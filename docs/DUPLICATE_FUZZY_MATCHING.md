@@ -1,6 +1,6 @@
 # Duplicate fuzzy matching: public spec and native run
 
-Files here: `org.tsv` (native verdicts), `cases.json` (the agreement bounds the
+Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_matching/` holds `org.tsv` (native verdicts), `cases.json` (the agreement bounds the
 conformance test enforces). The test is `TestFuzzyMatchingNativeRows` in
 `internal/dml/fuzzy_conformance_test.go`. The scorers are in
 `internal/dml/fuzzy_match.go`.
@@ -131,35 +131,45 @@ All pages are Salesforce Help articles.
 
 ## Glade fit (internal/dml/fuzzy_match.go)
 
-Pair agreement over every probe pair (API 67.0; blank rows excluded; the
-diagonal included). `Match` counts native matches; `tp/fn/fp` are Glade
-against native.
+The scorers are conservative: a false match blocks a save that Salesforce
+allows, while a missed match only leaves the earlier unenforced behavior. Every
+captured row, in-sample and held-out, has zero extra matches. Near-threshold
+pairs the approximations cannot separate resolve to no match, which costs
+recall.
 
-| Method | Pairs | Native matches | Glade tp | fn | fp | Agreement |
-|---|---|---|---|---|---|---|
-| First name | 2401 | 195 | 191 | 4 | 4 | 99.7% |
-| Last name | 2304 | 174 | 174 | 0 | 4 | 99.8% |
-| Phone (Contact) | 2401 | 189 | 189 | 0 | 0 | 100% |
-| Title | 2401 | 437 | 437 | 0 | 0 | 100% |
-| Company name | 2401 | 162 | 159 | 3 | 0 | 99.9% |
-| Street | 2401 | 207 | 207 | 0 | 6 | 99.8% |
-| City | 2304 | 68 | 68 | 0 | 0 | 100% |
-| ZIP | 2401 | 95 | 95 | 0 | 0 | 100% |
-| Phone (Account) | 2401 | 189 | 189 | 0 | 0 | 100% |
+Recall is the share of native matching pairs Glade also matches; extra is the
+count of pairs Glade matches that native did not. API 67.0, all pairs of probe
+values including the blank-row pairs of MatchBlanks rows; API 62.0 rows give the
+same figures.
 
-Held-out values (the `Holdout.` rows) were scored before the scorers were
-adjusted to them, then the scorers were adjusted. Before and after:
+In-sample (values the scorers were fitted to):
 
-| Method | Native matches | Before: tp / fn / fp | After: tp / fn / fp |
+| Method | Native matches | Glade recall | Extra |
 |---|---|---|---|
-| Company name | 80 | 70 / 10 / 6 | 76 / 4 / 0 |
-| Street | 122 | 100 / 22 / 6 | 114 / 8 / 6 |
-| City | 78 | 78 / 0 / 2 | 78 / 0 / 2 |
-| Phone | 271 | 244 / 27 / 0 | 271 / 0 / 0 |
+| First name | 195 | 185 (94.9%) | 0 |
+| Last name | 178 | 172 (96.6%) | 0 |
+| Phone (Contact) | 189 | 189 (100%) | 0 |
+| Phone (Account) | 189 | 189 (100%) | 0 |
+| Title | 437 | 437 (100%) | 0 |
+| Company name | 163 | 160 (98.2%) | 0 |
+| Street | 207 | 207 (100%) | 0 |
+| City | 68 | 64 (94.1%) | 0 |
+| ZIP | 95 | 95 (100%) | 0 |
 
-The after numbers are no longer held out; only the before numbers estimate
-agreement on unseen values. Dictionary and threshold choices are fitted to the
-rows, so agreement on other values will be lower.
+Held-out (values chosen after the main fit):
+
+| Method | Native matches | Before tuning: recall / extra | After tuning: recall / extra |
+|---|---|---|---|
+| Company name | 81 | 70 (86.4%) / 6 | 77 (95.1%) / 0 |
+| Street | 147 | 100 (68.0%) / 6 | 135 (91.8%) / 0 |
+| City | 103 | 78 (75.7%) / 2 | 97 (94.2%) / 0 |
+| Phone | 271 | 244 (90.0%) / 0 | 271 (100%) / 0 |
+
+Only the "before tuning" columns estimate agreement on unseen values: there
+Glade produced extra matches (6, 6 and 2) that the conservative changes then
+removed after seeing them, so the "after" columns are no longer held out. Dictionary
+and threshold choices are fitted to the rows; expect lower recall on other
+values, and extra matches cannot be ruled out for unseen pairs.
 
 ## Documented gaps
 
@@ -172,8 +182,9 @@ rows, so agreement on other values will be lower.
   accept (`Micheal`, `Lakeshore`, `Garcia` with an accent) and accept some
   that need a real syllable model (`Initec`/`Initech`, `Goldman`/`Goldmann`,
   `Industry`/`Industries` beyond the plural rule, `Maria`/`Maira`).
-- City threshold: native behaves like about 87, not the documented 85, on
-  the similarity used.
+- City threshold: native behaves like about 87 to 88, not the documented 85,
+  on the similarity used. Glade uses 88 so the 87.5 pair that native rejects
+  stays a no match; single edits in eight-letter words lose recall.
 - `matchConfidence` is not modeled below 100 (Glade still reports 100). The
   rows record native confidences (Phone and ZIP follow the documented weights;
   City reads `(100 + similarity) / 2`; Title and Street do not follow a

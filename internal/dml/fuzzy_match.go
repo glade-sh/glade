@@ -174,6 +174,11 @@ func fuzzyFirstName(a, b string) bool {
 	if x == y || nameVariants(x, y) {
 		return true
 	}
+	// A dictionary name only matches its own group: the rows reject near
+	// spellings across groups (Michael/Micheal, Jose/Josef).
+	if len(nameVariantIndex[x]) > 0 || len(nameVariantIndex[y]) > 0 {
+		return false
+	}
 	return jaroWinkler(x, y) >= 0.95 && min(len([]rune(x)), len([]rune(y))) >= 4
 }
 
@@ -191,8 +196,8 @@ func metaphoneKey(s string) string {
 		}
 		text := string(in)
 		for _, pair := range [][2]string{
-			{"ü", "u"}, {"ö", "o"}, {"ä", "a"}, {"é", "e"}, {"í", "i"}, {"ñ", "n"}, {"ç", "c"}, {"ue", "u"}, {"ae", "a"}, {"ph", "f"}, {"gh", ""},
-			{"ck", "k"}, {"kn", "n"}, {"wr", "r"}, {"sch", "x"}, {"ch", "x"}, {"sh", "x"}, {"th", "0"}, {"tch", "x"}, {"dg", "j"}, {"cz", "s"},
+			{"ü", "u"}, {"ö", "o"}, {"ä", "a"}, {"ue", "u"}, {"ae", "a"}, {"ph", "f"}, {"gh", ""},
+			{"ck", "k"}, {"kn", "n"}, {"wr", "r"}, {"sch", "x"}, {"ch", "x"}, {"sh", "x"}, {"th", "0"}, {"tch", "x"}, {"dg", "j"},
 			{"ou", "u"}, {"ey", "e"}, {"ei", "e"}, {"ie", "e"}, {"ci", "si"}, {"ce", "se"}, {"cy", "sy"}, {"d", "t"}, {"z", "s"}, {"q", "k"}, {"v", "f"}, {"w", "u"}, {"c", "k"}, {"y", "i"},
 		} {
 			text = strings.ReplaceAll(text, pair[0], pair[1])
@@ -338,7 +343,7 @@ func fuzzyZip(a, b string) bool {
 
 func fuzzyCity(a, b string) bool {
 	x, y := foldText(a), foldText(b)
-	return x == y || editSimilarity(x, y) >= 87
+	return x == y || editSimilarity(x, y) >= 88
 }
 
 var streetSuffixes = map[string]string{
@@ -391,11 +396,16 @@ func parseStreet(s string) streetParts {
 // and number edits, so the name is compared exactly.
 func fuzzyStreet(a, b string) bool {
 	x, y := parseStreet(a), parseStreet(b)
-	if x.number != y.number || editSimilarity(x.name, y.name) < 86 {
+	if x.number != y.number || editSimilarity(x.name, y.name) <= 90 {
 		return false
 	}
 	if x.suffix == y.suffix || x.rawSuffix == "" || y.rawSuffix == "" {
 		return true
+	}
+	if x.suite != y.suite && (streetSuffixes[x.rawSuffix] == "" || streetSuffixes[y.rawSuffix] == "") {
+		// The rows reject an abbreviation variant (Str) against a different
+		// suite; prefer no match.
+		return false
 	}
 	// A suffix mismatch is tolerated; the native rows only reject the pair
 	// when an unrecognized abbreviation sits two or more edits away.
