@@ -23,6 +23,8 @@ var caseUserSurfaceGatedFields = map[string][]string{
 	"Case": {
 		"HasCommentsUnreadByOwner", "HasSelfServiceComments", "IsSelfServiceClosed", "IsVisibleInSelfService",
 		"Language", "RecordTypeId", "SourceId", "ConnectionReceivedId", "ConnectionSentId",
+		// Relationship names of the accepted reference fields.
+		"ConnectionReceived", "ConnectionSent",
 	},
 	"User": {
 		"IsPortalSelfRegistered", "IsPortalEnabled", "PortalRole", "IsPartner", "UserPermissionsAvantgoUser",
@@ -34,6 +36,9 @@ var caseUserSurfaceGatedFields = map[string][]string{
 		"UserPreferencesDismissPersonalSpaceLegalMessage", "UserPreferencesDismissRecordChannelsSuggestedObjects",
 		"UserPreferencesDismissReuseUpdateReminderModal", "UserPreferencesEnableLwrLexPilot",
 		"UserPreferencesHideManagedEcaMobilePubModal",
+		// Documented fields of org settings the capture org lacked (name
+		// settings, divisions, Live Agent); no row, kept accepted.
+		"MiddleName", "Suffix", "DefaultDivision", "UserPermissionsLiveAgentUser",
 	},
 }
 
