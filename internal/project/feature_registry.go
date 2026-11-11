@@ -241,7 +241,7 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 	{
 		Name: "SocialCustomerService",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_surfaces.json"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
 		},
 	},
 	{
