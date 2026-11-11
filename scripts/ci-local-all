@@ -15,7 +15,7 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-SHARDS = {'apextest': 12, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 4, 'vm': 4}
+SHARDS = {'apextest': 14, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3}
 # CodeQL runs from Security, not Required CI; the local codeql step below stays as an extra check.
 MAPPING = {
     # PR selection is covered by the full suite and scripts tests locally.
@@ -204,6 +204,8 @@ class Runner:
                 self.results[name] = (status, log)
                 return
             env = {variable:str(self.root/name), 'GLADE_HOME':str(self.root/name/'glade-home'), 'CI_APEXTEST_SHARDS':str(SHARDS['apextest'])}
+            if group == 'gladecli': env['CI_GLADECLI_SHARDS'] = str(SHARDS['gladecli'])
+            if group == 'vm': env['CI_VM_SHARDS'] = str(SHARDS['vm'])
             if shared_binary:
                 env['CI_TEST_BIN_DIR'] = str(self.root/'binaries'/group)
             self.command(name,[g,command+'-shard',str(i)],env=env,prerequisites=prereq)

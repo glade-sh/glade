@@ -946,8 +946,9 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 29 {
 		t.Errorf("cache save count = %d, want existing DAG and history writers plus the Apex retry profile writer", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
-	if strings.Count(workflow, "shard: [0, 1]") != 1 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]") != 1 {
-		t.Error("workflow must contain the twelve-shard Apex and two-shard sema matrices")
+	// The two-entry matrices are sema and the two-shard gladecli push layout.
+	if strings.Count(workflow, "shard: [0, 1]\n") != 2 || strings.Count(workflow, "shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]") != 1 {
+		t.Error("workflow must contain the fourteen-shard Apex, two-shard sema and two-shard gladecli matrices")
 	}
 	if matches, _ := filepath.Glob(filepath.Join("..", "**", "*duration-history*.json")); len(matches) != 0 {
 		t.Fatalf("tracked duration history candidates: %v", matches)
