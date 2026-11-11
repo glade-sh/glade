@@ -1,0 +1,9 @@
+api	case	result
+62.0	MissingA	reject
+62.0	MissingB	reject
+62.0	MissingStd	reject
+62.0	Declared	accept
+67.0	MissingA	reject
+67.0	MissingB	reject
+67.0	MissingStd	reject
+67.0	Declared	accept

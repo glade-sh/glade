@@ -242,3 +242,57 @@ func TestMessagingCampaignNativeQueryVersionRoutes(t *testing.T) {
 		})
 	}
 }
+
+func TestMessagingCustomFieldNativeCompileRoutes(t *testing.T) {
+	const dir = "testdata/conformance/messaging_campaign_presence"
+	f, err := os.Open(filepath.Join(dir, "custom-fields.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 9 {
+		t.Fatalf("native rows=%d", len(rows)-1)
+	}
+	cfg, err := os.ReadFile(filepath.Join(dir, "scratch-def.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range rows[1:] {
+		row := row
+		if row[1] == "MissingStd" {
+			continue
+		}
+		t.Run(row[0]+"/"+row[1], func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+row[0]+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), string(cfg))
+			field := filepath.Join("force-app/main/default/objects/MessagingSession/fields/OwnedProbe__c.field-meta.xml")
+			b, err := os.ReadFile(filepath.Join(dir, "custom-project", field))
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, filepath.Join(root, field), string(b))
+			name := "MsgCustom" + row[1] + strings.TrimSuffix(row[0], ".0")
+			for _, s := range []string{".cls", ".cls-meta.xml"} {
+				rel := filepath.Join("force-app/main/default/classes", name+s)
+				b, err := os.ReadFile(filepath.Join(dir, "custom-project", rel))
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, filepath.Join(root, rel), string(b))
+			}
+			idx := loadTestIndex(t, root)
+			analysis := sema.Analyze(idx)
+			got := !idx.HasErrors() && !analysis.HasErrors()
+			if got != (row[2] == "accept") {
+				t.Fatalf("compile accepted=%t native=%s diagnostics=%v %v", got, row[2], idx.Diagnostics, analysis.Diagnostics)
+			}
+		})
+	}
+}
