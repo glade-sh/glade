@@ -1,6 +1,9 @@
 package vm
 
-import "maps"
+import (
+	"maps"
+	"reflect"
+)
 
 // Shared maps belong to an immutable runtime schema generation. Each VM has
 // its own map identity and token overlay; writes never reach the shared build.
@@ -19,26 +22,17 @@ func (vm *VM) sharedGlobalDescribeBuild() (Value, bool) {
 	if !ok {
 		value = vm.buildSchemaGlobalDescribe()
 		share.globalMaps[key] = value
+		share.registerTokenFields(value.Map)
 	}
 	share.mu.Unlock()
-	// Type tokens are writable in the existing local runtime. Privatize their
-	// fields once per VM, retaining aliases between different dictionary keys.
-	// Keys and order remain immutable and shared; typed bindings share this
-	// VM's entries until their first map write.
+	// Type tokens are writable in the existing local runtime. The token
+	// set is immutable shared data; a VM privatizes a token when assignPath
+	// first writes it (privatizeSharedDescribeToken). Keys and order stay
+	// shared too; typed bindings share this VM's entries until their first
+	// map write.
+	vm.noteDescribeTokenShare(share)
 	value.Ref = newValueRef()
-	shared := value.Map
-	value.Map = make(map[string]Value, len(shared))
-	tokens := make(map[uint64]Value, len(shared)/2+1)
-	for key, token := range shared {
-		private, ok := tokens[token.Ref]
-		if !ok {
-			private = token
-			private.Ref = newValueRef()
-			private.Fields = maps.Clone(token.Fields)
-			tokens[token.Ref] = private
-		}
-		value.Map[key] = private
-	}
+	value.Map = maps.Clone(value.Map)
 	return value, true
 }
 
@@ -106,4 +100,76 @@ type globalDescribeKeysVerifiedMemo struct {
 	caller  string
 	keys    map[string]Value
 	order   []string
+}
+
+// registerTokenFields records the Fields maps of a shared build's tokens.
+// Callers hold share.mu.
+func (share *describeShareCache) registerTokenFields(entries map[string]Value) {
+	if share.tokenFields == nil {
+		share.tokenFields = make(map[uintptr]struct{}, len(entries)/2+1)
+	}
+	for _, token := range entries {
+		if token.Fields != nil {
+			share.tokenFields[reflect.ValueOf(token.Fields).Pointer()] = struct{}{}
+		}
+	}
+}
+
+func (vm *VM) noteDescribeTokenShare(share *describeShareCache) {
+	for _, known := range vm.describeTokenShares {
+		if known == share {
+			return
+		}
+	}
+	vm.describeTokenShares = append(vm.describeTokenShares, share)
+}
+
+// privatizeSharedDescribeToken gives token private Fields when they belong to
+// a shared global describe build, and points this VM's cached describe maps at
+// the private copy. The caller writes the token next and propagates the
+// updated value to its other holders by identity, as for any field write.
+// The Ref is unchanged, so every holder in this VM still resolves to one token.
+func (vm *VM) privatizeSharedDescribeToken(token *Value) {
+	if token == nil || len(vm.describeTokenShares) == 0 || token.Kind != ValueObject || token.Fields == nil {
+		return
+	}
+	pointer := reflect.ValueOf(token.Fields).Pointer()
+	shared := false
+	for _, share := range vm.describeTokenShares {
+		share.mu.Lock()
+		_, shared = share.tokenFields[pointer]
+		share.mu.Unlock()
+		if shared {
+			break
+		}
+	}
+	if !shared {
+		return
+	}
+	sharedFields := token.Fields
+	token.Fields = maps.Clone(sharedFields)
+	replace := func(entries map[string]Value) {
+		for key, held := range entries {
+			if held.Ref == token.Ref && sameMapBacking(held.Fields, sharedFields) {
+				held.Fields = token.Fields
+				entries[key] = held
+			}
+		}
+	}
+	// The raw cache and the per-VM extensions cloned from it hold the token
+	// by value; update them all, so every route reads one private token.
+	if vm.globalDescribeCache != nil {
+		replace(vm.globalDescribeCache.Map)
+	}
+	for _, entry := range vm.globalDescribeVersionCaches {
+		if entry != nil && entry != vm.globalDescribeCache {
+			replace(entry.Map)
+		}
+	}
+	if vm.namedGlobalDescribe != nil {
+		replace(vm.namedGlobalDescribe.extended)
+	}
+	if vm.changeEventGlobal != nil {
+		replace(vm.changeEventGlobal.extended)
+	}
 }
