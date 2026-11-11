@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/trace"
 )
 
@@ -334,6 +335,7 @@ func (vm *VM) invokeUIAction(framework, className, methodName string, params map
 	}
 	out.Success = true
 	if lwc {
+		defer recoverLWCGetterStackFailure(&out, &err)
 		out.ReturnValue = vm.lwcJSONFromValue(value)
 	} else {
 		out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
@@ -350,6 +352,10 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 		candidates = append(candidates, vm.registeredFolded(strings.ToLower(className+"."+methodName))...)
 	}
 	sort.SliceStable(candidates, func(i, j int) bool { return uiMethodSignature(candidates[i]) < uiMethodSignature(candidates[j]) })
+	if lwc {
+		candidates = historicalLightningCandidates(candidates)
+		candidates = historicalLightningRankedCandidates(candidates)
+	}
 	var matchedMethod Method
 	var matchedArgs []Value
 	matched := 0
@@ -413,6 +419,41 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 		return Method{}, nil, parameterErr
 	}
 	return Method{}, nil, fmt.Errorf("no static @AuraEnabled method %s.%s accepts parameters %s", className, methodName, sortedParamNames(params))
+}
+
+// Historical Lightning actions select a unique highest-arity overload before
+// binding parameters. Unknown or mixed source versions retain normal handling.
+func historicalLightningCandidates(candidates []Method) []Method {
+	version := ""
+	maxArity := -1
+	maxSignature := ""
+	maxIndex := -1
+	uniqueMax := false
+	signatures := make(map[string]bool)
+	for i, method := range candidates {
+		if !method.IsStatic || !methodHasAuraEnabled(method.Modifiers) {
+			continue
+		}
+		if strings.TrimSpace(method.APIVersion) == "" {
+			return candidates
+		}
+		current, err := apexversion.PreserveSource(method.APIVersion)
+		if err != nil || !apexversion.Before(current, 55) || (version != "" && current != version) {
+			return candidates
+		}
+		version = current
+		signature := uiMethodSignature(method)
+		signatures[signature] = true
+		if len(method.Params) > maxArity {
+			maxArity, maxSignature, maxIndex, uniqueMax = len(method.Params), signature, i, true
+		} else if len(method.Params) == maxArity && signature != maxSignature {
+			uniqueMax = false
+		}
+	}
+	if len(signatures) < 2 || !uniqueMax {
+		return candidates
+	}
+	return []Method{candidates[maxIndex]}
 }
 
 func (vm *VM) lwcParameterValue(typeName string, raw any) (Value, error) {
@@ -586,7 +627,19 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 		}
 		out := make(map[string]any)
 		if _, ok := vm.lookupClass(value.Type); ok {
-			for _, name := range vm.jsonSerializableFieldNames(value.Type) {
+			names := vm.jsonSerializableFieldNames(value.Type)
+			deferScalars := false
+			if value.classInstance && value.projectClass {
+				for _, name := range names {
+					field, _, ok := vm.lookupField(value.Type, name)
+					if ok && !field.Static && field.Getter != nil && field.Getter.File != "" && methodHasAuraEnabled(field.Modifiers) {
+						deferScalars = true
+						break
+					}
+				}
+			}
+			var deferred []string
+			for _, name := range names {
 				field, owner, ok := vm.lookupField(value.Type, name)
 				if !ok || field.Static || !methodHasAuraEnabled(field.Modifiers) {
 					continue
@@ -595,10 +648,23 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 				if field.Getter != nil {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
 					if err != nil {
+						var fault *RuntimeError
+						if deferScalars && field.Getter.File != "" && errors.As(err, &fault) && fault.callStackLimit && strings.EqualFold(fault.Type, "System.LimitException") {
+							panic(lwcGetterStackFailure{err: err})
+						}
 						continue
 					}
 					item, present = getterValue, true
+				} else if deferScalars && present && item.Kind != ValueNull && jsonScalarFieldValue(item) {
+					deferred = append(deferred, name)
+					continue
 				}
+				if present && item.Kind != ValueNull {
+					out[name] = vm.lwcJSONFromValue(item)
+				}
+			}
+			for _, name := range deferred {
+				_, item, present := objectFieldValue(value, name)
 				if present && item.Kind != ValueNull {
 					out[name] = vm.lwcJSONFromValue(item)
 				}
@@ -621,6 +687,24 @@ func (vm *VM) lwcJSONFromValue(value Value) any {
 		return out
 	default:
 		return jsonFromValue(value, false)
+	}
+}
+
+// The action transport exposes a stable generic message for captured getter
+// stack exhaustion. Salesforce's accompanying error identifier varies.
+type lwcGetterStackFailure struct{ err error }
+
+func recoverLWCGetterStackFailure(out *UIInvocationResult, err *error) {
+	if recovered := recover(); recovered != nil {
+		failure, ok := recovered.(lwcGetterStackFailure)
+		if !ok {
+			panic(recovered)
+		}
+		out.Success = false
+		out.ReturnValue = nil
+		out.Error = uiInvocationError(failure.err)
+		out.Error.Message = "An internal server error has occurred"
+		*err = nil
 	}
 }
 

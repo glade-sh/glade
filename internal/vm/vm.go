@@ -282,7 +282,9 @@ func storageStringValueEquals(value storage.Value, text string) bool {
 
 func (vm *VM) shouldEnqueueFuture(method Method) bool {
 	if vm.testContext == nil {
-		return false
+		// A Lightning action defers its futures to the post-commit drain; every
+		// other non-test route keeps the inline approximation.
+		return vm.isolateAsyncJobFailures && vm.currentAsyncKind == "" && methodHasModifier(method.Modifiers, "future")
 	}
 	if vm.inEventSubscriberTrigger() && methodHasModifier(method.Modifiers, "future") {
 		// automated_process_user_mode rows: accepted and never run in a test.
@@ -298,10 +300,7 @@ func (vm *VM) shouldEnqueueFuture(method Method) bool {
 }
 
 func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value, error) {
-	if vm.rejectAsyncActions {
-		return Null, vm.rejectSynchronousAsyncAction(fmt.Sprintf("%s cannot cross the synchronous LWC action boundary", method.Name))
-	}
-	if vm.testContext == nil {
+	if vm.testContext == nil && !vm.isolateAsyncJobFailures {
 		return Null, nil
 	}
 	if !method.IsStatic {
@@ -332,6 +331,12 @@ func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value,
 		Kind:   "Future",
 		Method: method,
 		Args:   coercedArgs,
+	}
+	if vm.testContext == nil {
+		job.RunAsUser = vm.eventSubscriberRunAsUser()
+		vm.localAsyncJobs = append(vm.localAsyncJobs, job)
+		vm.recordAsyncJob(job, "Queued", "")
+		return Null, nil
 	}
 	if vm.testContext.Draining || vm.inEventSubscriberTrigger() {
 		return Null, nil

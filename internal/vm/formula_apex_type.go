@@ -40,15 +40,21 @@ func (vm *VM) formulaApexTypeMemberValidation(typeName, formula string, template
 	}
 	for _, referenced := range dml.FormulaReferencedFields(formula, template) {
 		root := strings.SplitN(referenced, ".", 2)[0]
-		if field, _, found := vm.lookupReceiverField(typeName, root); found && !field.Static && !formulaApexTypeFieldVisible(class, field) {
+		field, _, found := vm.lookupReceiverField(typeName, root)
+		if found && !field.Static && !formulaApexTypeFieldVisible(class, field) {
+			return "Field " + root + " does not exist. Check spelling."
+		}
+		// The captured global Apex context rejects an absent direct member.
+		// System variables and nested paths keep their existing validation.
+		if !found && root == referenced && !strings.HasPrefix(root, "$") {
 			return "Field " + root + " does not exist. Check spelling."
 		}
 	}
 	return ""
 }
 
-// The captured global property computes an SObject from inherited state. Its
-// initialized backing slot is not the getter's value. Automatic properties and
+// Captured global properties compute String and SObject values from getters.
+// Their backing slots are not the getter values. Automatic properties and
 // plain fields keep their existing stored-value path.
 func (vm *VM) formulaApexTypeGetter(receiver Value, name string) (Value, bool, error) {
 	if vm.isSObjectLikeType(receiver.Type) {
@@ -59,7 +65,11 @@ func (vm *VM) formulaApexTypeGetter(receiver Value, name string) (Value, bool, e
 		return Null, false, nil
 	}
 	field, owner, ok := vm.lookupReceiverField(receiver.Type, name)
-	if !ok || field.Static || !field.Property || field.Getter == nil || !strings.EqualFold(field.Access, "global") || !vm.isSObjectLikeType(vm.resolveTypeNameInClass(owner, field.Type)) {
+	if !ok || field.Static || !field.Property || field.Getter == nil || !strings.EqualFold(field.Access, "global") {
+		return Null, false, nil
+	}
+	typeName := vm.resolveTypeNameInClass(owner, field.Type)
+	if !vm.isSObjectLikeType(typeName) && !strings.EqualFold(typeName, "String") && !strings.EqualFold(typeName, "System.String") {
 		return Null, false, nil
 	}
 	value, err := vm.callGetter(owner, field, receiver)

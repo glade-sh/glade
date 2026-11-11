@@ -293,10 +293,11 @@ func OrgShapeFeatures(root string) []string {
 		}
 	}
 	// Deployed settings files reach the same trigger table as scratch settings.
-	if def, ok := sourceSettingsDefinition(root); ok {
+	settingsFiles, personAccounts := orgShapeEvidenceScan(root)
+	if def, ok := sourceSettingsDefinitionFromFiles(settingsFiles); ok {
 		features = append(features, scratchDefinitionFeatures(def)...)
 	}
-	if len(personAccountRecordTypePaths(root)) > 0 {
+	if len(personAccounts) > 0 {
 		features = append(features, "PersonAccounts")
 	}
 	return dedupeStrings(features)
@@ -2158,6 +2159,11 @@ func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
 			return nil
 		}
 		lower := strings.ToLower(path)
+		// Files directly under an LWC root are outside any component bundle,
+		// including names that otherwise resemble a different metadata type.
+		if isLWCPath(lower) && strings.EqualFold(filepath.Base(filepath.Dir(path)), "lwc") {
+			return nil
+		}
 		switch {
 		case isStaticResourceContentFile(path):
 			p.StaticResourceFiles = append(p.StaticResourceFiles, path)

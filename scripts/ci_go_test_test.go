@@ -1882,6 +1882,13 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		"test", "test-binaries", "smoke-runtime", "smoke-distribution", "apextest-history-input", "apextest", "lwc-compile-history-input", "visualforce-history-input",
 	} {
 		job := jobs[jobName]
+		if jobName != "vet" {
+			prGuard := "    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}"
+			if strings.Count(job, prGuard) != 1 {
+				return fmt.Sprintf("%s PR exclusion is not exact", jobName)
+			}
+			job = strings.Replace(job, prGuard, guard, 1)
+		}
 		if strings.Count(job, guard) != 1 {
 			return fmt.Sprintf("%s cache-pair bounds guard is not exact", jobName)
 		}
@@ -2015,6 +2022,7 @@ func ciRequiredAggregateProblem(workflow string) string {
 	}
 	wantNeeds := `    needs:
       - workflow-lint
+      - pr-tests
       - site
       - test-binaries
       - vet
@@ -2074,6 +2082,8 @@ func ciRequiredAggregateProblem(workflow string) string {
 		{name: "timeout", want: "    timeout-minutes: 5"},
 		{name: "needs JSON environment", want: `          REQUIRED_RESULTS: ${{ toJSON(needs) }}`},
 		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
+		{name: "PR result selection", want: `(.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan")`},
+		{name: "full result selection", want: `(.key != "pr-tests")`},
 		{name: "failure exit", want: "            exit 1"},
 	}
 	for _, check := range checks {
@@ -3364,6 +3374,10 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 			t.Errorf("node-integration job missing %q", marker)
 		}
 	}
+	if strings.Count(jobs["pr-tests"], "npm ci --prefix third_party/lwc") != 1 || strings.Count(jobs["pr-tests"], "npm ci --prefix lwcruntime") != 1 {
+		t.Error("PR browser prerequisites are incomplete")
+	}
+	workflow = strings.Replace(workflow, jobs["pr-tests"], "", 1)
 	if strings.Count(node, "npm ci --prefix third_party/lwc") != 1 || strings.Count(workflow, "npm ci --prefix third_party/lwc") != 4 {
 		t.Errorf("third_party/lwc npm install ownership count workflow/node = %d/%d, want 4/1 (distribution smoke, node lane, and two conformance lanes)", strings.Count(workflow, "npm ci --prefix third_party/lwc"), strings.Count(node, "npm ci --prefix third_party/lwc"))
 	}
@@ -3563,6 +3577,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		"apextest", "apextest-history", "gladecli", "leak-scan", "tree-receipt", "nested-sources", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "server-process-builder", "site", "smoke-distribution", "smoke-runtime", "test", "test-binaries", "vet", "workflow-lint",
 	}
+	wantJobs = append(wantJobs, "pr-tests")
 	wantJobs = append(wantJobs, "apextest-history-input", "lwc-compile-history-input", "lwc-compile-history", "visualforce-history-input", "visualforce-history", "gladecli-history-input", "gladecli-history", "vm-history-input", "vm", "vm-history")
 	sort.Strings(wantJobs)
 	gotJobs := make([]string, 0, len(jobs))

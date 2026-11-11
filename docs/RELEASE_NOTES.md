@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-### Lightning web components
+Seeded profiles now link to the user licenses and management permissions seen in captured Salesforce rows. Customized profiles from older saved orgs are preserved, license ID collisions are resolved, and the external license fallback only applies to key-only external licenses.
+
+### Lightning
+
+- **Historical overloaded Apex actions.** A Lightning web component call to an `@AuraEnabled` method whose single-parameter overloads still compile (Apex API before 55) now runs the overload Salesforce selects, instead of reporting the overload as unsupported. Other overload shapes keep the unsupported result.
 
 - **Action argument conversion.** Arguments of `@AuraEnabled` calls from Lightning web components convert as Salesforce does for Boolean (any string), `List<String>` (a string becomes one element or the parsed JSON array; numbers, booleans and objects become an empty list), Decimal, Double, Integer, Datetime, Object, Account and SObject parameters. A `Date` parameter that receives a UTC Datetime string is still rejected.
 
@@ -33,6 +37,11 @@ v0.3.6 fixes more differences from Salesforce found with captured org behavior, 
 ### CLI and CI
 
 - **Faster pull request CI.** Pull requests reuse the build caches saved from the main branch, and the LWC conformance test is split by API version (59, 67 and 68). No test or budget was removed.
+
+- **Flow record mapping and collection filters (62.0 and 67.0).** Autolaunched flows can map references and string literals into single records, retain mapped nulls in returned records, and use In and Not In filters with collection inputs in Get Records.
+
+- **Lightning action async work (Apex API 62.0 and 67.0).** Queueable, `@future` and platform-event work enqueued by an `@AuraEnabled` method called from an LWC or Aura component now runs after the action commits, sees the action's changes, and is discarded if the action throws or rolls back to an earlier savepoint. A failing job rolls back only itself and does not change the action's result. Under strict limit mode the 50-job caps apply to the action. This replaces the previous `UnsupportedFeature` rejection. `Database.*Async` DML, `Database.executeBatch` and `System.schedule` in an action are still rejected. Captured at 62.0 and 67.0.
+- **REST composite responses.** Missing-field errors and collection or tree rollback responses now follow the captured Salesforce status codes, error messages, and result shapes.
 
 ## v0.3.5
 

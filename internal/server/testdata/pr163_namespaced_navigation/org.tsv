@@ -1,0 +1,5 @@
+case	api	route	result	outcome
+ProbeNavC163__c	platform	record_page	accepted	$NS__ProbeNavC163__c
+$NS__ProbeNavC163__c	platform	record_page	accepted	$NS__ProbeNavC163__c
+other__ProbeNavC163__c	platform	record_page	accepted	$NS__ProbeNavC163__c
+Record	platform	record_page	accepted	$NS__ProbeNavC163__c

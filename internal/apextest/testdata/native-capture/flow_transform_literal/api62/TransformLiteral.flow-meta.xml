@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>62.0</apiVersion><interviewLabel>TransformLiteral</interviewLabel><label>TransformLiteral</label><processType>AutoLaunchedFlow</processType>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>MapRecord</targetReference></connector></start><status>Active</status>
+<transforms><name>MapRecord</name><label>Map Record</label><locationX>0</locationX><locationY>0</locationY><connector><targetReference>SaveRecord</targetReference></connector><dataType>SObject</dataType><isCollection>false</isCollection><objectType>Contact</objectType><scale>0</scale><transformValues>
+<transformValueActions><outputFieldApiName>LastName</outputFieldApiName><transformType>Map</transformType><value><elementReference>InputText</elementReference></value></transformValueActions>
+<transformValueActions><outputFieldApiName>Title</outputFieldApiName><transformType>Map</transformType><value><stringValue>Mapped</stringValue></value></transformValueActions>
+</transformValues></transforms>
+<assignments><name>SaveRecord</name><label>Save Record</label><locationX>0</locationX><locationY>0</locationY><assignmentItems><assignToReference>OutputRecord</assignToReference><operator>Assign</operator><value><elementReference>MapRecord</elementReference></value></assignmentItems></assignments>
+<variables><name>InputText</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables><variables><name>NullText</name><dataType>String</dataType><isCollection>false</isCollection><isInput>true</isInput><isOutput>false</isOutput></variables><variables><name>OutputRecord</name><dataType>SObject</dataType><objectType>Contact</objectType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+</Flow>

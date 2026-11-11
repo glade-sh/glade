@@ -1399,6 +1399,17 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 					frame.assigned[flowFrameKey(target)] = true
 					return nil
 				}
+				// A record input supplied as scalar null (or defaulted null) keeps the
+				// scalar-null route below; only a present record is copied by value.
+				sourceKey := flowFrameKey(assignment.SourceField)
+				_, sourceScalar := frame.scalars[sourceKey]
+				if record, found := frame.records[sourceKey]; found && !sourceScalar && !frame.nullRecordDefaults[sourceKey] {
+					frame.records[flowFrameKey(target)] = record.Clone()
+					delete(frame.scalars, flowFrameKey(target))
+					delete(frame.nullRecordDefaults, flowFrameKey(target))
+					frame.assigned[flowFrameKey(target)] = true
+					return nil
+				}
 			}
 			// Collection variables are stored separately from scalar values in a
 			// Flow frame. Salesforce permits assigning one SObject collection to
@@ -3745,6 +3756,43 @@ func (e *Engine) flowRecordLookupMatches(lookup storage.FlowRecordLookup, source
 func (e *Engine) applyFlowTransformStep(transform storage.FlowTransform, frame *flowFrame) error {
 	transformType := strings.ToLower(strings.TrimSpace(transform.TransformType))
 	switch transformType {
+	case "recordmap":
+		state, objectName, err := e.object(transform.ObjectType)
+		if err != nil {
+			return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s targets unknown object %s", transform.Name, transform.ObjectType)
+		}
+		record := storage.Record{Object: objectName, Fields: make(map[string]storage.Value)}
+		for _, mapping := range transform.FieldMappings {
+			field, ok := storage.ResolveFieldName(state.Definition, e.Org.Namespace, mapping.Field)
+			if !ok {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{mapping.Field}, "dml: flow transform %s maps unknown field %s.%s", transform.Name, objectName, mapping.Field)
+			}
+			var value storage.Value
+			if mapping.FlowLiteralString {
+				value = storage.StringValue(mapping.LiteralValue)
+			} else {
+				if !flowCapturedTransformVariable(frame, mapping.SourceField) {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references an unsupported source", transform.Name)
+				}
+				var ok bool
+				value, ok = e.flowFrameReferenceValueAudit(mapping.SourceField, frame, make(map[string]bool), false)
+				if !ok {
+					return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow transform %s references unknown value %s", transform.Name, mapping.SourceField)
+				}
+			}
+			value, ok = e.flowTransformTargetValue(state.Definition.Fields[field], value)
+			if !ok {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{field}, "dml: flow transform %s has unsupported value for %s.%s", transform.Name, objectName, field)
+			}
+			record.Fields[field] = value
+			if value.Kind == storage.ValueNull {
+				if record.ExplicitNulls == nil {
+					record.ExplicitNulls = make(map[string]bool)
+				}
+				record.ExplicitNulls[field] = true
+			}
+		}
+		frame.records[flowFrameKey(transform.Name)] = record
 	case "count":
 		records, ok := frame.flowCollection(transform.SourceCollection)
 		if !ok {
@@ -3937,7 +3985,16 @@ func (e *Engine) flowRecordLookupRecords(lookup storage.FlowRecordLookup, source
 		for _, item := range lookup.Criteria {
 			match, ok := e.evaluateFlowLookupCriteria(item, candidate, target.Definition, source, sourceDefinition, frame)
 			if !ok {
-				return nil, storage.ObjectDefinition{}, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+				err := dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+				op := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""))
+				if op == "in" || op == "notin" {
+					field, fieldOK := storage.ResolveFieldName(target.Definition, e.Org.Namespace, item.Field)
+					value, valueOK := e.flowRecordUpdateSourceValue(item.SourceField, source, sourceDefinition, frame)
+					if fieldOK && valueOK && flowLookupCollectionHasCapturedFault(target.Definition.Fields[field], value) {
+						return nil, storage.ObjectDefinition{}, &flowLookupCollectionFault{cause: err}
+					}
+				}
+				return nil, storage.ObjectDefinition{}, err
 			}
 			if disjunction && match {
 				matches = true
@@ -4012,6 +4069,31 @@ func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, t
 	}
 	field := targetDefinition.Fields[targetField]
 	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
+	case "in", "notin", "not in":
+		if !flowCapturedVariable(frame, item.SourceField, true) {
+			return false, false
+		}
+		if sourceValue.Kind != storage.ValueList && sourceValue.Kind != storage.ValueNull {
+			return false, false
+		}
+		if !flowLookupCollectionFieldSupported(field) {
+			return false, false
+		}
+		found := false
+		for _, element := range sourceValue.List {
+			equal, supported := flowLookupCollectionValuesEqual(field, targetValue, element)
+			if !supported {
+				return false, false
+			}
+			if equal {
+				found = true
+				break
+			}
+		}
+		if strings.EqualFold(strings.ReplaceAll(strings.TrimSpace(item.Operation), " ", ""), "notin") {
+			return !found, true
+		}
+		return found, true
 	case "", "equals", "equal", "eq":
 		return flowLookupIDValuesEqual(field, targetValue, sourceValue), true
 	case "notequal", "not equal", "notequals", "not equals", "ne":

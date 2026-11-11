@@ -3960,7 +3960,7 @@
    "durationMillis": 0
   },
   {
-   "name": "TestExecCreatedByProfileUserLicenseUsesCommunityLicenseKey",
+   "name": "TestExecCreatedByProfileUserLicenseUsesChatterExternalLicenseKey",
    "durationMillis": 50
   },
   {
@@ -15656,19 +15656,19 @@
    "durationMillis": 0
   },
   {
+   "name": "TestSynchronousActionBoundaryDefersFutureMethod",
+   "durationMillis": 0
+  },
+  {
+   "name": "TestSynchronousActionBoundaryDoesNotRejectEventBusPublish",
+   "durationMillis": 0
+  },
+  {
    "name": "TestSynchronousActionBoundaryRecordsAndClearsViolation",
    "durationMillis": 0
   },
   {
    "name": "TestSynchronousActionBoundaryRejectsDatabaseAsyncDML",
-   "durationMillis": 0
-  },
-  {
-   "name": "TestSynchronousActionBoundaryRejectsEventBusPublish",
-   "durationMillis": 0
-  },
-  {
-   "name": "TestSynchronousActionBoundaryRejectsFutureMethod",
    "durationMillis": 0
   },
   {

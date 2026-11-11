@@ -426,3 +426,114 @@ func SeededProfilePermissions(profileName string) (ProfilePermissionSeed, bool) 
 	}
 	return seed, true
 }
+
+// ensureInventoryUserLicense returns the UserLicense with the given key,
+// seeding it at the ID the captured inventory assigns to that key, so the
+// inventory pass reuses the same row.
+func ensureInventoryUserLicense(org *OrgState, name, key string) ID {
+	EnsureStandardObject(org, "UserLicense")
+	ids := make([]ID, 0, len(org.Objects["UserLicense"].Records))
+	for id := range org.Objects["UserLicense"].Records {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	for _, id := range ids {
+		if strings.EqualFold(org.Objects["UserLicense"].Records[id].Fields["LicenseDefinitionKey"].String, key) {
+			return id
+		}
+	}
+	id := ID("")
+	for i, license := range loadStandardPermissionInventory().Licenses {
+		if license.Kind == "UserLicense" && strings.EqualFold(license.Key, key) {
+			id = seededInventoryID("100", i+1)
+			break
+		}
+	}
+	if id == "" {
+		panic("captured permission inventory has no UserLicense " + key)
+	}
+	// A persisted license with another key may occupy the inventory ID; take
+	// the next free one. The inventory pass finds the license by key.
+	for n := 1; ; n++ {
+		if _, taken := org.Objects["UserLicense"].Records[id]; !taken {
+			break
+		}
+		id = seededInventoryID("100", 50000+n)
+	}
+	putSeedRecord(org, "UserLicense", Record{ID: id, Object: "UserLicense", Fields: map[string]Value{
+		"Name": StringValue(name), "LicenseDefinitionKey": StringValue(key),
+	}})
+	return id
+}
+
+// migrateLegacyLicenseSeeds repairs orgs persisted by builds that named the
+// PID_Customer_Community_Login license "Chatter External", linked Chatter
+// External User and Standard Platform User to the wrong license, and seeded a
+// "Customer Community Guest User" profile the fresh org does not have
+// (profile_usertype). Only rows that still carry the former seed are changed;
+// the guest profile is kept while a User references it.
+func migrateLegacyLicenseSeeds(org *OrgState, salesforceLicenseID, communityLoginLicenseID, chatterExternalLicenseID, platformLicenseID ID) {
+	licenses := org.Objects["UserLicense"]
+	if license, ok := licenses.Records[communityLoginLicenseID]; ok &&
+		license.Fields["Name"].String == "Chatter External" && license.Fields["LicenseDefinitionKey"].String == "PID_Customer_Community_Login" {
+		license.Fields["Name"] = StringValue("Customer Community Login")
+		licenses.Records[communityLoginLicenseID] = license
+	}
+	profiles := org.Objects["Profile"]
+	for _, legacy := range []struct {
+		id         ID
+		name       string
+		from, into ID
+	}{
+		{ID("00e000000000003"), "Chatter External User", communityLoginLicenseID, chatterExternalLicenseID},
+		{ID("00e000000000004"), "Standard Platform User", salesforceLicenseID, platformLicenseID},
+	} {
+		if profile, ok := profiles.Records[legacy.id]; ok && profile.Fields["Name"].String == legacy.name && IDsEqual(profile.Fields["UserLicenseId"].ID, legacy.from) {
+			profile.Fields["UserLicenseId"] = IDValue(legacy.into)
+			profiles.Records[legacy.id] = profile
+		}
+	}
+	guestID := ID("00e000000000007")
+	if profile, ok := profiles.Records[guestID]; ok && legacyGuestProfileUntouched(org, profile, communityLoginLicenseID) {
+		for id, set := range org.Objects["PermissionSet"].Records {
+			if IDsEqual(set.Fields["ProfileId"].ID, guestID) {
+				delete(org.Objects["PermissionSet"].Records, id)
+			}
+		}
+		delete(profiles.Records, guestID)
+	}
+}
+
+// legacyGuestProfileUntouched reports whether the former seeded guest profile
+// still holds exactly its seeded data and nothing else refers to it. A changed
+// license or permission field, or a reference from any record other than its
+// own profile-owned permission set, keeps the profile.
+func legacyGuestProfileUntouched(org *OrgState, profile Record, seededLicenseID ID) bool {
+	if profile.Fields["Name"].String != "Customer Community Guest User" ||
+		profile.Fields["UserType"].String != "Guest" ||
+		!IDsEqual(profile.Fields["UserLicenseId"].ID, seededLicenseID) {
+		return false
+	}
+	for field, value := range profile.Fields {
+		if strings.HasPrefix(field, "Permissions") && value.Boolean {
+			return false
+		}
+	}
+	for objectName, object := range org.Objects {
+		for id, record := range object.Records {
+			if objectName == "Profile" && IDsEqual(id, profile.ID) {
+				continue
+			}
+			owned := objectName == "PermissionSet" && IDsEqual(record.Fields["ProfileId"].ID, profile.ID) && record.Fields["IsOwnedByProfile"].Boolean
+			for field, value := range record.Fields {
+				if owned && strings.HasPrefix(field, "Permissions") && value.Boolean {
+					return false
+				}
+				if IDsEqual(value.ID, profile.ID) && !(owned && field == "ProfileId") {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}

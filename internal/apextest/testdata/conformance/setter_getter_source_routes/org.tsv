@@ -1,0 +1,25 @@
+api	case	route	outcome
+62.0	directBacking	IsTest-observe	Pass
+62.0	nullReject	IsTest-observe	Fail; System.NullPointerException: Attempt to de-reference a null object
+62.0	otherGetter	IsTest-observe	Pass
+62.0	sameMember	IsTest-observe	Fail; System.NullPointerException: Attempt to de-reference a null object
+62.0	sameSafeObserve	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: NULL|getters=0
+67.0	directBacking	IsTest-observe	Pass
+67.0	nullReject	IsTest-observe	Fail; System.NullPointerException: Attempt to de-reference a null object
+67.0	otherGetter	IsTest-observe	Pass
+67.0	sameMember	IsTest-observe	Fail; System.NullPointerException: Attempt to de-reference a null object
+67.0	sameSafeObserve	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: NULL|getters=0
+62.0	directBacking	IsTest-assert	Pass
+62.0	nullReject	IsTest-assert	Fail; System.NullPointerException: Attempt to de-reference a null object
+62.0	otherGetter	IsTest-assert	Pass
+62.0	qualifiedSame	IsTest-assert	Fail; System.NullPointerException: Attempt to de-reference a null object
+62.0	sameHelper	IsTest-assert	Pass
+62.0	sameMember	IsTest-assert	Fail; System.NullPointerException: Attempt to de-reference a null object
+62.0	sameSafeObserve	IsTest-assert	Pass
+67.0	directBacking	IsTest-assert	Pass
+67.0	nullReject	IsTest-assert	Fail; System.NullPointerException: Attempt to de-reference a null object
+67.0	otherGetter	IsTest-assert	Pass
+67.0	qualifiedSame	IsTest-assert	Fail; System.NullPointerException: Attempt to de-reference a null object
+67.0	sameHelper	IsTest-assert	Pass
+67.0	sameMember	IsTest-assert	Fail; System.NullPointerException: Attempt to de-reference a null object
+67.0	sameSafeObserve	IsTest-assert	Pass

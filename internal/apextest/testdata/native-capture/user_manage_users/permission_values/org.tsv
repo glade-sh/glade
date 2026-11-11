@@ -1,0 +1,33 @@
+source	api	profile	user_type	manage_users	manage_internal_users
+profile	62.0	Chatter External User	CsnOnly	false	false
+profile	62.0	Chatter Free User	CsnOnly	false	false
+profile	62.0	Customer Community Login User	CspLitePortal	false	false
+profile	62.0	Marketing User	Standard	false	false
+profile	62.0	Minimum Access - Salesforce	Standard	false	false
+profile	62.0	Standard Platform User	Standard	false	false
+profile	62.0	Standard User	Standard	false	false
+profile	62.0	System Administrator	Standard	true	true
+permissions	62.0	Chatter External User	CsnOnly	false	false
+permissions	62.0	Chatter Free User	CsnOnly	false	false
+permissions	62.0	Customer Community Login User	CspLitePortal	false	false
+permissions	62.0	Marketing User	Standard	false	false
+permissions	62.0	Minimum Access - Salesforce	Standard	false	false
+permissions	62.0	Standard Platform User	Standard	false	false
+permissions	62.0	Standard User	Standard	false	false
+permissions	62.0	System Administrator	Standard	true	true
+profile	67.0	Chatter External User	CsnOnly	false	false
+profile	67.0	Chatter Free User	CsnOnly	false	false
+profile	67.0	Customer Community Login User	CspLitePortal	false	false
+profile	67.0	Marketing User	Standard	false	false
+profile	67.0	Minimum Access - Salesforce	Standard	false	false
+profile	67.0	Standard Platform User	Standard	false	false
+profile	67.0	Standard User	Standard	false	false
+profile	67.0	System Administrator	Standard	true	true
+permissions	67.0	Chatter External User	CsnOnly	false	false
+permissions	67.0	Chatter Free User	CsnOnly	false	false
+permissions	67.0	Customer Community Login User	CspLitePortal	false	false
+permissions	67.0	Marketing User	Standard	false	false
+permissions	67.0	Minimum Access - Salesforce	Standard	false	false
+permissions	67.0	Standard Platform User	Standard	false	false
+permissions	67.0	Standard User	Standard	false	false
+permissions	67.0	System Administrator	Standard	true	true

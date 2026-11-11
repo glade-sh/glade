@@ -1,0 +1,29 @@
+api	case	route	outcome
+62.0	formulaDirect	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: value=direct|visits=1
+62.0	formulaFinite	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: value=value|visits=2
+62.0	formulaRecursive	IsTest-observe	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	formulaReject	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: error=System.FormulaValidationException|Field missing does not exist. Check spelling.
+62.0	jsonDirect	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: {""visits"":1,""value"":""direct""}|visits=1"
+62.0	jsonFinite	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: {""visits"":2,""value"":""value""}|visits=2"
+62.0	jsonRecursive	IsTest-observe	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	formulaDirect	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: value=direct|visits=1
+67.0	formulaFinite	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: value=value|visits=2
+67.0	formulaRecursive	IsTest-observe	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	formulaReject	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: error=System.FormulaValidationException|Field missing does not exist. Check spelling.
+67.0	jsonDirect	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: {""visits"":1,""value"":""direct""}|visits=1"
+67.0	jsonFinite	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: {""visits"":2,""value"":""value""}|visits=2"
+67.0	jsonRecursive	IsTest-observe	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	formulaDirect	IsTest-assert	Pass
+62.0	formulaFinite	IsTest-assert	Pass
+62.0	formulaRecursive	IsTest-assert	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	formulaReject	IsTest-assert	Pass
+62.0	jsonDirect	IsTest-assert	Pass
+62.0	jsonFinite	IsTest-assert	Pass
+62.0	jsonRecursive	IsTest-assert	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	formulaDirect	IsTest-assert	Pass
+67.0	formulaFinite	IsTest-assert	Pass
+67.0	formulaRecursive	IsTest-assert	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	formulaReject	IsTest-assert	Pass
+67.0	jsonDirect	IsTest-assert	Pass
+67.0	jsonFinite	IsTest-assert	Pass
+67.0	jsonRecursive	IsTest-assert	Fail; System.LimitException: Maximum stack depth reached: 1001

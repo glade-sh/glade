@@ -24,6 +24,7 @@ type StandardSymbolSpec struct {
 	ReplaceConstructors bool
 	Methods             []StandardMethodSpec
 	Properties          []StandardPropertySpec
+	Fields              []StandardFieldSpec
 }
 
 type StandardConstructorSpec struct {
@@ -51,6 +52,10 @@ type StandardPropertySpec struct {
 	Static bool
 	Force  bool
 }
+
+// StandardFieldSpec describes a source-visible platform field. It shares the
+// name and type metadata used by properties while retaining field semantics.
+type StandardFieldSpec = StandardPropertySpec
 
 func standardEnumProperties(typeName string, names ...string) []StandardPropertySpec {
 	props := make([]StandardPropertySpec, 0, len(names))
@@ -418,6 +423,18 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 				Modifiers: modifiers,
 			})
 		}
+		for _, field := range spec.Fields {
+			modifiers := []string{"public"}
+			if field.Static {
+				modifiers = append(modifiers, "static")
+			}
+			sym.Members = append(sym.Members, MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      field.Name,
+				Type:      field.Type,
+				Modifiers: modifiers,
+			})
+		}
 		for _, method := range spec.Methods {
 			modifiers := append([]string(nil), method.Modifiers...)
 			if !standardModifierContains(modifiers, "private") && !standardModifierContains(modifiers, "protected") && !standardModifierContains(modifiers, "public") && !standardModifierContains(modifiers, "global") {
@@ -489,6 +506,7 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 		}
 		existing.Methods = appendUniqueStandardMethods(existing.Methods, spec.Methods)
 		existing.Properties = appendUniqueStandardProperties(existing.Properties, spec.Properties)
+		existing.Fields = appendUniqueStandardProperties(existing.Fields, spec.Fields)
 	}
 	return out
 }
@@ -1340,7 +1358,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 		{Name: "renderStoredEmailTemplate", ReturnType: "Messaging.SingleEmailMessage", Parameters: []string{"String", "String", "String", "Messaging.AttachmentRetrievalOption"}, Static: true},
 		{Name: "renderStoredEmailTemplate", ReturnType: "Messaging.SingleEmailMessage", Parameters: []string{"String", "String", "String", "Messaging.AttachmentRetrievalOption", "Boolean"}, Static: true},
 	}},
-	{Name: "SObject", Methods: []StandardMethodSpec{{Name: "setOptions", ReturnType: "void", Parameters: []string{"Database.DMLOptions"}}, {Name: "getOptions", ReturnType: "Database.DMLOptions"}}},
+	{Name: "SObject", Fields: []StandardFieldSpec{{Name: "Id", Type: "Id"}}, Methods: []StandardMethodSpec{{Name: "setOptions", ReturnType: "void", Parameters: []string{"Database.DMLOptions"}}, {Name: "getOptions", ReturnType: "Database.DMLOptions"}}},
 	{Name: "ConnectApi.Organization", Methods: []StandardMethodSpec{{Name: "getSettings", ReturnType: "ConnectApi.OrganizationSettings", Static: true}}},
 	{Name: "ConnectApi.ChatterFeeds", Methods: []StandardMethodSpec{{Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "ConnectApi.FeedElementInput"}, Static: true}, {Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "String", "ConnectApi.FeedElementType", "String"}, Static: true}, {Name: "postCommentToFeedElement", ReturnType: "ConnectApi.Comment", Parameters: []string{"String", "String", "ConnectApi.CommentInput", "ConnectApi.BinaryInput"}, Static: true}, {Name: "postCommentToFeedElement", ReturnType: "ConnectApi.Comment", Parameters: []string{"String", "String", "String"}, Static: true}}},
 	{Name: "ConnectApi.UserProfiles", Methods: []StandardMethodSpec{{Name: "getUserProfile", ReturnType: "ConnectApi.UserProfile", Parameters: []string{"String", "String"}, Static: true}}},

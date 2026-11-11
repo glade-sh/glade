@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Ext__c</fullName><label>Ext</label><length>40</length><type>Text</type><externalId>true</externalId><unique>true</unique><caseSensitive>false</caseSensitive></CustomField>

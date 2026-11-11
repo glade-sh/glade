@@ -159,13 +159,15 @@ Integer recordTypeCount = firstRecordTypes.size();
 firstRecordTypes.clear();
 System.assertEquals(recordTypeCount, Widget__c.SObjectType.getDescribe().getRecordTypeInfos().size());
 
-Schema.FieldSet firstFieldSet = Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('Summary');
+// Native pr163_fieldset_keys/org.tsv:8-9: keys carry the namespace and the
+// unqualified name is absent at 62.0 and 67.0.
+Schema.FieldSet firstFieldSet = Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('pkg__Summary');
 List<Schema.FieldSetMember> firstMembers = firstFieldSet.getFields();
 Integer memberCount = firstMembers.size();
 firstMembers.clear();
 // Schema describe R220: repeated getters on this field set share its list.
 System.assertEquals(0, firstFieldSet.getFields().size());
-System.assertEquals(memberCount, Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('Summary').getFields().size());
+System.assertEquals(memberCount, Widget__c.SObjectType.getDescribe().fieldSets.getMap().get('pkg__Summary').getFields().size());
 
 Map<String, Schema.FieldSet> firstFieldSets = Widget__c.SObjectType.getDescribe().fieldSets.getMap();
 Integer fieldSetCount = firstFieldSets.size();

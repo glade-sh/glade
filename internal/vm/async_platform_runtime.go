@@ -34,9 +34,6 @@ func (vm *VM) namedStandardPublishShape(arg Value) bool {
 }
 
 func (vm *VM) eventBusPublishWithNamedSource(args []Value, result *Result, namedSource, defaultAccessCheck bool) (Value, error) {
-	if vm.rejectAsyncActions {
-		return Null, vm.rejectSynchronousAsyncAction("EventBus.publish cannot cross the synchronous LWC action boundary")
-	}
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("EventBus.publish expects event record or list and optional callback")
 	}

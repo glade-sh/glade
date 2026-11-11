@@ -880,6 +880,14 @@ platformStaticCall:
 			vm.savepoints[id] = snapshotRuntimeOrgState(vm.Org)
 		}
 		vm.emailSavepoints[id] = append([]CapturedEmail(nil), vm.capturedEmails...)
+		if vm.isolateAsyncJobFailures {
+			// Lightning action: work enqueued after the savepoint is discarded by
+			// Database.rollback (lightning_action_async_drain enqSavepoint).
+			if vm.actionAsyncSavepoints == nil {
+				vm.actionAsyncSavepoints = make(map[string]int)
+			}
+			vm.actionAsyncSavepoints[id] = len(vm.localAsyncJobs)
+		}
 		if vm.creationSavepoints == nil {
 			vm.creationSavepoints = make(map[string]recordCreationCheckpoint)
 		}
@@ -934,6 +942,10 @@ platformStaticCall:
 			*vm.Org = restored
 		}
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
+		if kept, ok := vm.actionAsyncSavepoints[idValue.Text]; ok && kept <= len(vm.localAsyncJobs) {
+			clear(vm.localAsyncJobs[kept:])
+			vm.localAsyncJobs = vm.localAsyncJobs[:kept]
+		}
 		vm.creationSavepoints[idValue.Text].restore()
 		vm.rollbackFlowPathSavepoint(idValue.Text)
 		vm.calloutPendingWork.pending = vm.calloutPendingWork.savepoints[idValue.Text]
@@ -4104,6 +4116,14 @@ func labelRegistryForNamespace(registry storage.MetadataRegistry, namespace stri
 	return registry
 }
 
+// Only source-backed labels belonging to this org use the captured local scope.
+func localLabelTranslationScope(registry storage.MetadataRegistry, orgNamespace, namespace, name string) (storage.MetadataRegistry, string, bool) {
+	if namespace != "" && !strings.EqualFold(namespace, orgNamespace) {
+		return registry, "", false
+	}
+	return resource.LocalLabelTranslationScope(registry, orgNamespace, name)
+}
+
 func (vm *VM) resolveLabelMethodValue(namespace, name, language string) (string, bool) {
 	namespace = strings.TrimSpace(namespace)
 	name = strings.TrimSpace(name)
@@ -4113,6 +4133,7 @@ func (vm *VM) resolveLabelMethodValue(namespace, name, language string) (string,
 	}
 	if language != "" && vm != nil && vm.Org != nil {
 		filtered := labelRegistryForNamespace(vm.Org.Metadata, namespace)
+		filtered, _, _ = localLabelTranslationScope(filtered, vm.Org.Namespace, namespace, name)
 		filtered.Labels = labelsForLanguage(filtered.Labels, language)
 		if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name); status != resource.LabelLookupMissing {
 			return value, true
@@ -4144,6 +4165,7 @@ func (vm *VM) labelTranslationExists(namespace, name, language string) bool {
 		language = vm.currentUserInfoField("LanguageLocaleKey", "en_US")
 	}
 	filtered := labelRegistryForNamespace(vm.Org.Metadata, namespace)
+	filtered, _, _ = localLabelTranslationScope(filtered, vm.Org.Namespace, namespace, name)
 	filtered.Labels = labelsForLanguage(filtered.Labels, language)
 	_, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name)
 	return status == resource.LabelLookupResolved

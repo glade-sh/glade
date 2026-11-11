@@ -311,6 +311,9 @@ type LabelMetadata struct {
 	ShortDescription string `json:"shortDescription,omitempty"`
 	Categories       string `json:"categories,omitempty"`
 	File             string `json:"file,omitempty"`
+	// TranslationSourceRaw retains source text that the legacy Value field
+	// normalizes. Older and pathless registries do not have this provenance.
+	TranslationSourceRaw *string `json:"translationSourceRaw,omitempty"`
 }
 
 // StandardValueSetTranslation is a project-authored translation of one
@@ -503,39 +506,40 @@ type Field struct {
 	MasterDetail   bool      `json:"masterDetail,omitempty"`
 	DisplayType    string    `json:"displayType,omitempty"`
 	// LongTextArea retains the declared metadata kind behind describe TEXTAREA.
-	LongTextArea         bool                `json:"longTextArea,omitempty"`
-	Length               int                 `json:"length,omitempty"`
-	Precision            int                 `json:"precision,omitempty"`
-	Digits               int                 `json:"digits,omitempty"`
-	Scale                int                 `json:"scale,omitempty"`
-	ScaleSpecified       bool                `json:"scaleSpecified,omitempty"`
-	Formula              string              `json:"formula,omitempty"`
-	FormulaTreatBlanksAs string              `json:"formulaTreatBlanksAs,omitempty"`
-	DefaultValue         string              `json:"defaultValue,omitempty"`
-	CompoundFieldName    string              `json:"compoundFieldName,omitempty"`
-	AutoNumber           bool                `json:"autoNumber,omitempty"`
-	DisplayFormat        string              `json:"displayFormat,omitempty"`
-	SummarizedField      string              `json:"summarizedField,omitempty"`
-	SummaryForeignKey    string              `json:"summaryForeignKey,omitempty"`
-	SummaryOperation     string              `json:"summaryOperation,omitempty"`
-	SummaryFilterItems   []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
-	FilteredLookupInfo   FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
-	Required             bool                `json:"required,omitempty"`
-	Nillable             *bool               `json:"nillable,omitempty"`
-	DefaultedOnCreate    *bool               `json:"defaultedOnCreate,omitempty"`
-	Accessible           *bool               `json:"accessible,omitempty"`
-	Createable           *bool               `json:"createable,omitempty"`
-	Updateable           *bool               `json:"updateable,omitempty"`
-	Filterable           *bool               `json:"filterable,omitempty"`
-	Groupable            *bool               `json:"groupable,omitempty"`
-	Sortable             *bool               `json:"sortable,omitempty"`
-	Aggregatable         *bool               `json:"aggregatable,omitempty"`
-	Permissionable       *bool               `json:"permissionable,omitempty"`
-	DeprecatedAndHidden  *bool               `json:"deprecatedAndHidden,omitempty"`
-	ExternalID           bool                `json:"externalId,omitempty"`
-	Unique               bool                `json:"unique,omitempty"`
-	Encrypted            bool                `json:"encrypted,omitempty"`
-	CaseSensitive        bool                `json:"caseSensitive,omitempty"`
+	LongTextArea             bool                `json:"longTextArea,omitempty"`
+	Length                   int                 `json:"length,omitempty"`
+	Precision                int                 `json:"precision,omitempty"`
+	Digits                   int                 `json:"digits,omitempty"`
+	Scale                    int                 `json:"scale,omitempty"`
+	ScaleSpecified           bool                `json:"scaleSpecified,omitempty"`
+	Formula                  string              `json:"formula,omitempty"`
+	FormulaTreatBlanksAs     string              `json:"formulaTreatBlanksAs,omitempty"`
+	DefaultValue             string              `json:"defaultValue,omitempty"`
+	DefaultValueFromMetadata bool                `json:"defaultValueFromMetadata,omitempty"`
+	CompoundFieldName        string              `json:"compoundFieldName,omitempty"`
+	AutoNumber               bool                `json:"autoNumber,omitempty"`
+	DisplayFormat            string              `json:"displayFormat,omitempty"`
+	SummarizedField          string              `json:"summarizedField,omitempty"`
+	SummaryForeignKey        string              `json:"summaryForeignKey,omitempty"`
+	SummaryOperation         string              `json:"summaryOperation,omitempty"`
+	SummaryFilterItems       []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo       FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
+	Required                 bool                `json:"required,omitempty"`
+	Nillable                 *bool               `json:"nillable,omitempty"`
+	DefaultedOnCreate        *bool               `json:"defaultedOnCreate,omitempty"`
+	Accessible               *bool               `json:"accessible,omitempty"`
+	Createable               *bool               `json:"createable,omitempty"`
+	Updateable               *bool               `json:"updateable,omitempty"`
+	Filterable               *bool               `json:"filterable,omitempty"`
+	Groupable                *bool               `json:"groupable,omitempty"`
+	Sortable                 *bool               `json:"sortable,omitempty"`
+	Aggregatable             *bool               `json:"aggregatable,omitempty"`
+	Permissionable           *bool               `json:"permissionable,omitempty"`
+	DeprecatedAndHidden      *bool               `json:"deprecatedAndHidden,omitempty"`
+	ExternalID               bool                `json:"externalId,omitempty"`
+	Unique                   bool                `json:"unique,omitempty"`
+	Encrypted                bool                `json:"encrypted,omitempty"`
+	CaseSensitive            bool                `json:"caseSensitive,omitempty"`
 	// Describe-only observation; storage comparison semantics stay independent.
 	DescribeCaseSensitive    *bool             `json:"describeCaseSensitive,omitempty"`
 	RestrictedPicklist       bool              `json:"restrictedPicklist,omitempty"`
@@ -697,7 +701,9 @@ type WorkflowFieldUpdate struct {
 	Name         string `json:"name"`
 	Field        string `json:"field"`
 	LiteralValue string `json:"literalValue,omitempty"`
-	Formula      string `json:"formula,omitempty"`
+	// FlowLiteralString marks a present string literal, including an empty one.
+	FlowLiteralString bool   `json:"flowLiteralString,omitempty"`
+	Formula           string `json:"formula,omitempty"`
 	// FlowFrameFormula marks an individually selected record-triggered Flow formula.
 	FlowFrameFormula bool   `json:"flowFrameFormula,omitempty"`
 	SourceField      string `json:"sourceField,omitempty"`
@@ -1116,6 +1122,7 @@ type FlowTransform struct {
 	TargetCollection string                `json:"targetCollection"`
 	FieldMappings    []WorkflowFieldUpdate `json:"fieldMappings,omitempty"`
 	SumField         string                `json:"sumField,omitempty"`
+	ObjectType       string                `json:"objectType,omitempty"`
 }
 
 type FlowCollectionProcessor struct {
@@ -2600,6 +2607,28 @@ func (o OrgState) Clone() OrgState {
 			out.Transactions[i] = transaction.Clone()
 		}
 	}
+	return out
+}
+
+// CloneObjectsShallow returns an org copy whose Objects map is its own, with
+// room for extra entries, while every object state, record map and definition
+// is shared with the receiver. It is for read-only views that add objects of
+// their own beside the receiver's. Every copied state is marked
+// RecordsShared and IndexesShared, so a writer that goes through
+// EnsureMutableObjectRecords clones the maps first; definitions must go
+// through EnsureMutableObjectDefinition. The copy gets an object name cache of
+// its own, as Clone does.
+func (o OrgState) CloneObjectsShallow(extra int) OrgState {
+	out := o
+	out.Features = slices.Clone(o.Features)
+	if o.Objects != nil || extra > 0 {
+		out.Objects = make(map[string]ObjectState, len(o.Objects)+extra)
+		for name, object := range o.Objects {
+			object.RecordsShared, object.IndexesShared = true, true
+			out.Objects[name] = object
+		}
+	}
+	out.objectNameCache = newObjectNameCacheFrom(o.objectNameCache, o.Objects, out.Objects)
 	return out
 }
 

@@ -62,26 +62,45 @@ type VM struct {
 	stringASCII             []stringASCIIEntry
 	stringASCIIBytes        int
 	// --- Class/method/type registries and lookup caches ---
-	Globals                  map[string]Value
-	VarTypes                 map[string]string
-	expressionTypeResolver   ExpressionTypeResolver
-	Methods                  map[string]Method
-	MethodOverloads          map[string][]Method
-	MethodFolded             map[string][]Method
-	methodCandidates         map[string][]Method
-	methodResolveCache       map[string]methodResolution
-	Classes                  map[string]Class
-	classLookup              map[string]Class
-	frozenClassLookup        *frozenClassLookup
-	sharedClassCopyPlan      *classCopyPlan
-	classLookupGeneration    uint64
-	classLookupNameCache     map[string]classLookupNameResult
-	classLookupNameOrder     []string
-	classLookupNameBytes     int
-	classLookupNameStats     classLookupNameCacheStats
-	namespaceClassLookup     map[string]map[string]namespaceClassLookup
-	classNamespaceCache      map[string]string
-	classForAccessCache      map[classForAccessKey]classForAccessLookup
+	Globals                map[string]Value
+	VarTypes               map[string]string
+	expressionTypeResolver ExpressionTypeResolver
+	Methods                map[string]Method
+	MethodOverloads        map[string][]Method
+	MethodFolded           map[string][]Method
+	methodCandidates       map[string][]Method
+	methodResolveCache     map[string]methodResolution
+	Classes                map[string]Class
+	classLookup            map[string]Class
+	frozenClassLookup      *frozenClassLookup
+	sharedClassCopyPlan    *classCopyPlan
+	classLookupGeneration  uint64
+	classLookupNameCache   map[string]classLookupNameResult
+	classLookupNameOrder   []string
+	classLookupNameBytes   int
+	classLookupNameStats   classLookupNameCacheStats
+	namespaceClassLookup   map[string]map[string]namespaceClassLookup
+	// namespaceClassRawLookup memoizes lookupClassInNamespace by its raw
+	// arguments so steady-state lookups skip the two case folds that build the
+	// namespaceClassLookup keys. It is reset with the access caches.
+	namespaceClassRawLookup map[namespaceClassRawKey]namespaceClassLookup
+	classNamespaceCache     map[string]string
+	classForAccessCache     map[classForAccessKey]classForAccessLookup
+	// accessScopeCache memoizes sameAccessScope. Its inputs are the two names
+	// plus the current class and namespace that classForAccess reads, so the
+	// key carries all four. It is reset with the access caches.
+	accessScopeCache map[accessScopeKey]bool
+	// frameSymbolCache memoizes apexMethodFrameSymbol for setCurrentStatement,
+	// which runs once per executed instruction. The symbol depends on the
+	// method identity, the execution namespace and the class registry, so the
+	// key carries the first two and the class lookup generation.
+	frameSymbolFirstKey   frameSymbolKey
+	frameSymbolFirstValue string
+	frameSymbolFirstValid bool
+	frameSymbolCache      map[frameSymbolKey]string
+	// sourceLineTables caches newline offsets per executed program source for
+	// setCurrentStatement's line and column (see sourceLineColumnCached).
+	sourceLineTables         map[int][]*sourceLineTable
 	nestedTypeHierarchyCache map[nestedTypeKey]nestedTypeResult
 	enumLookup               map[string]enumClassLookup
 	enumSuffixLookup         map[string]enumClassLookup
@@ -160,6 +179,8 @@ type VM struct {
 	localAsyncDrain              bool
 	localAsyncChain              bool
 	rejectAsyncActions           bool
+	isolateAsyncJobFailures      bool
+	actionAsyncSavepoints        map[string]int
 	asyncActionViolation         bool
 	executionUser                Value
 	// Captured once from the runner's initial org, before test setup inserts.
@@ -470,6 +491,33 @@ type classForAccessKey struct {
 	CurrentNamespace string
 }
 
+// namespaceClassRawKey is the lookupClassInNamespace memo key: the untrimmed,
+// unfolded arguments. Case and whitespace variants get distinct entries that
+// each hold the folded lookup's result.
+type namespaceClassRawKey struct {
+	Namespace string
+	ClassName string
+}
+
+// accessScopeKey is the sameAccessScope memo key. fillAccessScopeNames reads
+// vm.currentClass and vm.currentNamespace through classForAccess, so both are
+// part of the key.
+type accessScopeKey struct {
+	Left             string
+	Right            string
+	CurrentClass     string
+	CurrentNamespace string
+}
+
+// frameSymbolKey is the setCurrentStatement frame-symbol memo key.
+type frameSymbolKey struct {
+	MethodName         string
+	MethodClassName    string
+	ExecutionNamespace string
+	OrgNamespace       string
+	Generation         uint64
+}
+
 // nestedTypeKey memoizes resolveNestedTypeInClassHierarchy. The resolution is a
 // pure function of the (immutable) compiled class hierarchy, so per-VM caching
 // is safe: per-test clones never register new classes, and the access caches are
@@ -603,9 +651,10 @@ type StackFrame struct {
 }
 
 type RuntimeError struct {
-	Type    string
-	Message string
-	Stack   []StackFrame
+	Type           string
+	Message        string
+	Stack          []StackFrame
+	callStackLimit bool
 	// Preserve the Apex message before adding local diagnostic context.
 	exceptionMessage *string
 	// An assertion records its Apex frames where it fails; a trigger boundary
@@ -1020,6 +1069,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone.traceOutputLimit = vm.traceOutputLimit
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
 	clone.rejectAsyncActions = vm.rejectAsyncActions
+	clone.isolateAsyncJobFailures = vm.isolateAsyncJobFailures
 	clone.asyncActionViolation = vm.asyncActionViolation
 	clone.staticInitState = nil
 	clone.pageReferences = copyStringMap(vm.pageReferences)
@@ -3415,12 +3465,16 @@ func (vm *VM) AdvanceDeterministicTime(delta time.Duration) {
 	vm.fakeNow = vm.fakeNow.Add(delta)
 }
 
-// SetSynchronousActionBoundary makes framework actions fail closed when they
-// attempt to cross an asynchronous delivery boundary that the caller cannot
-// drain and commit as part of the same request.
+// SetSynchronousActionBoundary configures a Lightning action transaction.
+// Queueable, future and platform-event work enqueued by the action is drained
+// by DrainAsync after the action succeeds, and each drained job is its own
+// transaction: a failing job rolls back only its own changes and does not
+// change the action's result (lightning_action_async_drain captures).
+// Database.*Async DML has no capture for this boundary and still fails closed.
 func (vm *VM) SetSynchronousActionBoundary(enabled bool) {
 	if vm != nil {
 		vm.rejectAsyncActions = enabled
+		vm.isolateAsyncJobFailures = enabled
 		if !enabled {
 			vm.asyncActionViolation = false
 		}

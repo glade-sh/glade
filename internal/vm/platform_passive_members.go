@@ -479,13 +479,22 @@ func (vm *VM) flowInterviewOutputValue(output dml.FlowInterviewOutput) Value {
 		set(name, vmValueFromStorage(value))
 	}
 	convertRecord := vm.recordConverterForOrg(vm.Org)
+	convertOutputRecord := func(record storage.Record) Value {
+		value := convertRecord(record)
+		for field, explicit := range record.ExplicitNulls {
+			if explicit {
+				markExplicitSObjectField(&value, field)
+			}
+		}
+		return value
+	}
 	for name, record := range output.Records {
-		set(name, convertRecord(record))
+		set(name, convertOutputRecord(record))
 	}
 	for name, records := range output.Collections {
 		items := make([]Value, 0, len(records))
 		for _, record := range records {
-			items = append(items, convertRecord(record))
+			items = append(items, convertOutputRecord(record))
 		}
 		set(name, List(items...))
 	}
@@ -2120,10 +2129,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getDefaultValue expects 0 arguments")
 			}
-			if value, ok := receiver.Fields["defaultValue"]; ok {
+			if value, ok := receiver.Fields["defaultValue"]; ok && value.Kind != ValueNull {
 				return value, receiver, false, true, nil
 			}
-			return Null, receiver, false, true, nil
+			return typedNull("Object"), receiver, false, true, nil
 		case "getDefaultValueFormula":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getDefaultValueFormula expects 0 arguments")
@@ -3514,6 +3523,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			receiver.Fields["clientCertificatePasswordPresent"] = Bool(args[1].Text != "")
 			return Null, receiver, true, true, nil
 		case "setHeader":
+			if len(args) == 2 && args[0].Kind == ValueString {
+				if text, ok := typedIDValueText(args[1]); ok {
+					args = []Value{args[0], String(text)}
+				}
+			}
 			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setHeader expects name and value Strings")
 			}
@@ -3986,7 +4000,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			engine := vm.newDMLEngine(result)
 			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
 			if err != nil {
-				if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure || dml.IsFlowRecordUpdateMissingID(err) {
+				if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure || dml.IsFlowRecordUpdateMissingID(err) || dml.IsFlowLookupCollectionFault(err) {
 					return Null, receiver, false, true, newExceptionError("System.FlowException", err.Error())
 				}
 				return Null, receiver, false, true, err
