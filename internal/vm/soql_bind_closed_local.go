@@ -63,7 +63,9 @@ func (vm *VM) lookupSOQLBind(name string) (Value, error) {
 		return value, err
 	}
 	if departed, ok := vm.closedSOQLLocals[strings.ToLower(name)]; ok {
-		if departed.Kind != ValueSet || vm.dynamicSOQLBindRoute == "Database.countQuery" {
+		// Database.query reads String locals from the frame's slots only.
+		stringLocal := departed.Kind == ValueString || departed.Kind == ValueNull
+		if !(query && stringLocal) && (departed.Kind != ValueSet || vm.dynamicSOQLBindRoute == "Database.countQuery") {
 			return departed, nil
 		}
 	}
