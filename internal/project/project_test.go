@@ -764,10 +764,10 @@ func TestLoadResolvesSiblingSFDXPackageDependencyWithAncestorGladeConfig(t *test
 func TestLoadResolvesSiblingSFDXPackageDependencyWithoutConfig(t *testing.T) {
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
-	dependencyRoot := filepath.Join(workspaceRoot, "NebulaLogger")
-	consumerRoot := filepath.Join(workspaceRoot, "apex-rollup")
+	dependencyRoot := filepath.Join(workspaceRoot, "DependencyProject")
+	consumerRoot := filepath.Join(workspaceRoot, "consumer-project")
 	writeFile(t, filepath.Join(dependencyRoot, "sfdx-project.json"), `{
-  "packageDirectories": [{"path":"src","default":true,"package":"Nebula Logger - Core"}]
+  "packageDirectories": [{"path":"src","default":true,"package":"Sample Logger - Core"}]
 }`)
 	writeFile(t, filepath.Join(dependencyRoot, "src/main/default/classes/Logger.cls"), "global class Logger {}")
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
@@ -775,7 +775,7 @@ func TestLoadResolvesSiblingSFDXPackageDependencyWithoutConfig(t *testing.T) {
     "path":"src",
     "default":true,
     "package":"Consumer",
-    "dependencies": [{"package":"Nebula Logger - Core@4.14.4-optionally-auto-call-lightning-logger-lwc"}]
+    "dependencies": [{"package":"Sample Logger - Core@4.14.4-sample"}]
   }]
 }`)
 	writeFile(t, filepath.Join(consumerRoot, "src/main/default/classes/Consumer.cls"), "public class Consumer {}")
