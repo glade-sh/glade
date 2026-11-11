@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/trace"
@@ -460,20 +462,123 @@ func (vm *VM) lwcParameterValue(typeName string, raw any) (Value, error) {
 	if raw == nil && strings.EqualFold(strings.Join(strings.Fields(typeName), ""), "List<String>") {
 		return typedList(typeName), nil
 	}
+	if value, handled, err := vm.lwcCoercedParameter(typeName, raw); handled {
+		return value, err
+	}
 	if strings.EqualFold(typeName, "Datetime") {
-		if text, ok := raw.(string); ok && !strings.HasSuffix(text, "Z") {
+		if text, ok := raw.(string); ok && !strings.HasSuffix(text, "Z") && !lwcDateOnlyText(text) {
 			return Null, fmt.Errorf("LWC Datetime parameter requires UTC JSON")
 		}
 	}
 	if fields, ok := raw.(map[string]any); ok && vm.isSObjectLikeType(typeName) && !strings.EqualFold(typeName, "SObject") {
-		if actual, ok := fields["sobjectType"].(string); ok && !strings.EqualFold(typeName, actual) {
-			// Preserve the entity mismatch as an explicit local boundary. The
-			// native U# identifiers in r_serial_account_wrong_type are hosted
-			// identities, not local schema identifiers.
-			return Null, &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: fmt.Sprintf("Mismatched entity type. Expected %s but received %s", typeName, actual)}
+		if actual, ok := fields["sobjectType"].(string); ok {
+			if !strings.EqualFold(typeName, actual) {
+				// Preserve the entity mismatch as an explicit local boundary. The
+				// native U# identifiers in r_serial_account_wrong_type are hosted
+				// identities, not local schema identifiers.
+				return Null, &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: fmt.Sprintf("Mismatched entity type. Expected %s but received %s", typeName, actual)}
+			}
+			// The entity marker names the type; it is not a record field
+			// (lwc_param_conversion Account/obj_sobj).
+			raw = lwcWithoutSObjectType(fields)
 		}
 	}
 	return vm.typedValueFromJSON(typeName, raw, false)
+}
+
+// lwcCoercedParameter applies the conversions Lightning makes before an
+// @AuraEnabled method runs, where they differ from JSON.deserialize
+// (lwc_param_conversion/org.tsv). Types and argument shapes the rows do not
+// cover are not handled here and keep the JSON mapping.
+func (vm *VM) lwcCoercedParameter(typeName string, raw any) (Value, bool, error) {
+	compact := strings.ToLower(strings.Join(strings.Fields(typeName), ""))
+	switch compact {
+	case "boolean":
+		// Every string converts; only "true" in any case is true.
+		if text, ok := raw.(string); ok {
+			return Bool(strings.EqualFold(text, "true")), true, nil
+		}
+	case "integer":
+		// A string that parses but does not fit 32 bits is rejected.
+		if text, ok := raw.(string); ok {
+			if parsed, err := strconv.ParseInt(strings.TrimSpace(text), 10, 64); err == nil && (parsed < -2147483648 || parsed > 2147483647) {
+				return Null, true, fmt.Errorf("LWC Integer parameter out of range")
+			}
+		}
+	case "decimal", "double":
+		if text, ok := raw.(string); ok && text == "" {
+			return Null, true, fmt.Errorf("LWC %s parameter requires a number", typeName)
+		}
+	case "list<string>":
+		switch typed := raw.(type) {
+		case string:
+			// A JSON array text is that array; any other string is one element.
+			if strings.HasPrefix(typed, "[") {
+				var items []any
+				if err := json.Unmarshal([]byte(typed), &items); err != nil {
+					return Null, false, nil
+				}
+				value, err := vm.typedValueFromJSON(typeName, items, false)
+				return value, true, err
+			}
+			value, err := vm.typedValueFromJSON(typeName, []any{typed}, false)
+			return value, true, err
+		case float64, json.Number, bool, map[string]any:
+			return typedList(typeName), true, nil
+		}
+	case "object":
+		switch typed := raw.(type) {
+		case float64:
+			return Decimal(typed), true, nil
+		case json.Number:
+			value, err := decimalFromText(typed.String())
+			return value, err == nil, err
+		case []any:
+			value := valueFromJSON(typed)
+			value.Type = "List<Object>"
+			return value, true, nil
+		}
+	case "sobject":
+		if fields, ok := raw.(map[string]any); ok {
+			actual, _ := fields["sobjectType"].(string)
+			if strings.TrimSpace(actual) == "" {
+				// A record that names its type through attributes is not covered
+				// by the rows and keeps the JSON mapping.
+				if _, hasAttributes := fields["attributes"]; hasAttributes {
+					return Null, false, nil
+				}
+				return Null, true, &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: "Unable to read SObject"}
+			}
+			record := lwcWithoutSObjectType(fields)
+			record["attributes"] = map[string]any{"type": actual}
+			value, err := vm.sObjectValueFromJSON(record, false)
+			return value, true, err
+		}
+	default:
+		// An empty string is a null record for a concrete SObject parameter.
+		if text, ok := raw.(string); ok && text == "" && vm.isSObjectLikeType(typeName) {
+			return Null, true, nil
+		}
+	}
+	return Null, false, nil
+}
+
+func lwcWithoutSObjectType(fields map[string]any) map[string]any {
+	out := make(map[string]any, len(fields))
+	for key, item := range fields {
+		if key != "sobjectType" {
+			out[key] = item
+		}
+	}
+	return out
+}
+
+func lwcDateOnlyText(text string) bool {
+	if len(text) != len("2006-01-02") {
+		return false
+	}
+	_, err := time.Parse("2006-01-02", text)
+	return err == nil
 }
 
 // The Apex action transport has its own serializer. JSON.serialize and the
