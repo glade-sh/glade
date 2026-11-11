@@ -332,6 +332,8 @@ type VM struct {
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
+	// Last shared-backing map whose keys were verified; see fillGlobalDescribeProjectionKeys.
+	globalDescribeKeysVerified   globalDescribeKeysVerifiedMemo
 	describeTabsCache            *Value
 	describeDefCache             map[string]storage.ObjectDefinition
 	customDataCache              map[string]Value
