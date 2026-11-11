@@ -2357,6 +2357,10 @@ func (vm *VM) featureNamedSource(objectName string) bool {
 }
 
 func (vm *VM) featureFieldHiddenForAccess(objectName, field string) bool {
+	if vm.omitAuthFlowDefaultDescribeFields(objectName) &&
+		(strings.EqualFold(field, "FlowDefaultAccountId") || strings.EqualFold(field, "FlowDefaultProfileId")) {
+		return true
+	}
 	if storage.StandardFeatureNamedOnlyField(objectName, field) {
 		return !vm.featureNamedSource(objectName)
 	}
@@ -2377,9 +2381,8 @@ func (vm *VM) featureFieldHiddenForQuery(objectName, field string) bool {
 	return vm.featureFieldHiddenForAccess(objectName, field)
 }
 
-// The captured AuthProvider field maps omit both flow defaults at source API
-// 62 and 63 and expose them at 64–67. Other access routes are not constrained
-// by this describe-only observation.
+// Captured AuthProvider describe, field access and query routes omit both flow
+// defaults at source API 62 and 63 and expose them at 64–67.
 func (vm *VM) omitAuthFlowDefaultDescribeFields(objectName string) bool {
 	if vm == nil || !strings.EqualFold(objectName, "AuthProvider") {
 		return false
