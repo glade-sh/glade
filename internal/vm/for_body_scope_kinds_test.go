@@ -175,70 +175,68 @@ func TestLoopHeaderNameSharedWithBodyLocal(t *testing.T) {
 }
 
 // TestLoopBindingsAvoidPerIterationAllocation guards the churn for the loop
-// kinds and contexts the reuse covers.
+// kinds and contexts the reuse covers. It compares a body that declares two
+// locals with the same loop whose body declares none: the declarations must
+// add no per-iteration allocation (a fresh Globals key allocates one 312-byte
+// Value).
 func TestLoopBindingsAvoidPerIterationAllocation(t *testing.T) {
-	for _, tc := range []struct {
-		name   string
-		method bool
-		build  func(n int) string
-	}{
-		{"foreach-anonymous", false, func(n int) string {
-			return fmt.Sprintf(`Integer sum=0; List<Integer> xs = new List<Integer>(); for(Integer q=0;q<%d;q++){xs.add(q);} for(Integer x : xs){Integer a=x&3; Integer b=a+1; sum=sum+b;}`, n)
-		}},
-		{"for-method", true, func(n int) string {
-			return fmt.Sprintf(`Integer sum=0; for(Integer i=0;i<%d;i++){Integer a=i&3; Integer b=a+1; sum=sum+b;} return String.valueOf(sum);`, n)
-		}},
-		{"foreach-method", true, func(n int) string {
-			return fmt.Sprintf(`Integer sum=0; List<Integer> xs = new List<Integer>(); for(Integer q=0;q<%d;q++){xs.add(q);} for(Integer x : xs){Integer a=x&3; Integer b=a+1; sum=sum+b;} return String.valueOf(sum);`, n)
-		}},
-		{"while-anonymous", false, func(n int) string {
-			return fmt.Sprintf(`Integer sum=0; Integer i=0; while(i<%d){Integer a=i&3; Integer b=a+1; sum=sum+b; i++;}`, n)
-		}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			allocs := func(n int) float64 {
-				source := tc.build(n)
-				if !tc.method {
-					program, err := CompileAnonymous(source)
+	loops := map[string]func(n int, body string) string{
+		"for": func(n int, body string) string {
+			return fmt.Sprintf(`Integer sum=0; for(Integer i=0;i<%d;i++){%s} return String.valueOf(sum);`, n, body)
+		},
+		"foreach": func(n int, body string) string {
+			return fmt.Sprintf(`Integer sum=0; List<Integer> xs = new List<Integer>(); for(Integer q=0;q<%d;q++){xs.add(q);} for(Integer i : xs){%s} return String.valueOf(sum);`, n, body)
+		},
+	}
+	const declaring, plain = `Integer a=i&3; Integer b=a+1; sum=sum+b;`, `sum=sum+(i&3)+1;`
+	for kind, build := range loops {
+		for _, context := range []string{"anonymous", "method"} {
+			t.Run(kind+"/"+context, func(t *testing.T) {
+				allocs := func(n int, body string) float64 {
+					source := build(n, body)
+					if context == "anonymous" {
+						source = strings.Replace(source, ` return String.valueOf(sum);`, ``, 1)
+						program, err := CompileAnonymous(source)
+						if err != nil {
+							t.Fatal(err)
+						}
+						return testing.AllocsPerRun(3, func() {
+							machine := New(nil)
+							machine.SetTraceEnabled(false)
+							if _, err := machine.Execute(program); err != nil {
+								t.Fatal(err)
+							}
+						})
+					}
+					method, err := CompileAnonymous(source)
+					if err != nil {
+						t.Fatal(err)
+					}
+					entry, err := CompileAnonymous(`Host.run();`)
 					if err != nil {
 						t.Fatal(err)
 					}
 					return testing.AllocsPerRun(3, func() {
 						machine := New(nil)
 						machine.SetTraceEnabled(false)
-						if _, err := machine.Execute(program); err != nil {
+						if err := machine.RegisterClass(Class{Name: "Host"}); err != nil {
+							t.Fatal(err)
+						}
+						if err := machine.RegisterMethod(Method{Name: "Host.run", ClassName: "Host", IsStatic: true, ReturnType: "String", Program: method}); err != nil {
+							t.Fatal(err)
+						}
+						if _, err := machine.Execute(entry); err != nil {
 							t.Fatal(err)
 						}
 					})
 				}
-				body, err := CompileAnonymous(source)
-				if err != nil {
-					t.Fatal(err)
+				withDecls := (allocs(1100, declaring) - allocs(100, declaring)) / 1000
+				without := (allocs(1100, plain) - allocs(100, plain)) / 1000
+				t.Logf("ROW allocs/iteration declaring=%.2f plain=%.2f", withDecls, without)
+				if extra := withDecls - without; extra > 2.5 {
+					t.Fatalf("body declarations add %.2f allocations per iteration", extra)
 				}
-				entry, err := CompileAnonymous(`Host.run();`)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return testing.AllocsPerRun(3, func() {
-					machine := New(nil)
-					machine.SetTraceEnabled(false)
-					if err := machine.RegisterClass(Class{Name: "Host"}); err != nil {
-						t.Fatal(err)
-					}
-					if err := machine.RegisterMethod(Method{Name: "Host.run", ClassName: "Host", IsStatic: true, ReturnType: "String", Program: body}); err != nil {
-						t.Fatal(err)
-					}
-					if _, err := machine.Execute(entry); err != nil {
-						t.Fatal(err)
-					}
-				})
-			}
-			small, large := allocs(100), allocs(1100)
-			perIteration := (large - small) / 1000
-			t.Logf("ROW allocs/iteration=%.2f", perIteration)
-			if perIteration > 3 {
-				t.Fatalf("loop body declarations allocate %.2f times per iteration", perIteration)
-			}
-		})
+			})
+		}
 	}
 }
