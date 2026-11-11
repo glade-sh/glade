@@ -77,19 +77,24 @@ type OrgState struct {
 	formulaUserID           ID
 	formulaPermissionFields map[string]Value
 
-	OrgID                  string                 `json:"orgId,omitempty"`
-	APIVersion             string                 `json:"apiVersion,omitempty"`
-	Namespace              string                 `json:"namespace,omitempty"`
-	DomainURL              string                 `json:"domainUrl,omitempty"`
-	Features               []string               `json:"features,omitzero"`
-	Metadata               MetadataRegistry       `json:"metadata,omitempty"`
-	Objects                map[string]ObjectState `json:"objects"`
-	IDSequences            map[string]uint64      `json:"idSequences,omitempty"`
-	Transactions           []TransactionFrame     `json:"transactions,omitempty"`
-	Now                    func() time.Time       `json:"-"`
-	Today                  func() time.Time       `json:"-"` // Execution user's local calendar for formula TODAY().
-	PlatformCache          *PlatformCacheState    `json:"-"`
-	PlatformCacheTestSetup *PlatformCacheState    `json:"-"`
+	OrgID      string                 `json:"orgId,omitempty"`
+	APIVersion string                 `json:"apiVersion,omitempty"`
+	Namespace  string                 `json:"namespace,omitempty"`
+	DomainURL  string                 `json:"domainUrl,omitempty"`
+	Features   []string               `json:"features,omitzero"`
+	Metadata   MetadataRegistry       `json:"metadata,omitempty"`
+	Objects    map[string]ObjectState `json:"objects"`
+	// StandardSpread marks an org whose standard catalog objects are installed
+	// on first reference from a shared per-shape source (see
+	// standard_spread_source.go). "plain" is before the org shape applied,
+	// "shaped" after. Empty means the org holds every object it will hold.
+	StandardSpread         string              `json:"standardSpread,omitempty"`
+	IDSequences            map[string]uint64   `json:"idSequences,omitempty"`
+	Transactions           []TransactionFrame  `json:"transactions,omitempty"`
+	Now                    func() time.Time    `json:"-"`
+	Today                  func() time.Time    `json:"-"` // Execution user's local calendar for formula TODAY().
+	PlatformCache          *PlatformCacheState `json:"-"`
+	PlatformCacheTestSetup *PlatformCacheState `json:"-"`
 
 	SystemTimestampBase     string `json:"-"`
 	SystemTimestampSequence int64  `json:"-"`
@@ -1804,6 +1809,10 @@ func StripNamespaceToken(namespace, name string) string {
 }
 
 func ResolveObjectName(org OrgState, name string) (string, bool) {
+	if org.StandardSpread != "" {
+		// Objects is shared by value copies, so this installs for the caller.
+		installSpreadObject(&org, name)
+	}
 	org.objectNameCache = ownedObjectNameCache(org)
 	cacheKey := strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" + strconv.Itoa(len(org.Objects)) + "|" + strings.ToLower(strings.TrimSpace(name))
 	if org.objectNameCache != nil {
