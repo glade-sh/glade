@@ -364,7 +364,9 @@ type VM struct {
 	// Field-map owners outlive invalidation: earlier roots can still be in use.
 	describeShare            *describeShareCache
 	describeShareDefinitions []*describeShareDefinition
-	sharedDescribeFieldMaps  map[uintptr]*describeShareFieldMap
+	// describeTokenShares lists the shares whose global describe tokens this VM holds.
+	describeTokenShares     []*describeShareCache
+	sharedDescribeFieldMaps map[uintptr]*describeShareFieldMap
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs       map[uint64]bool
 	staticValueRefFields  map[uint64]staticFieldRefSet
@@ -1060,6 +1062,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
 		clone.describeShare = vm.describeShare
+		clone.describeTokenShares = append([]*describeShareCache(nil), vm.describeTokenShares...)
 	} else {
 		clone.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		clone.childRelCache = newChildRelationshipCache()
