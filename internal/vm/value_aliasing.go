@@ -388,7 +388,9 @@ func (vm *VM) propagateCollectionMutationFromSnapshotWithStaticIndexDelta(previo
 		return
 	}
 	vm.collectionMutationSeq++
+	seqBefore := vm.aliasContainmentMutationSeq
 	vm.recordCollectionMutation(updated.Ref, updated)
+	vm.noteListMutationEpoch(updated, seqBefore)
 	vm.finishMapPutParentContainment(delta)
 	vm.propagateTopLevelCollectionAliases(vm.Globals, updated)
 	localOnly := vm.localOnlyAlias(previous)
@@ -2674,6 +2676,89 @@ func (vm *VM) advanceAliasContainmentMutation() {
 	}
 }
 
+// aliasContainmentMutationLogSize bounds how many recent epoch bumps a cached
+// miss can be carried across. It must be a power of two.
+const aliasContainmentMutationLogSize = 8
+
+// aliasContainmentMutation records that the epoch bump to `seq` was a
+// mutation of List (ref) and nothing else.
+type aliasContainmentMutation struct {
+	seq uint64
+	ref uint64
+}
+
+// noteListMutationEpoch logs an epoch bump caused only by a mutation of the
+// List `updated`. A cached miss "V does not reach P" can be carried across such
+// a bump when V provably does not reach the mutated List either, because the
+// mutation then cannot change V. An epoch bump that is not logged here keeps
+// the global invalidation.
+func (vm *VM) noteListMutationEpoch(updated Value, seqBefore uint64) {
+	if vm == nil || updated.Ref == 0 || updated.Kind != ValueList || vm.aliasContainmentMutationSeq != seqBefore+1 {
+		return
+	}
+	seq := vm.aliasContainmentMutationSeq
+	vm.aliasContainmentLog[seq&(aliasContainmentMutationLogSize-1)] = aliasContainmentMutation{seq: seq, ref: updated.Ref}
+}
+
+// aliasContainmentMissCurrent reports whether a cached miss is still valid. A
+// miss stamped at an earlier epoch stays valid when every bump since then was
+// a logged List mutation that either targeted the entry's own previous
+// collection (V never reached it, so changing it cannot change V) or has its
+// own valid miss entry for the same V (V does not reach the mutated List). A
+// carried entry is re-stamped to the current epoch.
+func (vm *VM) aliasContainmentMissCurrent(key aliasContainmentCacheKey, stamped uint64) bool {
+	current := vm.aliasContainmentMutationSeq
+	if stamped == current {
+		return true
+	}
+	if stamped > current || current-stamped > aliasContainmentMutationLogSize {
+		return false
+	}
+	for seq := stamped + 1; seq <= current; seq++ {
+		entry := vm.aliasContainmentLog[seq&(aliasContainmentMutationLogSize-1)]
+		if entry.seq != seq {
+			return false
+		}
+		if entry.ref == key.PreviousRef && key.PreviousKind == ValueList {
+			continue
+		}
+		other := key
+		other.PreviousRef = entry.ref
+		other.PreviousKind = ValueList
+		if vm.aliasContainmentCache[other] != seq {
+			return false
+		}
+	}
+	vm.aliasContainmentCache[key] = current
+	return true
+}
+
+// advanceAliasContainmentFieldWrite advances the containment epoch for a field
+// store. Storing a reference-free scalar can only remove containment, never add
+// it, so cached misses stay valid and only the receiver cache is cleared.
+func (vm *VM) advanceAliasContainmentFieldWrite(value Value) {
+	if vm == nil {
+		return
+	}
+	if scalarFieldValueCannotAddContainment(value) {
+		vm.clearNestedReceiverCache()
+		return
+	}
+	vm.advanceAliasContainmentMutation()
+}
+
+func scalarFieldValueCannotAddContainment(value Value) bool {
+	if value.Ref != 0 {
+		return false
+	}
+	switch value.Kind {
+	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
+		return true
+	default:
+		return false
+	}
+}
+
 func (vm *VM) recordCollectionMutation(ref uint64, updated ...Value) {
 	if vm == nil {
 		return
@@ -2750,7 +2835,7 @@ func (vm *VM) valueContainsAliasRefCached(value Value, previous aliasSnapshot, s
 				PreviousKind: previous.kind,
 			}
 			if vm != nil && vm.aliasContainmentCache != nil {
-				if mutationSeq, ok := vm.aliasContainmentCache[cacheKey]; ok && mutationSeq == vm.aliasContainmentMutationSeq {
+				if mutationSeq, ok := vm.aliasContainmentCache[cacheKey]; ok && vm.aliasContainmentMissCurrent(cacheKey, mutationSeq) {
 					return false
 				}
 			}
@@ -2840,7 +2925,7 @@ func (vm *VM) valueContainsAliasRefCachedWithProbe(value Value, previous aliasSn
 				PreviousKind: previous.kind,
 			}
 			if vm != nil && vm.aliasContainmentCache != nil {
-				if mutationSeq, ok := vm.aliasContainmentCache[cacheKey]; ok && mutationSeq == vm.aliasContainmentMutationSeq {
+				if mutationSeq, ok := vm.aliasContainmentCache[cacheKey]; ok && vm.aliasContainmentMissCurrent(cacheKey, mutationSeq) {
 					if probe != nil {
 						probe.containmentCacheHits++
 					}
@@ -3679,7 +3764,7 @@ func replaceValueAliasRefWithMissCache(vm *VM, value Value, previous aliasSnapsh
 		if useMissCache && vm != nil && cacheableAliasContainmentValue(value) {
 			key := aliasContainmentCacheKey{ValueRef: value.Ref, ValueKind: value.Kind,
 				ValueType: firstAliasContainmentType(value), PreviousRef: previous.ref, PreviousKind: previous.kind}
-			if seq, ok := vm.aliasContainmentCache[key]; ok && seq == vm.aliasContainmentMutationSeq {
+			if seq, ok := vm.aliasContainmentCache[key]; ok && vm.aliasContainmentMissCurrent(key, seq) {
 				return value, false
 			}
 		}

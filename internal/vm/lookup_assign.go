@@ -845,7 +845,7 @@ func (vm *VM) setGraphFieldValue(object *Value, name string, value Value) {
 		return
 	}
 	vm.invalidateFlatObjectAliasIndexesForValue(value)
-	vm.advanceAliasContainmentMutation()
+	vm.advanceAliasContainmentFieldWrite(value)
 	if object.Fields == nil {
 		object.Fields = make(map[string]Value)
 	}
@@ -912,7 +912,7 @@ func (vm *VM) setExplicitSObjectFieldValue(object *Value, name string, value Val
 		vm.markCollectionRefsEscaped(value)
 		vm.registerSObjectAliasField(*object, name, value)
 	}
-	vm.advanceAliasContainmentMutation()
+	vm.advanceAliasContainmentFieldWrite(value)
 	setExplicitSObjectField(object, name, value)
 }
 

@@ -396,6 +396,7 @@ type VM struct {
 	mapKeySetBackings           map[uint64]mapKeySetSourceRef
 	mapKeySetBinds              uint64
 	aliasContainmentMutationSeq uint64
+	aliasContainmentLog         [aliasContainmentMutationLogSize]aliasContainmentMutation
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
 	mapPutParentContainment     *mapPutParentContainmentCache
 	perfRecorder                *PerfRecorder
