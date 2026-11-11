@@ -65,6 +65,19 @@ type Engine struct {
 	RecordCreations    *RecordCreations
 	LookupHistoryScope *storage.LookupHistoryScope
 
+	// BeginPlatformEventInterview starts the transaction of one event-triggered
+	// Flow interview and returns the function that rolls it back. Without it a
+	// failed interview reports its error to the caller.
+	BeginPlatformEventInterview func() func() error
+	// PlatformEventPublisher publishes an event record that an event-triggered
+	// Flow interview created, once the interview finishes without a fault.
+	PlatformEventPublisher func([]storage.Record) error
+	// FlowFaultDetail renders an Apex action's failure as the text of
+	// $Flow.FaultMessage, or "" when the failure did not come from Apex.
+	FlowFaultDetail func(error) string
+
+	platformEventInterview    bool
+	pendingInterviewEvents    []storage.Record
 	capturedMixedAfterSave    bool
 	capturedCaseAfterSave     bool
 	capturedBranchedAfterSave bool
