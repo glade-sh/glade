@@ -996,7 +996,10 @@ func (e *Engine) applyFlowStepsWithFrame(flowName, objectName string, record *st
 			if step.FaultTarget != "" {
 				faultIdx := flowStepIndexByName(steps, step.FaultTarget)
 				if faultIdx >= 0 && faultIdx > i {
-					frame.scalars[flowFrameKey("$Flow.FaultMessage")] = storage.StringValue(flowFaultMessage(err))
+					if e.platformEventInterview {
+						// Native rows cover event-triggered interviews only.
+						frame.scalars[flowFrameKey("$Flow.FaultMessage")] = storage.StringValue(flowFaultMessage(err))
+					}
 					i = faultIdx - 1
 					e.traceAutomation("apex.flow.fault", map[string]any{
 						"flow":   flowName,

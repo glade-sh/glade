@@ -186,9 +186,11 @@ func (e *Engine) flowCreateError(failure, cause error) error {
 	if !errors.As(cause, &rejected) {
 		return failure
 	}
-	// Native PE06K (anonymous, deliver and stopTest, APIs 62.0 and 67.0), where
-	// the save failed with STRING_TOO_LONG. Other status codes reuse the same
-	// frame with their own code and message, which no row has captured.
+	// Native PE06K (anonymous, deliver and stopTest, APIs 62.0 and 67.0) captured
+	// the text for STRING_TOO_LONG only. Other status codes keep the earlier text.
+	if rejected.code != "STRING_TOO_LONG" {
+		return &flowElementFault{err: failure}
+	}
 	message := "This error occurred when the flow tried to create records: " + rejected.code + ": " + rejected.message +
 		". You can look up ExceptionCode values in the <a href='https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/sforce_api_calls_concepts_core_data_objects.htm#'>SOAP API Developer Guide</a>."
 	return &flowElementFault{err: failure, message: message}
