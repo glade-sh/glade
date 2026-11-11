@@ -25,9 +25,46 @@ func (vm *VM) anonymousFieldPolicyScope() bool {
 	return adminOptionalFieldPolicyAPI(vm.currentMethod.APIVersion) && vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator"
 }
 
-// policyHiddenField reports an existing ordinary custom field the principal
-// cannot read under the field policy.
+// adminFLSStandardFields are the standard fields the default administrator
+// needs an explicit field grant for, in every baseline org (native
+// case_standard_field_fls rows, API 62.0 and 67.0): anonymous Apex does not see
+// them, API 67.0 named queries fail with "No such column", and a permission set
+// field grant makes every route see and query them. Keyed by object, lowercase.
+var adminFLSStandardFields = map[string]map[string]bool{
+	"case": {
+		"entitlementid": true, "businesshoursid": true, "milestonestatus": true,
+		"slastartdate": true, "slaexitdate": true, "isstopped": true,
+		"stopstartdate": true, "isclosedoncreate": true, "productid": true,
+		"servicecontractid": true, "assetwarrantyid": true,
+	},
+}
+
+// adminFLSStandardField reports a standard field that needs an explicit grant.
+func adminFLSStandardField(objectName, fieldName string) bool {
+	return adminFLSStandardFields[strings.ToLower(strings.TrimSpace(objectName))][strings.ToLower(strings.TrimSpace(fieldName))]
+}
+
+func hasAdminFLSStandardFields(objectName string) bool {
+	return len(adminFLSStandardFields[strings.ToLower(strings.TrimSpace(objectName))]) > 0
+}
+
+// adminFieldNeedsExplicitGrant reports a field whose access the default
+// administrator owes to a profile or permission set grant: an optional custom
+// field on an ordinary custom object, or one of adminFLSStandardFields.
+func (vm *VM) adminFieldNeedsExplicitGrant(objectName, fieldName string) bool {
+	if adminFLSStandardField(objectName, fieldName) {
+		return true
+	}
+	return vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName)
+}
+
+// policyHiddenField reports a field the principal cannot read under the field
+// policy: an existing optional custom field of an ordinary custom object or a
+// standard field in adminFLSStandardFields.
 func (vm *VM) policyHiddenField(objectName, fieldName string) bool {
+	if adminFLSStandardField(objectName, fieldName) {
+		return !vm.currentUserFieldPermission(objectName, fieldName, "isAccessible")
+	}
 	if !vm.ordinaryCustomPermissionObject(objectName) {
 		return false
 	}
@@ -45,7 +82,7 @@ func (vm *VM) anonymousPolicyHiddenField(objectName, fieldName string) bool {
 // anonymousPolicyHiddenQueryField returns the first direct field of query
 // that anonymous Apex cannot see.
 func (vm *VM) anonymousPolicyHiddenQueryField(query soql.Query) (string, bool) {
-	if !vm.anonymousFieldPolicyScope() || !vm.ordinaryCustomPermissionObject(query.Object) {
+	if !vm.anonymousFieldPolicyScope() || !(vm.ordinaryCustomPermissionObject(query.Object) || hasAdminFLSStandardFields(query.Object)) {
 		return "", false
 	}
 	fields := append([]string(nil), query.Fields...)
@@ -113,8 +150,34 @@ func (vm *VM) AnonymousPolicyHiddenFields(apiVersion, source string) map[string]
 			}
 		}
 	}
+	for objectName, fieldNames := range adminFLSStandardFields {
+		for fieldName := range fieldNames {
+			if !strings.Contains(lower, fieldName) {
+				continue
+			}
+			canonical, ok := vm.standardPolicyFieldName(objectName, fieldName)
+			if !ok || !vm.policyHiddenField(objectName, canonical) {
+				continue
+			}
+			if hidden == nil {
+				hidden = make(map[string][]string)
+			}
+			object, _ := vm.resolveObjectName(objectName)
+			hidden[object] = append(hidden[object], canonical)
+		}
+	}
 	for _, fields := range hidden {
 		sort.Strings(fields)
 	}
 	return hidden
+}
+
+// standardPolicyFieldName returns the catalog spelling of a standard field that
+// the org defines.
+func (vm *VM) standardPolicyFieldName(objectName, fieldName string) (string, bool) {
+	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
+	if !ok {
+		return "", false
+	}
+	return field.APIName, true
 }

@@ -409,7 +409,7 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 	featureVersion := vm.featureDescribeVersion(name)
 	namedOnly := storage.StandardFeatureHasNamedOnlyFields(name)
 	namedSource := vm.featureNamedSource(name)
-	anonymousPolicy := vm.anonymousFieldPolicyScope() && vm.ordinaryCustomPermissionObject(name)
+	anonymousPolicy := vm.anonymousFieldPolicyScope() && (vm.ordinaryCustomPermissionObject(name) || hasAdminFLSStandardFields(name))
 	for _, fieldName := range fieldNames {
 		field := definition.Fields[fieldName]
 		apiName := field.APIName
