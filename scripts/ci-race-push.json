@@ -355,6 +355,7 @@
       "TestReportsOrgConformance",
       "TestResidualBoundaryNativeEvidenceCarries",
       "TestResidualQueryOrgConformance",
+      "TestRollupShapedWorkloadOutcome",
       "TestRootSemiJoinNativeConformance",
       "TestRunAsDefaultSecurityConformance",
       "TestRunAsListQueryVisibilityNativeConformance",
