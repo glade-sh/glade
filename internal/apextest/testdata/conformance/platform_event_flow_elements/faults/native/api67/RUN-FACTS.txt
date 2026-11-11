@@ -1,0 +1,50 @@
+Fresh Developer edition scratch org, 30-day, captured 2026-11-11 on a campaign Dev Hub.
+The project deployed at the listed API version; the @IsTest routes ran through the synchronous
+test runner (each test publishes or inserts, then calls Test.getEventBus().deliver()) and the
+anonymous route ran the publish or insert and the read in separate executions with a wait
+between (two reads 45 seconds apart gave identical rows for every case). Org ids, usernames
+and record ids are not recorded: the probe masks record ids in fault text. The org was
+deleted afterwards and a later lookup of it failed.
+
+api=67.0
+native_complete=true
+deployment_success=true
+fixture_permission_set_assigned=true
+rows=126
+anonymous_rows=57
+org_deleted=true
+transport=System.assert
+input_sha256:cases.tsv=287548541996d98841a1ea5a455b6cb363326c188b27ae10df488f48ba76d858
+input_sha256:anonymous-publish.apex=3f900c3a6c0fe1afd5c8908e1142c886f202e9beaabaaec4ecbdd62517f67f0f
+input_sha256:anonymous-read.apex=f72df4388ecaeac766d88e93071ebd8411c9ff074bec604d13ac58b3b754a960
+source_sha256:sfdx-project.json=3ca98838e504b17eb4dcc7f8313d3c84c42c738b22bf2f65453730c8e6ad52bb
+source_sha256:config/project-scratch-def.json=1d3e197245289f422500d8aea2494d5d0b855b867876d45936d3ff1efb28c482
+source_sha256:force-app/main/default/classes/FltProbe.cls=26e0cb97923de8e2936676a9babda508416d6d47fcb1e9a50218891a7368742a
+source_sha256:force-app/main/default/classes/FltProbe.cls-meta.xml=7fb44201a93dd417225bd29008c7bf3ff37a3feb12b9ebb4c6d08a84388441cb
+source_sha256:force-app/main/default/classes/FltProbeTest.cls=751c1d748f10311744da93fe065f0b5aebbb2b3ed210886f96c90fcd60fc2dff
+source_sha256:force-app/main/default/classes/FltProbeTest.cls-meta.xml=7fb44201a93dd417225bd29008c7bf3ff37a3feb12b9ebb4c6d08a84388441cb
+source_sha256:force-app/main/default/flows/FltAfterSub.flow-meta.xml=78f33b0a7572a9490579d65f2eeec5dd5c773209266c6744e4ce1dd79ca42982
+source_sha256:force-app/main/default/flows/FltAuto.flow-meta.xml=f28780b355211e0c5e9f3ac82fc18af8b01c7908409f5f0a220246ca9b233fac
+source_sha256:force-app/main/default/flows/FltImmSub.flow-meta.xml=6d4288aa8612e2ce3e390ad7d803a7f3ed17c28548ddededfb034353916eebb4
+source_sha256:force-app/main/default/flows/FltRecAfter.flow-meta.xml=941ca39999c26fca1453a8418fb5435c726ed95234151a3f299371729b9c6641
+source_sha256:force-app/main/default/objects/FltAfter__e/FltAfter__e.object-meta.xml=a385bf4efdf5aecb80bf6c4b79e3310dcab7a4f600cc7ee60ab83326b4feb0a4
+source_sha256:force-app/main/default/objects/FltAfter__e/fields/Key__c.field-meta.xml=34efd4617c787297bef263a8009305ccdf82b5e76548100dc8798256b645b24b
+source_sha256:force-app/main/default/objects/FltAfter__e/fields/Operation__c.field-meta.xml=3e6ce45cdb9c126791d63707f7db149e5e1cc08b3fff2e4e993588ad95c0a6cc
+source_sha256:force-app/main/default/objects/FltHead__c/FltHead__c.object-meta.xml=3522b00c74f905063226c2b392eceb0dbafafa8e536f73ff0daa5f0956509ad0
+source_sha256:force-app/main/default/objects/FltImm__e/FltImm__e.object-meta.xml=eeb5500b23c20238b944606e60e0f3b93919ebed8ab462bd87e02f7ff0fc0a2d
+source_sha256:force-app/main/default/objects/FltImm__e/fields/Key__c.field-meta.xml=34efd4617c787297bef263a8009305ccdf82b5e76548100dc8798256b645b24b
+source_sha256:force-app/main/default/objects/FltImm__e/fields/Operation__c.field-meta.xml=3e6ce45cdb9c126791d63707f7db149e5e1cc08b3fff2e4e993588ad95c0a6cc
+source_sha256:force-app/main/default/objects/FltLog__c/FltLog__c.object-meta.xml=a9da0d35266ffff33a4cbde2c9ed5b46d2588af02dc33727af4ed1094f6c6881
+source_sha256:force-app/main/default/objects/FltLog__c/fields/Detail__c.field-meta.xml=780fdcf30e250d9863ff63fcd457911d81fbadfbf38d87e9fa2f94b2d759a20a
+source_sha256:force-app/main/default/objects/FltLog__c/fields/Note__c.field-meta.xml=92ea4841fa4ffa6a100171d539c18ccb0e91c4d4b31e3729ae48639871e39a54
+source_sha256:force-app/main/default/objects/FltLog__c/fields/Phase__c.field-meta.xml=b16251671bc7c846ff00785e7f33c40606f81647db07ba4fa068ad49e0c680e9
+source_sha256:force-app/main/default/objects/FltObj__c/FltObj__c.object-meta.xml=69fde6d2f32b2355aa8762ac66047d5b157394e62181e4dbcc88d8478e86d902
+source_sha256:force-app/main/default/objects/FltObj__c/fields/Head__c.field-meta.xml=9e447b8896d871641065913c97cb92c6835587d379be4e19aeaa94706c1a3bb8
+source_sha256:force-app/main/default/objects/FltObj__c/fields/Reject__c.field-meta.xml=dfec15dad37cf667a355fc61743f67cda34425714f578950f6fe7a1202cf5e31
+source_sha256:force-app/main/default/objects/FltObj__c/fields/Req__c.field-meta.xml=f1e79a544783b1cf48f2bc882412dfa82c89cd188877ce27ce4871279c4d56ba
+source_sha256:force-app/main/default/objects/FltObj__c/fields/Short__c.field-meta.xml=11ceda84ae294c03412f4408d6ef35263c4f38ce5e06588ded12d146004149ed
+source_sha256:force-app/main/default/objects/FltObj__c/fields/Uniq__c.field-meta.xml=8553e763df82a6f20e5c6f368a12b36503ff3a2e7413defb0f3fe42ac8b412a5
+source_sha256:force-app/main/default/objects/FltObj__c/validationRules/RejectRule.validationRule-meta.xml=d21a464cb3429e62856889897af42d66d300c687a5c6d847324914587875996d
+source_sha256:force-app/main/default/objects/FltRec__c/FltRec__c.object-meta.xml=b1ca4238057dc901338aad6d2025de114dc444ad0cb8893cce76957120f2dd89
+source_sha256:force-app/main/default/objects/FltRec__c/fields/Operation__c.field-meta.xml=3e6ce45cdb9c126791d63707f7db149e5e1cc08b3fff2e4e993588ad95c0a6cc
+source_sha256:force-app/main/default/permissionsets/FltFixture.permissionset-meta.xml=44ddaea901f657e108131b6fac60b93715d113cd5096111d8d6d6c0b4bfb8561
