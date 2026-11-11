@@ -2,6 +2,9 @@
  "version": 1,
  "objects": {
   "Case": {
+   "gate_alternatives": {
+    "SourceId": [["SocialCustomerService"]]
+   },
    "constructor_fields": [
     "Account",
     "AccountId",

@@ -34,6 +34,9 @@ type standardFieldPolicyGate struct {
 	Features         []string
 	Field            standardDescribeField
 	Legacy           bool
+	// Alternatives are further feature sets that each enable the field alone,
+	// from isolated captures added after the gate was built.
+	Alternatives [][]string `json:"-"`
 }
 
 type standardFieldPolicyObject struct {
@@ -130,8 +133,9 @@ func applyStandardFieldSurfaces(policies map[string]*standardFieldPolicyObject) 
 	var bundle struct {
 		Version int
 		Objects map[string]struct {
-			ConstructorFields    []string `json:"constructor_fields"`
-			AddConstructorFields []string `json:"add_constructor_fields"`
+			ConstructorFields    []string              `json:"constructor_fields"`
+			AddConstructorFields []string              `json:"add_constructor_fields"`
+			GateAlternatives     map[string][][]string `json:"gate_alternatives"`
 		}
 	}
 	if err := json.Unmarshal(standardFieldSurfaceData, &bundle); err != nil {
@@ -149,6 +153,12 @@ func applyStandardFieldSurfaces(policies map[string]*standardFieldPolicyObject) 
 		}
 		if len(surface.ConstructorFields) > 0 && len(policy.ConstructorFields) == 0 {
 			policy.ConstructorFields = append([]string(nil), surface.ConstructorFields...)
+		}
+		for field, groups := range surface.GateAlternatives {
+			if gate, ok := policy.gates[strings.ToLower(field)]; ok {
+				gate.Alternatives = groups
+				policy.gates[strings.ToLower(field)] = gate
+			}
 		}
 		for _, name := range surface.AddConstructorFields {
 			if len(policy.ConstructorFields) == 0 {
@@ -174,7 +184,19 @@ func standardFieldPolicyFor(object string) *standardFieldPolicyObject {
 }
 
 func standardFieldPolicyGateEnabled(gate standardFieldPolicyGate, signature string) bool {
-	for _, feature := range gate.Features {
+	if standardFieldPolicyFeaturesPresent(gate.Features, signature) {
+		return true
+	}
+	for _, group := range gate.Alternatives {
+		if standardFieldPolicyFeaturesPresent(group, signature) {
+			return true
+		}
+	}
+	return false
+}
+
+func standardFieldPolicyFeaturesPresent(features []string, signature string) bool {
+	for _, feature := range features {
 		if !featureSignatureHas(signature, feature) {
 			return false
 		}
