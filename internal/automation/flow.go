@@ -775,6 +775,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 	}
 	for _, customError := range raw.CustomErrors {
 		ce := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)
+		ce.APIVersion = strings.TrimSpace(raw.APIVersion)
 		if ce.Name != "" {
 			rule.CustomErrors = append(rule.CustomErrors, ce)
 		}
@@ -2676,7 +2677,9 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 				continue
 			}
 			modeled = true
-			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)})
+			branchError := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)
+			branchError.APIVersion = strings.TrimSpace(raw.APIVersion)
+			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: branchError})
 			break
 		}
 		if modeled {
