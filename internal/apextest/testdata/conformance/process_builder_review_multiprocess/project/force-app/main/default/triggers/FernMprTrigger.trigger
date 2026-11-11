@@ -1,0 +1,1 @@
+trigger FernMprTrigger on Fern_Mpr__c (before insert, after insert, before update, after update) { FernLog.fire('Mpr'); }

@@ -69,9 +69,11 @@ func IdentityForBuild(index typesys.Index, artifacts *typesys.BuildArtifacts, op
 	projectPayload := struct {
 		Index   typesys.Index            `json:"index"`
 		Sources []capturedSourceIdentity `json:"sources"`
+		Subset  bool                     `json:"subset,omitempty"`
 	}{
 		Index:   index,
 		Sources: sources,
+		Subset:  index.Subset,
 	}
 	projectDigest, err := jsonSHA256(projectPayload)
 	if err != nil {

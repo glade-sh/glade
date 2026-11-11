@@ -1,0 +1,7 @@
+case	class	test_class	api_versions
+private_override	OverrideProbe	OverrideCheck	62.0,64.0,65.0,67.0
+protected_override	ProtectedProbe	ProtectedCheck	62.0,65.0,67.0
+loop_after	LoopProbe	LoopCheck	62.0,67.0
+loop_before	LoopBad	-	62.0,67.0
+sibling	ScopeProbe	ScopeCheck	62.0,67.0
+sibling_bad	ScopeBad	-	62.0,67.0

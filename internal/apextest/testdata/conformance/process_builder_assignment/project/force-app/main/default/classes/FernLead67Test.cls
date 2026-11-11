@@ -1,0 +1,1 @@
+@IsTest private class FernLead67Test { @IsTest static void probe() { System.assertEquals('SENTINEL', FernLead67.run()); } }

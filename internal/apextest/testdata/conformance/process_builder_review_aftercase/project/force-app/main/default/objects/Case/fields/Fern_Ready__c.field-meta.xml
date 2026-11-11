@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Fern_Ready__c</fullName><label>Fern Ready</label><defaultValue>false</defaultValue><type>Checkbox</type></CustomField>

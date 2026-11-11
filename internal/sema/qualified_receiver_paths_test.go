@@ -72,9 +72,9 @@ func TestQualifiedReceiverNativePathClassification(t *testing.T) {
 			{"KnownType.Nested", true}, {"Schema.Address", true}, {"Cache.Org.OrgCacheException", true},
 			{"Cache.Session.SessionCacheException", true}, {"Auth.JWTValidationException", true},
 			{"a.b.KnownType", true}, {"KnownType.Bogus", false}, {"System.NotAType", false},
-			// Undeclared qualifiers cannot prove absence offline; they defer
-			// (qualified_receiver_shapes/deferred.tsv, undeclared_namespace_types).
-			// Local declarations and constructors share the deferral boundary.
+			// semaTypeReferenceKnownAtVersion keeps undeclared qualifiers open
+			// for receiver and cascade checks; type positions close them
+			// through semaTypePositionKnownAtVersion (ruling 49).
 			{"missingns.KnownType.Nested", true}, {"bar.Wrapper", true}, {"fooNs.Unknown", true},
 			// A platform class root's nested inventory is not closed.
 			{"String.Bogus", true},

@@ -16,7 +16,6 @@ import (
 func TestQualifiedReceiverShapesNamedIsTestTriggerRouteTwins(t *testing.T) {
 	const dir = "testdata/qualified_receiver_shapes"
 	rows := readQualifiedReceiverTSV(t, filepath.Join(dir, "org.tsv"), 4)
-	deferred := qualifiedReceiverUndeclaredNamespaceDeferrals(t, dir)
 	for _, row := range rows[1:] {
 		for _, route := range []string{"named", "isTest", "trigger"} {
 			t.Run(row[0]+"/"+route+"/"+row[1], func(t *testing.T) {
@@ -52,12 +51,6 @@ func TestQualifiedReceiverShapesNamedIsTestTriggerRouteTwins(t *testing.T) {
 				index.VisualforcePagesKnown = true
 				index.VisualforcePageNames = []string{"ownedlanding"}
 				result := Analyze(index)
-				if deferred[row[1]] {
-					if result.HasErrors() {
-						t.Fatalf("deferred undeclared-namespace row; derived %s diagnostics=%+v", route, result.Diagnostics)
-					}
-					return
-				}
 				if (row[2] == "true") == result.HasErrors() {
 					t.Fatalf("native compiled=%s (%s); derived %s diagnostics=%+v", row[2], row[3], route, result.Diagnostics)
 				}

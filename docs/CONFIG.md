@@ -74,6 +74,7 @@ Supported keys:
 | `project.dependencies` | Declared package names or SFDX aliases mapped to local source paths. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `project.dependencyPaths` | Inline list of local directories to search for declared SFDX package dependencies, relative to the supplying `glade.yml`. |
+| `project.externalNamespaces` | Inline list of installed managed-package namespaces with no local source. Each stays open; see [External namespaces](#external-namespaces). |
 | `project.schemaSnapshot` | Schema snapshot path, relative to `glade.yml`; requires `schemaSnapshotSHA256`. |
 | `project.schemaSnapshotSHA256` | Paired 64-character hexadecimal SHA-256 digest for `schemaSnapshot`. |
 
@@ -165,6 +166,31 @@ An SFDX project declares dependencies in
 to a `packageDirectories[].package` entry in a local project's own
 `sfdx-project.json`. Glade reads local source only; it does not install a
 package or fetch one from the network.
+
+### External namespaces
+
+Salesforce rejects a type from a namespace the org does not have, in every
+position: a local, field, parameter, return, generic argument, `new`, cast,
+`instanceof`, `extends` and `implements` give `Invalid type: <name>`, and a
+static field read through it gives `Variable does not exist: <name>`. Glade
+gives the same answers for a namespace the project never declares.
+
+When the org has a managed package installed but Glade has no source for it,
+declare its namespace:
+
+```yaml
+project:
+  externalNamespaces: [ccpkg, vendorns]
+```
+
+Each entry is an Apex namespace identifier; names compare without case, and a
+duplicate is a configuration error. A declared namespace stays open: its types
+compile in every position, and Glade reports no `dependency_missing`
+diagnostic for it. Glade still has no package bodies, so a static method call
+into the package (`vendorns.Logger.log(...)`) makes the calling class a compile
+exclusion, as for any source-less dependency; tests in other classes still run.
+A `managedPackageDependencies` entry for the same namespace takes precedence.
+Declare only packages the target org has; Glade never infers one from a name.
 
 ### Dependency paths
 

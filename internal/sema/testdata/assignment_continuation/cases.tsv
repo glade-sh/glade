@@ -1,0 +1,10 @@
+id	source
+and_line	and_line.apex
+or_line	or_line.apex
+and_line_comment	and_line_comment.apex
+and_block_comment	and_block_comment.apex
+parenthesized	parenthesized.apex
+adjacent_generic	adjacent_generic.apex
+arithmetic	arithmetic.apex
+bad_compare	bad_compare.apex
+bad_generic	bad_generic.apex

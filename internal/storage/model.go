@@ -734,9 +734,11 @@ type FlowRule struct {
 	RunInMode                              string `json:"runInMode,omitempty"`
 	Formula                                string `json:"formula,omitempty"`
 	// CoreEntryFilterLogic distinguishes a generated start-filter formula from an arbitrary formula.
-	CoreEntryFilterLogic bool                   `json:"coreEntryFilterLogic,omitempty"`
-	TextTemplates        map[string]string      `json:"textTemplates,omitempty"`
-	Criteria             []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	CoreEntryFilterLogic bool              `json:"coreEntryFilterLogic,omitempty"`
+	TextTemplates        map[string]string `json:"textTemplates,omitempty"`
+	// ProcessStringConstants are available only to captured process subflow interviews.
+	ProcessStringConstants map[string]string      `json:"processStringConstants,omitempty"`
+	Criteria               []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	// CriteriaGroups holds start-filter logic other than AND as alternatives:
 	// each group lists indexes into Criteria that must all match, and the
 	// entry matches when any group does ("or", "1 OR (2 AND 3)").
@@ -755,6 +757,188 @@ type FlowRule struct {
 	// StepTargets stores shared connector targets once. Reference steps name a
 	// target instead of recursively embedding its continuation.
 	StepTargets map[string][]FlowStep `json:"stepTargets,omitempty"`
+}
+
+// LinearRecordUpdates returns the flow's record updates in order when its steps
+// are only record updates and references to them.
+func (rule FlowRule) LinearRecordUpdates() ([]FlowRecordUpdate, bool) {
+	if len(rule.Branches) > 0 {
+		return nil, false
+	}
+	var updates []FlowRecordUpdate
+	visited := make(map[string]bool)
+	var walk func([]FlowStep) bool
+	walk = func(steps []FlowStep) bool {
+		for _, step := range steps {
+			switch step.Kind {
+			case "recordUpdate":
+				updates = append(updates, step.RecordUpdate)
+			case "reference":
+				key := strings.ToLower(strings.TrimSpace(step.Target))
+				if visited[key] {
+					return false
+				}
+				visited[key] = true
+				if !walk(rule.StepTargets[key]) {
+					return false
+				}
+			default:
+				return false
+			}
+		}
+		return true
+	}
+	if !walk(rule.Steps) || len(updates) == 0 {
+		return nil, false
+	}
+	return updates, true
+}
+
+// ProcessRecordUpdates recognizes the linear form and the captured single
+// non-null-input decision that precedes one update in a process flow action.
+// CapturedProcessActionSteps recognizes the two-invocable subflow graph
+// observed in process_builder_review twoactions, without admitting other graphs.
+func (rule FlowRule) CapturedProcessActionSteps() ([]FlowStep, bool) {
+	if len(rule.Variables) != 1 || len(rule.Steps) != 4 || len(rule.Branches) != 0 || len(rule.StepTargets) != 0 || len(rule.Paths) != 0 {
+		return nil, false
+	}
+	variable := rule.Variables[0]
+	if !variable.IsInput || variable.IsOutput || variable.IsCollection || !strings.EqualFold(variable.DataType, "String") {
+		return nil, false
+	}
+	for _, step := range rule.Steps {
+		if step.FaultTarget != "" || len(step.FaultBranch) != 0 {
+			return nil, false
+		}
+	}
+	a := rule.Steps[0].Assignment
+	if rule.Steps[0].Kind != "assignment" || !strings.EqualFold(a.Operator, "Assign") || !strings.EqualFold(a.Target, variable.Name) || !strings.EqualFold(a.SourceField, variable.Name) || a.Formula != "" || a.LiteralValue != "" {
+		return nil, false
+	}
+	for _, step := range rule.Steps[1:3] {
+		action := step.Action
+		if step.Kind != "action" || !strings.EqualFold(action.ActionType, "apex") || len(action.Inputs) != 1 || len(action.Outputs) != 0 {
+			return nil, false
+		}
+		input := action.Inputs[0]
+		if input.Field == "" || !strings.EqualFold(input.SourceField, variable.Name) || input.Formula != "" || input.LiteralValue != "" || input.ActionOutput != "" {
+			return nil, false
+		}
+	}
+	if rule.Steps[1].Action.ActionName == "" || rule.Steps[2].Action.ActionName == "" || strings.EqualFold(rule.Steps[1].Action.ActionName, rule.Steps[2].Action.ActionName) {
+		return nil, false
+	}
+	if rule.Steps[3].Kind != "recordUpdate" {
+		return nil, false
+	}
+	return rule.Steps, true
+}
+
+// CapturedProcessLookupSteps recognizes the lookup/lookup/assignment/update
+// graph observed in process_builder_review twolookups.
+func (rule FlowRule) CapturedProcessLookupSteps() ([]FlowStep, bool) {
+	if len(rule.Variables) != 3 || len(rule.Steps) != 4 || len(rule.Branches) != 0 || len(rule.StepTargets) != 0 || len(rule.Paths) != 0 {
+		return nil, false
+	}
+	var input string
+	for _, v := range rule.Variables {
+		if v.IsOutput || v.IsCollection || !strings.EqualFold(v.DataType, "String") || (v.DefaultValue != nil && v.DefaultValue.Kind != ValueNull) {
+			return nil, false
+		}
+		if v.IsInput {
+			if input != "" {
+				return nil, false
+			}
+			input = v.Name
+		}
+	}
+	if input == "" {
+		return nil, false
+	}
+	for _, step := range rule.Steps {
+		if step.FaultTarget != "" || len(step.FaultBranch) != 0 {
+			return nil, false
+		}
+	}
+	for _, step := range rule.Steps[:2] {
+		l := step.RecordLookup
+		if step.Kind != "recordLookup" || !l.GetFirstRecordOnly || !l.StoreOutputAutomatically || l.AssignNullValuesIfNoRecordsFound || l.OutputReference != "" || len(l.QueriedFields) != 0 || len(l.OutputAssignments) != 0 || l.SortField != "" || l.SortOrder != "" || len(l.Criteria) != 1 || !strings.EqualFold(l.CriteriaLogic, "and") {
+			return nil, false
+		}
+		c := l.Criteria[0]
+		if !strings.EqualFold(c.Field, "Id") || !strings.EqualFold(c.Operation, "equals") || !strings.EqualFold(c.SourceField, input) || c.Value != "" {
+			return nil, false
+		}
+	}
+	a := rule.Steps[2].Assignment
+	if rule.Steps[2].Kind != "assignment" || !strings.EqualFold(a.Operator, "Assign") || a.Target == "" || strings.EqualFold(a.Target, input) || a.LiteralValue == "" || a.Formula != "" || a.SourceField != "" {
+		return nil, false
+	}
+	found := false
+	for _, v := range rule.Variables {
+		if strings.EqualFold(v.Name, a.Target) && !v.IsInput {
+			found = true
+		}
+	}
+	if !found || rule.Steps[3].Kind != "recordUpdate" || len(rule.Steps[3].RecordUpdate.InputAssignments) != 1 || !strings.EqualFold(rule.Steps[3].RecordUpdate.InputAssignments[0].SourceField, a.Target) {
+		return nil, false
+	}
+	return rule.Steps, true
+}
+
+func (rule FlowRule) ProcessRecordUpdates() ([]FlowRecordUpdate, bool) {
+	if updates, ok := rule.LinearRecordUpdates(); ok {
+		return updates, true
+	}
+	if steps, ok := rule.CapturedProcessDependentLookupSteps(); ok {
+		return []FlowRecordUpdate{steps[3].RecordUpdate}, true
+	}
+	if steps, ok := rule.CapturedProcessRecordActionSteps(); ok {
+		return []FlowRecordUpdate{steps[2].RecordUpdate}, true
+	}
+	if steps, ok := rule.CapturedProcessActionSteps(); ok {
+		return []FlowRecordUpdate{steps[3].RecordUpdate}, true
+	}
+	if steps, ok := rule.CapturedProcessLookupSteps(); ok {
+		return []FlowRecordUpdate{steps[3].RecordUpdate}, true
+	}
+	if len(rule.Variables) != 1 || !rule.Variables[0].IsInput || rule.Variables[0].IsCollection || !strings.EqualFold(rule.Variables[0].DataType, "String") || len(rule.Branches) != 0 || len(rule.Steps) != 1 || len(rule.StepTargets) != 0 {
+		return nil, false
+	}
+	step := rule.Steps[0]
+	if step.Kind != "decision" || step.FaultTarget != "" || len(step.FaultBranch) != 0 || len(step.Branches) != 1 {
+		return nil, false
+	}
+	branch := step.Branches[0]
+	if branch.Default || branch.Formula != "" || len(branch.Criteria) != 1 || len(branch.Steps) != 1 {
+		return nil, false
+	}
+	criterion := branch.Criteria[0]
+	if !strings.EqualFold(criterion.Field, rule.Variables[0].Name) || !strings.EqualFold(criterion.Operation, "isNull") || !strings.EqualFold(criterion.Value, "false") || criterion.SourceField != "" {
+		return nil, false
+	}
+	next := branch.Steps[0]
+	if next.Kind != "recordUpdate" || next.FaultTarget != "" || len(next.FaultBranch) != 0 {
+		return nil, false
+	}
+	return []FlowRecordUpdate{next.RecordUpdate}, true
+}
+
+// SimpleProcessAfterSaveAction recognizes the single record-input action
+// form captured alongside a process in process_builder_review multiflow.
+func (rule FlowRule) SimpleProcessAfterSaveAction() (FlowAction, bool) {
+	if !rule.Active || !strings.EqualFold(rule.TriggerType, "RecordAfterSave") || !strings.EqualFold(rule.RecordTriggerType, "CreateAndUpdate") || rule.TriggerOrder != 0 || rule.Formula != "" || len(rule.Criteria) != 0 || len(rule.Branches) != 0 || len(rule.Paths) != 0 || len(rule.StepTargets) != 0 || len(rule.Steps) != 1 {
+		return FlowAction{}, false
+	}
+	step := rule.Steps[0]
+	if step.Kind != "action" || step.FaultTarget != "" || len(step.FaultBranch) != 0 || !strings.EqualFold(step.Action.ActionType, "apex") || len(step.Action.Inputs) != 1 || len(step.Action.Outputs) != 0 {
+		return FlowAction{}, false
+	}
+	input := step.Action.Inputs[0]
+	if !strings.EqualFold(input.SourceField, "$Record") || input.Field == "" || input.Formula != "" || input.LiteralValue != "" || input.ActionOutput != "" {
+		return FlowAction{}, false
+	}
+	return step.Action, true
 }
 
 // FlowPath retains a deferred record-triggered entry independently of the
@@ -884,6 +1068,7 @@ type FlowRecordUpdate struct {
 	ObjectName       string                 `json:"objectName,omitempty"`
 	InputReference   string                 `json:"inputReference,omitempty"`
 	Criteria         []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	CriteriaLogic    string                 `json:"criteriaLogic,omitempty"`
 	InputAssignments []WorkflowFieldUpdate  `json:"inputAssignments,omitempty"`
 }
 
@@ -2187,6 +2372,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 	out.FlowRules = append([]FlowRule(nil), d.FlowRules...)
 	for i := range out.FlowRules {
 		out.FlowRules[i].TextTemplates = cloneStringMap(d.FlowRules[i].TextTemplates)
+		out.FlowRules[i].ProcessStringConstants = cloneStringMap(d.FlowRules[i].ProcessStringConstants)
 		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
 		out.FlowRules[i].Steps = cloneFlowSteps(d.FlowRules[i].Steps)
 		out.FlowRules[i].StepTargets = cloneFlowStepTargets(d.FlowRules[i].StepTargets)
@@ -2243,6 +2429,7 @@ func cloneFlowRules(rules []FlowRule) []FlowRule {
 	out := append([]FlowRule(nil), rules...)
 	for i := range out {
 		out[i].TextTemplates = cloneStringMap(rules[i].TextTemplates)
+		out[i].ProcessStringConstants = cloneStringMap(rules[i].ProcessStringConstants)
 		out[i].Criteria = append([]WorkflowCriteriaItem(nil), rules[i].Criteria...)
 		out[i].Steps = cloneFlowSteps(rules[i].Steps)
 		out[i].StepTargets = cloneFlowStepTargets(rules[i].StepTargets)

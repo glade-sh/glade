@@ -56,20 +56,47 @@ type l11CompileResult struct {
 	Diagnostics []string
 }
 
-// TestL11SalesforceConformance replays all 285 captured rows at API 59/67/68:
+// l11APIVersions lists every captured API version replayed by the L11 suite.
+var l11APIVersions = []string{"59.0", "67.0", "68.0"}
+
+const l11ReportHeader = "api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\tdiagnostic_reason\toracle"
+
+// The L11 suite replays all 285 captured rows at API 59/67/68:
 // 64 LWC compile, eight ListView metadata and 213 native DOM observations.
 // Runtime inputs retain the original API 67 null/empty related-record reads.
 // API 68 uses capture-repair's 72 compiler and 213 browser answers.
 // Fresh ctrl_metadata_child_edit and user context bind the layout/locale inputs.
 // Enumerated API 68 request IDs and release URLs are qualified separately from
 // exact matches; every other response field remains exact.
+// Each top-level test replays one API version so the CI planner can distribute
+// the suite across shards; the Node observer receives that version selector.
 // GLADE_L11_CAPTURE=1 reports mismatches without failing; GLADE_L11_REPORT
-// selects the TSV destination. CI needs only these credential-free exports.
-func TestL11SalesforceConformance(t *testing.T) {
-	t.Run("BrowserRuntime", l11SalesforceConformance)
+// selects the TSV destination. Each API writes its own <destination>.<api>.tsv;
+// each contains only that API's observations and totals.
+func TestL11SalesforceConformanceAPI59(t *testing.T) {
+	l11SalesforceConformance(t, "59.0")
 }
 
-func l11SalesforceConformance(t *testing.T) {
+func TestL11SalesforceConformanceAPI67(t *testing.T) {
+	l11SalesforceConformance(t, "67.0")
+}
+
+func TestL11SalesforceConformanceAPI68(t *testing.T) {
+	l11SalesforceConformance(t, "68.0")
+}
+
+func l11SalesforceConformance(t *testing.T, apiVersion string) {
+	t.Helper()
+	knownVersion := false
+	for _, version := range l11APIVersions {
+		if version == apiVersion {
+			knownVersion = true
+			break
+		}
+	}
+	if !knownVersion {
+		t.Fatalf("unsupported L11 API version %q", apiVersion)
+	}
 	capture := os.Getenv("GLADE_L11_CAPTURE") == "1"
 	data, err := os.ReadFile("testdata/l11_salesforce.json")
 	if err != nil {
@@ -81,19 +108,19 @@ func l11SalesforceConformance(t *testing.T) {
 	if err := decoder.Decode(&cases); err != nil {
 		t.Fatal(err)
 	}
-	versions := []string{"59.0", "67.0", "68.0"}
+	versions := []string{apiVersion}
 	context := l11ReadAPI68Context(t, cases)
 	seen, groups := map[string]bool{}, map[string]bool{}
 	var compileCases, runtimeCases []l11Case
 	metadataRows, diagnosticRows := 0, 0
 	for _, c := range cases {
-		if c.ID == "" || seen[c.ID] || c.Basis != "org" || len(c.Expected) != len(versions) || len(c.Oracle) != len(versions) {
+		if c.ID == "" || seen[c.ID] || c.Basis != "org" || len(c.Expected) != len(l11APIVersions) || len(c.Oracle) != len(l11APIVersions) {
 			t.Fatalf("invalid or duplicate L11 row %q", c.ID)
 		}
 		seen[c.ID], groups[c.Group] = true, true
 		switch c.Kind {
 		case "compile":
-			if c.JS == "" || c.Template == "" || len(c.DiagnosticExpected) != len(versions) {
+			if c.JS == "" || c.Template == "" || len(c.DiagnosticExpected) != len(l11APIVersions) {
 				t.Fatalf("missing L11 compile input or diagnostics %s", c.ID)
 			}
 			if c.FixtureXML != "" {
@@ -107,14 +134,14 @@ func l11SalesforceConformance(t *testing.T) {
 			}
 			compileCases = append(compileCases, c)
 		case "runtime":
-			if c.Adapter == "" || len(c.RuntimeSource) != len(versions) {
+			if c.Adapter == "" || len(c.RuntimeSource) != len(l11APIVersions) {
 				t.Fatalf("missing L11 DOM input %s", c.ID)
 			}
 			runtimeCases = append(runtimeCases, c)
 		default:
 			t.Fatalf("invalid L11 row kind %s: %s", c.ID, c.Kind)
 		}
-		for _, api := range versions {
+		for _, api := range l11APIVersions {
 			want, ok := c.Expected[api]
 			if !ok || c.Oracle[api] == "" || (c.Kind == "compile" && want != "COMPILE_OK" && want != "COMPILE_ERROR") ||
 				(c.Kind == "runtime" && (!strings.HasPrefix(want, "BROWSER|") || !json.Valid([]byte(strings.TrimPrefix(want, "BROWSER|"))))) {
@@ -157,7 +184,7 @@ func l11SalesforceConformance(t *testing.T) {
 	}
 
 	var report strings.Builder
-	fmt.Fprintln(&report, "api\tid\tkind\tstatus\tactual\texpected\treason\tdiagnostic_status\tdiagnostic_actual\tdiagnostic_expected\tdiagnostic_reason\toracle")
+	fmt.Fprintln(&report, l11ReportHeader)
 	matches, compileMatches, metadataMatches, domMatches, localDOMRows, diagnosticMatches := 0, 0, 0, 0, 0, 0
 	qualifiedRows, qualifiedIDs, qualifiedURLs := 0, 0, 0
 	// The original first compile initializes any missing shared toolchain before
@@ -332,7 +359,7 @@ func l11SalesforceConformance(t *testing.T) {
 	fmt.Fprintf(&report, "QUALIFIED_TOTAL\t%d\nQUALIFIED_ERROR_ID_PATHS\t%d\nQUALIFIED_RELEASE_URL_PATHS\t%d\n", qualifiedRows, qualifiedIDs, qualifiedURLs)
 	t.Logf("L11 qualified %d rows separately from exact matches; request-ID paths %d; release URL paths %d", qualifiedRows, qualifiedIDs, qualifiedURLs)
 	if path := os.Getenv("GLADE_L11_REPORT"); path != "" {
-		l07Write(t, path, []byte(report.String()))
+		l11WriteReportArtifact(t, path, apiVersion, []byte(report.String()))
 	}
 }
 
@@ -736,7 +763,7 @@ func l11ObserveDOM(t *testing.T, api, sourceDirectory string, cases, fixtureCase
 	specs := make([]map[string]string, len(cases))
 	for index, c := range cases {
 		known[c.ID] = true
-		specs[index] = map[string]string{"id": c.ID, "adapter": c.Adapter}
+		specs[index] = map[string]string{"id": c.ID, "adapter": c.Adapter, "api": api}
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/lightning/", product) // Actual product Apex, wire and module routes.
@@ -761,7 +788,7 @@ func l11ObserveDOM(t *testing.T, api, sourceDirectory string, cases, fixtureCase
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	config, err := json.Marshal(map[string]any{"url": local.URL, "specs": specs, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
+	config, err := json.Marshal(map[string]any{"url": local.URL, "specs": specs, "apiVersions": []string{api}, "playwrightModule": playwright, "executablePath": os.Getenv("GLADE_LWC_BROWSER_EXECUTABLE")})
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -1150,4 +1177,180 @@ func l11SetUpNativeFixture(runtime *vm.VM, org *storage.OrgState, root, api stri
 		return fmt.Errorf("L11 native fixture setup async: %w", err)
 	}
 	return nil
+}
+
+func l11ReportArtifactPath(base, api string) string {
+	return base + "." + api + ".tsv"
+}
+
+func l11WriteReportArtifact(t *testing.T, base, api string, report []byte) {
+	t.Helper()
+	l11WriteFileAtomic(t, l11ReportArtifactPath(base, api), report)
+}
+
+func l11WriteFileAtomic(t *testing.T, path string, data []byte) {
+	t.Helper()
+	directory := filepath.Dir(path)
+	if err := os.MkdirAll(directory, 0755); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.CreateTemp(directory, "."+filepath.Base(path)+".tmp-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	name := file.Name()
+	defer os.Remove(name)
+	if _, err := file.Write(data); err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Chmod(0600); err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(name, path); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func l11TestReport(api string, compile, metadata, runtime, diagnostic, qualified, errorIDs, releaseURLs int) string {
+	var report strings.Builder
+	fmt.Fprintln(&report, l11ReportHeader)
+	for index := 0; index < compile; index++ {
+		diagnosticStatus, diagnosticActual, diagnosticExpected := "", "", ""
+		if index < diagnostic {
+			diagnosticStatus, diagnosticActual, diagnosticExpected = "MATCH", "[]", "[]"
+		}
+		fmt.Fprintf(&report, "%s\t%s\tcompile\tMATCH\tCOMPILE_OK\tCOMPILE_OK\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			api, fmt.Sprintf("c%d", index), "", diagnosticStatus, diagnosticActual, diagnosticExpected, "", "oracle")
+	}
+	for index := 0; index < runtime; index++ {
+		fmt.Fprintf(&report, "%s\t%s\truntime\tMATCH\tBROWSER|{}\tBROWSER|{}\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			api, fmt.Sprintf("r%d", index), "", "", "", "", "", "oracle")
+	}
+	total := compile + runtime
+	fmt.Fprintf(&report, "API_TOTAL\t%s\t%d/%d\nAPI_QUALIFIED\t%s\t%d\nLOCAL_DOM_ROWS\t%s\t%d/%d\n", api, total, total, api, qualified, api, runtime, runtime)
+	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_TOTAL\t%d/%d\nMETADATA_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nDIAGNOSTIC_TOTAL\t%d/%d\nLOCAL_DOM_ROWS\t%d/%d\n",
+		total, total, compile, compile, metadata, metadata, runtime, runtime, diagnostic, diagnostic, runtime, runtime)
+	fmt.Fprintf(&report, "QUALIFIED_TOTAL\t%d\nQUALIFIED_ERROR_ID_PATHS\t%d\nQUALIFIED_RELEASE_URL_PATHS\t%d\n", qualified, errorIDs, releaseURLs)
+	return report.String()
+}
+
+func TestL11ReportsAreIndependent(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "reports", "l11.tsv")
+	reports := map[string]string{}
+	for _, api := range l11APIVersions {
+		reports[api] = l11TestReport(api, 1, 0, 1, 0, 0, 0, 0)
+		l11WriteReportArtifact(t, base, api, []byte(reports[api]))
+	}
+	for _, api := range l11APIVersions {
+		data, err := os.ReadFile(l11ReportArtifactPath(base, api))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(data) != reports[api] {
+			t.Errorf("API %s report differs from its own output: %q", api, data)
+		}
+	}
+	if _, err := os.Stat(base); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("unexpected combined report: %v", err)
+	}
+	// A new observation must not read or change stale reports from other APIs.
+	stale := l11ReportArtifactPath(base, "67.0")
+	if err := os.WriteFile(stale, []byte("stale"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	updated := l11TestReport("59.0", 2, 0, 1, 0, 0, 0, 0)
+	l11WriteReportArtifact(t, base, "59.0", []byte(updated))
+	data, err := os.ReadFile(l11ReportArtifactPath(base, "59.0"))
+	if err != nil || string(data) != updated {
+		t.Errorf("updated report = %q, %v", data, err)
+	}
+	data, err = os.ReadFile(stale)
+	if err != nil || string(data) != "stale" {
+		t.Errorf("other report = %q, %v", data, err)
+	}
+}
+
+func TestL11BrowserSelectionObservesEveryInputOnce(t *testing.T) {
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("node unavailable")
+	}
+	observer, err := filepath.Abs("testdata/l11_browser.mjs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run := func(t *testing.T, config map[string]any) ([]string, error, string) {
+		t.Helper()
+		payload, err := json.Marshal(config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command("node", observer)
+		cmd.Stdin = bytes.NewReader(payload)
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		output, err := cmd.Output()
+		if err != nil {
+			return nil, err, stderr.String()
+		}
+		var selection struct {
+			IDs []string `json:"ids"`
+		}
+		if err := json.Unmarshal(output, &selection); err != nil {
+			t.Fatal(err)
+		}
+		return selection.IDs, nil, ""
+	}
+	legacy := []map[string]string{
+		{"id": "legacy", "adapter": "apex"},
+		{"id": "second", "adapter": "lds"},
+	}
+	t.Run("legacy-input", func(t *testing.T) {
+		ids, err, stderr := run(t, map[string]any{"specs": legacy, "selectOnly": true})
+		if err != nil || !reflect.DeepEqual(ids, []string{"legacy", "second"}) {
+			t.Fatalf("legacy L11 selection = %v, %v: %s", ids, err, stderr)
+		}
+	})
+	t.Run("single-api-assigns-unversioned", func(t *testing.T) {
+		specs := []map[string]string{
+			{"id": "legacy", "adapter": "apex"},
+			{"id": "r59", "adapter": "apex", "api": "59.0"},
+			{"id": "r67", "adapter": "lds", "api": "67.0"},
+		}
+		ids, err, stderr := run(t, map[string]any{"specs": specs, "apiVersions": []string{"59.0"}, "selectOnly": true})
+		if err != nil || !reflect.DeepEqual(ids, []string{"legacy", "r59"}) {
+			t.Fatalf("single-API L11 selection = %v, %v: %s", ids, err, stderr)
+		}
+	})
+	t.Run("versioned-partition", func(t *testing.T) {
+		specs := []map[string]string{
+			{"id": "r59", "adapter": "apex", "api": "59.0"},
+			{"id": "r67", "adapter": "lds", "api": "67.0"},
+			{"id": "r68", "adapter": "apex", "api": "68.0"},
+		}
+		var observed []string
+		for _, api := range l11APIVersions {
+			ids, err, stderr := run(t, map[string]any{"specs": specs, "apiVersions": []string{api}, "selectOnly": true})
+			if err != nil {
+				t.Fatalf("L11 API %s selection: %v: %s", api, err, stderr)
+			}
+			observed = append(observed, ids...)
+		}
+		if !reflect.DeepEqual(observed, []string{"r59", "r67", "r68"}) {
+			t.Fatalf("versioned L11 inputs were not observed exactly once: %v", observed)
+		}
+	})
+	t.Run("ambiguous-unversioned", func(t *testing.T) {
+		specs := append(append([]map[string]string{}, legacy[:1]...),
+			map[string]string{"id": "r59", "adapter": "apex", "api": "59.0"},
+			map[string]string{"id": "r67", "adapter": "lds", "api": "67.0"})
+		_, err, stderr := run(t, map[string]any{"specs": specs, "apiVersions": []string{"59.0", "67.0"}, "selectOnly": true})
+		if err == nil || !strings.Contains(stderr, "unversioned L11 spec is ambiguous") {
+			t.Fatalf("ambiguous L11 selection was not rejected: %v: %s", err, stderr)
+		}
+	})
 }
