@@ -229,6 +229,9 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		if err := vm.defaultRunAsSOQLDenial(query); err != nil {
 			return nil, err
 		}
+		if err := vm.guestUserColumnDenial(query); err != nil {
+			return nil, err
+		}
 	}
 	// Native custom-setting observations cover ordinary SOQL, query/countQuery
 	// AccessLevel overloads and their bind-map variants, query locators, cursors
@@ -4210,6 +4213,11 @@ func (vm *VM) soqlSharingUserID(query soql.Query) string {
 	}
 	if !userMode && vm.testContext != nil && vm.testContext.RunAsDepth == 0 {
 		return ""
+	}
+	if vm.guestUserReadsOnlySelf(query.Object) {
+		if id := vm.currentUserID(); id != "" {
+			return id
+		}
 	}
 	if !userMode && !vm.currentClassHasSharingMode("with sharing") {
 		return ""

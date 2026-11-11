@@ -174,7 +174,9 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 		return false
 	}
 	if vm.currentProfileHasUserType(profileID, "Guest") {
-		return false
+		// A Guest-type profile reads, creates and updates User natively and
+		// holds no other object access (guest_user_contract, API 62.0 and 67.0).
+		return strings.EqualFold(objectName, "User")
 	}
 	if method == "isAccessible" && vm.configuredUserDirectoryReadable(objectName, profileID) {
 		return true
@@ -386,6 +388,12 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	user := vm.fieldPermissionPrincipal()
 	profileID := stringField(user, "ProfileId")
 	profileName := vm.currentUserProfileName(user)
+	// A Guest-type profile has the Standard User flags on every User field
+	// except guestHiddenUserField (guest_user_contract, API 62.0 and 67.0).
+	guestUser := strings.EqualFold(objectName, "User") && vm.currentProfileHasUserType(profileID, "Guest")
+	if guestUser {
+		profileName = "Standard User"
+	}
 	if profileName == "System Administrator" {
 		// Optional custom fields on ordinary custom objects need an effective
 		// field grant even for the administrator in a freshly deployed org.
@@ -442,6 +450,9 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	}
 	if allowed, ok := vm.explicitFieldPermission(profileID, objectName, fieldName, method); ok {
 		return allowed
+	}
+	if guestUser && guestHiddenUserField(fieldName) {
+		return false
 	}
 	if (profileName == "Standard User" || profileName == "Standard Platform User") &&
 		standardProfileHiddenOptOutField(objectName, fieldName) {
@@ -521,6 +532,19 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		return false
 	}
 	return true
+}
+
+// guestHiddenUserField lists the User fields a Guest-type profile cannot read,
+// create or update although a Standard User can (guest_user_contract).
+func guestHiddenUserField(fieldName string) bool {
+	switch strings.ToLower(fieldName) {
+	case "accountid", "callcenterid", "contactid", "individualid", "profileid", "userroleid",
+		"userpreferencesapexpagesdevelopermode", "userpreferencesnewlightningreportrunpageenabled",
+		"userpreferencesreceivenonotificationsasapprover", "userpreferencesreceivenotificationsasdelegatedapprover",
+		"userpreferencesreverseopenactivitiesview":
+		return true
+	}
+	return false
 }
 
 func isBaselineSystemFieldReadableWithoutObjectAccess(fieldName string) bool {
