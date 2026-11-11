@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/dlclark/regexp2"
+
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 var errPrematureTimeout = errors.New("match timeout after 2s on input `0.0.0.0`")
@@ -190,7 +192,7 @@ func TestRegexRetryRealCPUBudget(t *testing.T) {
 	}
 	regexCPUSampleCache.Store(nil)
 	calls := 0
-	watchdog := time.Now().Add(20 * time.Second)
+	watchdog := time.Now().Add(testutil.Deadline(20 * time.Second))
 	_, err := retryPrematureRegexTimeout(200*time.Millisecond, func() (*regexp2.Match, error) {
 		calls++
 		start, available := regexProcessCPUTime()

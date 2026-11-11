@@ -19,6 +19,7 @@ import (
 	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testdaemon"
+	"github.com/glade-sh/glade/internal/testutil"
 	"github.com/glade-sh/glade/internal/testutil/toolchaininstall"
 )
 
@@ -74,7 +75,7 @@ func runHomeProjectConsumer(t *testing.T, route string) error {
 		}
 	case "DevLWC", "DevVF":
 		// Cold standard-org initialization is substantially slower under -race.
-		ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
+		ctx, cancel := context.WithTimeout(t.Context(), testutil.Deadline(90*time.Second))
 		defer cancel()
 		ready := filepath.Join(root, "ready.json")
 		args := []string{"--project", root, "--addr", "127.0.0.1:0", "--ready-file", ready, "--progress-json"}

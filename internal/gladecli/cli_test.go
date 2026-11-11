@@ -6112,7 +6112,7 @@ private class WarmOneTest {
 		if err != nil {
 			t.Fatalf("serve exit: %v", err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testutil.Deadline(5 * time.Second)):
 		t.Fatal("server did not stop")
 	}
 	if _, err := os.Stat(socket); !os.IsNotExist(err) {
