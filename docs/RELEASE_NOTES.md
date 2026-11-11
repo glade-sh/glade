@@ -38,6 +38,9 @@ v0.3.6 fixes more differences from Salesforce found with captured org behavior, 
 
 - **Flow record mapping and collection filters (62.0 and 67.0).** Autolaunched flows can map references and string literals into single records, retain mapped nulls in returned records, and use In and Not In filters with collection inputs in Get Records.
 
+- **Lightning action async work (Apex API 62.0 and 67.0).** Queueable, `@future` and platform-event work enqueued by an `@AuraEnabled` method called from an LWC or Aura component now runs after the action commits, sees the action's changes, and is discarded if the action throws or rolls back to an earlier savepoint. A failing job rolls back only itself and does not change the action's result. Under strict limit mode the 50-job caps apply to the action. This replaces the previous `UnsupportedFeature` rejection. `Database.*Async` DML, `Database.executeBatch` and `System.schedule` in an action are still rejected. Captured at 62.0 and 67.0.
+- **REST composite responses.** Missing-field errors and collection or tree rollback responses now follow the captured Salesforce status codes, error messages, and result shapes.
+
 ## v0.3.5
 
 v0.3.5 extends the supported Apex window to API 68.0, tracks the Salesforce Winter '27 release, and closes a large set of differences found by running real projects: field-level security for the default administrator, user-mode queries and DML, platform events, Flow, Visualforce markup, locale-aware strings and SOQL, and org-shape gating of standard objects. It also requires authentication on every API route of an exposed `glade server` listener. API labels list the source versions checked against captured results. The supported windows and hosted boundaries are in [release policy](RELEASE_POLICY.md#salesforce-api-versions).

@@ -12,17 +12,17 @@ import (
 func TestProcessBuilderRejectsPriorDiskRuntimeCache(t *testing.T) {
 	for _, tc := range []struct{ abi, suffix string }{
 		{"apextest-runtime-v31", ""}, {"apextest-runtime-v32", ""}, {"apextest-runtime-v32", "|stale"},
-		{"apextest-runtime-v33", "|process-builder-v036"},
-		{"apextest-runtime-v33", "|process-builder-v036-case1"},
-		{"apextest-runtime-v33", "|process-builder-v036-branched1"},
-		{"apextest-runtime-v33", "|process-builder-v036-input1"},
-		{"apextest-runtime-v33", "|process-builder-v036-case2"},
-		{"apextest-runtime-v33", "|process-builder-v036-replace1"},
-		{"apextest-runtime-v33", "|process-builder-v036-calc1"},
-		{"apextest-runtime-v33", "|process-builder-v036-datefirst1"},
-		{"apextest-runtime-v33", "|process-builder-v036-outputs1"},
-		{"apextest-runtime-v33", "|process-builder-v036-outputs2"},
-		{"apextest-runtime-v33", "|process-builder-v036-projection1"},
+		{"apextest-runtime-v34", "|process-builder-v036"},
+		{"apextest-runtime-v34", "|process-builder-v036-case1"},
+		{"apextest-runtime-v34", "|process-builder-v036-branched1"},
+		{"apextest-runtime-v34", "|process-builder-v036-input1"},
+		{"apextest-runtime-v34", "|process-builder-v036-case2"},
+		{"apextest-runtime-v34", "|process-builder-v036-replace1"},
+		{"apextest-runtime-v34", "|process-builder-v036-calc1"},
+		{"apextest-runtime-v34", "|process-builder-v036-datefirst1"},
+		{"apextest-runtime-v34", "|process-builder-v036-outputs1"},
+		{"apextest-runtime-v34", "|process-builder-v036-outputs2"},
+		{"apextest-runtime-v34", "|process-builder-v036-projection1"},
 		{"apextest-runtime-v34", ""}, {"apextest-runtime-v35", ""},
 	} {
 		t.Run(tc.abi+tc.suffix, func(t *testing.T) { testProcessBuilderRejectsRuntimeCache(t, tc.abi, tc.suffix) })

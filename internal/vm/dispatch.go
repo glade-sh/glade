@@ -880,6 +880,14 @@ platformStaticCall:
 			vm.savepoints[id] = snapshotRuntimeOrgState(vm.Org)
 		}
 		vm.emailSavepoints[id] = append([]CapturedEmail(nil), vm.capturedEmails...)
+		if vm.isolateAsyncJobFailures {
+			// Lightning action: work enqueued after the savepoint is discarded by
+			// Database.rollback (lightning_action_async_drain enqSavepoint).
+			if vm.actionAsyncSavepoints == nil {
+				vm.actionAsyncSavepoints = make(map[string]int)
+			}
+			vm.actionAsyncSavepoints[id] = len(vm.localAsyncJobs)
+		}
 		if vm.creationSavepoints == nil {
 			vm.creationSavepoints = make(map[string]recordCreationCheckpoint)
 		}
@@ -934,6 +942,10 @@ platformStaticCall:
 			*vm.Org = restored
 		}
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
+		if kept, ok := vm.actionAsyncSavepoints[idValue.Text]; ok && kept <= len(vm.localAsyncJobs) {
+			clear(vm.localAsyncJobs[kept:])
+			vm.localAsyncJobs = vm.localAsyncJobs[:kept]
+		}
 		vm.creationSavepoints[idValue.Text].restore()
 		vm.rollbackFlowPathSavepoint(idValue.Text)
 		vm.calloutPendingWork.pending = vm.calloutPendingWork.savepoints[idValue.Text]
