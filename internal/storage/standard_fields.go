@@ -1389,6 +1389,7 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 	// Preserve explicit field overrides while filling captured calculated and
 	// currency facets, repairing scalar Time references, and filling write flags.
 	enrichStandardStubWriteFlagsFromV2Describe(definition)
+	applyStandardStubRestrictedPicklists(definition)
 	applyStandardSObjectStubReadOnlyFields(definition)
 }
 

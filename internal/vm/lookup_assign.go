@@ -1732,9 +1732,10 @@ func (vm *VM) lookupSObjectSharingReasonToken(parts []string) (Value, bool) {
 	if !ok {
 		return Null, false
 	}
-	if field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist {
-		// Standard share field stubs expose RowCause as String even when the
-		// describe catalog carries the platform's sharing reason values.
+	if (field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist) || len(field.PicklistValues) == 0 {
+		// Standard share field stubs expose RowCause as String, or as a
+		// picklist without values (restricted-picklist stub typing), even when
+		// the describe catalog carries the platform's sharing reason values.
 		if storage.CapturedStandardSharingReasonObject(definition.APIName) {
 			if reason, found := storage.StandardPicklistValue(definition.APIName, fieldName, reasonName); found {
 				return String(reason), true
