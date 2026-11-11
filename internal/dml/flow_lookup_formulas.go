@@ -14,7 +14,17 @@ import (
 // LEN of an after-save $Record formula with BR() is 3).
 func (e *Engine) evaluateFlowDecisionFormula(expression string, source storage.Record, definition storage.ObjectDefinition, frame *flowFrame) (bool, bool) {
 	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(expression)), record: source, org: e.Org, definition: definition, namespace: formulaSourceNamespace("", definition), prior: e.flowPriorRecord(source.ID), userID: e.systemUserID(), permissionUserFields: e.PermissionUserFields, flowRecordContext: true, flowFinishFields: true}
+	// process_builder_shapes pri rows: ISNEW() in a criterion reads the creating save.
+	parser.isNew = frame != nil && (frame.processInterview || e.capturedMixedAfterSave) && frame.createDecision
 	parser.flowReference = func(reference string) (formulaValue, bool, bool) {
+		if frame != nil && frame.processInterview && strings.EqualFold(reference, "$User.Alias") && e.Org != nil {
+			_, user, found := storage.LookupRecordByID(e.Org.Objects["User"].Records, e.systemUserID())
+			if !found {
+				return formulaValue{}, true, false
+			}
+			alias, found := sourceRecordFieldValue(user, "Alias")
+			return formulaStorageValue(alias), true, found
+		}
 		name, _, nested := strings.Cut(reference, ".")
 		if frame == nil {
 			return formulaValue{}, false, false

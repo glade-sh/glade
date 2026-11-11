@@ -77,6 +77,7 @@ type workflowAlertXML struct {
 	Name       string                 `xml:"name"`
 	Template   string                 `xml:"template"`
 	Recipients []workflowRecipientXML `xml:"recipients"`
+	CCEmails   []string               `xml:"ccEmails"`
 }
 
 type workflowTaskXML struct {
@@ -125,6 +126,7 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
 	flowDefinitions := flowProjectRelationshipDefinitions(p)
+	flowPaths := make([]string, 0, len(p.FlowFiles))
 	for _, path := range p.FlowFiles {
 		flow, diagnostics, err := loadFlow(path, flowDefinitions)
 		if err != nil {
@@ -132,9 +134,13 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 			continue
 		}
 		idx.Flows = append(idx.Flows, flow)
+		flowPaths = append(flowPaths, path)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
 	flowValidateProjectTransformTargets(p, &idx)
+	if err := leaveUncoveredProcessesUnrun(&idx, flowPaths, flowDefinitions, project.EffectiveOrgShapeFeatures(p)); err != nil {
+		return Index{}, err
+	}
 	if err := flowRefsValidateProjectDecisions(p, &idx); err != nil {
 		return Index{}, err
 	}

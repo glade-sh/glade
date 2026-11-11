@@ -1,0 +1,3 @@
+# Native run
+
+A fresh 30-day Developer scratch org was used with the synthetic project from process_builder_review_aftercase and this fixture's flow overlay. Source metadata was deployed at API 67.0 and the synthetic field permission set assigned. Named and anonymous executions ran at API 62.0 and 67.0. The row exercises an entry-matched Case whose queue lookup finds no record, followed by the same update and action controls. The synthetic actions do not send messages. Named tests and anonymous executions deliberately raise a sentinel assertion after producing the result, rolling back their transactions. ScratchOrgInfo was verified Deleted and no ActiveScratchOrg record remained. IDs and aliases are not recorded.

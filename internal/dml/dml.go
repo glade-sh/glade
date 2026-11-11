@@ -37,6 +37,17 @@ type Engine struct {
 	// FlowActionBatchInvoker invokes one Apex action for an ordered cohort of
 	// interviews. Each request's Output callback receives its own result.
 	FlowActionBatchInvoker func(storage.FlowAction, []FlowActionRequest) error
+	// ProcessRecordUpdater saves one process element's records in one DML with
+	// the caller's Apex trigger orchestration. Without it a process's update
+	// runs record by record through updateOne.
+	ProcessRecordUpdater func([]storage.Record) ([]Result, error)
+	// ProcessRecordCreator batches the captured after-save Create Records cohort.
+	ProcessRecordCreator func([]storage.Record) ([]Result, error)
+	// ProcessActionFailure renders an Apex action's failure as "Type: message",
+	// or "" when the failure did not come from Apex.
+	ProcessActionFailure func(error) string
+	// CapturedMixedAfterSaveErrorSuffix supplies route-specific Salesforce detail.
+	CapturedMixedAfterSaveErrorSuffix func() string
 	// InvocableFlowRecordCreator routes scalar Create Records through
 	// the caller's Apex trigger orchestration. Other engines use insertOne.
 	InvocableFlowRecordCreator func(storage.Record) (Result, error)
@@ -54,19 +65,23 @@ type Engine struct {
 	RecordCreations    *RecordCreations
 	LookupHistoryScope *storage.LookupHistoryScope
 
-	workflowDepth   int
-	flowDepth       int
-	summaryOrder    []string
-	summaryUpdates  map[string]SummaryUpdate
-	automationRoll  map[string]bool
-	uniqueBatch     *uniqueBatchContext
-	activityRefresh *activityRefreshBatch
-	uniqueFieldMap  map[string]bool
-	activeValRules  map[string]bool
-	uniqueFields    map[string][]string
-	uniqueIndexes   map[string]map[string]map[storage.ID]bool
-	SummaryByChild  *SummaryRelationCache
-	subflowCache    map[string]cachedSubflow
+	capturedMixedAfterSave    bool
+	capturedCaseAfterSave     bool
+	capturedBranchedAfterSave bool
+	capturedShareReplacement  bool
+	workflowDepth             int
+	flowDepth                 int
+	summaryOrder              []string
+	summaryUpdates            map[string]SummaryUpdate
+	automationRoll            map[string]bool
+	uniqueBatch               *uniqueBatchContext
+	activityRefresh           *activityRefreshBatch
+	uniqueFieldMap            map[string]bool
+	activeValRules            map[string]bool
+	uniqueFields              map[string][]string
+	uniqueIndexes             map[string]map[string]map[storage.ID]bool
+	SummaryByChild            *SummaryRelationCache
+	subflowCache              map[string]cachedSubflow
 
 	pendingCreatedAutomation  map[storage.ID]bool
 	activeCreatedAutomationID storage.ID

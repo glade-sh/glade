@@ -175,8 +175,10 @@ type FormulaEvaluationOptions struct {
 	// FlowContext evaluates for a flow: LineFeedBR, and a stored formula field
 	// a flow formula references reads as its finished value (org capture
 	// flow_br_surfaces: LEN of $Record.<formula with BR()> is 3 in an after-save flow).
-	FlowContext bool
-	Error       *FormulaError
+	FlowContext                   bool
+	capturedAfterSaveSystemFields bool
+	capturedAfterSavePrior        *storage.Record
+	Error                         *FormulaError
 }
 
 func EvaluateRecordFormulaValueInOrgWithOptions(formula string, field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, options FormulaEvaluationOptions) (storage.Value, bool, bool) {
@@ -223,21 +225,23 @@ func EvaluateRecordFormulaValueInOrgWithOptions(formula string, field storage.Fi
 
 func parseRecordFormulaValue(formula string, field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, options FormulaEvaluationOptions) (formulaValue, bool) {
 	parser := formulaParser{
-		tokens:               tokenizeFormula(html.UnescapeString(formula)),
-		record:               record,
-		org:                  org,
-		definition:           definition,
-		evaluating:           make(map[string]bool),
-		namespace:            formulaFieldSourceNamespace("", definition, field),
-		preserveNumericNull:  options.PreserveNumericNull,
-		blankNumericAsZero:   currencyFormulaBlankAsZero(field) && !options.PreserveNumericNull,
-		formulaSurface:       options.FormulaSurface,
-		flowFinishFields:     options.FlowContext,
-		failure:              options.Error,
-		storedFormula:        options.FormulaSurface && field.Type == storage.FieldCalculated,
-		userID:               options.UserID,
-		permissionUserFields: options.PermissionUserFields,
-		setupUserID:          options.SetupUserID,
+		tokens:                        tokenizeFormula(html.UnescapeString(formula)),
+		record:                        record,
+		org:                           org,
+		definition:                    definition,
+		evaluating:                    make(map[string]bool),
+		namespace:                     formulaFieldSourceNamespace("", definition, field),
+		preserveNumericNull:           options.PreserveNumericNull,
+		blankNumericAsZero:            currencyFormulaBlankAsZero(field) && !options.PreserveNumericNull,
+		formulaSurface:                options.FormulaSurface,
+		flowFinishFields:              options.FlowContext,
+		prior:                         options.capturedAfterSavePrior,
+		capturedAfterSaveSystemFields: options.capturedAfterSaveSystemFields,
+		failure:                       options.Error,
+		storedFormula:                 options.FormulaSurface && field.Type == storage.FieldCalculated,
+		userID:                        options.UserID,
+		permissionUserFields:          options.PermissionUserFields,
+		setupUserID:                   options.SetupUserID,
 	}
 	if options.FormulaSurface {
 		parser.blankNumericAsZero = !options.PreserveNumericNull
@@ -632,11 +636,12 @@ type formulaParser struct {
 	flowRecordContext   bool
 	// flowFinishFields reads a stored formula field as its finished value
 	// (BR() as a line feed) when a flow formula references it.
-	flowFinishFields     bool
-	flowReference        func(string) (formulaValue, bool, bool)
-	userID               storage.ID
-	permissionUserFields map[string]storage.Value
-	setupUserID          storage.ID
+	flowFinishFields              bool
+	capturedAfterSaveSystemFields bool
+	flowReference                 func(string) (formulaValue, bool, bool)
+	userID                        storage.ID
+	permissionUserFields          map[string]storage.Value
+	setupUserID                   storage.ID
 }
 
 func (p *formulaParser) setupActor() storage.ID {
@@ -1258,7 +1263,7 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 // none; CreatedById, CreatedDate and LastModifiedById are blank on insert and
 // set on update. A value the record carries in its fields wins.
 func (p *formulaParser) validationSystemFieldValue(record storage.Record, field string, fieldDef storage.Field) (formulaValue, bool) {
-	if !p.validationRule || record.HasExplicitNull(field) {
+	if (!p.validationRule && !(p.capturedAfterSaveSystemFields && strings.EqualFold(field, "CreatedDate"))) || record.HasExplicitNull(field) {
 		return formulaValue{}, false
 	}
 	if _, present := formulaRecordField(record, field); present {
@@ -2654,10 +2659,15 @@ func (e *Engine) setupFormulaEvaluationOptions() FormulaEvaluationOptions {
 	return options
 }
 
+// The mixed after-save rows reference prior fields directly in Flow formulas.
+// The matcher limits these references to simple field names outside literals.
+var capturedAfterSavePriorReference = regexp.MustCompile(`(?i)\$Record__Prior\.([A-Za-z_][A-Za-z0-9_]*)`)
+
 // flowFormulaEvaluationOptions is setupFormulaEvaluationOptions for a flow.
 func (e *Engine) flowFormulaEvaluationOptions() FormulaEvaluationOptions {
 	options := e.setupFormulaEvaluationOptions()
 	options.FlowContext = true
+	options.capturedAfterSaveSystemFields = e != nil && e.capturedMixedAfterSave
 	return options
 }
 

@@ -1,0 +1,5 @@
+api	route	case	actual
+62.0	istest	assignment	process:false:Route:user|process:true:Route:user|flow:false:Route:user|flow:true:Route:user|control:false:Other:user|control:true:Other:user|matched:false:Route:user|matched:true:Route:queue
+62.0	anonymous	assignment	process:false:Route:user|process:true:Route:user|flow:false:Route:user|flow:true:Route:user|control:false:Other:user|control:true:Other:user|matched:false:Route:user|matched:true:Route:queue
+67.0	istest	assignment	process:false:Route:user|process:true:Route:user|flow:false:Route:user|flow:true:Route:user|control:false:Other:user|control:true:Other:user|matched:false:Route:user|matched:true:Route:queue
+67.0	anonymous	assignment	process:false:Route:user|process:true:Route:user|flow:false:Route:user|flow:true:Route:user|control:false:Other:user|control:true:Other:user|matched:false:Route:user|matched:true:Route:queue

@@ -341,11 +341,129 @@ type flowValueXML struct {
 }
 
 func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (Flow, []diagnostic.Diagnostic, error) {
-	data, err := os.ReadFile(path)
+	source, err := os.ReadFile(path)
 	if err != nil {
 		return Flow{}, nil, err
 	}
-	data, processBuilderSkip := normalizeProcessBuilderFlow(data)
+	data, processBuilderSkip := normalizeProcessBuilderFlow(source, definitions...)
+	flow, diagnostics, err := compileFlowSource(path, data, processBuilderSkip, definitions...)
+	if err != nil || processBuilderSkip != "" || bytes.Equal(data, source) {
+		return flow, diagnostics, err
+	}
+	// A process runs whole or not at all: a part the graph cannot model leaves
+	// it unrun, as an uncaptured shape does.
+	part := processBuilderUnmodeledPart(flow, diagnostics)
+	if part == "" {
+		part = processBuilderInlineFormulaOperands(flow, data)
+	}
+	if part != "" {
+		return compileFlowSource(path, source, part, definitions...)
+	}
+	return flow, diagnostics, nil
+}
+
+// processBuilderInlineFormulaOperands moves a criterion whose right operand is
+// a process formula into its branch formula, so the operand is evaluated with
+// the record (cgl dayafter and dayon rows). It names any such criterion it
+// cannot move.
+func processBuilderInlineFormulaOperands(flow Flow, data []byte) string {
+	var raw flowXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return "source"
+	}
+	formulas := flowFormulaMapWithConstants(raw.Formulas, raw.Constants)
+	operators := map[string]string{"equals": "=", "notequal": "<>", "greaterthan": ">", "greaterthanorequalto": ">=", "lessthan": "<", "lessthanorequalto": "<="}
+	unmoved := ""
+	var steps func([]storage.FlowStep)
+	branch := func(item *storage.FlowBranch) {
+		kept := item.Criteria[:0:0]
+		for _, criterion := range item.Criteria {
+			reference, isReference := strings.CutPrefix(strings.TrimSpace(criterion.Value), "{!")
+			reference = strings.TrimSuffix(reference, "}")
+			expression, isFormula := formulas[strings.ToLower(reference)]
+			if !isReference || !isFormula {
+				kept = append(kept, criterion)
+				continue
+			}
+			operator, known := operators[strings.ToLower(strings.TrimSpace(criterion.Operation))]
+			if !known || strings.Contains(criterion.Field, "$") {
+				unmoved = fmt.Sprintf("criterion on %q", criterion.Field)
+				continue
+			}
+			moved := criterion.Field + " " + operator + " (" + expression + ")"
+			if current := strings.TrimSpace(item.Formula); current != "" {
+				moved = "AND(" + current + ", " + moved + ")"
+			}
+			item.Formula = moved
+		}
+		item.Criteria = kept
+		steps(item.Steps)
+	}
+	steps = func(list []storage.FlowStep) {
+		for i := range list {
+			for j := range list[i].Branches {
+				branch(&list[i].Branches[j])
+			}
+		}
+	}
+	for i := range flow.Rules {
+		steps(flow.Rules[i].Steps)
+		for j := range flow.Rules[i].Branches {
+			branch(&flow.Rules[i].Branches[j])
+		}
+		for _, list := range flow.Rules[i].StepTargets {
+			steps(list)
+		}
+	}
+	return unmoved
+}
+
+func processBuilderUnmodeledPart(flow Flow, diagnostics []diagnostic.Diagnostic) string {
+	for _, item := range diagnostics {
+		if item.Code == "GLADEAUTO002" {
+			_, message, found := strings.Cut(item.Message, ": ")
+			if !found {
+				message = item.Message
+			}
+			return message
+		}
+	}
+	for _, rule := range flow.Rules {
+		if part := processBuilderStepsUnmodeled(rule.Steps); part != "" {
+			return part
+		}
+		for _, branch := range rule.Branches {
+			if part := processBuilderStepsUnmodeled(branch.Steps); part != "" {
+				return part
+			}
+		}
+		for _, steps := range rule.StepTargets {
+			if part := processBuilderStepsUnmodeled(steps); part != "" {
+				return part
+			}
+		}
+	}
+	return ""
+}
+
+func processBuilderStepsUnmodeled(steps []storage.FlowStep) string {
+	for _, step := range steps {
+		switch step.Kind {
+		case "reference", "recordUpdate", "action", "assignment":
+		case "decision":
+			for _, branch := range step.Branches {
+				if part := processBuilderStepsUnmodeled(branch.Steps); part != "" {
+					return part
+				}
+			}
+		default:
+			return fmt.Sprintf("step %q", step.Kind)
+		}
+	}
+	return ""
+}
+
+func compileFlowSource(path string, data []byte, processBuilderSkip string, definitions ...map[string]storage.ObjectDefinition) (Flow, []diagnostic.Diagnostic, error) {
 	var raw flowXML
 	if err := xml.Unmarshal(data, &raw); err != nil {
 		return Flow{}, nil, err
@@ -375,6 +493,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 	flowResolveStandardRelationshipUpdates(&raw, sourceDefinitions...)
 	formulas := flowFormulaMapWithConstants(raw.Formulas, raw.Constants)
 	variables := flowVariableMap(raw.Variables)
+	flowProcessPriorValueSources(raw, variables)
 	frameFormulas := flowFrameFormulaMap(raw, variables)
 	raw.frameFormulas = frameFormulas
 	raw.decisionFormulas = flowDecisionFormulaMap(raw, variables)
@@ -456,6 +575,12 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 		TextTemplates:                          flowTextTemplateMap(raw.TextTemplates),
 	}
 	rule.Variables = flowDeclarationVariables(raw.Variables)
+	if strings.EqualFold(raw.ProcessType, "AutoLaunchedFlow") && strings.TrimSpace(raw.Start.TriggerType) == "" && len(raw.Variables) == 1 && len(raw.Constants) == 1 && len(raw.ActionCalls) == 2 && len(raw.Assignments) == 1 && len(raw.RecordUpdates) == 1 && len(raw.RecordLookups) == 0 && len(raw.Decisions) == 0 && strings.EqualFold(raw.ActionCalls[0].ActionName, raw.ActionCalls[1].ActionName) {
+		constant := raw.Constants[0]
+		if strings.EqualFold(constant.DataType, "String") && strings.TrimSpace(constant.Name) != "" && constant.Value.StringValue != "" {
+			rule.ProcessStringConstants = map[string]string{strings.ToLower(strings.TrimSpace(constant.Name)): constant.Value.StringValue}
+		}
+	}
 
 	routedDecisions := false
 	for _, filter := range raw.Start.Filters {
@@ -593,7 +718,7 @@ func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (
 			continue
 		}
 		if !flowUpdatesTriggeringRecord(update.InputReference) {
-			if _, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups); !ok && !orderedGraph {
+			if _, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups, strings.EqualFold(raw.ProcessType, "Workflow")); !ok && !orderedGraph {
 				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record update %q does not target the triggering record", firstNonBlank(update.Name, update.Label))))
 			}
 			continue
@@ -2330,7 +2455,7 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 				if len(updates) > 0 {
 					branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "fieldUpdate", FaultTarget: fault, FieldUpdates: updates})
 				}
-			} else if recordUpdate, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups); ok {
+			} else if recordUpdate, ok := modeledFlowRecordUpdate(update, formulas, variables, flowConstantMap(raw.Constants), raw.RecordLookups, strings.EqualFold(raw.ProcessType, "Workflow")); ok {
 				branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "recordUpdate", FaultTarget: fault, RecordUpdate: recordUpdate})
 			} else {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("record update %q is not modeled in routed decision branch", firstNonBlank(update.Name, update.Label))})
@@ -2894,7 +3019,7 @@ func modeledFlowRecordUpdates(update flowRecordUpdateXML, formulas map[string]st
 	return updates, true
 }
 
-func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]string, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML) (storage.FlowRecordUpdate, bool) {
+func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]string, variables map[string]flowVariableXML, constants map[string]flowValueXML, lookups []flowRecordLookupXML, process bool) (storage.FlowRecordUpdate, bool) {
 	name := firstNonBlank(update.Name, update.Label)
 	inputReference := strings.TrimSpace(update.InputReference)
 	objectName := strings.TrimSpace(update.Object)
@@ -2919,10 +3044,14 @@ func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]str
 	if name == "" || objectName == "" {
 		return storage.FlowRecordUpdate{}, false
 	}
-	if logic := strings.TrimSpace(update.FilterLogic); logic != "" && !strings.EqualFold(logic, "and") {
+	logic := strings.TrimSpace(update.FilterLogic)
+	if logic != "" && !strings.EqualFold(logic, "and") && (!process || !capturedProcessUpdateAlternatives(update)) {
 		return storage.FlowRecordUpdate{}, false
 	}
 	out := storage.FlowRecordUpdate{Name: name, ObjectName: objectName, InputReference: inputReference}
+	if logic != "" && !strings.EqualFold(logic, "and") {
+		out.CriteriaLogic = logic
+	}
 	for _, filter := range update.Filters {
 		field := trimObjectPrefix(strings.TrimSpace(filter.Field))
 		if field == "" {
@@ -2950,6 +3079,30 @@ func modeledFlowRecordUpdate(update flowRecordUpdateXML, formulas map[string]str
 		})
 	}
 	return out, true
+}
+
+// capturedProcessUpdateAlternatives bounds routed record-update filters to
+// the five-predicate form observed in process_builder_review routedcontrol.
+func capturedProcessUpdateAlternatives(update flowRecordUpdateXML) bool {
+	logic := strings.ToUpper(strings.Join(strings.Fields(update.FilterLogic), ""))
+	if logic != "1AND(2OR3OR4OR5)" || update.InputReference != "" || len(update.Filters) != 5 || len(update.Fields) != 1 || update.FaultConnector.TargetReference != "" {
+		return false
+	}
+	id := update.Filters[0]
+	if !strings.EqualFold(id.Field, "Id") || !strings.EqualFold(id.Operator, "EqualTo") || !strings.EqualFold(id.Value.ElementReference, "$Record.Id") {
+		return false
+	}
+	field := strings.TrimSpace(update.Filters[1].Field)
+	if field == "" || strings.EqualFold(field, "Id") {
+		return false
+	}
+	for _, filter := range update.Filters[1:] {
+		if !strings.EqualFold(filter.Field, field) || !strings.EqualFold(filter.Operator, "EqualTo") || filter.Value.StringValue == "" || filter.Value.ElementReference != "" {
+			return false
+		}
+	}
+	assignment := update.Fields[0]
+	return assignment.Field != "" && assignment.Value.StringValue != "" && assignment.Value.ElementReference == ""
 }
 
 func flowBranchHasEffects(branch storage.FlowBranch) bool {
@@ -3448,12 +3601,50 @@ type processBuilderXML struct {
 	} `xml:",any"`
 	Decisions []struct {
 		Rules []struct {
-			Name string `xml:"name"`
+			Name       string `xml:"name"`
+			Conditions []struct {
+				LeftValueReference string `xml:"leftValueReference"`
+				Operator           string `xml:"operator"`
+				RightValue         struct {
+					ElementReference string `xml:"elementReference"`
+					BooleanValue     string `xml:"booleanValue"`
+				} `xml:"rightValue"`
+			} `xml:"conditions"`
 		} `xml:"rules"`
 	} `xml:"decisions"`
 	ActionCalls []struct {
 		ActionType string `xml:"actionType"`
+		Inputs     []struct {
+			Value struct {
+				ElementReference string `xml:"elementReference"`
+			} `xml:"value"`
+		} `xml:"inputParameters"`
 	} `xml:"actionCalls"`
+	Assignments []struct {
+		Name string `xml:"name"`
+	} `xml:"assignments"`
+	Formulas []struct {
+		Name       string `xml:"name"`
+		DataType   string `xml:"dataType"`
+		Expression string `xml:"expression"`
+	} `xml:"formulas"`
+	RecordUpdates []struct {
+		Object      string `xml:"object"`
+		FilterLogic string `xml:"filterLogic"`
+		Filters     []struct {
+			Field    string `xml:"field"`
+			Operator string `xml:"operator"`
+			Value    struct {
+				ElementReference string `xml:"elementReference"`
+			} `xml:"value"`
+		} `xml:"filters"`
+		InputAssignments []struct {
+			Field string `xml:"field"`
+			Value struct {
+				ElementReference string `xml:"elementReference"`
+			} `xml:"value"`
+		} `xml:"inputAssignments"`
+	} `xml:"recordUpdates"`
 	Variables []struct {
 		Name string `xml:"name"`
 	} `xml:"variables"`
@@ -3479,14 +3670,14 @@ type processBuilderXML struct {
 // decision calls an Apex action with the record). Other sources are returned
 // unchanged.
 //
-// Only the captured shape runs: an active onAllChanges process with one
-// criteria node (one decision, one rule) whose single immediate action is an
-// Apex action, and no resources besides the two object variables. Any other
-// active process (record updates, email alerts, flow or Chatter actions,
-// scheduled actions, several criteria, onCreateOnly, extra variables) is left
-// unrun, as before, and skip names the shape for an unsupported diagnostic,
-// so it never half-runs.
-func normalizeProcessBuilderFlow(data []byte) (out []byte, skip string) {
+// Only captured shapes run (process_builder_wait, process_builder_shapes): an
+// active onAllChanges or onCreateOnly process of decisions, record updates,
+// Apex, flow and email alert actions, with no resources besides the two object
+// variables and the wait-start stamp, and criteria the rows cover. Any other
+// active process (scheduled actions, Chatter actions, record creates, a recursion
+// counter, an uncaptured operator or global) is left unrun, as before, and skip
+// names the shape for an unsupported diagnostic, so it never half-runs.
+func normalizeProcessBuilderFlow(data []byte, definitions ...map[string]storage.ObjectDefinition) (out []byte, skip string) {
 	if !bytes.Contains(data, []byte("<processType>Workflow</processType>")) {
 		return data, ""
 	}
@@ -3496,6 +3687,10 @@ func normalizeProcessBuilderFlow(data []byte) (out []byte, skip string) {
 	}
 	if !flowActive(pb.Status) {
 		return data, ""
+	}
+	// A source-tool namespace token has no org row: a deploy tool replaces it.
+	if bytes.Contains(data, []byte("%%%NAMESPACE")) {
+		return data, "namespace token"
 	}
 	var objectType, triggerType, current, old string
 	for _, item := range pb.Metadata {
@@ -3513,11 +3708,16 @@ func normalizeProcessBuilderFlow(data []byte) (out []byte, skip string) {
 	if objectType == "" || current == "" {
 		return data, ""
 	}
-	if triggerType != "onAllChanges" {
+	recordTriggerType := ""
+	switch triggerType {
+	case "onAllChanges":
+		recordTriggerType = "CreateAndUpdate"
+	case "onCreateOnly":
+		recordTriggerType = "Create"
+	default:
 		return data, fmt.Sprintf("TriggerType %q", triggerType)
 	}
-	recordTriggerType := "CreateAndUpdate"
-	if skip := processBuilderUncoveredShape(pb, current, old); skip != "" {
+	if skip := processBuilderUncoveredShape(pb, data, current, old, definitions...); skip != "" {
 		return data, skip
 	}
 	text := string(data)
@@ -3529,6 +3729,7 @@ func normalizeProcessBuilderFlow(data []byte) (out []byte, skip string) {
 		text = strings.ReplaceAll(text, "<elementReference>"+variable+"</elementReference>", "<elementReference>"+record+"</elementReference>")
 		text = strings.ReplaceAll(text, "<elementReference>"+variable+".", "<elementReference>"+record+".")
 		text = strings.ReplaceAll(text, "<leftValueReference>"+variable+".", "<leftValueReference>"+record+".")
+		text = strings.ReplaceAll(text, "<leftValueReference>"+variable+"</leftValueReference>", "<leftValueReference>"+record+"</leftValueReference>")
 		text = strings.ReplaceAll(text, "<assignToReference>"+variable+".", "<assignToReference>"+record+".")
 		text = strings.ReplaceAll(text, "<inputReference>"+variable+"</inputReference>", "<inputReference>"+record+"</inputReference>")
 		// The declaration would shadow the record resource.
@@ -3546,29 +3747,998 @@ func normalizeProcessBuilderFlow(data []byte) (out []byte, skip string) {
 }
 
 // processBuilderUncoveredShape names the first part of a process outside the
-// process_builder_wait shape, or returns "".
-func processBuilderUncoveredShape(pb processBuilderXML, current, old string) string {
+// captured shapes, or returns "".
+func processBuilderUncoveredShape(pb processBuilderXML, data []byte, current, old string, definitions ...map[string]storage.ObjectDefinition) string {
+	var startVariable string
 	for _, element := range pb.Elements {
 		switch element.XMLName.Local {
 		case "apiVersion", "label", "description", "interviewLabel", "processType", "status", "startElementReference",
-			"processMetadataValues", "formulas", "variables", "decisions", "actionCalls":
+			"processMetadataValues", "formulas", "variables", "decisions", "actionCalls", "recordUpdates", "areMetricsLoggedToDataCloud", "isTemplate":
 		default:
 			return fmt.Sprintf("element %q", element.XMLName.Local)
 		}
 	}
-	if len(pb.Decisions) != 1 || len(pb.Decisions[0].Rules) != 1 {
-		return fmt.Sprintf("%d criteria nodes", len(pb.Decisions))
+	if len(pb.Assignments) > 0 {
+		var ok bool
+		startVariable, ok = processBuilderCapturedWaitStart(data, current, old)
+		if !ok {
+			return fmt.Sprintf("assignment %q with uncaptured start shape", strings.TrimSpace(pb.Assignments[0].Name))
+		}
 	}
-	if len(pb.ActionCalls) != 1 {
-		return fmt.Sprintf("%d immediate actions", len(pb.ActionCalls))
-	}
-	if actionType := strings.TrimSpace(pb.ActionCalls[0].ActionType); !strings.EqualFold(actionType, "apex") {
-		return fmt.Sprintf("actionType %q", actionType)
+	for _, action := range pb.ActionCalls {
+		switch actionType := strings.TrimSpace(action.ActionType); strings.ToLower(actionType) {
+		case "apex", "flow", "emailalert":
+		default:
+			return fmt.Sprintf("actionType %q", actionType)
+		}
 	}
 	for _, variable := range pb.Variables {
-		if name := strings.TrimSpace(variable.Name); name != current && name != old {
-			return fmt.Sprintf("variable %q", name)
+		name := strings.TrimSpace(variable.Name)
+		if name == current || name == old || (startVariable != "" && strings.EqualFold(name, startVariable)) {
+			continue
+		}
+		return fmt.Sprintf("variable %q", name)
+	}
+	return processBuilderUncoveredOperand(pb, current, definitions...)
+}
+
+// processBuilderUncoveredOperand names the first criterion, filter or value the
+// process_builder_shapes rows do not cover. Native evaluates these, so running
+// them with a guess or failing the save at run time would both be wrong: an
+// operator without a row, a global such as $User or $Setup, and a field right
+// operand other than the current record's under equals or not equals.
+func processBuilderUncoveredOperand(pb processBuilderXML, current string, definitions ...map[string]storage.ObjectDefinition) string {
+	formulas := make(map[string]bool, len(pb.Formulas))
+	for _, formula := range pb.Formulas {
+		name := strings.TrimSpace(formula.Name)
+		formulas[strings.ToLower(name)] = true
+		globalAlias := processBuilderCapturedUserAliasFormula(formula.Expression) && strings.EqualFold(formula.DataType, "Boolean") && processBuilderCapturedAliasUsage(pb, name)
+		valueResource := processBuilderCapturedValueResource(pb, name, formula.DataType, formula.Expression, current, definitions...)
+		pickChanged := processBuilderCapturedPickChanged(pb, name, formula.DataType, formula.Expression, current, definitions...)
+		formatFormula := processBuilderCapturedFormatFormula(pb, name, formula.DataType, formula.Expression, current, definitions...)
+		priorBlank := processBuilderCapturedPriorBlankFormula(pb, name, formula.DataType, formula.Expression, current, definitions...)
+		if strings.Contains(formula.Expression, "$") && !globalAlias && !valueResource {
+			return fmt.Sprintf("formula %q reading a global", name)
+		}
+		if function := processBuilderUnknownFunction(formula.Expression); function != "" {
+			return fmt.Sprintf("formula %q calling %s", name, function)
+		}
+		if !globalAlias && !valueResource && !pickChanged && !formatFormula && !priorBlank && (!processBuilderCapturedFormula(formula.Expression, current) || !processBuilderCapturedFormulaUse(pb, name, formula.DataType, formula.Expression, current, definitions...)) {
+			return fmt.Sprintf("formula %q with uncaptured expression or usage", name)
+		}
+	}
+	for _, decision := range pb.Decisions {
+		for _, rule := range decision.Rules {
+			for _, condition := range rule.Conditions {
+				operator := strings.TrimSpace(condition.Operator)
+				switch strings.ToLower(operator) {
+				case "equalto", "notequalto", "greaterthan", "greaterthanorequalto", "isnull":
+				default:
+					return fmt.Sprintf("operator %q", operator)
+				}
+				left := strings.TrimSpace(condition.LeftValueReference)
+				if strings.Contains(left, "$") {
+					return fmt.Sprintf("reference %q", left)
+				}
+				right := strings.TrimSpace(condition.RightValue.ElementReference)
+				if right == "" || formulas[strings.ToLower(right)] {
+					continue
+				}
+				_, field := strings.CutPrefix(right, current+".")
+				equality := strings.EqualFold(operator, "EqualTo") || strings.EqualFold(operator, "NotEqualTo")
+				if !field || !equality {
+					return fmt.Sprintf("right operand %q with operator %q", right, operator)
+				}
+			}
+		}
+	}
+	for _, update := range pb.RecordUpdates {
+		if logic := strings.TrimSpace(update.FilterLogic); logic != "" && !strings.EqualFold(logic, "and") {
+			if len(definitions) == 0 || len(update.Filters) != 5 || len(update.InputAssignments) != 1 {
+				return "routed record update without captured field types"
+			}
+			var def storage.ObjectDefinition
+			for name, candidate := range definitions[0] {
+				if strings.EqualFold(name, update.Object) {
+					def = candidate
+					break
+				}
+			}
+			filter, okFilter := storage.ResolveFieldName(def, "", update.Filters[1].Field)
+			assignment, okAssignment := storage.ResolveFieldName(def, "", update.InputAssignments[0].Field)
+			if !okFilter || !okAssignment {
+				return "routed record update with uncaptured field types"
+			}
+			filterType, assignmentType := def.Fields[filter].Type, def.Fields[assignment].Type
+			text := filterType == storage.FieldString && assignmentType == storage.FieldString
+			picklist := filterType == storage.FieldPicklist && assignmentType == storage.FieldPicklist && strings.EqualFold(filter, assignment)
+			if !text && !picklist {
+				return "routed record update with uncaptured field types"
+			}
+		}
+		for _, filter := range update.Filters {
+			if operator := strings.TrimSpace(filter.Operator); !strings.EqualFold(operator, "EqualTo") {
+				return fmt.Sprintf("record update filter operator %q", operator)
+			}
+			if reference := strings.TrimSpace(filter.Value.ElementReference); strings.Contains(reference, "$") {
+				return fmt.Sprintf("reference %q", reference)
+			}
+		}
+		for _, assignment := range update.InputAssignments {
+			if reference := strings.TrimSpace(assignment.Value.ElementReference); strings.Contains(reference, "$") {
+				return fmt.Sprintf("reference %q", reference)
+			}
 		}
 	}
 	return ""
+}
+
+var (
+	processBuilderFormulaStrings = regexp.MustCompile(`"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'`)
+	processBuilderFormulaCalls   = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)\s*\(`)
+)
+
+// processBuilderKnownFunctions lists what the formula evaluator reads. Another
+// function would write its source text or stop the interview, so such a process
+// stays unrun.
+var processBuilderKnownFunctions = map[string]bool{
+	"ABS": true, "ADDMONTHS": true, "AND": true, "BEGINS": true, "BLANKVALUE": true, "BR": true, "CASE": true, "CASESAFEID": true,
+	"CEILING": true, "CONTAINS": true, "DATE": true, "DATETIMEVALUE": true, "DATEVALUE": true, "DAY": true, "DAYOFYEAR": true, "EXP": true,
+	"FIND": true, "FLOOR": true, "IF": true, "IMAGE": true, "INCLUDES": true, "ISBLANK": true, "ISCHANGED": true, "ISNEW": true,
+	"ISNULL": true, "ISNUMBER": true, "ISPICKVAL": true, "LEFT": true, "LEN": true, "LN": true, "LOG": true, "LOWER": true, "LPAD": true,
+	"MAX": true, "MID": true, "MIN": true, "MOD": true, "MONTH": true, "NOT": true, "NOW": true, "NULLVALUE": true, "OR": true, "POWER": true,
+	"PRIORVALUE": true, "REGEX": true, "RIGHT": true, "ROUND": true, "RPAD": true, "SQRT": true, "SUBSTITUTE": true, "TEXT": true,
+	"TIMEVALUE": true, "TODAY": true, "TRIM": true, "UPPER": true, "VALUE": true, "WEEKDAY": true, "YEAR": true,
+}
+
+func processBuilderUnknownFunction(expression string) string {
+	bare := processBuilderFormulaStrings.ReplaceAllString(html.UnescapeString(expression), `""`)
+	for _, call := range processBuilderFormulaCalls.FindAllStringSubmatch(bare, -1) {
+		if !processBuilderKnownFunctions[strings.ToUpper(call[1])] {
+			return call[1] + "()"
+		}
+	}
+	return ""
+}
+
+func processBuilderFormulaExtraUse(pb processBuilderXML, name string) bool {
+	for _, action := range pb.ActionCalls {
+		for _, input := range action.Inputs {
+			if strings.EqualFold(input.Value.ElementReference, name) {
+				return true
+			}
+		}
+	}
+	for _, update := range pb.RecordUpdates {
+		for _, filter := range update.Filters {
+			if strings.EqualFold(filter.Value.ElementReference, name) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// processBuilderCapturedAliasUsage admits the alias resource only as the
+// true-valued decision criterion observed by globalcontrol.
+func processBuilderCapturedAliasUsage(pb processBuilderXML, name string) bool {
+	if processBuilderFormulaExtraUse(pb, name) {
+		return false
+	}
+	found := 0
+	for _, decision := range pb.Decisions {
+		for _, rule := range decision.Rules {
+			for _, condition := range rule.Conditions {
+				if strings.EqualFold(condition.RightValue.ElementReference, name) {
+					return false
+				}
+				if strings.EqualFold(condition.LeftValueReference, name) {
+					if !strings.EqualFold(condition.Operator, "EqualTo") || !strings.EqualFold(condition.RightValue.BooleanValue, "true") {
+						return false
+					}
+					found++
+				}
+			}
+		}
+	}
+	for _, update := range pb.RecordUpdates {
+		for _, assignment := range update.InputAssignments {
+			if strings.EqualFold(assignment.Value.ElementReference, name) {
+				return false
+			}
+		}
+	}
+	return found == 1
+}
+
+// processBuilderCapturedPickChanged recognizes the captured change/picklist
+// decision and requires the participating fields to have the observed types.
+func processBuilderCapturedPickChanged(pb processBuilderXML, name, dataType, expression, current string, definitions ...map[string]storage.ObjectDefinition) bool {
+	if !strings.EqualFold(dataType, "Boolean") || len(definitions) == 0 || !processBuilderCapturedAliasUsage(pb, name) {
+		return false
+	}
+	field := `\{!\s*` + regexp.QuoteMeta(current) + `\.([A-Za-z_][A-Za-z0-9_]*)\s*\}`
+	pattern := `(?i)^\s*ISCHANGED\s*\(\s*` + field + `\s*\)\s*&&\s*ISPICKVAL\s*\(\s*` + field + `\s*,\s*"[^"\\]*"\s*\)\s*&&\s*\(\s*` + field + `\s*=\s*FALSE\s*\)\s*$`
+	match := regexp.MustCompile(pattern).FindStringSubmatch(html.UnescapeString(expression))
+	if len(match) != 4 || !strings.EqualFold(match[1], match[2]) {
+		return false
+	}
+	var objectName string
+	for _, item := range pb.Metadata {
+		if item.Name == "ObjectType" {
+			objectName = strings.TrimSpace(item.Value.StringValue)
+			break
+		}
+	}
+	var def storage.ObjectDefinition
+	for object, candidate := range definitions[0] {
+		if strings.EqualFold(object, objectName) {
+			def = candidate
+			break
+		}
+	}
+	pick, okPick := storage.ResolveFieldName(def, "", match[1])
+	flag, okFlag := storage.ResolveFieldName(def, "", match[3])
+	return okPick && okFlag && def.Fields[pick].Type == storage.FieldPicklist && def.Fields[flag].Type == storage.FieldBoolean
+}
+
+// processBuilderCapturedValueResource admits only the direct user and clock
+// formula resources assigned to matching field types in the userclock rows.
+func processBuilderCapturedValueResource(pb processBuilderXML, name, dataType, expression, current string, definitions ...map[string]storage.ObjectDefinition) bool {
+	if processBuilderFormulaExtraUse(pb, name) {
+		return false
+	}
+	var expected storage.FieldType
+	wrappedUser := strings.EqualFold(strings.TrimSpace(expression), "{!$User.Id}")
+	userID := wrappedUser || strings.EqualFold(strings.TrimSpace(expression), "$User.Id")
+	switch {
+	case userID && strings.EqualFold(dataType, "String"):
+		expected = storage.FieldString
+	case strings.EqualFold(strings.TrimSpace(expression), "TODAY()") && strings.EqualFold(dataType, "Date"):
+		expected = storage.FieldDate
+	case strings.EqualFold(strings.TrimSpace(expression), "NOW()") && strings.EqualFold(dataType, "DateTime"):
+		expected = storage.FieldDateTime
+	default:
+		return false
+	}
+	if len(definitions) == 0 {
+		return false
+	}
+	for _, decision := range pb.Decisions {
+		for _, rule := range decision.Rules {
+			for _, condition := range rule.Conditions {
+				if strings.EqualFold(condition.LeftValueReference, name) || strings.EqualFold(condition.RightValue.ElementReference, name) {
+					return false
+				}
+			}
+		}
+	}
+	for _, other := range pb.Formulas {
+		if !strings.EqualFold(other.Name, name) && strings.Contains(strings.ToLower(other.Expression), strings.ToLower("{!"+name+"}")) {
+			return false
+		}
+	}
+	found := 0
+	for _, update := range pb.RecordUpdates {
+		for _, assignment := range update.InputAssignments {
+			if !strings.EqualFold(assignment.Value.ElementReference, name) {
+				continue
+			}
+			if len(update.Filters) != 1 || !strings.EqualFold(update.Filters[0].Field, "Id") || !strings.EqualFold(update.Filters[0].Operator, "EqualTo") || !strings.EqualFold(update.Filters[0].Value.ElementReference, current+".Id") {
+				return false
+			}
+			var def storage.ObjectDefinition
+			for object, candidate := range definitions[0] {
+				if strings.EqualFold(object, update.Object) {
+					def = candidate
+					break
+				}
+			}
+			if len(update.InputAssignments) != 1 {
+				// Only the paired User lookup and NOW DateTime assignments are captured.
+				if len(update.InputAssignments) != 2 {
+					return false
+				}
+				user, clock := false, false
+				for _, item := range update.InputAssignments {
+					fieldName, ok := storage.ResolveFieldName(def, "", item.Field)
+					if !ok {
+						return false
+					}
+					fd := def.Fields[fieldName]
+					for _, f := range pb.Formulas {
+						if !strings.EqualFold(item.Value.ElementReference, f.Name) {
+							continue
+						}
+						if (strings.EqualFold(strings.TrimSpace(f.Expression), "$User.Id") || strings.EqualFold(strings.TrimSpace(f.Expression), "{!$User.Id}")) && strings.EqualFold(f.DataType, "String") && fd.Type == storage.FieldReference && len(fd.ReferenceTo) == 1 && strings.EqualFold(fd.ReferenceTo[0], "User") {
+							user = true
+						}
+						if strings.EqualFold(strings.TrimSpace(f.Expression), "NOW()") && strings.EqualFold(f.DataType, "DateTime") && fd.Type == storage.FieldDateTime {
+							clock = true
+						}
+					}
+				}
+				if !user || !clock {
+					return false
+				}
+			}
+			field, ok := storage.ResolveFieldName(def, "", assignment.Field)
+			if !ok {
+				return false
+			}
+			fieldDefinition := def.Fields[field]
+			matches := !wrappedUser && fieldDefinition.Type == expected
+			if userID && fieldDefinition.Type == storage.FieldReference && len(fieldDefinition.ReferenceTo) == 1 && strings.EqualFold(fieldDefinition.ReferenceTo[0], "User") {
+				matches = true
+			}
+			if !matches {
+				return false
+			}
+			found++
+		}
+	}
+	return found == 1
+}
+
+// processBuilderCapturedPriorBlankFormula bounds the IF/ISBLANK/PRIORVALUE
+// Boolean decision captured in process_builder_review_prior.
+func processBuilderCapturedPriorBlankFormula(pb processBuilderXML, name, dataType, expression, current string, definitions ...map[string]storage.ObjectDefinition) bool {
+	if !strings.EqualFold(dataType, "Boolean") || len(definitions) == 0 || !processBuilderCapturedAliasUsage(pb, name) {
+		return false
+	}
+	field := `\{!\s*` + regexp.QuoteMeta(current) + `\.([A-Za-z_][A-Za-z0-9_]*)\s*\}`
+	pattern := `(?i)^\s*IF\s*\(\s*ISBLANK\s*\(\s*` + field + `\s*\)\s*,\s*TRUE\s*,\s*PRIORVALUE\s*\(\s*` + field + `\s*\)\s*<>\s*` + field + `\s*\)\s*$`
+	match := regexp.MustCompile(pattern).FindStringSubmatch(html.UnescapeString(expression))
+	if len(match) != 4 || !strings.EqualFold(match[2], match[3]) || strings.EqualFold(match[1], match[2]) {
+		return false
+	}
+	var objectName string
+	for _, meta := range pb.Metadata {
+		if strings.EqualFold(meta.Name, "ObjectType") {
+			objectName = meta.Value.StringValue
+			break
+		}
+	}
+	var def storage.ObjectDefinition
+	for object, candidate := range definitions[0] {
+		if strings.EqualFold(object, objectName) {
+			def = candidate
+			break
+		}
+	}
+	if storage.IsKnownStandardObject(objectName) {
+		def = def.Clone()
+		if def.APIName == "" {
+			def.APIName = objectName
+		}
+		if strings.EqualFold(def.Metadata[processBuilderPersonAccountsFeature], "true") {
+			storage.EnsureStandardObjectFieldsForFeatures(&def, []string{"PersonAccounts"})
+		} else {
+			storage.EnsureStandardObjectFields(&def)
+		}
+	}
+	first, okFirst := storage.ResolveFieldName(def, "", match[1])
+	second, okSecond := storage.ResolveFieldName(def, "", match[2])
+	return okFirst && okSecond && def.Fields[first].Type == storage.FieldString && strings.EqualFold(def.Fields[first].DisplayType, "STRING") && def.Fields[second].Type == storage.FieldString && strings.EqualFold(def.Fields[second].DisplayType, "STRING")
+}
+
+// processBuilderCapturedFormatFormula bounds the Picklist/DateTime formatting
+// assignment observed in process_builder_review_format.
+func processBuilderCapturedFormatFormula(pb processBuilderXML, name, dataType, expression, current string, definitions ...map[string]storage.ObjectDefinition) bool {
+	if !strings.EqualFold(dataType, "String") || len(definitions) == 0 || processBuilderFormulaExtraUse(pb, name) {
+		return false
+	}
+	field := `\{!\s*` + regexp.QuoteMeta(current) + `\.([A-Za-z_][A-Za-z0-9_]*)\s*\}`
+	pattern := `(?i)^\s*TEXT\s*\(\s*` + field + `\s*\)\s*\+\s*"[^"\\]*"\s*\+\s*TEXT\s*\(\s*DATEVALUE\s*\(\s*` + field + `\s*\)\s*\)\s*$`
+	match := regexp.MustCompile(pattern).FindStringSubmatch(html.UnescapeString(expression))
+	if len(match) != 3 {
+		return false
+	}
+	for _, decision := range pb.Decisions {
+		for _, rule := range decision.Rules {
+			for _, condition := range rule.Conditions {
+				if strings.EqualFold(condition.LeftValueReference, name) || strings.EqualFold(condition.RightValue.ElementReference, name) {
+					return false
+				}
+			}
+		}
+	}
+	found := 0
+	for _, update := range pb.RecordUpdates {
+		for _, assignment := range update.InputAssignments {
+			if !strings.EqualFold(assignment.Value.ElementReference, name) {
+				continue
+			}
+			if len(update.InputAssignments) != 1 || len(update.Filters) != 1 || !strings.EqualFold(update.Filters[0].Field, "Id") || !strings.EqualFold(update.Filters[0].Operator, "EqualTo") || !strings.EqualFold(update.Filters[0].Value.ElementReference, current+".Id") {
+				return false
+			}
+			var def storage.ObjectDefinition
+			for object, candidate := range definitions[0] {
+				if strings.EqualFold(object, update.Object) {
+					def = candidate
+					break
+				}
+			}
+			first, okFirst := storage.ResolveFieldName(def, "", match[1])
+			second, okSecond := storage.ResolveFieldName(def, "", match[2])
+			dest, okDest := storage.ResolveFieldName(def, "", assignment.Field)
+			if !okFirst || !okSecond || !okDest || def.Fields[first].Type != storage.FieldPicklist || def.Fields[second].Type != storage.FieldDateTime || def.Fields[dest].Type != storage.FieldString || !strings.EqualFold(def.Fields[dest].DisplayType, "STRING") {
+				return false
+			}
+			found++
+		}
+	}
+	return found == 1
+}
+
+// Captured formula assignments have matching source and destination types. A
+// Boolean formula was observed as a true-valued decision, not as an assignment.
+func processBuilderCapturedFormulaUse(pb processBuilderXML, name, dataType, expression, current string, definitions ...map[string]storage.ObjectDefinition) bool {
+	expression = strings.TrimSpace(html.UnescapeString(expression))
+	upper := strings.ToUpper(expression)
+	boolFormula := upper == "TRUE" || upper == "FALSE" || strings.HasPrefix(upper, "ISNEW(") || strings.HasPrefix(upper, "PRIORVALUE(") || strings.HasPrefix(upper, "AND(")
+	for _, action := range pb.ActionCalls {
+		for _, input := range action.Inputs {
+			if strings.EqualFold(input.Value.ElementReference, name) {
+				return false
+			}
+		}
+	}
+	for _, decision := range pb.Decisions {
+		for _, rule := range decision.Rules {
+			for _, condition := range rule.Conditions {
+				if strings.EqualFold(condition.RightValue.ElementReference, name) {
+					if !strings.HasPrefix(upper, "DATE(") || !strings.EqualFold(dataType, "Date") || !strings.EqualFold(condition.Operator, "GreaterThan") || len(definitions) == 0 {
+						return false
+					}
+					fieldName, ok := strings.CutPrefix(condition.LeftValueReference, current+".")
+					if !ok {
+						return false
+					}
+					var def storage.ObjectDefinition
+					for _, meta := range pb.Metadata {
+						if strings.EqualFold(meta.Name, "ObjectType") {
+							for object, candidate := range definitions[0] {
+								if strings.EqualFold(object, meta.Value.StringValue) {
+									def = candidate
+									break
+								}
+							}
+						}
+					}
+					resolved, ok := storage.ResolveFieldName(def, "", fieldName)
+					if !ok || def.Fields[resolved].Type != storage.FieldDate {
+						return false
+					}
+				}
+				if strings.EqualFold(condition.LeftValueReference, name) {
+					if !boolFormula || !strings.EqualFold(dataType, "Boolean") {
+						return false
+					}
+					if strings.EqualFold(condition.Operator, "EqualTo") && condition.RightValue.BooleanValue == "" && condition.RightValue.ElementReference == "" {
+						return false
+					}
+					if condition.RightValue.BooleanValue != "" {
+						switch strings.ToLower(condition.Operator) {
+						case "equalto":
+							if !strings.EqualFold(condition.RightValue.BooleanValue, "true") {
+								return false
+							}
+						case "notequalto", "greaterthan", "greaterthanorequalto", "isnull":
+							return false
+						}
+					}
+					if strings.EqualFold(condition.Operator, "EqualTo") && strings.HasPrefix(condition.RightValue.ElementReference, current+".") {
+						return false
+					}
+					pattern := `(?i)\{!\s*` + regexp.QuoteMeta(current) + `\.([A-Za-z_][A-Za-z0-9_]*)\s*\}`
+					refs := regexp.MustCompile(pattern).FindAllStringSubmatch(expression, -1)
+					if len(refs) > 0 {
+						if len(definitions) == 0 {
+							return false
+						}
+						var def storage.ObjectDefinition
+						for _, meta := range pb.Metadata {
+							if strings.EqualFold(meta.Name, "ObjectType") {
+								for object, candidate := range definitions[0] {
+									if strings.EqualFold(object, meta.Value.StringValue) {
+										def = candidate
+										break
+									}
+								}
+							}
+						}
+						want := storage.FieldString
+						if strings.HasPrefix(upper, "AND(") {
+							want = storage.FieldBoolean
+						}
+						for _, ref := range refs {
+							field, ok := storage.ResolveFieldName(def, "", ref[1])
+							if !ok || def.Fields[field].Type != want {
+								return false
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	for _, update := range pb.RecordUpdates {
+		for _, filter := range update.Filters {
+			if strings.EqualFold(filter.Value.ElementReference, name) {
+				return false
+			}
+		}
+		for _, assignment := range update.InputAssignments {
+			if !strings.EqualFold(assignment.Value.ElementReference, name) {
+				continue
+			}
+			if boolFormula || len(definitions) == 0 {
+				return false
+			}
+			var want storage.FieldType
+			switch {
+			case strings.EqualFold(dataType, "Number"):
+				want = storage.FieldDecimal
+			case strings.EqualFold(dataType, "String"):
+				want = storage.FieldString
+			default:
+				return false
+			}
+			var def storage.ObjectDefinition
+			for object, candidate := range definitions[0] {
+				if strings.EqualFold(object, update.Object) {
+					def = candidate
+					break
+				}
+			}
+			field, ok := storage.ResolveFieldName(def, "", assignment.Field)
+			if !ok || def.Fields[field].Type != want {
+				return false
+			}
+			pattern := `(?i)\{!\s*` + regexp.QuoteMeta(current) + `\.([A-Za-z_][A-Za-z0-9_]*)\s*\}`
+			refs := regexp.MustCompile(pattern).FindAllStringSubmatch(expression, -1)
+			if len(refs) != 1 {
+				return false
+			}
+			source, ok := storage.ResolveFieldName(def, "", refs[0][1])
+			if !ok {
+				return false
+			}
+			sourceType := want
+			if strings.HasPrefix(upper, "IF(") {
+				sourceType = storage.FieldString
+			}
+			if def.Fields[source].Type != sourceType {
+				return false
+			}
+			if strings.HasPrefix(upper, "BLANKVALUE(") && !strings.EqualFold(source, field) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// The global decision form is backed by the globalcontrol native rows.
+func processBuilderCapturedUserAliasFormula(expression string) bool {
+	matched, _ := regexp.MatchString(`(?i)^\s*NOT\s*\(\s*ISBLANK\s*\(\s*\$User\.Alias\s*\)\s*\)\s*$`, html.UnescapeString(expression))
+	return matched
+}
+
+// processBuilderCapturedFormula admits the expression structures observed in
+// process_builder_shapes and process_builder_wait. Evaluator support alone is
+// not native evidence for a Process Builder formula composition.
+func processBuilderCapturedFormula(expression, current string) bool {
+	field := `\{!\s*` + regexp.QuoteMeta(current) + `\.[A-Za-z_][A-Za-z0-9_]*\s*\}`
+	number := `-?[0-9]+(?:\.[0-9]+)?`
+	quoted := `"[^"\\]*"`
+	space := `\s*`
+	patterns := []string{
+		`true`,
+		`false`,
+		`DATE\(` + space + number + space + `,` + space + number + space + `,` + space + number + space + `\)`,
+		`ISNEW\(` + space + `\)`,
+		`PRIORVALUE\(` + space + field + space + `\)` + space + `=` + space + quoted,
+		`BLANKVALUE\(` + space + field + space + `,` + space + number + space + `\)` + space + `\+` + space + number,
+		`BLANKVALUE\(` + space + field + space + `,` + space + quoted + space + `\)` + space + `\+` + space + quoted,
+		`IF\(` + space + field + space + `=` + space + quoted + space + `,` + space + number + space + `,` + space + number + space + `\)`,
+		`AND\(` + space + field + space + `=` + space + `FALSE` + space + `,` + space + `ISCHANGED\(` + space + field + space + `\)` + space + `\)`,
+	}
+	for index, pattern := range patterns {
+		if matched, _ := regexp.MatchString(`(?i)^\s*`+pattern+`\s*$`, html.UnescapeString(expression)); matched {
+			if index == len(patterns)-1 {
+				fields := regexp.MustCompile(`(?i)`+field).FindAllString(expression, -1)
+				return len(fields) == 2 && strings.EqualFold(strings.ReplaceAll(fields[0], " ", ""), strings.ReplaceAll(fields[1], " ", ""))
+			}
+			return true
+		}
+	}
+	return false
+}
+
+// flowProcessPriorValueSources admits a process record update's prior-record
+// value, which process_builder_shapes pri rows pin at API 62.0 and 67.0. The
+// binding map is private; other flows have no such row and keep their path.
+func flowProcessPriorValueSources(raw flowXML, variables map[string]flowVariableXML) {
+	if !strings.EqualFold(strings.TrimSpace(raw.ProcessType), "Workflow") {
+		return
+	}
+	for _, update := range raw.RecordUpdates {
+		for _, assignment := range update.Fields {
+			reference := strings.TrimSpace(assignment.Value.ElementReference)
+			if field, found := strings.CutPrefix(strings.ToLower(reference), "$record__prior."); found && field != "" {
+				variables[strings.ToLower(reference)] = flowVariableXML{Name: reference}
+			}
+		}
+	}
+}
+
+// processBuilderCapturedPair checks the two dependent, literal Text updates
+// captured in process_builder_review_multiprocess and process_builder_review_reverse.
+func processBuilderCapturedPair(object string, paths []string, definitions map[string]storage.ObjectDefinition) bool {
+	if len(paths) != 2 {
+		return false
+	}
+	type part struct{ criterionField, criterionValue, targetField, value string }
+	var pair []part
+	var def storage.ObjectDefinition
+	for name, candidate := range definitions {
+		if strings.EqualFold(name, object) {
+			def = candidate
+			break
+		}
+	}
+	for _, path := range paths {
+		source, err := os.ReadFile(path)
+		if err != nil {
+			return false
+		}
+		var raw flowXML
+		var pb processBuilderXML
+		if xml.Unmarshal(source, &raw) != nil || xml.Unmarshal(source, &pb) != nil {
+			return false
+		}
+		current, trigger := "", ""
+		for _, m := range pb.Metadata {
+			if strings.EqualFold(m.Name, "ObjectVariable") {
+				current = m.Value.ElementReference
+			}
+			if strings.EqualFold(m.Name, "TriggerType") {
+				trigger = m.Value.StringValue
+			}
+		}
+		if current == "" || !strings.EqualFold(trigger, "onAllChanges") || len(raw.Decisions) != 1 || len(raw.RecordUpdates) != 1 || len(raw.Formulas)+len(raw.Constants)+len(raw.TextTemplates)+len(raw.Assignments)+len(raw.Screens)+len(raw.Loops)+len(raw.Subflows)+len(raw.ActionCalls)+len(raw.RecordLookups)+len(raw.RecordCreates)+len(raw.RecordDeletes)+len(raw.CustomErrors)+len(raw.ApexPluginCalls)+len(raw.Transforms)+len(raw.CollectionProcessors)+len(raw.OrchestratedStages)+len(raw.ScheduledPaths)+len(raw.Stages)+len(raw.ExitRules)+len(raw.Experiments)+len(raw.Segment)+len(raw.Schedule)+len(raw.Waits) != 0 {
+			return false
+		}
+		d, u := raw.Decisions[0], raw.RecordUpdates[0]
+		if !strings.EqualFold(raw.StartElementReference, d.Name) || d.DefaultConnector.TargetReference != "" || len(d.Rules) != 1 {
+			return false
+		}
+		rule := d.Rules[0]
+		if len(rule.Conditions) != 1 || !strings.EqualFold(rule.ConditionLogic, "and") || !strings.EqualFold(rule.Connector.TargetReference, u.Name) {
+			return false
+		}
+		c := rule.Conditions[0]
+		prefix := current + "."
+		if !strings.HasPrefix(strings.ToLower(c.LeftValueReference), strings.ToLower(prefix)) || !strings.EqualFold(c.Operator, "EqualTo") || c.RightValue.StringValue == "" || c.RightValue != (flowValueXML{StringValue: c.RightValue.StringValue}) {
+			return false
+		}
+		if !strings.EqualFold(u.Object, object) || u.InputReference != "" || len(u.Filters) != 1 || len(u.Fields) != 1 || !strings.EqualFold(u.FilterLogic, "and") || u.Connector.TargetReference != "" || u.FaultConnector.TargetReference != "" {
+			return false
+		}
+		f, a := u.Filters[0], u.Fields[0]
+		if !strings.EqualFold(f.Field, "Id") || !strings.EqualFold(f.Operator, "EqualTo") || !strings.EqualFold(f.Value.ElementReference, current+".Id") || f.Value != (flowValueXML{ElementReference: f.Value.ElementReference}) || a.Value.StringValue == "" || a.Value != (flowValueXML{StringValue: a.Value.StringValue}) {
+			return false
+		}
+		criterion := c.LeftValueReference[len(prefix):]
+		for _, field := range []string{criterion, a.Field} {
+			name, ok := storage.ResolveFieldName(def, "", field)
+			if !ok || def.Fields[name].Type != storage.FieldString || !strings.EqualFold(def.Fields[name].DisplayType, "STRING") {
+				return false
+			}
+		}
+		pair = append(pair, part{criterion, c.RightValue.StringValue, a.Field, a.Value.StringValue})
+	}
+	dependent := func(a, b part) bool {
+		return strings.EqualFold(a.targetField, b.criterionField) && a.value == b.criterionValue && !strings.EqualFold(a.criterionField, a.targetField) && !strings.EqualFold(a.criterionField, b.targetField) && !strings.EqualFold(a.targetField, b.targetField)
+	}
+	return dependent(pair[0], pair[1]) || dependent(pair[1], pair[0])
+}
+
+// leaveUncoveredProcessesUnrun applies the checks that read other flows.
+// The captured dependent pair is admitted; other multiple-process shapes stay
+// unrun. Flow-action targets must match the separately captured graphs.
+func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[string]storage.ObjectDefinition, features ...[]string) error {
+	counts := make(map[string]int)
+	processPaths := make(map[string][]string)
+	flows := make(map[string]storage.FlowRule)
+	for i, flow := range idx.Flows {
+		if flowIsActiveProcess(flow) && strings.TrimSpace(flow.ObjectName) != "" {
+			counts[strings.ToLower(flow.ObjectName)]++
+			processPaths[strings.ToLower(flow.ObjectName)] = append(processPaths[strings.ToLower(flow.ObjectName)], paths[i])
+		}
+		for _, rule := range flow.Rules {
+			flows[strings.ToLower(rule.Name)] = rule
+		}
+	}
+	afterSave := make(map[string][]storage.FlowRule)
+	for _, flow := range idx.Flows {
+		if flowIsActiveProcess(flow) || strings.TrimSpace(flow.ObjectName) == "" {
+			continue
+		}
+		for _, rule := range flow.Rules {
+			if rule.Active && strings.EqualFold(strings.TrimSpace(rule.TriggerType), "RecordAfterSave") {
+				afterSave[strings.ToLower(flow.ObjectName)] = append(afterSave[strings.ToLower(flow.ObjectName)], rule)
+				break
+			}
+		}
+	}
+	for i, flow := range idx.Flows {
+		if !flowIsActiveProcess(flow) || strings.TrimSpace(flow.ObjectName) == "" {
+			continue
+		}
+		skip := ""
+		if counts[strings.ToLower(flow.ObjectName)] > 1 && !processBuilderCapturedPair(flow.ObjectName, processPaths[strings.ToLower(flow.ObjectName)], definitions) {
+			skip = "several active processes on one object"
+		} else if after := afterSave[strings.ToLower(flow.ObjectName)]; len(after) > 1 {
+			if len(after) != 2 {
+				var def storage.ObjectDefinition
+				for name, candidate := range definitions {
+					if strings.EqualFold(name, flow.ObjectName) {
+						def = candidate
+						break
+					}
+				}
+				if _, ok := storage.CapturedFourAfterSavePlan(after, def, definitions); !ok && !processBuilderCapturedMixedAfterSave(idx, flow.ObjectName, after, def, definitions) && !capturedCaseAfterSave(after, def) && !processBuilderCapturedBranchedAfterSave(idx, flow.ObjectName, after, def, definitions, features...) {
+					skip = "several after-save flows on its object"
+				}
+			} else {
+				_, first := after[0].SimpleProcessAfterSaveAction()
+				_, second := after[1].SimpleProcessAfterSaveAction()
+				if !first || !second {
+					skip = "several after-save flows on its object"
+				}
+			}
+		}
+		if skip == "" {
+			skip = processBuilderUncoveredFlowAction(flow, flows, definitions)
+		}
+		if skip == "" {
+			continue
+		}
+		source, err := os.ReadFile(paths[i])
+		if err != nil {
+			return err
+		}
+		unrun, diagnostics, err := compileFlowSource(paths[i], source, skip, definitions)
+		if err != nil {
+			return err
+		}
+		idx.Flows[i] = unrun
+		for _, item := range diagnostics {
+			if strings.Contains(item.Message, "Process Builder process is not run") {
+				idx.Diagnostics = append(idx.Diagnostics, item)
+			}
+		}
+	}
+	return nil
+}
+
+func processBuilderUncoveredFlowAction(flow Flow, flows map[string]storage.FlowRule, definitions ...map[string]storage.ObjectDefinition) string {
+	skip := ""
+	check := func(steps []storage.FlowStep) {
+		for _, step := range steps {
+			if step.Kind != "action" || !strings.EqualFold(strings.TrimSpace(step.Action.ActionType), "flow") || skip != "" {
+				continue
+			}
+			target, found := flows[strings.ToLower(strings.TrimSpace(step.Action.ActionName))]
+			if !found || !target.Active || strings.TrimSpace(target.TriggerType) != "" {
+				skip = fmt.Sprintf("flow action %q without its flow's source", step.Action.ActionName)
+			} else if _, linear := target.ProcessRecordUpdates(); !linear {
+				skip = fmt.Sprintf("flow action %q on a flow with other steps", step.Action.ActionName)
+			} else if !processBuilderCapturedSubflow(flow.ObjectName, step.Action, target, definitions...) {
+				skip = fmt.Sprintf("flow action %q with uncaptured update shape", step.Action.ActionName)
+			}
+		}
+	}
+	var walk func([]storage.FlowStep)
+	walk = func(steps []storage.FlowStep) {
+		check(steps)
+		for _, step := range steps {
+			for _, branch := range step.Branches {
+				walk(branch.Steps)
+			}
+		}
+	}
+	for _, rule := range flow.Rules {
+		walk(rule.Steps)
+		for _, branch := range rule.Branches {
+			walk(branch.Steps)
+		}
+		for _, steps := range rule.StepTargets {
+			walk(steps)
+		}
+	}
+	return skip
+}
+
+// processBuilderCapturedSubflow admits the input and update structures observed
+// in flowact and flow2. Other flows remain unrun until captured.
+func processBuilderCapturedSubflow(objectName string, action storage.FlowAction, target storage.FlowRule, definitions ...map[string]storage.ObjectDefinition) bool {
+	if steps, ok := target.CapturedProcessDependentLookupSteps(); ok {
+		if len(definitions) == 0 || len(action.Inputs) != 2 || len(action.Outputs) != 0 || !strings.EqualFold(steps[0].RecordLookup.ObjectName, objectName) {
+			return false
+		}
+		recordVar := steps[0].RecordLookup.Criteria[0].SourceField
+		rootVar := steps[0].RecordLookup.Criteria[1].SourceField
+		linkField := steps[0].RecordLookup.Criteria[1].Field
+		boundRecord, boundRoot := false, false
+		for _, input := range action.Inputs {
+			if input.Formula != "" || input.LiteralValue != "" || input.ActionOutput != "" {
+				return false
+			}
+			if strings.EqualFold(input.Field, recordVar) && strings.EqualFold(input.SourceField, "Id") {
+				boundRecord = true
+			} else if strings.EqualFold(input.Field, rootVar) {
+				_, relationshipID := target.CapturedProcessRelationshipIDBinding(input)
+				if !strings.EqualFold(input.SourceField, linkField) && !relationshipID {
+					return false
+				}
+				boundRoot = true
+			} else {
+				return false
+			}
+		}
+		if !boundRecord || !boundRoot {
+			return false
+		}
+		var def, related storage.ObjectDefinition
+		for name, candidate := range definitions[0] {
+			if strings.EqualFold(name, objectName) {
+				def = candidate
+			}
+			if strings.EqualFold(name, steps[1].RecordLookup.ObjectName) {
+				related = candidate
+			}
+		}
+		if storage.IsKnownStandardObject(objectName) {
+			def = def.Clone()
+			if def.APIName == "" {
+				def.APIName = objectName
+			}
+			storage.EnsureStandardObjectFields(&def)
+		}
+		link, ok := storage.ResolveFieldName(def, "", linkField)
+		if !ok {
+			return false
+		}
+		linkDef := def.Fields[link]
+		if linkDef.Type != storage.FieldReference || len(linkDef.ReferenceTo) != 1 || !strings.EqualFold(linkDef.ReferenceTo[0], steps[1].RecordLookup.ObjectName) {
+			return false
+		}
+		_, sourceName, _ := strings.Cut(steps[2].Assignment.SourceField, ".")
+		source, okSource := storage.ResolveFieldName(related, "", sourceName)
+		dest, okDest := storage.ResolveFieldName(def, "", steps[3].RecordUpdate.InputAssignments[0].Field)
+		if !okSource || !okDest {
+			return false
+		}
+		src, dst := related.Fields[source], def.Fields[dest]
+		if src.Type != storage.FieldString || dst.Type != storage.FieldString {
+			return false
+		}
+		standardText := strings.EqualFold(sourceName, "Name") && !src.LongTextArea && strings.EqualFold(dst.DisplayType, "TEXTAREA") && !dst.LongTextArea
+		longTextToHTML := src.LongTextArea && strings.EqualFold(dst.DisplayType, "RICHTEXTAREA")
+		if target.Variables[0].IsOutput {
+			return longTextToHTML
+		}
+		return standardText || longTextToHTML
+	}
+	if steps, ok := target.CapturedProcessRecordActionSteps(); ok {
+		if len(definitions) == 0 || len(action.Inputs) != 1 || len(action.Outputs) != 0 || !strings.EqualFold(target.Variables[0].ObjectType, objectName) {
+			return false
+		}
+		input := action.Inputs[0]
+		if !strings.EqualFold(input.Field, target.Variables[0].Name) || !strings.EqualFold(input.SourceField, "$Record") || input.Formula != "" || input.LiteralValue != "" || input.ActionOutput != "" {
+			return false
+		}
+		var def storage.ObjectDefinition
+		for name, candidate := range definitions[0] {
+			if strings.EqualFold(name, objectName) {
+				def = candidate
+				break
+			}
+		}
+		if storage.IsKnownStandardObject(objectName) {
+			def = def.Clone()
+			if def.APIName == "" {
+				def.APIName = objectName
+			}
+			storage.EnsureStandardObjectFields(&def)
+		}
+		_, field, _ := strings.Cut(steps[1].Assignment.Target, ".")
+		resolved, found := storage.ResolveFieldName(def, "", field)
+		if !found || def.Fields[resolved].Type != storage.FieldString {
+			return false
+		}
+		display := def.Fields[resolved].DisplayType
+		return strings.EqualFold(display, "TEXTAREA") || strings.EqualFold(display, "PHONE")
+	}
+	updates, ok := target.ProcessRecordUpdates()
+	lookupSteps, lookupShape := target.CapturedProcessLookupSteps()
+	if !ok || len(updates) < 1 || len(updates) > 2 || objectName == "" || (!lookupShape && len(target.Variables) != 1) || len(action.Inputs) != 1 || len(action.Outputs) != 0 || len(definitions) == 0 {
+		return false
+	}
+	variable, input := target.Variables[0], action.Inputs[0]
+	if lookupShape {
+		for _, candidate := range target.Variables {
+			if candidate.IsInput {
+				variable = candidate
+				break
+			}
+		}
+		for _, step := range lookupSteps[:2] {
+			if !strings.EqualFold(step.RecordLookup.ObjectName, objectName) {
+				return false
+			}
+		}
+	}
+	if !variable.IsInput || variable.IsOutput || variable.IsCollection || !strings.EqualFold(variable.DataType, "String") ||
+		!strings.EqualFold(input.Field, variable.Name) || !strings.EqualFold(input.SourceField, "Id") || input.Formula != "" || input.LiteralValue != "" || input.ActionOutput != "" {
+		return false
+	}
+	var definition storage.ObjectDefinition
+	for name, candidate := range definitions[0] {
+		if strings.EqualFold(name, objectName) {
+			definition = candidate
+			break
+		}
+	}
+	fields := make(map[string]bool)
+	for _, update := range updates {
+		if !strings.EqualFold(update.ObjectName, objectName) || update.InputReference != "" || len(update.Criteria) != 1 || len(update.InputAssignments) != 1 {
+			return false
+		}
+		criterion, assignment := update.Criteria[0], update.InputAssignments[0]
+		if !strings.EqualFold(criterion.Field, "Id") || !strings.EqualFold(criterion.Operation, "equals") || !strings.EqualFold(criterion.SourceField, variable.Name) || criterion.Value != "" ||
+			assignment.Field == "" || assignment.Formula != "" || assignment.ActionOutput != "" || (!lookupShape && (assignment.LiteralValue == "" || assignment.SourceField != "")) || (lookupShape && (assignment.LiteralValue != "" || !strings.EqualFold(assignment.SourceField, lookupSteps[2].Assignment.Target))) {
+			return false
+		}
+		resolved, found := storage.ResolveFieldName(definition, "", assignment.Field)
+		if !found || definition.Fields[resolved].Type != storage.FieldString {
+			return false
+		}
+		key := strings.ToLower(assignment.Field)
+		if fields[key] {
+			return false
+		}
+		fields[key] = true
+	}
+	for _, step := range target.Steps {
+		if step.FaultTarget != "" || len(step.FaultBranch) != 0 {
+			return false
+		}
+	}
+	for _, steps := range target.StepTargets {
+		for _, step := range steps {
+			if step.FaultTarget != "" || len(step.FaultBranch) != 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func flowIsActiveProcess(flow Flow) bool {
+	for _, rule := range flow.Rules {
+		if rule.Active && strings.EqualFold(strings.TrimSpace(rule.ProcessType), "Workflow") {
+			return true
+		}
+	}
+	return false
+}
+
+func capturedCaseAfterSave(rules []storage.FlowRule, def storage.ObjectDefinition) bool {
+	_, ok := storage.CapturedCaseAfterSavePlan(rules, def)
+	return ok
 }
