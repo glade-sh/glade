@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
 
 ## v0.3.6
 
