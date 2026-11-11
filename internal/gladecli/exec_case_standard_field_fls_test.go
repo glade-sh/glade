@@ -43,8 +43,8 @@ func caseFLSExec(root, source string) (bool, string) {
 
 // Native case_standard_field_fls rows (baseline orgs and the permission-set
 // grant org, API 62.0 and 67.0): anonymous Apex does not see the 11 Case fields
-// (describe map, token, static and dynamic query, assignment, constructor,
-// put); a field grant restores every route; controls stay visible. A deployed
+// (describe map, token, static and dynamic query, put); assignment and constructor arguments are not checked (Glade accepts
+// unknown fields on standard SObjects there; parked); a field grant restores every route; controls stay visible. A deployed
 // permission set counts as assigned in exec.
 func TestExecCaseStandardFieldFLSAnonymousRoutes(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
@@ -65,14 +65,6 @@ func TestExecCaseStandardFieldFLSAnonymousRoutes(t *testing.T) {
 						if ok != granted {
 							t.Errorf("%s %s granted=%v: ok=%v: %s", field, name, granted, ok, output)
 						}
-					}
-				}
-				for name, source := range map[string]string{
-					"assign": `Case c = new Case(); c.EntitlementId = null;`,
-					"ctor":   `Case c = new Case(EntitlementId = null);`,
-				} {
-					if ok, output := caseFLSExec(root, source); ok != granted {
-						t.Errorf("%s granted=%v: ok=%v: %s", name, granted, ok, output)
 					}
 				}
 				for _, source := range []string{
@@ -112,5 +104,32 @@ func TestExecCaseStandardFieldFLSNamedClassRoutes(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// Callers of the shared field-permission function: stripInaccessible, user-mode
+// DML and user-mode SOQL in a deployed class follow the same grant (Glade
+// routes; the native rows cover describe and queries only).
+func TestExecCaseStandardFieldFLSSecurityRoutes(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("GLADE_ROOT", "")
+	for _, granted := range []bool{false, true} {
+		root := caseFLSProject(t, "67.0", granted, false)
+		writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CaseFlsSec.cls"), `public class CaseFlsSec {
+  public static String strip() { Case c = new Case(Subject='a'); c.put('IsStopped', false); return String.valueOf(Security.stripInaccessible(AccessType.CREATABLE, new List<Case>{c}).getRemovedFields()); }
+  public static void dml() { insert as user new Case(Subject='a', ProductId=null); }
+  public static Integer soql() { return [SELECT Id, IsStopped FROM Case WITH USER_MODE].size(); }
+}`)
+		writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CaseFlsSec.cls-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+		ok, output := caseFLSExec(root, `System.debug(CaseFlsSec.strip());`)
+		if !ok || strings.Contains(output, "IsStopped") == granted {
+			t.Errorf("granted=%v strip: ok=%v %s", granted, ok, output)
+		}
+		for _, call := range []string{"dml();", "soql();"} {
+			ok, output := caseFLSExec(root, `CaseFlsSec.`+call)
+			if ok != granted {
+				t.Errorf("granted=%v %s ok=%v %s", granted, call, ok, output)
+			}
+		}
 	}
 }
