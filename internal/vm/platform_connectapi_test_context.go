@@ -32,7 +32,7 @@ func (vm *VM) connectAPIServiceClass(className string) bool {
 	if !hasTypePrefixFold(className, "ConnectApi") {
 		return false
 	}
-	generated, ok := generatedPlatformTypes()[strings.ToLower(className)]
+	generated, ok := lookupGeneratedPlatformType(strings.ToLower(className))
 	return ok && generated.Kind != apexast.DeclarationEnum
 }
 
@@ -108,7 +108,7 @@ func connectAPIParamList(params []Param) string {
 }
 
 func (vm *VM) connectAPIHasTestSetter(className, methodName string) bool {
-	methods := generatedPlatformMethods()[strings.ToLower(className)]
+	methods := lookupGeneratedPlatformMethods(strings.ToLower(className))
 	setters := methods["settest"+strings.ToLower(methodName)]
 	for _, setter := range setters {
 		if setter.IsStatic {

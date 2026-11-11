@@ -63,7 +63,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		// Native rows call.CredentialPrincipalType.valueOf.null (APIs 62/67).
 		if className, methodName, ok := vm.splitClassMember(strings.TrimPrefix(callee, "System.")); ok && strings.EqualFold(methodName, "valueOf") &&
 			len(args) == 1 && args[0].Kind == ValueNull {
-			if generated, found := generatedPlatformTypes()[strings.ToLower(className)]; found && generated.Kind == apexast.DeclarationEnum {
+			if generated, found := lookupGeneratedPlatformType(strings.ToLower(className)); found && generated.Kind == apexast.DeclarationEnum {
 				return Null, newExceptionError("System.NoSuchElementException", "No enum value found called null")
 			}
 		}

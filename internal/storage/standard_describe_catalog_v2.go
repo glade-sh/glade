@@ -448,6 +448,7 @@ func ReleaseStandardCatalogCaches() {
 	}
 	standardDescribeCatalogV2ProductionCache.release()
 	standardDescribeCatalogV2RawProductionCache.release()
+	releaseStandardSObjectStubMembers()
 	standardCatalogReleases.Add(1)
 }
 

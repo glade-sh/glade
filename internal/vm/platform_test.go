@@ -1873,7 +1873,7 @@ System.assert(base.getAsMap().containsKey('fullName'));
 }
 
 func TestMetadataDeployMessageProblemTypeUsesEnumType(t *testing.T) {
-	typ, ok := generatedPlatformTypes()["metadata.deploymessage"]
+	typ, ok := lookupGeneratedPlatformType("metadata.deploymessage")
 	if !ok {
 		t.Fatal("missing generated Metadata.DeployMessage type")
 	}
