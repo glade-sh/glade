@@ -1,0 +1,8 @@
+capture_date=2026-11-11
+source_apis=62.0,67.0
+native_route=named synchronous Apex test (sf apex run test --synchronous)
+org_type=three-day Developer scratch org from a campaign Dev Hub, Winter '27 release; timezone America/Los_Angeles
+observations=Intentional assertion envelope FLOWFAULTUPDATE; transactions roll back. insert 2 and 3 records (value/throw/value, throw/throw, value/value) through an action-first after-save flow whose action fault connector runs a filtered record update setting Unit__c; no custom error.
+access=FlowCoreAOCaptureAccess permission set granted to the probe user inside the test.
+project=project (apiVersion 62.0; the 67.0 capture deployed the same sources with every apiVersion and sourceApiVersion set to 67.0)
+org_delete=scratch org deleted after the capture session
