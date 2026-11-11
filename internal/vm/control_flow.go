@@ -1900,8 +1900,8 @@ type heapStaticContainerRef struct {
 //     the body before the declaration, including the declaration's own type
 //     and initializer and nested blocks and loops;
 //   - no two body declarations share a name; and
-//   - the loop calls no dynamic query or search, whose bind names are read at
-//     runtime.
+//   - the loop calls no query, search, cursor or locator API, whose bind names
+//     are read at runtime.
 //
 // Every read that remains follows the declaration in the same iteration, which
 // rebinds the name with a fresh value, type and final flag, so it sees the same
@@ -1970,7 +1970,10 @@ func loopBodyBindingsReusable(inst ir.Instruction) bool {
 		scan(e.Value)
 		scan(e.Name)
 		scan(e.Callee)
-		if lower := strings.ToLower(e.Callee); strings.Contains(lower, "query") || strings.Contains(lower, "search") {
+		// Dynamic SOQL, SOSL and cursor APIs resolve bind names from a query
+		// string built at run time, which can name a body local before this
+		// iteration declares it.
+		if lower := strings.ToLower(e.Callee + " " + e.Name); strings.Contains(lower, "query") || strings.Contains(lower, "search") || strings.Contains(lower, "cursor") || strings.Contains(lower, "locator") {
 			reusable = false
 		}
 		for _, arg := range e.Args {
