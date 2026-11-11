@@ -399,3 +399,66 @@ func TestMessagingCustomFieldMissingPackageRemainsDeferred(t *testing.T) {
 		t.Fatalf("package-qualified partial field no longer defers: %v %v", idx.Diagnostics, analysis.Diagnostics)
 	}
 }
+
+func TestMessagingCustomFieldVersionNativeCompileRoutes(t *testing.T) {
+	const dir = "testdata/conformance/messaging_campaign_presence"
+	f, err := os.Open(filepath.Join(dir, "custom-versions.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 21 {
+		t.Fatalf("native rows=%d", len(rows)-1)
+	}
+	cfg, err := os.ReadFile(filepath.Join(dir, "scratch-def.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range rows[1:] {
+		row := row
+		t.Run(strings.Join(row[:3], "/"), func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+row[0]+`","packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), string(cfg))
+			for _, field := range []string{"OwnedProbe__c", "OwnedSecond__c"} {
+				rel := filepath.Join("force-app/main/default/objects/MessagingSession/fields", field+".field-meta.xml")
+				b, err := os.ReadFile(filepath.Join(dir, "custom-versions-project", rel))
+				if err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, filepath.Join(root, rel), string(b))
+			}
+			name := "MsgAdjacent" + row[2] + strings.TrimSuffix(row[0], ".0")
+			if row[1] == "named" {
+				for _, s := range []string{".cls", ".cls-meta.xml"} {
+					rel := filepath.Join("force-app/main/default/classes", name+s)
+					b, err := os.ReadFile(filepath.Join(dir, "custom-versions-project", rel))
+					if err != nil {
+						t.Fatal(err)
+					}
+					writeFile(t, filepath.Join(root, rel), string(b))
+				}
+				idx := loadTestIndex(t, root)
+				analysis := sema.Analyze(idx)
+				got := !idx.HasErrors() && !analysis.HasErrors()
+				if got != (row[3] == "accept") {
+					t.Fatalf("named accepted=%t native=%s diagnostics=%v %v", got, row[3], idx.Diagnostics, analysis.Diagnostics)
+				}
+				return
+			}
+			field := map[string]string{"Declared": "OwnedProbe__c", "DeclaredSecond": "OwnedSecond__c", "MissingC": "SyntheticThird__c"}[row[2]]
+			idx := loadTestIndex(t, root)
+			analysis := sema.AnalyzeAnonymous(idx, "MessagingSession x=new MessagingSession(); x."+field+"=null;", row[0])
+			got := !analysis.HasErrors()
+			if got != (row[3] == "accept") {
+				t.Fatalf("anonymous accepted=%t native=%s diagnostics=%v", got, row[3], analysis.Diagnostics)
+			}
+		})
+	}
+}
