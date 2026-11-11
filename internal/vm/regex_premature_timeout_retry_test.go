@@ -197,12 +197,16 @@ func TestRegexRetryRealCPUBudget(t *testing.T) {
 		if !available {
 			t.Fatal("process CPU time became unavailable")
 		}
+		// Burn until both clocks pass 150ms: process CPU alone can outrun the
+		// wall clock when other goroutines in the test binary are running, which
+		// would end the search before budget/2 and take the stale-clock rerun.
+		wallStart := time.Now()
 		for {
 			cpu, available := regexProcessCPUTime()
 			if !available {
 				t.Fatal("process CPU time became unavailable")
 			}
-			if cpu-start >= 150*time.Millisecond {
+			if cpu-start >= 150*time.Millisecond && time.Since(wallStart) >= 150*time.Millisecond {
 				break
 			}
 			if time.Now().After(watchdog) {
