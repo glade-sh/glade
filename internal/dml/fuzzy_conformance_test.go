@@ -3,6 +3,7 @@ package dml
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,6 +29,10 @@ type fuzzyBound struct {
 	MinRecall float64 `json:"min_recall"`
 	// MaxExtra is the most pairs Glade may match that native did not.
 	MaxExtra int `json:"max_extra"`
+	// MaxConfidenceError is the largest mean absolute difference allowed
+	// between Glade's rounded match confidence and the native confidence over
+	// the pairs both match.
+	MaxConfidenceError float64 `json:"max_conf_mae"`
 }
 
 type fuzzyCases struct {
@@ -71,8 +76,9 @@ func fuzzyRule(row fuzzyNativeRow) storage.DuplicateRule {
 }
 
 // fuzzyGladeMatches returns the (candidate, existing) index pairs Glade
-// reports through the shared duplicate-rule path.
-func fuzzyGladeMatches(t *testing.T, row fuzzyNativeRow) (map[[2]int]bool, string) {
+// reports through the shared duplicate-rule path with their match
+// confidences.
+func fuzzyGladeMatches(t *testing.T, row fuzzyNativeRow) (map[[2]int]float64, string) {
 	t.Helper()
 	org := storage.OrgState{APIVersion: "67.0", Objects: map[string]storage.ObjectState{}}
 	storage.EnsureStandardObject(&org, row.Object)
@@ -89,7 +95,7 @@ func fuzzyGladeMatches(t *testing.T, row fuzzyNativeRow) (map[[2]int]bool, strin
 	}
 	org.Objects[row.Object] = state
 	rule := fuzzyRule(row)
-	got := map[[2]int]bool{}
+	got := map[[2]int]float64{}
 	engine := ""
 	for b, value := range row.Values {
 		result, supported := FindDuplicateMatches(&org, rule, fuzzyRecord(row, value), nil)
@@ -98,19 +104,19 @@ func fuzzyGladeMatches(t *testing.T, row fuzzyNativeRow) (map[[2]int]bool, strin
 		}
 		for _, match := range result.Matches {
 			engine = match.Engine
-			for _, record := range match.Records {
-				got[[2]int{b, index[record.ID]}] = true
+			for i, record := range match.Records {
+				got[[2]int{b, index[record.ID]}] = math.Floor(match.Confidences[i] + 0.5)
 			}
 		}
 	}
 	return got, engine
 }
 
-// The native Datacloud.FindDuplicates verdicts for custom fuzzy matching rules
-// (every pair of probe values per method, API 62.0 and 67.0) are reproduced by
-// the shared duplicate-rule matcher. The bounds in cases.json are the measured
-// agreement of the fitted scorers; unmeasured behavior is listed in
-// docs/DUPLICATE_FUZZY_MATCHING.md.
+// The native Datacloud.FindDuplicates verdicts and match confidences for
+// custom fuzzy matching rules (every pair of probe values per method, API 62.0
+// and 67.0) are reproduced by the shared duplicate-rule matcher. The bounds in
+// cases.json are the measured agreement of the fitted scorers; unmeasured
+// behavior is listed in docs/DUPLICATE_FUZZY_MATCHING.md.
 func TestFuzzyMatchingNativeRows(t *testing.T) {
 	var cases fuzzyCases
 	raw, err := os.ReadFile(filepath.Join(fuzzyFixture, "cases.json"))
@@ -150,24 +156,29 @@ func TestFuzzyMatchingNativeRows(t *testing.T) {
 			if got == nil {
 				t.Fatalf("custom fuzzy rule is not enforced (%s)", engine)
 			}
-			native := map[[2]int]bool{}
+			native := map[[2]int]float64{}
 			for _, m := range row.Matches {
-				native[[2]int{int(m[0]), int(m[1])}] = true
+				native[[2]int{int(m[0]), int(m[1])}] = m[2]
 			}
-			hit, extra := 0, 0
-			for pair := range got {
-				if native[pair] {
+			hit, extra, confidenceError := 0, 0, 0.0
+			for pair, confidence := range got {
+				if nativeConfidence, ok := native[pair]; ok {
 					hit++
+					confidenceError += math.Abs(confidence - nativeConfidence)
 				} else {
 					extra++
 				}
 			}
-			recall := 1.0
+			recall, mae := 1.0, 0.0
 			if len(native) > 0 {
 				recall = float64(hit) / float64(len(native))
 			}
-			if recall+1e-9 < bound.MinRecall || extra > bound.MaxExtra {
-				t.Errorf("recall=%.4f (min %.4f) extra=%d (max %d); native=%d glade=%d", recall, bound.MinRecall, extra, bound.MaxExtra, len(native), len(got))
+			if hit > 0 {
+				mae = confidenceError / float64(hit)
+			}
+			t.Logf("recall=%.4f extra=%d conf_mae=%.3f native=%d glade=%d", recall, extra, mae, len(native), len(got))
+			if recall+1e-9 < bound.MinRecall || extra > bound.MaxExtra || mae > bound.MaxConfidenceError+1e-9 {
+				t.Errorf("recall=%.4f (min %.4f) extra=%d (max %d) conf_mae=%.3f (max %.3f); native=%d glade=%d", recall, bound.MinRecall, extra, bound.MaxExtra, mae, bound.MaxConfidenceError, len(native), len(got))
 			}
 			if engine != storage.StandardMatchEngine {
 				t.Errorf("match engine %q; native reports %q for fuzzy custom rules", engine, storage.StandardMatchEngine)
