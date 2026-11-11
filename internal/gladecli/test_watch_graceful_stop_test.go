@@ -15,6 +15,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/testutil"
 	"github.com/glade-sh/glade/internal/watch"
 )
 
@@ -46,7 +47,7 @@ func TestGracefulStopWatchRunnerRoutes(t *testing.T) {
 					// The unfixed route returns before the worker; do not let it outlive this case.
 					select {
 					case <-drained:
-					case <-time.After(5 * time.Second):
+					case <-time.After(testutil.Deadline(5 * time.Second)):
 						t.Fatal("cancelled worker did not drain")
 					}
 					if !errors.Is(err, context.Canceled) {

@@ -18,6 +18,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/testutil"
 	"github.com/glade-sh/glade/internal/watch"
 )
 
@@ -687,7 +688,7 @@ func startDaemonEquivalenceServerWithProgress(t *testing.T, root string, progres
 			if err != nil {
 				t.Errorf("serve exit: %v", err)
 			}
-		case <-time.After(5 * time.Second):
+		case <-time.After(testutil.Deadline(5 * time.Second)):
 			if err := server.Close(); err != nil {
 				t.Errorf("force-close daemon equivalence server: %v", err)
 			}

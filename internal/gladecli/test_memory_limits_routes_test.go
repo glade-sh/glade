@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestRunTestMemoryLimitsWarmDiskCacheRoute(t *testing.T) {
@@ -147,7 +148,7 @@ func writeMemoryLimitParallelProject(t *testing.T, api string) string {
 
 func runMemoryLimitProjectRoute(t *testing.T, args []string, perfPath string, total int) runPerfSummary {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testutil.Deadline(30*time.Second))
 	defer cancel()
 	var stdout, stderr bytes.Buffer
 	run, err := runTest(ctx, args, &stdout, &stderr)

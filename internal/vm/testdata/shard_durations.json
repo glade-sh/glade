@@ -440,7 +440,7 @@
    "durationMillis": 0
   },
   {
-   "name": "TestApexKitIdentitySetsKeepIdAndStringContracts",
+   "name": "TestFactoryIdentitySetsKeepIdAndStringContracts",
    "durationMillis": 30
   },
   {
