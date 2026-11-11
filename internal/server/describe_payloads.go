@@ -1253,10 +1253,10 @@ func compositeAllOrNoneRollbackResults(results []dml.Result) []dml.Result {
 		}
 		out[i].Success = false
 		out[i].StatusCode = "ALL_OR_NONE_OPERATION_ROLLED_BACK"
-		out[i].Error = "dml: operation rolled back because allOrNone request failed"
+		out[i].Error = "Record rolled back because not all records were valid and the request was using AllOrNone header"
 		out[i].Errors = []dml.Error{{
 			StatusCode: "ALL_OR_NONE_OPERATION_ROLLED_BACK",
-			Message:    "dml: operation rolled back because allOrNone request failed",
+			Message:    "Record rolled back because not all records were valid and the request was using AllOrNone header",
 			Fields:     []string{},
 		}}
 	}
@@ -1268,13 +1268,17 @@ func compositeResultRows(results []dml.Result, referenceIDs []string, includeCre
 	for i, result := range results {
 		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []map[string]any{}}
 		if includeCreated {
-			row["created"] = result.Created
+			row["created"] = result.UpsertCreated
 		}
 		if i < len(referenceIDs) && referenceIDs[i] != "" {
 			row["referenceId"] = referenceIDs[i]
 		}
 		if !result.Success {
 			row["errors"] = compositeErrorRows(result)
+			// A failed insert row has no id, including collection upsert.
+			if result.ID == "" && (!includeCreated || result.UpsertCreated) {
+				delete(row, "id")
+			}
 		}
 		out = append(out, row)
 	}
@@ -1287,7 +1291,8 @@ func compositeErrorRows(result dml.Result) []map[string]any {
 		if statusCode == "" {
 			statusCode = salesforceErrorCode(errDMLFailure)
 		}
-		return []map[string]any{{"statusCode": statusCode, "message": result.Error, "fields": result.Fields}}
+		statusCode, message, fields := restDMLFieldError(statusCode, result.Error, result.Fields)
+		return []map[string]any{{"statusCode": statusCode, "message": message, "fields": fields}}
 	}
 	errors := make([]map[string]any, 0, len(result.Errors))
 	for _, err := range result.Errors {
@@ -1295,7 +1300,8 @@ func compositeErrorRows(result dml.Result) []map[string]any {
 		if statusCode == "" {
 			statusCode = salesforceErrorCode(errDMLFailure)
 		}
-		errors = append(errors, map[string]any{"statusCode": statusCode, "message": err.Message, "fields": err.Fields})
+		statusCode, message, fields := restDMLFieldError(statusCode, err.Message, err.Fields)
+		errors = append(errors, map[string]any{"statusCode": statusCode, "message": message, "fields": fields})
 	}
 	return errors
 }

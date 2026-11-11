@@ -1,0 +1,5 @@
+api	route	case	actual
+62.0	istest	phoneflow	api=62.0 | mixed: Acc.BI3:null Acc.AI3:null before2:null:two:three Acc.BU2:555-0102 Acc.AU2:555-0102 after2:555-0102:two:three => go:555-0102;go:555-0102;stop:null
+62.0	anonymous	phoneflow	api=62.0 | mixed: Acc.BI3:null Acc.AI3:null before2:null:two:three Acc.BU2:555-0102 Acc.AU2:555-0102 after2:555-0102:two:three => go:555-0102;go:555-0102;stop:null
+67.0	istest	phoneflow	api=67.0 | mixed: Acc.BI3:null Acc.AI3:null before2:null:two:three Acc.BU2:555-0102 Acc.AU2:555-0102 after2:555-0102:two:three => go:555-0102;go:555-0102;stop:null
+67.0	anonymous	phoneflow	api=67.0 | mixed: Acc.BI3:null Acc.AI3:null before2:null:two:three Acc.BU2:555-0102 Acc.AU2:555-0102 after2:555-0102:two:three => go:555-0102;go:555-0102;stop:null

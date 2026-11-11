@@ -1,0 +1,9 @@
+case	api	route	outcome
+multiline	62.0	metadata-deploy	accepted
+multiline	67.0	metadata-deploy	accepted
+inherited	62.0	metadata-deploy	accepted
+inherited	67.0	metadata-deploy	accepted
+unknownreceiver	62.0	metadata-deploy	Variable does not exist: Probe.Missing
+unknownreceiver	67.0	metadata-deploy	Variable does not exist: Probe.Missing
+inherited_runtime	62.0	anonymous	passed
+inherited_runtime	67.0	anonymous	passed

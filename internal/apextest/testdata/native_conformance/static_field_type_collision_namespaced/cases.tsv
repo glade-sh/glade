@@ -1,0 +1,5 @@
+case	api	route	source_file
+field_dispatch	62.0	metadata-validation+test	cases/field_dispatch.json
+field_dispatch	67.0	metadata-validation+test	cases/field_dispatch.json
+missing_method	62.0	metadata-validation	cases/missing_method.json
+missing_method	67.0	metadata-validation	cases/missing_method.json

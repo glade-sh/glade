@@ -106,7 +106,10 @@ Unsupported workflow behavior (warning).
 
 ### GLADEAUTO002 {#gladeauto002}
 
-Unsupported Flow behavior (warning).
+Unsupported Flow behavior (warning). A Process Builder process with scheduled
+actions, Chatter actions, record creates, a recursion counter, an uncaptured
+criterion operator or global reference, or a second active process on its object
+stays unrun and reports this warning.
 
 ### GLADEAUTO003 {#gladeauto003}
 

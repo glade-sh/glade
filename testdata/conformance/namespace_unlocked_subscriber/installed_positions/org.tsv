@@ -1,0 +1,13 @@
+case_id	api_version	route	compile_outcome	observed_diagnostic	source
+field	62.0	named-checkonly	COMPILED		named62/V036PField.cls
+parameter	62.0	named-checkonly	COMPILED		named62/V036PParameter.cls
+return	62.0	named-checkonly	COMPILED		named62/V036PReturn.cls
+generic	62.0	named-checkonly	COMPILED		named62/V036PGeneric.cls
+missing_inner	62.0	named-checkonly	COMPILE_ERROR	Invalid type: V036PkgOuter.Absent	named62/V036PMissingInner.cls
+missing_outer	62.0	named-checkonly	COMPILE_ERROR	Invalid type: V036AbsentOuter.Box	named62/V036PMissingOuter.cls
+field	67.0	named-checkonly	COMPILED		named67/V036PField.cls
+parameter	67.0	named-checkonly	COMPILED		named67/V036PParameter.cls
+return	67.0	named-checkonly	COMPILED		named67/V036PReturn.cls
+generic	67.0	named-checkonly	COMPILED		named67/V036PGeneric.cls
+missing_inner	67.0	named-checkonly	COMPILE_ERROR	Invalid type: V036PkgOuter.Absent	named67/V036PMissingInner.cls
+missing_outer	67.0	named-checkonly	COMPILE_ERROR	Invalid type: V036AbsentOuter.Box	named67/V036PMissingOuter.cls

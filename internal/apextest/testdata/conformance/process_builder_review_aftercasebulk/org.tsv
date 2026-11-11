@@ -1,0 +1,9 @@
+api	route	case	actual
+62.0	istest	cohort	api=62.0 | row=true:none | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION | log=BU:2,AU:2,pb:2,one:2,two:1,BU:1,AU:1,pb:1,one:1,two:1
+62.0	anonymous	cohort	api=62.0 | row=true:none | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION | log=BU:2,AU:2,pb:2,one:2,two:1,BU:1,AU:1,pb:1,one:1,two:1
+62.0	istest	reverse	api=62.0 | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION | row=true:none | log=BU:2,AU:2,pb:2,one:2,two:1,BU:1,AU:1,pb:1,one:1,two:1
+62.0	anonymous	reverse	api=62.0 | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION | row=true:none | log=BU:2,AU:2,pb:2,one:2,two:1,BU:1,AU:1,pb:1,one:1,two:1
+67.0	istest	cohort	api=67.0 | row=true:none | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION | log=BU:2,AU:2,pb:2,one:2,two:1,BU:1,AU:1,pb:1,one:1,two:1
+67.0	anonymous	cohort	api=67.0 | row=true:none | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION | log=BU:2,AU:2,pb:2,one:2,two:1,BU:1,AU:1,pb:1,one:1,two:1
+67.0	istest	reverse	api=67.0 | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION | row=true:none | log=BU:2,AU:2,pb:2,one:2,two:1,BU:1,AU:1,pb:1,one:1,two:1
+67.0	anonymous	reverse	api=67.0 | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION | row=true:none | log=BU:2,AU:2,pb:2,one:2,two:1,BU:1,AU:1,pb:1,one:1,two:1

@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Fern_Person__c</fullName><label>Fern Person</label><deleteConstraint>SetNull</deleteConstraint><referenceTo>Contact</referenceTo><relationshipLabel>Fern Cases</relationshipLabel><relationshipName>FernCases</relationshipName><required>false</required><type>Lookup</type></CustomField>

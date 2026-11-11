@@ -14,7 +14,10 @@ import (
 // Salesforce rejects it with "Invalid type: cloudkit.Envelope"
 // (testdata/corpus_shape/native/org.tsv:2,7), so it cannot live in the
 // deployable project. Glade must report the same invalid type at the same
-// boundary, and the unrelated project tests must still run.
+// boundary, and the unrelated project tests must still run. Ruling 49 closes
+// the parameter and return positions too (namespace_external_positions), so
+// Glade reports one diagnostic per position; native compilation stops at the
+// first. Pin the exact Glade code and multiplicity for every position.
 func TestCorpusShapeUnresolvedManagedType(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run("API"+api, func(t *testing.T) {
@@ -32,12 +35,15 @@ func TestCorpusShapeUnresolvedManagedType(t *testing.T) {
 				t.Fatalf("index diagnostics: %v", index.Diagnostics)
 			}
 			diagnostics := sema.Analyze(index).Diagnostics
-			if len(diagnostics) != 1 {
-				t.Fatalf("want one invalid-type diagnostic, got %v", diagnostics)
+			want := map[string]int{"GLADESEMA002": 1, "GLADESEMA004": 1, "GLADESEMA006": 1}
+			if len(diagnostics) != 3 {
+				t.Fatalf("want exactly three position diagnostics, got %v", diagnostics)
 			}
-			d := diagnostics[0]
-			if d.Code != "GLADESEMA006" || d.Message != "Invalid type: cloudkit.Envelope" || !strings.HasSuffix(d.File, "ShapeOpaque.cls") {
-				t.Fatalf("unexpected diagnostic: %+v", d)
+			for _, d := range diagnostics {
+				if want[d.Code] == 0 || d.Message != "Invalid type: cloudkit.Envelope" || !strings.HasSuffix(d.File, "ShapeOpaque.cls") {
+					t.Fatalf("unexpected diagnostic: %+v", d)
+				}
+				want[d.Code]--
 			}
 			// The invalid class is excluded; independent project tests still run.
 			run := Run(index, Options{NoDiskCache: true, Parallelism: 1})

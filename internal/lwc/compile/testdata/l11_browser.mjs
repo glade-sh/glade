@@ -5,6 +5,41 @@ import { createRequire } from "node:module";
 import { pageCount } from "./browser_pages.mjs";
 
 const config = JSON.parse(fs.readFileSync(0, "utf8"));
+// The API-version selector may come from the JSON input, the environment, or
+// positional arguments. With no selector every supplied row is observed, which
+// preserves the standalone runner's original default.
+function apiVersionValues(value) {
+  if (Array.isArray(value)) return value.flatMap(apiVersionValues);
+  if (typeof value !== "string") return [];
+  return value.split(",").map(version => version.trim()).filter(Boolean);
+}
+// A versioned row belongs only to its own API. An unversioned row cannot be
+// assigned when several APIs are selected, so reject that input instead of
+// silently dropping or duplicating it.
+function selectL11Specs(specs, versions) {
+  if (versions.length === 0) return specs;
+  const selected = new Set(versions);
+  const isUnversioned = spec => spec.api === undefined || spec.api === null || spec.api === "";
+  if (selected.size > 1 && specs.some(isUnversioned)) {
+    throw new Error("unversioned L11 spec is ambiguous across " + [...selected].join(","));
+  }
+  return specs.filter(spec => isUnversioned(spec) || selected.has(spec.api));
+}
+function selectedAPIVersions() {
+  const configured = config.apiVersions ?? config.apiVersion;
+  if (configured !== undefined) return apiVersionValues(configured);
+  if (process.env.GLADE_L11_API_VERSIONS) return apiVersionValues(process.env.GLADE_L11_API_VERSIONS);
+  if (process.argv.length > 2) return apiVersionValues(process.argv.slice(2));
+  return [];
+}
+const apiVersions = selectedAPIVersions();
+const specs = selectL11Specs(config.specs, apiVersions);
+// The selection regression calls the real runner without Playwright and
+// without adding any observation path to the browser flow.
+if (config.selectOnly) {
+  fs.writeSync(1, JSON.stringify({ ids: specs.map(spec => spec.id) }));
+  process.exit(0);
+}
 const { chromium } = createRequire(import.meta.url)(config.playwrightModule);
 const browser = await chromium.launch({
   headless: true,
@@ -15,8 +50,8 @@ try {
   const values = {}, errors = {};
   const context = await browser.newContext();
   const mutations = new Set(["createList", "updateList", "deleteList", "updateListPreferences"]);
-  const reads = config.specs.filter(spec => !mutations.has(spec.adapter));
-  const writes = config.specs.filter(spec => mutations.has(spec.adapter));
+  const reads = specs.filter(spec => !mutations.has(spec.adapter));
+  const writes = specs.filter(spec => mutations.has(spec.adapter));
   async function observe(specs) {
     const page = await context.newPage();
     const pageErrors = [];

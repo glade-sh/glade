@@ -1,0 +1,71 @@
+case_id	api_version	context	route	outcome	component	line_col	observed	source
+C01_missing_only	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: missingns.Parcel.Options	sources/C01_missing_only
+C01_missing_only	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:88	Variable does not exist: missingns.Parcel.Instance	sources/C01_missing_only
+C01_missing_only	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C01_missing_only
+C02_local_type_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: missingns.Parcel.Options	sources/C02_local_type_collision
+C02_local_type_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:88	Variable does not exist: missingns.Parcel.Instance	sources/C02_local_type_collision
+C02_local_type_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C02_local_type_collision
+C03_static_only	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:54	Variable does not exist: missingns.Parcel.Instance	sources/C03_static_only
+C03_static_only	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:54	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Variable does not exist: missingns.Parcel.Instance	sources/C03_static_only
+C04_static_only_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:54	Variable does not exist: missingns.Parcel.Instance	sources/C04_static_only_collision
+C04_static_only_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:54	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Variable does not exist: missingns.Parcel.Instance	sources/C04_static_only_collision
+C05_field_only	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: missingns.Parcel.Options	sources/C05_field_only
+C05_field_only	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C05_field_only
+C06_field_only_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: missingns.Parcel.Options	sources/C06_field_only_collision
+C06_field_only_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C06_field_only_collision
+C07_istest_static_field	62.0	no_package_scratch	istest-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:46	Invalid type: missingns.Parcel.Options	sources/C07_istest_static_field
+C07_istest_static_field	62.0	no_package_scratch	istest-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:112	Variable does not exist: missingns.Parcel.Instance	sources/C07_istest_static_field
+C08_istest_static_field_collision	62.0	no_package_scratch	istest-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:46	Invalid type: missingns.Parcel.Options	sources/C08_istest_static_field_collision
+C08_istest_static_field_collision	62.0	no_package_scratch	istest-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:112	Variable does not exist: missingns.Parcel.Instance	sources/C08_istest_static_field_collision
+C09_local	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:54	Invalid type: missingns.Parcel.Options	sources/C09_local
+C09_local	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:82	Variable does not exist: missingns.Parcel.Instance	sources/C09_local
+C09_local	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:54	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C09_local
+C10_local_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:54	Invalid type: missingns.Parcel.Options	sources/C10_local_collision
+C10_local_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:82	Variable does not exist: missingns.Parcel.Instance	sources/C10_local_collision
+C10_local_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:54	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C10_local_collision
+C11_parameter	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:75	Invalid type: missingns.Parcel.Options	sources/C11_parameter
+C11_parameter	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:80	Variable does not exist: missingns.Parcel.Instance	sources/C11_parameter
+C11_parameter	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:75	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C11_parameter
+C12_parameter_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:75	Invalid type: missingns.Parcel.Options	sources/C12_parameter_collision
+C12_parameter_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:80	Variable does not exist: missingns.Parcel.Instance	sources/C12_parameter_collision
+C12_parameter_collision	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:75	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C12_parameter_collision
+K01_accept_control	62.0	no_package_scratch	named-checkonly-runspecified	COMPILED_TESTS_PASSED	ReceiverRunnerTest.observe	-	Pass	sources/K01_accept_control
+K02_accept_local_parcel	62.0	no_package_scratch	named-checkonly-runspecified	COMPILED_TESTS_PASSED	ReceiverRunnerTest.observe	-	Pass	sources/K02_accept_local_parcel
+K03_reject_control	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: System.NotATypePr173	sources/K03_reject_control
+K03_reject_control	62.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: System.NotATypePr173	sources/K03_reject_control
+K04_istest_accept_control	62.0	no_package_scratch	istest-checkonly-runspecified	COMPILED_TESTS_PASSED	ReceiverProbe.observe	-	Pass	sources/K04_istest_accept_control
+C01_missing_only	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: missingns.Parcel.Options	sources/C01_missing_only
+C01_missing_only	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:88	Variable does not exist: missingns.Parcel.Instance	sources/C01_missing_only
+C01_missing_only	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C01_missing_only
+C02_local_type_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: missingns.Parcel.Options	sources/C02_local_type_collision
+C02_local_type_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:88	Variable does not exist: missingns.Parcel.Instance	sources/C02_local_type_collision
+C02_local_type_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C02_local_type_collision
+C03_static_only	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:54	Variable does not exist: missingns.Parcel.Instance	sources/C03_static_only
+C03_static_only	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:54	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Variable does not exist: missingns.Parcel.Instance	sources/C03_static_only
+C04_static_only_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:54	Variable does not exist: missingns.Parcel.Instance	sources/C04_static_only_collision
+C04_static_only_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:54	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Variable does not exist: missingns.Parcel.Instance	sources/C04_static_only_collision
+C05_field_only	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: missingns.Parcel.Options	sources/C05_field_only
+C05_field_only	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C05_field_only
+C06_field_only_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: missingns.Parcel.Options	sources/C06_field_only_collision
+C06_field_only_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C06_field_only_collision
+C07_istest_static_field	67.0	no_package_scratch	istest-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:46	Invalid type: missingns.Parcel.Options	sources/C07_istest_static_field
+C07_istest_static_field	67.0	no_package_scratch	istest-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:112	Variable does not exist: missingns.Parcel.Instance	sources/C07_istest_static_field
+C08_istest_static_field_collision	67.0	no_package_scratch	istest-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:46	Invalid type: missingns.Parcel.Options	sources/C08_istest_static_field_collision
+C08_istest_static_field_collision	67.0	no_package_scratch	istest-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:112	Variable does not exist: missingns.Parcel.Instance	sources/C08_istest_static_field_collision
+C09_local	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:54	Invalid type: missingns.Parcel.Options	sources/C09_local
+C09_local	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:82	Variable does not exist: missingns.Parcel.Instance	sources/C09_local
+C09_local	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:54	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C09_local
+C10_local_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:54	Invalid type: missingns.Parcel.Options	sources/C10_local_collision
+C10_local_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:82	Variable does not exist: missingns.Parcel.Instance	sources/C10_local_collision
+C10_local_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:54	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C10_local_collision
+C11_parameter	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:75	Invalid type: missingns.Parcel.Options	sources/C11_parameter
+C11_parameter	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:80	Variable does not exist: missingns.Parcel.Instance	sources/C11_parameter
+C11_parameter	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:75	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C11_parameter
+C12_parameter_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:75	Invalid type: missingns.Parcel.Options	sources/C12_parameter_collision
+C12_parameter_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:80	Variable does not exist: missingns.Parcel.Instance	sources/C12_parameter_collision
+C12_parameter_collision	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:75	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: missingns.Parcel.Options	sources/C12_parameter_collision
+K01_accept_control	67.0	no_package_scratch	named-checkonly-runspecified	COMPILED_TESTS_PASSED	ReceiverRunnerTest.observe	-	Pass	sources/K01_accept_control
+K02_accept_local_parcel	67.0	no_package_scratch	named-checkonly-runspecified	COMPILED_TESTS_PASSED	ReceiverRunnerTest.observe	-	Pass	sources/K02_accept_local_parcel
+K03_reject_control	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverProbe	1:30	Invalid type: System.NotATypePr173	sources/K03_reject_control
+K03_reject_control	67.0	no_package_scratch	named-checkonly-runspecified	COMPILE_ERROR	ReceiverRunnerTest	1:30	Dependent class is invalid and needs recompilation:\n Class ReceiverProbe : Invalid type: System.NotATypePr173	sources/K03_reject_control
+K04_istest_accept_control	67.0	no_package_scratch	istest-checkonly-runspecified	COMPILED_TESTS_PASSED	ReceiverProbe.observe	-	Pass	sources/K04_istest_accept_control

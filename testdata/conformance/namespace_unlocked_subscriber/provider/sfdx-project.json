@@ -1,0 +1,13 @@
+{
+  "packageDirectories": [
+    {
+      "path": "package",
+      "default": true,
+      "package": "SyntheticProvider",
+      "versionName": "capture",
+      "versionNumber": "1.0.0.NEXT"
+    }
+  ],
+  "namespace": "",
+  "sourceApiVersion": "62.0"
+}

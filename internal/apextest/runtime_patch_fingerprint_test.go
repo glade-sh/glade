@@ -296,8 +296,8 @@ func TestRuntimePatchFingerprintStreamingABIAndCounters(t *testing.T) {
 	if runtimePatchABI != "apextest-runtime-patch-v3" {
 		t.Fatalf("runtime patch ABI = %q, want apextest-runtime-patch-v3", runtimePatchABI)
 	}
-	if testRuntimeCacheABI != "apextest-runtime-v32" {
-		t.Fatalf("runtime cache ABI = %q, want apextest-runtime-v32", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v33" {
+		t.Fatalf("runtime cache ABI = %q, want apextest-runtime-v33", testRuntimeCacheABI)
 	}
 	counters := newRunPerfCounters(true)
 	if _, ok := runtimePatchCompiledPayloadFingerprintWithPerf(runtimeFingerprintFixture(2), counters); !ok {

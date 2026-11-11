@@ -1,0 +1,29 @@
+api	automation	case	values
+62.0	off	exact_pre	In Progress	In Progress	true
+62.0	off	exact_insert	In Progress	In Progress	null	null	true	false	false	0
+62.0	off	before_positive	New	Additional Information Required
+62.0	off	update_additional	In Progress	Additional Information Required
+62.0	off	update_progress	In Progress	In Progress
+62.0	off	confirmation_control	0
+62.0	off	external_control	false	In Progress	New	false
+62.0	on	exact_pre	In Progress	In Progress	true
+62.0	on	exact_insert	In Progress	In Progress	updated	updated	true	false	false	0
+62.0	on	before_positive	Additional Information Required	Additional Information Required
+62.0	on	update_additional	Additional Information Required	Additional Information Required
+62.0	on	update_progress	In Progress	In Progress
+62.0	on	confirmation_control	1
+62.0	on	external_control	true	In Progress	In Progress	true
+67.0	off	exact_pre	In Progress	In Progress	true
+67.0	off	exact_insert	In Progress	In Progress	null	null	true	false	false	0
+67.0	off	before_positive	New	Additional Information Required
+67.0	off	update_additional	In Progress	Additional Information Required
+67.0	off	update_progress	In Progress	In Progress
+67.0	off	confirmation_control	0
+67.0	off	external_control	false	In Progress	New	false
+67.0	on	exact_pre	In Progress	In Progress	true
+67.0	on	exact_insert	In Progress	In Progress	updated	updated	true	false	false	0
+67.0	on	before_positive	Additional Information Required	Additional Information Required
+67.0	on	update_additional	Additional Information Required	Additional Information Required
+67.0	on	update_progress	In Progress	In Progress
+67.0	on	confirmation_control	1
+67.0	on	external_control	true	In Progress	In Progress	true
