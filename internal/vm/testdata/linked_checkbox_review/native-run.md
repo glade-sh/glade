@@ -1,0 +1,5 @@
+Reconfirmation, 2026-11-11. The existing org.tsv already carries the linked custom-checkbox default-true explicit-null rows at 62.0 and 67.0: dotted read and dynamic get after a constructor and after put (custom-null-true, custom-null-false), fresh insert, ID-only, queried, clone, null insert, and the WebStore dynamic-get null (webstore-null). The istest-62.cls and istest-67.cls classes cover the constructor and put routes.
+
+Fresh three-day Developer scratch org from a campaign Dev Hub, Winter '27 release. Same project (objects/, Probe permission set assigned to the running user). boundary.apex was run with `sf apex run --api-version 62.0` and `67.0`, minus the Contact and WebStore lines. Every remaining row reproduced the org.tsv value at both APIs: custom-null-true false|null, custom-null-false false|null, caller-omitted false|null, id-only false|null, queried true|true, clone false|null, null-insert INVALID_TYPE_ON_FIELD_IN_RECORD.
+
+Not reproduced in that org: the Contact rows (the new org reported the standard Contact checkbox as a missing field) and the WebStore row (no Commerce feature). Those rows rest on the earlier captures in org.tsv.
