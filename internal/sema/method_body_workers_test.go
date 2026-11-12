@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
@@ -150,6 +152,99 @@ func TestMethodBodyWorkerCountFollowsGOMAXPROCS(t *testing.T) {
 		runtime.GOMAXPROCS(procs)
 		if got := semaMethodBodyWorkerCount(); got != want {
 			t.Fatalf("GOMAXPROCS=%d: worker count = %d, want %d", procs, got, want)
+		}
+	}
+}
+
+// bodiesWithGOMAXPROCS runs the default body pass over a fresh view, as
+// analyzeWithOptions does, and returns the diagnostics and the view's hydrated
+// keys afterwards. Later passes read that view, so it must match too.
+func bodiesWithGOMAXPROCS(t *testing.T, index typesys.Index, procs int) ([]diagnostic.Diagnostic, []string) {
+	t.Helper()
+	previous := runtime.GOMAXPROCS(procs)
+	defer runtime.GOMAXPROCS(previous)
+	a := NewAnalyzer()
+	a.prepareAnalysisContext(index, AnalyzeOptions{Diagnostics: true})
+	index = prepareAnalysisIndexWithSources(index, a.sources)
+	a.prepareAnalysisModel(index)
+	view := buildSemaTypeMemberState(index, nil, a.sources).view()
+	a.checkMemberTypes(index, view)
+	diagnostics := a.checkMethodBodiesWithView(index, view, nil)
+	keys := make([]string, 0, len(view.hydrated))
+	for key := range view.hydrated {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return diagnostics, keys
+}
+
+func TestSpeculativeBodiesLeaveTheSerialViewHistory(t *testing.T) {
+	index, ok := methodBodyWorkersIndex(methodBodyWorkersProject(t, 60))
+	if !ok {
+		t.Fatal("generated project did not load")
+	}
+	wantDiagnostics, wantKeys := bodiesWithGOMAXPROCS(t, index, 1)
+	gotDiagnostics, gotKeys := bodiesWithGOMAXPROCS(t, index, 4)
+	if !reflect.DeepEqual(gotDiagnostics, wantDiagnostics) {
+		t.Fatalf("diagnostics differ between GOMAXPROCS=1 and 4")
+	}
+	if len(wantKeys) == 0 {
+		t.Fatal("serial run hydrated nothing; the history comparison would prove nothing")
+	}
+	if !reflect.DeepEqual(gotKeys, wantKeys) {
+		t.Fatalf("hydrated history differs\nserial:   %v\nparallel: %v", wantKeys, gotKeys)
+	}
+}
+
+// An earlier type's hydration can silence a later type's diagnostic. Workers
+// that have not seen that type must not report it: the run falls back to the
+// serial pass.
+func TestSpeculativeBodiesFallBackWhenEarlierHydrationMatters(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "LaterDiagnostics.cls")
+	source := "public class LaterDiagnostics {\n    public void run() {\n        OverlayOnly = 1;\n    }\n}\n"
+	writeSemaFile(t, file, source)
+	methodStart := strings.Index(source, "public void run()")
+	methodEnd := strings.LastIndex(source, "    }") + len("    }")
+	types := []typesys.TypeSymbol{
+		{Kind: apexast.DeclarationClass, Name: "DuplicateWithoutBody", Members: []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "Seed", Type: "OverlaySeed__c"}}},
+		{Kind: apexast.DeclarationClass, Name: "DuplicateWithoutBody"},
+		{Kind: apexast.DeclarationClass, Name: "Filler"},
+		{
+			Kind: apexast.DeclarationClass, Name: "LaterDiagnostics", File: file,
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationMethod, Name: "run", Type: "void",
+				BodyRange: semaParserBodyRange(source, methodStart, methodEnd),
+				Range:     diagnostic.Range{Start: diagnostic.Position{Offset: methodStart}, End: diagnostic.Position{Offset: methodEnd}},
+			}},
+		},
+	}
+	index := typesys.Index{Types: types}
+	run := func(procs int) []diagnostic.Diagnostic {
+		previous := runtime.GOMAXPROCS(procs)
+		defer runtime.GOMAXPROCS(previous)
+		lazyPlatform := newSemaLazyPlatformTypeMemberModel(nil)
+		lazyPlatform.lookups.Store(normalizeName("OverlaySeed__c"), semaPlatformTypeMemberLookup{
+			ok: true,
+			members: typeMembers{
+				name: "OverlaySeed__c", kind: apexast.DeclarationClass,
+				fields:  map[string]typesys.MemberSymbol{normalizeName("OverlayOnly"): {Kind: apexast.DeclarationField, Name: "OverlayOnly", Type: "Integer"}},
+				methods: make(map[string][]typesys.MemberSymbol),
+			},
+		})
+		base := buildTypeMemberLayerWithSources(index, newSemaSources(nil, nil), nil)
+		state := newSemaTypeMemberStateWithPlatform(base, &semaTypeMemberModel{members: make(map[string]typeMembers), platform: lazyPlatform})
+		return NewAnalyzer().checkMethodBodiesWithView(index, state.view(), nil)
+	}
+	want := run(1)
+	for _, item := range want {
+		if strings.Contains(item.Message, "assigns unknown variable") {
+			t.Fatalf("serial run must silence the assignment diagnostic: %v", want)
+		}
+	}
+	for _, procs := range []int{2, 4, 8} {
+		if got := run(procs); !reflect.DeepEqual(got, want) {
+			t.Fatalf("GOMAXPROCS=%d differs from serial\nserial: %v\n   got: %v", procs, want, got)
 		}
 	}
 }
