@@ -1,6 +1,7 @@
 package dap
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -24,6 +25,7 @@ type Handler struct {
 	seqMu       sync.Mutex
 	snapshot    Snapshot
 	launch      LaunchHandler
+	launchCtx   LaunchHandlerContext
 	seq         int
 	breakpoints map[string][]Breakpoint
 	varRefs     map[int]vm.Value
@@ -32,6 +34,14 @@ type Handler struct {
 	live        *LiveSession
 	events      chan Event
 	pending     *pendingLiveSession
+
+	inflightMu  sync.Mutex
+	inflightSeq int
+	inflight    context.CancelFunc
+	// cancelled holds request ids cancelled before they started. disconnected
+	// is set once the client has asked to disconnect.
+	cancelled    map[int]bool
+	disconnected bool
 }
 
 type pendingLiveSession struct {
@@ -100,6 +110,8 @@ func (h *Handler) Handle(request Request) []any {
 			return []any{h.success(request, nil)}
 		}
 		return h.withStoppedEvent(request, "pause")
+	case CommandCancel:
+		return []any{h.success(request, nil)}
 	case CommandDisconnect:
 		if live := h.liveSession(); live != nil {
 			live.Disconnect()
@@ -392,6 +404,7 @@ func (h *Handler) withInitializedEvent(request Request) []any {
 			"supportsSetVariable":              false,
 			"supportsStepBack":                 false,
 			"supportsRestartRequest":           false,
+			"supportsCancelRequest":            true,
 		}),
 		h.event("initialized", nil),
 	}
@@ -420,10 +433,35 @@ func (h *Handler) handleLaunch(request Request) []any {
 	if err := request.DecodeArguments(&args); err != nil {
 		return []any{h.failure(request, err.Error())}
 	}
-	if h.launch == nil {
+	h.stateMu.Lock()
+	launch, launchCtx := h.launch, h.launchCtx
+	h.stateMu.Unlock()
+	if launch == nil && launchCtx == nil {
 		return []any{h.failure(request, "launch not implemented")}
 	}
-	if err := h.launch(args); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	h.inflightMu.Lock()
+	h.inflightSeq, h.inflight = request.Seq, cancel
+	if h.disconnected || h.cancelled[request.Seq] {
+		cancel()
+	}
+	delete(h.cancelled, request.Seq)
+	h.inflightMu.Unlock()
+	var err error
+	if launchCtx != nil {
+		err = launchCtx(ctx, args)
+	} else {
+		err = launch(args)
+	}
+	h.inflightMu.Lock()
+	h.inflightSeq, h.inflight = 0, nil
+	h.inflightMu.Unlock()
+	cancelled := ctx.Err() != nil
+	cancel()
+	if cancelled {
+		return []any{h.failure(request, "cancelled")}
+	}
+	if err != nil {
 		return []any{h.failure(request, err.Error())}
 	}
 	messages := []any{h.success(request, nil)}
@@ -438,6 +476,45 @@ func (h *Handler) handleLaunch(request Request) []any {
 func (h *Handler) handleConfigurationDone(request Request) []any {
 	h.startPendingLiveSession()
 	return []any{h.success(request, nil)}
+}
+
+// Interrupt is called by the transport as soon as a request is read, before the
+// request is handled. A cancel request for the launch in flight, or a
+// disconnect, cancels the launch context so a slow launch ends early.
+func (h *Handler) Interrupt(request Request) {
+	switch request.Command {
+	case CommandCancel:
+		var args struct {
+			RequestID int `json:"requestId"`
+		}
+		_ = request.DecodeArguments(&args)
+		h.inflightMu.Lock()
+		if h.inflight != nil && (args.RequestID == 0 || args.RequestID == h.inflightSeq) {
+			h.inflight()
+		} else if args.RequestID > 0 {
+			// The request may be queued behind another or not started yet.
+			if h.cancelled == nil {
+				h.cancelled = make(map[int]bool)
+			}
+			h.cancelled[args.RequestID] = true
+		}
+		h.inflightMu.Unlock()
+	case CommandDisconnect, CommandTerminate:
+		h.inflightMu.Lock()
+		h.disconnected = true
+		if h.inflight != nil {
+			h.inflight()
+		}
+		h.inflightMu.Unlock()
+	}
+}
+
+// SetLaunchHandlerContext is like SetLaunchHandler. The context ends when the
+// client cancels the launch request or disconnects.
+func (h *Handler) SetLaunchHandlerContext(handler LaunchHandlerContext) {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	h.launchCtx = handler
 }
 
 func (h *Handler) SetLaunchHandler(handler LaunchHandler) {
