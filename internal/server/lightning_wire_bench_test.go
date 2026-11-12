@@ -117,7 +117,7 @@ func BenchmarkLightningWirePair(b *testing.B) {
 	b.ReportMetric(float64(len(handler.runtime.Classes)), "runtime-classes")
 }
 
-func lightningWireBenchmarkServer(b *testing.B) *Server {
+func lightningWireBenchmarkServer(b testing.TB) *Server {
 	b.Helper()
 	p, err := project.Load(filepath.Join("..", "lwc", "compile", "testdata", "l07_runtime", "api67"))
 	if err != nil {
@@ -181,8 +181,10 @@ func BenchmarkLightningWireRequestSetup(b *testing.B) {
 		}
 	})
 	b.Run("OrgEqual", func(b *testing.B) {
+		clone := handler.Org.Clone()
+		b.ResetTimer()
 		for range b.N {
-			if !orgStateEqual(*handler.Org, *handler.Org) {
+			if !orgStateEqual(clone, *handler.Org) {
 				b.Fatal("org comparison changed state")
 			}
 		}
