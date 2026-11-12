@@ -84,6 +84,14 @@ private class LazySpreadParityTest {
 		try { Database.update(new List<SObject>{((Id) 'a00000000000001AAA').getSObjectType().newSObject('a00000000000001AAA')}, false); rows.add('update'); } catch (Exception e) { rows.add(e.getTypeName() + ' ' + e.getMessage()); }
 		report(String.join(rows, ' | '));
 	}
+	// The virtual schema objects list every object the org holds, cold ones too.
+	@IsTest static void entityDefinitionSoslAndSoql() {
+		List<List<SObject>> found = [FIND 'Work Access' IN ALL FIELDS RETURNING EntityDefinition(QualifiedApiName)];
+		List<String> rows = new List<String>();
+		for (SObject o : found[0]) { rows.add(String.valueOf(o.get('QualifiedApiName'))); }
+		rows.sort();
+		report(String.join(rows, ',') + ' ' + [SELECT COUNT() FROM EntityDefinition] + ' ' + [SELECT COUNT() FROM EntityDefinition WHERE QualifiedApiName = 'WorkAccess'] + ' ' + [SELECT COUNT() FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = 'WorkAccess'] + ' ' + [SELECT COUNT() FROM EntityParticle WHERE EntityDefinition.QualifiedApiName = 'WorkAccess']);
+	}
 	@IsTest static void typeAndInstanceLookups() {
 		SObject s = (SObject) Type.forName('Schema.Entitlement').newInstance();
 		report(String.valueOf(Type.forName('AsyncApexJob')) + ' ' + String.valueOf(Type.forName('ServiceResource')) + ' ' + s.getSObjectType() + ' ' + new AsyncApexJob().getSObjectType() + ' ' + Schema.getGlobalDescribe().get('ServiceResource').newSObject().getSObjectType());
