@@ -12,7 +12,7 @@ import (
 )
 
 // NATIVE fixed candidates with readable and unreadable SOSL sort fields:
-// testdata/conformance/sosl_order_access/org.tsv:2 (istest 62.0) and :15 (istest 67.0).
+// testdata/conformance/sosl_order_access/org.tsv:9 (istest 62.0) and :22 (istest 67.0).
 // Bare anonymous context and empty search controls are in the same table.
 func TestSOSLOrderAccessConformance(t *testing.T) {
 	dir := filepath.Join("testdata", "conformance", "sosl_order_access")
@@ -86,7 +86,11 @@ func TestSOSLOrderAccessConformance(t *testing.T) {
 						if !errors.As(err, &failure) {
 							t.Fatalf("expected native exception, got %v", err)
 						}
-						actual, ok = failure.Type+": "+failure.ExceptionMessage(), true
+						typ := failure.Type
+						if !strings.Contains(typ, ".") {
+							typ = "System." + typ
+						}
+						actual, ok = typ+": "+failure.ExceptionMessage(), true
 					}
 					if !ok || actual != row[3] {
 						t.Errorf("native %q; Glade %q", row[3], actual)
