@@ -9,6 +9,7 @@
 ### Performance
 
 - **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process. Watch, daemon and server runs are unchanged. Results are unchanged.
+- **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. On the standard object set one lookup takes about a sixth of the time and allocates nothing. Results are unchanged.
 
 ## v0.3.7
 
