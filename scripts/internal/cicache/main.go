@@ -612,6 +612,11 @@ func checkJob(workflowName, jobName string, source job, savedKeys, implicitNPMWr
 		if candidate.Uses == "" {
 			continue
 		}
+		if strings.HasPrefix(candidate.Uses, "./.github/actions/") {
+			// Repository-local composite actions are reviewed in the same
+			// tree. They are restore-only and own no cache writer.
+			continue
+		}
 		if !fullActionSHA.MatchString(candidate.Uses) {
 			problems = append(problems, prefix+"action is not pinned to a full SHA: "+candidate.Uses)
 		}

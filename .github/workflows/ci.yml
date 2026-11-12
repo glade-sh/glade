@@ -743,6 +743,9 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Restore shared npm and Playwright caches
+        if: github.event_name != 'workflow_dispatch'
+        uses: ./.github/actions/restore-node-browser-caches
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -1242,6 +1245,9 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Restore shared npm and Playwright caches
+        if: github.event_name != 'workflow_dispatch'
+        uses: ./.github/actions/restore-node-browser-caches
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -1424,6 +1430,9 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Restore shared npm and Playwright caches
+        if: github.event_name != 'workflow_dispatch'
+        uses: ./.github/actions/restore-node-browser-caches
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -1874,6 +1883,9 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Restore shared npm and Playwright caches
+        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 && github.event_name != 'workflow_dispatch' }}
+        uses: ./.github/actions/restore-node-browser-caches
       - name: Install selected LWC test dependencies
         if: ${{ steps.select.outputs.browser == 'true' }}
         run: |
