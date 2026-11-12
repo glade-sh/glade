@@ -175,14 +175,15 @@ review; a WARN needs its reason in the PR.
 
 `Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
 checks formatting, vet, repository guard, workflow lint, leak scan and scripts
-tests, and tests changed Go packages and their direct importers (the fast PR lane, below). A changed path outside
+tests, and tests changed Go packages and their direct importers (the fast PR lane, below). The Apex, LWC compile and Visualforce shards of the fast lane plan from the same shared duration-history artifact the full suite uses. They also run the Apex, sema, LWC compile and Visualforce test binaries that the full suite's producer jobs build once, for the packages the pull request selects, and restore the Go caches read-only. A changed path outside
 every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
 `testdata/**`, workflows or root files) selects the full package set; only
 `docs/**` and Markdown files outside `testdata` are docs-only and select
 nothing. Pushes to `main`, scheduled and manually dispatched runs use the
-full suite. A pull request, including an integration train (section 3.12),
-runs only the fast lane over the union of its changed packages, so a train PR
-also needs a dispatched full run before it merges (section 3.12). Superseded PR runs
+full suite. So does a pull request from a `train/*` or `release/*` branch
+(section 3.12): it runs the full suite as its `Required CI` run and skips the
+fast lane. Any other pull request runs only the fast lane over the union of
+its changed packages. Superseded PR runs
 are cancelled, so push once and let the run finish; do not close and reopen a
 PR to retrigger CI, which cancels the run in flight. For a
 `pull_request` run, checkout and tests use GitHub's merge result for the PR
@@ -218,8 +219,8 @@ gates them.
 The coordinator squash merges after `Required CI` passes on the PR and review
 is done. `main` requires branches to be up to date and there is no merge queue,
 so a PR that fell behind `main` is updated and must pass `Required CI` again
-before it merges. A train PR also merges only after the full CI run dispatched
-on the train branch is green on the exact head (section 3.12). Prefer an integration train (section 3.12) when several PRs
+before it merges. For a train PR that run is the full suite, on the exact head
+(section 3.12). Prefer an integration train (section 3.12) when several PRs
 are ready together. The squash
 message is the PR title plus applicable `NATIVE` lines or local contract
 citations. The branch is deleted on merge.
@@ -271,13 +272,12 @@ is fixed before the tag unless the maintainer decides otherwise.
 
 Component branches are small, one ticket each. The coder validates a component
 branch with build, vet and the focused tests for the change, then pushes it.
-The full suite is not run per component. A train's pull request runs the fast
-lane over the union of its components. Every train PR also gets a full CI run
-before it merges: dispatch the CI workflow on the train branch with
-`gh workflow run ci.yml --ref <train branch>`. The train merges only when that
-dispatched run is green on the exact head and the train review approves. The
-full run on the push to `main` is then confirmation, not the first full test.
-New commits on the train restart the dispatched run.
+The full suite is not run per component. A train's pull request, from a
+`train/*` or `release/*` branch, runs the full suite once as its `Required CI`
+check; there is no separate fast lane and no dispatch. The train merges when
+that run is green on the exact head and the train review approves. The full
+run on the push to `main` is then confirmation, not the first full test.
+New commits on the train restart the run.
 
 - Train: the coordinator combines several approved PRs into one branch built
   from their heads and opens one PR. It gets one `Required CI` run and one

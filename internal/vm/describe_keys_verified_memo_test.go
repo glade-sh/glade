@@ -13,7 +13,7 @@ func TestGlobalDescribeKeysVerifiedMemo(t *testing.T) {
 	machine := describeShareClone(base, template)
 	first := machine.globalDescribeMapValue()
 	if !first.mapBackingShared {
-		t.Skip("route does not extend the global map; memo not applicable")
+		t.Fatal("route does not extend the global map; memo not applicable")
 	}
 	second := machine.globalDescribeMapValue()
 	if !sameMapBacking(first.Map, second.Map) || !sameMapBacking(first.MapKeys, second.MapKeys) {

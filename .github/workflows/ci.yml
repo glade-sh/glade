@@ -37,7 +37,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Check Go formatting
         run: scripts/ci-gofmt.sh
@@ -60,7 +60,7 @@ jobs:
           if-no-files-found: error
 
   site:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -129,7 +129,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -137,20 +137,20 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vet-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-vet-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vet-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-vet-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vet-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-vet-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vet-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-vet-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Check cache workflow invariants
         run: scripts/ci-cache-check.sh
       - run: scripts/ci-go-test.sh local-release-lane vet
@@ -170,7 +170,7 @@ jobs:
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
   gladecli-history-input:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
@@ -186,7 +186,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-gladecli-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
       - name: Stage gladecli duration history
         run: |
           mkdir -p ci-artifacts/gladecli-history-input
@@ -202,7 +202,7 @@ jobs:
           if-no-files-found: error
 
   gladecli:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     needs: gladecli-history-input
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -222,7 +222,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -230,20 +230,20 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-gladecli-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-gladecli-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-gladecli-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Download shared gladecli duration history
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
@@ -291,7 +291,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-gladecli-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload gladecli duration history evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -300,7 +300,7 @@ jobs:
           if-no-files-found: error
 
   vm-history-input:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
@@ -316,7 +316,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-vm-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
       - name: Stage vm duration history
         run: |
           mkdir -p ci-artifacts/vm-history-input
@@ -332,7 +332,7 @@ jobs:
           if-no-files-found: error
 
   vm:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     needs: vm-history-input
     runs-on: ubuntu-24.04
     timeout-minutes: 40
@@ -352,7 +352,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -360,20 +360,20 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vm-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-vm-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vm-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-vm-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vm-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-vm-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-vm-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-vm-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Download shared vm duration history
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
@@ -423,7 +423,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-vm-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload vm duration history evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -432,7 +432,7 @@ jobs:
           if-no-files-found: error
 
   node-integration:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -447,7 +447,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Node integration Go module cache
         id: restore-node-integration-go-mod-cache
@@ -455,18 +455,18 @@ jobs:
         continue-on-error: true
         with:
           path: ${{ env.GOMODCACHE }}
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-node-integration-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-node-integration-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-node-integration-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-node-integration-${{ hashFiles('go.sum') }}-
       - name: Restore Node integration Go build cache
         id: restore-node-integration-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ${{ env.GOCACHE }}
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-node-integration-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-node-integration-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-node-integration-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-node-integration-${{ hashFiles('go.sum') }}-
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         if: github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0
         with:
@@ -521,14 +521,14 @@ jobs:
           if-no-files-found: error
 
   nested-sources:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
@@ -549,7 +549,7 @@ jobs:
           test -z "$status"
 
   sema:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     needs: test-binaries
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -576,14 +576,14 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore sema duration history
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-sema-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
       # The shard runs a prebuilt test binary; it only needs the module cache
       # for go list and the build cache for the small helper tools. Read the
       # caches the remaining-go lane publishes from main and never write.
@@ -592,17 +592,17 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-sema-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-sema-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-sema-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-sema-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Run sema shard
         run: scripts/ci-resource-run.sh "$CI_SEMA_ARTIFACT_DIR/resource-usage.json" "sema-${{ matrix.shard }}" -- scripts/ci-go-test.sh sema-shard "${{ matrix.shard }}"
       - name: Upload sema shard evidence
@@ -632,7 +632,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-sema-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload sema duration history evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -653,24 +653,24 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore sema full module cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ${{ env.GOMODCACHE }}
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-v1-1.26.11-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-v1-1.26.11-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-
       - name: Restore sema full build cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ${{ env.GOCACHE }}
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-v1-1.26.11-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-v1-1.26.10-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-v1-1.26.11-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-
       - name: Run sema full oracle
         run: scripts/ci-resource-run.sh "$CI_SEMA_FULL_ARTIFACT_DIR/resource-usage.json" sema-full -- scripts/ci-go-test.sh sema-full
       - name: Upload sema full evidence
@@ -705,7 +705,7 @@ jobs:
           if-no-files-found: error
 
   server-and-playground:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -718,7 +718,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -726,23 +726,26 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-server-playground-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-server-playground-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-server-playground-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-server-playground-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-server-playground-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-server-playground-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-server-playground-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-server-playground-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Restore shared npm and Playwright caches
+        if: github.event_name != 'workflow_dispatch'
+        uses: ./.github/actions/restore-node-browser-caches
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -790,7 +793,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -798,20 +801,20 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-server-process-builder-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-server-process-builder-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-server-process-builder-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-server-process-builder-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-server-process-builder-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-server-process-builder-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-server-process-builder-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-server-process-builder-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-server-process-builder.json server-process-builder -- scripts/ci-go-test.sh lane server-process-builder
       - name: Save Go module cache
         if: success() && github.event_name != 'pull_request'
@@ -838,7 +841,7 @@ jobs:
           if-no-files-found: error
 
   lwc-compile-history-input:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -857,17 +860,24 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-lwc-compile-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
       - name: Find predecessor LWC shard evidence
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}
         id: predecessor
         env:
           GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then exit 0; fi
           if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
             echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
             exit 0
+          fi
+          if [[ -z "$run_id" && -n "${DEFAULT_BRANCH:-}" ]]; then
+            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$DEFAULT_BRANCH" -f event=push -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+              echo "::warning::Default-branch timing lookup unavailable; using deterministic scheduling fallback"
+              run_id=""
+            fi
           fi
           echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
       - name: Download predecessor LWC shard evidence
@@ -901,7 +911,7 @@ jobs:
           if-no-files-found: error
 
   visualforce-history-input:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -920,17 +930,24 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-visualforce-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
       - name: Find predecessor Visualforce evidence
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}
         id: predecessor
         env:
           GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           if [[ -s "$CI_VISUALFORCE_HISTORY_PATH" ]]; then exit 0; fi
           if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
             echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
             exit 0
+          fi
+          if [[ -z "$run_id" && -n "${DEFAULT_BRANCH:-}" ]]; then
+            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$DEFAULT_BRANCH" -f event=push -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+              echo "::warning::Default-branch timing lookup unavailable; using deterministic scheduling fallback"
+              run_id=""
+            fi
           fi
           if [[ -z "$run_id" ]]; then exit 0; fi
           if ! artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false) | .name')"; then
@@ -996,7 +1013,7 @@ jobs:
           if-no-files-found: error
 
   test-binaries-apextest:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
@@ -1005,12 +1022,15 @@ jobs:
       GOMAXPROCS: "4"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # A pull request selects binaries from the merge commit's diff against its first parent.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 1 }}
       - name: Validate benchmark cache pair
         if: github.event_name == 'workflow_dispatch'
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -1018,24 +1038,31 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Select binaries to build
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: scripts/ci-pr-binaries.sh >> "$GITHUB_OUTPUT"
       - name: Bind binary artifact attempt
         id: bundle
         run: echo "attempt=$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Build shared test binaries
+        if: ${{ steps.select.outputs.apextest == 'true' }}
         env:
           CGO_ENABLED: "1"
         run: |
@@ -1057,6 +1084,7 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
       - name: Upload apextest test binary
+        if: ${{ steps.select.outputs.apextest == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: test-binaries-apextest-${{ github.run_id }}-${{ github.run_attempt }}
@@ -1066,7 +1094,7 @@ jobs:
           if-no-files-found: error
 
   test-binaries:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
@@ -1076,12 +1104,15 @@ jobs:
       GOMAXPROCS: "4"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # A pull request selects binaries from the merge commit's diff against its first parent.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 1 }}
       - name: Validate benchmark cache pair
         if: github.event_name == 'workflow_dispatch'
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -1089,33 +1120,49 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-binaries-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-binaries-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Select binaries to build
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: scripts/ci-pr-binaries.sh >> "$GITHUB_OUTPUT"
       - name: Bind binary artifact attempt
         id: bundle
         run: echo "attempt=$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Build shared test binaries
         env:
           CGO_ENABLED: "1"
+          BUILD_SEMA: ${{ steps.select.outputs.sema }}
+          BUILD_LWC_COMPILE: ${{ steps.select.outputs.lwc-compile }}
+          BUILD_VISUALFORCE: ${{ steps.select.outputs.visualforce }}
         run: |
           # The sema, LWC compile and Visualforce jobs wait for these three
           # binaries; the apextest binary has its own producer. Each package
           # links into its own directory and manifest, so build them at once;
           # the Go build cache serialises any shared compile between them.
+          # A pull request builds only the packages it selects.
           pids=()
           for package in sema lwc/compile visualforce; do
+            case "$package" in
+              sema) want="$BUILD_SEMA" ;;
+              lwc/compile) want="$BUILD_LWC_COMPILE" ;;
+              visualforce) want="$BUILD_VISUALFORCE" ;;
+            esac
+            [[ "$want" == true ]] || continue
             slug="${package//\//-}"
             python3 scripts/ci-test-binary.py build "/tmp/glade-test-binaries/$slug" test "./internal/$package" &
             pids+=("$!")
@@ -1140,6 +1187,7 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
       - name: Upload sema test binary
+        if: ${{ steps.select.outputs.sema == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: test-binaries-sema-${{ github.run_id }}-${{ github.run_attempt }}
@@ -1148,6 +1196,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
       - name: Upload lwc-compile test binary
+        if: ${{ steps.select.outputs.lwc-compile == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: test-binaries-lwc-compile-${{ github.run_id }}-${{ github.run_attempt }}
@@ -1156,6 +1205,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
       - name: Upload visualforce test binary
+        if: ${{ steps.select.outputs.visualforce == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: test-binaries-visualforce-${{ github.run_id }}-${{ github.run_attempt }}
@@ -1166,7 +1216,7 @@ jobs:
 
   test:
     name: ${{ matrix.name }}
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 100
     strategy:
@@ -1191,7 +1241,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -1199,9 +1249,9 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Report Go module cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
@@ -1222,9 +1272,9 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Report Go build cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
@@ -1242,6 +1292,9 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Restore shared npm and Playwright caches
+        if: github.event_name != 'workflow_dispatch'
+        uses: ./.github/actions/restore-node-browser-caches
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -1295,7 +1348,7 @@ jobs:
           if-no-files-found: error
   lwc-vf:
     name: ${{ matrix.name }}
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 100
@@ -1361,7 +1414,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Download shared LWC duration history
         if: startsWith(matrix.lane, 'lwc-compile-')
@@ -1381,9 +1434,9 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Report Go module cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
@@ -1404,9 +1457,9 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.lane }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Report Go build cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
@@ -1424,6 +1477,9 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Restore shared npm and Playwright caches
+        if: github.event_name != 'workflow_dispatch'
+        uses: ./.github/actions/restore-node-browser-caches
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -1453,7 +1509,7 @@ jobs:
           if-no-files-found: error
 
   smoke-runtime:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1465,7 +1521,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -1473,20 +1529,20 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-smoke-runtime-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-smoke-runtime-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-smoke-runtime-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-smoke-runtime-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-smoke-runtime-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-smoke-runtime-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-smoke-runtime-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-smoke-runtime-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - run: CGO_ENABLED=1 go build -o "$RUNNER_TEMP/glade" ./cmd/glade
       - run: scripts/smoke-runtime.sh "$RUNNER_TEMP/glade"
       - name: Save Go module cache
@@ -1505,7 +1561,7 @@ jobs:
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
   smoke-distribution:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1517,7 +1573,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -1525,20 +1581,20 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-smoke-distribution-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-smoke-distribution-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-smoke-distribution-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-smoke-distribution-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-smoke-distribution-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-smoke-distribution-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-smoke-distribution-${{ hashFiles('go.sum') }}-
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-smoke-distribution-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         if: github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0
         with:
@@ -1583,7 +1639,7 @@ jobs:
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
   apextest-history-input:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -1602,7 +1658,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-apextest-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-wall-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
       - name: Select prior Apex scheduling attempt
         if: ${{ github.run_attempt > 1 && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
         id: retry
@@ -1618,6 +1674,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CI_APEXTEST_BENCHMARK_PAIR: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair || 0 }}
+          CI_DURATION_HISTORY_FALLBACK_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           mkdir -p ci-artifacts/apextest-history-input
           scripts/ci-apex-history-input.sh
@@ -1629,7 +1686,7 @@ jobs:
           if-no-files-found: error
 
   apextest:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     needs: [apextest-history-input, test-binaries-apextest]
     runs-on: ubuntu-24.04
     timeout-minutes: 100
@@ -1662,7 +1719,7 @@ jobs:
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Download shared Apex duration history
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -1677,17 +1734,17 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Apex build cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-apextest-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Run Apex shard
         run: scripts/ci-resource-run.sh "$CI_APEXTEST_ARTIFACT_DIR/resource-usage.json" "apextest-${{ matrix.shard }}" -- scripts/ci-go-test.sh apex-shard "${{ matrix.shard }}"
       - name: Upload Apex shard evidence
@@ -1744,7 +1801,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-apextest-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-wall-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload Apex duration history evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -1771,7 +1828,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-lwc-compile-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload LWC compile duration history evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -1798,7 +1855,7 @@ jobs:
         continue-on-error: true
         with:
           path: /tmp/glade-visualforce-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload Visualforce duration history evidence
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -1834,7 +1891,8 @@ jobs:
           scripts/leak-scan.sh --range "$range"
 
   pr-tests:
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}
+    needs: [apextest-history-input, lwc-compile-history-input, visualforce-history-input, test-binaries-apextest, test-binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -1846,6 +1904,10 @@ jobs:
       GOMAXPROCS: "2"
       # CI enables colored Babel code frames; native diagnostic fixtures are plain text.
       NO_COLOR: "1"
+      # One shared plan input per package, downloaded from the history-input jobs.
+      CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
+      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
+      CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -1853,8 +1915,46 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
+      # Every shard of a package reads the same artifact, so every shard plans
+      # the same partition. Never restore the history cache per shard.
+      - name: Download shared Apex duration history
+        if: ${{ matrix.shard < 12 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: apextest-history-input
+          path: /tmp/glade-apextest-duration-history
+      - name: Download shared LWC duration history
+        if: ${{ matrix.shard >= 24 && matrix.shard < 32 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: lwc-compile-history-input
+          path: /tmp/glade-lwc-compile-duration-history
+      - name: Download shared Visualforce duration history
+        if: ${{ matrix.shard >= 32 && matrix.shard < 36 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: visualforce-history-input
+          path: /tmp/glade-visualforce-duration-history
+      # Read-only: this lane restores what pushes to main publish and never
+      # saves, so it cannot evict the shared duration histories.
+      - name: Restore Go module cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Install actionlint for scripts tests
         if: ${{ matrix.shard == 22 }}
         run: |
@@ -1862,28 +1962,71 @@ jobs:
           echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
       - name: Select packages and direct importers
         id: select
+        env:
+          SHARD: ${{ matrix.shard }}
         run: |
-          go list -json ./... | jq -s . > "$RUNNER_TEMP/graph.json"
-          jq -r '.[].ImportPath' "$RUNNER_TEMP/graph.json" > "$RUNNER_TEMP/packages.txt"
-          go run ./scripts/internal/cishard --package-manifest scripts/ci-package-lanes.json --packages "$RUNNER_TEMP/packages.txt" > /dev/null
-          git diff --no-renames --name-only HEAD^1 HEAD | python3 scripts/ci-pr-select.py --root "$GITHUB_WORKSPACE" --graph "$RUNNER_TEMP/graph.json" --manifest scripts/ci-package-lanes.json > "$RUNNER_TEMP/selected.json"
+          scripts/ci-pr-select.sh "$RUNNER_TEMP/selected.json"
           cat "$RUNNER_TEMP/selected.json"
           if jq -e 'any(.[]; test("/internal/(server|playground|visualforce|lwc|lwcbrowser|lwcruntime)(/|$)"))' "$RUNNER_TEMP/selected.json" > /dev/null; then
             echo "browser=true" >> "$GITHUB_OUTPUT"
           fi
+          # A shard that runs one of the four packages with a shared test
+          # binary downloads that binary, when the pull request selects it.
+          # The shard routes match the loop in the test step below.
+          binary=""
+          if (( SHARD < 12 )); then binary=apextest; package=apextest
+          elif (( SHARD >= 20 && SHARD < 22 )); then binary=sema; package=sema
+          elif (( SHARD >= 24 && SHARD < 32 )); then binary=lwc-compile; package=lwc/compile
+          elif (( SHARD >= 32 && SHARD < 36 )); then binary=visualforce; package=visualforce
+          fi
+          if [[ -n "$binary" ]] && jq -e --arg pkg "github.com/glade-sh/glade/internal/$package" 'index($pkg) != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
+            echo "binary=$binary" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download shared apextest test binary
+        if: ${{ steps.select.outputs.binary == 'apextest' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries-apextest.outputs.artifact-attempt }}
+          path: /tmp/glade-test-binaries
+      - name: Download shared sema test binary
+        if: ${{ steps.select.outputs.binary == 'sema' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-binaries-sema-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-test-binaries
+      - name: Download shared lwc-compile test binary
+        if: ${{ steps.select.outputs.binary == 'lwc-compile' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-binaries-lwc-compile-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-test-binaries
+      - name: Download shared visualforce test binary
+        if: ${{ steps.select.outputs.binary == 'visualforce' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-binaries-visualforce-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-test-binaries
+      # Set only for a shard that downloaded a binary: it switches every
+      # script route in the shard to the prebuilt binary.
+      - name: Use shared test binary
+        if: ${{ steps.select.outputs.binary != '' }}
+        run: echo "CI_TEST_BIN_DIR=/tmp/glade-test-binaries" >> "$GITHUB_ENV"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
+      - name: Restore shared npm and Playwright caches
+        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 && github.event_name != 'workflow_dispatch' }}
+        uses: ./.github/actions/restore-node-browser-caches
       - name: Install selected LWC test dependencies
-        if: ${{ steps.select.outputs.browser == 'true' }}
+        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
         run: |
           npm ci --prefix third_party/lwc
           npm ci --prefix lwcruntime
       - name: Install selected browser
-        if: ${{ steps.select.outputs.browser == 'true' }}
+        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Enable selected browser tests
-        if: ${{ steps.select.outputs.browser == 'true' }}
+        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
         run: |
           echo "GLADE_LWC_BROWSER=1" >> "$GITHUB_ENV"
           echo "GLADE_LWC_PLAYWRIGHT_MODULE=$GITHUB_WORKSPACE/lwcruntime/node_modules/playwright" >> "$GITHUB_ENV"
@@ -1962,8 +2105,12 @@ jobs:
         env:
           REQUIRED_RESULTS: ${{ toJSON(needs) }}
           EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          failures="$(jq -r --arg event "$EVENT_NAME" 'to_entries[] | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan") else (.key != "pr-tests") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+          # Train and release pull requests run the full suite, not the fast lane.
+          event="$EVENT_NAME"
+          case "$HEAD_REF" in train/* | release/*) [[ "$event" != pull_request ]] || event=full ;; esac
+          failures="$(jq -r --arg event "$event" 'to_entries[] | select(if $event == "pull_request" then (.key == "workflow-lint" or .key == "pr-tests" or .key == "vet" or .key == "leak-scan") else (.key != "pr-tests") end) | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
           if [[ -n "$failures" ]]; then
             printf '%s\n' "$failures"
             exit 1

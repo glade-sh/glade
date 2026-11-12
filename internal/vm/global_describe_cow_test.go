@@ -83,8 +83,10 @@ func TestGlobalDescribeClonesShareBaseMap(t *testing.T) {
 			first := describeShareClone(base, template)
 			second := describeShareClone(base, template)
 			left, right := first.schemaGlobalDescribe(), second.schemaGlobalDescribe()
-			if left.Ref == right.Ref || sameMapBacking(left.Map, right.Map) || !sameMapBacking(left.MapKeys, right.MapKeys) {
-				t.Fatal("clone rebuilt immutable global describe keys or shares writable entries")
+			// Clones share the entries read-only (global_describe_map_share_test.go);
+			// each keeps its own identity and detaches on its first write.
+			if left.Ref == right.Ref || !sameMapBacking(left.Map, right.Map) || !sameMapBacking(left.MapKeys, right.MapKeys) {
+				t.Fatal("clone rebuilt immutable global describe keys or entries, or shares a map identity")
 			}
 			projectedLeft, projectedRight := first.globalDescribeMapValue(), second.globalDescribeMapValue()
 			if !sameMapBacking(projectedLeft.MapKeys, projectedRight.MapKeys) {

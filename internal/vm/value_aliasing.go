@@ -896,6 +896,8 @@ func valueSameHeaderAndBacking(before, after Value) bool {
 		before.pluginBatchableDetached == after.pluginBatchableDetached &&
 		before.sobjectListNullMapKey == after.sobjectListNullMapKey &&
 		before.mapBackingShared == after.mapBackingShared &&
+		before.mapEntriesShared == after.mapEntriesShared &&
+		before.fieldsShared == after.fieldsShared &&
 		before.globalDescribeEntriesCanonical == after.globalDescribeEntriesCanonical &&
 		before.primitiveSetState == after.primitiveSetState &&
 		sameSliceHeaderBacking(before.setInsertionHashes, after.setInsertionHashes) &&
@@ -3531,10 +3533,12 @@ func replaceStaticAliasChildHintValue(value Value, hint staticAliasChildHint, ch
 	switch hint.Kind {
 	case staticAliasChildHintObjectField:
 		if value.Fields != nil {
+			value.detachSharedFields()
 			value.Fields[hint.Name] = child
 		}
 	case staticAliasChildHintMapValue:
 		if value.Map != nil {
+			value.detachSharedEntries()
 			value.Map[hint.Key] = child
 		}
 	case staticAliasChildHintMapKey:
@@ -3576,6 +3580,7 @@ func replaceAliasSnapshotWithStaticChildHint(value Value, previous aliasSnapshot
 			}
 			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
 			if childChanged {
+				value.detachSharedFields()
 				value.Fields[name] = replaced
 				recordHint(staticAliasChildHint{Kind: staticAliasChildHintObjectField, Name: name})
 			}
@@ -3587,6 +3592,7 @@ func replaceAliasSnapshotWithStaticChildHint(value Value, previous aliasSnapshot
 			}
 			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
 			if childChanged {
+				value.detachSharedEntries()
 				value.Map[key] = replaced
 				recordHint(staticAliasChildHint{Kind: staticAliasChildHintMapValue, Key: key})
 			}
@@ -3760,6 +3766,7 @@ func replaceValueAliasRefWithMissCache(vm *VM, value Value, previous aliasSnapsh
 			}
 			replaced, childChanged := replaceValueAliasRefWithMissCache(vm, child, previous, updated, seen, useMissCache)
 			if childChanged {
+				value.detachSharedFields()
 				value.Fields[name] = replaced
 				changed = true
 			}
@@ -3771,6 +3778,7 @@ func replaceValueAliasRefWithMissCache(vm *VM, value Value, previous aliasSnapsh
 			}
 			replaced, childChanged := replaceValueAliasRefWithMissCache(vm, child, previous, updated, seen, useMissCache)
 			if childChanged {
+				value.detachSharedEntries()
 				value.Map[key] = replaced
 				changed = true
 			}
