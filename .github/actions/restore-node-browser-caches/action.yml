@@ -1,0 +1,25 @@
+name: Restore shared npm and Playwright caches
+description: >-
+  Restore-only. Restores the npm download cache and the Playwright Chromium
+  download that the Browser workflow saves, so a shard's npm ci and
+  playwright install find their downloads locally. A miss or a failed restore
+  leaves the install steps to do their normal work.
+runs:
+  using: composite
+  steps:
+    - name: Restore shared npm download cache
+      uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      continue-on-error: true
+      with:
+        path: ~/.npm
+        key: node-cache-Linux-x64-npm-${{ hashFiles('third_party/lwc/package-lock.json', 'lwcruntime/package-lock.json') }}
+        restore-keys: |
+          node-cache-Linux-x64-npm-
+    - name: Restore shared Playwright browser cache
+      uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      continue-on-error: true
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-restore-only
+        restore-keys: |
+          playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-

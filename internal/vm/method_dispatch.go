@@ -1019,7 +1019,7 @@ func (vm *VM) callClassLiteralReceiverMember(callee string, args []Value, result
 func (vm *VM) callValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	receiver = receiver.currentMapKeySet()
 	normalizeFieldMapHolderArgs(args)
-	if receiver.Kind == ValueMap && (receiver.mapBackingShared || isGlobalDescribeMap(receiver)) && mapMutatingMemberName(method) {
+	if receiver.Kind == ValueMap && (receiver.mapBackingShared || receiver.mapEntriesShared || isGlobalDescribeMap(receiver)) && mapMutatingMemberName(method) {
 		vm.prepareSharedMapMutation(&receiver)
 	}
 	if isIteratorValue(receiver) && (strings.EqualFold(method, "hasNext") || strings.EqualFold(method, "next")) {

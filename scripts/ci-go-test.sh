@@ -1499,6 +1499,7 @@ refresh_test_history() {
 		fi
 	done
 	python3 - "${package_name}" "${label}" "${prefix}" "${expected_count}" "${shard_count}" "${output}" "${script_dir}/ci-go-test.sh" "$@" <<'PY'
+import datetime
 import json
 import math
 import os
@@ -1556,6 +1557,25 @@ def require_exact_keys(value, keys, label):
 
 def is_integer(value):
     return isinstance(value, int) and not isinstance(value, bool)
+
+# Apex conformance tests do most of their work in parallel subtests, so their
+# shards are weighed and balance-checked by wall time. Other packages keep
+# Elapsed.
+WALL_WEIGHTS = PACKAGE == "github.com/glade-sh/glade/internal/apextest"
+
+def event_seconds(event):
+    """Return the event's Time as epoch seconds, or None when unusable."""
+    stamp = event.get("Time")
+    if not isinstance(stamp, str):
+        return None
+    match = re.fullmatch(r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?(Z|[+-]\d{2}:\d{2})", stamp)
+    if match is None:
+        return None
+    try:
+        base = datetime.datetime.fromisoformat(match.group(1) + ("+00:00" if match.group(3) == "Z" else match.group(3)))
+    except ValueError:
+        return None
+    return base.timestamp() + float(match.group(2) or 0)
 
 def load_discovery(path):
     with open(path, encoding="utf-8") as source:
@@ -1686,6 +1706,8 @@ try:
             reject(f"shard {index} validation summary does not exactly match its selection")
 
         terminal = {}
+        started = {}
+        paused = set()
         with open(os.path.join(shard_dir, "events.json"), encoding="utf-8") as source:
             for line_number, line in enumerate(source, 1):
                 if not line.strip():
@@ -1697,6 +1719,10 @@ try:
                     reject(f"shard {index} event {line_number} has the wrong package")
                 name = event.get("Test")
                 action = event.get("Action")
+                if isinstance(name, str) and "/" not in name and action == "run":
+                    started.setdefault(name, event_seconds(event))
+                if isinstance(name, str) and "/" not in name and action == "pause":
+                    paused.add(name)
                 if not isinstance(name, str) or "/" in name or action not in ("pass", "fail", "skip"):
                     continue
                 terminal.setdefault(name, []).append(event)
@@ -1716,6 +1742,12 @@ try:
             elapsed = events[0].get("Elapsed")
             if isinstance(elapsed, bool) or not isinstance(elapsed, (int, float)) or not math.isfinite(elapsed) or elapsed < 0:
                 reject(f"shard {index} test {name} has an invalid duration")
+            if WALL_WEIGHTS and name not in paused:
+                # A parent's Elapsed excludes the time it waits for its
+                # parallel subtests; its run-to-terminal interval does not.
+                begin, end = started.get(name), event_seconds(events[0])
+                if begin is not None and end is not None and math.isfinite(end - begin) and end - begin > elapsed:
+                    elapsed = end - begin
             millis = math.floor(elapsed * 1000 + 0.5)
             if millis > MAX_MILLIS:
                 reject(f"shard {index} test {name} duration overflows schema v1")

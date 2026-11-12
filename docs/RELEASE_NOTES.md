@@ -7,6 +7,10 @@
 - **Fewer source re-reads and a cached binary digest.** A warm test daemon request no longer reads and hashes every source and `-meta.xml` file at each stage; a file that has not changed since it was last hashed, and was already two seconds old then, is trusted by device, inode, size, mtime and ctime. Each process also remembers the SHA-256 of its own executable under the same stamp, which removes about 0.7 s from every cached `check` and `test`. Edited, replaced and recently written files are always hashed again, and results do not change.
 - **Visualforce controller gate computed once per project state.** A Visualforce page request, `glade exec` with a project and each warm one-class `glade test` no longer compile the whole project again to decide which controllers a page may use. The result is kept per project state, keyed by the project value and the content of every file it names, so any edit recomputes it. Which pages register does not change, and an edit to any named file recomputes the result.
 
+### Toolchain
+
+- Build with Go 1.26.11 (net/http fix GO-2026-6859).
+
 ### Test daemon
 
 - **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.
@@ -71,6 +75,13 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 - **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.
 
 - **Duplicate rules with fuzzy matching items.** A custom matching rule whose items use the fuzzy methods for first name, last name, company name, phone, city, street, ZIP or title is now enforced by duplicate rules on insert and update, and returned by `Datacloud.FindDuplicates`. The scorers follow captured Salesforce verdicts and match confidences for those methods (`docs/DUPLICATE_FUZZY_MATCHING.md` lists the recovered formulas and the gaps); the name-variant and acronym dictionaries are limited to the pairs the captures prove, and standard-rule fuzzy equations, cross-object rules and Person Account rules are still not enforced.
+### Performance
+
+- **Global describe maps.** `Schema.getGlobalDescribe()` no longer copies the 5,400-entry map three times for every test. Tests of one schema share the map until one of them writes it, and a write copies it for that test alone. Results are unchanged. On a project whose tests call it, instructions fell about 3 percent.
+
+### Performance
+
+- **Child relationship describes.** `getChildRelationships()` no longer clones every relationship value for each test. Tests of one schema share the values until one of them writes one, and a write copies that value for that test alone. Results are unchanged. On a describe-heavy suite, instructions fell about 7 percent and peak memory about 8 percent.
 
 ## v0.3.6
 
