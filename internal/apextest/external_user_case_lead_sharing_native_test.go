@@ -7,13 +7,19 @@ import (
 	"testing"
 )
 
-// Native rows: testdata/conformance/external_user_case_lead_sharing/<variant>/org.tsv
-// (istest route, API 62.0 and 67.0, scratch org with Digital Experiences). A
-// Customer Community, Plus or Login user reads no Case that it neither owns nor
-// is related to, and no Lead, while an internal Standard User reads all three
-// records. The org-wide defaults were Private for external users in all three
-// variants, whatever the internal model (ReadWriteTransfer, ReadWrite, Read).
-// The project declares only the internal model.
+// NATIVE a Customer Community or Plus user reads neither Case under the scratch default model
+// testdata/conformance/external_user_case_lead_sharing/default/org.tsv:2-5 istest 62.0 67.0
+// NATIVE the same with an internal Public Read/Write model
+// testdata/conformance/external_user_case_lead_sharing/public_read_write/org.tsv:2-5 istest 62.0 67.0
+// NATIVE the same with an internal Public Read model (Case stayed ReadWriteTransfer; Lead was Read)
+// testdata/conformance/external_user_case_lead_sharing/public_read/org.tsv:2-5 istest 62.0 67.0
+// NATIVE the external default was Private in all three variants
+// testdata/conformance/external_user_case_lead_sharing/default/org.tsv:10-11 istest 62.0 67.0
+// NATIVE a Community license refuses the Read Lead permission, so no row isolates Lead sharing
+// testdata/conformance/external_user_case_lead_sharing/lead_grant/org.tsv:2-5 istest 62.0 67.0
+//
+// The project declares only the internal model. A Standard User control reads
+// all three records (default/org.tsv:8-9).
 func TestExternalUserCaseLeadSharingNativeConformance(t *testing.T) {
 	const base = "testdata/conformance/external_user_case_lead_sharing"
 	variants := []string{"default", "public_read_write", "public_read"}

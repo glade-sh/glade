@@ -1,0 +1,10 @@
+capture: r-share-lead-rw
+started: 2026-11-12T18:14:15Z
+finished: 2026-11-12T18:14:56Z
+apis: 62.0 67.0
+routes: istest 
+cases: 2
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 8412a1b874b7582f
+mode: live
