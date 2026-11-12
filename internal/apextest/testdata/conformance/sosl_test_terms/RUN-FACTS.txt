@@ -1,0 +1,8 @@
+started: 2026-11-12T23:57:25Z
+finished: 2026-11-12T23:58:06Z
+apis: 62.0 67.0 68.0
+routes: istest
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+mode: live
+Actual @IsTest methods; both method metadata and invocation pinned to the source API. Synthetic SOSL statements from the indicated cases in ../sosl.json; reported exact output from each case. No fixed candidates, no index dependency. Independent named-route observations supplement existing anonymous answers. Scratch deletion verified.
