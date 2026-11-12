@@ -197,6 +197,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 	}
 	if opts.Diagnostics {
 		result.Diagnostics = a.refineRelationshipSOQLParserDiagnostics(index)
+		result.Diagnostics = a.refineRunAsArgumentParserDiagnostics(index, result.Diagnostics)
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
