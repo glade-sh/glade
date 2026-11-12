@@ -1,12 +1,13 @@
-# Duplicate fuzzy matching: public spec, native rows and the fitted model
+# Duplicate fuzzy matching: public spec, native rows and the model
 
 Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_matching/`
-holds `org.tsv` (native verdicts with match confidences) and `cases.json` (the
-agreement bounds the conformance test enforces). The test is
-`TestFuzzyMatchingNativeRows` in `internal/dml/fuzzy_conformance_test.go`; the
-direct formula checks are in `internal/dml/fuzzy_confidence_test.go`. The
-scorers are in `internal/dml/fuzzy_match.go`, the row-proven dictionaries in
-`internal/dml/fuzzy_tables.go`.
+holds `org.tsv` (native verdicts with match confidences), `cases.json` (the
+agreement bounds the conformance test enforces) and `RUN-FACTS.txt`. The tests
+are `TestFuzzyMatchingNativeRows` (`internal/dml/fuzzy_conformance_test.go`),
+`TestFuzzyScoreNativeConfidences` (`fuzzy_confidence_test.go`) and
+`TestFuzzyNameTablesMatchNativeRows` (`fuzzy_tables_test.go`). The scorers are
+in `internal/dml/fuzzy_match.go`, the phonetic key and Jaro-Winkler in
+`fuzzy_metaphone.go`, the row-proven dictionaries in `fuzzy_tables.go`.
 
 ## Public documentation read (own words)
 
@@ -37,59 +38,186 @@ All pages are Salesforce Help articles.
 - "How Match Keys Are Generated and Used in Matching Rules"
   (`sales.matching_rules_match_key_process.htm`). Field values are
   normalized, then combined into match keys. Records that share no match key
-  are never compared, so the algorithms never see them. The notation gives the
-  words and characters per word a key keeps: the custom-rule example is
-  `First_Name (1,1) Last_Name Company (2,5)`. No match key is generated for
-  Title.
+  are never compared, so the algorithms never see them. First names are
+  replaced by an alias where one applies; last names are reduced to a double
+  metaphone code. The notation gives the words and characters per word a key
+  keeps: the custom-rule example is `First_Name (1,1) Last_Name Company (2,5)`.
+  No match key is generated for Title.
 - "Standard Contact Matching Rule and Standard Lead Matching Rule"
   (`sales.matching_rules_standard_contact_rule.htm`). Match key examples:
-  First Name reduced to its initial, Last Name to its double metaphone code
-  ("Doe" to "t", "Benioff" to "pnf"), Company to the first two words of five
-  characters ("salesforce.com" to "sales"), Phone to the number without the
-  leading 1 and the last four digits. The equations and per-field criteria of
-  the standard rules; the Contact criteria list First Name with Metaphone 3 as
-  well, and Account Name with Edit Distance instead of Syllable Alignment.
+  Last Name as its double metaphone code ("Doe" to "t", "Benioff" to "pnf"),
+  Company as the first two words of five characters ("salesforce.com" to
+  "sales"), Phone as the number without the leading 1 and the last four
+  digits. The equations and per-field criteria of the standard rules.
+
+Double Metaphone and Jaro-Winkler are public algorithms; Glade implements both
+from their published descriptions. Metaphone 3 and Syllable Alignment are
+named by the help pages but Glade carries neither (see Gaps).
 
 ## Capture
 
-- Three fresh 30-day Developer Edition scratch orgs, each deleted afterwards.
+- Six fresh 30-day Developer Edition scratch orgs, each deleted afterwards.
   Custom matching rules with one fuzzy item each (plus an exact Last Name item
-  for Title, which the platform requires), a duplicate rule per matching rule.
-  At most five active matching rules per object, so the Account Phone rule of
-  the first run was not repeated.
+  for Title, which the platform requires), a duplicate rule per matching rule,
+  and one rule with two fuzzy items (Company Name and City). An object takes
+  four active custom matching rules.
 - Verdicts come from `Datacloud.FindDuplicates.findDuplicates` in anonymous
   Apex: up to 50 records inserted in one transaction, then every value run as
   an unsaved candidate against them (up to 2,500 pairs per row). A pair is a
   native match when the existing record comes back in the rule's
   `MatchResult`; `getMatchConfidence()` is the third element of each match.
-  Records are tagged by index; no record, org or user id is stored.
-- Row ids: `object.field.method.blankBehavior` for the first run (fit rows),
-  `Holdout.*` for its later rows, `Probe.*.<family>` for the second run's
-  designed probes (position of an edit, suffix tables, suite designators,
-  legal designators, same-key company spellings, Jaro-Winkler bands, name
-  variants, phonetic and keyboard families, title word structure) and
-  `Holdout2.*` for the second run's held-out rows, chosen before the fit. The
-  third run holds `Probe3.*` (hypothesis probes for the street abbreviation
-  table, company word variants, phone country digits, title prefix words,
-  first-name Jaro-Winkler fall-through and last-name keyboard families) and
-  `Holdout3.*`, CRM-shaped pairs that no scorer was tuned on. Holdout2 was
-  tuned on after it was first scored, so only Holdout3 is an unbiased
-  estimate.
-- API 67.0 for every row; API 62.0 confirmation rows for the first run's rows,
-  six probe rows of the second run and one probe row per method of the third
-  (eight rows). Every 62.0 row equals its 67.0 row
-  pair for pair, confidence for confidence.
+  Records are tagged by index; no record, org or user id is stored. A value
+  whose record never matched itself was not indexed in that run and is not
+  used as an existing record.
+- Row ids: `object.field.method.blankBehavior` for the first run,
+  `Holdout.*`, `Probe.*`, `Holdout2.*`, `Probe3.*` and `Holdout3.*` for the
+  second and third runs. The fourth run adds `P4.*` (designed probes: match
+  key, Jaro-Winkler variant, dictionary names against typos, name formats,
+  keyboard costs per key pair, trailing letters, ampersands and acronyms, the
+  two-item rule), `N4.FN.Typo.*` (about 2,700 common first names, each with
+  two typos that keep its match key), `N4.FN.Family.*` (about 590 nickname
+  families), `N4.LN.Var.*` (about 1,400 common surnames, each with up to two
+  respellings that keep its match key), and the held-out rows `Holdout4.*`
+  and `Holdout5.*`, written without sight of the model and scored once.
+- API 67.0 for every row; API 62.0 confirmation rows for the first run, six
+  probe rows of the second run, eight of the third and the fourth run's probe
+  rows listed in `RUN-FACTS.txt`. Every 62.0 row equals its 67.0 row pair for
+  pair, confidence for confidence.
 - The match engine reported for custom rules with a fuzzy item is
   `FuzzyMatchEngine`.
 
 ## What the native rows show (recovered model)
 
-The confidence `getMatchConfidence()` returns is a whole number. For a rule
-with one fuzzy item of a Maximum method it is `(100 + score) / 2` where score
-is the algorithm score below; for Phone and Street it is the weighted score
-itself; for the Title rows (Title plus exact Last Name) it is the mean of the
-two item scores. Glade therefore reports the mean of the item scores for a
-custom rule, with an exact or blank match scoring 100.
+`getMatchConfidence()` is a whole number. A rule's confidence is the mean of
+its items' confidences (NATIVE `P4.MULTI.NameCity`: Company 91 with City 94
+gives 92, Company 100 with City 94 gives 97, Company 91 with City 100 gives
+95). An exact or blank match is an item confidence of 100. A "Maximum" method
+(First Name, Last Name, Company, City, Title) has item confidence
+`(100 + algorithm score) / 2`; a weighted method (Phone, Street, ZIP) reports
+its weighted score.
+
+### First Name
+
+NATIVE `P4.FN.*`, `N4.FN.*`: about 50,000 native matches among the pairs of
+those rows, every verdict and confidence reproduced by the four rules below
+with the tables.
+
+1. Name Variant. If the existing name is in the candidate's dictionary entry
+   the score is 100. The dictionary is directional (`Rosa` finds `Rose`,
+   `Rose` does not find `Rosa`; `Andre` finds `Andrea` at 100, `Andrea` finds
+   `Andre` at 99 through Jaro-Winkler) and is a graph, not a set of groups
+   (`Jon` finds `John` and `Jonathan`, which do not find each other). It is
+   large and holds spelling variants as well as nicknames (`Katee`/`Katie`,
+   `Michal`/`Micheal`, `Andres`/`Andrés`); it is not published. Glade carries
+   the ordered pairs the rows prove (`nameVariantTable`).
+2. Match key. Otherwise the two names are compared only when the first two
+   characters of their Double Metaphone codes agree. Invented names show the
+   key without the dictionary: `Vorkel` finds `Vorpel` (FRKL, FRPL) and
+   `Vorkelina` finds `Forkelina`, but not `Volkel` (FL); `Zathor` does not
+   find `Zator` (S0, ST); `Zeo` does not find `Zeon` (S, SN); `Zovlan` does
+   not find `Zoblan`. The code is the common Java rendering of Double
+   Metaphone: `Jose` alone codes HS, so it finds neither `Josef` nor `Josee`;
+   `Michael` (MK) does not find `Micheal` (MX), `Rachael` (RK) not `Rachel`
+   (RX), `Matt` (MT) not `Matthew` (M0), `Nicholas` (NX) not `Nicolas` (NK).
+3. Alias keys. A dictionary name is keyed by its alias, not by its own
+   spelling: `Kate` (keyed like `Katherine`) finds neither `Katie` nor the
+   typos `Katte` and `Kaate`, although those find each other; `Leo` finds
+   `Leona` under the key of `Leon`; `Louie` finds `Louise` under the key of
+   `Louis`. `Roberta`, `Jane`, `Tess`, `Tony`, `Becky`, `Nick`, `Rick`,
+   `Bill`, `Beth` and others find nothing under their own key. Glade lists the names
+   the rows show (`nameAliasKeys`, and `nameKeptApart` for pairs such as
+   `Helen`/`Helena` where the rows do not say which name is alias-keyed); every other name, including every name
+   outside the captured lists, is keyed by its own spelling.
+4. Jaro-Winkler. With equal keys the pair matches when Jaro-Winkler is at
+   least 0.89 (`Daniel`/`Diane` 0.89 matches at 95, `Ravi`/`Ravindraa` 0.8889
+   does not), confidence `(100 + 100 * jw) / 2`. The variant: Jaro with the
+   transposition count halved by integer division, the whole common prefix
+   counted, a prefix scale of the smaller of 0.1 and one over the longer
+   length, applied from a Jaro value of 0.7 (`Bartholomewsonxy` against
+   `Bartholoxewsonxy` is 97, against `Bartholomewsonxz` 100). Accents, spaces,
+   hyphens and dots are ordinary characters (`Renee`/`Renée` 95,
+   `Jean-Paul`/`Jean Paul` 98, `Mary Ann`/`Mary` 95, `Jane.`/`Jane` 98);
+   salutations are not removed (`Dr. Jane` finds nothing).
+
+Not modeled: the Initials algorithm (`J`, `J.` and `J R` find each other at
+100; `J` finds no longer name in a first-name-only rule), and the punctuation
+folding of the dictionary lookup (`Jane.` is keyed like `Jane`).
+
+### Last Name
+
+NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
+
+1. Match key: the Double Metaphone code of the accent-folded name, four
+   characters at most. `Frost`/`Frosr` (FRST, FRSR), `Smith`/`Smiht`,
+   `Clark`/`Clsrk` and `Kowalski`/`Kovalski` are never compared;
+   `Martinez`/`Martinpz` (MRTN) and `Williams`/`Williamson` are. Every native
+   match in the rows has equal keys.
+2. Metaphone 3. Names with equal Metaphone 3 codes score 100. The code keeps
+   B apart from P, D from T and G from K (`Carter`/`Carder` 99 and
+   `Reid`/`Right` no match, `Campbell`/`Cambell` no match), ignores vowels
+   after the first letter (`Meyer`, `Meier`, `Mayer`, `Maier`, `Myer`), and
+   has context rules a Double Metaphone code does not (`Walker` does not find
+   `Wallker`, `Cohen` finds `Kohen` only at 96, `Lach` does not find `Leach`,
+   `Girard` does not find `Girrard`, `McKnight` does not find `Mknight`).
+   Glade does not carry Metaphone 3. `lastNameSoundsAlike` accepts the
+   spelling changes the surname rows show to be code-neutral: any change
+   inside vowel runs that touch no context-sensitive consonant, or one kind of
+   consonant respelling with unchanged vowels (a doubled consonant, `ck`/`k`,
+   `ph`/`f`, `z`/`s`, a silent `h` or `w`, a final `e`), each with the guards
+   the rows require. A dropped vowel is not accepted (natively 94% of the
+   captured cases score 100, `Cantu`/`Cntu`, `Combs`/`Cmbs` and
+   `Holman`/`Holmn` do not match).
+3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
+   are compared position by position; the cost of two different keys is 0.05
+   for neighbours and 0.08 for each further step, where the distance is the
+   column distance plus two between the top and bottom rows (`P4.LN.KB1`: 25
+   replacement letters on two bases); an accent costs 0.16; a trailing extra
+   letter about 0.25; the sum is divided by the longer length. The rows do
+   not pin the score down for three or more substituted letters, an inserted
+   letter or more than two trailing letters (`Martinez` finds
+   `Martinezkmptr` at 95 but `Frank` does not find `Franklin`), so Glade
+   matches by keyboard only one substitution, two with a score of 92 or
+   more, or up to two trailing letters.
+
+The apostrophe-removed form matches (`O'Connor`/`OConnor`), a space or
+hyphen does not (`O'Brien`/`O Brien`, `Mc Donald`/`McDonald`).
+
+### Company Name
+
+Lower case, a free-standing `&` is `and`, a hyphen is a space, punctuation is
+removed (`Salesforce.com` = `Salesforcecom`), a leading `the`, `of`/`and`/`the`
+and one trailing legal designator are dropped (Inc, Incorporated, Corp,
+Corporation, Co, Company, Ltd, Limited, LLC, LLP, LP, PLC, GmbH, AG, SA,
+Enterprises, NA). NATIVE `P4.CO.Amp`: an `&` inside a word is not `and`
+(`AT&T` does not find `AT and T`, `Barnes&Noble` does not find
+`Barnes & Noble`), and the Acronym algorithm is a dictionary, not initials
+(`ZQW` does not find `Zorblat Quantum Widgets`; `PGE`, `BMW`, `KFC`, `UPS`,
+`IBM`, `AMD`, `GE`, `GM`, `HP` and `NASA` find their expansions). Match key =
+first five characters of each of the first two words. With the same key:
+identical words score 100, as do words that differ only by doubled letters
+and the word pairs in `companyWordPairs`; one extra or different third word
+scores 91; one extra fourth word after three equal words scores 93; two extra
+words do not match. Syllable Alignment itself is not recovered: native
+scores some single-word pairs in one direction only (`Nordstrom` finds
+`Nordstroms`, not the reverse) and matches word pairs Glade does not
+(`Lakeside Hospital`/`Lakeside Hospitality` 100,
+`Acme Logistic`/`Acme Logistics` 100) while keeping others apart
+(`Partners`/`Partner`, `Marine`/`Marin`).
+
+### Phone
+
+Letters and digits are the characters of the number; separators are dropped.
+Ten characters, or eleven with the country digit first, parse into country,
+area, exchange and line; other lengths never match, not even themselves.
+Sections are compared exactly with weights 10, 50, 30, 10; the confidence is
+the weighted score; a match needs 80. A letter typed for a digit therefore
+still matches (`312 555 O199` finds `312-555-0199` and `312-555-0190` at 90).
+A country digit other than 1 never matches the same number with a different
+or no country digit.
+
+### City, Street, ZIP, Title
+
+Unchanged from the third run's model.
 
 - NATIVE City: match key = first six letters or digits of the accent-folded
   value with spaces and punctuation removed; a different key never matches
@@ -138,76 +266,6 @@ custom rule, with an exact or blank match scoring 100.
   `15 Elm St`/`15 Elm Drive` = (82.35 + 58.3) / 2 = 70, `123 Main St`/
   `123 Main Street` = 87, `Oak St 100` against itself = 90 (number blank,
   trailing number as suite).
-- NATIVE Company: lower case, `&` = `and`, hyphen = space, punctuation
-  removed (`Salesforce.com` = `Salesforcecom`, `Margie's` = `Margies`), a
-  leading `the`, `of`/`and`/`the` and one trailing legal designator dropped:
-  Inc, Incorporated, Corp, Corporation, Co, Company, Ltd, Limited, LLC, LLP,
-  LP, PLC, GmbH, AG, SA, Enterprises, NA. Not designators: Group, Holdings,
-  International, Technologies, Systems, Software, Partners, Associates, Trust,
-  Bank, USA, America, Pty Ltd, Bros; a second designator stays
-  (`Acme Corporation Inc` is not `Acme`). Match key = first five characters of
-  each of the first two words (`Adobe`/`Adobe Systems`, `Pfizer`/`Pfiser`,
-  `Burger King`/`Burger Kings`, `Oracle`/`Orcle` are never compared). With the
-  same key: identical words score 100, and so do words that differ only by
-  doubled letters (`Goldmann Sachs`) and the word pairs listed in
-  `companyWordPairs` (`Northwinds Traders`, `Hewlett Packards`, `Verizone`,
-  `Industries`/`Industrie`/`Industri`, `Kinetik`/`Kinetick`). The third run
-  shows these are not rules: `Guitars`, `Markets` and `Studios` match their
-  singular but `Partners`/`Partner`, `Robots`, `Towers`, `Lasers` and `Motors`
-  do not; `Verizon`/`Verizone` matches but `Marine`/`Marin` and `Grande`/
-  `Grand` do not; `Horizon` matches none of `Horizan`, `Horizun` and
-  `Horizen` although `Momentum` matches `Momentem` and `Momentom`. Glade
-  therefore carries only the pairs the rows prove; one extra or different word after the
-  first two scores 91 (`Hewlett Packard Enterprise`, `International Business
-  Systems`, `Blue Yonder Airlines`/`Blue Yonder`); two extra words do not
-  match (`Blue Yonder Air Lines`/`Blue Yonder`). Vowel changes score 96 to 98 for
-  some words (`Nordstram`, `Caterpiller`, `Prosewear`) and nothing for others
-  (`Verizen`, `Veryzon`, `Stanlie`, `Advisers`, `Horizan`); a consonant change
-  or a missing vowel mostly does not match (`Microsft`, `Verison`, `Morgan
-  Stanly`; `Starbux` 94 and `Initeck` 95 do). A hyphenated name matches the
-  same words spelled with a space and also the spaced name plus a designator
-  (`Coca-Cola`/`Coca Cola Company` match, 100 or 97 by direction). Acronym
-  dictionary entries proven: IBM, AMD, GE, GM, HP, NASA; AA, HPE, DOE, MSFT,
-  JNJ, J&J, P&G, BofA, CMO-style initials do not match their expansions.
-- NATIVE First Name: Name Variant pairs score 100 (261 pairs proven, listed
-  in `fuzzy_tables.go`; the dictionary is a graph, not transitive groups: Jon
-  matches Joan and Jan, Joan matches Jenny, Jon does not match Jenny). Other
-  pairs score Jaro-Winkler with a 0.1 prefix scale and no cap on the prefix
-  length (`Chris`/`Christoper` 96 needs a five-letter prefix), confidence
-  `(100 + score) / 2`, matching from about 0.87 (`Jon`/`Johny` 0.893 and
-  `Brynle`/`Brynn` 0.893 match, `Kaia`/`Kaya` 0.867 does not). Pairs the
-  dictionary keeps apart do not match even at high Jaro-Winkler
-  (`Michael`/`Micheal`, `Jane`/`Jayne`, `Nicholas`/`Nicolas`, `Kate`/`Katie`,
-  `Matthew`/`Matt`, `Tamsin`/`Tasmin`); Glade blocks the proven pairs and any
-  two names that both appear in a proven variant pair unless the rows show
-  that pair matching (`nameJaroPairs`: `Alexander`/`Alexandra`, `Tamsin`/
-  `Tamsinel`). The third run confirms the Jaro-Winkler fall-through for names
-  the dictionary does not pair (`Paul`/`Paula`, `Eric`/`Erica`, `Carl`/`Carla`,
-  `Mario`/`Maria`, `Dan`/`Dana` all match natively at their Jaro-Winkler
-  confidence); the rows prove no other form of the "both known" rule. `J` matches no
-  longer name in a first-name-only rule.
-- NATIVE Last Name: match key = four-character phonetic code of the
-  accent-folded name (`Williams`/`Williamson` compared, `Smith`/`Smiht` never
-  compared); equal full codes score 100 (`Taylor`/`Tayler`/`Tailor`/`Taylr`,
-  `Clark`/`Klark`/`Clarck`, `Meyer`/`Meier`/`Mayer`, `Reid`/`Reed`/`Read`,
-  `Wright`/`Right`/`Rite`, `Müller`/`Miller`; `Thompson` and `Thomson` do not match each other,
-  though each matches a neighbour: `Thompson`/`Thompsen`, `Thomson`/`Tomson`). Codes
-  keep D distinct from T (`Carter`/`Carder` 99, `Peterson`/`Pederson` 99) and B
-  from P (`Campbell`/`Cambell` no match), treat accented letters as neither
-  vowel nor consonant for the context rules (`García` against `Garcia` 99,
-  against `Gracia` no match), keep H between vowels (`Cohen` against `Coen` no
-  match) and keep a doubled L before a consonant (`Walker`/`Wallker` no match). The
-  apostrophe-removed form matches (`O'Connor`/`OConnor`) but a space does not
-  (`O'Brien`/`O Brien`). A keyboard substitution of `r` for the vowel before
-  a double L never matches (`Campbrll`, `Kimbrll`, `Russrll`, `Mitchrll`,
-  `Powrll`) while `w` does (`Kimbwll`, `Russwll`, `Mitchwll`); Glade's
-  two-vowel-group guard produces that split for these names.
-  Otherwise Keyboard Distance decides at 90: the strings are compared position
-  by position, a substitution costs 0.08 per key step (the larger of the row
-  and column distance on a QWERTY layout: `Martinez`/`Martinqz` 99,
-  `Martinez`/`Martinpz` 97), an accent 0.16 (`Björk`/`Bjork` 98), an extra
-  character 0.25 (`Williams`/`Williamson` 98), normalized by the longer length;
-  confidence `(100 + score) / 2`.
 - NATIVE Title: words are lower-cased, dots and commas trimmed, `&` = `and`.
   Exact when the content words (without of/and/the) are the same sequence or
   all words sort equal (`Sales Director`/`Director Sales` 100,
@@ -225,113 +283,86 @@ custom rule, with an exact or blank match scoring 100.
   One shared word against a five-word title matches only from the one-word
   side (`Global` finds `Senior Global Regional Operations Analyst`, not the
   reverse); Glade matches neither.
-- NATIVE Phone: sections compared exactly; a country digit other than 1 never
-  matches the same number with a different or no country digit (`2 415 555
-  0100` matches only itself); 10 digits, or 11 with a leading
-  country digit, parse; letters or other lengths never match. Country 10,
-  area 50, exchange 30, line 10; confidence equals the score (90, 80).
 - NATIVE Zip: only the segment before the first hyphen or space decides;
-  confidence 100.
-- NATIVE blanks: with Match Blank Fields two blank values match (100); with
-  the default they never do; one blank value never matches.
-- NATIVE verdicts and confidences were identical at API 62.0 and 67.0 for
-  every row captured at both versions.
+  confidence 100; a value under three characters matches nothing.
+
+NATIVE blanks: with Match Blank Fields two blank values match (100); with the
+default they never do; one blank value never matches.
 
 ## Glade fit
 
-Recall is the share of native matching pairs Glade also matches; extra is the
-count of pairs Glade matches that native did not; conf MAE is the mean
-absolute difference between Glade's confidence and the native confidence over
-the pairs both match. API 67.0 rows, every ordered pair of every row. Before
-is the scorer set at 02bab08ab; After is this change. Fit rows are the first
-two runs. Holdout2 was scored once and then tuned on, so its figures are
-tuned-on, not an estimate. Probe3 is the third run's probe set, which the
-change was fitted to. Holdout3 is the only unbiased set: nothing was tuned on
-it.
+Recall is the share of native matching pairs Glade also matches; false matches
+are pairs Glade matches that native does not; confidence MAE is the mean
+absolute difference between Glade's rounded confidence and the native one over
+the pairs both match. API 67.0 rows, every ordered pair of every row. "fit"
+is every row the model or its tables were built from (runs one to three, `P4.*`
+and `N4.*`). The held-out rows were written without sight of the model and
+scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
+`Holdout4.*` and `Holdout6.*` for First Name, `Holdout6.*` for Last Name and
+`Holdout5.*` for Company. Last Name and Company were first scored on
+`Holdout4.*`, which showed one false pair each (`Smith-Jones`/`Smith Jones`;
+`AT&T`/`AT and T`); one rule each was changed and a fresh held-out set drawn.
 
-| Method | Set | Before: recall, extra, conf MAE | After: recall, extra, conf MAE |
-|---|---|---|---|
-| City | Fit rows, runs 1-2 | 334/334 (100.0%), 0, 0.000 | 334/334 (100.0%), 0, 0.000 |
-| City | Holdout2 (tuned on) | 80/80 (100.0%), 0, 0.000 | 80/80 (100.0%), 0, 0.000 |
-| City | Probe3 (fitted to) | 38/38 (100.0%), 0, 0.000 | 38/38 (100.0%), 0, 0.000 |
-| City | Holdout3 (unbiased) | 79/79 (100.0%), 0, 0.000 | 79/79 (100.0%), 0, 0.000 |
-| Street | Fit rows, runs 1-2 | 1648/1728 (95.4%), 0, 0.148 | 1676/1728 (97.0%), 0, 0.112 |
-| Street | Holdout2 (tuned on) | 148/164 (90.2%), 0, 0.770 | 148/164 (90.2%), 0, 0.770 |
-| Street | Probe3 (fitted to) | 68/162 (42.0%), 2, 0.676 | 80/162 (49.4%), 0, 0.550 |
-| Street | Holdout3 (unbiased) | 105/125 (84.0%), 0, 0.686 | 107/125 (85.6%), 0, 0.673 |
-| Company | Fit rows, runs 1-2 | 1135/1193 (95.1%), 0, 0.032 | 1177/1193 (98.7%), 0, 0.006 |
-| Company | Holdout2 (tuned on) | 114/118 (96.6%), 0, 0.018 | 114/118 (96.6%), 0, 0.000 |
-| Company | Probe3 (fitted to) | 91/112 (81.2%), 12, 0.374 | 101/112 (90.2%), 0, 0.238 |
-| Company | Holdout3 (unbiased) | 95/105 (90.5%), 0, 0.242 | 87/105 (82.9%), 0, 0.678 |
-| First Name | Fit rows, runs 1-2 | 936/950 (98.5%), 0, 0.000 | 950/950 (100.0%), 0, 0.000 |
-| First Name | Holdout2 (tuned on) | 164/170 (96.5%), 0, 0.000 | 170/170 (100.0%), 0, 0.000 |
-| First Name | Probe3 (fitted to) | 134/154 (87.0%), 8, 0.836 | 154/154 (100.0%), 0, 0.013 |
-| First Name | Holdout3 (unbiased) | 110/116 (94.8%), 5, 0.600 | 110/116 (94.8%), 5, 0.600 |
-| Last Name | Fit rows, runs 1-2 | 696/748 (93.0%), 0, 0.046 | 696/748 (93.0%), 0, 0.046 |
-| Last Name | Holdout2 (tuned on) | 166/170 (97.6%), 0, 0.133 | 166/170 (97.6%), 0, 0.133 |
-| Last Name | Probe3 (fitted to) | 78/80 (97.5%), 0, 0.000 | 78/80 (97.5%), 0, 0.000 |
-| Last Name | Holdout3 (unbiased) | 99/101 (98.0%), 0, 0.000 | 99/101 (98.0%), 0, 0.000 |
-| Title | Fit rows, runs 1-2 | 939/942 (99.7%), 0, 0.246 | 939/942 (99.7%), 0, 0.246 |
-| Title | Holdout2 (tuned on) | 286/286 (100.0%), 0, 0.045 | 286/286 (100.0%), 0, 0.045 |
-| Title | Probe3 (fitted to) | 111/113 (98.2%), 0, 0.649 | 111/113 (98.2%), 0, 0.523 |
-| Title | Holdout3 (unbiased) | 174/174 (100.0%), 0, 0.121 | 174/174 (100.0%), 0, 0.132 |
-| Phone | Fit rows, runs 1-2 | 649/649 (100.0%), 0, 0.000 | 649/649 (100.0%), 0, 0.000 |
-| Phone | Probe3 (fitted to) | 23/23 (100.0%), 8, 0.000 | 23/23 (100.0%), 0, 0.000 |
-| Phone | Holdout3 (unbiased) | 164/200 (82.0%), 16, 0.000 | 164/200 (82.0%), 0, 0.000 |
-| ZIP | Fit rows, runs 1-2 | 95/95 (100.0%), 0, 0.000 | 95/95 (100.0%), 0, 0.000 |
-| ZIP | Probe3 (fitted to) | 17/17 (100.0%), 0, 0.000 | 17/17 (100.0%), 0, 0.000 |
-| ZIP | Holdout3 (unbiased) | 113/113 (100.0%), 6, 0.000 | 113/113 (100.0%), 0, 0.000 |
+| Method | Set | Recall | False matches | Confidence MAE |
+|---|---|---|---|---|
+| First Name | fit | 49935/49935 (100.0%) | 0 | 0.000 |
+| First Name | holdout (unbiased) | 460/478 (96.2%) | 0 | 0.200 |
+| Last Name | fit | 12914/17596 (73.4%) | 0 | 0.165 |
+| Last Name | holdout seen once, then one rule changed | 161/173 (93.1%) | 0 | 0.112 |
+| Last Name | holdout (unbiased) | 193/201 (96.0%) | 0 | 0.041 |
+| Company | fit | 1619/1665 (97.2%) | 0 | 0.083 |
+| Company | holdout seen once, then one rule changed | 145/149 (97.3%) | 0 | 0.159 |
+| Company | holdout (unbiased) | 162/164 (98.8%) | 0 | 0.117 |
+| Street | fit | 2011/2179 (92.3%) | 0 | 0.208 |
+| Street | holdout (unbiased) | 151/151 (100.0%) | 0 | 0.318 |
+| City | fit | 531/531 (100.0%) | 0 | 0.000 |
+| City | holdout (unbiased) | 57/57 (100.0%) | 0 | 0.000 |
+| ZIP | fit | 225/225 (100.0%) | 0 | 0.000 |
+| ZIP | holdout (unbiased) | 62/62 (100.0%) | 0 | 0.000 |
+| Phone | fit | 872/872 (100.0%) | 0 | 0.000 |
+| Phone | holdout (unbiased) | 81/81 (100.0%) | 0 | 0.000 |
+| Title | fit | 1510/1515 (99.7%) | 0 | 0.215 |
+| Title | holdout (unbiased) | 467/479 (97.5%) | 0 | 0.173 |
 
-Holdout3 was measured once after the scorers were fixed on Probe3 and the
-earlier rows alone: 933/1,013 native pairs matched and 11 extra (First Name 5,
-ZIP 6). The ZIP extras were values under three characters (`0`, `L1`) that
-native does not even match to themselves; ZIP now rejects any value shorter
-than three characters. That rule was chosen after seeing those rows, so the
-ZIP After figure and the total of 5 extra are tuned-on; the Holdout3 numbers
-before that rule are 933/1,013 with 11 extra. The five First Name extras
-(`Jose`/`José`, `Rachael`/`Rachel`, `Rose`/`Rosa` one way) are dictionary names
-Glade does not know; no rule separates them from `Paul`/`Paula`, which
-matches natively, so they remain and are not tuned on.
-
-The conservative company tables cost recall on unseen words: Company Holdout3
-recall is 82.9% where the generalizing rules had 90.5%, with no extra pair in
-either, and the probes show the generalizations (`Partners`, `Marine`,
-`Horizan`) did produce false matches. Where the approximation could not
-separate a pair that native accepts in one direction only (`Nordstrom`/
-`Nordstroms`, `Initech`/`Initechs`, `Starbuck`/`Starbucks`) or rejects without
-a visible cause (`Campbell`/`Campbrll`, `Oak Court`/`Oak Crt`, `Hewlett-Packard`
-against its acronym), Glade does not match the pair, so those are misses and
-not extras. Street suites parse a trailing letter or a number with letters as
-a suite, a designator word outside the proven list (`Fl`, `Floor`) stays in
-the name, and a separated number letter (`100 B`) does not equal an attached
-one (`100B`).
+The earlier bounds for the Last Name rows of the first three runs are lower
+than before this change. The previous phonetic code reproduced those rows but
+matched 670 pairs of the surname rows and 2,854 pairs of the first-name rows
+that Salesforce does not match; the rule set above matches none of them.
 
 ## Gaps
 
-- Syllable Alignment, Metaphone 3 and the Kullback-Leibler scoring are
-  approximated by the row-fitted rules above. Native scores some same-key
-  company pairs in one direction only (`Initec`/`Initech` 93, `Salesforce`/
-  `Salesforcecom` 90, `Nordstrom`/`Nordstroms` 100) and Glade is symmetric.
-  `Starbucks`/`Starbuck` (93), `Nordstrom`/`Nordstroms` and `Initech`/`Initechs` (one direction), `Starbux` (95), `Lockheed`/`Lockhead` (100),
-  `Hughes`/`Huse` (100) and `Nguyen`/`Nugyen` (97) are misses.
-- The Name Variant and Acronym dictionaries are unpublished; Glade carries
-  the proven pairs only. Two unseen dictionary names that Jaro-Winkler brings
-  within 0.87 may match in Glade and not natively.
-- Street: four pairs with an unknown suffix abbreviation score asymmetrically
+- Metaphone 3 is not implemented. `lastNameSoundsAlike` is a reject-biased
+  stand-in: it misses native matches with a dropped vowel (`Smith`/`Smth`),
+  two respellings at once (`Filips`/`Philipps`), silent consonants
+  (`Knight`/`Night`, `Hughes`/`Huse`, `Lee`/`Leigh`) and name-specific codes
+  (`Stewart`/`Stuart`, `Jackson`/`Jaxon`, `Khan`/`Cowen`). It can still accept
+  a respelling Metaphone 3 codes apart in a name the rows do not cover; the
+  surname rows put that at 2 of about 580 doubled-consonant pairs after the
+  guards (both now in the kept-apart list), and 0 on the held-out rows. An open-source
+  Metaphone 3 implementation as a dependency would remove this gap.
+- Keyboard Distance: the cost of trailing letters depends on the letters
+  (`Williams`/`Williamson` 98, `Stevenson`/`Stevensonnn` 97), which the flat
+  0.25 misses by one point; three or more substitutions, insertions and more
+  than two trailing letters are not matched.
+- First Name: the Name Variant dictionary and its alias keys are unpublished.
+  Glade carries the pairs and alias-keyed names proven for about 2,700 common
+  first names and 590 nickname families. A nickname pair outside those rows
+  is a miss. A dictionary name outside those rows whose alias key differs
+  from its own key can match a near spelling by Jaro-Winkler in Glade and not
+  natively. Initials (`J`, `J.`, `J R`) are not matched.
+- Syllable Alignment is not implemented. Company names match on identical or
+  listed words only; native one-direction matches (`Nordstrom`/`Nordstroms`),
+  prefix words (`Hospital`/`Hospitality`), unlisted plurals and vowel
+  variants, an `&` inside a word against the joined spelling (`AT&T` finds
+  `ATT` one way) and acronyms outside the proven entries are misses.
+- Street: pairs with an unknown suffix abbreviation score asymmetrically
   natively (`123 Main St`/`123 Main Str` 60 one way, 78 the other) and Glade
-  does not match them; `8 Oak`/`8 Oak Crt` (78) and `200 Park Ave`/
-  `200 Park Av` (81) are misses; `Friedrichstrasse 43`/`Friedrichstraße 43`
-  (79, no street number) is a miss.
-- Phone: native ignores a letter inside the digits (`312 555 O199` matches
-  `312-555-0199` at 90, 36 Holdout3 misses); Glade rejects any letter.
-- Company: Glade does not match an acronym of a multi-word name that native
-  does (`BMW`, `KFC`, `UPS` against their expansions).
+  does not match them; single letters after the number other than `E`.
 - Title: the (k, n) table covers up to five words; the one-direction match of
   a single word against a five-word title is not modeled.
 - Not captured: standard Account, Contact and Lead rules (their fuzzy
   equations and match keys), cross-object Lead and Contact rules, Person
-  Account rules, rules with several fuzzy items under OR (Glade averages the
-  matched items' scores), MatchBlanks on Contact fields, Title at API 62.0,
-  blank values on the last name and company name. Glade keeps its earlier
-  behavior for those rules.
+  Account rules, rules with fuzzy items under OR, rules with three or more
+  fuzzy items, MatchBlanks on Contact fields, blank values on the last name
+  and company name. Glade keeps its earlier behavior for those rules.
 - Unsupported fuzzy rules (unknown method names) are still left unenforced.

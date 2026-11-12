@@ -122,83 +122,58 @@ func editSimilarity(a, b string) float64 {
 	return 100 * (1 - float64(levenshtein(ra, rb))/float64(longest))
 }
 
-// jaroWinkler is the Jaro-Winkler similarity with the usual 0.1 prefix scale
-// and no cap on the common prefix length; the native confidences fit that
-// variant (the help example Johnny/Johny gives 0.967).
-func jaroWinkler(a, b string) float64 {
-	ra, rb := []rune(a), []rune(b)
-	if string(ra) == string(rb) {
-		return 1
-	}
-	if len(ra) == 0 || len(rb) == 0 {
-		return 0
-	}
-	window := max(len(ra), len(rb))/2 - 1
-	if window < 0 {
-		window = 0
-	}
-	ma, mb := make([]bool, len(ra)), make([]bool, len(rb))
-	matches := 0
-	for i := range ra {
-		for j := max(0, i-window); j < min(len(rb), i+window+1); j++ {
-			if !mb[j] && ra[i] == rb[j] {
-				ma[i], mb[j] = true, true
-				matches++
-				break
-			}
-		}
-	}
-	if matches == 0 {
-		return 0
-	}
-	k, transposed := 0, 0
-	for i := range ra {
-		if !ma[i] {
-			continue
-		}
-		for !mb[k] {
-			k++
-		}
-		if ra[i] != rb[k] {
-			transposed++
-		}
-		k++
-	}
-	m := float64(matches)
-	jaro := (m/float64(len(ra)) + m/float64(len(rb)) + (m-float64(transposed)/2)/m) / 3
-	prefix := 0
-	for prefix < len(ra) && prefix < len(rb) && ra[prefix] == rb[prefix] {
-		prefix++
-	}
-	return jaro + float64(prefix)*0.1*(1-jaro)
-}
-
 // averageWith100 is the single-item rule confidence of the Maximum methods.
 func averageWith100(score float64) float64 { return (100 + score) / 2 }
 
 // ---- First Name: Exact, Initials, Jaro-Winkler, Name Variant; threshold 85 ----
 
-const firstNameJaroWinklerThreshold = 0.87
+// firstNameJaroWinkler is the lowest Jaro-Winkler value the rows match: "Daniel"
+// against "Diane" (0.89) matches, "Ravi" against "Ravindraa" (0.8889) does not.
+const firstNameJaroWinkler = 0.89
 
-var (
-	nameVariantSet = pairSet(nameVariantPairs)
-	nameBlockedSet = pairSet(nameBlockedPairs)
-	nameJaroSet    = pairSet(nameJaroPairs)
-	nameKnown      = func() map[string]bool {
-		out := map[string]bool{}
-		for _, pair := range nameVariantPairs {
-			out[pair[0]], out[pair[1]] = true, true
-		}
-		return out
-	}()
-)
-
-func pairSet(pairs [][2]string) map[[2]string]bool {
-	out := map[[2]string]bool{}
-	for _, pair := range pairs {
-		out[orderedPair(pair[0], pair[1])] = true
+// fuzzyFirstName: a is the candidate, b the existing record. A Name Variant
+// entry of the candidate scores 100; the dictionary is directional ("Rosa"
+// finds "Rose", "Rose" does not find "Rosa"). Otherwise the two names are
+// compared only when their match keys agree, the first two characters of the
+// Double Metaphone code ("Vorkel" and "Volkel" are never compared, "Vorkel"
+// and "Vorpel" are), and match when Jaro-Winkler reaches the threshold, with
+// confidence (100 + score) / 2. A dictionary name whose key comes from its
+// alias and not from its own spelling ("Kate" is keyed as "Katherine", so it
+// matches neither "Katie" nor "Katte") never matches by Jaro-Winkler.
+func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
+	x, y := foldText(a), foldText(b)
+	if x == y || nameVariantOf(x, y) {
+		return true, 100
 	}
-	return out
+	if kx, ky := firstNameKey(x), firstNameKey(y); (kx == "" || kx != ky || nameKeptApart[orderedPair(x, y)]) && !firstNameSameEntry(x, y) {
+		return false, 0
+	}
+	score := jaroWinkler(x, y)
+	return score >= firstNameJaroWinkler-1e-9, averageWith100(100 * score)
+}
+
+// firstNameKey is the match key of a first name; empty for a dictionary name
+// whose alias key no row shows.
+func firstNameKey(name string) string {
+	if key, ok := nameAliasKeys[name]; ok {
+		return key
+	}
+	return doubleMetaphone(name, firstNameKeyLength)
+}
+
+// firstNameSameEntry reports a name and the same name followed by a second
+// word or by punctuation. The dictionary lookup reads the first word without
+// punctuation, so the two share a match key whatever that key is: "Billy Bob"
+// finds "Billy" and "Jane." finds "Jane" by Jaro-Winkler although "Billy" and
+// "Jane" are alias-keyed.
+func firstNameSameEntry(x, y string) bool {
+	head := func(s string) string {
+		if i := strings.IndexByte(s, ' '); i > 0 {
+			s = s[:i]
+		}
+		return strings.TrimFunc(s, unicode.IsPunct)
+	}
+	return head(x) == y || head(y) == x
 }
 
 func orderedPair(a, b string) [2]string {
@@ -208,140 +183,33 @@ func orderedPair(a, b string) [2]string {
 	return [2]string{a, b}
 }
 
-// fuzzyFirstName: a Name Variant pair matches at 100. Two names the rows show
-// the dictionary keeps apart never match, nor do two dictionary names outside
-// a proven pair. Other names match when Jaro-Winkler reaches the threshold,
-// with confidence (100 + score) / 2.
-func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
-	if x == y || nameVariantSet[orderedPair(x, y)] {
-		return true, 100
-	}
-	if nameBlockedSet[orderedPair(x, y)] || (nameKnown[x] && nameKnown[y] && !nameJaroSet[orderedPair(x, y)]) {
-		return false, 0
-	}
-	score := 100 * jaroWinkler(x, y)
-	return score >= 100*firstNameJaroWinklerThreshold, averageWith100(score)
-}
+const firstNameKeyLength = 2
 
 // ---- Last Name: Exact, Keyboard Distance, Metaphone 3; threshold 90 ----
 
-// phoneticCode is a reduced Metaphone-style code. Accented letters are dropped
-// like vowels but do not act as vowels for the context rules (so "García"
-// and "Garcia" encode differently) unless foldAccents is set, which the match
-// key uses. Word boundaries are kept.
-func phoneticCode(s string, foldAccents bool) string {
-	text := foldText(s)
-	if foldAccents {
-		text = stripAccents(text)
+const lastNameKeyLength = 4
+
+// fuzzyLastName: the match key is the Double Metaphone code of the
+// accent-folded name, four characters at most ("Frost" and "Frosr" are never
+// compared, "Martinez" and "Martinpz" are). Two names that sound alike score
+// 100; the platform decides that with Metaphone 3, which Glade does not
+// carry, so lastNameSoundsAlike accepts only the spelling changes the native
+// rows show to be code-neutral. Otherwise Keyboard Distance decides at 90
+// with confidence (100 + score) / 2.
+func fuzzyLastName(a, b string, _ bool) (bool, float64) {
+	x, y := foldText(a), foldText(b)
+	if x == y {
+		return true, 100
 	}
-	var words []string
-	for _, word := range strings.Fields(text) {
-		var w []rune
-		for _, r := range word {
-			if unicode.IsLetter(r) {
-				w = append(w, r)
-			}
-		}
-		if len(w) == 0 {
-			continue
-		}
-		for _, p := range [][2]string{{"mac", "mk"}, {"mc", "mk"}, {"kn", "n"}, {"gn", "n"}, {"pn", "n"}, {"wr", "r"}, {"ps", "s"}, {"wh", "w"}, {"sch", "x"}, {"x", "s"}} {
-			if strings.HasPrefix(string(w), p[0]) {
-				w = append([]rune(p[1]), w[len([]rune(p[0])):]...)
-				break
-			}
-		}
-		at := func(k int) rune {
-			if k < 0 || k >= len(w) {
-				return 0
-			}
-			return w[k]
-		}
-		isVowel := func(r rune) bool { return strings.ContainsRune("aeiouy", r) }
-		has := func(i int, prefix string) bool { return strings.HasPrefix(string(w[i:]), prefix) }
-		var code []string
-		emit := func(c string) {
-			if c != "" && !(len(code) > 0 && code[len(code)-1] == c && c != "L") {
-				code = append(code, c)
-			}
-		}
-		for i := 0; i < len(w); i++ {
-			ch, next := w[i], at(i+1)
-			switch {
-			case has(i, "ough") || has(i, "augh") || has(i, "eigh"):
-				i += 3
-				continue
-			case has(i, "igh"):
-				i += 2
-				continue
-			}
-			if isVowel(ch) || !isASCIILetter(ch) {
-				if i == 0 {
-					emit("a")
-				} else if ch == at(i-1) {
-					emit("A") // a doubled vowel changes the code
-				}
-				continue
-			}
-			if ch == 'h' {
-				if i > 0 && isVowel(at(i-1)) && isVowel(next) {
-					emit("h")
-				}
-				continue
-			}
-			if ch == at(i-1) && !(ch == 'l' && next != 0 && !isVowel(next)) {
-				continue // doubled consonants collapse, except LL before a consonant
-			}
-			c := string(ch)
-			switch {
-			case has(i, "sch"), has(i, "tch"):
-				c, i = "x", i+2
-			case ch == 'g' && next == 'h':
-				c, i = "k", i+1
-			case ch == 'p' && next == 'h':
-				c, i = "f", i+1
-			case ch == 'c' && next == 'k':
-				c, i = "k", i+1
-			case ch == 'c' && next == 'h', ch == 's' && next == 'h':
-				c, i = "x", i+1
-			case ch == 't' && next == 'h':
-				c = "0"
-				if has(i, "thom") || has(i, "tham") {
-					c = "t"
-				}
-				i++
-			case ch == 'c' && (next == 'e' || next == 'i' || next == 'y'):
-				c = "s"
-			case ch == 'c', ch == 'q':
-				c = "k"
-			case ch == 'g' && (next == 'e' || next == 'i'):
-				c = "j"
-			case ch == 'g':
-				c = "k"
-			case ch == 'z':
-				c = "s"
-			case ch == 'v':
-				c = "f"
-			case ch == 'x':
-				c = "ks"
-			case ch == 'd' && next == 't':
-				c, i = "t", i+1
-			case ch == 'w':
-				c = ""
-				if i == 0 && isVowel(next) {
-					c = "w"
-				}
-			case ch == 'l' && ch == at(i-1):
-				c = "L"
-			case ch == 'j' && next != 0 && !isVowel(next) && !isASCIILetter(next):
-				c = "y"
-			}
-			emit(c)
-		}
-		words = append(words, strings.Join(code, ""))
+	if doubleMetaphone(stripAccents(x), lastNameKeyLength) != doubleMetaphone(stripAccents(y), lastNameKeyLength) {
+		return false, 0
 	}
-	return strings.Join(words, " ")
+	x, y = strings.ReplaceAll(x, "'", ""), strings.ReplaceAll(y, "'", "")
+	if x == y || (lastNameSoundsAlike(x, y) && !lastNameKeptApart[orderedPair(x, y)]) {
+		return true, 100
+	}
+	score, ok := keyboardSimilarity(x, y)
+	return ok && score >= 90, averageWith100(score)
 }
 
 var qwertyPosition = func() map[rune][2]int {
@@ -354,15 +222,20 @@ var qwertyPosition = func() map[rune][2]int {
 	return out
 }()
 
-// keyboardCost is the Keyboard Distance substitution cost: 0.08 per key step
-// (the larger of the row and column distance), 0.16 for an accent only, 1 for
-// anything else.
+// keyboardCost is the Keyboard Distance substitution cost the rows fit: the
+// distance between two keys is their column distance, plus two between the
+// top and the bottom row; neighbouring keys cost 0.05 and every further step
+// 0.08 ("Richardson" with its last letter replaced by each other letter). An
+// accent alone costs 0.16, anything else 1.
 func keyboardCost(x, y rune) float64 {
 	if x == y {
 		return 0
 	}
 	bx, by := []rune(stripAccents(string(x))), []rune(stripAccents(string(y)))
-	if string(bx) == string(by) {
+	if len(bx) == 0 || len(by) == 0 {
+		return 1
+	}
+	if bx[0] == by[0] {
 		return 0.16
 	}
 	px, okx := qwertyPosition[bx[0]]
@@ -370,7 +243,14 @@ func keyboardCost(x, y rune) float64 {
 	if !okx || !oky {
 		return 1
 	}
-	return 0.08 * float64(max(abs(px[0]-py[0]), abs(px[1]-py[1])))
+	steps := abs(px[1] - py[1])
+	if abs(px[0]-py[0]) == 2 {
+		steps += 2
+	}
+	if steps <= 1 {
+		return 0.05
+	}
+	return 0.08 * float64(steps-1)
 }
 
 func abs(x int) int {
@@ -380,87 +260,258 @@ func abs(x int) int {
 	return x
 }
 
-// keyboardSimilarity compares the strings position by position; characters
-// beyond the shorter string cost 0.25 each. The native confidences fit this
-// positional form rather than an alignment ("Walker" against "Wallker" falls
-// below the threshold).
-func keyboardSimilarity(a, b string) float64 {
+// keyboardSimilarity compares the strings position by position and divides
+// the cost by the longer length; a trailing extra character costs 0.25. ok is
+// false for the shapes whose native score the rows do not pin down (three or
+// more substituted letters, two with a score under 92, an inserted letter, or
+// more than two trailing letters): natively some of those match and some do
+// not ("Frank" never finds "Franklin", "Kidde" never finds "Kight"), so Glade
+// matches none of them.
+func keyboardSimilarity(a, b string) (float64, bool) {
 	ra, rb := []rune(a), []rune(b)
-	n := max(len(ra), len(rb))
+	if len(ra) > len(rb) {
+		ra, rb = rb, ra
+	}
+	n := len(rb)
 	if n == 0 {
-		return 100
+		return 100, true
 	}
-	cost := 0.0
-	for i := 0; i < min(len(ra), len(rb)); i++ {
-		cost += keyboardCost(ra[i], rb[i])
-	}
-	cost += 0.25 * float64(abs(len(ra)-len(rb)))
-	return 100 * (1 - cost/float64(n))
-}
-
-const lastNameKeyLength = 4
-
-func phoneticKey(s string) string {
-	code := []rune(phoneticCode(s, true))
-	if len(code) > lastNameKeyLength {
-		code = code[:lastNameKeyLength]
-	}
-	return string(code)
-}
-
-// fuzzyLastName: the match key is the first four characters of the
-// accent-folded phonetic code. Equal full codes match at 100; otherwise the
-// keyboard similarity decides at 90 with confidence (100 + score) / 2.
-func fuzzyLastName(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
-	if x == y {
-		return true, 100
-	}
-	if phoneticKey(x) != phoneticKey(y) {
-		return false, 0
-	}
-	if phoneticCode(x, false) == phoneticCode(y, false) {
-		return true, 100
-	}
-	score := keyboardSimilarity(x, y)
-	if stripAccents(x) != stripAccents(y) && (vowelGroups(x) < 2 || vowelGroups(y) < 2) {
-		// The rows match a keyboard substitution only between names with two
-		// or more vowel groups ("Campbell" does not match "Campbrll"); an
-		// accent difference alone always matches.
-		return false, averageWith100(score)
-	}
-	return score >= 90, averageWith100(score)
-}
-
-// vowelGroups counts the runs of vowels in a folded name.
-func vowelGroups(s string) int {
-	groups, prev := 0, false
-	for _, r := range stripAccents(s) {
-		vowel := strings.ContainsRune("aeiouy", r)
-		if vowel && !prev {
-			groups++
+	cost, different := 0.0, 0
+	for i := range ra {
+		if ra[i] != rb[i] {
+			different++
+			step := keyboardCost(ra[i], rb[i])
+			if step >= 1 {
+				// A space, hyphen or other character that is not a letter key
+				// never substitutes: "Smith-Jones" does not find "Smith Jones".
+				return 0, false
+			}
+			cost += step
 		}
-		prev = vowel
 	}
-	return groups
+	extra := len(rb) - len(ra)
+	score := 100 * (1 - (cost+0.25*float64(extra))/float64(n))
+	switch {
+	case extra == 0 && different == 1:
+		return score, true
+	case extra == 0 && different == 2:
+		return score, score >= 92
+	case extra > 0 && extra <= 2 && different == 0:
+		return score, true
+	}
+	return score, false
 }
+
+func isNameVowel(r rune) bool {
+	if strings.ContainsRune("aeiouy", r) {
+		return true
+	}
+	// An accented vowel, or a letter such as "ø" with no ASCII base.
+	return r > unicode.MaxASCII && unicode.IsLetter(r) && r != 'ñ' && r != 'ç' && r != 'ß'
+}
+
+// nameRuns splits a folded name into alternating runs of vowels and of other
+// characters.
+func nameRuns(s string) []string {
+	var runs []string
+	var cur []rune
+	vowel := false
+	for i, r := range s {
+		v := isNameVowel(r)
+		if i > 0 && v != vowel && len(cur) > 0 {
+			runs = append(runs, string(cur))
+			cur = cur[:0]
+		}
+		vowel = v
+		cur = append(cur, r)
+	}
+	if len(cur) > 0 {
+		runs = append(runs, string(cur))
+	}
+	return runs
+}
+
+// lastNameShape renders a name for the sounds-alike comparison. With an
+// empty edit, every vowel run that does not touch a context-sensitive
+// consonant (c, g, h, j, x, or a t or s before it) and is not the first
+// letter becomes a wildcard, so "Taylor", "Tayler" and "Tailor" share a
+// shape. With an edit, vowels stay literal and one consonant respelling is
+// folded: 'd' a doubled consonant, 'k' "ck" and "q" as "k", 'f' "ph" as "f",
+// 'z' "z" as "s", 'h' an "h" outside a digraph, 'w' a "w" after the first
+// letter, 'e' a final "e" after a consonant.
+func lastNameShape(s string, edit byte, freeVowels bool) string {
+	runs := nameRuns(strings.ReplaceAll(s, "ñ", "n"))
+	if len(runs) > 1 && strings.HasPrefix(runs[0], "y") {
+		// An initial "y" before a vowel is a consonant ("Young", "Yung").
+		runs = append([]string{"y", runs[0][1:]}, runs[1:]...)
+		if runs[1] == "" {
+			runs = append(runs[:1], runs[2:]...)
+		}
+	}
+	if edit == 'e' && len(runs) >= 3 && runs[len(runs)-1] == "e" {
+		runs = runs[:len(runs)-1]
+	}
+	out := make([]string, 0, len(runs))
+	for i, run := range runs {
+		first := []rune(run)[0]
+		if isNameVowel(first) && !(i == 0 && run == "y") {
+			prev, next := "", ""
+			if i > 0 {
+				prev = runs[i-1]
+			}
+			if i+1 < len(runs) {
+				next = runs[i+1]
+			}
+			sensitive := i == 0 || lastNameSensitive(prev) || lastNameSensitive(next) ||
+				((strings.HasSuffix(prev, "t") || strings.HasSuffix(prev, "s")) && len([]rune(run)) > 1 && first == 'i')
+			if !freeVowels || sensitive {
+				out = append(out, run)
+			} else {
+				out = append(out, "*")
+			}
+			continue
+		}
+		r := []rune(run)
+		switch edit {
+		case 'd':
+			var folded []rune
+			for _, c := range r {
+				if len(folded) == 0 || folded[len(folded)-1] != c {
+					folded = append(folded, c)
+				}
+			}
+			r = folded
+		case 'k':
+			// "ck" as "k", but not in "Mc" ("McKnight" is not "Mknight").
+			if !(i == 0 && strings.HasPrefix(string(r), "mc")) {
+				r = []rune(strings.ReplaceAll(string(r), "ck", "k"))
+			}
+			r = []rune(strings.ReplaceAll(string(r), "q", "k"))
+		case 'f':
+			r = []rune(strings.ReplaceAll(string(r), "ph", "f"))
+		case 'z':
+			r = []rune(strings.ReplaceAll(string(r), "z", "s"))
+		case 't':
+			r = []rune(strings.ReplaceAll(strings.ReplaceAll(string(r), "tch", "ch"), "sch", "sh"))
+		case 'h', 'w':
+			var kept []rune
+			for j, c := range r {
+				drop := false
+				if !(i == 0 && j == 0) {
+					if edit == 'w' && c == 'w' {
+						drop = true
+					}
+					if edit == 'h' && c == 'h' && !(j > 0 && strings.ContainsRune("cstpg", r[j-1])) {
+						drop = true
+					}
+				}
+				if !drop {
+					kept = append(kept, c)
+				}
+			}
+			r = kept
+		}
+		if len(r) == 0 {
+			out = append(out, "-")
+		} else {
+			out = append(out, string(r))
+		}
+	}
+	return strings.Join(out, "|")
+}
+
+// lastNameSensitive reports a consonant run whose sound depends on the
+// vowels next to it: one with c, g, j or x ("Lach" does not find "Leach").
+func lastNameSensitive(run string) bool {
+	return strings.ContainsAny(run, "cgxj")
+}
+
+var (
+	lastNameSilentL    = regexp.MustCompile(`[ao]l+[kmfv]|ould`)
+	lastNameDoubleRisk = regexp.MustCompile(`[ao]l+[kmfv]|l+n$`)
+	lastNameSoftBefore = regexp.MustCompile(`[cg][eiy]+$`)
+	lastNameWeakVowel  = regexp.MustCompile(`[eiuy]`)
+)
+
+// lastNameDoubleSafe rejects the doubled consonants the rows show Metaphone 3
+// reads differently from the single letter: next to a silent L ("Walker",
+// "Wallker"), after a soft c or g ("Girard", "Girrard"), before or as one of
+// c, g, h, j, x ("Bethea", "Betthea"; "Bence", "Bennce").
+func lastNameDoubleSafe(s string) bool {
+	if lastNameDoubleRisk.MatchString(s) {
+		return false
+	}
+	r := []rune(s)
+	for i := 1; i < len(r); i++ {
+		if r[i] != r[i-1] || isNameVowel(r[i]) {
+			continue
+		}
+		start := i - 1
+		for start > 0 && r[start-1] == r[i] {
+			start--
+		}
+		end := i + 1
+		for end < len(r) && r[end] == r[i] {
+			end++
+		}
+		if strings.ContainsRune("cghxj", r[i]) || lastNameSoftBefore.MatchString(string(r[:start])) || (end < len(r) && strings.ContainsRune("cghxj", r[end])) {
+			return false
+		}
+		i = end - 1
+	}
+	return true
+}
+
+// lastNameSoundsAlike reports two names that differ only by spelling changes
+// the native rows score 100 (equal Metaphone 3 codes): any change inside
+// vowel runs away from a context-sensitive consonant, or one kind of
+// consonant respelling with every vowel unchanged. A dropped vowel is not
+// accepted: natively "Smith" finds "Smth" but "Cantu" does not find "Cntu".
+func lastNameSoundsAlike(x, y string) bool {
+	if lastNameShape(x, 0, true) == lastNameShape(y, 0, true) {
+		if (lastNameSilentL.MatchString(x) || lastNameSilentL.MatchString(y)) && lastNameWeakVowel.ReplaceAllString(x, "*") != lastNameWeakVowel.ReplaceAllString(y, "*") {
+			return false
+		}
+		return true
+	}
+	if lastNameMac.ReplaceAllString(x, "mc$1") == lastNameMac.ReplaceAllString(y, "mc$1") {
+		return true
+	}
+	for _, edit := range []byte("zhwdekft") {
+		if lastNameShape(x, edit, false) == lastNameShape(y, edit, false) {
+			return edit != 'd' || (lastNameDoubleSafe(x) && lastNameDoubleSafe(y))
+		}
+		// A final "e", a silent "h" or "w" and "z" for "s" also combine with
+		// vowel changes ("Smithe" and "Smyth", "Brown" and "Braun"); the
+		// other respellings do not ("Lammb" does not find "Lemb").
+		if strings.ContainsRune("ehwz", rune(edit)) && lastNameShape(x, edit, true) == lastNameShape(y, edit, true) {
+			return !lastNameSilentL.MatchString(x) && !lastNameSilentL.MatchString(y)
+		}
+	}
+	return false
+}
+
+var lastNameMac = regexp.MustCompile(`^mac([^aeiouy])`)
 
 // ---- Phone: weighted sections; threshold 80 ----
 
 // phoneParts splits a North American number into country, area, exchange and
-// line sections. ok is false for numbers outside that format.
+// line sections. Letters and digits both count as characters of the number (a
+// letter typed for a digit, "312 555 O199", still parses and differs only in
+// its line section); separators are dropped. ok is false unless ten characters
+// remain, or eleven with the country digit first, and for any other character.
 func phoneParts(s string) (country, area, exchange, line string, ok bool) {
-	var digits []rune
-	for _, r := range s {
+	var kept []rune
+	for _, r := range strings.ToLower(s) {
 		switch {
-		case r >= '0' && r <= '9':
-			digits = append(digits, r)
+		case (r >= '0' && r <= '9') || (r >= 'a' && r <= 'z'):
+			kept = append(kept, r)
 		case strings.ContainsRune("()+-./ \t", r):
 		default:
 			return "", "", "", "", false
 		}
 	}
-	d := string(digits)
+	d := string(kept)
 	switch {
 	case len(d) == 10:
 		return "", d[0:3], d[3:6], d[6:], true
@@ -785,18 +836,28 @@ var companyDesignators = map[string]bool{
 
 var companyStopWords = map[string]bool{"and": true, "of": true, "the": true}
 
-// companyWords lower-cases the name, folds "&" to "and" and hyphens to
-// spaces, drops punctuation, a leading "the", one trailing designator and the
-// stop words.
+// companyWords lower-cases the name, folds a free-standing "&" to "and" and
+// hyphens to spaces, drops punctuation, a leading "the", one trailing
+// designator and the stop words. An "&" or "/" inside a word stays part of it:
+// natively "AT&T" does not match "AT and T" and "Barnes&Noble" does not match
+// "Barnes & Noble".
 func companyWords(s string) []string {
-	s = strings.NewReplacer("&", " and ", "-", " ").Replace(strings.ToLower(s))
-	var clean []rune
-	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) {
-			clean = append(clean, r)
+	var words []string
+	for _, token := range strings.Fields(strings.ReplaceAll(strings.ToLower(s), "-", " ")) {
+		if token == "&" {
+			words = append(words, "and")
+			continue
+		}
+		var clean []rune
+		for _, r := range token {
+			if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '&' || r == '/' {
+				clean = append(clean, r)
+			}
+		}
+		if len(clean) > 0 {
+			words = append(words, string(clean))
 		}
 	}
-	words := strings.Fields(string(clean))
 	if len(words) > 1 && words[0] == "the" {
 		words = words[1:]
 	}
@@ -907,9 +968,15 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 		return true, confidence
 	}
 	if len(wa) >= 2 && len(wb) >= 2 {
-		// The rows score one extra or different third word at 91 and reject
-		// two or more.
-		return max(len(wa), len(wb)) == 3, 91
+		// The rows score one extra or different third word at 91, one extra
+		// fourth word after three equal words at 93, and reject two or more
+		// extra words.
+		switch {
+		case max(len(wa), len(wb)) == 3:
+			return true, 91
+		case same && min(len(wa), len(wb)) == 3 && max(len(wa), len(wb)) == 4:
+			return true, 93
+		}
 	}
 	return false, 0
 }
