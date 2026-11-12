@@ -12824,8 +12824,17 @@ System.assertEquals(2, rows.size());
 rows = Database.query('SELECT Id FROM Account WHERE Name = :names ORDER BY Name');
 System.assertEquals(2, rows.size());
 Account probe = new Account(Name = 'Beta');
-rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+// NATIVE a dotted dynamic bind is not a variable
+// internal/apextest/testdata/conformance/dynamic_bind_scope_paths/org.tsv anonymous 62.0 67.0
+String probeName = probe.Name;
+rows = Database.query('SELECT Id FROM Account WHERE Name = :probeName');
 System.assertEquals(1, rows.size());
+try {
+    Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+    System.assert(false, 'expected QueryException');
+} catch (QueryException dotted) {
+    System.assertEquals('Variable does not exist: probe.Name', dotted.getMessage());
+}
 List<Account> betaRows = rows;
 rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name + \' Test\'');
 System.assertEquals(0, rows.size());

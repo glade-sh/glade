@@ -47,7 +47,7 @@ func TestDynamicSOQLScopeBindPathsKeepAcceptedForms(t *testing.T) {
 		"SELECT Id FROM Account WHERE Id IN :accountsById.values()",
 		"SELECT Id FROM Account WHERE Name = :plain",
 	} {
-		if err := machine.validateDynamicSOQLBindSyntax(query, false); err != nil {
+		if err := machine.validateDynamicSOQLBindSyntaxMode(query, false, true); err != nil {
 			t.Fatalf("%s: %v", query, err)
 		}
 	}
