@@ -62,6 +62,7 @@ func InvalidateRuntimeCaches() {
 		runtimeCacheMu.Unlock()
 	})
 	resetRuntimeCacheUse()
+	resetExpressionResolvers()
 	runtimeCacheRootMu.Lock()
 	runtimeCacheRoots = make(map[runtimeCacheKey]string)
 	runtimeCacheRootMu.Unlock()

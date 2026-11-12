@@ -471,7 +471,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	recordCloneReason("", "run-base", "vm-runtime", runState.counters)
 	machineCloneStarted := time.Now()
 	baseMachine := runtime.restored.CloneMachine(nil)
-	baseMachine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	baseMachine.SetExpressionTypeResolver(runtimeExpressionResolver(runtimeKey, index))
 	recordCloneRuntimeMachineDuration(time.Since(machineCloneStarted), runState.counters)
 	baseMachine.SetTestDocumentBaseline(&org)
 	baseMachine.SetTestReportBaseline(&org)
@@ -3493,7 +3493,7 @@ func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
 // the documented legacy live-read behavior.
 func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index, digests *typesys.SourceDigestSet) error {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return err
 	}
@@ -3505,7 +3505,7 @@ func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index
 		return triggerErrors[0]
 	}
 	registerVisualforcePages(machine, runtime.PageNames)
-	machine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	machine.SetExpressionTypeResolver(runtimeExpressionResolver(key, index))
 	return registerBaseRuntime(machine, methods, classes, triggers)
 }
 
@@ -3523,7 +3523,7 @@ func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error
 // second time.
 func NewProjectRuntimeForRequest(index typesys.Index) (*vm.VM, error) {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexForExecutionWithSourceDigests(index, nil, sources)
+	key, runtime, err := runtimeFromIndexForExecutionWithSourceDigests(index, nil, sources)
 	if err != nil {
 		return nil, err
 	}
@@ -3531,7 +3531,7 @@ func NewProjectRuntimeForRequest(index typesys.Index) (*vm.VM, error) {
 		return nil, runtime.BaseErr
 	}
 	machine := runtime.restored.CloneMachine(nil)
-	machine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	machine.SetExpressionTypeResolver(runtimeExpressionResolver(key, index))
 	return machine, nil
 }
 
@@ -3585,11 +3585,11 @@ func RegisterUncachedProjectRuntimeForRequest(machine *vm.VM, index typesys.Inde
 // the documented legacy live-read behavior of RegisterProjectRuntimeForRequest.
 func RegisterProjectRuntimeForRequestWithSourceDigests(machine *vm.VM, index typesys.Index, digests *typesys.SourceDigestSet) error {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return err
 	}
-	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime, index))
+	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromKeyedEntry(key, runtime, index))
 }
 
 func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime {
@@ -3601,11 +3601,11 @@ func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime
 // snapshot that produced index when building runtime cache keys.
 func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) (CompiledProjectRuntime, error) {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return CompiledProjectRuntime{}, err
 	}
-	return compiledProjectRuntimeFromEntry(runtime, index), nil
+	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
 }
 
 func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
@@ -3641,6 +3641,13 @@ func RegisterTestMethodForRequest(machine *vm.VM, index typesys.Index, className
 		return fmt.Errorf("test method %s.%s was not compiled", className, methodName)
 	}
 	return registerTestRuntime(machine, []vm.Method{method})
+}
+
+// compiledProjectRuntimeFromKeyedEntry shares the generation's resolver.
+func compiledProjectRuntimeFromKeyedEntry(key runtimeCacheKey, runtime runtimeCacheEntry, index typesys.Index) CompiledProjectRuntime {
+	compiled := compiledProjectRuntimeFromEntry(runtime)
+	compiled.expressionTypes = runtimeExpressionResolver(key, index)
+	return compiled
 }
 
 func compiledProjectRuntimeFromEntry(runtime runtimeCacheEntry, indexes ...typesys.Index) CompiledProjectRuntime {
