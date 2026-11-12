@@ -744,7 +744,7 @@ func TestRuntimePatchAuthorityUsesRetainedVerifiedSources(t *testing.T) {
 	classes := compileProjectClasses(index, methods, sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	entry := runtimeCacheEntry{Methods: methods, Classes: classes, Triggers: triggers, TriggerErrors: triggerErrors, PageNames: pageNames}
-	if authority := newRuntimePatchAuthority(index, key, digests, sources, entry, org); authority == nil {
+	if authority := newRuntimePatchAuthority(index, key, digests, sources, entry, org, false); authority == nil {
 		t.Fatal("authority reread files instead of using retained verified sources")
 	}
 }
