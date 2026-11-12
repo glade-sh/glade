@@ -11,7 +11,10 @@ import (
 // a Lead still reads it after assignment moves it to an empty queue, at both
 // source APIs. No row has a reader who neither owns nor created the Lead, so
 // the read grant is scoped to that creator and queue state. Every other
-// omitted-model Lead read behaves as it did before the follow-up change.
+// omitted-model Lead read behaves as it did before the follow-up change, except
+// a Standard User in a declared scratch shape: external_user_case_lead_sharing
+// default/org.tsv:8-9 (APIs 62.0 and 67.0) reads and edits a Lead another user
+// owns, the ReadWriteTransfer scratch default.
 func TestFlowFollowupsLeadReadSharing(t *testing.T) {
 	const (
 		actor      storage.ID = "005000000000002"
@@ -59,17 +62,18 @@ func TestFlowFollowupsLeadReadSharing(t *testing.T) {
 							}}
 							// Read is an explicit public grant; no other model or
 							// user type widens the shared-object path.
-							if got, want := machine.soqlObjectHasPublicReadSharing("Lead"), model == "Read"; got != want {
+							scratchDefault := model == "" && userType == "Standard"
+							if got, want := machine.soqlObjectHasPublicReadSharing("Lead"), model == "Read" || scratchDefault; got != want {
 								t.Errorf("object public read=%t, want %t", got, want)
 							}
 							// Base behavior: public Read, or the owner. The one added
 							// grant is the Standard creator reading from an empty queue.
-							want := model == "Read" || owner == actor ||
+							want := model == "Read" || scratchDefault || owner == actor ||
 								(model == "" && userType == "Standard" && creator == actor && owner == emptyQueue)
 							if got := machine.userModeRecordVisible("Lead", lead, string(actor)); got != want {
 								t.Errorf("record visible=%t, want %t", got, want)
 							}
-							if model != "Read" {
+							if model != "Read" && !scratchDefault {
 								query := soql.Query{Object: "Lead", SecurityMode: "USER_MODE"}
 								if got := machine.soqlSharingUserID(query); got != string(actor) {
 									t.Errorf("sharing user %q, want the reading user", got)
@@ -77,8 +81,10 @@ func TestFlowFollowupsLeadReadSharing(t *testing.T) {
 							}
 							if owner != actor {
 								for _, operation := range []string{"update", "upsert", "delete", "undelete"} {
-									if machine.currentUserCanWriteRecord("Lead", lead, string(actor), operation) {
-										t.Errorf("read grant allowed another owner's %s", operation)
+									// The scratch default edits; deletion and undeletion stay with the owner.
+									writable := scratchDefault && (operation == "update" || operation == "upsert")
+									if got := machine.currentUserCanWriteRecord("Lead", lead, string(actor), operation); got != writable {
+										t.Errorf("another owner's %s allowed=%t, want %t", operation, got, writable)
 									}
 								}
 							}

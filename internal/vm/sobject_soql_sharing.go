@@ -521,5 +521,7 @@ func (vm *VM) leadHasDeclaredShapeDefaultModel(canonical string) bool {
 		return false
 	}
 	definition := vm.Org.Objects[canonical].Definition
-	return strings.TrimSpace(definition.SharingModel) == "" && storage.StandardObjectShapeDeclared(definition)
+	// The rows are a Standard User; other user types have no Lead sharing row.
+	return strings.TrimSpace(definition.SharingModel) == "" && storage.StandardObjectShapeDeclared(definition) &&
+		strings.EqualFold(vm.currentUserInfoField("UserType", ""), "Standard")
 }
