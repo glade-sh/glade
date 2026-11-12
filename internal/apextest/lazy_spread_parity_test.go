@@ -67,6 +67,23 @@ private class LazySpreadParityTest {
 	@IsTest static void keyPrefixLookups() {
 		report(((Id) '550000000000001AAA').getSObjectType() + ' ' + ((Id) '810000000000001AAA').getSObjectType() + ' ' + ((Id) '0DM000000000001AAA').getSObjectType() + ' ' + ((Id) '707000000000001AAA').getSObjectType() + ' ' + ((Id) '0Hn000000000001AAA').getSObjectType());
 	}
+	// Most catalog objects have no catalog key prefix. The complete spread gives
+	// them the next free custom prefix in name order, so a cold object's prefix
+	// is known only through the spread's unique assignment.
+	@IsTest static void reassignedPrefixLookups() {
+		report(((Id) 'a00000000000001AAA').getSObjectType() + ' ' + ((Id) 'a0E000000000001AAA').getSObjectType() + ' ' + ((Id) 'a0Z000000000001AAA').getSObjectType() + ' ' + ((Id) 'a1A000000000001AAA').getSObjectType() + ' ' + ((Id) 'a00000000000001').getSObjectType());
+	}
+	@IsTest static void reassignedPrefixDmlAndPolymorphic() {
+		List<String> rows = new List<String>();
+		Database.DeleteResult one = Database.delete('a00000000000001AAA', false);
+		rows.add(one.isSuccess() + ' ' + one.getErrors()[0].getStatusCode());
+		List<Database.DeleteResult> many = Database.delete(new List<Id>{'a0E000000000001AAA', 'a0Z000000000001AAA'}, false);
+		rows.add(many.size() + ' ' + many[0].getErrors()[0].getStatusCode() + ' ' + many[1].getErrors()[0].getStatusCode());
+		try { Task t = new Task(Subject = 'T', WhatId = 'a00000000000001AAA'); insert t; rows.add('insert ' + [SELECT What.Type FROM Task].size()); } catch (Exception e) { rows.add(e.getTypeName() + ' ' + e.getMessage()); }
+		try { SObject s = ((Id) 'a0E000000000001AAA').getSObjectType().newSObject('a0E000000000001AAA'); rows.add(String.valueOf(s.getSObjectType()) + ' ' + s.Id); } catch (Exception e) { rows.add(e.getTypeName() + ' ' + e.getMessage()); }
+		try { Database.update(new List<SObject>{((Id) 'a00000000000001AAA').getSObjectType().newSObject('a00000000000001AAA')}, false); rows.add('update'); } catch (Exception e) { rows.add(e.getTypeName() + ' ' + e.getMessage()); }
+		report(String.join(rows, ' | '));
+	}
 	@IsTest static void typeAndInstanceLookups() {
 		SObject s = (SObject) Type.forName('Schema.Entitlement').newInstance();
 		report(String.valueOf(Type.forName('AsyncApexJob')) + ' ' + String.valueOf(Type.forName('ServiceResource')) + ' ' + s.getSObjectType() + ' ' + new AsyncApexJob().getSObjectType() + ' ' + Schema.getGlobalDescribe().get('ServiceResource').newSObject().getSObjectType());
