@@ -4,6 +4,7 @@ package semanticcache
 
 import (
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -27,9 +28,20 @@ func cacheBaseUsableFor(uid int, base string) bool {
 	if uid != 0 {
 		return true
 	}
-	info, err := os.Stat(base)
-	if err != nil {
-		return true
+	// A missing base would be created by root inside its nearest existing
+	// ancestor, so that ancestor's owner decides.
+	existing := base
+	var info os.FileInfo
+	for {
+		var err error
+		if info, err = os.Stat(existing); err == nil {
+			break
+		}
+		parent := filepath.Dir(existing)
+		if parent == existing {
+			return true
+		}
+		existing = parent
 	}
 	st, ok := info.Sys().(*syscall.Stat_t)
 	return !ok || st.Uid == 0

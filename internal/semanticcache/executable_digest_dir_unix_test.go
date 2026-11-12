@@ -4,6 +4,7 @@ package semanticcache
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestCacheBaseUsableForRoot(t *testing.T) {
 	if cacheBaseUsableFor(0, base) {
 		t.Fatal("root must not create a cache inside another user's base directory")
 	}
-	if !cacheBaseUsableFor(0, base+"/missing") {
-		t.Fatal("a missing base has no other owner")
+	if cacheBaseUsableFor(0, filepath.Join(base, "missing", "deeper")) {
+		t.Fatal("root must not create a missing base inside another user's directory")
 	}
 }
