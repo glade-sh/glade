@@ -3,6 +3,7 @@ package apextest
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -83,11 +84,8 @@ private class LazySpreadParityTest {
 	}
 }`
 
-func runLazySpreadParity(t *testing.T, eager bool, scratch string) map[string]string {
+func writeLazySpreadParityProject(t *testing.T, scratch string) string {
 	t.Helper()
-	prior := eagerStandardSpread.Load()
-	eagerStandardSpread.Store(eager)
-	defer eagerStandardSpread.Store(prior)
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
 	if scratch != "" {
@@ -95,8 +93,13 @@ func runLazySpreadParity(t *testing.T, eager bool, scratch string) map[string]st
 	}
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/LazySpreadParityTest.cls"), lazySpreadParityClass)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/LazySpreadParityTest.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+	return root
+}
+
+func lazySpreadParityAnswers(t *testing.T, root string, noDisk bool) map[string]string {
+	t.Helper()
 	index := loadTestIndex(t, root)
-	run := Run(index, Options{NoDiskCache: true, Parallelism: 1, SelectedMethod: os.Getenv("LAZY_PARITY_METHOD")})
+	run := Run(index, Options{NoDiskCache: noDisk, Parallelism: 1, SelectedMethod: os.Getenv("LAZY_PARITY_METHOD")})
 	out := make(map[string]string)
 	for _, suite := range run.Suites {
 		for _, c := range suite.Cases {
@@ -108,6 +111,37 @@ func runLazySpreadParity(t *testing.T, eager bool, scratch string) map[string]st
 		}
 	}
 	return out
+}
+
+func runLazySpreadParity(t *testing.T, eager bool, scratch string) map[string]string {
+	t.Helper()
+	prior := eagerStandardSpread.Load()
+	eagerStandardSpread.Store(eager)
+	defer eagerStandardSpread.Store(prior)
+	return lazySpreadParityAnswers(t, writeLazySpreadParityProject(t, scratch), true)
+}
+
+// A lazy runtime written to the disk cache and restored from it answers what
+// the eager spread answers. The lazy flag and the objects it holds persist; the
+// shared source installs the rest.
+func TestLazyStandardSpreadRestoredFromDiskMatchesEagerSpread(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+	t.Setenv("LAZY_PARITY_METHOD", "soqlRelationshipsAndSubqueries")
+	eager := runLazySpreadParity(t, true, "")
+	enableDiskCacheForIsolationTest(t)
+	prior := eagerStandardSpread.Load()
+	eagerStandardSpread.Store(false)
+	defer eagerStandardSpread.Store(prior)
+	root := writeLazySpreadParityProject(t, "")
+	InvalidateRuntimeCaches()
+	built := lazySpreadParityAnswers(t, root, false)
+	InvalidateRuntimeCaches()
+	restored := lazySpreadParityAnswers(t, root, false)
+	if len(eager) != 1 || !reflect.DeepEqual(eager, built) || !reflect.DeepEqual(eager, restored) {
+		t.Fatalf("eager %v\nbuilt  %v\nrestored %v", eager, built, restored)
+	}
 }
 
 func TestLazyStandardSpreadMatchesEagerSpread(t *testing.T) {
