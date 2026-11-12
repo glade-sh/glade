@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/schema"
@@ -32,9 +32,8 @@ func captureBuildFingerprint() func() string {
 	return sync.OnceValue(func() string {
 		if file != nil {
 			defer file.Close()
-			hash := sha256.New()
-			if _, err := io.Copy(hash, file); err == nil {
-				return hex.EncodeToString(hash.Sum(nil))
+			if digest, err := executableDigest(file, executableDigestCacheDir(), time.Now); err == nil {
+				return digest
 			}
 		}
 		return "process:" + rand.Text()
