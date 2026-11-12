@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Performance
+
+- **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process. Watch, daemon and server runs are unchanged. Results are unchanged.
 
 ## v0.3.7
 

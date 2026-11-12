@@ -405,6 +405,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		return compileErrorRun(cases, gateErr, started, opts)
 	}
 	generation.controllerCompilation = visualforceControllerCompilationHint(index, diagnostics)
+	generation.oneShot = opts.OneShotProcess
 	diagnostics = gate.withoutScopedDependencyErrors(diagnostics)
 	if compileErr := indexCompileError(diagnostics); compileErr != nil {
 		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
@@ -1422,6 +1423,9 @@ type runtimeGeneration struct {
 	// generation, offered to the Visualforce controller compile gate so page
 	// registration does not build and analyze the project a second time.
 	controllerCompilation *visualforce.ControllerCompilation
+	// oneShot is Options.OneShotProcess for the run that prepared this
+	// generation. It is not part of any cache key.
+	oneShot bool
 }
 
 func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration) runtimeCacheKey {
@@ -1919,7 +1923,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		executionProjectionValidated: true,
 		standardPrefix:               classRuntime.prefix,
 	}
-	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
+	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org, generation.oneShot)
 	projected, projectOK := project(entry)
 	if !projectOK {
 		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
@@ -2087,7 +2091,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		executionProjectionValidated: true,
 		standardPrefix:               classRuntime.prefix,
 	}
-	entry.patchAuthority = newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, counters)
+	entry.patchAuthority = newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, counters, generation.oneShot)
 	counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(authorityStarted))
 	projected, projectOK := project(entry)
 	if !projectOK {
