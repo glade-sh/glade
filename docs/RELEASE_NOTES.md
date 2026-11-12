@@ -1220,7 +1220,7 @@ in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
 - **Impact reports (all source API versions).** `glade test --impact-json`
   writes optional per-test execution summaries. The input inventory remains
   incomplete, so these artifacts cannot authorize skipping tests. See
-  [impact trace limits](test-impact.md).
+  [impact trace limits](LOCAL_TESTING.md#per-test-impact-traces).
 
 ### Performance
 

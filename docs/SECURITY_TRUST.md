@@ -30,7 +30,7 @@ not public issues. If GitHub reporting is unavailable, use
   cookie sink is the Visualforce Apex Cookie emulation in
   `internal/server/visualforce.go`, which writes the flags the Apex program
   set. A server test pins those flags, and a source scan fails if another
-  non-test file sets a cookie. The [release budget and cookie assessment](CODEQL_BUDGET.md)
+  non-test file sets a cookie. The [release budget and cookie assessment](CODEQL.md#cookie-sink-assessment)
   record measured full-profile times, waiver limits, and the release check command.
 - `gosec` uploads SARIF for source-pattern review.
 - `npm audit --omit=dev --audit-level=high` checks packaged JavaScript
