@@ -1,0 +1,46 @@
+{
+  "business": {
+    "accountSeparate": "StandardBehavior.accountSeparate()",
+    "accountBulk": "StandardBehavior.accountBulk()",
+    "accountUpdate": "StandardBehavior.accountUpdate()",
+    "accountUpsert": "StandardBehavior.accountUpsert()",
+    "accountUpsertUpdate": "StandardBehavior.accountUpsertUpdate()",
+    "accountOptions": "StandardBehavior.accountOptions()",
+    "accountNoCity": "StandardBehavior.accountNoCity()",
+    "contactBlank": "StandardBehavior.contactBlank()",
+    "leadBlank": "StandardBehavior.leadBlank()",
+    "phoneInternational": "StandardBehavior.phoneInternational()",
+    "phoneExtension": "StandardBehavior.phoneExtension()"
+  },
+  "person": {
+    "personDefault": "PersonBehavior.personDefault()"
+  },
+  "custom": {
+    "CustomBlock": "CustomDuplicateProbe.run('CustomBlock')",
+    "CustomAlert": "CustomDuplicateProbe.run('CustomAlert')",
+    "CustomReport": "CustomDuplicateProbe.run('CustomReport')",
+    "PersonCustom": "CustomDuplicateProbe.run('PersonCustom')",
+    "CustomBlockUpsert": "CustomDuplicateProbe.run('CustomBlockUpsert')",
+    "CustomAlertUpsert": "CustomDuplicateProbe.run('CustomAlertUpsert')",
+    "CustomReportUpsert": "CustomDuplicateProbe.run('CustomReportUpsert')",
+    "PersonCustomUpsert": "CustomDuplicateProbe.run('PersonCustomUpsert')"
+  },
+  "extra": {
+    "externalNew": "ExtraBehavior.externalNew()",
+    "externalExisting": "ExtraBehavior.externalExisting()",
+    "initialForward": "ExtraBehavior.initialForward()",
+    "initialReverse": "ExtraBehavior.initialReverse()",
+    "transposedLast": "ExtraBehavior.transposedLast()"
+  },
+  "bound": {
+    "ordinary": "NonRuleBehavior.ordinary()",
+    "uncapped": "BoundBehavior.uncapped()"
+  },
+  "personActive": {
+    "lookup": "PersonLookupBehavior.lookup()"
+  },
+  "names": {
+    "initials": "NamePanelBehavior.initials()",
+    "transpositions": "NamePanelBehavior.transpositions()"
+  }
+}
