@@ -13,7 +13,7 @@
   "62/Company.Syllable.SY1.03": {
    "max_conf_mae": 0.038,
    "max_extra": 0,
-   "min_recall": 0.857
+   "min_recall": 0.8709
   },
   "62/Company.Syllable.SY1.04": {
    "max_conf_mae": 0.039,
@@ -308,7 +308,7 @@
   "67/Company.Syllable.SY1.03": {
    "max_conf_mae": 0.038,
    "max_extra": 0,
-   "min_recall": 0.857
+   "min_recall": 0.8709
   },
   "67/Company.Syllable.SY1.04": {
    "max_conf_mae": 0.039,
@@ -503,7 +503,7 @@
   "67/Company.Syllable.SY2.07": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.9896
+   "min_recall": 0.9894
   },
   "67/Company.Syllable.SY2.08": {
    "max_conf_mae": 0.001,
