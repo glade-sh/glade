@@ -414,11 +414,21 @@ func standardPersonOf(org *storage.OrgState, object string, record storage.Recor
 // candidate that has one. The phone and company paths need both first names.
 func standardPersonMatch(object string, candidate, existing standardPerson) (bool, float64) {
 	last := standardCompare(candidate.last, existing.last, standardLastName)
+	email := standardCompare(candidate.email, existing.email, standardExact)
 	if !last.ok() {
+		if email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
+			return standardCorroboratedSurname(candidate.last, existing.last)
+		}
 		return false, 0
 	}
 	first := standardCompare(candidate.first, existing.first, standardMethod("firstname"))
-	email := standardCompare(candidate.email, existing.email, standardExact)
+	// The standard rule accepts one initial with an exact surname and email
+	// or phone. A custom FirstName item does not match the same pairs.
+	if !first.ok() && strings.EqualFold(candidate.last, existing.last) && standardFirstInitial(candidate.first, existing.first) {
+		if email.ok() || candidate.phone != "" && strings.EqualFold(candidate.phone, existing.phone) {
+			return true, 100
+		}
+	}
 	best, found := 0.0, false
 	take := func(c float64) {
 		if !found || c > best {
