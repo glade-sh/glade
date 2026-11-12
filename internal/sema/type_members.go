@@ -139,6 +139,11 @@ type semaTypeMemberState struct {
 	// semaAnyKnownField raises it when an earlier type's hydration could have
 	// changed its answer, which a worker that has not seen that type cannot know.
 	historyProbe *atomic.Bool
+	// historyUsed, when set beside historyProbe, is raised when an answer of
+	// "yes" needed a hydrated entry rather than the base or platform model.
+	// An incremental run reuses cached body results only while no answer
+	// depended on what an earlier type happened to hydrate.
+	historyUsed *atomic.Bool
 }
 
 type semaTypeMemberView struct {
@@ -1078,7 +1083,13 @@ type semaMethodBodySource struct {
 }
 
 func buildSemaMethodBodyWorkItems(index typesys.Index, sources *semaSources) []semaMethodBodyWorkItem {
-	bodySources, workItemCount := collectSemaMethodBodySources(index, sources)
+	return buildSemaMethodBodyWorkItemsFor(index, sources, nil)
+}
+
+// buildSemaMethodBodyWorkItemsFor builds the work items of the types include
+// admits; a nil include admits every type.
+func buildSemaMethodBodyWorkItemsFor(index typesys.Index, sources *semaSources, include func(typeIndex int) bool) []semaMethodBodyWorkItem {
+	bodySources, workItemCount := collectSemaMethodBodySources(index, sources, include)
 	workItems := make([]semaMethodBodyWorkItem, 0, workItemCount)
 	for _, bodySource := range bodySources {
 		typeIndex := bodySource.typeIndex
@@ -1148,11 +1159,14 @@ func resolveSemaMethodBodyWorkItem(index typesys.Index, item semaMethodBodyWorkI
 	return typ, member, true
 }
 
-func collectSemaMethodBodySources(index typesys.Index, sources *semaSources) ([]semaMethodBodySource, int) {
+func collectSemaMethodBodySources(index typesys.Index, sources *semaSources, include func(typeIndex int) bool) ([]semaMethodBodySource, int) {
 	var bodySources []semaMethodBodySource
 	workItemCount := 0
 	for typeIndex, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || !semaTypeHasMethodBodyWork(typ) {
+			continue
+		}
+		if include != nil && !include(typeIndex) {
 			continue
 		}
 		source, ok := sources.normalizedForType(typ)

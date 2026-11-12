@@ -190,11 +190,20 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 }
 
 func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, recorder *perfRecorder) (result Result) {
+	return a.analyzeWithOptionsIncremental(index, opts, recorder, nil)
+}
+
+// analyzeWithOptionsIncremental is analyzeWithOptions with an optional
+// incremental run. A nil run is the plain analysis.
+func (a *Analyzer) analyzeWithOptionsIncremental(index typesys.Index, opts AnalyzeOptions, recorder *perfRecorder, incr *incrementalRun) (result Result) {
 	a.prepareAnalysisContext(index, opts, recorder)
 	enrichmentStarted := recorder.beginPhase()
 	index = prepareAnalysisIndexWithSources(index, a.sources)
 	if recorder != nil {
 		recorder.endPhase(&recorder.counters.SourceSchemaEnrichment, enrichmentStarted)
+	}
+	if incr != nil {
+		incr.begin(index, opts)
 	}
 	result = Result{
 		Project: index.Project,
@@ -234,7 +243,12 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, checkAnnotationCatalog(index)...)
 		result.Diagnostics = append(result.Diagnostics, checkAnnotationContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, checkWebExposureContracts(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithView(index, typeMemberView, recorder)...)
+		if incr != nil {
+			result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesIncremental(index, typeMemberView, recorder, incr)...)
+			incr.armLaterPasses(typeMemberState)
+		} else {
+			result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithView(index, typeMemberView, recorder)...)
+		}
 		result.Diagnostics = append(result.Diagnostics, a.checkImplicitDefaultConstructors(index, typeMemberView)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggerBodiesWithView(index, typeMemberView, recorder)...)
 		if !opts.SuppressPerformanceDiagnostics {
@@ -260,6 +274,9 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		Triggers:    len(index.Triggers),
 		Objects:     len(index.Objects),
 		Diagnostics: len(result.Diagnostics),
+	}
+	if incr != nil {
+		incr.finish()
 	}
 	if opts.ExportTypes {
 		exportStarted := recorder.beginPhase()
@@ -1488,14 +1505,18 @@ func (s semaScopeModel) localInBlock(name string, start, end int) (semaLocal, bo
 }
 
 func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
-	known := semaAnyKnownFieldInView(model, name)
-	if !known && model != nil && model.state != nil && model.state.historyProbe != nil {
-		model.state.historyProbe.Store(true)
+	known := semaAnyKnownFieldInView(model, name, false)
+	if model != nil && model.state != nil && model.state.historyProbe != nil {
+		if !known {
+			model.state.historyProbe.Store(true)
+		} else if model.state.historyUsed != nil && !semaAnyKnownFieldInView(model, name, true) {
+			model.state.historyUsed.Store(true)
+		}
 	}
 	return known
 }
 
-func semaAnyKnownFieldInView(model *semaTypeMemberView, name string) bool {
+func semaAnyKnownFieldInView(model *semaTypeMemberView, name string, ignoreHydrated bool) bool {
 	key := normalizeName(name)
 	if model == nil || key == "" || strings.Contains(key, ".") {
 		return false
@@ -1508,9 +1529,11 @@ func semaAnyKnownFieldInView(model *semaTypeMemberView, name string) bool {
 	if model.state == nil {
 		return false
 	}
-	for _, members := range model.hydrated {
-		if _, ok := members.fields[key]; ok {
-			return true
+	if !ignoreHydrated {
+		for _, members := range model.hydrated {
+			if _, ok := members.fields[key]; ok {
+				return true
+			}
 		}
 	}
 	if model.state.base == nil {
