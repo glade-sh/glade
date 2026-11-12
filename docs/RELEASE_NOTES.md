@@ -22,6 +22,7 @@
 - **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
 - **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
 - **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
+- **Fewer collections while a test process starts.** A standalone `glade test` process no longer collects garbage while its heap is under 512 MiB; the target returns to the usual 100 percent growth once the live heap passes 256 MiB, so a large run peaks at the same heap as before. On generated projects instructions fell 1% to 8% with the same peak memory. An explicit `GOGC` and `--gc-aggressive` keep their own behavior, and a soft memory limit under 2 GiB lowers the floor to a quarter of the limit. Results are unchanged.
 
 ## v0.3.7
 
