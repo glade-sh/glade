@@ -4,8 +4,11 @@ import (
 	"context"
 	"io"
 	"math"
+	"os"
+	"path/filepath"
 	"runtime/debug"
 	"testing"
+	"time"
 )
 
 func TestGCFloorPercentHoldsGoalAtFloorThenFollowsGrowth(t *testing.T) {
@@ -175,7 +178,7 @@ func TestGCFloorBackstopLimitIsInstalledAndRestored(t *testing.T) {
 	if got := debug.SetMemoryLimit(-1); got != 2*floor {
 		t.Fatalf("limit while floor is in force = %d, want %d", got, int64(2*floor))
 	}
-	tuner.finish(100)
+	tuner.release()
 	if got := debug.SetMemoryLimit(-1); got != 8<<30 {
 		t.Fatalf("limit after floor = %d, want the prior 8 GiB", got)
 	}
@@ -193,7 +196,7 @@ func TestGCFloorBackstopKeepsLowerExplicitLimit(t *testing.T) {
 	if got := debug.SetMemoryLimit(-1); got != 300<<20 {
 		t.Fatalf("explicit lower limit changed to %d", got)
 	}
-	tuner.finish(100)
+	tuner.release()
 	if got := debug.SetMemoryLimit(-1); got != 300<<20 {
 		t.Fatalf("explicit limit not preserved: %d", got)
 	}
@@ -207,5 +210,124 @@ func TestGCFloorDoesNotOverrideAnExplicitPercent(t *testing.T) {
 	}
 	if got := debug.SetGCPercent(-1); got != -1 {
 		t.Fatalf("GC percent = %d, want -1 kept", got)
+	}
+}
+
+func writeCgroupFile(t *testing.T, dir, name, value string) {
+	t.Helper()
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, name), []byte(value), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCgroupEffectiveLimitWalksAncestorsV2(t *testing.T) {
+	root := t.TempDir()
+	writeCgroupFile(t, root, "memory.max", "max\n")
+	writeCgroupFile(t, filepath.Join(root, "user.slice"), "memory.max", "268435456\n")
+	writeCgroupFile(t, filepath.Join(root, "user.slice", "app.scope"), "memory.max", "max\n")
+	writeCgroupFile(t, filepath.Join(root, "user.slice", "app.scope", "leaf"), "memory.max", "1073741824\n")
+	got := cgroupEffectiveLimit(root, "0::/user.slice/app.scope/leaf\n")
+	if got != 268435456 {
+		t.Fatalf("effective limit = %d, want the ancestor's 256 MiB", got)
+	}
+}
+
+func TestCgroupEffectiveLimitWalksAncestorsV1(t *testing.T) {
+	root := t.TempDir()
+	mem := filepath.Join(root, "memory")
+	writeCgroupFile(t, mem, "memory.limit_in_bytes", "9223372036854771712\n")
+	writeCgroupFile(t, filepath.Join(mem, "docker"), "memory.limit_in_bytes", "536870912\n")
+	writeCgroupFile(t, filepath.Join(mem, "docker", "c1"), "memory.limit_in_bytes", "1073741824\n")
+	self := "12:cpu,cpuacct:/docker/c1\n4:memory:/docker/c1\n"
+	if got := cgroupEffectiveLimit(root, self); got != 536870912 {
+		t.Fatalf("effective limit = %d, want the ancestor's 512 MiB", got)
+	}
+}
+
+func TestCgroupEffectiveLimitNamespacedAndUnlimitedViews(t *testing.T) {
+	root := t.TempDir()
+	// The process path does not exist under the mount: walk up to the root file.
+	writeCgroupFile(t, root, "memory.max", "134217728\n")
+	if got := cgroupEffectiveLimit(root, "0::/../../missing/child\n"); got != 134217728 {
+		t.Fatalf("namespaced limit = %d, want 128 MiB", got)
+	}
+	if got := cgroupEffectiveLimit(t.TempDir(), "0::/x\n"); got != 0 {
+		t.Fatalf("no readable files gave limit %d", got)
+	}
+	if got := cgroupEffectiveLimit(root, ""); got != 0 {
+		t.Fatalf("empty self cgroup gave limit %d", got)
+	}
+}
+
+func TestGCFloorNotStartedWhenLiveHeapIsAlreadyPastHalfTheFloor(t *testing.T) {
+	oldGC := debug.SetGCPercent(100)
+	oldLimit := debug.SetMemoryLimit(8 << 30)
+	defer debug.SetGCPercent(oldGC)
+	defer debug.SetMemoryLimit(oldLimit)
+	// A 1 MiB floor is below twice the 4 MiB runtime minimum, so the policy is already 100.
+	if tuner := newGCFloorTuner(1 << 20); tuner != nil {
+		t.Fatal("tuner started with nothing to hold back")
+	}
+	if got := debug.SetMemoryLimit(-1); got != 8<<30 {
+		t.Fatalf("limit changed to %d", got)
+	}
+}
+
+func TestGCFloorGoroutineEndsAtMaxAgeAndRestoresPolicy(t *testing.T) {
+	oldGC := debug.SetGCPercent(100)
+	oldLimit := debug.SetMemoryLimit(8 << 30)
+	defer debug.SetGCPercent(oldGC)
+	defer debug.SetMemoryLimit(oldLimit)
+	// A floor far above the live heap never reaches the hand-over, so only maxAge ends it.
+	tuner := newGCFloorTuner(1 << 40)
+	if tuner == nil {
+		t.Fatal("tuner did not start")
+	}
+	done := make(chan struct{})
+	go func() {
+		tuner.run(time.Millisecond, 40*time.Millisecond)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("tuner goroutine did not end at maxAge")
+	}
+	if got := debug.SetGCPercent(100); got != 100 {
+		t.Fatalf("GC percent after maxAge = %d, want 100", got)
+	}
+	if got := debug.SetMemoryLimit(-1); got != 8<<30 {
+		t.Fatalf("limit after maxAge = %d, want the prior 8 GiB", got)
+	}
+}
+
+func TestGCFloorGoroutineEndsAtHandOver(t *testing.T) {
+	oldGC := debug.SetGCPercent(100)
+	oldLimit := debug.SetMemoryLimit(8 << 30)
+	defer debug.SetGCPercent(oldGC)
+	defer debug.SetMemoryLimit(oldLimit)
+	tuner := newGCFloorTuner(1 << 40)
+	if tuner == nil {
+		t.Fatal("tuner did not start")
+	}
+	tuner.floor = 0 // the live heap now counts as past half the floor
+	done := make(chan struct{})
+	go func() {
+		tuner.run(time.Millisecond, time.Hour)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("tuner goroutine did not end at hand-over")
+	}
+	if got := debug.SetGCPercent(100); got != 100 {
+		t.Fatalf("GC percent after hand-over = %d, want 100", got)
+	}
+	if got := debug.SetMemoryLimit(-1); got != 8<<30 {
+		t.Fatalf("limit after hand-over = %d, want the prior 8 GiB", got)
 	}
 }

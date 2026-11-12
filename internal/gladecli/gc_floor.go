@@ -13,8 +13,8 @@ import (
 // class catalog from nothing and the live heap climbs from a few MiB to several
 // hundred. With the default collector target every doubling is a full mark of
 // everything built so far. Holding the next-collection goal at this floor skips
-// those cycles. Once the live heap passes half the floor the target is the
-// ordinary 100 percent growth, so the peak heap of a large run is unchanged.
+// those cycles. Once the live heap passes half the floor, or after
+// testGCFloorMaxAge, the target is the ordinary 100 percent growth.
 const testGCFloorBytes = 512 << 20
 
 const (
@@ -27,6 +27,10 @@ const (
 	// one eighth of physical memory or of the container limit.
 	testGCFloorBudgetShare = 8
 	testGCFloorPollEvery   = 20 * time.Millisecond
+	// testGCFloorMaxAge ends the tuner even if the live heap never reaches
+	// half the floor: a cold start that is still small after this long does not
+	// need the floor.
+	testGCFloorMaxAge = 30 * time.Second
 )
 
 var testGCFloorEnabled bool
@@ -59,7 +63,7 @@ func startTestGCFloorIfEnabled() {
 		return
 	}
 	if tuner := newGCFloorTuner(floor); tuner != nil {
-		go tuner.run()
+		go tuner.run(testGCFloorPollEvery, testGCFloorMaxAge)
 	}
 }
 
@@ -105,6 +109,10 @@ func newGCFloorTuner(floor uint64) *gcFloorTuner {
 	if !ok {
 		return nil
 	}
+	if percent == 100 {
+		// The live heap is already past half the floor: nothing to hold back.
+		return nil
+	}
 	// Only the runtime default is ours to replace: an explicit policy such as
 	// --gc-aggressive has already set the percent.
 	if previous := debug.SetGCPercent(percent); previous != 100 {
@@ -119,14 +127,23 @@ func newGCFloorTuner(floor uint64) *gcFloorTuner {
 	return tuner
 }
 
-// run follows the live heap until it passes half the floor, then restores the
-// ordinary policy. It polls so the hand-over does not depend on the scheduling
-// of a finalizer.
-func (t *gcFloorTuner) run() {
-	ticker := time.NewTicker(testGCFloorPollEvery)
+// run follows the live heap until it passes half the floor or maxAge elapses,
+// then restores the ordinary policy and returns. It polls so the hand-over does
+// not depend on the scheduling of a finalizer. The goroutine ends at the
+// hand-over, at maxAge, or with the process.
+func (t *gcFloorTuner) run(every, maxAge time.Duration) {
+	ticker := time.NewTicker(every)
 	defer ticker.Stop()
-	for range ticker.C {
-		if t.step() {
+	deadline := time.NewTimer(maxAge)
+	defer deadline.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			if t.step() {
+				return
+			}
+		case <-deadline.C:
+			t.release()
 			return
 		}
 	}
@@ -163,8 +180,8 @@ func gcFloorPercent(floor, live, roots uint64) int {
 // (for example --gc-aggressive) changed the percent.
 func (t *gcFloorTuner) step() bool {
 	percent, ok := t.percent()
-	if !ok {
-		t.finish(100)
+	if !ok || percent == 100 {
+		t.release()
 		return true
 	}
 	if percent == t.last {
@@ -174,25 +191,26 @@ func (t *gcFloorTuner) step() bool {
 	if previous != t.last {
 		// Another policy owns the percent. Hand its value back and stand down.
 		debug.SetGCPercent(previous)
-		t.finish(previous)
+		t.dropLimit()
 		return true
 	}
 	t.last = percent
-	if percent == 100 {
-		t.finish(100)
-		return true
-	}
 	return false
 }
 
-// finish drops the memory-limit backstop if it is still ours. The percent is
-// already the ordinary 100 or another policy's value.
-func (t *gcFloorTuner) finish(percent int) {
+// release hands the collector back to the ordinary 100 percent growth unless
+// another policy has taken the percent, and drops the memory-limit backstop.
+func (t *gcFloorTuner) release() {
+	if previous := debug.SetGCPercent(100); previous != t.last {
+		debug.SetGCPercent(previous)
+	}
+	t.dropLimit()
+}
+
+// dropLimit removes the backstop if it is still ours.
+func (t *gcFloorTuner) dropLimit() {
 	if t.ownedLimit != 0 && debug.SetMemoryLimit(-1) == t.ownedLimit {
 		debug.SetMemoryLimit(t.priorLimit)
 	}
 	t.ownedLimit = 0
-	if percent == 100 && t.last != 100 {
-		debug.SetGCPercent(100)
-	}
 }
