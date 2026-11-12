@@ -1,0 +1,11 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for the standard Account, Contact and Lead matching rules, the cross-object Contact and Lead rules, custom rules with OR groups and three items, a custom Person Account rule, and Company Name pairs for Syllable Alignment
+orgs: three fresh 1-day scratch orgs on campaign Dev Hubs (one with the PersonAccounts feature), each deleted after its run
+route: anonymous Apex (insert the existing records, then findDuplicates on unsaved candidates; up to 50 candidates per call)
+apis: 67.0 for every row; 62.0 for the rows listed as 62 in org.tsv
+row value: {"object","exist_object","rule","existing","candidates","matches"}; matches are [candidate index, existing index, confidence]; a field named _Account stands for the account the contact belongs to
+rules: Standard_Account_Match_Rule_v1_0, Standard_Contact_Match_Rule_v1_1, Standard_Lead_Match_Rule_v1_0 (the two cross-object duplicate rules were activated), custom rules FzName, FzOrNameCity, FzThree, FzMixOr, FzOrFLP, FzEmailOrLast, FzFirstLast and the Person Account rule FzPA (definitions in standard_rules_conformance_test.go)
+ids: records are tagged by index; no record, org or user id, username or alias is stored
+Standard Person Account matching rule: it ships inactive and cannot be activated by metadata deploy ("Standard matching rules can't be edited or deleted"), so no row covers it; findDuplicates on a person account with no active Person Account rule fails with "No active duplicate rules are defined for the Account object type"
+fit rows: Standard.*, Custom.*, Company.Syllable.*
+holdout rows: Holdout.*, written without sight of the model and scored once; Holdout.Field.Account.Street, Account.Phone, Contact.Phone and Lead.Phone were scored, showed false matches and the rules changed, so they are fit after that change; Holdout.Field.Account.Website was read once before the hyphen rule was written
+capture note: the first orgs reached their daily limit of Apex log headers; rows captured after that returned no matches and were captured again in fresh orgs with a sentinel pair that must match before a row is accepted (candidate lists of 50 carry no sentinel)

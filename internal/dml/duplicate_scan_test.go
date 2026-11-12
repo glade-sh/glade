@@ -2,126 +2,185 @@ package dml
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// referenceStandardDuplicateMatch is the per-pair form the matcher replaced:
-// every discriminator is read from both records on every comparison.
-func referenceStandardDuplicateMatch(lowerObject string, candidate, existing storage.Record) bool {
-	switch lowerObject {
-	case "account":
-		for _, field := range []string{"Name", "BillingStreet", "BillingCity", "BillingPostalCode"} {
-			if !duplicateFieldsEqual(candidate, existing, field) {
-				return false
-			}
-		}
-		return true
-	case "contact", "lead":
-		if !duplicateFieldsEqual(candidate, existing, "LastName") {
-			return false
-		}
-		first, firstOK := candidate.GetField("FirstName")
-		other, otherOK := existing.GetField("FirstName")
-		bothFirst := !duplicateBlank(first, firstOK) && !duplicateBlank(other, otherOK)
-		if bothFirst && !duplicateFieldsEqual(candidate, existing, "FirstName") {
-			return false
-		}
-		if duplicateFieldsEqual(candidate, existing, "Email") {
-			return true
-		}
-		return bothFirst && duplicateFieldsEqual(candidate, existing, "Phone")
-	}
-	return false
+// standardScanField is one field of a standard-rule grid: a text, the same
+// text with a different case and edge spaces, and a different text. Each
+// value is valid for the field's scorer.
+type standardScanField struct {
+	name        string
+	text, other string
 }
 
-// Every discriminator shape a field can take for the standard rules: absent,
-// explicit null, blank text, text, the same text in another case and with
-// surrounding whitespace, different text, and an integer rendered as text.
-var duplicateScanFieldShapes = []struct {
-	name  string
-	value *storage.Value
-}{
-	{"absent", nil},
-	{"null", ptr(storage.NullValue())},
-	{"blank", ptr(storage.StringValue("  "))},
-	{"text", ptr(storage.StringValue("Acme"))},
-	{"folded", ptr(storage.StringValue(" ACME "))},
-	{"other", ptr(storage.StringValue("Globex"))},
-	{"integer", ptr(storage.IntegerValue(42))},
+var standardScanAccountFields = []standardScanField{
+	{"Name", "Acme Widgets", "Zenith Corp"}, {"Website", "acme.com", "zenith.org"}, {"BillingCity", "Springfield", "Riverton"},
+	{"BillingPostalCode", "62701", "90210"}, {"BillingStreet", "100 Main St", "77 Birch Lane"}, {"Phone", "(217) 555-0100", "(415) 555-0199"},
 }
 
-func ptr(value storage.Value) *storage.Value { return &value }
+var standardScanPersonFields = []standardScanField{
+	{"LastName", "Hartwell", "Okafor"}, {"FirstName", "Jonathan", "Marcus"}, {"Email", "jon@example.com", "zed@example.org"}, {"Phone", "(217) 555-0100", "(415) 555-0199"},
+}
 
-func duplicateScanRecord(object string, fields []string, shape []int) storage.Record {
+var standardScanLeadFields = []standardScanField{
+	{"LastName", "Hartwell", "Okafor"}, {"FirstName", "Jonathan", "Marcus"}, {"Email", "jon@example.com", "zed@example.org"}, {"Phone", "(217) 555-0100", "(415) 555-0199"},
+	{"Company", "Acme Widgets", "Zenith Corp"}, {"Title", "Director of Sales", "Chief Engineer"},
+	{"Street", "100 Main St", "77 Birch Lane"}, {"City", "Springfield", "Riverton"}, {"PostalCode", "62701", "90210"},
+}
+
+// A shape is absent (0), the text (1), the folded text (2) or the other text (3).
+func standardScanRecord(object string, fields []standardScanField, shape []int) storage.Record {
 	record := storage.Record{Object: object, Fields: map[string]storage.Value{}}
 	for i, field := range fields {
-		if value := duplicateScanFieldShapes[shape[i]].value; value != nil {
-			record.Fields[field] = *value
+		switch shape[i] {
+		case 1:
+			record.Fields[field.name] = storage.StringValue(field.text)
+		case 2:
+			record.Fields[field.name] = storage.StringValue("  " + strings.ToUpper(field.text) + " ")
+		case 3:
+			record.Fields[field.name] = storage.StringValue(field.other)
 		}
 	}
 	return record
 }
 
-func duplicateScanShapes(fields int, visit func(shape []int)) {
-	shape := make([]int, fields)
+func standardScanGrid(fields []standardScanField, shapes []int) (out [][]int) {
+	cur := make([]int, len(fields))
 	var walk func(i int)
 	walk = func(i int) {
-		if i == fields {
-			visit(shape)
+		if i == len(fields) {
+			out = append(out, append([]int(nil), cur...))
 			return
 		}
-		for s := range duplicateScanFieldShapes {
-			shape[i] = s
+		for _, s := range shapes {
+			cur[i] = s
 			walk(i + 1)
 		}
 	}
 	walk(0)
+	return out
 }
 
-// The scan-level matcher answers exactly as the per-pair comparison for every
-// combination of discriminator shapes on both sides, including the candidates
-// it declines to scan for.
-func TestStandardDuplicateMatcherMatchesPerPairComparison(t *testing.T) {
-	cases := []struct {
-		object string
-		fields []string
-	}{
-		{"account", []string{"Name", "BillingStreet", "BillingCity", "BillingPostalCode"}},
-		{"contact", []string{"LastName", "FirstName", "Email", "Phone"}},
-		{"lead", []string{"LastName", "FirstName", "Email", "Phone"}},
-		{"opportunity", []string{"Name"}},
+// standardRelation names how two values of one field compare: "eq" for the
+// same text, "ne" for different text, "cb" when only the candidate is blank,
+// "eb" when only the existing record is, "bb" when both are.
+func standardScanRelation(c, e int) string {
+	switch {
+	case c == 0 && e == 0:
+		return "bb"
+	case c == 0:
+		return "cb"
+	case e == 0:
+		return "eb"
+	case (c == 3) == (e == 3):
+		return "eq"
 	}
-	for _, tc := range cases {
-		var candidates, existings []storage.Record
-		duplicateScanShapes(len(tc.fields), func(shape []int) {
-			candidates = append(candidates, duplicateScanRecord(tc.object, tc.fields, shape))
-		})
-		existings = candidates
-		pairs, matched, declined := 0, 0, 0
-		for _, candidate := range candidates {
-			matcher := standardDuplicateMatcher(tc.object, candidate)
-			if matcher == nil {
-				declined++
+	return "ne"
+}
+
+// referenceStandardStructure is the boolean structure of the standard rules as
+// the native truth tables show it, over field relations only.
+//
+// NATIVE Name path and Website path of the standard Account rule over 729 states
+// internal/apextest/testdata/conformance/duplicate_standard_rules/org.tsv:55 anonymous 67.0
+// NATIVE standard Contact and Lead rule with blank existing values
+// internal/apextest/testdata/conformance/duplicate_standard_rules/org.tsv:63 anonymous 67.0
+// NATIVE Lead company branch
+// internal/apextest/testdata/conformance/duplicate_standard_rules/org.tsv:65 anonymous 67.0
+func referenceStandardStructure(object string, rel map[string]string) bool {
+	eq := func(f string) bool { return rel[f] == "eq" }
+	switch object {
+	case "account":
+		cz := eq("BillingCity") || eq("BillingPostalCode")
+		return (eq("Name") && cz) || (eq("Website") && cz && (eq("BillingStreet") || eq("Phone")))
+	case "contact", "lead":
+		if !eq("LastName") {
+			return false
+		}
+		switch rel["FirstName"] {
+		case "eq":
+			if eq("Email") || eq("Phone") {
+				return true
 			}
-			for _, existing := range existings {
-				want := referenceStandardDuplicateMatch(tc.object, candidate, existing)
-				got := matcher != nil && matcher(existing)
-				if got != want {
-					t.Fatalf("%s candidate %v existing %v: matcher %v, per-pair %v", tc.object, candidate.Fields, existing.Fields, got, want)
-				}
-				pairs++
-				if want {
-					matched++
-				}
+			company := eq("Company") && (eq("Title") || eq("Street") && (eq("City") || eq("PostalCode")))
+			return object == "lead" && company
+		case "cb", "bb":
+			return eq("Email")
+		}
+	}
+	return false
+}
+
+func standardScanCheck(t *testing.T, object string, fields []standardScanField, candidateShapes, existingShapes [][]int, fixed map[string][2]string) {
+	t.Helper()
+	pairs, matched, declined := 0, 0, 0
+	for _, cs := range candidateShapes {
+		candidate := standardScanRecord(object, fields, cs)
+		for k, v := range fixed {
+			candidate.Fields[k] = storage.StringValue(v[0])
+		}
+		matcher := standardDuplicateMatcher(nil, object, object, candidate)
+		if matcher == nil {
+			declined++
+		}
+		for _, es := range existingShapes {
+			existing := standardScanRecord(object, fields, es)
+			for k, v := range fixed {
+				existing.Fields[k] = storage.StringValue(v[1])
+			}
+			rel := map[string]string{}
+			for i, f := range fields {
+				rel[f.name] = standardScanRelation(cs[i], es[i])
+			}
+			for k, v := range fixed {
+				rel[k] = map[bool]string{true: "eq", false: "ne"}[v[0] == v[1]]
+			}
+			want := referenceStandardStructure(object, rel)
+			got := false
+			if matcher != nil {
+				got, _ = matcher(existing)
+			}
+			if got != want {
+				t.Fatalf("%s candidate %v existing %v: matcher %v, native structure %v", object, candidate.Fields, existing.Fields, got, want)
+			}
+			pairs++
+			if want {
+				matched++
 			}
 		}
-		t.Logf("%s: %d pairs, %d matches, %d of %d candidates declined without a scan", tc.object, pairs, matched, declined, len(candidates))
-		if tc.object != "opportunity" && (matched == 0 || declined == 0 || declined == len(candidates)) {
-			t.Fatalf("%s grid exercised matched=%d declined=%d of %d; expected both outcomes", tc.object, matched, declined, len(candidates))
-		}
 	}
+	t.Logf("%s: %d pairs, %d matches, %d of %d candidates declined without a scan", object, pairs, matched, declined, len(candidateShapes))
+	if matched == 0 {
+		t.Fatalf("%s grid matched nothing", object)
+	}
+}
+
+func same(values map[string]string) map[string][2]string {
+	out := map[string][2]string{}
+	for k, v := range values {
+		out[k] = [2]string{v, v}
+	}
+	return out
+}
+
+// The scan-level matcher answers as the native structure of each standard
+// rule for every combination of field shapes on both sides, including the
+// candidates it declines to scan for.
+func TestStandardDuplicateMatcherFollowsNativeStructure(t *testing.T) {
+	account := standardScanGrid(standardScanAccountFields, []int{0, 1, 3})
+	standardScanCheck(t, "account", standardScanAccountFields, account, account, nil)
+	person := standardScanGrid(standardScanPersonFields, []int{0, 1, 2, 3})
+	standardScanCheck(t, "contact", standardScanPersonFields, person, person, nil)
+	// Lead: the company path needs every other lead field to be the same text,
+	// which the second grid varies; the first fixes company, title and address.
+	leadFields := standardScanLeadFields[:4]
+	lead := standardScanGrid(leadFields, []int{0, 1, 2, 3})
+	standardScanCheck(t, "lead", leadFields, lead, lead, same(map[string]string{"Company": "Acme Widgets", "Title": "Director of Sales", "Street": "100 Main St", "City": "Springfield", "PostalCode": "62701"}))
+	company := standardScanGrid(standardScanLeadFields[4:], []int{0, 1, 3})
+	standardScanCheck(t, "lead", standardScanLeadFields[4:], company, company, map[string][2]string{"LastName": {"Hartwell", "Hartwell"}, "FirstName": {"Jonathan", "Jonathan"}, "Email": {"jon@example.com", "zed@example.org"}, "Phone": {"(217) 555-0100", "(415) 555-0199"}})
 }
 
 // Case-insensitive stored field names resolve through Record.GetField's
@@ -129,12 +188,13 @@ func TestStandardDuplicateMatcherMatchesPerPairComparison(t *testing.T) {
 func TestStandardDuplicateMatcherFoldsStoredFieldNames(t *testing.T) {
 	candidate := storage.Record{Object: "Contact", Fields: map[string]storage.Value{"lastname": storage.StringValue("Doe"), "email": storage.StringValue("doe@example.com")}}
 	existing := storage.Record{Object: "Contact", Fields: map[string]storage.Value{"LASTNAME": storage.StringValue("doe"), "EMAIL": storage.StringValue("DOE@example.com")}}
-	matcher := standardDuplicateMatcher("contact", candidate)
-	if matcher == nil || !matcher(existing) {
-		t.Fatal("folded field names did not match")
+	matcher := standardDuplicateMatcher(nil, "contact", "contact", candidate)
+	if matcher == nil {
+		t.Fatal("no scan")
 	}
-	if !referenceStandardDuplicateMatch("contact", candidate, existing) {
-		t.Fatal("reference comparison disagrees")
+	// Neither record has a first name: the email address decides.
+	if matched, _ := matcher(existing); !matched {
+		t.Fatal("folded field names did not match")
 	}
 }
 

@@ -1,0 +1,949 @@
+{
+ "bounds": {
+  "62/Company.Syllable.SY1.01": {
+   "max_conf_mae": 0.037,
+   "max_extra": 0,
+   "min_recall": 0.9015
+  },
+  "62/Company.Syllable.SY1.02": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9015
+  },
+  "62/Company.Syllable.SY1.03": {
+   "max_conf_mae": 0.038,
+   "max_extra": 0,
+   "min_recall": 0.857
+  },
+  "62/Company.Syllable.SY1.04": {
+   "max_conf_mae": 0.039,
+   "max_extra": 0,
+   "min_recall": 0.7646
+  },
+  "62/Company.Syllable.SY2.01": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Company.Syllable.SY2.02": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Company.Syllable.SY2.03": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Custom.EmailOrLast": {
+   "max_conf_mae": 0.401,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Custom.FirstLast": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Custom.MixOr": {
+   "max_conf_mae": 0.101,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Custom.OrFLP": {
+   "max_conf_mae": 0.274,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Custom.OrNameCity": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Custom.PersonAccount": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Custom.Three": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Holdout.Custom.MixOr": {
+   "max_conf_mae": 0.126,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Holdout.Custom.OrNameCity": {
+   "max_conf_mae": 0.287,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Holdout.Custom.Three": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Holdout.Syllable.SY3.01": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8688
+  },
+  "62/Holdout.Syllable.SY3.02": {
+   "max_conf_mae": 0.036,
+   "max_extra": 0,
+   "min_recall": 0.8027
+  },
+  "62/Standard.Account.NameConfidence": {
+   "max_conf_mae": 1.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Account.Truth": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Account.WebsitePath": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Contact.AccountPath": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Contact.AccountPathBlanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Contact.Blanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Contact.EmailDomain": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Contact.FreeMailDomains": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8181
+  },
+  "62/Standard.Contact.NameConfidence": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.096
+  },
+  "62/Standard.Contact.Truth.S3": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Contact.Truth.S4": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Cross.ContactToLead": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Cross.LeadToContact": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Field.Account.City": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Field.Account.Name": {
+   "max_conf_mae": 0.107,
+   "max_extra": 0,
+   "min_recall": 0.9252
+  },
+  "62/Standard.Field.Account.Street": {
+   "max_conf_mae": 0.139,
+   "max_extra": 0,
+   "min_recall": 0.6482
+  },
+  "62/Standard.Field.Account.Website": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Field.Account.Zip": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Field.Contact.Email": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Field.Contact.First": {
+   "max_conf_mae": 0.115,
+   "max_extra": 0,
+   "min_recall": 0.7876
+  },
+  "62/Standard.Field.Contact.Last": {
+   "max_conf_mae": 0.013,
+   "max_extra": 0,
+   "min_recall": 0.8499
+  },
+  "62/Standard.Field.Contact.Phone": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.7726
+  },
+  "62/Standard.Field.Lead.Company": {
+   "max_conf_mae": 0.006,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Field.Lead.First": {
+   "max_conf_mae": 0.115,
+   "max_extra": 0,
+   "min_recall": 0.7876
+  },
+  "62/Standard.Field.Lead.Last": {
+   "max_conf_mae": 0.013,
+   "max_extra": 0,
+   "min_recall": 0.8499
+  },
+  "62/Standard.Field.Lead.Phone": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.7726
+  },
+  "62/Standard.Lead.Blanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Lead.CompanyPath": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Lead.CompanyPathBlanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Lead.EmailDomain": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Lead.FreeMailDomains": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8181
+  },
+  "62/Standard.Lead.NameConfidence": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.096
+  },
+  "62/Standard.Lead.Truth.S3": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Lead.Truth.S4": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY1.01": {
+   "max_conf_mae": 0.037,
+   "max_extra": 0,
+   "min_recall": 0.9015
+  },
+  "67/Company.Syllable.SY1.02": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9015
+  },
+  "67/Company.Syllable.SY1.03": {
+   "max_conf_mae": 0.038,
+   "max_extra": 0,
+   "min_recall": 0.857
+  },
+  "67/Company.Syllable.SY1.04": {
+   "max_conf_mae": 0.039,
+   "max_extra": 0,
+   "min_recall": 0.7646
+  },
+  "67/Company.Syllable.SY1.05": {
+   "max_conf_mae": 0.052,
+   "max_extra": 0,
+   "min_recall": 0.8805
+  },
+  "67/Company.Syllable.SY1.06": {
+   "max_conf_mae": 0.019,
+   "max_extra": 0,
+   "min_recall": 0.8729
+  },
+  "67/Company.Syllable.SY1.07": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9343
+  },
+  "67/Company.Syllable.SY1.08": {
+   "max_conf_mae": 0.017,
+   "max_extra": 0,
+   "min_recall": 0.884
+  },
+  "67/Company.Syllable.SY1.09": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8307
+  },
+  "67/Company.Syllable.SY1.10": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8749
+  },
+  "67/Company.Syllable.SY1.11": {
+   "max_conf_mae": 0.053,
+   "max_extra": 0,
+   "min_recall": 0.9205
+  },
+  "67/Company.Syllable.SY1.12": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9642
+  },
+  "67/Company.Syllable.SY1.13": {
+   "max_conf_mae": 0.036,
+   "max_extra": 0,
+   "min_recall": 0.9499
+  },
+  "67/Company.Syllable.SY1.14": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8593
+  },
+  "67/Company.Syllable.SY1.15": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8982
+  },
+  "67/Company.Syllable.SY1.16": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8792
+  },
+  "67/Company.Syllable.SY1.17": {
+   "max_conf_mae": 0.041,
+   "max_extra": 0,
+   "min_recall": 0.8196
+  },
+  "67/Company.Syllable.SY1.18": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8635
+  },
+  "67/Company.Syllable.SY1.19": {
+   "max_conf_mae": 0.068,
+   "max_extra": 0,
+   "min_recall": 0.8823
+  },
+  "67/Company.Syllable.SY1.20": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY1.21": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9499
+  },
+  "67/Company.Syllable.SY1.22": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9499
+  },
+  "67/Company.Syllable.SY1.23": {
+   "max_conf_mae": 0.017,
+   "max_extra": 0,
+   "min_recall": 0.7777
+  },
+  "67/Company.Syllable.SY1.24": {
+   "max_conf_mae": 0.07,
+   "max_extra": 0,
+   "min_recall": 0.9354
+  },
+  "67/Company.Syllable.SY1.25": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8474
+  },
+  "67/Company.Syllable.SY1.26": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.857
+  },
+  "67/Company.Syllable.SY1.27": {
+   "max_conf_mae": 0.036,
+   "max_extra": 0,
+   "min_recall": 0.8905
+  },
+  "67/Company.Syllable.SY1.28": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8688
+  },
+  "67/Company.Syllable.SY1.29": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9482
+  },
+  "67/Company.Syllable.SY1.30": {
+   "max_conf_mae": 0.019,
+   "max_extra": 0,
+   "min_recall": 0.9332
+  },
+  "67/Company.Syllable.SY1.31": {
+   "max_conf_mae": 0.056,
+   "max_extra": 0,
+   "min_recall": 0.9166
+  },
+  "67/Company.Syllable.SY1.32": {
+   "max_conf_mae": 0.07,
+   "max_extra": 0,
+   "min_recall": 0.7837
+  },
+  "67/Company.Syllable.SY1.33": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8709
+  },
+  "67/Company.Syllable.SY1.34": {
+   "max_conf_mae": 0.02,
+   "max_extra": 0,
+   "min_recall": 0.8851
+  },
+  "67/Company.Syllable.SY1.35": {
+   "max_conf_mae": 0.084,
+   "max_extra": 0,
+   "min_recall": 0.857
+  },
+  "67/Company.Syllable.SY2.01": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.02": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.03": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.04": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.99
+  },
+  "67/Company.Syllable.SY2.05": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9755
+  },
+  "67/Company.Syllable.SY2.06": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.07": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9896
+  },
+  "67/Company.Syllable.SY2.08": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.09": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.10": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.11": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.12": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.13": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Company.Syllable.SY2.14": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Custom.EmailOrLast": {
+   "max_conf_mae": 0.401,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Custom.FirstLast": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Custom.MixOr": {
+   "max_conf_mae": 0.101,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Custom.OrFLP": {
+   "max_conf_mae": 0.274,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Custom.OrNameCity": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Custom.PersonAccount": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Custom.Three": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Custom.EmailOrLast": {
+   "max_conf_mae": 0.401,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Custom.FirstLast": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Custom.MixOr": {
+   "max_conf_mae": 0.126,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Custom.OrFLP": {
+   "max_conf_mae": 0.274,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Custom.OrNameCity": {
+   "max_conf_mae": 0.287,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Custom.PersonAccount": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Custom.Three": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Field.Account.City": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Field.Account.Name": {
+   "max_conf_mae": 0.062,
+   "max_extra": 0,
+   "min_recall": 0.9611
+  },
+  "67/Holdout.Field.Account.Phone": {
+   "max_conf_mae": 0.194,
+   "max_extra": 0,
+   "min_recall": 0.3493
+  },
+  "67/Holdout.Field.Account.Street": {
+   "max_conf_mae": 0.494,
+   "max_extra": 0,
+   "min_recall": 0.7575
+  },
+  "67/Holdout.Field.Account.Website": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9047
+  },
+  "67/Holdout.Field.Account.Zip": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8968
+  },
+  "67/Holdout.Field.Contact.First": {
+   "max_conf_mae": 0.223,
+   "max_extra": 0,
+   "min_recall": 0.8243
+  },
+  "67/Holdout.Field.Contact.Last": {
+   "max_conf_mae": 0.048,
+   "max_extra": 0,
+   "min_recall": 0.842
+  },
+  "67/Holdout.Field.Contact.Phone": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.995
+  },
+  "67/Holdout.Field.Lead.Company": {
+   "max_conf_mae": 1.254,
+   "max_extra": 0,
+   "min_recall": 0.8461
+  },
+  "67/Holdout.Field.Lead.First": {
+   "max_conf_mae": 0.223,
+   "max_extra": 0,
+   "min_recall": 0.8243
+  },
+  "67/Holdout.Field.Lead.Last": {
+   "max_conf_mae": 0.048,
+   "max_extra": 0,
+   "min_recall": 0.842
+  },
+  "67/Holdout.Field.Lead.Phone": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8384
+  },
+  "67/Holdout.Structure.Account": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Structure.Contact": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Structure.Lead": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Syllable.SY3.01": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8688
+  },
+  "67/Holdout.Syllable.SY3.02": {
+   "max_conf_mae": 0.036,
+   "max_extra": 0,
+   "min_recall": 0.8027
+  },
+  "67/Holdout.Syllable.SY3.03": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.7385
+  },
+  "67/Holdout.Syllable.SY3.04": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8357
+  },
+  "67/Holdout.Syllable.SY3.05": {
+   "max_conf_mae": 0.118,
+   "max_extra": 0,
+   "min_recall": 0.7593
+  },
+  "67/Holdout.Syllable.SY3.06": {
+   "max_conf_mae": 0.019,
+   "max_extra": 0,
+   "min_recall": 0.8332
+  },
+  "67/Holdout.Syllable.SY3.07": {
+   "max_conf_mae": 0.154,
+   "max_extra": 0,
+   "min_recall": 0.7563
+  },
+  "67/Holdout.Syllable.SY3.08": {
+   "max_conf_mae": 0.036,
+   "max_extra": 0,
+   "min_recall": 0.8027
+  },
+  "67/Holdout.Syllable.SY3.09": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.857
+  },
+  "67/Holdout.Syllable.SY3.10": {
+   "max_conf_mae": 0.103,
+   "max_extra": 0,
+   "min_recall": 0.8081
+  },
+  "67/Holdout.Syllable.SY3.11": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8688
+  },
+  "67/Holdout.Syllable.SY3.12": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Syllable.SY4.01": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Syllable.SY4.02": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9782
+  },
+  "67/Holdout.Syllable.SY4.03": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Syllable.SY4.04": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9573
+  },
+  "67/Holdout.Syllable.SY4.05": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Holdout.Syllable.SY4.06": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9772
+  },
+  "67/Holdout.Syllable.SY4.07": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9777
+  },
+  "67/Holdout.Syllable.SY4.08": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9499
+  },
+  "67/Standard.Account.Blanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Account.NameConfidence": {
+   "max_conf_mae": 1.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Account.NoStateCountry": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Account.Truth": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Account.WebsitePath": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Contact.AccountPath": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Contact.AccountPathBlanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Contact.Blanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Contact.EmailDomain": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Contact.FreeMailDomains": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8181
+  },
+  "67/Standard.Contact.NameConfidence": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.096
+  },
+  "67/Standard.Contact.Truth.S3": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Contact.Truth.S4": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Cross.ContactToLead": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Cross.LeadToContact": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Field.Account.City": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Field.Account.Name": {
+   "max_conf_mae": 0.107,
+   "max_extra": 0,
+   "min_recall": 0.9252
+  },
+  "67/Standard.Field.Account.Phone": {
+   "max_conf_mae": 0.354,
+   "max_extra": 0,
+   "min_recall": 0.1827
+  },
+  "67/Standard.Field.Account.Street": {
+   "max_conf_mae": 0.139,
+   "max_extra": 0,
+   "min_recall": 0.6482
+  },
+  "67/Standard.Field.Account.Website": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Field.Account.Zip": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Field.Contact.Email": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Field.Contact.First": {
+   "max_conf_mae": 0.115,
+   "max_extra": 0,
+   "min_recall": 0.7876
+  },
+  "67/Standard.Field.Contact.Last": {
+   "max_conf_mae": 0.013,
+   "max_extra": 0,
+   "min_recall": 0.8499
+  },
+  "67/Standard.Field.Contact.Phone": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.7726
+  },
+  "67/Standard.Field.Lead.Company": {
+   "max_conf_mae": 0.006,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Field.Lead.First": {
+   "max_conf_mae": 0.115,
+   "max_extra": 0,
+   "min_recall": 0.7876
+  },
+  "67/Standard.Field.Lead.Last": {
+   "max_conf_mae": 0.013,
+   "max_extra": 0,
+   "min_recall": 0.8499
+  },
+  "67/Standard.Field.Lead.Phone": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.7726
+  },
+  "67/Standard.Lead.Blanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Lead.CompanyPath": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Lead.CompanyPathBlanks": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Lead.EmailDomain": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Lead.FreeMailDomains": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.8181
+  },
+  "67/Standard.Lead.NameConfidence": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.096
+  },
+  "67/Standard.Lead.Truth.S3": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Lead.Truth.S4": {
+   "max_conf_mae": 0.001,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  }
+ }
+}
