@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 // Source-backed lazy spread
@@ -72,6 +73,7 @@ type spreadTemplateKey struct {
 }
 
 type spreadTemplateCell struct {
+	done  atomic.Bool
 	once  sync.Once
 	state ObjectState
 	ok    bool
@@ -115,6 +117,7 @@ func spreadTemplate(org *OrgState, canonical string) (ObjectState, bool) {
 		cell.state = scratch.Objects[canonical]
 		cell.ok = true
 	})
+	cell.done.Store(true)
 	return cell.state, cell.ok
 }
 
@@ -271,4 +274,52 @@ func applySpreadKeyPrefixPlan(org *OrgState) {
 	if changed {
 		org.ClearRuntimeSchemaStamp()
 	}
+}
+
+// SpreadObjectUntouched reports whether a lazy org holds a catalog object
+// exactly as the shared source installed it: the template's definition, no
+// records and no indexes. Such an object is a pure function of the org's
+// feature shape, so a fingerprint of the org's ambient state may leave it out;
+// an eager org holds the same object, and a lazy org that has not installed it
+// yet would otherwise differ only by when something touched it.
+func (o OrgState) SpreadObjectUntouched(name string) bool {
+	if o.StandardSpread == "" {
+		return false
+	}
+	state, ok := o.Objects[name]
+	if !ok || len(state.Records) != 0 || len(state.Indexes) != 0 {
+		return false
+	}
+	_, hasRecordType := o.Objects["RecordType"]
+	cellAny, ok := spreadTemplates.Load(spreadTemplateKey{
+		phase:      o.StandardSpread,
+		signature:  canonicalFeatureSignature(o.Features),
+		multiCurr:  o.HasFeature("MultiCurrency"),
+		recordType: hasRecordType,
+		object:     name,
+	})
+	if !ok {
+		return false
+	}
+	cell := cellAny.(*spreadTemplateCell)
+	template, built := cell.peek()
+	if !built {
+		return false
+	}
+	if reflect.ValueOf(template.Definition.Fields).Pointer() == reflect.ValueOf(state.Definition.Fields).Pointer() {
+		return true
+	}
+	// A deep clone of the org holds equal, unshared definitions. The key
+	// prefix is the one value the full assignment may have replaced.
+	want := template.Definition
+	want.KeyPrefix = state.Definition.KeyPrefix
+	return reflect.DeepEqual(want, state.Definition)
+}
+
+// peek returns the template if it has been built, without building it.
+func (c *spreadTemplateCell) peek() (ObjectState, bool) {
+	if !c.done.Load() {
+		return ObjectState{}, false
+	}
+	return c.state, c.ok
 }

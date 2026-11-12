@@ -508,7 +508,7 @@ func tryRuntimePatchTransitionContext(ctx context.Context, previous, current typ
 	}
 
 	ambientStarted := time.Now()
-	currentOrg := orgFromIndex(current, sources)
+	currentOrg := orgFromIndexLazy(current, sources)
 	currentPageNames := visualforcePageNames(current)
 	currentAmbientFingerprint, ambientOK := runtimePatchAmbientFingerprint(currentOrg, currentPageNames)
 	if counters != nil {
@@ -668,7 +668,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
 	}
 	ambientStarted := time.Now()
-	currentOrg := orgFromIndex(current, sources)
+	currentOrg := orgFromIndexLazy(current, sources)
 	currentPageNames := visualforcePageNames(current)
 	currentAmbientFingerprint, ambientOK := runtimePatchAmbientFingerprint(currentOrg, currentPageNames)
 	if counters != nil {
@@ -1743,6 +1743,14 @@ func runtimePatchAmbientFingerprint(org storage.OrgState, pageNames []string) (s
 	ambientOrg := org
 	ambientOrg.Objects = maps.Clone(org.Objects)
 	delete(ambientOrg.Objects, "ApexClass")
+	// A lazy org holds only what something touched. Catalog objects it still
+	// holds exactly as installed depend only on the feature shape, so they stay
+	// out of the fingerprint, whenever they were installed.
+	for name := range ambientOrg.Objects {
+		if org.SpreadObjectUntouched(name) {
+			delete(ambientOrg.Objects, name)
+		}
+	}
 	// JSON only reads field definitions. Avoid cloning their large maps, while
 	// retaining Clone's nil/empty normalization for the rest of the payload.
 	// The field slices that Clone normalizes all have omitempty JSON tags.

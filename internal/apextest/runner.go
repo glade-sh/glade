@@ -5008,6 +5008,16 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 }
 
 func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState {
+	org := orgFromIndexLazy(index, caches...)
+	// This host-facing API returns the complete schema a caller can enumerate.
+	storage.MaterializeStandardObjectSpread(&org)
+	return org
+}
+
+// orgFromIndexLazy is orgFromIndex for callers that fingerprint or compare the
+// org and treat catalog objects the lazy spread has not installed as absent
+// from both sides.
+func orgFromIndexLazy(index typesys.Index, caches ...*sourceCache) storage.OrgState {
 	org, _ := orgFromIndexWithError(index, caches...)
 	// This host-facing API exposes mutable schema maps. Internal runtime
 	// construction retains frozen definitions and detaches only its overlays.

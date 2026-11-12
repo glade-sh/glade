@@ -1,0 +1,22 @@
+64.0 APEX_CODE,DEBUG;APEX_PROFILING,INFO;CALLOUT,INFO;DB,INFO;NBA,INFO;SYSTEM,DEBUG;VALIDATION,INFO;VISUALFORCE,INFO;WAVE,INFO;WORKFLOW,INFO
+00:00:00.000 (0)|USER_INFO|[EXTERNAL]|005000000000000AAA|glade@local.run|Greenwich Mean Time (GMT)|GMT+00:00
+00:00:00.001 (1000000)|EXECUTION_STARTED
+00:00:00.002 (2000000)|CODE_UNIT_STARTED|[EXTERNAL]|execute_anonymous_apex
+00:00:00.003 (3000000)|CUMULATIVE_LIMIT_USAGE
+00:00:00.004 (4000000)|LIMIT_USAGE_FOR_NS|(default)|
+  Number of SOQL queries: 0 out of 100
+  Number of query rows: 0 out of 50000
+  Number of SOSL queries: 0 out of 20
+  Number of DML statements: 0 out of 150
+  Number of Publish Immediate DML: 0 out of 150
+  Number of DML rows: 0 out of 10000
+  Maximum CPU time: 1 out of 10000
+  Maximum heap size: 0 out of 6000000
+  Number of callouts: 0 out of 100
+  Number of Email Invocations: 0 out of 10
+  Number of future calls: 0 out of 50
+  Number of queueable jobs added to the queue: 0 out of 50
+  Number of Mobile Apex push calls: 0 out of 10
+00:00:00.005 (5000000)|CUMULATIVE_LIMIT_USAGE_END
+00:00:00.006 (6000000)|CODE_UNIT_FINISHED|execute_anonymous_apex
+00:00:00.007 (7000000)|EXECUTION_FINISHED
