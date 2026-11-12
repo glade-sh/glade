@@ -36,6 +36,7 @@ var standardSpreadCoreObjects = []string{
 	"ApprovalWorkItem",
 	"ArticleType__DataCategorySelection",
 	"Asset",
+	"AssetWarranty",
 	"AssignmentRule",
 	"AsyncApexJob",
 	"AttachedContentDocument",
