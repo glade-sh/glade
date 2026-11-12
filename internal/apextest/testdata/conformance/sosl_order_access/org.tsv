@@ -1,0 +1,27 @@
+api	route	case	observation
+62.0	istest	filterUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	findOrderReadable	records=mine
+62.0	istest	findOrderUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	noCandidatesOrderUnreadable	records=
+62.0	istest	onlyOtherOwner	records=
+62.0	istest	onlyOtherOwnerOrderUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	orderReadable	records=mine
+62.0	istest	orderUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	secondOrderUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	selectUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	anonymous	runas	"System.TypeException: System.runAs can only be used within a test method: "
+62.0	anonymous	fixed	System.StringException: Test.setFixedSearchResults() can only be called from testMethods
+62.0	anonymous	empty	System.AssertException: Assertion Failed: OBS|groups=1,count=0
+67.0	istest	filterUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	istest	findOrderReadable	records=mine
+67.0	istest	findOrderUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	istest	noCandidatesOrderUnreadable	records=
+67.0	istest	onlyOtherOwner	records=
+67.0	istest	onlyOtherOwnerOrderUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	istest	orderReadable	records=mine
+67.0	istest	orderUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	istest	secondOrderUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	istest	selectUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	anonymous	runas	"System.TypeException: System.runAs can only be used within a test method: "
+67.0	anonymous	fixed	System.StringException: Test.setFixedSearchResults() can only be called from testMethods
+67.0	anonymous	empty	System.AssertException: Assertion Failed: OBS|groups=1,count=0
