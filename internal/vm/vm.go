@@ -957,7 +957,13 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 		if name, ok := vm.orgObjectNameForKeyPrefix(prefix); ok {
 			return name, true
 		}
-		if owner := storage.StandardKeyPrefixOwner(prefix); owner != "" {
+		owner := storage.StandardKeyPrefixOwner(prefix)
+		// A lazy org installs an object with the prefix the unique assignment
+		// gives it, which can differ from the catalog prefix.
+		if spreadOwner := vm.Org.SpreadKeyPrefixOwner(prefix); spreadOwner != "" {
+			owner = spreadOwner
+		}
+		if owner != "" {
 			if name, ok := vm.lazyStandardObject(owner); ok {
 				return name, true
 			}
