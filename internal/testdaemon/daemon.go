@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -178,11 +179,75 @@ func optionsForGeneration(opts apextest.Options, generation daemonGeneration) ap
 }
 
 func (d *Daemon) runGeneration(ctx context.Context, generation daemonGeneration, opts apextest.Options) testreport.Run {
-	opts = optionsForGeneration(opts, generation)
 	if d.runGenerationFn != nil {
-		return d.runGenerationFn(ctx, generation, opts)
+		return d.runGenerationFn(ctx, generation, optionsForGeneration(opts, generation))
 	}
-	return apextest.RunContext(ctx, generation.index, opts)
+	run := apextest.RunContext(ctx, generation.index, optionsForGeneration(opts, generation))
+	if run.Summary().CompileErrors == 0 || ctx.Err() != nil {
+		return run
+	}
+	// A save can land after the watcher captured this generation and before it
+	// applies the update. The run then reports a source snapshot mismatch for a
+	// file the daemon is about to pick up anyway. Bring the generation up to the
+	// disk and run once more; a compile error that remains is a real one.
+	refreshed, ok := d.refreshStaleGeneration(generation)
+	if !ok {
+		return run
+	}
+	return apextest.RunContext(ctx, refreshed.index, optionsForGeneration(opts, refreshed))
+}
+
+// refreshStaleGeneration reports false when generation still matches the
+// files on disk. Otherwise it applies the drifted files and returns the
+// published generation.
+func (d *Daemon) refreshStaleGeneration(generation daemonGeneration) (daemonGeneration, bool) {
+	if typesys.ValidateSourceGeneration(generation.index, generation.artifacts.SourceDigests) == nil {
+		return daemonGeneration{}, false
+	}
+	d.updateMu.Lock()
+	defer d.updateMu.Unlock()
+	current := d.snapshotGeneration()
+	if current.serial != generation.serial {
+		return current, true
+	}
+	const maxIncremental = 8
+	for attempt := 0; ; attempt++ {
+		err := typesys.ValidateSourceGeneration(current.index, current.artifacts.SourceDigests)
+		if err == nil {
+			return current, attempt > 0
+		}
+		var mismatch *typesys.SourceSnapshotMismatchError
+		incremental := attempt < maxIncremental && errors.As(err, &mismatch) && driftChange(mismatch.File) != nil
+		if incremental {
+			exact, updateErr := d.tryUpdateChangesLocked([]watch.Change{*driftChange(mismatch.File)}, nil, true)
+			incremental = updateErr == nil && exact
+		}
+		if !incremental {
+			if reloadErr := d.reloadLocked(nil); reloadErr != nil {
+				return daemonGeneration{}, false
+			}
+			return d.snapshotGeneration(), true
+		}
+		current = d.snapshotGeneration()
+	}
+}
+
+// driftChange describes a drifted Apex source file as a watch change. It is nil
+// for anything the incremental route does not own.
+func driftChange(file string) *watch.Change {
+	kind := watch.FileKindApexClass
+	switch {
+	case strings.HasSuffix(file, ".trigger"):
+		kind = watch.FileKindApexTrigger
+	case strings.HasSuffix(file, ".cls"):
+	default:
+		return nil
+	}
+	op := watch.ChangeModified
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		op = watch.ChangeDeleted
+	}
+	return &watch.Change{Path: file, Op: op, Kind: kind}
 }
 
 func optionsForSelection(opts apextest.Options, selection watch.TestSelection) (apextest.Options, bool) {
