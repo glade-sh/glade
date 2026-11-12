@@ -3234,12 +3234,14 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 		// index wait for it; initialize and document sync do not.
 		handler := lsp.NewPendingHandler()
 		go func() {
-			index, err := loadIndex(root)
+			index, analyze, err := loadLSPProject(root)
 			if err != nil {
 				handler.Fail(err)
 				return
 			}
+			handler.SetAnalyzer(analyze)
 			handler.SetIndex(index)
+			handler.StartAnalysis()
 		}()
 		serveErr := lsp.Serve(os.Stdin, w, handler)
 		if serveErr != nil {

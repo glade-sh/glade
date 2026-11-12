@@ -30,6 +30,7 @@ type Handler struct {
 	parser       *apexast.Parser
 	parserClosed bool
 
+	analyzer     func(typesys.Index) sema.Result
 	analysisOnce sync.Once
 	analysis     sema.Result
 
@@ -122,9 +123,25 @@ func (h *Handler) analysisResult() sema.Result {
 		return sema.Result{}
 	}
 	h.analysisOnce.Do(func() {
-		h.analysis = sema.Analyze(h.index)
+		analyze := h.analyzer
+		if analyze == nil {
+			analyze = sema.Analyze
+		}
+		h.analysis = analyze(h.index)
 	})
 	return h.analysis
+}
+
+// SetAnalyzer replaces the whole-project semantic pass, for callers that can
+// answer from a cache. Call it before the index is published.
+func (h *Handler) SetAnalyzer(analyze func(typesys.Index) sema.Result) {
+	h.analyzer = analyze
+}
+
+// StartAnalysis runs the semantic pass in the background once the index is
+// ready, so the first diagnostics request finds it done or already running.
+func (h *Handler) StartAnalysis() {
+	go h.analysisResult()
 }
 
 func (h *Handler) Shutdown() bool {
