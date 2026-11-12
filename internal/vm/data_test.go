@@ -10441,7 +10441,8 @@ System.runAs(u) {
 	);
 	System.assert(result.isSuccess());
 
-	List<Account> queried = Database.query('SELECT Id, Phone FROM Account WHERE Id = :created.Id WITH USER_MODE');
+	Id createdId = created.Id;
+	List<Account> queried = Database.query('SELECT Id, Phone FROM Account WHERE Id = :createdId WITH USER_MODE');
 	System.assertEquals(1, queried.size());
 	System.assertEquals('415-555-0100', queried[0].Phone);
 
