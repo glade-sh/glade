@@ -40,6 +40,12 @@ type Handler struct {
 	shutdown atomic.Bool
 
 	debounce time.Duration
+
+	// completionCatalogs caches the default completion list per ordering.
+	completionCatalogs [3]struct {
+		once  sync.Once
+		items []CompletionItem
+	}
 }
 
 // DefaultDiagnosticsDebounce is how long Serve waits after the last
@@ -587,6 +593,19 @@ func (h *Handler) Completion(params CompletionParams) CompletionList {
 		sortCompletionItems(context.items, completionContextDefault)
 		return CompletionList{Items: context.items}
 	}
+	return CompletionList{Items: h.defaultCompletionCatalog(context.kind)}
+}
+
+// defaultCompletionCatalog returns the sorted whole-project completion list for
+// one ordering. The index never changes after it is published, so each ordering
+// is built once and shared. Callers must not modify the returned items.
+func (h *Handler) defaultCompletionCatalog(kind completionContext) []CompletionItem {
+	slot := &h.completionCatalogs[kind]
+	slot.once.Do(func() { slot.items = h.buildDefaultCompletionCatalog(kind) })
+	return slot.items
+}
+
+func (h *Handler) buildDefaultCompletionCatalog(kind completionContext) []CompletionItem {
 	items := make([]CompletionItem, 0, len(h.index.Types)+len(h.index.Objects))
 	seen := make(map[string]bool)
 	add := func(item CompletionItem) {
@@ -634,8 +653,8 @@ func (h *Handler) Completion(params CompletionParams) CompletionList {
 	for _, keyword := range []string{"class", "trigger", "interface", "enum", "public", "private", "protected", "global", "static", "void", "return", "new", "for", "if", "else"} {
 		add(CompletionItem{Label: keyword, Kind: completionItemKindKeyword, Detail: "Apex keyword"})
 	}
-	sortCompletionItems(items, context.kind)
-	return CompletionList{Items: items}
+	sortCompletionItems(items, kind)
+	return items
 }
 
 type completionResultContext struct {

@@ -43,10 +43,23 @@ type DebugPause struct {
 	Statics  map[string]Value
 }
 
+// DebugProbe is the cheap description of an execution point that a Precheck
+// sees before any variables are copied.
+type DebugProbe struct {
+	Reason     DebugPauseReason
+	Location   DebugLocation
+	StackDepth int
+}
+
 type DebugHooks struct {
 	Breakpoints []DebugBreakpoint
 	Step        bool
-	OnPause     func(DebugPause) DebugAction
+	// Precheck, when set, is asked first whether the point needs a pause. It
+	// runs before the stack, globals and statics are copied, so a false answer
+	// costs no snapshot and OnPause is not called. A true answer builds the
+	// full snapshot and calls OnPause as before.
+	Precheck func(DebugProbe) bool
+	OnPause  func(DebugPause) DebugAction
 }
 
 type DebugStopError struct {
@@ -77,6 +90,9 @@ func (vm *VM) maybePauseForDebug(inst ir.Instruction) error {
 	if location.Symbol == "" {
 		location.Symbol = string(inst.Op)
 	}
+	if vm.debugHooks.Precheck != nil && !vm.debugHooks.Precheck(DebugProbe{Reason: reason, Location: location, StackDepth: vm.debugStackDepth()}) {
+		return nil
+	}
 	pause := DebugPause{
 		Reason:   reason,
 		Location: location,
@@ -92,6 +108,15 @@ func (vm *VM) maybePauseForDebug(inst ir.Instruction) error {
 		return &DebugStopError{Location: location}
 	}
 	return nil
+}
+
+// debugStackDepth is len(stackFrames(rawStackFrames())) without building them.
+func (vm *VM) debugStackDepth() int {
+	depth := len(vm.callStack)
+	if vm.hasStatement && vm.currentStatement.Line > 0 {
+		depth++
+	}
+	return depth
 }
 
 func (vm *VM) debugPauseReason() (DebugPauseReason, bool) {
