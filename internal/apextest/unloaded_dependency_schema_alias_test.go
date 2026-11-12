@@ -18,6 +18,7 @@ import (
 )
 
 func TestUnloadedDependencySchemaAliasKnownTypeUnitRoute(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	index := typesys.Index{
 		Objects: []schema.Object{{Name: "CedarAlias__c"}, {Name: "cedar__Record__c"}},
 		Types:   []typesys.TypeSymbol{{Name: "CedarHelper"}},
@@ -41,6 +42,7 @@ func TestUnloadedDependencySchemaAliasKnownTypeUnitRoute(t *testing.T) {
 }
 
 func TestUnloadedDependencySchemaAliasExplanationAnonymousUnitRoute(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	index := typesys.Index{
 		Objects:      []schema.Object{{Name: "CedarAlias__c"}},
 		Dependencies: []typesys.DependencyInfo{{Namespace: "cedar-optional", Diagnostics: []diagnostic.Diagnostic{{Code: "dependency_missing"}}}},
@@ -61,6 +63,7 @@ func TestUnloadedDependencySchemaAliasExplanationAnonymousUnitRoute(t *testing.T
 }
 
 func TestUnloadedDependencySchemaAliasNamedTestRunnerLSPNativeRoutes(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	dir := filepath.Join("testdata/conformance/unloaded_dependency/schema_alias")
 	var cases []struct{ ID, Source, Outcome string }
 	raw, err := os.ReadFile(filepath.Join(dir, "cases.json"))

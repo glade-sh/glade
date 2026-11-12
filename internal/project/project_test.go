@@ -523,6 +523,7 @@ func TestLoadManagedPackageDependencies(t *testing.T) {
 }
 
 func TestLoadResolvesLocalSFDXPackageDependencies(t *testing.T) {
+	t.Setenv(SiblingDependencyScanEnvVar, "1")
 	root := t.TempDir()
 	coreRoot := filepath.Join(root, "packages", "core")
 	consumerRoot := filepath.Join(root, "packages", "consumer")
@@ -585,6 +586,7 @@ func TestLoadSkipsSFDXPackageDependenciesSatisfiedWithinManifest(t *testing.T) {
 }
 
 func TestLoadRejectsAmbiguousLocalSFDXPackageDependency(t *testing.T) {
+	t.Setenv(SiblingDependencyScanEnvVar, "1")
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	modulesRoot := filepath.Join(workspaceRoot, "modules")
@@ -630,6 +632,7 @@ func TestLoadRejectsAmbiguousLocalSFDXPackageDependency(t *testing.T) {
 }
 
 func TestLoadResolvesAliasedNestedSFDXPackageDependency(t *testing.T) {
+	t.Setenv(SiblingDependencyScanEnvVar, "1")
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	consumerRoot := filepath.Join(workspaceRoot, "flow_screen_components", "consumer")
@@ -688,7 +691,7 @@ func TestLoadReportsMissingLocalSFDXPackageDependency(t *testing.T) {
 	}
 	diagnostic := p.DependencyDiagnostics[0]
 	if diagnostic.Namespace != "MissingPkg" || diagnostic.Status != "missing" || diagnostic.Code != "dependency_missing" ||
-		diagnostic.Message != `declared SFDX package dependency "MissingPkg" has no configured source or artifact; add the directory that holds its sfdx-project.json (or a parent of it) to glade.yml, for example project.dependencyPaths: ["../path/to/MissingPkg"], or project.managedPackageDependencies for a namespaced package` {
+		diagnostic.Message != `declared SFDX package dependency "MissingPkg" has no configured source or artifact; add the directory that holds its sfdx-project.json (or a parent of it) to glade.yml, for example project.dependencyPaths: ["../path/to/MissingPkg"], or project.managedPackageDependencies for a namespaced package; sibling directories are searched only with project.siblingDependencyScan: true or --sibling-dependencies` {
 		t.Fatalf("diagnostic = %#v", diagnostic)
 	}
 }
@@ -723,6 +726,7 @@ func TestLoadDoesNotScanUnrelatedGrandchildrenForSFDXPackageDependencies(t *test
 }
 
 func TestLoadResolvesSiblingSFDXPackageDependencyWithAncestorGladeConfig(t *testing.T) {
+	t.Setenv(SiblingDependencyScanEnvVar, "1")
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	coreRoot := filepath.Join(workspaceRoot, "modules", "src-core-package")
@@ -762,6 +766,7 @@ func TestLoadResolvesSiblingSFDXPackageDependencyWithAncestorGladeConfig(t *test
 }
 
 func TestLoadResolvesSiblingSFDXPackageDependencyWithoutConfig(t *testing.T) {
+	t.Setenv(SiblingDependencyScanEnvVar, "1")
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	dependencyRoot := filepath.Join(workspaceRoot, "DependencyProject")
@@ -797,6 +802,7 @@ func TestLoadResolvesSiblingSFDXPackageDependencyWithoutConfig(t *testing.T) {
 }
 
 func TestLoadResolvesReferencedNamespaceSFDXDependencyWithoutPackageName(t *testing.T) {
+	t.Setenv(SiblingDependencyScanEnvVar, "1")
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	depRoot := filepath.Join(workspaceRoot, "dep-package")

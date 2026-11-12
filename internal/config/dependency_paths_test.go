@@ -32,3 +32,28 @@ func TestLoadFileDependencyPathsRelativeToConfig(t *testing.T) {
 		t.Fatalf("dependencyPaths=%v, want %v", got.DependencyPaths, want)
 	}
 }
+
+func TestLoadFileSiblingDependencyScan(t *testing.T) {
+	for _, tc := range []struct {
+		body    string
+		want    bool
+		wantErr bool
+	}{
+		{"project:\n  siblingDependencyScan: true\n", true, false},
+		{"project:\n  siblingDependencyScan: false\n", false, false},
+		{"project:\n  dependencyPaths: []\n", false, false},
+		{"project:\n  siblingDependencyScan: maybe\n", false, true},
+	} {
+		path := filepath.Join(t.TempDir(), "glade.yml")
+		if err := os.WriteFile(path, []byte(tc.body), 0600); err != nil {
+			t.Fatal(err)
+		}
+		cfg, err := LoadFile(path)
+		if (err != nil) != tc.wantErr {
+			t.Fatalf("%q: err=%v, wantErr=%v", tc.body, err, tc.wantErr)
+		}
+		if err == nil && cfg.Project.SiblingDependencyScan != tc.want {
+			t.Fatalf("%q: SiblingDependencyScan=%v, want %v", tc.body, cfg.Project.SiblingDependencyScan, tc.want)
+		}
+	}
+}
