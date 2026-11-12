@@ -4709,6 +4709,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
 		}
 		field := passiveAccessorFieldName(receiver, suffix)
+		receiver.detachSharedFields()
 		receiver.Fields[field] = args[0]
 		return Null, receiver, true, true, nil
 	}
@@ -4716,6 +4717,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		if len(args) != 1 && len(args) != 2 {
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 or 2 arguments", receiver.Type, method)
 		}
+		receiver.detachSharedFields()
 		if len(args) == 2 {
 			field := passiveAccessorFieldName(receiver, suffix)
 			actual, mapValue, ok := objectFieldValue(receiver, field)
@@ -4748,6 +4750,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
 		}
+		receiver.detachSharedFields()
 		field := passiveAccessorFieldName(receiver, suffix+"s")
 		actual, listValue, ok := objectFieldValue(receiver, field)
 		if !ok {
