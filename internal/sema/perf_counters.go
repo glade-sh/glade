@@ -103,6 +103,35 @@ func (r *perfRecorder) endPhase(phase *PhaseCounters, started time.Time) {
 	phase.DurationNS += durationNanoseconds(time.Since(started))
 }
 
+// addPhaseDuration adds the time since started to phase without counting a
+// call. A pass that discards one attempt and repeats it uses it to keep the
+// discarded attempt's time in the phase.
+func (r *perfRecorder) addPhaseDuration(phase *PhaseCounters, started time.Time) {
+	if r == nil || !r.enabled {
+		return
+	}
+	phase.DurationNS += durationNanoseconds(time.Since(started))
+}
+
+// sourceArenaCounts is the source-arena part of a recorder's counters.
+type sourceArenaCounts struct {
+	hits, misses, fallbackReads uint64
+}
+
+func (r *perfRecorder) sourceArenaCounts() sourceArenaCounts {
+	if r == nil || !r.enabled {
+		return sourceArenaCounts{}
+	}
+	return sourceArenaCounts{r.counters.SourceArenaHits, r.counters.SourceArenaMisses, r.counters.SourceArenaFallbackReads}
+}
+
+func (r *perfRecorder) setSourceArenaCounts(counts sourceArenaCounts) {
+	if r == nil || !r.enabled {
+		return
+	}
+	r.counters.SourceArenaHits, r.counters.SourceArenaMisses, r.counters.SourceArenaFallbackReads = counts.hits, counts.misses, counts.fallbackReads
+}
+
 func (r *perfRecorder) finish() {
 	if !r.enabled {
 		return
