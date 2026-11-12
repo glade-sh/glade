@@ -1963,7 +1963,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		// shared flag keep the in-place rewrite their retained headers observe.
 		detachFieldMapHolder := preserveAliasRepresentation && published.mapBackingShared && namesFrozenFieldMap(published)
 		detachSharedBacking := detachFieldMapHolder ||
-			(preserveAliasRepresentation && published.mapBackingShared && isGlobalDescribeMap(published))
+			(preserveAliasRepresentation && published.mapBackingShared && (isGlobalDescribeMap(published) || published.mapEntriesShared))
 		if detachSharedBacking {
 			// Frozen field-map storage: this holder and its true aliases get
 			// a private tuple with the same identity; siblings keep theirs.
@@ -1971,6 +1971,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			published.MapKeys = make(map[string]Value, uniqueEntryCount)
 			published.MapOrder = make([]string, 0, uniqueEntryCount)
 			published.mapBackingShared = false
+			published.mapEntriesShared = false
 			published.globalDescribeEntriesCanonical = false
 		} else if preserveAliasRepresentation {
 			clear(published.Map)
@@ -1978,6 +1979,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			published.MapOrder = published.MapOrder[:0]
 		} else {
 			published.Ref = newValueRef()
+			published.mapEntriesShared = false
 			published.Map = make(map[string]Value, uniqueEntryCount)
 			published.MapKeys = make(map[string]Value, uniqueEntryCount)
 			published.MapOrder = make([]string, 0, uniqueEntryCount)

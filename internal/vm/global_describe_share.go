@@ -23,17 +23,89 @@ func (vm *VM) sharedGlobalDescribeBuild() (Value, bool) {
 		value = vm.buildSchemaGlobalDescribe()
 		share.globalMaps[key] = value
 		share.registerTokenFields(value.Map)
+		share.registerSharedMap(value.Map)
 	}
 	share.mu.Unlock()
 	// Type tokens are writable in the existing local runtime. The token
 	// set is immutable shared data; a VM privatizes a token when assignPath
-	// first writes it (privatizeSharedDescribeToken). Keys and order stay
-	// shared too; typed bindings share this VM's entries until their first
-	// map write.
+	// first writes it (privatizeSharedDescribeToken). The map itself is shared
+	// too: every VM of the generation holds one backing, flagged shared, and
+	// the first write through any route clones it for that VM alone
+	// (prepareSharedMapMutation, privatizeSharedDescribeToken). Keys and order
+	// are shared as well; each VM keeps its own identity.
 	vm.noteDescribeTokenShare(share)
 	value.Ref = newValueRef()
-	value.Map = maps.Clone(value.Map)
+	value.mapBackingShared = true
+	value.mapEntriesShared = true
 	return value, true
+}
+
+// sharedGlobalDescribeExtension returns the generation's extension of a shared
+// global describe map, building it once with build. base must be a map this
+// generation's share holds; any other map (a private copy after a write, a
+// projection) returns false and the caller builds privately. kind and detail
+// name the extension (named references with their object list, change events
+// with the API major). The extension's tokens join the shared token set.
+func (vm *VM) sharedGlobalDescribeExtension(base map[string]Value, kind, detail string, build func() map[string]Value) (map[string]Value, bool) {
+	vm.ensureMetadataCacheGeneration()
+	share := vm.describeShare
+	if share == nil || vm.Org == nil || vm.Org.RuntimeSchemaStamp == "" || vm.Org.RuntimeSchemaStamp != share.stamp || len(base) == 0 {
+		return nil, false
+	}
+	key := globalDescribeExtensionKey{base: reflect.ValueOf(base).Pointer(), kind: kind, detail: detail}
+	share.mu.Lock()
+	defer share.mu.Unlock()
+	if _, shared := share.sharedMaps[key.base]; !shared {
+		return nil, false
+	}
+	extended, ok := share.extensions[key]
+	if !ok {
+		// A nil result means the layer adds nothing; that is remembered too.
+		extended = build()
+		if share.extensions == nil {
+			share.extensions = make(map[globalDescribeExtensionKey]map[string]Value)
+		}
+		share.extensions[key] = extended
+		if extended != nil {
+			share.registerTokenFields(extended)
+			share.registerSharedMap(extended)
+		}
+	}
+	vm.noteDescribeTokenShare(share)
+	return extended, true
+}
+
+// globalDescribeExtensionKey identifies an extension by the base map it
+// extends. The share keeps the base alive, so the pointer stays unique.
+type globalDescribeExtensionKey struct {
+	base         uintptr
+	kind, detail string
+}
+
+// registerSharedMap records a map backing that VMs share. Callers hold share.mu.
+func (share *describeShareCache) registerSharedMap(entries map[string]Value) {
+	if share.sharedMaps == nil {
+		share.sharedMaps = make(map[uintptr]struct{})
+	}
+	share.sharedMaps[reflect.ValueOf(entries).Pointer()] = struct{}{}
+}
+
+// sharesMap reports whether entries is a backing map this VM shares with other
+// VMs of its generation.
+func (vm *VM) sharesMap(entries map[string]Value) bool {
+	if len(entries) == 0 {
+		return false
+	}
+	pointer := reflect.ValueOf(entries).Pointer()
+	for _, share := range vm.describeTokenShares {
+		share.mu.Lock()
+		_, shared := share.sharedMaps[pointer]
+		share.mu.Unlock()
+		if shared {
+			return true
+		}
+	}
+	return false
 }
 
 type globalDescribeKeyMetadata struct {
@@ -148,28 +220,47 @@ func (vm *VM) privatizeSharedDescribeToken(token *Value) {
 	}
 	sharedFields := token.Fields
 	token.Fields = maps.Clone(sharedFields)
-	replace := func(entries map[string]Value) {
+	// A map holds the token by value. Repoint the entries at the private copy;
+	// a map that other VMs share is cloned first, so their entries stay put.
+	replace := func(entries map[string]Value) (map[string]Value, bool) {
+		copied := false
 		for key, held := range entries {
 			if held.Ref == token.Ref && sameMapBacking(held.Fields, sharedFields) {
+				if !copied && vm.sharesMap(entries) {
+					entries = maps.Clone(entries)
+					copied = true
+				}
 				held.Fields = token.Fields
 				entries[key] = held
 			}
 		}
+		return entries, copied
 	}
-	// The raw cache and the per-VM extensions cloned from it hold the token
-	// by value; update them all, so every route reads one private token.
+	// The raw cache and the per-VM extensions hold the token by value; update
+	// them all, so every route reads one private token.
+	replaceEntry := func(entry *Value) {
+		var copied bool
+		entry.Map, copied = replace(entry.Map)
+		if copied {
+			entry.mapEntriesShared = false
+		}
+	}
 	if vm.globalDescribeCache != nil {
-		replace(vm.globalDescribeCache.Map)
+		replaceEntry(vm.globalDescribeCache)
 	}
 	for _, entry := range vm.globalDescribeVersionCaches {
 		if entry != nil && entry != vm.globalDescribeCache {
-			replace(entry.Map)
+			replaceEntry(entry)
 		}
 	}
-	if vm.namedGlobalDescribe != nil {
-		replace(vm.namedGlobalDescribe.extended)
+	if memo := vm.namedGlobalDescribe; memo != nil {
+		var copied bool
+		memo.extended, copied = replace(memo.extended)
+		memo.shared = memo.shared && !copied
 	}
-	if vm.changeEventGlobal != nil {
-		replace(vm.changeEventGlobal.extended)
+	if memo := vm.changeEventGlobal; memo != nil {
+		var copied bool
+		memo.extended, copied = replace(memo.extended)
+		memo.shared = memo.shared && !copied
 	}
 }
