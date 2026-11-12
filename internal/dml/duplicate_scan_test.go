@@ -42,6 +42,12 @@ func standardScanRecord(object string, fields []standardScanField, shape []int) 
 			record.Fields[field.name] = storage.StringValue("  " + strings.ToUpper(field.text) + " ")
 		case 3:
 			record.Fields[field.name] = storage.StringValue(field.other)
+		case 4:
+			record.Fields[field.name] = storage.NullValue()
+		case 5:
+			record.Fields[field.name] = storage.StringValue("  ")
+		case 6:
+			record.Fields[field.name] = storage.IntegerValue(42)
 		}
 	}
 	return record
@@ -68,6 +74,17 @@ func standardScanGrid(fields []standardScanField, shapes []int) (out [][]int) {
 // same text, "ne" for different text, "cb" when only the candidate is blank,
 // "eb" when only the existing record is, "bb" when both are.
 func standardScanRelation(c, e int) string {
+	blank := func(s int) bool { return s == 0 || s == 4 || s == 5 }
+	switch {
+	case blank(c) && blank(e):
+		return "bb"
+	case blank(c):
+		return "cb"
+	case blank(e):
+		return "eb"
+	case c == 6 || e == 6:
+		return map[bool]string{true: "eq", false: "ne"}[c == e]
+	}
 	switch {
 	case c == 0 && e == 0:
 		return "bb"
@@ -181,6 +198,41 @@ func TestStandardDuplicateMatcherFollowsNativeStructure(t *testing.T) {
 	standardScanCheck(t, "lead", leadFields, lead, lead, same(map[string]string{"Company": "Acme Widgets", "Title": "Director of Sales", "Street": "100 Main St", "City": "Springfield", "PostalCode": "62701"}))
 	company := standardScanGrid(standardScanLeadFields[4:], []int{0, 1, 3})
 	standardScanCheck(t, "lead", standardScanLeadFields[4:], company, company, map[string][2]string{"LastName": {"Hartwell", "Hartwell"}, "FirstName": {"Jonathan", "Jonathan"}, "Email": {"jon@example.com", "zed@example.org"}, "Phone": {"(217) 555-0100", "(415) 555-0199"}})
+}
+
+// Absent, null, blank and integer values, the folded text of an Account, a
+// no-rule object and candidates the scan declines.
+func TestStandardDuplicateMatcherFieldShapes(t *testing.T) {
+	// Name, website, city, ZIP, street and phone: the folded text joins the grid
+	// on the candidate side.
+	candidates := standardScanGrid(standardScanAccountFields, []int{0, 1, 2, 3})
+	existing := standardScanGrid(standardScanAccountFields, []int{0, 1, 3})
+	standardScanCheck(t, "account", standardScanAccountFields, candidates, existing, nil)
+	// Contact and Lead: every shape on the name and email fields.
+	for _, object := range []string{"contact", "lead"} {
+		fields := standardScanPersonFields
+		var fixed map[string][2]string
+		if object == "lead" {
+			fixed = same(map[string]string{"Company": "Acme Widgets", "Title": "Director of Sales", "Street": "100 Main St", "City": "Springfield", "PostalCode": "62701"})
+		}
+		var shapes [][]int
+		for _, s := range standardScanGrid(fields[:3], []int{0, 1, 2, 3, 4, 5, 6}) {
+			shapes = append(shapes, append(s, 1))
+		}
+		standardScanCheck(t, object, fields, shapes, shapes, fixed)
+	}
+	if standardDuplicateMatcher(nil, "opportunity", "opportunity", storage.Record{Object: "Opportunity", Fields: map[string]storage.Value{"Name": storage.StringValue("x")}}) != nil {
+		t.Fatal("an object with no standard rule scans")
+	}
+	declined := 0
+	for _, shape := range standardScanGrid(standardScanPersonFields, []int{0, 1}) {
+		if standardDuplicateMatcher(nil, "contact", "contact", standardScanRecord("Contact", standardScanPersonFields, shape)) == nil {
+			declined++
+		}
+	}
+	if declined != 8 {
+		t.Fatalf("%d contact candidates declined; the 8 without a last name must", declined)
+	}
 }
 
 // Case-insensitive stored field names resolve through Record.GetField's

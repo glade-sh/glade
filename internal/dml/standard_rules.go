@@ -61,6 +61,13 @@ func standardMethod(method string) func(a, b string) (bool, float64) {
 	}
 }
 
+func standardLastName(a, b string) (bool, float64) {
+	if !standardLastNameGate(a, b) {
+		return false, 0
+	}
+	return fuzzyLastName(a, b, false)
+}
+
 // standardExact compares two values without letter case or edge spaces.
 func standardExact(a, b string) (bool, float64) {
 	return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b)), 100
@@ -116,28 +123,19 @@ func standardZipParts(s string) (head, ext string, ok bool) {
 // seven characters or more that start with different letters match nothing
 // unless one starts with a word the method drops.
 func standardCompany(a, b string) (bool, float64) {
-	if len(a) >= 7 && len(b) >= 7 {
-		if x, y := firstASCIIAlnum(a), firstASCIIAlnum(b); x != 0 && y != 0 && x != y && !companyStartsWithStopWord(a) && !companyStartsWithStopWord(b) {
-			return false, 0
-		}
+	if !standardCompanyGate(a, b) {
+		return false, 0
 	}
 	return fuzzyCompany(a, b, false)
-}
-
-func companyStartsWithStopWord(s string) bool {
-	s = strings.ToLower(strings.TrimSpace(s))
-	for _, w := range []string{"the ", "of ", "and ", "& "} {
-		if strings.HasPrefix(s, w) {
-			return true
-		}
-	}
-	return false
 }
 
 // standardCity is the City method with a cheap necessary condition: two
 // values whose match keys agree start with the same letter or digit.
 func standardCity(a, b string) (bool, float64) {
-	if x, y := firstASCIIAlnum(a), firstASCIIAlnum(b); x != 0 && y != 0 && x != y {
+	if strings.EqualFold(a, b) {
+		return true, 100
+	}
+	if !standardCityGate(a, b) {
 		return false, 0
 	}
 	return fuzzyCity(a, b, false)
@@ -191,6 +189,7 @@ var standardPhoneLineMismatch = map[string]float64{"account": 94, "contact": 97,
 
 func standardPhone(object string) func(a, b string) (bool, float64) {
 	return func(a, b string) (bool, float64) {
+
 		// Digits only: natively "503-555-O142" (a letter for a zero) finds
 		// nothing, and a seven digit number matches the full number in the fit
 		// rows but not in the holdout rows, so Glade leaves it unmatched.
@@ -200,6 +199,13 @@ func standardPhone(object string) func(a, b string) (bool, float64) {
 					return false, 0
 				}
 			}
+		}
+		if da, db := standardDigits(a), standardDigits(b); len(da) == 7 && da == db {
+			// NATIVE two seven digit numbers with the same digits match
+			// ("1234567" finds "123-4567"). Equal digits of another length do
+			// not: "415-555-1234 x5" never finds "415-555-12345" and
+			// "+44 20 7946 0958" never finds "442079460958".
+			return true, 100
 		}
 		ca, aa, ea, la, okA := phoneParts(a)
 		cb, ab, eb, lb, okB := phoneParts(b)
@@ -250,6 +256,16 @@ func standardStreet(a, b string) (bool, float64) {
 	return true, confidence
 }
 
+func standardDigits(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
 // product multiplies item confidences, each a percentage.
 func standardProduct(confidences ...float64) float64 {
 	out := 100.0
@@ -274,34 +290,80 @@ func bestOf(items ...standardItem) (float64, bool) {
 // The Name path scores the product of the name and the better of city and ZIP;
 // the Website path scores the product of the website and the better of street
 // and phone, the city or ZIP code only gating it. The best path decides.
-func standardAccountMatch(candidate, existing storage.Record) (bool, float64) {
-	field := func(r storage.Record, name string) string {
-		v, ok := r.GetField(name)
+func standardAccountMatch(candidate standardAccountCandidate, existing storage.Record) (bool, float64) {
+	// Fields of the candidate that are blank are never read from the existing
+	// record: a blank candidate value satisfies no item.
+	field := func(name string) string {
+		v, ok := existing.Fields[name]
 		if !ok {
-			return ""
+			if v, ok = existing.GetField(name); !ok {
+				return ""
+			}
 		}
 		return workflowValueString(v)
 	}
-	city := standardCompare(field(candidate, "BillingCity"), field(existing, "BillingCity"), standardCity)
-	zip := standardCompare(field(candidate, "BillingPostalCode"), field(existing, "BillingPostalCode"), standardZip)
+	var city, zip standardItem
+	if candidate.city != "" {
+		// The match keys decide before any scoring.
+		if text := field("BillingCity"); text != "" && (strings.EqualFold(candidate.city, strings.TrimSpace(text)) || rawKeysOf(text).city == candidate.cityKeys.city) {
+			city = standardCompare(candidate.city, text, standardCity)
+		}
+	}
+	if candidate.zip != "" {
+		zip = standardCompare(candidate.zip, field("BillingPostalCode"), standardZip)
+	}
 	cityOrZip, haveCZ := bestOf(city, zip)
 	if !haveCZ {
 		return false, 0
 	}
 	best, found := 0.0, false
-	if name := standardCompare(field(candidate, "Name"), field(existing, "Name"), standardCompany); name.ok() {
-		best, found = standardProduct(name.confidence, cityOrZip), true
+	if candidate.name != "" {
+		if text := field("Name"); text != "" && companyKeysMayMatch(candidate.nameKeys.company, rawKeysOf(text).company, candidate.name, text) {
+			if name := standardCompare(candidate.name, text, standardCompany); name.ok() {
+				best, found = standardProduct(name.confidence, cityOrZip), true
+			}
+		}
 	}
-	if website := standardCompare(field(candidate, "Website"), field(existing, "Website"), standardWebsite); website.ok() {
-		street := standardCompare(field(candidate, "BillingStreet"), field(existing, "BillingStreet"), standardStreet)
-		phone := standardCompare(field(candidate, "Phone"), field(existing, "Phone"), standardPhone("account"))
-		if streetOrPhone, ok := bestOf(street, phone); ok {
-			if c := standardProduct(website.confidence, streetOrPhone); !found || c > best {
-				best, found = c, true
+	if candidate.website != "" {
+		if website := standardCompare(candidate.website, field("Website"), standardWebsite); website.ok() {
+			var street, phone standardItem
+			if candidate.street != "" {
+				street = standardCompare(candidate.street, field("BillingStreet"), standardStreet)
+			}
+			if candidate.phone != "" {
+				phone = standardCompare(candidate.phone, field("Phone"), standardPhone("account"))
+			}
+			if streetOrPhone, ok := bestOf(street, phone); ok {
+				if c := standardProduct(website.confidence, streetOrPhone); !found || c > best {
+					best, found = c, true
+				}
 			}
 		}
 	}
 	return found, best
+}
+
+// standardAccountCandidate is the candidate's trimmed fields, read once per scan.
+type standardAccountCandidate struct {
+	name, website, city, zip, street, phone string
+	nameKeys, cityKeys                      standardRawKeys
+}
+
+func newStandardAccountCandidate(r storage.Record) (standardAccountCandidate, bool) {
+	text := func(name string) string {
+		text, _ := duplicateFieldText(r, name)
+		return text
+	}
+	c := standardAccountCandidate{name: text("Name"), website: text("Website"), city: text("BillingCity"), zip: text("BillingPostalCode"), street: text("BillingStreet"), phone: text("Phone")}
+	if c.name != "" {
+		c.nameKeys = rawKeysOf(c.name)
+	}
+	if c.city != "" {
+		c.cityKeys = rawKeysOf(c.city)
+	}
+	// Every path needs a city or ZIP code and a name or website: a candidate
+	// without them matches nothing and scans nothing.
+	return c, (c.city != "" || c.zip != "") && (c.name != "" || c.website != "")
 }
 
 // standardPerson is the part of a Contact or Lead the standard rules read.
@@ -309,7 +371,7 @@ type standardPerson struct {
 	kind                             string // "contact" or "lead"
 	first, last, email, phone, title string
 	street, city, zip                string
-	company                          string
+	company, lastKey                 string
 	accountID                        storage.ID
 }
 
@@ -351,7 +413,7 @@ func standardPersonOf(org *storage.OrgState, object string, record storage.Recor
 // a pair without first names; an existing record without one never matches a
 // candidate that has one. The phone and company paths need both first names.
 func standardPersonMatch(object string, candidate, existing standardPerson) (bool, float64) {
-	last := standardCompare(candidate.last, existing.last, standardMethod("lastname"))
+	last := standardCompare(candidate.last, existing.last, standardLastName)
 	if !last.ok() {
 		return false, 0
 	}

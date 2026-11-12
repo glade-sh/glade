@@ -203,7 +203,7 @@
   "62/Standard.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.7726
+   "min_recall": 0.7878
   },
   "62/Standard.Field.Lead.Company": {
    "max_conf_mae": 0.006,
@@ -223,7 +223,7 @@
   "62/Standard.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.7726
+   "min_recall": 0.7878
   },
   "62/Standard.Lead.Blanks": {
    "max_conf_mae": 0.001,
@@ -264,6 +264,36 @@
    "max_conf_mae": 0.001,
    "max_extra": 0,
    "min_recall": 0.9999
+  },
+  "62/Standard.Shapes.Account.Family": {
+   "max_conf_mae": 4.014,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "62/Standard.Shapes.Account.Name": {
+   "max_conf_mae": 2.27,
+   "max_extra": 0,
+   "min_recall": 0.9177
+  },
+  "62/Standard.Shapes.Account.NameZip": {
+   "max_conf_mae": 2.765,
+   "max_extra": 0,
+   "min_recall": 0.9321
+  },
+  "62/Standard.Shapes.Contact.First": {
+   "max_conf_mae": 0.825,
+   "max_extra": 0,
+   "min_recall": 0.9443
+  },
+  "62/Standard.Shapes.Contact.Last": {
+   "max_conf_mae": 0.024,
+   "max_extra": 0,
+   "min_recall": 0.9361
+  },
+  "62/Standard.Shapes.Lead.Last": {
+   "max_conf_mae": 0.024,
+   "max_extra": 0,
+   "min_recall": 0.9361
   },
   "67/Company.Syllable.SY1.01": {
    "max_conf_mae": 0.037,
@@ -591,9 +621,9 @@
    "min_recall": 0.9611
   },
   "67/Holdout.Field.Account.Phone": {
-   "max_conf_mae": 0.194,
+   "max_conf_mae": 0.193,
    "max_extra": 0,
-   "min_recall": 0.3493
+   "min_recall": 0.3511
   },
   "67/Holdout.Field.Account.Street": {
    "max_conf_mae": 0.494,
@@ -623,7 +653,7 @@
   "67/Holdout.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.995
+   "min_recall": 0.9999
   },
   "67/Holdout.Field.Lead.Company": {
    "max_conf_mae": 1.254,
@@ -643,7 +673,7 @@
   "67/Holdout.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.8384
+   "min_recall": 0.8426
   },
   "67/Holdout.Structure.Account": {
    "max_conf_mae": 0.001,
@@ -846,9 +876,9 @@
    "min_recall": 0.9252
   },
   "67/Standard.Field.Account.Phone": {
-   "max_conf_mae": 0.354,
+   "max_conf_mae": 0.347,
    "max_extra": 0,
-   "min_recall": 0.1827
+   "min_recall": 0.1863
   },
   "67/Standard.Field.Account.Street": {
    "max_conf_mae": 0.139,
@@ -883,7 +913,7 @@
   "67/Standard.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.7726
+   "min_recall": 0.7878
   },
   "67/Standard.Field.Lead.Company": {
    "max_conf_mae": 0.006,
@@ -903,7 +933,7 @@
   "67/Standard.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.7726
+   "min_recall": 0.7878
   },
   "67/Standard.Lead.Blanks": {
    "max_conf_mae": 0.001,
@@ -944,6 +974,36 @@
    "max_conf_mae": 0.001,
    "max_extra": 0,
    "min_recall": 0.9999
+  },
+  "67/Standard.Shapes.Account.Family": {
+   "max_conf_mae": 4.014,
+   "max_extra": 0,
+   "min_recall": 0.9999
+  },
+  "67/Standard.Shapes.Account.Name": {
+   "max_conf_mae": 2.27,
+   "max_extra": 0,
+   "min_recall": 0.9177
+  },
+  "67/Standard.Shapes.Account.NameZip": {
+   "max_conf_mae": 2.765,
+   "max_extra": 0,
+   "min_recall": 0.9321
+  },
+  "67/Standard.Shapes.Contact.First": {
+   "max_conf_mae": 0.825,
+   "max_extra": 0,
+   "min_recall": 0.9443
+  },
+  "67/Standard.Shapes.Contact.Last": {
+   "max_conf_mae": 0.024,
+   "max_extra": 0,
+   "min_recall": 0.9361
+  },
+  "67/Standard.Shapes.Lead.Last": {
+   "max_conf_mae": 0.024,
+   "max_extra": 0,
+   "min_recall": 0.9361
   }
  }
 }

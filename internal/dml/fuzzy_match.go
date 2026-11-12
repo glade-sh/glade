@@ -189,7 +189,7 @@ func firstNameKey(name string) string {
 	if key, ok := nameAliasKeys[name]; ok {
 		return key
 	}
-	return doubleMetaphone(name, firstNameKeyLength)
+	return firstNameCodeCache.get(name, func(s string) string { return doubleMetaphone(s, firstNameKeyLength) })
 }
 
 // firstNameSameEntry reports a name and the same name followed by a second
@@ -225,12 +225,17 @@ const lastNameKeyLength = 4
 // compared, "Martinez" and "Martinpz" are). Two names with equal Metaphone 3
 // codes score 100 (lastNameMetaphone3Equal). Otherwise Keyboard Distance
 // decides at 90 with confidence (100 + score) / 2.
+// lastNameCode is the match key of a folded last name, cached by its text.
+func lastNameCode(folded string) string {
+	return lastNameKeyCache.get(folded, func(s string) string { return doubleMetaphone(stripAccents(s), lastNameKeyLength) })
+}
+
 func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	x, y := foldText(a), foldText(b)
 	if x == y {
 		return true, 100
 	}
-	if doubleMetaphone(stripAccents(x), lastNameKeyLength) != doubleMetaphone(stripAccents(y), lastNameKeyLength) {
+	if lastNameCode(x) != lastNameCode(y) {
 		return false, 0
 	}
 	x, y = strings.ReplaceAll(x, "'", ""), strings.ReplaceAll(y, "'", "")

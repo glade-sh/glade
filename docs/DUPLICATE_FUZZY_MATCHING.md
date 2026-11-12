@@ -511,12 +511,9 @@ rows) agree with their 67.0 rows; `cases.json` holds a bound per row.
 | Standard Account City | holdout | 76/76 (100.0%) | 0 | 0.000 |
 | Standard Account Name | fit | 161/174 (92.5%) | 0 | 0.106 |
 | Standard Account Name | holdout | 99/103 (96.1%) | 0 | 0.061 |
-| Standard Account Phone | fit | 204/1116 (18.3%) | 0 | 0.353 |
-| Standard Account Phone | holdout | 405/1159 (34.9%) | 0 | 0.193 |
-| Standard Account Street | fit | 188/290 (64.8%) | 0 | 0.138 |
-| Standard Account Street | holdout | 150/198 (75.8%) | 0 | 0.493 |
-| Standard Account Website | fit | 183/183 (100.0%) | 0 | 0.000 |
-| Standard Account Website | holdout | 152/168 (90.5%) | 0 | 0.000 |
+| Standard Account Phone | fit | 615/2275 (27.0%) | 0 | 0.244 |
+| Standard Account Street | fit | 338/488 (69.3%) | 0 | 0.296 |
+| Standard Account Website | fit | 335/351 (95.4%) | 0 | 0.000 |
 | Standard Account Zip | fit | 79/79 (100.0%) | 0 | 0.000 |
 | Standard Account Zip | holdout | 87/97 (89.7%) | 0 | 0.000 |
 | Standard Contact/Lead Company | fit | 2500/2500 (100.0%) | 0 | 0.005 |
@@ -526,10 +523,12 @@ rows) agree with their 67.0 rows; `cases.json` holds a bound per row.
 | Standard Contact/Lead First | holdout | 432/524 (82.4%) | 0 | 0.222 |
 | Standard Contact/Lead Last | fit | 340/400 (85.0%) | 0 | 0.012 |
 | Standard Contact/Lead Last | holdout | 256/304 (84.2%) | 0 | 0.047 |
-| Standard Contact/Lead Phone | fit | 408/528 (77.3%) | 0 | 0.000 |
-| Standard Contact/Lead Phone | holdout | 810/890 (91.0%) | 0 | 0.000 |
+| Standard Contact/Lead Phone | fit | 1230/1418 (86.7%) | 0 | 0.000 |
 | Standard rule structure (Account) | fit | 2118/2118 (100.0%) | 0 | 0.000 |
+| Standard rule structure (Account) | holdout | 44/44 (100.0%) | 0 | 0.000 |
+| Standard rule structure (Contact) | holdout | 8/8 (100.0%) | 0 | 0.000 |
 | Standard rule structure (Contact/Lead) | fit | 314/314 (100.0%) | 0 | 0.000 |
+| Standard rule structure (Lead) | holdout | 10/10 (100.0%) | 0 | 0.000 |
 | Standard.Account.NameConfidence | fit | 42/42 (100.0%) | 0 | 1.000 |
 | Standard.Account.NoStateCountry | fit | 85/85 (100.0%) | 0 | 0.000 |
 | Standard.Contact.EmailDomain | fit | 63/63 (100.0%) | 0 | 0.000 |
@@ -538,19 +537,35 @@ rows) agree with their 67.0 rows; `cases.json` holds a bound per row.
 | Standard.Lead.EmailDomain | fit | 63/63 (100.0%) | 0 | 0.000 |
 | Standard.Lead.FreeMailDomains | fit | 27/33 (81.8%) | 0 | 0.000 |
 | Standard.Lead.NameConfidence | fit | 20/208 (9.6%) | 0 | 0.000 |
-| Standard rule structure (Account) | holdout | 44/44 (100.0%) | 0 | 0.000 |
-| Standard rule structure (Contact) | holdout | 8/8 (100.0%) | 0 | 0.000 |
-| Standard rule structure (Lead) | holdout | 10/10 (100.0%) | 0 | 0.000 |
+| Standard.Shapes.Account.Family | fit | 1600/1600 (100.0%) | 0 | 4.013 |
+| Standard.Shapes.Account.Name | fit | 67/73 (91.8%) | 0 | 2.269 |
+| Standard.Shapes.Account.NameZip | fit | 55/59 (93.2%) | 0 | 2.764 |
+| Standard.Shapes.Contact.First | fit | 34/36 (94.4%) | 0 | 0.824 |
+| Standard.Shapes.Contact.Last | fit | 88/94 (93.6%) | 0 | 0.023 |
+| Standard.Shapes.Lead.Last | fit | 88/94 (93.6%) | 0 | 0.023 |
 
-Seen-after-change rows: the first scoring of `Holdout.Field.Account.Street` and
+Rows listed as fit that began as holdout (Account Street, Account Phone, Contact and Lead Phone, Account Website) were scored first as holdout: the first scoring of `Holdout.Field.Account.Street` and
 `Holdout.Field.Account.Phone` showed false matches (a street with a number sign,
-a seven digit phone number, a letter typed for a digit); the rules were changed
-to leave those unmatched, so those two rows and `Holdout.Field.Contact.Phone`
-and `Holdout.Field.Lead.Phone` are fit after the change. `Holdout.Field.Account.Website`
+a seven digit phone number against a full number, a letter typed for a digit); the rules were changed
+to leave those unmatched, so those rows count as fit after the change. `Holdout.Field.Account.Website`
 was read once before the hyphen rule was written. The first Account structure
 holdout looked wrong only because the capture org had reached its daily limit
 of Apex log headers and returned no rows; those captures were repeated in
 fresh orgs with a sentinel pair that must match before a row is accepted.
+
+### Digits, non-Latin names and the capture's blank names
+
+NATIVE `Standard.Shapes.*`: Salesforce matches names that differ only in a
+digit (`Test1` finds `Test2` at 100, `42` finds `43` at 99, `Contact 1` finds
+`Contact 27`, `Test Account 1` finds every `Test Account N`, at 94 to 100
+depending on where the digits sit) and names in another script (`王` finds `李`,
+`Иванов` finds `Петров`, at 100), because its phonetic key ignores digits and is
+empty for those scripts. Glade matches the same pairs; it keeps one native
+exception, that a name of digits only never finds a name in letters (`42` and
+`王` do not match). Apex test data with numbered names therefore reports
+duplicates under the standard rules as it does in an org. A record with a
+blank required name was captured with the placeholder `Blankrow` (the same text
+on both sides), so no row covers blank Account names or Contact last names.
 
 ### Standard rule gaps
 

@@ -28,10 +28,20 @@ func lastNameMetaphone3Equal(x, y string) bool {
 // lastNameMetaphone3 returns the primary Metaphone 3 code. An Encoder holds
 // state and is not safe for concurrent use, so each call takes its own.
 func lastNameMetaphone3(s string) string {
-	encoder := &metaphone3.Encoder{EncodeExact: true}
-	primary, _ := encoder.Encode(s)
-	return primary
+	return metaphone3CodeCache.get(s, func(s string) string {
+		encoder := &metaphone3.Encoder{EncodeExact: true}
+		primary, _ := encoder.Encode(s)
+		return primary
+	})
 }
+
+// metaphone3CodeCache and firstNameCodeCache memoize the phonetic codes, pure
+// functions of the text, that every standard-rule scan asks for once per
+// existing record (standard_keys.go).
+var (
+	metaphone3CodeCache standardKeyCache[string]
+	firstNameCodeCache  standardKeyCache[string]
+)
 
 func lastNameSeparators(s string) string {
 	var out strings.Builder

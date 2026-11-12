@@ -128,23 +128,29 @@ func duplicateFieldText(record storage.Record, field string) (string, bool) {
 func standardDuplicateMatcher(org *storage.OrgState, ruleObject, candidateObject string, candidate storage.Record) func(existing storage.Record) (bool, float64) {
 	switch strings.ToLower(ruleObject) {
 	case "account":
-		// Every path needs a city or ZIP code and a name or website: a
-		// candidate without them matches nothing and scans nothing.
-		text := func(name string) string {
-			text, _ := duplicateFieldText(candidate, name)
-			return text
-		}
-		if text("BillingCity") == "" && text("BillingPostalCode") == "" || text("Name") == "" && text("Website") == "" {
+		prepared, ok := newStandardAccountCandidate(candidate)
+		if !ok {
 			return nil
 		}
-		return func(existing storage.Record) (bool, float64) { return standardAccountMatch(candidate, existing) }
+		return func(existing storage.Record) (bool, float64) { return standardAccountMatch(prepared, existing) }
 	case "contact", "lead":
 		person := standardPersonOf(org, candidateObject, candidate)
 		if person.last == "" {
 			return nil
 		}
+		person.lastKey = rawKeysOf(person.last).last
 		object := strings.ToLower(ruleObject)
 		return func(existing storage.Record) (bool, float64) {
+			// The last name gates the pair; the other fields are read only after it.
+			last := ""
+			if v, ok := existing.Fields["LastName"]; ok {
+				last = strings.TrimSpace(workflowValueString(v))
+			} else if v, ok := existing.GetField("LastName"); ok {
+				last = strings.TrimSpace(workflowValueString(v))
+			}
+			if last == "" || rawKeysOf(last).last != person.lastKey {
+				return false, 0
+			}
 			return standardPersonMatch(object, person, standardPersonOf(org, ruleObject, existing))
 		}
 	}

@@ -131,3 +131,64 @@ func TestPersonAccountRulesSelectedByRecord(t *testing.T) {
 		t.Fatalf("business account rules: %+v", rules)
 	}
 }
+
+// Names that differ only in a digit, and names in another script, match the
+// way Salesforce matches them: its phonetic key ignores digits and is empty for
+// a Han, Cyrillic or Greek name, so every such pair is a duplicate. Apex test
+// data ("Test1", "Test2") is full of them.
+//
+// NATIVE a digits-only name never finds a name in letters (42 and 王 do not match):
+// the same rows.
+// NATIVE Test1 finds Test2 at 100, 42 finds 43 at 99, 王 finds 李 at 100:
+// internal/apextest/testdata/conformance/duplicate_standard_rules/org.tsv Standard.Shapes.Contact.Last
+// anonymous 67.0.
+func TestStandardDigitAndNonLatinNamesMatchLikeNative(t *testing.T) {
+	for _, pair := range [][2]string{{"Test1", "Test2"}, {"42", "43"}, {"TestContact0", "TestContact199"}, {"王", "李"}, {"田中", "佐藤"}, {"Иванов", "Петров"}} {
+		org := standardRuleOrg(t, "Contact", "Contact", "Standard_Contact_Match_Rule_v1_1")
+		engine := dml.NewEngine(org)
+		engine.Options.EnforceDuplicateRules = true
+		if r := insertRow(engine, "Contact", map[string]string{"FirstName": "Jon", "LastName": pair[0], "Email": "same@example.com"}); !r.Success {
+			t.Fatalf("seed: %+v", r)
+		}
+		if r := insertRow(engine, "Contact", map[string]string{"FirstName": "Jon", "LastName": pair[1], "Email": "same@example.com"}); !blocked(r) {
+			t.Errorf("%q must find %q as natively: %+v", pair[1], pair[0], r)
+		}
+	}
+}
+
+func TestStandardDigitsOnlyNameNeverFindsLetters(t *testing.T) {
+	for _, pair := range [][2]string{{"42", "王"}, {"Иванов", "43"}} {
+		org := standardRuleOrg(t, "Contact", "Contact", "Standard_Contact_Match_Rule_v1_1")
+		engine := dml.NewEngine(org)
+		engine.Options.EnforceDuplicateRules = true
+		if r := insertRow(engine, "Contact", map[string]string{"FirstName": "Jon", "LastName": pair[0], "Email": "same@example.com"}); !r.Success {
+			t.Fatalf("seed: %+v", r)
+		}
+		if r := insertRow(engine, "Contact", map[string]string{"FirstName": "Jon", "LastName": pair[1], "Email": "same@example.com"}); blocked(r) {
+			t.Errorf("%q must not find %q: %+v", pair[1], pair[0], r)
+		}
+	}
+}
+
+// Two seven digit numbers with the same digits satisfy the phone item. Equal
+// digits of another length do not (extensions, international numbers).
+//
+// NATIVE 1234567 finds 123-4567: internal/apextest/testdata/conformance/duplicate_fuzzy_matching/org.tsv
+// (Phone rows, API 67.0, anonymous); duplicate_standard_rules/org.tsv Standard.Field.Account.Phone
+// shows "415-555-1234 x5" not finding "415-555-12345".
+func TestStandardPhoneEqualSevenDigits(t *testing.T) {
+	org := standardRuleOrg(t, "Contact", "Contact", "Standard_Contact_Match_Rule_v1_1")
+	engine := dml.NewEngine(org)
+	engine.Options.EnforceDuplicateRules = true
+	if r := insertRow(engine, "Contact", map[string]string{"FirstName": "Jon", "LastName": "Phone", "Email": "a@example.com", "Phone": "123-4567"}); !r.Success {
+		t.Fatalf("seed: %+v", r)
+	}
+	for _, phone := range []string{"1234567", "123 4567", "(123) 456-7"} {
+		if r := insertRow(engine, "Contact", map[string]string{"FirstName": "Jon", "LastName": "Phone", "Email": "b@example.com", "Phone": phone}); !blocked(r) {
+			t.Errorf("phone %q must match 123-4567: %+v", phone, r)
+		}
+	}
+	if r := insertRow(engine, "Contact", map[string]string{"FirstName": "Jon", "LastName": "Phone", "Email": "c@example.com", "Phone": "123-4568"}); blocked(r) {
+		t.Errorf("a different short number must not match: %+v", r)
+	}
+}
