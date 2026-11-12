@@ -71,7 +71,7 @@ func (s *Server) handleCompositeTree(w http.ResponseWriter, r *http.Request, par
 		return
 	}
 
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	results := make([]dml.Result, 0)
 	referenceIDs := make([]string, 0)
