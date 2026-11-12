@@ -1,6 +1,10 @@
 package storage
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
+)
 
 // NATIVE Case.Division is present with the Division scratch feature
 // internal/apextest/testdata/conformance/standard_case_field_features_division/org.tsv:38-49 anonymous 62.0 67.0
@@ -37,10 +41,12 @@ func TestStandardCaseDivisionFollowsFeature(t *testing.T) {
 			}
 		})
 	}
-	if !StandardFieldAssignmentReadOnly("Case", "Division") {
-		t.Fatal("Division assignment must be read-only")
+	if !StandardFeatureEnabledFieldAssignmentReadOnly("Case", "Division", []string{"Division"}) {
+		t.Fatal("Division assignment must be read-only with the feature")
 	}
-	if !StandardFeatureEnabledFieldDynamicPutReadOnly("Case", "Division") || StandardFeatureEnabledFieldDynamicPutReadOnly("Case", "Subject") {
-		t.Fatal("dynamic put read-only decision")
+	if StandardFeatureEnabledFieldAssignmentReadOnly("Case", "Division", []string{project.UnspecifiedStandardFieldShape}) ||
+		StandardFeatureEnabledFieldAssignmentReadOnly("Case", "Division", []string{"LiveAgent"}) ||
+		StandardFieldAssignmentReadOnly("Case", "Division") {
+		t.Fatal("no restriction without the feature or for an unknown shape")
 	}
 }

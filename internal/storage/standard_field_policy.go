@@ -674,3 +674,10 @@ func StandardObjectInsertForcedValues(object string) map[string]bool {
 	}
 	return values
 }
+
+// StandardObjectShapeDeclared reports a definition whose standard-field overlay
+// was applied for a declared scratch shape (not an unknown one).
+func StandardObjectShapeDeclared(definition ObjectDefinition) bool {
+	signature, applied := definition.Metadata[standardFieldsOverlayMarker]
+	return applied && !featureSignatureHas(signature, project.UnspecifiedStandardFieldShape)
+}

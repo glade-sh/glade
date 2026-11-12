@@ -5,7 +5,6 @@ apis: 62.0 67.0
 routes: anonymous
 cases: 36
 sf: @salesforce/cli/2.157.8
-hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
 cases.tsv sha256: 35888b221206df71
 mode: live
 setup: after creation the admin user was given UserPermissionsKnowledgeUser and a Knowledge settings file with two active languages (en_US, fr) and defaultLanguage en_US was deployed

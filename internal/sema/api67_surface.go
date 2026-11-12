@@ -396,5 +396,5 @@ func semaStandardFieldAssignmentReadOnly(model *semaTypeMemberView, receiver, fi
 			}
 		}
 	}
-	return storage.StandardFieldAssignmentReadOnly(receiver, field) || anonymous && storage.StandardFieldAssignmentRequiresNamedCode(receiver, field)
+	return storage.StandardFieldAssignmentReadOnly(receiver, field) || storage.StandardFeatureEnabledFieldAssignmentReadOnly(receiver, field, model.state.base.orgShapeFeatures) || anonymous && storage.StandardFieldAssignmentRequiresNamedCode(receiver, field)
 }

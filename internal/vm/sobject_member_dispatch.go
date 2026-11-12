@@ -776,7 +776,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 					actualField = canonical
 					fieldDef := definition.Fields[canonical]
 					if strings.TrimSpace(fieldDef.Formula) != "" || fieldDef.Type == storage.FieldSummary || systemFieldDynamicPutReadOnly(canonical) ||
-						!receiver.classInstance && storage.StandardFeatureEnabledFieldDynamicPutReadOnly(receiver.Type, canonical) {
+						!receiver.classInstance && storage.StandardFeatureEnabledFieldDynamicPutReadOnly(definition, canonical) {
 						return Null, true, newExceptionError("System.SObjectException", "Field "+canonical+" is not editable")
 					}
 					if err := scaleZeroNumberDynamicPutError(definition, fieldDef, args[0], value); err != nil {

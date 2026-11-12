@@ -4413,7 +4413,7 @@ func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject str
 	if vm == nil || vm.Org == nil || !vm.currentUserIsCapturedPortalUser() {
 		return false
 	}
-	if !strings.EqualFold(canonicalObject, "Case") {
+	if !strings.EqualFold(canonicalObject, "Case") || !storage.StandardObjectShapeDeclared(vm.Org.Objects[canonicalObject].Definition) {
 		return false
 	}
 	return strings.TrimSpace(vm.Org.Objects[canonicalObject].Definition.ExternalSharingModel) == ""
