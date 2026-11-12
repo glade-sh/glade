@@ -1,0 +1,1 @@
+Integer qs=Limits.getSoslQueries(), rs=Limits.getQueryRows(); List<List<SObject>> rows=Search.query('FIND {Amberquartz} RETURNING Account(Id)'); obs=''+rows[0].size()+'|'+(Limits.getSoslQueries()-qs)+'|'+(Limits.getQueryRows()-rs);

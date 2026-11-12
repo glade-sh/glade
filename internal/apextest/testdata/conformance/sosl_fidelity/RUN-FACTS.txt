@@ -1,0 +1,17 @@
+started: 2026-11-12T23:43:54Z
+finished: 2026-11-12T23:45:56Z
+apis: 62.0 67.0
+routes: anonymous istest
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+mode: live
+source: independent synthetic fixtures; no customer or existing org data
+classes: deploy separate named @IsTest classes at 62.0 and 67.0; test command and metadata version match
+anonymous: bare sf apex run --api-version at 62.0 and 67.0; seed committed in an earlier request
+readiness: poll exact sorted Account and Contact labels in independent transactions; require two consecutive full identities per API before any indexed observation; see readiness.tsv. Initial empty polls are not negative assertions.
+istest: each method inserts three Accounts and two Contacts in its own test context; fixed results, empty-list and no-setter controls; no index wait or SeeAllData
+transport: named methods deliberately assert OBS|value|END to export their result. Anonymous values come only from decoded USER_DEBUG events, never echoed source. Non-observation exceptions or missing observations invalidate capture.
+identity: A,B,C are AccountNumber labels; K,M are Contact.Department labels. Original per-object order is retained. No org identifiers recorded.
+repetitions: repeat each named training method independently at each API; repeat the first eight anonymous probes at both APIs against the same committed seed. All 90 repeated observations matched. This is one index and fixture distribution, not a ranking guarantee.
+cleanup: scratch delete succeeded and org display no longer resolved the owned alias.
+case table sha256: 5f92c8089396363e8a36c4152b0433be15a7b29095809ef99445e4dbced402ac
