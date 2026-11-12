@@ -43,7 +43,8 @@ func rejectedVisualforceControllersWith(p project.Project, compilation *Controll
 // controllerGate is the outcome of one controller compile: the project's
 // controller-presentation diagnostics and the controller class names they
 // reject. It holds no type index, so retaining it per project generation is
-// cheap.
+// cheap. rejectedErr is a deterministic function of the same sources and is
+// retained with it; compile errors are never retained.
 type controllerGate struct {
 	diagnostics []diagnostic.Diagnostic
 	rejected    map[string]bool

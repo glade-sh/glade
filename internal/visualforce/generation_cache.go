@@ -151,6 +151,27 @@ func projectGenerationKey(p project.Project) (string, bool) {
 			hashSharingReasons(h, dir)
 		}
 	}
+	// sema and typesys probe for sfdx-project.json at the root and above every
+	// Apex source; no string in the project names those markers.
+	markerDirs := map[string]bool{p.Root: true}
+	for _, path := range p.ApexFiles {
+		dir := filepath.Dir(path)
+		for i := 0; i < 32 && !markerDirs[dir]; i++ {
+			markerDirs[dir] = true
+			if dir == p.Root || filepath.Dir(dir) == dir {
+				break
+			}
+			dir = filepath.Dir(dir)
+		}
+	}
+	dirList := make([]string, 0, len(markerDirs))
+	for dir := range markerDirs {
+		dirList = append(dirList, dir)
+	}
+	sort.Strings(dirList)
+	for _, dir := range dirList {
+		hashRegularFile(h, filepath.Join(dir, "sfdx-project.json"))
+	}
 	return hex.EncodeToString(h.Sum(nil)), true
 }
 

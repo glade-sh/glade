@@ -217,3 +217,23 @@ func TestControllerGateDiagnosticsAreCopiedToCallers(t *testing.T) {
 		t.Fatalf("a caller's edit reached the shared generation: %+v, want %+v", second, want)
 	}
 }
+
+func TestGenerationKeyCoversNestedProjectMarkers(t *testing.T) {
+	p := writeControllerPageProject(t, validProbeController)
+	before, ok := projectGenerationKey(p)
+	if !ok {
+		t.Fatal("no key")
+	}
+	marker := filepath.Join(p.Root, "force-app/main/default/classes/sfdx-project.json")
+	writeFile(t, marker, `{"packageDirectories":[{"path":"."}]}`)
+	added, _ := projectGenerationKey(p)
+	if added == before {
+		t.Fatal("adding a nested sfdx-project.json did not change the key")
+	}
+	if err := os.Remove(marker); err != nil {
+		t.Fatal(err)
+	}
+	if again, _ := projectGenerationKey(p); again != before {
+		t.Fatal("removing the marker did not restore the key")
+	}
+}
