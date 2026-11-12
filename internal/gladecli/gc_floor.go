@@ -15,7 +15,7 @@ import (
 // everything built so far. Holding the next-collection goal at this floor skips
 // those cycles. Once the live heap passes half the floor, or after
 // testGCFloorMaxAge, the target is the ordinary 100 percent growth.
-const testGCFloorBytes = 512 << 20
+const testGCFloorBytes = 256 << 20
 
 const (
 	// testGCFloorUnknownHostBytes is the floor when no host or container

@@ -45,8 +45,8 @@ func TestGCFloorForHostScalesWithMemoryBudgetAndLimit(t *testing.T) {
 		limit  int64
 		want   uint64
 	}{
-		{"large host", 64 * gib, math.MaxInt64, 512 * mib},
-		{"4 GiB host", 4 * gib, math.MaxInt64, 512 * mib},
+		{"large host", 64 * gib, math.MaxInt64, 256 * mib},
+		{"4 GiB host", 4 * gib, math.MaxInt64, 256 * mib},
 		{"2 GiB container", 2 * gib, math.MaxInt64, 256 * mib},
 		{"1 GiB container", 1 * gib, math.MaxInt64, 128 * mib},
 		{"512 MiB container", 512 * mib, math.MaxInt64, 64 * mib},
@@ -54,7 +54,7 @@ func TestGCFloorForHostScalesWithMemoryBudgetAndLimit(t *testing.T) {
 		{"unknown budget uses conservative fallback", 0, math.MaxInt64, 256 * mib},
 		{"explicit soft limit caps floor", 64 * gib, 1 * gib, 256 * mib},
 		{"tiny soft limit is off", 64 * gib, 128 * mib, 0},
-		{"unlimited sentinel ignored", 64 * gib, -1, 512 * mib},
+		{"unlimited sentinel ignored", 64 * gib, -1, 256 * mib},
 	} {
 		if got := gcFloorForHost(testGCFloorBytes, tc.budget, tc.limit); got != tc.want {
 			t.Errorf("%s: floor = %d MiB, want %d MiB", tc.name, got/mib, tc.want/mib)
