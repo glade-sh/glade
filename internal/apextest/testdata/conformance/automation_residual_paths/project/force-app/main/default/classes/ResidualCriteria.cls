@@ -1,15 +1,16 @@
 public class ResidualCriteria {
+ static Map<String,Id> ids=new Map<String,Id>();
  static Id q; static Id queueId(){ if(q==null) q=[SELECT Id FROM Group WHERE Type='Queue' AND DeveloperName='ResidualQueue'].Id; return q; }
  static void run(Map<String,Object> m, String k, Lead l){
   try{
    Database.DMLOptions o=new Database.DMLOptions(); o.assignmentRuleHeader.useDefaultRule=true; o.duplicateRuleHeader.allowSave=true;
    Database.SaveResult r=Database.insert(l,o);
    if(!r.isSuccess()){ m.put(k,'ERR:'+r.getErrors()[0].getMessage().left(80)); return; }
-   m.put(k,[SELECT OwnerId FROM Lead WHERE Id=:l.Id].OwnerId==queueId()?1:0);
+   ids.put(k,l.Id);
   }catch(Exception e){ m.put(k,'EX:'+e.getMessage().left(80)); }
  }
  public static Map<String,Object> run(){
-  Map<String,Object> m=new Map<String,Object>();
+  Map<String,Object> m=new Map<String,Object>(); ids.clear();
   run(m,'T1|Abc',new Lead(LastName='x',Company='kT1',Title='Abc'));
   run(m,'T1|xAb',new Lead(LastName='x',Company='kT1',Title='xAb'));
   run(m,'T1|abc',new Lead(LastName='x',Company='kT1',Title='abc'));
@@ -89,6 +90,32 @@ public class ResidualCriteria {
   run(m,'D3|0102',new Lead(LastName='x',Company='kD3',Day__c=Date.newInstance(2026,1,2)));
   run(m,'D4|1231',new Lead(LastName='x',Company='kD4',Day__c=Date.newInstance(2025,12,31)));
   run(m,'D4|0101',new Lead(LastName='x',Company='kD4',Day__c=Date.newInstance(2026,1,1)));
+  run(m,'N8|null',new Lead(LastName='x',Company='kN8',NumberOfEmployees=null));
+  run(m,'N9|null',new Lead(LastName='x',Company='kN9',NumberOfEmployees=null));
+  run(m,'N10|null',new Lead(LastName='x',Company='kN10',NumberOfEmployees=null));
+  run(m,'N10|0',new Lead(LastName='x',Company='kN10',NumberOfEmployees=0));
+  run(m,'N11|null',new Lead(LastName='x',Company='kN11',NumberOfEmployees=null));
+  run(m,'N11|0',new Lead(LastName='x',Company='kN11',NumberOfEmployees=0));
+  run(m,'N12|null',new Lead(LastName='x',Company='kN12',NumberOfEmployees=null));
+  run(m,'N13|1000.4',new Lead(LastName='x',Company='kN13',AnnualRevenue=1000.4));
+  run(m,'N13|1000.5',new Lead(LastName='x',Company='kN13',AnnualRevenue=1000.5));
+  run(m,'N13|null',new Lead(LastName='x',Company='kN13',AnnualRevenue=null));
+  run(m,'D5|null',new Lead(LastName='x',Company='kD5',Day__c=null));
+  run(m,'D6|null',new Lead(LastName='x',Company='kD6',Day__c=null));
+  run(m,'D7|null',new Lead(LastName='x',Company='kD7',Day__c=null));
+  run(m,'T9|null',new Lead(LastName='x',Company='kT9',Title=null));
+  run(m,'T10|b',new Lead(LastName='x',Company='kT10',Title='b'));
+  run(m,'T10| b',new Lead(LastName='x',Company='kT10',Title=' b'));
+  run(m,'T10|a',new Lead(LastName='x',Company='kT10',Title='a'));
+  run(m,'T11|x',new Lead(LastName='x',Company='kT11',Title='x'));
+  run(m,'T11|xa',new Lead(LastName='x',Company='kT11',Title='xa'));
+  run(m,'T11|null',new Lead(LastName='x',Company='kT11',Title=null));
+  run(m,'T12|null',new Lead(LastName='x',Company='kT12',Title=null));
+  run(m,'T12|a',new Lead(LastName='x',Company='kT12',Title='a'));
+  run(m,'T12|b',new Lead(LastName='x',Company='kT12',Title='b'));
+  run(m,'P5|null',new Lead(LastName='x',Company='kP5',Rating=null));
+  Map<Id,Id> owners=new Map<Id,Id>(); for(Lead x:[SELECT Id,OwnerId FROM Lead WHERE Id IN :ids.values()]) owners.put(x.Id,x.OwnerId);
+  for(String k:ids.keySet()) m.put(k,owners.get(ids.get(k))==queueId()?1:0);
   return m;
  }
 }
