@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"strconv"
+	"sync"
 	"unicode/utf8"
 )
 
@@ -27,7 +28,9 @@ func decodeStandardDescribeObjectJSON(data []byte) (standardDescribeObject, erro
 }
 
 func fastDecodeStandardDescribeObject(data []byte) (standardDescribeObject, bool) {
-	decoder := describeJSONDecoder{data: data}
+	scratch := getDescribeDecodeScratch()
+	defer putDescribeDecodeScratch(scratch)
+	decoder := describeJSONDecoder{data: data, scratch: scratch}
 	var describe standardDescribeObject
 	if !decoder.describeObject(&describe) {
 		return standardDescribeObject{}, false
@@ -42,8 +45,48 @@ func fastDecodeStandardDescribeObject(data []byte) (standardDescribeObject, bool
 // describeJSONDecoder is a strict cursor over one JSON document. Methods
 // return false when the input is outside the shape the fast path accepts.
 type describeJSONDecoder struct {
-	data []byte
-	pos  int
+	data    []byte
+	pos     int
+	scratch *describeDecodeScratch
+}
+
+// describeDecodeScratch holds the working slices that field and picklist
+// arrays are appended to. An array is decoded into the reused backing store and
+// then copied into an exactly sized slice, so growth by doubling leaves no
+// garbage and the result carries no spare capacity. Decoded values never
+// reference the scratch; it is cleared before it returns to the pool.
+type describeDecodeScratch struct {
+	fields    []standardDescribeField
+	picklists []standardDescribePicklistValue
+}
+
+// describeDecodeScratchMaxCap bounds the element count a pooled slice keeps.
+const describeDecodeScratchMaxCap = 8192
+
+var describeDecodeScratchPool sync.Pool
+
+func getDescribeDecodeScratch() *describeDecodeScratch {
+	if scratch, ok := describeDecodeScratchPool.Get().(*describeDecodeScratch); ok {
+		return scratch
+	}
+	return &describeDecodeScratch{}
+}
+
+func putDescribeDecodeScratch(scratch *describeDecodeScratch) {
+	clear(scratch.fields[:cap(scratch.fields)])
+	clear(scratch.picklists[:cap(scratch.picklists)])
+	scratch.fields, scratch.picklists = scratch.fields[:0], scratch.picklists[:0]
+	if cap(scratch.fields) > describeDecodeScratchMaxCap || cap(scratch.picklists) > describeDecodeScratchMaxCap {
+		return
+	}
+	describeDecodeScratchPool.Put(scratch)
+}
+
+// describeExactCopy returns a non-nil slice of exactly len(values) elements.
+func describeExactCopy[T any](values []T) []T {
+	out := make([]T, len(values))
+	copy(out, values)
+	return out
 }
 
 // describeJSONMaxDepth bounds recursion in skipped values. Deeper input falls
@@ -96,14 +139,15 @@ func (decoder *describeJSONDecoder) describeFields(out *[]standardDescribeField)
 		*out = nil
 		return true
 	}
-	fields := make([]standardDescribeField, 0)
+	fields := decoder.scratch.fields[:0]
 	for first := true; ; first = false {
 		more, ok := decoder.nextElement(first)
 		if !ok {
 			return false
 		}
 		if !more {
-			*out = fields
+			decoder.scratch.fields = fields
+			*out = describeExactCopy(fields)
 			return true
 		}
 		fields = append(fields, standardDescribeField{})
@@ -204,14 +248,15 @@ func (decoder *describeJSONDecoder) describePicklistValues(out *[]standardDescri
 		*out = nil
 		return true
 	}
-	values := make([]standardDescribePicklistValue, 0)
+	values := decoder.scratch.picklists[:0]
 	for first := true; ; first = false {
 		more, ok := decoder.nextElement(first)
 		if !ok {
 			return false
 		}
 		if !more {
-			*out = values
+			decoder.scratch.picklists = values
+			*out = describeExactCopy(values)
 			return true
 		}
 		var value standardDescribePicklistValue

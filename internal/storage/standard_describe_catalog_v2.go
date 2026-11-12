@@ -312,6 +312,9 @@ var standardDescribeMemberBuffers sync.Pool
 // standardDescribeMemberBufferMaxCap keeps the pool from holding an outlier.
 const standardDescribeMemberBufferMaxCap = 4 << 20
 
+// standardDescribeMemberBufferStep rounds up a replacement pooled buffer.
+const standardDescribeMemberBufferStep = 256 << 10
+
 // decodeStandardDescribeCatalogV2MemberBytes returns a member's JSON in a
 // buffer the caller owns.
 func decodeStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescribeCatalogV2IndexEntry, magic []byte, count int) ([]byte, error) {
@@ -324,6 +327,10 @@ func withStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescrib
 	var buffer []byte
 	if pooled, ok := standardDescribeMemberBuffers.Get().(*[]byte); ok {
 		buffer = *pooled
+	}
+	// Size a replacement in steps so the next members of similar size reuse it.
+	if need := int(entry.UncompressedLength) + 1; cap(buffer) < need && need <= standardDescribeMemberBufferMaxCap {
+		buffer = make([]byte, 0, (need+standardDescribeMemberBufferStep-1)/standardDescribeMemberBufferStep*standardDescribeMemberBufferStep)
 	}
 	data, err := decodeStandardDescribeCatalogV2MemberInto(pack, entry, magic, count, buffer[:0])
 	if err == nil {
