@@ -25,7 +25,7 @@ func (e *Engine) insertRecordFlowRecord(record storage.Record) (storage.ID, erro
 // record that a record-triggered flow changed. The failure is an Update
 // Records element fault, which the flow reports as its process failure.
 func (e *Engine) recordFlowDuplicateUpdate(record, prior storage.Record) error {
-	if e.recordFlowDuplicateRules == 0 {
+	if e.recordTriggeredFlow == 0 {
 		return nil
 	}
 	previous := e.Options.EnforceDuplicateRules

@@ -86,11 +86,11 @@ type Engine struct {
 	FlowFaultInTest func() bool
 
 	platformEventInterview bool
-	// recordFlowDuplicateRules is positive while a record-triggered flow runs:
-	// its Create Records and Update Records elements save under the duplicate
-	// rules, with the saving statement's allowSave header (native rows in
-	// automation_residual_paths).
-	recordFlowDuplicateRules  int
+	// recordTriggeredFlow is positive while a record-triggered after-save flow
+	// runs: its Create and Update Records elements save under the duplicate
+	// rules, and its unhandled Apex action failures surface as the flow's
+	// process failure (native rows in automation_residual_paths).
+	recordTriggeredFlow       int
 	activeFlowName            string
 	pendingInterviewEvents    []storage.Record
 	capturedMixedAfterSave    bool

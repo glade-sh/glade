@@ -38,7 +38,7 @@ func invocableFlowActionRecordCreateError(objectName, node string, err error) er
 
 func (e *Engine) insertInvocableFlowRecord(record storage.Record) (storage.ID, error) {
 	if e.InvocableFlowRecordCreator == nil {
-		if e.recordFlowDuplicateRules > 0 {
+		if e.recordTriggeredFlow > 0 {
 			return e.insertRecordFlowRecord(record)
 		}
 		return e.insertOne(record, nil)
@@ -55,7 +55,7 @@ func (e *Engine) insertInvocableFlowRecord(record storage.Record) (storage.ID, e
 
 func (e *Engine) updateInvocableFlowRecord(record storage.Record) error {
 	if e.InvocableFlowRecordUpdater == nil {
-		if e.recordFlowDuplicateRules > 0 {
+		if e.recordTriggeredFlow > 0 {
 			previous := e.Options.EnforceDuplicateRules
 			e.Options.EnforceDuplicateRules = true
 			defer func() { e.Options.EnforceDuplicateRules = previous }()

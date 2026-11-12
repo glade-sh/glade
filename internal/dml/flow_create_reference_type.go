@@ -72,7 +72,14 @@ func (e *Engine) flowCreateReferencePrefixKnown(field storage.Field) bool {
 	return true
 }
 
-type flowCoreRecordCreateFailure struct{ cause error }
+// flowCoreRecordCreateFailure is an unhandled element failure of a
+// record-triggered flow. saved marks the failures whose singleton save has a
+// native row error (duplicate-rule rejections and Apex action failures); the
+// others keep the error path they had.
+type flowCoreRecordCreateFailure struct {
+	cause error
+	saved bool
+}
 
 func (e *flowCoreRecordCreateFailure) Error() string { return e.cause.Error() }
 func (e *flowCoreRecordCreateFailure) Unwrap() error { return e.cause }
@@ -90,6 +97,16 @@ func flowCoreRecordCreateTriggerError(rule storage.FlowRule, typed *flowCreateRe
 func FlowRecordCreateFailureResult(err error) (Result, bool) {
 	var failure *flowCoreRecordCreateFailure
 	if !errors.As(err, &failure) {
+		return Result{}, false
+	}
+	return resultFromError("", failure.cause), true
+}
+
+// FlowSavedRecordFailureResult is FlowRecordCreateFailureResult limited to the
+// failures that native rows show as the row error of a singleton save.
+func FlowSavedRecordFailureResult(err error) (Result, bool) {
+	var failure *flowCoreRecordCreateFailure
+	if !errors.As(err, &failure) || !failure.saved {
 		return Result{}, false
 	}
 	return resultFromError("", failure.cause), true
