@@ -191,11 +191,9 @@ const lastNameKeyLength = 4
 
 // fuzzyLastName: the match key is the Double Metaphone code of the
 // accent-folded name, four characters at most ("Frost" and "Frosr" are never
-// compared, "Martinez" and "Martinpz" are). Two names that sound alike score
-// 100; the platform decides that with Metaphone 3, which Glade does not
-// carry, so lastNameSoundsAlike accepts only the spelling changes the native
-// rows show to be code-neutral. Otherwise Keyboard Distance decides at 90
-// with confidence (100 + score) / 2.
+// compared, "Martinez" and "Martinpz" are). Two names with equal Metaphone 3
+// codes score 100 (lastNameMetaphone3Equal). Otherwise Keyboard Distance
+// decides at 90 with confidence (100 + score) / 2.
 func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	x, y := foldText(a), foldText(b)
 	if x == y {
@@ -205,7 +203,7 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 		return false, 0
 	}
 	x, y = strings.ReplaceAll(x, "'", ""), strings.ReplaceAll(y, "'", "")
-	if x == y || (lastNameSoundsAlike(x, y) && !lastNameKeptApart[orderedPair(x, y)]) {
+	if x == y || lastNameMetaphone3Equal(x, y) {
 		return true, 100
 	}
 	score, ok := keyboardSimilarity(x, y)
@@ -301,197 +299,6 @@ func keyboardSimilarity(a, b string) (float64, bool) {
 	}
 	return score, false
 }
-
-func isNameVowel(r rune) bool {
-	if strings.ContainsRune("aeiouy", r) {
-		return true
-	}
-	// An accented vowel, or a letter such as "ø" with no ASCII base.
-	return r > unicode.MaxASCII && unicode.IsLetter(r) && r != 'ñ' && r != 'ç' && r != 'ß'
-}
-
-// nameRuns splits a folded name into alternating runs of vowels and of other
-// characters.
-func nameRuns(s string) []string {
-	var runs []string
-	var cur []rune
-	vowel := false
-	for i, r := range s {
-		v := isNameVowel(r)
-		if i > 0 && v != vowel && len(cur) > 0 {
-			runs = append(runs, string(cur))
-			cur = cur[:0]
-		}
-		vowel = v
-		cur = append(cur, r)
-	}
-	if len(cur) > 0 {
-		runs = append(runs, string(cur))
-	}
-	return runs
-}
-
-// lastNameShape renders a name for the sounds-alike comparison. With an
-// empty edit, every vowel run that does not touch a context-sensitive
-// consonant (c, g, h, j, x, or a t or s before it) and is not the first
-// letter becomes a wildcard, so "Taylor", "Tayler" and "Tailor" share a
-// shape. With an edit, vowels stay literal and one consonant respelling is
-// folded: 'd' a doubled consonant, 'k' "ck" and "q" as "k", 'f' "ph" as "f",
-// 'z' "z" as "s", 'h' an "h" outside a digraph, 'w' a "w" after the first
-// letter, 'e' a final "e" after a consonant.
-func lastNameShape(s string, edit byte, freeVowels bool) string {
-	runs := nameRuns(strings.ReplaceAll(s, "ñ", "n"))
-	if len(runs) > 1 && strings.HasPrefix(runs[0], "y") {
-		// An initial "y" before a vowel is a consonant ("Young", "Yung").
-		runs = append([]string{"y", runs[0][1:]}, runs[1:]...)
-		if runs[1] == "" {
-			runs = append(runs[:1], runs[2:]...)
-		}
-	}
-	if edit == 'e' && len(runs) >= 3 && runs[len(runs)-1] == "e" {
-		runs = runs[:len(runs)-1]
-	}
-	out := make([]string, 0, len(runs))
-	for i, run := range runs {
-		first := []rune(run)[0]
-		if isNameVowel(first) && !(i == 0 && run == "y") {
-			prev, next := "", ""
-			if i > 0 {
-				prev = runs[i-1]
-			}
-			if i+1 < len(runs) {
-				next = runs[i+1]
-			}
-			sensitive := i == 0 || lastNameSensitive(prev) || lastNameSensitive(next) ||
-				((strings.HasSuffix(prev, "t") || strings.HasSuffix(prev, "s")) && len([]rune(run)) > 1 && first == 'i')
-			if !freeVowels || sensitive {
-				out = append(out, run)
-			} else {
-				out = append(out, "*")
-			}
-			continue
-		}
-		r := []rune(run)
-		switch edit {
-		case 'd':
-			var folded []rune
-			for _, c := range r {
-				if len(folded) == 0 || folded[len(folded)-1] != c {
-					folded = append(folded, c)
-				}
-			}
-			r = folded
-		case 'k':
-			// "ck" as "k", but not in "Mc" ("McKnight" is not "Mknight").
-			if !(i == 0 && strings.HasPrefix(string(r), "mc")) {
-				r = []rune(strings.ReplaceAll(string(r), "ck", "k"))
-			}
-			r = []rune(strings.ReplaceAll(string(r), "q", "k"))
-		case 'f':
-			r = []rune(strings.ReplaceAll(string(r), "ph", "f"))
-		case 'z':
-			r = []rune(strings.ReplaceAll(string(r), "z", "s"))
-		case 't':
-			r = []rune(strings.ReplaceAll(strings.ReplaceAll(string(r), "tch", "ch"), "sch", "sh"))
-		case 'h', 'w':
-			var kept []rune
-			for j, c := range r {
-				drop := false
-				if !(i == 0 && j == 0) {
-					if edit == 'w' && c == 'w' {
-						drop = true
-					}
-					if edit == 'h' && c == 'h' && !(j > 0 && strings.ContainsRune("cstpg", r[j-1])) {
-						drop = true
-					}
-				}
-				if !drop {
-					kept = append(kept, c)
-				}
-			}
-			r = kept
-		}
-		if len(r) == 0 {
-			out = append(out, "-")
-		} else {
-			out = append(out, string(r))
-		}
-	}
-	return strings.Join(out, "|")
-}
-
-// lastNameSensitive reports a consonant run whose sound depends on the
-// vowels next to it: one with c, g, j or x ("Lach" does not find "Leach").
-func lastNameSensitive(run string) bool {
-	return strings.ContainsAny(run, "cgxj")
-}
-
-var (
-	lastNameSilentL    = regexp.MustCompile(`[ao]l+[kmfv]|ould`)
-	lastNameDoubleRisk = regexp.MustCompile(`[ao]l+[kmfv]|l+n$`)
-	lastNameSoftBefore = regexp.MustCompile(`[cg][eiy]+$`)
-	lastNameWeakVowel  = regexp.MustCompile(`[eiuy]`)
-)
-
-// lastNameDoubleSafe rejects the doubled consonants the rows show Metaphone 3
-// reads differently from the single letter: next to a silent L ("Walker",
-// "Wallker"), after a soft c or g ("Girard", "Girrard"), before or as one of
-// c, g, h, j, x ("Bethea", "Betthea"; "Bence", "Bennce").
-func lastNameDoubleSafe(s string) bool {
-	if lastNameDoubleRisk.MatchString(s) {
-		return false
-	}
-	r := []rune(s)
-	for i := 1; i < len(r); i++ {
-		if r[i] != r[i-1] || isNameVowel(r[i]) {
-			continue
-		}
-		start := i - 1
-		for start > 0 && r[start-1] == r[i] {
-			start--
-		}
-		end := i + 1
-		for end < len(r) && r[end] == r[i] {
-			end++
-		}
-		if strings.ContainsRune("cghxj", r[i]) || lastNameSoftBefore.MatchString(string(r[:start])) || (end < len(r) && strings.ContainsRune("cghxj", r[end])) {
-			return false
-		}
-		i = end - 1
-	}
-	return true
-}
-
-// lastNameSoundsAlike reports two names that differ only by spelling changes
-// the native rows score 100 (equal Metaphone 3 codes): any change inside
-// vowel runs away from a context-sensitive consonant, or one kind of
-// consonant respelling with every vowel unchanged. A dropped vowel is not
-// accepted: natively "Smith" finds "Smth" but "Cantu" does not find "Cntu".
-func lastNameSoundsAlike(x, y string) bool {
-	if lastNameShape(x, 0, true) == lastNameShape(y, 0, true) {
-		if (lastNameSilentL.MatchString(x) || lastNameSilentL.MatchString(y)) && lastNameWeakVowel.ReplaceAllString(x, "*") != lastNameWeakVowel.ReplaceAllString(y, "*") {
-			return false
-		}
-		return true
-	}
-	if lastNameMac.ReplaceAllString(x, "mc$1") == lastNameMac.ReplaceAllString(y, "mc$1") {
-		return true
-	}
-	for _, edit := range []byte("zhwdekft") {
-		if lastNameShape(x, edit, false) == lastNameShape(y, edit, false) {
-			return edit != 'd' || (lastNameDoubleSafe(x) && lastNameDoubleSafe(y))
-		}
-		// A final "e", a silent "h" or "w" and "z" for "s" also combine with
-		// vowel changes ("Smithe" and "Smyth", "Brown" and "Braun"); the
-		// other respellings do not ("Lammb" does not find "Lemb").
-		if strings.ContainsRune("ehwz", rune(edit)) && lastNameShape(x, edit, true) == lastNameShape(y, edit, true) {
-			return !lastNameSilentL.MatchString(x) && !lastNameSilentL.MatchString(y)
-		}
-	}
-	return false
-}
-
-var lastNameMac = regexp.MustCompile(`^mac([^aeiouy])`)
 
 // ---- Phone: weighted sections; threshold 80 ----
 

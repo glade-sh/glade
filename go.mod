@@ -5,6 +5,7 @@ go 1.26.10
 require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/dlclark/metaphone3 v0.0.0-20190903202417-5fe87fcdd547
 	github.com/dlclark/regexp2 v1.12.0
 	github.com/fsnotify/fsnotify v1.10.0
 	github.com/glade-sh/apex-parser v0.1.0

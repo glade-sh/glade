@@ -10,7 +10,7 @@ import sys
 
 
 PARSER_MODULE = "github.com/glade-sh/apex-parser"
-NOTICE_NAME = re.compile(r"^(license|notice|copying)([._-].*)?$", re.IGNORECASE)
+NOTICE_NAME = re.compile(r"^(license|notice|copying|attrib)([._-].*)?$", re.IGNORECASE)
 
 
 def command(*args):
