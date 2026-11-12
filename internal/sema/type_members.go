@@ -3,9 +3,11 @@ package sema
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -131,6 +133,10 @@ func (m *semaTypeMemberModel) hasField(key string) bool {
 type semaTypeMemberState struct {
 	base     *semaTypeMemberModel
 	platform *semaTypeMemberModel
+	// historyProbe is set only on the private state of a parallel body run.
+	// semaAnyKnownField raises it when an earlier type's hydration could have
+	// changed its answer, which a worker that has not seen that type cannot know.
+	historyProbe *atomic.Bool
 }
 
 type semaTypeMemberView struct {
@@ -545,10 +551,150 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 }
 
 func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
-	return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+	workers := semaMethodBodyWorkerCount()
+	if workers <= 1 || model == nil || model.state == nil {
+		return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+	}
+	return a.checkMethodBodiesSpeculative(index, model, recorder, workers)
+}
+
+// checkMethodBodiesSpeculative checks bodies on several workers and still
+// reports exactly what one worker reports. A single worker carries one view
+// through every type, so a type's check can see what earlier types hydrated.
+// Parallel workers see less. The only reader of that history is
+// semaAnyKnownField, and it raises the state's probe whenever it answers "no
+// such field": the one answer a smaller history can get wrong. A raised probe
+// discards the parallel run and repeats it serially on the untouched view.
+// Otherwise the workers' history is merged into the caller's view, so later
+// passes see what a serial run would have left there.
+func (a *Analyzer) checkMethodBodiesSpeculative(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workers int) []diagnostic.Diagnostic {
+	started := recorder.beginPhase()
+	var probe atomic.Bool
+	probed := &semaTypeMemberState{base: model.state.base, platform: model.state.platform, historyProbe: &probe}
+	scratch := model.cloneOnto(probed)
+	run := &semaBodyRun{seedWorkers: true, abort: &probe}
+	diagnostics, recovered := a.checkMethodBodiesRecovering(index, scratch, workers, run)
+	if probe.Load() {
+		return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+	}
+	if recovered != nil {
+		panic(recovered)
+	}
+	for _, view := range run.views {
+		model.mergeHydrated(view)
+	}
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.MethodBodies, started)
+	}
+	return diagnostics
+}
+
+// checkMethodBodiesRecovering runs the speculative attempt and hands back a
+// panic instead of raising it: a raised probe discards the attempt, panic
+// included, because the serial rerun may not reach it.
+func (a *Analyzer) checkMethodBodiesRecovering(index typesys.Index, scratch *semaTypeMemberView, workers int, run *semaBodyRun) (diagnostics []diagnostic.Diagnostic, recovered any) {
+	defer func() {
+		recovered = recover()
+	}()
+	return a.checkMethodBodiesRun(index, scratch, nil, workers, run), nil
+}
+
+// semaBodyRun carries the extras of a speculative parallel body run.
+type semaBodyRun struct {
+	// seedWorkers starts each worker's view from the primary view's hydrated
+	// entries, as a serial run's view would be when body checking began.
+	seedWorkers bool
+	// abort, once true, stops workers from claiming further types.
+	abort *atomic.Bool
+	// views receives every worker view, primary first.
+	views []*semaTypeMemberView
+}
+
+// cloneOnto returns a view over state that starts with v's configuration and
+// hydrated entries. Entries are replaced, never edited in place, so sharing
+// their maps is safe.
+func (v *semaTypeMemberView) cloneOnto(state *semaTypeMemberState) *semaTypeMemberView {
+	out := state.view()
+	out.current = v.current
+	out.sourceUnit = v.sourceUnit
+	out.anonymous = v.anonymous
+	out.namedApexReferenceObjects = v.namedApexReferenceObjects
+	for key, members := range v.hydrated {
+		out.hydrated[key] = members
+	}
+	if len(v.namedApexReferenceMembers) != 0 {
+		out.namedApexReferenceMembers = make(map[string]typeMembers, len(v.namedApexReferenceMembers))
+		for key, members := range v.namedApexReferenceMembers {
+			out.namedApexReferenceMembers[key] = members
+		}
+	}
+	return out
+}
+
+// mergeHydrated adds src's hydrated entries to v. An entry both views hold
+// keeps v's members and gains the fields only src's copy has, which is what a
+// view that saw both histories would hold.
+func (v *semaTypeMemberView) mergeHydrated(src *semaTypeMemberView) {
+	merge := func(dst map[string]typeMembers, from map[string]typeMembers) {
+		for key, members := range from {
+			held, ok := dst[key]
+			if !ok {
+				dst[key] = members
+				continue
+			}
+			var fields map[string]typesys.MemberSymbol
+			for fieldKey, field := range members.fields {
+				if _, has := held.fields[fieldKey]; has {
+					continue
+				}
+				if fields == nil {
+					fields = make(map[string]typesys.MemberSymbol, len(held.fields)+1)
+					for k, f := range held.fields {
+						fields[k] = f
+					}
+				}
+				fields[fieldKey] = field
+			}
+			if fields != nil {
+				held.fields = fields
+				dst[key] = held
+			}
+		}
+	}
+	merge(v.hydrated, src.hydrated)
+	if len(src.namedApexReferenceMembers) != 0 {
+		if v.namedApexReferenceMembers == nil {
+			v.namedApexReferenceMembers = make(map[string]typeMembers, len(src.namedApexReferenceMembers))
+		}
+		merge(v.namedApexReferenceMembers, src.namedApexReferenceMembers)
+	}
+	v.changedHydration()
+}
+
+// semaMethodBodyMaxWorkers bounds the body-check workers. Each worker holds a
+// private member view, and bodies are CPU bound, so more than a few cores
+// add memory without adding speed.
+const semaMethodBodyMaxWorkers = 8
+
+// semaMethodBodyWorkerCount follows the process's CPU budget: one worker under
+// GOMAXPROCS=1 (the serial path), up to semaMethodBodyMaxWorkers otherwise.
+// Diagnostics do not depend on the count.
+func semaMethodBodyWorkerCount() int {
+	workers := runtime.GOMAXPROCS(0)
+	if workers > semaMethodBodyMaxWorkers {
+		workers = semaMethodBodyMaxWorkers
+	}
+	if workers < 1 {
+		workers = 1
+	}
+	return workers
 }
 
 func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workerCount int) []diagnostic.Diagnostic {
+	return a.checkMethodBodiesRun(index, model, recorder, workerCount, nil)
+}
+
+func (a *Analyzer) checkMethodBodiesRun(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workerCount int, run *semaBodyRun) []diagnostic.Diagnostic {
 	constructability := buildConstructability(index)
 	duplicateTypes := semaDuplicateTypeKeys(index)
 	sources := a.sources
@@ -569,8 +715,18 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 			views := make([]*semaTypeMemberView, workerCount)
 			views[0] = model
 			for workerID := 1; workerID < workerCount; workerID++ {
-				views[workerID] = model.state.view()
+				if run != nil && run.seedWorkers {
+					views[workerID] = model.cloneOnto(model.state)
+				} else {
+					views[workerID] = model.state.view()
+				}
 			}
+			if run != nil {
+				run.views = views
+			}
+			// Worker w takes tasks w, w+n, w+2n, ..., so each type's view is the
+			// same on every run. Each result lands in its own type's slot and
+			// the merge below walks the slots in the serial order.
 			var workers sync.WaitGroup
 			for workerID := 0; workerID < workerCount; workerID++ {
 				workerID := workerID
@@ -578,24 +734,34 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 				go func() {
 					defer workers.Done()
 					for taskIndex := workerID; taskIndex < len(tasks); taskIndex += workerCount {
+						if run != nil && run.abort != nil && run.abort.Load() {
+							return
+						}
 						task := tasks[taskIndex]
 						results[task.typeIndex] = a.checkSemaMethodBodyTask(index, task, workItems, views[workerID], duplicateTypes, constructability)
 					}
 				}()
 			}
 			workers.Wait()
-			for _, typeIndex := range semaInnerFirstTypeOrder(index) {
-				result := results[typeIndex]
-				if result.recovered != nil {
-					panic(result.recovered)
+			// The serial path stops at the first panicking type in index order.
+			for typeIndex := range results {
+				if results[typeIndex].recovered != nil {
+					panic(results[typeIndex].recovered)
 				}
-				diagnostics = append(diagnostics, result.diagnostics...)
+			}
+			for _, typeIndex := range semaInnerFirstTypeOrder(index) {
+				diagnostics = append(diagnostics, results[typeIndex].diagnostics...)
 			}
 			if recorder != nil {
 				recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
 			}
 			return diagnostics
 		}
+	}
+	if run != nil {
+		// Fewer tasks than workers: the pass ran serially on this view, which
+		// holds the history the caller's view must receive.
+		run.views = []*semaTypeMemberView{model}
 	}
 	workItemIndex := 0
 	byType := make([][]diagnostic.Diagnostic, len(index.Types))
@@ -1226,7 +1392,12 @@ func buildTypeMembersWithSources(index typesys.Index, sources *semaSources) *sem
 	return buildTypeMemberLayerWithSources(index, sources, semaPlatformTypeMemberModel())
 }
 
+// semaTypeMemberLayerBuilds counts whole-project member models built in this
+// process. Tests read it to prove an analysis builds one model, not one per class.
+var semaTypeMemberLayerBuilds atomic.Int64
+
 func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, platform *semaTypeMemberModel) *semaTypeMemberModel {
+	semaTypeMemberLayerBuilds.Add(1)
 	if sources == nil {
 		sources = newSemaSources(nil, nil)
 	}
@@ -1680,6 +1851,27 @@ func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]s
 
 func buildSemaTypeMemberView(index typesys.Index) *semaTypeMemberView {
 	return newSemaTypeMemberState(buildTypeMembers(index)).view()
+}
+
+// semaLazyView hands a pass one member view, built on first use. With a state
+// the view layers over the analysis' shared type-member model; without one the
+// pass builds a private model, as callers outside a full analysis do. A pass
+// that never reaches a candidate declaration builds nothing.
+type semaLazyView struct {
+	state *semaTypeMemberState
+	index typesys.Index
+	model *semaTypeMemberView
+}
+
+func (l *semaLazyView) get() *semaTypeMemberView {
+	if l.model == nil {
+		if l.state != nil {
+			l.model = l.state.view()
+		} else {
+			l.model = buildSemaTypeMemberView(l.index)
+		}
+	}
+	return l.model
 }
 
 func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {

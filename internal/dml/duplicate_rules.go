@@ -14,6 +14,21 @@ type DuplicateMatch struct {
 	Rule    string
 	Engine  string
 	Records []storage.Record
+	// Confidences holds each record's match confidence (Datacloud
+	// MatchRecord.matchConfidence), parallel to Records.
+	Confidences []float64
+}
+
+// byMatchRecordID orders a match's records and confidences together by ID.
+type byMatchRecordID struct{ m *DuplicateMatch }
+
+func (b byMatchRecordID) Len() int { return len(b.m.Records) }
+func (b byMatchRecordID) Less(i, j int) bool {
+	return b.m.Records[i].ID < b.m.Records[j].ID
+}
+func (b byMatchRecordID) Swap(i, j int) {
+	b.m.Records[i], b.m.Records[j] = b.m.Records[j], b.m.Records[i]
+	b.m.Confidences[i], b.m.Confidences[j] = b.m.Confidences[j], b.m.Confidences[i]
 }
 
 // DuplicateResult mirrors Datacloud.DuplicateResult for one duplicate rule.
@@ -166,27 +181,59 @@ func standardDuplicateMatcher(lowerObject string, candidate storage.Record) func
 	return nil
 }
 
-func exactDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.Record) (bool, bool) {
+// customDuplicateMatch evaluates a custom matching rule's items. Exact items
+// compare text without letter case (DR10); fuzzy items score the pair with the
+// field-specific method. Blank handling is shared: MatchBlanks pairs two blank
+// values, NullNotAllowed never does, and one blank side never matches.
+//
+// The returned confidence is the matching rule's match confidence: the mean of
+// the item scores (an exact or blank match scores 100, a fuzzy item its
+// method score). Native rows prove the mean for single fuzzy items and for a
+// fuzzy item paired with an exact item; for a filter with OR branches the mean
+// runs over the matched items only, which no row covers.
+func customDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.Record) (matched, supported bool, confidence float64) {
 	matches := make([]bool, len(rule.Items))
+	scores := make([]float64, len(rule.Items))
 	for i, item := range rule.Items {
 		left, lok := candidate.GetField(item.Field)
 		right, rok := existing.GetField(item.Field)
 		leftBlank, rightBlank := duplicateBlank(left, lok), duplicateBlank(right, rok)
+		matchBlanks := strings.EqualFold(item.BlankBehavior, "MatchBlanks")
 		switch {
 		case leftBlank || rightBlank:
 			// DR09: MatchBlanks pairs two blank keys; NullNotAllowed never does.
-			matches[i] = leftBlank && rightBlank && strings.EqualFold(item.BlankBehavior, "MatchBlanks")
+			matches[i] = leftBlank && rightBlank && matchBlanks
+			scores[i] = 100
+		case !strings.EqualFold(item.Method, "Exact"):
+			var score float64
+			matches[i], score = FuzzyScore(item.Method, workflowValueString(left), workflowValueString(right), matchBlanks)
+			scores[i] = fuzzyItemScore(item.Method, score)
 		default:
 			// DR10: Exact compares text without letter case.
 			matches[i] = strings.EqualFold(strings.TrimSpace(workflowValueString(left)), strings.TrimSpace(workflowValueString(right)))
+			scores[i] = 100
 		}
 	}
-	return evaluateLookupFilterLogic(rule.BooleanFilter, matches)
+	matched, supported = evaluateLookupFilterLogic(rule.BooleanFilter, matches)
+	if !matched || !supported {
+		return matched, supported, 0
+	}
+	sum, count := 0.0, 0
+	for i, ok := range matches {
+		if ok {
+			sum += scores[i]
+			count++
+		}
+	}
+	if count == 0 {
+		return matched, supported, 100
+	}
+	return matched, supported, sum / float64(count)
 }
 
 // FindDuplicateMatches evaluates one duplicate rule for the record. supported
 // is false when the rule needs matching semantics outside the captured rows:
-// cross-object, fuzzy or unresolved matching rules. Callers then leave the
+// cross-object, unsupported fuzzy methods or unresolved matching rules. Callers then leave the
 // rule unenforced, as before duplicate enforcement existed.
 func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (DuplicateResult, bool) {
 	result := DuplicateResult{Rule: rule.Name, RuleID: rule.ID, Object: rule.Object}
@@ -198,13 +245,17 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			return result, false
 		}
 		standard := storage.IsStandardMatchingRule(matching.Object, matching.Name) && len(matching.Items) == 0
+		fuzzy := false
 		if !standard {
 			if !strings.EqualFold(matching.Status, "Active") || len(matching.Items) == 0 {
 				return result, false
 			}
 			for _, item := range matching.Items {
-				if !strings.EqualFold(item.Method, "Exact") {
+				if !strings.EqualFold(item.Method, "Exact") && !FuzzyMethodSupported(item.Method) {
 					return result, false
+				}
+				if !strings.EqualFold(item.Method, "Exact") {
+					fuzzy = true
 				}
 			}
 		}
@@ -213,6 +264,10 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			return result, false
 		}
 		match := DuplicateMatch{Object: objectName, Rule: matching.Name, Engine: exactMatchEngine}
+		if fuzzy {
+			// Native custom rules with a fuzzy item report the fuzzy engine.
+			match.Engine = storage.StandardMatchEngine
+		}
 		var standardMatch func(existing storage.Record) bool
 		scan := true
 		if standard {
@@ -228,19 +283,21 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 				continue
 			}
 			var matched bool
+			confidence := 100.0
 			if standard {
 				matched = standardMatch(existing)
 			} else {
 				var supported bool
-				if matched, supported = exactDuplicateMatch(matching, record, existing); !supported {
+				if matched, supported, confidence = customDuplicateMatch(matching, record, existing); !supported {
 					return result, false
 				}
 			}
 			if matched {
 				match.Records = append(match.Records, existing.Clone())
+				match.Confidences = append(match.Confidences, confidence)
 			}
 		}
-		sort.Slice(match.Records, func(i, j int) bool { return match.Records[i].ID < match.Records[j].ID })
+		sort.Sort(byMatchRecordID{&match})
 		result.Matches = append(result.Matches, match)
 	}
 	return result, true

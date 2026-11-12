@@ -545,6 +545,7 @@
     "./internal/cpurisk": null,
     "./internal/dap": null,
     "./internal/dml": null,
+    "./internal/filestamp": null,
     "./internal/frontendcache": null,
     "./internal/gladecli": [
       "TestCase339ServerBoundsSlowRequestBody",
@@ -682,6 +683,7 @@
     "./internal/tui": null,
     "./internal/typesys": null,
     "./internal/visualforce": [
+      "TestControllerGateSharedByConcurrentCallers",
       "TestRenderEnvironmentConcurrentAccess",
       "TestShardPartitionMatchesUnshardedTestSet",
       "TestV13SalesforceConformance",
@@ -704,6 +706,7 @@
     "./internal/cpurisk": 10,
     "./internal/dap": 131,
     "./internal/dml": 102,
+    "./internal/filestamp": 15,
     "./internal/frontendcache": 15,
     "./internal/gladecli": 3691,
     "./internal/gladehome": 780,

@@ -46,6 +46,7 @@ func assertApexProjectHistoryRebalances(t *testing.T, planner, output string, di
 		}
 	}
 	t.Setenv("GITHUB_EVENT_NAME", "push")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	// The same skew under a history-driven plan is a planner failure.
 	setPlanHistoryUsed(t, dirs, true)
 	if out, err := runNShardHistory(t, "cli", output, dirs); err == nil || !strings.Contains(out, "exceeds 1.5x") {
@@ -58,6 +59,7 @@ func assertApexProjectHistoryRebalances(t *testing.T, planner, output string, di
 		t.Fatalf("main must retain measured fallback-planned project durations: %v\n%s", err, out)
 	}
 	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	if out, err := runNShardHistory(t, "cli", output, dirs); err != nil || !strings.Contains(out, "timing advisory:") {
 		t.Fatalf("PR must retain measured project durations: %v\n%s", err, out)
 	}
@@ -158,6 +160,7 @@ func TestCIApexNShardBalanceTimingRoutes(t *testing.T) {
 							timing = "above"
 						}
 						t.Setenv("GITHUB_EVENT_NAME", event)
+						t.Setenv("GITHUB_HEAD_REF", "")
 						elapsed := make([]float64, count)
 						for i := range elapsed {
 							if timing != "zero" {
@@ -203,6 +206,7 @@ func TestCIApexNShardBalanceTimingRoutes(t *testing.T) {
 
 func TestCIApexSixShardBalanceAdvisoryPreservesUnionGuard(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	for _, entry := range []string{"cli", "sourced"} {
 		for _, mutation := range []string{"missing", "duplicate", "extra"} {
 			t.Run(entry+"/"+mutation, func(t *testing.T) {
@@ -232,5 +236,38 @@ func TestCIApexSixShardBalanceAdvisoryPreservesUnionGuard(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// The 1.5x balance check is advisory on ordinary pull requests and enforced
+// on train and release pull requests, on push and on every other event.
+func TestCIApexBalanceEnforcedOnTrainAndReleasePullRequests(t *testing.T) {
+	cases := []struct {
+		name, event, headRef string
+		wantErr              bool
+	}{
+		{"push", "push", "", true},
+		{"push with stray head ref", "push", "feature/x", true},
+		{"ordinary PR", "pull_request", "feature/balance", false},
+		{"PR without head ref", "pull_request", "", false},
+		{"train PR", "pull_request", "train/v038-e", true},
+		{"release PR", "pull_request", "release/v0.3.8", true},
+		{"look-alike prefix", "pull_request", "trains/x", false},
+		{"look-alike nested", "pull_request", "feature/train/x", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("GITHUB_EVENT_NAME", tc.event)
+			t.Setenv("GITHUB_HEAD_REF", tc.headRef)
+			output, dirs := nShardHistoryFixture(t, []float64{3, 1, 1, 1})
+			setPlanHistoryUsed(t, dirs, true)
+			out, err := runNShardHistory(t, "generic", output, dirs)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("refresh error = %v, wantErr %v\n%s", err, tc.wantErr, out)
+			}
+			if strings.Contains(out, "timing advisory:") == tc.wantErr {
+				t.Fatalf("incorrect timing advisory\n%s", out)
+			}
+		})
 	}
 }

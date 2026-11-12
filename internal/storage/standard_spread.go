@@ -45,13 +45,16 @@ func (o *OrgState) EnableLazyStandardSpread() {
 // LazyStandardSpreadEnabled reports whether catalog objects are still pending
 // for this org. MaterializeStandardObjectSpread clears it.
 func (o *OrgState) LazyStandardSpreadEnabled() bool {
-	return o != nil && o.lazyStandardSpread
+	return o != nil && (o.lazyStandardSpread || o.StandardSpread != "")
 }
 
 // LazyStandardObjectName resolves a name to a catalog object the lazy spread
 // would still add: a known standard object the org shape allows and that is
 // not installed yet. The result is the canonical API name.
 func LazyStandardObjectName(org *OrgState, name string) (string, bool) {
+	if org != nil && org.StandardSpread != "" {
+		return spreadObjectOwed(org, name)
+	}
 	if org == nil || !org.lazyStandardSpread {
 		return "", false
 	}
@@ -79,6 +82,16 @@ func EnsureLazyStandardObject(org *OrgState, name string) (string, bool) {
 	canonical, ok := LazyStandardObjectName(org, name)
 	if !ok {
 		return "", false
+	}
+	if org.StandardSpread != "" {
+		if installed, ok := installSpreadObject(org, canonical); ok {
+			return installed, true
+		}
+		ensureStandardObjectWithProfile(org, canonical, nil)
+		if org.StandardSpread == standardSpreadShaped {
+			applyShapeToLazyObject(org, canonical)
+		}
+		return canonical, true
 	}
 	ensureStandardObjectWithProfile(org, canonical, nil)
 	applyShapeToLazyObject(org, canonical)
@@ -119,6 +132,9 @@ func refreshObjectFeatureFields(org *OrgState, objectName string) {
 // lookups that missed) use it so their answers match an eagerly built org.
 // It returns false when the org was not lazy or is already complete.
 func MaterializeStandardObjectSpread(org *OrgState) bool {
+	if org != nil && org.StandardSpread != "" {
+		return materializeSpreadSource(org)
+	}
 	if org == nil || !org.lazyStandardSpread {
 		return false
 	}

@@ -1052,11 +1052,10 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -1084,14 +1083,13 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 }
 
 func validateApexMetadataInput(path string, expected typesys.ApexMetadataInput) error {
-	data, err := os.ReadFile(path) // #nosec G304 -- fixed metadata companion for an indexed Apex source.
+	actual, err := currentFileDigest(path)
 	if err != nil {
 		if os.IsNotExist(err) && !expected.Present {
 			return nil
 		}
 		return sourceSnapshotMismatch(path, expected.Digest, nil, err)
 	}
-	actual := sha256.Sum256(data)
 	if !expected.Present || actual != expected.Digest {
 		return sourceSnapshotMismatch(path, expected.Digest, &actual, nil)
 	}
@@ -1698,11 +1696,10 @@ func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDi
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		data, err := os.ReadFile(file) // #nosec G304 -- indexed source path.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -4087,11 +4084,10 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	}
 	cache.mu.RUnlock()
 	for file, expected := range files {
-		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return cache.recordSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return cache.recordSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -4900,6 +4896,29 @@ var standardApexTestOrgCache struct {
 	org   storage.OrgState
 }
 
+// eagerStandardSpread makes every test org start from the whole standard
+// catalog instead of the source-backed lazy spread. The lazy spread must give
+// the same answers; tests flip this to compare the two.
+var eagerStandardSpread atomic.Bool
+
+// lazyStandardApexTestOrg is the empty org of the source-backed lazy spread:
+// catalog objects arrive on first reference with the definition the eager
+// spread holds.
+func lazyStandardApexTestOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	org.OrgID = storage.DefaultOrgID
+	org.EnableStandardSpreadSource()
+	return org
+}
+
+// standardApexTestOrgForRun starts the org of a test run.
+func standardApexTestOrgForRun() storage.OrgState {
+	if eagerStandardSpread.Load() {
+		return standardApexTestOrg()
+	}
+	return lazyStandardApexTestOrg()
+}
+
 func standardApexTestOrg() storage.OrgState {
 	standardApexTestOrgCache.mu.Lock()
 	if !standardApexTestOrgCache.built {
@@ -4986,10 +5005,11 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 	key, _ := json.Marshal(struct {
 		Features  []string
 		DomainURL string
-	}{features, domainURL})
+		Eager     bool
+	}{features, domainURL, eagerStandardSpread.Load()})
 	shapedStandardApexTestOrgCache.mu.Lock()
 	if shapedStandardApexTestOrgCache.key != string(key) {
-		org := standardApexTestOrg()
+		org := standardApexTestOrgForRun()
 		org.APIVersion = storage.DefaultRESTAPIVersion
 		org.DomainURL = domainURL
 		storage.ApplyProjectOrgShape(&org, features)
@@ -5003,6 +5023,16 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 }
 
 func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState {
+	org := orgFromIndexLazy(index, caches...)
+	// This host-facing API returns the complete schema a caller can enumerate.
+	storage.MaterializeStandardObjectSpread(&org)
+	return org
+}
+
+// orgFromIndexLazy is orgFromIndex for callers that fingerprint or compare the
+// org and treat catalog objects the lazy spread has not installed as absent
+// from both sides.
+func orgFromIndexLazy(index typesys.Index, caches ...*sourceCache) storage.OrgState {
 	org, _ := orgFromIndexWithError(index, caches...)
 	// This host-facing API exposes mutable schema maps. Internal runtime
 	// construction retains frozen definitions and detaches only its overlays.
@@ -5034,7 +5064,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	if shapedSeed {
 		org = shapedStandardApexTestOrg(features, domainURL)
 	} else {
-		org = standardApexTestOrg()
+		org = standardApexTestOrgForRun()
 		// The shaped route released the catalogs when its seed was built. This
 		// route reads them while the project objects and shape apply, so it
 		// releases once the org is complete, and only once per process.

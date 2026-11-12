@@ -50,6 +50,11 @@ func (vm *VM) lazyResolveQueryObjectsRecursive(query *soql.Query, depth int) {
 	if query == nil || depth > 8 || !vm.Org.LazyStandardSpreadEnabled() {
 		return
 	}
+	if lazyVirtualSchemaObject(query.Object) {
+		// The virtual schema rows are built from every object the org holds.
+		vm.materializeLazyStandardSpread()
+		return
+	}
 	vm.resolveObjectName(query.Object)
 	for _, typeof := range query.Typeofs {
 		for typeName := range typeof.When {
@@ -93,4 +98,14 @@ func (vm *VM) lazySpreadCompletesMissingObject(err error) bool {
 		return false
 	}
 	return vm.materializeLazyStandardSpread()
+}
+
+// lazyVirtualSchemaObject reports whether name is a virtual schema object whose
+// rows derive from every object definition in the org.
+func lazyVirtualSchemaObject(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "entitydefinition", "entityparticle", "fielddefinition", "relationshipdomain", "userentityaccess", "userfieldaccess":
+		return true
+	}
+	return false
 }

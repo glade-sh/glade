@@ -70,10 +70,10 @@ func pageAndEmailFilesKey(p project.Project) string {
 // schema that expression validation reads, computed once per project source set.
 func (c *loadCache) expressionSources(p project.Project) (*expressionValidationSources, error) {
 	if c == nil {
-		return loadExpressionValidationSources(p)
+		return sharedExpressionSources(p)
 	}
 	return c.sources.get(apexFilesKey(p)+"\x01"+p.Root+"\x01"+p.Namespace, func() (*expressionValidationSources, error) {
-		return loadExpressionValidationSources(p)
+		return sharedExpressionSources(p)
 	})
 }
 

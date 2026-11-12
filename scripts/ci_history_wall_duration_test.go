@@ -128,6 +128,7 @@ func sequentialTest(name string, seconds float64) []wallEvent {
 
 func TestCIApexHistoryWeighsParallelSubtestParentsByWallTime(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "push")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	output, dirs := wallHistoryFixture(t, fixturePackage, false, [][]wallEvent{
 		parallelParent("TestWall00", 240),
 		sequentialTest("TestWall01", 240),
@@ -143,6 +144,7 @@ func TestCIApexHistoryWeighsParallelSubtestParentsByWallTime(t *testing.T) {
 
 func TestCIApexHistoryWallTimeFallsBackToElapsed(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	cases := map[string][]wallEvent{
 		// A top-level parallel test waits for the sequential tests; only its
 		// Elapsed is its own cost.
@@ -203,6 +205,7 @@ func TestCIApexHistoryBalanceGateUsesWallTime(t *testing.T) {
 		sequentialTest("TestWall02", 1),
 	}
 	t.Setenv("GITHUB_EVENT_NAME", "push")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	output, dirs := wallHistoryFixture(t, fixturePackage, true, events)
 	if out, err := runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs); err == nil || !strings.Contains(out, "shard 0 elapsed") || !strings.Contains(out, "exceeds 1.5x") {
 		t.Fatalf("history-planned skew hidden behind parallel subtests must be rejected: %v\n%s", err, out)
@@ -221,6 +224,7 @@ func TestCIApexHistoryBalanceGateUsesWallTime(t *testing.T) {
 func TestCIHistoryWallTimeIsLimitedToApex(t *testing.T) {
 	const sema = "github.com/glade-sh/glade/internal/sema"
 	t.Setenv("GITHUB_EVENT_NAME", "push")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	output, dirs := wallHistoryFixture(t, sema, true, [][]wallEvent{
 		parallelParent("TestWall00", 240),
 		sequentialTest("TestWall01", 0.25),
