@@ -42,7 +42,7 @@ func runtimeExpressionResolver(key runtimeCacheKey, index typesys.Index) vm.Expr
 	// The runtime key hashes source contents, not every field the member
 	// model reads (artifact and generated types carry no source snapshot), so
 	// the identity also covers the resolver's own inputs.
-	key += runtimeCacheKey("\x00" + expressionResolverInputs(index))
+	key += runtimeCacheKey("\x00" + memoizedExpressionResolverInputs(index))
 	expressionResolverMu.Lock()
 	defer expressionResolverMu.Unlock()
 	for i, entry := range expressionResolvers {
@@ -58,6 +58,44 @@ func runtimeExpressionResolver(key runtimeCacheKey, index typesys.Index) vm.Expr
 		expressionResolvers = append([]expressionResolverEntry(nil), expressionResolvers[len(expressionResolvers)-maxExpressionResolvers:]...)
 	}
 	return resolver
+}
+
+type expressionFingerprint struct {
+	types     []typesys.TypeSymbol // retained so the backing array cannot be reused
+	namespace string
+	value     string
+}
+
+var (
+	expressionFingerprintMu sync.Mutex
+	expressionFingerprints  []expressionFingerprint // oldest first
+)
+
+// memoizedExpressionResolverInputs computes the fingerprint once per index
+// generation. An index is an immutable generation: copies of it share the
+// Types backing array, so the array's address and length identify it. The
+// array is retained by the memo, so its address cannot be reused by another
+// index while the entry lives. The memo is bounded like the resolvers.
+func memoizedExpressionResolverInputs(index typesys.Index) string {
+	if len(index.Types) == 0 {
+		return expressionResolverInputs(index)
+	}
+	expressionFingerprintMu.Lock()
+	for _, e := range expressionFingerprints {
+		if len(e.types) == len(index.Types) && &e.types[0] == &index.Types[0] && e.namespace == index.Project.Namespace {
+			expressionFingerprintMu.Unlock()
+			return e.value
+		}
+	}
+	expressionFingerprintMu.Unlock()
+	value := expressionResolverInputs(index)
+	expressionFingerprintMu.Lock()
+	defer expressionFingerprintMu.Unlock()
+	expressionFingerprints = append(expressionFingerprints, expressionFingerprint{index.Types, index.Project.Namespace, value})
+	if len(expressionFingerprints) > maxExpressionResolvers {
+		expressionFingerprints = append([]expressionFingerprint(nil), expressionFingerprints[len(expressionFingerprints)-maxExpressionResolvers:]...)
+	}
+	return value
 }
 
 // expressionResolverInputs fingerprints everything the resolver reads from the
@@ -81,4 +119,7 @@ func resetExpressionResolvers() {
 	expressionResolverMu.Lock()
 	expressionResolvers = nil
 	expressionResolverMu.Unlock()
+	expressionFingerprintMu.Lock()
+	expressionFingerprints = nil
+	expressionFingerprintMu.Unlock()
 }
