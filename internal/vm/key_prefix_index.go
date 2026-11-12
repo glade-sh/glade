@@ -33,9 +33,15 @@ func buildKeyPrefixIndex(objects map[string]storage.ObjectState) *keyPrefixIndex
 // is stamped. Every in-place definition writer clears the stamp, which
 // detaches the generation and with it the index. Two guards cover a writer
 // that does not: an object count that differs from the indexed one, and a hit
-// whose object no longer holds the prefix, both fall back to the scan.
+// whose object no longer holds the prefix, both fall back to the scan. A lazy
+// org scans the objects it holds.
 func orgObjectNameForKeyPrefix(org *storage.OrgState, prefix string) (string, bool) {
-	if strings.TrimSpace(org.RuntimeSchemaStamp) == "" {
+	// A lazy org holds the catalog objects something has referenced. Clones of
+	// one generation install different sets without leaving it, so a shared
+	// index could not answer for them all; the scan is short for the few
+	// objects such an org holds. A completed spread is the eager object set and
+	// uses the index.
+	if strings.TrimSpace(org.RuntimeSchemaStamp) == "" || org.LazyStandardSpreadEnabled() {
 		return scanOrgObjectNameForKeyPrefix(org.Objects, prefix)
 	}
 	index := org.RuntimeGenerationCacheValue("vm:key-prefix-index", func() any {
