@@ -178,6 +178,7 @@ func TestCIDurationHistoryFallbackPlanKeepsEvidenceValidation(t *testing.T) {
 // A main push without history must save its observed durations so the next
 // plan can balance; that next, history-driven plan is enforced again.
 func TestCISemaHistoryFallbackRefreshThenEnforces(t *testing.T) {
+	t.Setenv("GITHUB_HEAD_REF", "")
 	root := t.TempDir()
 	planner := filepath.Join(root, "cishard")
 	if out, err := exec.Command(realGoCommand(t), "build", "-o", planner, "./internal/cishard").CombinedOutput(); err != nil {

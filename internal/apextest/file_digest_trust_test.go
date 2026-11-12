@@ -50,7 +50,7 @@ func skipWithoutStamps(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, ok := filestamp.Stat(path); !ok {
-		t.Skip("file system without a trusted ctime")
+		t.Fatal("file system without a trusted ctime")
 	}
 }
 
@@ -172,7 +172,7 @@ func TestCurrentFileDigestSeesEveryKindOfEdit(t *testing.T) {
 				t.Fatal(err)
 			}
 			if err := os.Symlink(other, path); err != nil {
-				t.Skip("symlinks unavailable")
+				t.Fatalf("symlinks unavailable: %v", err)
 			}
 		},
 		"deleted": func(t *testing.T, path string) {
