@@ -75,11 +75,18 @@ type Engine struct {
 	// PlatformEventPublisher publishes an event record that an event-triggered
 	// Flow interview created, once the interview finishes without a fault.
 	PlatformEventPublisher func([]storage.Record) error
+	// PlatformEventDirectPublisher publishes an event record that a Flow other
+	// than an event-triggered one created, as soon as its element runs.
+	PlatformEventDirectPublisher func([]storage.Record) error
 	// FlowFaultDetail renders an Apex action's failure as the text of
 	// $Flow.FaultMessage, or "" when the failure did not come from Apex.
 	FlowFaultDetail func(error) string
+	// FlowFaultInTest reports a run inside a test, where Salesforce words a
+	// duplicate-value fault without the field or the record.
+	FlowFaultInTest func() bool
 
 	platformEventInterview    bool
+	activeFlowName            string
 	pendingInterviewEvents    []storage.Record
 	capturedMixedAfterSave    bool
 	capturedCaseAfterSave     bool

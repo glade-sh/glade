@@ -420,7 +420,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	caller := vm.Globals
 	callerTypes := vm.VarTypes
 	callerFinals := vm.finalLocals
-	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
+	callerClosedLocals, callerBindRoute, callerBindFrame := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame
 	callerClass := vm.currentClass
 	callerMethod := vm.currentMethod
 	callerTrigger := vm.currentTrigger
@@ -450,7 +450,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	vm.Globals = frame
 	vm.VarTypes = frameTypes
 	vm.finalLocals = nil
-	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
+	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = nil, "", bindFrameState{}
 	vm.currentClass = method.ClassName
 	vm.currentMethod = method
 	vm.currentTrigger = false
@@ -500,7 +500,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.Globals = caller
 		vm.VarTypes = callerTypes
 		vm.finalLocals = callerFinals
-		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
+		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
 		vm.currentClass = callerClass
 		vm.currentMethod = callerMethod
 		vm.currentTrigger = callerTrigger
