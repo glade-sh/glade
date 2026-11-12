@@ -763,6 +763,7 @@ type TestContext struct {
 	changeJournal            []changeDataCaptureEntry
 	changeSavepoints         map[string][]changeDataCaptureEntry
 	changeSequence           int64
+	changeMerging            bool
 	changeTransaction        string
 	ReadOnlyApplication      bool
 	Draining                 bool
