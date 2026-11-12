@@ -948,7 +948,18 @@ func (vm *VM) validateDynamicSOQLBindsWith(raw string, lookup func(string) (Valu
 // reject (dynamic_bind_scope_paths E14, E17). Other value types keep their
 // existing handling on those routes.
 func (vm *VM) validateDynamicSOQLExceptionBinds(raw string) error {
-	return vm.validateDynamicSOQLBindsOnly(raw, vm.lookupSOQLBind, true)
+	// Only plain locals and ended variables are read: a lookup here must not
+	// evaluate a property getter or any other code.
+	lookup := func(name string) (Value, error) {
+		if value, ok := vm.Globals[name]; ok {
+			return value, nil
+		}
+		if departed, ok := vm.closedSOQLLocals[strings.ToLower(name)]; ok {
+			return departed, nil
+		}
+		return Null, newExceptionError("QueryException", "Variable does not exist: "+name)
+	}
+	return vm.validateDynamicSOQLBindsOnly(raw, lookup, true)
 }
 
 func (vm *VM) validateDynamicSOQLBindsOnly(raw string, lookup func(string) (Value, error), exceptionsOnly bool) error {
@@ -4610,10 +4621,14 @@ func (vm *VM) expandSOQLBindsFromMap(raw string, binds Value) (string, error) {
 		return "", fmt.Errorf("queryWithBinds bind values must be a Map")
 	}
 	return vm.expandSOQLBindsWith(raw, func(name string) (Value, error) {
-		// A dotted bind never matches a map key spelled with the dot: the
-		// lookup uses the member after it (dynamic_bind_scope_paths E09).
+		// A dotted bind whose root is a local in scope never matches a map
+		// key spelled with the dot: the lookup uses the member after it
+		// (dynamic_bind_scope_paths E09). A dotted key with no such local
+		// keeps the full-name lookup; no native row covers it.
 		if dot := strings.LastIndexByte(name, '.'); dot >= 0 {
-			name = name[dot+1:]
+			if _, local := vm.lookupGlobalName(name[:strings.IndexByte(name, '.')]); local {
+				name = name[dot+1:]
+			}
 		}
 		return soqlBindMapValue(binds, name)
 	}, nil)
