@@ -159,6 +159,8 @@ type VM struct {
 	scopeStack            []map[string]Value
 	finalLocals           map[string]bool // active frame; bool records initialization
 	closedSOQLLocals      map[string]Value
+	bindFrame             bindFrameState
+	bindBodySiteCache     map[*ir.Instruction]map[int]struct{}
 	dynamicSOQLBindRoute  string
 	currentClass          string
 	forBodyReusable       map[*ir.Instruction]bool
@@ -3437,10 +3439,13 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 	defer restoreCreations()
 	finishDuplicateReports := vm.beginDuplicateReportTransaction()
 	defer func() { finishDuplicateReports(err == nil) }()
-	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
-	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
+	callerClosedLocals, callerBindRoute, callerBindFrame := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame
+	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = nil, "", bindFrameState{}
+	if className == "" {
+		vm.bindFrame.anonymous, vm.bindFrame.anonymousBody = true, program.Instructions
+	}
 	defer func() {
-		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
+		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
 	}()
 	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled, traceOutputLimit: vm.traceOutputLimit}
 	if vm.traceEnabled {
