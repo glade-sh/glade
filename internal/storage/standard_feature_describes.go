@@ -111,6 +111,15 @@ func StandardFeatureCapturedReference(object, field, target string) bool {
 // the isolated feature surfaces. The second value is false for unmeasured
 // fields or API versions, which retain the ordinary catalog behavior.
 func StandardFeatureFieldVersion(object, field, api string) (bool, bool) {
+	if strings.EqualFold(object, "MessagingSession") && strings.EqualFold(field, "CampaignId") {
+		switch api {
+		case "60.0", "62.0", "63.0", "64.0", "65.0":
+			return false, true
+		case "66.0", "67.0", "68.0":
+			return true, true
+		}
+		return false, false
+	}
 	bundle := loadStandardFeatureDescribes()
 	name, ok := standardFeatureDescribeName(object)
 	if !ok {
@@ -126,6 +135,9 @@ func StandardFeatureFieldVersion(object, field, api string) (bool, bool) {
 }
 
 func StandardFeatureHasVersionedFields(object string) bool {
+	if strings.EqualFold(object, "MessagingSession") {
+		return true
+	}
 	bundle := loadStandardFeatureDescribes()
 	name, ok := standardFeatureDescribeName(object)
 	return ok && len(bundle.FieldVersions[name]) > 0

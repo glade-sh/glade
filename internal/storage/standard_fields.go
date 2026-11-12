@@ -166,6 +166,9 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
+	if messagingCampaignFieldNeedsRepair(definition) {
+		return true
+	}
 	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
 		return true
 	}
@@ -228,7 +231,18 @@ func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSigna
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
+	if messagingCampaignFieldNeedsRepair(definition) {
+		return true
+	}
 	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
+}
+
+func messagingCampaignFieldNeedsRepair(definition ObjectDefinition) bool {
+	if !stringsEqualFold(definition.APIName, "MessagingSession") {
+		return false
+	}
+	_, found := ResolveFieldName(definition, "", "CampaignId")
+	return !found
 }
 
 func apexClassLengthNillabilityNeedsRepair(definition ObjectDefinition) bool {
@@ -1908,6 +1922,13 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 func standardObjectCompatibilitySupplementFields(objectName string) []Field {
 	var fields []Field
 	switch {
+	case stringsEqualFold(objectName, "MessagingSession"):
+		// messaging_campaign_presence/facets.tsv captures this reference at
+		// API 66/67. Source and REST visibility are versioned separately.
+		fields = []Field{{APIName: "CampaignId", Label: "Campaign ID", Type: FieldReference, DisplayType: "REFERENCE", Length: 18,
+			Nillable: BoolFlag(true), Createable: BoolFlag(true), Updateable: BoolFlag(true), Filterable: BoolFlag(true),
+			Groupable: BoolFlag(true), Sortable: BoolFlag(true), Aggregatable: BoolFlag(true), Permissionable: BoolFlag(true),
+			ReferenceTo: []string{"Campaign"}, RelationshipName: "Campaign"}}
 	case stringsEqualFold(objectName, "Account"):
 		fields = []Field{
 			{APIName: "Tradestyle", Type: FieldString, DisplayType: "STRING", Length: 255},

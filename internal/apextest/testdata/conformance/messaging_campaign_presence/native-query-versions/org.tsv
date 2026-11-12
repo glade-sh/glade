@@ -1,0 +1,13 @@
+api	route	result
+62.0	static-query	reject
+62.0	dynamic-query	success
+63.0	static-query	reject
+63.0	dynamic-query	success
+64.0	static-query	reject
+64.0	dynamic-query	success
+65.0	static-query	reject
+65.0	dynamic-query	success
+66.0	static-query	accept
+66.0	dynamic-query	success
+67.0	static-query	accept
+67.0	dynamic-query	success

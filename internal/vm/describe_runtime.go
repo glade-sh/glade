@@ -2408,6 +2408,11 @@ func (vm *VM) featureFieldHiddenForAccess(objectName, field string) bool {
 }
 
 func (vm *VM) featureFieldHiddenForQuery(objectName, field string) bool {
+	// The native dynamic-query rows succeed at API 62-67 even when the
+	// source and describe field are hidden before API 66.
+	if strings.EqualFold(objectName, "MessagingSession") && strings.EqualFold(field, "CampaignId") {
+		return false
+	}
 	if storage.StandardFeatureNamedOnlyField(objectName, field) {
 		if !vm.featureNamedSource(objectName) {
 			return true
