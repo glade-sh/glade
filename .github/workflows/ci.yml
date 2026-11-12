@@ -1010,7 +1010,7 @@ jobs:
           if-no-files-found: error
 
   test-binaries-apextest:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
@@ -1019,6 +1019,9 @@ jobs:
       GOMAXPROCS: "4"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # A pull request selects binaries from the merge commit's diff against its first parent.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 1 }}
       - name: Validate benchmark cache pair
         if: github.event_name == 'workflow_dispatch'
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
@@ -1046,10 +1049,17 @@ jobs:
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-apextest-${{ hashFiles('go.sum') }}-
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Select binaries to build
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: scripts/ci-pr-binaries.sh >> "$GITHUB_OUTPUT"
       - name: Bind binary artifact attempt
         id: bundle
         run: echo "attempt=$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Build shared test binaries
+        if: ${{ steps.select.outputs.apextest == 'true' }}
         env:
           CGO_ENABLED: "1"
         run: |
@@ -1071,6 +1081,7 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
       - name: Upload apextest test binary
+        if: ${{ steps.select.outputs.apextest == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: test-binaries-apextest-${{ github.run_id }}-${{ github.run_attempt }}
@@ -1080,7 +1091,7 @@ jobs:
           if-no-files-found: error
 
   test-binaries:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     outputs:
       artifact-attempt: ${{ steps.bundle.outputs.attempt }}
@@ -1090,6 +1101,9 @@ jobs:
       GOMAXPROCS: "4"
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # A pull request selects binaries from the merge commit's diff against its first parent.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 1 }}
       - name: Validate benchmark cache pair
         if: github.event_name == 'workflow_dispatch'
         run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
@@ -1117,19 +1131,35 @@ jobs:
           restore-keys: |
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-binaries-${{ hashFiles('go.sum') }}-
             ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Select binaries to build
+        id: select
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: scripts/ci-pr-binaries.sh >> "$GITHUB_OUTPUT"
       - name: Bind binary artifact attempt
         id: bundle
         run: echo "attempt=$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Build shared test binaries
         env:
           CGO_ENABLED: "1"
+          BUILD_SEMA: ${{ steps.select.outputs.sema }}
+          BUILD_LWC_COMPILE: ${{ steps.select.outputs.lwc-compile }}
+          BUILD_VISUALFORCE: ${{ steps.select.outputs.visualforce }}
         run: |
           # The sema, LWC compile and Visualforce jobs wait for these three
           # binaries; the apextest binary has its own producer. Each package
           # links into its own directory and manifest, so build them at once;
           # the Go build cache serialises any shared compile between them.
+          # A pull request builds only the packages it selects.
           pids=()
           for package in sema lwc/compile visualforce; do
+            case "$package" in
+              sema) want="$BUILD_SEMA" ;;
+              lwc/compile) want="$BUILD_LWC_COMPILE" ;;
+              visualforce) want="$BUILD_VISUALFORCE" ;;
+            esac
+            [[ "$want" == true ]] || continue
             slug="${package//\//-}"
             python3 scripts/ci-test-binary.py build "/tmp/glade-test-binaries/$slug" test "./internal/$package" &
             pids+=("$!")
@@ -1154,6 +1184,7 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
       - name: Upload sema test binary
+        if: ${{ steps.select.outputs.sema == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: test-binaries-sema-${{ github.run_id }}-${{ github.run_attempt }}
@@ -1162,6 +1193,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
       - name: Upload lwc-compile test binary
+        if: ${{ steps.select.outputs.lwc-compile == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: test-binaries-lwc-compile-${{ github.run_id }}-${{ github.run_attempt }}
@@ -1170,6 +1202,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
       - name: Upload visualforce test binary
+        if: ${{ steps.select.outputs.visualforce == 'true' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: test-binaries-visualforce-${{ github.run_id }}-${{ github.run_attempt }}
@@ -1850,7 +1883,7 @@ jobs:
 
   pr-tests:
     if: ${{ github.event_name == 'pull_request' }}
-    needs: [apextest-history-input, lwc-compile-history-input, visualforce-history-input]
+    needs: [apextest-history-input, lwc-compile-history-input, visualforce-history-input, test-binaries-apextest, test-binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -1895,6 +1928,24 @@ jobs:
         with:
           name: visualforce-history-input
           path: /tmp/glade-visualforce-duration-history
+      # Read-only: this lane restores what pushes to main publish and never
+      # saves, so it cannot evict the shared duration histories.
+      - name: Restore Go module cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
       - name: Install actionlint for scripts tests
         if: ${{ matrix.shard == 22 }}
         run: |
@@ -1902,15 +1953,55 @@ jobs:
           echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
       - name: Select packages and direct importers
         id: select
+        env:
+          SHARD: ${{ matrix.shard }}
         run: |
-          go list -json ./... | jq -s . > "$RUNNER_TEMP/graph.json"
-          jq -r '.[].ImportPath' "$RUNNER_TEMP/graph.json" > "$RUNNER_TEMP/packages.txt"
-          go run ./scripts/internal/cishard --package-manifest scripts/ci-package-lanes.json --packages "$RUNNER_TEMP/packages.txt" > /dev/null
-          git diff --no-renames --name-only HEAD^1 HEAD | python3 scripts/ci-pr-select.py --root "$GITHUB_WORKSPACE" --graph "$RUNNER_TEMP/graph.json" --manifest scripts/ci-package-lanes.json > "$RUNNER_TEMP/selected.json"
+          scripts/ci-pr-select.sh "$RUNNER_TEMP/selected.json"
           cat "$RUNNER_TEMP/selected.json"
           if jq -e 'any(.[]; test("/internal/(server|playground|visualforce|lwc|lwcbrowser|lwcruntime)(/|$)"))' "$RUNNER_TEMP/selected.json" > /dev/null; then
             echo "browser=true" >> "$GITHUB_OUTPUT"
           fi
+          # A shard that runs one of the four packages with a shared test
+          # binary downloads that binary, when the pull request selects it.
+          # The shard routes match the loop in the test step below.
+          binary=""
+          if (( SHARD < 12 )); then binary=apextest; package=apextest
+          elif (( SHARD >= 20 && SHARD < 22 )); then binary=sema; package=sema
+          elif (( SHARD >= 24 && SHARD < 32 )); then binary=lwc-compile; package=lwc/compile
+          elif (( SHARD >= 32 && SHARD < 36 )); then binary=visualforce; package=visualforce
+          fi
+          if [[ -n "$binary" ]] && jq -e --arg pkg "github.com/glade-sh/glade/internal/$package" 'index($pkg) != null' "$RUNNER_TEMP/selected.json" > /dev/null; then
+            echo "binary=$binary" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Download shared apextest test binary
+        if: ${{ steps.select.outputs.binary == 'apextest' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-binaries-apextest-${{ github.run_id }}-${{ needs.test-binaries-apextest.outputs.artifact-attempt }}
+          path: /tmp/glade-test-binaries
+      - name: Download shared sema test binary
+        if: ${{ steps.select.outputs.binary == 'sema' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-binaries-sema-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-test-binaries
+      - name: Download shared lwc-compile test binary
+        if: ${{ steps.select.outputs.binary == 'lwc-compile' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-binaries-lwc-compile-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-test-binaries
+      - name: Download shared visualforce test binary
+        if: ${{ steps.select.outputs.binary == 'visualforce' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: test-binaries-visualforce-${{ github.run_id }}-${{ needs.test-binaries.outputs.artifact-attempt }}
+          path: /tmp/glade-test-binaries
+      # Set only for a shard that downloaded a binary: it switches every
+      # script route in the shard to the prebuilt binary.
+      - name: Use shared test binary
+        if: ${{ steps.select.outputs.binary != '' }}
+        run: echo "CI_TEST_BIN_DIR=/tmp/glade-test-binaries" >> "$GITHUB_ENV"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"

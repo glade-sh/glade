@@ -79,11 +79,13 @@ func TestCIPRWorkflowSelection(t *testing.T) {
 	if err := yaml.Unmarshal(data, &workflow); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"site", "test", "test-binaries", "apextest", "vm", "gladecli", "sema", "nested-sources", "smoke-runtime", "smoke-distribution"} {
+	for _, name := range []string{"site", "test", "apextest", "vm", "gladecli", "sema", "nested-sources", "smoke-runtime", "smoke-distribution"} {
 		if !strings.Contains(workflow.Jobs[name].If, "github.event_name != 'pull_request'") {
 			t.Errorf("%s does not exclude PRs", name)
 		}
 	}
+	// test-binaries and test-binaries-apextest also run on PRs: pr-tests reuses
+	// their binaries (TestCIPRLaneUsesSharedTestBinaries).
 	if !strings.Contains(workflow.Jobs["pr-tests"].If, "github.event_name == 'pull_request'") {
 		t.Fatal("PR tests do not select PRs")
 	}
