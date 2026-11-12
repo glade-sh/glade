@@ -135,6 +135,36 @@ func TestChildRelationshipFilterGenerate(t *testing.T) {
 			runtime.GC()
 		}
 	}
+	if os.Getenv("GLADE_UPDATE_CHILD_REL_FILTER") == "pairs" {
+		// Exhaustive check of the superset assumption: every unordered pair
+		// of covered features. Reports what the union lacks and writes nothing.
+		all := append(slices.Clone(childRelFilterFeatureNames), childRelFilterShapeTokens...)
+		checked, added := 0, 0
+		for i := 0; i < len(all); i++ {
+			for j := i + 1; j < len(all); j++ {
+				set := []string{all[i], all[j]}
+				extra := newChildRelFilterFacts()
+				org := completeShapedOrg(set)
+				extra.collect(&org)
+				for h, pair := range extra.pairs {
+					if _, ok := facts.pairs[h]; !ok {
+						added++
+						t.Errorf("%s adds %v", childRelFilterName(set), pair)
+					}
+				}
+				for h, key := range extra.keys {
+					if _, ok := facts.keys[h]; !ok {
+						added++
+						t.Errorf("%s adds parent key %v", childRelFilterName(set), key)
+					}
+				}
+				checked++
+				runtime.GC()
+			}
+		}
+		t.Logf("pairs mode: %d feature pairs checked, %d additions", checked, added)
+		return
+	}
 	blob := encodeChildRelFilter(storage.StandardCatalogStamp(), sortedHashes(facts.pairs), sortedHashes(facts.keys))
 	if err := os.WriteFile("child_relationship_filter.txt", blob, 0o644); err != nil {
 		t.Fatal(err)
