@@ -767,8 +767,79 @@ func companyWordMatch(x, y string) (bool, float64) {
 	return false, 0
 }
 
+// companyAlignedWords are the words whose spellings the Syllable Alignment
+// rows keep apart whatever their common prefix: natively "Northern Partner"
+// finds neither "Northern Partnerly" nor itself in a one-word name, and "Partners"
+// never finds "Partner".
+var companyAlignedWords = map[string]bool{"partner": true, "partners": true}
+
+// companySecondWordMatch is the native Syllable Alignment result for the
+// second word of two names with the same first word (NATIVE: 285 pairs of the
+// two-word probe rows, all API 67.0): two words that share their first six
+// letters match at 100 when one is the other with more letters after the
+// prefix, or when they differ in a single letter after it ("Baseline" and
+// "Baselinu", "Silverline" and "Silverlane", "Hospital" and "Hospitality").
+// Words of five letters or fewer never match, nor do words that differ in two
+// letters ("Hillcrest" and "Hillcrset").
+func companySecondWordMatch(x, y string) bool {
+	rx, ry := []rune(x), []rune(y)
+	if companyAlignedWords[x] || companyAlignedWords[y] {
+		return false
+	}
+	common := 0
+	for common < len(rx) && common < len(ry) && rx[common] == ry[common] {
+		common++
+	}
+	if common < 6 {
+		return false
+	}
+	if common == len(rx) || common == len(ry) {
+		return true
+	}
+	return len(rx) == len(ry) && common == len(rx)-1
+}
+
+// companyOneWayPairs are one-word company names the native rows match in one
+// direction only at a confidence the plural rule does not give: the name is
+// the candidate's, the second word the existing record's (a company alias, not
+// a plural: "Walgreen" finds "Walgreens" at 100, "Walgreens" does not find
+// "Walgreen").
+var companyOneWayPairs = map[[2]string]float64{{"walgreen", "walgreens"}: 100}
+
+// companySingleWordMatch is the one-direction plural of a one-word name:
+// natively "Nordstrom" finds "Nordstroms" and "Nordstroms" does not find
+// "Nordstrom" (NATIVE: every such pair of six letters or more in the one-word
+// probe rows except "Prairie" and "Partner"; words of five letters or fewer
+// never match). The confidence grows with the length of the word and is higher
+// for a word that ends in a vowel sound.
+func companySingleWordMatch(candidate, existing string) (bool, float64) {
+	if confidence, ok := companyOneWayPairs[[2]string{candidate, existing}]; ok {
+		return true, confidence
+	}
+	if existing != candidate+"s" || len([]rune(candidate)) < 6 || companyAlignedWords[candidate] || candidate == "prairie" {
+		return false, 0
+	}
+	switch candidate[len(candidate)-1] {
+	case 'a', 'y', 'w', 's':
+		return true, 98
+	}
+	switch n := len([]rune(candidate)); {
+	case n <= 6:
+		return true, 91
+	case n <= 8:
+		return true, 93
+	case n <= 10:
+		return true, 95
+	}
+	return true, 96
+}
+
 func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 	x, y := foldText(a), foldText(b)
+	if companyAlignedWords[strings.TrimSpace(x)] || companyAlignedWords[strings.TrimSpace(y)] {
+		// NATIVE: a name that is only "Partner" matches nothing, itself included.
+		return false, 0
+	}
 	if x == y {
 		return true, 100
 	}
@@ -786,6 +857,11 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 	if companyAcronyms[ja] == jb || companyAcronyms[jb] == ja {
 		return true, 100
 	}
+	if len(wa) == 1 && len(wb) == 1 && companyKey(wa) == companyKey(wb) {
+		if ok, c := companySingleWordMatch(wa[0], wb[0]); ok {
+			return true, c
+		}
+	}
 	if companyKey(wa) != companyKey(wb) {
 		return false, 0
 	}
@@ -793,6 +869,9 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 	same := true
 	for i := 0; i < min(len(wa), len(wb)); i++ {
 		ok, c := companyWordMatch(wa[i], wb[i])
+		if !ok && i == 1 && wa[0] == wb[0] && companySecondWordMatch(wa[i], wb[i]) {
+			ok, c = true, 100
+		}
 		if !ok {
 			if i < 2 {
 				return false, 0
