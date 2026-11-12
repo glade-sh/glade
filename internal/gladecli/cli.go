@@ -2851,6 +2851,7 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	if err != nil {
 		return err
 	}
+	visualforce.SetPersistentGateCache(apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{}).Enabled)
 	jsonOut := parsed.Bool("json")
 	debug = parsed.Bool("debug")
 	projectRoot := strings.TrimSpace(parsed.String("project"))

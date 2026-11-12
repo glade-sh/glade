@@ -352,6 +352,7 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 // project subset without its invalid classes and their dependents.
 func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases []TestCase, hooks semanticGateHooks, runState *runExecution, gate *compileGate) (report testreport.Run) {
 	started := time.Now()
+	visualforce.SetPersistentGateCache(!opts.NoDiskCache && diskCacheEnabled())
 	if gate != nil && opts.Progress != nil {
 		opts.Progress = compileGateNestedProgress(opts.Progress)
 	}
