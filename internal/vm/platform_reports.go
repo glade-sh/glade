@@ -78,7 +78,7 @@ func reportsEnumStringValue(typeName string, value Value) Value {
 	if value.Kind != ValueString {
 		return value
 	}
-	generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]
+	generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName))
 	if !ok {
 		return Null
 	}

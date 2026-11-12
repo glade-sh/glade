@@ -551,7 +551,7 @@ func (vm *VM) hasExactRuntimeClass(name string) bool {
 	if _, ok := vm.classEntry(name); ok {
 		return true
 	}
-	if _, ok := generatedPlatformTypes()[strings.ToLower(name)]; ok {
+	if _, ok := lookupGeneratedPlatformType(strings.ToLower(name)); ok {
 		return true
 	}
 	if class, ok := vm.resolveEnumClass(name); ok && class.Name == name {

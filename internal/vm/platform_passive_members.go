@@ -5054,7 +5054,7 @@ func (vm *VM) passivePlatformDTOCollectionMethod(typeName, method string, args [
 	if !vm.isPassivePlatformDTOType(typeName) {
 		return Method{}, false
 	}
-	methodsByName := generatedPlatformMethods()[strings.ToLower(typeName)]
+	methodsByName := lookupGeneratedPlatformMethods(strings.ToLower(typeName))
 	candidates := methodsByName[strings.ToLower(method)]
 	for _, candidate := range candidates {
 		if candidate.IsStatic || len(candidate.Params) != len(args) || !generatedPlatformPassiveCollectionMethod(candidate) {
@@ -5306,7 +5306,7 @@ func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
 	if typeName == "" || !strings.Contains(typeName, ".") {
 		return false
 	}
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 		if safeSchemaPassiveDTOTypeName(generated.Name) {
 			return true
 		}
@@ -5358,7 +5358,7 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 		return true
 	}
 	hasDataShape := len(generated.Fields) != 0 || len(generated.Constructors) != 0 || strings.HasSuffix(generated.Name, ".Builder")
-	for _, overloads := range generatedPlatformMethods()[strings.ToLower(generated.Name)] {
+	for _, overloads := range lookupGeneratedPlatformMethods(strings.ToLower(generated.Name)) {
 		for _, method := range overloads {
 			if hasTypePrefixFold(generated.Name, "ConnectApi") && method.IsStatic && !generatedConnectAPIPassiveStaticMethod(generated.Name, method) {
 				return false
@@ -5387,7 +5387,7 @@ func generatedPlatformPassiveCollectionShape(generated generatedPlatformType) bo
 		return false
 	}
 	hasCollectionMethod := false
-	for _, overloads := range generatedPlatformMethods()[strings.ToLower(generated.Name)] {
+	for _, overloads := range lookupGeneratedPlatformMethods(strings.ToLower(generated.Name)) {
 		for _, method := range overloads {
 			if !generatedPlatformPassiveCollectionMethod(method) {
 				return false

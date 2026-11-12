@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if ! command -v actionlint >/dev/null 2>&1; then
-  echo 'actionlint is required; see docs/WORKFLOW_VALIDATION.md for the pinned version' >&2
+  echo 'actionlint is required; see docs/AI_SETUP.md#workflow-lint for the pinned version' >&2
   exit 127
 fi
 

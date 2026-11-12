@@ -149,19 +149,25 @@ func (h *Handler) sourceFiles() []string {
 	for _, trigger := range h.index.Triggers {
 		add(trigger.File)
 	}
+	h.docMu.RLock()
 	for _, doc := range h.documents {
 		add(doc.Path)
 	}
+	h.docMu.RUnlock()
 	sort.Strings(files)
 	return files
 }
 
 func (h *Handler) documentText(path string) (string, bool) {
+	h.docMu.RLock()
 	for _, doc := range h.documents {
 		if sameDocument(doc.Path, path) {
-			return doc.Text, true
+			text := doc.Text
+			h.docMu.RUnlock()
+			return text, true
 		}
 	}
+	h.docMu.RUnlock()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", false

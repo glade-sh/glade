@@ -339,6 +339,8 @@ type VM struct {
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
+	// Last shared-backing map whose keys were verified; see fillGlobalDescribeProjectionKeys.
+	globalDescribeKeysVerified   globalDescribeKeysVerifiedMemo
 	describeTabsCache            *Value
 	describeDefCache             map[string]storage.ObjectDefinition
 	customDataCache              map[string]Value
@@ -369,7 +371,9 @@ type VM struct {
 	// Field-map owners outlive invalidation: earlier roots can still be in use.
 	describeShare            *describeShareCache
 	describeShareDefinitions []*describeShareDefinition
-	sharedDescribeFieldMaps  map[uintptr]*describeShareFieldMap
+	// describeTokenShares lists the shares whose global describe tokens this VM holds.
+	describeTokenShares     []*describeShareCache
+	sharedDescribeFieldMaps map[uintptr]*describeShareFieldMap
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs       map[uint64]bool
 	staticValueRefFields  map[uint64]staticFieldRefSet
@@ -403,6 +407,10 @@ type VM struct {
 	mapKeySetBackings           map[uint64]mapKeySetSourceRef
 	mapKeySetBinds              uint64
 	aliasContainmentMutationSeq uint64
+	aliasContainmentLog         [aliasContainmentMutationLogSize]aliasContainmentMutation
+	// disableAliasMissCarry turns off carrying cached misses across logged
+	// List bumps. Tests use it to compare results with the carry on and off.
+	disableAliasMissCarry       bool
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
 	mapPutParentContainment     *mapPutParentContainmentCache
 	perfRecorder                *PerfRecorder
@@ -1076,6 +1084,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
 		clone.describeShare = vm.describeShare
+		clone.describeTokenShares = append([]*describeShareCache(nil), vm.describeTokenShares...)
 	} else {
 		clone.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		clone.childRelCache = newChildRelationshipCache()

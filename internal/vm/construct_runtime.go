@@ -299,7 +299,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		isCanonicalRuntimeTypeName(typeName[len("System."):])
 	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
 	if hasTypePrefixFold(typeName, "ConnectApi") {
-		if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+		if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 			if class, registered := vm.classEntry(generated.Name); !registered || class.PlatformType {
 				if value, handled, err := vm.constructConnectAPIValue(generated, args, namedArgs); handled || err != nil {
 					return value, err
@@ -428,7 +428,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 	if value, handled, err := constructProcessPluginDescribeResultParameter(typeName, args, namedArgs); handled || err != nil {
 		return value, err
 	}
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 		if value, handled, err := vm.constructGeneratedMetadataDTO(generated, args, namedArgs); handled || err != nil {
 			return value, err
 		}

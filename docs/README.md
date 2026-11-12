@@ -66,7 +66,7 @@ labels do not establish fresh release validation.
 3. Product boundary for AI and human contributors: [../AGENTS.md](../AGENTS.md)
    and [AI_SETUP.md](AI_SETUP.md) for agent setup and validation by surface.
 4. Clean-room rules: [CLEAN_ROOM.md](CLEAN_ROOM.md)
-5. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
+5. Storage model and DB behavior: [STORAGE_SCHEMA.md](STORAGE_SCHEMA.md)
 6. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
 7. Apex language compatibility:
    [APEX_LANGUAGE_COMPATIBILITY.md](APEX_LANGUAGE_COMPATIBILITY.md)

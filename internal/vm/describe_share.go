@@ -34,10 +34,12 @@ import (
 type describeShareCache struct {
 	globalMaps           map[string]Value
 	globalProjectionKeys map[string]globalDescribeKeyMetadata
-	stamp                string
-	mu                   sync.Mutex
-	definitions          map[string]weak.Pointer[describeShareDefinition]
-	fieldMaps            map[describeShareFieldMapKey]weak.Pointer[describeShareFieldMap]
+	// tokenFields holds the Fields maps of globalMaps' tokens; see privatizeSharedDescribeToken.
+	tokenFields map[uintptr]struct{}
+	stamp       string
+	mu          sync.Mutex
+	definitions map[string]weak.Pointer[describeShareDefinition]
+	fieldMaps   map[describeShareFieldMapKey]weak.Pointer[describeShareFieldMap]
 }
 
 // Entries are built under their own lock by the first VM that needs them. A

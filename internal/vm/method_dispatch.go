@@ -2693,7 +2693,7 @@ func (vm *VM) callManagedPassiveMissingMember(receiver Value, method string, arg
 }
 
 func generatedPlatformTypeName(typeName string) bool {
-	_, ok := generatedPlatformTypes()[strings.ToLower(typeName)]
+	_, ok := lookupGeneratedPlatformType(strings.ToLower(typeName))
 	return ok
 }
 
