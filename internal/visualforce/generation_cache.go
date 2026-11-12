@@ -1,0 +1,3 @@
+package visualforce
+
+func resetGenerationCache() {}
