@@ -1862,8 +1862,9 @@ var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[
 // appendOtherUserRecordAccess adds the rows of a queried user other than the
 // actor, computed as that user (portal_sharing_timing_c4: an administrator
 // test reads a portal user's HasReadAccess for its own and the child
-// Accounts, APIs 62.0 and 67.0). Only portal users named by Id in the query
-// qualify.
+// Accounts, APIs 62.0 and 67.0). Only portal and Standard users named by Id in
+// the query qualify (external_user_case_lead_sharing: a named Standard User
+// returns its own rows, APIs 62.0 and 67.0).
 func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, objectNames []string, userMode bool, queryText string, sequence *int) {
 	if vm.testContext == nil || vm.Org == nil {
 		return
@@ -1872,7 +1873,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	seen := map[string]bool{}
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
-		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portalUserTypeRecord(user) {
+		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portalUserTypeRecord(user) && !standardUserTypeRecord(user) {
 			continue
 		}
 		seen[string(user.ID)] = true
@@ -1946,6 +1947,29 @@ func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, e
 	return rows, true, nil
 }
 
+// currentUserLicenseExcludesObject reports a Customer Community, Community Plus
+// or Community Login user querying Lead, and a Guest-type user querying Case or
+// Lead. external_user_case_lead_sharing and external_guest_case_lead_access
+// (APIs 62.0 and 67.0): the countQuery raises under runAs as each of these
+// users, at the floor as well as 67.0, where the unqualified-query defaults do
+// not apply, so the license excludes the object rather than a CRUD check
+// denying it. The exception text is not captured; the platform's missing-object
+// text is used.
+func (vm *VM) currentUserLicenseExcludesObject(objectName string) bool {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 {
+		return false
+	}
+	isLead, isCase := strings.EqualFold(objectName, "Lead"), strings.EqualFold(objectName, "Case")
+	if !isLead && !isCase {
+		return false
+	}
+	profileID := vm.currentUserInfoField("ProfileId", "")
+	if vm.currentProfileHasUserType(profileID, "Guest") {
+		return true
+	}
+	return isLead && vm.profileHasCommunityLicense(profileID)
+}
+
 func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
 	if vm == nil || vm.Org == nil {
 		return nil
@@ -1956,7 +1980,8 @@ func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
 		objectName = resolved
 	}
 	if !vm.allowsStandardObject(objectName) ||
-		strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") {
+		strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") ||
+		vm.currentUserLicenseExcludesObject(objectName) {
 		return newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
 	}
 	for _, child := range query.ChildQueries {
@@ -4378,6 +4403,13 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 	if model == "" && standardObjectDefaultsToPublicRead(canonical) {
 		return true
 	}
+	// external_user_case_lead_sharing default rows (APIs 62.0 and 67.0): in a
+	// declared scratch shape that omits the Lead model, a Standard User reads and
+	// counts a Lead another user owns, the ReadWriteTransfer scratch default.
+	// An unknown shape keeps its earlier behavior.
+	if model == "" && vm.leadHasDeclaredShapeDefaultModel(canonical) {
+		return true
+	}
 	switch strings.ToLower(model) {
 	// lead_sharing/org.tsv: a ReadWriteTransfer Lead (the scratch default) is read
 	// by non-owner, non-creator Standard users at both source APIs.
@@ -4399,6 +4431,18 @@ func portalUserTypeRecord(user storage.Record) bool {
 		}
 	}
 	return false
+}
+
+// standardUserTypeRecord reports a stored internal User: UserType Standard, or
+// unset, which Glade treats as Standard (see currentUserInfoField callers).
+func standardUserTypeRecord(user storage.Record) bool {
+	for name, value := range user.Fields {
+		if strings.EqualFold(name, "UserType") {
+			userType := strings.TrimSpace(value.String)
+			return userType == "" || strings.EqualFold(userType, "Standard")
+		}
+	}
+	return true
 }
 
 // currentUserHasUndeclaredPrivateExternalDefault reports a captured portal user

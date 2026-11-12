@@ -498,6 +498,9 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 				case "ReadWrite", "ReadWriteTransfer":
 					return true
 				}
+				if vm.leadHasDeclaredShapeDefaultModel(canonical) {
+					return true
+				}
 			}
 			if strings.EqualFold(model, "ReadWrite") || strings.EqualFold(model, "PublicReadWrite") {
 				return true
@@ -506,4 +509,17 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 	}
 	// Read-only sharing and read shares do not grant write authority.
 	return record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID))
+}
+
+// leadHasDeclaredShapeDefaultModel reports a Lead with no declared sharing
+// model in a declared scratch shape: the ReadWriteTransfer scratch default,
+// which a Standard User reads and edits when another user owns the record
+// (external_user_case_lead_sharing default/org.tsv:8-9, APIs 62.0 and 67.0).
+// An unknown shape keeps its earlier behavior.
+func (vm *VM) leadHasDeclaredShapeDefaultModel(canonical string) bool {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(canonical, "Lead") {
+		return false
+	}
+	definition := vm.Org.Objects[canonical].Definition
+	return strings.TrimSpace(definition.SharingModel) == "" && storage.StandardObjectShapeDeclared(definition)
 }
