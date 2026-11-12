@@ -160,7 +160,7 @@ func installSpreadObjectWithPlan(org *OrgState, name string, plan map[string]str
 		return "", false
 	}
 	installed := template.CloneRuntimeFrozenDefinition()
-	if org.keyPrefixesValidated {
+	if org.spreadPlanApplies() {
 		// The org's prefixes are already unique; the object arrives with the
 		// prefix the full assignment gives it.
 		if plan == nil {
@@ -183,7 +183,7 @@ func materializeSpreadSource(org *OrgState) bool {
 	// One plan serves every install: only catalog objects arrive, and the plan
 	// does not depend on them.
 	var plan map[string]string
-	if org.keyPrefixesValidated {
+	if org.spreadPlanApplies() {
 		plan = spreadKeyPrefixPlan(org)
 	}
 	for _, name := range KnownStandardObjectNames() {
@@ -381,7 +381,7 @@ func (o *OrgState) SpreadKeyPrefixOwner(prefix string) string {
 	if o == nil || o.StandardSpread == "" {
 		return ""
 	}
-	if !o.keyPrefixesValidated {
+	if !o.spreadPlanApplies() {
 		owner := StandardKeyPrefixOwner(prefix)
 		if owner == "" {
 			return ""
@@ -401,4 +401,11 @@ func (o *OrgState) SpreadKeyPrefixOwner(prefix string) string {
 		}
 	}
 	return owner
+}
+
+// spreadPlanApplies reports whether objects install with the prefix the unique
+// assignment gives them: the org's prefixes are validated, or were before the
+// schema stamp was cleared.
+func (o *OrgState) spreadPlanApplies() bool {
+	return o.keyPrefixesValidated || o.spreadPrefixesPlanned
 }

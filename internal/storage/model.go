@@ -109,6 +109,11 @@ type OrgState struct {
 	keyPrefixesValidatedGeneration  uint64
 	schemaGeneration                uint64
 	runtimeGeneration               *orgRuntimeGeneration
+
+	// spreadPrefixesPlanned records that a source-backed lazy org has had its
+	// prefixes validated. Clearing the schema stamp does not clear it: the cold
+	// objects still take their prefixes from the unique assignment.
+	spreadPrefixesPlanned bool
 }
 
 type orgRuntimeGeneration struct {
