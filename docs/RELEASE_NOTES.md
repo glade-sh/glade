@@ -12,6 +12,7 @@
 - **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. On the standard object set one lookup takes about a sixth of the time and allocates nothing. Results are unchanged.
 - **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
 - **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
+- **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
 
 ## v0.3.7
 
