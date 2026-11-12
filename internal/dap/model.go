@@ -1,6 +1,7 @@
 package dap
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -35,6 +36,8 @@ const (
 	CommandPause             = "pause"
 	CommandEvaluate          = "evaluate"
 	CommandDisconnect        = "disconnect"
+	CommandCancel            = "cancel"
+	CommandTerminate         = "terminate"
 )
 
 type LaunchRequest struct {
@@ -49,6 +52,8 @@ type LaunchRequest struct {
 }
 
 type LaunchHandler func(request LaunchRequest) error
+
+type LaunchHandlerContext func(ctx context.Context, request LaunchRequest) error
 
 type Request struct {
 	Seq       int             `json:"seq"`

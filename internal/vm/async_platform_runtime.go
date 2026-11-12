@@ -794,6 +794,7 @@ func (vm *VM) discardMetadataCaches() {
 	vm.namedGlobalDescribe = nil
 	vm.changeEventGlobal = nil
 	vm.globalDescribeProjectionKeys = nil
+	vm.globalDescribeKeysVerified = globalDescribeKeysVerifiedMemo{}
 	vm.describeTabsCache = nil
 	vm.childRelCandidates = nil
 	vm.childRelCache = newChildRelationshipCache()

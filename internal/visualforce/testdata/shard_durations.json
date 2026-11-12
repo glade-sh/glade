@@ -940,8 +940,32 @@
    "durationMillis": 116460
   },
   {
-   "name": "TestV09SalesforceConformance",
-   "durationMillis": 828500
+   "name": "TestV09SalesforceConformancePart1of4",
+   "durationMillis": 31000
+  },
+  {
+   "name": "TestV09SalesforceConformancePart2of4",
+   "durationMillis": 25500
+  },
+  {
+   "name": "TestV09SalesforceConformancePart3of4",
+   "durationMillis": 33000
+  },
+  {
+   "name": "TestV09SalesforceConformancePart4of4",
+   "durationMillis": 37500
+  },
+  {
+   "name": "TestV09SalesforceControlsDenied",
+   "durationMillis": 86500
+  },
+  {
+   "name": "TestV09SalesforceControlsReview",
+   "durationMillis": 176500
+  },
+  {
+   "name": "TestV09SalesforceControlsWidget",
+   "durationMillis": 63000
   },
   {
    "name": "TestV10SalesforceConformance",

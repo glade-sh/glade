@@ -3205,20 +3205,35 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
+	if !parsed.Bool("diagnostics-once") {
+		// Serve at once and index in the background. Requests that need the
+		// index wait for it; initialize and document sync do not.
+		handler := lsp.NewPendingHandler()
+		go func() {
+			index, err := loadIndex(root)
+			if err != nil {
+				handler.Fail(err)
+				return
+			}
+			handler.SetIndex(index)
+		}()
+		serveErr := lsp.Serve(os.Stdin, w, handler)
+		if serveErr != nil {
+			return serveErr
+		}
+		return handler.LoadError()
+	}
 	index, err := loadIndex(root)
 	if err != nil {
 		return err
 	}
 	handler := lsp.NewHandler(index)
-	if parsed.Bool("diagnostics-once") {
-		for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
-			if err := lsp.WriteMessage(w, notification); err != nil {
-				return err
-			}
+	for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
+		if err := lsp.WriteMessage(w, notification); err != nil {
+			return err
 		}
-		return nil
 	}
-	return lsp.Serve(os.Stdin, w, handler)
+	return nil
 }
 
 func runProfile(ctx context.Context, args []string, w io.Writer) error {
