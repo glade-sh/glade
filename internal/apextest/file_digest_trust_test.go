@@ -122,7 +122,7 @@ func TestCurrentFileDigestRehashesRecentlyModifiedFile(t *testing.T) {
 }
 
 func TestCurrentFileDigestSeesEveryKindOfEdit(t *testing.T) {
-		original := []byte("public class A { Integer x = 1; }")
+	original := []byte("public class A { Integer x = 1; }")
 	sameSize := []byte("public class A { Integer x = 2; }")
 	for name, edit := range map[string]func(t *testing.T, path string){
 		"rewrite same size": func(t *testing.T, path string) {
