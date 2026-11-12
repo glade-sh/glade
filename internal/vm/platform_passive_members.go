@@ -4642,9 +4642,27 @@ func newRichMessagingProcessPaymentResult() Value {
 	return out
 }
 
+// passiveDTOMemberReadOnly names the members that never write the receiver:
+// getters, is-accessors, and the Object methods.
+func passiveDTOMemberReadOnly(method string) bool {
+	lower := strings.ToLower(method)
+	switch lower {
+	case "equals", "hashcode", "tostring", "clone":
+		return true
+	}
+	return strings.HasPrefix(lower, "get") || strings.HasPrefix(lower, "is")
+}
+
 func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	if !vm.isPassivePlatformDTOObject(receiver) {
 		return Null, receiver, false, false, nil
+	}
+	// A shared describe value (child relationship or token) is read-only until
+	// written. Every passive member below that is not a pure read may write the
+	// receiver's Fields, so such a call works on a private copy; the caller
+	// stores the updated receiver when the member reports a mutation.
+	if receiver.fieldsShared && !passiveDTOMemberReadOnly(method) {
+		receiver.detachSharedFields()
 	}
 	if value, updated, mutated, handled := vm.reportsDTOAccessor(receiver, method, args); handled {
 		return value, updated, mutated, true, nil
@@ -4774,7 +4792,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		}
 		if ok && listValue.Kind == ValueList {
 			filtered := listValue
-			filtered.List = filtered.List[:0]
+			filtered.List = make([]Value, 0, len(listValue.List))
 			for _, item := range listValue.List {
 				if !item.Equal(args[0]) {
 					filtered.List = append(filtered.List, item)
