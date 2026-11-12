@@ -112,7 +112,9 @@ CGO_ENABLED=1 go test -count=1 -p=1 -timeout=0 \
 In an archived checkout without `node_modules`, set
 `GLADE_LWC_PLAYWRIGHT_MODULE` to the absolute Playwright package directory and
 `GLADE_HOME` to a prepared toolchain. `GLADE_LWC_BROWSER_EXECUTABLE` selects an
-installed Chromium. On Linux, CI installs Chromium with `--with-deps`.
+installed Chromium. On Linux, CI installs Chromium with
+`scripts/ci-install-playwright.sh`, which bounds each `--with-deps` attempt and
+falls back to Chromium alone if it launches.
 `GLADE_LWC_BROWSER_API_PARALLEL=2` with `-parallel=2` runs two API observations
 at once and needs at least 16 GiB of host memory. The `browser-suites` skill
 carries the same commands. Use [the CI workflows](../.github/workflows) and
