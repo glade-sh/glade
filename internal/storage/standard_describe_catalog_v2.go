@@ -241,13 +241,15 @@ func lookupStandardDescribeChildRelationshipsV2(objectName string) (standardDesc
 	if !ok {
 		return standardDescribeChildRelationshipsV2Member{}, false, nil
 	}
-	data, err := decodeStandardDescribeCatalogV2MemberBytes(standardDescribeChildRelationshipsV2Pack, entry, standardDescribeChildRelationshipsV2Magic, len(standardDescribeChildRelationshipsV2Index))
+	var member standardDescribeChildRelationshipsV2Member
+	err := withStandardDescribeCatalogV2MemberBytes(standardDescribeChildRelationshipsV2Pack, entry, standardDescribeChildRelationshipsV2Magic, len(standardDescribeChildRelationshipsV2Index), func(data []byte) error {
+		if err := json.Unmarshal(data, &member); err != nil {
+			return fmt.Errorf("decode standard describe reverse member %q: %w", entry.Name, err)
+		}
+		return nil
+	})
 	if err != nil {
 		return standardDescribeChildRelationshipsV2Member{}, true, err
-	}
-	var member standardDescribeChildRelationshipsV2Member
-	if err := json.Unmarshal(data, &member); err != nil {
-		return standardDescribeChildRelationshipsV2Member{}, true, fmt.Errorf("decode standard describe reverse member %q: %w", entry.Name, err)
 	}
 	return member, true, nil
 }
@@ -287,48 +289,84 @@ func standardDescribeNameAtLeast(name, key string) bool {
 }
 
 func decodeStandardDescribeCatalogV2Member(pack []byte, entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
-	data, err := decodeStandardDescribeCatalogV2MemberBytes(pack, entry, standardDescribeCatalogV2Magic, len(standardDescribeCatalogV2Index))
+	var describe standardDescribeObject
+	err := withStandardDescribeCatalogV2MemberBytes(pack, entry, standardDescribeCatalogV2Magic, len(standardDescribeCatalogV2Index), func(data []byte) error {
+		var decodeErr error
+		describe, decodeErr = decodeStandardDescribeObjectJSON(data)
+		if decodeErr != nil {
+			return fmt.Errorf("decode standard describe member %q: %w", entry.Name, decodeErr)
+		}
+		return nil
+	})
 	if err != nil {
 		return standardDescribeObject{}, err
-	}
-	describe, err := decodeStandardDescribeObjectJSON(data)
-	if err != nil {
-		return standardDescribeObject{}, fmt.Errorf("decode standard describe member %q: %w", entry.Name, err)
 	}
 	return describe, nil
 }
 
+// standardDescribeMemberBuffers holds uncompressed member buffers. A buffer is
+// only lent to a callback that copies what it keeps: decoded values never
+// reference it (strings are copied, encoding/json copies too).
+var standardDescribeMemberBuffers sync.Pool
+
+// standardDescribeMemberBufferMaxCap keeps the pool from holding an outlier.
+const standardDescribeMemberBufferMaxCap = 4 << 20
+
+// decodeStandardDescribeCatalogV2MemberBytes returns a member's JSON in a
+// buffer the caller owns.
 func decodeStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescribeCatalogV2IndexEntry, magic []byte, count int) ([]byte, error) {
+	return decodeStandardDescribeCatalogV2MemberInto(pack, entry, magic, count, nil)
+}
+
+// withStandardDescribeCatalogV2MemberBytes verifies a member and lends its JSON
+// to use from a pooled buffer. use must not retain data or slices of it.
+func withStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescribeCatalogV2IndexEntry, magic []byte, count int, use func(data []byte) error) error {
+	var buffer []byte
+	if pooled, ok := standardDescribeMemberBuffers.Get().(*[]byte); ok {
+		buffer = *pooled
+	}
+	data, err := decodeStandardDescribeCatalogV2MemberInto(pack, entry, magic, count, buffer[:0])
+	if err == nil {
+		err = use(data)
+	}
+	if cap(data) > 0 && cap(data) <= standardDescribeMemberBufferMaxCap {
+		data = data[:0]
+		standardDescribeMemberBuffers.Put(&data)
+	}
+	return err
+}
+
+func decodeStandardDescribeCatalogV2MemberInto(pack []byte, entry standardDescribeCatalogV2IndexEntry, magic []byte, count int, buffer []byte) ([]byte, error) {
 	if len(pack) < standardDescribeCatalogV2HeaderSize || !bytes.Equal(pack[:8], magic) || binary.BigEndian.Uint32(pack[8:12]) != 2 || int64(binary.BigEndian.Uint32(pack[12:16])) != int64(count) {
-		return nil, fmt.Errorf("decode standard describe member %q: invalid pack header", entry.Name)
+		return buffer, fmt.Errorf("decode standard describe member %q: invalid pack header", entry.Name)
 	}
 	end := entry.Offset + uint64(entry.CompressedLength)
 	if end < entry.Offset || entry.Offset < standardDescribeCatalogV2HeaderSize || end > uint64(len(pack)) {
-		return nil, fmt.Errorf("decode standard describe member %q: member bounds [%d,%d) exceed pack length %d", entry.Name, entry.Offset, end, len(pack))
+		return buffer, fmt.Errorf("decode standard describe member %q: member bounds [%d,%d) exceed pack length %d", entry.Name, entry.Offset, end, len(pack))
 	}
 	memberReader := bytes.NewReader(pack[entry.Offset:end])
 	reader, err := standardDescribeGzipReader(memberReader)
 	if err != nil {
-		return nil, fmt.Errorf("decode standard describe member %q: %w", entry.Name, err)
+		return buffer, fmt.Errorf("decode standard describe member %q: %w", entry.Name, err)
 	}
 	defer standardDescribeGzipReaders.Put(reader)
 	reader.Multistream(false)
-	data, readErr := readAllSized(io.LimitReader(reader, int64(entry.UncompressedLength)+1), int(entry.UncompressedLength)+1)
+	data, readErr := readAllSized(io.LimitReader(reader, int64(entry.UncompressedLength)+1), int(entry.UncompressedLength)+1, buffer)
 	closeErr := reader.Close()
 	if readErr != nil {
-		return nil, fmt.Errorf("decode standard describe member %q: %w", entry.Name, readErr)
+		return data, fmt.Errorf("decode standard describe member %q: %w", entry.Name, readErr)
 	}
 	if closeErr != nil {
-		return nil, fmt.Errorf("decode standard describe member %q: %w", entry.Name, closeErr)
+		return data, fmt.Errorf("decode standard describe member %q: %w", entry.Name, closeErr)
 	}
 	if memberReader.Len() != 0 {
-		return nil, fmt.Errorf("decode standard describe member %q: %d trailing compressed bytes", entry.Name, memberReader.Len())
+		return data, fmt.Errorf("decode standard describe member %q: %d trailing compressed bytes", entry.Name, memberReader.Len())
 	}
 	if len(data) != int(entry.UncompressedLength) {
-		return nil, fmt.Errorf("decode standard describe member %q: uncompressed length %d, want %d", entry.Name, len(data), entry.UncompressedLength)
+		return data, fmt.Errorf("decode standard describe member %q: uncompressed length %d, want %d", entry.Name, len(data), entry.UncompressedLength)
 	}
 	if digest := sha256.Sum256(data); digest != entry.SHA256 {
-		return nil, fmt.Errorf("decode standard describe member %q: SHA256 %x, want %x", entry.Name, digest, entry.SHA256)
+		return data, fmt.Errorf("decode standard describe member %q: SHA256 %x, want %x", entry.Name, digest, entry.SHA256)
 	}
 	return data, nil
 }
@@ -404,8 +442,12 @@ func standardDescribeGzipReader(source io.Reader) (*gzip.Reader, error) {
 
 // readAllSized is io.ReadAll with an initial capacity, so a member whose size
 // the index records is read without regrowing the buffer.
-func readAllSized(reader io.Reader, capacity int) ([]byte, error) {
-	data := make([]byte, 0, capacity)
+// A non-nil buffer with enough capacity is reused.
+func readAllSized(reader io.Reader, capacity int, buffer []byte) ([]byte, error) {
+	data := buffer[:0]
+	if cap(data) < capacity {
+		data = make([]byte, 0, capacity)
+	}
 	for {
 		if len(data) == cap(data) {
 			data = append(data, 0)[:len(data)]
