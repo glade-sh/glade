@@ -879,7 +879,7 @@ func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts
 				perfCounters.phases.semanticBuilds.Add(1)
 				perfCounters.phases.semanticAnalyses.Add(1)
 			}
-			analyzed := sema.AnalyzeWithOptions(analysisIndex, analyzeOptions)
+			analyzed := analyzeSemantic(ctx, analysisIndex, analyzeOptions)
 			if hooks.afterAnalysis != nil {
 				hooks.afterAnalysis()
 			}

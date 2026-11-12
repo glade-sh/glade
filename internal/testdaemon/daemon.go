@@ -12,6 +12,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/watch"
@@ -31,6 +32,10 @@ type Daemon struct {
 	captureScopeFn   func(watch.Scope) (watch.Snapshot, error)
 	refreshGraphFn   func(*watch.RefGraph, typesys.Index, []watch.Change) (*watch.RefGraph, error)
 	warmRuntimeFn    func(context.Context, typesys.Index, *typesys.BuildArtifacts) error
+	// semaState carries the previous generation's per-type body diagnostics, so
+	// a one-line edit re-checks one type instead of the project. The semantic
+	// gate reads it from the context of Warm and of every run.
+	semaState *sema.IncrementalState
 	// runGenerationFn is a per-daemon test seam for proving a run receives one
 	// complete immutable generation. Production leaves it nil.
 	runGenerationFn func(context.Context, daemonGeneration, apextest.Options) testreport.Run
@@ -77,6 +82,7 @@ func New(root string) (*Daemon, error) {
 			return graph.Refreshed(index, changes), nil
 		},
 		warmRuntimeFn: apextest.WarmRuntimeWithBuildArtifacts,
+		semaState:     sema.NewIncrementalState(),
 	}, nil
 }
 
@@ -110,7 +116,7 @@ func (d *Daemon) Warm() error {
 	generation := d.daemonGeneration
 	defer d.mu.RUnlock()
 	artifacts := generation.artifacts
-	return d.warmRuntimeFn(context.Background(), generation.index, &artifacts)
+	return d.warmRuntimeFn(apextest.WithIncrementalSemantic(context.Background(), d.semaState), generation.index, &artifacts)
 }
 
 func (d *Daemon) RunFilter(filter string) testreport.Run {
@@ -179,6 +185,7 @@ func optionsForGeneration(opts apextest.Options, generation daemonGeneration) ap
 }
 
 func (d *Daemon) runGeneration(ctx context.Context, generation daemonGeneration, opts apextest.Options) testreport.Run {
+	ctx = apextest.WithIncrementalSemantic(ctx, d.semaState)
 	if d.runGenerationFn != nil {
 		return d.runGenerationFn(ctx, generation, optionsForGeneration(opts, generation))
 	}
