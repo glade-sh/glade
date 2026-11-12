@@ -46,7 +46,7 @@ func executableDigest(file *os.File, cacheDir string, now func() time.Time) (str
 	var entry string
 	if stamped && cacheDir != "" {
 		entry = filepath.Join(cacheDir, executableStampName(before))
-		if digest, ok := readExecutableDigestEntry(entry); ok {
+		if digest, ok := readExecutableDigestEntry(cacheDir, entry); ok {
 			return digest, nil
 		}
 	}
@@ -72,7 +72,10 @@ func executableStampName(s filestamp.Stamp) string {
 	return hex.EncodeToString(sum[:16])
 }
 
-func readExecutableDigestEntry(path string) (string, bool) {
+func readExecutableDigestEntry(dir, path string) (string, bool) {
+	if !privateDigestDir(dir) {
+		return "", false
+	}
 	data, err := os.ReadFile(path) // #nosec G304 -- fixed cache directory, stamp-derived name.
 	if err != nil || !validDigestHex(data) {
 		return "", false
@@ -94,7 +97,7 @@ func validDigestHex(data []byte) bool {
 
 // writeExecutableDigestEntry is best effort: a failure only costs a re-hash.
 func writeExecutableDigestEntry(dir, entry, digest string) {
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil || !privateDigestDir(dir) {
 		return
 	}
 	tmp, err := os.CreateTemp(dir, ".tmp-*")

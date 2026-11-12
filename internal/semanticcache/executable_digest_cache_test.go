@@ -224,3 +224,24 @@ func TestExecutableDigestPrunesOldEntries(t *testing.T) {
 		t.Fatalf("want exactly the fresh entry, have %d", len(entries))
 	}
 }
+
+func TestExecutableDigestRefusesSharedCacheDirectory(t *testing.T) {
+	requireStamps(t)
+	path := writeExe(t, "executable bytes")
+	cacheDir := t.TempDir()
+	if err := os.Chmod(cacheDir, 0o777); err != nil {
+		t.Fatal(err)
+	}
+	hashes := countHashes(t)
+	for range 3 {
+		if got := digestOf(t, path, cacheDir, inAnHour); got != sha("executable bytes") {
+			t.Fatalf("digest = %q", got)
+		}
+	}
+	if *hashes != 3 {
+		t.Fatalf("hashed %d times with a world-writable cache directory, want 3 (entries must not be used)", *hashes)
+	}
+	if entries, _ := os.ReadDir(cacheDir); len(entries) != 0 {
+		t.Fatalf("entries written into a world-writable directory: %d", len(entries))
+	}
+}
