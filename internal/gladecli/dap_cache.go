@@ -3,6 +3,7 @@ package gladecli
 import (
 	"context"
 	"path/filepath"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/project"
@@ -13,6 +14,28 @@ import (
 
 // Require person-family metadata and the captured business-default fallback in the restored org.
 const dapCacheVersion = 18
+
+// normalizedDAPRoot is the absolute, cleaned, symlink-resolved project root.
+// Load slots and publish locks are keyed on it so two spellings of one project
+// share them.
+func normalizedDAPRoot(projectRoot string) (string, error) {
+	root, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return "", err
+	}
+	root = filepath.Clean(root)
+	if resolved, err := filepath.EvalSymlinks(root); err == nil {
+		root = resolved
+	}
+	return root, nil
+}
+
+var dapPublishLocks sync.Map // normalized root -> *sync.Mutex
+
+func dapPublishLock(root string) *sync.Mutex {
+	lock, _ := dapPublishLocks.LoadOrStore(root, &sync.Mutex{})
+	return lock.(*sync.Mutex)
+}
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	org, runtime, apiVersion, _, err := loadDAPStartupStateWithIndex(context.Background(), projectRoot)
@@ -46,14 +69,19 @@ func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (stor
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
 	runtime := apextest.CompileProjectRuntimeForRequest(index)
-	// A cancelled load never publishes: the cache entry fingerprints the files
-	// as they are when it is written, which may no longer be the files this
-	// build read.
+	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
+	built.Version = dapCacheVersion
+	// A cancelled load never publishes: the entry fingerprints files when it is
+	// built, which may no longer be what this load read. The check and the write
+	// share the root's publish lock, and a cancelled launch is never published
+	// after the check.
+	lockRoot, _ := normalizedDAPRoot(root)
+	publish := dapPublishLock(lockRoot)
+	publish.Lock()
+	defer publish.Unlock()
 	if err := ctx.Err(); err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
-	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
-	built.Version = dapCacheVersion
 	if err := startupcache.Write(&built, startupcache.SubdirDAP); err != nil {
 		// Caching is an optimization; keep serving from rebuilt state even if
 		// cache persistence fails.

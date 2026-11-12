@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/glade-sh/glade/internal/startupcache"
+	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -172,5 +173,68 @@ func TestWarmTestLaunchCancelEndsDuringIndexBuild(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("warm test launch stayed blocked in the index build after cancel")
+	}
+}
+
+func TestDAPLoadSlotsShareOneProjectAcrossSpellings(t *testing.T) {
+	root := t.TempDir()
+	link := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(root, link); err != nil {
+		t.Skip("symlinks unavailable")
+	}
+	release := make(chan struct{})
+	var started atomic.Int32
+	previous := dapStartupLoader
+	dapStartupLoader = func(context.Context, string) dapStartup {
+		started.Add(1)
+		<-release
+		return dapStartup{err: errors.New("done")}
+	}
+	t.Cleanup(func() { dapStartupLoader = previous })
+	spellings := []string{root, link, filepath.Join(root, ".", "x", ".."), link + "/"}
+	var wg sync.WaitGroup
+	for _, spelling := range spellings {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer cancel()
+			_, _ = awaitDAPStartup(ctx, spelling)
+		}()
+	}
+	wg.Wait()
+	close(release)
+	if started.Load() != 1 {
+		t.Fatalf("loaders started = %d for one project, want 1", started.Load())
+	}
+}
+
+// A load that is cancelled while it waits for the publish lock must not write.
+func TestCancelDuringPublishLockWaitSkipsWrite(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg"))
+	project := filepath.Join(root, "project")
+	writeTestFile(t, filepath.Join(project, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(project, "force-app/main/classes/A.cls"), "public class A {}")
+	normalized, err := normalizedDAPRoot(project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lock := dapPublishLock(normalized)
+	lock.Lock()
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, _, _, _, err := loadDAPStartupStateWithIndex(ctx, project)
+		done <- err
+	}()
+	time.Sleep(300 * time.Millisecond) // the load is built and waits at the lock
+	cancel()
+	lock.Unlock()
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want canceled", err)
+	}
+	if cache, err := startupcache.Read(project, startupcache.SubdirDAP); err == nil && cache != nil {
+		t.Fatal("cache was written after cancel")
 	}
 }

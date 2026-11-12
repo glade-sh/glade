@@ -216,6 +216,9 @@ func acquireDAPLoadSlot(ctx context.Context, root string) (release func(), err e
 // not publish cache state. Results are never shared between launches.
 func runCancellable[T any](ctx context.Context, root string, work func(context.Context) T) (T, error) {
 	var zero T
+	if normalized, err := normalizedDAPRoot(root); err == nil {
+		root = normalized
+	}
 	release, err := acquireDAPLoadSlot(ctx, root)
 	if err != nil {
 		return zero, err
