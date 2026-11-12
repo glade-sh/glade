@@ -14,25 +14,32 @@ import (
 const dapCacheVersion = 18
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
+	org, runtime, apiVersion, _, err := loadDAPStartupStateWithIndex(projectRoot)
+	return org, runtime, apiVersion, err
+}
+
+// loadDAPStartupStateWithIndex also returns the project index when this call
+// had to build it (a startup cache miss). On a cache hit the index is nil.
+func loadDAPStartupStateWithIndex(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
 	root = filepath.Clean(root)
 	cache, err := startupcache.Read(root, startupcache.SubdirDAP)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
 	if cache != nil && startupcache.Fresh(cache, root, dapCacheVersion) {
-		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil
+		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil, nil
 	}
 	p, index, err := loadProjectIndex(root)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
 	org, err := orgStateFromIndex(root, p, index)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
 	runtime := apextest.CompileProjectRuntimeForRequest(index)
 	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
@@ -41,7 +48,7 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 		// Caching is an optimization; keep serving from rebuilt state even if
 		// cache persistence fails.
 	}
-	return built.Org, runtime, p.SourceAPIVersion, nil
+	return built.Org, runtime, p.SourceAPIVersion, &index, nil
 }
 
 func compiledRuntimeFromCache(runtime startupcache.CompiledRuntime) apextest.CompiledProjectRuntime {

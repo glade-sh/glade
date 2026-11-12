@@ -13,6 +13,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -137,8 +138,10 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return err
 	}
 	if testLaunch {
-		index, err := loadIndex(projectRoot)
-		if err != nil {
+		var index typesys.Index
+		if state.index != nil {
+			index = *state.index
+		} else if index, err = dapTestIndexLoader(projectRoot); err != nil {
 			return err
 		}
 		if err := apextest.RegisterTestMethodForRequest(machine, index, launch.ClassName, launch.MethodName); err != nil {
@@ -163,17 +166,24 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 	return nil
 }
 
+// dapTestIndexLoader builds the index for a test launch when the startup load
+// did not return one. Tests replace it.
+var dapTestIndexLoader = loadIndex
+
 type dapStartup struct {
 	org        storage.OrgState
 	runtime    apextest.CompiledProjectRuntime
 	apiVersion string
-	err        error
+	// index is the project index the load built, nil when the startup cache
+	// answered. A test launch reuses it instead of building the index again.
+	index *typesys.Index
+	err   error
 }
 
 // dapStartupLoader builds the launch state for a project root. Tests replace it.
 var dapStartupLoader = func(root string) dapStartup {
-	org, runtime, apiVersion, err := loadDAPStartupState(root)
-	return dapStartup{org: org, runtime: runtime, apiVersion: apiVersion, err: err}
+	org, runtime, apiVersion, index, err := loadDAPStartupStateWithIndex(root)
+	return dapStartup{org: org, runtime: runtime, apiVersion: apiVersion, index: index, err: err}
 }
 
 // awaitDAPStartup returns the launch state, or ctx.Err() as soon as ctx ends.
