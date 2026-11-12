@@ -92,6 +92,43 @@ func (vm *VM) rememberDepartedString(name string, site int, value Value) {
 	f.slots[key] = append(slots, bindSlot{value: value, site: site})
 }
 
+// rememberEndedBindValue records a variable of any type whose scope ended with
+// the given value (an exception for a catch variable, null for a loop variable
+// whose loop never ran). Every dynamic route binds it, so it is also kept in
+// closedSOQLLocals, which the countQuery and locator routes read.
+func (vm *VM) rememberEndedBindValue(name string, site int, value Value) {
+	key := strings.ToLower(name)
+	f := &vm.bindFrame
+	if f.slots == nil {
+		f.slots = make(map[string][]bindSlot)
+	}
+	slots := f.slots[key]
+	for i := range slots {
+		if slots[i].site == site {
+			slots = append(slots[:i], slots[i+1:]...)
+			break
+		}
+	}
+	f.slots[key] = append(slots, bindSlot{value: value, site: site})
+	if vm.closedSOQLLocals == nil {
+		vm.closedSOQLLocals = make(map[string]Value)
+	}
+	vm.closedSOQLLocals[key] = value
+}
+
+// dropEndedBindSite forgets the ended value of a variable whose declaration is
+// about to run again.
+func (vm *VM) dropEndedBindSite(name string, site int) {
+	key := strings.ToLower(name)
+	slots := vm.bindFrame.slots[key]
+	for i := range slots {
+		if slots[i].site == site {
+			vm.bindFrame.slots[key] = append(slots[:i], slots[i+1:]...)
+			break
+		}
+	}
+}
+
 // enterBindBlock runs when a block body starts. It drops the ended locals the
 // body (or a block inside it) declared, and marks ended locals that a
 // declaration in this body will outrank.
@@ -204,6 +241,9 @@ func collectBindSites(instructions []ir.Instruction, sites map[int]struct{}) {
 		if inst.Op == ir.OpDeclare || inst.Op == ir.OpForEach {
 			sites[inst.Pos] = struct{}{}
 		}
+		for _, clause := range vmCatchClauses(*inst) {
+			sites[clause.Pos] = struct{}{}
+		}
 		if inst.Init != nil {
 			collectBindSites([]ir.Instruction{*inst.Init}, sites)
 		}
@@ -219,4 +259,17 @@ func collectBindSites(instructions []ir.Instruction, sites map[int]struct{}) {
 			collectBindSites(c.Body, sites)
 		}
 	}
+}
+
+// bindValueTypeName spells a bind value's type for the "Invalid bind
+// expression type" error. An exception value prints the way its getTypeName
+// does (dynamic_bind_scope_paths D38: System.DmlException).
+func (vm *VM) bindValueTypeName(value Value) string {
+	if value.Kind == ValueObject && isExceptionType(value.Type) {
+		if class, ok := vm.lookupClass(value.Type); ok && !class.PlatformType {
+			return vm.classTypeToken(class)
+		}
+		return vm.exceptionQualifiedTypeName(value.Type)
+	}
+	return valueTypeName(value)
 }
