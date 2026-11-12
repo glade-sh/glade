@@ -150,7 +150,7 @@ func (vm *VM) prepareDMLScopeAliasPlan(scope map[string]Value, mutations []dmlSc
 		}
 	}
 	// Inspect each static graph once, rather than once per record or changed node.
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesNoLazy() {
 		for _, field := range class.StaticFields {
 			if !plan.externalSafe(field.Value, seen) {
 				return reject("external static sharing")

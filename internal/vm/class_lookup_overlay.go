@@ -176,7 +176,7 @@ func (o *classLookupOverlay) lookup(vm *VM, typeName string) (Class, bool) {
 	if class, ok := o.prior[alias]; ok {
 		return class, true
 	}
-	return vm.classEntry(alias)
+	return vm.classEntryRaw(alias)
 }
 
 // freezeClassLookupOverlay publishes the overlay as a layer over the root
@@ -241,7 +241,7 @@ func (vm *VM) freezeClassLookupOverlay(o *classLookupOverlay) bool {
 func (vm *VM) recomputeClassLookupKey(contributors, written []string, key, previous string) (string, bool) {
 	best, bestNS, bestRank, found := "", "", 0, false
 	consider := func(alias string) {
-		class, ok := vm.classEntry(alias)
+		class, ok := vm.classEntryRaw(alias)
 		if !ok {
 			return
 		}
@@ -321,7 +321,7 @@ func (vm *VM) patchTopLevelClassLookup(base map[string]topLevelClassLookup, cont
 		var entry topLevelClassLookup
 		found := false
 		visit := func(alias string) {
-			class, ok := vm.classEntry(alias)
+			class, ok := vm.classEntryRaw(alias)
 			if !ok {
 				return
 			}
