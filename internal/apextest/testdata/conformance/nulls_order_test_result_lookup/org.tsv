@@ -1,0 +1,11 @@
+api	object	field	observation
+62.0	ApexTestResult	ApexClassId	"{""distinctCount"":3,""nullCount"":0,""skip"":""no null and two distinct parent values""}"
+62.0	ApexTestResult	ApexLogId	"{""distinctCount"":3,""nullCount"":0,""skip"":""no null and two distinct parent values""}"
+62.0	ApexTestResult	ApexTestRunResultId	"{""ASC"":""NLH"",""DESC"":""NHL"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""LHN""}"
+62.0	ApexTestResult	AsyncApexJobId	"{""ASC"":""NLH"",""DESC"":""NHL"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""LHN""}"
+62.0	ApexTestResult	QueueItemId	"{""ASC"":""NLH"",""DESC"":""NHL"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""LHN""}"
+67.0	ApexTestResult	ApexClassId	"{""distinctCount"":3,""nullCount"":0,""skip"":""no null and two distinct parent values""}"
+67.0	ApexTestResult	ApexLogId	"{""distinctCount"":3,""nullCount"":0,""skip"":""no null and two distinct parent values""}"
+67.0	ApexTestResult	ApexTestRunResultId	"{""ASC"":""NLH"",""DESC"":""NHL"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""LHN""}"
+67.0	ApexTestResult	AsyncApexJobId	"{""ASC"":""NLH"",""DESC"":""NHL"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""LHN""}"
+67.0	ApexTestResult	QueueItemId	"{""ASC"":""NLH"",""DESC"":""NHL"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""LHN""}"

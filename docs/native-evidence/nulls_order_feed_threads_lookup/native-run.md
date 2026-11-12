@@ -1,0 +1,1 @@
+Synthetic feed-comment thread lookup capture, 2026-11-09, in a fresh 30-day Developer scratch org from a campaign Dev Hub. FeedComment.ThreadParentId honors explicit NULLS placement at APIs 62 and 67 with saved-null verification and synthetic parent comments. The org was deleted and its unique description matched exactly one Dev Hub ScratchOrgInfo record with Status Deleted.

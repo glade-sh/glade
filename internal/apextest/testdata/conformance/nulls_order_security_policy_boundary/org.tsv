@@ -1,0 +1,5 @@
+api	case	result
+67.0	classes	accepted
+67.0	transactionSecurityPolicies	rejected: You don't have sufficient access to perform this action.; You don't have sufficient access to perform this action.
+62.0	saved shape	"{""apexDistinct"":0,""apexNull"":0,""count"":0,""userDistinct"":0,""userNull"":0}"
+67.0	saved shape	"{""apexDistinct"":0,""apexNull"":0,""count"":0,""userDistinct"":0,""userNull"":0}"

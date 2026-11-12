@@ -1,0 +1,9 @@
+api	object	field	case	observation
+62.0	ContentWorkspaceMember	ContentWorkspacePermissionId	null	"{""accepted"":false,""messages"":[""Required fields are missing: [ContentWorkspacePermissionId]"",""Required fields are missing: [ContentWorkspacePermissionId]""]}"
+62.0	MobileSettingsAssignment	ProfileId	null	"{""accepted"":false,""messages"":[""No user profile specified. Select a profile to assign the settings to.: Profile ID"",""No user profile specified. Select a profile to assign the settings to.: Profile ID""]}"
+62.0	ContentWorkspaceMember	ContentWorkspacePermissionId	control	"{""accepted"":true,""messages"":[]}"
+62.0	MobileSettingsAssignment	ProfileId	control	"{""accepted"":true,""messages"":[]}"
+67.0	ContentWorkspaceMember	ContentWorkspacePermissionId	null	"{""accepted"":false,""messages"":[""Required fields are missing: [ContentWorkspacePermissionId]"",""Required fields are missing: [ContentWorkspacePermissionId]""]}"
+67.0	MobileSettingsAssignment	ProfileId	null	"{""accepted"":false,""messages"":[""No user profile specified. Select a profile to assign the settings to.: Profile ID"",""No user profile specified. Select a profile to assign the settings to.: Profile ID""]}"
+67.0	ContentWorkspaceMember	ContentWorkspacePermissionId	control	"{""accepted"":true,""messages"":[]}"
+67.0	MobileSettingsAssignment	ProfileId	control	"{""accepted"":true,""messages"":[]}"

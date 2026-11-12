@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe62_08 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|UserAppInfo|'+JSON.serialize(new Map<String,Object>{'AppDefinitionId'=>NullExisting62.observe('UserAppInfo','AppDefinitionId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|UserAppMenuCustomization|'+JSON.serialize(new Map<String,Object>{'ApplicationId'=>NullExisting62.observe('UserAppMenuCustomization','ApplicationId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|UserProvAccount|'+JSON.serialize(new Map<String,Object>{'ConnectedAppId'=>NullExisting62.observe('UserProvAccount','ConnectedAppId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|UserProvAccount|'+JSON.serialize(new Map<String,Object>{'SalesforceUserId'=>NullExisting62.observe('UserProvAccount','SalesforceUserId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|UserProvAccountStaging|'+JSON.serialize(new Map<String,Object>{'ConnectedAppId'=>NullExisting62.observe('UserProvAccountStaging','ConnectedAppId')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|UserProvisioningConfig|'+JSON.serialize(new Map<String,Object>{'ConnectedAppId'=>NullExisting62.observe('UserProvisioningConfig','ConnectedAppId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|UserProvisioningConfig|'+JSON.serialize(new Map<String,Object>{'NamedCredentialId'=>NullExisting62.observe('UserProvisioningConfig','NamedCredentialId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|UserProvisioningRequest|'+JSON.serialize(new Map<String,Object>{'ConnectedAppId'=>NullExisting62.observe('UserProvisioningRequest','ConnectedAppId')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|UserProvisioningRequest|'+JSON.serialize(new Map<String,Object>{'UserProvAccountId'=>NullExisting62.observe('UserProvisioningRequest','UserProvAccountId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|UserProvisioningRequest|'+JSON.serialize(new Map<String,Object>{'UserProvConfigId'=>NullExisting62.observe('UserProvisioningRequest','UserProvConfigId')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|UserRole|'+JSON.serialize(new Map<String,Object>{'ForecastUserId'=>NullExisting62.observe('UserRole','ForecastUserId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|UserRole|'+JSON.serialize(new Map<String,Object>{'PortalAccountId'=>NullExisting62.observe('UserRole','PortalAccountId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|WebLink|'+JSON.serialize(new Map<String,Object>{'ScontrolId'=>NullExisting62.observe('WebLink','ScontrolId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|WorkCapacityAvailability|'+JSON.serialize(new Map<String,Object>{'ServiceTerritoryId'=>NullExisting62.observe('WorkCapacityAvailability','ServiceTerritoryId')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|WorkCapacityLimit|'+JSON.serialize(new Map<String,Object>{'ServiceTerritoryId'=>NullExisting62.observe('WorkCapacityLimit','ServiceTerritoryId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|WorkCapacityUsage|'+JSON.serialize(new Map<String,Object>{'ServiceTerritoryId'=>NullExisting62.observe('WorkCapacityUsage','ServiceTerritoryId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|WorkOrder|'+JSON.serialize(new Map<String,Object>{'BusinessHoursId'=>NullExisting62.observe('WorkOrder','BusinessHoursId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|WorkOrder|'+JSON.serialize(new Map<String,Object>{'ProductServiceCampaignItemId'=>NullExisting62.observe('WorkOrder','ProductServiceCampaignItemId')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|WorkOrder|'+JSON.serialize(new Map<String,Object>{'ServiceReportTemplateId'=>NullExisting62.observe('WorkOrder','ServiceReportTemplateId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|WorkOrderLineItem|'+JSON.serialize(new Map<String,Object>{'Product2Id'=>NullExisting62.observe('WorkOrderLineItem','Product2Id')})); }
+}

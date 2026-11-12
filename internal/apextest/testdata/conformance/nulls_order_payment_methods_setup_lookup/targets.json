@@ -1,0 +1,8 @@
+{
+"AlternativePaymentMethod": [
+"PaymentGatewayId"
+],
+"CardPaymentMethod": [
+"PaymentGatewayId"
+]
+}

@@ -1,0 +1,3 @@
+@IsTest(SeeAllData=true) private class NullProbe62_00 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|ScorecardMetric|'+NullCore62.probeObject('ScorecardMetric',new List<String>{'ReportId'})); }
+}

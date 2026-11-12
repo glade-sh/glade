@@ -1,0 +1,8 @@
+{
+"ApptBundlePolicy": [
+"FilterCriteriaId"
+],
+"ServiceAppointment": [
+"BundlePolicyId"
+]
+}

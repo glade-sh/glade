@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class NullProbe67_00 { @IsTest static void m00(){System.assert(false,'CAPTURE|UserProvAccount|'+NullCore67.probeObject('UserProvAccount',new List<String>{'SalesforceUserId'}));} @IsTest static void m01(){System.assert(false,'CAPTURE|UserProvAccountStaging|'+NullCore67.probeObject('UserProvAccountStaging',new List<String>{'SalesforceUserId'}));} }

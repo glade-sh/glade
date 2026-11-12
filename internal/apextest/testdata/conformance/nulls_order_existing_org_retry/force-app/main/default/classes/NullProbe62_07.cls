@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe62_07 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|ServiceAppointment|'+JSON.serialize(new Map<String,Object>{'BundlePolicyId'=>NullExisting62.observe('ServiceAppointment','BundlePolicyId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|ServiceAppointment|'+JSON.serialize(new Map<String,Object>{'ParentRecordId'=>NullExisting62.observe('ServiceAppointment','ParentRecordId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|ServiceAppointment|'+JSON.serialize(new Map<String,Object>{'RelatedBundleId'=>NullExisting62.observe('ServiceAppointment','RelatedBundleId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|ServiceResource|'+JSON.serialize(new Map<String,Object>{'LocationId'=>NullExisting62.observe('ServiceResource','LocationId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|ServiceResource|'+JSON.serialize(new Map<String,Object>{'PayGroupId'=>NullExisting62.observe('ServiceResource','PayGroupId')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|ServiceResource|'+JSON.serialize(new Map<String,Object>{'RelatedRecordId'=>NullExisting62.observe('ServiceResource','RelatedRecordId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|ServiceResource|'+JSON.serialize(new Map<String,Object>{'ServiceCrewId'=>NullExisting62.observe('ServiceResource','ServiceCrewId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|Shift|'+JSON.serialize(new Map<String,Object>{'RecordsetFilterCriteriaId'=>NullExisting62.observe('Shift','RecordsetFilterCriteriaId')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|Skill|'+JSON.serialize(new Map<String,Object>{'TypeId'=>NullExisting62.observe('Skill','TypeId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|Swarm|'+JSON.serialize(new Map<String,Object>{'CollaborationRoomId'=>NullExisting62.observe('Swarm','CollaborationRoomId')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|ThreatDetectionFeedback|'+JSON.serialize(new Map<String,Object>{'ThreatDetectionEventId'=>NullExisting62.observe('ThreatDetectionFeedback','ThreatDetectionEventId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|ThreatDetectionFeedback|'+JSON.serialize(new Map<String,Object>{'UserId'=>NullExisting62.observe('ThreatDetectionFeedback','UserId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|TimeSheet|'+JSON.serialize(new Map<String,Object>{'ServiceResourceId'=>NullExisting62.observe('TimeSheet','ServiceResourceId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|TimeSheetEntry|'+JSON.serialize(new Map<String,Object>{'WorkOrderId'=>NullExisting62.observe('TimeSheetEntry','WorkOrderId')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|TimeSheetEntry|'+JSON.serialize(new Map<String,Object>{'WorkOrderLineItemId'=>NullExisting62.observe('TimeSheetEntry','WorkOrderLineItemId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|TimeSlot|'+JSON.serialize(new Map<String,Object>{'RecordsetFilterCriteriaId'=>NullExisting62.observe('TimeSlot','RecordsetFilterCriteriaId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|TransactionSecurityPolicy|'+JSON.serialize(new Map<String,Object>{'ApexPolicyId'=>NullExisting62.observe('TransactionSecurityPolicy','ApexPolicyId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|TransactionSecurityPolicy|'+JSON.serialize(new Map<String,Object>{'ExecutionUserId'=>NullExisting62.observe('TransactionSecurityPolicy','ExecutionUserId')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|User|'+JSON.serialize(new Map<String,Object>{'CallCenterId'=>NullExisting62.observe('User','CallCenterId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|User|'+JSON.serialize(new Map<String,Object>{'ContactId'=>NullExisting62.observe('User','ContactId')})); }
+}

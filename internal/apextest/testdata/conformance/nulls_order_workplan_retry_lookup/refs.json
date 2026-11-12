@@ -1,0 +1,1 @@
+[{"obj": "WorkPlan", "field": "WorkOrderId", "createable": true, "nillable": true, "sortable": true}, {"obj": "WorkPlan", "field": "WorkOrderLineItemId", "createable": true, "nillable": true, "sortable": true}]

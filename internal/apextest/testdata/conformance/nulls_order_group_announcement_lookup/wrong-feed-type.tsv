@@ -1,0 +1,3 @@
+api	object	field	observation
+62.0	CollaborationGroup	AnnouncementId	"{""skip"":""EXC System.DmlException: Insert failed. First exception on row 0; first error: INVALID_OPERATION, Error: You can create an announcement only with the AdvancedTextPost feed item type.: []""}"
+67.0	CollaborationGroup	AnnouncementId	"{""skip"":""EXC System.DmlException: Insert failed. First exception on row 0; first error: INVALID_OPERATION, Error: You can create an announcement only with the AdvancedTextPost feed item type.: []""}"

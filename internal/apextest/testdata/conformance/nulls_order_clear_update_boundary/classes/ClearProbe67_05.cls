@@ -1,0 +1,1 @@
+@IsTest private class ClearProbe67_05 { @IsTest static void probe() { System.assert(false,'CAPTURE|MobileSettingsAssignment|ProfileId|'+JSON.serialize(NullCore67.probeField('MobileSettingsAssignment','ProfileId'))); } }

@@ -1,0 +1,17 @@
+{
+"AttributeDefinition": [
+"PicklistId"
+],
+"EmailMessageRelation": [
+"RelationId"
+],
+"Order": [
+"OriginalOrderId"
+],
+"UserProvAccount": [
+"SalesforceUserId"
+],
+"UserProvAccountStaging": [
+"SalesforceUserId"
+]
+}

@@ -1,0 +1,1 @@
+@IsTest(SeeAllData=true) private class NullProbe67_00 { @IsTest static void m00(){System.assert(false,'CAPTURE|PaymentGateway|'+NullCore67.probeObject('PaymentGateway',new List<String>{'MerchantCredentialId','PaymentGatewayProviderId'}));} }

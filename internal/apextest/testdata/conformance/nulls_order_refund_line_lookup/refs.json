@@ -1,0 +1,1 @@
+[{"obj": "PaymentLineInvoice", "field": "AssociatedAccountId", "createable": true, "nillable": true, "sortable": true}, {"obj": "RefundLinePayment", "field": "AssociatedAccountId", "createable": true, "nillable": true, "sortable": true}]

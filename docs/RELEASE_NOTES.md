@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Apex
+
+- **Lookup null ordering.** SOQL `ORDER BY` on additional standard lookup fields places nulls as the captured Salesforce rows show at API 62 and 67.
 
 ## v0.3.8
 

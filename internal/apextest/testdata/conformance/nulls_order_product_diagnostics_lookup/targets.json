@@ -1,0 +1,46 @@
+{
+"DigitalWallet": [
+"PaymentGatewayId"
+],
+"Entitlement": [
+"BusinessHoursId"
+],
+"EntitlementTemplate": [
+"BusinessHoursId"
+],
+"MessagingChannel": [
+"BusinessHoursId"
+],
+"Payment": [
+"PaymentGatewayId"
+],
+"PaymentAuthorization": [
+"PaymentGatewayId"
+],
+"ProductConsumed": [
+"ProductItemId"
+],
+"ProductServiceCampaignItem": [
+"SerializedProductId"
+],
+"ProductTransfer": [
+"SourceProductItemId"
+],
+"Refund": [
+"PaymentGatewayId"
+],
+"ReturnOrderLineItem": [
+"ProductItemId",
+"ProductServiceCampaignItemId"
+],
+"SerializedProduct": [
+"ProductItemId"
+],
+"WorkOrder": [
+"BusinessHoursId",
+"ProductServiceCampaignItemId"
+],
+"WorkOrderLineItem": [
+"ProductServiceCampaignItemId"
+]
+}

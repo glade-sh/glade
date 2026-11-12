@@ -1,0 +1,11 @@
+{
+"AuthorizationFormConsent": [
+"DocumentVersionId"
+],
+"AuthorizationFormText": [
+"ContentDocumentId"
+],
+"Image": [
+"ContentDocumentId"
+]
+}

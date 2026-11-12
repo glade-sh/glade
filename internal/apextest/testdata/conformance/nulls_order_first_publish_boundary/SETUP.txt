@@ -1,0 +1,1 @@
+Create two synthetic accounts and three synthetic content links through the data API. Omit FirstPublishLocationId on one link and supply distinct account IDs on the other two. At API 62.0 and 67.0 re-query all three saved values. Do not visit the synthetic links. This observes a saved-value boundary rather than ordering.

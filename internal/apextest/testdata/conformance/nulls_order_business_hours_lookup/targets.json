@@ -1,0 +1,14 @@
+{
+"Entitlement": [
+"BusinessHoursId"
+],
+"EntitlementTemplate": [
+"BusinessHoursId"
+],
+"MessagingChannel": [
+"BusinessHoursId"
+],
+"WorkOrder": [
+"BusinessHoursId"
+]
+}

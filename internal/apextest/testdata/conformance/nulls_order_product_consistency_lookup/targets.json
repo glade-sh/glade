@@ -1,0 +1,11 @@
+{
+"ProductConsumed": [
+"ProductItemId"
+],
+"ProductServiceCampaignItem": [
+"SerializedProductId"
+],
+"SerializedProduct": [
+"ProductItemId"
+]
+}

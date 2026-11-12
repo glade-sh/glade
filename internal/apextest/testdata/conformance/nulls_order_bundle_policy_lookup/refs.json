@@ -1,0 +1,1 @@
+[{"obj": "ApptBundlePolicy", "field": "FilterCriteriaId", "createable": true, "nillable": true, "sortable": true}, {"obj": "ServiceAppointment", "field": "BundlePolicyId", "createable": true, "nillable": true, "sortable": true}]

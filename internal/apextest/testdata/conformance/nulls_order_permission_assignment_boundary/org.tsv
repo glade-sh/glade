@@ -1,0 +1,3 @@
+api	object	field	observation
+62.0	PermissionSetAssignment	PermissionSetId	"{""controlErrors"":[],""controlSuccess"":true,""nullErrors"":[{""fields"":[],""message"":""We can't save this assignment because there's no permission set ID or permission set group ID."",""statusCode"":""INVALID_CROSS_REFERENCE_KEY""}],""nullSuccess"":false}"
+67.0	PermissionSetAssignment	PermissionSetId	"{""controlErrors"":[],""controlSuccess"":true,""nullErrors"":[{""fields"":[],""message"":""We can't save this assignment because there's no permission set ID or permission set group ID."",""statusCode"":""INVALID_CROSS_REFERENCE_KEY""}],""nullSuccess"":false}"

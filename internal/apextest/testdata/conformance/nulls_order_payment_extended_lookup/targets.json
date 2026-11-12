@@ -1,0 +1,20 @@
+{
+"DigitalWallet": [
+"PaymentGatewayId"
+],
+"Payment": [
+"PaymentMethodId"
+],
+"PaymentAuthorization": [
+"PaymentMethodId"
+],
+"PaymentGateway": [
+"MerchantCredentialId"
+],
+"PaymentGatewayLog": [
+"PaymentGatewayId"
+],
+"Refund": [
+"PaymentMethodId"
+]
+}

@@ -1,0 +1,22 @@
+@IsTest(SeeAllData=true) private class NullProbe62_06 {
+ @IsTest static void m00(){ System.assert(false,'CAPTURE|ProductTransfer|'+JSON.serialize(new Map<String,Object>{'SourceProductItemId'=>NullExisting62.observe('ProductTransfer','SourceProductItemId')})); }
+ @IsTest static void m01(){ System.assert(false,'CAPTURE|ProductWarrantyTerm|'+JSON.serialize(new Map<String,Object>{'CoveredProductId'=>NullExisting62.observe('ProductWarrantyTerm','CoveredProductId')})); }
+ @IsTest static void m02(){ System.assert(false,'CAPTURE|PromptVersion|'+JSON.serialize(new Map<String,Object>{'ExperienceContextId'=>NullExisting62.observe('PromptVersion','ExperienceContextId')})); }
+ @IsTest static void m03(){ System.assert(false,'CAPTURE|PromptVersion|'+JSON.serialize(new Map<String,Object>{'ImageId'=>NullExisting62.observe('PromptVersion','ImageId')})); }
+ @IsTest static void m04(){ System.assert(false,'CAPTURE|PromptVersion|'+JSON.serialize(new Map<String,Object>{'PublishedByUserId'=>NullExisting62.observe('PromptVersion','PublishedByUserId')})); }
+ @IsTest static void m05(){ System.assert(false,'CAPTURE|PromptVersion|'+JSON.serialize(new Map<String,Object>{'TargetRecordTypeId'=>NullExisting62.observe('PromptVersion','TargetRecordTypeId')})); }
+ @IsTest static void m06(){ System.assert(false,'CAPTURE|Recommendation|'+JSON.serialize(new Map<String,Object>{'ImageId'=>NullExisting62.observe('Recommendation','ImageId')})); }
+ @IsTest static void m07(){ System.assert(false,'CAPTURE|RecordAction|'+JSON.serialize(new Map<String,Object>{'FlowInterviewId'=>NullExisting62.observe('RecordAction','FlowInterviewId')})); }
+ @IsTest static void m08(){ System.assert(false,'CAPTURE|RecordType|'+JSON.serialize(new Map<String,Object>{'BusinessProcessId'=>NullExisting62.observe('RecordType','BusinessProcessId')})); }
+ @IsTest static void m09(){ System.assert(false,'CAPTURE|Refund|'+JSON.serialize(new Map<String,Object>{'PaymentGatewayId'=>NullExisting62.observe('Refund','PaymentGatewayId')})); }
+ @IsTest static void m10(){ System.assert(false,'CAPTURE|Refund|'+JSON.serialize(new Map<String,Object>{'PaymentMethodId'=>NullExisting62.observe('Refund','PaymentMethodId')})); }
+ @IsTest static void m11(){ System.assert(false,'CAPTURE|RefundLinePayment|'+JSON.serialize(new Map<String,Object>{'AssociatedAccountId'=>NullExisting62.observe('RefundLinePayment','AssociatedAccountId')})); }
+ @IsTest static void m12(){ System.assert(false,'CAPTURE|RefundLinePayment|'+JSON.serialize(new Map<String,Object>{'AssociatedRefundLinePaymentId'=>NullExisting62.observe('RefundLinePayment','AssociatedRefundLinePaymentId')})); }
+ @IsTest static void m13(){ System.assert(false,'CAPTURE|ReturnOrderLineItem|'+JSON.serialize(new Map<String,Object>{'ProductItemId'=>NullExisting62.observe('ReturnOrderLineItem','ProductItemId')})); }
+ @IsTest static void m14(){ System.assert(false,'CAPTURE|ReturnOrderLineItem|'+JSON.serialize(new Map<String,Object>{'ProductServiceCampaignItemId'=>NullExisting62.observe('ReturnOrderLineItem','ProductServiceCampaignItemId')})); }
+ @IsTest static void m15(){ System.assert(false,'CAPTURE|SPSamlAttributes|'+JSON.serialize(new Map<String,Object>{'ConnectivityId'=>NullExisting62.observe('SPSamlAttributes','ConnectivityId')})); }
+ @IsTest static void m16(){ System.assert(false,'CAPTURE|ScorecardMetric|'+JSON.serialize(new Map<String,Object>{'ReportId'=>NullExisting62.observe('ScorecardMetric','ReportId')})); }
+ @IsTest static void m17(){ System.assert(false,'CAPTURE|Seller|'+JSON.serialize(new Map<String,Object>{'PartyId'=>NullExisting62.observe('Seller','PartyId')})); }
+ @IsTest static void m18(){ System.assert(false,'CAPTURE|SerializedProduct|'+JSON.serialize(new Map<String,Object>{'AssetId'=>NullExisting62.observe('SerializedProduct','AssetId')})); }
+ @IsTest static void m19(){ System.assert(false,'CAPTURE|SerializedProduct|'+JSON.serialize(new Map<String,Object>{'ProductItemId'=>NullExisting62.observe('SerializedProduct','ProductItemId')})); }
+}

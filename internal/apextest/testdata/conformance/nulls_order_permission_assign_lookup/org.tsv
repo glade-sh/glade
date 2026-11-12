@@ -1,0 +1,5 @@
+api	object	field	observation
+62.0	PermissionSetAssignment	PermissionSetId	"{""skip"":""expected one saved null and two distinct parents""}"
+62.0	PermissionSetAssignment	PermissionSetGroupId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"
+67.0	PermissionSetAssignment	PermissionSetId	"{""skip"":""expected one saved null and two distinct parents""}"
+67.0	PermissionSetAssignment	PermissionSetGroupId	"{""ASC"":""NLH"",""DESC"":""HLN"",""DESC NULLS LAST"":""HLN"",""NULLS FIRST"":""NLH"",""NULLS LAST"":""NLH""}"

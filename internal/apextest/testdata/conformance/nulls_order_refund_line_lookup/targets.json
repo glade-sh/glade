@@ -1,0 +1,8 @@
+{
+"PaymentLineInvoice": [
+"AssociatedAccountId"
+],
+"RefundLinePayment": [
+"AssociatedAccountId"
+]
+}

@@ -1,0 +1,3 @@
+# Native capture: test-run lookup null update boundaries
+
+A fresh 30-day Developer scratch org was created from a campaign Dev Hub. The synthetic classes in ../nulls_order_test_class_delete_boundary/classes were deployed and run asynchronously, producing three test-run controls. Salesforce data REST PATCH requests sent JSON null for AsyncApexJobId and UserId at API 62 and 67; each was rejected with INVALID_FIELD_FOR_INSERT_UPDATE and re-query retained populated values. Temporary IDs are not retained. This is a setup boundary, not an ordering result. The scratch org was deleted and ScratchOrgInfo status verified as Deleted.
