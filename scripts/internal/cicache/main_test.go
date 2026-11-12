@@ -257,6 +257,28 @@ jobs:
 	}
 }
 
+func TestCheckWorkflowAcceptsRepositoryLocalAction(t *testing.T) {
+	errs := checkWorkflow("ci.yml", []byte(`
+jobs:
+  test:
+    steps:
+      - uses: actions/checkout@v6x
+      - uses: ./.github/actions/restore-node-browser-caches
+`))
+	if hasProblem(errs, "restore-node-browser-caches") {
+		t.Fatalf("local action rejected: %v", errs)
+	}
+	errs = checkWorkflow("ci.yml", []byte(`
+jobs:
+  test:
+    steps:
+      - uses: ./vendored/other-action
+`))
+	if !hasProblem(errs, "action is not pinned to a full SHA: ./vendored/other-action") {
+		t.Fatalf("non-.github local action accepted: %v", errs)
+	}
+}
+
 func TestCheckWorkflowRejectsDuplicateExactCacheSaveKeyAcrossJobs(t *testing.T) {
 	errs := checkWorkflow("fixture.yml", []byte(`
 jobs:
