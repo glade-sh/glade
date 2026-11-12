@@ -47,7 +47,7 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 func compiledRuntimeFromCache(runtime startupcache.CompiledRuntime) apextest.CompiledProjectRuntime {
 	return apextest.CompiledProjectRuntime{
 		Methods:   runtime.Methods,
-		Classes:   runtime.Classes,
+		Classes:   apextest.RestoreLazyClasses(runtime.Classes),
 		Triggers:  runtime.Triggers,
 		PageNames: runtime.PageNames,
 	}
@@ -56,7 +56,7 @@ func compiledRuntimeFromCache(runtime startupcache.CompiledRuntime) apextest.Com
 func compiledRuntimeToCache(runtime apextest.CompiledProjectRuntime) startupcache.CompiledRuntime {
 	return startupcache.CompiledRuntime{
 		Methods:   runtime.Methods,
-		Classes:   runtime.Classes,
+		Classes:   apextest.PersistableClasses(runtime.Classes),
 		Triggers:  runtime.Triggers,
 		PageNames: runtime.PageNames,
 	}
