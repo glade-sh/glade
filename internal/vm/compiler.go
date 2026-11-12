@@ -195,6 +195,7 @@ func lex(source string) ([]token, error) {
 }
 
 func lexWithAnnotations(source string, annotations bool) ([]token, error) {
+	lexScanRuns.Add(1)
 	var tokens []token
 	bracketDepth, queryDepth := 0, 0
 	for i := 0; i < len(source); {
