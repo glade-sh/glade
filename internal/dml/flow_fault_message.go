@@ -201,11 +201,15 @@ func (e *Engine) flowLookupFault(lookup storage.FlowRecordLookup) error {
 	return &flowElementFault{err: failure, message: "This error occurred when the flow tried to look up records: " + text + ". " + flowFaultReferenceLink, verb: "look up", text: text, inTest: e.flowFaultInTest(), current: e.flowFaultCurrentAPI()}
 }
 
-// flowApexActionVerb marks the failure of an Apex action. Native rows
-// (flowApexThrow, flowCallout): inside a record-triggered flow with no fault
-// connector the save fails with APEX_FAILED, the process-failure text and the
-// Apex error, a line feed, and outside tests an Error ID.
+// flowApexActionVerb marks the failure of an Apex action inside a
+// record-triggered flow (native rows flowApexThrow and flowCallout).
 const flowApexActionVerb = "apex action"
+
+// savedRowFailure reports the captured failures whose singleton save returns a
+// row error: a duplicate-rule rejection and an Apex action failure.
+func (f *flowElementFault) savedRowFailure() bool {
+	return f.code == "DUPLICATES_DETECTED" || f.verb == flowApexActionVerb
+}
 
 const flowUnhandledGeneric = "An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information."
 
@@ -228,7 +232,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 			errorID = " Error ID: 0-0 (0)"
 		}
 		message := processFailureMessage(rule, "CANNOT_EXECUTE_FLOW_TRIGGER: "+fault.text+"\n"+errorID)
-		return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message)}, true
+		return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message), saved: true}, true
 	}
 	if fault.verb == "look up" {
 		message := processFailureMessage(rule, "<b>An unhandled fault has occurred in this flow</b><br>"+flowUnhandledGeneric+errorID)
@@ -240,7 +244,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 		detail = fault.message
 	}
 	message := processFailureMessage(rule, "CANNOT_EXECUTE_FLOW_TRIGGER: "+detail+errorID)
-	return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message)}, true
+	return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message), saved: fault.savedRowFailure()}, true
 }
 
 // FlowUnhandledDetail is the FlowException message that Flow.Interview.start

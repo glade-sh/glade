@@ -87,8 +87,9 @@ type Engine struct {
 
 	platformEventInterview bool
 	// recordTriggeredFlow is positive while a record-triggered after-save flow
-	// runs. Its unhandled Apex action failures and rejected saves surface as the
-	// flow's process failure (native rows in automation_residual_paths).
+	// runs: its Create and Update Records elements save under the duplicate
+	// rules, and its unhandled Apex action failures surface as the flow's
+	// process failure (native rows in automation_residual_paths).
 	recordTriggeredFlow       int
 	activeFlowName            string
 	pendingInterviewEvents    []storage.Record
