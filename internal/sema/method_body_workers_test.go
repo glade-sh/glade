@@ -142,3 +142,14 @@ func TestAnalyzeDiagnosticsIdenticalAcrossGOMAXPROCS(t *testing.T) {
 		}
 	}
 }
+
+func TestMethodBodyWorkerCountFollowsGOMAXPROCS(t *testing.T) {
+	previous := runtime.GOMAXPROCS(0)
+	defer runtime.GOMAXPROCS(previous)
+	for procs, want := range map[int]int{1: 1, 2: 2, 4: 4, 64: semaMethodBodyMaxWorkers} {
+		runtime.GOMAXPROCS(procs)
+		if got := semaMethodBodyWorkerCount(); got != want {
+			t.Fatalf("GOMAXPROCS=%d: worker count = %d, want %d", procs, got, want)
+		}
+	}
+}

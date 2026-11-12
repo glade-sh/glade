@@ -3,6 +3,7 @@ package sema
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -545,7 +546,26 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 }
 
 func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
-	return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+	return a.checkMethodBodiesWithViewWorkers(index, model, recorder, semaMethodBodyWorkerCount())
+}
+
+// semaMethodBodyMaxWorkers bounds the body-check workers. Each worker holds a
+// private member view, and bodies are CPU bound, so more than a few cores
+// add memory without adding speed.
+const semaMethodBodyMaxWorkers = 8
+
+// semaMethodBodyWorkerCount follows the process's CPU budget: one worker under
+// GOMAXPROCS=1 (the serial path), up to semaMethodBodyMaxWorkers otherwise.
+// Diagnostics do not depend on the count.
+func semaMethodBodyWorkerCount() int {
+	workers := runtime.GOMAXPROCS(0)
+	if workers > semaMethodBodyMaxWorkers {
+		workers = semaMethodBodyMaxWorkers
+	}
+	if workers < 1 {
+		workers = 1
+	}
+	return workers
 }
 
 func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workerCount int) []diagnostic.Diagnostic {
@@ -571,6 +591,9 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 			for workerID := 1; workerID < workerCount; workerID++ {
 				views[workerID] = model.state.view()
 			}
+			// Worker w takes tasks w, w+n, w+2n, ..., so each type's view is the
+			// same on every run. Each result lands in its own type's slot and
+			// the merge below walks the slots in the serial order.
 			var workers sync.WaitGroup
 			for workerID := 0; workerID < workerCount; workerID++ {
 				workerID := workerID
@@ -584,12 +607,14 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 				}()
 			}
 			workers.Wait()
-			for _, typeIndex := range semaInnerFirstTypeOrder(index) {
-				result := results[typeIndex]
-				if result.recovered != nil {
-					panic(result.recovered)
+			// The serial path stops at the first panicking type in index order.
+			for typeIndex := range results {
+				if results[typeIndex].recovered != nil {
+					panic(results[typeIndex].recovered)
 				}
-				diagnostics = append(diagnostics, result.diagnostics...)
+			}
+			for _, typeIndex := range semaInnerFirstTypeOrder(index) {
+				diagnostics = append(diagnostics, results[typeIndex].diagnostics...)
 			}
 			if recorder != nil {
 				recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
