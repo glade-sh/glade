@@ -37,17 +37,13 @@ invocation, and expected externally observable behavior. The expected behavior
 should come from Salesforce itself or from a written public specification, not
 from proprietary implementation internals.
 
-When runtime behavior is ambiguous, confirm it against the connected scratch org
-before changing `glade`. Use an explicitly authorized scratch org alias such as
-`glade-probe` for small executable probes:
-
-```bash
-echo "System.debug('Hello from CLI');" | sf apex run --target-org glade-probe
-```
-
-Keep the probe minimal, record the observed result in the test or commit
-context, and then encode the behavior in an owned regression or compatibility
-fixture.
+When runtime behavior is ambiguous, confirm it against a scratch org before
+changing `glade`. Use only an org the ticket or maintainer explicitly
+authorized. Follow the capture procedure in
+[WORKFLOW.md](WORKFLOW.md#33-evidence-behavior-changes-only): write the case
+table, capture every case at the current API and the floor, scrub org ids and
+aliases, and encode the rows in a data-driven conformance test. Do not commit
+an alias, org id or personal path.
 
 When the blocker is a missing system class, method, field, or object shape,
 consult the public Apex system stubs before patching. Use them to fill the
