@@ -244,20 +244,27 @@ type MetadataRegistry struct {
 	Labels                 []LabelMetadata               `json:"labels,omitempty"`
 	ValueSetTranslations   []StandardValueSetTranslation `json:"standardValueSetTranslations,omitempty"`
 	ManagedLabelNamespaces []string                      `json:"managedLabelNamespaces,omitempty"`
-	Tabs                   []TabMetadata                 `json:"tabs,omitempty"`
-	Applications           []ApplicationMetadata         `json:"applications,omitempty"`
-	DataCategoryGroups     []DataCategoryGroup           `json:"dataCategoryGroups,omitempty"`
-	QuickActions           []QuickActionMetadata         `json:"quickActions,omitempty"`
-	FieldSets              []FieldSetMetadata            `json:"fieldSets,omitempty"`
-	StaticResources        []StaticResourceMetadata      `json:"staticResources,omitempty"`
-	ContentAssets          []ContentAssetMetadata        `json:"contentAssets,omitempty"`
-	Endpoints              []EndpointMetadata            `json:"endpoints,omitempty"`
-	EmailTemplates         []EmailTemplateMetadata       `json:"emailTemplates,omitempty"`
-	MessageChannels        []MessageChannelMetadata      `json:"messageChannels,omitempty"`
-	FeatureParameters      []FeatureParameterMetadata    `json:"featureParameters,omitempty"`
-	Layouts                []LayoutMetadata              `json:"layouts,omitempty"`
-	ProjectReports         []ProjectReportMetadata       `json:"projectReports,omitempty"`
-	ReportFolderShares     []ProjectReportFolderShare    `json:"reportFolderShares,omitempty"`
+	// PackageFieldsNarrow is set when the project declares package
+	// dependencies with known namespaces. A namespaced custom field that a
+	// standard object lacks is then accepted only for a namespace listed in
+	// SourcelessPackageNamespaces (installed, source absent). When unset the
+	// project declared nothing and every ns__X__c name stays accepted.
+	PackageFieldsNarrow         bool                       `json:"packageFieldsNarrow,omitempty"`
+	SourcelessPackageNamespaces []string                   `json:"sourcelessPackageNamespaces,omitempty"`
+	Tabs                        []TabMetadata              `json:"tabs,omitempty"`
+	Applications                []ApplicationMetadata      `json:"applications,omitempty"`
+	DataCategoryGroups          []DataCategoryGroup        `json:"dataCategoryGroups,omitempty"`
+	QuickActions                []QuickActionMetadata      `json:"quickActions,omitempty"`
+	FieldSets                   []FieldSetMetadata         `json:"fieldSets,omitempty"`
+	StaticResources             []StaticResourceMetadata   `json:"staticResources,omitempty"`
+	ContentAssets               []ContentAssetMetadata     `json:"contentAssets,omitempty"`
+	Endpoints                   []EndpointMetadata         `json:"endpoints,omitempty"`
+	EmailTemplates              []EmailTemplateMetadata    `json:"emailTemplates,omitempty"`
+	MessageChannels             []MessageChannelMetadata   `json:"messageChannels,omitempty"`
+	FeatureParameters           []FeatureParameterMetadata `json:"featureParameters,omitempty"`
+	Layouts                     []LayoutMetadata           `json:"layouts,omitempty"`
+	ProjectReports              []ProjectReportMetadata    `json:"projectReports,omitempty"`
+	ReportFolderShares          []ProjectReportFolderShare `json:"reportFolderShares,omitempty"`
 }
 
 // ProjectReportMetadata is the immutable project definition associated with a
@@ -2833,4 +2840,20 @@ func (m Mutation) Clone() Mutation {
 		out.After = &after
 	}
 	return out
+}
+
+// PackageFieldNamespaceAllowed reports whether an undefined namespaced custom
+// field of namespace may be tolerated on a standard object: the project
+// declared nothing (narrow is false) or declared the namespace with its
+// source absent.
+func PackageFieldNamespaceAllowed(narrow bool, sourceless []string, namespace string) bool {
+	if !narrow {
+		return true
+	}
+	for _, candidate := range sourceless {
+		if strings.EqualFold(candidate, namespace) {
+			return true
+		}
+	}
+	return false
 }

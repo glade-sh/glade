@@ -967,6 +967,45 @@ func dependencyPackageDirectories(dirs []PackageDirectory, requestedPackages ...
 	return dirs
 }
 
+// PackageNamespaceBinding says which namespaces the project's declared package
+// dependencies bind. Narrow is false when the project declares no dependency,
+// or declares one whose namespace is unknown (an SFDX alias with no namespace
+// binding); the caller then keeps its open tolerance. Sourceless lists the
+// declared namespaces whose package source is absent: the package is installed
+// in the org but Glade cannot see its fields.
+type PackageNamespaceBinding struct {
+	Narrow     bool
+	Sourceless []string
+}
+
+// PackageNamespaceBinding reads the declared dependencies of this project only.
+func (p Project) PackageNamespaceBinding() PackageNamespaceBinding {
+	known := make(map[string]bool, len(p.ManagedPackageDependencies))
+	var binding PackageNamespaceBinding
+	for _, dep := range p.ManagedPackageDependencies {
+		namespace := strings.TrimSpace(dep.Namespace)
+		if namespace == "" {
+			return PackageNamespaceBinding{}
+		}
+		key := strings.ToLower(namespace)
+		known[key] = true
+		sourcePresent := dep.Status == "loaded" && (dep.Project != nil || dep.ArtifactPath != "")
+		if !sourcePresent {
+			binding.Sourceless = append(binding.Sourceless, namespace)
+		}
+	}
+	for _, diag := range p.DependencyDiagnostics {
+		if !known[strings.ToLower(strings.TrimSpace(diag.Namespace))] {
+			return PackageNamespaceBinding{}
+		}
+	}
+	binding.Narrow = len(known) > 0
+	if !binding.Narrow {
+		binding.Sourceless = nil
+	}
+	return binding
+}
+
 // DependencyStatusDeclared marks a namespace-only declaration from glade.yml
 // project.externalNamespaces: an installed package without source. It is
 // open like a dependency whose source is missing, without a diagnostic.
