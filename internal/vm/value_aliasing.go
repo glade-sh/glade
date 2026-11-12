@@ -894,6 +894,7 @@ func valueSameHeaderAndBacking(before, after Value) bool {
 		before.pluginBatchableDetached == after.pluginBatchableDetached &&
 		before.sobjectListNullMapKey == after.sobjectListNullMapKey &&
 		before.mapBackingShared == after.mapBackingShared &&
+		before.fieldsShared == after.fieldsShared &&
 		before.globalDescribeEntriesCanonical == after.globalDescribeEntriesCanonical &&
 		before.primitiveSetState == after.primitiveSetState &&
 		sameSliceHeaderBacking(before.setInsertionHashes, after.setInsertionHashes) &&
