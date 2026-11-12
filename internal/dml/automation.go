@@ -537,8 +537,10 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 		return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
 	}
 	e.flowDepth++
+	e.recordFlowDuplicateRules++
 	defer func() {
 		e.flowDepth--
+		e.recordFlowDuplicateRules--
 	}()
 
 	object := e.Org.Objects[objectName]
@@ -550,6 +552,7 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 		return false, nil
 	}
 	changed := false
+	var changedRule storage.FlowRule
 	var deferred []storage.FlowRule
 	previous := record
 	record = record.Clone()
@@ -601,6 +604,9 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 				return false, flowCoreRecordTriggerError(rule, err)
 			}
 			changed = changed || branchChanged
+			if branchChanged {
+				changedRule = rule
+			}
 			continue
 		}
 		ruleChanged, err := e.applyFlowEffects(rule.Name, objectName, &record, object.Definition, rule.Steps, rule.FieldUpdates, rule.Actions, rule.RecordLookups, rule.RecordCreates, rule.TextTemplates, rule.Variables)
@@ -608,12 +614,19 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 			return false, flowCoreRecordTriggerError(rule, err)
 		}
 		changed = changed || ruleChanged
+		if ruleChanged {
+			changedRule = rule
+		}
 	}
 	if !changed {
 		e.enqueueFlowPaths(objectName, id, deferred)
 		return false, nil
 	}
 	if err := e.storeFlowFieldUpdates(objectName, previous, record); err != nil {
+		var fault *flowElementFault
+		if errors.As(err, &fault) {
+			return false, flowCoreRecordTriggerError(changedRule, err)
+		}
 		return false, err
 	}
 	e.enqueueFlowPaths(objectName, id, deferred)
@@ -635,6 +648,9 @@ func (e *Engine) storeFlowFieldUpdates(objectName string, previous, record stora
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
+		return err
+	}
+	if err := e.recordFlowDuplicateUpdate(record, priorRecord); err != nil {
 		return err
 	}
 	if _, cloned := storage.EnsureMutableObjectRecords(e.Org, objectName); cloned {

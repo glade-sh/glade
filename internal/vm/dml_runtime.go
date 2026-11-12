@@ -3233,7 +3233,10 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	}
 	if op == "insert" || op == "update" || op == "upsert" {
 		if err := vm.applyDeferredAutomation(&engine, afterRecords, afterInputBefore, allOrNone, rollback, result); err != nil {
-			if failures, ok := flowActionInputDMLResults(op, results, err); ok {
+			if failures, ok := flowActionInputDMLResults(op, results, err); ok || singleFlowRecordFailureResults(op, results, err) != nil {
+				if !ok {
+					failures = singleFlowRecordFailureResults(op, results, err)
+				}
 				if !allOrNone {
 					if rollbackErr := restoreRollback(); rollbackErr != nil {
 						return nil, rollbackErr
