@@ -18,7 +18,7 @@ func TestCompilerCallsOverlap(t *testing.T) {
 		if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(p, nil, 0644); err != nil {
+		if err := os.WriteFile(p, []byte("// glade-compiler-protocol: two-phase-v1"), 0644); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -29,7 +29,7 @@ func TestCompilerCallsOverlap(t *testing.T) {
 	if err := os.MkdirAll(started, 0755); err != nil {
 		t.Fatal(err)
 	}
-	script := "#!/bin/sh\ncat >/dev/null\nif [ \"$2\" = \"--salesforce-import-references\" ]; then printf '[]'; exit 0; fi\ntouch \"$GLADE_TEST_STARTED/$$\"\nwhile [ ! -e \"$GLADE_TEST_RELEASE\" ]; do sleep 0.1; done\nprintf '{\"modules\":{}}'\n"
+	script := "#!/bin/sh\nif [ \"$2\" = \"--two-phase\" ]; then IFS= read -r cfg; printf '[]\\n'; IFS= read -r metadata; else cat >/dev/null; fi\nif [ \"$2\" = \"--salesforce-import-references\" ]; then printf '[]'; exit 0; fi\ntouch \"$GLADE_TEST_STARTED/$$\"\nwhile [ ! -e \"$GLADE_TEST_RELEASE\" ]; do sleep 0.1; done\nprintf '{\"modules\":{}}'\n"
 	if err := os.WriteFile(filepath.Join(bin, "node"), []byte(script), 0755); err != nil {
 		t.Fatal(err)
 	}
