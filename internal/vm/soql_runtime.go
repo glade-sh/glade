@@ -2624,6 +2624,14 @@ func (vm *VM) enforceSOSLAccess(objectName string, spec sosl.ReturningObject, ac
 		fields = append(fields, projection.Field)
 	}
 	fields = append(fields, soslConditionFields(spec.Where)...)
+	if vm.fixedSearchResultsSet {
+		for _, order := range spec.OrderBy {
+			// These captures cover direct fields on the searched object.
+			if !strings.Contains(order.Field, ".") {
+				fields = append(fields, order.Field)
+			}
+		}
+	}
 	for _, field := range fields {
 		if strings.EqualFold(field, "Id") {
 			continue
