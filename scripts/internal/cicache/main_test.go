@@ -352,6 +352,23 @@ jobs:
 	}
 }
 
+func TestCheckWorkflowRejectsSymlinkedLocalActionEscape(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outside, "action.yml"), []byte("runs:\n  using: composite\n  steps: []\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, ".github", "actions"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(root, ".github", "actions", "shared")); err != nil {
+		t.Fatal(err)
+	}
+	if errs := checkWithLocalActions(t, root, localActionWorkflow); !hasProblem(errs, "local action escapes .github/actions") {
+		t.Fatalf("symlinked action directory accepted: %v", errs)
+	}
+}
+
 func TestRepositoryLocalActionsPassLint(t *testing.T) {
 	problems, err := checkWorkflowDir(filepath.Join("..", "..", "..", ".github", "workflows"))
 	if err != nil {

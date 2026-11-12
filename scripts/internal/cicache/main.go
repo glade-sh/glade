@@ -726,10 +726,28 @@ func expandLocalActions(steps []step, repoRoot, prefix string, depth int) ([]ste
 			problems = append(problems, prefix+"local action escapes .github/actions: "+candidate.Uses)
 			continue
 		}
+		// A symlink under .github/actions must not lead outside it.
+		resolvedDir, resolveErr := filepath.EvalSymlinks(filepath.Join(repoRoot, actionDir))
+		resolvedBase, baseErr := filepath.EvalSymlinks(filepath.Join(repoRoot, ".github", "actions"))
+		if resolveErr != nil || baseErr != nil {
+			problems = append(problems, prefix+"cannot read local action "+candidate.Uses)
+			continue
+		}
+		if relative, err := filepath.Rel(resolvedBase, resolvedDir); err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+			problems = append(problems, prefix+"local action escapes .github/actions: "+candidate.Uses)
+			continue
+		}
 		var data []byte
 		var err error
 		for _, name := range []string{"action.yml", "action.yaml"} {
-			data, err = os.ReadFile(filepath.Join(repoRoot, actionDir, name)) // #nosec G304 -- confined to .github/actions above.
+			data, err = os.ReadFile(filepath.Join(resolvedDir, name)) // #nosec G304 -- confined to .github/actions above.
+			if err == nil {
+				if target, linkErr := filepath.EvalSymlinks(filepath.Join(resolvedDir, name)); linkErr == nil {
+					if rel, relErr := filepath.Rel(resolvedBase, target); relErr != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+						err = fmt.Errorf("action file escapes .github/actions")
+					}
+				}
+			}
 			if err == nil {
 				break
 			}
