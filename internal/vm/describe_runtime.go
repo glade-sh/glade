@@ -944,7 +944,7 @@ func (vm *VM) prepareSharedMapMutation(receiver *Value) {
 		return
 	}
 	_, cached := vm.globalDescribeCacheEntry(receiver.Ref)
-	if !receiver.mapBackingShared && !cached {
+	if !receiver.mapBackingShared && !receiver.mapEntriesShared && !cached {
 		return
 	}
 	receiver.Map = maps.Clone(receiver.Map)
