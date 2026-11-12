@@ -1,0 +1,5 @@
+setting	api	observation
+unmodified	62.0	"{""creatorEmptyQueue"":1,""creatorFullQueue"":1,""fullQueueMember"":1,""otherEmptyQueue"":1,""otherOwn"":1,""owner"":1}"
+unmodified	67.0	"{""creatorEmptyQueue"":1,""creatorFullQueue"":1,""fullQueueMember"":1,""otherEmptyQueue"":1,""otherOwn"":1,""owner"":1}"
+private	62.0	"{""creatorEmptyQueue"":0,""creatorFullQueue"":0,""fullQueueMember"":1,""otherEmptyQueue"":0,""otherOwn"":0,""owner"":1}"
+private	67.0	"{""creatorEmptyQueue"":0,""creatorFullQueue"":0,""fullQueueMember"":1,""otherEmptyQueue"":0,""otherOwn"":0,""owner"":1}"

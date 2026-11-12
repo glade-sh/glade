@@ -19,6 +19,7 @@ import (
 var parsedQueryCache sync.Map
 
 const virtualSchemaHydrationStampKey = "__glade_virtual_schema_hydration_stamp"
+const virtualEntitySharingKeyPrefix = "__glade_virtual_entity_sharing:"
 
 func cachedParsedQuery(input string, now time.Time, fiscalYearStartMonth int) (Query, bool) {
 	return cachedParsedQueryWithTimeZone(input, now, fiscalYearStartMonth, "UTC")
@@ -937,11 +938,13 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 	org.Objects["RelationshipDomain"] = relationshipDomains
 	org.Objects["UserEntityAccess"] = userEntityAccess
 	org.Objects["UserFieldAccess"] = userFieldAccess
+	syncVirtualEntitySharingModels(org)
 }
 
 func virtualSchemaHydrationStamp(org storage.OrgState) string {
 	objectCount := 0
 	fieldCount := 0
+	var sharingModels []string
 	for objectName, object := range org.Objects {
 		if isVirtualSchemaObjectName(objectName) || isUserAccessVirtualSchemaObjectName(objectName) {
 			continue
@@ -951,8 +954,80 @@ func virtualSchemaHydrationStamp(org storage.OrgState) string {
 		}
 		objectCount++
 		fieldCount += len(object.Definition.Fields)
+		if model := object.Definition.SharingModel; model != "" {
+			sharingModels = append(sharingModels, object.Definition.APIName+"\x00"+model)
+		}
 	}
-	return strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount)
+	sort.Strings(sharingModels)
+	return strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount) + ":" + strings.Join(sharingModels, "\x00")
+}
+
+// syncVirtualEntitySharingModels projects only the captured sharing-model
+// values. A reserved metadata marker distinguishes generated fields from
+// explicitly supplied EntityDefinition values and lets warm views refresh or
+// clear a previously generated value when source metadata changes.
+func syncVirtualEntitySharingModels(org *storage.OrgState) {
+	if org == nil {
+		return
+	}
+	entities, ok := org.Objects["EntityDefinition"]
+	if !ok {
+		return
+	}
+	dirty := false
+	for objectName, object := range org.Objects {
+		if isVirtualSchemaObjectName(objectName) || isUserAccessVirtualSchemaObjectName(objectName) || object.Definition.APIName == "" {
+			continue
+		}
+		id := storage.ID(object.Definition.APIName)
+		record, exists := entities.Records[id]
+		if !exists {
+			continue
+		}
+		key := virtualEntitySharingKeyPrefix + object.Definition.APIName
+		previous, generated := entities.Definition.Metadata[key]
+		value, known := capturedEntitySharingModel(object.Definition.SharingModel)
+		current, supplied := record.Fields["InternalSharingModel"]
+		if !generated && (!known || (supplied && current.Kind != storage.ValueNull)) {
+			continue
+		}
+		if generated && known && previous == value && supplied && current.Kind == storage.ValueString && current.String == value {
+			continue
+		}
+		if !dirty {
+			storage.EnsureMutableObjectDefinition(org, "EntityDefinition")
+			storage.EnsureMutableObjectRecords(org, "EntityDefinition")
+			entities = org.Objects["EntityDefinition"]
+			if entities.Definition.Metadata == nil {
+				entities.Definition.Metadata = make(map[string]string)
+			}
+			dirty = true
+		}
+		record = record.Clone()
+		if record.Fields == nil {
+			record.Fields = make(map[string]storage.Value)
+		}
+		if known {
+			record.Fields["InternalSharingModel"] = storage.StringValue(value)
+			entities.Definition.Metadata[key] = value
+		} else {
+			delete(record.Fields, "InternalSharingModel")
+			delete(entities.Definition.Metadata, key)
+		}
+		entities.Records[id] = record
+	}
+	if dirty {
+		org.Objects["EntityDefinition"] = entities
+	}
+}
+
+func capturedEntitySharingModel(model string) (string, bool) {
+	switch model {
+	case "Private", "Read", "ReadWrite", "ReadWriteTransfer":
+		return model, true
+	default:
+		return "", false
+	}
 }
 
 func virtualSchemaAlreadyHydrated(org storage.OrgState, stamp string) bool {

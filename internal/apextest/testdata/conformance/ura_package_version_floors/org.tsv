@@ -1,0 +1,13 @@
+api	route	case	result
+62.0	istest	package-version	"{""A_plain"":[true,true,true,true,false,""Transfer""],""A_pv"":[true,true,true,true,false,""Transfer""],""A_pv_user"":[true,true,true,true,true,""All""],""A_user"":[true,true,true,true,true,""All""],""R_pv_user"":[true,true,false,false,false,""Edit""],""R_user"":[true,true,false,false,false,""Edit""],""owd"":""ReadWrite""}"
+63.0	istest	package-version	"{""A_plain"":[true,true,true,true,false,""Transfer""],""A_pv"":[true,true,true,true,false,""Transfer""],""A_pv_user"":[true,true,true,true,true,""All""],""A_user"":[true,true,true,true,true,""All""],""R_pv_user"":[true,true,false,false,false,""Edit""],""R_user"":[true,true,false,false,false,""Edit""],""owd"":""ReadWrite""}"
+64.0	istest	package-version	"{""A_plain"":[true,true,true,true,false,""Transfer""],""A_pv"":[true,true,true,true,false,""Transfer""],""A_pv_user"":[true,true,true,true,true,""All""],""A_user"":[true,true,true,true,true,""All""],""R_pv_user"":[true,true,false,false,false,""Edit""],""R_user"":[true,true,false,false,false,""Edit""],""owd"":""ReadWrite""}"
+65.0	istest	package-version	"{""A_plain"":[true,true,true,true,false,""Transfer""],""A_pv"":[true,true,true,true,false,""Transfer""],""A_pv_user"":[true,true,true,true,true,""All""],""A_user"":[true,true,true,true,true,""All""],""R_pv_user"":[true,true,false,false,false,""Edit""],""R_user"":[true,true,false,false,false,""Edit""],""owd"":""ReadWrite""}"
+66.0	istest	package-version	"{""A_plain"":[true,true,true,true,false,""Transfer""],""A_pv"":[true,true,true,true,false,""Transfer""],""A_pv_user"":[true,true,true,true,true,""All""],""A_user"":[true,true,true,true,true,""All""],""R_pv_user"":[true,true,false,false,false,""Edit""],""R_user"":[true,true,false,false,false,""Edit""],""owd"":""ReadWrite""}"
+67.0	istest	package-version	"{""A_plain"":[true,true,true,true,true,""All""],""A_pv"":[true,true,true,true,true,""All""],""A_pv_user"":[true,true,true,true,true,""All""],""A_user"":[true,true,true,true,true,""All""],""R_pv_user"":[true,true,false,false,false,""Edit""],""R_user"":[true,true,false,false,false,""Edit""],""owd"":""ReadWrite""}"
+62.0	anonymous	direct-access	"NO_OBSERVATION Compilation failed at Ln 1, Col 253 with the error:
+
+RecordId field must be selected"
+67.0	anonymous	direct-access	"NO_OBSERVATION Compilation failed at Ln 1, Col 253 with the error:
+
+RecordId field must be selected"
