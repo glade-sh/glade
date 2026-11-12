@@ -547,7 +547,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 		if vm.permissionViewAllFieldsHidden(receiver.Type, field) {
 			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
 		}
-		if vm.featureFieldHiddenForAccess(receiver.Type, field) {
+		authFlowDefaultHidden := args[0].Kind == ValueString && vm.omitAuthFlowDefaultDescribeFields(receiver.Type) &&
+			(strings.EqualFold(field, "FlowDefaultAccountId") || strings.EqualFold(field, "FlowDefaultProfileId"))
+		if authFlowDefaultHidden || vm.featureFieldHiddenForAccess(receiver.Type, field) {
 			if args[0].Kind == ValueString {
 				return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
 			}
@@ -688,7 +690,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 		if vm.permissionViewAllFieldsHidden(receiver.Type, field) || vm.anonymousPolicyHiddenField(receiver.Type, field) {
 			return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
 		}
-		if vm.featureFieldHiddenForAccess(receiver.Type, field) {
+		authFlowDefaultHidden := args[0].Kind == ValueString && vm.omitAuthFlowDefaultDescribeFields(receiver.Type) &&
+			(strings.EqualFold(field, "FlowDefaultAccountId") || strings.EqualFold(field, "FlowDefaultProfileId"))
+		if authFlowDefaultHidden || vm.featureFieldHiddenForAccess(receiver.Type, field) {
 			if args[0].Kind == ValueString {
 				return Null, true, newExceptionError("SObjectException", "Invalid field "+field+" for "+receiver.Type)
 			}

@@ -20,6 +20,13 @@ import (
 
 const runtimeLoweringDiagnosticCode = "GLADERUNTIME001"
 
+// Direct reads and writes of these standard fields are available from API 64.
+func authFlowDefaultDirectFieldHidden(version, objectName, fieldName string) bool {
+	return (apexversion.Range{Since: 62, Until: 64}).Allows(version) &&
+		strings.EqualFold(objectName, "AuthProvider") &&
+		(strings.EqualFold(fieldName, "FlowDefaultAccountId") || strings.EqualFold(fieldName, "FlowDefaultProfileId"))
+}
+
 func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	if model != nil && model.bodyFieldScopeMemo == nil {
 		model.bodyFieldScopeMemo = &semaBodyFieldScopeMemo{}
@@ -2282,7 +2289,7 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 				fieldReceiver = receiverType
 				fieldName := expr.Name[dot+1:]
 				visible, captured := storage.StandardFeatureFieldVersion(receiverType, fieldName, typ.EffectiveAPIVersion)
-				versionHidden := captured && !visible
+				versionHidden := (captured && !visible) || authFlowDefaultDirectFieldHidden(typ.EffectiveAPIVersion, receiverType, fieldName)
 				namedHidden := scope.anonymous && storage.StandardFeatureNamedOnlyField(receiverType, fieldName)
 				if (versionHidden || namedHidden) && !semaProjectTypeShadowsPlatform(model, receiverType) && !a.explicitFeatureFieldDeclared(receiverType, fieldName) {
 					return []diagnostic.Diagnostic{semaHTTPDiagnostic(typ, "Variable does not exist: "+fieldName, bodyOffset+pos, bodyOffset+pos+len(expr.Name), source)}
@@ -2525,7 +2532,7 @@ func (a *Analyzer) checkIRAssignmentTarget(typ typesys.TypeSymbol, member typesy
 			}
 			visible, captured := storage.StandardFeatureFieldVersion(receiverType, field, typ.EffectiveAPIVersion)
 			namedHidden := scope.anonymous && storage.StandardFeatureNamedOnlyField(receiverType, field)
-			if ((captured && !visible) || namedHidden) && !semaProjectTypeShadowsPlatform(model, receiverType) && !a.explicitFeatureFieldDeclared(receiverType, field) {
+			if ((captured && !visible) || namedHidden || authFlowDefaultDirectFieldHidden(typ.EffectiveAPIVersion, receiverType, field)) && !semaProjectTypeShadowsPlatform(model, receiverType) && !a.explicitFeatureFieldDeclared(receiverType, field) {
 				return []diagnostic.Diagnostic{semaFieldAccessDiagnostic(typ, member, name, "Variable does not exist: "+field, bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)}
 			}
 			featureObject, featureField, featureReadOnly := storage.StandardFeatureReadOnlyField(receiverType, field)

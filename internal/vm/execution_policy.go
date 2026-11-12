@@ -5,6 +5,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -83,6 +84,40 @@ func (vm *VM) validateExplicitAccessLevel(accessLevel Value) error {
 		return newExceptionError("SecurityException", "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.")
 	}
 	return nil
+}
+
+// locator_system_precedence captures simple projections, COUNT and an Id bind
+// at APIs 62–67. Syntax errors precede the anonymous SYSTEM_MODE rejection.
+func (vm *VM) boundLocatorSystemModeCapturedShape(raw string) bool {
+	if vm == nil || !(apexversion.Range{Since: 62, Until: 68}).Allows(vm.currentMethod.APIVersion) {
+		return false
+	}
+	query, err := soql.Parse(raw)
+	if err != nil || len(query.Fields) != 1 || query.SecurityMode != "" || len(query.ChildQueries) != 0 ||
+		len(query.Typeofs) != 0 || (!query.Count && len(query.Aggregates) != 0) || len(query.GroupBy) != 0 ||
+		query.Having != nil || len(query.Order) != 0 || query.HasOffset || query.ForUpdate || query.ForView ||
+		query.ForReference || query.AllRows || query.UsingScope != "" || query.DataCategoryGroup != "" ||
+		query.DataCategoryOperator != "" || query.DataCategoryName != "" || (query.HasLimit && query.Limit != 1) {
+		return false
+	}
+	if query.Count && !strings.EqualFold(query.Fields[0], "COUNT()") {
+		return false
+	}
+	if !query.Count {
+		field := query.Fields[0]
+		if field == "" || strings.IndexFunc(field, func(r rune) bool {
+			return !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '_')
+		}) >= 0 {
+			return false
+		}
+	}
+	if query.Where == nil {
+		return true
+	}
+	where := query.Where
+	return strings.EqualFold(where.Field, "Id") && where.Op == "=" && !where.Not &&
+		len(where.And) == 0 && len(where.Or) == 0 && !where.Range && where.Subquery == nil &&
+		where.Value.Kind == storage.ValueID && strings.HasPrefix(string(where.Value.ID), ":")
 }
 
 // C137_046/048/050/051/088/090/092/093 capture anonymous query and

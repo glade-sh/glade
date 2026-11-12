@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Authentication flow default objects now follow the captured API version, field access and query clause boundaries for static and dynamic access.
 
 ## v0.3.8
 

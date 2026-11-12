@@ -721,6 +721,11 @@ platformStaticCall:
 		if !isDatabaseAccessLevelValue(args[2]) {
 			return Null, fmt.Errorf("Database.getQueryLocatorWithBinds expects AccessLevel")
 		}
+		if vm.boundLocatorSystemModeCapturedShape(args[0].Text) {
+			if err := vm.validateExplicitAccessLevel(args[2]); err != nil {
+				return Null, err
+			}
+		}
 		return vm.databaseQueryHandle(args[0], args[1], args[2], false, result)
 	case "Database.getAsyncLocator":
 		if len(args) != 1 {

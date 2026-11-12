@@ -1,0 +1,61 @@
+api	route	field	observation
+62.0	istest	account	ok
+62.0	istest	contact	ok
+62.0	istest	count	System.QueryException: use countQuery() for [select count()...] queries
+62.0	istest	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+62.0	istest	missingBind	System.QueryException: Key 'absent' does not exist in the bindMap
+62.0	anonymous	account	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+62.0	anonymous	contact	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+62.0	anonymous	count	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+62.0	anonymous	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+62.0	anonymous	missingBind	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+63.0	istest	account	ok
+63.0	istest	contact	ok
+63.0	istest	count	System.QueryException: use countQuery() for [select count()...] queries
+63.0	istest	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+63.0	istest	missingBind	System.QueryException: Key 'absent' does not exist in the bindMap
+63.0	anonymous	account	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+63.0	anonymous	contact	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+63.0	anonymous	count	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+63.0	anonymous	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+63.0	anonymous	missingBind	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+64.0	istest	account	ok
+64.0	istest	contact	ok
+64.0	istest	count	System.QueryException: use countQuery() for [select count()...] queries
+64.0	istest	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+64.0	istest	missingBind	System.QueryException: Key 'absent' does not exist in the bindMap
+64.0	anonymous	account	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+64.0	anonymous	contact	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+64.0	anonymous	count	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+64.0	anonymous	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+64.0	anonymous	missingBind	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+65.0	istest	account	ok
+65.0	istest	contact	ok
+65.0	istest	count	System.QueryException: use countQuery() for [select count()...] queries
+65.0	istest	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+65.0	istest	missingBind	System.QueryException: Key 'absent' does not exist in the bindMap
+65.0	anonymous	account	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+65.0	anonymous	contact	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+65.0	anonymous	count	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+65.0	anonymous	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+65.0	anonymous	missingBind	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+66.0	istest	account	ok
+66.0	istest	contact	ok
+66.0	istest	count	System.QueryException: use countQuery() for [select count()...] queries
+66.0	istest	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+66.0	istest	missingBind	System.QueryException: Key 'absent' does not exist in the bindMap
+66.0	anonymous	account	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+66.0	anonymous	contact	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+66.0	anonymous	count	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+66.0	anonymous	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+66.0	anonymous	missingBind	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+67.0	istest	account	ok
+67.0	istest	contact	ok
+67.0	istest	count	System.QueryException: use countQuery() for [select count()...] queries
+67.0	istest	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+67.0	istest	missingBind	System.QueryException: Key 'absent' does not exist in the bindMap
+67.0	anonymous	account	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+67.0	anonymous	contact	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+67.0	anonymous	count	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+67.0	anonymous	invalid	System.QueryException: unexpected token: 'SELECT FROM'
+67.0	anonymous	missingBind	System.SecurityException: Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
