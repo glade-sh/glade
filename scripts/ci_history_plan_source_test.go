@@ -88,6 +88,7 @@ func TestCIDurationHistoryFallbackPlanTimingAdvisory(t *testing.T) {
 				for _, event := range []string{"push", "schedule", "workflow_dispatch", "", "pull_request", "pull_request_target"} {
 					t.Run(fmt.Sprintf("%s/%s/%s/%q", route, entry, source, event), func(t *testing.T) {
 						t.Setenv("GITHUB_EVENT_NAME", event)
+						t.Setenv("GITHUB_HEAD_REF", "")
 						packageName := fixturePackage
 						if route == "sema" {
 							packageName = semaFixturePackage
@@ -139,6 +140,7 @@ func TestCIDurationHistoryFallbackPlanTimingAdvisory(t *testing.T) {
 
 func TestCIDurationHistoryFallbackPlanKeepsEvidenceValidation(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "push")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	for _, route := range []string{"sema", "apex"} {
 		for _, invalid := range []string{"missing terminal", "failed terminal", "plan mismatch"} {
 			t.Run(route+"/"+invalid, func(t *testing.T) {
