@@ -21,6 +21,10 @@ func standardFirstInitial(a, b string) bool {
 	return true
 }
 
+func standardSurnameLengthsMayMatch(a, b string) bool {
+	return len(a) >= 2 && len(b) >= 2 && abs(len(a)-len(b)) <= 1
+}
+
 // With an exact first name and email the standard rule can also match local
 // edits to a surname whose phonetic key differs. Preserve the keyboard
 // threshold for neighboring-letter swaps. A phone alone does not qualify.
@@ -29,7 +33,7 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	if len(a) > len(b) {
 		a, b = b, a
 	}
-	if len(a) < 2 || len(b)-len(a) > 1 {
+	if !standardSurnameLengthsMayMatch(a, b) {
 		return false, 0
 	}
 	for i := range len(b) {

@@ -416,7 +416,7 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 	last := standardCompare(candidate.last, existing.last, standardLastName)
 	email := standardCompare(candidate.email, existing.email, standardExact)
 	if !last.ok() {
-		if email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
+		if candidate.kind == existing.kind && email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
 			return standardCorroboratedSurname(candidate.last, existing.last)
 		}
 		return false, 0
@@ -424,9 +424,12 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 	first := standardCompare(candidate.first, existing.first, standardMethod("firstname"))
 	// The standard rule accepts one initial with an exact surname and email
 	// or phone. A custom FirstName item does not match the same pairs.
-	if !first.ok() && strings.EqualFold(candidate.last, existing.last) && standardFirstInitial(candidate.first, existing.first) {
-		if email.ok() || candidate.phone != "" && strings.EqualFold(candidate.phone, existing.phone) {
+	if !first.ok() && candidate.kind == existing.kind && strings.EqualFold(candidate.last, existing.last) && standardFirstInitial(candidate.first, existing.first) {
+		if email.ok() {
 			return true, 100
+		}
+		if candidate.phone != "" && candidate.phone == existing.phone {
+			return standardPhone(object)(candidate.phone, existing.phone)
 		}
 	}
 	best, found := 0.0, false

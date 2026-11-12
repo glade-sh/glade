@@ -154,8 +154,11 @@ func standardDuplicateMatcher(org *storage.OrgState, ruleObject, candidateObject
 			if rawKeysOf(last).last != person.lastKey {
 				// Exact first name and email can also expose a surname variant
 				// outside the ordinary phonetic key. Read these two fields only.
+				if person.kind != object || person.email == "" || !standardSurnameLengthsMayMatch(person.last, last) {
+					return false, 0
+				}
 				email, _ := duplicateFieldText(existing, "Email")
-				if person.email == "" || !strings.EqualFold(person.email, email) {
+				if !strings.EqualFold(person.email, email) {
 					return false, 0
 				}
 				first, _ := duplicateFieldText(existing, "FirstName")
