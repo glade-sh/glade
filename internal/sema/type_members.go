@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -1226,7 +1227,12 @@ func buildTypeMembersWithSources(index typesys.Index, sources *semaSources) *sem
 	return buildTypeMemberLayerWithSources(index, sources, semaPlatformTypeMemberModel())
 }
 
+// semaTypeMemberLayerBuilds counts whole-project member models built in this
+// process. Tests read it to prove an analysis builds one model, not one per class.
+var semaTypeMemberLayerBuilds atomic.Int64
+
 func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, platform *semaTypeMemberModel) *semaTypeMemberModel {
+	semaTypeMemberLayerBuilds.Add(1)
 	if sources == nil {
 		sources = newSemaSources(nil, nil)
 	}
