@@ -83,10 +83,11 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	org, runtime, apiVersion, err := loadDAPStartupState(projectRoot)
+	state, err := awaitDAPStartup(ctx, projectRoot)
 	if err != nil {
 		return err
 	}
+	org, runtime, apiVersion := state.org, state.runtime, state.apiVersion
 	trace.mark("load-startup-state")
 	if err := ctx.Err(); err != nil {
 		return err
@@ -160,6 +161,34 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return store.Save(storage.SnapshotRuntimeOrg(machine.Org))
 	})
 	return nil
+}
+
+type dapStartup struct {
+	org        storage.OrgState
+	runtime    apextest.CompiledProjectRuntime
+	apiVersion string
+	err        error
+}
+
+// dapStartupLoader builds the launch state for a project root. Tests replace it.
+var dapStartupLoader = func(root string) dapStartup {
+	org, runtime, apiVersion, err := loadDAPStartupState(root)
+	return dapStartup{org: org, runtime: runtime, apiVersion: apiVersion, err: err}
+}
+
+// awaitDAPStartup returns the launch state, or ctx.Err() as soon as ctx ends.
+// The project load cannot be interrupted, so after a cancel it finishes in the
+// background and still fills the startup cache for the next launch. Its result
+// is never shared: each launch owns the state it receives.
+func awaitDAPStartup(ctx context.Context, root string) (dapStartup, error) {
+	result := make(chan dapStartup, 1)
+	go func() { result <- dapStartupLoader(root) }()
+	select {
+	case state := <-result:
+		return state, state.err
+	case <-ctx.Done():
+		return dapStartup{}, ctx.Err()
+	}
 }
 
 type dapStartupTrace struct {
