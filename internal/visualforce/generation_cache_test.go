@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/semanticcache"
 )
 
 func controllerClassPath(p project.Project) string {
@@ -307,5 +308,222 @@ func TestControllerGateSeesOrgShapeAndMarkerEdits(t *testing.T) {
 	_, b := gateOutcomeOf(t, p)
 	if reflect.DeepEqual(a, b) {
 		t.Fatalf("setup: feature edit does not change diagnostics (%v)", a)
+	}
+}
+
+func enablePersistedGateForTest(t *testing.T) string {
+	t.Helper()
+	dir := filepath.Join(t.TempDir(), "gate")
+	t.Cleanup(semanticcache.SetPersistedGateDirForTesting(dir))
+	SetPersistentGateCache(true)
+	t.Cleanup(func() { SetPersistentGateCache(false) })
+	return dir
+}
+
+func countingCompile(p project.Project, calls *int) func() (controllerGate, error) {
+	return func() (controllerGate, error) {
+		*calls++
+		index, diagnostics, err := compileControllerProject(p)
+		if err != nil {
+			return controllerGate{}, err
+		}
+		return computeControllerGate(p, index, diagnostics), nil
+	}
+}
+
+func TestPersistedControllerGateSurvivesProcessRestart(t *testing.T) {
+	for name, body := range map[string]string{"accepted": validProbeController, "rejected": rejectedProbeController} {
+		t.Run(name, func(t *testing.T) {
+			if !semanticcacheFingerprintUsable() {
+				t.Skip("build fingerprint is per process")
+			}
+			enablePersistedGateForTest(t)
+			p := writeControllerPageProject(t, body)
+			resetGenerationCache()
+			calls := 0
+			first, err := sharedControllerGate(p, countingCompile(p, &calls))
+			if err != nil || calls != 1 {
+				t.Fatalf("first: err=%v calls=%d", err, calls)
+			}
+			resetGenerationCache() // a new process has an empty memory cache
+			second, err := sharedControllerGate(p, countingCompile(p, &calls))
+			if err != nil || calls != 1 {
+				t.Fatalf("second should come from disk: err=%v calls=%d", err, calls)
+			}
+			if !reflect.DeepEqual(first, second) {
+				t.Fatalf("persisted gate differs:\n%+v\n%+v", first, second)
+			}
+		})
+	}
+}
+
+func semanticcacheFingerprintUsable() bool {
+	probe := "probe-" + fmt.Sprint(time.Now().UnixNano())
+	dir, _ := os.MkdirTemp("", "gatefp")
+	defer os.RemoveAll(dir)
+	defer semanticcache.SetPersistedGateDirForTesting(dir)()
+	semanticcache.StorePersistedGate(probe, []byte("x"))
+	_, ok := semanticcache.LoadPersistedGate(probe)
+	return ok
+}
+
+func TestPersistedControllerGateHonorsDisableAndEdits(t *testing.T) {
+	if !semanticcacheFingerprintUsable() {
+		t.Skip("build fingerprint is per process")
+	}
+	dir := enablePersistedGateForTest(t)
+	p := writeControllerPageProject(t, validProbeController)
+	resetGenerationCache()
+	calls := 0
+	if _, err := sharedControllerGate(p, countingCompile(p, &calls)); err != nil {
+		t.Fatal(err)
+	}
+	// Disabled: neither reads nor writes.
+	SetPersistentGateCache(false)
+	resetGenerationCache()
+	if _, err := sharedControllerGate(p, countingCompile(p, &calls)); err != nil || calls != 2 {
+		t.Fatalf("disabled run must compile: err=%v calls=%d", err, calls)
+	}
+	SetPersistentGateCache(true)
+	// An edit changes the key, so the stored outcome is not served.
+	if err := os.WriteFile(controllerClassPath(p), []byte(rejectedProbeController), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	resetGenerationCache()
+	edited, err := sharedControllerGate(p, countingCompile(p, &calls))
+	if err != nil || calls != 3 {
+		t.Fatalf("edit must recompute: err=%v calls=%d", err, calls)
+	}
+	if len(edited.rejected) == 0 {
+		t.Fatalf("edited controller should be rejected")
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 2 {
+		t.Fatalf("want 2 entries, got %d", len(entries))
+	}
+}
+
+func TestPersistedControllerGateToleratesCorruption(t *testing.T) {
+	if !semanticcacheFingerprintUsable() {
+		t.Skip("build fingerprint is per process")
+	}
+	dir := enablePersistedGateForTest(t)
+	p := writeControllerPageProject(t, rejectedProbeController)
+	resetGenerationCache()
+	calls := 0
+	want, err := sharedControllerGate(p, countingCompile(p, &calls))
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 1 {
+		t.Fatalf("want one entry, got %d", len(entries))
+	}
+	path := filepath.Join(dir, entries[0].Name())
+	good, _ := os.ReadFile(path)
+	for name, bad := range map[string][]byte{
+		"empty":     {},
+		"garbage":   []byte("not a gate"),
+		"truncated": good[:len(good)/2],
+		"flipped":   append(append([]byte{}, good[:len(good)-3]...), 'Z', 'Z', 'Z'),
+	} {
+		if err := os.WriteFile(path, bad, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		resetGenerationCache()
+		before := calls
+		got, err := sharedControllerGate(p, countingCompile(p, &calls))
+		if err != nil || calls != before+1 || !reflect.DeepEqual(got, want) {
+			t.Fatalf("%s: err=%v recompute=%d equal=%v", name, err, calls-before, reflect.DeepEqual(got, want))
+		}
+	}
+}
+
+func TestPersistedControllerGateConcurrentProcesses(t *testing.T) {
+	if !semanticcacheFingerprintUsable() {
+		t.Skip("build fingerprint is per process")
+	}
+	dir := enablePersistedGateForTest(t)
+	p := writeControllerPageProject(t, validProbeController)
+	key, _ := projectGenerationKey(p)
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 20 {
+				storePersistedControllerGate(key, controllerGate{rejected: map[string]bool{"a": true}})
+				if g, ok := loadPersistedControllerGate(key); ok && !g.rejected["a"] {
+					t.Error("served a partial entry")
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 1 {
+		t.Fatalf("temporary files left behind: %d entries", len(entries))
+	}
+}
+
+func TestPersistedControllerGateRejectsUnsafeDirectory(t *testing.T) {
+	if !semanticcacheFingerprintUsable() {
+		t.Skip("build fingerprint is per process")
+	}
+	dir := enablePersistedGateForTest(t)
+	if err := os.MkdirAll(dir, 0o777); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(dir, 0o777); err != nil {
+		t.Fatal(err)
+	}
+	storePersistedControllerGate("k", controllerGate{rejected: map[string]bool{"a": true}})
+	if _, ok := loadPersistedControllerGate("k"); ok {
+		t.Fatal("a group- and world-writable directory must not be trusted")
+	}
+}
+
+func TestWarmGenerationKeyDoesNotRereadUnchangedFiles(t *testing.T) {
+	p := writeControllerPageProject(t, validProbeController)
+	// ctime cannot be backdated: shrink the trust window and let the files age past it.
+	fileDigestTrustAge = 50 * time.Millisecond
+	t.Cleanup(func() { fileDigestTrustAge = 2 * time.Second })
+	time.Sleep(120 * time.Millisecond)
+	resetFileDigestMemo()
+	reads := 0
+	fileDigestReadHook = func(string) { reads++ }
+	t.Cleanup(func() { fileDigestReadHook = nil; resetFileDigestMemo() })
+	cold, _ := projectGenerationKey(p)
+	coldReads := reads
+	if coldReads == 0 {
+		t.Fatal("cold key read no files")
+	}
+	warm, _ := projectGenerationKey(p)
+	if warm != cold || reads != coldReads {
+		t.Fatalf("warm key re-read files: reads %d -> %d, equal=%v", coldReads, reads, warm == cold)
+	}
+	// An edit with different size is seen.
+	if err := os.WriteFile(controllerClassPath(p), []byte(rejectedProbeController), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if edited, _ := projectGenerationKey(p); edited == cold {
+		t.Fatal("edit not reflected in key")
+	}
+}
+
+func TestFileDigestMemoNeverTrustsFreshFiles(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "f")
+	if err := os.WriteFile(path, []byte("aaaa"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	resetFileDigestMemo()
+	a, _ := fileContentDigest(path)
+	// Same size, same second: a stamp-only memo could miss this write.
+	if err := os.WriteFile(path, []byte("bbbb"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := fileContentDigest(path)
+	if a == b {
+		t.Fatal("fresh file served from memo")
 	}
 }

@@ -85,12 +85,17 @@ func sharedControllerGate(p project.Project, compile func() (controllerGate, err
 	if g.gate != nil {
 		return *g.gate, nil
 	}
+	if gate, ok := loadPersistedControllerGate(key); ok {
+		g.gate = &gate
+		return gate, nil
+	}
 	gate, err := compile()
 	if err != nil {
 		return controllerGate{}, err
 	}
 	if after, ok := projectGenerationKey(p); ok && after == key {
 		g.gate = &gate
+		storePersistedControllerGate(key, gate)
 	}
 	return gate, nil
 }
@@ -219,18 +224,12 @@ func hashRegularFile(h io.Writer, path string) bool {
 		return false
 	}
 	_, _ = io.WriteString(h, "\x00file\x00"+path+"\x00")
-	file, err := os.Open(path) // #nosec G304 -- a path the loaded project names.
+	digest, err := fileContentDigest(path)
 	if err != nil {
 		_, _ = io.WriteString(h, "unreadable: "+err.Error())
 		return true
 	}
-	defer file.Close()
-	fileHash := sha256.New()
-	if _, err := io.Copy(fileHash, file); err != nil {
-		_, _ = io.WriteString(h, "unreadable: "+err.Error())
-		return true
-	}
-	_, _ = h.Write(fileHash.Sum(nil))
+	_, _ = h.Write(digest[:])
 	return true
 }
 
