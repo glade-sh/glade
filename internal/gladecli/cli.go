@@ -37,6 +37,7 @@ import (
 	"github.com/glade-sh/glade/internal/semanticcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -207,8 +208,32 @@ func diagnosticTry(code string) []string {
 	}
 }
 
+// siblingDependenciesFlag opts in to resolving declared SFDX package
+// dependencies from sibling project directories (off by default).
+const siblingDependenciesFlag = "--sibling-dependencies"
+
+// applySiblingDependenciesFlag removes the global --sibling-dependencies flag
+// (anywhere before a "--" terminator) and records the choice in the environment
+// so every project load in this process and its children sees it.
+func applySiblingDependenciesFlag(args []string) []string {
+	out := args[:0:0]
+	for i, arg := range args {
+		if arg == "--" {
+			out = append(out, args[i:]...)
+			break
+		}
+		if arg == siblingDependenciesFlag {
+			_ = os.Setenv(project.SiblingDependencyScanEnvVar, "1")
+			continue
+		}
+		out = append(out, arg)
+	}
+	return out
+}
+
 // Run executes the glade CLI and returns a process exit code.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	args = applySiblingDependenciesFlag(args)
 	if len(args) == 0 {
 		_ = cliui.WriteHelp(stdout)
 		return 0
@@ -2756,15 +2781,16 @@ func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (
 }
 
 type execProjectLoad struct {
-	index  typesys.Index
-	org    storage.OrgState
-	orgErr error
-	err    error
+	project project.Project
+	index   typesys.Index
+	org     storage.OrgState
+	orgErr  error
+	err     error
 }
 
 func loadExecProject(root string, loadOrg bool) execProjectLoad {
 	p, index, err := loadProjectIndex(root)
-	load := execProjectLoad{index: index, err: err}
+	load := execProjectLoad{project: p, index: index, err: err}
 	if err == nil && loadOrg {
 		load.org, load.orgErr = orgStateFromIndexWithSpread(root, p, index, true)
 	}
@@ -2917,6 +2943,10 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 		}
 		projectIndex = load.index
 		hasProjectRuntime = true
+		if load.project.Root != "" {
+			visualforce.SetVMRenderEnvironment(machine, load.project)
+			defer visualforce.ClearVMRenderEnvironment(machine)
+		}
 		if dbPath == "" {
 			org := load.org
 			machine.SetOrg(&org)
@@ -3199,20 +3229,35 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
+	if !parsed.Bool("diagnostics-once") {
+		// Serve at once and index in the background. Requests that need the
+		// index wait for it; initialize and document sync do not.
+		handler := lsp.NewPendingHandler()
+		go func() {
+			index, err := loadIndex(root)
+			if err != nil {
+				handler.Fail(err)
+				return
+			}
+			handler.SetIndex(index)
+		}()
+		serveErr := lsp.Serve(os.Stdin, w, handler)
+		if serveErr != nil {
+			return serveErr
+		}
+		return handler.LoadError()
+	}
 	index, err := loadIndex(root)
 	if err != nil {
 		return err
 	}
 	handler := lsp.NewHandler(index)
-	if parsed.Bool("diagnostics-once") {
-		for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
-			if err := lsp.WriteMessage(w, notification); err != nil {
-				return err
-			}
+	for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
+		if err := lsp.WriteMessage(w, notification); err != nil {
+			return err
 		}
-		return nil
 	}
-	return lsp.Serve(os.Stdin, w, handler)
+	return nil
 }
 
 func runProfile(ctx context.Context, args []string, w io.Writer) error {

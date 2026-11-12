@@ -52,13 +52,16 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
+	// adminStandardFLSRoute marks the routes where the default administrator's
+	// standard-field grant rule applies (anonymous_field_policy.go).
+	adminStandardFLSRoute  bool
 	knowledgeIssuedParents map[storage.ID]bool
-	road174WarmOrderAccess map[string]bool
-	road174PermissionStamp map[string]string
-	// road174WarmDirectAccess holds actor:record keys whose direct
+	case174WarmOrderAccess map[string]bool
+	case174PermissionStamp map[string]string
+	// case174WarmDirectAccess holds actor:record keys whose direct
 	// UserRecordAccess row was warmed by a system-mode relationship query
 	// (ura_direct_carry). It lives for one System.runAs block.
-	road174WarmDirectAccess map[string]bool
+	case174WarmDirectAccess map[string]bool
 	stringASCII             []stringASCIIEntry
 	stringASCIIBytes        int
 	// --- Class/method/type registries and lookup caches ---
@@ -156,8 +159,11 @@ type VM struct {
 	scopeStack            []map[string]Value
 	finalLocals           map[string]bool // active frame; bool records initialization
 	closedSOQLLocals      map[string]Value
+	bindFrame             bindFrameState
+	bindBodySiteCache     map[*ir.Instruction]map[int]struct{}
 	dynamicSOQLBindRoute  string
 	currentClass          string
+	forBodyReusable       map[*ir.Instruction]bool
 	// anonymousLocal is the running anonymous block's method table and its
 	// top-level frame (anonymous_local_methods_c4), nil outside such a block.
 	anonymousLocal   *anonymousLocalScope
@@ -212,6 +218,7 @@ type VM struct {
 	limitMode       LimitMode
 	limitViolations []LimitViolation
 	cpuBudgetUsed   int
+	work            workState
 	fakeNow         time.Time
 	lastNow         time.Time
 	hasLastNow      bool
@@ -332,6 +339,8 @@ type VM struct {
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
+	// Last shared-backing map whose keys were verified; see fillGlobalDescribeProjectionKeys.
+	globalDescribeKeysVerified   globalDescribeKeysVerifiedMemo
 	describeTabsCache            *Value
 	describeDefCache             map[string]storage.ObjectDefinition
 	customDataCache              map[string]Value
@@ -362,7 +371,9 @@ type VM struct {
 	// Field-map owners outlive invalidation: earlier roots can still be in use.
 	describeShare            *describeShareCache
 	describeShareDefinitions []*describeShareDefinition
-	sharedDescribeFieldMaps  map[uintptr]*describeShareFieldMap
+	// describeTokenShares lists the shares whose global describe tokens this VM holds.
+	describeTokenShares     []*describeShareCache
+	sharedDescribeFieldMaps map[uintptr]*describeShareFieldMap
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs       map[uint64]bool
 	staticValueRefFields  map[uint64]staticFieldRefSet
@@ -396,6 +407,10 @@ type VM struct {
 	mapKeySetBackings           map[uint64]mapKeySetSourceRef
 	mapKeySetBinds              uint64
 	aliasContainmentMutationSeq uint64
+	aliasContainmentLog         [aliasContainmentMutationLogSize]aliasContainmentMutation
+	// disableAliasMissCarry turns off carrying cached misses across logged
+	// List bumps. Tests use it to compare results with the carry on and off.
+	disableAliasMissCarry       bool
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
 	mapPutParentContainment     *mapPutParentContainmentCache
 	perfRecorder                *PerfRecorder
@@ -661,9 +676,12 @@ type StackFrame struct {
 }
 
 type RuntimeError struct {
-	Type           string
-	Message        string
-	Stack          []StackFrame
+	Type    string
+	Message string
+	Stack   []StackFrame
+	// PlatformFault marks an uncatchable platform failure whose native REST
+	// transport is UNKNOWN_EXCEPTION rather than an Apex exception.
+	PlatformFault  bool `json:"-"`
 	callStackLimit bool
 	// Preserve the Apex message before adding local diagnostic context.
 	exceptionMessage *string
@@ -723,16 +741,21 @@ type callFrame struct {
 }
 
 type TestContext struct {
-	Started                  bool
-	Stopped                  bool
-	CurrentUser              Value
-	SeeAllData               bool
-	SeeAllDataSet            bool
-	AsyncJobs                []AsyncJob
-	AsyncStartIndex          int
-	FlexQueueJobs            []Value
-	EventPublishes           []eventPublishCallback
-	PlatformEvents           []storage.Record
+	Started         bool
+	Stopped         bool
+	CurrentUser     Value
+	SeeAllData      bool
+	SeeAllDataSet   bool
+	AsyncJobs       []AsyncJob
+	AsyncStartIndex int
+	FlexQueueJobs   []Value
+	EventPublishes  []eventPublishCallback
+	PlatformEvents  []storage.Record
+	// FlowPublishedEvents holds events that event-triggered Flow interviews
+	// created. The next explicit Test.getEventBus().deliver() delivers them;
+	// the delivery that ran the interview and stopTest do not (native
+	// platform_event_flow_elements/extended PE09A to PE09D).
+	FlowPublishedEvents      []storage.Record
 	PlatformEventRetries     map[string]int
 	PlatformEventPublishes   int
 	PlatformEventStartIndex  int
@@ -791,6 +814,9 @@ type AsyncJob struct {
 	LastProcessed       string
 	LastProcessedOffset int
 	Deferred            bool
+	// EventSeq orders a publish-after-commit event Flow job against savepoints.
+	// A rollback discards the job. Zero means the job is not rolled back.
+	EventSeq uint64
 	// Finish-created schedules remain eligible between stopTest drain passes.
 	RunAtTestStop bool
 
@@ -1062,6 +1088,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
 		clone.describeShare = vm.describeShare
+		clone.describeTokenShares = append([]*describeShareCache(nil), vm.describeTokenShares...)
 	} else {
 		clone.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		clone.childRelCache = newChildRelationshipCache()
@@ -2329,6 +2356,9 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	vm.ensureMetadataCacheGeneration()
 	engine := dml.NewEngine(vm.Org)
 	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
+	if vm.work.tracking {
+		engine.FlowMatchObserver = func() { vm.work.flowRuns++ }
+	}
 	engine.PermissionUserFields = vm.currentUserPermissionFields()
 	if vm.dmlSummaryByChild == nil {
 		vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
@@ -2352,6 +2382,15 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	}
 	engine.FlowActionInvoker = func(action storage.FlowAction, record storage.Record) error {
 		return vm.invokeFlowAction(action, record, result)
+	}
+	engine.FlowFaultDetail = vm.flowApexFaultDetail
+	engine.FlowFaultInTest = func() bool { return vm.testContext != nil }
+	engine.BeginPlatformEventInterview = vm.beginPlatformEventInterview
+	engine.PlatformEventPublisher = func(records []storage.Record) error {
+		return vm.publishFlowEvents(records, result)
+	}
+	engine.PlatformEventDirectPublisher = func(records []storage.Record) error {
+		return vm.publishFlowCreatedEvents(records, result)
 	}
 	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
 		return vm.invokeFlowActionWithContext(action, record, context, result)
@@ -2848,7 +2887,11 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 	// The native bulk capture uses atomic inserts. Partial-save scheduling
 	// retains its existing per-record path.
 	if allOrNone {
-		if handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
+		// flow_batch_refire/org.tsv: every interview's Flow writes finish before
+		// the after-update triggers run, and the triggers see one batch.
+		var refireIDs []storage.ID
+		var refireOld []storage.Record
+		handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
 			record := records[i]
 			appendTrace(result, "apex.automation.apply", "apex.automation", map[string]any{
 				"object": record.Object,
@@ -2861,8 +2904,14 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 			if i < len(oldRecords) {
 				oldRecord = oldRecords[i]
 			}
-			return vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result)
-		}); handled {
+			refireIDs = append(refireIDs, record.ID)
+			refireOld = append(refireOld, oldRecord)
+			return nil
+		})
+		if handled && err == nil && len(refireIDs) > 0 {
+			err = vm.refireAutomationUpdateTriggersFor(records[0].Object, refireIDs, refireOld, allOrNone, rollback, result)
+		}
+		if handled {
 			if err != nil && allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 					return rollbackErr
@@ -3381,16 +3430,16 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 	// a DML update of the user's own LocaleSidKey before the first comparison
 	// must not move it (string_equality_locale_change_c14).
 	vm.snapshotLocaleCase()
-	previousRoad174WarmOrderAccess := vm.road174WarmOrderAccess
-	previousRoad174PermissionStamp := vm.road174PermissionStamp
-	previousRoad174WarmDirectAccess := vm.road174WarmDirectAccess
-	vm.road174WarmOrderAccess = nil
-	vm.road174PermissionStamp = nil
-	vm.road174WarmDirectAccess = nil
+	previousCase174WarmOrderAccess := vm.case174WarmOrderAccess
+	previousCase174PermissionStamp := vm.case174PermissionStamp
+	previousCase174WarmDirectAccess := vm.case174WarmDirectAccess
+	vm.case174WarmOrderAccess = nil
+	vm.case174PermissionStamp = nil
+	vm.case174WarmDirectAccess = nil
 	defer func() {
-		vm.road174WarmOrderAccess = previousRoad174WarmOrderAccess
-		vm.road174PermissionStamp = previousRoad174PermissionStamp
-		vm.road174WarmDirectAccess = previousRoad174WarmDirectAccess
+		vm.case174WarmOrderAccess = previousCase174WarmOrderAccess
+		vm.case174PermissionStamp = previousCase174PermissionStamp
+		vm.case174WarmDirectAccess = previousCase174WarmDirectAccess
 	}()
 	vm.ensureMetadataCacheGeneration()
 	if vm.testContext == nil {
@@ -3404,10 +3453,13 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 	defer restoreCreations()
 	finishDuplicateReports := vm.beginDuplicateReportTransaction()
 	defer func() { finishDuplicateReports(err == nil) }()
-	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
-	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
+	callerClosedLocals, callerBindRoute, callerBindFrame := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame
+	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = nil, "", bindFrameState{}
+	if className == "" {
+		vm.bindFrame.anonymous, vm.bindFrame.anonymousBody = true, program.Instructions
+	}
 	defer func() {
-		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
+		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
 	}()
 	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled, traceOutputLimit: vm.traceOutputLimit}
 	if vm.traceEnabled {

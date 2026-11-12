@@ -1,0 +1,23 @@
+id	event	operation	mode	routes	shape
+PE06A	imm	faultCreate	keep	anonymous,deliver,deliver2,stop	Fault path on failing Create Records
+PE06B	imm	faultApex	keep	anonymous,deliver,deliver2,stop	Fault path on throwing Apex action
+PE06C	imm	faultApexU	keep	anonymous,deliver,deliver2,stop	Unhandled Apex action fault after a Create
+PE06D	imm	faultCreateU	keep	anonymous,deliver,deliver2,stop	Unhandled Create fault after a Create
+PE06E	after	faultApex	keep	anonymous,deliver,deliver2,stop	Fault path, publish after commit
+PE06F	after	faultApexU	keep	anonymous,deliver,deliver2,stop	Unhandled Apex fault, publish after commit
+PE06G	imm	faultCreateOk	keep	anonymous,deliver,deliver2,stop	Control Create Records inside a fault-capable path
+PE06H	imm	faultCreateStatic	keep	anonymous,deliver,deliver2,stop	Failing Create Records, fault path writes a static log
+PE06I	imm	faultCreateApex	keep	anonymous,deliver,deliver2,stop	Failing Create Records, fault path runs an Apex action that inserts
+PE06J	imm	faultCreateReq	keep	anonymous,deliver,deliver2,stop	Create Records missing a required field, fault path
+PE08A	imm	log	rollback	anonymous,deliver,deliver2,stop	Publish immediately then rollback
+PE08B	after	log	rollback	anonymous,deliver,deliver2,stop	Publish after commit then rollback
+PE08C	imm	log	keep	anonymous,deliver,deliver2,stop	Control publish immediately
+PE08D	after	log	keep	anonymous,deliver,deliver2,stop	Control publish after commit
+PE08E	after	log	partial	anonymous,deliver,deliver2,stop	Savepoint rollback of the second after-commit event
+PE08F	imm	log	partial	anonymous,deliver,deliver2,stop	Savepoint rollback of the second immediate event
+PE08G	after	log	mixed	anonymous,deliver,deliver2,stop	Both behaviors then rollback
+PE09A	imm	chainI	keep	anonymous,deliver,deliver2,stop	Immediate flow publishes immediate event
+PE09B	after	chainA	keep	anonymous,deliver,deliver2,stop	After-commit flow publishes after-commit event
+PE09C	imm	chainA	keep	anonymous,deliver,deliver2,stop	Immediate flow publishes after-commit event
+PE09D	after	chainI	keep	anonymous,deliver,deliver2,stop	After-commit flow publishes immediate event
+PE06K	imm	faultCreateLong	keep	anonymous,deliver,deliver2,stop	Failing Create Records, fault path stores the fault message in a long text field

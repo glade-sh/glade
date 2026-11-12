@@ -46,7 +46,7 @@ at 23 of 25 queries), so the gate fails only on findings or errors. The full
 profile skips five queries the fast PR scan runs (ReflectedXss,
 BadRedirectCheck, OpenUrlRedirect, UncontrolledAllocationSize, StringBreak), so
 their alerts gate nothing now that CodeQL is outside `Required CI`. The waiver
-list in [CODEQL_BUDGET.md](CODEQL_BUDGET.md) is reviewed for every release.
+list in [CODEQL.md](CODEQL.md#release-budget) is reviewed for every release.
 
 The local gate does not include the built-site, rendered-site browser, or preview
 smoke checks. Run those as described in [site/README.md](../site/README.md);

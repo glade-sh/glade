@@ -92,7 +92,7 @@ func TestFlowActionCollectionOpsNativeConformance(t *testing.T) {
 					if !errors.As(execErr, &e) || e.Type != "System.AssertException" {
 						t.Fatalf("missing observation: %v", execErr)
 					}
-					_, payload, ok := strings.Cut(e.ExceptionMessage(), "ROAD195_RESULT|")
+					_, payload, ok := strings.Cut(e.ExceptionMessage(), "CASE195_RESULT|")
 					if !ok {
 						t.Fatalf("missing marker: %v", execErr)
 					}
@@ -128,7 +128,7 @@ func TestFlowActionCollectionOpsProjectRoutes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	operation := strings.Replace(string(body), "System.assert(false,'ROAD195_RESULT|'+JSON.serialize(out));", `System.assertEquals(2,rs.size());
+	operation := strings.Replace(string(body), "System.assert(false,'CASE195_RESULT|'+JSON.serialize(out));", `System.assertEquals(2,rs.size());
 for (Integer i=0;i<2;i++) { System.assert(rs[i].isSuccess()); Map<String,Object> values=rs[i].getOutputParameters(); System.assertEquals(null,values.get('NullText')); System.assertEquals(null,values.get('Unassigned')); System.assertEquals(null,values.get('AnotherUnassigned')); System.assertEquals(null,values.get('CopyDest')); System.assertEquals(new List<String>{null},values.get('NullItems')); System.assertEquals('',values.get('EmptyText')); System.assertEquals(i==0?'alpha':'beta',values.get('Echo')); System.assertEquals('Finished',values.get('Flow__InterviewStatus')); System.assertEquals(new List<String>{'first','second'},values.get('Items')); }`, 1)
 	if operation == string(body) {
 		t.Fatal("missing capture marker")

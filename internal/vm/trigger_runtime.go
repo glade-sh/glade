@@ -679,6 +679,7 @@ func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []stora
 	return nil, updated, nil
 }
 func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, result *Result) ([]dml.Result, error) {
+	vm.work.triggerRuns++
 	appendTraceLazy(result, "apex.trigger."+trigger.Name, "apex.trigger", func() map[string]any {
 		return vm.traceTriggerArgs(trigger, len(records))
 	})
@@ -687,7 +688,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	caller := vm.Globals
 	callerTypes := vm.VarTypes
 	callerFinals := vm.finalLocals
-	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
+	callerClosedLocals, callerBindRoute, callerBindFrame := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame
 	callerClass := vm.currentClass
 	callerNamespace := vm.currentNamespace
 	callerMethod := vm.currentMethod
@@ -707,7 +708,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	vm.Globals = frame
 	vm.VarTypes = make(map[string]string)
 	vm.finalLocals = nil
-	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
+	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = nil, "", bindFrameState{}
 	vm.triggerGlobals = frame
 	vm.currentClass = trigger.Name
 	vm.currentNamespace = strings.TrimSpace(trigger.Namespace)
@@ -746,7 +747,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.Globals = caller
 		vm.VarTypes = callerTypes
 		vm.finalLocals = callerFinals
-		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
+		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
 		vm.triggerGlobals = callerTriggerGlobals
 		vm.activeTriggerNamespaces = callerTriggerNamespaces
 		vm.currentClass = callerClass

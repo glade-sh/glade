@@ -276,7 +276,9 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 31
 		}
 		if objectName == "ObjectPermissions" {
-			want = 58
+			// Native profile_object_inventory rows add 10 captured
+			// Standard User/Campaign,Case,Lead,Pricebook2,Product2 grants.
+			want = 68
 		}
 		if objectName == "UserRole" {
 			want = 18

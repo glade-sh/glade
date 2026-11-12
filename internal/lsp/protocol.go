@@ -63,28 +63,3 @@ func WriteMessage(w io.Writer, message any) error {
 	_, err = w.Write(data)
 	return err
 }
-
-func Serve(r io.Reader, w io.Writer, handler *Handler) error {
-	reader := NewProtocolReader(r)
-	for {
-		data, err := reader.Read()
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
-		response, err := handler.HandleJSON(data)
-		if err != nil {
-			return err
-		}
-		if len(response) > 0 {
-			if err := WriteMessage(w, json.RawMessage(response)); err != nil {
-				return err
-			}
-		}
-		if handler.Shutdown() {
-			return nil
-		}
-	}
-}

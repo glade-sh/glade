@@ -29,7 +29,6 @@ const ciWorkflow = await readFile(new URL("../../.github/workflows/ci.yml", impo
 const releaseWorkflow = await readFile(new URL("../../.github/workflows/release.yml", import.meta.url), "utf8");
 const codeqlWorkflow = await readFile(new URL("../../.github/workflows/codeql.yml", import.meta.url), "utf8").catch(() => "");
 const securityWorkflow = await readFile(new URL("../../.github/workflows/security.yml", import.meta.url), "utf8").catch(() => "");
-const agentGuide = await readFile(new URL("../../AGENTS.md", import.meta.url), "utf8");
 const repoGitignore = await readFile(new URL("../../.gitignore", import.meta.url), "utf8");
 const repoReadme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
 const repoSecurityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8").catch(() => "");
@@ -53,7 +52,7 @@ const repoPlugins = await readFile(new URL("../../docs/PLUGINS.md", import.meta.
 const repoDistributionWorkflow = await readFile(new URL("../../docs/DISTRIBUTION_WORKFLOW.md", import.meta.url), "utf8");
 const checkCommandImplementation = await readFile(new URL("../../internal/gladecli/cli.go", import.meta.url), "utf8");
 const testCommandImplementation = await readFile(new URL("../../internal/gladecli/test_command.go", import.meta.url), "utf8");
-const storageSchema = await readFile(new URL("../../docs/storage-schema.md", import.meta.url), "utf8");
+const storageSchema = await readFile(new URL("../../docs/STORAGE_SCHEMA.md", import.meta.url), "utf8");
 const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
@@ -477,17 +476,6 @@ test("site readme points to the real docs landing route", () => {
   assert.doesNotMatch(siteReadme, /docs at `\/guide\/`/);
 });
 
-test("repo compatibility CLI surface matches contributor guide inventory", () => {
-  const guideMatch = agentGuide.match(/Product CLI commands:\s*([\s\S]*?)\.\n/);
-  assert.ok(guideMatch, "AGENTS.md should list product CLI commands");
-  const compatibilityMatch = repoCompatibility.match(/\| CLI surface \| supported \| ([^|]+) exist\./);
-  assert.ok(compatibilityMatch, "COMPATIBILITY.md should list the supported CLI surface");
-
-  const commandsFromGuide = [...guideMatch[1].matchAll(/`([^`]+)`/g)].map((match) => match[1]);
-  const commandsFromCompatibility = [...compatibilityMatch[1].matchAll(/`([^`]+)`/g)].map((match) => match[1]);
-  assert.deepEqual(commandsFromCompatibility, commandsFromGuide);
-});
-
 test('theme defines complete light and dark color tokens', () => {
   for (const role of ['canvas','rail','surface','control','text','muted','link','action','focus','success','warning','error','code']) {
     assert.equal((tokensCss.match(new RegExp(`--glade-${role}: #`, 'g')) || []).length, 2, `${role} has both themes`);
@@ -771,8 +759,8 @@ test("security and release trust claims stay linked to repository proof", () => 
   assert.match(securityWorkflow, /ossf\/scorecard-action@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /publish_results: true/);
 
-  assert.match(ciWorkflow, /go-version: "1\.26\.10"/);
-  assert.match(releaseWorkflow, /go-version: "1\.26\.10"/);
+  assert.match(ciWorkflow, /go-version: "1\.26\.11"/);
+  assert.match(releaseWorkflow, /go-version: "1\.26\.11"/);
   assert.match(releaseWorkflow, /cyclonedx-gomod/);
   assert.match(releaseWorkflow, /tar -xzf "\$archive" -C "\$extract_dir" glade/);
   assert.match(releaseWorkflow, /cyclonedx-gomod bin -json -version "\$VERSION" -output "\$sbom" "\$extract_dir\/glade"/);

@@ -21,7 +21,7 @@ func TestUpsertDuplicateUncapturedScopeProjectRoutes(t *testing.T) {
 				root := copyLookupFilterValidationProject(t, fixture, api)
 				base := filepath.Join(root, "force-app/main/default")
 				writeFile(t, filepath.Join(base, "objects/Contact/fields/RouteKey__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>RouteKey__c</fullName><externalId>true</externalId><label>Route Key</label><length>100</length><type>Text</type></CustomField>`)
-				// The native twin assigns a permission set granting the key (Road197Probe).
+				// The native twin assigns a permission set granting the key (Case197Probe).
 				writeFile(t, filepath.Join(base, "profiles/Admin.profile-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><Profile xmlns="http://soap.sforce.com/2006/04/metadata"><custom>false</custom><fieldPermissions><editable>true</editable><field>Contact.RouteKey__c</field><readable>true</readable></fieldPermissions></Profile>`)
 				items := `<matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>Phone</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems>`
 				if shape == "multi_field" {

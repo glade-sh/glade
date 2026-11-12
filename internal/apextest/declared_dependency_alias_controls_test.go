@@ -14,6 +14,7 @@ import (
 // api{62,67}/org.tsv, missing_static and loaded_static. Alias handling and
 // independent-test scoping are local project-resolver policy.
 func TestDeclaredDependencyAliasAvailabilityControls(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		f, err := os.Open(filepath.Join("testdata/conformance/declared_dependency_alias_capture", "api"+api[:2], "org.tsv"))
 		if err != nil {
@@ -83,6 +84,7 @@ func TestDeclaredDependencyAliasAvailabilityControls(t *testing.T) {
 // A mixed manifest reproduces the work-queue shape: one alias and one bare
 // package are both unavailable. Neither should exclude an unrelated test.
 func TestDeclaredDependencyMixedAliasesScope(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			root := t.TempDir()

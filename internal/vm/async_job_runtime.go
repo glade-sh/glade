@@ -830,6 +830,10 @@ func (vm *VM) drainTestPlatformEvents(result *Result) error {
 	if err := vm.drainChangeDataCapture(result, false); err != nil {
 		return err
 	}
+	if pending := vm.testContext.FlowPublishedEvents; len(pending) > 0 {
+		vm.testContext.FlowPublishedEvents = nil
+		vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, pending...)
+	}
 	return vm.drainTestPlatformEventsFrom(result, 0, false)
 }
 func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTimeDelivery bool) error {
@@ -1327,9 +1331,9 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result, batchProjection ...*bool
 	defer restoreMixedDML()
 	// The job is its own transaction: a warm direct UserRecordAccess row of
 	// the enqueuing block does not reach it (ura_direct_carry).
-	previousWarmDirectAccess := vm.road174WarmDirectAccess
-	vm.road174WarmDirectAccess = nil
-	defer func() { vm.road174WarmDirectAccess = previousWarmDirectAccess }()
+	previousWarmDirectAccess := vm.case174WarmDirectAccess
+	vm.case174WarmDirectAccess = nil
+	defer func() { vm.case174WarmDirectAccess = previousWarmDirectAccess }()
 	_, err := vm.withQueueableDuplicateSignatureTransaction(func() (Value, error) {
 		return Null, vm.runAsyncJobInTransaction(job, result, batchProjection...)
 	})

@@ -11,6 +11,7 @@ import (
 )
 
 func TestUnloadedDependencyMultiHelperAnonymousExecNativeRoutes(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	dir := filepath.Join("../apextest/testdata/conformance/unloaded_dependency/multi_helper/sources")
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, count := range []int{2, 3} {

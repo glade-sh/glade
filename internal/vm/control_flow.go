@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -74,6 +75,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		}()
 	}
 	for seq, inst := range program.Instructions {
+		vm.work.instructions++
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
@@ -117,6 +119,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 			value.Static = inst.Type
 			vm.Globals[inst.Name] = value
 			vm.VarTypes[inst.Name] = inst.Type
+			if vm.bindFrame.declWatch != nil {
+				vm.bindFrame.noteDeclared(inst.Name)
+			}
 			if inst.Final {
 				if vm.finalLocals == nil {
 					vm.finalLocals = make(map[string]bool)
@@ -687,11 +692,38 @@ func childProgram(parent ir.Program, instructions []ir.Instruction) ir.Program {
 // source syntax and version rules F03/F04 also capture if-block shadowing and restoration at API62/68.
 // Try bodies use the same lexical cleanup for their final-local bindings.
 func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result *Result) (execOutcome, error) {
+	return vm.executeBlockScopeKeeping(program, inst, result, nil)
+}
+
+// executeBlockScopeKeeping is executeBlockScope for a loop body. When kept is
+// non-nil, body bindings that did not exist outside the block stay in the
+// binding maps after the block and are recorded in kept; the loop removes them
+// once it exits. Re-inserting a deleted Globals key allocates a new Value
+// (the map stores 312-byte elements indirectly), so this avoids that per
+// iteration.
+func (vm *VM) executeBlockScopeKeeping(program ir.Program, inst ir.Instruction, result *Result, kept *[]string) (execOutcome, error) {
+	declares := false
+	for i := range inst.Then {
+		if op := inst.Then[i].Op; op == ir.OpDeclare || op == ir.OpDeclGroup {
+			declares = true
+			break
+		}
+	}
+	if !declares {
+		// No local of its own to snapshot or restore.
+		if len(vm.bindFrame.slots) != 0 {
+			vm.enterBindBlock(inst.Then, func(func(string, bool)) {})
+		}
+		return vm.executeProgram(childProgram(program, inst.Then), result)
+	}
 	type outerBinding struct {
 		value            Value
 		name, typ        string
 		existed, hadType bool
 		final, hadFinal  bool
+		// site is the declaration's Pos. declStart counts earlier runs of a
+		// declaration of a name that was already live (anonymous shadowing).
+		site, declStart int
 	}
 	// Most blocks declare only a handful of names. Keep their snapshots in a
 	// bounded local buffer, growing only for larger scopes.
@@ -733,7 +765,13 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 					value, existed := vm.Globals[name]
 					typ, hadType := vm.VarTypes[name]
 					final, hadFinal := vm.finalLocals[name]
-					binding := outerBinding{name: name, value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal}
+					if kept != nil && slices.Contains(*kept, name) {
+						value, existed, typ, hadType, final, hadFinal = Value{}, false, "", false, false, false
+					}
+					binding := outerBinding{name: name, value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal, site: child.Pos}
+					if existed {
+						binding.declStart = vm.bindFrame.watchDecl(name)
+					}
 					if useMap {
 						large[name] = binding
 					} else {
@@ -746,14 +784,35 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 		}
 	}
 	collect(inst.Then)
+	if len(vm.bindFrame.slots) != 0 {
+		vm.enterBindBlock(inst.Then, func(visit func(string, bool)) {
+			if large != nil {
+				for name, binding := range large {
+					visit(name, binding.existed)
+				}
+				return
+			}
+			for _, binding := range outer {
+				visit(binding.name, binding.existed)
+			}
+		})
+	}
 	completed := false
 	defer func() {
 		restore := func(name string, binding outerBinding) {
-			// Closed for-body String binds remain available to dynamic SOQL
-			// without keeping the declaration in lexical lookup.
-			closedStringLoop := inst.Op == ir.OpFor && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "String")
-			if completed && (inst.Op == ir.OpIf || closedStringLoop) && !binding.existed {
-				if value, ok := vm.Globals[name]; ok {
+			// A String local of a block that ended stays visible to dynamic
+			// SOQL (see soql_bind_scope.go) without staying in lexical lookup.
+			// A name that was already live counts only if this block's own
+			// declaration ran.
+			if value, ok := vm.Globals[name]; ok {
+				isString := isStringBindType(vm.VarTypes[name])
+				if isString && (!binding.existed || vm.bindFrame.declaredSince(name, binding.declStart)) {
+					vm.rememberDepartedString(name, binding.site, value)
+				}
+				// The other dynamic routes keep the earlier rule: completed
+				// if-blocks and for bodies only.
+				closedStringLoop := inst.Op == ir.OpFor && isString
+				if completed && (inst.Op == ir.OpIf || closedStringLoop) && !binding.existed {
 					vm.rememberClosedSOQLLocal(name, vm.VarTypes[name], value)
 				}
 			}
@@ -761,6 +820,12 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 				if value, ok := vm.Globals[name]; ok && value.Kind == ValueInt && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "Integer") {
 					vm.rememberClosedSOQLInteger(name, value)
 				}
+			}
+			if kept != nil && !binding.existed && !binding.hadType && !binding.hadFinal {
+				if !slices.Contains(*kept, name) {
+					*kept = append(*kept, name)
+				}
+				return
 			}
 			if binding.existed {
 				vm.Globals[name] = binding.value
@@ -983,6 +1048,7 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if err := vm.ctx.Err(); err != nil {
 			return execOutcome{}, err
 		}
+		vm.work.loopIterations++
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
@@ -997,7 +1063,8 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if !conditionValue {
 			return execOutcome{}, nil
 		}
-		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		// The body is its own scope: its locals end with each pass.
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1018,7 +1085,7 @@ func (vm *VM) executeDoWhile(source string, inst ir.Instruction, result *Result)
 		if err := vm.chargeLoopIteration("do/while", iteration); err != nil {
 			return execOutcome{}, err
 		}
-		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1054,10 +1121,20 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if initializer.Op != ir.OpDeclare {
 			continue
 		}
-		name := initializer.Name
+		name, site := initializer.Name, initializer.Pos
 		previous, existed := vm.Globals[name]
 		previousType, hadType := vm.VarTypes[name]
+		declStart := 0
+		if existed {
+			declStart = vm.bindFrame.watchDecl(name)
+		}
 		defer func() {
+			// The loop variable of a finished for statement still binds in
+			// dynamic SOQL (see soql_bind_scope.go).
+			if value, ok := vm.Globals[name]; ok && isStringBindType(vm.VarTypes[name]) &&
+				(!existed || vm.bindFrame.declaredSince(name, declStart)) {
+				vm.rememberDepartedString(name, site, value)
+			}
 			if existed {
 				vm.Globals[name] = previous
 			} else {
@@ -1076,6 +1153,20 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 			return out, err
 		}
 	}
+	// Anonymous code has no fields or trigger globals a stale body binding
+	// could shadow in the loop condition or update, so body locals can stay
+	// bound between iterations and be removed once when the loop exits.
+	var kept *[]string
+	if vm.currentClass == "" && !vm.currentTrigger && vm.forBodyBindingsReusable(inst) {
+		kept = new([]string)
+		defer func() {
+			for _, name := range *kept {
+				delete(vm.Globals, name)
+				delete(vm.VarTypes, name)
+				delete(vm.finalLocals, name)
+			}
+		}()
+	}
 	for iteration := 0; ; iteration++ {
 		if err := vm.chargeLoopIteration("for", iteration); err != nil {
 			return execOutcome{}, err
@@ -1091,7 +1182,7 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if !conditionValue {
 			return execOutcome{}, nil
 		}
-		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
+		out, err := vm.executeBlockScopeKeeping(ir.Program{Source: source}, inst, result, kept)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1226,7 +1317,13 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	_, existed := vm.Globals[inst.Name]
 	previous := vm.Globals[inst.Name]
 	previousType, hadType := vm.VarTypes[inst.Name]
+	iterated := false
 	defer func() {
+		// After the loop a String loop variable binds in dynamic SOQL as
+		// null (see soql_bind_scope.go).
+		if iterated && isStringBindType(inst.Type) {
+			vm.rememberDepartedString(inst.Name, inst.Pos, Null)
+		}
 		if existed {
 			vm.Globals[inst.Name] = previous
 		} else {
@@ -1251,6 +1348,7 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		}
 		vm.Globals[inst.Name] = coerced
 		vm.VarTypes[inst.Name] = inst.Type
+		iterated = true
 		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
@@ -1278,6 +1376,7 @@ func (vm *VM) chargeLoopIteration(kind string, iteration int) error {
 	if iteration >= maxLoopIterations && (vm.limitMode != LimitModeStrict || vm.limitCaps.CPUTimeMS < 0) {
 		return fmt.Errorf("%s loop exceeded %d iterations", kind, maxLoopIterations)
 	}
+	vm.work.loopIterations++
 	return vm.incrementCPUBudget(1)
 }
 
@@ -1640,10 +1739,10 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	// A direct UserRecordAccess row warmed inside a runAs block does not
 	// survive the block, and an outer warm row does not reach into it
 	// (ura_direct_carry e10).
-	previousWarmDirectAccess := vm.road174WarmDirectAccess
-	vm.road174WarmDirectAccess = nil
+	previousWarmDirectAccess := vm.case174WarmDirectAccess
+	vm.case174WarmDirectAccess = nil
 	defer func() {
-		vm.road174WarmDirectAccess = previousWarmDirectAccess
+		vm.case174WarmDirectAccess = previousWarmDirectAccess
 		if packageVersion.Kind != "" {
 			vm.testContext.PackageRunAsDepth--
 			vm.testContext.CurrentPackageVersion = previousPackageVersion
@@ -1837,4 +1936,135 @@ func dynamicSOQLForLoopError(expr ir.Expr, err error) error {
 type heapStaticContainerRef struct {
 	fields map[string]Field
 	name   string
+}
+
+// forBodyBindingsReusable reports whether the body locals of a for loop can
+// stay bound between iterations. A stale local would be visible to name
+// resolution that is case-insensitive (a type or class named like the local),
+// so every spelling of each body-declared name in the loop must be the
+// declaration's own spelling. The answer depends only on the loop's IR.
+func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
+	if len(inst.Then) == 0 {
+		return false
+	}
+	key := &inst.Then[0]
+	if cached, ok := vm.forBodyReusable[key]; ok {
+		return cached
+	}
+	declared := make(map[string]string)
+	var collect func([]ir.Instruction)
+	collect = func(list []ir.Instruction) {
+		for _, child := range list {
+			switch child.Op {
+			case ir.OpDeclare:
+				if child.Name != "" {
+					declared[child.Name] = child.Name
+				}
+			case ir.OpDeclGroup:
+				collect(child.Then)
+			}
+		}
+	}
+	collect(inst.Then)
+	spellings := make(map[string]map[string]bool)
+	scan := func(text string) {
+		for i := 0; i < len(text); {
+			c := text[i]
+			if !(c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+				i++
+				continue
+			}
+			start := i
+			for i < len(text) && (text[i] == '_' || text[i] >= '0' && text[i] <= '9' || text[i] >= 'a' && text[i] <= 'z' || text[i] >= 'A' && text[i] <= 'Z') {
+				i++
+			}
+			word := text[start:i]
+			lower := strings.ToLower(word)
+			if spellings[lower] == nil {
+				spellings[lower] = make(map[string]bool)
+			}
+			spellings[lower][word] = true
+		}
+	}
+	// Dynamic SOQL, SOSL and cursor APIs resolve bind names from a query
+	// string built at run time, which can name a body local before this
+	// iteration declares it. Loops that reach them keep per-iteration scopes.
+	runtimeBinds := false
+	var scanExpr func(ir.Expr)
+	scanExpr = func(e ir.Expr) {
+		if callee := strings.ToLower(e.Callee + " " + e.Name); strings.Contains(callee, "query") || strings.Contains(callee, "search") || strings.Contains(callee, "cursor") || strings.Contains(callee, "locator") {
+			runtimeBinds = true
+		}
+		scan(e.Value)
+		scan(e.Name)
+		scan(e.Callee)
+		for _, arg := range e.Args {
+			scanExpr(arg)
+		}
+		for _, named := range e.NamedArgs {
+			scan(named.Name)
+			scanExpr(named.Expr)
+		}
+		if e.Left != nil {
+			scanExpr(*e.Left)
+		}
+		if e.Right != nil {
+			scanExpr(*e.Right)
+		}
+	}
+	var scanList func([]ir.Instruction)
+	var scanInst func(ir.Instruction)
+	scanList = func(list []ir.Instruction) {
+		for _, child := range list {
+			scanInst(child)
+		}
+	}
+	scanInst = func(in ir.Instruction) {
+		scan(in.Type)
+		scan(in.Name)
+		scan(in.Field)
+		for _, t := range in.CatchTypes {
+			scan(t)
+		}
+		scanExpr(in.Expr)
+		if in.Init != nil {
+			scanInst(*in.Init)
+		}
+		scanList(in.Inits)
+		if in.Update != nil {
+			scanInst(*in.Update)
+		}
+		scanList(in.Updates)
+		scanList(in.Then)
+		scanList(in.Else)
+		scanList(in.Catch)
+		for _, c := range in.Catches {
+			for _, t := range c.Types {
+				scan(t)
+			}
+			scan(c.Name)
+			scanList(c.Body)
+		}
+		scanList(in.Finally)
+		for _, c := range in.Cases {
+			for _, e := range c.Exprs {
+				scanExpr(e)
+			}
+			scanList(c.Body)
+		}
+	}
+	scanInst(inst)
+	reusable := !runtimeBinds
+	for name := range declared {
+		forms := spellings[strings.ToLower(name)]
+		if len(forms) != 1 || !forms[name] {
+			reusable = false
+			break
+		}
+	}
+	if vm.forBodyReusable == nil {
+		vm.forBodyReusable = make(map[*ir.Instruction]bool)
+	}
+	vm.forBodyReusable[key] = reusable
+	return reusable
 }

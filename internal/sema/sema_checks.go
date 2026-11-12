@@ -371,6 +371,10 @@ type querySemanticsChecker struct {
 	bindingTypes   []typesys.TypeSymbol
 	hasBaseline    bool
 	shapeFeatures  []string
+	// packageFieldsNarrow and sourcelessPackageNamespaces come from the
+	// project's declared dependencies (typesys.ProjectInfo).
+	packageFieldsNarrow         bool
+	sourcelessPackageNamespaces []string
 	// namedApexReferenceObjects is set for files declaring named classes.
 	namedApexReferenceObjects bool
 	// anonymousRoute is set for the execute-anonymous body.
@@ -388,6 +392,9 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		bindingTypes:   index.Types,
 		hasBaseline:    len(declaredObjects) > 0,
 		shapeFeatures:  index.OrgShapeFeatures,
+
+		packageFieldsNarrow:         index.Project.PackageFieldsNarrow,
+		sourcelessPackageNamespaces: strings.FieldsFunc(index.Project.SourcelessPackageNamespaces, func(r rune) bool { return r == ',' }),
 	}
 	checker.apiVersion, _ = apexversion.Major(index.Project.SourceAPIVersion)
 	for _, typ := range index.Types {
@@ -2004,8 +2011,13 @@ func (c querySemanticsChecker) allowsIncompleteExternalManagedPackageField(objec
 	if objectNamespace := semaNamespaceFromAPIName(object.Name); objectNamespace != "" {
 		return !strings.EqualFold(objectNamespace, c.namespace)
 	}
-	_, ok = storage.StandardObjectDefinition(object.Name)
-	return ok
+	if _, ok = storage.StandardObjectDefinition(object.Name); !ok {
+		return false
+	}
+	// Native rows accept a namespaced field on a standard object only for an
+	// installed package. Declared dependencies stand for installed packages;
+	// a project that declares none keeps every namespace open.
+	return storage.PackageFieldNamespaceAllowed(c.packageFieldsNarrow, c.sourcelessPackageNamespaces, fieldNamespace)
 }
 
 func (c querySemanticsChecker) relationshipField(objectName, relationshipName string) (schema.Field, string, bool) {

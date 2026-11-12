@@ -20,6 +20,9 @@ type Engine struct {
 	UserHasCustomPermission func(string) bool
 	Options                 Options
 	FlowActionInvoker       func(storage.FlowAction, storage.Record) error
+	// FlowMatchObserver is called once each time a flow rule matches a record.
+	// It is advisory and must not change execution.
+	FlowMatchObserver func()
 	// FlowPathEnqueuer submits matched deferred paths to the host transaction.
 	FlowPathEnqueuer func(string, storage.FlowRule, storage.FlowPath, storage.ID)
 	// SystemTimestampObserver reports generated audit timestamps to the host
@@ -65,6 +68,26 @@ type Engine struct {
 	RecordCreations    *RecordCreations
 	LookupHistoryScope *storage.LookupHistoryScope
 
+	// BeginPlatformEventInterview starts the transaction of one event-triggered
+	// Flow interview and returns the function that rolls it back. Without it a
+	// failed interview reports its error to the caller.
+	BeginPlatformEventInterview func() func() error
+	// PlatformEventPublisher publishes an event record that an event-triggered
+	// Flow interview created, once the interview finishes without a fault.
+	PlatformEventPublisher func([]storage.Record) error
+	// PlatformEventDirectPublisher publishes an event record that a Flow other
+	// than an event-triggered one created, as soon as its element runs.
+	PlatformEventDirectPublisher func([]storage.Record) error
+	// FlowFaultDetail renders an Apex action's failure as the text of
+	// $Flow.FaultMessage, or "" when the failure did not come from Apex.
+	FlowFaultDetail func(error) string
+	// FlowFaultInTest reports a run inside a test, where Salesforce words a
+	// duplicate-value fault without the field or the record.
+	FlowFaultInTest func() bool
+
+	platformEventInterview    bool
+	activeFlowName            string
+	pendingInterviewEvents    []storage.Record
 	capturedMixedAfterSave    bool
 	capturedCaseAfterSave     bool
 	capturedBranchedAfterSave bool

@@ -1,0 +1,1 @@
+<apex:page controller="InventoryHostV62" showHeader="false" sidebar="false"><apex:outputText value="{!outcome}"/></apex:page>

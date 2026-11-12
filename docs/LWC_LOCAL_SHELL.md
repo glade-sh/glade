@@ -29,6 +29,12 @@ use its scripts; a source-only checkout can use installed dependencies. Running
 that checkout; `glade toolchain install` selects a source from the current
 checkout. These actions authorize its preparation scripts.
 
+For a shared compiler dependency installation, set `GLADE_LWC_DEPS_DIR` to the
+absolute directory containing the prepared `node_modules` tree. This selects
+the Node dependencies for both compiler passes; the compiler script still
+comes from the selected toolchain root. The shared dependencies are executable
+code and must use the versions prepared for that compiler.
+
 For the legacy automatic discovery workflow, set
 `GLADE_ALLOW_PROJECT_TOOLCHAIN=1` in the invoking environment only after reviewing
 the project and its surroundings. Exactly `1` permits discovery beside the

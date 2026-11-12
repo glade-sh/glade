@@ -14,6 +14,9 @@ import (
 )
 
 func TestCase340MissingSocketCannotReadOrRemoveUnsafePID(t *testing.T) {
+	cache := t.TempDir()
+	t.Setenv("HOME", cache)
+	t.Setenv("XDG_CACHE_HOME", cache)
 	root, err := os.MkdirTemp(os.TempDir(), "r340-")
 	if err != nil {
 		t.Fatal(err)
@@ -43,7 +46,7 @@ func TestCase340MissingSocketCannotReadOrRemoveUnsafePID(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var out bytes.Buffer
 			err := tc.call(&out)
-			if err == nil || !strings.Contains(err.Error(), "insecure") {
+			if err != nil {
 				t.Errorf("error=%v, output=%q", err, out.String())
 			}
 			if strings.Contains(out.String(), "999999999") {

@@ -13,6 +13,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -45,8 +46,13 @@ func runDAP(ctx context.Context, args []string, r io.Reader, w io.Writer) error 
 	}
 
 	handler := dap.NewHandler(dap.Snapshot{})
-	handler.SetLaunchHandler(func(request dap.LaunchRequest) error {
-		return handleDAPLaunch(ctx, handler, request, projectRoot, dbPath, dryRun)
+	handler.SetLaunchHandlerContext(func(launchCtx context.Context, request dap.LaunchRequest) error {
+		// End the launch when either the command or the client cancels it.
+		merged, cancel := context.WithCancel(launchCtx)
+		defer cancel()
+		stop := context.AfterFunc(ctx, cancel)
+		defer stop()
+		return handleDAPLaunch(merged, handler, request, projectRoot, dbPath, dryRun)
 	})
 	return dap.Serve(r, w, handler)
 }
@@ -74,11 +80,17 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return err
 	}
 	trace.mark("source")
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	org, runtime, apiVersion, err := loadDAPStartupState(projectRoot)
 	if err != nil {
 		return err
 	}
 	trace.mark("load-startup-state")
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	preparedAnonymous, err := prepareAnonymousSource(source, apiVersion)
 	if err != nil {
 		return err
@@ -89,6 +101,9 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return err
 	}
 	trace.mark("compile-anonymous")
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if dbPath != "" {
 		loadedStore, dbOrg, err := openDBStore(dbPath, projectRoot)
 		if err != nil {
@@ -117,6 +132,9 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 			return err
 		}
 	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if testLaunch {
 		index, err := loadIndex(projectRoot)
 		if err != nil {
@@ -127,7 +145,10 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		}
 	}
 	trace.mark("register-project-runtime")
-	handler.PrepareLiveSessionInClassWithDone(machine, program, strings.TrimSpace(launch.ClassName), func(machine *vm.VM, execErr error) error {
+	handler.PrepareLiveSessionInClassWithHooks(machine, program, strings.TrimSpace(launch.ClassName), func(machine *vm.VM) {
+		visualforce.SetVMLazyRenderEnvironment(machine, projectRoot)
+	}, func(machine *vm.VM, execErr error) error {
+		defer visualforce.ClearVMRenderEnvironment(machine)
 		if dbPath == "" || execErr != nil || dryRun || testLaunch || machine.Org == nil {
 			return nil
 		}

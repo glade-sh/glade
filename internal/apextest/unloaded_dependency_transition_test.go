@@ -14,6 +14,7 @@ import (
 // Re-load the same consumer after its declared package becomes available and
 // unavailable again, to guard project discovery against stale source state.
 func TestUnloadedDependencySourceTransition(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			workspace := t.TempDir()

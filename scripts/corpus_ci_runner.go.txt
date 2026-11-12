@@ -1,0 +1,40 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/glade-sh/glade/tools/internal/corpusrun"
+)
+
+func main() {
+	if len(os.Args) != 3 {
+		fmt.Println("CORPUS-INFRA: expected binary and config")
+		os.Exit(corpusrun.ExitInfra)
+	}
+	report, err := corpusrun.Run(context.Background(), corpusrun.Options{
+		Glade: os.Args[1], ConfigDir: os.Args[2], Tier: "A",
+		StepTimeout: 6 * time.Minute, Parallelism: 2,
+		Scratch: filepath.Join(filepath.Dir(os.Args[2]), "scratch"),
+	})
+	if err != nil {
+		fmt.Println("CORPUS-INFRA: runner failed")
+		os.Exit(corpusrun.ExitInfra)
+	}
+	fmt.Println(report.First)
+	for _, r := range report.Results {
+		// Only synthetic IDs and aggregate counts are printed in public logs.
+		fmt.Printf("%s NEW %d GONE %d", r.Repo, r.Diff.New.Count(), r.Diff.Gone.Count())
+		if r.Diff.Infra != "" {
+			fmt.Print(" INFRA")
+		}
+		if r.Diff.Slow > 0 {
+			fmt.Printf(" SLOW %.2fx", r.Diff.Slow)
+		}
+		fmt.Println()
+	}
+	os.Exit(report.ExitCode)
+}

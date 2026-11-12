@@ -76,6 +76,7 @@ func (vm *VM) projectStandardAPI68Global(value Value) Value {
 			}
 			if !changed {
 				projected.Map = maps.Clone(value.Map)
+				projected.mapEntriesShared = false
 				projected.Ref = newValueRef()
 				changed = true
 			}

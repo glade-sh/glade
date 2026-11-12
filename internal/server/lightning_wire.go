@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -115,6 +116,8 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		})
 		return
 	}
+	visualforce.SetVMRenderEnvironment(machine, s.Source.Project)
+	defer visualforce.ClearVMRenderEnvironment(machine)
 	// LWC Apex actions are mutating request boundaries. Execute against an
 	// isolated org and publish it only after the action succeeds and the
 	// backing store accepts the result. Using s.Org directly would leak DML

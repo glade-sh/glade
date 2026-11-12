@@ -86,6 +86,12 @@ func concurrentRaceTests(t *testing.T, dir string) []string {
 			}
 			name := prefix + fn.Name.Name
 			functions[name] = fn
+			// Only helpers count: a test that re-executes itself directly keeps
+			// its existing classification, while every test reaching such a
+			// helper through calls is concurrent.
+			if !strings.HasPrefix(fn.Name.Name, "Test") && reexecsTestBinary(fn.Body) {
+				concurrent[name] = true
+			}
 			ast.Inspect(fn.Body, func(n ast.Node) bool {
 				switch x := n.(type) {
 				case *ast.GoStmt:
@@ -145,12 +151,40 @@ func concurrentRaceTests(t *testing.T, dir string) []string {
 	}
 	var tests []string
 	for name := range functions {
-		if strings.HasPrefix(name, "Test") && concurrent[name] {
+		if strings.HasPrefix(name, "Test") && name != "TestMain" && concurrent[name] {
 			tests = append(tests, name)
 		}
 	}
 	sort.Strings(tests)
 	return tests
+}
+
+// reexecsTestBinary reports whether a function starts a child process from the
+// running test binary (os.Args[0] or os.Executable passed to exec.Command*).
+// The child runs beside the parent without a go statement in the test itself.
+func reexecsTestBinary(body *ast.BlockStmt) bool {
+	var command, self, testFlag bool
+	ast.Inspect(body, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.CallExpr:
+			if sel, ok := x.Fun.(*ast.SelectorExpr); ok {
+				if ident, ok := sel.X.(*ast.Ident); ok {
+					command = command || ident.Name == "exec" && strings.HasPrefix(sel.Sel.Name, "Command") && sel.Sel.Name != "LookPath"
+					self = self || ident.Name == "os" && sel.Sel.Name == "Executable"
+				}
+			}
+		case *ast.BasicLit:
+			testFlag = testFlag || x.Kind == token.STRING && strings.Contains(x.Value, "-test.")
+		case *ast.IndexExpr:
+			if sel, ok := x.X.(*ast.SelectorExpr); ok {
+				if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "os" && sel.Sel.Name == "Args" {
+					self = true
+				}
+			}
+		}
+		return true
+	})
+	return command && self && testFlag
 }
 
 func TestCIRacePushRetainsConcurrentTests(t *testing.T) {

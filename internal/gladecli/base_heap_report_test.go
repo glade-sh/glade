@@ -1,3 +1,5 @@
+//go:build heapreport
+
 package gladecli
 
 import (
@@ -14,7 +16,7 @@ import (
 
 // TestBaseHeapReport loads a small synthetic project through the local test
 // route and logs the heap the process retains afterwards. It measures; it does
-// not assert. Run it with GLADE_HEAP_REPORT=1 and -v, in a fresh process per
+// not assert. Run it with -tags heapreport, GLADE_HEAP_REPORT=1 and -v, in a fresh process per
 // sample (-count=1 -run TestBaseHeapReport).
 func TestBaseHeapReport(t *testing.T) {
 	if os.Getenv("GLADE_HEAP_REPORT") == "" {
@@ -46,6 +48,5 @@ func TestBaseHeapReport(t *testing.T) {
 	runtime.GC()
 	var stats runtime.MemStats
 	runtime.ReadMemStats(&stats)
-	maxRSS := float64(peakRSSBytes())
-	t.Logf("HEAPREPORT heap_inuse_mib=%.1f heap_alloc_mib=%.1f sys_mib=%.1f peak_rss_mib=%.1f", float64(stats.HeapInuse)/(1<<20), float64(stats.HeapAlloc)/(1<<20), float64(stats.Sys)/(1<<20), maxRSS/(1<<20))
+	t.Logf("HEAPREPORT heap_inuse_mib=%.1f heap_alloc_mib=%.1f sys_mib=%.1f", float64(stats.HeapInuse)/(1<<20), float64(stats.HeapAlloc)/(1<<20), float64(stats.Sys)/(1<<20))
 }

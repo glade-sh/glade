@@ -15,7 +15,7 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-SHARDS = {'apextest': 12, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 4, 'vm': 4}
+SHARDS = {'apextest': 14, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3}
 # CodeQL runs from Security, not Required CI; the local codeql step below stays as an extra check.
 MAPPING = {
     # PR selection is covered by the full suite and scripts tests locally.
@@ -81,7 +81,7 @@ class Runner:
         self.go = bool(shutil.which('go'))
         if self.go:
             version = subprocess.run(['go', 'version'], capture_output=True, text=True)
-            self.go = version.returncode == 0 and bool(re.search(r'\bgo1\.26\.10\b', version.stdout))
+            self.go = version.returncode == 0 and bool(re.search(r'\bgo1\.26\.11\b', version.stdout))
 
     def command(self, name, command, env=None, prerequisites=()):
         if self.cancelled.is_set():
@@ -155,7 +155,7 @@ class Runner:
         return p.returncode == 0 and Path(p.stdout).is_file()
 
     def run(self):
-        go = (self.go, 'Go 1.26.10 toolchain')
+        go = (self.go, 'Go 1.26.11 toolchain')
         node = (self.node, 'Node 22 and npm')
         for prefix, label in [('third_party/lwc', 'lwc'), ('lwcruntime', 'runtime'), ('site', 'site'), ('internal/playground/web', 'playground')]:
             self.command('npm-ci-'+label, ['npm', 'ci', '--prefix', prefix], prerequisites=[node])
@@ -204,6 +204,8 @@ class Runner:
                 self.results[name] = (status, log)
                 return
             env = {variable:str(self.root/name), 'GLADE_HOME':str(self.root/name/'glade-home'), 'CI_APEXTEST_SHARDS':str(SHARDS['apextest'])}
+            if group == 'gladecli': env['CI_GLADECLI_SHARDS'] = str(SHARDS['gladecli'])
+            if group == 'vm': env['CI_VM_SHARDS'] = str(SHARDS['vm'])
             if shared_binary:
                 env['CI_TEST_BIN_DIR'] = str(self.root/'binaries'/group)
             self.command(name,[g,command+'-shard',str(i)],env=env,prerequisites=prereq)

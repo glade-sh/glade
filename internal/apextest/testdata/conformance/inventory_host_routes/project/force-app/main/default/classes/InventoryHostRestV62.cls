@@ -1,0 +1,1 @@
+@RestResource(urlMapping='/inventory-host-62/*') global with sharing class InventoryHostRestV62 { @HttpGet global static String get() { return InventoryHostV62.observe(); } }

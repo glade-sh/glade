@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -17,7 +18,7 @@ func (vm *VM) deliverPublishedPlatformEventSubscribers(records []storage.Record,
 	if err := vm.runPlatformEventTriggers(records, result); err != nil {
 		return err
 	}
-	var payloads []Value
+	var payloads, afterCommitPayloads []Value
 	convertRecord := vm.recordConverterForOrg(vm.Org)
 	for _, record := range records {
 		if vm.Org == nil {
@@ -29,13 +30,24 @@ func (vm *VM) deliverPublishedPlatformEventSubscribers(records []storage.Record,
 		}
 		for _, rule := range vm.Org.Objects[name].Definition.FlowRules {
 			if rule.Active && strings.EqualFold(strings.TrimSpace(rule.TriggerType), "PlatformEvent") {
-				payloads = append(payloads, convertRecord(record.Clone()))
+				// Native PE08B, PE08E and PE08G (anonymous, APIs 62.0 and 67.0): a
+				// rollback drops a publish-after-commit event's Flow interview
+				// and keeps a publish-immediately one.
+				if strings.EqualFold(vm.Org.Objects[name].Definition.Metadata["publishBehavior"], "PublishAfterCommit") {
+					afterCommitPayloads = append(afterCommitPayloads, convertRecord(record.Clone()))
+				} else {
+					payloads = append(payloads, convertRecord(record.Clone()))
+				}
 				break
 			}
 		}
 	}
 	if len(payloads) > 0 {
 		vm.enqueueAsyncJob(AsyncJob{Kind: platformEventFlowJobKind, Args: payloads})
+	}
+	if len(afterCommitPayloads) > 0 {
+		vm.flowAsyncSeq++
+		vm.enqueueAsyncJob(AsyncJob{Kind: platformEventFlowJobKind, Args: afterCommitPayloads, EventSeq: vm.flowAsyncSeq})
 	}
 	return nil
 }
@@ -49,6 +61,7 @@ func (vm *VM) runPlatformEventFlowJob(payloads []Value, result *Result) error {
 		}
 		records = append(records, record)
 	}
+	defer vm.withInterviewJournal()()
 	_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 		engine := vm.newDeferredAutomationDMLEngine(result)
 		return Null, engine.ApplyPlatformEventFlows(records)
@@ -60,8 +73,68 @@ func (vm *VM) deliverPlatformEventSubscribers(records []storage.Record, result *
 	if err := vm.runPlatformEventTriggers(records, result); err != nil {
 		return err
 	}
+	defer vm.withInterviewJournal()()
 	engine := vm.newDeferredAutomationDMLEngine(result)
 	return engine.ApplyPlatformEventFlows(records)
+}
+
+// withInterviewJournal makes sure DML is journaled while event-triggered
+// interviews run, so a faulted interview can roll back its own writes. It
+// returns the function that restores the previous journal.
+func (vm *VM) withInterviewJournal() func() {
+	if vm == nil || vm.Org == nil || (vm.isolationJournal != nil && vm.isolationJournal.Org() == vm.Org) {
+		return func() {}
+	}
+	previous := vm.isolationJournal
+	vm.isolationJournal = storage.NewIsolationJournal(vm.Org)
+	return func() { vm.isolationJournal = previous }
+}
+
+// beginPlatformEventInterview starts the transaction of one event-triggered
+// interview. The returned function rolls back its writes and side effects.
+func (vm *VM) beginPlatformEventInterview() func() error {
+	mark, ok := vm.beginBatchChunkTransaction()
+	if !ok {
+		return nil
+	}
+	effects := vm.snapshotSideEffects()
+	return func() error {
+		if err := vm.rollbackBatchChunkTransaction(mark); err != nil {
+			return err
+		}
+		vm.restoreSideEffects(effects)
+		return nil
+	}
+}
+
+// flowApexFaultDetail is the $Flow.FaultMessage text of an Apex action that
+// threw (native PE06B and PE06E rows, APIs 62.0 and 67.0, every route).
+func (vm *VM) flowApexFaultDetail(err error) string {
+	var failure *RuntimeError
+	if !errors.As(err, &failure) {
+		return ""
+	}
+	return "An Apex error occurred: " + apexFailureText(failure)
+}
+
+// publishFlowEvents publishes the events an event-triggered interview created.
+func (vm *VM) publishFlowEvents(records []storage.Record, result *Result) error {
+	if vm.testContext != nil {
+		vm.testContext.FlowPublishedEvents = append(vm.testContext.FlowPublishedEvents, records...)
+		return nil
+	}
+	return vm.deliverPublishedPlatformEventSubscribers(records, result)
+}
+
+// publishFlowCreatedEvents publishes the events that a record-triggered or
+// autolaunched Flow created, the way Apex EventBus.publish does: a test queues
+// them for its next delivery, any other run delivers them after the publisher.
+func (vm *VM) publishFlowCreatedEvents(records []storage.Record, result *Result) error {
+	if vm.testContext != nil && (!vm.testContext.Stopped || vm.testContext.StopDraining) {
+		vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, records...)
+		return nil
+	}
+	return vm.deliverPublishedPlatformEventSubscribers(records, result)
 }
 
 func (vm *VM) runPlatformEventTriggers(records []storage.Record, result *Result) error {

@@ -148,7 +148,7 @@ go vet ./internal/<pkg>
 A full package run is spent once per package per code change; a new change
 in that package allows one more. Exception: never run the whole
 `internal/apextest` package locally. Run your own apextest tests with `-run`;
-CI runs the 12 shards. `-timeout=0` matters for `internal/vm`,
+CI runs the 14 shards. `-timeout=0` matters for `internal/vm`,
 `internal/gladecli` and `internal/visualforce`, which can exceed Go's default
 ten minutes.
 
@@ -175,14 +175,15 @@ review; a WARN needs its reason in the PR.
 
 `Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
 checks formatting, vet, repository guard, workflow lint, leak scan and scripts
-tests, and tests changed Go packages and their direct importers (the fast PR lane, below). A changed path outside
+tests, and tests changed Go packages and their direct importers (the fast PR lane, below). The Apex, LWC compile and Visualforce shards of the fast lane plan from the same shared duration-history artifact the full suite uses. They also run the Apex, sema, LWC compile and Visualforce test binaries that the full suite's producer jobs build once, for the packages the pull request selects, and restore the Go caches read-only. A changed path outside
 every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
 `testdata/**`, workflows or root files) selects the full package set; only
 `docs/**` and Markdown files outside `testdata` are docs-only and select
 nothing. Pushes to `main`, scheduled and manually dispatched runs use the
-full suite. A pull request, including an integration train (section 3.12),
-runs only the fast lane over the union of its changed packages, so a train PR
-also needs a dispatched full run before it merges (section 3.12). Superseded PR runs
+full suite. So does a pull request from a `train/*` or `release/*` branch
+(section 3.12): it runs the full suite as its `Required CI` run and skips the
+fast lane. Any other pull request runs only the fast lane over the union of
+its changed packages. Superseded PR runs
 are cancelled, so push once and let the run finish; do not close and reopen a
 PR to retrigger CI, which cancels the run in flight. For a
 `pull_request` run, checkout and tests use GitHub's merge result for the PR
@@ -205,9 +206,10 @@ change without a cited local contract and regression test; a missing applicable
 route twin; a deleted or loosened assertion without appropriate evidence;
 third-party names or content; credentials, org ids or personal paths.
 Everything else is a comment, not a block. The reviewer may fix a small
-finding with a commit on the branch and approve, saying so in the review.
-After "changes requested", the coder fixes on the branch without rebasing, and
-the reviewer re-reviews only the new commits.
+finding (for example a missing lane or manifest entry) with one commit on the
+branch, saying so in the review, then re-reviews the new head. It never pushes
+twice. After "changes requested", the coder fixes on the branch without
+rebasing, and the reviewer re-reviews only the new commits.
 
 Docs-only PRs, and test or fixture PRs that only add, need no review. CI still
 gates them.
@@ -217,8 +219,8 @@ gates them.
 The coordinator squash merges after `Required CI` passes on the PR and review
 is done. `main` requires branches to be up to date and there is no merge queue,
 so a PR that fell behind `main` is updated and must pass `Required CI` again
-before it merges. A train PR also merges only after the full CI run dispatched
-on the train branch is green on the exact head (section 3.12). Prefer an integration train (section 3.12) when several PRs
+before it merges. For a train PR that run is the full suite, on the exact head
+(section 3.12). Prefer an integration train (section 3.12) when several PRs
 are ready together. The squash
 message is the PR title plus applicable `NATIVE` lines or local contract
 citations. The branch is deleted on merge.
@@ -270,13 +272,12 @@ is fixed before the tag unless the maintainer decides otherwise.
 
 Component branches are small, one ticket each. The coder validates a component
 branch with build, vet and the focused tests for the change, then pushes it.
-The full suite is not run per component. A train's pull request runs the fast
-lane over the union of its components. Every train PR also gets a full CI run
-before it merges: dispatch the CI workflow on the train branch with
-`gh workflow run ci.yml --ref <train branch>`. The train merges only when that
-dispatched run is green on the exact head and the train review approves. The
-full run on the push to `main` is then confirmation, not the first full test.
-New commits on the train restart the dispatched run.
+The full suite is not run per component. A train's pull request, from a
+`train/*` or `release/*` branch, runs the full suite once as its `Required CI`
+check; there is no separate fast lane and no dispatch. The train merges when
+that run is green on the exact head and the train review approves. The full
+run on the push to `main` is then confirmation, not the first full test.
+New commits on the train restart the run.
 
 - Train: the coordinator combines several approved PRs into one branch built
   from their heads and opens one PR. It gets one `Required CI` run and one
@@ -369,7 +370,8 @@ Rules: docs/WORKFLOW.md sections 3 to 5, and AGENTS.md.
 
 ```text
 Review pull request <url> for glade (an offline Salesforce Apex runtime in Go).
-Read-only, except that you may push one small fix commit to the branch and say so.
+Read-only, except that you may push one small fix commit to the branch (never two), say so,
+then re-review the new head. Report every finding in one pass.
 Check in this order:
 1. Each Salesforce-observable compatibility change has a NATIVE line citing org.tsv:<line> at a
    matching route and API. Each Glade-specific change cites its local contract and regression test.
@@ -378,13 +380,13 @@ Check in this order:
    server, hosts; use the applicable current supported version, floor, and 67.0 for Apex where
    relevant to Salesforce compatibility).
 4. Existing tests: `go test ./internal/<touched pkg>` at HEAD and at the merge base; a pass that
-   becomes a failure is blocking. For apextest, run focused tests with `-run`; CI runs its 12 shards.
+   becomes a failure is blocking. For apextest, run focused tests with `-run`; CI runs its 14 shards.
 5. No deleted or loosened assertion without a matching native row or local contract.
    No third-party project names or content.
    No org ids, aliases, personal paths or credentials.
 6. For sema or typesys changes: `go test ./internal/apextest -run 'TestCorpusShape'` at HEAD.
-Verdict: APPROVE, or REQUEST CHANGES listing only blocking findings as file:line with the rule
-broken. Everything else is a comment.
+First line: `APPROVE <head sha>` or `CHANGES <head sha>: <one line>`. Then list only blocking
+findings as file:line with the rule broken. Everything else is a comment.
 ```
 
 ## Appendix C: capture request

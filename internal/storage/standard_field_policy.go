@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"bytes"
-	"compress/gzip"
 	_ "embed"
 	"encoding/json"
 	"sort"
@@ -16,8 +14,16 @@ import (
 // Absence is limited to the recaptured historical candidates, rather than
 // treating a partial REST describe as a complete standard schema.
 //
-//go:embed standard_field_policy.json.gz
+//go:embed standard_field_policy.json
 var standardFieldPolicyData []byte
+
+// standardFieldSurfaceData extends the sidecar with closed constructor
+// surfaces captured after it was built (Case, User) and with captured fields
+// that the sidecar's surface lacks (WebStore.SupportedCurrencies). It is a
+// separate file so a regenerated sidecar keeps them.
+//
+//go:embed standard_field_surfaces.json
+var standardFieldSurfaceData []byte
 
 type standardFieldPolicyGate struct {
 	RecordTypes      bool `json:"record_types"`
@@ -26,6 +32,9 @@ type standardFieldPolicyGate struct {
 	Features         []string
 	Field            standardDescribeField
 	Legacy           bool
+	// Alternatives are further feature sets that each enable the field alone,
+	// from isolated captures added after the gate was built.
+	Alternatives [][]string `json:"-"`
 }
 
 type standardFieldPolicyObject struct {
@@ -37,14 +46,19 @@ type standardFieldPolicyObject struct {
 	// CapturedFields name policy fields whose native facets replace a field
 	// that the stub overlay supplies with only a name and a type. A field that
 	// the project itself configures is never replaced.
-	CapturedFields     []string        `json:"captured_fields"`
-	InsertForcedValues map[string]bool `json:"insert_forced_values"`
-	Fields             []standardDescribeField
-	Absent             []string
-	fields             map[string]Field
-	picklistFields     []Field
-	absent             map[string]bool
-	gates              map[string]standardFieldPolicyGate
+	CapturedFields           []string        `json:"captured_fields"`
+	InsertForcedValues       map[string]bool `json:"insert_forced_values"`
+	Fields                   []standardDescribeField
+	Absent                   []string
+	PlainDeveloperAbsent     []string          `json:"plain_developer_absent"`
+	ConstructorDefaults      map[string]string `json:"constructor_defaults"`
+	ConstructorHiddenRemoved []string          `json:"constructor_hidden_removed"`
+	fields                   map[string]Field
+	picklistFields           []Field
+	absent                   map[string]bool
+	plainDeveloperAbsent     map[string]bool
+	constructorDefaults      map[string]string
+	gates                    map[string]standardFieldPolicyGate
 }
 
 type standardFieldPolicyBundle struct {
@@ -74,13 +88,8 @@ func standardFieldPolicies() map[string]*standardFieldPolicyObject {
 }
 
 func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
-	stream, err := gzip.NewReader(bytes.NewReader(standardFieldPolicyData))
-	if err != nil {
-		panic(err)
-	}
-	defer stream.Close()
 	var bundle standardFieldPolicyBundle
-	if err := json.NewDecoder(stream).Decode(&bundle); err != nil {
+	if err := json.Unmarshal(standardFieldPolicyData, &bundle); err != nil {
 		panic(err)
 	}
 	if bundle.Version != 1 {
@@ -92,6 +101,8 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 	for object, policy := range bundle.Objects {
 		policy.fields = map[string]Field{}
 		policy.absent = map[string]bool{}
+		policy.plainDeveloperAbsent = map[string]bool{}
+		policy.constructorDefaults = map[string]string{}
 		policy.gates = map[string]standardFieldPolicyGate{}
 		for _, field := range policy.Fields {
 			captured := describeField(field)
@@ -102,6 +113,12 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 		}
 		for _, field := range policy.Absent {
 			policy.absent[strings.ToLower(field)] = true
+		}
+		for _, field := range policy.PlainDeveloperAbsent {
+			policy.plainDeveloperAbsent[strings.ToLower(field)] = true
+		}
+		for field, value := range policy.ConstructorDefaults {
+			policy.constructorDefaults[strings.ToLower(field)] = value
 		}
 		policies[strings.ToLower(object)] = policy
 	}
@@ -114,7 +131,57 @@ func loadStandardFieldPolicies() map[string]*standardFieldPolicyObject {
 		}
 		policy.gates[strings.ToLower(gate.Field.Name)] = gate
 	}
+	applyStandardFieldSurfaces(policies)
 	return policies
+}
+
+func applyStandardFieldSurfaces(policies map[string]*standardFieldPolicyObject) {
+	var bundle struct {
+		Version int
+		Objects map[string]struct {
+			ConstructorFields    []string              `json:"constructor_fields"`
+			AddConstructorFields []string              `json:"add_constructor_fields"`
+			GateAlternatives     map[string][][]string `json:"gate_alternatives"`
+		}
+	}
+	if err := json.Unmarshal(standardFieldSurfaceData, &bundle); err != nil {
+		panic(err)
+	}
+	if bundle.Version != 1 {
+		panic("unsupported standard field surface version")
+	}
+	for object, surface := range bundle.Objects {
+		key := strings.ToLower(object)
+		policy := policies[key]
+		if policy == nil {
+			policy = &standardFieldPolicyObject{fields: map[string]Field{}, absent: map[string]bool{}, gates: map[string]standardFieldPolicyGate{}}
+			policies[key] = policy
+		}
+		if len(surface.ConstructorFields) > 0 && len(policy.ConstructorFields) == 0 {
+			policy.ConstructorFields = append([]string(nil), surface.ConstructorFields...)
+		}
+		for field, groups := range surface.GateAlternatives {
+			if gate, ok := policy.gates[strings.ToLower(field)]; ok {
+				gate.Alternatives = groups
+				policy.gates[strings.ToLower(field)] = gate
+			}
+		}
+		for _, name := range surface.AddConstructorFields {
+			if len(policy.ConstructorFields) == 0 {
+				continue
+			}
+			present := false
+			for _, existing := range policy.ConstructorFields {
+				if stringsEqualFold(existing, name) {
+					present = true
+					break
+				}
+			}
+			if !present {
+				policy.ConstructorFields = append(policy.ConstructorFields, name)
+			}
+		}
+	}
 }
 
 func standardFieldPolicyFor(object string) *standardFieldPolicyObject {
@@ -122,8 +189,50 @@ func standardFieldPolicyFor(object string) *standardFieldPolicyObject {
 	return policy
 }
 
+// CapturedStandardConstructorDefault returns a native constructor-only value
+// for the declared plain Developer shape without changing describe defaults.
+func CapturedStandardConstructorDefault(definition ObjectDefinition, field Field) (Value, bool) {
+	if !featureSignatureHas(definition.Metadata[standardFieldsOverlayMarker], project.PlainDeveloperObjectShape) || strings.TrimSpace(field.DefaultValue) != "" {
+		return Value{}, false
+	}
+	policy := standardFieldPolicyFor(definition.APIName)
+	if policy == nil {
+		return Value{}, false
+	}
+	raw, ok := standardPolicyLookup(policy.constructorDefaults, field.APIName)
+	if !ok {
+		return Value{}, false
+	}
+	field.DefaultValue = raw
+	return DefaultValueForField(field)
+}
+
+// CapturedStandardConstructorHiddenRemoved returns native hidden field names
+// reported by stripping an original loaded record in a plain Developer org.
+func CapturedStandardConstructorHiddenRemoved(definition ObjectDefinition) []string {
+	if !featureSignatureHas(definition.Metadata[standardFieldsOverlayMarker], project.PlainDeveloperObjectShape) {
+		return nil
+	}
+	if policy := standardFieldPolicyFor(definition.APIName); policy != nil {
+		return policy.ConstructorHiddenRemoved
+	}
+	return nil
+}
+
 func standardFieldPolicyGateEnabled(gate standardFieldPolicyGate, signature string) bool {
-	for _, feature := range gate.Features {
+	if standardFieldPolicyFeaturesPresent(gate.Features, signature) {
+		return true
+	}
+	for _, group := range gate.Alternatives {
+		if standardFieldPolicyFeaturesPresent(group, signature) {
+			return true
+		}
+	}
+	return false
+}
+
+func standardFieldPolicyFeaturesPresent(features []string, signature string) bool {
+	for _, feature := range features {
 		if !featureSignatureHas(signature, feature) {
 			return false
 		}
@@ -151,6 +260,9 @@ func standardOptionalFieldEnabledForDefinition(definition ObjectDefinition, fiel
 		return true
 	}
 	if policy := standardFieldPolicyFor(definition.APIName); policy != nil {
+		if absent, _ := standardPolicyLookup(policy.plainDeveloperAbsent, field); absent && featureSignatureHas(signature, project.PlainDeveloperObjectShape) {
+			return standardFieldPolicyPreservesConfiguredField(definition, field)
+		}
 		if gate, ok := standardPolicyLookup(policy.gates, field); ok {
 			return (!gate.Legacy && featureSignatureHas(signature, project.UnspecifiedStandardFieldShape)) || standardFieldPolicyPreservesConfiguredField(definition, field) || standardFieldPolicyGateEnabledForDefinition(gate, definition, signature)
 		}
@@ -295,6 +407,9 @@ func applyStandardFieldPolicy(definition *ObjectDefinition, signature string) {
 		}
 	}
 	for name := range policy.absent {
+		removeGenerated(name)
+	}
+	for name := range policy.plainDeveloperAbsent {
 		removeGenerated(name)
 	}
 	for name := range policy.gates {
@@ -468,7 +583,8 @@ func standardConfiguredOptionalField(definition ObjectDefinition, field string) 
 	}
 	_, gated := standardPolicyLookup(policy.gates, field)
 	absent, _ := standardPolicyLookup(policy.absent, field)
-	return gated || absent
+	plainAbsent, _ := standardPolicyLookup(policy.plainDeveloperAbsent, field)
+	return gated || absent || plainAbsent
 }
 
 // StandardObjectInsertInputFieldAllowed reports captured insertion inputs that

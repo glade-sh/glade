@@ -1,56 +1,30 @@
 # AI contributor setup
 
 The end-to-end process (stages, roles, review and release rules, templates) is
-in [WORKFLOW.md](WORKFLOW.md). This file covers client setup and the validation
-commands per surface.
+in [WORKFLOW.md](WORKFLOW.md). This file covers instruction loading and the
+validation commands per surface.
 
 This guide is for developing Glade itself. To use an agent to develop Apex in
 a Salesforce DX project, use the [AI-assisted Apex guide](../site/docs-src/guide/ai-assisted-apex.md).
 
-## Instructions and models
+## Instructions
 
-[AGENTS.md](../AGENTS.md) is the shared contributor contract. Codex is the
-primary documented client; the repository does not require a particular model,
-provider, plugin, or personal skill collection. Other clients should load the
-same file through their supported instruction mechanism. Add a small pointer
-only when a client needs one; keep the actual rules in one place.
+[AGENTS.md](../AGENTS.md) is the shared contributor contract. The repository
+does not require a particular client, model, provider or plugin. Task procedures
+live in `.claude/skills/<name>/SKILL.md`; a client that does not load them
+automatically should open the one whose description matches the task. Keep
+repository rules in `AGENTS.md`. Keep model choice, authentication, permissions
+and machine-specific tools in personal settings. The repository needs no Codex
+configuration override today.
 
-Keep repository facts, constraints, and verification commands in `AGENTS.md`.
-Keep model selection, reasoning effort, authentication, permissions, and
-machine-specific tools in personal settings. The repository needs no Codex
-configuration override today. Add `.codex/config.toml` only for a demonstrated
-project requirement.
-
-Codex discovers instructions from its home directory and the repository path to
-the working directory. `AGENTS.override.md` takes precedence over `AGENTS.md`
-in the same directory. Linked guides are references to read when needed, not
-automatically expanded instructions. Start a new task after changing startup
-instructions and verify which files it loaded. See the official
-[AGENTS.md guide](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
-
-Pick the model in the client; the repository does not depend on one. State
-the client and model in your report so results can be reproduced. Model and
-reasoning defaults belong in user configuration; provider endpoints and auth
-also belong there. Pass the model explicitly when a client's default may
-differ, and inspect the effective task settings when an app selection differs
-from a CLI default. See
-[Codex configuration](https://learn.chatgpt.com/docs/config-file/config-basic).
-
-Give any agent a clear outcome, the relevant files, the constraints in
-`AGENTS.md`, and the completion checks from the validation table. Say when to
-proceed on reasonable assumptions and when independent subtasks may run in
-parallel. Audit overlapping skills before adding more instructions: broad
-triggers, conflicting approval rules, unavailable tool names, and mandatory
-ceremonies can all change the result.
-
-Use task-specific skills for recurring procedures. Routine repository work
-already has shell commands and tests; it does not require a new MCP server,
-orchestration layer, or model-specific prompt copy. Keep skills narrow and
-use the tools actually exposed by the active client.
+Linked guides are references to read when needed, not automatically expanded
+instructions. State the client and model in a report so results can be
+reproduced. Give any agent a clear outcome, the relevant files, the constraints
+in `AGENTS.md` and the completion checks from the table below.
 
 ## Local prerequisites
 
-Run from the checkout being changed. Use Go `1.26.10` (the version in `go.mod`),
+Run from the checkout being changed. Use Go `1.26.11` (the version in `go.mod`),
 a C compiler, and CGO for normal builds and tests:
 
 ```bash
@@ -106,83 +80,45 @@ CI=1 GLADE_SITE_PREBUILT=1 npm run test:browser --prefix site
 task's server. `release:check` alone does not run browser or built-output checks.
 See [site/README.md](../site/README.md) for preview and deployment details.
 
-For LWC Go browser integration, install dependencies in `third_party/lwc` and
-`lwcruntime` and install Chromium using the latter's Playwright version, then run:
+## Browser suites
+
+A skipped browser test is not a pass. LWC runtime, `TestL08SalesforceConformance`
+in `internal/server` and the Visualforce V09, V12, V13 and V15 conformance tests
+need Node, Playwright and Chromium. Ordinary Go runs skip them with an explicit
+reason. Set `GLADE_LWC_BROWSER=1` to require the browser environment; an enabled
+run fails at once when a prerequisite is missing. The required `Browser`
+workflow runs L08 and rejects missing, skipped or failing results.
+
+Install the dependencies and Chromium as CI does:
+
+```bash
+npm ci --prefix third_party/lwc
+npm ci --prefix lwcruntime
+./lwcruntime/node_modules/.bin/playwright install chromium
+```
+
+Then run:
 
 ```bash
 GLADE_LWC_BROWSER=1 CGO_ENABLED=1 go test -p=1 -count=1 -timeout=25m \
   -run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$' \
   ./internal/lwcruntime ./internal/lwcbrowser
-```
-
-`TestL08SalesforceConformance` in `internal/server` also requires this browser
-environment. Ordinary Go runs skip it with an explicit reason; set
-`GLADE_LWC_BROWSER=1` to require it (`GLADE_L08_CAPTURE` also requires it).
-An enabled run fails immediately when Node, the compiler, Playwright or Chromium
-is unavailable. A passing ordinary Go run does not establish L08 browser parity.
-The required Browser workflow runs L08 and rejects missing, skipped or failing
-results. It also runs after changes confined to L08 fixtures or its browser
-harness. The ordinary CI server lane routes L08 to that authority. Provisioned
-race jobs and full server routes (`core`, `test`, `race`, `local-release`, and
-`local-release-lane server-playground` in `scripts/ci-go-test.sh`) enable browser
-coverage and fail when prerequisites are missing; they do not accept an L08 skip.
-Use `npm ci --prefix third_party/lwc` and `npm ci --prefix lwcruntime`, then
-install Chromium with the Playwright version in `lwcruntime`. The compiler's
-postinstall prepares the pinned `@lwc/shared` API identities. Check the selected
-installation without modifying it with
-`node third_party/lwc/scripts/prepare-lwc-shared.mjs --check <third_party/lwc-root>`.
-An older API 67 preparation cannot replay the retained API 68 observations;
-those historical rows do not extend the product's API 59–67 support contract.
-For an archived checkout, point `GLADE_HOME` at a prepared toolchain and set
-`GLADE_LWC_PLAYWRIGHT_MODULE` to the absolute Playwright package directory.
-`GLADE_LWC_BROWSER_EXECUTABLE` optionally selects an installed Chromium binary.
-
-Visualforce's V09, V09 clicked-field, V12, V13 and V15 Salesforce
-conformance tests also require Node, Playwright and Chromium. CI installs the
-locked `lwcruntime` dependencies and its Chromium before the Visualforce
-shards. A tracked-files-only archive omits `node_modules`, so a runner without
-an externally provisioned Playwright package cannot execute these browser
-checks. Treat them as CI-only on such runners; missing prerequisites are not a
-conformance pass. To run them on a provisioned checkout, install both dependency
-trees and Chromium as in CI, then use:
-
-```bash
+GLADE_HOME="$PWD" GLADE_LWC_BROWSER=1 CGO_ENABLED=1 go test -p=1 -count=1 -timeout=0 \
+  -run '^TestL08SalesforceConformance$' ./internal/server
 CGO_ENABLED=1 go test -count=1 -p=1 -timeout=0 \
   -run '^TestV(09|12|13|15).*SalesforceConformance$' ./internal/visualforce
 ```
 
-An archived checkout needs `GLADE_LWC_PLAYWRIGHT_MODULE` set to the absolute
-path of a compatible installed Playwright package and a usable Chromium. On
-Linux, Chromium may also need system dependencies; CI uses Playwright's
-`install --with-deps chromium`.
-
-For a checkout with dependencies installed, run:
-
-```bash
-GLADE_HOME="$PWD" GLADE_LWC_BROWSER=1 CGO_ENABLED=1 go test -p=1 -count=1 -timeout=0 \
-  -run '^TestL08SalesforceConformance$' ./internal/server
-```
-
-LWC family conformance runs one API at a time by default. Set
-`GLADE_LWC_BROWSER_API_PARALLEL=2` and pass `-parallel=2` to opt in to two
-isolated API observations. The mode requires at least 16 GiB of physical host
-memory; smaller hosts or an unknown memory size stay sequential even with an
-explicit request. Higher requested counts are capped at two. API 68 and
-intermediate version checks retain their existing coverage. Observation windows,
-within-API page histories, comparison rules and TSV row order are unchanged. Each family remains sequential with other families.
-
-For a small native-backed project check, run
-`go test ./internal/lwc/compile -run '^TestBrowserAPIProjectMode$' -count=1 -parallel=2`
-with the API-pass variable set to `1` and then `2`. Set
-`GLADE_LWC_BROWSER_API_REPORT` to separate TSV paths and compare them byte for
-byte. Measure aggregate RSS across the Go, Node and Chromium process tree;
-a single process's maximum RSS does not measure the concurrent host cost.
-A small-project result does not establish equivalence or a performance gain
-for all families: repeat each family's conformance test and compare its report
-before enabling concurrency in a lane planner.
-
-Use [the CI workflows](../.github/workflows) and package scripts as the current
-command authority.
+In an archived checkout without `node_modules`, set
+`GLADE_LWC_PLAYWRIGHT_MODULE` to the absolute Playwright package directory and
+`GLADE_HOME` to a prepared toolchain. `GLADE_LWC_BROWSER_EXECUTABLE` selects an
+installed Chromium. On Linux, CI installs Chromium with
+`scripts/ci-install-playwright.sh`, which bounds each `--with-deps` attempt and
+falls back to Chromium alone if it launches.
+`GLADE_LWC_BROWSER_API_PARALLEL=2` with `-parallel=2` runs two API observations
+at once and needs at least 16 GiB of host memory. The `browser-suites` skill
+carries the same commands. Use [the CI workflows](../.github/workflows) and
+package scripts as the current command authority.
 
 ## Validation ladder
 
@@ -191,7 +127,7 @@ Climb only as far as the change needs. Each step runs once per exact tree.
 | Step | Command | When |
 | --- | --- | --- |
 | Focused | `go test ./internal/<pkg> -run '^(TestA\|TestB)$'` | While iterating. Rerun a failure alone before anything broader. |
-| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard`; for apextest use focused `-run` tests | Once before review; CI runs the 12 apextest shards. |
+| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard`; for apextest use focused `-run` tests | Once before review; CI runs the 14 apextest shards. |
 | Full local release | `scripts/ci-go-test.sh local-release` | Changes that cross packages or touch the parser, `sema`, `vm`, `storage`, `soql` or `dml`; release candidates. |
 | Distribution smoke | `scripts/release-check.sh` (adds `git diff --check`, the site release proof and `scripts/smoke.sh`) | Release candidates, from a clean checkout. |
 | Required CI, locally | `scripts/ci-local-all` | Before opening or updating a release PR. |
@@ -205,7 +141,7 @@ under `ci-artifacts/local-release/`. Avoid running it alongside another broad
 suite on the same host.
 
 `scripts/ci-local-all` runs the jobs behind `Required CI` without GitHub
-Actions, with the same shard counts: apextest 12, vm 4, gladecli 4, sema 2,
+Actions, with the same shard counts: apextest 14, vm 3, gladecli 2, sema 2,
 LWC compile 8 and Visualforce 4. It needs Go with CGO, Node 22, actionlint,
 the CodeQL CLI and Go query packs, and Playwright Chromium. A missing tool is
 `SKIP-ENV`, which exits nonzero. Shards run serially unless `--jobs N` is set.
@@ -230,8 +166,7 @@ profile runs in Security outside `Required CI`. The full profile runs in Securit
 and as a release tag dependency. Analysis has a hard 300-second budget. When
 the budget expires, both profiles warn and upload no SARIF.
 Large changes regularly hit this. An incomplete scan is not evidence that there
-are no findings. See [CODEQL_WORKFLOW.md](CODEQL_WORKFLOW.md) and
-[CODEQL_BUDGET.md](CODEQL_BUDGET.md).
+are no findings. See [CODEQL.md](CODEQL.md).
 
 Release tags need an exact-SHA `Required CI` success from a push to `main`.
 `scripts/verify-required-ci.sh OWNER/REPO SHA` finds it; PR and manual runs do
@@ -239,22 +174,60 @@ not count. Browser, Race and Security are operator checks for the release candid
 release workflow independently runs the full CodeQL scan on the tag and fails
 on findings or errors; a timeout there is a known-issue warning.
 
-## Check that the setup helps
+## Workflow lint
 
-Two habits remove most review rounds. Review your own diff with the reviewer's
-criteria before asking for review: observed evidence for each behavior change,
-a fail-before test, route twins, and no loosened assertion without a citation.
-Then rerun your new tests from a clean export of HEAD
-(`git archive HEAD | tar -x -C <dir>`), so untracked files cannot hide a
-failure.
+CI's `workflow-lint` job installs actionlint **1.7.12** from the upstream
+[release](https://github.com/rhysd/actionlint/releases/tag/v1.7.12).
+`scripts/install-actionlint.sh` pins the Linux amd64 archive SHA-256 to
+`8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8`.
+It verifies the downloaded archive before extraction or execution. The CI job's
+checkout and Go setup actions use full commit pins with version comments.
 
-In a fresh task, ask the agent to identify its instruction files, the product
-boundary, and the checks for the files you intend to change. It should find
-these answers without reading every document or installing extra tooling.
+With actionlint on PATH, run from the repository root:
+
+```sh
+scripts/ci-actionlint.sh
+scripts/ci-go-test.sh lane workflow-lint
+```
+
+The wrapper checks every `.github/workflows/*.yml` and `*.yaml`, including when
+called from another directory. Explicit file arguments are resolved relative to
+the caller. It fails if actionlint is missing or discovery finds no workflows.
+Tests skip real-actionlint cases with an explicit message only when the tool is
+absent; CI always installs it first. Tests never download anything. The corrupt
+archive test stubs curl and verifies that extraction cannot run on bad bytes.
+Optional ShellCheck and Pyflakes integrations are disabled to keep this check
+focused on workflow syntax, expressions, contexts and action configuration.
+No actionlint errors are ignored.
+
+The CI job uses the lane and resource wrappers, uploads raw test events and
+resource usage even on failure, and is a dependency of `Required CI`. The lane
+runs only the offline actionlint tests, with a three-minute timeout. Its raw
+events are written to `ci-artifacts/go-test/test-workflow-lint.json`.
+
+For a local macOS install, download the matching archive from that release and
+verify its digest against the upstream `actionlint_1.7.12_checksums.txt` before
+extracting. The Darwin arm64 archive SHA-256 is
+`aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f`.
+
+To update the pin, choose an exact upstream release, review its release notes,
+download the Linux amd64 archive and published checksums, and independently
+compute the archive's SHA-256. Update `version` and `sha256` together in the
+installer and update this document. Repeat the commands above with the new
+binary; the job-env fixture must be rejected and the step-env fixture accepted.
+Review any real-workflow errors before committing the pin change. Keep action
+references pinned to full commits with version comments when updating the job.
+
+## Before asking for review
+
+Review your own diff with the reviewer's criteria: observed evidence for each
+behavior change, a fail-before test, route twins, and no loosened assertion
+without a citation. Rerun your new tests from a clean export of HEAD
+(`git archive HEAD | tar -x -C <dir>`) so untracked files cannot hide a
+failure. The `pr-ready` skill lists the steps.
 
 Compare candidate instruction or model changes on the same representative
-tasks: one runtime regression, one parser change, and one documentation edit.
-Keep the starting commit and acceptance checks fixed. Record correctness,
-unnecessary questions, unrelated edits, skipped gates, elapsed time, and usage
-when available. More reasoning or more instructions is not proof of a better
-setup; keep changes that improve observed results.
+tasks (a runtime regression, a parser change, a documentation edit) with the
+starting commit and acceptance checks fixed. Record correctness, unnecessary
+questions, skipped gates, elapsed time and usage. Keep changes that improve
+observed results.

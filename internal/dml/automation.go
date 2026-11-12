@@ -865,8 +865,10 @@ type flowFrame struct {
 	autolaunched            bool
 	outputAssignmentLookups map[string]bool
 	// Automatic single-output Apex results belong to this interview.
-	actionOutputs  map[string]storage.Value
-	preparedAction *flowPreparedAction
+	actionOutputs         map[string]storage.Value
+	preparedAction        *flowPreparedAction
+	batchUpdatedFields    map[string]bool
+	batchLaterFieldUpdate bool
 }
 
 // A prepared result is consumed once by the original action node. Nested
@@ -970,6 +972,9 @@ func cloneFlowRecords(records []storage.Record) []storage.Record {
 
 func (e *Engine) applyFlowStepsWithFrame(flowName, objectName string, record *storage.Record, definition storage.ObjectDefinition, steps []storage.FlowStep, frame *flowFrame) (bool, error) {
 	changed := false
+	previousFlow := e.activeFlowName
+	e.activeFlowName = flowName
+	defer func() { e.activeFlowName = previousFlow }()
 	for i := 0; i < len(steps); i++ {
 		step := steps[i]
 		stepChanged, err := e.applyFlowStep(flowName, objectName, record, definition, step, frame)
@@ -978,7 +983,7 @@ func (e *Engine) applyFlowStepsWithFrame(flowName, objectName string, record *st
 				// Fault paths can read the Salesforce global fault message. Keep it
 				// in the same frame so a following assignment can materialize it in
 				// an output error SObject.
-				frame.scalars[flowFrameKey("$Flow.FaultMessage")] = storage.StringValue(err.Error())
+				frame.scalars[flowFrameKey("$Flow.FaultMessage")] = storage.StringValue(flowFaultMessage(err))
 				e.traceAutomation("apex.flow.fault", map[string]any{
 					"flow":   flowName,
 					"object": objectName,
@@ -996,6 +1001,7 @@ func (e *Engine) applyFlowStepsWithFrame(flowName, objectName string, record *st
 			if step.FaultTarget != "" {
 				faultIdx := flowStepIndexByName(steps, step.FaultTarget)
 				if faultIdx >= 0 && faultIdx > i {
+					frame.scalars[flowFrameKey("$Flow.FaultMessage")] = storage.StringValue(flowFaultMessage(err))
 					i = faultIdx - 1
 					e.traceAutomation("apex.flow.fault", map[string]any{
 						"flow":   flowName,
@@ -1081,6 +1087,9 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 		defer delete(frame.activeTargets, key)
 		return e.applyFlowStepsWithFrame(flowName, objectName, record, definition, target, frame)
 	case "fieldUpdate":
+		if len(frame.batchUpdatedFields) > 0 {
+			frame.batchLaterFieldUpdate = true
+		}
 		changed := false
 		for _, update := range step.FieldUpdates {
 			stepChanged, err := e.applyFlowFieldUpdate(flowName, objectName, record, definition, update, frame)
@@ -1203,16 +1212,16 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			context := e.flowActionContextFromFrame(frame)
 			context.Output = frame.actionOutputReceiver(step.Action.Name)
 			context.OutputFields = frame.actionOutputFieldReceiver(step.Action)
-			if err := e.FlowActionInvokerWithContext(step.Action, record.Clone(), context); err != nil {
-				return false, flowActionFailure(step.Action.Name, err)
+			if err := e.shareIDSequences(func() error { return e.FlowActionInvokerWithContext(step.Action, record.Clone(), context) }); err != nil {
+				return false, e.flowActionError(step.Action.Name, err)
 			}
 			return false, nil
 		}
 		if e.FlowActionInvoker == nil {
 			return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s requires Apex action execution support", step.Action.Name)
 		}
-		if err := e.FlowActionInvoker(step.Action, record.Clone()); err != nil {
-			return false, flowActionFailure(step.Action.Name, err)
+		if err := e.shareIDSequences(func() error { return e.FlowActionInvoker(step.Action, record.Clone()) }); err != nil {
+			return false, e.flowActionError(step.Action.Name, err)
 		}
 	case "assignment":
 		if err := e.applyFlowAssignmentStep(step.Assignment, frame); err != nil {
@@ -2007,7 +2016,7 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 				return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s has unsupported assignment", update.Name)
 			}
 			if err := e.updateInvocableFlowRecord(record); err != nil {
-				return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
+				return 0, e.flowUpdateError(dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err), err, []storage.ID{record.ID})
 			}
 			return 1, nil
 		}
@@ -2036,7 +2045,7 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 				delete(record.Fields, "Id")
 			}
 			if err := e.updateInvocableFlowRecord(record); err != nil {
-				return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
+				return 0, e.flowUpdateError(dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err), err, []storage.ID{record.ID})
 			}
 			return 1, nil
 		}
@@ -2067,7 +2076,7 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 			}
 			delete(out.Fields, "Id")
 			if err := e.updateInvocableFlowRecord(out); err != nil {
-				failure := dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
+				failure := e.flowUpdateError(dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err), err, nil)
 				if singleRecordInput && len(out.Fields) > 0 && errors.Is(err, errUpdateRequiresID) {
 					return count, &flowRecordUpdateMissingID{cause: failure}
 				}
@@ -2105,8 +2114,9 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 		}
 		for i, record := range updates {
 			if err := e.updateInvocableFlowRecord(record); err != nil {
-				return i, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
+				return i, e.flowUpdateError(dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err), err, flowRecordIDs(updates))
 			}
+			frame.recordBatchUpdateFields(source, record)
 		}
 		return len(updates), nil
 	}
@@ -2130,8 +2140,9 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 	}
 	for i, record := range updates {
 		if err := e.updateInvocableFlowRecord(record); err != nil {
-			return i, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
+			return i, e.flowUpdateError(dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err), err, flowRecordIDs(updates))
 		}
+		frame.recordBatchUpdateFields(source, record)
 	}
 	return len(updates), nil
 }
@@ -3248,6 +3259,9 @@ func (e *Engine) flowRecordLookupOutputs(lookups []storage.FlowRecordLookup, sou
 }
 
 func (e *Engine) applyFlowRecordLookupStep(lookup storage.FlowRecordLookup, source storage.Record, sourceDefinition storage.ObjectDefinition, frame *flowFrame) error {
+	if fault := e.flowLookupFault(lookup); fault != nil {
+		return fault
+	}
 	records, definition, err := e.flowRecordLookupRecords(lookup, source, sourceDefinition, frame)
 	if err != nil {
 		return err
@@ -3361,11 +3375,14 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 		}
 	}
 	if err := e.flowCreateReferenceTypeCheck(target.Definition, record); err != nil {
+		return "", e.flowCreateTypedFault(err)
+	}
+	if published, err := e.publishFlowEvent(targetName, record); published || err != nil {
 		return "", err
 	}
 	createdID, err := e.insertInvocableFlowRecord(record)
 	if err != nil {
-		return "", invocableFlowActionRecordCreateError(targetName, create.Name, err)
+		return "", e.flowCreateError(invocableFlowActionRecordCreateError(targetName, create.Name, err), err)
 	}
 	return createdID, nil
 }
@@ -3391,7 +3408,7 @@ func (e *Engine) executeFlowRecordDelete(del storage.FlowRecordDelete, source st
 			}
 			record := storage.Record{Object: targetName, ID: id}
 			if err := e.deleteOne(record); err != nil {
-				return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record delete %s failed: %v", del.Name, err)
+				return 0, e.flowDeleteError(dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record delete %s failed: %v", del.Name, err), err, targetName, id)
 			}
 			return 1, nil
 		}
@@ -3417,7 +3434,7 @@ func (e *Engine) executeFlowRecordDelete(del storage.FlowRecordDelete, source st
 				continue
 			}
 			if err := e.deleteOne(storage.Record{Object: targetName, ID: id}); err != nil {
-				return count, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record delete %s failed: %v", del.Name, err)
+				return count, &flowElementFault{err: dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record delete %s failed: %v", del.Name, err)}
 			}
 			count++
 		}
@@ -3442,7 +3459,7 @@ func (e *Engine) executeFlowRecordDelete(del storage.FlowRecordDelete, source st
 	}
 	for _, id := range ids {
 		if err := e.deleteOne(storage.Record{Object: targetName, ID: id}); err != nil {
-			return 0, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record delete %s failed: %v", del.Name, err)
+			return 0, e.flowDeleteErrorOf(dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record delete %s failed: %v", del.Name, err), err, targetName, id, len(ids))
 		}
 	}
 	return len(ids), nil
@@ -4163,6 +4180,14 @@ func evaluateWorkflowRuleWithUser(rule storage.WorkflowRule, record storage.Reco
 }
 
 func (e *Engine) evaluateFlowRule(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition) (bool, bool) {
+	matches, ok := e.evaluateFlowRuleMatch(rule, record, definition)
+	if matches && ok && e.FlowMatchObserver != nil {
+		e.FlowMatchObserver()
+	}
+	return matches, ok
+}
+
+func (e *Engine) evaluateFlowRuleMatch(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition) (bool, bool) {
 	if !e.flowRefsLifecycleMatches(rule, record) {
 		return false, true
 	}

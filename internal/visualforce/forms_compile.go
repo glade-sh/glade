@@ -282,6 +282,12 @@ func validateInputValueSource(source, sourceName string) error {
 				return fmt.Errorf("Unknown property '%s'", strings.ReplaceAll(value, "{!", "#{"))
 			}
 			line, column := lineColumnAt(source, offset)
+			if tag == "inputHidden" {
+				// vf_inputhidden_columns captures the compiler counting each
+				// ampersand on the current line as its escaped spelling.
+				lineStart := strings.LastIndex(source[:offset], "\n") + 1
+				column += 4 * strings.Count(source[lineStart:offset], "&")
+			}
 			location := fmt.Sprintf(" at line %d column %d", line, column)
 			if sourceName != "" {
 				location = " in " + sourceName + location

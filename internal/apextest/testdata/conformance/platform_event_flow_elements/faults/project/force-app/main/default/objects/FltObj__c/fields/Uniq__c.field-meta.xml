@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Uniq__c</fullName><label>Uniq</label><length>20</length><unique>true</unique><caseSensitive>false</caseSensitive><type>Text</type></CustomField>

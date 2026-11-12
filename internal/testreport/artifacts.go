@@ -26,7 +26,7 @@ func WriteGitHubAnnotations(w io.Writer, run Run) error {
 					title = testCase.Problem.Type
 				}
 				if testCase.Problem.Message != "" {
-					message = testCase.Problem.Message
+					message = testCase.Problem.ResultMessage()
 				}
 			}
 			props := []string{}
