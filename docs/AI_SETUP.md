@@ -127,7 +127,7 @@ Climb only as far as the change needs. Each step runs once per exact tree.
 | Step | Command | When |
 | --- | --- | --- |
 | Focused | `go test ./internal/<pkg> -run '^(TestA\|TestB)$'` | While iterating. Rerun a failure alone before anything broader. |
-| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard`; for apextest use focused `-run` tests | Once before review; CI runs the 14 apextest shards. |
+| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard`; for apextest use focused `-run` tests | Once before review; CI runs the 16 apextest shards. |
 | Full local release | `scripts/ci-go-test.sh local-release` | Changes that cross packages or touch the parser, `sema`, `vm`, `storage`, `soql` or `dml`; release candidates. |
 | Distribution smoke | `scripts/release-check.sh` (adds `git diff --check`, the site release proof and `scripts/smoke.sh`) | Release candidates, from a clean checkout. |
 | Required CI, locally | `scripts/ci-local-all` | Before opening or updating a release PR. |
@@ -141,7 +141,7 @@ under `ci-artifacts/local-release/`. Avoid running it alongside another broad
 suite on the same host.
 
 `scripts/ci-local-all` runs the jobs behind `Required CI` without GitHub
-Actions, with the same shard counts: apextest 14, vm 3, gladecli 2, sema 2,
+Actions, with the same shard counts: apextest 16, vm 3, gladecli 2, sema 2,
 LWC compile 8 and Visualforce 4. It needs Go with CGO, Node 22, actionlint,
 the CodeQL CLI and Go query packs, and Playwright Chromium. A missing tool is
 `SKIP-ENV`, which exits nonzero. Shards run serially unless `--jobs N` is set.

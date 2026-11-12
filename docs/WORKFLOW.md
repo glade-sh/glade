@@ -148,7 +148,7 @@ go vet ./internal/<pkg>
 A full package run is spent once per package per code change; a new change
 in that package allows one more. Exception: never run the whole
 `internal/apextest` package locally. Run your own apextest tests with `-run`;
-CI runs the 14 shards. `-timeout=0` matters for `internal/vm`,
+CI runs the 16 shards. `-timeout=0` matters for `internal/vm`,
 `internal/gladecli` and `internal/visualforce`, which can exceed Go's default
 ten minutes.
 
@@ -380,7 +380,7 @@ Check in this order:
    server, hosts; use the applicable current supported version, floor, and 67.0 for Apex where
    relevant to Salesforce compatibility).
 4. Existing tests: `go test ./internal/<touched pkg>` at HEAD and at the merge base; a pass that
-   becomes a failure is blocking. For apextest, run focused tests with `-run`; CI runs its 14 shards.
+   becomes a failure is blocking. For apextest, run focused tests with `-run`; CI runs its 16 shards.
 5. No deleted or loosened assertion without a matching native row or local contract.
    No third-party project names or content.
    No org ids, aliases, personal paths or credentials.
