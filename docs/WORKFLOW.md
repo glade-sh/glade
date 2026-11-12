@@ -175,7 +175,7 @@ review; a WARN needs its reason in the PR.
 
 `Required CI` runs a fast lane on every PR, including drafts. It builds with CGO,
 checks formatting, vet, repository guard, workflow lint, leak scan and scripts
-tests, and tests changed Go packages and their direct importers (the fast PR lane, below). A changed path outside
+tests, and tests changed Go packages and their direct importers (the fast PR lane, below). The Apex, LWC compile and Visualforce shards of the fast lane plan from the same shared duration-history artifact the full suite uses. A changed path outside
 every Go package (for example `lwcruntime/**`, `third_party/lwc/**`, root
 `testdata/**`, workflows or root files) selects the full package set; only
 `docs/**` and Markdown files outside `testdata` are docs-only and select

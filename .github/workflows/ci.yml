@@ -841,7 +841,7 @@ jobs:
           if-no-files-found: error
 
   lwc-compile-history-input:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -911,7 +911,7 @@ jobs:
           if-no-files-found: error
 
   visualforce-history-input:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -1606,7 +1606,7 @@ jobs:
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
   apextest-history-input:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -1859,6 +1859,7 @@ jobs:
 
   pr-tests:
     if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}
+    needs: [apextest-history-input, lwc-compile-history-input, visualforce-history-input]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -1870,6 +1871,10 @@ jobs:
       GOMAXPROCS: "2"
       # CI enables colored Babel code frames; native diagnostic fixtures are plain text.
       NO_COLOR: "1"
+      # One shared plan input per package, downloaded from the history-input jobs.
+      CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
+      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
+      CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -1879,6 +1884,26 @@ jobs:
         with:
           go-version: "1.26.10"
           cache: false
+      # Every shard of a package reads the same artifact, so every shard plans
+      # the same partition. Never restore the history cache per shard.
+      - name: Download shared Apex duration history
+        if: ${{ matrix.shard < 12 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: apextest-history-input
+          path: /tmp/glade-apextest-duration-history
+      - name: Download shared LWC duration history
+        if: ${{ matrix.shard >= 24 && matrix.shard < 32 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: lwc-compile-history-input
+          path: /tmp/glade-lwc-compile-duration-history
+      - name: Download shared Visualforce duration history
+        if: ${{ matrix.shard >= 32 && matrix.shard < 36 }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: visualforce-history-input
+          path: /tmp/glade-visualforce-duration-history
       - name: Install actionlint for scripts tests
         if: ${{ matrix.shard == 22 }}
         run: |
