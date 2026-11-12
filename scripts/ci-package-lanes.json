@@ -110,7 +110,7 @@
     "./internal/testdaemon": 35,
     "./internal/testutil/toolchaininstall": 5,
     "./internal/typesys": 1,
-    "./internal/visualforce": 5,
+    "./internal/visualforce": 6,
     "./internal/vm": 64,
     "./internal/watch": 1
   }

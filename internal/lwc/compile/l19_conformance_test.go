@@ -107,12 +107,27 @@ func l19InteractionText(t *testing.T, text string) string {
 // CI uses only credential-free owned exports.
 // GLADE_L19_CAPTURE=1 reports exact-text differences without failing them;
 // GLADE_L19_REPORT selects the per-row TSV, including the before match count.
-func TestL19SalesforceConformance(t *testing.T) {
-	t.Run("BrowserRuntime", l19SalesforceConformance)
-	t.Run("BrowserFixtures", l19BrowserFixtures)
+//
+// The 249 rows (cases, then controls) are split into l19PartCount interleaved
+// parts, one top-level test each, so the CI shard planner can spread them. The
+// parts cover every row exactly once per API; the first part also runs the
+// browser fixtures. GLADE_L19_ROW_RANGE selects a zero-based, half-open
+// start:end range of rows that each part intersects with its own;
+// GLADE_L19_REPORT gets ".partNofM" inserted before its extension.
+const l19PartCount = 3
+
+func TestL19SalesforceConformancePart1of3(t *testing.T) { l19RunPart(t, 0) }
+func TestL19SalesforceConformancePart2of3(t *testing.T) { l19RunPart(t, 1) }
+func TestL19SalesforceConformancePart3of3(t *testing.T) { l19RunPart(t, 2) }
+
+func l19RunPart(t *testing.T, part int) {
+	t.Run("BrowserRuntime", func(t *testing.T) { l19SalesforceConformance(t, part) })
+	if part == 0 {
+		t.Run("BrowserFixtures", l19BrowserFixtures)
+	}
 }
 
-func l19SalesforceConformance(t *testing.T) {
+func l19SalesforceConformance(t *testing.T, part int) {
 	capture := os.Getenv("GLADE_L19_CAPTURE") == "1"
 	data, err := os.ReadFile("testdata/l19_salesforce.json")
 	if err != nil {
@@ -232,6 +247,57 @@ func l19SalesforceConformance(t *testing.T) {
 		diagnosticRows != 48 || len(removed["59.0"]) != 34 || len(removed["67.0"]) != 34 {
 		t.Fatalf("record forms native denominator changed: cases=%d compile=%d APIs=%v diagnostics=%d removals=%d/%d", len(fixture.Cases), len(compileCases), apiTotals, diagnosticRows, len(removed["59.0"]), len(removed["67.0"]))
 	}
+	selectedRows, err := selectedPartRows(part, l19PartCount, len(allCases), os.Getenv("GLADE_L19_ROW_RANGE"))
+	if err != nil {
+		t.Fatalf("invalid GLADE_L19_ROW_RANGE: %v", err)
+	}
+	if len(selectedRows) == 0 {
+		t.Skipf("GLADE_L19_ROW_RANGE selects no row of part %d", part+1)
+	}
+	// Compile rows keep their place in the whole table: native diagnostics name
+	// the bundle by that index.
+	compileIndex := make(map[string]int, len(compileCases))
+	for index, c := range compileCases {
+		compileIndex[c.ID] = index
+	}
+	partRows := map[string]bool{}
+	var partCases []l19Case
+	for _, index := range selectedRows {
+		partRows[allCases[index].ID] = true
+		partCases = append(partCases, allCases[index])
+	}
+	// Everything above validated the whole fixture. From here the part replays
+	// only its own rows; the other parts replay the rest.
+	allCases = partCases
+	var partCompileCases []l19Case
+	for _, c := range compileCases {
+		if partRows[c.ID] {
+			partCompileCases = append(partCompileCases, c)
+		}
+	}
+	compileCases = partCompileCases
+	for api, rows := range runtimeCases {
+		var partRuntime []l19Case
+		for _, c := range rows {
+			if partRows[c.ID] {
+				partRuntime = append(partRuntime, c)
+			}
+		}
+		runtimeCases[api] = partRuntime
+	}
+	apiTotals, controlAPITotals = map[string]int{}, map[string]int{}
+	for _, c := range allCases {
+		for _, api := range versions {
+			if _, ok := c.Expected[api]; !ok {
+				continue
+			}
+			if c.Projection != "" {
+				controlAPITotals[api]++
+			} else {
+				apiTotals[api]++
+			}
+		}
+	}
 	if len(fixture.FixturePicklists) != 1 {
 		t.Fatal("missing native record forms picklist fixture input")
 	}
@@ -319,7 +385,7 @@ func l19SalesforceConformance(t *testing.T) {
 	controlMatches, controlTotal, localControlRows := 0, 0, 0
 	writeReport := func() {
 		if path := os.Getenv("GLADE_L19_REPORT"); path != "" {
-			l07Write(t, path, []byte(report.String()))
+			l07Write(t, rowPartReportPath(path, part, l19PartCount), []byte(report.String()))
 		}
 	}
 	type browserPass struct {
@@ -341,7 +407,7 @@ func l19SalesforceConformance(t *testing.T) {
 		// Fail in API order before starting any browsers if compilation fails.
 		prepared := make([]browserPass, len(versions))
 		for pass, api := range versions {
-			prepared[pass].compiled, prepared[pass].compileErr = l19CompileCases(t, api, compileCases)
+			prepared[pass].compiled, prepared[pass].compileErr = l19CompileCases(t, api, compileCases, compileIndex)
 			if prepared[pass].compileErr != nil {
 				t.Fatal(prepared[pass].compileErr)
 			}
@@ -357,7 +423,7 @@ func l19SalesforceConformance(t *testing.T) {
 		var result browserPass
 		if parallel == 1 {
 			// Keep compile/observe/report interleaved on the test goroutine.
-			result.compiled, result.compileErr = l19CompileCases(t, api, compileCases)
+			result.compiled, result.compileErr = l19CompileCases(t, api, compileCases, compileIndex)
 			if result.compileErr != nil {
 				t.Fatal(result.compileErr)
 			}
@@ -489,7 +555,7 @@ func l19SalesforceConformance(t *testing.T) {
 	}
 	domTotal := len(runtimeCases["59.0"]) + len(runtimeCases["67.0"]) - controlTotal
 	fmt.Fprintf(&report, "TOTAL\t%d/%d\nCOMPILE_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nLOCAL_DOM_TOTAL\t%d/%d\nDIAGNOSTIC_TOTAL\t%d/%d\n", matches, total, compileMatches, len(compileCases)*len(versions), domMatches, domTotal, localDOMRows, domTotal, diagnosticMatches, diagnosticTotal)
-	t.Logf("record forms matches %d/%d; compile %d/104; DOM %d/%d; observed local DOM %d/%d; diagnostics %d/%d", matches, total, compileMatches, domMatches, domTotal, localDOMRows, domTotal, diagnosticMatches, diagnosticTotal)
+	t.Logf("record forms matches %d/%d; compile %d/%d; DOM %d/%d; observed local DOM %d/%d; diagnostics %d/%d", matches, total, compileMatches, len(compileCases)*len(versions), domMatches, domTotal, localDOMRows, domTotal, diagnosticMatches, diagnosticTotal)
 	fmt.Fprintf(&report, "CONTROL_TOTAL\t%d/%d\nLOCAL_CONTROL_TOTAL\t%d/%d\n", controlMatches, controlTotal, localControlRows, controlTotal)
 	t.Logf("record forms native cache/interaction controls %d/%d; observed %d/%d", controlMatches, controlTotal, localControlRows, controlTotal)
 	writeReport()
@@ -541,11 +607,15 @@ func l19CompilerEnvironmentError(err error) error {
 	return nil
 }
 
-func l19CompileCases(t *testing.T, api string, cases []l19Case) (map[string]compile.BundleResult, error) {
+func l19CompileCases(t *testing.T, api string, cases []l19Case, compileIndex map[string]int) (map[string]compile.BundleResult, error) {
 	t.Helper()
+	if len(cases) == 0 {
+		return map[string]compile.BundleResult{}, nil
+	}
 	root := t.TempDir()
 	keys := map[string]string{}
-	for index, c := range cases {
+	for _, c := range cases {
+		index := compileIndex[c.ID]
 		name := fmt.Sprintf("familyL19%03d", index)
 		rel := filepath.Join("cases", fmt.Sprintf("%04d", index), "force-app", "main", "default", "lwc", name)
 		keys[c.ID] = filepath.ToSlash(rel)
