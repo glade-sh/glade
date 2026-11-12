@@ -82,7 +82,11 @@ type Value struct {
 	// mapEntriesShared marks a Map whose entries other VMs of the same schema
 	// generation read too (the generation's global describe maps). It is
 	// read-only: a write clones Map first and clears the mark (detachSharedEntries).
-	mapEntriesShared               bool
+	mapEntriesShared bool
+	// fieldsShared marks an object whose Fields map is shared with other VMs of
+	// the same schema generation (child relationship describes). It is
+	// read-only: a write clones Fields first and clears the mark.
+	fieldsShared                   bool
 	globalDescribeEntriesCanonical bool
 
 	nativeListElement bool
@@ -100,6 +104,15 @@ func (v *Value) detachSharedEntries() {
 	if v.mapEntriesShared {
 		v.Map = maps.Clone(v.Map)
 		v.mapEntriesShared = false
+	}
+}
+
+// detachSharedFields gives the value a private copy of Fields before an
+// in-place field write, when other VMs share the fields.
+func (v *Value) detachSharedFields() {
+	if v.fieldsShared {
+		v.Fields = maps.Clone(v.Fields)
+		v.fieldsShared = false
 	}
 }
 

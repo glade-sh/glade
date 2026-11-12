@@ -30,6 +30,7 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 		"shared map backing":         func(value *Value) { value.mapBackingShared = true },
 		"canonical describe entries": func(value *Value) { value.globalDescribeEntriesCanonical = true },
 		"shared entries across VMs":  func(value *Value) { value.mapEntriesShared = true },
+		"shared fields across VMs":   func(value *Value) { value.fieldsShared = true },
 		"type":                       func(value *Value) { value.Type = "Contact" },
 		"text":                       func(value *Value) { value.Text = "changed" },
 		"hidden flag":                func(value *Value) { value.schemaIDConstructor = true },

@@ -65,6 +65,10 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 
 - **Global describe maps.** `Schema.getGlobalDescribe()` no longer copies the 5,400-entry map three times for every test. Tests of one schema share the map until one of them writes it, and a write copies it for that test alone. Results are unchanged. On a project whose tests call it, instructions fell about 3 percent.
 
+### Performance
+
+- **Child relationship describes.** `getChildRelationships()` no longer clones every relationship value for each test. Tests of one schema share the values until one of them writes one, and a write copies that value for that test alone. Results are unchanged. On a describe-heavy suite, instructions fell about 7 percent and peak memory about 8 percent.
+
 ## v0.3.6
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
