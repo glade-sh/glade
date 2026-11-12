@@ -60,7 +60,7 @@ func (e *Engine) afterInsertPermissionSetGroup(group storage.Record) error {
 	return err
 }
 
-func (e *Engine) afterInsertPermissionSetGroupComponent(component storage.Record) {
+func (e *Engine) markPermissionSetGroupComponentChanged(component storage.Record) {
 	id := idFromStorageValue(component.Fields["PermissionSetGroupId"])
 	_, group, found := storage.LookupRecordByID(e.Org.Objects["PermissionSetGroup"].Records, id)
 	if !found || group.Fields["Status"].String != "Updated" && group.Fields["Status"].String != "Outdated" {
@@ -96,9 +96,71 @@ func (e *Engine) RecalculatePermissionSetGroups(ids []storage.ID, beforeUpdate f
 		}
 	}
 	for _, id := range pending {
+		e.projectCapturedGroupUserPermissions(id)
 		e.setPermissionSetGroupStatus(id, "Updated")
 	}
 	return nil
+}
+
+// projectCapturedGroupUserPermissions projects the user-permission fields
+// observed in psg_recalculation_union and adjacent captures. Leave groups with a muting component
+// or an unavailable member unchanged until those shapes have native rows.
+func (e *Engine) projectCapturedGroupUserPermissions(groupID storage.ID) {
+	sets := e.Org.Objects["PermissionSet"]
+	var aggregateID storage.ID
+	var aggregate storage.Record
+	for id, record := range sets.Records {
+		if !record.System.IsDeleted && strings.EqualFold(record.Fields["Type"].String, "Group") &&
+			storage.IDsEqual(idFromStorageValue(record.Fields["PermissionSetGroupId"]), groupID) {
+			aggregateID, aggregate = id, record
+			break
+		}
+	}
+	if aggregateID == "" {
+		return
+	}
+	fields := []string{"PermissionsApiEnabled", "PermissionsRunReports", "PermissionsViewSetup", "PermissionsExportReport", "PermissionsViewRoles"}
+	values := make(map[string]bool, len(fields))
+	for _, component := range e.Org.Objects["PermissionSetGroupComponent"].Records {
+		if component.System.IsDeleted || !storage.IDsEqual(idFromStorageValue(component.Fields["PermissionSetGroupId"]), groupID) {
+			continue
+		}
+		memberID := idFromStorageValue(component.Fields["PermissionSetId"])
+		if _, mute, found := storage.LookupRecordByID(e.Org.Objects["MutingPermissionSet"].Records, memberID); found && !mute.System.IsDeleted {
+			return
+		}
+		_, member, found := storage.LookupRecordByID(sets.Records, memberID)
+		if !found || member.System.IsDeleted {
+			return
+		}
+		for _, field := range fields {
+			values[field] = values[field] || member.Fields[field].Boolean
+		}
+	}
+	changed := false
+	for _, field := range fields {
+		if aggregate.Fields[field].Boolean != values[field] {
+			changed = true
+		}
+	}
+	if !changed {
+		return
+	}
+	if mutable, _ := storage.EnsureMutableObjectRecords(e.Org, "PermissionSet"); mutable != nil {
+		sets = *mutable
+	}
+	if e.IsolationJournal != nil {
+		e.IsolationJournal.RecordUpdate("PermissionSet", aggregateID, aggregate)
+	}
+	aggregate = aggregate.Clone()
+	if aggregate.Fields == nil {
+		aggregate.Fields = make(map[string]storage.Value)
+	}
+	for _, field := range fields {
+		aggregate.Fields[field] = storage.BooleanValue(values[field])
+	}
+	sets.Records[aggregateID] = aggregate
+	e.Org.Objects["PermissionSet"] = sets
 }
 
 func (e *Engine) localPermissionSetGroup(group storage.Record) bool {

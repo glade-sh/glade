@@ -201,8 +201,23 @@ func seedProjectMutingPermissionSet(org *storage.OrgState, p project.Project, na
 	}
 	cache := make(map[string]permissionSetMetadataCacheEntry)
 	label := name
-	if metadata, ok := readPermissionSetMetadata(file, cache); ok && strings.TrimSpace(metadata.Label) != "" {
-		label = strings.TrimSpace(metadata.Label)
+	if metadata, ok := readPermissionSetMetadata(file, cache); ok {
+		if strings.TrimSpace(metadata.Label) != "" {
+			label = strings.TrimSpace(metadata.Label)
+		}
+		// A deployed Read-only field mute is discarded by Salesforce. Keep
+		// Edit-only and Read+Edit entries, including in the same muting set.
+		// permset_muting_read_only and permset_muting_multiple capture this
+		// independently at source API 62 and 67.
+		filtered := make([]permissionSetFieldPermission, 0, len(metadata.FieldPermissions))
+		for _, field := range metadata.FieldPermissions {
+			if field.Readable && !field.Editable {
+				continue
+			}
+			filtered = append(filtered, field)
+		}
+		metadata.FieldPermissions = filtered
+		cache[file] = permissionSetMetadataCacheEntry{metadata: metadata, ok: true}
 	}
 	state.Records[id] = storage.Record{ID: id, Object: "MutingPermissionSet", Fields: map[string]storage.Value{
 		"DeveloperName": storage.StringValue(name),

@@ -10,6 +10,10 @@
 
 - **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.
 
+### Apex
+
+- Permission set group status, group permission calculation and read-only field muting now match captured Salesforce results.
+
 ### Performance
 
 - **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process. Watch, daemon and server runs are unchanged. Results are unchanged.

@@ -104,12 +104,15 @@ func TestStringEqualityLocaleChangeC14NativeConformance(t *testing.T) {
 							}
 							return
 						}
-						// The method threw before emitting. p3, p3b and p4 update the runAs
-						// user's own User record as a Standard User: native allows it (p3/p4
-						// at 62.0, p3b at both APIs) and rejects the full-object update at
-						// 67.0 with a field-access DmlException; Glade rejects every self-update
-						// as a record-access failure. That User self-update rule is a
-						// permissions carry, so these probes' rows stay registered.
+						if api == "67.0" && (probe == "p3" || probe == "p4") {
+							want := "Operation failed due to fields being inaccessible on Sobject User, check errors on Exception or Result!"
+							if strings.TrimPrefix(result.Problem.Type, "System.") != "DmlException" || !strings.Contains(result.Problem.Message, want) {
+								t.Fatalf("native System.DmlException %q; Glade %s: %s", want, result.Problem.Type, result.Problem.Message)
+							}
+							return
+						}
+						// Any other method that throws before emitting has lost its
+						// captured comparison steps and must be reported as a gap.
 						t.Logf("%s threw before emitting: %s: %s; native rows: %d", method, result.Problem.Type, result.Problem.Message, len(byProbe[probe]))
 						case345Skip(t)
 					}
