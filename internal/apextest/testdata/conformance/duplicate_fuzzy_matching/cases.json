@@ -1,0 +1,2189 @@
+{
+ "bounds": {
+  "62/Contact.FirstName.FirstName.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Contact.LastName.LastName.NullNotAllowed": {
+   "min_recall": 0.7977,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "62/Contact.Phone.Phone.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Account.Name.CompanyName.NullNotAllowed": {
+   "min_recall": 0.9938,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Account.BillingStreet.Street.NullNotAllowed": {
+   "min_recall": 0.9323,
+   "max_extra": 0,
+   "max_conf_mae": 0.35
+  },
+  "62/Account.BillingCity.City.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Account.BillingPostalCode.Zip.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Account.Name.CompanyName.MatchBlanks": {
+   "min_recall": 0.9938,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Account.BillingStreet.Street.MatchBlanks": {
+   "min_recall": 0.9158,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Account.BillingCity.City.MatchBlanks": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Account.Phone.Phone.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Contact.FirstName.FirstName.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Contact.LastName.LastName.NullNotAllowed": {
+   "min_recall": 0.7977,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/Contact.Phone.Phone.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Contact.Title.Title.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/Account.Name.CompanyName.NullNotAllowed": {
+   "min_recall": 0.9938,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.BillingStreet.Street.NullNotAllowed": {
+   "min_recall": 0.9323,
+   "max_extra": 0,
+   "max_conf_mae": 0.35
+  },
+  "67/Account.BillingCity.City.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.BillingPostalCode.Zip.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.Name.CompanyName.MatchBlanks": {
+   "min_recall": 0.9938,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.BillingStreet.Street.MatchBlanks": {
+   "min_recall": 0.9158,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.BillingCity.City.MatchBlanks": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Account.Phone.Phone.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout.Account.Name.CompanyName.MatchBlanks": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout.Account.BillingStreet.Street.MatchBlanks": {
+   "min_recall": 0.9727,
+   "max_extra": 0,
+   "max_conf_mae": 0.4
+  },
+  "67/Holdout.Account.BillingCity.City.MatchBlanks": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout.Account.Phone.Phone.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Account.BillingCity.City.NullNotAllowed.Position": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Name": {
+   "min_recall": 0.9819,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Suffix": {
+   "min_recall": 0.9502,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Unit": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Account.Name.CompanyName.NullNotAllowed.Designator": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Account.Name.CompanyName.NullNotAllowed.Syllable": {
+   "min_recall": 0.9463,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Account.Name.CompanyName.NullNotAllowed.Syllable2": {
+   "min_recall": 0.9469,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Jaro": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Variant": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Variant2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Variant3": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.FirstName.FirstName.NullNotAllowed.Variant4": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe.Contact.LastName.LastName.NullNotAllowed.Keyboard": {
+   "min_recall": 0.8014,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/Probe.Contact.LastName.LastName.NullNotAllowed.Phonetic": {
+   "min_recall": 0.863,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/Probe.Contact.LastName.LastName.NullNotAllowed.Phonetic2": {
+   "min_recall": 0.7948,
+   "max_extra": 0,
+   "max_conf_mae": 0.4
+  },
+  "67/Probe.Contact.Title.Title.NullNotAllowed.Words": {
+   "min_recall": 0.994,
+   "max_extra": 0,
+   "max_conf_mae": 0.45
+  },
+  "67/Holdout2.Account.BillingCity.City.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout2.Account.BillingStreet.Street.NullNotAllowed": {
+   "min_recall": 0.9024,
+   "max_extra": 0,
+   "max_conf_mae": 0.8
+  },
+  "67/Holdout2.Account.Name.CompanyName.NullNotAllowed": {
+   "min_recall": 0.9661,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout2.Contact.FirstName.FirstName.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout2.Contact.LastName.LastName.NullNotAllowed": {
+   "min_recall": 0.7294,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/Holdout2.Contact.Title.Title.NullNotAllowed": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe.Account.BillingCity.City.NullNotAllowed.Position": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe.Account.BillingStreet.Street.NullNotAllowed.Unit": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe.Account.Name.CompanyName.NullNotAllowed.Syllable": {
+   "min_recall": 0.9463,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe.Contact.FirstName.FirstName.NullNotAllowed.Jaro": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe.Contact.LastName.LastName.NullNotAllowed.Keyboard": {
+   "min_recall": 0.8014,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "62/Probe.Contact.Title.Title.NullNotAllowed.Words": {
+   "min_recall": 0.994,
+   "max_extra": 0,
+   "max_conf_mae": 0.45
+  },
+  "67/Holdout3.Account.BillingCity.City.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Account.BillingCity.City.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Account.BillingPostalCode.Zip.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Account.BillingStreet.Street.NullNotAllowed.1": {
+   "min_recall": 0.8448,
+   "max_extra": 0,
+   "max_conf_mae": 0.75
+  },
+  "67/Holdout3.Account.BillingStreet.Street.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Account.Name.CompanyName.NullNotAllowed.1": {
+   "min_recall": 0.875,
+   "max_extra": 0,
+   "max_conf_mae": 0.75
+  },
+  "67/Holdout3.Account.Name.CompanyName.NullNotAllowed.2": {
+   "min_recall": 0.7777,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Contact.FirstName.FirstName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Contact.FirstName.FirstName.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Contact.LastName.LastName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/Holdout3.Contact.LastName.LastName.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Contact.Phone.Phone.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout3.Contact.Title.Title.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/Holdout3.Contact.Title.Title.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe3.Account.BillingCity.City.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe3.Account.BillingPostalCode.Zip.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe3.Account.BillingStreet.Street.NullNotAllowed.1": {
+   "min_recall": 0.4938,
+   "max_extra": 0,
+   "max_conf_mae": 0.55
+  },
+  "67/Probe3.Account.Name.CompanyName.NullNotAllowed.1": {
+   "min_recall": 0.9878,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/Probe3.Account.Name.CompanyName.NullNotAllowed.2": {
+   "min_recall": 0.8666,
+   "max_extra": 0,
+   "max_conf_mae": 0.4
+  },
+  "67/Probe3.Contact.FirstName.FirstName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe3.Contact.FirstName.FirstName.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe3.Contact.LastName.LastName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe3.Contact.Phone.Phone.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Probe3.Contact.Title.Title.NullNotAllowed.1": {
+   "min_recall": 0.9823,
+   "max_extra": 0,
+   "max_conf_mae": 0.55
+  },
+  "62/Probe3.Account.BillingCity.City.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe3.Account.BillingPostalCode.Zip.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe3.Account.BillingStreet.Street.NullNotAllowed.1": {
+   "min_recall": 0.4938,
+   "max_extra": 0,
+   "max_conf_mae": 0.55
+  },
+  "62/Probe3.Account.Name.CompanyName.NullNotAllowed.1": {
+   "min_recall": 0.9878,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "62/Probe3.Contact.FirstName.FirstName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe3.Contact.LastName.LastName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe3.Contact.Phone.Phone.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/Probe3.Contact.Title.Title.NullNotAllowed.1": {
+   "min_recall": 0.9823,
+   "max_extra": 0,
+   "max_conf_mae": 0.55
+  },
+  "62/Holdout5.Account.Name.CompanyName.NullNotAllowed.3": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "62/P4.CO.Amp": {
+   "min_recall": 0.9489,
+   "max_extra": 0,
+   "max_conf_mae": 0.35
+  },
+  "62/P4.FN.A": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/P4.FN.B": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "62/P4.LN.KB1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "62/P4.LN.KB2": {
+   "min_recall": 0.5936,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/Holdout4.Account.BillingCity.City.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout4.Account.BillingPostalCode.Zip.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout4.Account.BillingStreet.Street.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.6
+  },
+  "67/Holdout4.Account.BillingStreet.Street.NullNotAllowed.2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout4.Account.Name.CompanyName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout4.Account.Name.CompanyName.NullNotAllowed.2": {
+   "min_recall": 0.9402,
+   "max_extra": 0,
+   "max_conf_mae": 0.4
+  },
+  "67/Holdout4.Contact.FirstName.FirstName.NullNotAllowed.1": {
+   "min_recall": 0.9583,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/Holdout4.Contact.FirstName.FirstName.NullNotAllowed.2": {
+   "min_recall": 0.975,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/Holdout4.Contact.LastName.LastName.NullNotAllowed.1": {
+   "min_recall": 0.9764,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout4.Contact.LastName.LastName.NullNotAllowed.2": {
+   "min_recall": 0.8863,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/Holdout4.Contact.Phone.Phone.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout4.Contact.Title.Title.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/Holdout4.Contact.Title.Title.NullNotAllowed.2": {
+   "min_recall": 0.9154,
+   "max_extra": 0,
+   "max_conf_mae": 0.4
+  },
+  "67/Holdout5.Account.Name.CompanyName.NullNotAllowed.1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/Holdout5.Account.Name.CompanyName.NullNotAllowed.2": {
+   "min_recall": 0.9701,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/Holdout5.Account.Name.CompanyName.NullNotAllowed.3": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/Holdout6.Contact.FirstName.FirstName.NullNotAllowed.1": {
+   "min_recall": 0.9424,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout6.Contact.FirstName.FirstName.NullNotAllowed.2": {
+   "min_recall": 0.9696,
+   "max_extra": 0,
+   "max_conf_mae": 0.55
+  },
+  "67/Holdout6.Contact.FirstName.FirstName.NullNotAllowed.3": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout6.Contact.LastName.LastName.NullNotAllowed.1": {
+   "min_recall": 0.978,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/Holdout6.Contact.LastName.LastName.NullNotAllowed.2": {
+   "min_recall": 0.9268,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/Holdout6.Contact.LastName.LastName.NullNotAllowed.3": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.001": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.002": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.003": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.004": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.005": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.006": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.007": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.008": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.009": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.010": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.011": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.012": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.013": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.014": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.015": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.016": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.017": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.018": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.019": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.020": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.021": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.022": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.023": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.024": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.025": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.026": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.027": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.028": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.029": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.030": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.031": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.032": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.033": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.034": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.035": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.036": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.037": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.038": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.039": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.040": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.041": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.042": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.043": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Family.044": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.001": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.002": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.003": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.004": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.005": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.006": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.007": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.008": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.009": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.010": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.011": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.012": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.013": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.014": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.015": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.017": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.018": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.019": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.020": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.021": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.022": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.023": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.024": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.025": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.026": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.027": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.028": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.029": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.030": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.031": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.032": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.033": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.034": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.035": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.036": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.037": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.038": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.039": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.040": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.041": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.043": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.044": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.045": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.046": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.047": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.048": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.049": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.050": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.051": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.052": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.053": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.054": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.056": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.057": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.058": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.059": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.060": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.061": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.062": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.063": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.065": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.066a2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.066b1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.066b2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.067": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.068": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.069": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.070": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.071": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.072": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.073": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.074": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.075": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.076": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.077": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.078": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.079": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.080": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.081": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.082": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.083": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.084": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.085": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.086": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.087": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.088": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.089": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.090": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.091a2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.091b1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.091b2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.092a1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.092a2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.092b1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.092b3": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.093": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.094": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.095": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.096a1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.096a2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.096b1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.096b2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.097": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.098": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.099": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.100a1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.100a2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.100b1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.100b2": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.101": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.102": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.103": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.104": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.105": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.106": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.107": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.108": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.109": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.110": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.111": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.112": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.113": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.114": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.115": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.116": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.118": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.119": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.120": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.121": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.122": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.123": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.124": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.125": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.126": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.127": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.128": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.129": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.130": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.131": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.132": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.133": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.134": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.135": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.136": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.137": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.138": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.139": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.140": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.141": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.142": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.143": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.144": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.145": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.146": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.147": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.148": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.149": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.150": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.151": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.152": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.153": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.154": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.155": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.156": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.157": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.158": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.159": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.160": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.161": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.162": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.163": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.164": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.165": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.166": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.167": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.168": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.169": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.R01": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.R02": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.R03": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.R04": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.R05": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.FN.Typo.R06": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.001": {
+   "min_recall": 0.6923,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.002": {
+   "min_recall": 0.6185,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.003": {
+   "min_recall": 0.6153,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.004": {
+   "min_recall": 0.7407,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.005": {
+   "min_recall": 0.7444,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.006": {
+   "min_recall": 0.7191,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.007": {
+   "min_recall": 0.6666,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.008": {
+   "min_recall": 0.725,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.009": {
+   "min_recall": 0.8055,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.010": {
+   "min_recall": 0.6444,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.011": {
+   "min_recall": 0.72,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.012": {
+   "min_recall": 0.7777,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.013": {
+   "min_recall": 0.6555,
+   "max_extra": 0,
+   "max_conf_mae": 0.5
+  },
+  "67/N4.LN.Var.014": {
+   "min_recall": 0.6388,
+   "max_extra": 0,
+   "max_conf_mae": 0.6
+  },
+  "67/N4.LN.Var.015": {
+   "min_recall": 0.7222,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.016": {
+   "min_recall": 0.6122,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.017": {
+   "min_recall": 0.6555,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.018": {
+   "min_recall": 0.8285,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.019": {
+   "min_recall": 0.6122,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.020": {
+   "min_recall": 0.7349,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.021": {
+   "min_recall": 0.7228,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.022": {
+   "min_recall": 0.6913,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.023": {
+   "min_recall": 0.6666,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.024": {
+   "min_recall": 0.7375,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.025": {
+   "min_recall": 0.7794,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.026": {
+   "min_recall": 0.7124,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.027": {
+   "min_recall": 0.7101,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.028": {
+   "min_recall": 0.6666,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.029": {
+   "min_recall": 0.6666,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.030": {
+   "min_recall": 0.6888,
+   "max_extra": 0,
+   "max_conf_mae": 0.4
+  },
+  "67/N4.LN.Var.031": {
+   "min_recall": 0.6396,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.032": {
+   "min_recall": 0.8591,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.033": {
+   "min_recall": 0.629,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.034": {
+   "min_recall": 0.6962,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.035": {
+   "min_recall": 0.782,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.036": {
+   "min_recall": 0.8,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.037": {
+   "min_recall": 0.7323,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.038": {
+   "min_recall": 0.5858,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.039": {
+   "min_recall": 0.7977,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.040": {
+   "min_recall": 0.7515,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.041": {
+   "min_recall": 0.8194,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.042": {
+   "min_recall": 0.7422,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.043": {
+   "min_recall": 0.7483,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.044": {
+   "min_recall": 0.8163,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.045": {
+   "min_recall": 0.7721,
+   "max_extra": 0,
+   "max_conf_mae": 0.35
+  },
+  "67/N4.LN.Var.046": {
+   "min_recall": 0.753,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.047": {
+   "min_recall": 0.7857,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.048": {
+   "min_recall": 0.6635,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.049": {
+   "min_recall": 0.6296,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.050": {
+   "min_recall": 0.4634,
+   "max_extra": 0,
+   "max_conf_mae": 0.6
+  },
+  "67/N4.LN.Var.051": {
+   "min_recall": 0.7083,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.052": {
+   "min_recall": 0.7529,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.053": {
+   "min_recall": 0.7283,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.054": {
+   "min_recall": 0.7555,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.055": {
+   "min_recall": 0.7826,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.056": {
+   "min_recall": 0.7361,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.057": {
+   "min_recall": 0.8,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.058": {
+   "min_recall": 0.7176,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.059": {
+   "min_recall": 0.7941,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.060": {
+   "min_recall": 0.6534,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.061": {
+   "min_recall": 0.7916,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.062": {
+   "min_recall": 0.6627,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.063": {
+   "min_recall": 0.7375,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.064": {
+   "min_recall": 0.7314,
+   "max_extra": 0,
+   "max_conf_mae": 0.35
+  },
+  "67/N4.LN.Var.065": {
+   "min_recall": 0.5833,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.066": {
+   "min_recall": 0.6962,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.067": {
+   "min_recall": 0.5645,
+   "max_extra": 0,
+   "max_conf_mae": 0.35
+  },
+  "67/N4.LN.Var.068": {
+   "min_recall": 0.7435,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.069": {
+   "min_recall": 0.7638,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.070": {
+   "min_recall": 0.7037,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.071": {
+   "min_recall": 0.7714,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.072": {
+   "min_recall": 0.7916,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.073": {
+   "min_recall": 0.7777,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.074": {
+   "min_recall": 0.8202,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.075": {
+   "min_recall": 0.7647,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.076": {
+   "min_recall": 0.7831,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.077": {
+   "min_recall": 0.8382,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.078": {
+   "min_recall": 0.6333,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/N4.LN.Var.079": {
+   "min_recall": 0.7183,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.080": {
+   "min_recall": 0.6543,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.081": {
+   "min_recall": 0.8108,
+   "max_extra": 0,
+   "max_conf_mae": 0.3
+  },
+  "67/N4.LN.Var.082": {
+   "min_recall": 0.7471,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/N4.LN.Var.083": {
+   "min_recall": 0.8472,
+   "max_extra": 0,
+   "max_conf_mae": 0.15
+  },
+  "67/N4.LN.Var.084": {
+   "min_recall": 0.7209,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/N4.LN.Var.085": {
+   "min_recall": 0.7228,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/N4.LN.Var.086": {
+   "min_recall": 0.5462,
+   "max_extra": 0,
+   "max_conf_mae": 0.55
+  },
+  "67/N4.LN.Var.087": {
+   "min_recall": 0.5353,
+   "max_extra": 0,
+   "max_conf_mae": 0.2
+  },
+  "67/P4.CO.Amp": {
+   "min_recall": 0.9489,
+   "max_extra": 0,
+   "max_conf_mae": 0.35
+  },
+  "67/P4.FN.A": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/P4.FN.B": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/P4.FN.C": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/P4.FN.D": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.05
+  },
+  "67/P4.LN.KB1": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  },
+  "67/P4.LN.KB2": {
+   "min_recall": 0.5936,
+   "max_extra": 0,
+   "max_conf_mae": 0.25
+  },
+  "67/P4.MULTI.NameCity": {
+   "min_recall": 0.9999,
+   "max_extra": 0,
+   "max_conf_mae": 0.1
+  }
+ }
+}

@@ -70,6 +70,8 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 - **Shorter CI graph.** The apextest binary is built in its own job and the Go test matrix is split so shards start sooner. Every test still runs once.
 - **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.
 
+- **Duplicate rules with fuzzy matching items.** A custom matching rule whose items use the fuzzy methods for first name, last name, company name, phone, city, street, ZIP or title is now enforced by duplicate rules on insert and update, and returned by `Datacloud.FindDuplicates`. The scorers follow captured Salesforce verdicts and match confidences for those methods (`docs/DUPLICATE_FUZZY_MATCHING.md` lists the recovered formulas and the gaps); the name-variant and acronym dictionaries are limited to the pairs the captures prove, and standard-rule fuzzy equations, cross-object rules and Person Account rules are still not enforced.
+
 ## v0.3.6
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
