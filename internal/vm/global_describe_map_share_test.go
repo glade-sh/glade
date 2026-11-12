@@ -289,3 +289,60 @@ System.assertEquals('Account', String.valueOf(h.get('account')));`)
 		})
 	}
 }
+
+func globalDescribeMapAtAPI(t *testing.T, machine *VM, api string) map[string]string {
+	t.Helper()
+	machine.currentMethod.APIVersion = api
+	return globalDescribeMapDigest(globalDescribeMapBacking(t, machine).Map)
+}
+
+// The change-event layer depends on the API version. One VM switching versions,
+// and a write at either version, leave the shared layer of each version, and
+// every other VM, as a private build reads it.
+func TestGlobalDescribeMapsAcrossAPIVersions(t *testing.T) {
+	versions := []string{"62.0", "67.0"}
+	writes := map[string]string{
+		"put":         `Schema.getGlobalDescribe().put('private', Account.SObjectType);`,
+		"clear":       `Schema.getGlobalDescribe().clear();`,
+		"token write": `Schema.getGlobalDescribe().get('accountchangeevent').object = 'Contact';`,
+	}
+	for _, namespaced := range []bool{false, true} {
+		want := map[string]map[string]string{}
+		for _, api := range versions {
+			want[api] = globalDescribeMapAtAPI(t, describeShareUnprimedFor(namespaced), api)
+		}
+		for name, source := range writes {
+			for _, writeAPI := range versions {
+				t.Run(fmt.Sprintf("namespace=%v/%s/write at %s", namespaced, name, writeAPI), func(t *testing.T) {
+					base, template := describeSharePrimedBaseFor(t, namespaced)
+					early := describeShareClone(base, template)
+					for _, api := range versions {
+						if got := globalDescribeMapAtAPI(t, early, api); !reflect.DeepEqual(got, want[api]) {
+							t.Fatalf("shared layer at %s differs from a private build", api)
+						}
+					}
+					writer := describeShareClone(base, template)
+					for _, api := range versions {
+						globalDescribeMapAtAPI(t, writer, api)
+					}
+					writer.currentMethod.APIVersion = writeAPI
+					program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: writeAPI})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if _, err := writer.Execute(program); err != nil {
+						t.Fatal(err)
+					}
+					// Back to the other version on the writer, then read from fresh VMs.
+					for _, machine := range []*VM{early, describeShareClone(base, template)} {
+						for _, api := range versions {
+							if got := globalDescribeMapAtAPI(t, machine, api); !reflect.DeepEqual(got, want[api]) {
+								t.Fatalf("write at %s changed the layer another VM reads at %s", writeAPI, api)
+							}
+						}
+					}
+				})
+			}
+		}
+	}
+}
