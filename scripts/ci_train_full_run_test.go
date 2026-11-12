@@ -129,6 +129,9 @@ func ciJobWidth(t *testing.T, name string, matrix map[string]any) int {
 	return width
 }
 
+// readCIJobIfs returns each job's `if` and its concurrent width. A job that
+// needs required-ci runs after every other job has finished, so it never
+// competes with them for runners and has width zero.
 func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 	t.Helper()
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
@@ -137,7 +140,8 @@ func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 	}
 	var workflow struct {
 		Jobs map[string]struct {
-			If       string `yaml:"if"`
+			If       string    `yaml:"if"`
+			Needs    yaml.Node `yaml:"needs"`
 			Strategy struct {
 				Matrix map[string]any `yaml:"matrix"`
 			} `yaml:"strategy"`
@@ -151,6 +155,19 @@ func readCIJobIfs(t *testing.T) (map[string]string, map[string]int) {
 	for name, job := range workflow.Jobs {
 		ifs[name] = job.If
 		widths[name] = ciJobWidth(t, name, job.Strategy.Matrix)
+		var needs []string
+		if job.Needs.Kind == yaml.ScalarNode {
+			needs = []string{job.Needs.Value}
+		} else if job.Needs.Kind != 0 {
+			if err := job.Needs.Decode(&needs); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for _, need := range needs {
+			if need == "required-ci" {
+				widths[name] = 0
+			}
+		}
 	}
 	return ifs, widths
 }
