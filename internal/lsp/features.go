@@ -241,6 +241,7 @@ func wordRanges(text, word string) []Range {
 	var ranges []Range
 	lowerText := strings.ToLower(text)
 	lowerWord := strings.ToLower(word)
+	cursor := positionCursor{text: text}
 	for offset := 0; offset < len(text); {
 		next := strings.Index(lowerText[offset:], lowerWord)
 		if next < 0 {
@@ -249,7 +250,7 @@ func wordRanges(text, word string) []Range {
 		start := offset + next
 		end := start + len(lowerWord)
 		if isIdentifierBoundary(text, start-1) && isIdentifierBoundary(text, end) {
-			ranges = append(ranges, rangeForOffsets(text, start, end))
+			ranges = append(ranges, Range{Start: cursor.positionAt(start), End: cursor.positionAt(end)})
 		}
 		offset = end
 	}
@@ -287,6 +288,55 @@ func isIdentifierByte(b byte) bool {
 
 func rangeForOffsets(text string, start, end int) Range {
 	return Range{Start: positionForOffset(text, start), End: positionForOffset(text, end)}
+}
+
+// positionCursor converts ascending byte offsets of one text to positions in a
+// single pass. positionAt gives the same answer as positionForOffset; an offset
+// before the previous one restarts from the beginning.
+type positionCursor struct {
+	text      string
+	offset    int
+	line      int
+	character int
+	// lastStart is where the last consumed character began, or -1.
+	lastStart int
+	started   bool
+}
+
+func (c *positionCursor) positionAt(target int) Position {
+	if c.started && target <= c.lastStart {
+		*c = positionCursor{text: c.text}
+	}
+	c.started = true
+	text := c.text
+	offset, line, character := c.offset, c.line, c.character
+	lastStart := c.lastStart
+	if offset == 0 {
+		lastStart = -1
+	}
+	for offset < len(text) && offset < target {
+		lastStart = offset
+		b := text[offset]
+		if b < utf8.RuneSelf && b != '\r' && b != '\n' {
+			character++
+			offset++
+			continue
+		}
+		r, size := utf8.DecodeRuneInString(text[offset:])
+		if r == '\r' || r == '\n' {
+			line++
+			character = 0
+			offset += size
+			if r == '\r' && offset < len(text) && text[offset] == '\n' {
+				offset++
+			}
+			continue
+		}
+		character += utf16Len(string(r))
+		offset += size
+	}
+	c.offset, c.line, c.character, c.lastStart = offset, line, character, lastStart
+	return Position{Line: line, Character: character}
 }
 
 func positionForOffset(text string, target int) Position {
