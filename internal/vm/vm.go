@@ -977,7 +977,7 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 // prefix is prefix. One pass keeps the smallest matching name, which is the
 // object a scan of the sorted names would reach first.
 func (vm *VM) orgObjectNameForKeyPrefix(prefix string) (string, bool) {
-	return scanOrgObjectNameForKeyPrefix(vm.Org.Objects, prefix)
+	return orgObjectNameForKeyPrefix(vm.Org, prefix)
 }
 
 func scanOrgObjectNameForKeyPrefix(objects map[string]storage.ObjectState, prefix string) (string, bool) {
