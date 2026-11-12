@@ -194,9 +194,22 @@ func callDatacloudDuplicateMember(_ *VM, receiver Value, method string, args []V
 	return value, receiver, false, true, nil
 }
 
-func (vm *VM) duplicateResultsForRecord(record storage.Record, object string) []Value {
+func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, byID bool) ([]Value, error) {
+	rules, person := dml.DuplicateSearchRules(vm.Org, object, record, byID)
+	if len(rules) == 0 {
+		if person {
+			label := "Account"
+			if byID {
+				label = "PersonAccount"
+			}
+			return nil, newExceptionError("System.HandledException", "No active duplicate rules are defined for the "+label+" object type.")
+		}
+		if !byID && strings.EqualFold(object, "Opportunity") {
+			return nil, newExceptionError("System.HandledException", "The FindDuplicates API doesn't support the Opportunity object.")
+		}
+	}
 	var out []Value
-	for _, rule := range dml.ActiveDuplicateRulesForRecord(vm.Org, object, record) {
+	for _, rule := range rules {
 		applies, supported := dml.DuplicateRuleApplies(vm.Org, rule, record)
 		if !supported || !applies {
 			continue
@@ -213,7 +226,7 @@ func (vm *VM) duplicateResultsForRecord(record storage.Record, object string) []
 		}
 		out = append(out, datacloudDuplicateResultValue(found, true))
 	}
-	return out
+	return out, nil
 }
 
 func newDatacloudFindDuplicatesResultWith(duplicates []Value) Value {
@@ -261,7 +274,11 @@ func (vm *VM) findDuplicates(args []Value) (Value, error) {
 	}
 	results := make([]Value, 0, len(records))
 	for _, record := range records {
-		results = append(results, newDatacloudFindDuplicatesResultWith(vm.duplicateResultsForRecord(record, object)))
+		duplicates, err := vm.duplicateResultsForRecord(record, object, false)
+		if err != nil {
+			return Null, err
+		}
+		results = append(results, newDatacloudFindDuplicatesResultWith(duplicates))
 	}
 	return List(results...), nil
 }
@@ -300,7 +317,11 @@ func (vm *VM) findDuplicatesByIDs(args []Value) (Value, error) {
 	for _, row := range rows {
 		var duplicates []Value
 		if row.found {
-			duplicates = vm.duplicateResultsForRecord(row.record, object)
+			var err error
+			duplicates, err = vm.duplicateResultsForRecord(row.record, object, true)
+			if err != nil {
+				return Null, err
+			}
 		}
 		results = append(results, newDatacloudFindDuplicatesResultWith(duplicates))
 	}
