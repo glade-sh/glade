@@ -426,7 +426,7 @@ func (vm *VM) splitClassMember(name string) (string, string, bool) {
 		if resolved, ok := vm.resolveClassName(className); ok {
 			return resolved, strings.Join(parts[i:], "."), true
 		}
-		if generated, ok := generatedPlatformTypes()[strings.ToLower(className)]; ok {
+		if generated, ok := lookupGeneratedPlatformType(strings.ToLower(className)); ok {
 			return generated.Name, strings.Join(parts[i:], "."), true
 		}
 		if class, ok := vm.resolveEnumClass(className); ok {
@@ -761,7 +761,7 @@ func generatedPlatformTypeForName(namespace, name string) (string, bool) {
 		candidates = []string{qualifiedName}
 	}
 	for _, candidate := range candidates {
-		if generated, ok := generatedPlatformTypes()[strings.ToLower(candidate)]; ok {
+		if generated, ok := lookupGeneratedPlatformType(strings.ToLower(candidate)); ok {
 			return generated.Name, true
 		}
 		if alias, ok := platformShortTypeAlias(candidate); ok {

@@ -603,7 +603,7 @@ func (vm *VM) isEnumObjectValue(value Value) bool {
 		strings.EqualFold(value.Type, "Metadata.MetadataType"):
 		return true
 	}
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(value.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(value.Type)); ok && generated.Kind == apexast.DeclarationEnum {
 		return true
 	}
 	if _, ok := vm.resolveEnumClass(value.Type); ok {
@@ -3030,7 +3030,7 @@ func (vm *VM) jsonAbstractObjectFieldError(fieldType string, raw any, strict boo
 		}
 		return nil
 	}
-	if platform, known := generatedPlatformTypes()[strings.ToLower(typeName)]; known && platform.Kind == apexast.DeclarationInterface {
+	if platform, known := lookupGeneratedPlatformType(strings.ToLower(typeName)); known && platform.Kind == apexast.DeclarationInterface {
 		name := platform.Name
 		if qualified, system := typeExceptionSystemTypeName(name); system {
 			name = qualified

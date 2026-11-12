@@ -597,7 +597,7 @@ func (vm *VM) generatedPlatformTypeDistance(typeName, target string, seen map[st
 		return 0, false
 	}
 	seen[key] = true
-	generation, ok := generatedPlatformTypes()[key]
+	generation, ok := lookupGeneratedPlatformType(key)
 	if !ok || strings.TrimSpace(generation.SuperClass) == "" {
 		return 0, false
 	}

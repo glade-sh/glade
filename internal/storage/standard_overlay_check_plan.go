@@ -111,7 +111,7 @@ func buildStandardOverlayCheckPlan(objectName string) *standardOverlayCheckPlan 
 		isGroup:              stringsEqualFold(objectName, "Group"),
 		generatedNumberField: standardGeneratedNumberField(objectName),
 	}
-	_, plan.hasStubFields = standardSObjectStubFieldsFor(objectName)
+	plan.hasStubFields = standardSObjectStubHasFields(objectName)
 	plan.readOnlyFields, plan.readOnlyFieldsOK = standardSObjectStubReadOnlyFieldsFor(objectName)
 	if plan.hasStubFields {
 		plan.stubReferenceFields = standardStubReferenceFieldsFromV2Describe(objectName)
