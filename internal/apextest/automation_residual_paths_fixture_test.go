@@ -111,6 +111,15 @@ func newAutomationResidualFixtureRun(t *testing.T, api string) (anonymous, named
 		t.Fatal(err)
 	}
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+	triggers, triggerErrors := compileProjectTriggers(index)
+	if len(triggerErrors) != 0 {
+		t.Fatal(triggerErrors)
+	}
+	for _, trigger := range triggers {
+		if err := runner.base.RegisterTrigger(trigger); err != nil {
+			t.Fatal(err)
+		}
+	}
 	methods, methodErrors := compileTestMethodsForIndex(&index, selected)
 	programs, programErrors := compileTestInvokePrograms(selected)
 	anonymous = func(method string) string {
