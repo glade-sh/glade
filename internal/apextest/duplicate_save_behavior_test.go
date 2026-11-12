@@ -76,6 +76,13 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 					copyMeta("objects")
 					copyMeta("permissionsets")
 					writeCapturedAssignments(t, root, "ProbeKeyAccess")
+				case "order":
+					copyMeta("matchingRules")
+					copyMeta("duplicateRules")
+					writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"edition":"Developer","features":["PersonAccounts"]}`)
+					helpers = append(helpers, "OrderBehavior")
+				case "limit":
+					helpers = append(helpers, "LimitBehavior")
 				case "bound":
 					helpers = append(helpers, "BoundBehavior", "NonRuleBehavior")
 				case "names":

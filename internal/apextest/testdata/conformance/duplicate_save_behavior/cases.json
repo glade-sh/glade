@@ -39,8 +39,17 @@
   "personActive": {
     "lookup": "PersonLookupBehavior.lookup()"
   },
+  "personInactive": {
+    "lookup": "PersonLookupBehavior.lookup()"
+  },
   "names": {
     "initials": "NamePanelBehavior.initials()",
     "transpositions": "NamePanelBehavior.transpositions()"
+  },
+  "limit": {
+    "lateExact": "LimitBehavior.lateExact()"
+  },
+  "order": {
+    "overlap": "OrderBehavior.overlap()"
   }
 }
