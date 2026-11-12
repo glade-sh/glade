@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -151,18 +152,53 @@ func projectGenerationKey(p project.Project) (string, bool) {
 			hashSharingReasons(h, dir)
 		}
 	}
-	// sema and typesys probe for sfdx-project.json at the root and above every
-	// Apex source; no string in the project names those markers.
-	markerDirs := map[string]bool{p.Root: true}
-	for _, path := range p.ApexFiles {
-		dir := filepath.Dir(path)
-		for i := 0; i < 32 && !markerDirs[dir]; i++ {
-			markerDirs[dir] = true
-			if dir == p.Root || filepath.Dir(dir) == dir {
-				break
+	// The compile also reads inputs no string in the project names: sema and
+	// typesys probe for sfdx-project.json at the root and above every Apex
+	// source (dependencies and shims included, up to the file system root),
+	// and schema and typesys read the org shape (scratch definitions, glade
+	// config, settings and Person Account evidence). Key the files and the
+	// values derived from them.
+	markerDirs := map[string]bool{}
+	var visit func(project.Project)
+	visit = func(q project.Project) {
+		markerDirs[q.Root] = true
+		for _, path := range q.ApexFiles {
+			for dir := filepath.Dir(path); !markerDirs[dir]; dir = filepath.Dir(dir) {
+				markerDirs[dir] = true
+				if filepath.Dir(dir) == dir {
+					break
+				}
 			}
-			dir = filepath.Dir(dir)
 		}
+		_, _ = io.WriteString(h, "\x00shape\x00"+q.Root+"\x00")
+		fmt.Fprintf(h, "%q\n", project.OrgShapeFeatures(q.Root))
+		records := project.ScratchObjectDefaultRecordTypes(q.Root)
+		keys := make([]string, 0, len(records))
+		for k := range records {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fmt.Fprintf(h, "%q=%q\n", k, records[k])
+		}
+		for _, f := range project.OrgShapeInputFiles(q.Root) {
+			hashRegularFile(h, f)
+		}
+		for _, dep := range q.ManagedPackageDependencies {
+			if dep.Project != nil {
+				visit(*dep.Project)
+			}
+		}
+		for _, shim := range q.PackageShims {
+			if shim.Project != nil {
+				visit(*shim.Project)
+			}
+		}
+	}
+	visit(p)
+	fmt.Fprintf(h, "%q %q\n", project.StandardFieldPolicyFeatures(p), project.StaticOnlyShapeFeatures(p))
+	for _, f := range project.EffectiveOrgShapeInputFiles(p) {
+		hashRegularFile(h, f)
 	}
 	dirList := make([]string, 0, len(markerDirs))
 	for dir := range markerDirs {

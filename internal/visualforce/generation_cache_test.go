@@ -237,3 +237,74 @@ func TestGenerationKeyCoversNestedProjectMarkers(t *testing.T) {
 		t.Fatal("removing the marker did not restore the key")
 	}
 }
+
+// Inputs the compile reads that no project string names: each edit must give
+// the same outcome as a fresh compile.
+func TestControllerGateSeesOrgShapeAndMarkerEdits(t *testing.T) {
+	const controller = `public with sharing class ProbeController {
+  public String value { get; set; }
+  public ProbeController() { ConnectApi.CdpCatalog x; }
+}
+`
+	cases := map[string]struct {
+		before, after func(t *testing.T, root string)
+	}{
+		"scratch definition features": {
+			before: func(t *testing.T, root string) {
+				writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"features":["DevelopmentWave"]}`)
+			},
+			after: func(t *testing.T, root string) {
+				writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"features":["AnalyticsAdminPerms"]}`)
+			},
+		},
+		"extra scratch definition": {
+			before: func(t *testing.T, root string) {},
+			after: func(t *testing.T, root string) {
+				writeFile(t, filepath.Join(root, "config/extra-scratch-def.json"), `{"features":["DevelopmentWave"]}`)
+			},
+		},
+		"nested sfdx-project marker": {
+			before: func(t *testing.T, root string) {},
+			after: func(t *testing.T, root string) {
+				writeFile(t, filepath.Join(root, "force-app/main/default/classes/sfdx-project.json"), `{"packageDirectories":[{"path":"."}]}`)
+			},
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			p := writeControllerPageProject(t, controller)
+			tc.before(t, p.Root)
+			p, err := project.Load(p.Root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			resetGenerationCache()
+			first, _ := gateOutcomeOf(t, p)
+			time.Sleep(20 * time.Millisecond)
+			tc.after(t, p.Root)
+			p, err = project.Load(p.Root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cached, cachedDiags := gateOutcomeOf(t, p)
+			resetGenerationCache()
+			fresh, freshDiags := gateOutcomeOf(t, p)
+			if !reflect.DeepEqual(cached, fresh) || !reflect.DeepEqual(cachedDiags, freshDiags) {
+				t.Fatalf("cached gate differs from a fresh compile after the edit:\ncached %+v %v\nfresh  %+v %v\n(first %+v)", cached, cachedDiags, fresh, freshDiags, first)
+			}
+		})
+	}
+	// The scratch-definition case must actually flip the outcome, or it proves nothing.
+	p := writeControllerPageProject(t, controller)
+	writeFile(t, filepath.Join(p.Root, "config/project-scratch-def.json"), `{"features":["DevelopmentWave"]}`)
+	p, _ = project.Load(p.Root)
+	resetGenerationCache()
+	_, a := gateOutcomeOf(t, p)
+	writeFile(t, filepath.Join(p.Root, "config/project-scratch-def.json"), `{"features":["AnalyticsAdminPerms"]}`)
+	p, _ = project.Load(p.Root)
+	resetGenerationCache()
+	_, b := gateOutcomeOf(t, p)
+	if reflect.DeepEqual(a, b) {
+		t.Fatalf("setup: feature edit does not change diagnostics (%v)", a)
+	}
+}
