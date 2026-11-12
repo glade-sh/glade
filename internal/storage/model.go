@@ -484,7 +484,7 @@ type ObjectState struct {
 
 	// recordsClock versions the Records map. Write it through the record
 	// write methods, never through the map directly.
-	recordsClock *recordsClock
+	recordsClock *recordsClockTag
 }
 
 // OwnerSharingRule is a supported declared owner-based Read rule between public groups.

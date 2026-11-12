@@ -1,6 +1,9 @@
 package storage
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func versionedObject() ObjectState {
 	var object ObjectState
@@ -141,5 +144,35 @@ func TestIsolationJournalRollbackAdvancesVersion(t *testing.T) {
 	}
 	if len(org.Objects["Thing__c"].Records["a"].Fields) != 0 {
 		t.Fatal("rollback must restore the update")
+	}
+}
+
+func TestRecordClockDoesNotAffectDeepEqual(t *testing.T) {
+	a, b := versionedObject(), versionedObject()
+	a.PutRecord("x", Record{ID: "x"})
+	a.DeleteRecord("x")
+	a.PutRecord("x", Record{ID: "x"})
+	b.PutRecord("x", Record{ID: "x"})
+	if a.RecordsVersion() == b.RecordsVersion() {
+		t.Fatal("test setup: versions should differ")
+	}
+	if !reflect.DeepEqual(a, b) {
+		t.Fatal("equal rows with different versions must compare equal")
+	}
+}
+
+func TestCloneKeepsUnversionedObjectUnversioned(t *testing.T) {
+	literal := ObjectState{Definition: ObjectDefinition{APIName: "Thing__c"}, Records: map[ID]Record{"a": {ID: "a"}}}
+	clone := literal.Clone()
+	if _, ok := clone.RecordsToken(); ok {
+		t.Fatal("cloning an unversioned object must not version it")
+	}
+	if !reflect.DeepEqual(literal, clone) {
+		t.Fatal("clone of a literal must compare equal to it")
+	}
+	versioned := versionedObject()
+	versioned.PutRecord("a", Record{ID: "a"})
+	if _, ok := versioned.Clone().RecordsToken(); !ok {
+		t.Fatal("cloning a versioned object must keep it versioned")
 	}
 }
