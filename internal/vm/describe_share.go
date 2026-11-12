@@ -36,6 +36,10 @@ type describeShareCache struct {
 	globalProjectionKeys map[string]globalDescribeKeyMetadata
 	// tokenFields holds the Fields maps of globalMaps' tokens; see privatizeSharedDescribeToken.
 	tokenFields map[uintptr]struct{}
+	// sharedMaps holds the backing of every map in globalMaps and extensions.
+	sharedMaps map[uintptr]struct{}
+	// extensions holds the named-reference and change-event layers over a shared base map.
+	extensions  map[globalDescribeExtensionKey]map[string]Value
 	stamp       string
 	mu          sync.Mutex
 	definitions map[string]weak.Pointer[describeShareDefinition]

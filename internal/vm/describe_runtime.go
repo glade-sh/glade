@@ -855,6 +855,7 @@ func (vm *VM) globalDescribeMapValue() Value {
 	// from the current raw map; share verified key metadata and typed bindings.
 	caller := vm.currentCallerNamespace()
 	value.Map = maps.Clone(value.Map)
+	value.mapEntriesShared = false
 	for key, token := range value.Map {
 		objectName := token.Fields["object"].Text
 		if vm.ownedGlobalDescribeLocalKeyForCaller(mapStoredKey(value, key).Text, objectName, caller) {
@@ -943,10 +944,11 @@ func (vm *VM) prepareSharedMapMutation(receiver *Value) {
 		return
 	}
 	_, cached := vm.globalDescribeCacheEntry(receiver.Ref)
-	if !receiver.mapBackingShared && !cached {
+	if !receiver.mapBackingShared && !receiver.mapEntriesShared && !cached {
 		return
 	}
 	receiver.Map = maps.Clone(receiver.Map)
+	receiver.mapEntriesShared = false
 	receiver.MapKeys = maps.Clone(receiver.MapKeys)
 	receiver.MapOrder = slices.Clone(receiver.MapOrder)
 	receiver.mapBackingShared = false

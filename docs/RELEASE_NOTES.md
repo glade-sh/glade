@@ -61,6 +61,10 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 - **Shorter CI graph.** The apextest binary is built in its own job and the Go test matrix is split so shards start sooner. Every test still runs once.
 - **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.
 
+### Performance
+
+- **Global describe maps.** `Schema.getGlobalDescribe()` no longer copies the 5,400-entry map three times for every test. Tests of one schema share the map until one of them writes it, and a write copies it for that test alone. Results are unchanged. On a project whose tests call it, instructions fell about 3 percent.
+
 ## v0.3.6
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
