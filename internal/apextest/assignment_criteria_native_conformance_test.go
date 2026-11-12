@@ -8,3 +8,10 @@ import "testing"
 func TestAssignmentRuleCriteriaNativeConformance(t *testing.T) {
 	runAutomationResidualRows(t, "criteria")
 }
+
+// A lead that an assignment rule entry with startsWith criteria routes to a
+// queue, saved with the duplicate rule header and change data capture enabled:
+// the entry matches, the owner changes and one create event is delivered.
+func TestAssignmentRuleStartsWithNativeConformance(t *testing.T) {
+	runAutomationResidualRows(t, "cdcAssign", "dupAssignAlertAllowSave")
+}

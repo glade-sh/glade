@@ -92,7 +92,7 @@ func (e *Engine) assignmentEntryMatches(entry storage.AssignmentRuleEntry, recor
 	}
 	matches := make([]bool, len(entry.Criteria))
 	for i, item := range entry.Criteria {
-		matched, ok := evaluateWorkflowCriteria(item, record, definition, e.Org.Namespace)
+		matched, ok := evaluateAssignmentCriteria(item, record, definition, e.Org.Namespace)
 		if !ok {
 			return false, false
 		}
