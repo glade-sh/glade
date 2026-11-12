@@ -40,7 +40,11 @@ func FuzzyMatch(method, left, right string) bool {
 	return matched
 }
 
-// FuzzyScore scores two non-blank values under the method. The score is the
+// FuzzyScore scores two values under the method. A blank (empty or
+// whitespace-only) value on either side never matches; the rule path filters
+// blanks before it gets here, so this only guards direct callers.
+// Values longer than maxFuzzyInputRunes are truncated before scoring.
+// The score is the
 // match confidence a single-item rule reports for the pair (0 to 100); a
 // matched pair always scores at least the method's threshold. matchBlanks is
 // the item's blank handling, which the Street method applies to a blank
@@ -50,7 +54,34 @@ func FuzzyScore(method, left, right string, matchBlanks bool) (bool, float64) {
 	if !ok {
 		return false, 0
 	}
-	return scorer(strings.TrimSpace(left), strings.TrimSpace(right), matchBlanks)
+	left, right = strings.TrimSpace(left), strings.TrimSpace(right)
+	if left == "" || right == "" {
+		return false, 0
+	}
+	return scorer(capFuzzyInput(left), capFuzzyInput(right), matchBlanks)
+}
+
+// maxFuzzyInputRunes bounds the text each scorer compares. Jaro-Winkler,
+// keyboard distance and edit distance are quadratic in length. Duplicate rules
+// read field values, and no field a fuzzy method applies to holds more than
+// 255 characters (Street and the name, company and title fields; Phone is
+// 40), so a longer value cannot occur natively. The cap is four times the
+// largest of those limits, so no real value is ever shortened. Only the first
+// maxFuzzyInputRunes runes of a longer value are compared.
+const maxFuzzyInputRunes = 1024
+
+func capFuzzyInput(s string) string {
+	if len(s) <= maxFuzzyInputRunes {
+		return s
+	}
+	n := 0
+	for i := range s {
+		if n == maxFuzzyInputRunes {
+			return s[:i]
+		}
+		n++
+	}
+	return s
 }
 
 type fuzzyScorer func(a, b string, matchBlanks bool) (bool, float64)
