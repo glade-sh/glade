@@ -1884,7 +1884,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	} {
 		job := jobs[jobName]
 		// vet and the PR-lane inputs run on pull requests too.
-		runsOnPR := map[string]bool{"vet": true, "apextest-history-input": true, "lwc-compile-history-input": true, "visualforce-history-input": true}
+		runsOnPR := map[string]bool{"vet": true, "apextest-history-input": true, "lwc-compile-history-input": true, "visualforce-history-input": true, "test-binaries": true, "test-binaries-apextest": true}
 		if !runsOnPR[jobName] {
 			prGuard := "    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}"
 			if strings.Count(job, prGuard) != 1 {
@@ -3605,7 +3605,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
 			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[apextest-history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[lwc-compile-history-input, visualforce-history-input, test-binaries]", "gladecli": "gladecli-history-input", "vm": "vm-history-input", "pr-tests": "[apextest-history-input, lwc-compile-history-input, visualforce-history-input]"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[apextest-history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[lwc-compile-history-input, visualforce-history-input, test-binaries]", "gladecli": "gladecli-history-input", "vm": "vm-history-input", "pr-tests": "[apextest-history-input, lwc-compile-history-input, visualforce-history-input, test-binaries-apextest, test-binaries]"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}

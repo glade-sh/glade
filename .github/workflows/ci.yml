@@ -1935,17 +1935,17 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-pr-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
           restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
       - name: Install actionlint for scripts tests
         if: ${{ matrix.shard == 22 }}
         run: |
