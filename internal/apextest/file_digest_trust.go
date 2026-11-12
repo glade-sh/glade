@@ -6,6 +6,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/glade-sh/glade/internal/filestamp"
 )
 
 // fileDigestTrustAge is how long a file must have been unmodified, by both its
@@ -19,16 +21,8 @@ const fileDigestTrustAge = 2 * time.Second
 // fileDigestTrustMaxEntries bounds the process-wide stamp table.
 const fileDigestTrustMaxEntries = 1 << 18
 
-// fileStamp identifies one version of a file on disk. ctime cannot be set from
-// user space, so rewriting a file and restoring its mtime still changes it.
-type fileStamp struct {
-	dev, ino     uint64
-	size         int64
-	mtime, ctime int64
-}
-
 type trustedFileDigest struct {
-	stamp  fileStamp
+	stamp  filestamp.Stamp
 	digest [sha256.Size]byte
 }
 
@@ -53,7 +47,7 @@ func resetFileDigestTrust() {
 // is returned without reading the file. Any stamp difference, any recent
 // modification and any stat failure fall back to reading and hashing.
 func currentFileDigest(path string) ([sha256.Size]byte, error) {
-	if stamp, ok := statFileStamp(path); ok {
+	if stamp, ok := filestamp.Stat(path); ok {
 		fileDigestTrustMu.Lock()
 		entry, hit := fileDigestTrust[path]
 		fileDigestTrustMu.Unlock()
@@ -70,15 +64,15 @@ func currentFileDigest(path string) ([sha256.Size]byte, error) {
 		fileDigestReadHook(path)
 	}
 	hashedAt := fileDigestNow()
-	before, beforeOK := fstatFileStamp(file)
+	before, beforeOK := filestamp.Fstat(file)
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
 		return [sha256.Size]byte{}, err
 	}
 	var digest [sha256.Size]byte
 	hash.Sum(digest[:0])
-	after, afterOK := fstatFileStamp(file)
-	if false && beforeOK && afterOK && before == after && stampOlderThan(after, hashedAt, fileDigestTrustAge) {
+	after, afterOK := filestamp.Fstat(file)
+	if beforeOK && afterOK && before == after && after.OlderThan(hashedAt, fileDigestTrustAge) {
 		fileDigestTrustMu.Lock()
 		if len(fileDigestTrust) >= fileDigestTrustMaxEntries {
 			clear(fileDigestTrust)
@@ -87,9 +81,4 @@ func currentFileDigest(path string) ([sha256.Size]byte, error) {
 		fileDigestTrustMu.Unlock()
 	}
 	return digest, nil
-}
-
-func stampOlderThan(stamp fileStamp, now time.Time, age time.Duration) bool {
-	newest := max(stamp.mtime, stamp.ctime)
-	return now.UnixNano()-newest >= int64(age)
 }
