@@ -257,16 +257,89 @@ jobs:
 	}
 }
 
-func TestCheckWorkflowAcceptsRepositoryLocalAction(t *testing.T) {
-	errs := checkWorkflow("ci.yml", []byte(`
+func writeLocalAction(t *testing.T, root, name, body string) {
+	t.Helper()
+	dir := filepath.Join(root, ".github", "actions", name)
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "action.yml"), []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func checkWithLocalActions(t *testing.T, root, workflowSource string) []string {
+	t.Helper()
+	return checkWorkflowWithOwnership("fixture.yml", []byte(workflowSource), make(map[string]string), make(map[string]string), root)
+}
+
+const localActionWorkflow = `
 jobs:
   test:
     steps:
-      - uses: actions/checkout@v6x
-      - uses: ./.github/actions/restore-node-browser-caches
-`))
-	if hasProblem(errs, "restore-node-browser-caches") {
-		t.Fatalf("local action rejected: %v", errs)
+      - uses: actions/checkout@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # v1.0.0
+      - uses: ./.github/actions/shared
+`
+
+func TestCheckWorkflowAcceptsPinnedRestoreOnlyLocalAction(t *testing.T) {
+	root := t.TempDir()
+	writeLocalAction(t, root, "shared", `
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache/restore@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # v1.0.0
+      with:
+        path: ~/.npm
+        key: node-cache-Linux-x64-npm-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          node-cache-Linux-x64-npm-
+`)
+	if errs := checkWithLocalActions(t, root, localActionWorkflow); len(errs) != 0 {
+		t.Fatalf("problems = %v", errs)
+	}
+}
+
+func TestCheckWorkflowAppliesRulesInsideLocalAction(t *testing.T) {
+	root := t.TempDir()
+	writeLocalAction(t, root, "shared", `
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v5
+    - uses: actions/cache/save@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa # v1.0.0
+      with:
+        path: /tmp/cache
+        key: immutable-cache-key
+`)
+	errs := checkWithLocalActions(t, root, localActionWorkflow+`
+  other:
+    steps:
+      - uses: ./.github/actions/shared
+`)
+	if !hasProblem(errs, "fixture.yml/test: action is not pinned to a full SHA: actions/setup-go@v5") {
+		t.Fatalf("unpinned remote action inside local action not flagged: %v", errs)
+	}
+	if !hasProblem(errs, "fixture.yml/test: duplicate immutable cache save key") {
+		t.Fatalf("cache save inside local action not tracked: %v", errs)
+	}
+}
+
+func TestCheckWorkflowRejectsUnreadableOrEscapingLocalAction(t *testing.T) {
+	root := t.TempDir()
+	if errs := checkWithLocalActions(t, root, localActionWorkflow); !hasProblem(errs, "cannot read local action ./.github/actions/shared") {
+		t.Fatalf("missing local action accepted: %v", errs)
+	}
+	errs := checkWithLocalActions(t, root, `
+jobs:
+  test:
+    steps:
+      - uses: ./.github/actions/../../outside
+`)
+	if !hasProblem(errs, "local action escapes .github/actions") {
+		t.Fatalf("escaping local action accepted: %v", errs)
+	}
+	if errs := checkWorkflow("fixture.yml", []byte(localActionWorkflow)); !hasProblem(errs, "cannot read local action without a repository root") {
+		t.Fatalf("rootless check accepted local action: %v", errs)
 	}
 	errs = checkWorkflow("ci.yml", []byte(`
 jobs:
@@ -276,6 +349,16 @@ jobs:
 `))
 	if !hasProblem(errs, "action is not pinned to a full SHA: ./vendored/other-action") {
 		t.Fatalf("non-.github local action accepted: %v", errs)
+	}
+}
+
+func TestRepositoryLocalActionsPassLint(t *testing.T) {
+	problems, err := checkWorkflowDir(filepath.Join("..", "..", "..", ".github", "workflows"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(problems) != 0 {
+		t.Fatalf("problems = %v", problems)
 	}
 }
 

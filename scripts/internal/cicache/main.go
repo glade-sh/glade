@@ -596,6 +596,9 @@ func checkWorkflowWithOwnership(name string, data []byte, savedKeys, implicitNPM
 func checkJob(workflowName, jobName string, source job, savedKeys, implicitNPMWriters map[string]string, repoRoot string) []string {
 	prefix := workflowName + "/" + jobName + ": "
 	var problems []string
+	expanded, expandProblems := expandLocalActions(source.Steps, repoRoot, prefix, 0)
+	problems = append(problems, expandProblems...)
+	source.Steps = expanded
 	checkoutSeen := false
 	populatedPaths := make(map[string]bool)
 	toolchains := jobToolchains(source)
@@ -610,11 +613,6 @@ func checkJob(workflowName, jobName string, source job, savedKeys, implicitNPMWr
 			}
 		}
 		if candidate.Uses == "" {
-			continue
-		}
-		if strings.HasPrefix(candidate.Uses, "./.github/actions/") {
-			// Repository-local composite actions are reviewed in the same
-			// tree. They are restore-only and own no cache writer.
 			continue
 		}
 		if !fullActionSHA.MatchString(candidate.Uses) {
@@ -670,7 +668,13 @@ func checkJob(workflowName, jobName string, source job, savedKeys, implicitNPMWr
 				}
 			}
 		}
-		problems = append(problems, cacheKeyProblems(prefix, cacheType, key, toolchains)...)
+		keyToolchains := toolchains
+		if cacheType == npmCache && !kind.saves() && strings.HasPrefix(key, "node-cache-") {
+			// A restore-only read of setup-node's own cache namespace. Its keys
+			// carry no Node version, so the toolchain component cannot apply.
+			keyToolchains = map[cacheKind]string{}
+		}
+		problems = append(problems, cacheKeyProblems(prefix, cacheType, key, keyToolchains)...)
 		if kind.restores() {
 			problems = append(problems, restoreKeyProblems(prefix, key, withValue(candidate, "restore-keys"))...)
 		}
@@ -686,6 +690,68 @@ func checkJob(workflowName, jobName string, source job, savedKeys, implicitNPMWr
 		}
 	}
 	return problems
+}
+
+type compositeAction struct {
+	Runs struct {
+		Using string `yaml:"using"`
+		Steps []step `yaml:"steps"`
+	} `yaml:"runs"`
+}
+
+const localActionPrefix = "./.github/actions/"
+const maxLocalActionDepth = 4
+
+// expandLocalActions replaces each repository-local composite action step with
+// the steps of its action.yml, so the same pin, cache and ownership rules
+// apply inside it. A local action that cannot be read is reported.
+func expandLocalActions(steps []step, repoRoot, prefix string, depth int) ([]step, []string) {
+	var out []step
+	var problems []string
+	for _, candidate := range steps {
+		if !strings.HasPrefix(candidate.Uses, localActionPrefix) {
+			out = append(out, candidate)
+			continue
+		}
+		if depth >= maxLocalActionDepth {
+			problems = append(problems, prefix+"local action nesting is too deep: "+candidate.Uses)
+			continue
+		}
+		if repoRoot == "" {
+			problems = append(problems, prefix+"cannot read local action without a repository root: "+candidate.Uses)
+			continue
+		}
+		actionDir := filepath.Clean(filepath.FromSlash(strings.TrimPrefix(candidate.Uses, "./")))
+		if !strings.HasPrefix(filepath.ToSlash(actionDir), ".github/actions/") {
+			problems = append(problems, prefix+"local action escapes .github/actions: "+candidate.Uses)
+			continue
+		}
+		var data []byte
+		var err error
+		for _, name := range []string{"action.yml", "action.yaml"} {
+			data, err = os.ReadFile(filepath.Join(repoRoot, actionDir, name)) // #nosec G304 -- confined to .github/actions above.
+			if err == nil {
+				break
+			}
+		}
+		if err != nil {
+			problems = append(problems, prefix+"cannot read local action "+candidate.Uses+": "+err.Error())
+			continue
+		}
+		var action compositeAction
+		if err := yaml.Unmarshal(data, &action); err != nil {
+			problems = append(problems, prefix+"parse local action "+candidate.Uses+": "+err.Error())
+			continue
+		}
+		if action.Runs.Using != "composite" {
+			problems = append(problems, prefix+"local action is not composite: "+candidate.Uses)
+			continue
+		}
+		inner, innerProblems := expandLocalActions(action.Runs.Steps, repoRoot, prefix+"local action "+candidate.Uses+": ", depth+1)
+		problems = append(problems, innerProblems...)
+		out = append(out, inner...)
+	}
+	return out, problems
 }
 
 type matrixRequirements struct {
