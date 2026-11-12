@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -24,11 +24,52 @@ private class LazySpreadParityTest {
 		List<String> keys = new List<String>(all.keySet()); keys.sort();
 		report(all.size() + ' ' + md5(String.join(keys, ',')) + ' ' + all.containsKey('quote') + ' ' + all.containsKey('network') + ' ' + all.containsKey('asyncapexjob'));
 	}
-	@IsTest static void describeEveryObject() {
+	@IsTest static void describeEveryObject0() {
 		List<String> keys = new List<String>(Schema.getGlobalDescribe().keySet()); keys.sort();
 		List<String> names = new List<String>(); List<String> prefixes = new List<String>(); List<String> labels = new List<String>();
 		List<String> fields = new List<String>(); List<String> rtis = new List<String>(); List<String> kids = new List<String>();
+		Integer position = 0;
 		for (String k : keys) {
+			if (Math.mod(position++, 4) != 0) { continue; }
+			Schema.DescribeSObjectResult d = Schema.getGlobalDescribe().get(k).getDescribe();
+			names.add(d.getName()); prefixes.add(d.getName() + d.getKeyPrefix()); labels.add(d.getName() + d.getLabel());
+			fields.add(d.getName() + d.fields.getMap().size()); rtis.add(d.getName() + d.getRecordTypeInfos().size()); kids.add(d.getName() + d.getChildRelationships().size());
+		}
+		report(keys.size() + ' ' + md5(String.join(names, ',')) + ' ' + md5(String.join(prefixes, ',')) + ' ' + md5(String.join(labels, ',')) + ' ' + md5(String.join(fields, ',')) + ' ' + md5(String.join(rtis, ',')) + ' ' + md5(String.join(kids, ',')));
+	}
+	@IsTest static void describeEveryObject1() {
+		List<String> keys = new List<String>(Schema.getGlobalDescribe().keySet()); keys.sort();
+		List<String> names = new List<String>(); List<String> prefixes = new List<String>(); List<String> labels = new List<String>();
+		List<String> fields = new List<String>(); List<String> rtis = new List<String>(); List<String> kids = new List<String>();
+		Integer position = 0;
+		for (String k : keys) {
+			if (Math.mod(position++, 4) != 1) { continue; }
+			Schema.DescribeSObjectResult d = Schema.getGlobalDescribe().get(k).getDescribe();
+			names.add(d.getName()); prefixes.add(d.getName() + d.getKeyPrefix()); labels.add(d.getName() + d.getLabel());
+			fields.add(d.getName() + d.fields.getMap().size()); rtis.add(d.getName() + d.getRecordTypeInfos().size()); kids.add(d.getName() + d.getChildRelationships().size());
+		}
+		report(keys.size() + ' ' + md5(String.join(names, ',')) + ' ' + md5(String.join(prefixes, ',')) + ' ' + md5(String.join(labels, ',')) + ' ' + md5(String.join(fields, ',')) + ' ' + md5(String.join(rtis, ',')) + ' ' + md5(String.join(kids, ',')));
+	}
+	@IsTest static void describeEveryObject2() {
+		List<String> keys = new List<String>(Schema.getGlobalDescribe().keySet()); keys.sort();
+		List<String> names = new List<String>(); List<String> prefixes = new List<String>(); List<String> labels = new List<String>();
+		List<String> fields = new List<String>(); List<String> rtis = new List<String>(); List<String> kids = new List<String>();
+		Integer position = 0;
+		for (String k : keys) {
+			if (Math.mod(position++, 4) != 2) { continue; }
+			Schema.DescribeSObjectResult d = Schema.getGlobalDescribe().get(k).getDescribe();
+			names.add(d.getName()); prefixes.add(d.getName() + d.getKeyPrefix()); labels.add(d.getName() + d.getLabel());
+			fields.add(d.getName() + d.fields.getMap().size()); rtis.add(d.getName() + d.getRecordTypeInfos().size()); kids.add(d.getName() + d.getChildRelationships().size());
+		}
+		report(keys.size() + ' ' + md5(String.join(names, ',')) + ' ' + md5(String.join(prefixes, ',')) + ' ' + md5(String.join(labels, ',')) + ' ' + md5(String.join(fields, ',')) + ' ' + md5(String.join(rtis, ',')) + ' ' + md5(String.join(kids, ',')));
+	}
+	@IsTest static void describeEveryObject3() {
+		List<String> keys = new List<String>(Schema.getGlobalDescribe().keySet()); keys.sort();
+		List<String> names = new List<String>(); List<String> prefixes = new List<String>(); List<String> labels = new List<String>();
+		List<String> fields = new List<String>(); List<String> rtis = new List<String>(); List<String> kids = new List<String>();
+		Integer position = 0;
+		for (String k : keys) {
+			if (Math.mod(position++, 4) != 3) { continue; }
 			Schema.DescribeSObjectResult d = Schema.getGlobalDescribe().get(k).getDescribe();
 			names.add(d.getName()); prefixes.add(d.getName() + d.getKeyPrefix()); labels.add(d.getName() + d.getLabel());
 			fields.add(d.getName() + d.fields.getMap().size()); rtis.add(d.getName() + d.getRecordTypeInfos().size()); kids.add(d.getName() + d.getChildRelationships().size());
@@ -170,34 +211,100 @@ func TestLazyStandardSpreadRestoredFromDiskMatchesEagerSpread(t *testing.T) {
 	}
 }
 
-func TestLazyStandardSpreadMatchesEagerSpread(t *testing.T) {
-	for _, shape := range []struct{ name, scratch string }{
-		{"no inputs", ""},
-		{"features", `{"edition":"Enterprise","features":["Communities","NetworksEnabled","Quotes","MultiCurrency","PersonAccounts"]}`},
-	} {
-		t.Run(shape.name, func(t *testing.T) {
-			eager := runLazySpreadParity(t, true, shape.scratch)
-			lazy := runLazySpreadParity(t, false, shape.scratch)
-			if len(eager) < 12 && os.Getenv("LAZY_PARITY_METHOD") == "" {
-				t.Fatalf("eager run reported %d cases: %v", len(eager), eager)
+// The describe-every-object method is split by position into this many chunks,
+// each its own top-level test, so CI shard planning can place them separately.
+const lazySpreadParityDescribeChunks = 4
+
+var lazySpreadParityMethodPattern = regexp.MustCompile(`@IsTest static void (\w+)\(`)
+
+func lazySpreadParityMethods(chunk bool) []string {
+	var out []string
+	for _, match := range lazySpreadParityMethodPattern.FindAllStringSubmatch(lazySpreadParityClass, -1) {
+		if strings.HasPrefix(match[1], "describeEveryObject") == chunk {
+			out = append(out, match[1])
+		}
+	}
+	return out
+}
+
+func runLazySpreadParityMethod(t *testing.T, eager bool, scratch, method string) map[string]string {
+	t.Helper()
+	t.Setenv("LAZY_PARITY_METHOD", method)
+	return runLazySpreadParity(t, eager, scratch)
+}
+
+func compareLazySpreadParity(t *testing.T, scratch string, methods []string) {
+	t.Helper()
+	if len(methods) == 0 {
+		t.Fatal("no parity methods selected")
+	}
+	for _, method := range methods {
+		eager := runLazySpreadParityMethod(t, true, scratch, method)
+		lazy := runLazySpreadParityMethod(t, false, scratch, method)
+		if len(eager) != 1 {
+			t.Fatalf("%s: eager run reported %d cases: %v", method, len(eager), eager)
+		}
+		for name, answer := range eager {
+			if !strings.HasPrefix(answer, string(testreport.StatusFail)) {
+				t.Errorf("%s: eager answer is not a reported digest: %s", name, answer)
 			}
-			names := make([]string, 0, len(eager))
-			for name := range eager {
-				names = append(names, name)
+			if answer != lazy[name] {
+				t.Errorf("%s\n eager %s\n lazy  %s", name, answer, lazy[name])
 			}
-			sort.Strings(names)
-			for _, name := range names {
-				if !strings.HasPrefix(eager[name], string(testreport.StatusFail)) {
-					t.Errorf("%s: eager answer is not a reported digest: %s", name, eager[name])
-				}
-				if eager[name] != lazy[name] {
-					t.Errorf("%s\n eager %s\n lazy  %s", name, eager[name], lazy[name])
-				}
-			}
-			if len(lazy) != len(eager) {
-				t.Errorf("case counts differ: eager %d, lazy %d", len(eager), len(lazy))
-			}
-		})
+		}
+		if len(lazy) != len(eager) {
+			t.Errorf("%s: case counts differ: eager %d, lazy %d", method, len(eager), len(lazy))
+		}
+	}
+}
+
+const (
+	lazySpreadParityNoInputs = ""
+	lazySpreadParityFeatures = `{"edition":"Enterprise","features":["Communities","NetworksEnabled","Quotes","MultiCurrency","PersonAccounts"]}`
+)
+
+// The lazy spread must give the answers the eager spread gives. Each shape runs
+// as several top-level tests: one per quarter of the describe-every-object
+// method, and one for every other method.
+
+func TestLazyStandardSpreadParityNoInputsDescribe0(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityNoInputs, lazySpreadParityMethods(true)[0:1])
+}
+func TestLazyStandardSpreadParityNoInputsDescribe1(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityNoInputs, lazySpreadParityMethods(true)[1:2])
+}
+func TestLazyStandardSpreadParityNoInputsDescribe2(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityNoInputs, lazySpreadParityMethods(true)[2:3])
+}
+func TestLazyStandardSpreadParityNoInputsDescribe3(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityNoInputs, lazySpreadParityMethods(true)[3:4])
+}
+func TestLazyStandardSpreadParityNoInputsRest(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityNoInputs, lazySpreadParityMethods(false))
+}
+func TestLazyStandardSpreadParityFeaturesDescribe0(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityFeatures, lazySpreadParityMethods(true)[0:1])
+}
+func TestLazyStandardSpreadParityFeaturesDescribe1(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityFeatures, lazySpreadParityMethods(true)[1:2])
+}
+func TestLazyStandardSpreadParityFeaturesDescribe2(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityFeatures, lazySpreadParityMethods(true)[2:3])
+}
+func TestLazyStandardSpreadParityFeaturesDescribe3(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityFeatures, lazySpreadParityMethods(true)[3:4])
+}
+func TestLazyStandardSpreadParityFeaturesRest(t *testing.T) {
+	compareLazySpreadParity(t, lazySpreadParityFeatures, lazySpreadParityMethods(false))
+}
+
+// The chunk count and the methods above must agree.
+func TestLazyStandardSpreadParityCoversEveryMethod(t *testing.T) {
+	if got := len(lazySpreadParityMethods(true)); got != lazySpreadParityDescribeChunks {
+		t.Fatalf("%d describe chunks in the class, tests cover %d", got, lazySpreadParityDescribeChunks)
+	}
+	if len(lazySpreadParityMethods(false)) == 0 {
+		t.Fatal("no other parity methods")
 	}
 }
 
