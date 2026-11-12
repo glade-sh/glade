@@ -1445,7 +1445,8 @@ func (vm *VM) objectSharingModel(objectName string) string {
 //     HasTransferAccess (HasReadAccess alone, or HasEditAccess with
 //     HasAllAccess, does not warm; the Delete/Transfer pair was captured
 //     together);
-//   - the class is not declared without sharing;
+//   - a without-sharing class warms only for the captured Delete/Transfer
+//     pair at API 67; the full access-field selection does not warm;
 //   - the warm row belongs to that record only, and lasts until the end of
 //     the System.runAs block (Test.startTest does not clear it).
 //
@@ -1462,7 +1463,21 @@ func (vm *VM) warmsDirectUserRecordAccess(query soql.Query, explicitSystemMode, 
 		return false
 	}
 	if mode, ok := vm.classSharingMode(vm.currentClass); ok && mode == "without sharing" {
-		return false
+		// ura_direct_carry g3: the two-field selection warms in API 67,
+		// unlike the full access-field selection and the 62/66 twins.
+		if !apexversion.Enabled(vm.currentSourceExecutionPolicy().APIVersion, apexversion.SecureDefaults) || len(query.Fields) != 2 {
+			return false
+		}
+		var deleteField, transferField bool
+		for _, field := range query.Fields {
+			switch strings.ToLower(field) {
+			case "userrecordaccess.hasdeleteaccess":
+				deleteField = true
+			case "userrecordaccess.hastransferaccess":
+				transferField = true
+			}
+		}
+		return deleteField && transferField
 	}
 	for _, field := range query.Fields {
 		switch strings.ToLower(field) {
