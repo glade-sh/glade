@@ -1809,7 +1809,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 		}
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	id := sObjectIDFromFields(user.Fields)
 	if id == "" {
@@ -1901,7 +1901,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 			}
 		}
 		vm.recordIsolationJournalMutation(objectName, id, storage.Record{}, false)
-		object.Records[id] = record
+		object.PutRecord(id, record)
 	}
 	vm.Org.Objects[objectName] = object
 	vm.ensureUserProfilePermissionSetAssignment(record)

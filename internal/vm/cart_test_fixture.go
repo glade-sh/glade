@@ -75,10 +75,10 @@ func (vm *VM) cartTestFixture(method string, args []Value) (Value, bool) {
 		record.System.OwnerID = storage.ID(vm.currentUserID())
 		object, _ := storage.EnsureMutableObjectRecords(vm.Org, record.Object)
 		if object.Records == nil {
-			object.Records = make(map[storage.ID]storage.Record)
+			object.SetRecords(make(map[storage.ID]storage.Record))
 		}
 		vm.recordIsolationJournalMutation(record.Object, record.ID, storage.Record{}, false)
-		object.Records[record.ID] = *record
+		object.PutRecord(record.ID, *record)
 		vm.Org.Objects[record.Object] = *object
 		storage.RebuildObjectIndexes(vm.Org, record.Object)
 	}

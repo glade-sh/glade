@@ -251,7 +251,7 @@ func (vm *VM) rollbackAfterTriggerFailures(op string, records []storage.Record, 
 		backupObject, hasBackupObject := backup.Objects[objectName]
 		if hasBackupObject {
 			if storedID, previous, found := storage.LookupRecordByID(backupObject.Records, record.ID); found {
-				current.Records[storedID] = previous.Clone()
+				current.PutRecord(storedID, previous.Clone())
 				vm.Org.Objects[objectName] = current
 				continue
 			}
@@ -259,7 +259,7 @@ func (vm *VM) rollbackAfterTriggerFailures(op string, records []storage.Record, 
 		if strings.EqualFold(op, "insert") || strings.EqualFold(op, "upsert") {
 			if storedID, _, found := storage.LookupRecordByID(current.Records, record.ID); found {
 				vm.recordCreations.Forget(storedID)
-				delete(current.Records, storedID)
+				current.DeleteRecord(storedID)
 				vm.Org.Objects[objectName] = current
 			}
 		}
@@ -408,7 +408,7 @@ func (vm *VM) storeTriggerRecords(objectName string, records []storage.Record) e
 		}
 		merged.System = stored.System
 		preserveReadOnlyCalculatedFields(object.Definition, &merged, stored)
-		object.Records[storedID] = merged
+		object.PutRecord(storedID, merged)
 	}
 	vm.Org.Objects[objectName] = object
 	return nil

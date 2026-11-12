@@ -847,7 +847,7 @@ func ensureStandardObjectWithProfile(org *OrgState, objectName string, profile [
 		state.Definition.KeyPrefix = StandardKeyPrefix(objectName)
 	}
 	if state.Records == nil {
-		state.Records = make(map[ID]Record)
+		state.SetRecords(make(map[ID]Record))
 	}
 	if state.Indexes == nil {
 		state.Indexes = make(map[string]IndexSet)

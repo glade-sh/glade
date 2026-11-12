@@ -278,7 +278,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 						if record.Fields["IsDefault"].Boolean {
 							record = record.Clone()
 							record.Fields["IsDefault"] = storage.BooleanValue(false)
-							state.Records[id] = record
+							state.PutRecord(id, record)
 						}
 					}
 					staged.Objects["BusinessHours"] = state
@@ -312,7 +312,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 func upsertSetupMetadataRecord(org *storage.OrgState, generator *storage.IDGenerator, object string, fields map[string]storage.Value, keys []string) error {
 	state := org.Objects[object]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	var selected storage.ID
 	for id, record := range state.Records {
@@ -351,7 +351,7 @@ func upsertSetupMetadataRecord(org *storage.OrgState, generator *storage.IDGener
 	for name, value := range fields {
 		record.Fields[name] = value
 	}
-	state.Records[selected] = record
+	state.PutRecord(selected, record)
 	org.Objects[object] = state
 	return nil
 }

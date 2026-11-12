@@ -126,7 +126,7 @@ func (e *Engine) ApplyAssignmentRules(input storage.Record) error {
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordUpdate(input.Object, storedID, before)
 	}
-	state.Records[storedID] = record
+	state.PutRecord(storedID, record)
 	e.Org.Objects[input.Object] = state
 	return e.reconcilePrivateOwnerShares(input.Object, storedID)
 }

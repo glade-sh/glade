@@ -94,7 +94,7 @@ func EnsureMutableObjectRecords(org *OrgState, objectName string) (*ObjectState,
 	object := org.Objects[canonical]
 	cloned := false
 	if object.RecordsShared {
-		object.Records = cloneRecordMap(object.Records)
+		object.SetRecords(cloneRecordMap(object.Records))
 		object.RecordsShared = false
 		cloned = true
 	}

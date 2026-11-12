@@ -479,7 +479,7 @@ func (vm *VM) orgWithTestBaselineVisibility(objectName string, baselineIDs map[s
 	for name, state := range vm.Org.Objects {
 		org.Objects[name] = state
 	}
-	object.Records = records
+	object.SetRecords(records)
 	object.Indexes = nil
 	object.RecordsShared, object.IndexesShared = false, false
 	org.Objects[objectName] = object
@@ -1193,7 +1193,7 @@ func (vm *VM) orgWithSyntheticRecentlyViewed() storage.OrgState {
 	org := cloneRuntimeOrgState(*vm.Org)
 	storage.EnsureStandardObject(&org, "RecentlyViewed")
 	object := org.Objects["RecentlyViewed"]
-	object.Records = make(map[storage.ID]storage.Record)
+	object.SetRecords(make(map[storage.ID]storage.Record))
 	userID := vm.currentUserInfoField("Id", storage.DefaultUserID)
 	views := vm.recentlyViewed[userID]
 	ids := make([]string, 0, len(views))
@@ -1212,7 +1212,7 @@ func (vm *VM) orgWithSyntheticRecentlyViewed() storage.OrgState {
 		if strings.TrimSpace(view.ReferencedAt) != "" {
 			lastReferencedDate = storage.DateTimeValue(view.ReferencedAt)
 		}
-		object.Records[id] = storage.Record{
+		object.PutRecord(id, storage.Record{
 			ID:     id,
 			Object: "RecentlyViewed",
 			Fields: map[string]storage.Value{
@@ -1221,7 +1221,7 @@ func (vm *VM) orgWithSyntheticRecentlyViewed() storage.OrgState {
 				"LastViewedDate":     lastViewedDate,
 				"LastReferencedDate": lastReferencedDate,
 			},
-		}
+		})
 	}
 	org.Objects["RecentlyViewed"] = object
 	return org
@@ -1240,9 +1240,9 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 	definitions := org.Objects["FlowDefinitionView"]
 	variables := org.Objects["FlowVariableView"]
 	versions := org.Objects["FlowVersionView"]
-	definitions.Records = make(map[storage.ID]storage.Record)
-	variables.Records = make(map[storage.ID]storage.Record)
-	versions.Records = make(map[storage.ID]storage.Record)
+	definitions.SetRecords(make(map[storage.ID]storage.Record))
+	variables.SetRecords(make(map[storage.ID]storage.Record))
+	versions.SetRecords(make(map[storage.ID]storage.Record))
 	rules := append([]storage.FlowRule(nil), vm.Org.Metadata.Flows...)
 	rules = append(rules, vm.Org.Metadata.FlowDeclarations...)
 	sort.Slice(rules, func(i, j int) bool { return strings.ToLower(rules[i].Name) < strings.ToLower(rules[j].Name) })
@@ -1266,7 +1266,7 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 		if (strings.EqualFold(rule.ProcessType, "AutoLaunchedFlow") || strings.EqualFold(rule.ProcessType, "Flow")) && rule.TriggerType == "" {
 			triggerType = storage.NullValue()
 		}
-		definitions.Records[definitionID] = storage.Record{
+		definitions.PutRecord(definitionID, storage.Record{
 			ID:     definitionID,
 			Object: "FlowDefinitionView",
 			Fields: map[string]storage.Value{
@@ -1279,11 +1279,11 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 				"ProcessType":     storage.StringValue(rule.ProcessType),
 				"TriggerType":     triggerType,
 			},
-		}
+		})
 		if !active {
 			record := definitions.Records[definitionID]
 			record.Fields["ActiveVersionId"] = storage.NullValue()
-			definitions.Records[definitionID] = record
+			definitions.PutRecord(definitionID, record)
 		}
 		status := rule.SourceStatus
 		if status == "" && active {
@@ -1300,13 +1300,13 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 			fields["ApiVersionRuntime"] = storage.DecimalValue(rule.APIVersion)
 			fields["ApiVersion"] = storage.DecimalValue(rule.APIVersion)
 		}
-		versions.Records[versionID] = storage.Record{ID: versionID, Object: "FlowVersionView", Fields: fields}
+		versions.PutRecord(versionID, storage.Record{ID: versionID, Object: "FlowVersionView", Fields: fields})
 		for variableIndex, variable := range rule.Variables {
 			if strings.TrimSpace(variable.Name) == "" {
 				continue
 			}
 			variableID := storage.ID(fmt.Sprintf("3FW%09d%03d", index+1, variableIndex+1))
-			variables.Records[variableID] = storage.Record{
+			variables.PutRecord(variableID, storage.Record{
 				ID:     variableID,
 				Object: "FlowVariableView",
 				Fields: map[string]storage.Value{
@@ -1319,7 +1319,7 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 					"IsOutput":          storage.BooleanValue(variable.IsOutput),
 					"ObjectType":        storage.StringValue(variable.ObjectType),
 				},
-			}
+			})
 		}
 	}
 	org.Objects["FlowDefinitionView"] = definitions
@@ -1816,7 +1816,7 @@ func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) 
 	org := cloneRuntimeOrgState(*vm.Org)
 	storage.EnsureStandardObject(&org, "UserRecordAccess")
 	accessObject := org.Objects["UserRecordAccess"]
-	accessObject.Records = make(map[storage.ID]storage.Record)
+	accessObject.SetRecords(make(map[storage.ID]storage.Record))
 	objectNames := make([]string, 0, len(vm.Org.Objects))
 	for objectName := range vm.Org.Objects {
 		if strings.EqualFold(objectName, "UserRecordAccess") {
@@ -1849,7 +1849,7 @@ func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) 
 			sequence++
 			access := vm.userRecordAccessDirect(objectName, record, userMode)
 			access.ID = accessID
-			accessObject.Records[accessID] = access
+			accessObject.PutRecord(accessID, access)
 		}
 	}
 	vm.appendOtherUserRecordAccess(&accessObject, objectNames, userMode, queryText, &sequence)
@@ -1894,7 +1894,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 				access := vm.userRecordAccessDirect(objectName, record, userMode)
 				access.ID = storage.ID(fmt.Sprintf("0UR%012d", *sequence))
 				*sequence++
-				accessObject.Records[access.ID] = access
+				accessObject.PutRecord(access.ID, access)
 			}
 		}
 		vm.testContext.CurrentUser = previous
@@ -2033,7 +2033,7 @@ func (vm *VM) testSetCreatedDate(args []Value) (Value, error) {
 		}
 		vm.recordIsolationJournalMutation(objectName, storedID, record, true)
 		record.System.CreatedDate = createdDate
-		object.Records[storedID] = record
+		object.PutRecord(storedID, record)
 		vm.Org.Objects[objectName] = object
 		return Null, nil
 	}

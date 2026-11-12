@@ -44,7 +44,7 @@ func ensureNamedCredentialObject(org *storage.OrgState, p project.Project, readM
 			for id, record := range object.Records {
 				if record.MetadataSourceUnit == legacyUnit {
 					record.MetadataSourceUnit = sourceUnit
-					object.Records[id] = record
+					object.PutRecord(id, record)
 				}
 			}
 			org.Objects["NamedCredential"] = *object
@@ -95,25 +95,25 @@ func ensureNamedCredentialObject(org *storage.OrgState, p project.Project, readM
 					delete(existing.Fields, "MasterLabel")
 				}
 				existing.MetadataSourceUnit = sourceUnit
-				object.Records[key] = existing
+				object.PutRecord(key, existing)
 				org.Objects["NamedCredential"] = *object
 				storage.RebuildObjectIndexes(org, "NamedCredential")
 			}
 			continue
 		}
-		object.Records[id] = storage.Record{ID: id, Object: "NamedCredential", MetadataSourceUnit: sourceUnit, Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "NamedCredential", MetadataSourceUnit: sourceUnit, Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"DeveloperName":   storage.StringValue(name),
 			"Endpoint":        storage.StringValue(endpoint.URL),
 			"NamespacePrefix": storage.NullValue(),
-		}}
+		}})
 		if strings.EqualFold(endpoint.PrincipalType, "Anonymous") {
 			record := object.Records[id]
 			record.Fields["PrincipalType"] = storage.StringValue("Anonymous")
 			if label != "" {
 				record.Fields["MasterLabel"] = storage.StringValue(label)
 			}
-			object.Records[id] = record
+			object.PutRecord(id, record)
 		}
 		org.Objects["NamedCredential"] = *object
 		storage.RebuildObjectIndexes(org, "NamedCredential")
@@ -123,7 +123,7 @@ func ensureNamedCredentialObject(org *storage.OrgState, p project.Project, readM
 		changed := false
 		for id, record := range object.Records {
 			if record.MetadataSourceUnit == sourceUnit && !sourceNames[strings.ToLower(record.Fields["DeveloperName"].String)] {
-				delete(object.Records, id)
+				object.DeleteRecord(id)
 				changed = true
 			}
 		}
@@ -199,14 +199,14 @@ func ensureSecuredEndpointNamedCredentialRows(org *storage.OrgState, p project.P
 		if label == "" {
 			label = name
 		}
-		object.Records[id] = storage.Record{ID: id, Object: "NamedCredential", MetadataSourceUnit: sourceUnit, Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "NamedCredential", MetadataSourceUnit: sourceUnit, Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"DeveloperName":   storage.StringValue(name),
 			"MasterLabel":     storage.StringValue(label),
 			"Endpoint":        storage.NullValue(),
 			"PrincipalType":   storage.NullValue(),
 			"NamespacePrefix": storage.NullValue(),
-		}}
+		}})
 		org.Objects["NamedCredential"] = *object
 		storage.RebuildObjectIndexes(org, "NamedCredential")
 	}

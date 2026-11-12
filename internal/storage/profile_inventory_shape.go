@@ -79,7 +79,7 @@ func reconcileBootstrapProfileLicenses(org *OrgState) {
 		mutable, _ := EnsureMutableObjectRecords(org, "Profile")
 		profile = mutable.Records[id].Clone()
 		profile.Fields["UserLicenseId"] = IDValue(license)
-		mutable.Records[id] = profile
+		mutable.PutRecord(id, profile)
 		changed = true
 	}
 	if changed && len(org.Objects["Profile"].Definition.Indexes) != 0 {
@@ -125,7 +125,7 @@ func pruneUncapturedBootstrapProfiles(org *OrgState) {
 		}
 		if !referenced {
 			mutable, _ := EnsureMutableObjectRecords(org, "Profile")
-			delete(mutable.Records, id)
+			mutable.DeleteRecord(id)
 			changed = true
 		}
 	}

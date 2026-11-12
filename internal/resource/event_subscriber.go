@@ -174,14 +174,14 @@ func syncProjectEventSubscribers(org *storage.OrgState, desired []storage.Record
 	}
 	state = *mutable
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	old := make(map[string]storage.Record)
 	unowned := make(map[string]bool)
 	for id, record := range state.Records {
 		if storage.IsProjectEventSubscriber(record) {
 			old[eventSubscriberKey(record)] = record
-			delete(state.Records, id)
+			state.DeleteRecord(id)
 		} else {
 			unowned[eventSubscriberKey(record)] = true
 		}
@@ -210,7 +210,7 @@ func syncProjectEventSubscribers(org *storage.OrgState, desired []storage.Record
 			}
 		}
 		if record.ID != "" {
-			state.Records[record.ID] = record
+			state.PutRecord(record.ID, record)
 		}
 	}
 	org.Objects["EventBusSubscriber"] = state

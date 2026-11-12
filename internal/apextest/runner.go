@@ -5367,7 +5367,7 @@ func foldPersonAccountObjectIntoAccount(org *storage.OrgState) {
 	if recordTypes, ok := org.Objects["RecordType"]; ok {
 		for id, record := range recordTypes.Records {
 			if strings.EqualFold(record.Fields["SobjectType"].String, "PersonAccount") {
-				delete(recordTypes.Records, id)
+				recordTypes.DeleteRecord(id)
 			}
 		}
 		org.Objects["RecordType"] = recordTypes
@@ -7131,7 +7131,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 	state := org.Objects["ApexClass"]
 	state.Definition = definition
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	generator := storage.NewIDGenerator(map[string]string{"ApexClass": "01p"})
 	sources := sourceCacheFor(caches)
@@ -7164,7 +7164,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 		if !typ.Dependency {
 			sourceUnit = projectClassUnit
 		}
-		state.Records[id] = storage.Record{
+		state.PutRecord(id, storage.Record{
 			ID:                 id,
 			Object:             "ApexClass",
 			MetadataSourceUnit: sourceUnit,
@@ -7181,7 +7181,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 				CreatedDate: apexClassSeedTimestamp, LastModifiedDate: apexClassSeedTimestamp, SystemModstamp: apexClassSeedTimestamp,
 				CreatedByID: storage.ID(storage.DefaultUserID), LastModifiedByID: storage.ID(storage.DefaultUserID),
 			},
-		}
+		})
 	}
 	org.Objects["ApexClass"] = state
 }
@@ -7207,11 +7207,11 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 	storage.EnsureStandardObject(org, "AppMenuItem")
 	apps := org.Objects["CustomApplication"]
 	if apps.Records == nil {
-		apps.Records = make(map[storage.ID]storage.Record)
+		apps.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	menu := org.Objects["AppMenuItem"]
 	if menu.Records == nil {
-		menu.Records = make(map[storage.ID]storage.Record)
+		menu.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	paths := append([]string(nil), applicationFiles...)
 	sort.Strings(paths)
@@ -7233,7 +7233,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 		menuID := storage.ID(fmt.Sprintf("0DS%012d", menuSeq))
 		appSeq++
 		menuSeq++
-		apps.Records[appID] = storage.Record{
+		apps.PutRecord(appID, storage.Record{
 			ID:     appID,
 			Object: "CustomApplication",
 			Fields: map[string]storage.Value{
@@ -7241,8 +7241,8 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 				"Label":         storage.StringValue(label),
 				"Name":          storage.StringValue(developerName),
 			},
-		}
-		menu.Records[menuID] = storage.Record{
+		})
+		menu.PutRecord(menuID, storage.Record{
 			ID:     menuID,
 			Object: "AppMenuItem",
 			Fields: map[string]storage.Value{
@@ -7252,7 +7252,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 				"Type":          storage.StringValue("TabSet"),
 				"SortOrder":     storage.IntegerValue(int64(menuSeq - 1)),
 			},
-		}
+		})
 	}
 	org.Objects["CustomApplication"] = apps
 	org.Objects["AppMenuItem"] = menu
@@ -7315,7 +7315,7 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 		}
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	sort.Strings(files)
 	seq := len(state.Records) + 1
@@ -7337,14 +7337,14 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 		}
 		id := storage.ID(fmt.Sprintf("0ML%012d", seq))
 		seq++
-		state.Records[id] = storage.Record{
+		state.PutRecord(id, storage.Record{
 			ID:     id,
 			Object: "CustomNotificationType",
 			Fields: map[string]storage.Value{
 				"DeveloperName": storage.StringValue(developerName),
 				"MasterLabel":   storage.StringValue(label),
 			},
-		}
+		})
 	}
 	org.Objects["CustomNotificationType"] = state
 }

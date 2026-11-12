@@ -3522,7 +3522,7 @@ func (vm *VM) applyStoredDMLDerivedFields(op string, records []storage.Record, r
 		if testViewDates {
 			applyTestSObjectViewDateDefaults(object.Definition, &record)
 		}
-		object.Records[recordID] = record
+		object.PutRecord(recordID, record)
 		vm.Org.Objects[objectName] = object
 		if insertDerived {
 			storage.RebuildObjectIndexes(vm.Org, objectName)
@@ -6231,9 +6231,9 @@ func cloneRuntimeOrgState(org storage.OrgState) storage.OrgState {
 		for name, object := range org.Objects {
 			copied := object
 			if object.Records != nil {
-				copied.Records = make(map[storage.ID]storage.Record, len(object.Records))
+				copied.SetRecords(make(map[storage.ID]storage.Record, len(object.Records)))
 				for id, record := range object.Records {
-					copied.Records[id] = cloneRuntimeSnapshotRecord(record)
+					copied.PutRecord(id, cloneRuntimeSnapshotRecord(record))
 				}
 			}
 			// Runtime DML maintains uniqueness through dml.Engine caches and does

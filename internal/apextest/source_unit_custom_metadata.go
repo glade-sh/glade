@@ -63,7 +63,8 @@ func customMetadataForSourceUnit(org storage.OrgState, sourceUnit string) storag
 					objects[objectName] = state
 				}
 			}
-			object.Records, object.Indexes = records, nil
+			object.SetRecords(records)
+			object.Indexes = nil
 			object.RecordsShared, object.IndexesShared = false, false
 			objects[name] = object
 		}

@@ -294,7 +294,8 @@ func (m *SourceMetadata) loadToolingObjects() error {
 			"Name": storage.StringValue(name),
 			"Body": storage.StringValue(string(content)),
 		}}
-		m.ToolingOrg.Objects["StaticResource"].Records[id] = record
+		staticResources := m.ToolingOrg.Objects["StaticResource"]
+		staticResources.PutRecord(id, record)
 		m.Components = append(m.Components, metadataComponent{Type: "StaticResource", FullName: name, FileName: path, ID: id, Content: string(content)})
 	}
 	return nil
@@ -383,7 +384,8 @@ func (m *SourceMetadata) addSourceComponents(objectName, prefix string, paths []
 			}
 		}
 		record := storage.Record{ID: id, Object: objectName, Fields: fields}
-		m.ToolingOrg.Objects[objectName].Records[id] = record
+		toolingObject := m.ToolingOrg.Objects[objectName]
+		toolingObject.PutRecord(id, record)
 		m.Components = append(m.Components, metadataComponent{Type: objectName, FullName: name, FileName: path, ID: id, Content: body})
 	}
 	return nil
@@ -679,9 +681,9 @@ func (m *SourceMetadata) addToolingSchemaMetadataRecords() error {
 func (m *SourceMetadata) addToolingRecord(objectName string, id storage.ID, fields map[string]storage.Value) {
 	state := m.ToolingOrg.Objects[objectName]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
-	state.Records[id] = storage.Record{ID: id, Object: objectName, Fields: fields}
+	state.PutRecord(id, storage.Record{ID: id, Object: objectName, Fields: fields})
 	m.ToolingOrg.Objects[objectName] = state
 }
 

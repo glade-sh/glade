@@ -867,7 +867,7 @@ func (vm *VM) persistSentEmailActivity(captured CapturedEmail, result *Result) e
 		// The sent activity is closed by the platform, rather than by a caller
 		// writing the read-only IsClosed field through ordinary Task DML.
 		record.Fields["IsClosed"] = storage.BooleanValue(true)
-		object.Records[storedID] = record
+		object.PutRecord(storedID, record)
 		vm.Org.Objects["Task"] = object
 	}
 	return nil
@@ -932,7 +932,7 @@ func (vm *VM) persistSentEmailMessage(captured CapturedEmail, result *Result) er
 			if deferredWhatID != "" {
 				record.Fields["RelatedToId"] = storage.IDValue(storage.ID(deferredWhatID))
 			}
-			object.Records[storedID] = record
+			object.PutRecord(storedID, record)
 			vm.Org.Objects["EmailMessage"] = object
 		}
 	}

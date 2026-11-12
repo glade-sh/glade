@@ -22,7 +22,7 @@ func applyApexTypeImplementorRecords(org *storage.OrgState, index typesys.Index)
 		return
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 
 	generator := storage.NewRuntimeIDGeneratorForOrg(org)
@@ -57,7 +57,7 @@ func applyApexTypeImplementorRecords(org *storage.OrgState, index typesys.Index)
 				return
 			}
 			seen[key] = struct{}{}
-			state.Records[id] = storage.Record{
+			state.PutRecord(id, storage.Record{
 				ID:     id,
 				Object: "ApexTypeImplementor",
 				Fields: map[string]storage.Value{
@@ -67,7 +67,7 @@ func applyApexTypeImplementorRecords(org *storage.OrgState, index typesys.Index)
 					"InterfaceNamespacePrefix": storage.NullValue(),
 					"IsConcrete":               storage.BooleanValue(true),
 				},
-			}
+			})
 		}
 	}
 	org.Objects["ApexTypeImplementor"] = state

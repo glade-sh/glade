@@ -60,7 +60,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			}
 			parentRecord.Fields[relation.parentField] = value
 			e.applyQuoteDerivedFields(&parentRecord)
-			parentObject.Records[storedParentID] = parentRecord
+			parentObject.PutRecord(storedParentID, parentRecord)
 			e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
 			updatedParents[parentObjectName] = append(updatedParents[parentObjectName], parentRecord)
 			changed = true
