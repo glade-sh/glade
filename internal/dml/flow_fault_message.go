@@ -201,6 +201,12 @@ func (e *Engine) flowLookupFault(lookup storage.FlowRecordLookup) error {
 	return &flowElementFault{err: failure, message: "This error occurred when the flow tried to look up records: " + text + ". " + flowFaultReferenceLink, verb: "look up", text: text, inTest: e.flowFaultInTest(), current: e.flowFaultCurrentAPI()}
 }
 
+// flowApexActionVerb marks the failure of an Apex action. Native rows
+// (flowApexThrow, flowCallout): inside a record-triggered flow with no fault
+// connector the save fails with APEX_FAILED, the process-failure text and the
+// Apex error, a line feed, and outside tests an Error ID.
+const flowApexActionVerb = "apex action"
+
 const flowUnhandledGeneric = "An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information."
 
 // flowUnhandledTriggerError is the failure of a record-triggered after-save
@@ -216,6 +222,13 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 	errorID := ""
 	if !fault.inTest && (fault.verb == "delete" || fault.verb == "look up") {
 		errorID = " Error ID: 0-0 (0)"
+	}
+	if fault.verb == flowApexActionVerb {
+		if !fault.inTest {
+			errorID = " Error ID: 0-0 (0)"
+		}
+		message := processFailureMessage(rule, "CANNOT_EXECUTE_FLOW_TRIGGER: "+fault.text+"\n"+errorID)
+		return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message)}, true
 	}
 	if fault.verb == "look up" {
 		message := processFailureMessage(rule, "<b>An unhandled fault has occurred in this flow</b><br>"+flowUnhandledGeneric+errorID)
@@ -235,7 +248,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 // for these elements: a test sees the element's text, any other run the generic text.
 func FlowUnhandledDetail(err error) (string, bool) {
 	var fault *flowElementFault
-	if !errors.As(err, &fault) || !fault.unhandledCaptured() {
+	if !errors.As(err, &fault) || !fault.unhandledCaptured() || fault.verb == flowApexActionVerb {
 		return "", false
 	}
 	if !fault.inTest {
@@ -261,6 +274,9 @@ func FlowUnhandledDetail(err error) (string, bool) {
 func (f *flowElementFault) unhandledCaptured() bool {
 	if f.verb == "" {
 		return false
+	}
+	if f.verb == flowApexActionVerb {
+		return true
 	}
 	return f.verb != "create" || f.code == "STRING_TOO_LONG"
 }
