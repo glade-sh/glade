@@ -191,7 +191,7 @@ func (r *incrementalRun) begin(index typesys.Index, opts AnalyzeOptions) {
 	}
 }
 
-// incrementalRecheckSet marks every type that must run again: the changed
+// expandDependents sets recheck to every type that must run again: the changed
 // types, the types whose source names a changed top-level type, and every
 // type that extends or implements one of those, transitively.
 func (r *incrementalRun) expandDependents(a *Analyzer, index typesys.Index) {
