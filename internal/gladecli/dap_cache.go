@@ -26,22 +26,50 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 	if cache != nil && startupcache.Fresh(cache, root, dapCacheVersion) {
 		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil
 	}
-	p, index, err := loadProjectIndex(root)
+	// Hash every input before the build reads any of them. The entry is only
+	// published when the same inputs are still on disk after the build.
+	before, beforeErr := startupcache.ValidateInputWithSourceDigests(root, nil)
+	p, err := project.Load(root)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
 	}
+	index, artifacts := buildProjectIndexWithArtifacts(p)
 	org, err := orgStateFromIndex(root, p, index)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
 	}
 	runtime := apextest.CompileProjectRuntimeForRequest(index)
-	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
-	built.Version = dapCacheVersion
-	if err := startupcache.Write(&built, startupcache.SubdirDAP); err != nil {
-		// Caching is an optimization; keep serving from rebuilt state even if
-		// cache persistence fails.
+	if dapBeforePublishHook != nil {
+		dapBeforePublishHook()
 	}
-	return built.Org, runtime, p.SourceAPIVersion, nil
+	if beforeErr == nil {
+		if built, ok := dapPublishableEntry(root, before, artifacts.SourceDigests, org, runtime); ok {
+			// Caching is an optimization; keep serving from rebuilt state even
+			// if cache persistence fails.
+			_ = startupcache.Write(&built, startupcache.SubdirDAP)
+		}
+	}
+	return org, runtime, p.SourceAPIVersion, nil
+}
+
+// dapBeforePublishHook runs after the build and before the freshness re-check.
+// Tests use it to edit inputs mid-build.
+var dapBeforePublishHook func()
+
+// dapPublishableEntry binds the entry to the input proof taken before the
+// build. It reports false when the inputs drifted, so no entry pairs an old
+// runtime with a newer fingerprint.
+func dapPublishableEntry(root string, before *startupcache.ValidatedInput, digests *typesys.SourceDigestSet, org storage.OrgState, runtime apextest.CompiledProjectRuntime) (startupcache.Entry, bool) {
+	after, err := startupcache.ValidateInputWithSourceDigests(root, digests)
+	if err != nil || after.Digest() != before.Digest() {
+		return startupcache.Entry{}, false
+	}
+	entry, err := startupcache.NewEntryWithValidatedInput(before, org, compiledRuntimeToCache(runtime))
+	if err != nil {
+		return startupcache.Entry{}, false
+	}
+	entry.Version = dapCacheVersion
+	return entry, true
 }
 
 func compiledRuntimeFromCache(runtime startupcache.CompiledRuntime) apextest.CompiledProjectRuntime {
@@ -60,10 +88,4 @@ func compiledRuntimeToCache(runtime apextest.CompiledProjectRuntime) startupcach
 		Triggers:  runtime.Triggers,
 		PageNames: runtime.PageNames,
 	}
-}
-
-func buildDAPStartupCache(projectRoot string, p project.Project, index typesys.Index, org storage.OrgState, runtime apextest.CompiledProjectRuntime) startupcache.Entry {
-	entry := startupcache.NewEntry(projectRoot, p, index, org, compiledRuntimeToCache(runtime))
-	entry.Version = dapCacheVersion
-	return entry
 }
