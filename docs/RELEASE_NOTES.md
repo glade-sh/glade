@@ -5,6 +5,7 @@
 ### Performance
 
 - **Fewer source re-reads and a cached binary digest.** A warm test daemon request no longer reads and hashes every source and `-meta.xml` file at each stage; a file that has not changed since it was last hashed, and was already two seconds old then, is trusted by device, inode, size, mtime and ctime. Each process also remembers the SHA-256 of its own executable under the same stamp, which removes about 0.7 s from every cached `check` and `test`. Edited, replaced and recently written files are always hashed again, and results do not change.
+- **Visualforce controller gate computed once per project state.** A Visualforce page request, `glade exec` with a project and each warm one-class `glade test` no longer compile the whole project again to decide which controllers a page may use. The result is kept per project state, keyed by the project value and the content of every file it names, so any edit recomputes it. Which pages register does not change, and an edit to any named file recomputes the result.
 
 ### Test daemon
 
