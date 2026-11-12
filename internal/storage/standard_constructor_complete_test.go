@@ -55,7 +55,7 @@ func TestStandardConstructorCompleteNativePolicy(t *testing.T) {
 		}
 	}
 	sort.Strings(closed)
-	want := []string{"account", "contact", "emailmessage", "lead", "pricebookentry", "webstore"}
+	want := []string{"account", "case", "contact", "emailmessage", "lead", "pricebookentry", "user", "webstore"}
 	if !reflect.DeepEqual(closed, want) {
 		t.Fatalf("qualified constructor objects=%v; want %v", closed, want)
 	}
