@@ -1914,6 +1914,14 @@ func standardObjectCompatibilitySupplementFields(objectName string) []Field {
 	case stringsEqualFold(objectName, "Contact"):
 		// P0 describes (API 62.0/67.0) report Contact.CleanStatus restricted.
 		fields = []Field{{APIName: "CleanStatus", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 40, RestrictedPicklist: true, RestrictedPicklistFromCatalog: true}}
+	case stringsEqualFold(objectName, "Case"):
+		// Native case_standard_field_fls named describe and REST describe (API
+		// 62.0 and 67.0): both are 18-character createable, updateable,
+		// filterable references the generated catalog lacks.
+		fields = []Field{
+			{APIName: "ServiceContractId", Label: "Service Contract ID", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"ServiceContract"}, RelationshipName: "ServiceContract", Filterable: BoolFlag(true)},
+			{APIName: "AssetWarrantyId", Label: "Asset Warranty ID", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"AssetWarranty"}, RelationshipName: "AssetWarranty", Filterable: BoolFlag(true)},
+		}
 	case stringsEqualFold(objectName, "Order"):
 		fields = []Field{
 			{APIName: "PoNumber", Type: FieldString, DisplayType: "STRING", Length: 80},

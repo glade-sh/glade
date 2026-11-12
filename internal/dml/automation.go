@@ -865,8 +865,10 @@ type flowFrame struct {
 	autolaunched            bool
 	outputAssignmentLookups map[string]bool
 	// Automatic single-output Apex results belong to this interview.
-	actionOutputs  map[string]storage.Value
-	preparedAction *flowPreparedAction
+	actionOutputs         map[string]storage.Value
+	preparedAction        *flowPreparedAction
+	batchUpdatedFields    map[string]bool
+	batchLaterFieldUpdate bool
 }
 
 // A prepared result is consumed once by the original action node. Nested
@@ -978,7 +980,7 @@ func (e *Engine) applyFlowStepsWithFrame(flowName, objectName string, record *st
 				// Fault paths can read the Salesforce global fault message. Keep it
 				// in the same frame so a following assignment can materialize it in
 				// an output error SObject.
-				frame.scalars[flowFrameKey("$Flow.FaultMessage")] = storage.StringValue(err.Error())
+				frame.scalars[flowFrameKey("$Flow.FaultMessage")] = storage.StringValue(flowFaultMessage(err))
 				e.traceAutomation("apex.flow.fault", map[string]any{
 					"flow":   flowName,
 					"object": objectName,
@@ -996,6 +998,10 @@ func (e *Engine) applyFlowStepsWithFrame(flowName, objectName string, record *st
 			if step.FaultTarget != "" {
 				faultIdx := flowStepIndexByName(steps, step.FaultTarget)
 				if faultIdx >= 0 && faultIdx > i {
+					if e.platformEventInterview {
+						// Native rows cover event-triggered interviews only.
+						frame.scalars[flowFrameKey("$Flow.FaultMessage")] = storage.StringValue(flowFaultMessage(err))
+					}
 					i = faultIdx - 1
 					e.traceAutomation("apex.flow.fault", map[string]any{
 						"flow":   flowName,
@@ -1081,6 +1087,9 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 		defer delete(frame.activeTargets, key)
 		return e.applyFlowStepsWithFrame(flowName, objectName, record, definition, target, frame)
 	case "fieldUpdate":
+		if len(frame.batchUpdatedFields) > 0 {
+			frame.batchLaterFieldUpdate = true
+		}
 		changed := false
 		for _, update := range step.FieldUpdates {
 			stepChanged, err := e.applyFlowFieldUpdate(flowName, objectName, record, definition, update, frame)
@@ -1203,16 +1212,16 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 			context := e.flowActionContextFromFrame(frame)
 			context.Output = frame.actionOutputReceiver(step.Action.Name)
 			context.OutputFields = frame.actionOutputFieldReceiver(step.Action)
-			if err := e.FlowActionInvokerWithContext(step.Action, record.Clone(), context); err != nil {
-				return false, flowActionFailure(step.Action.Name, err)
+			if err := e.shareIDSequences(func() error { return e.FlowActionInvokerWithContext(step.Action, record.Clone(), context) }); err != nil {
+				return false, e.flowActionError(step.Action.Name, err)
 			}
 			return false, nil
 		}
 		if e.FlowActionInvoker == nil {
 			return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s requires Apex action execution support", step.Action.Name)
 		}
-		if err := e.FlowActionInvoker(step.Action, record.Clone()); err != nil {
-			return false, flowActionFailure(step.Action.Name, err)
+		if err := e.shareIDSequences(func() error { return e.FlowActionInvoker(step.Action, record.Clone()) }); err != nil {
+			return false, e.flowActionError(step.Action.Name, err)
 		}
 	case "assignment":
 		if err := e.applyFlowAssignmentStep(step.Assignment, frame); err != nil {
@@ -2107,6 +2116,7 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 			if err := e.updateInvocableFlowRecord(record); err != nil {
 				return i, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
 			}
+			frame.recordBatchUpdateFields(source, record)
 		}
 		return len(updates), nil
 	}
@@ -2132,6 +2142,7 @@ func (e *Engine) executeFlowRecordUpdate(update storage.FlowRecordUpdate, source
 		if err := e.updateInvocableFlowRecord(record); err != nil {
 			return i, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record update %s failed: %v", update.Name, err)
 		}
+		frame.recordBatchUpdateFields(source, record)
 	}
 	return len(updates), nil
 }
@@ -3363,9 +3374,12 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 	if err := e.flowCreateReferenceTypeCheck(target.Definition, record); err != nil {
 		return "", err
 	}
+	if e.publishFlowEvent(targetName, record) {
+		return "", nil
+	}
 	createdID, err := e.insertInvocableFlowRecord(record)
 	if err != nil {
-		return "", invocableFlowActionRecordCreateError(targetName, create.Name, err)
+		return "", e.flowCreateError(invocableFlowActionRecordCreateError(targetName, create.Name, err), err)
 	}
 	return createdID, nil
 }

@@ -30,7 +30,7 @@ not public issues. If GitHub reporting is unavailable, use
   cookie sink is the Visualforce Apex Cookie emulation in
   `internal/server/visualforce.go`, which writes the flags the Apex program
   set. A server test pins those flags, and a source scan fails if another
-  non-test file sets a cookie. The [release budget and cookie assessment](CODEQL_BUDGET.md)
+  non-test file sets a cookie. The [release budget and cookie assessment](CODEQL.md#cookie-sink-assessment)
   record measured full-profile times, waiver limits, and the release check command.
 - `gosec` uploads SARIF for source-pattern review.
 - `npm audit --omit=dev --audit-level=high` checks packaged JavaScript
@@ -125,6 +125,9 @@ Glade can write:
 - `glade.yml` project config.
 - `.glade/` run artifacts and project state, including private local caches
   under `.glade/test/` and `.glade/semantic/`.
+  The test daemon directory must be owned by you and not group- or
+  world-writable; otherwise Glade falls back to the per-user cache directory
+  (see `docs/TEST_STARTUP_CACHE.md`).
 - SQLite files named by `--db`.
 - User-level plugin, editor, and LWC toolchain data under the OS user data
   directory.

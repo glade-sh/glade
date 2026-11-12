@@ -82,7 +82,12 @@ func TestStandardParentPlatformChildFieldDescribeProjectRoutes(t *testing.T) {
 					if tokenRoute == "child-field-map" {
 						body = strings.Replace(body,
 							"Schema.DescribeFieldResult d = cr.getField().getDescribe();",
-							`Schema.DescribeFieldResult d = cr.getChildSObject().getDescribe().fields.getMap().get(String.valueOf(cr.getField()).toLowerCase()).getDescribe();`, 1)
+							// Look up the field map only for the selected edges: anonymous
+							// Apex natively omits some standard fields (for example
+							// Case.ProductId) from fields.getMap(), and unselected edges are
+							// not compared.
+							"if (!selected.get(parent).contains(cr.getRelationshipName())) { continue; }\n"+
+								`Schema.DescribeFieldResult d = cr.getChildSObject().getDescribe().fields.getMap().get(String.valueOf(cr.getField()).toLowerCase()).getDescribe();`, 1)
 					}
 					for _, class := range []string{"StandardChildFieldProbe", "StandardChildFieldProbeTest"} {
 						source := read("force-app/main/default/classes/" + class + ".cls")
