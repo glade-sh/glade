@@ -5,8 +5,11 @@ description: Use when asked to review a glade pull request or branch and return 
 
 # Review a pull request
 
-Read-only. Do not edit, commit, push, merge or leave background jobs. Review
-the whole diff once and report every finding in one pass.
+Read-only by default: do not edit, merge, comment on GitHub or leave
+background jobs. Exception: when the only finding is small (for example a
+missing lane or manifest entry), push one fix commit to the branch, say so in
+the review, then re-review the new head. Never push twice. Review the whole
+diff once and report every finding in one pass.
 
 ## Setup
 
