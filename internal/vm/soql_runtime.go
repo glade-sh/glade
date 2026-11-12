@@ -5490,6 +5490,9 @@ func nullListInBindError(prefix string, value Value) error {
 // term, a label prefix for a trailing wildcard, nothing for a leading wildcard)
 // and returns rows in QualifiedApiName order before any LIMIT.
 func (vm *VM) soslEntityDefinitionRecords(spec sosl.ReturningObject, patterns []sosl.SearchTerm, expression *sosl.SearchExpression) ([]storage.Record, error) {
+	// The rows derive from every object the org holds, so a lazy org
+	// completes its spread first.
+	vm.materializeLazyStandardSpread()
 	view := soql.VirtualSchemaView(*vm.Org)
 	state, ok := view.Objects["EntityDefinition"]
 	if !ok {
