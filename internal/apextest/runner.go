@@ -1052,11 +1052,10 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -1084,14 +1083,13 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 }
 
 func validateApexMetadataInput(path string, expected typesys.ApexMetadataInput) error {
-	data, err := os.ReadFile(path) // #nosec G304 -- fixed metadata companion for an indexed Apex source.
+	actual, err := currentFileDigest(path)
 	if err != nil {
 		if os.IsNotExist(err) && !expected.Present {
 			return nil
 		}
 		return sourceSnapshotMismatch(path, expected.Digest, nil, err)
 	}
-	actual := sha256.Sum256(data)
 	if !expected.Present || actual != expected.Digest {
 		return sourceSnapshotMismatch(path, expected.Digest, &actual, nil)
 	}
@@ -1698,11 +1696,10 @@ func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDi
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		data, err := os.ReadFile(file) // #nosec G304 -- indexed source path.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -4087,11 +4084,10 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	}
 	cache.mu.RUnlock()
 	for file, expected := range files {
-		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return cache.recordSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return cache.recordSnapshotMismatch(file, expected, &actual, nil)
 		}

@@ -29,6 +29,7 @@
       "github.com/glade-sh/glade/internal/enterpriseassess",
       "github.com/glade-sh/glade/internal/enterprisecruft",
       "github.com/glade-sh/glade/internal/enterprisegraph",
+      "github.com/glade-sh/glade/internal/filestamp",
       "github.com/glade-sh/glade/internal/flagparse",
       "github.com/glade-sh/glade/internal/frontendcache",
       "github.com/glade-sh/glade/internal/gladehome",
