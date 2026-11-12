@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Duplicate rules
+
+- **Standard Account, Contact and Lead rules follow Salesforce.** The standard matching rules no longer need every address field to be equal. An Account matches on its name and a city or ZIP code, or its website, a city or ZIP code and a street or phone number. A Contact or Lead matches on last and first name with an email address, a phone number, or the same company (or email domain) with a title or street. The cross-object Contact and Lead rules and Person Account rules are enforced when active. Match confidences follow the captured values. Pairs that Salesforce matches by looser fuzzy rules (a first name against its initial, transposed last-name letters) still do not match, so no false duplicates are reported. Large Account scans with many same-city, similar-name records cost more per insert.
+- **Confidence of OR rules.** A custom matching rule with OR groups reports the mean over its filter, counting items that did not match, as Salesforce does. Company names that share a six-letter second word and one-word plurals now match as Syllable Alignment does.
+
 ### Performance
 
 - **Fewer source re-reads and a cached binary digest.** A warm test daemon request no longer reads and hashes every source and `-meta.xml` file at each stage; a file that has not changed since it was last hashed, and was already two seconds old then, is trusted by device, inode, size, mtime and ctime. Each process also remembers the SHA-256 of its own executable under the same stamp, which removes about 0.7 s from every cached `check` and `test`. Edited, replaced and recently written files are always hashed again, and results do not change.
