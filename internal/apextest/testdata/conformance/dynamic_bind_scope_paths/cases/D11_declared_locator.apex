@@ -1,0 +1,1 @@
+try { String nope='x'; Database.QueryLocator ql = Database.getQueryLocator('SELECT Id FROM Account WHERE Name = :nope'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

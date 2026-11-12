@@ -1,0 +1,1 @@
+try { List<Account> l = Database.query('SELECT Id FROM Account WHERE Name = :late'); String late='x'; System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

@@ -1,0 +1,35 @@
+# merged from three captures: A (API 67.0, anonymous and test route), B (API 62.0, same cases), C (supplementary anonymous cases at 62.0 and 67.0)
+--
+capture: r423
+started: 2026-11-12T14:34:39Z
+finished: 2026-11-12T14:38:18Z
+apis: 67.0
+routes: anonymous istest 
+cases: 80
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 558832ad2a0a58d3
+mode: live
+--
+capture: r423-62
+started: 2026-11-12T14:38:28Z
+finished: 2026-11-12T14:41:45Z
+apis: 62.0
+routes: anonymous istest 
+cases: 80
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 558832ad2a0a58d3
+mode: live
+--
+capture: r423x
+started: 2026-11-12T15:06:54Z
+finished: 2026-11-12T15:09:04Z
+apis: 62.0 67.0
+routes: anonymous 
+cases: 20
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 0fcac1ecfef60d0e
+mode: live
+project67/ holds the deployed test classes with apiVersion 67.0; the 62.0 capture used the same sources with apiVersion 62.0.

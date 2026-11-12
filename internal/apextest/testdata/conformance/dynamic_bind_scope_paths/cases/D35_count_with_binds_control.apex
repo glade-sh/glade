@@ -1,0 +1,1 @@
+try { Integer n = Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Name = :nope', new Map<String,Object>{'nope'=>'x'}, AccessLevel.USER_MODE); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

@@ -1,0 +1,1 @@
+try { Account acc = new Account(Name='x'); Integer n = Database.countQuery('SELECT COUNT() FROM Account WHERE Name = :acc.Name'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }
