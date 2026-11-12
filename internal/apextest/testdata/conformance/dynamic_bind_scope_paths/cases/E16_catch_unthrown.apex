@@ -1,0 +1,1 @@
+try { try { Integer i = 1; } catch (DmlException ex) { } List<Account> l = Database.query('SELECT Id FROM Account WHERE Name = :ex'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

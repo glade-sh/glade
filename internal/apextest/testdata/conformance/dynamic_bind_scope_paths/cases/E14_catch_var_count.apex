@@ -1,0 +1,1 @@
+try { try { throw new DmlException('x'); } catch (DmlException ex) { } Integer n = Database.countQuery('SELECT COUNT() FROM Account WHERE Name = :ex'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }
