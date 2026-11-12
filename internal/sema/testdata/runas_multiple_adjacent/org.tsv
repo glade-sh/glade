@@ -1,0 +1,7 @@
+api	route	result	observation
+62.0	variables	rejected	runAs requires a single argument of type 'User' or 'Version'
+62.0	three	rejected	runAs requires a single argument of type 'User' or 'Version'
+62.0	control	accepted	""
+67.0	variables	rejected	runAs requires a single argument of type 'User' or 'Version'
+67.0	three	rejected	runAs requires a single argument of type 'User' or 'Version'
+67.0	control	accepted	""
