@@ -350,6 +350,14 @@ jobs:
           path: ${{ env.GOCACHE }}
           key: ${{ steps.restore-browser-build-cache.outputs.cache-primary-key }}
 
+      - name: Save shared npm download cache
+        if: steps.scope.outputs.run_expensive == 'true' && success() && github.event_name != 'workflow_dispatch'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: ~/.npm
+          key: npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-${{ hashFiles('source/third_party/lwc/package-lock.json', 'source/lwcruntime/package-lock.json') }}
+
       - name: Save Chromium cache
         if: steps.scope.outputs.run_expensive == 'true' && success()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
