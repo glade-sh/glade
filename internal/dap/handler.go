@@ -459,6 +459,11 @@ func (h *Handler) handleLaunch(request Request) []any {
 	cancelled := ctx.Err() != nil
 	cancel()
 	if cancelled {
+		// A launch that installed its session just before the cancel must not
+		// leave it for configurationDone to start.
+		h.stateMu.Lock()
+		h.pending = nil
+		h.stateMu.Unlock()
 		return []any{h.failure(request, "cancelled")}
 	}
 	if err != nil {

@@ -71,10 +71,12 @@ func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (stor
 	runtime := apextest.CompileProjectRuntimeForRequest(index)
 	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
 	built.Version = dapCacheVersion
-	// A cancelled load never publishes: the entry fingerprints files when it is
-	// built, which may no longer be what this load read. The check and the write
-	// share the root's publish lock, and a cancelled launch is never published
-	// after the check.
+	// A load that was cancelled before it got here skips the write, so an
+	// abandoned build does not refresh the cache. This only narrows the old
+	// window: NewEntry still fingerprints the files when it runs, so a file
+	// edited between indexing and fingerprinting can pair old compiled state
+	// with a new hash. That predates cancellation and is not fixed here; it needs
+	// the fingerprint taken before the build and compared after it.
 	lockRoot, _ := normalizedDAPRoot(root)
 	publish := dapPublishLock(lockRoot)
 	publish.Lock()
