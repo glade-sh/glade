@@ -176,3 +176,34 @@ func TestCloneKeepsUnversionedObjectUnversioned(t *testing.T) {
 		t.Fatal("cloning a versioned object must keep it versioned")
 	}
 }
+
+func TestSetRecordsNeverSharesAMapBetweenClocks(t *testing.T) {
+	a := versionedObject()
+	a.PutRecord("x", Record{ID: "x"})
+	b := a
+	b.SetRecords(a.Records)
+	before, _ := a.RecordsToken()
+	b.PutRecord("y", Record{ID: "y"})
+	if after, _ := a.RecordsToken(); after == before {
+		t.Fatal("same-map SetRecords gave the alias an independent clock")
+	}
+
+	unversioned := ObjectState{Records: map[ID]Record{}}
+	c := versionedObject()
+	c.SetRecords(unversioned.Records)
+	unversioned.Records["z"] = Record{ID: "z"}
+	if _, ok := c.Records["z"]; ok {
+		t.Fatal("SetRecords kept an alias of the caller's map")
+	}
+}
+
+func TestMixedVersionedAndLiteralStatesDiffer(t *testing.T) {
+	// Documented contract: versioned and unversioned states differ under
+	// reflect.DeepEqual even with identical rows.
+	literal := ObjectState{Records: map[ID]Record{}}
+	built := ObjectState{}
+	built.SetRecords(map[ID]Record{})
+	if reflect.DeepEqual(literal, built) {
+		t.Fatal("contract changed: mixed states now compare equal")
+	}
+}

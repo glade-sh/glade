@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"maps"
+	"reflect"
 	"sync/atomic"
 	"unsafe"
 )
@@ -70,12 +72,25 @@ func (o ObjectState) RecordsVersion() uint64 {
 // A repoguard test rejects a direct write anywhere else. Each one advances the
 // version of the map it writes.
 
-// SetRecords replaces the record map. A versioned object gets a new clock for
-// the new map, so tokens taken before the call never match tokens taken after
-// it. An object that had no map gets a clock too. An object whose existing map
-// was never versioned, such as a struct literal in a test, stays unversioned,
-// so clones and rebuilds of it still compare equal to it.
+// SetRecords replaces the record map with a copy of records. The copy keeps a
+// map from ever sharing a clock with, or escaping the clock of, another map:
+// the caller's map stays the caller's, and writes through it are not tracked.
+// A versioned object gets a new clock for the new map, so tokens taken before
+// the call never match tokens taken after it. An object that had no map gets a
+// clock too. An object whose existing map was never versioned, such as a
+// struct literal in a test, stays unversioned, so clones and rebuilds of it
+// still compare equal to it. Passing the object's own current map is a no-op.
 func (o *ObjectState) SetRecords(records map[ID]Record) {
+	if records != nil && o.Records != nil && reflect.ValueOf(records).UnsafePointer() == reflect.ValueOf(o.Records).UnsafePointer() {
+		return
+	}
+	o.adoptRecords(maps.Clone(records))
+}
+
+// adoptRecords takes ownership of a map the caller has just built and holds no
+// other reference to. Storage code uses it where a copy would double the cost
+// of a clone.
+func (o *ObjectState) adoptRecords(records map[ID]Record) {
 	versioned := o.Records == nil || o.recordsClock != nil
 	o.Records = records
 	if records == nil || !versioned {
@@ -88,7 +103,7 @@ func (o *ObjectState) SetRecords(records map[ID]Record) {
 // PutRecord stores a record under id, creating the map when it is nil.
 func (o *ObjectState) PutRecord(id ID, record Record) {
 	if o.Records == nil {
-		o.SetRecords(make(map[ID]Record))
+		o.adoptRecords(make(map[ID]Record))
 	}
 	o.Records[id] = record
 	o.TouchRecords()

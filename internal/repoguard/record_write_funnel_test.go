@@ -24,17 +24,20 @@ var recordWriteFunnelExempt = []string{
 // slices. The check is syntactic, so these are matched by file and receiver
 // expression.
 var recordsFieldOwners = map[string][]string{
-	"internal/dbmanager/lookup.go":            {"out"},
-	"internal/dml/automation.go":              {"context"},
-	"internal/dml/dml.go":                     {"output"},
-	"internal/dml/duplicate_rules.go":         {"b.m", "match"},
-	"internal/gladecli/cli.go":                {"info"},
-	"internal/orgimport/sf.go":                {"result", "object"},
-	"internal/server/composite_handlers.go":   {"body"},
-	"internal/storage/fixture.go":             {"fixtureObject"},
-	"internal/storage/sqlite.go":              {"summary"},
-	"internal/vm/platform_passive_members.go": {"input"},
-	"internal/vm/soql_runtime.go":             {"result"},
+	"internal/server/tooling_metadata_bulk.go": {"result"},
+	"internal/server/data_query_handlers.go":   {"result"},
+	"internal/gladecli/db_command.go":          {"result"},
+	"internal/dbmanager/lookup.go":             {"out"},
+	"internal/dml/automation.go":               {"context"},
+	"internal/dml/dml.go":                      {"output"},
+	"internal/dml/duplicate_rules.go":          {"b.m", "match"},
+	"internal/gladecli/cli.go":                 {"info"},
+	"internal/orgimport/sf.go":                 {"result", "object"},
+	"internal/server/composite_handlers.go":    {"body"},
+	"internal/storage/fixture.go":              {"fixtureObject"},
+	"internal/storage/sqlite.go":               {"summary"},
+	"internal/vm/platform_passive_members.go":  {"input"},
+	"internal/vm/soql_runtime.go":              {"result"},
 }
 
 // TestObjectStateRecordsWritesUseFunnel fails when non-test code under
@@ -159,58 +162,146 @@ func scanRecordWrites(fset *token.FileSet, file *ast.File) []recordWriteFinding 
 	return out
 }
 
+// recordsReadOnlyCallees names functions and methods that take a Records map
+// (or an alias of one) and only read it.
+var recordsReadOnlyCallees = map[string]bool{
+	"len": true, "cap": true, "range": true,
+	"LookupRecordByID": true, "cloneRecordMap": true, "sortedStorageRecords": true,
+	"sortedCustomDataRecords": true, "cartChildRecords": true, "canonicalSummaryParentIDs": true,
+	"next": true, "revokeChangedUsers": true,
+	"Sprintf": true, "Fprintf": true, "Printf": true, "Errorf": true, "Marshal": true,
+}
+
+func calleeName(fun ast.Expr) string {
+	switch f := fun.(type) {
+	case *ast.Ident:
+		return f.Name
+	case *ast.SelectorExpr:
+		return f.Sel.Name
+	}
+	return ""
+}
+
 func scanRecordWritesIn(fset *token.FileSet, body *ast.BlockStmt) []recordWriteFinding {
 	var out []recordWriteFinding
 	aliases := map[string]string{}
 	line := func(n ast.Node) int { return fset.Position(n.Pos()).Line }
-	// target reports whether expr is a Records selector or an alias of one.
-	target := func(expr ast.Expr) (string, string, bool) {
+	var source func(expr ast.Expr) (string, bool)
+	source = func(expr ast.Expr) (string, bool) {
+		for {
+			paren, ok := expr.(*ast.ParenExpr)
+			if !ok {
+				break
+			}
+			expr = paren.X
+		}
 		if recv, ok := recordsSelector(fset, expr); ok {
-			return recv, "direct write", true
+			return recv, true
 		}
 		if id, ok := expr.(*ast.Ident); ok {
-			if recv, ok := aliases[id.Name]; ok {
-				return recv, "write through alias " + id.Name, true
+			recv, ok := aliases[id.Name]
+			return recv, ok
+		}
+		return "", false
+	}
+	// Collect aliases to a fixed point: := and = assignments, var specs, and
+	// copies of an alias.
+	for changed := true; changed; {
+		changed = false
+		bind := func(name ast.Expr, value ast.Expr) {
+			id, ok := name.(*ast.Ident)
+			if !ok || id.Name == "_" {
+				return
+			}
+			if recv, ok := source(value); ok {
+				if _, seen := aliases[id.Name]; !seen {
+					aliases[id.Name] = recv
+					changed = true
+				}
 			}
 		}
-		return "", "", false
+		ast.Inspect(body, func(n ast.Node) bool {
+			switch x := n.(type) {
+			case *ast.AssignStmt:
+				if len(x.Lhs) == len(x.Rhs) {
+					for i := range x.Rhs {
+						bind(x.Lhs[i], x.Rhs[i])
+					}
+				}
+			case *ast.ValueSpec:
+				if len(x.Names) == len(x.Values) {
+					for i := range x.Values {
+						bind(x.Names[i], x.Values[i])
+					}
+				}
+			}
+			return true
+		})
+	}
+	target := func(expr ast.Expr) (string, string, bool) {
+		recv, ok := source(expr)
+		if !ok {
+			return "", "", false
+		}
+		if _, direct := recordsSelector(fset, expr); direct {
+			return recv, "direct write", true
+		}
+		return recv, "write through alias", true
+	}
+	// nested reports a write whose target chain indexes into a stored row, as
+	// in X.Records[id].Fields[name] = value. The row's maps are shared with
+	// the stored record.
+	nested := func(expr ast.Expr) (string, bool) {
+		for {
+			switch e := expr.(type) {
+			case *ast.IndexExpr:
+				if _, _, ok := target(e.X); ok {
+					recv, _ := source(e.X)
+					return recv, true
+				}
+				expr = e.X
+			case *ast.SelectorExpr:
+				expr = e.X
+			case *ast.ParenExpr:
+				expr = e.X
+			default:
+				return "", false
+			}
+		}
 	}
 	ast.Inspect(body, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.AssignStmt:
-			for i, rhs := range x.Rhs {
-				if recv, ok := recordsSelector(fset, rhs); ok && len(x.Lhs) == len(x.Rhs) {
-					if id, ok := x.Lhs[i].(*ast.Ident); ok && id.Name != "_" {
-						aliases[id.Name] = recv
-					}
-				}
-			}
 			for _, lhs := range x.Lhs {
 				if ix, ok := lhs.(*ast.IndexExpr); ok {
 					if recv, what, ok := target(ix.X); ok {
 						out = append(out, recordWriteFinding{line(n), what + ": index assignment", recv})
+						continue
 					}
-				} else if recv, ok := recordsSelector(fset, lhs); ok {
+				}
+				if recv, ok := recordsSelector(fset, lhs); ok {
 					out = append(out, recordWriteFinding{line(n), "direct write: field assignment", recv})
+				} else if recv, ok := nested(lhs); ok {
+					out = append(out, recordWriteFinding{line(n), "write into a stored row", recv})
 				}
 			}
 		case *ast.IncDecStmt:
-			if ix, ok := x.X.(*ast.IndexExpr); ok {
-				if recv, what, ok := target(ix.X); ok {
-					out = append(out, recordWriteFinding{line(n), what + ": index update", recv})
-				}
+			if recv, ok := nested(x.X); ok {
+				out = append(out, recordWriteFinding{line(n), "write into a stored row", recv})
 			}
 		case *ast.CallExpr:
-			if id, ok := x.Fun.(*ast.Ident); ok && (id.Name == "delete" || id.Name == "clear") && len(x.Args) > 0 {
-				if recv, what, ok := target(x.Args[0]); ok {
-					out = append(out, recordWriteFinding{line(n), what + ": " + id.Name, recv})
+			name := calleeName(x.Fun)
+			for i, arg := range x.Args {
+				recv, what, ok := target(arg)
+				if !ok {
+					continue
 				}
-			}
-			if sel, ok := x.Fun.(*ast.SelectorExpr); ok && len(x.Args) > 0 {
-				if pkg, ok := sel.X.(*ast.Ident); ok && pkg.Name == "maps" && (sel.Sel.Name == "Copy" || sel.Sel.Name == "DeleteFunc") {
-					if recv, what, ok := target(x.Args[0]); ok {
-						out = append(out, recordWriteFinding{line(n), what + ": maps." + sel.Sel.Name, recv})
-					}
+				switch {
+				case (name == "delete" || name == "clear") && i == 0:
+					out = append(out, recordWriteFinding{line(n), what + ": " + name, recv})
+				case recordsReadOnlyCallees[name]:
+				default:
+					out = append(out, recordWriteFinding{line(n), what + " passed to " + name + "; it may mutate the map", recv})
 				}
 			}
 		}
@@ -247,6 +338,37 @@ func f(org *Org, object State) {
 		lines = append(lines, finding.line)
 	}
 	want := []int{3, 4, 5, 6, 8, 9, 10}
+	if !slices.Equal(lines, want) {
+		t.Fatalf("flagged lines = %v, want %v", lines, want)
+	}
+}
+
+func TestScanRecordWritesFlagsAliasAndNestedShapes(t *testing.T) {
+	const src = `package p
+func f(object State) {
+	var rows = object.Records
+	rows[id] = rec
+	first := object.Records
+	other := first
+	delete(other, id)
+	object.Records[id].Fields["Name"] = value
+	mutate(object.Records)
+	alias := object.Records
+	helper(alias)
+	_ = len(object.Records)
+	_ = LookupRecordByID(object.Records, id)
+}
+`
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "p.go", src, parser.SkipObjectResolution)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lines []int
+	for _, finding := range scanRecordWrites(fset, file) {
+		lines = append(lines, finding.line)
+	}
+	want := []int{4, 7, 8, 9, 11}
 	if !slices.Equal(lines, want) {
 		t.Fatalf("flagged lines = %v, want %v", lines, want)
 	}
