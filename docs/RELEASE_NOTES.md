@@ -6,6 +6,10 @@
 
 - **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.
 
+### Performance
+
+- **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
+
 ## v0.3.7
 
 v0.3.7 fixes more differences from Salesforce found with captured org behavior, runs Lightning action async work, and shortens test and CI time.
