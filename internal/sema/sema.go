@@ -218,8 +218,8 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 	if opts.Diagnostics {
 		result.Diagnostics = append(result.Diagnostics, sourceAPIVersionDiagnostics(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
+		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index, typeMemberState)...)
 		typeMemberView := typeMemberState.view()
 		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index, typeMemberView)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkSourceTypeContracts(index)...)
@@ -244,7 +244,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		if recorder != nil {
 			recorder.endPhase(&recorder.counters.QuerySemantics, queryStarted)
 		}
-		result.Diagnostics = NativeLifecycleDiagnostics(index, result.Diagnostics)
+		result.Diagnostics = nativeLifecycleDiagnostics(index, result.Diagnostics, typeMemberState)
 		if indexHasSourceBackedDependency(index) {
 			result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(index, result.Diagnostics, a, typeMemberView)
 		}

@@ -26,6 +26,14 @@ var (
 // conversion, valueOf and map-value failures also publish native text as Message;
 // other diagnostics retain their local explanation for the editor.
 func NativeLifecycleDiagnostics(index typesys.Index, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	return nativeLifecycleDiagnostics(index, diagnostics, nil)
+}
+
+// nativeLifecycleDiagnostics is NativeLifecycleDiagnostics with the caller's
+// type-member state, so a pass that needs a member view layers over the model
+// the analysis already built instead of rebuilding it. A nil state builds a
+// private model on first use.
+func nativeLifecycleDiagnostics(index typesys.Index, diagnostics []diagnostic.Diagnostic, state *semaTypeMemberState) []diagnostic.Diagnostic {
 	out := append([]diagnostic.Diagnostic(nil), diagnostics...)
 	var exceptionSources *semaSources
 	lookup := func(name string) (typesys.TypeSymbol, bool) {
@@ -233,7 +241,7 @@ func NativeLifecycleDiagnostics(index typesys.Index, diagnostics []diagnostic.Di
 			}
 		}
 	}
-	return nativeAnnotationDiagnostics(index, capturedInheritedFinalDiagnostics(index, capturedReturnDependencyNativeText(index, out)))
+	return nativeAnnotationDiagnostics(index, capturedInheritedFinalDiagnostics(index, state, capturedReturnDependencyNativeText(index, out)))
 }
 
 // Preserve the member selected by inheritance checking. Reconstructing it from

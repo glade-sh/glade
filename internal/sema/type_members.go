@@ -1688,6 +1688,27 @@ func buildSemaTypeMemberView(index typesys.Index) *semaTypeMemberView {
 	return newSemaTypeMemberState(buildTypeMembers(index)).view()
 }
 
+// semaLazyView hands a pass one member view, built on first use. With a state
+// the view layers over the analysis' shared type-member model; without one the
+// pass builds a private model, as callers outside a full analysis do. A pass
+// that never reaches a candidate declaration builds nothing.
+type semaLazyView struct {
+	state *semaTypeMemberState
+	index typesys.Index
+	model *semaTypeMemberView
+}
+
+func (l *semaLazyView) get() *semaTypeMemberView {
+	if l.model == nil {
+		if l.state != nil {
+			l.model = l.state.view()
+		} else {
+			l.model = buildSemaTypeMemberView(l.index)
+		}
+	}
+	return l.model
+}
+
 func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
 	return semaRequiresQualifiedDependencyNameValues(typ.Namespace, typ.Dependency, typ.Artifact, typ.SourceRoot)
 }
