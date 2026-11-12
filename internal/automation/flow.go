@@ -2009,6 +2009,11 @@ func modeledFlowRecordCreate(create flowRecordCreateXML, formulas map[string]str
 				sourceField = strings.TrimSpace(assignment.Value.ElementReference)
 			}
 		}
+		// A fault path stores the interview's fault text (native
+		// platform_event_flow_elements/extended PE06B, PE06E, PE06K).
+		if formula == "" && sourceField == "" && strings.EqualFold(strings.TrimSpace(assignment.Value.ElementReference), "$Flow.FaultMessage") {
+			sourceField = "$Flow.FaultMessage"
+		}
 		out.InputAssignments = append(out.InputAssignments, storage.WorkflowFieldUpdate{
 			Name:         field,
 			Field:        field,

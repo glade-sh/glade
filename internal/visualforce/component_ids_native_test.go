@@ -74,11 +74,7 @@ func TestPageNamesNativeComponentIDRows(t *testing.T) {
 			for _, name := range order {
 				where, markup := cases[name][0], cases[name][1]
 				page := "CedarP" + name
-				if where == "page" && strings.HasPrefix(name, "Action") {
-					// Glade checks references only for a page whose controller source is in the project;
-					// the native rows have no controller and reject the same names.
-					write(base+"pages/"+page+".page", `<apex:page controller="CedarListCtl"><div>`+markup+`</div></apex:page>`)
-				} else if where == "page" {
+				if where == "page" {
 					write(base+"pages/"+page+".page", `<apex:page><div>`+markup+`</div></apex:page>`)
 				} else if where == "ctl" {
 					write(base+"pages/"+page+".page", `<apex:page controller="CedarListCtl"><div>`+markup+`</div></apex:page>`)

@@ -1,0 +1,11 @@
+api	case	checkboxes
+59.0	ContactUnset	[]
+59.0	ContactSet	[]
+59.0	CustomRows	"[""<input type=\""checkbox\"" name=\""j_id0:j_id1:j_id2:0:j_id3\"" checked=\""checked\"" />"", ""<input type=\""checkbox\"" name=\""j_id0:j_id1:j_id2:1:j_id3\"" />""]"
+59.0	ContactOutside	[]
+59.0	ContactOutsideEmail	[]
+67.0	ContactUnset	[]
+67.0	ContactSet	[]
+67.0	CustomRows	"[""<input type=\""checkbox\"" name=\""j_id0:j_id1:j_id2:0:j_id3\"" checked=\""checked\"" />"", ""<input type=\""checkbox\"" name=\""j_id0:j_id1:j_id2:1:j_id3\"" />""]"
+67.0	ContactOutside	[]
+67.0	ContactOutsideEmail	[]

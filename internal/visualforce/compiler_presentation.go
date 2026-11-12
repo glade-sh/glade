@@ -352,6 +352,11 @@ func validateNativeIDAndParam(token html.Token, startTag, location string, linkD
 				// Rows IdEmpty*: an empty id fails the page's validation on every component.
 				return fmt.Errorf("Failed validation: ApexPage")
 			}
+			// vf_whitespace_ids captures a single-space ID on these two
+			// components as rejected at both supported API floors.
+			if a.Val == " " && (strings.EqualFold(component, "outputText") || strings.EqualFold(component, "outputPanel")) {
+				return fmt.Errorf("Failed validation: ApexPage")
+			}
 			if strings.Contains(a.Val, "{!") {
 				return fmt.Errorf("Literal value is required for attribute id in <apex:%s>%s", component, location)
 			}
