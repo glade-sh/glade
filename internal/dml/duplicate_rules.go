@@ -286,6 +286,13 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			}
 		}
 		sort.Sort(byMatchRecordID{&match})
+		// The standard Account search and save error expose the same 100
+		// members in the overflow rows, including when a later row is exact.
+		// Keep confidence paired with each returned record.
+		if standard && strings.EqualFold(matching.Object, "Account") && len(match.Records) > 100 {
+			match.Records = match.Records[:100]
+			match.Confidences = match.Confidences[:100]
+		}
 		result.Matches = append(result.Matches, match)
 	}
 	return result, true
@@ -354,11 +361,17 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 	exclude := func(id storage.ID) bool { return !update && e.duplicates.stamp == stamp && e.duplicates.batch[id] }
 	var report *DuplicateReport
 	for _, rule := range ActiveDuplicateRulesForRecord(e.Org, record.Object, record) {
-		if !update && e.Options.UpsertCapturedInsertRulesOnly && !upsertCapturedEmailRule(rule, record) {
+		if !update && e.Options.UpsertCapturedInsertRulesOnly && !upsertCapturedEmailRule(rule, record) && !standardAccountInsertRule(rule) {
 			continue
 		}
-		if update && e.Options.UpsertChangedExactDuplicatesOnly && !upsertExactMatchChanged(rule, record, prior) {
-			continue
+		if update {
+			fuzzy, changed := customFuzzyFieldsChanged(rule, record, prior)
+			if fuzzy && !changed {
+				continue
+			}
+			if e.Options.UpsertChangedExactDuplicatesOnly && !fuzzy && !upsertExactMatchChanged(rule, record, prior) {
+				continue
+			}
 		}
 		applies, supported := DuplicateRuleApplies(e.Org, rule, record)
 		if !supported || !applies {
@@ -460,6 +473,42 @@ func (e *Engine) noteDuplicateInsert(stamp *string, report *DuplicateReport, id 
 func (e *Engine) enforceDuplicateRulesOnUpdate(record, prior storage.Record) error {
 	_, err := e.checkDuplicateRules(record, true, nil, &prior)
 	return err
+}
+
+// The scalar external-key insert row uses the built-in business Account rule.
+func standardAccountInsertRule(rule storage.DuplicateRule) bool {
+	if !strings.EqualFold(rule.Object, "Account") || rule.Subtype != "" || len(rule.MatchRules) != 1 {
+		return false
+	}
+	match := rule.MatchRules[0]
+	return strings.EqualFold(match.Object, "Account") && len(match.Items) == 0 && storage.IsStandardMatchingRule(match.Object, match.Name)
+}
+
+// A sparse edit to unrelated fields leaves an existing fuzzy duplicate alone.
+// On a matched scalar upsert, changing a fuzzy rule field runs the edit action.
+// The rows exercise single-object, all-fuzzy rules with nonblank keys.
+func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record, prior *storage.Record) (fuzzy, changed bool) {
+	if prior == nil || len(rule.MatchRules) != 1 {
+		return false, false
+	}
+	match := rule.MatchRules[0]
+	if len(match.Items) == 0 || !strings.EqualFold(match.Status, "Active") {
+		return false, false
+	}
+	for _, item := range match.Items {
+		if !FuzzyMethodSupported(item.Method) || !strings.EqualFold(item.BlankBehavior, "NullNotAllowed") {
+			return false, false
+		}
+		before, beforeOK := prior.GetField(item.Field)
+		after, afterOK := record.GetField(item.Field)
+		if duplicateBlank(before, beforeOK) || duplicateBlank(after, afterOK) {
+			return false, false
+		}
+		if !storageValuesEqual(storage.Field{}, before, after) {
+			changed = true
+		}
+	}
+	return true, changed
 }
 
 // Limit upsert update enforcement to changed, single-field exact matches.
