@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Performance
+
+- **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
 
 ## v0.3.7
 
@@ -54,10 +56,6 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 - **Public corpus check in CI.** Required CI runs a tier of pinned public Salesforce projects and compares the results with stored expectations.
 - **Shorter CI graph.** The apextest binary is built in its own job and the Go test matrix is split so shards start sooner. Every test still runs once.
 - **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.
-
-### Performance
-
-- **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
 
 ## v0.3.6
 
