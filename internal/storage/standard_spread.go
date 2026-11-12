@@ -1,9 +1,32 @@
 package storage
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"sort"
 	"sync"
 )
+
+var standardCatalogStampCache struct {
+	once  sync.Once
+	stamp string
+}
+
+// StandardCatalogStamp identifies the standard object catalog: a digest of its
+// sorted object names. Data generated from the catalog records it and is
+// refused when it no longer matches. It is a cheap first check; the tests that
+// rebuild such data are the guard for changes inside a definition.
+func StandardCatalogStamp() string {
+	standardCatalogStampCache.once.Do(func() {
+		sum := sha256.New()
+		for _, name := range KnownStandardObjectNames() {
+			sum.Write([]byte(name))
+			sum.Write([]byte{0})
+		}
+		standardCatalogStampCache.stamp = hex.EncodeToString(sum.Sum(nil))
+	})
+	return standardCatalogStampCache.stamp
+}
 
 // EnsureStandardObjectSpread materializes the full standard schema catalog,
 // the starting point of every `glade test` org. Network and NetworkMember wait
