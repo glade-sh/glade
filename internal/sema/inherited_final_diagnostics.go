@@ -12,7 +12,8 @@ import (
 
 // CD-076's static-final and private cross-owner twins retain their rejections.
 // Supply the measured native text without widening constructor admission.
-func capturedInheritedFinalDiagnostics(index typesys.Index, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+func capturedInheritedFinalDiagnostics(index typesys.Index, state *semaTypeMemberState, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	views := &semaLazyView{state: state, index: index}
 	var model *semaTypeMemberView
 	var sources *semaSources
 	protectedStatics := make(map[string]bool)
@@ -43,7 +44,7 @@ func capturedInheritedFinalDiagnostics(index typesys.Index, diagnostics []diagno
 			continue
 		}
 		if model == nil {
-			model = buildSemaTypeMemberView(index)
+			model = views.get()
 			sources = newSemaSources(nil, nil)
 		}
 		source, ok := sources.rawForType(typ)
@@ -94,13 +95,13 @@ func capturedInheritedFinalDiagnostics(index typesys.Index, diagnostics []diagno
 		}
 		out = append(out, d)
 	}
-	return capturedInheritedStaticFinalWrites(index, out)
+	return capturedInheritedStaticFinalWrites(index, views, out)
 }
 
 // CD-076 STATIC and PROTECTED_STATIC_BASE contain one class-qualified static
 // final write in a sibling or direct-base constructor. Check that assignment
 // even when earlier body analysis produced no diagnostic (for example x=7).
-func capturedInheritedStaticFinalWrites(index typesys.Index, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+func capturedInheritedStaticFinalWrites(index typesys.Index, views *semaLazyView, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
 	var model *semaTypeMemberView
 	var sources *semaSources
 	appendUnique := func(d diagnostic.Diagnostic) {
@@ -123,7 +124,7 @@ func capturedInheritedStaticFinalWrites(index typesys.Index, diagnostics []diagn
 				continue
 			}
 			if model == nil {
-				model = buildSemaTypeMemberView(index)
+				model = views.get()
 				sources = newSemaSources(nil, nil)
 			}
 			source, ok := sources.rawForType(typ)

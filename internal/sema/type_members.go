@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -1226,7 +1227,12 @@ func buildTypeMembersWithSources(index typesys.Index, sources *semaSources) *sem
 	return buildTypeMemberLayerWithSources(index, sources, semaPlatformTypeMemberModel())
 }
 
+// semaTypeMemberLayerBuilds counts whole-project member models built in this
+// process. Tests read it to prove an analysis builds one model, not one per class.
+var semaTypeMemberLayerBuilds atomic.Int64
+
 func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, platform *semaTypeMemberModel) *semaTypeMemberModel {
+	semaTypeMemberLayerBuilds.Add(1)
 	if sources == nil {
 		sources = newSemaSources(nil, nil)
 	}
@@ -1680,6 +1686,27 @@ func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]s
 
 func buildSemaTypeMemberView(index typesys.Index) *semaTypeMemberView {
 	return newSemaTypeMemberState(buildTypeMembers(index)).view()
+}
+
+// semaLazyView hands a pass one member view, built on first use. With a state
+// the view layers over the analysis' shared type-member model; without one the
+// pass builds a private model, as callers outside a full analysis do. A pass
+// that never reaches a candidate declaration builds nothing.
+type semaLazyView struct {
+	state *semaTypeMemberState
+	index typesys.Index
+	model *semaTypeMemberView
+}
+
+func (l *semaLazyView) get() *semaTypeMemberView {
+	if l.model == nil {
+		if l.state != nil {
+			l.model = l.state.view()
+		} else {
+			l.model = buildSemaTypeMemberView(l.index)
+		}
+	}
+	return l.model
 }
 
 func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
