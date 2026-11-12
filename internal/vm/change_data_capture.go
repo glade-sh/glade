@@ -130,6 +130,8 @@ func (vm *VM) materializeChangeDataCapture(entries []changeDataCaptureEntry) []s
 		key := strings.ToLower(record.Object) + "/" + canonicalIDMapKey(string(record.ID))
 		if i, ok := byID[key]; ok && entry.operation == "UPDATE" && (changes[i].operation == "CREATE" || changes[i].operation == "UPDATE") {
 			changes[i].after = entry.after
+			// An ordinary update that joins a merge's update keeps the event.
+			changes[i].merge = changes[i].merge && entry.merge
 			continue
 		}
 		byID[key] = len(changes)

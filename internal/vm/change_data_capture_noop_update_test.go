@@ -22,3 +22,19 @@ func TestChangeDataCaptureNoChangeUpdateKeepsEvent(t *testing.T) {
 		})
 	}
 }
+
+// A merge followed by an ordinary update of the surviving record before
+// delivery coalesces into one update; the merge marker must not suppress it.
+func TestChangeDataCaptureMergeThenNoChangeUpdateKeepsEvent(t *testing.T) {
+	for _, api := range []string{"62", "67"} {
+		t.Run(api, func(t *testing.T) {
+			org := storage.NewOrgState()
+			org.APIVersion = api + ".0"
+			storage.EnsureStandardObject(&org, "Lead")
+			machine := changeDataCaptureCounterMachine(t, &org, "LeadChangeEvent")
+			machine.EnableTestContext()
+			source := `Lead a = new Lead(LastName='m', Company='A'); Lead b = new Lead(LastName='m', Company='B'); insert new List<Lead>{a, b}; Test.enableChangeDataCapture(); Test.getEventBus().deliver(); CaptureCounter.hits = 0; merge a b; a.Company = 'A'; update a; Test.getEventBus().deliver(); System.assertEquals(2, CaptureCounter.hits);`
+			executeChangeDataCaptureSource(t, machine, api, source)
+		})
+	}
+}
