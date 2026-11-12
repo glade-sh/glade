@@ -24,7 +24,7 @@ func TestSOSLOrderAccessConformance(t *testing.T) {
 	reader := csv.NewReader(file)
 	reader.Comma = '\t'
 	rows, err := reader.ReadAll()
-	if err != nil || len(rows) != 27 {
+	if err != nil || len(rows) != 29 {
 		t.Fatalf("native capture: %d rows, error %v", len(rows), err)
 	}
 	schema := filepath.Join("testdata", "conformance", "api67_sosl_locator_matching", "project", "force-app", "main", "default")
@@ -37,26 +37,36 @@ func TestSOSLOrderAccessConformance(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			class := "SearchAccess" + strings.TrimSuffix(api, ".0")
-			body, err := os.ReadFile(filepath.Join(dir, class+".cls"))
-			if err != nil {
-				t.Fatal(err)
+			var classes []string
+			for _, name := range []string{"SearchAccess", "SearchInlineAccess"} {
+				version := strings.TrimSuffix(api, ".0")
+				class := name + version
+				classes = append(classes, class)
+				body, err := os.ReadFile(filepath.Join(dir, name+".cls.tmpl"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				classPath := filepath.Join(metadata, "classes", class+".cls")
+				writeFile(t, classPath, strings.ReplaceAll(string(body), "{{API}}", version))
+				writeFile(t, classPath+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
 			}
-			classPath := filepath.Join(metadata, "classes", class+".cls")
-			writeFile(t, classPath, string(body))
-			writeFile(t, classPath+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion></ApexClass>")
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
 			index := loadTestIndex(t, root)
-			run := Run(index, Options{SelectedClasses: []string{class}, NoDiskCache: true, Parallelism: 1})
-			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 10 {
+			run := Run(index, Options{SelectedClasses: classes, NoDiskCache: true, Parallelism: 1})
+			if len(run.Suites) != len(classes) {
 				t.Fatalf("incomplete execution: %+v", run.Summary())
 			}
 			observed := map[string]string{}
-			for _, c := range run.Suites[0].Cases {
-				if c.Problem == nil || !strings.HasPrefix(c.Problem.Message, "Assertion Failed: OBS|") {
-					t.Fatalf("%s failed before observation: %+v", c.MethodName, c.Problem)
+			for _, suite := range run.Suites {
+				for _, c := range suite.Cases {
+					if c.Problem == nil || !strings.HasPrefix(c.Problem.Message, "Assertion Failed: OBS|") {
+						t.Fatalf("%s failed before observation: %+v", c.MethodName, c.Problem)
+					}
+					observed[c.MethodName] = strings.TrimPrefix(c.Problem.Message, "Assertion Failed: OBS|")
 				}
-				observed[c.MethodName] = strings.TrimPrefix(c.Problem.Message, "Assertion Failed: OBS|")
+			}
+			if len(observed) != 11 {
+				t.Fatalf("observed %d restricted-user methods", len(observed))
 			}
 			org := orgFromIndex(index)
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})

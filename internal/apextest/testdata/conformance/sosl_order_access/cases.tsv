@@ -4,3 +4,5 @@ access67	istest	SearchAccess67	67.0
 anonymousRunAs	anonymous	runas.apex
 anonymousFixed	anonymous	fixed.apex
 anonymousAllowed	anonymous	empty.apex
+inline62	istest	SearchInlineAccess62	62.0
+inline67	istest	SearchInlineAccess67	67.0

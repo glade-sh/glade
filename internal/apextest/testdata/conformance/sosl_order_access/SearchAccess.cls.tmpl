@@ -1,4 +1,4 @@
-@IsTest private class SearchAccess67 {
+@IsTest private class SearchAccess{{API}} {
   static User mkUser() {
     Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
     String un = 'gl' + String.valueOf(Crypto.getRandomInteger()).replace('-','') + '@example.com';
