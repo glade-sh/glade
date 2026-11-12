@@ -1,0 +1,10 @@
+capture: r-share-rw
+started: 2026-11-12T18:02:54Z
+finished: 2026-11-12T18:03:55Z
+apis: 62.0 67.0
+routes: istest 
+cases: 5
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 2d8d854fb7b8a3fa
+mode: live
