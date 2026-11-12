@@ -2,9 +2,11 @@ package visualforce
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync/atomic"
 
@@ -28,10 +30,54 @@ func rejectedVisualforceControllers(p project.Project) (map[string]bool, error) 
 }
 
 func rejectedVisualforceControllersWith(p project.Project, compilation *ControllerCompilation) (map[string]bool, error) {
-	index, diagnostics, err := visualforceControllerCompilationWith(p, compilation)
+	gate, err := controllerGateFor(p, compilation)
 	if err != nil {
 		return nil, err
 	}
+	if gate.rejectedErr != nil {
+		return nil, gate.rejectedErr
+	}
+	return maps.Clone(gate.rejected), nil
+}
+
+// controllerGate is the outcome of one controller compile: the project's
+// controller-presentation diagnostics and the controller class names they
+// reject. It holds no type index, so retaining it per project generation is
+// cheap.
+type controllerGate struct {
+	diagnostics []diagnostic.Diagnostic
+	rejected    map[string]bool
+	rejectedErr error
+}
+
+func computeControllerGate(p project.Project, index typesys.Index, diagnostics []diagnostic.Diagnostic) controllerGate {
+	rejected, err := rejectedControllersFromCompilation(p, index, diagnostics)
+	return controllerGate{diagnostics: diagnostics, rejected: rejected, rejectedErr: err}
+}
+
+// controllerGateFor runs the controller compile gate for p. A supplied
+// compilation that matches p's sources is reused. Otherwise the project is
+// compiled once per project generation (see generation_cache.go); every
+// further caller of the same generation shares that outcome.
+func controllerGateFor(p project.Project, compilation *ControllerCompilation) (controllerGate, error) {
+	if compilation != nil && typesys.MatchesProjectSources(compilation.Index, p) {
+		index, diagnostics, err := reuseControllerCompilation(p, compilation)
+		if err != nil {
+			return controllerGate{}, err
+		}
+		return computeControllerGate(p, index, diagnostics), nil
+	}
+	compile := func() (controllerGate, error) {
+		index, diagnostics, err := compileControllerProject(p)
+		if err != nil {
+			return controllerGate{}, err
+		}
+		return computeControllerGate(p, index, diagnostics), nil
+	}
+	return sharedControllerGate(p, compile)
+}
+
+func rejectedControllersFromCompilation(p project.Project, index typesys.Index, diagnostics []diagnostic.Diagnostic) (map[string]bool, error) {
 	files := map[string]bool{}
 	syntaxFiles := map[string]bool{}
 	for _, diag := range diagnostics {
@@ -83,12 +129,11 @@ func rejectedVisualforceControllersWith(p project.Project, compilation *Controll
 // when rejecting dependent Visualforce controllers. Its inputs are project
 // source and schema, independent of any conformance expectation.
 func ControllerCompileDiagnostics(p project.Project) ([]diagnostic.Diagnostic, error) {
-	_, diagnostics, err := visualforceControllerCompilation(p)
-	return diagnostics, err
-}
-
-func visualforceControllerCompilation(p project.Project) (typesys.Index, []diagnostic.Diagnostic, error) {
-	return visualforceControllerCompilationWith(p, nil)
+	gate, err := controllerGateFor(p, nil)
+	if err != nil {
+		return nil, err
+	}
+	return slices.Clone(gate.diagnostics), nil
 }
 
 // ControllerCompilation is an Apex compilation of a project that the caller
@@ -107,16 +152,17 @@ type ControllerCompilation struct {
 // ControllerCompilation. Tests use it to prove a reuse or a fallback.
 var controllerCompilationReuses atomic.Uint64
 
-func visualforceControllerCompilationWith(p project.Project, compilation *ControllerCompilation) (typesys.Index, []diagnostic.Diagnostic, error) {
-	if compilation != nil && typesys.MatchesProjectSources(compilation.Index, p) {
-		controllerCompilationReuses.Add(1)
-		// The supplied slice may be shared with a semantic cache; rewrite a copy.
-		diagnostics, err := visualforceControllerDiagnostics(p, append([]diagnostic.Diagnostic(nil), compilation.Diagnostics...))
-		if err != nil {
-			return typesys.Index{}, nil, err
-		}
-		return compilation.Index, diagnostics, nil
+func reuseControllerCompilation(p project.Project, compilation *ControllerCompilation) (typesys.Index, []diagnostic.Diagnostic, error) {
+	controllerCompilationReuses.Add(1)
+	// The supplied slice may be shared with a semantic cache; rewrite a copy.
+	diagnostics, err := visualforceControllerDiagnostics(p, append([]diagnostic.Diagnostic(nil), compilation.Diagnostics...))
+	if err != nil {
+		return typesys.Index{}, nil, err
 	}
+	return compilation.Index, diagnostics, nil
+}
+
+func compileControllerProject(p project.Project) (typesys.Index, []diagnostic.Diagnostic, error) {
 	objects, err := schema.LoadProject(p)
 	if err != nil {
 		return typesys.Index{}, nil, err
