@@ -167,8 +167,8 @@ func flowFaultMessage(err error) string {
 // publishFlowEvent publishes an event record that a Create Records element
 // created. An event-triggered interview holds it until the interview finishes
 // (native PE09A to PE09D). Any other flow publishes it where the element runs,
-// and a later fault in that flow does not take it back (native R16, R18, A16
-// and A18, APIs 62.0 and 67.0). It reports false for a record that is not an
+// and a later fault in that flow does not take it back (native R16 and R18,
+// APIs 62.0 and 67.0). It reports false for a record that is not an
 // event.
 func (e *Engine) publishFlowEvent(objectName string, record storage.Record) (bool, error) {
 	if e.PlatformEventPublisher == nil || e.Org == nil {

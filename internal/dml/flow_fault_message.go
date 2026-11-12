@@ -94,7 +94,7 @@ func (e *Engine) flowCreateTypedFault(err error) error {
 }
 
 // flowUpdateError reports an Update Records element whose save failed. Only a
-// single-record update has a captured text (native E07, R07, A07).
+// single-record update has a captured text (native E07 and R07).
 func (e *Engine) flowUpdateError(failure, cause error, ids []storage.ID) error {
 	var rejected dmlError
 	if len(ids) != 1 || !errors.As(cause, &rejected) || rejected.code != "STRING_TOO_LONG" {
@@ -104,8 +104,8 @@ func (e *Engine) flowUpdateError(failure, cause error, ids []storage.ID) error {
 }
 
 // flowDeleteError reports a Delete Records element whose delete failed. Only a
-// restricted lookup with one child record has a captured text (native E10,
-// R10, A10).
+// restricted lookup with one child record has a captured text (native E10
+// and R10).
 func (e *Engine) flowDeleteError(failure, cause error, objectName string, id storage.ID) error {
 	var rejected dmlError
 	if !errors.As(cause, &rejected) || rejected.code != "DELETE_FAILED" {
@@ -174,8 +174,8 @@ func flowRecordIDs(records []storage.Record) []storage.ID {
 }
 
 // flowLookupFault faults a Get Records element that filters one Id field with a
-// literal that is not an Id (native E13, R13, A13 and the unhandled E14, R14,
-// A14: the query fails with "invalid ID field"). The text spells the query that
+// literal that is not an Id (native E13 and R13 and the unhandled E14 and R14:
+// the query fails with "invalid ID field"). The text spells the query that
 // Flow built, which selects only Id here because nothing reads other fields.
 // Any other shape keeps its earlier behavior.
 func (e *Engine) flowLookupFault(lookup storage.FlowRecordLookup) error {
@@ -231,8 +231,8 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 }
 
 // FlowUnhandledDetail is the FlowException message that Flow.Interview.start
-// raises when an element faulted with no fault connector. Native A08, A11, A14,
-// A16 and A17: a test sees the element's text, any other run the generic text.
+// raises when an element faulted with no fault connector. Native anonymous-run rows
+// for these elements: a test sees the element's text, any other run the generic text.
 func FlowUnhandledDetail(err error) (string, bool) {
 	var fault *flowElementFault
 	if !errors.As(err, &fault) || !fault.unhandledCaptured() {
@@ -242,7 +242,7 @@ func FlowUnhandledDetail(err error) (string, bool) {
 		return " An unhandled fault has occurred in this flow  " + flowUnhandledGeneric, true
 	}
 	if fault.verb == "look up" {
-		// Native A14 words this link differently from the other elements.
+		// A native anonymous-run row words this link differently from the other elements.
 		return "This error occurred when the flow tried to look up records: " + fault.text +
 			". You can look up ExceptionCode values in the <a href='https://developer.salesforce.com/docs/atlas.en-us.api.meta/api/sforce_api_calls_concepts_core_data_objects.htm#'>SOAP API Developer Guide .", true
 	}
@@ -255,7 +255,7 @@ func FlowUnhandledDetail(err error) (string, bool) {
 
 // unhandledCaptured is true for the element failures whose unhandled form has
 // native rows: Update, Delete and Get Records, and a Create Records rejected with
-// STRING_TOO_LONG (R16, R17, A16, A17). Rows 01-06 cover the other Create codes
+// STRING_TOO_LONG (R16 and R17). Rows 01-06 cover the other Create codes
 // and the reference-type rejections only with a fault connector, so those keep
 // their earlier behavior when nothing catches them.
 func (f *flowElementFault) unhandledCaptured() bool {

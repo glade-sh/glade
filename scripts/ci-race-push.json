@@ -267,6 +267,7 @@
       "TestListSObjectCastSeedsConformance",
       "TestListSObjectCastTransportControlConformance",
       "TestListSettingFieldsOrgConformance",
+      "TestLoopScopeDynamicBindsNativeConformance",
       "TestMathOrgConformance",
       "TestMemberAliasNativeConformance",
       "TestMessagingOrgConformance",
@@ -1240,7 +1241,8 @@
       "TestStandardDescribeAPI68NativeIsTestRoute": 30,
       "TestCartListRuntimeNativeConformance": 60,
       "TestCartOrchestratorRuntimeNativeConformance": 60,
-      "TestDefaultPermissionsV035NativeConformance": 12
+      "TestDefaultPermissionsV035NativeConformance": 12,
+      "TestLoopScopeDynamicBindsNativeConformance": 30
     },
     "./internal/gladecli": {
       "TestCompatDispatchesToLinkedPlugin": 20,
