@@ -213,7 +213,15 @@ func materializeSpreadSource(org *OrgState) bool {
 // feature shape and the objects outside the catalog.
 var spreadPrefixPlans struct {
 	mu    sync.Mutex
-	plans map[string]map[string]string
+	plans map[string]spreadPrefixPlanEntry
+}
+
+// spreadPrefixPlanEntry holds the seed map its key names by address. Holding it
+// keeps the address from being reused by another map while the entry is cached,
+// and lookups compare identity as well.
+type spreadPrefixPlanEntry struct {
+	seed map[string]string
+	plan map[string]string
 }
 
 // spreadPlanKeyBuilds counts plan lookups, for tests that bound the work.
@@ -252,8 +260,8 @@ func spreadKeyPrefixPlan(org *OrgState) map[string]string {
 	spreadPrefixPlans.mu.Lock()
 	cached, ok := spreadPrefixPlans.plans[cacheKey]
 	spreadPrefixPlans.mu.Unlock()
-	if ok {
-		return cached
+	if ok && reflect.ValueOf(cached.seed).Pointer() == reflect.ValueOf(org.spreadPrefixSeed).Pointer() {
+		return cached.plan
 	}
 	entries := make([]keyPrefixEntry, 0, len(org.Objects)+len(KnownStandardObjectNames()))
 	seen := make(map[string]bool, len(org.Objects))
@@ -285,13 +293,13 @@ func spreadKeyPrefixPlan(org *OrgState) map[string]string {
 	}
 	spreadPrefixPlans.mu.Lock()
 	defer spreadPrefixPlans.mu.Unlock()
-	if existing, ok := spreadPrefixPlans.plans[cacheKey]; ok {
-		return existing
+	if existing, ok := spreadPrefixPlans.plans[cacheKey]; ok && reflect.ValueOf(existing.seed).Pointer() == reflect.ValueOf(org.spreadPrefixSeed).Pointer() {
+		return existing.plan
 	}
 	if spreadPrefixPlans.plans == nil || len(spreadPrefixPlans.plans) >= maxSpreadPrefixPlans {
-		spreadPrefixPlans.plans = make(map[string]map[string]string)
+		spreadPrefixPlans.plans = make(map[string]spreadPrefixPlanEntry)
 	}
-	spreadPrefixPlans.plans[cacheKey] = plan
+	spreadPrefixPlans.plans[cacheKey] = spreadPrefixPlanEntry{seed: org.spreadPrefixSeed, plan: plan}
 	return plan
 }
 

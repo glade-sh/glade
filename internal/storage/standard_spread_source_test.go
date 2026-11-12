@@ -183,3 +183,33 @@ func TestStandardSpreadSourceMaterializeBuildsPlanOnce(t *testing.T) {
 	EnsureUniqueKeyPrefixes(&eager)
 	compareCompleteOrgs(t, eager, lazy)
 }
+
+// The plan memo names a seed map by address, so an entry must keep its seed
+// alive and a lookup must match that seed's identity: a later map at a reused
+// address cannot read another seed's plan.
+func TestStandardSpreadPlanMemoHoldsSeedIdentity(t *testing.T) {
+	lazy := sourceSpreadLazyOrg(nil)
+	EnsureUniqueKeyPrefixes(&lazy)
+	if lazy.spreadPrefixSeed == nil {
+		t.Fatal("validated lazy org has no prefix seed")
+	}
+	plan := spreadKeyPrefixPlan(&lazy)
+	spreadPrefixPlans.mu.Lock()
+	var held bool
+	for _, entry := range spreadPrefixPlans.plans {
+		if reflect.ValueOf(entry.seed).Pointer() == reflect.ValueOf(lazy.spreadPrefixSeed).Pointer() {
+			held = true
+		}
+	}
+	spreadPrefixPlans.mu.Unlock()
+	if !held {
+		t.Fatal("plan memo does not hold the seed map its key names")
+	}
+	// An org with a different seed map never reads that entry, even if the
+	// two keys were equal.
+	other := lazy
+	other.spreadPrefixSeed = map[string]string{}
+	if reflect.ValueOf(spreadKeyPrefixPlan(&other)).Pointer() == reflect.ValueOf(plan).Pointer() {
+		t.Fatal("an org with another seed read this seed's plan")
+	}
+}
