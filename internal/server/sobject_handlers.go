@@ -189,7 +189,7 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
-		next := s.Org.Clone()
+		next := s.Org.CloneCopyOnWrite()
 		engine := s.newDMLEngine(r, &next)
 		result := engine.Insert([]storage.Record{record})[0]
 		if result.Success {
@@ -255,7 +255,7 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 			record.Fields[fieldName] = value
 		}
 		delete(record.ExplicitNulls, fieldName)
-		next := s.Org.Clone()
+		next := s.Org.CloneCopyOnWrite()
 		engine := s.newDMLEngine(r, &next)
 		result := engine.UpsertWithExternalID([]storage.Record{record}, fieldName)[0]
 		if result.Success {
@@ -270,7 +270,7 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 		if !writeExternalIDLookupResult(w, objectName, fieldName, matches) {
 			return
 		}
-		next := s.Org.Clone()
+		next := s.Org.CloneCopyOnWrite()
 		engine := s.newDMLEngine(r, &next)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {
@@ -343,7 +343,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
-		next := s.Org.Clone()
+		next := s.Org.CloneCopyOnWrite()
 		engine := s.newDMLEngine(r, &next)
 		result := engine.Update([]storage.Record{record})[0]
 		if result.Success {
@@ -359,7 +359,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 			writeSalesforceError(w, errUnknownRecord)
 			return
 		}
-		next := s.Org.Clone()
+		next := s.Org.CloneCopyOnWrite()
 		engine := s.newDMLEngine(r, &next)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {

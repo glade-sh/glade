@@ -913,7 +913,7 @@ func (s *Server) handleCompositeSObjectInsert(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Insert(body.Records)
 	s.writeCompositeMutationResults(w, next, compositeMutationInsert, body.AllOrNone, results, body.ReferenceIDs)
@@ -924,7 +924,7 @@ func (s *Server) handleCompositeSObjectUpdate(w http.ResponseWriter, r *http.Req
 	if !ok {
 		return
 	}
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Update(body.Records)
 	s.writeCompositeMutationResults(w, next, compositeMutationUpdate, body.AllOrNone, results, body.ReferenceIDs)
@@ -948,7 +948,7 @@ func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Req
 		objectName := s.objectNameForRecordID(id)
 		records = append(records, storage.Record{Object: objectName, ID: id})
 	}
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.Delete(records)
 	for i := range results {
@@ -1109,7 +1109,7 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 		referenceIDs = append(referenceIDs, referenceID)
 	}
 
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	results := engine.UpsertWithExternalID(records, fieldName)
 	hasFailure := false
