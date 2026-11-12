@@ -154,7 +154,9 @@ CGO_ENABLED=1 go test -count=1 -p=1 -timeout=0 \
 An archived checkout needs `GLADE_LWC_PLAYWRIGHT_MODULE` set to the absolute
 path of a compatible installed Playwright package and a usable Chromium. On
 Linux, Chromium may also need system dependencies; CI uses Playwright's
-`install --with-deps chromium`.
+`install --with-deps chromium`. `scripts/ci-install-playwright.sh` bounds each
+system-package attempt and, if it fails, installs Chromium alone and checks that
+it launches with the runner image's libraries.
 
 For a checkout with dependencies installed, run:
 

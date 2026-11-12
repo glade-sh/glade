@@ -1875,15 +1875,15 @@ jobs:
         with:
           node-version: "22"
       - name: Install selected LWC test dependencies
-        if: ${{ steps.select.outputs.browser == 'true' }}
+        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
         run: |
           npm ci --prefix third_party/lwc
           npm ci --prefix lwcruntime
       - name: Install selected browser
-        if: ${{ steps.select.outputs.browser == 'true' }}
+        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
         run: scripts/ci-install-playwright.sh ./lwcruntime/node_modules/.bin/playwright install --with-deps chromium
       - name: Enable selected browser tests
-        if: ${{ steps.select.outputs.browser == 'true' }}
+        if: ${{ steps.select.outputs.browser == 'true' && matrix.shard >= 12 }}
         run: |
           echo "GLADE_LWC_BROWSER=1" >> "$GITHUB_ENV"
           echo "GLADE_LWC_PLAYWRIGHT_MODULE=$GITHUB_WORKSPACE/lwcruntime/node_modules/playwright" >> "$GITHUB_ENV"
