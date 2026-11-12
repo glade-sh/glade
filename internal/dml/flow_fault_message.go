@@ -210,7 +210,7 @@ const flowUnhandledGeneric = "An unhandled fault has occurred while processing t
 // and text, except a failed Get Records, which reports the generic fault. A
 // delete or a lookup adds an Error ID outside tests.
 func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (error, bool) {
-	if fault.verb == "" {
+	if !fault.unhandledCaptured() {
 		return nil, false
 	}
 	errorID := ""
@@ -235,7 +235,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 // A16 and A17: a test sees the element's text, any other run the generic text.
 func FlowUnhandledDetail(err error) (string, bool) {
 	var fault *flowElementFault
-	if !errors.As(err, &fault) || fault.verb == "" {
+	if !errors.As(err, &fault) || !fault.unhandledCaptured() {
 		return "", false
 	}
 	if !fault.inTest {
@@ -251,4 +251,16 @@ func FlowUnhandledDetail(err error) (string, bool) {
 	}
 	return "This error occurred when the flow tried to " + fault.verb + " records: " + fault.code + ": " + fault.text +
 		". You can look up ExceptionCode values in the SOAP API Developer Guide.", true
+}
+
+// unhandledCaptured is true for the element failures whose unhandled form has
+// native rows: Update, Delete and Get Records, and a Create Records rejected with
+// STRING_TOO_LONG (R16, R17, A16, A17). Rows 01-06 cover the other Create codes
+// and the reference-type rejections only with a fault connector, so those keep
+// their earlier behavior when nothing catches them.
+func (f *flowElementFault) unhandledCaptured() bool {
+	if f.verb == "" {
+		return false
+	}
+	return f.verb != "create" || f.code == "STRING_TOO_LONG"
 }

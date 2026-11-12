@@ -48,3 +48,5 @@ source_sha256:force-app/main/default/objects/FltObj__c/validationRules/RejectRul
 source_sha256:force-app/main/default/objects/FltRec__c/FltRec__c.object-meta.xml=b1ca4238057dc901338aad6d2025de114dc444ad0cb8893cce76957120f2dd89
 source_sha256:force-app/main/default/objects/FltRec__c/fields/Operation__c.field-meta.xml=3e6ce45cdb9c126791d63707f7db149e5e1cc08b3fff2e4e993588ad95c0a6cc
 source_sha256:force-app/main/default/permissionsets/FltFixture.permissionset-meta.xml=44ddaea901f657e108131b6fac60b93715d113cd5096111d8d6d6c0b4bfb8561
+uncaptured_api_range=63.0 to 66.0 (unhandled-fault wording assumed to follow 62.0)
+uncaptured=unhandled Create Records with a code other than STRING_TOO_LONG, and unhandled reference-type creates
