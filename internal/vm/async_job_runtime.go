@@ -830,6 +830,10 @@ func (vm *VM) drainTestPlatformEvents(result *Result) error {
 	if err := vm.drainChangeDataCapture(result, false); err != nil {
 		return err
 	}
+	if pending := vm.testContext.FlowPublishedEvents; len(pending) > 0 {
+		vm.testContext.FlowPublishedEvents = nil
+		vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, pending...)
+	}
 	return vm.drainTestPlatformEventsFrom(result, 0, false)
 }
 func (vm *VM) drainTestPlatformEventsFrom(result *Result, startIndex int, stopTimeDelivery bool) error {

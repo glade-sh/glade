@@ -1,8 +1,6 @@
 package compile
 
 import (
-	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -28,27 +26,6 @@ type salesforceImportConfig struct {
 	Resources         map[string]bool                   `json:"resources"`
 	Assets            map[string]bool                   `json:"assets"`
 	CustomPermissions map[string]bool                   `json:"customPermissions"`
-}
-
-// Collect decoded AST specifiers before resolving shared metadata references.
-// The compiler's import validation consumes the same decoded references.
-func collectSalesforceImportReferences(cfg compileConfig, roots compileRoots) ([]string, error) {
-	payload, err := json.Marshal(cfg)
-	if err != nil {
-		return nil, err
-	}
-	cmd := lwcCompilerCommand(roots)
-	cmd.Args = append(cmd.Args, "--salesforce-import-references")
-	cmd.Stdin = strings.NewReader(string(payload))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("lwc compile: %w\n%s", err, string(out))
-	}
-	var references []string
-	if err := json.Unmarshal(out, &references); err != nil {
-		return nil, fmt.Errorf("decode Salesforce import references: %w\n%s", err, string(out))
-	}
-	return references, nil
 }
 
 func loadSalesforceImports(p project.Project, references []string) (*salesforceImportConfig, error) {
