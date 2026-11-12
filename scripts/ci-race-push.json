@@ -743,6 +743,7 @@
   },
   "testSeconds": {
     "./internal/apextest": {
+      "TestRuntimeExpressionResolverSharedAcrossGoroutines": 10,
       "TestAbstractHierarchyOrgConformance": 60,
       "TestAbstractRedeclarationOrgConformance": 80,
       "TestActivityFieldProjectionNativeConformance": 60,
@@ -1288,6 +1289,12 @@
       "TestLoopScopeDynamicBindsNativeConformance": 30
     },
     "./internal/gladecli": {
+      "TestCancelDuringPublishLockWaitSkipsWrite": 10,
+      "TestDAPLaunchCancelEndsWhileProjectLoadIsRunning": 10,
+      "TestDAPLoadSlotsShareOneProjectAcrossSpellings": 10,
+      "TestDAPLoadsForOneRootRunOneAtATime": 10,
+      "TestEditorLatencyHarness": 10,
+      "TestWarmTestLaunchCancelEndsDuringIndexBuild": 10,
       "TestCompatDispatchesToLinkedPlugin": 20,
       "TestConnectedMalformedFailedShardResponseWritesNoArtifacts": 20,
       "TestConnectedRunKeepsArtifactPathsClientLocal": 20,
