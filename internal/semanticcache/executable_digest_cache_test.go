@@ -5,15 +5,22 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/filestamp"
 )
 
+// requireStamps skips tests of the cached path on file systems whose ctime
+// cannot be relied on; there every call hashes.
 func requireStamps(t *testing.T) {
 	t.Helper()
-	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
-		t.Skip("executable digests are only cached on darwin and linux")
+	path := filepath.Join(t.TempDir(), "probe")
+	if err := os.WriteFile(path, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := filestamp.Stat(path); !ok {
+		t.Skip("file system without a trusted ctime")
 	}
 }
 

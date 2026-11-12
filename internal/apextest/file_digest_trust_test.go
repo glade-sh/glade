@@ -6,10 +6,10 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -40,10 +40,17 @@ func countReads(t *testing.T, path string) *int {
 // ctimeTick separates two writes so a coarse filesystem clock cannot give them one ctime.
 func ctimeTick() { time.Sleep(30 * time.Millisecond) }
 
+// skipWithoutStamps skips tests of the trusted path on file systems whose
+// ctime cannot be relied on (exFAT, network mounts); there every validation
+// hashes, which the other tests cover.
 func skipWithoutStamps(t *testing.T) {
 	t.Helper()
-	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
-		t.Skip("stat stamps are only trusted on darwin and linux")
+	path := filepath.Join(t.TempDir(), "probe")
+	if err := os.WriteFile(path, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := filestamp.Stat(path); !ok {
+		t.Skip("file system without a trusted ctime")
 	}
 }
 
@@ -115,8 +122,7 @@ func TestCurrentFileDigestRehashesRecentlyModifiedFile(t *testing.T) {
 }
 
 func TestCurrentFileDigestSeesEveryKindOfEdit(t *testing.T) {
-	skipWithoutStamps(t)
-	original := []byte("public class A { Integer x = 1; }")
+		original := []byte("public class A { Integer x = 1; }")
 	sameSize := []byte("public class A { Integer x = 2; }")
 	for name, edit := range map[string]func(t *testing.T, path string){
 		"rewrite same size": func(t *testing.T, path string) {

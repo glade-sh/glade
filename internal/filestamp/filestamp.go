@@ -16,13 +16,14 @@ type Stamp struct {
 }
 
 // Stat stamps the file at path, following symlinks. ok is false for a missing
-// or non-regular file and on platforms without a trustworthy ctime.
+// or non-regular file, and on file systems or platforms without a trustworthy
+// ctime (see stamp_unix.go); callers then hash.
 func Stat(path string) (Stamp, bool) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return Stamp{}, false
 	}
-	return fromInfo(info)
+	return statStamp(path, info)
 }
 
 // Fstat stamps an open file.
@@ -31,7 +32,7 @@ func Fstat(file *os.File) (Stamp, bool) {
 	if err != nil {
 		return Stamp{}, false
 	}
-	return fromInfo(info)
+	return fstatStamp(file, info)
 }
 
 // OlderThan reports whether the newer of mtime and ctime is at least age
