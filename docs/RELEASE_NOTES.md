@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Performance
+
+- **Visualforce controller gate computed once per project state.** A Visualforce page request, `glade exec` with a project and each warm one-class `glade test` no longer compile the whole project again to decide which controllers a page may use. The result is kept per project state, keyed by the project value and the content of every file it names, so any edit recomputes it. Which pages register does not change.
+
 ### Test daemon
 
 - **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.
