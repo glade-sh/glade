@@ -122,14 +122,17 @@ func AnalyzeAnonymousDeclarationsInContext(index, transient typesys.Index) Resul
 		}
 		return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: NativeLifecycleDiagnostics(context, diagnostics)}
 	}
-	result := Analyze(context)
+	analyzer := NewAnalyzer()
+	result := analyzer.Analyze(context)
 	diagnostics = nil
 	for _, item := range result.Diagnostics {
 		if item.File == "" || transientFiles[item.File] {
 			diagnostics = append(diagnostics, item)
 		}
 	}
-	result.Diagnostics = NativeLifecycleDiagnostics(context, diagnostics)
+	// The analysis just built the member model and read the sources this pass
+	// needs; reuse them instead of building a private model.
+	result.Diagnostics = nativeLifecycleDiagnostics(context, diagnostics, analyzer.typeMemberState, analyzer.sources)
 	result.Summary.Diagnostics = len(diagnostics)
 	return result
 }

@@ -73,6 +73,10 @@ type Analyzer struct {
 	visualforcePageNames          map[string]bool
 	visualforcePagesKnown         bool
 	sources                       *semaSources
+	// typeMemberState is the member model the last diagnostic analysis built.
+	// A caller that runs a later pass over the same index reads it instead of
+	// building another.
+	typeMemberState *semaTypeMemberState
 }
 
 type AnalyzeOptions struct {
@@ -219,6 +223,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, sourceAPIVersionDiagnostics(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
+		a.typeMemberState = typeMemberState
 		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index, typeMemberState)...)
 		typeMemberView := typeMemberState.view()
 		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index, typeMemberView)...)
@@ -244,7 +249,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		if recorder != nil {
 			recorder.endPhase(&recorder.counters.QuerySemantics, queryStarted)
 		}
-		result.Diagnostics = nativeLifecycleDiagnostics(index, result.Diagnostics, typeMemberState)
+		result.Diagnostics = nativeLifecycleDiagnostics(index, result.Diagnostics, typeMemberState, a.sources)
 		if indexHasSourceBackedDependency(index) {
 			result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(index, result.Diagnostics, a, typeMemberView)
 		}
@@ -288,6 +293,7 @@ func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptio
 		perf = recorder[0]
 	}
 	a.sources = newSemaSourcesWithCaptured(opts.BuildArtifacts, opts.CapturedSource, perf)
+	a.typeMemberState = nil
 	if perf != nil && opts.BuildArtifacts != nil && opts.BuildArtifacts.Sources != nil {
 		stats := opts.BuildArtifacts.Sources.Stats()
 		perf.counters.WorkspacePhysicalReads = stats.PhysicalReadAttempts

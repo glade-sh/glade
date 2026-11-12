@@ -1,9 +1,11 @@
 package sema
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -575,7 +577,13 @@ func (a *Analyzer) checkMethodBodiesSpeculative(index typesys.Index, model *sema
 	run := &semaBodyRun{seedWorkers: true, abort: &probe}
 	diagnostics, recovered := a.checkMethodBodiesRecovering(index, scratch, workers, run)
 	if probe.Load() {
-		return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+		// The discarded attempt still cost time, so it stays in the phase. The
+		// serial pass reads the same sources the attempt already counted, so
+		// it does not count them again.
+		if recorder != nil {
+			recorder.addPhaseDuration(&recorder.counters.MethodBodies, started)
+		}
+		return a.checkMethodBodiesRun(index, model, recorder, 1, &semaBodyRun{repeatsAttempt: true})
 	}
 	if recovered != nil {
 		panic(recovered)
@@ -594,7 +602,9 @@ func (a *Analyzer) checkMethodBodiesSpeculative(index typesys.Index, model *sema
 // included, because the serial rerun may not reach it.
 func (a *Analyzer) checkMethodBodiesRecovering(index typesys.Index, scratch *semaTypeMemberView, workers int, run *semaBodyRun) (diagnostics []diagnostic.Diagnostic, recovered any) {
 	defer func() {
-		recovered = recover()
+		if value := recover(); value != nil {
+			recovered = semaCapturePanic(value)
+		}
 	}()
 	return a.checkMethodBodiesRun(index, scratch, nil, workers, run), nil
 }
@@ -608,6 +618,43 @@ type semaBodyRun struct {
 	abort *atomic.Bool
 	// views receives every worker view, primary first.
 	views []*semaTypeMemberView
+	// repeatsAttempt marks the serial pass that follows a discarded attempt.
+	// The attempt already counted the source reads of the passes that run
+	// before the bodies, so this pass leaves those counters as they were.
+	repeatsAttempt bool
+}
+
+// semaWorkerPanic carries a recovered panic together with the stack of the
+// goroutine that raised it. A worker's panic is raised again from the
+// coordinator, whose own stack says nothing about the failing body check.
+// Printing it with %v gives the original value, as a serial run's panic does.
+// %+v adds the original stack.
+type semaWorkerPanic struct {
+	value any
+	stack []byte
+}
+
+// semaCapturePanic wraps a value just returned by recover, on the stack that
+// raised it. A value already wrapped keeps its first stack.
+func semaCapturePanic(value any) *semaWorkerPanic {
+	if wrapped, ok := value.(*semaWorkerPanic); ok {
+		return wrapped
+	}
+	return &semaWorkerPanic{value: value, stack: debug.Stack()}
+}
+
+func (p *semaWorkerPanic) Error() string { return fmt.Sprint(p.value) }
+
+func (p *semaWorkerPanic) Unwrap() error {
+	err, _ := p.value.(error)
+	return err
+}
+
+func (p *semaWorkerPanic) Format(state fmt.State, verb rune) {
+	_, _ = fmt.Fprint(state, p.value)
+	if verb == 'v' && state.Flag('+') {
+		_, _ = fmt.Fprintf(state, "\n%s", p.stack)
+	}
 }
 
 // cloneOnto returns a view over state that starts with v's configuration and
@@ -633,12 +680,28 @@ func (v *semaTypeMemberView) cloneOnto(state *semaTypeMemberState) *semaTypeMemb
 
 // mergeHydrated adds src's hydrated entries to v. An entry both views hold
 // keeps v's members and gains the fields only src's copy has, which is what a
-// view that saw both histories would hold.
+// view that saw both histories would hold. When v's copy is still a standard
+// SObject placeholder and src's copy is the hydrated entry built from it, the
+// hydrated entry is the base, so the merged entry also reports its fields as
+// loaded instead of being rebuilt on the next lookup.
 func (v *semaTypeMemberView) mergeHydrated(src *semaTypeMemberView) {
 	merge := func(dst map[string]typeMembers, from map[string]typeMembers) {
 		for key, members := range from {
 			held, ok := dst[key]
 			if !ok {
+				dst[key] = members
+				continue
+			}
+			if members.standardSObjectFieldsLoaded && !held.standardSObjectFieldsLoaded {
+				// Entries are shared between views, so build a new field map.
+				fields := make(map[string]typesys.MemberSymbol, len(members.fields)+len(held.fields))
+				for fieldKey, field := range members.fields {
+					fields[fieldKey] = field
+				}
+				for fieldKey, field := range held.fields {
+					fields[fieldKey] = field
+				}
+				members.fields = fields
 				dst[key] = members
 				continue
 			}
@@ -703,8 +766,15 @@ func (a *Analyzer) checkMethodBodiesRun(index typesys.Index, model *semaTypeMemb
 	}
 	var diagnostics []diagnostic.Diagnostic
 	bodyStarted := recorder.beginPhase()
+	var arenaBefore sourceArenaCounts
+	if run != nil && run.repeatsAttempt {
+		arenaBefore = recorder.sourceArenaCounts()
+	}
 	diagnostics = append(diagnostics, a.checkFieldInitializerTypes(index, model, sources)...)
 	workItems := buildSemaMethodBodyWorkItems(index, sources)
+	if run != nil && run.repeatsAttempt {
+		recorder.setSourceArenaCounts(arenaBefore)
+	}
 	if workerCount > 1 {
 		tasks := buildSemaMethodBodyTasks(index, workItems)
 		if workerCount > len(tasks) {
@@ -971,7 +1041,9 @@ func buildSemaMethodBodyTasks(index typesys.Index, workItems []semaMethodBodyWor
 
 func (a *Analyzer) checkSemaMethodBodyTask(index typesys.Index, task semaMethodBodyTask, workItems []semaMethodBodyWorkItem, model *semaTypeMemberView, duplicateTypes map[string]int, constructability map[string]typesys.TypeSymbol) (result semaMethodBodyResult) {
 	defer func() {
-		result.recovered = recover()
+		if value := recover(); value != nil {
+			result.recovered = semaCapturePanic(value)
+		}
 	}()
 	typ := index.Types[task.typeIndex]
 	bodyModel := model
