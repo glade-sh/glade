@@ -128,11 +128,13 @@ func TestCIPRLaneConsumesOneSharedHistoryArtifact(t *testing.T) {
 	// Shards that disagree on the plan would skip or repeat tests, and the PR
 	// lane has no union check, so no shard may restore a history cache itself.
 	for _, step := range pr.Steps {
-		if strings.HasPrefix(step.Uses, "actions/cache") {
-			t.Errorf("pr-tests step %q uses a per-shard cache", step.Name)
+		if !strings.HasPrefix(step.Uses, "actions/cache") {
+			continue
 		}
-		if strings.Contains(step.With["key"], "duration-history") {
-			t.Errorf("pr-tests step %q restores duration history per shard", step.Name)
+		for _, field := range []string{"key", "restore-keys", "path"} {
+			if strings.Contains(step.With[field], "duration-history") {
+				t.Errorf("pr-tests step %q restores duration history per shard (%s)", step.Name, field)
+			}
 		}
 	}
 	// Download ranges match the shard routes the job actually runs.
