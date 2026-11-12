@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/glade-sh/glade/internal/filestamp"
@@ -21,17 +22,31 @@ import (
 // that a coarse filesystem clock could not tell apart from a later write never
 // stands in for content.
 const (
-	executableDigestTrustAge  = 2 * time.Second
-	executableDigestEntryTTL  = 30 * 24 * time.Hour
-	executableDigestPruneScan = 512
+	executableDigestTrustAge = 2 * time.Second
+	executableDigestEntryTTL = 30 * 24 * time.Hour
+	// The scan bound only guards against a runaway directory. Names are hashes
+	// so any fixed prefix of the listing would leave the same old entries
+	// unscanned forever; scan far past the entries a user can accumulate.
+	executableDigestPruneScan = 16384
 )
 
 // executableHashHook is a test seam that fires once per full hash.
 var executableHashHook func()
 
-func executableDigestCacheDir() string {
+// executableDigestCacheDir returns the per-user cache directory, or "" when no
+// entry may be read or written. Test binaries never use the user's cache: each
+// is a freshly built executable whose entry is only litter. A process running
+// as root with the cache base owned by another user (sudo keeping HOME) does
+// not create a root-owned directory there; the user could never use it.
+var executableDigestCacheDir = func() string {
+	if testing.Testing() {
+		return ""
+	}
 	base, err := os.UserCacheDir()
 	if err != nil || base == "" {
+		return ""
+	}
+	if !cacheBaseUsable(base) {
 		return ""
 	}
 	return filepath.Join(base, "glade", "executable-digest")

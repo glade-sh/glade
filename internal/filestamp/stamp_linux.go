@@ -13,7 +13,7 @@ func trustedFilesystem(fs *syscall.Statfs_t) bool {
 		0x58465342, // xfs
 		0x9123683E, // btrfs
 		0x01021994, // tmpfs
-		0x794c7630, // overlayfs
+		0x794c7630, // overlayfs: only the upper layer is checked, see package doc
 		0x2fc12fc1, // zfs
 		0xF2F52010: // f2fs
 		return true
