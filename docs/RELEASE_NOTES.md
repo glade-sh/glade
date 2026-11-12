@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Toolchain
+
+- Build with Go 1.26.11 (net/http fix GO-2026-6859).
+
 ### Test daemon
 
 - **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.

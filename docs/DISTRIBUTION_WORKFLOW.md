@@ -61,7 +61,7 @@ clean candidate tree:
 scripts/ci-local-all
 ```
 
-Use Go 1.26.10 with CGO, Node 22 and npm, `actionlint`, the CodeQL CLI and Go
+Use Go 1.26.11 with CGO, Node 22 and npm, `actionlint`, the CodeQL CLI and Go
 query packs, and Playwright Chromium for the site and LWC runtime. The runner
 installs lockfile-pinned npm dependencies with `npm ci`; install the matching
 Playwright Chromium beforehand using the repository's

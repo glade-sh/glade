@@ -233,7 +233,7 @@ remaining diagnostics have been resolved. This proposal makes no recovery claim.
 
 ## Reproducing the relevant checks
 
-Use Go 1.26.10 with CGO enabled. Focused Go commands use `GOMAXPROCS=2`,
+Use Go 1.26.11 with CGO enabled. Focused Go commands use `GOMAXPROCS=2`,
 `GOMEMLIMIT=2GiB`, `GOTOOLCHAIN=local`, and `nice -n 10`. The local CGO binary
 build uses `GOMAXPROCS=1`. No whole-package or repository test suite is needed
 for this document.
