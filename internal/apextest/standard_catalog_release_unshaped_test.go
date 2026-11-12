@@ -39,6 +39,10 @@ func resetUnshapedCatalogRelease(t *testing.T) {
 // build must still release the decoded describe catalogs when the process
 // opted in, and the org it returns must be the same as without the release.
 func TestOrgFromIndexCustomObjectReleasesCatalogs(t *testing.T) {
+	// This test follows the shared unshaped seed, which only the eager spread
+	// builds; the lazy spread has no such seed to keep.
+	eagerStandardSpread.Store(true)
+	t.Cleanup(func() { eagerStandardSpread.Store(false) })
 	index := releaseProbeIndex(t)
 	previous := storage.SetStandardCatalogReleaseEnabled(false)
 	t.Cleanup(func() { storage.SetStandardCatalogReleaseEnabled(previous) })

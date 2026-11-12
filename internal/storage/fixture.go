@@ -376,6 +376,7 @@ func applyOrgShape(org *OrgState, features []string) {
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)
 	}
+	org.markStandardSpreadShaped()
 }
 
 func featureArgumentInt(feature string, fallback int) int {

@@ -812,6 +812,11 @@ func ensureStandardObjectWithProfile(org *OrgState, objectName string, profile [
 	if org.Objects == nil {
 		org.Objects = make(map[string]ObjectState)
 	}
+	if org.StandardSpread != "" {
+		// An object the lazy spread owes starts from what the eager spread
+		// holds, then this call refreshes it as it would an existing object.
+		installSpreadObject(org, objectName)
+	}
 	state, existed := org.Objects[objectName]
 	features := strings.Split(state.Definition.Metadata[standardFieldsOverlayMarker], ",")
 	if profile != nil {
