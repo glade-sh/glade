@@ -155,7 +155,7 @@ class Runner:
         return p.returncode == 0 and Path(p.stdout).is_file()
 
     def run(self):
-        go = (self.go, 'Go 1.26.10 toolchain')
+        go = (self.go, 'Go 1.26.11 toolchain')
         node = (self.node, 'Node 22 and npm')
         for prefix, label in [('third_party/lwc', 'lwc'), ('lwcruntime', 'runtime'), ('site', 'site'), ('internal/playground/web', 'playground')]:
             self.command('npm-ci-'+label, ['npm', 'ci', '--prefix', prefix], prerequisites=[node])
