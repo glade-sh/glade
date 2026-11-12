@@ -109,6 +109,10 @@ func TestMethodBodyDiagnosticsIdenticalAcrossWorkerCounts(t *testing.T) {
 		if i == 0 {
 			workerCounts, rounds = []int{2, 3, 8}, 3
 		}
+		// One worker per type: every type's body check starts from a view no
+		// other worker has touched, so a read of an earlier type's hydration
+		// shows as a difference here.
+		workerCounts = append(workerCounts, len(index.Types))
 		for _, workers := range workerCounts {
 			for round := 0; round < rounds; round++ {
 				if got := bodyDiagnosticsWithWorkers(index, workers); !reflect.DeepEqual(got, want) {
@@ -160,6 +164,12 @@ func TestMethodBodyWorkerCountFollowsGOMAXPROCS(t *testing.T) {
 // analyzeWithOptions does, and returns the diagnostics and the view's hydrated
 // keys afterwards. Later passes read that view, so it must match too.
 func bodiesWithGOMAXPROCS(t *testing.T, index typesys.Index, procs int) ([]diagnostic.Diagnostic, []string) {
+	diagnostics, keys, _ := bodiesViewWithGOMAXPROCS(t, index, procs)
+	return diagnostics, keys
+}
+
+// bodiesViewWithGOMAXPROCS also returns the view's hydrated entries.
+func bodiesViewWithGOMAXPROCS(t *testing.T, index typesys.Index, procs int) ([]diagnostic.Diagnostic, []string, map[string]typeMembers) {
 	t.Helper()
 	previous := runtime.GOMAXPROCS(procs)
 	defer runtime.GOMAXPROCS(previous)
@@ -175,24 +185,62 @@ func bodiesWithGOMAXPROCS(t *testing.T, index typesys.Index, procs int) ([]diagn
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-	return diagnostics, keys
+	return diagnostics, keys, view.hydrated
 }
 
 func TestSpeculativeBodiesLeaveTheSerialViewHistory(t *testing.T) {
-	index, ok := methodBodyWorkersIndex(methodBodyWorkersProject(t, 60))
-	if !ok {
-		t.Fatal("generated project did not load")
+	compared := 0
+	for i, root := range methodBodyWorkersRoots(t) {
+		if i == 0 {
+			root = methodBodyWorkersProject(t, 60)
+		}
+		index, ok := methodBodyWorkersIndex(root)
+		if !ok {
+			continue
+		}
+		name := strings.TrimPrefix(root, "../../")
+		wantDiagnostics, wantKeys, wantHydrated := bodiesViewWithGOMAXPROCS(t, index, 1)
+		gotDiagnostics, gotKeys, gotHydrated := bodiesViewWithGOMAXPROCS(t, index, 4)
+		if !reflect.DeepEqual(gotDiagnostics, wantDiagnostics) {
+			t.Fatalf("%s: diagnostics differ between GOMAXPROCS=1 and 4", name)
+		}
+		if i == 0 && len(wantKeys) == 0 {
+			t.Fatal("serial run hydrated nothing; the history comparison would prove nothing")
+		}
+		if reflect.DeepEqual(gotKeys, wantKeys) {
+			compared++
+			continue
+		}
+		// The merged view may hold a key the serial view never hydrated, as
+		// long as it is an alias: every serial key is present and unchanged,
+		// and each extra key's members equal an entry the serial view holds.
+		// The extra key is the schema-qualified spelling of an object the
+		// serial view already hydrated under its plain name, so a later pass
+		// reads the same members whichever key it asks for.
+		for _, key := range wantKeys {
+			if !reflect.DeepEqual(gotHydrated[key], wantHydrated[key]) {
+				t.Fatalf("%s: hydrated entry %q differs\nserial:   %v\nparallel: %v", name, key, wantKeys, gotKeys)
+			}
+		}
+		for _, key := range gotKeys {
+			if _, held := wantHydrated[key]; held {
+				continue
+			}
+			equal := false
+			for _, members := range wantHydrated {
+				if reflect.DeepEqual(gotHydrated[key], members) {
+					equal = true
+					break
+				}
+			}
+			if !equal {
+				t.Fatalf("%s: extra hydrated key %q has no content-equal serial entry\nserial:   %v\nparallel: %v", name, key, wantKeys, gotKeys)
+			}
+		}
+		compared++
 	}
-	wantDiagnostics, wantKeys := bodiesWithGOMAXPROCS(t, index, 1)
-	gotDiagnostics, gotKeys := bodiesWithGOMAXPROCS(t, index, 4)
-	if !reflect.DeepEqual(gotDiagnostics, wantDiagnostics) {
-		t.Fatalf("diagnostics differ between GOMAXPROCS=1 and 4")
-	}
-	if len(wantKeys) == 0 {
-		t.Fatal("serial run hydrated nothing; the history comparison would prove nothing")
-	}
-	if !reflect.DeepEqual(gotKeys, wantKeys) {
-		t.Fatalf("hydrated history differs\nserial:   %v\nparallel: %v", wantKeys, gotKeys)
+	if compared < 5 {
+		t.Fatalf("compared %d projects, want the generated project and the repo testdata projects", compared)
 	}
 }
 
