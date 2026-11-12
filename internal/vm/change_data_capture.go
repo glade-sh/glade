@@ -176,6 +176,11 @@ func (vm *VM) materializeChangeDataCapture(entries []changeDataCaptureEntry) []s
 			}
 			fields[name] = value.Clone()
 		}
+		if entry.operation == "UPDATE" && len(changed) == 0 {
+			// Native lead merges (automation_residual_paths cdcMerge, 62.0 and
+			// 67.0) never report an update event without a changed field.
+			continue
+		}
 		sort.Slice(changed, func(i, j int) bool { return changed[i].String < changed[j].String })
 		sort.Slice(nulled, func(i, j int) bool { return nulled[i].String < nulled[j].String })
 		fields["ChangeEventHeader.entityName"] = storage.StringValue(record.Object)
