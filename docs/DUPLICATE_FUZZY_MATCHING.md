@@ -51,8 +51,11 @@ All pages are Salesforce Help articles.
   digits. The equations and per-field criteria of the standard rules.
 
 Double Metaphone and Jaro-Winkler are public algorithms; Glade implements both
-from their published descriptions. Metaphone 3 and Syllable Alignment are
-named by the help pages but Glade carries neither (see Gaps).
+from their published descriptions. Metaphone 3 is the Go port
+`github.com/dlclark/metaphone3` (BSD 3-Clause, from Lawrence Philips's
+published reference code; the release bundle carries its LICENSE and ATTRIB
+notices). Syllable Alignment is named by the help pages but Glade does not
+carry it (see Gaps).
 
 ## Capture
 
@@ -159,14 +162,15 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    has context rules a Double Metaphone code does not (`Walker` does not find
    `Wallker`, `Cohen` finds `Kohen` only at 96, `Lach` does not find `Leach`,
    `Girard` does not find `Girrard`, `McKnight` does not find `Mknight`).
-   Glade does not carry Metaphone 3. `lastNameSoundsAlike` accepts the
-   spelling changes the surname rows show to be code-neutral: any change
-   inside vowel runs that touch no context-sensitive consonant, or one kind of
-   consonant respelling with unchanged vowels (a doubled consonant, `ck`/`k`,
-   `ph`/`f`, `z`/`s`, a silent `h` or `w`, a final `e`), each with the guards
-   the rows require. A dropped vowel is not accepted (natively 94% of the
-   captured cases score 100, `Cantu`/`Cntu`, `Combs`/`Cmbs` and
-   `Holman`/`Holmn` do not match).
+   Glade encodes both names with the port in exact mode (B, D and G stay
+   apart from P, T and K), vowels after the first letter not encoded, and its
+   default code length of eight; of the option combinations tried, this one
+   has no false match on the rows and the highest recall. The primary codes
+   are compared. The code does not see a space or a hyphen, but natively
+   `Smith Jones`, `De La Cruz` and `Mc Donald` do not find `Smith-Jones`,
+   `Delacruz` and `McDonald`, so two names match only when their separators
+   agree. This replaced a hand-written stand-in that rejected anything it
+   could not prove and missed dropped vowels, silent letters and name codes.
 3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
    are compared position by position; the cost of two different keys is 0.05
    for neighbours and 0.08 for each further step, where the distance is the
@@ -307,9 +311,9 @@ scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
 |---|---|---|---|---|
 | First Name | fit | 49935/49935 (100.0%) | 0 | 0.000 |
 | First Name | holdout (unbiased) | 460/478 (96.2%) | 0 | 0.200 |
-| Last Name | fit | 12914/17596 (73.4%) | 0 | 0.165 |
-| Last Name | holdout seen once, then one rule changed | 161/173 (93.1%) | 0 | 0.112 |
-| Last Name | holdout (unbiased) | 193/201 (96.0%) | 0 | 0.041 |
+| Last Name | fit | 17010/17600 (96.6%) | 0 | 0.012 |
+| Last Name | holdout seen once, then one rule changed | 171/173 (98.8%) | 0 | 0.000 |
+| Last Name | holdout (unbiased) | 199/201 (99.0%) | 0 | 0.010 |
 | Company | fit | 1619/1665 (97.2%) | 0 | 0.083 |
 | Company | holdout seen once, then one rule changed | 145/149 (97.3%) | 0 | 0.159 |
 | Company | holdout (unbiased) | 162/164 (98.8%) | 0 | 0.117 |
@@ -324,22 +328,24 @@ scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
 | Title | fit | 1510/1515 (99.7%) | 0 | 0.215 |
 | Title | holdout (unbiased) | 467/479 (97.5%) | 0 | 0.173 |
 
-The earlier bounds for the Last Name rows of the first three runs are lower
-than before this change. The previous phonetic code reproduced those rows but
+The earlier bounds for the Last Name rows of the first three runs were lower
+than before the Metaphone 3 change. An earlier phonetic code reproduced those rows but
 matched 670 pairs of the surname rows and 2,854 pairs of the first-name rows
 that Salesforce does not match; the rule set above matches none of them.
 
+Before the Metaphone 3 dependency the Last Name rows were fit 12918/17600
+(73.4%, MAE 0.165), the seen-once holdout 161/173 (93.1%, 0.112) and the
+unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
+`cases.json` bounds for every Last Name row were tightened to the new values.
+
 ## Gaps
 
-- Metaphone 3 is not implemented. `lastNameSoundsAlike` is a reject-biased
-  stand-in: it misses native matches with a dropped vowel (`Smith`/`Smth`),
-  two respellings at once (`Filips`/`Philipps`), silent consonants
-  (`Knight`/`Night`, `Hughes`/`Huse`, `Lee`/`Leigh`) and name-specific codes
-  (`Stewart`/`Stuart`, `Jackson`/`Jaxon`, `Khan`/`Cowen`). It can still accept
-  a respelling Metaphone 3 codes apart in a name the rows do not cover; the
-  surname rows put that at 2 of about 580 doubled-consonant pairs after the
-  guards (both now in the kept-apart list), and 0 on the held-out rows. An open-source
-  Metaphone 3 implementation as a dependency would remove this gap.
+- Last Name: Glade does not reproduce the 2 of 201 unbiased-holdout, 2 of 173
+  seen-once and about 590 of the fit pairs that native matches and the port
+  does not. They are Keyboard Distance matches of three or more edits, long
+  names the key cuts differently (`Kowalczyk`/`Kowalsky`), respellings the
+  port codes apart (`Robards`/`Robertz`, `Waalker`/`Walkker`) and a
+  hyphenated surname against its first part (`Fitzgerald`/`Fitzgerald-Lee`).
 - Keyboard Distance: the cost of trailing letters depends on the letters
   (`Williams`/`Williamson` 98, `Stevenson`/`Stevensonnn` 97), which the flat
   0.25 misses by one point; three or more substitutions, insertions and more

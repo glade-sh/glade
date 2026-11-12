@@ -2,6 +2,7 @@ package dml
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -68,6 +69,21 @@ func TestFuzzyScoreNativeConfidences(t *testing.T) {
 		{"LastName", "Olivier", "Ollivier", false, 0},
 		{"LastName", "Cantu", "Cntu", false, 0},
 		{"LastName", "Frank", "Franklin", false, 0},
+		// Equal Metaphone 3 codes: a dropped vowel, silent letters and
+		// name-specific codes (native rows, API 67.0 and 62.0).
+		{"LastName", "Smith", "Smth", true, 100},
+		{"LastName", "Knight", "Night", true, 100},
+		{"LastName", "Hughes", "Huse", true, 100},
+		{"LastName", "Stewart", "Stuart", true, 100},
+		{"LastName", "Jackson", "Jaxon", true, 100},
+		{"LastName", "Filips", "Philipps", true, 100},
+		{"LastName", "Lee", "Leigh", true, 100},
+		{"LastName", "Olivier", "Ollivier", false, 0},
+		{"LastName", "Pelletier", "Peletier", false, 0},
+		// A space or hyphen is a difference the codes do not see.
+		{"LastName", "Smith Jones", "Smith-Jones", false, 0},
+		{"LastName", "De La Cruz", "Delacruz", false, 0},
+		{"LastName", "Mc Donald", "McDonald", false, 0},
 		{"LastName", "Richardson", "Richardsom", true, 100},
 		{"LastName", "Richardson", "Richardsop", true, 98},
 		{"LastName", "Martinez", "Martinezk", true, 99},
@@ -137,6 +153,19 @@ func TestFuzzyRuleConfidenceAveragesFuzzyItems(t *testing.T) {
 		}
 		if got := math.Floor(result.Matches[0].Confidences[0] + 0.5); got != c.confidence {
 			t.Errorf("%s/%s: confidence %.2f; native reports %.0f", c.name, c.city, result.Matches[0].Confidences[0], c.confidence)
+		}
+	}
+}
+
+// The Last Name scorer takes any text a record can hold without panicking,
+// including very long values and non-letter characters.
+func TestFuzzyLastNameHandlesOddInput(t *testing.T) {
+	long := strings.Repeat("Wolfeschlegelsteinhausen", 400)
+	inputs := []string{"", " ", "-", "'", "''", "\u00e9\u00e8\u00ea", "\u4e2d\u6587", "\U0001F600", "a", "Zzzz", "123", "O'", long, long + "x", strings.Repeat("x", 100000), "\x00\xff\xfe"}
+	for _, a := range inputs {
+		for _, b := range inputs {
+			FuzzyScore("LastName", a, b, false)
+			FuzzyScore("LastName", a, b, true)
 		}
 	}
 }
