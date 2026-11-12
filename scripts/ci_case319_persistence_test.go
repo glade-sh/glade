@@ -46,8 +46,8 @@ if [ "$1" = api ]; then echo 901; else mkdir -p "$7"; cp -R "$FAKE_EVIDENCE"/ape
 		t.Fatal(err)
 	}
 	workflow := string(data)
-	begin := strings.Index(workflow, "  apextest-history-input:\n")
-	end := strings.Index(workflow, "\n  apextest:\n")
+	begin := strings.Index(workflow, "  history-input:\n")
+	end := strings.Index(workflow, "\n  gladecli:\n")
 	if begin < 0 || end <= begin {
 		t.Fatal("missing workflow job")
 	}

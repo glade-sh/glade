@@ -19,13 +19,13 @@ func TestCIScaleApexWorkflowRoutes(t *testing.T) {
 			t.Errorf("Apex matrix missing %q", marker)
 		}
 	}
-	history := jobs["apextest-history"]
+	history := jobs["history"]
 	for index := range 14 {
 		if !strings.Contains(history, fmt.Sprintf("/tmp/apextest-history-input/apex-shard-%d", index)) {
 			t.Errorf("Apex history omits shard %d", index)
 		}
 	}
-	for _, name := range []string{"apextest", "apextest-history"} {
+	for _, name := range []string{"apextest", "history"} {
 		if !strings.Contains(jobs["required-ci"], "      - "+name+"\n") {
 			t.Errorf("Required CI omits %s", name)
 		}

@@ -197,11 +197,11 @@ func TestCIHistoryDefaultBranchFallbackWorkflowSteps(t *testing.T) {
 		job, step, historyVar string
 		extra                 string
 	}{
-		{"lwc-compile-history-input", "Find predecessor LWC shard evidence", "CI_LWC_COMPILE_HISTORY_PATH", ""},
-		{"visualforce-history-input", "Find predecessor Visualforce evidence", "CI_VISUALFORCE_HISTORY_PATH", "format=shards\n"},
+		{"history-input", "Find predecessor LWC shard evidence", "CI_LWC_COMPILE_HISTORY_PATH", ""},
+		{"history-input", "Find predecessor Visualforce evidence", "CI_VISUALFORCE_HISTORY_PATH", "format=shards\n"},
 	}
 	for _, c := range cases {
-		t.Run(c.job+"/default-branch-run-used", func(t *testing.T) {
+		t.Run(c.step+"/default-branch-run-used", func(t *testing.T) {
 			_, calls, out := runHistoryFallbackStep(t, c.job, c.step, c.historyVar, "4242", false)
 			if !strings.Contains(calls, "head_sha=abc") || !strings.Contains(calls, "branch=main") || !strings.Contains(calls, "event=push") {
 				t.Fatalf("expected both lookups:\n%s", calls)
@@ -210,7 +210,7 @@ func TestCIHistoryDefaultBranchFallbackWorkflowSteps(t *testing.T) {
 				t.Fatalf("GITHUB_OUTPUT = %q, want run_id=4242 and %q", out, c.extra)
 			}
 		})
-		t.Run(c.job+"/both-empty", func(t *testing.T) {
+		t.Run(c.step+"/both-empty", func(t *testing.T) {
 			_, calls, out := runHistoryFallbackStep(t, c.job, c.step, c.historyVar, "", false)
 			if !strings.Contains(calls, "branch=main") {
 				t.Fatalf("fallback lookup not attempted:\n%s", calls)
@@ -222,7 +222,7 @@ func TestCIHistoryDefaultBranchFallbackWorkflowSteps(t *testing.T) {
 				t.Fatalf("unexpected LWC output %q", out)
 			}
 		})
-		t.Run(c.job+"/fallback-lookup-fails", func(t *testing.T) {
+		t.Run(c.step+"/fallback-lookup-fails", func(t *testing.T) {
 			out, _, outFile := runHistoryFallbackStep(t, c.job, c.step, c.historyVar, "4242", true)
 			if !strings.Contains(out, "::warning::") {
 				t.Fatalf("missing warning:\n%s", out)
@@ -237,9 +237,9 @@ func TestCIHistoryDefaultBranchFallbackWorkflowSteps(t *testing.T) {
 func TestCIHistoryDefaultBranchFallbackEnvWiring(t *testing.T) {
 	const want = "${{ github.event.repository.default_branch }}"
 	for _, c := range []struct{ job, step, key string }{
-		{"lwc-compile-history-input", "Find predecessor LWC shard evidence", "DEFAULT_BRANCH"},
-		{"visualforce-history-input", "Find predecessor Visualforce evidence", "DEFAULT_BRANCH"},
-		{"apextest-history-input", "Stage validated Apex scheduling input", "CI_DURATION_HISTORY_FALLBACK_BRANCH"},
+		{"history-input", "Find predecessor LWC shard evidence", "DEFAULT_BRANCH"},
+		{"history-input", "Find predecessor Visualforce evidence", "DEFAULT_BRANCH"},
+		{"history-input", "Stage validated Apex scheduling input", "CI_DURATION_HISTORY_FALLBACK_BRANCH"},
 	} {
 		step := historyFallbackWorkflowStep(t, c.job, c.step)
 		if step.Env[c.key] != want {
