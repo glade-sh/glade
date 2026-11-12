@@ -6,6 +6,8 @@ import (
 	"sort"
 	"sync"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 const passivePre = `List<Schema.ChildRelationship> rels = Schema.SObjectType.Account.getDescribe().getChildRelationships(); Schema.ChildRelationship cr = rels[1]; Schema.SObjectField fld = cr.getField();
@@ -121,10 +123,30 @@ func TestChildRelationshipDescribePassiveRoutes(t *testing.T) {
 // and adding names through the passive accessors in one VM rewrites nothing the
 // other VMs read, including the list backing array.
 func TestChildRelationshipDescribeJunctionListsStayShared(t *testing.T) {
-	base, template := describeSharePrimedBaseFor(t, false)
+	// The shared fixture org carries no junction names, so add one explicitly.
+	org := describeShareOrg()
+	org.Objects["LinkParent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "LinkParent__c", Fields: map[string]storage.Field{"Id": {APIName: "Id", Label: "Record ID", Type: storage.FieldID}},
+	}}
+	org.Objects["LinkChild__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "LinkChild__c",
+		Fields: map[string]storage.Field{
+			"Id":        {APIName: "Id", Label: "Record ID", Type: storage.FieldID},
+			"Parent__c": {APIName: "Parent__c", Label: "Parent", Type: storage.FieldReference, ReferenceTo: []string{"LinkParent__c"}, RelationshipName: "Parent__r"},
+		},
+		Relations: []storage.Relationship{{
+			Field:               "Parent__c",
+			ParentObjects:       []string{"LinkParent__c"},
+			ParentRelationship:  "Parent__r",
+			ChildRelationship:   "Children__r",
+			JunctionIDListNames: []string{"LinkIds"},
+			JunctionReferenceTo: []string{"LinkParent__c"},
+		}},
+	}}
+	base, template := describeSharePrimedBaseWithOrg(t, org)
 	object, index, names := passiveFindJunction(t, describeShareClone(base, template), "67.0")
 	if object == "" || len(names) == 0 {
-		t.Skip("fixture has no relationship with junction names")
+		t.Fatal("fixture has no relationship with junction names")
 	}
 	read := func(machine *VM) []string {
 		machine.currentMethod.APIVersion = "67.0"
