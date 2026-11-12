@@ -64,6 +64,9 @@ type l13CompiledRow struct {
 // GLADE_L13_REPORT selects the TSV destination. Neither changes the case table.
 // CI uses only this export; it never calls Salesforce or imports capture tools.
 func TestL13SalesforceConformance(t *testing.T) {
+	// The dependency-project cases keep their managed-package metadata in a sibling
+	// directory of the consumer project; that layout loads only with the sibling scan.
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	capture := os.Getenv("GLADE_L13_CAPTURE") == "1"
 	data, err := os.ReadFile("testdata/l13_salesforce.json")
 	if err != nil {
