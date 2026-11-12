@@ -65,6 +65,12 @@ type Options struct {
 	Parallelism     int
 	ParallelMethods bool
 	NoDiskCache     bool
+	// OneShotProcess marks a run whose process exits after this run and keeps
+	// no later runtime transition. Set it only on the CLI's one-shot local
+	// route, never for the daemon, server, watch or dev loops. The runtime
+	// patch authority then skips the ambient org fingerprint it could only
+	// use in a later transition, and fails closed instead.
+	OneShotProcess bool
 	// RestoredRuntimeMultiWorker is an internal, default-off experiment that
 	// permits disk-restored runtimes with parallel method workers. Product
 	// configuration and CLI surfaces intentionally do not expose it.
