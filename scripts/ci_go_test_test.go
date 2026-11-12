@@ -1884,7 +1884,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 	} {
 		job := jobs[jobName]
 		if jobName != "vet" {
-			prGuard := "    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}"
+			prGuard := "    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}"
 			if strings.Count(job, prGuard) != 1 {
 				return fmt.Sprintf("%s PR exclusion is not exact", jobName)
 			}
