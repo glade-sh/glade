@@ -792,71 +792,72 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 }
 
 func dedupeProjectFiles(p *Project) {
-	p.ApexFiles = dedupeFilePaths(p.ApexFiles)
-	p.ObjectFiles = dedupeFilePaths(p.ObjectFiles)
-	p.FieldFiles = dedupeFilePaths(p.FieldFiles)
-	p.FieldSetFiles = dedupeFilePaths(p.FieldSetFiles)
-	p.RecordTypeFiles = dedupeFilePaths(p.RecordTypeFiles)
-	p.ValidationRuleFiles = dedupeFilePaths(p.ValidationRuleFiles)
-	p.LabelFiles = dedupeFilePaths(p.LabelFiles)
-	p.TranslationFiles = dedupeFilePaths(p.TranslationFiles)
-	p.StaticResourceFiles = dedupeFilePaths(p.StaticResourceFiles)
-	p.StaticResourceMetas = dedupeFilePaths(p.StaticResourceMetas)
-	p.DataCategoryGroupFiles = dedupeFilePaths(p.DataCategoryGroupFiles)
-	p.PlatformEventChannelMemberFiles = dedupeFilePaths(p.PlatformEventChannelMemberFiles)
-	p.CachePartitionFiles = dedupeFilePaths(p.CachePartitionFiles)
-	p.DataWeaveFiles = dedupeFilePaths(p.DataWeaveFiles)
-	p.DataWeaveMetas = dedupeFilePaths(p.DataWeaveMetas)
-	p.ContentAssetFiles = dedupeFilePaths(p.ContentAssetFiles)
-	p.ContentAssetMetas = dedupeFilePaths(p.ContentAssetMetas)
-	p.EmailTemplateFiles = dedupeFilePaths(p.EmailTemplateFiles)
-	p.EmailServiceFiles = dedupeFilePaths(p.EmailServiceFiles)
-	p.FolderFiles = dedupeFilePaths(p.FolderFiles)
-	p.PaymentGatewayProviderFiles = dedupeFilePaths(p.PaymentGatewayProviderFiles)
-	p.ReportFiles = dedupeFilePaths(p.ReportFiles)
-	p.DashboardFiles = dedupeFilePaths(p.DashboardFiles)
-	p.NamedCredentialFiles = dedupeFilePaths(p.NamedCredentialFiles)
-	p.RemoteSiteFiles = dedupeFilePaths(p.RemoteSiteFiles)
-	p.CustomPermissionFiles = dedupeFilePaths(p.CustomPermissionFiles)
-	p.CustomMetadataFiles = dedupeFilePaths(p.CustomMetadataFiles)
-	p.FeatureParameterFiles = dedupeFilePaths(p.FeatureParameterFiles)
-	p.AutoResponseRuleFiles = dedupeFilePaths(p.AutoResponseRuleFiles)
-	p.ApprovalProcessFiles = dedupeFilePaths(p.ApprovalProcessFiles)
-	p.AssignmentRuleFiles = dedupeFilePaths(p.AssignmentRuleFiles)
-	p.WorkflowFiles = dedupeFilePaths(p.WorkflowFiles)
-	p.FlowFiles = dedupeFilePaths(p.FlowFiles)
-	p.OwnerSharingRuleFiles = dedupeFilePaths(p.OwnerSharingRuleFiles)
-	p.GroupFiles = dedupeFilePaths(p.GroupFiles)
-	p.QueueFiles = dedupeFilePaths(p.QueueFiles)
-	p.RoleFiles = dedupeFilePaths(p.RoleFiles)
-	p.ProfileFiles = dedupeFilePaths(p.ProfileFiles)
-	p.NetworkFiles = dedupeFilePaths(p.NetworkFiles)
-	p.PermissionSetFiles = dedupeFilePaths(p.PermissionSetFiles)
-	p.PermissionSetGroupFiles = dedupeFilePaths(p.PermissionSetGroupFiles)
-	p.MutingPermissionSetFiles = dedupeFilePaths(p.MutingPermissionSetFiles)
-	p.BusinessHoursSettingsFiles = dedupeFilePaths(p.BusinessHoursSettingsFiles)
-	p.DuplicateRuleFiles = dedupeFilePaths(p.DuplicateRuleFiles)
-	p.MatchingRuleFiles = dedupeFilePaths(p.MatchingRuleFiles)
-	p.PermissionAssignmentFiles = dedupeFilePaths(p.PermissionAssignmentFiles)
-	p.ListViewFiles = dedupeFilePaths(p.ListViewFiles)
-	p.LayoutFiles = dedupeFilePaths(p.LayoutFiles)
-	p.CompactLayoutFiles = dedupeFilePaths(p.CompactLayoutFiles)
-	p.TabFiles = dedupeFilePaths(p.TabFiles)
-	p.WebLinkFiles = dedupeFilePaths(p.WebLinkFiles)
-	p.QuickActionFiles = dedupeFilePaths(p.QuickActionFiles)
-	p.GlobalValueSetFiles = dedupeFilePaths(p.GlobalValueSetFiles)
-	p.StandardValueSetFiles = dedupeFilePaths(p.StandardValueSetFiles)
-	p.ValueSetTranslationFiles = dedupeFilePaths(p.ValueSetTranslationFiles)
-	p.FlexiPageFiles = dedupeFilePaths(p.FlexiPageFiles)
-	p.ApplicationFiles = dedupeFilePaths(p.ApplicationFiles)
-	p.VisualforcePageFiles = dedupeFilePaths(p.VisualforcePageFiles)
-	p.VisualforceComponentFiles = dedupeFilePaths(p.VisualforceComponentFiles)
-	p.AuraFiles = dedupeFilePaths(p.AuraFiles)
-	p.LWCFiles = dedupeFilePaths(p.LWCFiles)
-	p.LWCHTMLFiles = dedupeFilePaths(p.LWCHTMLFiles)
-	p.LWCCSSFiles = dedupeFilePaths(p.LWCCSSFiles)
-	p.LWCMetaFiles = dedupeFilePaths(p.LWCMetaFiles)
-	p.MessageChannelFiles = dedupeFilePaths(p.MessageChannelFiles)
+	keys := newCanonicalFileKeys()
+	p.ApexFiles = dedupeFilePaths(keys, p.ApexFiles)
+	p.ObjectFiles = dedupeFilePaths(keys, p.ObjectFiles)
+	p.FieldFiles = dedupeFilePaths(keys, p.FieldFiles)
+	p.FieldSetFiles = dedupeFilePaths(keys, p.FieldSetFiles)
+	p.RecordTypeFiles = dedupeFilePaths(keys, p.RecordTypeFiles)
+	p.ValidationRuleFiles = dedupeFilePaths(keys, p.ValidationRuleFiles)
+	p.LabelFiles = dedupeFilePaths(keys, p.LabelFiles)
+	p.TranslationFiles = dedupeFilePaths(keys, p.TranslationFiles)
+	p.StaticResourceFiles = dedupeFilePaths(keys, p.StaticResourceFiles)
+	p.StaticResourceMetas = dedupeFilePaths(keys, p.StaticResourceMetas)
+	p.DataCategoryGroupFiles = dedupeFilePaths(keys, p.DataCategoryGroupFiles)
+	p.PlatformEventChannelMemberFiles = dedupeFilePaths(keys, p.PlatformEventChannelMemberFiles)
+	p.CachePartitionFiles = dedupeFilePaths(keys, p.CachePartitionFiles)
+	p.DataWeaveFiles = dedupeFilePaths(keys, p.DataWeaveFiles)
+	p.DataWeaveMetas = dedupeFilePaths(keys, p.DataWeaveMetas)
+	p.ContentAssetFiles = dedupeFilePaths(keys, p.ContentAssetFiles)
+	p.ContentAssetMetas = dedupeFilePaths(keys, p.ContentAssetMetas)
+	p.EmailTemplateFiles = dedupeFilePaths(keys, p.EmailTemplateFiles)
+	p.EmailServiceFiles = dedupeFilePaths(keys, p.EmailServiceFiles)
+	p.FolderFiles = dedupeFilePaths(keys, p.FolderFiles)
+	p.PaymentGatewayProviderFiles = dedupeFilePaths(keys, p.PaymentGatewayProviderFiles)
+	p.ReportFiles = dedupeFilePaths(keys, p.ReportFiles)
+	p.DashboardFiles = dedupeFilePaths(keys, p.DashboardFiles)
+	p.NamedCredentialFiles = dedupeFilePaths(keys, p.NamedCredentialFiles)
+	p.RemoteSiteFiles = dedupeFilePaths(keys, p.RemoteSiteFiles)
+	p.CustomPermissionFiles = dedupeFilePaths(keys, p.CustomPermissionFiles)
+	p.CustomMetadataFiles = dedupeFilePaths(keys, p.CustomMetadataFiles)
+	p.FeatureParameterFiles = dedupeFilePaths(keys, p.FeatureParameterFiles)
+	p.AutoResponseRuleFiles = dedupeFilePaths(keys, p.AutoResponseRuleFiles)
+	p.ApprovalProcessFiles = dedupeFilePaths(keys, p.ApprovalProcessFiles)
+	p.AssignmentRuleFiles = dedupeFilePaths(keys, p.AssignmentRuleFiles)
+	p.WorkflowFiles = dedupeFilePaths(keys, p.WorkflowFiles)
+	p.FlowFiles = dedupeFilePaths(keys, p.FlowFiles)
+	p.OwnerSharingRuleFiles = dedupeFilePaths(keys, p.OwnerSharingRuleFiles)
+	p.GroupFiles = dedupeFilePaths(keys, p.GroupFiles)
+	p.QueueFiles = dedupeFilePaths(keys, p.QueueFiles)
+	p.RoleFiles = dedupeFilePaths(keys, p.RoleFiles)
+	p.ProfileFiles = dedupeFilePaths(keys, p.ProfileFiles)
+	p.NetworkFiles = dedupeFilePaths(keys, p.NetworkFiles)
+	p.PermissionSetFiles = dedupeFilePaths(keys, p.PermissionSetFiles)
+	p.PermissionSetGroupFiles = dedupeFilePaths(keys, p.PermissionSetGroupFiles)
+	p.MutingPermissionSetFiles = dedupeFilePaths(keys, p.MutingPermissionSetFiles)
+	p.BusinessHoursSettingsFiles = dedupeFilePaths(keys, p.BusinessHoursSettingsFiles)
+	p.DuplicateRuleFiles = dedupeFilePaths(keys, p.DuplicateRuleFiles)
+	p.MatchingRuleFiles = dedupeFilePaths(keys, p.MatchingRuleFiles)
+	p.PermissionAssignmentFiles = dedupeFilePaths(keys, p.PermissionAssignmentFiles)
+	p.ListViewFiles = dedupeFilePaths(keys, p.ListViewFiles)
+	p.LayoutFiles = dedupeFilePaths(keys, p.LayoutFiles)
+	p.CompactLayoutFiles = dedupeFilePaths(keys, p.CompactLayoutFiles)
+	p.TabFiles = dedupeFilePaths(keys, p.TabFiles)
+	p.WebLinkFiles = dedupeFilePaths(keys, p.WebLinkFiles)
+	p.QuickActionFiles = dedupeFilePaths(keys, p.QuickActionFiles)
+	p.GlobalValueSetFiles = dedupeFilePaths(keys, p.GlobalValueSetFiles)
+	p.StandardValueSetFiles = dedupeFilePaths(keys, p.StandardValueSetFiles)
+	p.ValueSetTranslationFiles = dedupeFilePaths(keys, p.ValueSetTranslationFiles)
+	p.FlexiPageFiles = dedupeFilePaths(keys, p.FlexiPageFiles)
+	p.ApplicationFiles = dedupeFilePaths(keys, p.ApplicationFiles)
+	p.VisualforcePageFiles = dedupeFilePaths(keys, p.VisualforcePageFiles)
+	p.VisualforceComponentFiles = dedupeFilePaths(keys, p.VisualforceComponentFiles)
+	p.AuraFiles = dedupeFilePaths(keys, p.AuraFiles)
+	p.LWCFiles = dedupeFilePaths(keys, p.LWCFiles)
+	p.LWCHTMLFiles = dedupeFilePaths(keys, p.LWCHTMLFiles)
+	p.LWCCSSFiles = dedupeFilePaths(keys, p.LWCCSSFiles)
+	p.LWCMetaFiles = dedupeFilePaths(keys, p.LWCMetaFiles)
+	p.MessageChannelFiles = dedupeFilePaths(keys, p.MessageChannelFiles)
 }
 
 func duplicateApexClassSourceWarnings(root string, files []string) []string {
@@ -903,14 +904,14 @@ func duplicateApexClassSourceWarnings(root string, files []string) []string {
 	return warnings
 }
 
-func dedupeFilePaths(paths []string) []string {
+func dedupeFilePaths(keys *canonicalFileKeys, paths []string) []string {
 	if len(paths) < 2 {
 		return paths
 	}
 	seen := make(map[string]bool, len(paths))
 	out := make([]string, 0, len(paths))
 	for _, path := range paths {
-		key := canonicalFileKey(path)
+		key := keys.key(path)
 		if seen[key] {
 			continue
 		}
@@ -918,6 +919,39 @@ func dedupeFilePaths(paths []string) []string {
 		out = append(out, path)
 	}
 	return out
+}
+
+// canonicalFileKeys resolves symlinks once per directory instead of once per
+// file. A file whose own entry is a symlink, or whose directory cannot be
+// resolved, takes the full per-path resolution.
+type canonicalFileKeys struct {
+	dirs map[string]string
+}
+
+func newCanonicalFileKeys() *canonicalFileKeys {
+	return &canonicalFileKeys{dirs: make(map[string]string)}
+}
+
+func (c *canonicalFileKeys) key(path string) string {
+	dir, base := filepath.Split(path)
+	info, err := os.Lstat(path)
+	if err != nil || info.Mode()&os.ModeSymlink != 0 || base == "" || base == "." || base == ".." {
+		return canonicalFileKey(path)
+	}
+	resolvedDir, ok := c.dirs[dir]
+	if !ok {
+		resolved, err := filepath.EvalSymlinks(filepath.Clean(dir))
+		if err != nil {
+			c.dirs[dir] = ""
+			return canonicalFileKey(path)
+		}
+		resolvedDir = filepath.Clean(resolved)
+		c.dirs[dir] = resolvedDir
+	}
+	if resolvedDir == "" {
+		return canonicalFileKey(path)
+	}
+	return filepath.Join(resolvedDir, base)
 }
 
 func canonicalFileKey(path string) string {
