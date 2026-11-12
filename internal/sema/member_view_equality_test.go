@@ -2,6 +2,7 @@ package sema
 
 import (
 	"io/fs"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -23,7 +24,8 @@ func TestSharedMemberViewKeepsDiagnosticsIdentical(t *testing.T) {
 			return nil
 		})
 	}
-	compared := 0
+	roots = append(roots, memberViewFinalWriteProject(t))
+	compared, finalFed := 0, 0
 	for i, root := range roots {
 		index, ok := memberViewSharingIndex(t, root)
 		if !ok {
@@ -49,12 +51,54 @@ func TestSharedMemberViewKeepsDiagnosticsIdentical(t *testing.T) {
 			}
 		}
 		input := append(append([]diagnostic.Diagnostic(nil), private...), a.checkMemberTypes(index, state.view())...)
-		if got, want := nativeLifecycleDiagnostics(index, input, state), nativeLifecycleDiagnostics(index, input, nil); !reflect.DeepEqual(got, want) {
+		// The lifecycle pass rewrites body diagnostics GLADESEMA010 and 027
+		// through the member view, so feed it the real ones too.
+		for _, d := range a.checkMethodBodiesWithView(index, state.view(), nil) {
+			if d.Code == "GLADESEMA010" || d.Code == "GLADESEMA027" {
+				input = append(input, d)
+				finalFed++
+			}
+		}
+		got, want := nativeLifecycleDiagnostics(index, input, state), nativeLifecycleDiagnostics(index, input, nil)
+		if i == len(roots)-1 {
+			rewritten := false
+			for _, d := range want {
+				rewritten = rewritten || d.NativeMessage == "Variable is not visible: FinalBase.q"
+			}
+			if !rewritten {
+				t.Fatalf("final-write project must reach the member-view rewrite: %v", want)
+			}
+		}
+		if !reflect.DeepEqual(got, want) {
 			t.Fatalf("%s: lifecycle diagnostics differ\nprivate: %v\nshared:  %v", strings.TrimPrefix(root, "../../"), want, got)
 		}
 		compared++
 	}
+	if finalFed == 0 {
+		t.Fatal("no GLADESEMA010 or GLADESEMA027 diagnostic reached the lifecycle pass")
+	}
 	if compared < 5 {
 		t.Fatalf("compared %d projects, want the generated project and the repo testdata projects", compared)
 	}
+}
+
+// memberViewFinalWriteProject writes a public API 67 class whose zero-argument
+// constructor assigns an inherited private final field of its virtual base.
+// Body analysis reports that write as GLADESEMA010, and the lifecycle pass
+// reads the member view to give it the native text.
+func memberViewFinalWriteProject(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	classes := filepath.Join(root, "force-app/main/default/classes")
+	if err := os.MkdirAll(classes, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	write := func(name, body string) {
+		writeSemaFile(t, filepath.Join(classes, name+".cls"), body)
+		writeSemaFile(t, filepath.Join(classes, name+".cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+	}
+	write("FinalBase", "public virtual class FinalBase {\n private final Integer q = 1;\n}\n")
+	write("FinalChild", "public class FinalChild extends FinalBase {\n public FinalChild() {\n  q = 7;\n }\n}\n")
+	return root
 }

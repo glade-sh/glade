@@ -67,8 +67,8 @@ func TestAnalysisBuildsOneTypeMemberModel(t *testing.T) {
 	before := semaTypeMemberLayerBuilds.Load()
 	result := Analyze(index)
 	builds := semaTypeMemberLayerBuilds.Load() - before
-	if builds > 2 {
-		t.Fatalf("analysis built %d type-member models for 40 handler classes, want at most 2", builds)
+	if builds > 1 {
+		t.Fatalf("analysis built %d type-member models for 40 handler classes, want at most 1", builds)
 	}
 	if len(result.Diagnostics) == 0 {
 		t.Fatal("generated project must produce diagnostics for the equality checks to mean something")
