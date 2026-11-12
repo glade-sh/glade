@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
@@ -141,7 +142,10 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		var index typesys.Index
 		if state.index != nil {
 			index = *state.index
-		} else if index, err = dapTestIndexLoader(projectRoot); err != nil {
+		} else if index, err = awaitDAPTestIndex(ctx, projectRoot); err != nil {
+			return err
+		}
+		if err := ctx.Err(); err != nil {
 			return err
 		}
 		if err := apextest.RegisterTestMethodForRequest(machine, index, launch.ClassName, launch.MethodName); err != nil {
@@ -149,6 +153,10 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		}
 	}
 	trace.mark("register-project-runtime")
+	// Never install a pending session for a launch that was cancelled.
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	handler.PrepareLiveSessionInClassWithHooks(machine, program, strings.TrimSpace(launch.ClassName), func(machine *vm.VM) {
 		visualforce.SetVMLazyRenderEnvironment(machine, projectRoot)
 	}, func(machine *vm.VM, execErr error) error {
@@ -181,24 +189,74 @@ type dapStartup struct {
 }
 
 // dapStartupLoader builds the launch state for a project root. Tests replace it.
-var dapStartupLoader = func(root string) dapStartup {
-	org, runtime, apiVersion, index, err := loadDAPStartupStateWithIndex(root)
+// It should stop early and publish nothing once ctx ends.
+var dapStartupLoader = func(ctx context.Context, root string) dapStartup {
+	org, runtime, apiVersion, index, err := loadDAPStartupStateWithIndex(ctx, root)
 	return dapStartup{org: org, runtime: runtime, apiVersion: apiVersion, index: index, err: err}
 }
 
-// awaitDAPStartup returns the launch state, or ctx.Err() as soon as ctx ends.
-// The project load cannot be interrupted, so after a cancel it finishes in the
-// background and still fills the startup cache for the next launch. Its result
-// is never shared: each launch owns the state it receives.
-func awaitDAPStartup(ctx context.Context, root string) (dapStartup, error) {
-	result := make(chan dapStartup, 1)
-	go func() { result <- dapStartupLoader(root) }()
+// dapLoadSlots allows one project load per root at a time, so repeated
+// launch and cancel cycles cannot pile up background builds.
+var dapLoadSlots sync.Map // root -> chan struct{}
+
+func acquireDAPLoadSlot(ctx context.Context, root string) (release func(), err error) {
+	value, _ := dapLoadSlots.LoadOrStore(root, make(chan struct{}, 1))
+	slot := value.(chan struct{})
 	select {
-	case state := <-result:
-		return state, state.err
+	case slot <- struct{}{}:
+		return func() { <-slot }, nil
 	case <-ctx.Done():
-		return dapStartup{}, ctx.Err()
+		return nil, ctx.Err()
 	}
+}
+
+// runCancellable runs work and returns its result, or ctx.Err() as soon as ctx
+// ends. The work gets a context that ends with ctx and keeps running until it
+// notices, but only one load per root runs at once and a cancelled load does
+// not publish cache state. Results are never shared between launches.
+func runCancellable[T any](ctx context.Context, root string, work func(context.Context) T) (T, error) {
+	var zero T
+	release, err := acquireDAPLoadSlot(ctx, root)
+	if err != nil {
+		return zero, err
+	}
+	result := make(chan T, 1)
+	go func() {
+		defer release()
+		result <- work(ctx)
+	}()
+	select {
+	case value := <-result:
+		return value, nil
+	case <-ctx.Done():
+		return zero, ctx.Err()
+	}
+}
+
+func awaitDAPStartup(ctx context.Context, root string) (dapStartup, error) {
+	state, err := runCancellable(ctx, root, func(c context.Context) dapStartup { return dapStartupLoader(c, root) })
+	if err != nil {
+		return dapStartup{}, err
+	}
+	return state, state.err
+}
+
+type dapIndexResult struct {
+	index typesys.Index
+	err   error
+}
+
+// awaitDAPTestIndex builds the index for a warm test launch without blocking
+// the launch past a cancel.
+func awaitDAPTestIndex(ctx context.Context, root string) (typesys.Index, error) {
+	res, err := runCancellable(ctx, root, func(context.Context) dapIndexResult {
+		index, err := dapTestIndexLoader(root)
+		return dapIndexResult{index, err}
+	})
+	if err != nil {
+		return typesys.Index{}, err
+	}
+	return res.index, res.err
 }
 
 type dapStartupTrace struct {

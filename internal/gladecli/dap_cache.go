@@ -1,6 +1,7 @@
 package gladecli
 
 import (
+	"context"
 	"path/filepath"
 
 	"github.com/glade-sh/glade/internal/apextest"
@@ -14,13 +15,13 @@ import (
 const dapCacheVersion = 18
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
-	org, runtime, apiVersion, _, err := loadDAPStartupStateWithIndex(projectRoot)
+	org, runtime, apiVersion, _, err := loadDAPStartupStateWithIndex(context.Background(), projectRoot)
 	return org, runtime, apiVersion, err
 }
 
 // loadDAPStartupStateWithIndex also returns the project index when this call
 // had to build it (a startup cache miss). On a cache hit the index is nil.
-func loadDAPStartupStateWithIndex(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
+func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
@@ -41,7 +42,16 @@ func loadDAPStartupStateWithIndex(projectRoot string) (storage.OrgState, apextes
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
+	if err := ctx.Err(); err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
+	}
 	runtime := apextest.CompileProjectRuntimeForRequest(index)
+	// A cancelled load never publishes: the cache entry fingerprints the files
+	// as they are when it is written, which may no longer be the files this
+	// build read.
+	if err := ctx.Err(); err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
+	}
 	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
 	built.Version = dapCacheVersion
 	if err := startupcache.Write(&built, startupcache.SubdirDAP); err != nil {

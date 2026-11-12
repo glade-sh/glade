@@ -3,7 +3,10 @@ package gladecli
 import (
 	"context"
 	"errors"
+	"github.com/glade-sh/glade/internal/startupcache"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,7 +19,7 @@ func TestDAPLaunchCancelEndsWhileProjectLoadIsRunning(t *testing.T) {
 	started := make(chan struct{})
 	finished := make(chan struct{})
 	previous := dapStartupLoader
-	dapStartupLoader = func(string) dapStartup {
+	dapStartupLoader = func(context.Context, string) dapStartup {
 		close(started)
 		<-release
 		close(finished)
@@ -87,5 +90,87 @@ func TestDAPTestLaunchBuildsTheProjectIndexOnce(t *testing.T) {
 	launch() // startup cache hit: no index in hand, so one is built
 	if extraLoads != 1 {
 		t.Fatalf("warm test launch built the index %d times, want 1", extraLoads)
+	}
+}
+
+func TestCancelledStartupLoadDoesNotPublishCache(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg"))
+	project := filepath.Join(root, "project")
+	writeTestFile(t, filepath.Join(project, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(project, "force-app/main/classes/A.cls"), "public class A { public static Integer v() { return 1; } }")
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, _, _, _, err := loadDAPStartupStateWithIndex(ctx, project); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled load error = %v", err)
+	}
+	cache, err := startupcache.Read(project, startupcache.SubdirDAP)
+	if err == nil && cache != nil && startupcache.Fresh(cache, project, dapCacheVersion) {
+		t.Fatal("a cancelled load published a fresh startup cache")
+	}
+}
+
+func TestDAPLoadsForOneRootRunOneAtATime(t *testing.T) {
+	var running, peak, started atomic.Int32
+	release := make(chan struct{})
+	previous := dapStartupLoader
+	dapStartupLoader = func(context.Context, string) dapStartup {
+		n := running.Add(1)
+		for {
+			p := peak.Load()
+			if n <= p || peak.CompareAndSwap(p, n) {
+				break
+			}
+		}
+		started.Add(1)
+		<-release
+		running.Add(-1)
+		return dapStartup{err: errors.New("done")}
+	}
+	t.Cleanup(func() { dapStartupLoader = previous })
+	root := t.TempDir()
+	var wg sync.WaitGroup
+	for i := 0; i < 5; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer cancel()
+			_, _ = awaitDAPStartup(ctx, root)
+		}()
+	}
+	wg.Wait()
+	close(release)
+	if peak.Load() != 1 || started.Load() != 1 {
+		t.Fatalf("concurrent loads peak=%d started=%d, want 1 and 1", peak.Load(), started.Load())
+	}
+}
+
+func TestWarmTestLaunchCancelEndsDuringIndexBuild(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	previousIdx, previousStart := dapTestIndexLoader, dapStartupLoader
+	dapStartupLoader = func(context.Context, string) dapStartup { return dapStartup{} } // cache hit: no index
+	dapTestIndexLoader = func(string) (typesys.Index, error) {
+		close(started)
+		<-release
+		return typesys.Index{}, nil
+	}
+	t.Cleanup(func() { dapTestIndexLoader, dapStartupLoader = previousIdx, previousStart; close(release) })
+	ctx, cancel := context.WithCancel(context.Background())
+	result := make(chan error, 1)
+	handler := dap.NewHandler(dap.Snapshot{})
+	go func() {
+		result <- handleDAPLaunch(ctx, handler, dap.LaunchRequest{ClassName: "T", MethodName: "m", AnonymousBody: "System.debug(1);"}, t.TempDir(), "", false)
+	}()
+	<-started
+	cancel()
+	select {
+	case err := <-result:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("err = %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("warm test launch stayed blocked in the index build after cancel")
 	}
 }

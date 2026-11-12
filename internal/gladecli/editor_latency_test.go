@@ -89,7 +89,11 @@ func (c *lspClient) send(message map[string]any) {
 func (c *lspClient) wait(what string, limit time.Duration, match func(map[string]any) bool) time.Duration {
 	c.t.Helper()
 	deadline := time.Now().Add(limit)
-	timer := time.AfterFunc(limit, func() { c.cond.Broadcast() })
+	timer := time.AfterFunc(limit, func() {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		c.cond.Broadcast()
+	})
 	defer timer.Stop()
 	c.mu.Lock()
 	defer c.mu.Unlock()
