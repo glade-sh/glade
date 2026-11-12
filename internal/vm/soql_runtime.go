@@ -250,7 +250,12 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	// ungranted administrator these standard fields.
 	savedFLSRoute := vm.adminStandardFLSRoute
 	vm.adminStandardFLSRoute = savedFLSRoute || defaultMode
-	securityErr := vm.enforceSOQLSecurity(query, permissionSetID)
+	// The license denial precedes the API 67 secure-default object check, which
+	// would otherwise raise QueryException (external_user_query_denial, 67.0).
+	securityErr := vm.licenseExcludedObjectError(query.Object)
+	if securityErr == nil {
+		securityErr = vm.enforceSOQLSecurity(query, permissionSetID)
+	}
 	vm.adminStandardFLSRoute = savedFLSRoute
 	if securityErr != nil {
 		return nil, securityErr
@@ -1953,8 +1958,20 @@ func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, e
 // (APIs 62.0 and 67.0): the countQuery raises under runAs as each of these
 // users, at the floor as well as 67.0, where the unqualified-query defaults do
 // not apply, so the license excludes the object rather than a CRUD check
-// denying it. The exception text is not captured; the platform's missing-object
-// text is used.
+// denying it. The exception is SecurityException "Access to entity 'Case' denied"
+// (external_user_query_denial/org.tsv).
+func (vm *VM) licenseExcludedObjectError(objectName string) error {
+	if vm != nil && vm.Org != nil {
+		if resolved, ok := vm.resolveObjectName(objectName); ok {
+			objectName = resolved
+		}
+	}
+	if vm.currentUserLicenseExcludesObject(objectName) {
+		return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
+	}
+	return nil
+}
+
 func (vm *VM) currentUserLicenseExcludesObject(objectName string) bool {
 	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 {
 		return false
@@ -1980,9 +1997,11 @@ func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
 		objectName = resolved
 	}
 	if !vm.allowsStandardObject(objectName) ||
-		strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") ||
-		vm.currentUserLicenseExcludesObject(objectName) {
+		strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") {
 		return newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
+	}
+	if err := vm.licenseExcludedObjectError(objectName); err != nil {
+		return err
 	}
 	for _, child := range query.ChildQueries {
 		childQuery := child.Query
