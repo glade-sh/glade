@@ -743,22 +743,6 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
-      - name: Restore shared npm download cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.npm
-          key: npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-${{ hashFiles('third_party/lwc/package-lock.json', 'lwcruntime/package-lock.json') }}
-          restore-keys: |
-            npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-
-      - name: Restore shared Playwright browser cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-restore-only
-          restore-keys: |
-            playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -1258,22 +1242,6 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
-      - name: Restore shared npm download cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.npm
-          key: npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-${{ hashFiles('third_party/lwc/package-lock.json', 'lwcruntime/package-lock.json') }}
-          restore-keys: |
-            npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-
-      - name: Restore shared Playwright browser cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-restore-only
-          restore-keys: |
-            playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -1456,22 +1424,6 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
-      - name: Restore shared npm download cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.npm
-          key: npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-${{ hashFiles('third_party/lwc/package-lock.json', 'lwcruntime/package-lock.json') }}
-          restore-keys: |
-            npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-
-      - name: Restore shared Playwright browser cache
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-restore-only
-          restore-keys: |
-            playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-
       - name: Install LWC conformance dependencies
         run: npm ci --prefix third_party/lwc
       - name: Install browser conformance dependencies
@@ -1922,24 +1874,6 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: "22"
-      - name: Restore shared npm download cache
-        if: ${{ steps.select.outputs.browser == 'true' }}
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.npm
-          key: npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-${{ hashFiles('third_party/lwc/package-lock.json', 'lwcruntime/package-lock.json') }}
-          restore-keys: |
-            npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-shared-
-      - name: Restore shared Playwright browser cache
-        if: ${{ steps.select.outputs.browser == 'true' }}
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-restore-only
-          restore-keys: |
-            playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('lwcruntime/package-lock.json') }}-
       - name: Install selected LWC test dependencies
         if: ${{ steps.select.outputs.browser == 'true' }}
         run: |
