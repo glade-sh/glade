@@ -11,6 +11,7 @@ import (
 )
 
 func TestUnloadedDependencyAnonymousExecNativeRoutes(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	dir := filepath.Join("..", "apextest", "testdata", "conformance", "unloaded_dependency")
 	var cases []struct {
 		ID, State, Source, Outcome string

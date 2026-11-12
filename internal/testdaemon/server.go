@@ -61,6 +61,10 @@ type Server struct {
 	closeErr    error
 	serveCancel context.CancelFunc
 
+	// siblingScan is the process sibling-scan mode this daemon loaded its
+	// project under. A run requested in the other mode is refused.
+	siblingScan bool
+
 	runOnce             sync.Once
 	runAdmission        chan struct{}
 	runExecution        chan struct{}
@@ -137,6 +141,7 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 		defaultSocket: defaultSocket,
 		runProgress:   cfg.RunProgress,
 		warmDone:      make(chan struct{}),
+		siblingScan:   processSiblingDependencyScan(),
 	}
 	keepPIDRoot = true
 	if cfg.Warm {
@@ -478,6 +483,10 @@ func (s *Server) handleV1(ctx context.Context, request RequestV1) ResponseV1 {
 			response.Error = err.Error()
 			return response
 		}
+		if request.Run.SiblingDependencyScan != s.siblingScan {
+			response.Error = siblingScanMismatchMessage(s.siblingScan)
+			return response
+		}
 		release, err := s.acquireRunV1(ctx, request.ID)
 		if err != nil {
 			return runErrorResponseV1(response, testreport.Run{}, err)
@@ -513,6 +522,13 @@ func (s *Server) handleV1(ctx context.Context, request RequestV1) ResponseV1 {
 		response.Error = fmt.Sprintf("unknown op %q", request.Op)
 		return response
 	}
+}
+
+func siblingScanMismatchMessage(daemonOn bool) string {
+	if daemonOn {
+		return "test server was started with sibling dependency scan on, but this run has it off; restart the test server without --sibling-dependencies or run with it"
+	}
+	return "test server was started with sibling dependency scan off, but this run has it on; restart the test server with --sibling-dependencies"
 }
 
 func runErrorResponseV1(response ResponseV1, run testreport.Run, err error) ResponseV1 {

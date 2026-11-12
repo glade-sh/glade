@@ -3728,7 +3728,7 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 		_, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 		return ok
 	}
-	if namespacedCustomFieldLikeSOQLName(field) {
+	if namespacedCustomFieldTolerated(org, field) {
 		return true
 	}
 	if len(definition.Fields) == 0 && !strings.Contains(field, ".") {
@@ -4588,7 +4588,7 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if !ok && customObjectLikeSOQLName(definition.APIName) && customFieldLikeSOQLName(canonicalField) {
 		return storage.NullValue(), true
 	}
-	if !ok && namespacedCustomFieldLikeSOQLName(canonicalField) {
+	if !ok && namespacedCustomFieldTolerated(org, canonicalField) {
 		return storage.NullValue(), true
 	}
 	if !ok && storage.IsCustomMetadataDefinition(definition) {
@@ -4624,6 +4624,20 @@ func customFieldLikeSOQLName(name string) bool {
 	}
 	lower := strings.ToLower(strings.TrimSpace(name))
 	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__pc")
+}
+
+// namespacedCustomFieldTolerated accepts an undefined ns__X__c name on a
+// standard object. Native rows (namespaced_standard_field_soql) accept it only
+// when that managed package is installed and has the field. Glade knows
+// installed packages from the project's declared dependencies: when the
+// project declares none, or one with no namespace binding, every such name
+// stays accepted; otherwise only a declared namespace whose source is absent.
+func namespacedCustomFieldTolerated(org storage.OrgState, name string) bool {
+	if !namespacedCustomFieldLikeSOQLName(name) {
+		return false
+	}
+	namespace := strings.TrimSpace(name)[:strings.Index(strings.TrimSpace(name), "__")]
+	return storage.PackageFieldNamespaceAllowed(org.Metadata.PackageFieldsNarrow, org.Metadata.SourcelessPackageNamespaces, namespace)
 }
 
 func namespacedCustomFieldLikeSOQLName(name string) bool {

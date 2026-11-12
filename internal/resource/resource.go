@@ -291,6 +291,9 @@ func loadProject(p project.Project, readMetadata func(string) ([]byte, error)) (
 		registry.MessageChannels = append(registry.MessageChannels, channel)
 	}
 	registry.ManagedLabelNamespaces = managedLabelNamespaces(p)
+	binding := p.PackageNamespaceBinding()
+	registry.PackageFieldsNarrow = binding.Narrow
+	registry.SourcelessPackageNamespaces = binding.Sourceless
 	for _, path := range p.TabFiles {
 		tab, err := loadTab(path, p.Namespace)
 		if err != nil {

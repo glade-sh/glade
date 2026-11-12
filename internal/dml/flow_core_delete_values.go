@@ -55,6 +55,12 @@ func flowCoreRecordTriggerError(rule storage.FlowRule, err error) error {
 	if errors.As(err, &createType) {
 		return flowCoreRecordCreateTriggerError(rule, createType)
 	}
+	var elementFault *flowElementFault
+	if errors.As(err, &elementFault) {
+		if failure, ok := flowUnhandledTriggerError(rule, elementFault); ok {
+			return failure
+		}
+	}
 	var unknownOutput *flowCoreUnknownSubflowOutputError
 	var unstoredInput *flowUnstoredSubflowInputFieldError
 	if errors.As(err, &unknownOutput) || errors.As(err, &unstoredInput) {

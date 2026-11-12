@@ -7995,6 +7995,8 @@ private class SetupRandomTest {
 }
 
 func TestRunUpsertUsesNamespacedExternalIDFromSiblingDependency(t *testing.T) {
+	// The dependency lives in a sibling directory of the consumer; it loads only with the sibling scan.
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	depRoot := filepath.Join(workspaceRoot, "dep-package")

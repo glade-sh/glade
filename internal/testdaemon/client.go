@@ -10,6 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/glade-sh/glade/internal/config"
+	"github.com/glade-sh/glade/internal/project"
 )
 
 const defaultDialTimeout = 3 * time.Second
@@ -76,7 +79,15 @@ func PingV1(ctx context.Context, socket string) (ResponseV1, error) {
 }
 
 func RunV1(ctx context.Context, socket string, run RunRequestV1) (ResponseV1, error) {
+	run.SiblingDependencyScan = processSiblingDependencyScan()
 	return callV1(ctx, socket, RequestV1{Version: ProtocolVersionV1, Op: OpRun, Run: &run})
+}
+
+// processSiblingDependencyScan reports the process-level sibling-scan mode
+// (flag or environment). A glade.yml setting is read by client and daemon from
+// the same file, so only the process mode needs to be compared.
+func processSiblingDependencyScan() bool {
+	return project.SiblingDependencyScanEnabled(config.Config{}, false)
 }
 
 func ShutdownV1(ctx context.Context, socket string) (ResponseV1, error) {
