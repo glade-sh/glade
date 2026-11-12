@@ -6,6 +6,10 @@
 
 - **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.
 
+### Performance
+
+- **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
+
 ## v0.3.7
 
 v0.3.7 fixes more differences from Salesforce found with captured org behavior, runs Lightning action async work, and shortens test and CI time.
