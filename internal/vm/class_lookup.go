@@ -277,13 +277,16 @@ func (vm *VM) lookupClassInNamespaceUncached(namespace, className string) (Class
 		}
 		return result.Class, true
 	}
-	if classesByShort, ok := vm.frozenNamespaceClassLookup(nsKey); ok {
-		vm.namespaceClassLookup[nsKey] = classesByShort
-		result, found := classesByShort[shortKey]
-		if !found || !result.OK {
+	if aliases, ok := vm.frozenNamespaceAliases(nsKey); ok {
+		// Resolve only the queried name. The raw-key memo keeps the answer, so
+		// a clone never copies the whole namespace table to answer a few names.
+		entry, found := aliases[shortKey]
+		if !found || !entry.OK {
 			return Class{}, false
 		}
-		return result.Class, true
+		if class, exists := vm.classEntryRaw(entry.Alias); exists {
+			return class, true
+		}
 	}
 	classesByShort := make(map[string]namespaceClassLookup)
 	for _, entry := range vm.classNameSearchEntries() {
@@ -316,13 +319,12 @@ func (vm *VM) lookupClassInNamespaceUncached(namespace, className string) (Class
 	return result.Class, true
 }
 
-// frozenNamespaceClassLookup returns this VM's per-namespace short-name table
-// using the alias table shared by every clone of one frozen generation. The
-// shared table holds live Classes keys only; Class values are read from this
-// VM's own Classes map when the namespace is first queried, exactly when the
-// unshared path below would snapshot them. Registration drops the frozen
+// frozenNamespaceAliases returns the per-namespace short-name alias table
+// shared by every clone of one frozen generation. The shared table holds live
+// Classes keys only; a clone reads the Class value for a name from its own
+// Classes map when the name is first queried. Registration drops the frozen
 // generation, so a changed class set never reads a stale table.
-func (vm *VM) frozenNamespaceClassLookup(nsKey string) (map[string]namespaceClassLookup, bool) {
+func (vm *VM) frozenNamespaceAliases(nsKey string) (map[string]namespaceClassAlias, bool) {
 	frozen := vm.frozenClassLookup
 	if frozen == nil {
 		return nil, false
@@ -330,32 +332,20 @@ func (vm *VM) frozenNamespaceClassLookup(nsKey string) (map[string]namespaceClas
 	frozen.namespaceMu.RLock()
 	aliases, ok := frozen.namespaceAliases[nsKey]
 	frozen.namespaceMu.RUnlock()
-	if !ok {
-		aliases = vm.buildFrozenNamespaceClassAliases(frozen, nsKey)
-		frozen.namespaceMu.Lock()
-		if frozen.namespaceAliases == nil {
-			frozen.namespaceAliases = make(map[string]map[string]namespaceClassAlias)
-		}
-		if existing, exists := frozen.namespaceAliases[nsKey]; exists {
-			aliases = existing
-		} else {
-			frozen.namespaceAliases[nsKey] = aliases
-		}
-		frozen.namespaceMu.Unlock()
+	if ok {
+		return aliases, true
 	}
-	classesByShort := make(map[string]namespaceClassLookup, len(aliases))
-	for key, entry := range aliases {
-		if !entry.OK {
-			classesByShort[key] = namespaceClassLookup{}
-			continue
-		}
-		class, exists := vm.classEntryRaw(entry.Alias)
-		if !exists {
-			return nil, false
-		}
-		classesByShort[key] = namespaceClassLookup{Class: class, OK: true}
+	aliases = vm.buildFrozenNamespaceClassAliases(frozen, nsKey)
+	frozen.namespaceMu.Lock()
+	defer frozen.namespaceMu.Unlock()
+	if frozen.namespaceAliases == nil {
+		frozen.namespaceAliases = make(map[string]map[string]namespaceClassAlias)
 	}
-	return classesByShort, true
+	if existing, exists := frozen.namespaceAliases[nsKey]; exists {
+		return existing, true
+	}
+	frozen.namespaceAliases[nsKey] = aliases
+	return aliases, true
 }
 
 // buildFrozenNamespaceClassAliases mirrors the unshared table build in
