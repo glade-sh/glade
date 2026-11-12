@@ -37,6 +37,16 @@ func clockOf(tag *recordsClockTag) *recordsClock {
 }
 
 // RecordsToken names the content of an ObjectState.Records map at one moment.
+//
+// Contract limit: the token covers the map's keys and the Record values stored
+// in it through the funnel. Records are copied shallow, so a Record's Fields,
+// ExplicitNulls and other maps or slices are shared with every other copy of
+// that record, including copies held by another object after SetRecords or by
+// a caller that passed the record to PutRecord. Editing those in place changes
+// every holder's rows, and only the holder that then calls PutRecord or
+// TouchRecords sees its token move. A consumer that needs row content, not row
+// membership, must clone the record before editing it and must not reuse a
+// token across objects that may share rows.
 // Two equal tokens mean no write went through the funnel between them. It is
 // comparable and keeps its clock alive, so it is safe as a cache key.
 type RecordsToken struct {
@@ -100,7 +110,8 @@ func (o *ObjectState) adoptRecords(records map[ID]Record) {
 	o.recordsClock = newRecordsClock()
 }
 
-// PutRecord stores a record under id, creating the map when it is nil.
+// PutRecord stores a record under id, creating the map when it is nil. The
+// record is stored shallow; see the RecordsToken contract.
 func (o *ObjectState) PutRecord(id ID, record Record) {
 	if o.Records == nil {
 		o.adoptRecords(make(map[ID]Record))

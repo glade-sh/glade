@@ -46,6 +46,12 @@ var recordsFieldOwners = map[string][]string{
 // A write that skips the funnel leaves the per-object write version stale, and
 // any cache keyed on that version would then serve old rows.
 //
+// Contract limit: the token covers the set of rows and every row stored
+// through the funnel. A row's own Fields map is shared with every copy of the
+// row, so editing it in place (row := X.Records[id]; row.Fields[k] = v) is
+// legal only when followed by PutRecord or TouchRecords. The scan cannot
+// enforce that ordering, so it does not track row locals.
+//
 // The scan is syntactic. It flags index assignment, delete, clear, direct
 // assignment of the field, and the same writes through a local variable
 // that was assigned from a .Records selector.
@@ -182,6 +188,15 @@ func calleeName(fun ast.Expr) string {
 	return ""
 }
 
+// nestedArg reports a map argument that lives inside a stored row, such as
+// X.Records[id].Fields in delete(X.Records[id].Fields, k).
+func nestedArg(arg ast.Expr, nested func(ast.Expr) (string, bool)) (string, bool) {
+	if _, ok := arg.(*ast.SelectorExpr); !ok {
+		return "", false
+	}
+	return nested(arg)
+}
+
 func scanRecordWritesIn(fset *token.FileSet, body *ast.BlockStmt) []recordWriteFinding {
 	var out []recordWriteFinding
 	aliases := map[string]string{}
@@ -294,6 +309,9 @@ func scanRecordWritesIn(fset *token.FileSet, body *ast.BlockStmt) []recordWriteF
 			for i, arg := range x.Args {
 				recv, what, ok := target(arg)
 				if !ok {
+					if nestedRecv, isNested := nestedArg(arg, nested); isNested && (name == "delete" || name == "clear") && i == 0 {
+						out = append(out, recordWriteFinding{line(n), "write into a stored row: " + name, nestedRecv})
+					}
 					continue
 				}
 				switch {
@@ -353,6 +371,7 @@ func f(object State) {
 	delete(other, id)
 	object.Records[id].Fields["Name"] = value
 	mutate(object.Records)
+	delete(object.Records[id].Fields, "Name")
 	alias := object.Records
 	helper(alias)
 	_ = len(object.Records)
@@ -368,7 +387,7 @@ func f(object State) {
 	for _, finding := range scanRecordWrites(fset, file) {
 		lines = append(lines, finding.line)
 	}
-	want := []int{4, 7, 8, 9, 11}
+	want := []int{4, 7, 8, 9, 10, 12}
 	if !slices.Equal(lines, want) {
 		t.Fatalf("flagged lines = %v, want %v", lines, want)
 	}

@@ -207,3 +207,28 @@ func TestMixedVersionedAndLiteralStatesDiffer(t *testing.T) {
 		t.Fatal("contract changed: mixed states now compare equal")
 	}
 }
+
+func TestTokenDoesNotCoverSharedRowContents(t *testing.T) {
+	// Documents the RecordsToken contract limit: rows are shallow copies, so an
+	// in-place edit of a shared Fields map moves only the editor's token.
+	input := map[ID]Record{"a": {ID: "a", Fields: map[string]Value{"Name": StringValue("one")}}}
+	var a, b ObjectState
+	a.SetRecords(input)
+	b.SetRecords(input)
+	before, _ := b.RecordsToken()
+	row := a.Records["a"]
+	row.Fields["Name"] = StringValue("two")
+	a.PutRecord("a", row)
+	if after, _ := b.RecordsToken(); after != before {
+		t.Fatal("contract changed: token now follows shared row contents")
+	}
+	if b.Records["a"].Fields["Name"].String != "two" {
+		t.Fatal("test setup: rows should share Fields")
+	}
+	// The holder that edits and then puts or touches sees its own token move.
+	own, _ := a.RecordsToken()
+	a.TouchRecords()
+	if next, _ := a.RecordsToken(); next == own {
+		t.Fatal("TouchRecords must move the token")
+	}
+}
