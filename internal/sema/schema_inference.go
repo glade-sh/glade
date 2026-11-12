@@ -19,6 +19,7 @@ func enrichIndexWithProjectReferencedSchemaFieldsWithSources(index typesys.Index
 	}
 	index.Objects = semaMergeEquivalentSchemaObjects(index.Objects)
 	ctx := newSemaProjectReferencedSchemaContext(index.Objects, index.Project.Namespace)
+	ctx.orgShapeFeatures = index.OrgShapeFeatures
 	seenSources := make(map[string]bool)
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || typ.File == "" {
@@ -164,6 +165,7 @@ type semaProjectReferencedSchemaContext struct {
 	inferenceAllowedObjectKeys map[string]bool
 	childRelationshipTargetSet map[string]map[string]struct{}
 	inferObjectReferences      bool
+	orgShapeFeatures           []string
 	// ownedFields marks objects whose Fields slice this context has copied.
 	// The incoming index is shared, so the first write to an object clones it.
 	ownedFields map[int]bool
@@ -273,6 +275,17 @@ func (ctx *semaProjectReferencedSchemaContext) schemaObjectIndex(name string, cr
 	ctx.indexObject(idx)
 	ctx.markObjectInferenceAllowed(name)
 	return idx, true
+}
+
+// unsuppliedFieldRejects keeps source inference from inventing a standard field
+// that no configured feature supplies (Case.Language, the Connection fields, a
+// feature-gated Division). An unspecified shape keeps the open behavior.
+func (ctx *semaProjectReferencedSchemaContext) unsuppliedFieldRejects(objectName, fieldName string) bool {
+	canonical, standard := storage.ResolveKnownStandardObjectName(objectName)
+	if !standard {
+		return false
+	}
+	return storage.StandardObjectUnsuppliedFieldRejected(canonical, fieldName, ctx.orgShapeFeatures)
 }
 
 func (ctx *semaProjectReferencedSchemaContext) markObjectInferenceAllowed(name string) {
@@ -825,6 +838,9 @@ func semaRecordProjectReferencedSchemaFieldWithType(ctx *semaProjectReferencedSc
 	if ctx.schemaNameIsChildRelationship(ctx.objects[idx].Name, fieldName) {
 		return
 	}
+	if ctx.unsuppliedFieldRejects(ctx.objects[idx].Name, fieldName) {
+		return
+	}
 	if semaProjectReferencedSchemaAPINamesMatch(ctx.namespace, fieldName, "Name") {
 		fieldType = "Text"
 	}
@@ -868,6 +884,9 @@ func semaRecordProjectReferencedLookupSchemaField(ctx *semaProjectReferencedSche
 	relationshipName := semaProjectReferencedParentRelationshipName(fieldName)
 	if relationshipName == "" {
 		semaRecordProjectReferencedSchemaField(ctx, objectName, fieldName)
+		return
+	}
+	if ctx.unsuppliedFieldRejects(ctx.objects[idx].Name, fieldName) {
 		return
 	}
 	for _, field := range ctx.objects[idx].Fields {

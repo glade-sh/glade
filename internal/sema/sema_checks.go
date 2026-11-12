@@ -1694,6 +1694,13 @@ func (c querySemanticsChecker) checkQueryField(objectName, fieldPath string, ctx
 		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
 		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
 	}
+	// Case lacks a name that no configured feature supplies, even when feature
+	// profiles made the schema object partial. A field the project declares
+	// itself stays.
+	if !strings.Contains(fieldPath, ".") && c.unsuppliedFieldLacking(objectName, fieldPath) {
+		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
+	}
 	// record_type_shape c2: RecordTypeId of an object with no record type in a
 	// declared shape is "No such column" (semaRecordTypeFieldAbsent).
 	if c.anonymousRoute && strings.EqualFold(fieldPath, "RecordTypeId") && c.recordTypeFieldUnavailable(objectName) {
@@ -1917,6 +1924,25 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 		return field, true
 	}
 	return schema.Field{}, false
+}
+
+func (c querySemanticsChecker) unsuppliedFieldLacking(objectName, fieldName string) bool {
+	canonical, standard := storage.ResolveKnownStandardObjectName(objectName)
+	if !standard || !storage.StandardObjectUnsuppliedFieldRejected(canonical, fieldName, c.shapeFeatures) {
+		return false
+	}
+	if object, ok := c.object(objectName); ok {
+		if provider := c.providers[normalizeName(object.Name)]; provider != nil {
+			declared := false
+			provider.visitDeclared(func(field schema.Field) {
+				if field.File != "" && strings.EqualFold(field.Name, fieldName) {
+					declared = true
+				}
+			})
+			return !declared
+		}
+	}
+	return true
 }
 
 func (c querySemanticsChecker) featureFieldUnavailable(objectName, fieldName string) bool {

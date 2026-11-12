@@ -4372,6 +4372,8 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 	// (Account externalSharingModel Private hides the child Accounts).
 	if external := strings.TrimSpace(definition.ExternalSharingModel); external != "" && vm.currentUserIsCapturedPortalUser() {
 		model = external
+	} else if vm.currentUserHasUndeclaredPrivateExternalDefault(canonical) {
+		return false
 	}
 	if model == "" && standardObjectDefaultsToPublicRead(canonical) {
 		return true
@@ -4397,6 +4399,24 @@ func portalUserTypeRecord(user storage.Record) bool {
 		}
 	}
 	return false
+}
+
+// currentUserHasUndeclaredPrivateExternalDefault reports a captured portal user
+// reading Case when the project declares no external sharing model.
+// external_user_case_lead_sharing (APIs 62.0 and 67.0): the external default
+// was Private in the scratch default, with Public Read/Write and with Public
+// Read internal models, and the community users read neither Case. Lead is
+// not covered: the Community licenses refuse Lead read natively
+// (lead_grant rows), so no row isolates its sharing default. Other objects
+// keep the internal model for external users until a row covers them.
+func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject string) bool {
+	if vm == nil || vm.Org == nil || !vm.currentUserIsCapturedPortalUser() {
+		return false
+	}
+	if !strings.EqualFold(canonicalObject, "Case") {
+		return false
+	}
+	return strings.TrimSpace(vm.Org.Objects[canonicalObject].Definition.ExternalSharingModel) == ""
 }
 
 func (vm *VM) currentUserIsCapturedPortalUser() bool {

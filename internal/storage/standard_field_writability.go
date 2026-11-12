@@ -40,7 +40,39 @@ func StandardFieldAssignmentReadOnly(objectName, fieldName string) bool {
 			return field.Type != FieldID && !FieldFlagValue(field.Createable, false) && !FieldFlagValue(field.Updateable, false)
 		}
 	}
+	if field, enabled := standardFeatureEnabledField(objectName, fieldName); enabled {
+		return field.Type != FieldID && !FieldFlagValue(field.Createable, false) && !FieldFlagValue(field.Updateable, false)
+	}
 	return false
+}
+
+// standardFeatureEnabledField returns the generated catalog field that a
+// feature switches on (surface file feature_enabled_fields). The baseline
+// definition omits it, so writability follows the catalog facets.
+func standardFeatureEnabledField(objectName, fieldName string) (Field, bool) {
+	policy := standardFieldPolicyFor(objectName)
+	if policy == nil {
+		return Field{}, false
+	}
+	groups, ok := standardPolicyLookup(policy.featureEnabledFields, fieldName)
+	if !ok || len(groups) == 0 {
+		return Field{}, false
+	}
+	definition := ObjectDefinition{APIName: objectName, Fields: map[string]Field{}}
+	EnsureStandardObjectFieldsForFeatures(&definition, groups[0])
+	if name, found := ResolveFieldName(definition, "", fieldName); found {
+		return definition.Fields[name], true
+	}
+	return Field{}, false
+}
+
+// StandardFeatureEnabledFieldDynamicPutReadOnly reports a field that an org
+// feature switches on (Case.Division) and that describe marks neither
+// createable nor updateable. A name-based put rejects it as not editable, but
+// only once the org has the field, so callers check existence first.
+func StandardFeatureEnabledFieldDynamicPutReadOnly(objectName, fieldName string) bool {
+	field, enabled := standardFeatureEnabledField(objectName, fieldName)
+	return enabled && field.Type != FieldID && !FieldFlagValue(field.Createable, false) && !FieldFlagValue(field.Updateable, false)
 }
 
 // These setters compile in named Apex at API 62 and 67. Execute Anonymous

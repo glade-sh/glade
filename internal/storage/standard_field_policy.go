@@ -56,9 +56,15 @@ type standardFieldPolicyObject struct {
 	fields                   map[string]Field
 	picklistFields           []Field
 	absent                   map[string]bool
-	plainDeveloperAbsent     map[string]bool
-	constructorDefaults      map[string]string
-	gates                    map[string]standardFieldPolicyGate
+	// unspecifiedShapeFields are accepted only when the project declares no
+	// scratch definition (an unknown org shape). featureEnabledFields lists
+	// generated catalog fields that stay absent unless one feature group is on.
+	unspecifiedShapeFields map[string]bool
+	constructorFieldSet    map[string]bool
+	featureEnabledFields   map[string][][]string
+	plainDeveloperAbsent   map[string]bool
+	constructorDefaults    map[string]string
+	gates                  map[string]standardFieldPolicyGate
 }
 
 type standardFieldPolicyBundle struct {
@@ -142,6 +148,8 @@ func applyStandardFieldSurfaces(policies map[string]*standardFieldPolicyObject) 
 			ConstructorFields    []string              `json:"constructor_fields"`
 			AddConstructorFields []string              `json:"add_constructor_fields"`
 			GateAlternatives     map[string][][]string `json:"gate_alternatives"`
+			UnspecifiedShape     []string              `json:"unspecified_shape_fields"`
+			FeatureEnabled       map[string][][]string `json:"feature_enabled_fields"`
 		}
 	}
 	if err := json.Unmarshal(standardFieldSurfaceData, &bundle); err != nil {
@@ -159,6 +167,18 @@ func applyStandardFieldSurfaces(policies map[string]*standardFieldPolicyObject) 
 		}
 		if len(surface.ConstructorFields) > 0 && len(policy.ConstructorFields) == 0 {
 			policy.ConstructorFields = append([]string(nil), surface.ConstructorFields...)
+		}
+		if len(surface.UnspecifiedShape) > 0 && policy.unspecifiedShapeFields == nil {
+			policy.unspecifiedShapeFields = map[string]bool{}
+		}
+		for _, field := range surface.UnspecifiedShape {
+			policy.unspecifiedShapeFields[strings.ToLower(field)] = true
+		}
+		if len(surface.FeatureEnabled) > 0 && policy.featureEnabledFields == nil {
+			policy.featureEnabledFields = map[string][][]string{}
+		}
+		for field, groups := range surface.FeatureEnabled {
+			policy.featureEnabledFields[strings.ToLower(field)] = groups
 		}
 		for field, groups := range surface.GateAlternatives {
 			if gate, ok := policy.gates[strings.ToLower(field)]; ok {
@@ -267,6 +287,13 @@ func standardOptionalFieldEnabledForDefinition(definition ObjectDefinition, fiel
 			return (!gate.Legacy && featureSignatureHas(signature, project.UnspecifiedStandardFieldShape)) || standardFieldPolicyPreservesConfiguredField(definition, field) || standardFieldPolicyGateEnabledForDefinition(gate, definition, signature)
 		}
 		if absent, _ := standardPolicyLookup(policy.absent, field); absent {
+			if groups, ok := standardPolicyLookup(policy.featureEnabledFields, field); ok {
+				for _, group := range groups {
+					if standardFieldPolicyFeaturesPresent(group, signature) {
+						return true
+					}
+				}
+			}
 			return featureSignatureHas(signature, project.UnspecifiedStandardFieldShape) || standardFieldPolicyPreservesConfiguredField(definition, field)
 		}
 	}
@@ -491,12 +518,46 @@ func StandardObjectConstructorFieldAllowedForFeatures(object, field string, feat
 			return true
 		}
 	}
+	// Names no captured configuration supplies stay open only while the org
+	// shape is unknown (no scratch definition).
+	if unspecified, _ := standardPolicyLookup(policy.unspecifiedShapeFields, field); unspecified && featureSignatureHas(signature, project.UnspecifiedStandardFieldShape) {
+		return true
+	}
 	// An enabled gate can add a field outside the captured baseline surface.
 	if gate, ok := standardPolicyLookup(policy.gates, field); ok {
 		return standardFieldPolicyGateEnabledForDefinition(gate, definition, signature)
 	}
 	// Custom fields still require their project metadata in the semantic checker.
 	return stringsHasSuffixFold(field, "__c") || stringsHasSuffixFold(field, "__r") || stringsHasSuffixFold(field, "__pc") || stringsHasSuffixFold(field, "__pr")
+}
+
+// StandardObjectUnsuppliedFieldRejected reports a standard field that no
+// configured feature supplies: a name the surface file lists as open only for
+// an unknown org shape (Case.Language, the Connection fields), or a field that
+// a feature switches on (Case.Division) while that feature is off. Source
+// inference and the query check use it so such a name is neither invented nor
+// accepted, even when feature profiles made the schema object partial. An
+// unspecified shape (no scratch definition) accepts both.
+func StandardObjectUnsuppliedFieldRejected(object, field string, features []string) bool {
+	policy := standardFieldPolicyFor(object)
+	if policy == nil || strings.Contains(field, "__") {
+		return false
+	}
+	unsupplied, _ := standardPolicyLookup(policy.unspecifiedShapeFields, field)
+	groups, featureEnabled := standardPolicyLookup(policy.featureEnabledFields, field)
+	if !unsupplied && !featureEnabled {
+		return false
+	}
+	signature := canonicalFeatureSignature(features)
+	if featureSignatureHas(signature, project.UnspecifiedStandardFieldShape) {
+		return false
+	}
+	for _, group := range groups {
+		if standardFieldPolicyFeaturesPresent(group, signature) {
+			return false
+		}
+	}
+	return true
 }
 
 // Policy keys are ASCII API names. Keep the case-insensitive lookup on the
