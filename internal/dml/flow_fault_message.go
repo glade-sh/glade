@@ -282,5 +282,5 @@ func (f *flowElementFault) unhandledCaptured() bool {
 	if f.verb == flowApexActionVerb {
 		return true
 	}
-	return f.verb != "create" || f.code == "STRING_TOO_LONG"
+	return f.verb != "create" || f.code == "STRING_TOO_LONG" || f.code == "DUPLICATES_DETECTED"
 }
