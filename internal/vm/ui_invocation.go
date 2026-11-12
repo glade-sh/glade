@@ -379,15 +379,13 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 			if lwc {
 				value, err = vm.lwcParameterValue(typeName, raw)
 			} else {
-				value, err = vm.typedValueFromJSON(typeName, raw, false)
+				value, err = vm.auraParameterValue(typeName, raw)
 			}
 			if err != nil {
-				if lwc {
-					parameterErr = &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: fmt.Sprintf("Value provided is invalid for action parameter '%s' of type '%s'", param.Name, param.Type)}
-					var actionErr *UIActionDiagnosticError
-					if errors.As(err, &actionErr) {
-						parameterErr = actionErr
-					}
+				parameterErr = &UIActionDiagnosticError{Type: "InvalidActionParameter", Message: fmt.Sprintf("Value provided is invalid for action parameter '%s' of type '%s'", param.Name, param.Type)}
+				var actionErr *UIActionDiagnosticError
+				if errors.As(err, &actionErr) {
+					parameterErr = actionErr
 				}
 				ok = false
 				break
@@ -454,6 +452,14 @@ func historicalLightningCandidates(candidates []Method) []Method {
 		return candidates
 	}
 	return []Method{candidates[maxIndex]}
+}
+
+// auraParameterValue converts one Aura action argument. Native Aura components
+// answered every cell of lwc_param_conversion/org.tsv like the LWC route, so
+// the two routes share one conversion. It is a separate entry point so the
+// Aura route does not depend on how typedValueFromJSON serves JSON.deserialize.
+func (vm *VM) auraParameterValue(typeName string, raw any) (Value, error) {
+	return vm.lwcParameterValue(typeName, raw)
 }
 
 func (vm *VM) lwcParameterValue(typeName string, raw any) (Value, error) {

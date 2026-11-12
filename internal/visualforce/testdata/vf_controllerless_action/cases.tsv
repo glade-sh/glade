@@ -1,0 +1,4 @@
+case	markup
+ValidNew	<apex:page><apex:outputLink value="{!URLFOR($Action.Account.New)}">x</apex:outputLink></apex:page>
+BadVerb	<apex:page><apex:outputLink value="{!URLFOR($Action.Account.Bogus)}">x</apex:outputLink></apex:page>
+BadObject	<apex:page><apex:outputLink value="{!URLFOR($Action.ProbeMissing__c.New)}">x</apex:outputLink></apex:page>

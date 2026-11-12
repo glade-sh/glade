@@ -2,6 +2,7 @@ package visualforce
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -52,7 +53,9 @@ type RenderContext struct {
 	repeatCommandScripts      map[string]bool
 	// formDepth counts the apex:form elements around the component being
 	// rendered.
-	formDepth int
+	formDepth         int
+	nativeFormIDs     []string
+	nativeFormActions map[string]string
 }
 
 func RenderMarkupTree(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -212,6 +215,9 @@ func renderChildren(node *MarkupNode, ctx *RenderContext) (string, error) {
 }
 
 func renderApexPage(node *MarkupNode, ctx *RenderContext) (string, error) {
+	previousNativeActions := ctx.nativeFormActions
+	ctx.nativeFormActions = make(map[string]string)
+	defer func() { ctx.nativeFormActions = previousNativeActions }()
 	previousHead, previousCollect := ctx.presentationHead, ctx.collectPresentationHead
 	ctx.presentationHead, ctx.collectPresentationHead = nil, true
 	defer func() { ctx.presentationHead, ctx.collectPresentationHead = previousHead, previousCollect }()
@@ -232,7 +238,7 @@ func renderApexPage(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if node.Attribute("standardStylesheets") == "" || strings.EqualFold(strings.TrimSpace(standardStyles), "true") {
 		head += `<link rel="stylesheet" href="/styles/glade-visualforce.css" />`
 	}
-	head += strings.Join(ctx.presentationHead, "") + VisualforceAjaxScript() + VisualforceFieldWidgetsScript() + renderPageRemotingScript(node, ctx)
+	head += strings.Join(ctx.presentationHead, "") + VisualforceAjaxScript() + visualforceNativeFormScript(ctx.nativeFormActions) + VisualforceFieldWidgetsScript() + renderPageRemotingScript(node, ctx)
 	return "<!DOCTYPE html><html><head>" + head + "</head><body>" + body + "</body></html>", nil
 }
 
@@ -559,6 +565,9 @@ func renderApexLink(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if !hasVisualforceLinkParameters(node) {
+		renderedHref = nativeLiteralResourceLink(href, renderedHref)
+	}
 	attrs := componentIDAttr(node, ctx)
 	if id := visualforceExplicitComponentClientID(node, ctx); id != "" {
 		attrs += ` name="` + html.EscapeString(id) + `"`
@@ -592,10 +601,12 @@ func escapeURLAttribute(value string) string {
 func renderApexForm(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if ctx != nil {
 		ctx.formDepth++
+		ctx.nativeFormIDs = append(ctx.nativeFormIDs, visualforceComponentClientID(node, ctx))
 	}
 	children, err := renderChildren(node, ctx)
 	if ctx != nil {
 		ctx.formDepth--
+		ctx.nativeFormIDs = ctx.nativeFormIDs[:len(ctx.nativeFormIDs)-1]
 	}
 	if err != nil {
 		return "", err
@@ -748,6 +759,18 @@ func renderApexInputTextarea(node *MarkupNode, ctx *RenderContext) (string, erro
 }
 
 func renderApexInputCheckbox(node *MarkupNode, ctx *RenderContext) (string, error) {
+	// The captured Contact field bindings render no component, including for
+	// explicitly set values. Wrapper Boolean controls still render normally.
+	raw := strings.TrimSpace(node.Attribute("value"))
+	if strings.HasPrefix(raw, "{!") && strings.HasSuffix(raw, "}") {
+		parts := strings.Split(strings.TrimSpace(raw[2:len(raw)-1]), ".")
+		if len(parts) == 2 && (strings.EqualFold(parts[1], "DoNotCall") || strings.EqualFold(parts[1], "HasOptedOutOfEmail")) {
+			record, _, err := evaluateRenderExpressionValue(parts[0], ctx)
+			if err == nil && record.Kind == vm.ValueObject && strings.EqualFold(record.Type, "Contact") {
+				return "", nil
+			}
+		}
+	}
 	name := formRenderedInputName(node, ctx)
 	clientID := visualforceExplicitComponentClientID(node, ctx)
 	checked := ""
@@ -981,6 +1004,11 @@ func renderApexCommandButton(node *MarkupNode, ctx *RenderContext) (string, erro
 	if label == "" {
 		label = "Submit"
 	}
+	if nativePlainCommandShape(node, "commandbutton") && ctx != nil && ctx.formDepth > 0 && len(ctx.repeatPath) == 0 {
+		if id := visualforceExplicitComponentClientID(node, ctx); nativeFormClientID(id) {
+			return `<input id="` + html.EscapeString(id) + `" type="submit" name="` + html.EscapeString(id) + `" value="` + html.EscapeString(label) + `" />`, nil
+		}
+	}
 	attrs := ` type="submit"`
 	if node.HasAttribute("rerender") {
 		attrs = ` type="button"`
@@ -1150,6 +1178,13 @@ func renderApexDataTable(node *MarkupNode, ctx *RenderContext, pageBlockStyle bo
 	if err != nil {
 		return "", err
 	}
+	columns, err := dataTableColumns(node, ctx, true)
+	if err != nil {
+		return "", err
+	}
+	if rendered, matched, err := renderPlainCapturedDataTable(node, ctx, rows, columns, pageBlockStyle); matched || err != nil {
+		return rendered, err
+	}
 	className := "dataTable"
 	if pageBlockStyle {
 		className = "list"
@@ -1158,10 +1193,6 @@ func renderApexDataTable(node *MarkupNode, ctx *RenderContext, pageBlockStyle bo
 	builder.WriteString(`<table class="`)
 	builder.WriteString(className)
 	builder.WriteString(`"><thead><tr>`)
-	columns, err := dataTableColumns(node, ctx, true)
-	if err != nil {
-		return "", err
-	}
 	for _, col := range columns {
 		ctx.Scope.PushFrame()
 		col.bind(ctx.Scope)
@@ -1202,6 +1233,55 @@ func renderApexDataTable(node *MarkupNode, ctx *RenderContext, pageBlockStyle bo
 	}
 	builder.WriteString(`</tbody></table>`)
 	return builder.String(), nil
+}
+
+// renderPlainCapturedDataTable handles the native headerless, literal-ID
+// table shape captured with empty and populated string lists. Other table
+// attributes, column forms and pageBlockTable keep their existing renderer.
+func renderPlainCapturedDataTable(node *MarkupNode, ctx *RenderContext, rows []vm.Value, columns []dataTableColumn, pageBlockStyle bool) (string, bool, error) {
+	if pageBlockStyle || strings.TrimSpace(node.Attribute("id")) == "" || !node.HasAttribute("value") || !node.HasAttribute("var") || len(node.Attributes) != 3 || len(columns) == 0 {
+		return "", false, nil
+	}
+	for _, row := range rows {
+		if row.Kind != vm.ValueString {
+			return "", false, nil
+		}
+	}
+	for _, col := range columns {
+		if len(col.bindings) != 0 || len(col.node.Attributes) != 1 || !col.node.HasAttribute("value") || len(col.node.Children) != 0 {
+			return "", false, nil
+		}
+	}
+	tableID := visualforceComponentClientID(node, ctx)
+	if tableID == "" {
+		return "", false, nil
+	}
+	var builder strings.Builder
+	builder.WriteString(`<table id="` + html.EscapeString(tableID) + `" border="0" cellpadding="0" cellspacing="0"><colgroup span="` + strconv.Itoa(len(columns)) + `"></colgroup><tbody id="` + html.EscapeString(tableID) + `:tb">`)
+	for i, row := range rows {
+		ctx.Scope.PushFrame()
+		if name := strings.TrimSpace(node.Attribute("var")); name != "" {
+			ctx.Scope.Set(name, row)
+		}
+		builder.WriteString(`<tr>`)
+		for _, col := range columns {
+			cell, err := renderRepetitionColumn(col, ctx, strings.TrimSpace(node.Attribute("var")))
+			if err != nil {
+				ctx.Scope.PopFrame()
+				return "", true, err
+			}
+			columnID := visualforceComponentClientID(col.node, ctx)
+			if at := strings.LastIndex(columnID, ":"); at >= 0 {
+				columnID = columnID[at+1:]
+			}
+			cellID := tableID + ":" + strconv.Itoa(i) + ":" + columnID
+			builder.WriteString(`<td id="` + html.EscapeString(cellID) + `" colspan="1">` + cell + `</td>`)
+		}
+		builder.WriteString(`</tr>`)
+		ctx.Scope.PopFrame()
+	}
+	builder.WriteString(`</tbody></table>`)
+	return builder.String(), true, nil
 }
 
 func renderApexPanelGrid(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -1548,6 +1628,13 @@ func renderApexActionFunction(node *MarkupNode, ctx *RenderContext) (string, err
 	}
 	action := strings.TrimSpace(node.Attribute("action"))
 	rerender := strings.TrimSpace(node.Attribute("rerender"))
+	if nativePlainCommandShape(node, "actionfunction") && ctx != nil && ctx.nativeFormActions != nil && len(ctx.nativeFormIDs) > 0 && len(ctx.repeatPath) == 0 && visualforceControllerMethodName.MatchString(name) {
+		id, formID := visualforceComponentClientID(node, ctx), ctx.nativeFormIDs[len(ctx.nativeFormIDs)-1]
+		if nativeFormClientID(id) && nativeFormClientID(formID) {
+			ctx.nativeFormActions[id] = action
+			return `<script>function ` + name + `() { SfdcApp.Visualforce.VSManager.vfPrepareForms([` + strconv.Quote(formID) + `]); if(typeof jsfcljs == 'function'){jsfcljs(document.forms[` + jsStringLiteral(formID) + `],` + jsStringLiteral(id+","+id) + `,'');}return false }</script>`, nil
+		}
+	}
 	params, err := visualforceAjaxParams(node, ctx)
 	if err != nil {
 		return "", err
@@ -1557,6 +1644,52 @@ func renderApexActionFunction(node *MarkupNode, ctx *RenderContext) (string, err
 		return "", err
 	}
 	return `<script id="` + html.EscapeString(visualforceComponentClientID(node, ctx)) + `" data-action="` + html.EscapeString(action) + `" data-rerender="` + html.EscapeString(rerender) + `">function ` + html.EscapeString(name) + `(` + html.EscapeString(VisualforceAjaxFunctionArgs(params)) + `){` + hook + `}</script>`, nil
+}
+
+// nativePlainCommandShape limits native form submission to the plain literal-ID
+// controls captured in vf_render_markup; Ajax, repeated and decorated controls
+// retain their existing renderer and lifecycle.
+func nativePlainCommandShape(node *MarkupNode, name string) bool {
+	if node == nil || !strings.EqualFold(node.Name, name) || !visualforceControllerMethodName.MatchString(node.Attribute("id")) || strings.TrimSpace(node.Attribute("action")) == "" || len(node.Children) != 0 {
+		return false
+	}
+	allowed := map[string]bool{"id": true, "action": true}
+	if strings.EqualFold(name, "commandbutton") {
+		allowed["value"] = true
+		if strings.TrimSpace(node.Attribute("value")) == "" {
+			return false
+		}
+	} else {
+		allowed["name"] = true
+	}
+	for key := range node.Attributes {
+		if !allowed[strings.ToLower(key)] {
+			return false
+		}
+	}
+	return true
+}
+
+func nativeFormClientID(id string) bool {
+	if id == "" {
+		return false
+	}
+	for _, part := range strings.Split(id, ":") {
+		if !visualforceControllerMethodName.MatchString(part) {
+			return false
+		}
+	}
+	return true
+}
+
+// visualforceNativeFormScript supplies the local equivalent of the JSF submit
+// functions referenced by the captured plain actionFunction markup.
+func visualforceNativeFormScript(actions map[string]string) string {
+	if len(actions) == 0 {
+		return ""
+	}
+	encoded, _ := json.Marshal(actions)
+	return `<script>(function(){var actions=` + string(encoded) + `;window.SfdcApp=window.SfdcApp||{};SfdcApp.Visualforce=SfdcApp.Visualforce||{};SfdcApp.Visualforce.VSManager=SfdcApp.Visualforce.VSManager||{};SfdcApp.Visualforce.VSManager.vfPrepareForms=SfdcApp.Visualforce.VSManager.vfPrepareForms||function(){};window.jsfcljs=window.jsfcljs||function(form,command){var action=actions[String(command||'').split(',')[0]];if(!form||!action){return false;}var field=form.elements['` + ViewStateActionFieldName() + `'];if(field){field.value=action;}form.submit();return false;};})();</script>`
 }
 
 func renderApexActionRegion(node *MarkupNode, ctx *RenderContext) (string, error) {
