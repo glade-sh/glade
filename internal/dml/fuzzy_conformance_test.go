@@ -48,14 +48,22 @@ func fuzzyRequiredField(object string) string {
 
 // fuzzyRecord builds one probe record. Values with no text stay absent, and the
 // object's required field takes a placeholder only when the probe leaves it
-// out, as the native capture did.
+// out, as the native capture did. A row whose field is "A+B" varies two fields
+// and separates their values with "|".
 func fuzzyRecord(row fuzzyNativeRow, value *string) storage.Record {
 	record := storage.Record{Object: row.Object, Fields: map[string]storage.Value{}}
 	for field, constant := range row.Const {
 		record.Fields[field] = storage.StringValue(constant)
 	}
 	if value != nil {
-		record.Fields[row.Field] = storage.StringValue(*value)
+		fields := strings.Split(row.Field, "+")
+		values := []string{*value}
+		if len(fields) > 1 {
+			values = strings.Split(*value, "|")
+		}
+		for i, field := range fields {
+			record.Fields[field] = storage.StringValue(values[i])
+		}
 	}
 	if _, ok := record.Fields[fuzzyRequiredField(row.Object)]; !ok {
 		record.Fields[fuzzyRequiredField(row.Object)] = storage.StringValue("Blankrow")
@@ -64,9 +72,13 @@ func fuzzyRecord(row fuzzyNativeRow, value *string) storage.Record {
 }
 
 func fuzzyRule(row fuzzyNativeRow) storage.DuplicateRule {
-	matching := storage.MatchingRule{
-		Object: row.Object, Name: "Probe", Status: "Active",
-		Items: []storage.MatchingRuleItem{{Field: row.Field, Method: row.Method, BlankBehavior: row.Blank}},
+	matching := storage.MatchingRule{Object: row.Object, Name: "Probe", Status: "Active"}
+	fields, methods := strings.Split(row.Field, "+"), strings.Split(row.Method, "+")
+	for i, field := range fields {
+		matching.Items = append(matching.Items, storage.MatchingRuleItem{Field: field, Method: methods[i], BlankBehavior: row.Blank})
+	}
+	if len(fields) > 1 {
+		matching.BooleanFilter = "1 AND 2"
 	}
 	if row.Field == "Title" {
 		matching.BooleanFilter = "1 AND 2"
