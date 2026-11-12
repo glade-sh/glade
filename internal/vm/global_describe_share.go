@@ -52,6 +52,18 @@ type globalDescribeKeyMetadata struct {
 // VM's projection even while the org schema itself is unchanged.
 func (vm *VM) fillGlobalDescribeProjectionKeys(value *Value, caller string) {
 	vm.ensureMetadataCacheGeneration()
+	// A shared backing map is detached before any write, so the same backing
+	// with the same caller still holds the key set verified last time.
+	memo := &vm.globalDescribeKeysVerified
+	if value.mapBackingShared && memo.keys != nil && memo.caller == caller && sameMapBacking(memo.backing, value.Map) {
+		value.MapKeys, value.MapOrder = memo.keys, memo.order
+		return
+	}
+	defer func() {
+		if value.mapBackingShared && value.MapKeys != nil && len(value.MapKeys) == len(value.Map) {
+			*memo = globalDescribeKeysVerifiedMemo{backing: value.Map, caller: caller, keys: value.MapKeys, order: value.MapOrder}
+		}
+	}()
 	// A mutable worker cannot borrow preparation from its old frozen
 	// generation. It may retain private immutable keys, validated against the
 	// complete current key set every time. Values/tokens are never cached here.
@@ -85,4 +97,13 @@ func (vm *VM) fillGlobalDescribeProjectionKeys(value *Value, caller string) {
 		*cache = make(map[string]globalDescribeKeyMetadata)
 	}
 	(*cache)[caller] = globalDescribeKeyMetadata{keys: value.MapKeys, order: value.MapOrder}
+}
+
+// globalDescribeKeysVerifiedMemo remembers the stored keys of the last shared
+// backing map, so repeated getGlobalDescribe calls skip the O(n) key check.
+type globalDescribeKeysVerifiedMemo struct {
+	backing map[string]Value
+	caller  string
+	keys    map[string]Value
+	order   []string
 }
