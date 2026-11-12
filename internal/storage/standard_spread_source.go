@@ -369,3 +369,36 @@ func (c *spreadTemplateCell) peek() (ObjectState, bool) {
 	}
 	return c.state, c.ok
 }
+
+// SpreadKeyPrefixOwner returns the catalog object a source-backed lazy org
+// still owes whose key prefix, once installed, is prefix: the first such
+// object in name order, which is the object a complete spread reports. When
+// the org's prefixes have been validated an object installs with the prefix
+// the unique assignment gives it, and a conflicting catalog prefix may have
+// moved, so the answer follows the same plan the install applies. It returns
+// "" when no owed object ends up with the prefix.
+func (o *OrgState) SpreadKeyPrefixOwner(prefix string) string {
+	if o == nil || o.StandardSpread == "" {
+		return ""
+	}
+	if !o.keyPrefixesValidated {
+		owner := StandardKeyPrefixOwner(prefix)
+		if owner == "" {
+			return ""
+		}
+		if canonical, owed := spreadObjectOwed(o, owner); owed {
+			return canonical
+		}
+		return ""
+	}
+	owner := ""
+	for name, assigned := range spreadKeyPrefixPlan(o) {
+		if assigned != prefix || (owner != "" && name >= owner) {
+			continue
+		}
+		if _, owed := spreadObjectOwed(o, name); owed {
+			owner = name
+		}
+	}
+	return owner
+}
