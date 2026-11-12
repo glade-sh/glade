@@ -59,7 +59,7 @@ func TestSharedMemberViewKeepsDiagnosticsIdentical(t *testing.T) {
 				finalFed++
 			}
 		}
-		got, want := nativeLifecycleDiagnostics(index, input, state), nativeLifecycleDiagnostics(index, input, nil)
+		got, want := nativeLifecycleDiagnostics(index, input, state, nil), nativeLifecycleDiagnostics(index, input, nil, nil)
 		if i == len(roots)-1 {
 			rewritten := false
 			for _, d := range want {
