@@ -156,16 +156,49 @@ func (c *childRelationshipCache) load(key string) ([]Value, bool) {
 	if !ok {
 		return nil, false
 	}
-	return cloneChildRelationshipValues(value), true
+	return shareChildRelationshipValues(value), true
 }
 
-func (c *childRelationshipCache) store(key string, value []Value) {
+// store keeps value as the generation's shared relationship values and returns
+// the caller's own list over them. The values are read-only until a VM writes
+// one: the relationship objects and their token objects carry fieldsShared, so
+// a write clones that object's Fields first (privatizeSharedDescribeToken,
+// setGraphFieldValue, the alias replace walkers). Only the list is copied.
+func (c *childRelationshipCache) store(key string, value []Value) []Value {
 	if c == nil {
-		return
+		return value
 	}
+	markChildRelationshipValuesShared(value)
 	c.mu.Lock()
-	c.entries[key] = cloneChildRelationshipValues(value)
+	c.entries[key] = value
 	c.mu.Unlock()
+	return shareChildRelationshipValues(value)
+}
+
+// shareChildRelationshipValues copies the list; the values keep their shared fields.
+func shareChildRelationshipValues(values []Value) []Value {
+	if len(values) == 0 {
+		return nil
+	}
+	return append(make([]Value, 0, len(values)), values...)
+}
+
+// markChildRelationshipValuesShared flags freshly built values, and the token
+// objects they hold, before they are published. Callers own the values.
+func markChildRelationshipValuesShared(values []Value) {
+	for i := range values {
+		value := &values[i]
+		if value.Fields == nil {
+			continue
+		}
+		value.fieldsShared = true
+		for name, field := range value.Fields {
+			if field.Kind == ValueObject && field.Fields != nil && !field.fieldsShared {
+				field.fieldsShared = true
+				value.Fields[name] = field
+			}
+		}
+	}
 }
 
 func (c *childRelationshipLookupCache) load(key childRelationshipLookupKey) (childRelationshipLookup, bool) {
@@ -235,38 +268,6 @@ func (c *lazyChildRelationshipLookupCache) size() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.entries)
-}
-
-func cloneChildRelationshipValues(values []Value) []Value {
-	if len(values) == 0 {
-		return nil
-	}
-	out := make([]Value, len(values))
-	for i, value := range values {
-		out[i] = cloneChildRelationshipValue(value)
-	}
-	return out
-}
-
-func cloneChildRelationshipValue(value Value) Value {
-	out := value
-	if value.Fields == nil {
-		return out
-	}
-	out.Fields = make(map[string]Value, len(value.Fields))
-	for name, fieldValue := range value.Fields {
-		if fieldValue.Kind == ValueObject && fieldValue.Fields != nil {
-			copied := fieldValue
-			copied.Fields = make(map[string]Value, len(fieldValue.Fields))
-			for nestedName, nestedValue := range fieldValue.Fields {
-				copied.Fields[nestedName] = nestedValue
-			}
-			out.Fields[name] = copied
-			continue
-		}
-		out.Fields[name] = fieldValue
-	}
-	return out
 }
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
@@ -801,8 +802,7 @@ func (vm *VM) describeChildRelationships(name string) []Value {
 			childRelationships = append(childRelationships, vm.childRelationshipValue(child.childObject, child.relationship))
 		}
 	}
-	vm.childRelCache.store(cacheKey, childRelationships)
-	return childRelationships
+	return vm.childRelCache.store(cacheKey, childRelationships)
 }
 
 // standardChangeEventChildRelationships lists an installed standard change

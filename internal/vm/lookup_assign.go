@@ -849,6 +849,7 @@ func (vm *VM) setGraphFieldValue(object *Value, name string, value Value) {
 	if object.Fields == nil {
 		object.Fields = make(map[string]Value)
 	}
+	object.detachSharedFields()
 	object.Fields[name] = value
 	vm.registerSObjectAliasField(*object, name, value)
 }

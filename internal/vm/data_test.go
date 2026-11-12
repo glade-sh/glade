@@ -1200,6 +1200,8 @@ func TestDescribeChildRelationshipCacheReturnsIsolatedValues(t *testing.T) {
 	if len(first) != 1 {
 		t.Fatalf("child relationships = %d, want 1", len(first))
 	}
+	// Cached values are shared until a write; a write privatizes first, as assignPath does.
+	machine.privatizeSharedDescribeToken(&first[0])
 	first[0].Fields["childSObject"] = sObjectTypeToken("Wrong__c")
 
 	second := machine.describeChildRelationships("Parent__c")

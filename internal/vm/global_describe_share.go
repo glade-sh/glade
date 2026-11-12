@@ -130,6 +130,12 @@ func (vm *VM) noteDescribeTokenShare(share *describeShareCache) {
 // updated value to its other holders by identity, as for any field write.
 // The Ref is unchanged, so every holder in this VM still resolves to one token.
 func (vm *VM) privatizeSharedDescribeToken(token *Value) {
+	if token != nil && token.fieldsShared {
+		// A shared child relationship value or one of its tokens. Holders in
+		// this VM follow by identity, as for a global describe token.
+		token.detachSharedFields()
+		return
+	}
 	if token == nil || len(vm.describeTokenShares) == 0 || token.Kind != ValueObject || token.Fields == nil {
 		return
 	}

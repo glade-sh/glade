@@ -3,6 +3,7 @@ package vm
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math"
 	"math/big"
 	"sort"
@@ -77,7 +78,11 @@ type Value struct {
 	// shared with another holder (a typed view of the global describe map).
 	// Mutations copy the storage first, so holders never see each other's
 	// writes while reads share one copy.
-	mapBackingShared               bool
+	mapBackingShared bool
+	// fieldsShared marks an object whose Fields map is shared with other VMs of
+	// the same schema generation (child relationship describes). It is
+	// read-only: a write clones Fields first and clears the mark.
+	fieldsShared                   bool
 	globalDescribeEntriesCanonical bool
 
 	nativeListElement bool
@@ -87,6 +92,15 @@ type Value struct {
 	Map               map[string]Value `json:"map,omitempty"`
 	MapKeys           map[string]Value `json:"-"`
 	MapOrder          []string         `json:"-"`
+}
+
+// detachSharedFields gives the value a private copy of Fields before an
+// in-place field write, when other VMs share the fields.
+func (v *Value) detachSharedFields() {
+	if v.fieldsShared {
+		v.Fields = maps.Clone(v.Fields)
+		v.fieldsShared = false
+	}
 }
 
 type ValueKind string
