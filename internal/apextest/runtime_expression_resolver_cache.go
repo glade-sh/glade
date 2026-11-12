@@ -1,6 +1,9 @@
 package apextest
 
 import (
+	"encoding/json"
+	"hash/fnv"
+	"strconv"
 	"sync"
 
 	"github.com/glade-sh/glade/internal/sema"
@@ -36,6 +39,10 @@ func runtimeExpressionResolver(key runtimeCacheKey, index typesys.Index) vm.Expr
 	if key == "" {
 		return newExpressionResolver(index)
 	}
+	// The runtime key hashes source contents, not every field the member
+	// model reads (artifact and generated types carry no source snapshot), so
+	// the identity also covers the resolver's own inputs.
+	key += runtimeCacheKey("\x00" + expressionResolverInputs(index))
 	expressionResolverMu.Lock()
 	defer expressionResolverMu.Unlock()
 	for i, entry := range expressionResolvers {
@@ -51,6 +58,23 @@ func runtimeExpressionResolver(key runtimeCacheKey, index typesys.Index) vm.Expr
 		expressionResolvers = append([]expressionResolverEntry(nil), expressionResolvers[len(expressionResolvers)-maxExpressionResolvers:]...)
 	}
 	return resolver
+}
+
+// expressionResolverInputs fingerprints everything the resolver reads from the
+// index: every type symbol with its members, and the project namespace.
+func expressionResolverInputs(index typesys.Index) string {
+	h := fnv.New128a()
+	enc := json.NewEncoder(h)
+	_ = enc.Encode(index.Types)
+	_, _ = h.Write([]byte(index.Project.Namespace))
+	for _, typ := range index.Types {
+		// Excluded from the symbol's JSON form but read by the model.
+		_, _ = h.Write([]byte(strconv.FormatBool(typ.ConstructorsAuthoritative)))
+		if typ.EnumHashBase != nil {
+			_, _ = h.Write([]byte(strconv.FormatInt(*typ.EnumHashBase, 10)))
+		}
+	}
+	return string(h.Sum(nil))
 }
 
 func resetExpressionResolvers() {

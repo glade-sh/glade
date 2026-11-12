@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -109,4 +110,59 @@ func TestRuntimeExpressionResolverCachedAnswersMatchFresh(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestRuntimeExpressionResolverSeparatesIndexesSharingAKey(t *testing.T) {
+	countResolverBuilds(t)
+	build := func(fieldType string) typesys.Index {
+		return typesys.Index{Types: []typesys.TypeSymbol{
+			{Name: "SourcelessHolder", Kind: apexast.DeclarationClass, Artifact: true, Members: []typesys.MemberSymbol{
+				{Name: "slot", Kind: apexast.DeclarationField, Type: fieldType, Modifiers: []string{"public", "static"}},
+			}},
+		}}
+	}
+	program, err := vm.CompileAnonymous("return true ? null : SourcelessHolder.slot;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expr := program.Instructions[0].Expr
+	// Same runtime key, as for sourceless types that differ only in members.
+	asString := runtimeExpressionResolver("shared-key", build("String"))
+	asInteger := runtimeExpressionResolver("shared-key", build("Integer"))
+	if got := asString(expr, nil, "SourcelessHolder"); got != "String" {
+		t.Fatalf("string model resolved %q", got)
+	}
+	if got := asInteger(expr, nil, "SourcelessHolder"); got != "Integer" {
+		t.Fatalf("a resolver built for another model was reused: %q, want Integer", got)
+	}
+	// An equal index (separate allocation) still shares.
+	builds := countResolverBuilds(t)
+	runtimeExpressionResolver("shared-key", build("String"))
+	runtimeExpressionResolver("shared-key", build("String"))
+	if *builds != 1 {
+		t.Fatalf("equal indexes built %d resolvers, want 1", *builds)
+	}
+}
+
+func TestRuntimeExpressionResolverSharedAcrossGoroutines(t *testing.T) {
+	countResolverBuilds(t)
+	index := resolverTestIndex()
+	program, err := vm.CompileAnonymous("return true ? null : ChoiceLab.item;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expr := program.Instructions[0].Expr
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 20 {
+				if got := runtimeExpressionResolver("generation-a", index)(expr, nil, "OtherLab"); got != "ChoiceLab.Pebble" {
+					t.Errorf("resolved %q", got)
+				}
+			}
+		}()
+	}
+	wg.Wait()
 }
