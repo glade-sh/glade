@@ -758,6 +758,11 @@ func (a *Analyzer) checkMethodBodiesRun(index typesys.Index, model *semaTypeMemb
 			return diagnostics
 		}
 	}
+	if run != nil {
+		// Fewer tasks than workers: the pass ran serially on this view, which
+		// holds the history the caller's view must receive.
+		run.views = []*semaTypeMemberView{model}
+	}
 	workItemIndex := 0
 	byType := make([][]diagnostic.Diagnostic, len(index.Types))
 	for typeIndex, typ := range index.Types {

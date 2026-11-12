@@ -248,3 +248,28 @@ func TestSpeculativeBodiesFallBackWhenEarlierHydrationMatters(t *testing.T) {
 		}
 	}
 }
+
+// With fewer types than workers the pass runs serially on the scratch view;
+// the caller's view must still receive that view's hydration.
+func TestSpeculativeBodiesMergeHistoryWhenWorkersExceedTypes(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "OnlyType.cls")
+	source := "public class OnlyType {\n    public void run() {\n        Case c = new Case(); String s = c.Subject; Lead l = new Lead(); Integer n = l.NumberOfEmployees;\n    }\n}\n"
+	writeSemaFile(t, file, source)
+	start := strings.Index(source, "public void run()")
+	end := strings.LastIndex(source, "    }") + len("    }")
+	index := typesys.Index{Types: []typesys.TypeSymbol{{
+		Kind: apexast.DeclarationClass, Name: "OnlyType", File: file,
+		Members: []typesys.MemberSymbol{
+			{Kind: apexast.DeclarationField, Name: "seed", Type: "Contact"},
+			{Kind: apexast.DeclarationMethod, Name: "run", Type: "void",
+				BodyRange: semaParserBodyRange(source, start, end),
+				Range:     diagnostic.Range{Start: diagnostic.Position{Offset: start}, End: diagnostic.Position{Offset: end}}},
+		},
+	}}}
+	_, want := bodiesWithGOMAXPROCS(t, index, 1)
+	_, got := bodiesWithGOMAXPROCS(t, index, 4)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("hydrated history differs\nserial:   %v\nparallel: %v", want, got)
+	}
+}
