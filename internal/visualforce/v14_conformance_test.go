@@ -109,10 +109,21 @@ const v14BatchSize = 16
 // Sequential batches use this compiled test binary to release each batch's
 // compiler/runtime allocations, including native parser memory, on exit.
 // GLADE_V14_CAPTURE=1 records mismatches without failing; GLADE_V14_REPORT
-// selects the optional per-row TSV report path.
+// selects the optional per-row TSV report path; part N writes the file name
+// with ".partNofM" inserted before its extension.
+// Each API's observed rows are split into v14PartCount contiguous ranges, one
+// top-level test each, so the CI shard planner can spread them. The parts cover
+// every row exactly once per API. GLADE_V14_ROW_RANGE selects a zero-based,
+// half-open start:end range of an API's observed rows that each part
+// intersects with its own.
 var v14APIVersions = []string{"59.0", "67.0"}
 
-func TestV14SalesforceConformance(t *testing.T) {
+const v14PartCount = 2
+
+func TestV14SalesforceConformancePart1of2(t *testing.T) { v14RunConformance(t, 0) }
+func TestV14SalesforceConformancePart2of2(t *testing.T) { v14RunConformance(t, 1) }
+
+func v14RunConformance(t *testing.T, part int) {
 	capture := os.Getenv("GLADE_V14_CAPTURE") != ""
 	data, err := os.ReadFile("testdata/v14_salesforce.json")
 	if err != nil {
@@ -374,7 +385,7 @@ func TestV14SalesforceConformance(t *testing.T) {
 	var report strings.Builder
 	var output io.Writer = &report
 	if path := os.Getenv("GLADE_V14_REPORT"); path != "" {
-		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+		file, err := os.OpenFile(rowPartReportPath(path, part, v14PartCount), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -405,11 +416,36 @@ func TestV14SalesforceConformance(t *testing.T) {
 		// asserted exactly once and the per-API totals are unchanged.
 		t.Run(api, func(t *testing.T) {
 			cases := v14ObservedCases(table.Cases, api)
+			partStart, partEnd, selected, err := selectedPartRows(part, v14PartCount, len(cases), os.Getenv("GLADE_V14_ROW_RANGE"))
+			if err != nil {
+				t.Fatalf("invalid GLADE_V14_ROW_RANGE: %v", err)
+			}
+			if !selected {
+				t.Skipf("GLADE_V14_ROW_RANGE selects no row of part %d", part+1)
+			}
 			apiCounts := map[string]int{}
-			for _, c := range cases {
+			for _, c := range cases[partStart:partEnd] {
 				apiCounts[c.Kind]++
 			}
+			// Group sizes inside this part's range. Rows stay in the original,
+			// request, query, review, header-write and independent-review order.
+			groupEnds := []int{originalCount}
+			for _, size := range []int{len(controls.Cases), len(queryControls.Cases), len(reviewControls.Cases), len(headerControls.Cases)} {
+				groupEnds = append(groupEnds, groupEnds[len(groupEnds)-1]+size)
+			}
+			groupEnds = append(groupEnds, len(cases))
+			partGroup := make([]int, len(groupEnds))
+			for group, groupEnd := range groupEnds {
+				groupStart := 0
+				if group > 0 {
+					groupStart = groupEnds[group-1]
+				}
+				partGroup[group] = max(0, min(groupEnd, partEnd)-max(groupStart, partStart))
+			}
 			for _, c := range table.Cases {
+				if part != 0 {
+					break // One part reports the unobservable rows.
+				}
 				if omission, omitted := c.Unobservable[api]; omitted {
 					t.Logf("API %s %s unobservable: %s (%s)", api, c.ID, omission.Reason, omission.CompileID)
 					writeRow(t, api, c.ID, "UNOBSERVABLE", "", "", c.Group, "", "", omission.Reason, "NOT_APPLICABLE", "NOT_APPLICABLE", v04Encode(t, omission.Diagnostics))
@@ -422,8 +458,8 @@ func TestV14SalesforceConformance(t *testing.T) {
 			reviewMatches := 0
 			headerMatches := 0
 			independentMatches := 0
-			for first := 0; first < len(cases); first += v14BatchSize {
-				last := min(first+v14BatchSize, len(cases))
+			for first := partStart; first < partEnd; first += v14BatchSize {
+				last := min(first+v14BatchSize, partEnd)
 				results, batchErr := v14ExecuteBatch(t, api, first, last)
 				for i, result := range results {
 					c := cases[first+i]
@@ -500,27 +536,27 @@ func TestV14SalesforceConformance(t *testing.T) {
 				if batchErr != nil {
 					t.Fatal(batchErr)
 				}
-				t.Logf("V14 API %s completed %d/%d rows; exact %d", api, last, len(cases), apiMatches)
+				t.Logf("V14 API %s completed rows %d:%d of %d; exact %d", api, partStart, last, len(cases), apiMatches)
 			}
-			writeRow(t, "ORIGINAL_API_TOTAL", api, fmt.Sprintf("%d/%d", originalMatches, originalCount))
-			writeRow(t, "CONTROL_API_TOTAL", api, fmt.Sprintf("%d/%d", requestMatches, len(controls.Cases)))
-			writeRow(t, "QUERY_CONTROL_API_TOTAL", api, fmt.Sprintf("%d/%d", queryMatches, len(queryControls.Cases)))
-			writeRow(t, "REVIEW_CONTROL_API_TOTAL", api, fmt.Sprintf("%d/%d", reviewMatches, len(reviewControls.Cases)))
-			writeRow(t, "HEADER_WRITE_CONTROL_API_TOTAL", api, fmt.Sprintf("%d/%d", headerMatches, len(headerControls.Cases)))
-			independentCount := len(v14ObservedCases(independentControls.Cases, api))
+			writeRow(t, "ORIGINAL_API_TOTAL", api, fmt.Sprintf("%d/%d", originalMatches, partGroup[0]))
+			writeRow(t, "CONTROL_API_TOTAL", api, fmt.Sprintf("%d/%d", requestMatches, partGroup[1]))
+			writeRow(t, "QUERY_CONTROL_API_TOTAL", api, fmt.Sprintf("%d/%d", queryMatches, partGroup[2]))
+			writeRow(t, "REVIEW_CONTROL_API_TOTAL", api, fmt.Sprintf("%d/%d", reviewMatches, partGroup[3]))
+			writeRow(t, "HEADER_WRITE_CONTROL_API_TOTAL", api, fmt.Sprintf("%d/%d", headerMatches, partGroup[4]))
+			independentCount := partGroup[5]
 			writeRow(t, "INDEPENDENT_REVIEW_API_TOTAL", api, fmt.Sprintf("%d/%d", independentMatches, independentCount))
-			writeRow(t, "API_TOTAL", api, fmt.Sprintf("%d/%d", apiMatches, len(cases)))
+			writeRow(t, "API_TOTAL", api, fmt.Sprintf("%d/%d", apiMatches, partEnd-partStart))
 			writeRow(t, "COMPILE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiCompileMatches, apiCounts["compile"]))
 			writeRow(t, "COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiAcceptanceMatches, apiCounts["compile"]))
 			writeRow(t, "DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDiagnosticMatches, apiCounts["compile"]))
 			writeRow(t, "DOM_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDOMMatches, apiCounts["runtime"]))
-			t.Logf("V14 API %s original exact %d/293; request controls %d/24; query controls %d/15; self-review controls %d/36; header-write controls %d/4; independent-review controls %d/%d; combined %d/%d; compile %d/%d, acceptance %d/%d, diagnostics %d/%d; DOM %d/%d", api, originalMatches, requestMatches, queryMatches, reviewMatches, headerMatches, independentMatches, independentCount, apiMatches, len(cases), apiCompileMatches, apiCounts["compile"], apiAcceptanceMatches, apiCounts["compile"], apiDiagnosticMatches, apiCounts["compile"], apiDOMMatches, apiCounts["runtime"])
+			t.Logf("V14 API %s original exact %d/%d; request controls %d/%d; query controls %d/%d; self-review controls %d/%d; header-write controls %d/%d; independent-review controls %d/%d; combined %d/%d; compile %d/%d, acceptance %d/%d, diagnostics %d/%d; DOM %d/%d", api, originalMatches, partGroup[0], requestMatches, partGroup[1], queryMatches, partGroup[2], reviewMatches, partGroup[3], headerMatches, partGroup[4], independentMatches, independentCount, apiMatches, partEnd-partStart, apiCompileMatches, apiCounts["compile"], apiAcceptanceMatches, apiCounts["compile"], apiDiagnosticMatches, apiCounts["compile"], apiDOMMatches, apiCounts["runtime"])
 			matches += apiMatches
 			compileMatches += apiCompileMatches
 			acceptanceMatches += apiAcceptanceMatches
 			diagnosticMatches += apiDiagnosticMatches
 			domMatches += apiDOMMatches
-			totalObserved += len(cases)
+			totalObserved += partEnd - partStart
 			totalDOM += apiCounts["runtime"]
 			totalCompile += apiCounts["compile"]
 		})
@@ -748,7 +784,7 @@ func v14ExecuteBatch(t *testing.T, api string, first, last int) ([]v14Result, er
 	path := filepath.Join(t.TempDir(), "observed.jsonl")
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, executable, "-test.run=^TestV14SalesforceConformance$", "-test.timeout=9m", "-test.v")
+	cmd := exec.CommandContext(ctx, executable, "-test.run=^TestV14SalesforceConformancePart1of2$", "-test.timeout=9m", "-test.v")
 	cmd.Env = append(os.Environ(),
 		fmt.Sprintf("GLADE_V14_BATCH=%s:%d:%d", api, first, last),
 		"GLADE_V14_BATCH_RESULT="+path)

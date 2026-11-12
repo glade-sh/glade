@@ -684,10 +684,12 @@
     "./internal/typesys": null,
     "./internal/visualforce": [
       "TestControllerGateSharedByConcurrentCallers",
+      "TestPersistedControllerGateConcurrentProcesses",
       "TestRenderEnvironmentConcurrentAccess",
       "TestShardPartitionMatchesUnshardedTestSet",
       "TestV13SalesforceConformance",
-      "TestV14SalesforceConformance"
+      "TestV14SalesforceConformancePart1of2",
+      "TestV14SalesforceConformancePart2of2"
     ],
     "./internal/vm": null,
     "./internal/watch": null,

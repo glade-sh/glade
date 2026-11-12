@@ -104,13 +104,13 @@
     "./internal/repoguard": 2,
     "./internal/sema": 658,
     "./internal/semanticcache": 6,
-    "./internal/server": 12,
+    "./internal/server": 13,
     "./internal/soql": 4,
     "./internal/storage": 9,
     "./internal/testdaemon": 35,
     "./internal/testutil/toolchaininstall": 5,
     "./internal/typesys": 1,
-    "./internal/visualforce": 5,
+    "./internal/visualforce": 7,
     "./internal/vm": 65,
     "./internal/watch": 1
   }
