@@ -31,10 +31,12 @@ func TestCaseUnspecifiedShapeKeepsEarlierBehavior(t *testing.T) {
 				t.Fatal(err)
 			}
 			result, runErr := runner.execute(program)
-			if runErr != nil && strings.Contains(runErr.Error(), "not editable") {
-				t.Fatalf("dynamic put gained the Division restriction: %v", runErr)
+			if runErr != nil {
+				t.Fatalf("no-scratch dynamic put must run cleanly: %v", runErr)
 			}
-			_ = result
+			if !strings.Contains(strings.Join(result.Debug, "\n"), "R|put") {
+				t.Fatalf("put did not complete: %v", result.Debug)
+			}
 		})
 	}
 }
