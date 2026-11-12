@@ -435,7 +435,8 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		// field grant even for the administrator in a freshly deployed org.
 		api := vm.currentSourceExecutionPolicy().APIVersion
 		capturedOlderTestRoute := vm.testContext != nil && vm.testContext.RunAsDepth > 0 && apexversion.AtLeast(api, 55) && !apexversion.AtLeast(api, 56)
-		if (adminOptionalFieldPolicyAPI(api) || capturedOlderTestRoute) && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
+		olderRouteNeedsGrant := capturedOlderTestRoute && vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(fieldName) && !vm.customFieldHasIntrinsicAccess(objectName, fieldName)
+		if (adminOptionalFieldPolicyAPI(api) && vm.adminFieldNeedsExplicitGrant(objectName, fieldName)) || olderRouteNeedsGrant {
 			return vm.adminExplicitFieldGrant(user, profileID, objectName, fieldName, method)
 		}
 		return true

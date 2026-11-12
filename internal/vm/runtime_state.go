@@ -52,6 +52,9 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
+	// adminStandardFLSRoute marks the routes where the default administrator's
+	// standard-field grant rule applies (anonymous_field_policy.go).
+	adminStandardFLSRoute  bool
 	knowledgeIssuedParents map[storage.ID]bool
 	case174WarmOrderAccess map[string]bool
 	case174PermissionStamp map[string]string
@@ -733,16 +736,21 @@ type callFrame struct {
 }
 
 type TestContext struct {
-	Started                  bool
-	Stopped                  bool
-	CurrentUser              Value
-	SeeAllData               bool
-	SeeAllDataSet            bool
-	AsyncJobs                []AsyncJob
-	AsyncStartIndex          int
-	FlexQueueJobs            []Value
-	EventPublishes           []eventPublishCallback
-	PlatformEvents           []storage.Record
+	Started         bool
+	Stopped         bool
+	CurrentUser     Value
+	SeeAllData      bool
+	SeeAllDataSet   bool
+	AsyncJobs       []AsyncJob
+	AsyncStartIndex int
+	FlexQueueJobs   []Value
+	EventPublishes  []eventPublishCallback
+	PlatformEvents  []storage.Record
+	// FlowPublishedEvents holds events that event-triggered Flow interviews
+	// created. The next explicit Test.getEventBus().deliver() delivers them;
+	// the delivery that ran the interview and stopTest do not (native
+	// platform_event_flow_elements/extended PE09A to PE09D).
+	FlowPublishedEvents      []storage.Record
 	PlatformEventRetries     map[string]int
 	PlatformEventPublishes   int
 	PlatformEventStartIndex  int
@@ -801,6 +809,9 @@ type AsyncJob struct {
 	LastProcessed       string
 	LastProcessedOffset int
 	Deferred            bool
+	// EventSeq orders a publish-after-commit event Flow job against savepoints.
+	// A rollback discards the job. Zero means the job is not rolled back.
+	EventSeq uint64
 	// Finish-created schedules remain eligible between stopTest drain passes.
 	RunAtTestStop bool
 
@@ -2369,6 +2380,11 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine.FlowActionInvoker = func(action storage.FlowAction, record storage.Record) error {
 		return vm.invokeFlowAction(action, record, result)
 	}
+	engine.FlowFaultDetail = vm.flowApexFaultDetail
+	engine.BeginPlatformEventInterview = vm.beginPlatformEventInterview
+	engine.PlatformEventPublisher = func(records []storage.Record) error {
+		return vm.publishFlowEvents(records, result)
+	}
 	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
 		return vm.invokeFlowActionWithContext(action, record, context, result)
 	}
@@ -2864,7 +2880,11 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 	// The native bulk capture uses atomic inserts. Partial-save scheduling
 	// retains its existing per-record path.
 	if allOrNone {
-		if handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
+		// flow_batch_refire/org.tsv: every interview's Flow writes finish before
+		// the after-update triggers run, and the triggers see one batch.
+		var refireIDs []storage.ID
+		var refireOld []storage.Record
+		handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
 			record := records[i]
 			appendTrace(result, "apex.automation.apply", "apex.automation", map[string]any{
 				"object": record.Object,
@@ -2877,8 +2897,14 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 			if i < len(oldRecords) {
 				oldRecord = oldRecords[i]
 			}
-			return vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result)
-		}); handled {
+			refireIDs = append(refireIDs, record.ID)
+			refireOld = append(refireOld, oldRecord)
+			return nil
+		})
+		if handled && err == nil && len(refireIDs) > 0 {
+			err = vm.refireAutomationUpdateTriggersFor(records[0].Object, refireIDs, refireOld, allOrNone, rollback, result)
+		}
+		if handled {
 			if err != nil && allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 					return rollbackErr

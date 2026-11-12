@@ -9,6 +9,32 @@ import (
 )
 
 var urlEntityMarker = regexp.MustCompile(`^&#[0-9]+;`)
+var literalResourceURLFor = regexp.MustCompile(`(?i)^URLFOR\s*\(\s*\$Resource\.[A-Za-z_][A-Za-z0-9_]*\s*,\s*'[^']*'\s*\)$`)
+
+// nativeLiteralResourceLink is limited to the literal-path outputLink shape
+// captured in vf_resource_unicode. Supplementary characters terminate that
+// resource href with an ampersand; BMP characters use nativeURLText as usual.
+func nativeLiteralResourceLink(expression, rendered string) string {
+	raw := strings.TrimSpace(expression)
+	if !strings.HasPrefix(raw, "{!") || !strings.HasSuffix(raw, "}") || !literalResourceURLFor.MatchString(strings.TrimSpace(raw[2:len(raw)-1])) {
+		return rendered
+	}
+	for i, r := range rendered {
+		if r > 0xFFFF {
+			return rendered[:i] + "&"
+		}
+	}
+	return rendered
+}
+
+func hasVisualforceLinkParameters(node *MarkupNode) bool {
+	for _, child := range node.Children {
+		if child.Type == MarkupNodeElement && strings.EqualFold(child.Namespace, "apex") && strings.EqualFold(child.Name, "param") {
+			return true
+		}
+	}
+	return false
+}
 
 // nativeURLText encodes the URL text of apex:outputLink and apex:image the way
 // the org does (rows Link*, LinkParam*, Image* of testdata/vf_render_markup).

@@ -1472,6 +1472,23 @@ func visualforceActionParams(values map[string]string, allowedFields map[string]
 		return nil
 	}
 	bindings := VisualforceFormBindingsForFields(values, allowedFields)
+	// Qualified repeat IDs are processed in iteration order, then a bare
+	// alias (explicit or synthesized from the last row) wins over them.
+	sort.Slice(bindings, func(i, j int) bool {
+		left, right := bindings[i], bindings[j]
+		leftBare := left.SubmittedName == left.FieldName
+		rightBare := right.SubmittedName == right.FieldName
+		if leftBare != rightBare {
+			return !leftBare
+		}
+		if naturalLess(left.SubmittedName, right.SubmittedName) {
+			return true
+		}
+		if naturalLess(right.SubmittedName, left.SubmittedName) {
+			return false
+		}
+		return left.SubmittedName < right.SubmittedName
+	})
 	out := make(map[string]string, len(bindings))
 	for _, binding := range bindings {
 		out[binding.FieldName] = binding.Value

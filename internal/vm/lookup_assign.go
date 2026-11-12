@@ -1682,6 +1682,12 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	if field.APIName == "" {
 		field.APIName = canonical
 	}
+	// Anonymous Apex cannot name a standard field the default administrator has
+	// no grant on (native case_standard_field_fls E01, E06-E08: the token does not
+	// resolve).
+	if adminFLSStandardField(objectName, canonical) && vm.anonymousPolicyHiddenField(objectName, canonical) {
+		return Null, false
+	}
 	return vm.sObjectFieldTokenFromField(objectName, field), true
 }
 

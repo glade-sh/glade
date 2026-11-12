@@ -88,3 +88,5 @@ func secureDiscoveryAncestry(path string) bool {
 	}
 	return true
 }
+
+const discoveryOwnerChecks = true

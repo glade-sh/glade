@@ -8,12 +8,6 @@ import (
 	"testing"
 )
 
-// The catalog has no Case.ServiceContractId or Case.AssetWarrantyId, which named
-// code and the REST describe show natively (reference fields to ServiceContract
-// and AssetWarranty, createable, updateable, 18 characters). Adding them needs
-// the generated catalog inputs, so they stay out of this check.
-var caseCatalogGapFields = map[string]bool{"ServiceContractId": true, "AssetWarrantyId": true}
-
 // Native rows: case_standard_field_fls/org.tsv, named-code describes (route
 // istest) in the baseline orgs at source API 62.0 and 67.0. Named code sees all
 // 11 FLS-gated Case fields; the feature fields stay absent.
@@ -50,9 +44,6 @@ func TestCaseNamedDescribeMatchesNativeRows(t *testing.T) {
 		for key, value := range observed {
 			present, isBool := value.(bool)
 			if !isBool || len(key) < 6 || key[:5] != "Case." {
-				continue
-			}
-			if caseCatalogGapFields[key[5:]] {
 				continue
 			}
 			_, exists := ResolveFieldName(caseDefinition, "", key[5:])
