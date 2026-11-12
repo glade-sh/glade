@@ -1,39 +1,93 @@
 package gladecli
 
 import (
+	"math"
 	"os"
-	"runtime"
 	"runtime/debug"
 	"runtime/metrics"
+	"time"
 )
 
-// testGCFloorBytes is the heap size below which `glade test` does not start a
-// collection. A cold test process builds its org and class catalog from nothing
-// and the live heap climbs from a few MiB to several hundred. With the default
-// collector target every doubling is a full mark of everything built so far.
-// Holding the next-collection goal at this floor skips those cycles. Once the
-// live heap passes half the floor the target is the ordinary 100 percent
-// growth, so the peak heap of a large run is unchanged.
+// testGCFloorBytes is the heap size below which a standalone `glade test`
+// process does not start a collection. A cold test process builds its org and
+// class catalog from nothing and the live heap climbs from a few MiB to several
+// hundred. With the default collector target every doubling is a full mark of
+// everything built so far. Holding the next-collection goal at this floor skips
+// those cycles. Once the live heap passes half the floor the target is the
+// ordinary 100 percent growth, so the peak heap of a large run is unchanged.
 const testGCFloorBytes = 512 << 20
 
-// TuneTestGC applies the heap floor to the standalone `glade test` process.
-// An explicit GOGC always wins. A soft memory limit under four times the floor
-// lowers the floor to a quarter of the limit. Library callers and test
-// binaries keep the runtime default.
-func TuneTestGC(args []string) {
+const (
+	// testGCFloorUnknownHostBytes is the floor when no host or container
+	// memory budget can be read.
+	testGCFloorUnknownHostBytes = 256 << 20
+	// testGCFloorMinBytes is the smallest floor worth installing.
+	testGCFloorMinBytes = 64 << 20
+	// testGCFloorBudgetShare divides the memory budget: the floor never exceeds
+	// one eighth of physical memory or of the container limit.
+	testGCFloorBudgetShare = 8
+	testGCFloorPollEvery   = 20 * time.Millisecond
+)
+
+var testGCFloorEnabled bool
+
+// EnableTestGCFloor marks the process as a standalone `glade test` candidate.
+// It starts nothing: runTest installs the floor only on the route that runs
+// tests in this process. An explicit GOGC always wins. Library callers and test
+// binaries never call it and keep the runtime default.
+func EnableTestGCFloor(args []string) {
 	if len(args) == 0 || args[0] != "test" || os.Getenv("GOGC") != "" {
 		return
 	}
-	startGCFloor(testGCFloorBytes)
+	testGCFloorEnabled = true
+}
+
+// gcFloorRouteEligible reports whether this runTest route executes the tests
+// in the current process. Test servers (serve), daemons, watch loops, debug
+// sessions and runs sent to a server are not eligible.
+func gcFloorRouteEligible(daemonMode, watchMode, debugMode, connectMode bool) bool {
+	return !daemonMode && !watchMode && !debugMode && !connectMode
+}
+
+func startTestGCFloorIfEnabled() {
+	if !testGCFloorEnabled {
+		return
+	}
+	testGCFloorEnabled = false
+	floor := gcFloorForHost(testGCFloorBytes, hostMemoryBudget(), debug.SetMemoryLimit(-1))
+	if floor == 0 {
+		return
+	}
+	if tuner := newGCFloorTuner(floor); tuner != nil {
+		go tuner.run()
+	}
+}
+
+// gcFloorForHost caps the floor by the memory budget (physical memory or a
+// container limit, 0 when unknown) and by a soft memory limit. A floor below
+// the minimum is not worth the extra resident memory and returns 0 (off).
+func gcFloorForHost(floor, budget uint64, softLimit int64) uint64 {
+	if budget == 0 {
+		floor = min(floor, testGCFloorUnknownHostBytes)
+	} else {
+		floor = min(floor, budget/testGCFloorBudgetShare)
+	}
+	if softLimit > 0 && softLimit != math.MaxInt64 {
+		floor = min(floor, uint64(softLimit)/4)
+	}
+	if floor < testGCFloorMinBytes {
+		return 0
+	}
+	return floor
 }
 
 type gcFloorTuner struct {
-	floor  uint64
-	last   int
-	sample []metrics.Sample
+	floor      uint64
+	last       int
+	sample     []metrics.Sample
+	priorLimit int64
+	ownedLimit int64
 }
-
-type gcFloorSentinel struct{ tuner *gcFloorTuner }
 
 func newGCFloorSamples() []metrics.Sample {
 	return []metrics.Sample{
@@ -43,32 +97,39 @@ func newGCFloorSamples() []metrics.Sample {
 	}
 }
 
-func startGCFloor(floor uint64) {
-	if limit := debug.SetMemoryLimit(-1); limit > 0 && uint64(limit)/4 < floor {
-		floor = uint64(limit) / 4
-	}
-	if floor == 0 {
-		return
-	}
+// newGCFloorTuner installs the floor. While it is in force a soft memory limit
+// of twice the floor bounds the heap even if the follow-up is late.
+func newGCFloorTuner(floor uint64) *gcFloorTuner {
 	tuner := &gcFloorTuner{floor: floor, sample: newGCFloorSamples()}
 	percent, ok := tuner.percent()
 	if !ok {
-		return
+		return nil
+	}
+	// Only the runtime default is ours to replace: an explicit policy such as
+	// --gc-aggressive has already set the percent.
+	if previous := debug.SetGCPercent(percent); previous != 100 {
+		debug.SetGCPercent(previous)
+		return nil
 	}
 	tuner.last = percent
-	debug.SetGCPercent(percent)
-	armGCFloorSentinel(tuner)
+	if backstop := int64(floor * 2); debug.SetMemoryLimit(-1) > backstop {
+		tuner.priorLimit = debug.SetMemoryLimit(backstop)
+		tuner.ownedLimit = backstop
+	}
+	return tuner
 }
 
-// armGCFloorSentinel registers a finalizer on an object that dies at the next
-// collection, so the tuner runs once per cycle.
-func armGCFloorSentinel(tuner *gcFloorTuner) {
-	sentinel := &gcFloorSentinel{tuner: tuner}
-	runtime.SetFinalizer(sentinel, func(s *gcFloorSentinel) {
-		if s.tuner.afterCycle() {
-			armGCFloorSentinel(s.tuner)
+// run follows the live heap until it passes half the floor, then restores the
+// ordinary policy. It polls so the hand-over does not depend on the scheduling
+// of a finalizer.
+func (t *gcFloorTuner) run() {
+	ticker := time.NewTicker(testGCFloorPollEvery)
+	defer ticker.Stop()
+	for range ticker.C {
+		if t.step() {
+			return
 		}
-	})
+	}
 }
 
 // percent reads the last measured live heap and root sizes and returns the
@@ -97,22 +158,41 @@ func gcFloorPercent(floor, live, roots uint64) int {
 	return 100
 }
 
-// afterCycle runs once per completed collection. It reports whether the
-// tuner stays armed.
-func (t *gcFloorTuner) afterCycle() bool {
+// step applies one update. It reports true when the tuner is finished: the
+// live heap passed half the floor, metrics are unavailable, or another policy
+// (for example --gc-aggressive) changed the percent.
+func (t *gcFloorTuner) step() bool {
 	percent, ok := t.percent()
 	if !ok {
-		return false
+		t.finish(100)
+		return true
 	}
 	if percent == t.last {
-		return true
+		return false
 	}
 	previous := debug.SetGCPercent(percent)
 	if previous != t.last {
-		// Someone else set a policy (for example --gc-aggressive). Hand it back.
+		// Another policy owns the percent. Hand its value back and stand down.
 		debug.SetGCPercent(previous)
-		return false
+		t.finish(previous)
+		return true
 	}
 	t.last = percent
-	return true
+	if percent == 100 {
+		t.finish(100)
+		return true
+	}
+	return false
+}
+
+// finish drops the memory-limit backstop if it is still ours. The percent is
+// already the ordinary 100 or another policy's value.
+func (t *gcFloorTuner) finish(percent int) {
+	if t.ownedLimit != 0 && debug.SetMemoryLimit(-1) == t.ownedLimit {
+		debug.SetMemoryLimit(t.priorLimit)
+	}
+	t.ownedLimit = 0
+	if percent == 100 && t.last != 100 {
+		debug.SetGCPercent(100)
+	}
 }
