@@ -54,6 +54,8 @@ func ciIfApplies(t *testing.T, expr string, sc ciScenario) bool {
 		return "F"
 	})
 	expr = ciIfInputs.ReplaceAllString(expr, "T")
+	// A scenario is not a cancelled run.
+	expr = strings.ReplaceAll(expr, "!cancelled()", "T")
 	expr = ciIfStatusCall.ReplaceAllString(expr, "T")
 	toks := regexp.MustCompile(`&&|\|\||[()!TF]|\S`).FindAllString(expr, -1)
 	pos := 0

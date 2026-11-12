@@ -58,8 +58,8 @@ func TestCICase319ApexPredecessorBootstrapWorkflow(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := string(data)
-	start := strings.Index(text, "  apextest-history-input:")
-	end := strings.Index(text, "\n  apextest:\n")
+	start := strings.Index(text, "  history-input:")
+	end := strings.Index(text, "\n  gladecli:\n")
 	if start < 0 || end <= start {
 		t.Fatal("missing Apex history jobs")
 	}

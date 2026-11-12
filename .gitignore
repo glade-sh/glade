@@ -35,3 +35,4 @@ contrib/vscode-glade/dist/
 contrib/vscode-glade/out/
 .worktrees/
 .tmp_count/
+/scripts/ci-artifacts/
