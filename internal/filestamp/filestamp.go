@@ -1,6 +1,20 @@
 // Package filestamp identifies one on-disk version of a regular file by device,
 // inode, size, mtime and ctime. ctime cannot be set from user space, so
 // rewriting a file and restoring its mtime still changes the stamp.
+//
+// Known limits, accepted and not detectable from a stat:
+//   - Writes through a shared writable mapping (mmap MAP_SHARED) may change
+//     content without updating mtime or ctime. A stamp is trusted for build
+//     artifacts that are written then executed or read, not for files another
+//     process maps writable.
+//   - overlayfs is trusted on the strength of the overlay's own statfs type.
+//     Its lower layer may be a file system without a real ctime, and statfs
+//     does not name it. A file served from such a lower layer could keep its
+//     stamp across a content change. Container images normally keep their
+//     lower layers immutable.
+//   - The per-device trust verdict is re-checked every 30 seconds, not on every
+//     call. A device number reused by another file system inside that window is
+//     still judged by the old verdict.
 package filestamp
 
 import (
