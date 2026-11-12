@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 )
 
 func sourceSpreadEagerOrg(features []string) OrgState {
@@ -155,5 +156,30 @@ func TestStandardSpreadSourceKeyPrefixesWithCustomObjects(t *testing.T) {
 		}
 	}
 	MaterializeStandardObjectSpread(&lazy)
+	compareCompleteOrgs(t, eager, lazy)
+}
+
+// Completing a prefix-validated lazy org must not rebuild the key prefix plan
+// for every object it installs: that made completion quadratic in the number
+// of objects held.
+func TestStandardSpreadSourceMaterializeBuildsPlanOnce(t *testing.T) {
+	lazy := sourceSpreadLazyOrg(nil)
+	EnsureUniqueKeyPrefixes(&lazy)
+	if !lazy.keyPrefixesValidated {
+		t.Fatal("org prefixes are not validated")
+	}
+	before := spreadPlanKeyBuilds.Load()
+	started := time.Now()
+	if !MaterializeStandardObjectSpread(&lazy) {
+		t.Fatal("materialize reported no change")
+	}
+	if builds := spreadPlanKeyBuilds.Load() - before; builds > 2 {
+		t.Fatalf("materialize looked up the key prefix plan %d times; want at most 2", builds)
+	}
+	if elapsed := time.Since(started); elapsed > 20*time.Second {
+		t.Fatalf("materialize took %v", elapsed)
+	}
+	eager := sourceSpreadEagerOrg(nil)
+	EnsureUniqueKeyPrefixes(&eager)
 	compareCompleteOrgs(t, eager, lazy)
 }

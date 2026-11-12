@@ -144,6 +144,13 @@ func spreadObjectOwed(org *OrgState, name string) (string, bool) {
 // reports false when the object is not owed or has no safe template; callers
 // then complete the spread so the answer still matches an eager org.
 func installSpreadObject(org *OrgState, name string) (string, bool) {
+	return installSpreadObjectWithPlan(org, name, nil)
+}
+
+// installSpreadObjectWithPlan is installSpreadObject with the key prefix plan
+// supplied by a caller that installs many objects. A nil plan is computed on
+// demand when the org's prefixes are validated.
+func installSpreadObjectWithPlan(org *OrgState, name string, plan map[string]string) (string, bool) {
 	canonical, ok := spreadObjectOwed(org, name)
 	if !ok {
 		return "", false
@@ -156,7 +163,10 @@ func installSpreadObject(org *OrgState, name string) (string, bool) {
 	if org.keyPrefixesValidated {
 		// The org's prefixes are already unique; the object arrives with the
 		// prefix the full assignment gives it.
-		if prefix, ok := spreadKeyPrefixPlan(org)[canonical]; ok {
+		if plan == nil {
+			plan = spreadKeyPrefixPlan(org)
+		}
+		if prefix, ok := plan[canonical]; ok {
 			installed.Definition.KeyPrefix = prefix
 		}
 	}
@@ -170,11 +180,17 @@ func materializeSpreadSource(org *OrgState) bool {
 	if org == nil || org.StandardSpread == "" {
 		return false
 	}
+	// One plan serves every install: only catalog objects arrive, and the plan
+	// does not depend on them.
+	var plan map[string]string
+	if org.keyPrefixesValidated {
+		plan = spreadKeyPrefixPlan(org)
+	}
 	for _, name := range KnownStandardObjectNames() {
 		if _, owed := spreadObjectOwed(org, name); !owed {
 			continue
 		}
-		if _, ok := installSpreadObject(org, name); !ok {
+		if _, ok := installSpreadObjectWithPlan(org, name, plan); !ok {
 			// No safe template: build this object in place, as the eager
 			// spread does.
 			ensureStandardObjectWithProfile(org, name, nil)
@@ -195,7 +211,17 @@ func materializeSpreadSource(org *OrgState) bool {
 // plus the names it owes, using each owed object's catalog prefix, and applies
 // it to what it installs. The result is memoized by what can change it: the
 // feature shape and the objects outside the catalog.
-var spreadPrefixPlans sync.Map // string -> map[string]string
+var spreadPrefixPlans struct {
+	mu    sync.Mutex
+	plans map[string]map[string]string
+}
+
+// spreadPlanKeyBuilds counts plan lookups, for tests that bound the work.
+var spreadPlanKeyBuilds atomic.Int64
+
+// maxSpreadPrefixPlans bounds the memo: a long-lived process sees few feature
+// shapes and custom-object sets, and a miss only recomputes.
+const maxSpreadPrefixPlans = 64
 
 func spreadCatalogName(name string) bool {
 	canonical, ok := ResolveKnownStandardObjectName(name)
@@ -203,6 +229,7 @@ func spreadCatalogName(name string) bool {
 }
 
 func spreadKeyPrefixPlan(org *OrgState) map[string]string {
+	spreadPlanKeyBuilds.Add(1)
 	var key strings.Builder
 	key.WriteString(org.StandardSpread)
 	key.WriteByte(0)
@@ -222,8 +249,11 @@ func spreadKeyPrefixPlan(org *OrgState) map[string]string {
 		key.WriteString(entry)
 	}
 	cacheKey := key.String()
-	if cached, ok := spreadPrefixPlans.Load(cacheKey); ok {
-		return cached.(map[string]string)
+	spreadPrefixPlans.mu.Lock()
+	cached, ok := spreadPrefixPlans.plans[cacheKey]
+	spreadPrefixPlans.mu.Unlock()
+	if ok {
+		return cached
 	}
 	entries := make([]keyPrefixEntry, 0, len(org.Objects)+len(KnownStandardObjectNames()))
 	seen := make(map[string]bool, len(org.Objects))
@@ -253,8 +283,16 @@ func spreadKeyPrefixPlan(org *OrgState) map[string]string {
 	for i, entry := range entries {
 		plan[entry.name] = assigned[i]
 	}
-	actual, _ := spreadPrefixPlans.LoadOrStore(cacheKey, plan)
-	return actual.(map[string]string)
+	spreadPrefixPlans.mu.Lock()
+	defer spreadPrefixPlans.mu.Unlock()
+	if existing, ok := spreadPrefixPlans.plans[cacheKey]; ok {
+		return existing
+	}
+	if spreadPrefixPlans.plans == nil || len(spreadPrefixPlans.plans) >= maxSpreadPrefixPlans {
+		spreadPrefixPlans.plans = make(map[string]map[string]string)
+	}
+	spreadPrefixPlans.plans[cacheKey] = plan
+	return plan
 }
 
 // applySpreadKeyPrefixPlan is EnsureUniqueKeyPrefixes for a lazy org.

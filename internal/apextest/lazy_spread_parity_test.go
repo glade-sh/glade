@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/testreport"
 )
@@ -172,5 +173,38 @@ func TestLazyStandardSpreadMatchesEagerSpread(t *testing.T) {
 				t.Errorf("case counts differ: eager %d, lazy %d", len(eager), len(lazy))
 			}
 		})
+	}
+}
+
+// A query whose child subquery names a cold object completes the lazy spread.
+// That must cost about what the eager spread costs, not seconds per test.
+func TestLazyStandardSpreadColdChildSubqueryCost(t *testing.T) {
+	const class = `@IsTest
+private class ColdChildTest {
+	@IsTest static void a() { System.assertEquals(0, [SELECT Id, (SELECT Id FROM CampaignMembers) FROM Campaign].size()); }
+	@IsTest static void b() { System.assertEquals(0, [SELECT Id, (SELECT Id FROM CampaignMembers) FROM Campaign].size()); }
+	@IsTest static void c() { System.assertEquals(0, [SELECT Id, (SELECT Id FROM CampaignMembers) FROM Campaign].size()); }
+}`
+	wall := func(eager bool) time.Duration {
+		prior := eagerStandardSpread.Load()
+		eagerStandardSpread.Store(eager)
+		defer eagerStandardSpread.Store(prior)
+		root := t.TempDir()
+		writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+		writeFile(t, filepath.Join(root, "force-app/main/default/classes/ColdChildTest.cls"), class)
+		writeFile(t, filepath.Join(root, "force-app/main/default/classes/ColdChildTest.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+		index := loadTestIndex(t, root)
+		started := time.Now()
+		run := Run(index, Options{NoDiskCache: true, Parallelism: 1})
+		elapsed := time.Since(started)
+		if summary := run.Summary(); summary.Total != 3 || summary.Passed != 3 {
+			t.Fatalf("eager=%v summary = %#v", eager, summary)
+		}
+		return elapsed
+	}
+	eager, lazy := wall(true), wall(false)
+	t.Logf("cold child subquery, 3 tests: eager %v, lazy %v", eager, lazy)
+	if lazy > 3*eager+2*time.Second {
+		t.Fatalf("lazy spread took %v against %v eager", lazy, eager)
 	}
 }
