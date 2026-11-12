@@ -69,7 +69,7 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 - **Faster Process Builder host tests.** The tests share one project load per API version, and review scenarios run in parallel. Test time is about half.
 - **Pull request lane.** Pull requests run a fast lane that includes the delegated CLI tests. The full suite runs in the merge queue.
 - **LWC conformance test split.** The L07 LWC conformance test runs once per API version, plus a prerequisites test. Each writes its own report.
-- **Wider Apex shards.** Main-branch CI runs Apex tests in 14 shards, within a 58-job budget that a test enforces.
+- **Wider Apex shards.** Main-branch CI runs Apex tests in 16 shards, within a 58-job budget that a test enforces.
 - **Public corpus check in CI.** Required CI runs a tier of pinned public Salesforce projects and compares the results with stored expectations.
 - **Shorter CI graph.** The apextest binary is built in its own job and the Go test matrix is split so shards start sooner. Every test still runs once.
 - **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.
