@@ -61,8 +61,8 @@ type v09Case struct {
 	Parameters    map[string]string          `json:"-"`
 }
 
-// TestV09SalesforceConformance replays all 146 compile/metadata and 132 DOM
-// rows at API 59/67. The final floor DOM capture is browser-recapture/
+// TestV09SalesforceConformancePart1of4 through Part4of4 together replay all 146
+// compile/metadata and 132 DOM rows at API 59/67. The final floor DOM capture is browser-recapture/
 // api59; floor metadata is from api59, and both ceiling captures are from api67.
 // Compile rows use V04's shared compiler adapter. DOM rows use the product HTTP
 // handler and its same-principal lookup destinations, without a browser.
@@ -71,11 +71,39 @@ type v09Case struct {
 // raw null, current-date affordances and generated script text. Expected values
 // never seed execution. Only the owned Account ID is replaced in fixture source.
 // GLADE_V09_CAPTURE=1 records all row differences without failing on mismatches;
-// GLADE_V09_REPORT selects the optional per-row TSV output path.
+// GLADE_V09_REPORT selects the optional per-row TSV output path; part N writes
+// the file name with ".partNofM" inserted before its extension.
+// The table is split into v09PartCount contiguous, half-open row ranges, one
+// top-level test per range, so the package shard planner (see main_test.go) can
+// place the parts on different CI shards. The parts cover every row exactly
+// once per API, and a plain go test runs all of them. The API 67 widget,
+// review and denied control suites, which take most of the time, are three more
+// top-level tests (TestV09SalesforceControls*).
 // GLADE_V09_ROW_RANGE selects a zero-based, half-open row range, start:end.
-// Adjacent ranges covering the whole table run every row once per API. The
-// range beginning at zero also runs the API 67 control suites.
+// Each part then runs the intersection of its own range and the selection, and
+// skips when that is empty; the control tests run when the selection starts at
+// row zero, as the unsplit test did.
 var v09APIVersions = []string{"59.0", "67.0"}
+
+const v09PartCount = 4
+
+// v09PartRange returns part's (zero-based) half-open row range of count rows.
+// The ranges of parts 0..v09PartCount-1 are contiguous and cover [0, count).
+func v09PartRange(part, count int) (int, int) {
+	return part * count / v09PartCount, (part + 1) * count / v09PartCount
+}
+
+// v09SelectedRows intersects part's range with the optional env selection. ok
+// is false when no row is selected.
+func v09SelectedRows(part, count int, selection string) (start, end int, ok bool, err error) {
+	start, end = v09PartRange(part, count)
+	selStart, selEnd, err := v09RowRange(selection, count)
+	if err != nil {
+		return 0, 0, false, err
+	}
+	start, end = max(start, selStart), min(end, selEnd)
+	return start, end, start < end, nil
+}
 
 func v09RowRange(value string, count int) (int, int, error) {
 	if value == "" {
@@ -103,7 +131,77 @@ func v09RowRange(value string, count int) (int, int, error) {
 	return start, end, nil
 }
 
-func TestV09SalesforceConformance(t *testing.T) {
+func TestV09SalesforceConformancePart1of4(t *testing.T) { v09RunConformance(t, 0) }
+func TestV09SalesforceConformancePart2of4(t *testing.T) { v09RunConformance(t, 1) }
+func TestV09SalesforceConformancePart3of4(t *testing.T) { v09RunConformance(t, 2) }
+func TestV09SalesforceConformancePart4of4(t *testing.T) { v09RunConformance(t, 3) }
+
+func TestV09SalesforceControlsWidget(t *testing.T) { v09RunControls(t, "widget") }
+func TestV09SalesforceControlsReview(t *testing.T) { v09RunControls(t, "review") }
+func TestV09SalesforceControlsDenied(t *testing.T) { v09RunControls(t, "denied") }
+
+// v09RunControls runs one API 67 control suite. Its report goes to
+// GLADE_V09_REPORT with ".<kind>" inserted before the extension.
+func v09RunControls(t *testing.T, kind string) {
+	selectionStart, _, err := v09RowRange(os.Getenv("GLADE_V09_ROW_RANGE"), 1<<30)
+	if err != nil {
+		t.Fatalf("invalid GLADE_V09_ROW_RANGE: %v", err)
+	}
+	if selectionStart != 0 {
+		t.Skip("GLADE_V09_ROW_RANGE does not start at row 0")
+	}
+	capture := os.Getenv("GLADE_V09_CAPTURE") != ""
+	const memoryLimit = 1536 << 20
+	if previous := debug.SetMemoryLimit(-1); previous > memoryLimit {
+		debug.SetMemoryLimit(memoryLimit)
+		defer debug.SetMemoryLimit(previous)
+	}
+	restoreDiskCache := apextest.DisableDiskCacheForTesting()
+	defer restoreDiskCache()
+	v09ReleaseRowState(t)
+	defer v09ReleaseRowState(t)
+	var report io.Writer = io.Discard
+	if path := os.Getenv("GLADE_V09_REPORT"); path != "" {
+		extension := filepath.Ext(path)
+		path = strings.TrimSuffix(path, extension) + "." + kind + extension
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if err := file.Close(); err != nil {
+				t.Error(err)
+			}
+		}()
+		report = file
+	}
+	tsv := csv.NewWriter(report)
+	tsv.Comma = '\t'
+	write := func(fields ...string) {
+		if err := tsv.Write(fields); err != nil {
+			t.Fatal(err)
+		}
+		tsv.Flush()
+		if err := tsv.Error(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	switch kind {
+	case "widget":
+		v09RunWidgetControls(t, v09LoadWidgetControls(t), capture, write)
+	case "review":
+		v09RunReviewControls(t, capture, write)
+	case "denied":
+		v09RunDeniedControls(t, capture, write)
+	default:
+		t.Fatalf("unknown V09 control suite %q", kind)
+	}
+}
+
+func v09RunConformance(t *testing.T, part int) {
 	capture := os.Getenv("GLADE_V09_CAPTURE") != ""
 	// Preserve a stricter host limit and restore the process setting afterwards.
 	// Rows run serially; no browser, page, handler or DOM survives a row.
@@ -226,9 +324,12 @@ func TestV09SalesforceConformance(t *testing.T) {
 		t.Fatalf("V09 requires 146 compile/metadata and 132 DOM rows in all five groups, got %v, %v", counts, groups)
 	}
 
-	start, end, err := v09RowRange(os.Getenv("GLADE_V09_ROW_RANGE"), len(table.Cases))
+	start, end, ok, err := v09SelectedRows(part, len(table.Cases), os.Getenv("GLADE_V09_ROW_RANGE"))
 	if err != nil {
 		t.Fatalf("invalid GLADE_V09_ROW_RANGE: %v", err)
+	}
+	if !ok {
+		t.Skipf("GLADE_V09_ROW_RANGE selects no row of part %d", part+1)
 	}
 	selected := table.Cases[start:end]
 	compileCount := 0
@@ -241,6 +342,9 @@ func TestV09SalesforceConformance(t *testing.T) {
 
 	var report io.Writer = io.Discard
 	if path := os.Getenv("GLADE_V09_REPORT"); path != "" {
+		// Each part writes its own file so parts in one process do not truncate each other.
+		extension := filepath.Ext(path)
+		path = fmt.Sprintf("%s.part%dof%d%s", strings.TrimSuffix(path, extension), part+1, v09PartCount, extension)
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)
 		}
@@ -380,12 +484,6 @@ func TestV09SalesforceConformance(t *testing.T) {
 			acceptanceMatches += apiAcceptanceMatches
 			diagnosticMatches += apiDiagnosticMatches
 			domMatches += apiDOMMatches
-			if api == "67.0" && start == 0 {
-				write := func(fields ...string) { writeRow(t, fields...) }
-				v09RunWidgetControls(t, controls, capture, write)
-				v09RunReviewControls(t, capture, write)
-				v09RunDeniedControls(t, capture, write)
-			}
 		})
 	}
 	writeRow(t, "COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileMatches, apiPasses*compileCount))
