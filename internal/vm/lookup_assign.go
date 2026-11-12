@@ -3186,6 +3186,7 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 		if current.Kind == ValueNull {
 			return newNullDereferenceError("while assigning " + strings.Join(parts[:i+1], "."))
 		}
+		vm.privatizeSharedDescribeToken(&current)
 		if current.Kind != ValueObject {
 			return fmt.Errorf("cannot assign field %s on %s", part, current.Kind)
 		}
@@ -3286,7 +3287,10 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 			}
 		}
 	}
+	// The pre-write value stays the elision baseline: a privatized token must
+	// still be propagated to its other holders.
 	previousLeafValue = current
+	vm.privatizeSharedDescribeToken(&current)
 	previousLeaf = snapshotAlias(current)
 	if reason, ok := sobjectReadOnlyReason(current); ok {
 		if isTriggerSObject(current) {
