@@ -13,7 +13,7 @@ import (
 // automation_residual_paths prove for Lead criteria, and hands every other
 // combination to the shared workflow criteria evaluator unchanged.
 //
-// Proven by the rows (API 62.0 and 67.0 alike):
+// It serves Lead only. Proven by the rows (API 62.0 and 67.0 alike):
 //   - Text and picklist operators equals, notEqual, startsWith, contains and
 //     notContain compare without case. The rule value is a comma separated
 //     list: equals, startsWith and contains match any element; notEqual and
