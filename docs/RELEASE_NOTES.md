@@ -22,6 +22,7 @@
 - **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
 - **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
 - **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
+- **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
 
 ## v0.3.7
 
