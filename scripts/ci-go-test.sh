@@ -1251,9 +1251,9 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "apex-ci" ]]; then
 		test_args=(-count=1 -timeout=90m)
-		if [[ "${shard_count}" == "14" ]]; then
-			index_pattern='^([0-9]|1[0-3])$'
-			index_description='between 0 and 13'
+		if [[ "${shard_count}" == "16" ]]; then
+			index_pattern='^([0-9]|1[0-5])$'
+			index_description='between 0 and 15'
 		elif [[ "${shard_count}" == "12" ]]; then
 			index_pattern='^([0-9]|1[01])$'
 			index_description='between 0 and 11'
@@ -1403,17 +1403,17 @@ run_apextest_matrix_shard() {
 		label="local-release Apex"
 		shard_count="2"
 		index_pattern='^[01]$'
-	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" || "${shard_count}" == "14" ]]; then
+	elif [[ "${shard_count}" == "6" || "${shard_count}" == "12" || "${shard_count}" == "16" ]]; then
 		mode="apex-ci"
-		if [[ "${shard_count}" == "14" ]]; then
-			index_pattern='^([0-9]|1[0-3])$'
+		if [[ "${shard_count}" == "16" ]]; then
+			index_pattern='^([0-9]|1[0-5])$'
 		elif [[ "${shard_count}" == "12" ]]; then
 			index_pattern='^([0-9]|1[01])$'
 		else
 			index_pattern='^[0-5]$'
 		fi
 	elif [[ "${shard_count}" != "2" ]]; then
-		echo "CI_APEXTEST_SHARDS must be 2, 6, 12, or 14" >&2
+		echo "CI_APEXTEST_SHARDS must be 2, 6, 12, or 16" >&2
 		return 2
 	fi
 	local artifact_suffix="invalid"
@@ -1426,7 +1426,7 @@ run_apextest_matrix_shard() {
 	# go test -vet=off -trimpath -list '^Test' "${apex_package}"
 	# planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
 	# run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=90m -trimpath -run "${regex}" "${apex_package}"
-	# CI opts into six, twelve or fourteen shards; local helpers default to two shards.
+	# CI opts into six, twelve or sixteen shards; local helpers default to two shards.
 	# About 280 measured-plan Apex minutes plus 25% test growth
 	# estimates 58 minutes per CI shard, or 87 with a 1.5x margin.
 	# Allow 90 minutes for cold history and runner variance.
@@ -1847,13 +1847,13 @@ refresh_apextest_history() {
 	# Keep the two-shard local train interface; CI supplies output then all dirs.
 	if [[ "$#" -eq 3 ]]; then
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "2" "$3" "$1" "$2"
-	elif [[ "$#" -eq 7 || "$#" -eq 13 || "$#" -eq 15 ]]; then
+	elif [[ "$#" -eq 7 || "$#" -eq 13 || "$#" -eq 17 ]]; then
 		local output="$1"
 		local shard_count="6"
 		if [[ "$#" -eq 13 ]]; then
 			shard_count="12"
-		elif [[ "$#" -eq 15 ]]; then
-			shard_count="14"
+		elif [[ "$#" -eq 17 ]]; then
+			shard_count="16"
 		fi
 		shift
 		refresh_test_history "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0" "${shard_count}" "${output}" "$@"
@@ -2161,7 +2161,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-13|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-15|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

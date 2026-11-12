@@ -26,7 +26,7 @@ Route twins: <routes covered, or `n/a: <reason>`>.
 | Check | Command | Result |
 | --- | --- | --- |
 | Focused tests | `CGO_ENABLED=1 go test ./internal/<pkg> -run '...'` | |
-| Package tests, once (apextest: focused `-run` tests; CI runs 14 shards) | `CGO_ENABLED=1 go test ./internal/<pkg>` | |
+| Package tests, once (apextest: focused `-run` tests; CI runs 16 shards) | `CGO_ENABLED=1 go test ./internal/<pkg>` | |
 | Repository guard | `CGO_ENABLED=1 go test ./internal/repoguard` | |
 | Format and vet | `gofmt -l .` and `go vet ./internal/<pkg>` | |
 

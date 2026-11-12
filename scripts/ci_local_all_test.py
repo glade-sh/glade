@@ -328,11 +328,11 @@ except KeyboardInterrupt:
             calls = self.capture_plan(root)
             env = calls['apextest-dispatch'][1]['env']
             self.assertEqual(env.get('CI_APEXTEST_HISTORY_COMPLETE'), '1')
-            self.assertEqual(env['CI_APEXTEST_SHARDS'], '14')
+            self.assertEqual(env['CI_APEXTEST_SHARDS'], '16')
 
     def test_apex_ci_history_collects_deferred_union(self):
         package = 'github.com/glade-sh/glade/internal/apextest'
-        names = ['TestA%02d' % i for i in range(13)] + ['TestRunDataWeaveTypedAdmitted']
+        names = ['TestA%02d' % i for i in range(15)] + ['TestRunDataWeaveTypedAdmitted']
         shards = [dict(index=i, tests=[name], estimatedDurationMillis=0, regex='^(?:' + name + ')$') for i, name in enumerate(names)]
         plan = dict(version=1, package=package, historyUsed=False, shards=shards)
         with tempfile.TemporaryDirectory() as directory:
@@ -345,7 +345,7 @@ except KeyboardInterrupt:
                 (fixture / 'discovery.txt').write_text('\n'.join(names) + '\n')
                 (fixture / 'plan.json').write_text(json.dumps(plan))
                 (fixture / 'selected-shard.json').write_text(json.dumps(shards[i]))
-                deferred = i == 13
+                deferred = i == 15
                 (fixture / 'validation-summary.json').write_text(json.dumps(dict(valid=True, expected=[name], passed=[] if deferred else [name], errors=[], deferred=[name] if deferred else [])))
                 events = []
                 if deferred:
@@ -476,7 +476,7 @@ except KeyboardInterrupt:
                 self.assertFalse(r.browser_available('lwcruntime'))
 
     def test_shard_inventory_matches_workflow(self):
-        self.assertEqual(runner.SHARDS, {'apextest': 14, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3})
+        self.assertEqual(runner.SHARDS, {'apextest': 16, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3})
 
 
 if __name__ == '__main__':
