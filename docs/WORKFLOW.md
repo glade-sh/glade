@@ -204,10 +204,11 @@ behavior change without a matching `NATIVE` line; a Glade-specific behavior
 change without a cited local contract and regression test; a missing applicable
 route twin; a deleted or loosened assertion without appropriate evidence;
 third-party names or content; credentials, org ids or personal paths.
-Everything else is a comment, not a block. The reviewer is read-only: it does
-not edit, commit or push, and reports every finding in one pass. After
-"changes requested", the coder fixes on the branch without rebasing, and the
-reviewer re-reviews only the new commits.
+Everything else is a comment, not a block. The reviewer may fix a small
+finding (for example a missing lane or manifest entry) with one commit on the
+branch, saying so in the review, then re-reviews the new head. It never pushes
+twice. After "changes requested", the coder fixes on the branch without
+rebasing, and the reviewer re-reviews only the new commits.
 
 Docs-only PRs, and test or fixture PRs that only add, need no review. CI still
 gates them.
@@ -369,7 +370,8 @@ Rules: docs/WORKFLOW.md sections 3 to 5, and AGENTS.md.
 
 ```text
 Review pull request <url> for glade (an offline Salesforce Apex runtime in Go).
-Read-only: do not edit, commit, push or merge. Report every finding in one pass.
+Read-only, except that you may push one small fix commit to the branch (never two), say so,
+then re-review the new head. Report every finding in one pass.
 Check in this order:
 1. Each Salesforce-observable compatibility change has a NATIVE line citing org.tsv:<line> at a
    matching route and API. Each Glade-specific change cites its local contract and regression test.
