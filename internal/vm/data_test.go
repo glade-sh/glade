@@ -1806,7 +1806,8 @@ func TestExecMapConstructorAcceptsDynamicQueryResultRecords(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account acme = new Account(Name = 'Acme');
 insert acme;
-Map<Id, Account> byId = new Map<Id, Account>(Database.query('SELECT Id, Name FROM Account WHERE Id = :acme.Id'));
+Id acmeId = acme.Id;
+Map<Id, Account> byId = new Map<Id, Account>(Database.query('SELECT Id, Name FROM Account WHERE Id = :acmeId'));
 System.assertEquals('Acme', byId.get(acme.Id).Name);
 `)
 	if err != nil {

@@ -154,11 +154,6 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 		return Null, newExceptionError("InvalidParameterValueException", "System.InvalidParameterValueException: Query must not be empty or null")
 	}
 	mapBinds := binds.Kind == ValueMap
-	if !cursor && !mapBinds {
-		if err := vm.validateDynamicSOQLBindSyntaxMode(query.Text, false, true); err != nil {
-			return Null, err
-		}
-	}
 	emptySumConstruction := false
 	emptyDateConstruction := false
 	expand := vm.expandSOQLBinds
@@ -207,6 +202,11 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 				message = "You cannot lock records with Cursor using FOR UPDATE"
 			}
 			return Null, newExceptionError("QueryException", message)
+		}
+	}
+	if !cursor && !mapBinds {
+		if err := vm.validateDynamicSOQLBindSyntaxMode(query.Text, false, true); err != nil {
+			return Null, err
 		}
 	}
 	accounting := soqlLocatorAccounting
