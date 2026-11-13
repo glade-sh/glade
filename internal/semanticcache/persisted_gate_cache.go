@@ -31,6 +31,15 @@ func defaultPersistedGateDir() string {
 	if err != nil || base == "" {
 		return ""
 	}
+	return persistedGateDirIn(base, os.Getuid())
+}
+
+// persistedGateDirIn applies the executable digest cache's base-ownership
+// rule: a root process never creates the cache inside another user's base.
+func persistedGateDirIn(base string, uid int) string {
+	if !cacheBaseUsableFor(uid, base) {
+		return ""
+	}
 	return filepath.Join(base, "glade", "controller-gate")
 }
 
