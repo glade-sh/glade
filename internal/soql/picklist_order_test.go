@@ -105,6 +105,8 @@ func TestPicklistOrderUsesDefinitionSequence(t *testing.T) {
 	})
 }
 
+// restricted_picklist_null_order.tsv rows 2-13: anonymous Apex API 62/67,
+// restricted picklist with configured Zulu, Alpha, Middle and one null.
 // ROAD-451 restricted picklist native capture uses configured Zulu, Alpha,
 // Middle and null values. Source 62 DESC with no NULLS clause places null last.
 func TestRestrictedPicklistLegacyDescendingImplicitNulls(t *testing.T) {
@@ -123,15 +125,25 @@ func TestRestrictedPicklistLegacyDescendingImplicitNulls(t *testing.T) {
 	for _, tc := range []struct {
 		name         string
 		desc, legacy bool
+		nulls        string
 		want         []string
 	}{
-		{"source62 asc default", false, true, []string{"null", "z", "a", "m"}},
-		{"source62 desc default", true, true, []string{"m", "a", "z", "null"}},
-		{"source67 desc default", true, false, []string{"null", "m", "a", "z"}},
+		{"source62 asc default", false, true, "", []string{"null", "z", "a", "m"}},
+		{"source62 desc default", true, true, "", []string{"m", "a", "z", "null"}},
+		{"source62 asc first", false, true, "FIRST", []string{"null", "z", "a", "m"}},
+		{"source62 asc last", false, true, "LAST", []string{"null", "z", "a", "m"}},
+		{"source62 desc first", true, true, "FIRST", []string{"m", "a", "z", "null"}},
+		{"source62 desc last", true, true, "LAST", []string{"m", "a", "z", "null"}},
+		{"source67 asc default", false, false, "", []string{"null", "z", "a", "m"}},
+		{"source67 desc default", true, false, "", []string{"null", "m", "a", "z"}},
+		{"source67 asc first", false, false, "FIRST", []string{"null", "z", "a", "m"}},
+		{"source67 asc last", false, false, "LAST", []string{"z", "a", "m", "null"}},
+		{"source67 desc first", true, false, "FIRST", []string{"null", "m", "a", "z"}},
+		{"source67 desc last", true, false, "LAST", []string{"m", "a", "z", "null"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rows := append([]storage.Record(nil), records...)
-			sortRecordsByOrder(org, definition, rows, []OrderSpec{{Field: "Rank__c", Desc: tc.desc}}, tc.legacy)
+			sortRecordsByOrder(org, definition, rows, []OrderSpec{{Field: "Rank__c", Desc: tc.desc, Nulls: tc.nulls}}, tc.legacy)
 			var got []string
 			for _, record := range rows {
 				got = append(got, record.Fields["Name"].String)
