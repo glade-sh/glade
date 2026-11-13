@@ -87,8 +87,54 @@ func (vm *VM) prepareTestStopAsyncJobs() {
 			ready = append(ready, job)
 		}
 	}
+	orderStopAsyncJobs(ready)
 	vm.testContext.AsyncJobs = append(prior, ready...)
 	vm.testContext.AsyncStartIndex = len(prior)
+}
+
+// splitBatchAtStop reports whether a test-submitted batch should pause after
+// start at stopTest. Batches submitted by async work, and captured fault
+// projections, keep their single-pass path.
+func (vm *VM) splitBatchAtStop(job AsyncJob, projectNative bool) bool {
+	return vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining && vm.testContext.StopDraining &&
+		job.Kind == "BatchApex" && job.DirectBatchSubmission && !job.SuppressWorkerRecords && !projectNative
+}
+
+// stopAsyncKindRank orders work at stopTest: futures, then batch start, then
+// queueables FIFO, then top-level Schedulable. ok is false for other kinds.
+func stopAsyncKindRank(kind string) (int, bool) {
+	switch kind {
+	case "Future":
+		return 0, true
+	case "BatchApex":
+		return 1, true
+	case "Queueable":
+		return 2, true
+	case "ScheduledApex":
+		return 3, true
+	}
+	return 0, false
+}
+
+// orderStopAsyncJobs stably sorts the ranked kinds among the slots they
+// occupy; jobs of other kinds keep their position.
+func orderStopAsyncJobs(jobs []AsyncJob) {
+	var slots []int
+	var ranked []AsyncJob
+	for i, job := range jobs {
+		if _, ok := stopAsyncKindRank(job.Kind); ok {
+			slots = append(slots, i)
+			ranked = append(ranked, job)
+		}
+	}
+	slices.SortStableFunc(ranked, func(a, b AsyncJob) int {
+		ra, _ := stopAsyncKindRank(a.Kind)
+		rb, _ := stopAsyncKindRank(b.Kind)
+		return ra - rb
+	})
+	for n, i := range slots {
+		jobs[i] = ranked[n]
+	}
 }
 
 func (vm *VM) drainTestWork(result *Result) error {
@@ -1640,7 +1686,13 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		}
 	}
 	locatorStart := false
-	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok {
+	resume := job.batchResume
+	if resume != nil {
+		scope = resume.scope
+		locatorStart = resume.locatorStart
+		statefulObject = resume.statefulObject
+	}
+	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok && resume == nil {
 		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 		value, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			restoreMixedDML := vm.beginMixedDMLTransaction()
@@ -1691,6 +1743,14 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		vm.recordAsyncJobTotals(job, 0, 0, 1)
 		vm.recordAsyncJob(job, "Failed", err.Error())
 		return err
+	}
+	if resume == nil && vm.splitBatchAtStop(job, projectNative) {
+		// Native stopTest runs batch start in its submission slot and execute
+		// and finish as continuations behind the queued Queueables.
+		job.batchResume = &batchResumeState{scope: scope, locatorStart: locatorStart, statefulObject: statefulObject}
+		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
+		markProjection()
+		return nil
 	}
 	executeArgs := []Value{asyncContext("Database.BatchableContext", job.ID), List()}
 	execute, ok, ambiguous := vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", executeArgs)

@@ -836,6 +836,15 @@ type AsyncJob struct {
 	QueueableDelaySet           bool
 	QueueableDuplicateSignature string
 	NotBefore                   time.Time
+	// batchResume marks a stopTest batch whose start already ran; execute and
+	// finish run later, after the first-generation queueables.
+	batchResume *batchResumeState
+}
+
+type batchResumeState struct {
+	scope          []Value
+	locatorStart   bool
+	statefulObject Value
 }
 
 type cacheEntry struct {
