@@ -21,7 +21,7 @@ func TestParallelUncapturedAssignmentNeighbor(t *testing.T) {
 	writeSemaFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	for i := 0; i < 12; i++ {
 		name := fmt.Sprintf("Neighbor%d", i)
-		src := fmt.Sprintf("public class %s { public void run() { unknownOwner.child = 1; } }", name)
+		src := fmt.Sprintf("public class %s { public void run() { unknownOwner.child = 1; Integer count = 'text'; } }", name)
 		writeSemaFile(t, filepath.Join(classes, name+".cls"), src)
 		writeSemaFile(t, filepath.Join(classes, name+".cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
 	}
@@ -31,6 +31,9 @@ func TestParallelUncapturedAssignmentNeighbor(t *testing.T) {
 	}
 	serial, _ := bodiesWithGOMAXPROCS(t, index, 1)
 	parallel, _ := bodiesWithGOMAXPROCS(t, index, 4)
+	if len(serial) < 12 {
+		t.Fatalf("expected diagnostic sentinels, got %d", len(serial))
+	}
 	if !reflect.DeepEqual(serial, parallel) {
 		t.Fatalf("diagnostics differ: serial=%v parallel=%v", serial, parallel)
 	}
