@@ -419,7 +419,7 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	// Only the create branch of an upsert runs insert validation.
 	dmlOptions.ApexRejectNullPersonRecordType = ordinaryDatabaseCall && (op == "insert" || (op == "upsert" && (externalIDField == "" || strings.EqualFold(externalIDField, "Id"))))
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
-	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode)
+	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode, accessLevelPermissionSetID(accessLevel))
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
@@ -2459,7 +2459,10 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	return vm.applyDMLWithAccessPolicy(op, value, allOrNone, externalIDField, options, result, false, false, "")
 }
 
-func (vm *VM) applyDMLWithRecordAccess(op string, value Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, resolvedMode string) ([]dml.Result, error) {
+func (vm *VM) applyDMLWithRecordAccess(op string, value Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, resolvedMode string, scope ...string) ([]dml.Result, error) {
+	if len(scope) > 0 {
+		options.UserModePermissionSetID = scope[0]
+	}
 	userMode := resolvedMode == "USER_MODE"
 	// Preserve the existing explicit USER_MODE exception boundary. The API 53
 	// with-sharing contract reports denied rows through Database save results.
@@ -2601,7 +2604,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	// Partial user-mode DML fails only the rows whose fields are denied; the
 	// all-or-none routes raised the statement exception before this point.
 	if resolvedMode == "USER_MODE" && !allOrNone && len(targets) == len(records) && (op == "insert" || op == "update" || op == "upsert") {
-		if failures := vm.userModeDMLFieldFailures(op, targets, externalIDField); hasDMLFailures(failures) {
+		if failures := vm.userModeDMLFieldFailures(op, targets, options.UserModePermissionSetID, externalIDField); hasDMLFailures(failures) {
 			records, _, targets = filterDMLInputs(records, nil, targets, failures)
 			if len(records) == 0 {
 				return failures, nil

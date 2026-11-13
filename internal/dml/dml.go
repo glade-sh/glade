@@ -202,7 +202,9 @@ func (c *SummaryRelationCache) store(childObjectName string, relations []summary
 }
 
 type Options struct {
-	AssignmentRule *storage.AssignmentRuleSelection
+	// UserModePermissionSetID carries the scoped access level through DML retries.
+	UserModePermissionSetID string
+	AssignmentRule          *storage.AssignmentRuleSelection
 	// Apex insert/update statements enforce duplicate rules; explicit
 	// Database.DMLOptions.DuplicateRuleHeader.allowSave saves Allow+Alert matches.
 	EnforceDuplicateRules, AllowDuplicateSave bool

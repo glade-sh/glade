@@ -712,7 +712,7 @@ func userModeFieldDMLRowFailure(op, objectName string, record Value, fields []st
 
 // userModeDMLFieldFailures evaluates the captured field denial for each target
 // of a partial-DML call. Rows without a denial keep their position and run.
-func (vm *VM) userModeDMLFieldFailures(op string, targets []*Value, externalKey ...string) []dml.Result {
+func (vm *VM) userModeDMLFieldFailures(op string, targets []*Value, scopedPermissionSetID string, externalKey ...string) []dml.Result {
 	objectPermission, fieldPermission := userModeDMLPermissions(op)
 	if fieldPermission == "" {
 		return nil
@@ -724,7 +724,7 @@ func (vm *VM) userModeDMLFieldFailures(op string, targets []*Value, externalKey 
 		}
 		// The statement check already ran CRUD and the SecurityException
 		// fields; only policy-denied fields are left here.
-		denied, _ := vm.userModeDMLRecordAccess(op, *target, objectPermission, fieldPermission, "", externalKey...)
+		denied, _ := vm.userModeDMLRecordAccess(op, *target, objectPermission, fieldPermission, scopedPermissionSetID, externalKey...)
 		if len(denied) == 0 {
 			continue
 		}
@@ -752,9 +752,12 @@ func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLe
 		if err != nil {
 			return err
 		}
-		// Scoped permission sets keep the statement exception: the partial
-		// engine checks rows without the scope.
-		if len(fields) > 0 && (!deferFieldRows || scopedPermissionSetID != "") {
+		// Partial DML checks denied fields per row with the same scope.
+		scopedPartialCaptured := scopedPermissionSetID != "" && op == "insert" && vm.testContext != nil && !strings.Contains(vm.canonicalSObjectValueType(record), "__")
+		for _, field := range fields {
+			scopedPartialCaptured = scopedPartialCaptured && isCustomSchemaName(field)
+		}
+		if len(fields) > 0 && (!deferFieldRows || scopedPermissionSetID != "" && !scopedPartialCaptured) {
 			return userModeFieldDMLException(op, vm.canonicalSObjectValueType(record), record, fields, index)
 		}
 	}
@@ -798,7 +801,18 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		if strings.EqualFold(objectName, "User") && record.Fields[field].Kind == ValueNull && !isExplicitSObjectField(record, field) {
 			continue
 		}
-		if !vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID) || vm.automatedProcessCustomFieldDenied(op, objectName, canonicalField, scopedPermissionSetID) {
+		allowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
+		// The captured test-runner administrator insert checks explicit grants
+		// for optional custom fields on standard objects, including a scoped grant.
+		// Universally required fields retain their intrinsic access.
+		user := vm.fieldPermissionPrincipal()
+		if op == "insert" && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.currentUserProfileName(user) == "System Administrator" && !strings.Contains(objectName, "__") && isCustomSchemaName(canonicalField) && !vm.customFieldHasIntrinsicAccess(objectName, canonicalField) {
+			allowed = vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), objectName, canonicalField, fieldPermission)
+			if !allowed && scopedPermissionSetID != "" {
+				allowed, _ = vm.explicitFieldPermission(vm.canonicalPermissionSetKey(scopedPermissionSetID), objectName, canonicalField, fieldPermission)
+			}
+		}
+		if !allowed || vm.automatedProcessCustomFieldDenied(op, objectName, canonicalField, scopedPermissionSetID) {
 			// Native dotfix_fls_followups case.insert.user rows (restricted user,
 			// API 62.0, 67.0, 68.0): a denied standard field on a standard object
 			// raises the same statement DmlException, with the field name.
@@ -807,7 +821,13 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			// denied custom field returns DML field failures (standard user,
 			// standard_ext_upsert_standard_user rows at API 62 and 67).
 			standardExternalUpsert := op == "upsert" && len(externalKey) > 0 && vm.standardExternalUpsertKey(objectName, externalKey[0]) && isCustomSchemaName(canonicalField)
-			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert) {
+			// Native standard_custom_field_policy rows (Standard User, API 62.0
+			// and 67.0): a custom field of a standard object with no grant
+			// raises the same statement DmlException or failed row, not a
+			// SecurityException, on explicit USER_MODE at both APIs and on the
+			// default mode from source API 67.0.
+			standardObjectCustomField := vm.testContext != nil && (scopedPermissionSetID == "" || op == "insert") && !strings.Contains(objectName, "__") && isCustomSchemaName(canonicalField)
+			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert || standardObjectCustomField) {
 				policyFields = append(policyFields, canonicalField)
 				continue
 			}

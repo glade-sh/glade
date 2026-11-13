@@ -65,6 +65,7 @@
 
 - **Exception stacks.** Exceptions caught through a helper chain from one-line anonymous Apex now retain the captured anonymous caller frames, including constructed causes.
 - **Standard describes.** The captured default Developer configuration exposes the observed Account field map and standard picklist values at APIs 62 and 67. Field tokens returned by a named helper remain describable by its caller.
+- **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets.
 
 ## v0.3.8
 
