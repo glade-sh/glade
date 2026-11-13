@@ -596,13 +596,33 @@ on both sides), so no row covers blank Account names or Contact last names.
   Row and column start at zero. Phonetic hits scored 100. The 80 unseen inputs
   in the boundary fixture agreed on match identities, saves, and recorded
   integer confidences at both APIs on the anonymous and test routes.
-  On 40 further short-edit inputs, all eight-letter nonphonetic five-column
-  swaps with sums of 42 or 44 saved. A previously measured positive at 60
-  matched at 97. Other sums keep the ordinary surname verdict. The interval
-  between 44 and 60 remains unmeasured. Two other four-letter stems with a trailing letter matched the
-  right records and differed on reported confidence by one or two points
-  in both directions. The fixture asserts exact save decisions, member IDs
-  and bounds each of those four score differences.
+  The `surname_keyboard` fixture adds 672 directed inputs in panels A through
+  I, including Contact and Lead mirrors. Each method has two matching native
+  repeats at APIs 62.0 and 67.0 on anonymous and named test routes. Equal
+  Metaphone 3 trailing-letter pairs score 100. Four-to-five extensions always
+  qualify with the same first name and email: p scores 99; s scores 98 below
+  sum 42 and 99 from 42; z scores 97 at sum 16 and 98 from 18. Other tails
+  keep their ordinary grade. Three-to-four extensions also qualify, with the
+  captured s, p and k grade buckets pinned by the tests.
+  One-letter substitutions use keyboard distance, including adjacent keys
+  and m/n: lengths three and four score 99, and five through eight score 100.
+  The five-letter far-key controls at cost 0.4 score 97; the wider q/p controls
+  miss. Three-letter same-row adjacent swaps score 98 through sum 29 and 99
+  from 31. Five-letter terminal rotations in the one-row/one-column group
+  score 98 through sum 35 and 99 from 39; vertical controls score 98 and
+  wide same-row controls score 97. Wide rotations below keyboard score 94
+  miss. Eight-letter nonphonetic five-column terminal swaps on the same or
+  neighboring rows miss through sum 44 and score 97 from 46 through 62.
+  Other geometries and higher sums retain the ordinary keyboard gate.
+  Case, accents, hyphens and a shared leading token are normalized for the
+  additional surname comparison. Panel H includes an ordinary same-key
+  eight-letter swap at sum 46 that scores 97 with an exact first name and
+  shared phone; it does not need the supplementary email path.
+  All captured membership decisions now agree. Nine four-to-five pairs still
+  differ by one confidence point in both directions for other trailing
+  letters. The tests list each native and current grade exactly. The older
+  short-edit holdout now compares the entire observation exactly, including
+  the previously differing Metaphone and p-extension inputs.
   Lead probes also cover corroborated and uncorroborated initial and surname
   pairs with distinct companies. A second custom Contact phone rule captured
   a filter-field change into and out of scope: both edits saved with an
