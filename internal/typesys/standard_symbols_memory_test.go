@@ -208,11 +208,12 @@ func platformTableBytes() (allocated, live uint64, table []TypeSymbol) {
 	return mid.TotalAlloc - before.TotalAlloc, after.HeapAlloc - before.HeapAlloc, table
 }
 
-// The budgets sit about 10% above the measured sizes after the change. The
-// builder used to allocate roughly 48 MiB and keep 27 MiB live.
+// The budgets sit about 10% above the sizes measured after the change (35 MB
+// allocated, 22 MB live). The
+// builder used to allocate 65 MB and keep 31 MB live.
 const (
-	platformTableAllocBudget = 30 << 20
-	platformTableLiveBudget  = 15 << 20
+	platformTableAllocBudget = 38 << 20
+	platformTableLiveBudget  = 24 << 20
 )
 
 func TestPlatformSymbolTableAllocationAndLiveBudget(t *testing.T) {

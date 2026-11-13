@@ -296,7 +296,7 @@ func buildStandardPlatformSymbols(connectAPI bool) []TypeSymbol {
 			}
 		}
 	}
-	return StandardSymbolsFromSpecs(specs)
+	return standardSymbolsFromSpecs(specs, newStandardSymbolLists())
 }
 
 func cloneTypeSymbols(symbols []TypeSymbol) []TypeSymbol {
@@ -366,9 +366,108 @@ func StandardTypeNameSymbols(names []string) []TypeSymbol {
 }
 
 func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
+	return standardSymbolsFromSpecs(specs, nil)
+}
+
+// standardSymbolLists shares identical member modifier and parameter lists
+// across the platform table. The table is read-only; StandardPlatformSymbols
+// clones every list before it leaves the package. Each shared list has its
+// capacity clamped to its length, so an append by a consumer copies.
+type standardSymbolLists struct {
+	modifiers map[string][]string
+	params    map[string][]apexast.Parameter
+	key       []byte
+	scratch   []apexast.Parameter
+}
+
+func newStandardSymbolLists() *standardSymbolLists {
+	return &standardSymbolLists{
+		modifiers: make(map[string][]string, 16),
+		params:    make(map[string][]apexast.Parameter, 256),
+	}
+}
+
+func (l *standardSymbolLists) modifierList(values ...string) []string {
+	if l.modifiers == nil {
+		return append([]string(nil), values...)
+	}
+	l.key = l.key[:0]
+	for _, value := range values {
+		l.key = append(l.key, value...)
+		l.key = append(l.key, 0)
+	}
+	if list, ok := l.modifiers[string(l.key)]; ok {
+		return list
+	}
+	list := append(make([]string, 0, len(values)), values...)
+	l.modifiers[string(l.key)] = list
+	return list
+}
+
+func (l *standardSymbolLists) parameterList(params []apexast.Parameter) []apexast.Parameter {
+	if len(params) == 0 {
+		return []apexast.Parameter{}
+	}
+	if l.params == nil {
+		return append(make([]apexast.Parameter, 0, len(params)), params...)
+	}
+	l.key = l.key[:0]
+	for _, param := range params {
+		l.key = append(l.key, param.Name...)
+		l.key = append(l.key, 0)
+		l.key = append(l.key, param.Type...)
+		l.key = append(l.key, 1)
+	}
+	if list, ok := l.params[string(l.key)]; ok {
+		return list
+	}
+	list := append(make([]apexast.Parameter, 0, len(params)), params...)
+	l.params[string(l.key)] = list
+	return list
+}
+
+// specParameters is standardSpecParameters through the shared lists.
+func (l *standardSymbolLists) specParameters(specs []StandardParameterSpec) []apexast.Parameter {
+	l.scratch = l.scratch[:0]
+	for i, spec := range specs {
+		name := spec.Name
+		if name == "" {
+			name = standardParameterName(i)
+		}
+		l.scratch = append(l.scratch, apexast.Parameter{Name: name, Type: spec.Type})
+	}
+	return l.parameterList(l.scratch)
+}
+
+// typeParameters is standardParameters through the shared lists.
+func (l *standardSymbolLists) typeParameters(types []string) []apexast.Parameter {
+	l.scratch = l.scratch[:0]
+	for i, typ := range types {
+		l.scratch = append(l.scratch, apexast.Parameter{Name: standardParameterName(i), Type: typ})
+	}
+	return l.parameterList(l.scratch)
+}
+
+func (l *standardSymbolLists) methodParameters(typeName string, method StandardMethodSpec) []apexast.Parameter {
+	if len(method.ParameterSpecs) != 0 {
+		return l.specParameters(normalizeStandardMethodParameterSpecs(typeName, method))
+	}
+	return l.typeParameters(method.Parameters)
+}
+
+// standardSymbolsFromSpecs builds the sorted symbol table. Members are sized
+// exactly. A nil lists value gives every symbol private modifier and
+// parameter lists; the platform table passes shared lists.
+func standardSymbolsFromSpecs(specs []StandardSymbolSpec, lists *standardSymbolLists) []TypeSymbol {
 	specs = mergeStandardSymbolSpecs(specs)
 	out := make([]TypeSymbol, 0, len(specs))
 	seen := make(map[string]bool, len(specs))
+	// A zero-value lists struct hands out private copies, so the member loops
+	// below read the same either way.
+	shared := lists
+	if shared == nil {
+		shared = &standardSymbolLists{}
+	}
 	for _, spec := range specs {
 		if spec.Name == "" {
 			continue
@@ -401,20 +500,25 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 			sym.Namespace = namespace
 			sym.Name = localName
 		}
+		var ctors []StandardConstructorSpec
 		if kind == apexast.DeclarationClass {
-			for _, ctor := range standardConstructorSpecs(spec) {
-				sym.Members = append(sym.Members, MemberSymbol{
-					Kind:       apexast.DeclarationConstructor,
-					Name:       localStandardSymbolName(spec.Name),
-					Modifiers:  []string{"public", "passive-generated"},
-					Parameters: standardSpecParameters(ctor.Parameters),
-				})
-			}
+			ctors = standardConstructorSpecs(spec)
+		}
+		if n := len(ctors) + len(spec.Properties) + len(spec.Fields) + len(spec.Methods); n > 0 {
+			sym.Members = make([]MemberSymbol, 0, n)
+		}
+		for _, ctor := range ctors {
+			sym.Members = append(sym.Members, MemberSymbol{
+				Kind:       apexast.DeclarationConstructor,
+				Name:       localStandardSymbolName(spec.Name),
+				Modifiers:  shared.modifierList("public", "passive-generated"),
+				Parameters: shared.specParameters(ctor.Parameters),
+			})
 		}
 		for _, prop := range spec.Properties {
-			modifiers := []string{"public"}
+			modifiers := shared.modifierList("public")
 			if prop.Static {
-				modifiers = append(modifiers, "static")
+				modifiers = shared.modifierList("public", "static")
 			}
 			sym.Members = append(sym.Members, MemberSymbol{
 				Kind:      apexast.DeclarationProperty,
@@ -424,9 +528,9 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 			})
 		}
 		for _, field := range spec.Fields {
-			modifiers := []string{"public"}
+			modifiers := shared.modifierList("public")
 			if field.Static {
-				modifiers = append(modifiers, "static")
+				modifiers = shared.modifierList("public", "static")
 			}
 			sym.Members = append(sym.Members, MemberSymbol{
 				Kind:      apexast.DeclarationField,
@@ -436,19 +540,12 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 			})
 		}
 		for _, method := range spec.Methods {
-			modifiers := append([]string(nil), method.Modifiers...)
-			if !standardModifierContains(modifiers, "private") && !standardModifierContains(modifiers, "protected") && !standardModifierContains(modifiers, "public") && !standardModifierContains(modifiers, "global") {
-				modifiers = append([]string{"public"}, modifiers...)
-			}
-			if method.Static {
-				modifiers = append(modifiers, "static")
-			}
 			sym.Members = append(sym.Members, MemberSymbol{
 				Kind:       apexast.DeclarationMethod,
 				Name:       method.Name,
 				Type:       method.ReturnType,
-				Modifiers:  modifiers,
-				Parameters: standardMethodParameters(spec.Name, method),
+				Modifiers:  shared.methodModifiers(method),
+				Parameters: shared.methodParameters(spec.Name, method),
 			})
 		}
 		out = append(out, sym)
@@ -460,6 +557,32 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 		return out[i].Namespace < out[j].Namespace
 	})
 	return out
+}
+
+// methodModifiers lists a method's modifiers: its own, with public ahead when
+// none of the access modifiers is present, and static last.
+func (l *standardSymbolLists) methodModifiers(method StandardMethodSpec) []string {
+	explicit := method.Modifiers
+	access := standardModifierContains(explicit, "private") || standardModifierContains(explicit, "protected") || standardModifierContains(explicit, "public") || standardModifierContains(explicit, "global")
+	n := len(explicit)
+	if !access {
+		n++
+	}
+	if method.Static {
+		n++
+	}
+	if n == 0 {
+		return nil
+	}
+	values := make([]string, 0, n)
+	if !access {
+		values = append(values, "public")
+	}
+	values = append(values, explicit...)
+	if method.Static {
+		values = append(values, "static")
+	}
+	return l.modifierList(values...)
 }
 
 func standardConstructorSpecs(spec StandardSymbolSpec) []StandardConstructorSpec {
