@@ -74,6 +74,8 @@ func TestFutureQueueableGetterPreservesExplicitCap(t *testing.T) {
 	caps.QueueableJobs = 7
 	machine.SetLimitCaps(caps)
 	machine.currentAsyncKind = "Future"
+	machine.EnableTestContext()
+	machine.testContext.StopDraining = true
 	got, ok := machine.limitValue("getLimitQueueableJobs")
 	if !ok || got.Int != 7 {
 		t.Fatalf("explicit getter = %v, %t", got, ok)
