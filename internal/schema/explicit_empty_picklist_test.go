@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -19,7 +20,7 @@ func TestExplicitPicklistDefinitionProvenance(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "Example.field-meta.xml")
 			writeFile(t, path, `<CustomField><fullName>Example</fullName><type>Picklist</type>`+tc.valueSet+`</CustomField>`)
-			field, err := loadField(path)
+			field, err := loadField(os.ReadFile, path)
 			if err != nil {
 				t.Fatal(err)
 			}
