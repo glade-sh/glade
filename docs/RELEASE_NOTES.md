@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- SOSL name searches match words within a name, including interior `*` and `?` wildcards. Phone searches recognize digit suffixes across number formatting.
+- SOSL name searches match word prefixes and interior `*` and `?` wildcards. Phone searches can find an international-format North American number by its seven local digits or ten national digits.
 
 ### Performance
 

@@ -2789,11 +2789,11 @@ func soslIsPhoneField(fieldName string, field storage.Field) bool {
 	return name == "phone" || strings.HasSuffix(name, "phone") || strings.Contains(label, "phone")
 }
 
-// The owned NAME FIELDS captures distinguish interior word fragments, word
-// prefixes, and interior wildcards. Other scopes and phrase/escape matching
+// The owned NAME FIELDS captures establish the boundaries of explicit
+// word-prefix and interior wildcard patterns. Other scopes and phrase/escape matching
 // keep their existing contracts.
 func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchScope) bool {
-	if scope == sosl.SearchScopeName && (term.NameWordGlob || soslASCIIWord(term.Text)) {
+	if scope == sosl.SearchScopeName && (term.NameWordGlob || term.Prefix && soslASCIIWord(term.Text)) {
 		pattern := strings.ToLower(term.Text)
 		for _, word := range strings.Fields(strings.ToLower(text)) {
 			if term.NameWordGlob {
@@ -2807,21 +2807,18 @@ func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchSc
 		}
 		return false
 	}
-	if scope == sosl.SearchScopePhone && !term.Prefix && term.Text != "" && strings.Trim(term.Text, "0123456789") == "" {
-		// Preserve local exact/substring matching; additionally recognize a
-		// digit suffix across formatting separators in the stored number.
-		digits := strings.Map(func(r rune) rune {
-			if r >= '0' && r <= '9' {
-				return r
-			}
-			return -1
-		}, text)
-		if strings.HasSuffix(digits, term.Text) {
-			return true
+	if scope == sosl.SearchScopePhone && !term.Prefix && (len(term.Text) == 7 || len(term.Text) == 10) && strings.Trim(term.Text, "0123456789") == "" {
+		// The observed international-format NANP number can be found by
+		// its ten national or seven local digits. Preserve the existing
+		// matcher for other number formats or query lengths.
+		if parts := soslNorthAmericanPhone.FindStringSubmatch(text); parts != nil {
+			return strings.HasSuffix(parts[1]+parts[2]+parts[3], term.Text)
 		}
 	}
 	return soslTextMatchesPattern(text, term)
 }
+
+var soslNorthAmericanPhone = regexp.MustCompile(`^\+1 \(([0-9]{3})\) ([0-9]{3})-([0-9]{4})$`)
 
 func soslASCIIWord(s string) bool {
 	if s == "" {
