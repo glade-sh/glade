@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"os"
 	"sort"
 	"strings"
 
@@ -335,7 +336,7 @@ func activeDuplicateRules(org *storage.OrgState, object, subtype string) []stora
 	}
 	var rules []storage.DuplicateRule
 	for _, rule := range org.Objects[name].Definition.DuplicateRules {
-		if rule.Active && strings.EqualFold(rule.Subtype, subtype) {
+		if rule.Active && strings.EqualFold(rule.Subtype, subtype) && (!rule.Seeded || StandardDuplicateRulesEnabled(org)) {
 			rules = append(rules, rule)
 		}
 	}
@@ -498,4 +499,19 @@ func (e *Engine) TakeDuplicateReports() []DuplicateReport {
 	reports := e.duplicates.reports
 	e.duplicates.reports = nil
 	return reports
+}
+
+// StandardDuplicateRulesEnabled reports whether the seeded standard duplicate
+// rules are enforced: the duplicateRules.standard setting or
+// GLADE_STANDARD_DUPLICATE_RULES=on. The setting is off by default. A rule a
+// project's metadata defines is never seeded and is always honored.
+func StandardDuplicateRulesEnabled(org *storage.OrgState) bool {
+	if org != nil && org.StandardDuplicateRules {
+		return true
+	}
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("GLADE_STANDARD_DUPLICATE_RULES"))) {
+	case "on", "1", "true":
+		return true
+	}
+	return false
 }
