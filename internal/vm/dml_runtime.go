@@ -2791,8 +2791,14 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		(vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers) {
 		return vm.applyTriggerDMLChunks(op, value, targets, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode)
 	}
+	var summaryParent, summaryKey string
+	if op == "insert" && len(records) > 0 && vm.hasSummarySideEffectsForDML(records) && recordsShareSingleObject(records) {
+		schema := dml.Engine{Org: vm.Org, SummaryByChild: vm.dmlSummaryByChild}
+		summaryParent, summaryKey = schema.SummaryValidationRelation(records[0].Object)
+	}
+	summaryInsert := summaryKey != ""
 	triggerInput := Null
-	if !allOrNone && (vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers) {
+	if !allOrNone && (vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers || summaryInsert) {
 		// Access-denied rows have already been removed; identity and trigger
 		// failures below retain positions within this private input snapshot.
 		triggerInput = vm.snapshotTriggerDMLInput(value, targets)
@@ -2911,7 +2917,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		partialAfterTriggerBackup = snapshotRuntimeOrgState(vm.Org)
 		partialAfterTriggerBackupReady = true
 	}
-	if vm.hasAutomationForDML(records) || vm.needsEarlyDMLRollbackSnapshot(op, records, allOrNone) || vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers || (op == "insert" && (hasStoredInsertDerivedFields(records) || options.CaptureAutoResponseEmail || attachedEmailHeader)) {
+	if summaryInsert || vm.hasAutomationForDML(records) || vm.needsEarlyDMLRollbackSnapshot(op, records, allOrNone) || vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers || (op == "insert" && (hasStoredInsertDerivedFields(records) || options.CaptureAutoResponseEmail || attachedEmailHeader)) {
 		// An unhandled trigger failure
 		// rolls back its DML even when Database allOrNone is false.
 		ensureRollback(false)
@@ -3228,8 +3234,27 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		}
 		return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, results, rollback, attempt)
 	}
-	if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result); err != nil {
+	summaryResults, err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, summaryParent, summaryKey, records, engineResults)
+	if err != nil {
 		return results, err
+	}
+	if summaryResults != nil {
+		results = summaryResults
+		if hasDMLFailures(beforeFailures) {
+			results = mergeDMLResults(beforeFailures, results)
+		}
+		if allOrNone {
+			if err := restoreRollback(); err != nil {
+				return nil, err
+			}
+			vm.clearDMLResultFieldsForFailures(targets, results, []string{op})
+			return results, nil
+		}
+		attempt := 0
+		if len(triggerRetries) > 0 {
+			attempt = triggerRetries[0]
+		}
+		return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, results, rollback, attempt)
 	}
 	if op == "insert" || op == "update" || op == "upsert" {
 		if err := vm.applyDeferredAutomation(&engine, afterRecords, afterInputBefore, allOrNone, rollback, result); err != nil {
@@ -3922,7 +3947,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			vm.rollbackAfterTriggerFailures(kind, afterRecords, afterFailures, partialAfterTriggerBackup)
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
-		if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result); err != nil {
+		if _, err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, "", "", nil, nil); err != nil {
 			return results, err
 		}
 		if err := vm.applyDeferredAutomation(&engine, afterRecords, groupBefore, allOrNone, rollback, result); err != nil {
