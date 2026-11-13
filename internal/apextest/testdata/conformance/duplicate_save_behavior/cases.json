@@ -64,5 +64,12 @@
     "longB": "KeyboardBehavior.longB()",
     "nearA": "KeyboardBehavior.nearA()",
     "nearB": "KeyboardBehavior.nearB()"
+  },
+  "prefix": {
+    "stemA": "PrefixBehavior.stemA()",
+    "stemB": "PrefixBehavior.stemB()",
+    "stemC": "PrefixBehavior.stemC()",
+    "stemD": "PrefixBehavior.stemD()",
+    "stemE": "PrefixBehavior.stemE()"
   }
 }
