@@ -94,3 +94,20 @@ func TestParallelUnknownAssignmentMatchesSerialWithoutRetry(t *testing.T) {
 		t.Fatalf("diagnostics differ\nserial: %v\nparallel: %v", want, got)
 	}
 }
+
+func TestParallelUnknownHistoryObservesPlatformLookup(t *testing.T) {
+	watch := newSemaUnknownHistory()
+	lazy := newSemaLazyPlatformTypeMemberModel(nil)
+	lazy.lookups.Store("example", semaPlatformTypeMemberLookup{ok: true, members: typeMembers{fields: map[string]typesys.MemberSymbol{"target": {Name: "Target"}}}})
+	state := &semaTypeMemberState{platform: &semaTypeMemberModel{members: make(map[string]typeMembers), platform: lazy}, unknownHistory: watch}
+	view := state.view()
+	if semaAnyKnownField(view, "TARGET") {
+		t.Fatal("field is not hydrated yet")
+	}
+	if _, ok := view.lookup("example"); !ok {
+		t.Fatal("platform lookup failed")
+	}
+	if !watch.conflict() {
+		t.Fatal("platform lookup did not record the case-insensitive field")
+	}
+}
