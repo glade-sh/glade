@@ -431,6 +431,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
 	callerSource := vm.currentSource
+	// Implicit getters, setters and initializers can dispatch while an outer
+	// expression still has a pending call token. Consume it only for this
+	// invocation and restore it with the rest of the caller's source state.
+	callerCallPos := vm.callPos
 	// The frame reports the line of the invoked method-name token, or of the
 	// new token for a constructor, not the line where the statement starts.
 	callLine := callerStatement.Line
@@ -516,6 +520,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.currentTrigger = callerTrigger
 		vm.currentStatement = callerStatement
 		vm.currentSource = callerSource
+		vm.callPos = callerCallPos
 		vm.hasStatement = callerHasStatement
 		lastScope := len(vm.scopeStack) - 1
 		vm.scopeStack[lastScope] = nil
