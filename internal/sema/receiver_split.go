@@ -208,6 +208,11 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 			close++
 		}
 		if before {
+			// A single-part receiver with call arguments is captured as a
+			// statement, not inside an enclosing call.
+			if depth > 0 && !strings.Contains(receiver, ".") && tokens[last+2].text != ")" {
+				continue
+			}
 			// Two-sided trivia is observed in a later call argument only;
 			// compound expressions with before-dot trivia are unobserved.
 			if after && !previousArgument {
