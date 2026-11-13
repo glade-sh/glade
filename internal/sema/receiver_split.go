@@ -211,14 +211,23 @@ func (a *Analyzer) semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesy
 		// The captured declaration, expression and argument contexts have distinct
 		// parser messages. Return and other expression contexts are not captured.
 		stmt := first == 0
-		decl := first >= 3 && len(tokens) > 3 && tokens[2].text == "="
-		assign := first >= 2 && len(tokens) > 2 && tokens[1].text == "="
-		arg := depth > 0 && depth <= 2 && tokens[0].text != "return" && tokens[0].text != "throw"
-		// Fluent initializers and assignments have no receiver-trivia capture.
-		if (decl || assign) && close < len(tokens) && tokens[close].text == "." {
+		decl := first == 3 && len(tokens) > 3 && tokens[2].text == "="
+		assign := first == 2 && len(tokens) > 2 && tokens[1].text == "="
+		arg := depth > 0 && depth <= 2 && tokens[0].text != "return" && tokens[0].text != "throw" && (tokens[first-1].text == "(" || tokens[first-1].text == ",")
+		// Compound initializers and assignments have no receiver-trivia capture.
+		if (decl || assign) && (close >= len(tokens) || tokens[close].text != ";") {
 			continue
 		}
+		// Standalone fluent captures have exactly one zero-argument continuation.
+		if stmt && close < len(tokens) && tokens[close].text == "." {
+			if close+4 >= len(tokens) || tokens[close+2].text != "(" || tokens[close+3].text != ")" || tokens[close+4].text != ";" {
+				continue
+			}
+		}
 		if before {
+			if !stmt && !decl && !arg {
+				continue
+			}
 			// The standalone comment capture has no line break; the
 			// comment-plus-line-break capture is in an argument.
 			if stmt && strings.Contains(beforeTrivia, "/*") && strings.ContainsAny(beforeTrivia, "\r\n") {
