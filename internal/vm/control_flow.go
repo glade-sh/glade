@@ -952,6 +952,7 @@ func (vm *VM) setCurrentStatement(inst ir.Instruction, source string) {
 		file = vm.currentMethod.File
 	}
 	vm.currentStatement = callFrame{Symbol: symbol, File: file, Line: line, Column: column, statement: true}
+	vm.currentSource = source
 	vm.hasStatement = true
 }
 

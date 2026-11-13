@@ -1,0 +1,1 @@
+Search.SearchResults res=Search.find('FIND {Amberquartz} RETURNING Account(Id,AccountNumber ORDER BY Name ASC LIMIT 2)'); List<String> vals=new List<String>(); for(Search.SearchResult item:res.get('Account')){vals.add((String)item.getSObject().get('AccountNumber'));} obs=String.join(vals,',');

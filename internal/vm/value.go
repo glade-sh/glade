@@ -32,7 +32,7 @@ type Value struct {
 	lexicalClassLiteral bool
 	// Preserve class-literal origin for the legacy dependency construction path.
 	dependencyClassLiteral bool
-	// Retained only for the captured single-helper exception text boundary.
+	// Projection-only anonymous callers for captured exception text boundaries.
 	exceptionAnonymousCallerLine int
 	// Keep the observed String-constructor display separate from runtime faults,
 	// cause constructors and default exception construction.
@@ -902,6 +902,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 }
 
 func numericDecimalValuesEqual(left, right Value) bool {
+	if equal, handled := signedDoubleZeroEqual(left, right); handled {
+		return equal
+	}
 	if isFloatBackedDecimal(left) && isFloatBackedDecimal(right) && math.IsNaN(left.Decimal) && math.IsNaN(right.Decimal) {
 		return true
 	}

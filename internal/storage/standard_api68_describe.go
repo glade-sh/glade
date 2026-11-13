@@ -82,14 +82,12 @@ func standardAPI68GeneratedSignatures() map[string]string {
 
 // StandardAPI68DescribeProfile selects only an exactly captured shape. A
 // missing edition or an unobserved combination has no inferred profile.
-// The plain Developer object-shape marker is derived from the same scratch
-// definition, not a shape feature, so it does not change the profile.
+// Plain Developer markers describe derived shapes, not additional org features.
 func StandardAPI68DescribeProfile(features []string) (string, bool) {
-	shape := features
-	for i, feature := range features {
-		if feature == project.PlainDeveloperObjectShape {
-			shape = append(append(make([]string, 0, len(features)-1), features[:i]...), features[i+1:]...)
-			break
+	shape := make([]string, 0, len(features))
+	for _, feature := range features {
+		if feature != project.PlainDeveloperObjectShape && feature != project.PlainDeveloperDescribeShape {
+			shape = append(shape, feature)
 		}
 	}
 	profile, ok := standardAPI68GeneratedSignatures()[canonicalFeatureSignature(shape)]

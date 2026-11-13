@@ -1,0 +1,379 @@
+case	api	route	observation
+a_b_addAfter	62.0	istest	{"asyncSaw": "[A,B,C,E]@sosl=1@isTest=true", "syncAfter": "[A,B,C,E]"}
+a_b_addAfter	67.0	istest	{"asyncSaw": "[A,B,C,E]@sosl=1@isTest=true", "syncAfter": "[A,B,C,E]"}
+a_b_base	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_b_base	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_b_beforeStart	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_b_beforeStart	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_b_clearAfter	62.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_b_clearAfter	67.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_b_inline	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_b_inline	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_b_limits	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]@sosl=1"}
+a_b_limits	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]@sosl=1"}
+a_b_none	62.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_b_none	67.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_b_override	62.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_b_override	67.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_b_setAfter	62.0	istest	{"asyncSaw": "[B,D]@sosl=1@isTest=true", "syncAfter": "[B,D]"}
+a_b_setAfter	67.0	istest	{"asyncSaw": "[B,D]@sosl=1@isTest=true", "syncAfter": "[B,D]"}
+a_b_setInside	62.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_b_setInside	67.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_f_addAfter	62.0	istest	{"asyncSaw": "[A,B,C,E]@sosl=1@isTest=true", "syncAfter": "[A,B,C,E]"}
+a_f_addAfter	67.0	istest	{"asyncSaw": "[A,B,C,E]@sosl=1@isTest=true", "syncAfter": "[A,B,C,E]"}
+a_f_base	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_f_base	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_f_beforeStart	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_f_beforeStart	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_f_clearAfter	62.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_f_clearAfter	67.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_f_inline	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_f_inline	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_f_limits	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]@sosl=1"}
+a_f_limits	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]@sosl=1"}
+a_f_none	62.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_f_none	67.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_f_override	62.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_f_override	67.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_f_setAfter	62.0	istest	{"asyncSaw": "[B,D]@sosl=1@isTest=true", "syncAfter": "[B,D]"}
+a_f_setAfter	67.0	istest	{"asyncSaw": "[B,D]@sosl=1@isTest=true", "syncAfter": "[B,D]"}
+a_f_setInside	62.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_f_setInside	67.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_q_addAfter	62.0	istest	{"asyncSaw": "[A,B,C,E]@sosl=1@isTest=true", "syncAfter": "[A,B,C,E]"}
+a_q_addAfter	67.0	istest	{"asyncSaw": "[A,B,C,E]@sosl=1@isTest=true", "syncAfter": "[A,B,C,E]"}
+a_q_base	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_q_base	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_q_beforeStart	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_q_beforeStart	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_q_clearAfter	62.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_q_clearAfter	67.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_q_inline	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_q_inline	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]"}
+a_q_limits	62.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]@sosl=1"}
+a_q_limits	67.0	istest	{"asyncSaw": "[A,C,E]@sosl=1@isTest=true", "syncAfter": "[A,C,E]@sosl=1"}
+a_q_none	62.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_q_none	67.0	istest	{"asyncSaw": "[]@sosl=1@isTest=true", "syncAfter": "[]"}
+a_q_override	62.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_q_override	67.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_q_setAfter	62.0	istest	{"asyncSaw": "[B,D]@sosl=1@isTest=true", "syncAfter": "[B,D]"}
+a_q_setAfter	67.0	istest	{"asyncSaw": "[B,D]@sosl=1@isTest=true", "syncAfter": "[B,D]"}
+a_q_setInside	62.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+a_q_setInside	67.0	istest	{"asyncSaw": "set-ok|[F]@sosl=1@isTest=true", "syncAfter": "[F]"}
+allUnq10_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+allUnq10_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+allUnq10_nf	62.0	istest	
+allUnq10_nf	67.0	istest	
+allUnq10_sub	62.0	istest	A,D,H,L
+allUnq10_sub	67.0	istest	A,D,H,L
+allUnq7_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+allUnq7_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+allUnq7_nf	62.0	istest	
+allUnq7_nf	67.0	istest	
+allUnq7_sub	62.0	istest	A,D,H,L
+allUnq7_sub	67.0	istest	A,D,H,L
+fmtDash10_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtDash10_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtDash10_nf	62.0	istest	
+fmtDash10_nf	67.0	istest	
+fmtDash10_sub	62.0	istest	A,D,H,L
+fmtDash10_sub	67.0	istest	A,D,H,L
+fmtDash7_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtDash7_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtDash7_nf	62.0	istest	
+fmtDash7_nf	67.0	istest	
+fmtDash7_sub	62.0	istest	A,D,H,L
+fmtDash7_sub	67.0	istest	A,D,H,L
+fmtParen10_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtParen10_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtParen10_nf	62.0	istest	
+fmtParen10_nf	67.0	istest	
+fmtParen10_sub	62.0	istest	A,D,H,L
+fmtParen10_sub	67.0	istest	A,D,H,L
+fmtParen7_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtParen7_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtParen7_nf	62.0	istest	
+fmtParen7_nf	67.0	istest	
+fmtParen7_sub	62.0	istest	A,D,H,L
+fmtParen7_sub	67.0	istest	A,D,H,L
+fmtPlain10_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtPlain10_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtPlain10_nf	62.0	istest	
+fmtPlain10_nf	67.0	istest	
+fmtPlain10_sub	62.0	istest	A,D,H,L
+fmtPlain10_sub	67.0	istest	A,D,H,L
+fmtPlain7_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtPlain7_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+fmtPlain7_nf	62.0	istest	
+fmtPlain7_nf	67.0	istest	
+fmtPlain7_sub	62.0	istest	A,D,H,L
+fmtPlain7_sub	67.0	istest	A,D,H,L
+leadStar_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+leadStar_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+leadStar_nf	62.0	istest	
+leadStar_nf	67.0	istest	
+leadStar_sub	62.0	istest	A,D,H,L
+leadStar_sub	67.0	istest	A,D,H,L
+loneQ3_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+loneQ3_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+loneQ3_nf	62.0	istest	
+loneQ3_nf	67.0	istest	
+loneQ3_sub	62.0	istest	A,D,H,L
+loneQ3_sub	67.0	istest	A,D,H,L
+loneQ3b_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+loneQ3b_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+loneQ3b_nf	62.0	istest	
+loneQ3b_nf	67.0	istest	
+loneQ3b_sub	62.0	istest	A,D,H,L
+loneQ3b_sub	67.0	istest	A,D,H,L
+nameUnq10_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+nameUnq10_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+nameUnq10_nf	62.0	istest	
+nameUnq10_nf	67.0	istest	
+nameUnq10_sub	62.0	istest	A,D,H,L
+nameUnq10_sub	67.0	istest	A,D,H,L
+nameUnq7_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+nameUnq7_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+nameUnq7_nf	62.0	istest	
+nameUnq7_nf	67.0	istest	
+nameUnq7_sub	62.0	istest	A,D,H,L
+nameUnq7_sub	67.0	istest	A,D,H,L
+pfxAQ1_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxAQ1_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxAQ1_nf	62.0	istest	
+pfxAQ1_nf	67.0	istest	
+pfxAQ1_sub	62.0	istest	A,D,H,L
+pfxAQ1_sub	67.0	istest	A,D,H,L
+pfxAQ2_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxAQ2_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxAQ2_nf	62.0	istest	
+pfxAQ2_nf	67.0	istest	
+pfxAQ2_sub	62.0	istest	A,D,H,L
+pfxAQ2_sub	67.0	istest	A,D,H,L
+pfxAS_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxAS_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxAS_nf	62.0	istest	
+pfxAS_nf	67.0	istest	
+pfxAS_sub	62.0	istest	A,D,H,L
+pfxAS_sub	67.0	istest	A,D,H,L
+pfxQ1_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxQ1_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxQ1_nf	62.0	istest	
+pfxQ1_nf	67.0	istest	
+pfxQ1_sub	62.0	istest	A,D,H,L
+pfxQ1_sub	67.0	istest	A,D,H,L
+pfxQ2_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxQ2_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxQ2_nf	62.0	istest	
+pfxQ2_nf	67.0	istest	
+pfxQ2_sub	62.0	istest	A,D,H,L
+pfxQ2_sub	67.0	istest	A,D,H,L
+pfxS_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxS_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+pfxS_nf	62.0	istest	
+pfxS_nf	67.0	istest	
+pfxS_sub	62.0	istest	A,D,H,L
+pfxS_sub	67.0	istest	A,D,H,L
+phDash_fx	62.0	istest	System.QueryException|line 1:9 mismatched character '-' expecting '}'
+phDash_fx	67.0	istest	System.QueryException|line 1:9 mismatched character '-' expecting '}'
+phDash_nf	62.0	istest	System.QueryException|line 1:9 mismatched character '-' expecting '}'
+phDash_nf	67.0	istest	System.QueryException|line 1:9 mismatched character '-' expecting '}'
+phDash_sub	62.0	istest	System.QueryException|line 1:9 mismatched character '-' expecting '}'
+phDash_sub	67.0	istest	System.QueryException|line 1:9 mismatched character '-' expecting '}'
+phQDash_fx	62.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+phQDash_fx	67.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+phQDash_nf	62.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+phQDash_nf	67.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+phQDash_sub	62.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+phQDash_sub	67.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+phUnq10_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+phUnq10_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+phUnq10_nf	62.0	istest	
+phUnq10_nf	67.0	istest	
+phUnq10_sub	62.0	istest	A,D,H,L
+phUnq10_sub	67.0	istest	A,D,H,L
+phUnq11_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+phUnq11_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+phUnq11_nf	62.0	istest	
+phUnq11_nf	67.0	istest	
+phUnq11_sub	62.0	istest	A,D,H,L
+phUnq11_sub	67.0	istest	A,D,H,L
+phUnq4_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+phUnq4_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+phUnq4_nf	62.0	istest	
+phUnq4_nf	67.0	istest	
+phUnq4_sub	62.0	istest	A,D,H,L
+phUnq4_sub	67.0	istest	A,D,H,L
+phUnq7_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+phUnq7_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+phUnq7_nf	62.0	istest	
+phUnq7_nf	67.0	istest	
+phUnq7_sub	62.0	istest	A,D,H,L
+phUnq7_sub	67.0	istest	A,D,H,L
+prefixAnne_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixAnne_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixAnne_nf	62.0	istest	
+prefixAnne_nf	67.0	istest	
+prefixAnne_sub	62.0	istest	A,D,H,L
+prefixAnne_sub	67.0	istest	A,D,H,L
+prefixApos_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixApos_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixApos_nf	62.0	istest	
+prefixApos_nf	67.0	istest	
+prefixApos_sub	62.0	istest	A,D,H,L
+prefixApos_sub	67.0	istest	A,D,H,L
+prefixBrien_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixBrien_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixBrien_nf	62.0	istest	
+prefixBrien_nf	67.0	istest	
+prefixBrien_sub	62.0	istest	A,D,H,L
+prefixBrien_sub	67.0	istest	A,D,H,L
+prefixHyphen_fx	62.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+prefixHyphen_fx	67.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+prefixHyphen_nf	62.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+prefixHyphen_nf	67.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+prefixHyphen_sub	62.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+prefixHyphen_sub	67.0	istest	System.QueryException|line 1:10 mismatched character '-' expecting '}'
+prefixRun_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixRun_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixRun_nf	62.0	istest	
+prefixRun_nf	67.0	istest	
+prefixRun_sub	62.0	istest	A,D,H,L
+prefixRun_sub	67.0	istest	A,D,H,L
+prefixSecond_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixSecond_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+prefixSecond_nf	62.0	istest	
+prefixSecond_nf	67.0	istest	
+prefixSecond_sub	62.0	istest	A,D,H,L
+prefixSecond_sub	67.0	istest	A,D,H,L
+qThenStar_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+qThenStar_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+qThenStar_nf	62.0	istest	
+qThenStar_nf	67.0	istest	
+qThenStar_sub	62.0	istest	A,D,H,L
+qThenStar_sub	67.0	istest	A,D,H,L
+quotedFour_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+quotedFour_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+quotedFour_nf	62.0	istest	
+quotedFour_nf	67.0	istest	
+quotedFour_sub	62.0	istest	A,D,H,L
+quotedFour_sub	67.0	istest	A,D,H,L
+quotedLocal_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+quotedLocal_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+quotedLocal_nf	62.0	istest	
+quotedLocal_nf	67.0	istest	
+quotedLocal_sub	62.0	istest	A,D,H,L
+quotedLocal_sub	67.0	istest	A,D,H,L
+quotedMiss_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+quotedMiss_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+quotedMiss_nf	62.0	istest	
+quotedMiss_nf	67.0	istest	
+quotedMiss_sub	62.0	istest	A,D,H,L
+quotedMiss_sub	67.0	istest	A,D,H,L
+quotedNational_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+quotedNational_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+quotedNational_nf	62.0	istest	
+quotedNational_nf	67.0	istest	
+quotedNational_sub	62.0	istest	A,D,H,L
+quotedNational_sub	67.0	istest	A,D,H,L
+spanA0_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanA0_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanA0_nf	62.0	istest	
+spanA0_nf	67.0	istest	
+spanA0_sub	62.0	istest	A,D,H,L
+spanA0_sub	67.0	istest	A,D,H,L
+spanA2_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanA2_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanA2_nf	62.0	istest	
+spanA2_nf	67.0	istest	
+spanA2_sub	62.0	istest	A,D,H,L
+spanA2_sub	67.0	istest	A,D,H,L
+spanA3_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanA3_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanA3_nf	62.0	istest	
+spanA3_nf	67.0	istest	
+spanA3_sub	62.0	istest	A,D,H,L
+spanA3_sub	67.0	istest	A,D,H,L
+spanA4_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanA4_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanA4_nf	62.0	istest	
+spanA4_nf	67.0	istest	
+spanA4_sub	62.0	istest	A,D,H,L
+spanA4_sub	67.0	istest	A,D,H,L
+spanR0_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR0_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR0_nf	62.0	istest	
+spanR0_nf	67.0	istest	
+spanR0_sub	62.0	istest	A,D,H,L
+spanR0_sub	67.0	istest	A,D,H,L
+spanR1_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR1_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR1_nf	62.0	istest	
+spanR1_nf	67.0	istest	
+spanR1_sub	62.0	istest	A,D,H,L
+spanR1_sub	67.0	istest	A,D,H,L
+spanR2_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR2_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR2_nf	62.0	istest	
+spanR2_nf	67.0	istest	
+spanR2_sub	62.0	istest	A,D,H,L
+spanR2_sub	67.0	istest	A,D,H,L
+spanR2b_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR2b_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR2b_nf	62.0	istest	
+spanR2b_nf	67.0	istest	
+spanR2b_sub	62.0	istest	A,D,H,L
+spanR2b_sub	67.0	istest	A,D,H,L
+spanR3_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR3_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR3_nf	62.0	istest	
+spanR3_nf	67.0	istest	
+spanR3_sub	62.0	istest	A,D,H,L
+spanR3_sub	67.0	istest	A,D,H,L
+spanR4_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR4_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR4_nf	62.0	istest	
+spanR4_nf	67.0	istest	
+spanR4_sub	62.0	istest	A,D,H,L
+spanR4_sub	67.0	istest	A,D,H,L
+spanR5_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR5_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+spanR5_nf	62.0	istest	
+spanR5_nf	67.0	istest	
+spanR5_sub	62.0	istest	A,D,H,L
+spanR5_sub	67.0	istest	A,D,H,L
+starEight_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starEight_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starEight_nf	62.0	istest	
+starEight_nf	67.0	istest	
+starEight_sub	62.0	istest	A,D,H,L
+starEight_sub	67.0	istest	A,D,H,L
+starFive_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starFive_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starFive_nf	62.0	istest	
+starFive_nf	67.0	istest	
+starFive_sub	62.0	istest	A,D,H,L
+starFive_sub	67.0	istest	A,D,H,L
+starLongMiss_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starLongMiss_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starLongMiss_nf	62.0	istest	
+starLongMiss_nf	67.0	istest	
+starLongMiss_sub	62.0	istest	A,D,H,L
+starLongMiss_sub	67.0	istest	A,D,H,L
+starNine_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starNine_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starNine_nf	62.0	istest	
+starNine_nf	67.0	istest	
+starNine_sub	62.0	istest	A,D,H,L
+starNine_sub	67.0	istest	A,D,H,L
+starThenStar_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starThenStar_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starThenStar_nf	62.0	istest	
+starThenStar_nf	67.0	istest	
+starThenStar_sub	62.0	istest	A,D,H,L
+starThenStar_sub	67.0	istest	A,D,H,L
+starThree_fx	62.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starThree_fx	67.0	istest	A,B,C,D,E,F,G,H,I,J,K,L
+starThree_nf	62.0	istest	
+starThree_nf	67.0	istest	
+starThree_sub	62.0	istest	A,D,H,L
+starThree_sub	67.0	istest	A,D,H,L

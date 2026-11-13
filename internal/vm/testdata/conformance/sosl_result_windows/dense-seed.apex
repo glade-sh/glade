@@ -1,0 +1,3 @@
+List<Account> rowsA=new List<Account>();for(Integer i=0;i<321;i++)rowsA.add(new Account(Name='Opalwindow '+String.valueOf(i).leftPad(3,'0')));insert rowsA;
+List<Contact> rowsC=new List<Contact>();for(Integer i=0;i<321;i++)rowsC.add(new Contact(LastName='Opalwindow '+String.valueOf(i).leftPad(3,'0')));insert rowsC;
+List<Lead> rowsL=new List<Lead>();for(Integer i=0;i<321;i++)rowsL.add(new Lead(LastName='Opalwindow '+String.valueOf(i).leftPad(3,'0'),Company='Owned'));insert rowsL;

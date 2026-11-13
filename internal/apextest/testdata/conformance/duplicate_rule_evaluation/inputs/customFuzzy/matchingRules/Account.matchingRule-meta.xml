@@ -1,0 +1,1 @@
+<MatchingRules><matchingRules><fullName>MrAcctFuzzy</fullName><label>MrAcctFuzzy</label><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>Name</fieldName><matchingMethod>CompanyName</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules></MatchingRules>

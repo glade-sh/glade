@@ -92,6 +92,10 @@ func testAddressLocationNativeConformance(t *testing.T, fixture string) {
 				t.Fatal(err)
 			}
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+			if filepath.Base(fixture) == "address_location_review" {
+				// DUPLICATE_SHADOW was captured with the standard rule active.
+				writeFile(t, filepath.Join(root, "glade.yml"), "duplicateRules:\n  standard: on\n")
+			}
 			index := loadTestIndex(t, root)
 			org := orgFromIndex(index)
 			org.APIVersion = api

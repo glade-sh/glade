@@ -75,8 +75,13 @@ func TestUpsertDuplicateUncapturedScopeProjectRoutes(t *testing.T) {
 	}
 }
 
-// Blank prior values are uncaptured local shipping-preservation controls.
-func TestUpsertDuplicateUncapturedBlankPriorProjectRoutes(t *testing.T) {
+// NATIVE null-to-matching edits and external-key updates
+// testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:26 anonymous 62.0
+// testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:28 istest 62.0
+// testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:30 anonymous 67.0
+// testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:32 istest 67.0
+// E4b and E11existing supersede the earlier uncaptured blank-prior control.
+func TestUpsertDuplicateBlankPriorProjectRoutes(t *testing.T) {
 	t.Cleanup(EnableDiskCacheForTesting())
 	t.Cleanup(InvalidateRuntimeCaches)
 	for _, api := range []string{"62.0", "67.0"} {
@@ -90,7 +95,7 @@ func TestUpsertDuplicateUncapturedBlankPriorProjectRoutes(t *testing.T) {
 				if prior == "null" {
 					priorEmail = ", Email=null"
 				}
-				body := `insert new Contact(LastName='Block', Email='scope@example.invalid', RouteKey__c='seed'); Contact target=new Contact(LastName='Safe', RouteKey__c='target'` + priorEmail + `); insert target; Contact row=new Contact(LastName='Block', Email='scope@example.invalid', RouteKey__c='target'); Database.UpsertResult saved=Database.upsert(row, Contact.RouteKey__c, false); System.assertEquals(true,saved.isSuccess());`
+				body := `insert new Contact(LastName='Block', Email='scope@example.invalid', RouteKey__c='seed'); Contact target=new Contact(LastName='Safe', RouteKey__c='target'` + priorEmail + `); insert target; Contact row=new Contact(LastName='Block', Email='scope@example.invalid', RouteKey__c='target'); Database.UpsertResult saved=Database.upsert(row, Contact.RouteKey__c, false); System.assertEquals(false,saved.isSuccess()); System.assertEquals(StatusCode.DUPLICATES_DETECTED,saved.getErrors()[0].getStatusCode());`
 				class := filepath.Join(base, "classes/BlankPriorPreservationTest.cls")
 				writeFile(t, class, "@IsTest private class BlankPriorPreservationTest { @IsTest static void runCase() { "+body+" } }")
 				writeFile(t, class+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)

@@ -50,9 +50,39 @@ func scanSpreadCoreLiterals(t *testing.T) []string {
 			if err != nil {
 				t.Fatal(err)
 			}
+			// Picklist entries are values, not object lookups, even when a
+			// value coincides with a standard object name.
+			picklistValues := make(map[*ast.BasicLit]bool)
+			for _, decl := range parsed.Decls {
+				fn, ok := decl.(*ast.FuncDecl)
+				if !ok || fn.Name.Name != "plainDeveloperPicklist" {
+					continue
+				}
+				ast.Inspect(fn.Body, func(n ast.Node) bool {
+					assign, ok := n.(*ast.AssignStmt)
+					if !ok || len(assign.Lhs) != 1 || len(assign.Rhs) != 1 {
+						return true
+					}
+					name, ok := assign.Lhs[0].(*ast.Ident)
+					if !ok || name.Name != "entries" {
+						return true
+					}
+					if values, ok := assign.Rhs[0].(*ast.CompositeLit); ok {
+						for _, value := range values.Elts {
+							if lit, ok := value.(*ast.BasicLit); ok {
+								picklistValues[lit] = true
+							}
+						}
+					}
+					return true
+				})
+			}
 			local := make(map[string]bool)
 			ast.Inspect(parsed, func(n ast.Node) bool {
 				if lit, ok := n.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+					if picklistValues[lit] {
+						return true
+					}
 					if s, err := strconv.Unquote(lit.Value); err == nil && known[s] {
 						local[s] = true
 					}

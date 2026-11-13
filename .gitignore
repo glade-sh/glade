@@ -3,7 +3,7 @@
 /dist/
 /glade
 /coverage.out
-/.glade/
+.glade/
 /.superpowers/
 /.kilo/
 node_modules/

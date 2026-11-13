@@ -1,5 +1,13 @@
 # Duplicate fuzzy matching: public spec, native rows and the model
 
+Three fixtures hold the native rows. The Apex save and search routes are
+covered by `duplicate_save_behavior/`, including default and custom rule
+actions, error members, Person Accounts, upsert, and controlled surname panels. `duplicate_standard_rules/` (second fixture,
+described under "Standard rules" below) covers the standard Account, Contact
+and Lead rules, the cross-object rules, custom rules with OR groups and three
+items, a custom Person Account rule and the Syllable Alignment pairs; its test
+is `TestStandardRulesNativeRows` (`internal/dml/standard_rules_conformance_test.go`).
+
 Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_matching/`
 holds `org.tsv` (native verdicts with match confidences), `cases.json` (the
 agreement bounds the conformance test enforces) and `RUN-FACTS.txt`. The tests
@@ -356,19 +364,302 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   is a miss. A dictionary name outside those rows whose alias key differs
   from its own key can match a near spelling by Jaro-Winkler in Glade and not
   natively. Initials (`J`, `J.`, `J R`) are not matched.
-- Syllable Alignment is not implemented. Company names match on identical or
-  listed words only; native one-direction matches (`Nordstrom`/`Nordstroms`),
-  prefix words (`Hospital`/`Hospitality`), unlisted plurals and vowel
-  variants, an `&` inside a word against the joined spelling (`AT&T` finds
-  `ATT` one way) and acronyms outside the proven entries are misses.
+- Syllable Alignment is modeled only where the second fixture proves a rule
+  (see "Syllable Alignment"). Native confidences of one-word plurals vary with
+  the word beyond what the length and last letter explain; vowel variants, an
+  `&` inside a word against the joined spelling (`AT&T` finds `ATT` one way)
+  and acronyms outside the proven entries are misses.
 - Street: pairs with an unknown suffix abbreviation score asymmetrically
   natively (`123 Main St`/`123 Main Str` 60 one way, 78 the other) and Glade
   does not match them; single letters after the number other than `E`.
 - Title: the (k, n) table covers up to five words; the one-direction match of
   a single word against a five-word title is not modeled.
-- Not captured: standard Account, Contact and Lead rules (their fuzzy
-  equations and match keys), cross-object Lead and Contact rules, Person
-  Account rules, rules with fuzzy items under OR, rules with three or more
-  fuzzy items, MatchBlanks on Contact fields, blank values on the last name
-  and company name. Glade keeps its earlier behavior for those rules.
+- Not captured: MatchBlanks on Contact fields, blank values on the last name
+  and company name. The standard rules, the cross-object rules, OR groups and
+  three-item rules are in the second fixture; its gaps are listed under
+  "Standard rules".
 - Unsupported fuzzy rules (unknown method names) are still left unenforced.
+
+## Standard rules
+
+The standard rules are off by default. `duplicateRules.standard: on` in
+`glade.yml` (or `GLADE_STANDARD_DUPLICATE_RULES=on`) turns on the standard
+Account, Contact and Lead rules that no project metadata defines. A project's
+`duplicateRules` metadata for a standard rule (for example
+`Standard_Account_Duplicate_Rule`, active or inactive) is honored exactly, and
+custom duplicate rules from project metadata are always enforced, fuzzy
+methods included. The conformance tests run with the setting on.
+
+Fixture: `internal/apextest/testdata/conformance/duplicate_standard_rules/`
+(`org.tsv`, `cases.json`, `RUN-FACTS.txt`); test `TestStandardRulesNativeRows`;
+scorers in `internal/dml/standard_rules.go`, `duplicate_filter_confidence.go`
+and `fuzzy_raw.go`. Verdicts come from `Datacloud.FindDuplicates` in
+anonymous Apex against three fresh 1-day scratch orgs, at API 67.0 and 62.0;
+the two versions agree on every row they share. The public help names the
+standard rules but not their equations (the article on the standard Contact and
+Lead rules gives only match-key examples), so the structure below is read
+from native truth tables over every combination of same, different and blank
+values for the fields involved.
+
+Every field comparison has five outcomes: the values match, differ, the
+candidate is blank, the existing record is blank, or both are. Only a match
+satisfies a field. Two blank values never satisfy a field.
+
+### Account
+
+`Standard_Account_Match_Rule_v1_0` matches when the name and a city or ZIP
+code match, or the website, a city or ZIP code, and a street or phone number
+match (NATIVE `Standard.Account.Truth`, 729 states of the six fields, and
+`Standard.Account.Blanks`, 7,290 states with blank existing values). The
+confidence is the product of the items on the path: name times the better of
+city and ZIP on the Name path (`Standard.Account.NameConfidence`: name 93 and
+city 95 report 89), website times the better of street and phone on the
+Website path, the city or ZIP gating that path without scoring it
+(`Standard.Account.WebsitePath`). The standard items are the fuzzy methods
+with their own scales: ZIP is five digits with an optional hyphenated
+extension (`94105` finds `94105-1234` at 100, two different extensions score
+95, `94105 1234` with a space is not an extension, non-US codes match only
+themselves), the website drops case, the scheme, a leading `www.` and a lone
+trailing slash (`acme.com/` does not find `acme.com`; `a-cme.com` finds
+`acme.com` at 94), phone numbers differing in the last four digits score 94 for
+an Account, 97 for a Contact and 98 for a Lead, and a letter typed for a
+digit finds nothing.
+
+The same structure holds with the state and country equal on both records
+and with them blank (`Standard.Account.Truth` kept them equal,
+`Standard.Account.NoStateCountry` leaves them out). Streets with a number sign
+(`210 Elm St #4`) match only their own spelling, and a seven digit phone
+number does not find the full number: the fit rows showed it, the holdout
+rows did not.
+
+### Contact and Lead
+
+`Standard_Contact_Match_Rule_v1_1` and `Standard_Lead_Match_Rule_v1_0` share
+one structure (NATIVE `Standard.Contact.Truth.*`, `Standard.Lead.Truth.*`,
+`Standard.*.Blanks`, `Standard.*.CompanyPath*`, `Standard.*.AccountPath*`):
+the last name matches, and either
+
+- the first names match and the email address, the phone number, or the
+  company branch matches; or
+- the candidate has no first name, or both have none, and the email address
+  matches.
+
+An existing record without a first name never matches a candidate that has
+one. The company branch needs the same company (a Lead's company text, a
+Contact's account) or two email addresses at one domain, and then the same
+title, or the same street with the same city or ZIP code. Two addresses at one
+domain count whatever the domain (gmail.com included, `Standard.*.EmailDomain`).
+Contacts compare accounts by id; a Lead candidate's company text never
+equals a Contact's account. The confidence is the product of the last name,
+first name and path items.
+
+### Cross-object rules
+
+`Standard_Rule_for_Contacts_with_Duplicate_Leads` and
+`Standard_Rule_for_Leads_with_Duplicate_Contacts` apply the other object's
+rule to the record's own fields (a Contact's account becomes the Lead's
+company). NATIVE `Standard.Cross.ContactToLead` and `Standard.Cross.LeadToContact`:
+the structure is the Lead rule in the first direction and the Contact rule in
+the second, and a Lead candidate's company never equals a Contact's account.
+Glade enforces them when the rule is active.
+
+### Custom rules: OR groups and three items
+
+NATIVE `Custom.*`: a rule's confidence is the mean over its filter. An AND
+group and an OR group each report the mean of their children, a leaf is its
+item's confidence, and a leaf that did not match still counts with the score
+its algorithm gave the pair. `(1 AND 2) OR 3` with the first and last name
+matching and a phone number sharing only the exchange reports
+`(100 + 40) / 2 = 70`; the phone score is the weighted score (country 10, area
+50, exchange 30, line 10, blank countries agreeing). An Exact item that
+differs counts 50. Three AND items report the mean of three. Raw scores for
+Company Name and Title are not recovered and count 50.
+
+### Person Account
+
+NATIVE `Custom.PersonAccount`: a custom matching rule on `PersonAccount`
+compares person accounts with each other and a person account is checked only
+against Person Account rules. The standard Person Account matching rule ships
+inactive and cannot be activated by metadata deploy, so no row covers it and
+Glade leaves it unenforced.
+
+### Syllable Alignment
+
+NATIVE `Company.Syllable.*`: for two names whose first words are the same, the
+second words match at 100 in both directions when they share their first six
+letters and one is the other with more letters after the prefix, or they
+differ in one letter after it (`Hospital`/`Hospitality`, `Baseline`/`Baselinu`);
+words of five letters or fewer never match, and `Hillcrest`/`Hillcrset`
+(two letters) does not. For a one-word name only the plural is matched, in
+one direction (`Nordstrom` finds `Nordstroms`, not the reverse) for a word of
+six letters or more, at a confidence that grows with the length (91 at six
+letters, 98 for a word ending in a vowel sound). `Partner` matches nothing,
+itself included, and `Prairie` does not find `Prairies`. The native scores
+vary with the word beyond these features (`Walgreen` finds `Walgreens` at 100,
+`Evergreen` finds `Evergreens` at 95), which Glade does not reproduce.
+
+### Glade fit
+
+API 67.0 rows, every ordered pair of every row. "fit" is every row the model
+was read from; "holdout" rows were written without sight of the model. Recall
+is the share of native matching pairs Glade also matches, extra the pairs Glade
+matches and native does not (the bar is 0 on every row), MAE the mean absolute
+difference between Glade's rounded confidence and the native one over the pairs
+both match. The 62.0 rows (about half of the fit rows and a rerun of the key
+rows) agree with their 67.0 rows; `cases.json` holds a bound per row.
+
+| Method | Set | Recall | False matches | Confidence MAE |
+|---|---|---|---|---|
+| Company Syllable Alignment | fit | 3137/3395 (92.4%) | 0 | 0.013 |
+| Company Syllable Alignment | holdout | 1325/1488 (89.0%) | 0 | 0.020 |
+| Cross-object rules | fit | 52/52 (100.0%) | 0 | 0.000 |
+| Custom OR / 3-item rules | fit | 57/57 (100.0%) | 0 | 0.158 |
+| Custom OR / 3-item rules | holdout | 50/50 (100.0%) | 0 | 0.220 |
+| Person Account custom rule | fit | 4/4 (100.0%) | 0 | 0.000 |
+| Person Account custom rule | holdout | 4/4 (100.0%) | 0 | 0.000 |
+| Standard Account City | fit | 68/68 (100.0%) | 0 | 0.000 |
+| Standard Account City | holdout | 76/76 (100.0%) | 0 | 0.000 |
+| Standard Account Name | fit | 161/174 (92.5%) | 0 | 0.106 |
+| Standard Account Name | holdout | 99/103 (96.1%) | 0 | 0.061 |
+| Standard Account Phone | fit | 615/2275 (27.0%) | 0 | 0.244 |
+| Standard Account Street | fit | 338/488 (69.3%) | 0 | 0.296 |
+| Standard Account Website | fit | 335/351 (95.4%) | 0 | 0.000 |
+| Standard Account Zip | fit | 79/79 (100.0%) | 0 | 0.000 |
+| Standard Account Zip | holdout | 87/97 (89.7%) | 0 | 0.000 |
+| Standard Contact/Lead Company | fit | 2500/2500 (100.0%) | 0 | 0.005 |
+| Standard Contact/Lead Company | holdout | 99/117 (84.6%) | 0 | 1.253 |
+| Standard Contact/Lead Email | fit | 83/83 (100.0%) | 0 | 0.000 |
+| Standard Contact/Lead First | fit | 490/622 (78.8%) | 0 | 0.114 |
+| Standard Contact/Lead First | holdout | 432/524 (82.4%) | 0 | 0.222 |
+| Standard Contact/Lead Last | fit | 340/400 (85.0%) | 0 | 0.012 |
+| Standard Contact/Lead Last | holdout | 256/304 (84.2%) | 0 | 0.047 |
+| Standard Contact/Lead Phone | fit | 1230/1418 (86.7%) | 0 | 0.000 |
+| Standard rule structure (Account) | fit | 2118/2118 (100.0%) | 0 | 0.000 |
+| Standard rule structure (Account) | holdout | 44/44 (100.0%) | 0 | 0.000 |
+| Standard rule structure (Contact) | holdout | 8/8 (100.0%) | 0 | 0.000 |
+| Standard rule structure (Contact/Lead) | fit | 314/314 (100.0%) | 0 | 0.000 |
+| Standard rule structure (Lead) | holdout | 10/10 (100.0%) | 0 | 0.000 |
+| Standard.Account.NameConfidence | fit | 42/42 (100.0%) | 0 | 1.000 |
+| Standard.Account.NoStateCountry | fit | 85/85 (100.0%) | 0 | 0.000 |
+| Standard.Contact.EmailDomain | fit | 63/63 (100.0%) | 0 | 0.000 |
+| Standard.Contact.FreeMailDomains | fit | 27/33 (81.8%) | 0 | 0.000 |
+| Standard.Contact.NameConfidence | fit | 20/208 (9.6%) | 0 | 0.000 |
+| Standard.Lead.EmailDomain | fit | 63/63 (100.0%) | 0 | 0.000 |
+| Standard.Lead.FreeMailDomains | fit | 27/33 (81.8%) | 0 | 0.000 |
+| Standard.Lead.NameConfidence | fit | 20/208 (9.6%) | 0 | 0.000 |
+| Standard.Shapes.Account.Family | fit | 1600/1600 (100.0%) | 0 | 4.013 |
+| Standard.Shapes.Account.Name | fit | 67/73 (91.8%) | 0 | 2.269 |
+| Standard.Shapes.Account.NameZip | fit | 55/59 (93.2%) | 0 | 2.764 |
+| Standard.Shapes.Contact.First | fit | 34/36 (94.4%) | 0 | 0.824 |
+| Standard.Shapes.Contact.Last | fit | 88/94 (93.6%) | 0 | 0.023 |
+| Standard.Shapes.Lead.Last | fit | 88/94 (93.6%) | 0 | 0.023 |
+
+Rows listed as fit that began as holdout (Account Street, Account Phone, Contact and Lead Phone, Account Website) were scored first as holdout: the first scoring of `Holdout.Field.Account.Street` and
+`Holdout.Field.Account.Phone` showed false matches (a street with a number sign,
+a seven digit phone number against a full number, a letter typed for a digit); the rules were changed
+to leave those unmatched, so those rows count as fit after the change. `Holdout.Field.Account.Website`
+was read once before the hyphen rule was written. The first Account structure
+holdout looked wrong only because the capture org had reached its daily limit
+of Apex log headers and returned no rows; those captures were repeated in
+fresh orgs with a sentinel pair that must match before a row is accepted.
+
+### Digits, non-Latin names and the capture's blank names
+
+NATIVE `Standard.Shapes.*`: Salesforce matches names that differ only in a
+digit (`Test1` finds `Test2` at 100, `42` finds `43` at 99, `Contact 1` finds
+`Contact 27`, `Test Account 1` finds every `Test Account N`, at 94 to 100
+depending on where the digits sit) and names in another script (`王` finds `李`,
+`Иванов` finds `Петров`, at 100), because its phonetic key ignores digits and is
+empty for those scripts. Glade matches the same pairs; it keeps one native
+exception, that a name of digits only never finds a name in letters (`42` and
+`王` do not match). Apex test data with numbered names therefore reports
+duplicates under the standard rules as it does in an org. A record with a
+blank required name was captured with the placeholder `Blankrow` (the same text
+on both sides), so no row covers blank Account names or Contact last names.
+
+### Standard rule gaps
+
+- The standard rules still miss some phonetic first names and surname variants.
+  The `duplicate_save_behavior` fixture exercises single-letter initials,
+  approximate surnames, explicit Person Account record types, edit actions,
+  scalar upserts and two overfull Account searches through Apex at both APIs.
+  The table above records the earlier scorer fit. The new standard-name checks
+  use a matching surname plus email or phone for an initial, and an exact first
+  name and email for additional surname variants. Custom field-method rows
+  have separate match-key behavior.
+  The short-name and six-letter terminal transposition panels separate native
+  saves from rejections even when the edited letters agree. The measured
+  correction is limited to an accepted keyboard comparison corroborated by
+  first name and email. For eligible six-letter names, exchanging letters four
+  columns apart on the same or neighboring QWERTY rows matched at 97 when
+  the sum of `abs(2*column-11) + 2*row` over the name was at least 44.
+  Row and column start at zero. Phonetic hits scored 100. The 80 unseen inputs
+  in the boundary fixture agreed on match identities, saves, and recorded
+  integer confidences at both APIs on the anonymous and test routes.
+  The `surname_keyboard` fixture adds 672 directed inputs in panels A through
+  I, including Contact and Lead mirrors. Each method has two matching native
+  repeats at APIs 62.0 and 67.0 on anonymous and named test routes. Equal
+  Metaphone 3 trailing-letter pairs score 100. Four-to-five extensions always
+  qualify with the same first name and email: p scores 99; s scores 98 below
+  sum 42 and 99 from 42; z scores 97 at sum 16 and 98 from 18. Other tails
+  keep their ordinary grade. Three-to-four extensions also qualify, with the
+  captured s, p and k grade buckets pinned by the tests.
+  The `surname_substitution` fixture adds panels J and K: 624 directed inputs
+  plus exact and unrelated sentinels, with the same API, route and repeat
+  matrix. Panel J measures first, middle and final substitutions, lengths
+  four through eight, both directions and both objects. Same-row adjacent,
+  vertical and diagonal neighbors all match with exact first name and email.
+  Five through eight letters score 100. Four-letter neighbors score 99,
+  except captured cross-row pairs whose smaller keyboard position sum is
+  at least 34, which score 100. High-sum same-row four-letter grades remain
+  unmeasured and keep 99. Three-letter supplementary substitutions remain
+  limited to panel D's terminal, same-row neighbors, at 99.
+  Far-key controls are position-sensitive through the whole-name sum: bottom
+  row substitutions six columns apart score 97 at length four from smaller
+  sum 40, and at length five; length six scores 97 below smaller sum 50 and
+  98 from 50; lengths seven and eight score 98. Top row substitutions nine
+  columns apart miss at lengths four through six; length seven misses below
+  smaller sum 51 and scores 97 from 51, while length eight scores 97.
+  Other far-key geometries retain the inherited gate. These are measured
+  buckets, not a claim about the native distance formula or its unmeasured
+  boundaries. Panel K holds missing email, different email, different first
+  name and phone-only controls across positions and neighbor geometries.
+  Panels J and K compare exact confidence, membership and save decisions
+  without any new residuals; all 4992 comparisons agree with zero false matches.
+  Predictions were frozen before native capture; the fresh 30-day scratch org
+  was deleted and deletion verified. Three-letter same-row adjacent swaps score 98 through sum 29 and 99
+  from 31. Five-letter terminal rotations in the one-row/one-column group
+  score 98 through sum 35 and 99 from 39; vertical controls score 98 and
+  wide same-row controls score 97. Wide rotations below keyboard score 94
+  miss. Eight-letter nonphonetic five-column terminal swaps on the same or
+  neighboring rows miss through sum 44 and score 97 from 46 through 62.
+  Other geometries and higher sums retain the ordinary keyboard gate.
+  Case, accents, hyphens and a shared leading token are normalized for the
+  additional surname comparison. Panel H includes an ordinary same-key
+  eight-letter swap at sum 46 that scores 97 with an exact first name and
+  shared phone; it does not need the supplementary email path.
+  All captured membership decisions now agree. Nine four-to-five pairs still
+  differ by one confidence point in both directions for other trailing
+  letters. The tests list each native and current grade exactly. The older
+  short-edit holdout now compares the entire observation exactly, including
+  the previously differing Metaphone and p-extension inputs.
+  Lead probes also cover corroborated and uncorroborated initial and surname
+  pairs with distinct companies. A second custom Contact phone rule captured
+  a filter-field change into and out of scope: both edits saved with an
+  unchanged phone, while a changed-phone upsert into a match was rejected.
+  The underlying Salesforce distance function and wider input range remain open.
+- Street: native scores the street sections multiplicatively (a different
+  suffix word 91, a different street number 95); Glade matches the pairs the
+  custom Street method matches and approximates the confidence.
+- Phone: on the Account phone panels, the website, ZIP and street also supply
+  matching paths. Missing records on those panels cannot all be attributed to
+  the phone comparison. Identical international and extension strings in the
+  Contact save fixture return no match with only the names as corroboration.
+- Standard Person Account matching rule: not activatable by metadata deploy,
+  so not captured; unenforced in Glade.
+- Raw (below threshold) item scores for Company Name and Title count 50 in an
+  OR rule's confidence, and the Keyboard Distance score of two unlike last names
+  is approximate (OR rules report 0.2 to 0.4 points of confidence error).
+- Syllable Alignment: only the two-word second-word rule and the one-word plural
+  are modeled; first-word variants, three-word names, vowel substitutions and
+  the varying plural confidences are misses.

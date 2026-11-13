@@ -1,0 +1,761 @@
+label	codepoints	char
+00	U+004D U+0075 U+0065 U+006C U+006C U+0065 U+0072	Mueller
+01	U+FF71	ｱ
+02	U+0064 U+007A	dz
+03	U+006E	n
+04	U+7530	田
+05	U+3087	ょ
+06	U+005F	_
+07	U+0061 U+007A	az
+08	U+0076 U+006F	vo
+09	U+3086	ゆ
+0a	U+0431	б
+0b	U+4E16 U+754C	世界
+0c	U+015E	Ş
+0d	U+044A	ъ
+0e	U+006C	l
+0f	U+30FD	ヽ
+0g	U+3092	を
+0h	U+3078	へ
+0i	U+0029	)
+0j	U+00F5	õ
+0k	U+00CA	Ê
+0l	U+006F U+0065 U+007A	oez
+0m	U+0064 U+0061	da
+0n	U+0159	ř
+0o	U+0026	&
+0p	U+004D	M
+0q	U+00FA	ú
+0r	U+0050	P
+0s	U+0034	4
+0t	U+00C8	È
+0u	U+CE74	카
+0v	U+674E	李
+0w	U+0152	Œ
+0x	U+043D	н
+0y	U+0061	a
+0z	U+2460	①
+10	U+5BB6	家
+11	U+0451 U+0436	ёж
+12	U+0444	ф
+13	U+006E U+007A U+007A	nzz
+14	U+3051	け
+15	U+0163	ţ
+16	U+3047	ぇ
+17	U+0063 U+006F U+006F U+0070 U+002D	coop-
+18	U+006D	m
+19	U+3079	べ
+1a	U+0061 U+0061 U+0061	aaa
+1b	U+C544	아
+1c	U+4E09	三
+1d	U+0E2E	ฮ
+1e	U+307C	ぼ
+1f	U+5B66	学
+1g	U+00C0	À
+1h	U+0069 U+006A U+007A	ijz
+1i	U+00CB	Ë
+1j	U+0433	г
+1k	U+0456 U+0457 U+0454 U+0491 U+0406 U+0407 U+0404 U+0490	іїєґІЇЄҐ
+1l	U+0072 U+0061	ra
+1m	U+3083	ゃ
+1n	U+30A6	ウ
+1o	U+0070 U+00EA U+0063 U+0068 U+0065 U+0072	pêcher
+1p	U+5B59	孙
+1q	U+30E4	ヤ
+1r	U+002C	,
+1s	U+D55C	한
+1t	U+0041 U+0061	Aa
+1u	U+0073 U+00FB U+0072	sûr
+1v	U+0063 U+0073 U+007A	csz
+1w	U+00CD	Í
+1x	U+005A U+00FC U+0072 U+0069 U+0063 U+0068	Zürich
+1y	U+0068 U+0061	ha
+1z	U+AE68	깨
+20	U+6C5F	江
+21	U+91D1	金
+22	U+0052 U+00E9 U+0073 U+0075 U+006D U+00E9	Résumé
+23	U+003F	?
+24	U+611B	愛
+25	U+3046	う
+26	U+5417	吗
+27	U+0059	Y
+28	U+9B3C	鬼
+29	U+4E86	了
+2a	U+0070 U+0065 U+0063 U+0068 U+0065	peche
+2b	U+0039	9
+2c	U+30CA	ナ
+2d	U+0036	6
+2e	U+0056	V
+2f	U+0079 U+0065	ye
+2g	U+0440	р
+2h	U+0391	Α
+2i	U+0132	Ĳ
+2j	U+54E6	哦
+2k	U+3080	む
+2l	U+3063	っ
+2m	U+7684	的
+2n	U+5C0F	小
+2o	U+5468	周
+2p	U+0053	S
+2q	U+6708	月
+2r	U+6728	木
+2s	U+0023	#
+2t	U+006F U+0065	oe
+2u	U+6C88	沈
+2v	U+0060	`
+2w	U+006E U+007A	nz
+2x	U+006F	o
+2y	U+304B	か
+2z	U+65E5 U+672C U+8A9E	日本語
+30	U+00C1	Á
+31	U+4EAC	京
+32	U+002B	+
+33	U+0068 U+007A	hz
+34	U+0079 U+006F	yo
+35	U+03C6	φ
+36	U+007B	{
+37	U+30BF	タ
+38	U+3060	だ
+39	U+0063 U+006F U+0074 U+00E9	coté
+3a	U+00E6	æ
+3b	U+0063 U+0073	cs
+3c	U+0057	W
+3d	U+0177	ŷ
+3e	U+0064 U+007A U+0073	dzs
+3f	U+0171	ű
+3g	U+0030	0
+3h	U+0063 U+007A	cz
+3i	U+0075 U+0062	ub
+3j	U+0050 U+0069 U+006C U+0073 U+0065 U+006E	Pilsen
+3k	U+005E	^
+3l	U+006F U+0062	ob
+3m	U+4E2D U+6587	中文
+3n	U+30A2 U+3042	アあ
+3o	U+004A	J
+3p	U+0063 U+006F U+0027 U+006F U+0070	co'op
+3q	U+0153 U+0075 U+0076 U+0072 U+0065	œuvre
+3r	U+03A9	Ω
+3s	U+00D4	Ô
+3t	U+0063	c
+3u	U+0E02	ข
+3v	U+0067	g
+3w	U+00A3	£
+3x	U+00EF	ï
+3y	U+5B89	安
+3z	U+00FD	ý
+40	U+C0AC	사
+41	U+0905	अ
+42	U+706B	火
+43	U+03C3	σ
+44	U+7231	爱
+45	U+305C	ぜ
+46	U+30A2	ア
+47	U+3048	え
+48	U+672C	本
+49	U+FF9D	ﾝ
+4a	U+30A8	エ
+4b	U+0073 U+0061	sa
+4c	U+6015	怕
+4d	U+00C5 U+006E U+0067 U+0073 U+0074 U+0072 U+00F6 U+006D	Ångström
+4e	U+0147	Ň
+4f	U+5927	大
+4g	U+00DC	Ü
+4h	U+65E5	日
+4i	U+5F88	很
+4j	U+0061 U+0062 U+002D	ab-
+4k	U+016F	ů
+4l	U+00F9	ù
+4m	U+00EB	ë
+4n	U+0066 U+0069	fi
+4o	U+3043	ぃ
+4p	U+007A U+0073	zs
+4q	U+30B7	シ
+4r	U+0103	ă
+4s	U+01C5	ǅ
+4t	U+0073 U+0075 U+0072	sur
+4u	U+304D U+3088 U+3046	きよう
+4v	U+043B	л
+4w	U+0070 U+00E9 U+0063 U+0068 U+00E9	péché
+4x	U+0048 U+0072 U+0061 U+0064 U+0065 U+0063	Hradec
+4y	U+0065 U+0301	é
+4z	U+306E	の
+50	U+97D3	韓
+51	U+00BD	½
+52	U+314F U+314F	ㅏㅏ
+53	U+006B	k
+54	U+017B	Ż
+55	U+03BB	λ
+56	U+0105	ą
+57	U+0043 U+0068 U+0065 U+0062	Cheb
+58	U+0043 U+0068 U+006F U+006D U+0075 U+0074 U+006F U+0076	Chomutov
+59	U+3052	げ
+5a	U+0074 U+007A	tz
+5b	U+4E94	五
+5c	U+30F2	ヲ
+5d	U+0074	t
+5e	U+0401	Ё
+5f	U+0079 U+0061	ya
+5g	U+00E0	à
+5h	U+307A	ぺ
+5i	U+8A9E	語
+5j	U+0049	I
+5k	U+CC28	차
+5l	U+00E1	á
+5m	U+05D1	ב
+5n	U+548C	和
+5o	U+00D6	Ö
+5p	U+0063 U+006F U+002D U+006F U+0070	co-op
+5q	U+0035	5
+5r	U+00DA	Ú
+5s	U+AC00 U+B098	가나
+5t	U+0050 U+0142 U+006F U+0063 U+006B	Płock
+5u	U+B2E4	다
+5v	U+006E U+0303	ñ
+5w	U+011F	ğ
+5x	U+FF41	ａ
+5y	U+0073	s
+5z	U+0161	š
+60	U+0061 U+0308	ä
+61	U+00AA	ª
+62	U+0178	Ÿ
+63	U+0392	Β
+64	U+D55C U+AE00	한글
+65	U+304B U+3042	かあ
+66	U+0432	в
+67	U+FF11	１
+68	U+5C71	山
+69	U+0033	3
+6a	U+006C U+006C U+0061	lla
+6b	U+4E2D	中
+6c	U+0063 U+006F U+006F U+0070	coop
+6d	U+00F2	ò
+6e	U+AE30	기
+6f	U+3082	も
+6g	U+0151	ő
+6h	U+00F0	ð
+6i	U+571F	土
+6j	U+3066	て
+6k	U+0058	X
+6l	U+0031	1
+6m	U+044D	э
+6n	U+0043	C
+6o	U+0436	ж
+6p	U+3042	あ
+6q	U+042F	Я
+6r	U+004E	N
+6s	U+662F	是
+6t	U+015A	Ś
+6u	U+0064	d
+6v	U+AC00 U+B2E4	가다
+6w	U+5434	吴
+6x	U+03C2	ς
+6y	U+0050 U+0073 U+007A U+0063 U+007A U+0079 U+006E U+0061	Pszczyna
+6z	U+007D	}
+70	U+03AC	ά
+71	U+6C34	水
+72	U+00ED	í
+73	U+00D3	Ó
+74	U+007E	~
+75	U+0434	д
+76	U+0047	G
+77	U+597D	好
+78	U+304C	が
+79	U+308D	ろ
+7a	U+00DF	ß
+7b	U+006E U+0079	ny
+7c	U+004F U+0065 U+0075 U+0076 U+0072 U+0065	Oeuvre
+7d	U+0906	आ
+7e	U+03B1	α
+7f	U+006F U+0308	ö
+7g	U+4F60	你
+7h	U+D30C	파
+7i	U+0149	ŉ
+7j	U+3076	ぶ
+7k	U+308A	り
+7l	U+003C	<
+7m	U+0061 U+002E U+0062	a.b
+7n	U+00D6 U+0062 U+0065 U+0072 U+0067	Öberg
+7o	U+00D8	Ø
+7p	U+767D	白
+7q	U+0130 U+0073 U+0074 U+0061 U+006E U+0062 U+0075 U+006C	İstanbul
+7r	U+0130	İ
+7s	U+005A U+0075 U+0072 U+0069 U+0063 U+0068	Zurich
+7t	U+004D U+00FC U+006C U+006C U+0065 U+0072	Müller
+7u	U+003B	;
+7v	U+0061 U+0065 U+006F U+006E	aeon
+7w	U+03B9	ι
+7x	U+006F U+0065 U+0075 U+0076 U+0072 U+0065	oeuvre
+7y	U+305D	そ
+7z	U+5B78	學
+80	U+6211	我
+81	U+0076	v
+82	U+0133	ĳ
+83	U+0393	Γ
+84	U+0063 U+006F U+002E U+006F U+0070	co.op
+85	U+00D6 U+0073 U+0074 U+0065 U+006E	Östen
+86	U+0076 U+007A	vz
+87	U+05EA	ת
+88	U+6C37	氷
+89	U+0042	B
+8a	U+0061 U+0027 U+0062	a'b
+8b	U+0143	Ń
+8c	U+0447	ч
+8d	U+0158	Ř
+8e	U+0070 U+00E9 U+0063 U+0068 U+0065 U+0072	pécher
+8f	U+0053 U+0075 U+0072	Sur
+8g	U+0101	ā
+8h	U+2014	—
+8i	U+94B1	钱
+8j	U+304E	ぎ
+8k	U+00CE	Î
+8l	U+306B	に
+8m	U+305A	ず
+8n	U+043F	п
+8o	U+30AD U+30E7 U+30A6	キョウ
+8p	U+00A9	©
+8q	U+3058	じ
+8r	U+0441	с
+8s	U+0061 U+002D U+0062	a-b
+8t	U+FF76	ｶ
+8u	U+0435 U+044F	ея
+8v	U+3077	ぷ
+8w	U+00CC	Ì
+8x	U+0077 U+006F	wo
+8y	U+0065	e
+8z	U+0032	2
+90	U+0063 U+00F4 U+0074 U+0065	côte
+91	U+00C9	É
+92	U+015B	ś
+93	U+AC10	감
+94	U+AC01 U+AC00	각가
+95	U+03B2	β
+96	U+0438	и
+97	U+0041 U+0062 U+0065 U+0072 U+0067	Aberg
+98	U+0061 U+0063	ac
+99	U+307B	ほ
+9a	U+0451	ё
+9b	U+AEBC	꺼
+9c	U+05D0	א
+9d	U+0401 U+0436	Ёж
+9e	U+0063 U+0075	cu
+9f	U+6F22 U+5B57	漢字
+9g	U+004F U+0072 U+0073 U+0074 U+0065 U+0064	Orsted
+9h	U+0443	у
+9i	U+044B	ы
+9j	U+0044	D
+9k	U+0452 U+045B U+045F	ђћџ
+9l	U+53D1	发
+9m	U+308B	る
+9n	U+FB02	ﬂ
+9o	U+307F	み
+9p	U+308F	わ
+9q	U+0075 U+007A	uz
+9r	U+03B4	δ
+9s	U+002D	-
+9t	U+0068	h
+9u	U+AC02	갂
+9v	U+0022	"
+9w	U+AC01	각
+9x	U+0141 U+00F3 U+0064 U+017A	Łódź
+9y	U+0078	x
+9z	U+0162	Ţ
+a0	U+00F6	ö
+a1	U+00C4	Ä
+a2	U+0021	!
+a3	U+0051	Q
+a4	U+010D	č
+a5	U+3072	ひ
+a6	U+00B2	²
+a7	U+00F1	ñ
+a8	U+03B3	γ
+a9	U+0070 U+00EA U+0063 U+0068 U+0065	pêche
+aa	U+03C4	τ
+ab	U+0437	з
+ac	U+0045	E
+ad	U+0165	ť
+ae	U+0915	क
+af	U+9F8D	龍
+ag	U+0070	p
+ah	U+03C5	υ
+ai	U+0074 U+0079	ty
+aj	U+0063 U+0069	ci
+ak	U+308E	ゎ
+al	U+516B	八
+am	U+4E0D	不
+an	U+30F3	ン
+ao	U+305F	た
+ap	U+00D0	Ð
+aq	U+0153	œ
+ar	U+3042 U+30A2	あア
+as	U+00EE	î
+at	U+012F	į
+au	U+FB01	ﬁ
+av	U+307E	ま
+aw	U+3073	び
+ax	U+00C7 U+0061 U+0074 U+0061 U+006C U+0068 U+00F6 U+0079 U+00FC U+006B	Çatalhöyük
+ay	U+304B U+309B	か゛
+az	U+1F600	😀
+b0	U+0063 U+0061	ca
+b1	U+0038	8
+b2	U+0119	ę
+b3	U+6771	東
+b4	U+0041	A
+b5	U+0043 U+006F U+0074 U+0065	Cote
+b6	U+003D	=
+b7	U+0066 U+0066	ff
+b8	U+0077	w
+b9	U+3050	ぐ
+ba	U+30CB	ニ
+bb	U+97E9	韩
+bc	U+044F	я
+bd	U+00F3	ó
+be	U+0031 U+0030	10
+bf	U+0117	ė
+bg	U+0411	Б
+bh	U+6F22	漢
+bi	U+4E9C	亜
+bj	U+3064	つ
+bk	U+0072 U+0065 U+0073 U+0075 U+006D U+0065	resume
+bl	U+962A	阪
+bm	U+3065	づ
+bn	U+0053 U+0069 U+0061 U+0075 U+006C U+0069 U+0061 U+0069	Siauliai
+bo	U+891A	褚
+bp	U+03B8	θ
+bq	U+006E U+0061	na
+br	U+3006	〆
+bs	U+0107	ć
+bt	U+3084	や
+bu	U+00D2	Ò
+bv	U+0435 U+0436	еж
+bw	U+0074 U+0061	ta
+bx	U+00C2	Â
+by	U+3067	で
+bz	U+0055	U
+c0	U+00E9	é
+c1	U+90FD	都
+c2	U+0627	ا
+c3	U+007A U+007A	zz
+c4	U+ADF8	그
+c5	U+3044	い
+c6	U+0079	y
+c7	U+3005	々
+c8	U+30E9	ラ
+c9	U+554A	啊
+ca	U+00E4	ä
+cb	U+30DE	マ
+cc	U+0072 U+0072	rr
+cd	U+AC00	가
+ce	U+4E2A	个
+cf	U+8349	草
+cg	U+305E	ぞ
+ch	U+002D U+0061 U+0062	-ab
+ci	U+963F	阿
+cj	U+0446	ц
+ck	U+4E00	一
+cl	U+7ADC	竜
+cm	U+6CE2	波
+cn	U+00CF	Ï
+co	U+00F4	ô
+cp	U+0061 U+0061	aa
+cq	U+0043 U+0061 U+0074 U+0061 U+006C U+0068 U+006F U+0079 U+0075 U+006B	Catalhoyuk
+cr	U+0394	Δ
+cs	U+306D	ね
+ct	U+0066	f
+cu	U+30B5	サ
+cv	U+3134	ㄴ
+cw	U+0061 U+002C U+0062	a,b
+cx	U+308C	れ
+cy	U+30A4	イ
+cz	U+309E	ゞ
+d0	U+624D	才
+d1	U+D558	하
+d2	U+53EF	可
+d3	U+006C U+0061	la
+d4	U+0069 U+006A	ij
+d5	U+03B7	η
+d6	U+B77C	라
+d7	U+0024	$
+d8	U+0449	щ
+d9	U+3057	し
+da	U+004F	O
+db	U+00FC	ü
+dc	U+00E2	â
+dd	U+2013	–
+de	U+0071	q
+df	U+AC1C	개
+dg	U+304A	お
+dh	U+00A0 U+0078	 x
+di	U+0040	@
+dj	U+0141	Ł
+dk	U+0072 U+00E9 U+0073 U+0075 U+006D U+00E9	résumé
+dl	U+006C U+007A	lz
+dm	U+AC70	거
+dn	U+03BF	ο
+do	U+3059	す
+dp	U+0061 U+0031	a1
+dq	U+00EC	ì
+dr	U+0061 U+0020 U+0062	a b
+ds	U+0110	Đ
+dt	U+017E	ž
+du	U+AE00	글
+dv	U+015F	ş
+dw	U+0043 U+006C U+0075 U+006A	Cluj
+dx	U+0061 U+0065 U+0062	aeb
+dy	U+30AB U+30A2	カア
+dz	U+3042 U+30FC	あー
+e0	U+D0C0	타
+e1	U+03C9	ω
+e2	U+0144	ń
+e3	U+AC04	간
+e4	U+5179	兹
+e5	U+0049 U+0073 U+0074 U+0061 U+006E U+0062 U+0075 U+006C	Istanbul
+e6	U+0448	ш
+e7	U+00D9	Ù
+e8	U+30D1	パ
+e9	U+3071	ぱ
+ea	U+0072 U+00E9 U+0073 U+0075 U+006D U+0065	résume
+eb	U+00C6 U+006F U+006E	Æon
+ec	U+00EA	ê
+ed	U+007A U+0061	za
+ee	U+00FE	þ
+ef	U+03BC	μ
+eg	U+56DB	四
+eh	U+0430	а
+ei	U+848B	蒋
+ej	U+006E U+0062	nb
+ek	U+043E	о
+el	U+0063 U+006F U+00F6 U+0070	coöp
+em	U+2026	…
+en	U+0410	А
+eo	U+0075	u
+ep	U+4E0B	下
+eq	U+5C31	就
+er	U+0435	е
+es	U+010F	ď
+et	U+00E7	ç
+eu	U+C790	자
+ev	U+628A	把
+ew	U+03B5	ε
+ex	U+010E	Ď
+ey	U+03B6	ζ
+ez	U+012B	ī
+f0	U+00C3	Ã
+f1	U+00D8 U+0072 U+0073 U+0074 U+0065 U+0064	Ørsted
+f2	U+0063 U+0068	ch
+f3	U+306F	は
+f4	U+004D U+0075 U+006C U+006C U+0065 U+0072	Muller
+f5	U+044C	ь
+f6	U+10400	𐐀
+f7	U+0412	В
+f8	U+30AF	ク
+f9	U+00BA	º
+fa	U+00FF	ÿ
+fb	U+002A	*
+fc	U+00C6 U+0062 U+006C U+0065 U+0073 U+006B U+0069 U+0076 U+0065 U+0072	Æbleskiver
+fd	U+0067 U+007A	gz
+fe	U+8AAC	説
+ff	U+0063 U+00F4 U+0074 U+00E9	côté
+fg	U+014D	ō
+fh	U+006F U+0065 U+0062	oeb
+fi	U+3069	ど
+fj	U+307D	ぽ
+fk	U+3068	と
+fl	U+3061	ち
+fm	U+00FB	û
+fn	U+306A	な
+fo	U+006A	j
+fp	U+005A U+0075 U+0065 U+0072 U+0069 U+0063 U+0068	Zuerich
+fq	U+30AC	ガ
+fr	U+002F	/
+fs	U+0077 U+007A	wz
+ft	U+570B	國
+fu	U+011B	ě
+fv	U+3056	ざ
+fw	U+0160	Š
+fx	U+00E5	å
+fy	U+536B	卫
+fz	U+004B	K
+g0	U+00B5	µ
+g1	U+003E	>
+g2	U+B09C	난
+g3	U+0164	Ť
+g4	U+017C	ż
+g5	U+3090	ゐ
+g6	U+3049	ぉ
+g7	U+0064 U+007A U+007A	dzz
+g8	U+56FD	国
+g9	U+0072	r
+ga	U+0066 U+006C	fl
+gb	U+004F U+0073 U+0074 U+0072 U+0061 U+0076 U+0061	Ostrava
+gc	U+90D1	郑
+gd	U+00DB	Û
+ge	U+305B	せ
+gf	U+6768	杨
+gg	U+309D	ゝ
+gh	U+3062	ぢ
+gi	U+0067 U+0079	gy
+gj	U+0061 U+0062	ab
+gk	U+30FC	ー
+gl	U+003A	:
+gm	U+007C	|
+gn	U+0061 U+0039	a9
+go	U+043A	к
+gp	U+314F	ㅏ
+gq	U+00E3	ã
+gr	U+1E9E	ẞ
+gs	U+01C6	ǆ
+gt	U+0061 U+0031 U+0030	a10
+gu	U+0073 U+0073	ss
+gv	U+5B57	字
+gw	U+30B6	ザ
+gx	U+3054	ご
+gy	U+0041 U+0041	AA
+gz	U+064A	ي
+h0	U+FF21	Ａ
+h1	U+005B	[
+h2	U+00A5	¥
+h3	U+ACE0	고
+h4	U+00C7	Ç
+h5	U+3053	こ
+h6	U+3131	ㄱ
+h7	U+03C7	χ
+h8	U+4E03	七
+h9	U+52A0	加
+ha	U+3088	よ
+hb	U+0065 U+0301 U+007A	éz
+hc	U+3070	ば
+hd	U+4ED6	他
+he	U+010C U+0061 U+006B U+006F U+0076 U+0065 U+0063	Čakovec
+hf	U+9CE5	鳥
+hg	U+306C	ぬ
+hh	U+0445	х
+hi	U+005C	\
+hj	U+3081	め
+hk	U+00C6	Æ
+hl	U+0061 U+0065	ae
+hm	U+03C1	ρ
+hn	U+0063 U+006F U+0074 U+0065	cote
+ho	U+3074	ぴ
+hp	U+3093	ん
+hq	U+0442	т
+hr	U+0052	R
+hs	U+0043 U+0068	Ch
+ht	U+0628	ب
+hu	U+0061 U+005F U+0062	a_b
+hv	U+011E	Ğ
+hw	U+044E	ю
+hx	U+516D	六
+hy	U+3075	ふ
+hz	U+0067 U+0061	ga
+i0	U+30AD U+30E8 U+30A6	キヨウ
+i1	U+4EAC U+6771	京東
+i2	U+738B	王
+i3	U+00DD	Ý
+i4	U+0063 U+006F U+0020 U+006F U+0070	co op
+i5	U+045E U+040E	ўЎ
+i6	U+007A	z
+i7	U+0179	Ź
+i8	U+00F8	ø
+i9	U+30EF	ワ
+ia	U+0037	7
+ib	U+0131 U+0073 U+0074 U+0061 U+006E U+0062 U+0075 U+006C	ıstanbul
+ic	U+AC08	갈
+id	U+03BA	κ
+ie	U+BC14	바
+if	U+00DE	Þ
+ig	U+006C U+006C	ll
+ih	U+5DDD	川
+ii	U+004C U+006F U+0064 U+007A	Lodz
+ij	U+03BD	ν
+ik	U+0046	F
+il	U+00C5	Å
+im	U+0025	%
+in	U+03C8	ψ
+io	U+30D0	バ
+ip	U+00F1 U+007A	ñz
+iq	U+3091	ゑ
+ir	U+6771 U+4EAC	東京
+is	U+4E8C	二
+it	U+51AF	冯
+iu	U+005A	Z
+iv	U+0106	Ć
+iw	U+0148	ň
+ix	U+304D	き
+iy	U+0079 U+0075	yu
+iz	U+0056 U+006F	Vo
+j0	U+0404 U+0416	ЄЖ
+j1	U+0E01	ก
+j2	U+016B	ū
+j3	U+5730	地
+j4	U+0048	H
+j5	U+30C0	ダ
+j6	U+0939	ह
+j7	U+20AC	€
+j8	U+30AB	カ
+j9	U+304B U+30FC	かー
+ja	U+30CF	ハ
+jb	U+30AA	オ
+jc	U+304F	く
+jd	U+5341	十
+je	U+0069	i
+jf	U+AD6C	구
+jg	U+0439	й
+jh	U+0073 U+007A U+007A	szz
+ji	U+3045	ぅ
+jj	U+4EBA	人
+jk	U+017D	Ž
+jl	U+0078 U+00A0 U+0079	x y
+jm	U+4E5D	九
+jn	U+3085	ゅ
+jo	U+03C0	π
+jp	U+5F20	张
+jq	U+4E4B	之
+jr	U+30F4	ヴ
+js	U+0160 U+0069 U+0061 U+0075 U+006C U+0069 U+0061 U+0069	Šiauliai
+jt	U+010C	Č
+ju	U+0057 U+006F	Wo
+jv	U+5B87	宇
+jw	U+004D U+0151 U+006C U+006C U+0065 U+0072	Mőller
+jx	U+AE4C	까
+jy	U+30AD	キ
+jz	U+017A	ź
+k0	U+4F0A	伊
+k1	U+0062	b
+k2	U+0131	ı
+k3	U+00D5	Õ
+k4	U+0142	ł
+k5	U+304D U+3087 U+3046	きょう
+k6	U+00C5 U+0062 U+0065 U+0072 U+0067	Åberg
+k7	U+B098	나
+k8	U+006F U+007A	oz
+k9	U+00E8	è
+ka	U+0041 U+0065 U+006F U+006E	Aeon
+kb	U+0075 U+0065 U+007A	uez
+kc	U+D7A3	힣
+kd	U+8D75	赵
+ke	U+FB00	ﬀ
+kf	U+00D1	Ñ
+kg	U+002E	.
+kh	U+3089	ら
+ki	U+043C	м
+kj	U+005D	]
+kk	U+B9C8	마
+kl	U+0111	đ
+km	U+004C	L
+kn	U+3094	ゔ
+ko	U+0063 U+0062	cb
+kp	U+0072 U+0065 U+0073 U+0075 U+006D U+00E9	resumé
+kq	U+0073 U+007A	sz
+kr	U+0054	T
+ks	U+004F U+0062 U+0065 U+0072 U+0067	Oberg
+kt	U+0075 U+0065	ue
+ku	U+3055	さ
+kv	U+AC15	강
+kw	U+5C3E	尾
+kx	U+0027	'
+ky	U+9648	陈
+kz	U+0028	(
+l0	U+0041 U+006E U+0067 U+0073 U+0074 U+0072 U+006F U+006D	Angstrom
+l1	U+0113	ē
+l2	U+03BE	ξ
+l3	U+0061 U+0065 U+007A	aez

@@ -41,7 +41,7 @@ func standardCatalogDefinition(name string, features []string) ObjectDefinition 
 // Project-owned definitions continue through the normal merge path.
 func isBareStandardDefinition(d ObjectDefinition) bool {
 	return d.Label == "" && d.PluralLabel == "" && d.KeyPrefix == "" &&
-		d.OwnerSharingRules == nil && d.SharingModel == "" && d.ExternalSharingModel == "" && !d.EnableSearch &&
+		d.OwnerSharingRules == nil && d.CriteriaSharingRules == nil && d.SharingModel == "" && d.ExternalSharingModel == "" && !d.EnableSearch &&
 		d.Fields == nil && d.Relations == nil && d.RecordTypes == nil &&
 		d.ValidationRules == nil && d.AutoResponseRules == nil && d.AssignmentRules == nil && d.WorkflowRules == nil && d.FlowRules == nil &&
 		d.Indexes == nil && d.Metadata == nil

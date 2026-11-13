@@ -28,10 +28,28 @@ type ownerSharingRuleXML struct {
 	Other       []struct{ XMLName xml.Name } `xml:",any"`
 }
 
+type criteriaSharingItemXML struct {
+	Field     string                       `xml:"field"`
+	Operation string                       `xml:"operation"`
+	Value     string                       `xml:"value"`
+	Other     []struct{ XMLName xml.Name } `xml:",any"`
+}
+
+type criteriaSharingRuleXML struct {
+	FullName    string                       `xml:"fullName"`
+	AccessLevel string                       `xml:"accessLevel"`
+	Description string                       `xml:"description"`
+	Label       string                       `xml:"label"`
+	SharedTo    ownerSharingSelectorXML      `xml:"sharedTo"`
+	Items       []criteriaSharingItemXML     `xml:"criteriaItems"`
+	Other       []struct{ XMLName xml.Name } `xml:",any"`
+}
+
 type ownerSharingRulesXML struct {
-	XMLName xml.Name                     `xml:"SharingRules"`
-	Rules   []ownerSharingRuleXML        `xml:"sharingOwnerRules"`
-	Other   []struct{ XMLName xml.Name } `xml:",any"`
+	XMLName  xml.Name                     `xml:"SharingRules"`
+	Rules    []ownerSharingRuleXML        `xml:"sharingOwnerRules"`
+	Criteria []criteriaSharingRuleXML     `xml:"sharingCriteriaRules"`
+	Other    []struct{ XMLName xml.Name } `xml:",any"`
 }
 
 // ApplyProjectOwnerSharingRules attaches declared configuration, without granting
@@ -64,7 +82,22 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 			declaredGroups[name] = true
 		}
 	}
-	staged := make(map[string][]storage.OwnerSharingRule)
+	type stagedRules struct {
+		owner    []storage.OwnerSharingRule
+		criteria []storage.CriteriaSharingRule
+	}
+	staged := make(map[string]*stagedRules)
+	requireGroup := func(path, groupName string) error {
+		if !declaredGroups[groupName] {
+			return fmt.Errorf("load owner sharing metadata %s: group %s is not declared", path, groupName)
+		}
+		for _, group := range org.Objects["Group"].Records {
+			if group.Fields["DeveloperName"].String == groupName && group.Fields["Type"].String == "Regular" {
+				return nil
+			}
+		}
+		return fmt.Errorf("load owner sharing metadata %s: group %s is not loaded", path, groupName)
+	}
 	for _, path := range paths {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -74,17 +107,21 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 		if err := xml.Unmarshal(data, &source); err != nil {
 			return fmt.Errorf("load owner sharing metadata %s: %w", path, err)
 		}
-		if len(source.Rules) == 0 || len(source.Other) != 0 {
-			return fmt.Errorf("load owner sharing metadata %s: only owner rules are supported", path)
+		if len(source.Rules) == 0 && len(source.Criteria) == 0 || len(source.Other) != 0 {
+			return fmt.Errorf("load owner sharing metadata %s: only owner and criteria rules are supported", path)
 		}
 		name := trimKnownSuffix(trimKnownSuffix(filepath.Base(path), ".sharingRules-meta.xml"), ".sharingRules")
 		object, ok := org.Objects[name]
-		if !ok || !strings.HasSuffix(name, "__c") || object.Definition.SharingModel != "Private" {
+		if len(source.Rules) != 0 && (!ok || object.Definition.SharingModel != "Private") {
+			return fmt.Errorf("load owner sharing metadata %s: a Private object is required", path)
+		}
+		if len(source.Rules) != 0 && !strings.HasSuffix(name, "__c") {
 			return fmt.Errorf("load owner sharing metadata %s: a Private custom object is required", path)
 		}
 		if _, duplicate := staged[name]; duplicate {
 			return fmt.Errorf("load owner sharing metadata %s: duplicate object rule source is not supported", path)
 		}
+		rules := &stagedRules{}
 		seen := make(map[string]bool)
 		for _, r := range source.Rules {
 			key := strings.ToLower(strings.TrimSpace(r.FullName))
@@ -96,31 +133,84 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 				return fmt.Errorf("load owner sharing metadata %s: only Read rules between public groups are supported", path)
 			}
 			for _, groupName := range []string{r.SharedFrom.Group, r.SharedTo.Group} {
-				if !declaredGroups[groupName] {
-					return fmt.Errorf("load owner sharing metadata %s: group %s is not declared", path, groupName)
-				}
-				found := false
-				for _, group := range org.Objects["Group"].Records {
-					if group.Fields["DeveloperName"].String == groupName && group.Fields["Type"].String == "Regular" {
-						found = true
-						break
-					}
-				}
-				if !found {
-					return fmt.Errorf("load owner sharing metadata %s: group %s is not loaded", path, groupName)
+				if err := requireGroup(path, groupName); err != nil {
+					return err
 				}
 			}
-			staged[name] = append(staged[name], storage.OwnerSharingRule{Name: r.FullName, SourceGroup: r.SharedFrom.Group, TargetGroup: r.SharedTo.Group, AccessLevel: r.AccessLevel})
+			rules.owner = append(rules.owner, storage.OwnerSharingRule{Name: r.FullName, SourceGroup: r.SharedFrom.Group, TargetGroup: r.SharedTo.Group, AccessLevel: r.AccessLevel})
+		}
+		criteriaSeen := make(map[string]bool)
+		for _, r := range source.Criteria {
+			if !ok || name != "Case" || object.Definition.SharingModel != "Private" {
+				continue
+			}
+			rule, err := criteriaRuleFromXML(object.Definition, r)
+			if err != nil {
+				continue
+			}
+			key := strings.ToLower(rule.Name)
+			if criteriaSeen[key] {
+				return fmt.Errorf("load owner sharing metadata %s: duplicate criteria rule name", path)
+			}
+			criteriaSeen[key] = true
+			if err := requireGroup(path, rule.TargetGroup); err != nil {
+				continue
+			}
+			rules.criteria = append(rules.criteria, rule)
+		}
+		if ok {
+			staged[name] = rules
 		}
 	}
 	for name, rules := range staged {
 		object := org.Objects[name]
 		object.Definition = object.Definition.Clone()
-		object.Definition.OwnerSharingRules = rules
+		object.Definition.OwnerSharingRules = rules.owner
+		object.Definition.CriteriaSharingRules = rules.criteria
 		org.Objects[name] = object
+		if len(rules.criteria) != 0 {
+			// A rule's grant is a share row for a group member. Both tables must
+			// exist in a lean database org, not only after a lazy first reference.
+			storage.EnsureStandardObject(org, name+"Share")
+			storage.EnsureStandardObject(org, "GroupMember")
+		}
 	}
 	org.ClearRuntimeSchemaStamp()
 	return nil
+}
+
+// criteriaRuleFromXML accepts the captured single Subject equality shape.
+// Unsupported criteria are ignored by the loader.
+func criteriaRuleFromXML(definition storage.ObjectDefinition, r criteriaSharingRuleXML) (storage.CriteriaSharingRule, error) {
+	name := strings.TrimSpace(r.FullName)
+	if name == "" || r.AccessLevel != "Read" || len(r.Other) != 0 || len(r.SharedTo.Other) != 0 || r.SharedTo.Group == "" || len(r.Items) != 1 {
+		return storage.CriteriaSharingRule{}, fmt.Errorf("only Read criteria rules for one public group are supported")
+	}
+	rule := storage.CriteriaSharingRule{Name: name, TargetGroup: r.SharedTo.Group, AccessLevel: r.AccessLevel}
+	for _, item := range r.Items {
+		operation := strings.TrimSpace(item.Operation)
+		if len(item.Other) != 0 || operation != "equals" || strings.Contains(item.Value, ",") {
+			return storage.CriteriaSharingRule{}, fmt.Errorf("criteria rule %s: only equals and notEqual against one literal are supported", name)
+		}
+		field, ok := criteriaFieldDefinition(definition, strings.TrimSpace(item.Field))
+		if !ok || field.APIName != "Subject" || field.Type != storage.FieldString {
+			return storage.CriteriaSharingRule{}, fmt.Errorf("criteria rule %s: field %s is not a supported text field", name, item.Field)
+		}
+		rule.Criteria = append(rule.Criteria, storage.CriteriaSharingCondition{Field: field.APIName, Operation: operation, Value: item.Value})
+	}
+	return rule, nil
+}
+
+func criteriaFieldDefinition(definition storage.ObjectDefinition, name string) (storage.Field, bool) {
+	for key, field := range definition.Fields {
+		if strings.EqualFold(key, name) {
+			if field.APIName == "" {
+				field.APIName = key
+			}
+			return field, true
+		}
+	}
+	return storage.Field{}, false
 }
 
 func projectOwnerSharingRuleFiles(p project.Project) []string {
@@ -144,11 +234,12 @@ func RefreshProjectOwnerSharingRules(org *storage.OrgState, p project.Project) e
 	staged.Objects = maps.Clone(org.Objects)
 	staged.IDSequences = maps.Clone(org.IDSequences)
 	for name, object := range staged.Objects {
-		if len(object.Definition.OwnerSharingRules) == 0 {
+		if len(object.Definition.OwnerSharingRules) == 0 && len(object.Definition.CriteriaSharingRules) == 0 {
 			continue
 		}
 		object.Definition = object.Definition.Clone()
 		object.Definition.OwnerSharingRules = nil
+		object.Definition.CriteriaSharingRules = nil
 		staged.Objects[name] = object
 	}
 	if len(projectOwnerSharingRuleFiles(p)) != 0 {

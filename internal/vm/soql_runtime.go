@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -1899,7 +1900,7 @@ var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[
 // the query qualify (external_user_case_lead_sharing: a named Standard User
 // returns its own rows, APIs 62.0 and 67.0).
 func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, objectNames []string, userMode bool, queryText string, sequence *int) {
-	if vm.testContext == nil || vm.Org == nil {
+	if vm.Org == nil {
 		return
 	}
 	current := vm.currentUserInfoField("Id", "")
@@ -1910,10 +1911,15 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) {
 			continue
 		}
+		if vm.testContext == nil && !vm.namedUserIsCapturedStandard(user) {
+			continue
+		}
 		seen[string(user.ID)] = true
-		previous := vm.testContext.CurrentUser
-		vm.testContext.CurrentUser = vm.vmValueFromRecord(user)
+		restore := vm.actAsNamedUser(vm.vmValueFromRecord(user))
 		for _, objectName := range objectNames {
+			if vm.testContext == nil && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
+				continue
+			}
 			if !portal && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
 				continue
 			}
@@ -1935,8 +1941,22 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 				accessObject.PutRecord(access.ID, access)
 			}
 		}
-		vm.testContext.CurrentUser = previous
+		restore()
 	}
+}
+
+// actAsNamedUser makes the named user the current user and returns the undo. A
+// test run switches its run-as user; an anonymous execution has no test
+// context and switches the execution user, which the same checks read.
+func (vm *VM) actAsNamedUser(user Value) func() {
+	if vm.testContext != nil {
+		previous := vm.testContext.CurrentUser
+		vm.testContext.CurrentUser = user
+		return func() { vm.testContext.CurrentUser = previous }
+	}
+	previous := vm.executionUser
+	vm.executionUser = user
+	return func() { vm.executionUser = previous }
 }
 
 func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, execResult *Result) ([]Value, bool, error) {
@@ -2062,6 +2082,7 @@ func (vm *VM) testSetFixedSearchResults(args []Value) (Value, error) {
 		return Null, fmt.Errorf("Test.setFixedSearchResults expects List<Id>")
 	}
 	vm.fixedSearchResults = append([]Value(nil), args[0].List...)
+	vm.fixedSearchResultsRef = args[0].Ref
 	vm.fixedSearchResultsSet = true
 	return Null, nil
 }
@@ -2165,18 +2186,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 			return Null, err
 		}
 	}
-	if !isDatabaseAccessLevelValue(accessLevel) {
-		accessLevel = vm.defaultAccessLevel()
-	}
-	if err := vm.incrementLimit("soslQueries", 1); err != nil {
-		return Null, err
-	}
-	_, query, err := vm.parseSOSLQuery(args[0].Text)
+	_, query, accessLevel, err := vm.prepareSOSLSearch(args[0].Text, false, accessLevel)
 	if err != nil {
 		return Null, err
-	}
-	if query.AccessMode != "" {
-		accessLevel = soslAccessLevel(query.AccessMode)
 	}
 	groups, err := vm.executeSOSLQuery(query, accessLevel)
 	if err != nil {
@@ -2294,6 +2306,19 @@ func (vm *VM) soslParseError(err error) error {
 	return newExceptionError("QueryException", err.Error())
 }
 
+// A positive OFFSET in a multi-object search is rejected after the search is
+// counted (sosl_result_windows_wide/org.tsv OFF rows), unlike a parse error.
+func soslMultiObjectOffsetError(query sosl.Query) error {
+	if len(query.Returning) > 1 {
+		for _, spec := range query.Returning {
+			if spec.Offset.HasValue && spec.Offset.Value > 0 {
+				return newExceptionError("SearchException", "SOSL only supports OFFSET clause for single entity search")
+			}
+		}
+	}
+	return nil
+}
+
 func validateSOSLRuntimeFeatures(query sosl.Query) error {
 	if query.UpdateViewStat || query.UpdateTracking {
 		option := "VIEWSTAT"
@@ -2362,6 +2387,13 @@ func (vm *VM) parseSOSLQuerySource(raw string, inline bool) (string, sosl.Query,
 		return "", sosl.Query{}, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
 	}
 	query, err := sosl.Parse(queryText)
+	if err != nil && originalErr == nil && !inline && vm.hasSOSLNullDatetimeBind(original) {
+		// The source parser has already rejected ordered *literal* nulls.
+		// Only retry the specific expanded-bind shape with a native answer.
+		if retry, retryErr := sosl.ParseExpandedBinds(queryText); retryErr == nil && markSOSLNullDatetimeBind(&retry) {
+			query, err = retry, nil
+		}
+	}
 	if err != nil {
 		return "", sosl.Query{}, vm.soslParseError(err)
 	}
@@ -2373,9 +2405,6 @@ func (vm *VM) parseSOSLQuerySource(raw string, inline bool) (string, sosl.Query,
 				query.Returning[i].EmptyNegativeOffset = true
 			}
 		}
-	}
-	if len([]rune(query.SearchText)) < 2 || query.Expression != nil && query.Expression.Operator == "INVALID_SEARCH_TERM" {
-		return "", sosl.Query{}, newExceptionError("SearchException", "search term must be longer than one character: "+query.SearchText)
 	}
 	switch query.Scope {
 	case sosl.SearchScopeAll, sosl.SearchScopeName, sosl.SearchScopeEmail, sosl.SearchScopePhone, sosl.SearchScopeSidebar:
@@ -2399,19 +2428,37 @@ func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessL
 	return vm.executeSOSLSource(raw, execResult, accessLevel, false)
 }
 
-func (vm *VM) executeSOSLSource(raw string, execResult *Result, accessLevel Value, inline bool) (Value, error) {
-	if !isDatabaseAccessLevelValue(accessLevel) {
-		accessLevel = vm.defaultAccessLevel()
-	}
-	if err := vm.incrementLimit("soslQueries", 1); err != nil {
-		return Null, err
-	}
+// prepareSOSLSearch separates admission from the counted operation. Malformed
+// syntax, invalid projections and an anonymous SYSTEM_MODE suffix cost no query.
+func (vm *VM) prepareSOSLSearch(raw string, inline bool, accessLevel Value) (string, sosl.Query, Value, error) {
 	queryText, query, err := vm.parseSOSLQuerySource(raw, inline)
 	if err != nil {
-		return Null, err
+		return "", query, Null, err
 	}
 	if query.AccessMode != "" {
 		accessLevel = soslAccessLevel(query.AccessMode)
+		if err := vm.validateExplicitAccessLevel(accessLevel); err != nil {
+			return "", query, Null, err
+		}
+	} else if !isDatabaseAccessLevelValue(accessLevel) {
+		accessLevel = vm.defaultAccessLevel()
+	}
+	if err := vm.incrementLimit("soslQueries", 1); err != nil {
+		return "", query, Null, err
+	}
+	if err := soslMultiObjectOffsetError(query); err != nil {
+		return "", query, Null, err
+	}
+	if vm.testContext == nil && (len([]rune(query.SearchText)) < 2 || query.Expression != nil && query.Expression.Operator == "INVALID_SEARCH_TERM") {
+		return "", query, Null, newExceptionError("SearchException", "search term must be longer than one character: "+query.SearchText)
+	}
+	return queryText, query, accessLevel, nil
+}
+
+func (vm *VM) executeSOSLSource(raw string, execResult *Result, accessLevel Value, inline bool) (Value, error) {
+	queryText, query, accessLevel, err := vm.prepareSOSLSearch(raw, inline, accessLevel)
+	if err != nil {
+		return Null, err
 	}
 	groups, err := vm.executeSOSLQuery(query, accessLevel)
 	if err != nil {
@@ -2442,11 +2489,10 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 	// object or field serves every record it scans.
 	defer vm.beginPermissionCheckMemo()()
 	groups := make([]soslResultGroup, 0, len(query.Returning))
-	remaining := -1
-	if query.Limit.HasValue {
-		remaining = query.Limit.Value
-	}
-	for _, spec := range query.Returning {
+	// Native allocation was measured with one to five and ten objects on
+	// both routes (sosl_result_windows and sosl_result_windows_wide).
+	groupLimits := soslResultLimits(query)
+	for i, spec := range query.Returning {
 		specObjectName := spec.Object
 		if vm.Org != nil {
 			if canonical, ok := vm.resolveObjectName(spec.Object); ok {
@@ -2487,13 +2533,13 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		}
 		sortSOSLRows(rows, spec.OrderBy)
 		applySOSLReturningOffset(&rows, spec)
-		applySOSLReturningLimit(&rows, spec)
-		if remaining >= 0 {
-			if remaining < len(rows.List) {
-				rows.List = rows.List[:remaining]
-			}
-			remaining -= len(rows.List)
+		limit := min(len(rows.List), groupLimits[i])
+		if !vm.fixedSearchResultsSet && soslIndexedGroupCapped(query, spec, specObjectName) {
+			// Fixed results use the full quota. Indexed groups each
+			// returned at most 250 rows.
+			limit = min(limit, 250)
 		}
+		rows.List = rows.List[:limit]
 		// R141/R143/R144/R164 prove empty-result acceptance. Captured rows
 		// do not establish the index's highlight or target-length formatting.
 		if len(rows.List) > 0 && query.WithHighlight {
@@ -2588,7 +2634,7 @@ func (vm *VM) soslRecordsForSpec(spec sosl.ReturningObject, objectName string, p
 			if knowledgeView {
 				_, record, ok = storage.LookupRecordByID(state.Records, storage.ID(id))
 			}
-			if !ok {
+			if !ok || record.System.IsDeleted {
 				continue
 			}
 			recordID := record.ID
@@ -2700,6 +2746,14 @@ func (vm *VM) enforceSOSLAccess(objectName string, spec sosl.ReturningObject, ac
 		fields = append(fields, projection.Field)
 	}
 	fields = append(fields, soslConditionFields(spec.Where)...)
+	if vm.fixedSearchResultsSet {
+		for _, order := range spec.OrderBy {
+			// These captures cover direct fields on the searched object.
+			if !strings.Contains(order.Field, ".") {
+				fields = append(fields, order.Field)
+			}
+		}
+	}
 	for _, field := range fields {
 		if strings.EqualFold(field, "Id") {
 			continue
@@ -2738,14 +2792,14 @@ func soslConditionFields(condition *sosl.Condition) []string {
 
 func (vm *VM) soslRecordMatchesExpression(objectName string, record storage.Record, terms []sosl.SearchTerm, expression *sosl.SearchExpression, scope sosl.SearchScope, accessLevel Value) (bool, error) {
 	if expression == nil {
-		return vm.soslRecordMatchesSearch(objectName, record, terms, scope, accessLevel), nil
+		return vm.soslRecordMatchesSearch(objectName, record, terms, scope, accessLevel)
 	}
 	switch expression.Operator {
 	case "TERM":
-		if expression.Term.NeedsMatcher {
+		if expression.Term.NeedsMatcher && !(scope == sosl.SearchScopeName && expression.Term.NameWordGlob) {
 			return false, unsupportedCallError("SOSL wildcard index matching")
 		}
-		return vm.soslRecordMatchesSearchPattern(objectName, record, expression.Term, scope, accessLevel), nil
+		return vm.soslRecordMatchesSearchPattern(objectName, record, expression.Term, scope, accessLevel)
 	case "AND", "OR", "AND NOT":
 		left, err := vm.soslRecordMatchesExpression(objectName, record, terms, expression.Left, scope, accessLevel)
 		if err != nil {
@@ -2770,28 +2824,28 @@ func (vm *VM) soslRecordMatchesExpression(objectName string, record storage.Reco
 	}
 }
 
-func (vm *VM) soslRecordMatchesSearch(objectName string, record storage.Record, patterns []sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) bool {
+func (vm *VM) soslRecordMatchesSearch(objectName string, record storage.Record, patterns []sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) (bool, error) {
 	if len(patterns) == 0 {
-		return true
+		return true, nil
 	}
 	for _, pattern := range patterns {
-		if vm.soslRecordMatchesSearchPattern(objectName, record, pattern, scope, accessLevel) {
-			return true
+		if matched, err := vm.soslRecordMatchesSearchPattern(objectName, record, pattern, scope, accessLevel); matched || err != nil {
+			return matched, err
 		}
 	}
-	return false
+	return false, nil
 }
 
-func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.Record, pattern sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) bool {
+func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.Record, pattern sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) (bool, error) {
 	if pattern.Text == "" {
-		return true
+		return true, nil
 	}
 	if scope == sosl.SearchScopeAll && soslTextMatchesPattern(string(record.ID), pattern) {
-		return true
+		return true, nil
 	}
 	object, ok := vm.Org.Objects[objectName]
 	if !ok {
-		return false
+		return false, nil
 	}
 	permissionSetID := accessLevelPermissionSetID(accessLevel)
 	userMode := databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE"
@@ -2816,11 +2870,11 @@ func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.R
 		if !ok {
 			continue
 		}
-		if soslTextMatchesPattern(storageValueText(value), pattern) {
-			return true
+		if matched, err := soslFieldTextMatches(storageValueText(value), pattern, scope); matched || err != nil {
+			return matched, err
 		}
 	}
-	return false
+	return false, nil
 }
 
 func soslSearchableField(field storage.Field) bool {
@@ -2863,6 +2917,54 @@ func soslIsPhoneField(fieldName string, field storage.Field) bool {
 	label := strings.ToLower(strings.TrimSpace(field.Label))
 	return name == "phone" || strings.HasSuffix(name, "phone") || strings.Contains(label, "phone")
 }
+
+// NAME FIELDS captures establish word matching only on space-separated ASCII names.
+func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchScope) (bool, error) {
+	if text != "" && scope == sosl.SearchScopeName && (term.NameWordGlob || term.Prefix && soslNameWord.MatchString(term.Text)) {
+		if !soslNameWords.MatchString(text) {
+			if term.NameWordGlob {
+				return false, unsupportedCallError("SOSL wildcard index matching")
+			}
+			return soslTextMatchesPattern(text, term), nil
+		}
+		pattern := strings.ToLower(term.Text)
+		for _, word := range strings.Fields(strings.ToLower(text)) {
+			if term.NameWordGlob {
+				// The parser approved only letters and the interior wildcard group.
+				if matched, _ := path.Match(pattern, word); matched {
+					// The indexed controls distinguish zero, one and two letters
+					// at '*'. Leave a longer expansion at the matcher boundary.
+					if strings.Contains(pattern, "*") && len(word)-(len(pattern)-1) > 2 {
+						return false, unsupportedCallError("SOSL wildcard index matching")
+					}
+					return true, nil
+				}
+				// No captured candidate begins with a complete wildcard match
+				// followed by additional letters. Keep that index boundary.
+				if prefix, _ := path.Match(pattern+"*", word); prefix {
+					return false, unsupportedCallError("SOSL wildcard index matching")
+				}
+			} else if strings.HasPrefix(word, pattern) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+	if scope == sosl.SearchScopePhone && term.PhoneDigits {
+		// The observed international-format NANP number can be found by
+		// its ten national or seven local digits.
+		if parts := soslNorthAmericanPhone.FindStringSubmatch(text); parts != nil {
+			return strings.HasSuffix(parts[1]+parts[2]+parts[3], term.Text), nil
+		}
+	}
+	return soslTextMatchesPattern(text, term), nil
+}
+
+var (
+	soslNameWord           = regexp.MustCompile(`^[A-Za-z]+$`)
+	soslNameWords          = regexp.MustCompile(`^[A-Za-z]+( [A-Za-z]+)*$`)
+	soslNorthAmericanPhone = regexp.MustCompile(`^\+1 \(([0-9]{3})\) ([0-9]{3})-([0-9]{4})$`)
+)
 
 func soslTextMatchesPattern(text string, pattern sosl.SearchTerm) bool {
 	text = strings.TrimSpace(text)
@@ -3061,7 +3163,7 @@ func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType fun
 		matches, known := soslWhereResult(record, &positive, fieldType, fieldValue, relativeDate)
 		return known && !matches, known
 	}
-	if where == nil {
+	if where == nil || where.NullDatetimeBound {
 		return true, true
 	}
 	if len(where.And) > 0 {
@@ -3294,11 +3396,43 @@ func applySOSLReturningOffset(rows *Value, spec sosl.ReturningObject) {
 	rows.List = rows.List[spec.Offset.Value:]
 }
 
-func applySOSLReturningLimit(rows *Value, spec sosl.ReturningObject) {
-	if rows == nil || rows.Kind != ValueList || !spec.Limit.HasValue || spec.Limit.Value >= len(rows.List) {
-		return
+// soslIndexedGroupCapped reports whether the hosted index returned at most
+// 250 rows for this group: every group of a multi-object search, and a single
+// object with neither WHERE nor ORDER BY. A larger LIMIT does not lift it.
+// EntityDefinition has no captured ceiling.
+func soslIndexedGroupCapped(query sosl.Query, spec sosl.ReturningObject, objectName string) bool {
+	if len(query.Returning) > 1 {
+		return true
 	}
-	rows.List = rows.List[:spec.Limit.Value]
+	return spec.Where == nil && len(spec.OrderBy) == 0 && !strings.EqualFold(objectName, "EntityDefinition")
+}
+
+// SOSL splits the declared budget before it reads records. An empty bucket
+// keeps its share. Smaller explicit caps get the first remainder slots, with
+// RETURNING order breaking ties.
+func soslResultLimits(query sosl.Query) []int {
+	const maxResults = 2000
+	remaining := maxResults
+	if query.Limit.HasValue {
+		remaining = query.Limit.Value
+	}
+	limits := make([]int, len(query.Returning))
+	order := make([]int, len(limits))
+	for i, spec := range query.Returning {
+		order[i] = i
+		limits[i] = maxResults
+		if spec.Limit.HasValue {
+			limits[i] = spec.Limit.Value
+		}
+	}
+	sort.SliceStable(order, func(i, j int) bool { return limits[order[i]] < limits[order[j]] })
+	for pos, index := range order {
+		count := len(order) - pos
+		share := (remaining + count - 1) / count
+		limits[index] = min(share, limits[index])
+		remaining -= limits[index]
+	}
+	return limits
 }
 
 func compareSOSLRows(left, right Value, orderBy []sosl.OrderSpec) int {
@@ -3832,7 +3966,7 @@ func (vm *VM) enforceSOQLSecurityScanned(query soql.Query, permissionSetID strin
 	defer vm.beginPermissionCheckMemo()()
 	scanUserMode := !scanned && mode == "USER_MODE" && permissionSetID == "" && (apexversion.Range{Since: 62, Until: 69}).Allows(vm.currentMethod.APIVersion)
 	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
-		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) {
+		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) || vm.api62DynamicSecurePermissionDenial(query, permissionSetID) {
 			return newExceptionError("QueryException", "Insufficient permissions: secure query included inaccessible field")
 		}
 		if mode == "USER_MODE" && permissionSetID == "" {

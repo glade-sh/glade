@@ -43,8 +43,14 @@ type Query struct {
 	// orderAggregates contains execution-only values for ORDER BY expressions
 	// absent from SELECT. They are removed after sorting and windowing.
 	orderAggregates []Aggregate
+	// textComparator is private to this execution and never cached with syntax.
+	textComparator *textComparator
+	textLocale     string
 	// LegacyPicklistNullOrder is execution state, separate from cached syntax.
 	LegacyPicklistNullOrder bool `json:"-"`
+	// LegacyRestrictedPicklistNullOrder extends the legacy policy to restricted
+	// picklists; native source-version rows place the transition at 66.0.
+	LegacyRestrictedPicklistNullOrder bool `json:"-"`
 }
 type OrderSpec struct {
 	Field string
@@ -54,6 +60,9 @@ type OrderSpec struct {
 	// RewrittenAggregate distinguishes a selected aggregate expression from
 	// an author-written exprN selector.
 	RewrittenAggregate bool
+
+	// textComparator carries the running user’s locale for text ordering.
+	textComparator *textComparator
 }
 type ChildQuery struct {
 	Relationship string
@@ -73,6 +82,9 @@ type Aggregate struct {
 	Func  string
 	Field string
 	Alias string
+
+	// textComparator supplies secondary strength for MIN and MAX over text.
+	textComparator *textComparator
 }
 type Condition struct {
 	Parenthesized bool

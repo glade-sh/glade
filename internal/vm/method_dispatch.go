@@ -61,6 +61,10 @@ func (vm *VM) collectionStoreException(collectionType string, value Value) error
 }
 
 func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value, result *Result, callerSharingOverride ...string) (Value, error) {
+	return vm.callMethodWithReceiverEntry(method, receiver, args, result, nil, callerSharingOverride...)
+}
+
+func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []Value, result *Result, entered *bool, callerSharingOverride ...string) (Value, error) {
 	if len(vm.callStack) >= maxApexCallDepth {
 		return Null, &RuntimeError{Type: "RuntimeError", Message: "maximum Apex call stack depth exceeded", Stack: vm.stackFrames(), callStackLimit: true}
 	}
@@ -430,6 +434,20 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
+	callerSource := vm.currentSource
+	// Implicit getters, setters and initializers can dispatch while an outer
+	// expression still has a pending call token. Consume it only for this
+	// invocation and restore it with the rest of the caller's source state.
+	callerCallPos := vm.callPos
+	// The frame reports the line of the invoked method-name token, or of the
+	// new token for a constructor, not the line where the statement starts.
+	callLine := callerStatement.Line
+	if vm.callPos > 0 && callerHasStatement && callerSource != "" {
+		if line, _ := vm.sourceLineColumnCached(callerSource, vm.callPos); line >= callLine {
+			callLine = line
+		}
+	}
+	vm.callPos = 0
 	// Salesforce reports the caller's call-site location in stack traces. The
 	// frame is created when the caller method starts, so refresh its source
 	// location immediately before entering a callee while the caller's current
@@ -438,7 +456,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	// with the platform.
 	if callerHasStatement && callerStatement.Line > 0 && len(vm.callStack) > 0 {
 		callerFrame := &vm.callStack[len(vm.callStack)-1]
-		callerFrame.Line = callerStatement.Line
+		callerFrame.Line = callLine
 		if callerStatement.Column > 0 {
 			callerFrame.Column = callerStatement.Column
 		}
@@ -466,12 +484,12 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		SharingMode: callerSharingMode,
 	}
 	if callerClass == "" && callerMethod.Name == "" && !callerTrigger &&
-		callerHasStatement && len(vm.callStack) == 0 && method.IsStatic && len(args) == 0 &&
+		callerHasStatement && len(vm.callStack) == 0 &&
 		method.APIVersion == callerMethod.APIVersion && method.Namespace == "" &&
 		vm.currentNamespace == "" && (vm.Org == nil || vm.Org.Namespace == "") {
 		switch callerMethod.APIVersion {
 		case "62.0", "67.0", "68.0":
-			entryFrame.anonymousCallerLine = callerStatement.Line
+			entryFrame.anonymousCallerLine = callLine
 		}
 	}
 	vm.callStack = append(vm.callStack, entryFrame)
@@ -505,12 +523,17 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.currentMethod = callerMethod
 		vm.currentTrigger = callerTrigger
 		vm.currentStatement = callerStatement
+		vm.currentSource = callerSource
+		vm.callPos = callerCallPos
 		vm.hasStatement = callerHasStatement
 		lastScope := len(vm.scopeStack) - 1
 		vm.scopeStack[lastScope] = nil
 		vm.scopeStack = vm.scopeStack[:lastScope]
 	}()
 
+	if entered != nil {
+		*entered = true
+	}
 	out, err := vm.executeProgram(method.Program, result)
 	if err != nil {
 		var thrown *apexThrowError

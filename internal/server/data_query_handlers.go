@@ -40,6 +40,10 @@ func (s *Server) objectNameForRecordID(id storage.ID) string {
 }
 
 func (s *Server) commitOrg(org storage.OrgState) error {
+	// Criteria sharing rules take effect when the transaction commits.
+	if err := dml.ReconcileCriteriaSharing(&org); err != nil {
+		return err
+	}
 	if err := s.persistOrg(org); err != nil {
 		return err
 	}
@@ -91,7 +95,8 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 	if allRows {
 		query.AllRows = true
 	}
-	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: s.currentUser(r, "").ID})
+	user := s.currentUser(r, "")
+	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: user.ID, Locale: userString(user, "LocaleSidKey", "")})
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return

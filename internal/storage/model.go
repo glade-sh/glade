@@ -88,7 +88,10 @@ type OrgState struct {
 	// on first reference from a shared per-shape source (see
 	// standard_spread_source.go). "plain" is before the org shape applied,
 	// "shaped" after. Empty means the org holds every object it will hold.
-	StandardSpread         string              `json:"standardSpread,omitempty"`
+	StandardSpread string `json:"standardSpread,omitempty"`
+	// StandardDuplicateRules turns on the seeded standard duplicate rules (the
+	// duplicateRules.standard setting); project metadata rules are always on.
+	StandardDuplicateRules bool                `json:"standardDuplicateRules,omitempty"`
 	IDSequences            map[string]uint64   `json:"idSequences,omitempty"`
 	Transactions           []TransactionFrame  `json:"transactions,omitempty"`
 	Now                    func() time.Time    `json:"-"`
@@ -495,6 +498,24 @@ type OwnerSharingRule struct {
 	AccessLevel string `json:"accessLevel"`
 }
 
+// CriteriaSharingCondition is one supported field test of a criteria rule.
+type CriteriaSharingCondition struct {
+	Field     string `json:"field"`
+	Operation string `json:"operation"`
+	Value     string `json:"value"`
+}
+
+// CriteriaSharingRule is a declared Read rule that shares matching records with
+// one public group. Salesforce evaluates it at commit, never inside the writing
+// transaction (grant rows), so the rule is configuration only until a
+// commit reconciles its Rule share rows.
+type CriteriaSharingRule struct {
+	Name        string                     `json:"name"`
+	TargetGroup string                     `json:"targetGroup"`
+	AccessLevel string                     `json:"accessLevel"`
+	Criteria    []CriteriaSharingCondition `json:"criteria"`
+}
+
 type ObjectDefinition struct {
 	APIName           string             `json:"apiName"`
 	Label             string             `json:"label,omitempty"`
@@ -518,6 +539,9 @@ type ObjectDefinition struct {
 	// ExternalSharingModel is the declared external organization-wide default
 	// (CustomObject externalSharingModel); empty when the metadata omits it.
 	ExternalSharingModel string `json:"externalSharingModel,omitempty"`
+
+	// CriteriaSharingRules are the declared criteria-based Read rules for public groups.
+	CriteriaSharingRules []CriteriaSharingRule `json:"criteriaSharingRules,omitempty"`
 }
 
 type Field struct {
@@ -1209,6 +1233,8 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// CriteriaSharingOwned identifies a share created by criteria reconciliation.
+	CriteriaSharingOwned bool `json:"criteriaSharingOwned,omitempty"`
 	// triggerAssignments tracks explicit before-trigger assignments during DML.
 	triggerAssignments uint8
 	// dmlNameUnassigned is transient provenance for a queried, unassigned Name.
@@ -2381,6 +2407,10 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.Relations[i].JunctionReferenceTo = append([]string(nil), d.Relations[i].JunctionReferenceTo...)
 	}
 	out.OwnerSharingRules = append([]OwnerSharingRule(nil), d.OwnerSharingRules...)
+	out.CriteriaSharingRules = append([]CriteriaSharingRule(nil), d.CriteriaSharingRules...)
+	for i := range out.CriteriaSharingRules {
+		out.CriteriaSharingRules[i].Criteria = append([]CriteriaSharingCondition(nil), d.CriteriaSharingRules[i].Criteria...)
+	}
 	out.RecordTypes = append([]RecordTypeInfo(nil), d.RecordTypes...)
 	for i := range out.RecordTypes {
 		if d.RecordTypes[i].PicklistDefaults == nil {

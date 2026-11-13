@@ -11,8 +11,9 @@ import (
 type ExecutionContext struct {
 	APIVersion string
 	Language   string
-	// Locale is the user's LocaleSidKey; text comparison folds by it.
-	Locale string
+	// Locale is the user's LocaleSidKey for collation and field case rules.
+	Locale         string
+	textComparator *textComparator
 	// FormatDatetime renders a stored Datetime for FORMAT() in the user's
 	// time zone and locale.
 	FormatDatetime       func(text string) (string, bool)
