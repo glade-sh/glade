@@ -219,6 +219,11 @@ func (a *Analyzer) semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesy
 			continue
 		}
 		if before {
+			// The standalone comment capture has no line break; the
+			// comment-plus-line-break capture is in an argument.
+			if stmt && strings.Contains(beforeTrivia, "/*") && strings.ContainsAny(beforeTrivia, "\r\n") {
+				continue
+			}
 			if assign {
 				continue
 			}
@@ -270,6 +275,12 @@ func (a *Analyzer) semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesy
 			// Assignment and binary argument captures use a line break after
 			// the dot; space-only forms have no observed result.
 			lineBreak := strings.ContainsAny(afterGap, "\r\n")
+			if (stmt || decl || assign) && strings.Contains(afterGap, "/*") {
+				start, end := strings.Index(afterGap, "/*"), strings.LastIndex(afterGap, "*/")
+				if end >= start && (strings.ContainsAny(afterGap[:start], "\r\n") || strings.ContainsAny(afterGap[end+2:], "\r\n")) {
+					continue
+				}
+			}
 			if stmt && !local && tokens[last+2].text == ")" {
 				// The zero-argument statement captures have source or local receivers.
 				if members, known := model.lookupName(receiver); known && members.platform {
