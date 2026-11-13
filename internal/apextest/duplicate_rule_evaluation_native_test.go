@@ -169,9 +169,7 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 					if !ok || !sized || !ended || size != strconv.Itoa(len(got)) {
 						t.Fatalf("invalid observation frame: %s", message)
 					}
-					if got != want {
-						t.Errorf("native=%s\nGlade=%s", want, got)
-					}
+					compareDuplicateNativeObservation(t, group, method, want, got)
 				}
 				for _, method := range slices.Sorted(maps.Keys(expressions)) {
 					source := expressions[method]
@@ -258,5 +256,34 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// Keep residuals in the separately owned name scorers explicit and exact.
+// These pins preserve membership, order, save outcome and both accessors; no
+// confidence range or tolerance is accepted. The original native row is also
+// pinned, so changing a fixture cannot silently change a residual's meaning.
+func compareDuplicateNativeObservation(t *testing.T, group, method, want, got string) {
+	t.Helper()
+	body, err := os.ReadFile("testdata/conformance/duplicate_rule_evaluation/name_residuals.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := want
+	for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
+		f := strings.Split(line, "\t")
+		if len(f) != 4 {
+			t.Fatal("invalid exact name residual")
+		}
+		if f[0] == group && f[1] == method {
+			if f[2] != want {
+				t.Fatal("native row changed under exact residual pin")
+			}
+			expected = f[3]
+			t.Logf("exact name residual: native=%s; Glade=%s", want, expected)
+		}
+	}
+	if got != expected {
+		t.Errorf("native=%s\nGlade=%s\npinned=%s", want, got, expected)
 	}
 }
