@@ -196,7 +196,7 @@ func callDatacloudDuplicateMember(_ *VM, receiver Value, method string, args []V
 
 func (vm *VM) duplicateResultsForRecord(record storage.Record, object string) []Value {
 	var out []Value
-	for _, rule := range dml.ActiveDuplicateRules(vm.Org, object) {
+	for _, rule := range dml.ActiveDuplicateRulesForRecord(vm.Org, object, record) {
 		applies, supported := dml.DuplicateRuleApplies(vm.Org, rule, record)
 		if !supported || !applies {
 			continue

@@ -1,0 +1,11 @@
+SOSL index cap: which rows a capped group keeps, 2026-11-13 UTC
+Orgs: three fresh 30-day Developer scratch orgs on campaign Dev Hubs, scratch HOME, generic keychain. All three deleted and verified gone.
+Route: anonymous Apex (sf apex run), Search.query, APIs 62.0 and 67.0, each query twice per API in separate transactions: 12 cells per case (3 orgs x 2 APIs x 2 repeats).
+Populations: 321 synthetic records whose text is '<term> NNN', NNN = 000..320. Each population was inserted in its own transaction, in one DML unless the name says "three_inserts" (three DMLs of 107 or 108 rows). Orders: asc, desc, and a Fisher-Yates shuffle with the generator s=(s*1103515245+12345) mod 2^31, j=s mod (i+1), i from 320 down to 1, seeds 7 and 99.
+Objects: Contact with four other Contact populations and an Account population in the same org; Lead, Opportunity and Case with one population each; Campaign with two populations (asc and desc).
+Readiness: before the queries, ORDER BY controls returned 321 for every population and the bare queries returned 250, three consecutive polls and at least 150 seconds after the last seed for the second batch.
+Queries: FIND {term} RETURNING Obj(Id,Field), and RETURNING Obj with no field list; for the Contact/Account population also the two-object search with and without ORDER BY.
+org.tsv: one row per case and result group. cells = observations compared; distinct = distinct survivor sets among them; survivor_labels = the surviving NNN labels as ranges when distinct is 1, else "varies".
+Result: every group had exactly 250 rows (n=250 in all 12 cells). WHERE or ORDER BY on a single object returned all 321.
+Which 250: Lead, Opportunity and Campaign populations (one DML each) kept the 250 earliest-inserted records, identical in all 12 cells, whatever their label order. The Account group of the two-object search did too. The Contact and Case groups did not: the same seed gave three different survivor sets in three orgs (four for one shuffled seed), stable across the two APIs and repeats within an org except for the shuffled Contacts in one org. No rule on label, insertion order, DML split or Id rank reproduced them. The order the rows are returned in is not stable either.
+Not proven: why Contact and Case differ from Lead, Opportunity, Campaign and Account.

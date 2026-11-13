@@ -2,9 +2,12 @@ package storage
 
 // DuplicateRule retains deployed metadata independently of DML transaction options.
 type DuplicateRule struct {
-	ID                 ID                  `json:"id,omitempty"`
-	Object             string              `json:"object,omitempty"`
-	Subtype            string              `json:"subtype,omitempty"`
+	ID      ID     `json:"id,omitempty"`
+	Object  string `json:"object,omitempty"`
+	Subtype string `json:"subtype,omitempty"`
+	// Seeded marks a built-in standard rule Glade created, as opposed to one a
+	// project's metadata defines.
+	Seeded             bool                `json:"seeded,omitempty"`
 	Name               string              `json:"name"`
 	Label              string              `json:"label,omitempty"`
 	Active             bool                `json:"active"`

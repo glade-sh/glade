@@ -1,0 +1,7 @@
+Date: 2026-11-12 UTC
+Org: fresh 30-day Developer scratch org, deleted and verified gone.
+Apex versions: 62.0 and 67.0. A single committed seed transaction inserted the five synthetic Contacts in seed.apex.
+Readiness: before scoring, two distinct anonymous transactions per API each returned A,B,C,D,E for the seed marker, one email match and one phone match. The index was polled at transaction boundaries. No sleep-only pass.
+Anonymous: each query ran against the committed seed with no fixed IDs. Each anonymous batch was run twice per API; all 54 second observations exactly matched the first. ORDER BY Department ASC makes membership observable without implicit relevance rank.
+@IsTest: a fresh method inserted the same five records, then called Test.setFixedSearchResults(new List<Id>{f.Id,b.Id,a.Id}). The test returned department labels via a deliberate assertion. Each method ran once per API.
+org.tsv contains 27 probes x two APIs x two routes. Empty final cells are empty result strings. The adapter decoded the debug log transport escaping, removed the ROW/OBS markers and extracted the deliberate assertion message. It retained group membership and order.

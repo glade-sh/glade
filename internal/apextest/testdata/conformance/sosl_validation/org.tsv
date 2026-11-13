@@ -1,0 +1,133 @@
+id	api	route	observation
+shortUnsetquery	62.0	anonymous	System.SearchException|search term must be longer than one character: x|1
+shortUnsetquery	62.0	istest	0|1
+shortUnsetquery	67.0	anonymous	System.SearchException|search term must be longer than one character: x|1
+shortUnsetquery	67.0	istest	0|1
+shortUnsetfind	62.0	anonymous	System.SearchException|search term must be longer than one character: x|1
+shortUnsetfind	62.0	istest	0|1
+shortUnsetfind	67.0	anonymous	System.SearchException|search term must be longer than one character: x|1
+shortUnsetfind	67.0	istest	0|1
+shortClearquery	62.0	istest	0|1
+shortClearquery	67.0	istest	0|1
+shortClearfind	62.0	istest	0|1
+shortClearfind	67.0	istest	0|1
+shortFixedquery	62.0	istest	1|1
+shortFixedquery	67.0	istest	1|1
+shortFixedfind	62.0	istest	1|1
+shortFixedfind	67.0	istest	1|1
+twoUnsetquery	62.0	anonymous	0|1
+twoUnsetquery	62.0	istest	0|1
+twoUnsetquery	67.0	anonymous	0|1
+twoUnsetquery	67.0	istest	0|1
+twoUnsetfind	62.0	anonymous	0|1
+twoUnsetfind	62.0	istest	0|1
+twoUnsetfind	67.0	anonymous	0|1
+twoUnsetfind	67.0	istest	0|1
+twoClearquery	62.0	istest	0|1
+twoClearquery	67.0	istest	0|1
+twoClearfind	62.0	istest	0|1
+twoClearfind	67.0	istest	0|1
+twoFixedquery	62.0	istest	1|1
+twoFixedquery	67.0	istest	1|1
+twoFixedfind	62.0	istest	1|1
+twoFixedfind	67.0	istest	1|1
+starUnsetquery	62.0	anonymous	System.SearchException|search term must be longer than one character: *|1
+starUnsetquery	62.0	istest	0|1
+starUnsetquery	67.0	anonymous	System.SearchException|search term must be longer than one character: *|1
+starUnsetquery	67.0	istest	0|1
+starUnsetfind	62.0	anonymous	System.SearchException|search term must be longer than one character: *|1
+starUnsetfind	62.0	istest	0|1
+starUnsetfind	67.0	anonymous	System.SearchException|search term must be longer than one character: *|1
+starUnsetfind	67.0	istest	0|1
+starClearquery	62.0	istest	0|1
+starClearquery	67.0	istest	0|1
+starClearfind	62.0	istest	0|1
+starClearfind	67.0	istest	0|1
+starFixedquery	62.0	istest	1|1
+starFixedquery	67.0	istest	1|1
+starFixedfind	62.0	istest	1|1
+starFixedfind	67.0	istest	1|1
+blankUnsetquery	62.0	anonymous	System.SearchException|search term must be longer than one character: |1
+blankUnsetquery	62.0	istest	0|1
+blankUnsetquery	67.0	anonymous	System.SearchException|search term must be longer than one character: |1
+blankUnsetquery	67.0	istest	0|1
+blankUnsetfind	62.0	anonymous	System.SearchException|search term must be longer than one character: |1
+blankUnsetfind	62.0	istest	0|1
+blankUnsetfind	67.0	anonymous	System.SearchException|search term must be longer than one character: |1
+blankUnsetfind	67.0	istest	0|1
+blankClearquery	62.0	istest	0|1
+blankClearquery	67.0	istest	0|1
+blankClearfind	62.0	istest	0|1
+blankClearfind	67.0	istest	0|1
+blankFixedquery	62.0	istest	1|1
+blankFixedquery	67.0	istest	1|1
+blankFixedfind	62.0	istest	1|1
+blankFixedfind	67.0	istest	1|1
+queryBad	62.0	anonymous	System.QueryException|unexpected token: WRONG|0
+queryBad	62.0	istest	System.QueryException|unexpected token: WRONG|0
+queryBad	67.0	anonymous	System.QueryException|unexpected token: WRONG|0
+queryBad	67.0	istest	System.QueryException|unexpected token: WRONG|0
+queryField	62.0	anonymous	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryField	62.0	istest	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryField	67.0	anonymous	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryField	67.0	istest	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryUser	62.0	anonymous	ok|1
+queryUser	62.0	istest	ok|1
+queryUser	67.0	anonymous	ok|1
+queryUser	67.0	istest	ok|1
+querySystem	62.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.|0
+querySystem	62.0	istest	ok|1
+querySystem	67.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.|0
+querySystem	67.0	istest	ok|1
+queryObj	62.0	anonymous	System.QueryException|sObject type 'notanentity' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryObj	62.0	istest	System.QueryException|sObject type 'notanentity' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryObj	67.0	anonymous	System.QueryException|sObject type 'notanentity' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryObj	67.0	istest	System.QueryException|sObject type 'notanentity' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryDup	62.0	anonymous	System.QueryException|duplicate field selected: Name|0
+queryDup	62.0	istest	System.QueryException|duplicate field selected: Name|0
+queryDup	67.0	anonymous	System.QueryException|duplicate field selected: Name|0
+queryDup	67.0	istest	System.QueryException|duplicate field selected: Name|0
+findBad	62.0	anonymous	System.QueryException|unexpected token: WRONG|0
+findBad	62.0	istest	System.QueryException|unexpected token: WRONG|0
+findBad	67.0	anonymous	System.QueryException|unexpected token: WRONG|0
+findBad	67.0	istest	System.QueryException|unexpected token: WRONG|0
+findField	62.0	anonymous	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+findField	62.0	istest	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+findField	67.0	anonymous	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+findField	67.0	istest	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+findUser	62.0	anonymous	ok|1
+findUser	62.0	istest	ok|1
+findUser	67.0	anonymous	ok|1
+findUser	67.0	istest	ok|1
+findSystem	62.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.|0
+findSystem	62.0	istest	ok|1
+findSystem	67.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.|0
+findSystem	67.0	istest	ok|1
+findObj	62.0	anonymous	System.QueryException|sObject type 'notanentity' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.|0
+findObj	62.0	istest	System.QueryException|sObject type 'notanentity' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.|0
+findObj	67.0	anonymous	System.QueryException|sObject type 'notanentity' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.|0
+findObj	67.0	istest	System.QueryException|sObject type 'notanentity' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names.|0
+findDup	62.0	anonymous	System.QueryException|duplicate field selected: Name|0
+findDup	62.0	istest	System.QueryException|duplicate field selected: Name|0
+findDup	67.0	anonymous	System.QueryException|duplicate field selected: Name|0
+findDup	67.0	istest	System.QueryException|duplicate field selected: Name|0
+defaultName	62.0	anonymous	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name|1
+defaultName	62.0	istest	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name|1
+defaultName	67.0	anonymous	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name|1
+defaultName	67.0	istest	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Name|1
+defaultId	62.0	anonymous	true|1
+defaultId	62.0	istest	true|1
+defaultId	67.0	anonymous	true|1
+defaultId	67.0	istest	true|1
+defaultPhone	62.0	anonymous	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone|1
+defaultPhone	62.0	istest	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone|1
+defaultPhone	67.0	anonymous	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone|1
+defaultPhone	67.0	istest	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone|1
+exhaustquery	62.0	anonymous	UNCATCHED|System.LimitException|Too many SOSL queries: 21
+exhaustquery	62.0	istest	UNCATCHED|System.LimitException|Too many SOSL queries: 21
+exhaustquery	67.0	anonymous	UNCATCHED|System.LimitException|Too many SOSL queries: 21
+exhaustquery	67.0	istest	UNCATCHED|System.LimitException|Too many SOSL queries: 21
+exhaustfind	62.0	anonymous	UNCATCHED|System.LimitException|Too many SOSL queries: 21
+exhaustfind	62.0	istest	UNCATCHED|System.LimitException|Too many SOSL queries: 21
+exhaustfind	67.0	anonymous	UNCATCHED|System.LimitException|Too many SOSL queries: 21
+exhaustfind	67.0	istest	UNCATCHED|System.LimitException|Too many SOSL queries: 21

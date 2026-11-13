@@ -4,10 +4,22 @@
 
 ### Changes
 
-- **Standard duplicate rules.** Standard duplicate rules are opt-in.
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
 - Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
 - **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
+
+### Duplicate rules
+
+- **Duplicate rule settings survive reloads.** Saved orgs and warm test runtimes honor the current standard-rule setting, including after upgrading an older saved org.
+- **Standard Account, Contact and Lead duplicate rules behind `duplicateRules.standard`.** The standard rules are available with `duplicateRules.standard: on` in `glade.yml` (or `GLADE_STANDARD_DUPLICATE_RULES=on`) and off by default; a project's `duplicateRules` metadata for a standard rule is honored whatever the setting says, and custom duplicate rules stay always on. With the setting on, an Account matches on its name and a city or ZIP code, or its website, a city or ZIP code and a street or phone number. A Contact or Lead matches on last and first name with an email address, a phone number, or the same company (or email domain) with a title or street. The cross-object Contact and Lead rules and Person Account rules are enforced when active. Match confidences follow the captured values. Pairs that Salesforce matches by looser fuzzy rules (a first name against its initial, transposed last-name letters) still do not match, so no false duplicates are reported. Large Account scans with many same-city, similar-name records cost more per insert.
+- **Confidence of OR rules.** A custom matching rule with OR groups reports the mean over its filter, counting items that did not match, as Salesforce does. Company names that share a six-letter second word and one-word plurals now match as Syllable Alignment does.
+- Apex SOSL now distinguishes invalid queries from counted searches, rejects anonymous `WITH SYSTEM_MODE`, and allows short FIND terms in Apex tests. Fixed searches omit deleted records, and a direct Datetime greater-than filter bound to a null Datetime matches its candidates.
+
+### Apex search
+
+- A user-mode SOSL search with fixed test results now reports an unreadable field used to sort a RETURNING group, including when its only candidate belongs to another user.
+- SOSL divides the result limit among all `RETURNING` objects, including when an object has fewer matching rows than its share. Outside tests, each object of a multi-object search returns at most 250 rows, as does a single object with no `WHERE` or `ORDER BY`, except `EntityDefinition`, which has no captured ceiling and is not capped. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
+- SOSL name searches over space-separated ASCII names match word prefixes and the interior `?`, `??`, and `*` forms, with up to two letters matched by `*`. Unquoted phone searches can find an international-format North American number by its seven local digits or ten national digits.
 
 ### Performance
 
@@ -19,6 +31,11 @@
 - **Smaller platform type table.** The standard platform types (System, Database, Schema and the rest) are now built with exact-size member lists, and members that share a modifier list or a parameter list share one copy. Building the table allocates about 35 MB instead of 65 MB and keeps about 22 MB live instead of 31 MB, in every process. Symbols and their order are unchanged.
 - **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
 - **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, and peak memory can rise up to about 10% on small runs. Results are unchanged.
+- **SOQL text ordering.** SOQL text ordering is locale-aware for `en_*` locales.
+- **SOQL text predicates.** Grouped and scalar aggregate evaluation retain the execution locale for HAVING text ranges, consistent with WHERE. REST and Bulk queries pass the selected user’s locale to the same executor. The English GROUP BY representative rule remains provisional outside the captured case pairs.
+
+- **Restricted picklist ordering.** Source APIs 62–65 now apply the legacy picklist null-order policy to restricted picklists with configured values. Native source-version controls place the transition at API 66.0, which honors explicit NULLS clauses like 67.0.
+- **Double signed zero.** Equality and typed List membership distinguish positive and negative Double zero in the captured cases. Sorting Double and Object lists places negative Double zero first.
 
 ## v0.3.8
 

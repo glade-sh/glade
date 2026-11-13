@@ -1,0 +1,1 @@
+Native Salesforce anonymous Apex and named tests at matching source and transport APIs 62.0 and 67.0. The retained synthetic sources compare parsed positive and negative Double zero in typed Lists, Sets, and Maps, including both insertion orders and a nonzero control. org.tsv rows 2–5 retain the observations without generated identifiers.

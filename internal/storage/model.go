@@ -88,7 +88,10 @@ type OrgState struct {
 	// on first reference from a shared per-shape source (see
 	// standard_spread_source.go). "plain" is before the org shape applied,
 	// "shaped" after. Empty means the org holds every object it will hold.
-	StandardSpread         string              `json:"standardSpread,omitempty"`
+	StandardSpread string `json:"standardSpread,omitempty"`
+	// StandardDuplicateRules turns on the seeded standard duplicate rules (the
+	// duplicateRules.standard setting); project metadata rules are always on.
+	StandardDuplicateRules bool                `json:"standardDuplicateRules,omitempty"`
 	IDSequences            map[string]uint64   `json:"idSequences,omitempty"`
 	Transactions           []TransactionFrame  `json:"transactions,omitempty"`
 	Now                    func() time.Time    `json:"-"`

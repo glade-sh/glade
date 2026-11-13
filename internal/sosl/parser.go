@@ -32,6 +32,10 @@ type SearchTerm struct {
 	Text         string
 	Prefix       bool
 	NeedsMatcher bool
+	// NameWordGlob is an unquoted ASCII name word with one interior *, ? or ??.
+	NameWordGlob bool
+	// PhoneDigits identifies a bare seven- or ten-digit search term.
+	PhoneDigits bool
 }
 
 type SelectExpr struct {
@@ -47,15 +51,16 @@ type Condition struct {
 	Values   []string
 	// UnquotedValues retains literal spelling for filter type validation. The
 	// indexes refer to Values; null entries are tracked separately by NullInList.
-	UnquotedValues map[int]bool
-	ValueIsNull    bool
-	ValueQuoted    bool
-	RelativeDate   bool
-	NullInList     bool
-	Bind           string
-	Not            bool
-	And            []Condition
-	Or             []Condition
+	UnquotedValues    map[int]bool
+	NullDatetimeBound bool // validated null Datetime bind on a greater-than predicate
+	ValueIsNull       bool
+	ValueQuoted       bool
+	RelativeDate      bool
+	NullInList        bool
+	Bind              string
+	Not               bool
+	And               []Condition
+	Or                []Condition
 }
 
 type OrderSpec struct {
@@ -202,9 +207,17 @@ func ParseInline(input string) (Query, error) {
 	return parser.parse()
 }
 
+// ParseExpandedBinds preserves ordered null operands after a valid source
+// query has been expanded. The caller must verify their original bind types.
+func ParseExpandedBinds(input string) (Query, error) {
+	p := parser{tokens: lex(input), expanded: true}
+	return p.parse()
+}
+
 type parser struct {
-	tokens []token
-	pos    int
+	expanded bool
+	tokens   []token
+	pos      int
 }
 
 func (p *parser) parse() (Query, error) {
@@ -639,7 +652,7 @@ func (p *parser) parseConditionLeaf() (Condition, error) {
 		return Condition{}, err
 	}
 	// Q026/Q037-Q040: a literal null is rejected for ordered comparisons.
-	if nullValue && !quoted && (operation == "<" || operation == "<=" || operation == ">" || operation == ">=") {
+	if !p.expanded && nullValue && !quoted && (operation == "<" || operation == "<=" || operation == ">" || operation == ">=") {
 		return Condition{}, contract("QueryException", "invalid operator")
 	}
 	return Condition{Field: field.text, Operator: operation, Value: value, Bind: bind, ValueIsNull: nullValue && !quoted, ValueQuoted: quoted, RelativeDate: !quoted && value != "" && !isDigit(value[0]) && strings.Contains(value, ":")}, nil

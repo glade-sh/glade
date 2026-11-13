@@ -609,6 +609,12 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 			}
 			return Bool(equal), nil
 		}
+		if equal, handled := signedDoubleZeroEqual(left, right); handled {
+			return Bool(equal == (op == "==")), nil
+		}
+		if equal, handled := signedDoubleIntegerZeroEqual(left, right); handled {
+			return Bool(equal == (op == "==")), nil
+		}
 		equal, err := vm.apexEquals(left, right, result)
 		if err != nil {
 			return Null, err
