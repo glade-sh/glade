@@ -241,3 +241,48 @@ System.assertEquals('` + named + `', String.valueOf(other[0].get('UserId')).subs
 		t.Fatal("the execution user was not restored")
 	}
 }
+
+// Anonymous projections outside the captured private Case shape retain the
+// previous no-row behavior. Test-context projections have separate coverage.
+func TestAnonymousNamedUserProjectionBoundaries(t *testing.T) {
+	const named storage.ID = "005000000000017"
+	for _, tc := range []struct {
+		name, userType, object, model string
+		profile                       storage.ID
+		want                          int
+	}{
+		{"standard-private-case", "Standard", "Case", "Private", boundaryStandardProfile, 1},
+		{"standard-public-case", "Standard", "Case", "ReadWrite", boundaryStandardProfile, 0},
+		{"standard-lead", "Standard", "Lead", "Private", boundaryStandardProfile, 0},
+		{"guest-case", "", "Case", "Private", boundaryGuestProfile, 0},
+		{"guest-lead", "", "Lead", "Private", boundaryGuestProfile, 0},
+		{"portal-case", "CspLitePortal", "Case", "Private", boundaryCommunityProfile, 0},
+		{"portal-account", "CspLitePortal", "Account", "Private", boundaryCommunityProfile, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := testDataOrg()
+			for _, name := range []string{"User", tc.object} {
+				storage.EnsureStandardObject(&org, name)
+			}
+			boundaryProfiles(&org)
+			users := org.Objects["User"]
+			users.Records[named] = storage.Record{ID: named, Object: "User", Fields: boundaryUserFields(tc.userType, tc.profile)}
+			const actor storage.ID = "005000000000001"
+			users.Records[actor] = storage.Record{ID: actor, Object: "User", Fields: boundaryUserFields("Standard", boundaryCustomProfile)}
+			org.Objects["User"] = users
+			object := org.Objects[tc.object]
+			object.Definition.SharingModel = tc.model
+			object.Records = map[storage.ID]storage.Record{"500000000000001": {ID: "500000000000001", Object: tc.object}}
+			org.Objects[tc.object] = object
+			machine := New(nil)
+			machine.SetOrg(&org)
+			machine.SetCurrentUser(users.Records[actor])
+			access := storage.ObjectState{Records: map[storage.ID]storage.Record{}}
+			sequence := 1
+			machine.appendOtherUserRecordAccess(&access, []string{tc.object}, false, string(named), &sequence)
+			if got := len(access.Records); got != tc.want {
+				t.Fatalf("projected rows = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
