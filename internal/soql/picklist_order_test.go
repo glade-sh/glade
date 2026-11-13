@@ -1,7 +1,9 @@
 package soql
 
 import (
+	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -105,51 +107,60 @@ func TestPicklistOrderUsesDefinitionSequence(t *testing.T) {
 	})
 }
 
-// restricted_picklist_null_order.tsv rows 2-13: anonymous Apex API 62/67,
-// restricted picklist with configured Zulu, Alpha, Middle and one null.
-// ROAD-451 restricted picklist native capture uses configured Zulu, Alpha,
-// Middle and null values. Source 62 DESC with no NULLS clause places null last.
-func TestRestrictedPicklistLegacyDescendingImplicitNulls(t *testing.T) {
+// org.tsv rows 2–13 capture restricted picklist order at source API 62/67.
+func TestRestrictedPicklistNullOrderBySourcePolicy(t *testing.T) {
 	org := storage.NewOrgState()
 	definition := storage.ObjectDefinition{APIName: "Item__c", Fields: map[string]storage.Field{
 		"Name":    {APIName: "Name", Type: storage.FieldString},
 		"Rank__c": {APIName: "Rank__c", Type: storage.FieldPicklist, RestrictedPicklist: true, PicklistValues: []storage.PicklistValue{{Value: "Zulu"}, {Value: "Alpha"}, {Value: "Middle"}}},
 	}}
 	records := []storage.Record{
-		{Fields: map[string]storage.Value{"Name": storage.StringValue("null")}},
-		{Fields: map[string]storage.Value{"Name": storage.StringValue("z"), "Rank__c": storage.StringValue("Zulu")}},
-		{Fields: map[string]storage.Value{"Name": storage.StringValue("a"), "Rank__c": storage.StringValue("Alpha")}},
-		{Fields: map[string]storage.Value{"Name": storage.StringValue("m"), "Rank__c": storage.StringValue("Middle")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("v3")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("v0"), "Rank__c": storage.StringValue("Zulu")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("v1"), "Rank__c": storage.StringValue("Alpha")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("v2"), "Rank__c": storage.StringValue("Middle")}},
 	}
 	org.Objects["Item__c"] = storage.ObjectState{Definition: definition}
-	for _, tc := range []struct {
-		name         string
-		desc, legacy bool
-		nulls        string
-		want         []string
-	}{
-		{"source62 asc default", false, true, "", []string{"null", "z", "a", "m"}},
-		{"source62 desc default", true, true, "", []string{"m", "a", "z", "null"}},
-		{"source62 asc first", false, true, "FIRST", []string{"null", "z", "a", "m"}},
-		{"source62 asc last", false, true, "LAST", []string{"null", "z", "a", "m"}},
-		{"source62 desc first", true, true, "FIRST", []string{"m", "a", "z", "null"}},
-		{"source62 desc last", true, true, "LAST", []string{"m", "a", "z", "null"}},
-		{"source67 asc default", false, false, "", []string{"null", "z", "a", "m"}},
-		{"source67 desc default", true, false, "", []string{"null", "m", "a", "z"}},
-		{"source67 asc first", false, false, "FIRST", []string{"null", "z", "a", "m"}},
-		{"source67 asc last", false, false, "LAST", []string{"z", "a", "m", "null"}},
-		{"source67 desc first", true, false, "FIRST", []string{"null", "m", "a", "z"}},
-		{"source67 desc last", true, false, "LAST", []string{"m", "a", "z", "null"}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
+	data, err := os.ReadFile("testdata/restricted_picklist_null_order/org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) != 13 || lines[0] != "source_api\troute\torder\tresult" {
+		t.Fatal("invalid native observation table")
+	}
+	seen := make(map[string]bool)
+	for _, line := range lines[1:] {
+		cells := strings.Split(line, "\t")
+		if len(cells) != 4 || cells[1] != "anonymous" || (cells[0] != "62.0" && cells[0] != "67.0") {
+			t.Fatalf("invalid observation: %q", line)
+		}
+		key := cells[0] + "/" + cells[2]
+		if seen[key] {
+			t.Fatalf("duplicate observation: %s", key)
+		}
+		seen[key] = true
+		parts := strings.Fields(cells[2])
+		if (len(parts) != 1 && len(parts) != 3) || (parts[0] != "ASC" && parts[0] != "DESC") {
+			t.Fatalf("invalid order: %q", cells[2])
+		}
+		nulls := ""
+		if len(parts) == 3 {
+			if parts[1] != "NULLS" || (parts[2] != "FIRST" && parts[2] != "LAST") {
+				t.Fatalf("invalid order: %q", cells[2])
+			}
+			nulls = parts[2]
+		}
+		t.Run(key, func(t *testing.T) {
 			rows := append([]storage.Record(nil), records...)
-			sortRecordsByOrder(org, definition, rows, []OrderSpec{{Field: "Rank__c", Desc: tc.desc, Nulls: tc.nulls}}, tc.legacy)
+			sortRecordsByOrder(org, definition, rows, []OrderSpec{{Field: "Rank__c", Desc: parts[0] == "DESC", Nulls: nulls}}, cells[0] == "62.0")
 			var got []string
 			for _, record := range rows {
 				got = append(got, record.Fields["Name"].String)
 			}
-			if !reflect.DeepEqual(got, tc.want) {
-				t.Fatalf("got %v, want %v", got, tc.want)
+			want := strings.Split(cells[3], ",")
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("got %v, want %v", got, want)
 			}
 		})
 	}
