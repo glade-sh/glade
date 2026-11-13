@@ -260,7 +260,10 @@ func previewValueDepth(value vm.Value, depth int) string {
 		header = fmt.Sprintf("Map(%d)", len(value.Map))
 	case vm.ValueDecimal:
 		// Numeric formatting can copy a large decimal payload several times.
-		return truncatePreview(value.Text)
+		if len(value.Text) > 256 {
+			return truncatePreview(value.Text)
+		}
+		return truncatePreview(value.String())
 	case vm.ValueObject:
 		header = value.Type
 		if header == "" {
