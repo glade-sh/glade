@@ -12,6 +12,34 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// NATIVE static_same testdata/receiver_split/org.tsv:2 anonymous 62.0
+// NATIVE static_same testdata/receiver_split/org.tsv:3 anonymous 67.0
+// NATIVE static_comment testdata/receiver_split/org.tsv:4 anonymous 62.0
+// NATIVE static_comment testdata/receiver_split/org.tsv:5 anonymous 67.0
+// NATIVE static_inline_comment testdata/receiver_split/org.tsv:6 anonymous 62.0
+// NATIVE static_inline_comment testdata/receiver_split/org.tsv:7 anonymous 67.0
+// NATIVE static_blank testdata/receiver_split/org.tsv:8 anonymous 62.0
+// NATIVE static_blank testdata/receiver_split/org.tsv:9 anonymous 67.0
+// NATIVE instance_split testdata/receiver_split/org.tsv:10 anonymous 62.0
+// NATIVE instance_split testdata/receiver_split/org.tsv:11 anonymous 67.0
+// NATIVE chain_split testdata/receiver_split/org.tsv:12 anonymous 62.0
+// NATIVE chain_split testdata/receiver_split/org.tsv:13 anonymous 67.0
+// NATIVE qualified_split testdata/receiver_split/org.tsv:14 anonymous 62.0
+// NATIVE qualified_split testdata/receiver_split/org.tsv:15 anonymous 67.0
+// NATIVE qualified_same testdata/receiver_split/org.tsv:16 anonymous 62.0
+// NATIVE qualified_same testdata/receiver_split/org.tsv:17 anonymous 67.0
+// NATIVE static_dot_before testdata/receiver_split/org.tsv:18 anonymous 62.0
+// NATIVE static_dot_before testdata/receiver_split/org.tsv:19 anonymous 67.0
+// NATIVE dot_statement testdata/receiver_split/org.tsv:20 anonymous 62.0
+// NATIVE dot_statement testdata/receiver_split/org.tsv:21 anonymous 67.0
+// NATIVE dot_assign testdata/receiver_split/org.tsv:22 anonymous 62.0
+// NATIVE dot_assign testdata/receiver_split/org.tsv:23 anonymous 67.0
+// NATIVE dot_instance testdata/receiver_split/org.tsv:24 anonymous 62.0
+// NATIVE dot_instance testdata/receiver_split/org.tsv:25 anonymous 67.0
+// NATIVE static_space testdata/receiver_split/org.tsv:26 anonymous 62.0
+// NATIVE static_space testdata/receiver_split/org.tsv:27 anonymous 67.0
+// NATIVE split_statement testdata/receiver_split/org.tsv:28 anonymous 62.0
+// NATIVE split_statement testdata/receiver_split/org.tsv:29 anonymous 67.0
 func TestReceiverSplitNative(t *testing.T) {
 	const fixture = "testdata/receiver_split"
 	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
