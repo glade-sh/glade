@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Probe Access</label><fieldPermissions><editable>true</editable><field>Account.Probe_A__c</field><readable>true</readable></fieldPermissions></PermissionSet>
