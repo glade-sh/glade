@@ -21,6 +21,15 @@ type Config struct {
 	Project ProjectConfig `json:"project"`
 	Org     OrgConfig     `json:"org"`
 	Test    TestConfig    `json:"test"`
+	// DuplicateRules holds the duplicate-rule settings.
+	DuplicateRules DuplicateRulesConfig `json:"duplicateRules"`
+}
+
+// DuplicateRulesConfig configures duplicate rules. Standard turns on the
+// standard Account, Contact and Lead rules that no project metadata defines;
+// it is off by default. A project's duplicateRules metadata is always honored.
+type DuplicateRulesConfig struct {
+	Standard bool `json:"standard"`
 }
 
 type PDFConfig struct {
@@ -331,6 +340,15 @@ func parseYAMLSubset(src string) (Config, error) {
 				cfg.Test.PermissionSets = values
 			} else {
 				cfg.Test.PermissionSetGroups = values
+			}
+		case "duplicateRules.standard":
+			switch strings.ToLower(trimScalar(value)) {
+			case "on", "true":
+				cfg.DuplicateRules.Standard = true
+			case "off", "false":
+				cfg.DuplicateRules.Standard = false
+			default:
+				return Config{}, fmt.Errorf("glade.yml:%d: duplicateRules.standard: expected on or off", lineNo+1)
 			}
 		case "org.features":
 			values, err := parseInlineList(value)

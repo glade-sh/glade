@@ -20,9 +20,11 @@ type Index struct {
 	AutoResponseRules []storage.AutoResponseRule `json:"autoResponseRules,omitempty"`
 	AssignmentRules   []storage.AssignmentRule   `json:"assignmentRules,omitempty"`
 	DuplicateRules    []storage.DuplicateRule    `json:"duplicateRules,omitempty"`
-	Workflows         []Workflow                 `json:"workflows,omitempty"`
-	Flows             []Flow                     `json:"flows,omitempty"`
-	Diagnostics       []diagnostic.Diagnostic    `json:"diagnostics,omitempty"`
+	// StandardDuplicateRules is the project's duplicateRules.standard setting.
+	StandardDuplicateRules bool                    `json:"standardDuplicateRules,omitempty"`
+	Workflows              []Workflow              `json:"workflows,omitempty"`
+	Flows                  []Flow                  `json:"flows,omitempty"`
+	Diagnostics            []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
 }
 
 type Workflow struct {
@@ -112,7 +114,7 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		readMetadata = metadataReaders[0]
 	}
 	rules, diagnostics := loadDuplicateRules(p, readMetadata)
-	idx := Index{DuplicateRules: rules, Diagnostics: diagnostics}
+	idx := Index{DuplicateRules: rules, Diagnostics: diagnostics, StandardDuplicateRules: p.StandardDuplicateRules}
 	idx.AutoResponseRules, diagnostics = loadAutoResponseRules(p, readMetadata)
 	idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	idx.AssignmentRules, diagnostics = loadAssignmentRules(p, readMetadata)
@@ -169,6 +171,7 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 		return
 	}
 	applyDuplicateRules(org, idx.DuplicateRules)
+	org.StandardDuplicateRules = idx.StandardDuplicateRules
 	applyAssignmentRules(org, idx.AssignmentRules)
 	applyAutoResponseRules(org, idx.AutoResponseRules)
 	for _, workflow := range idx.Workflows {

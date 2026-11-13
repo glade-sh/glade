@@ -8,6 +8,11 @@
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
 - Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
 - **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
+### Duplicate rules
+
+- **Duplicate rule settings survive reloads.** Saved orgs and warm test runtimes honor the current standard-rule setting, including after upgrading an older saved org.
+- **Standard Account, Contact and Lead duplicate rules behind `duplicateRules.standard`.** The standard rules are available with `duplicateRules.standard: on` in `glade.yml` (or `GLADE_STANDARD_DUPLICATE_RULES=on`) and off by default; a project's `duplicateRules` metadata for a standard rule is honored whatever the setting says, and custom duplicate rules stay always on. With the setting on, an Account matches on its name and a city or ZIP code, or its website, a city or ZIP code and a street or phone number. A Contact or Lead matches on last and first name with an email address, a phone number, or the same company (or email domain) with a title or street. The cross-object Contact and Lead rules and Person Account rules are enforced when active. Match confidences follow the captured values. Pairs that Salesforce matches by looser fuzzy rules (a first name against its initial, transposed last-name letters) still do not match, so no false duplicates are reported. Large Account scans with many same-city, similar-name records cost more per insert.
+- **Confidence of OR rules.** A custom matching rule with OR groups reports the mean over its filter, counting items that did not match, as Salesforce does. Company names that share a six-letter second word and one-word plurals now match as Syllable Alignment does.
 
 ### Performance
 

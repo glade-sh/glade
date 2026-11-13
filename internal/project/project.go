@@ -54,6 +54,7 @@ type Project struct {
 	SourceNamespaceRoots        map[string]string          `json:"sourceNamespaceRoots,omitempty"`
 	SourceAPIVersion            string                     `json:"sourceApiVersion,omitempty"`
 	OrgDomainURL                string                     `json:"orgDomainUrl,omitempty"`
+	StandardDuplicateRules      bool                       `json:"standardDuplicateRules,omitempty"`
 	HierarchyAccessObjects      []string                   `json:"hierarchyAccessObjects,omitempty"`
 	SchemaSnapshot              string                     `json:"schemaSnapshot,omitempty"`
 	SchemaSnapshotSHA256        string                     `json:"schemaSnapshotSHA256,omitempty"`
@@ -638,6 +639,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 		p.PDF = gladeCfg.PDF
 		p.ExtraMetadataDirs = gladeCfg.Project.ExtraMetadataDirs
 		p.OrgDomainURL = gladeCfg.Org.DomainURL
+		p.StandardDuplicateRules = gladeCfg.DuplicateRules.Standard
 		p.HierarchyAccessObjects = append([]string(nil), gladeCfg.Org.HierarchyAccessObjects...)
 		p.SchemaSnapshot = gladeCfg.Project.SchemaSnapshot
 		p.SchemaSnapshotSHA256 = gladeCfg.Project.SchemaSnapshotSHA256
@@ -652,6 +654,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 			}
 			p.PDF = nearestCfg.PDF
 			p.OrgDomainURL = nearestCfg.Org.DomainURL
+			p.StandardDuplicateRules = nearestCfg.DuplicateRules.Standard
 			p.HierarchyAccessObjects = append([]string(nil), nearestCfg.Org.HierarchyAccessObjects...)
 			dependencyCfg = nearestCfg
 			dependencyCfgOK = true

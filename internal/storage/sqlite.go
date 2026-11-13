@@ -6,7 +6,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"sort"
+	"strconv"
 
 	_ "modernc.org/sqlite"
 )
@@ -31,6 +33,8 @@ const (
 	metaOrgDomainURL             = "domainUrl"
 	metaOrgMetadata              = "glade.org.metadata"
 	metaOrgFeatures              = "glade.org.features"
+	metaStandardDuplicateRules   = "glade.org.standardDuplicateRules"
+	metaDuplicateRuleOrigins     = "glade.org.duplicateRuleOrigins"
 	metaProjectRoot              = "glade.project.root"
 	metaProjectSchemaFingerprint = "glade.project.schemaFingerprint"
 	metaProjectSourceAPIVersion  = "glade.project.sourceApiVersion"
@@ -105,6 +109,7 @@ func (s *SQLiteStore) Close() error {
 
 func (s *SQLiteStore) Load() (OrgState, error) {
 	org := NewOrgState()
+	modernRuleOrigins := false
 	rows, err := s.db.Query(`select key, value from org_meta`)
 	if err != nil {
 		return OrgState{}, err
@@ -128,6 +133,14 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 				return OrgState{}, fmt.Errorf("storage: load org domainUrl: %w", err)
 			}
 			org.DomainURL = domainURL
+		case metaDuplicateRuleOrigins:
+			modernRuleOrigins = value == "1"
+		case metaStandardDuplicateRules:
+			enabled, err := strconv.ParseBool(value)
+			if err != nil {
+				return OrgState{}, fmt.Errorf("storage: decode standard duplicate rules: %w", err)
+			}
+			org.StandardDuplicateRules = enabled
 		case metaOrgFeatures:
 			if err := json.Unmarshal([]byte(value), &org.Features); err != nil {
 				return OrgState{}, fmt.Errorf("storage: decode org features: %w", err)
@@ -155,6 +168,34 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 		var definition ObjectDefinition
 		if err := json.Unmarshal(raw, &definition); err != nil {
 			return OrgState{}, fmt.Errorf("storage: decode object definition %s: %w", name, err)
+		}
+		if !modernRuleOrigins && len(definition.DuplicateRules) > 0 {
+			// Old databases omitted rule origin. Only a structurally equivalent built-in
+			// definition can be recognized without project metadata.
+			var origins struct {
+				DuplicateRules []map[string]json.RawMessage `json:"duplicateRules"`
+			}
+			if err := json.Unmarshal(raw, &origins); err != nil {
+				return OrgState{}, err
+			}
+			for i := range definition.DuplicateRules {
+				rule := &definition.DuplicateRules[i]
+				if i >= len(origins.DuplicateRules) {
+					continue
+				}
+				if _, present := origins.DuplicateRules[i]["seeded"]; present {
+					continue
+				}
+				for _, seed := range standardDuplicateRuleSeeds {
+					expected := standardDuplicateRule(seed, seed.active)
+					expected.Seeded = false
+					expected.ID = rule.ID
+					if reflect.DeepEqual(*rule, expected) {
+						rule.Seeded = true
+						break
+					}
+				}
+			}
 		}
 		org.Objects[name] = ObjectState{Definition: definition, Records: make(map[ID]Record)}
 	}
@@ -234,6 +275,8 @@ func (s *SQLiteStore) Save(org OrgState) error {
 		return err
 	}
 	setMetaValue(meta, metaOrgFeatures, string(features))
+	setMetaValue(meta, metaStandardDuplicateRules, strconv.FormatBool(org.StandardDuplicateRules))
+	setMetaValue(meta, metaDuplicateRuleOrigins, "1")
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err

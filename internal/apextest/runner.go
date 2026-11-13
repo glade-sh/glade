@@ -1395,9 +1395,10 @@ const (
 )
 
 type runtimeMetadataGeneration struct {
-	authority   runtimeMetadataAuthority
-	inputs      map[string]typesys.ApexMetadataInput
-	apiVersions map[string]string
+	standardDuplicateRules bool
+	authority              runtimeMetadataAuthority
+	inputs                 map[string]typesys.ApexMetadataInput
+	apiVersions            map[string]string
 }
 
 type runtimeSourceInput struct {
@@ -1451,6 +1452,7 @@ func runtimeKeyWithMetadataGeneration(base runtimeCacheKey, generation runtimeMe
 	write("apextest-runtime-metadata-v1")
 	write(string(base))
 	write(string(generation.authority))
+	write("standard-duplicate-rules:" + strconv.FormatBool(generation.standardDuplicateRules))
 	paths := make([]string, 0, len(generation.inputs))
 	for path := range generation.inputs {
 		paths = append(paths, path)
