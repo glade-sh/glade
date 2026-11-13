@@ -44,9 +44,6 @@ func TestEditorLatencyDAPHarness(t *testing.T) {
 	measure("dap_test_launch_cold", func() error {
 		return handleDAPLaunch(context.Background(), dap.NewHandler(dap.Snapshot{}), launch, project, "", true)
 	})
-	if _, err := dapTestIndexLoader(project); err != nil {
-		t.Fatal(err)
-	}
 	measure("dap_test_launch_warm", func() error {
 		return handleDAPLaunch(context.Background(), dap.NewHandler(dap.Snapshot{}), launch, project, "", true)
 	})
