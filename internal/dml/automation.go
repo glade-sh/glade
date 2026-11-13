@@ -537,8 +537,10 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) (bool, 
 		return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
 	}
 	e.flowDepth++
+	e.recordTriggeredFlow++
 	defer func() {
 		e.flowDepth--
+		e.recordTriggeredFlow--
 	}()
 
 	object := e.Org.Objects[objectName]
