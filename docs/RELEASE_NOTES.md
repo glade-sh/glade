@@ -60,6 +60,11 @@
 
 - **Test and async boundaries.** `Test.stopTest()` outside a test now reports the native `System.FinalException`. Future callbacks drained by `Test.stopTest()` report the native default queueable-job limit, and failed Queueable callbacks retain their test-visible Processing status.
 
+- **Trigger exception lines.** Trigger stacks retain the getter call site when entered through `Database.insert`.
+- **Exception caller lines.** Property getters, setters and field initializers evaluated inside a call preserve the enclosing call-token line in exception stacks.
+
+- **Exception stacks.** Exceptions caught through a helper chain from one-line anonymous Apex now retain the captured anonymous caller frames, including constructed causes.
+
 ## v0.3.8
 
 v0.3.8 turns more Salesforce compile and runtime differences into matching errors, enforces fuzzy duplicate rules, makes dependency resolution deterministic, and cuts test startup time, memory and check time.
