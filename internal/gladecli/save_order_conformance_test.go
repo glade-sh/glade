@@ -20,6 +20,9 @@ func TestSaveOrderNativeConformance(t *testing.T) {
 	replaySaveOrder(t, "rollup", "control", "siblings.tsv", "siblings.apex", "RollupControlTest", "combined", "RollupResultException")
 	replaySaveOrder(t, "rollup_events", "single", "single.tsv", "single.apex", "RollupSideSingle", "probe", "RollupResultException")
 	replaySaveOrder(t, "rollup_events", "mixed", "mixed.tsv", "mixed.apex", "RollupSideMixed", "probe", "RollupResultException")
+	replaySaveOrder(t, "retry_validation", "single", "single.tsv", "single.apex", "RetrySingle", "probe", "RollupResultException")
+	replaySaveOrder(t, "retry_validation", "partial", "partial.tsv", "partial.apex", "RetryPartial", "probe", "RollupResultException")
+	replaySaveOrder(t, "retry_validation", "atomic", "atomic.tsv", "atomic.apex", "RetryAtomic", "probe", "RollupResultException")
 }
 
 func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, method, exception string) {
@@ -45,12 +48,12 @@ func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, m
 		}
 		project := fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api)
 		writeTestFile(t, filepath.Join(root, "sfdx-project.json"), project)
-		if fixture == "rollup" || fixture == "rollup_events" {
+		if fixture != "combined" {
 			// The scratch org assigned this deployed permission set before running Apex.
 			writeTestFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [Probe_Access]\n")
 		}
 		for j, route := range []string{"anonymous", "istest"} {
-			t.Run(rowID+"/"+api+"/"+route, func(t *testing.T) {
+			t.Run(fixture+"/"+rowID+"/"+api+"/"+route, func(t *testing.T) {
 				row := strings.Split(lines[1+2*i+j], "\t")
 				if len(row) != 6 || row[0] != rowID || row[1] != api || row[2] != route || row[3] != "true" {
 					t.Fatalf("unexpected capture row %q", row)
