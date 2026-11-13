@@ -118,9 +118,11 @@ func (vm *VM) validateDynamicSOQLBindSyntaxMode(raw string, countQuery, scopeBin
 			path += "." + member
 			dotted = true
 		}
-		if next := skipDynamicSOQLWhitespace(raw, i); scopeBinds && dotted && !called && !(next < len(raw) && strings.ContainsRune("+-*/", rune(raw[next]))) {
+		if next := skipDynamicSOQLWhitespace(raw, i); scopeBinds && dotted && !called && path != "" && (path[0] < '0' || path[0] > '9') && !(next < len(raw) && strings.ContainsRune("+-*/", rune(raw[next]))) {
 			// Dynamic SOQL resolves a bind by its whole spelled name: a dotted
-			// path never names a variable, declared or not. An arithmetic
+			// path never names a variable, declared or not. A leading digit is
+			// not a bind at all: it is the colon of a datetime literal and falls
+			// through to the query grammar. An arithmetic
 			// continuation has no captured row and keeps its prior handling.
 			return newExceptionError("QueryException", "Variable does not exist: "+path)
 		}
