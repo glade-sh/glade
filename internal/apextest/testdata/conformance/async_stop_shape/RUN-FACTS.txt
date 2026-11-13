@@ -16,6 +16,6 @@ sha256 51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d StopShap
 sha256 e9b8b7b8248eb5f1d76b4c12ca2f56360dfd15dc8b9fa721a36cce488ad913fd StopShapeTest.cls
 sha256 51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d StopShapeTest.cls-meta.xml
 edition=Developer (default scratch definition; no features or settings)
-driver=campaign capture.sh, adjusted for 30-day scratch orgs; Salesforce CLI Apex test route
+driver=capture driver script, adjusted for 30-day scratch orgs; Salesforce CLI Apex test route
 identifiers=record and org identifiers omitted; markers are synthetic labels
-source=project/force-app; the same source is present in async_stop_boundary/project
+source=../async_stop_boundary/project/force-app (shared with async_stop_boundary; not copied)
