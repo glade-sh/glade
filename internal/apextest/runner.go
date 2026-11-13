@@ -6358,7 +6358,7 @@ func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []p
 	cache := sourceCacheFor(caches)
 	var staticRefs []projectRecordTypeReference
 	for _, file := range projectDataJSONFiles(p.Root) {
-		data, err := os.ReadFile(file)
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6372,7 +6372,7 @@ func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []p
 		}
 	}
 	for _, file := range []string{filepath.Join(p.Root, "cumulusci.yml")} {
-		data, err := os.ReadFile(file)
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6464,7 +6464,7 @@ func projectRecordTypeNameFromCallArg(match []string, constants map[string]strin
 	return strings.TrimSpace(name)
 }
 
-func projectDataFieldReferences(root string) []projectDataFieldReference {
+func projectDataFieldReferences(read func(string) ([]byte, error), root string) []projectDataFieldReference {
 	seen := make(map[string]bool)
 	var refs []projectDataFieldReference
 	add := func(objectName, fieldName string, value any) {
@@ -6481,7 +6481,7 @@ func projectDataFieldReferences(root string) []projectDataFieldReference {
 		refs = append(refs, projectDataFieldReference{ObjectName: objectName, FieldName: fieldName})
 	}
 	for _, file := range projectDataJSONFiles(root) {
-		data, err := os.ReadFile(file)
+		data, err := read(file)
 		if err != nil {
 			continue
 		}
@@ -6526,7 +6526,7 @@ func collectDataFieldReferences(value any, currentObject string, add func(object
 	}
 }
 
-func projectDataRelationshipReferences(root string) []projectDataRelationshipReference {
+func projectDataRelationshipReferences(read func(string) ([]byte, error), root string) []projectDataRelationshipReference {
 	seen := make(map[string]bool)
 	var refs []projectDataRelationshipReference
 	add := func(childObject, parentRelationship string) {
@@ -6543,7 +6543,7 @@ func projectDataRelationshipReferences(root string) []projectDataRelationshipRef
 		refs = append(refs, projectDataRelationshipReference{ChildObject: childObject, ParentRelationship: parentRelationship})
 	}
 	for _, file := range projectDataJSONFiles(root) {
-		data, err := os.ReadFile(file)
+		data, err := read(file)
 		if err != nil {
 			continue
 		}
