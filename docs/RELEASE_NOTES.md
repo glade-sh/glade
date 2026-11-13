@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Performance
+
+- **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method. On a 500-class project total allocation fell about 4 percent and peak memory about 6 percent; on a 150-class project allocation fell about 4 percent and instructions about 4 percent. Results are identical.
 
 ## v0.3.9
 
