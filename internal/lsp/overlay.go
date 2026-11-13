@@ -354,8 +354,13 @@ func (h *Handler) primeOverlayState(ctx context.Context) {
 	}
 	h.refreshMu.Lock()
 	base, config := h.base, h.baseConfig
+	var artifacts *typesys.BuildArtifacts
+	if base != nil {
+		// startArtifactsLocked may fill base.artifacts; read it under refreshMu.
+		artifacts = base.artifacts
+	}
 	h.refreshMu.Unlock()
-	if base == nil || config.AnalyzeOverlay == nil || base.artifacts == nil {
+	if base == nil || config.AnalyzeOverlay == nil || artifacts == nil {
 		return
 	}
 	done := make(chan struct{})
@@ -371,5 +376,5 @@ func (h *Handler) primeOverlayState(ctx context.Context) {
 	if ctx.Err() != nil || h.gen.Load() != base {
 		return
 	}
-	config.AnalyzeOverlay(base.index, base.artifacts)
+	config.AnalyzeOverlay(base.index, artifacts)
 }
