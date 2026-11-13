@@ -95,7 +95,7 @@
     "./internal/apextest": 534,
     "./internal/dap": 8,
     "./internal/frontendcache": 1,
-    "./internal/gladecli": 94,
+    "./internal/gladecli": 95,
     "./internal/gladehome": 8,
     "./internal/lwcbrowser": 2,
     "./internal/playground": 4,
