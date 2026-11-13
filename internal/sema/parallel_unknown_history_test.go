@@ -33,3 +33,16 @@ func TestParallelUnknownHistoryTracksReplacedFields(t *testing.T) {
 		t.Fatal("unrelated field must not force a serial retry")
 	}
 }
+
+func TestParallelUnknownHistoryObservesViewHydration(t *testing.T) {
+	watch := newSemaUnknownHistory()
+	view := (&semaTypeMemberState{unknownHistory: watch}).view()
+	if semaAnyKnownField(view, "Target") {
+		t.Fatal("unexpected known field")
+	}
+	view.storeHydrated("object", typeMembers{fields: map[string]typesys.MemberSymbol{"target": {Name: "Target"}}})
+	view.storeHydrated("object", typeMembers{fields: map[string]typesys.MemberSymbol{}})
+	if !watch.conflict() {
+		t.Fatal("view must record a field even if replaced")
+	}
+}
