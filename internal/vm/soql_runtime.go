@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -2703,14 +2704,14 @@ func soslConditionFields(condition *sosl.Condition) []string {
 
 func (vm *VM) soslRecordMatchesExpression(objectName string, record storage.Record, terms []sosl.SearchTerm, expression *sosl.SearchExpression, scope sosl.SearchScope, accessLevel Value) (bool, error) {
 	if expression == nil {
-		return vm.soslRecordMatchesSearch(objectName, record, terms, scope, accessLevel), nil
+		return vm.soslRecordMatchesSearch(objectName, record, terms, scope, accessLevel)
 	}
 	switch expression.Operator {
 	case "TERM":
-		if expression.Term.NeedsMatcher {
+		if expression.Term.NeedsMatcher && !(scope == sosl.SearchScopeName && expression.Term.NameWordGlob) {
 			return false, unsupportedCallError("SOSL wildcard index matching")
 		}
-		return vm.soslRecordMatchesSearchPattern(objectName, record, expression.Term, scope, accessLevel), nil
+		return vm.soslRecordMatchesSearchPattern(objectName, record, expression.Term, scope, accessLevel)
 	case "AND", "OR", "AND NOT":
 		left, err := vm.soslRecordMatchesExpression(objectName, record, terms, expression.Left, scope, accessLevel)
 		if err != nil {
@@ -2735,28 +2736,28 @@ func (vm *VM) soslRecordMatchesExpression(objectName string, record storage.Reco
 	}
 }
 
-func (vm *VM) soslRecordMatchesSearch(objectName string, record storage.Record, patterns []sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) bool {
+func (vm *VM) soslRecordMatchesSearch(objectName string, record storage.Record, patterns []sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) (bool, error) {
 	if len(patterns) == 0 {
-		return true
+		return true, nil
 	}
 	for _, pattern := range patterns {
-		if vm.soslRecordMatchesSearchPattern(objectName, record, pattern, scope, accessLevel) {
-			return true
+		if matched, err := vm.soslRecordMatchesSearchPattern(objectName, record, pattern, scope, accessLevel); matched || err != nil {
+			return matched, err
 		}
 	}
-	return false
+	return false, nil
 }
 
-func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.Record, pattern sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) bool {
+func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.Record, pattern sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) (bool, error) {
 	if pattern.Text == "" {
-		return true
+		return true, nil
 	}
 	if scope == sosl.SearchScopeAll && soslTextMatchesPattern(string(record.ID), pattern) {
-		return true
+		return true, nil
 	}
 	object, ok := vm.Org.Objects[objectName]
 	if !ok {
-		return false
+		return false, nil
 	}
 	permissionSetID := accessLevelPermissionSetID(accessLevel)
 	userMode := databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE"
@@ -2781,11 +2782,11 @@ func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.R
 		if !ok {
 			continue
 		}
-		if soslTextMatchesPattern(storageValueText(value), pattern) {
-			return true
+		if matched, err := soslFieldTextMatches(storageValueText(value), pattern, scope); matched || err != nil {
+			return matched, err
 		}
 	}
-	return false
+	return false, nil
 }
 
 func soslSearchableField(field storage.Field) bool {
@@ -2828,6 +2829,54 @@ func soslIsPhoneField(fieldName string, field storage.Field) bool {
 	label := strings.ToLower(strings.TrimSpace(field.Label))
 	return name == "phone" || strings.HasSuffix(name, "phone") || strings.Contains(label, "phone")
 }
+
+// NAME FIELDS captures establish word matching only on space-separated ASCII names.
+func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchScope) (bool, error) {
+	if text != "" && scope == sosl.SearchScopeName && (term.NameWordGlob || term.Prefix && soslNameWord.MatchString(term.Text)) {
+		if !soslNameWords.MatchString(text) {
+			if term.NameWordGlob {
+				return false, unsupportedCallError("SOSL wildcard index matching")
+			}
+			return soslTextMatchesPattern(text, term), nil
+		}
+		pattern := strings.ToLower(term.Text)
+		for _, word := range strings.Fields(strings.ToLower(text)) {
+			if term.NameWordGlob {
+				// The parser approved only letters and the interior wildcard group.
+				if matched, _ := path.Match(pattern, word); matched {
+					// The indexed controls distinguish zero, one and two letters
+					// at '*'. Leave a longer expansion at the matcher boundary.
+					if strings.Contains(pattern, "*") && len(word)-(len(pattern)-1) > 2 {
+						return false, unsupportedCallError("SOSL wildcard index matching")
+					}
+					return true, nil
+				}
+				// No captured candidate begins with a complete wildcard match
+				// followed by additional letters. Keep that index boundary.
+				if prefix, _ := path.Match(pattern+"*", word); prefix {
+					return false, unsupportedCallError("SOSL wildcard index matching")
+				}
+			} else if strings.HasPrefix(word, pattern) {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+	if scope == sosl.SearchScopePhone && term.PhoneDigits {
+		// The observed international-format NANP number can be found by
+		// its ten national or seven local digits.
+		if parts := soslNorthAmericanPhone.FindStringSubmatch(text); parts != nil {
+			return strings.HasSuffix(parts[1]+parts[2]+parts[3], term.Text), nil
+		}
+	}
+	return soslTextMatchesPattern(text, term), nil
+}
+
+var (
+	soslNameWord           = regexp.MustCompile(`^[A-Za-z]+$`)
+	soslNameWords          = regexp.MustCompile(`^[A-Za-z]+( [A-Za-z]+)*$`)
+	soslNorthAmericanPhone = regexp.MustCompile(`^\+1 \(([0-9]{3})\) ([0-9]{3})-([0-9]{4})$`)
+)
 
 func soslTextMatchesPattern(text string, pattern sosl.SearchTerm) bool {
 	text = strings.TrimSpace(text)
