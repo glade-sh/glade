@@ -1,6 +1,7 @@
 package gladehome
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -61,6 +62,10 @@ func leaseActiveRoot(ensure bool) (string, func(), error) {
 }
 
 func leaseActiveRootWith(ensure bool, open func(string, int, os.FileMode) (*os.File, error), lock func(*os.File, bool) error) (string, func(), error) {
+	return leaseActiveRootContext(context.Background(), ensure, open, lock, false)
+}
+
+func leaseActiveRootContext(ctx context.Context, ensure bool, open func(string, int, os.FileMode) (*os.File, error), lock func(*os.File, bool) error, bounded bool) (string, func(), error) {
 	if root, ok := explicitToolchainRoot(); ok && !selectedRootIsShare(root) && hasGoMod(root) {
 		return root, func() {}, nil
 	}
@@ -70,7 +75,7 @@ func leaseActiveRootWith(ensure bool, open func(string, int, os.FileMode) (*os.F
 		}
 	}
 	dir := selectedInstallDir()
-	file, release, err := acquireReadLease(dir, open, lock)
+	file, release, err := acquireReadLeaseContext(ctx, dir, open, lock, bounded)
 	if err != nil {
 		return "", nil, err
 	}
@@ -102,6 +107,9 @@ func leaseActiveRootWith(ensure bool, open func(string, int, os.FileMode) (*os.F
 	}
 	if filepath.Clean(root) != filepath.Clean(dir) && !sameDirectory(root, dir) {
 		release()
+		if bounded {
+			return "", nil, fmt.Errorf("toolchain changed during status check; retry")
+		}
 		replacement, err := leaseManagedRoot(root, open)
 		if err != nil {
 			return "", nil, err
@@ -112,7 +120,7 @@ func leaseActiveRootWith(ensure bool, open func(string, int, os.FileMode) (*os.F
 		// A first install may have created the selected root after the
 		// initial missing-directory probe. Never return it without a fence.
 		release()
-		file, release, err = acquireReadLease(root, open, lock)
+		file, release, err = acquireReadLeaseContext(ctx, root, open, lock, bounded)
 		if err != nil {
 			return "", nil, err
 		}

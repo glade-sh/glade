@@ -1,10 +1,12 @@
 package gladehome
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 // POSIX record locks belong to a process: closing any descriptor for the
@@ -34,11 +36,20 @@ func readLeaseKey(dir string) string {
 }
 
 func acquireReadLease(dir string, open func(string, int, os.FileMode) (*os.File, error), lock func(*os.File, bool) error) (*os.File, func(), error) {
-	installMu.RLock()
+	return acquireReadLeaseContext(context.Background(), dir, open, lock, false)
+}
+
+func acquireReadLeaseContext(ctx context.Context, dir string, open func(string, int, os.FileMode) (*os.File, error), lock func(*os.File, bool) error, noRecovery bool) (*os.File, func(), error) {
+	if err := waitTryLock(ctx, installMu.TryRLock); err != nil {
+		return nil, nil, err
+	}
 	key := readLeaseKey(dir)
 	dirInfo, _ := os.Stat(dir)
 	lockInfo, _ := os.Stat(filepath.Join(dir, ".install.lock"))
-	readLeaseRegistry.mu.Lock()
+	if err := waitTryLock(ctx, readLeaseRegistry.mu.TryLock); err != nil {
+		installMu.RUnlock()
+		return nil, nil, err
+	}
 	var entry *sharedReadLease
 	for candidate := range readLeaseRegistry.roots {
 		if dirInfo != nil && candidate.dirInfo != nil && os.SameFile(dirInfo, candidate.dirInfo) &&
@@ -73,7 +84,10 @@ func acquireReadLease(dir string, open func(string, int, os.FileMode) (*os.File,
 		readLeaseRegistry.mu.Unlock()
 		installMu.RUnlock()
 	}
-	entry.mu.Lock()
+	if err := waitTryLock(ctx, entry.mu.TryLock); err != nil {
+		retire()
+		return nil, nil, err
+	}
 	if entry.refs == 0 {
 		// Publish a newly created lock's identity before another root can
 		// discover a hard link to it. Never hold the registry mutex while
@@ -87,7 +101,7 @@ func acquireReadLease(dir string, open func(string, int, os.FileMode) (*os.File,
 			}
 			return file, err
 		}
-		file, err := readInstallLockAtWith(dir, trackedOpen, lock)
+		file, err := readInstallLockAtWithMode(dir, trackedOpen, lock, noRecovery)
 		if err != nil {
 			entry.mu.Unlock()
 			retire()
@@ -112,4 +126,15 @@ func acquireReadLease(dir string, open func(string, int, os.FileMode) (*os.File,
 		})
 	}
 	return file, release, nil
+}
+
+func waitTryLock(ctx context.Context, try func() bool) error {
+	for !try() {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	return nil
 }

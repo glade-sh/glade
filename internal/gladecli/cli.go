@@ -1009,7 +1009,7 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	}
 
 	parserStatus := parserSelfCheck()
-	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatus()
+	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatusBounded(ctx)
 	loadedProject := project.Project{}
 	projectErr := rootProblem
 	if projectErr == nil {

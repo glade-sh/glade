@@ -1,6 +1,7 @@
 package gladehome
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 )
 
 // RepoRoot locates a glade source checkout (go.mod + LWC toolchain). Use this for
@@ -416,6 +418,52 @@ func ToolchainStatus() (path string, ok bool, detail string) {
 		}
 	}
 	if errors.Is(err, os.ErrPermission) || errors.Is(err, syscall.EROFS) {
+		return UserShareDir(), false, err.Error()
+	}
+	return UserShareDir(), false, "missing; reinstall the release or install from a Glade source checkout"
+}
+
+// ToolchainStatusBounded skips a busy install rather than blocking a diagnostic.
+func ToolchainStatusBounded(ctx context.Context) (string, bool, string) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	lock := func(file *os.File, exclusive bool) error {
+		for {
+			err := tryLockInstallFile(file, exclusive)
+			if err == nil {
+				return nil
+			}
+			if !isInstallLockBusy(err) {
+				return err
+			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(10 * time.Millisecond):
+			}
+		}
+	}
+	root, release, err := leaseActiveRootContext(ctx, false, os.OpenFile, lock, true)
+	if err == nil {
+		defer release()
+		_, detail, findErr := findActiveToolchainRoot()
+		if findErr == nil {
+			return root, true, detail
+		}
+		err = findErr
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return UserShareDir(), false, "busy; toolchain check skipped while installation is locked"
+	}
+	if _, ok := explicitToolchainRoot(); !ok {
+		if homeErr := requireManagedShare(); homeErr != nil {
+			return "", false, homeErr.Error()
+		}
+	}
+	if errors.Is(err, os.ErrPermission) || errors.Is(err, syscall.EROFS) {
+		return UserShareDir(), false, err.Error()
+	}
+	if strings.Contains(err.Error(), "recovery busy") || strings.Contains(err.Error(), "changed during status") {
 		return UserShareDir(), false, err.Error()
 	}
 	return UserShareDir(), false, "missing; reinstall the release or install from a Glade source checkout"

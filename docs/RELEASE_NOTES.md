@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Doctor.** A busy toolchain installation no longer blocks the diagnostic indefinitely; the toolchain check reports that it was skipped.
 
 ## v0.3.8
 
