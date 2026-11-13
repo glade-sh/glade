@@ -111,3 +111,15 @@ func TestParallelUnknownHistoryObservesPlatformLookup(t *testing.T) {
 		t.Fatal("platform lookup did not record the case-insensitive field")
 	}
 }
+
+func TestParallelUnknownHistoryIncludesSeededFields(t *testing.T) {
+	watch := newSemaUnknownHistory()
+	view := (&semaTypeMemberState{}).view()
+	view.storeHydrated("object", typeMembers{fields: map[string]typesys.MemberSymbol{"target": {Name: "Target"}}})
+	watch.seed(view)
+	view.storeHydrated("object", typeMembers{fields: map[string]typesys.MemberSymbol{}})
+	watch.missing("Target")
+	if !watch.conflict() {
+		t.Fatal("replaced initial field must force a serial retry")
+	}
+}
