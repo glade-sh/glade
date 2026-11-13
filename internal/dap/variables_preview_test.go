@@ -78,6 +78,18 @@ func TestPreviewValueOmitsUnusedObjectFields(t *testing.T) {
 	}
 }
 
+func TestPreviewValueRespectsObjectFormatterPrecedence(t *testing.T) {
+	for _, typ := range []string{"PageReference", "Database.QueryLocator", "Invocable.Action"} {
+		t.Run(typ, func(t *testing.T) {
+			object := vm.Object(typ)
+			object.Fields["value"] = vm.String("ignored")
+			if got, want := previewValue(object), object.String(); got != want {
+				t.Fatalf("preview = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
 func TestVariablesConcurrentPauses(t *testing.T) {
 	h := NewHandler(Snapshot{})
 	done := make(chan struct{})

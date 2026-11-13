@@ -376,6 +376,43 @@ func (v Value) String() string {
 	}
 }
 
+// DirectStringValue reports the value-field rendering when no earlier object
+// formatter takes precedence. It avoids visiting fields that String omits.
+func (v Value) DirectStringValue() (string, bool) {
+	if v.Kind != ValueObject || len(v.Type) > 4096 {
+		return "", false
+	}
+	raw, ok := v.Fields["value"]
+	if !ok || raw.Kind != ValueString {
+		return "", false
+	}
+	if strings.EqualFold(v.Runtime, "System.Location") || strings.EqualFold(v.Type, "AccessLevel") ||
+		strings.EqualFold(v.Type, "PageReference") || strings.EqualFold(v.Type, "Schema.SObjectType") ||
+		strings.EqualFold(v.Type, "Schema.SObjectField") || (v.projectClass && !isExceptionType(v.Type)) {
+		return "", false
+	}
+	if _, ok := stubProxyTypeName(v); ok {
+		return "", false
+	}
+	// Probe formatter ownership without rendering any of the actual fields.
+	empty := v
+	empty.Fields = nil
+	empty.Ref = 0
+	if _, ok := httpDTOString(empty); ok {
+		return "", false
+	}
+	if _, ok := databaseDTOString(empty, nil); ok {
+		return "", false
+	}
+	if _, ok := automationDTOString(empty, nil); ok {
+		return "", false
+	}
+	if strings.EqualFold(v.Type, "Id") {
+		return displayIDText(raw.Text), true
+	}
+	return raw.Text, true
+}
+
 var accessLevelConstantRefs = [2]uint64{newValueRef(), newValueRef()}
 
 func isAccessLevelValue(value Value) bool {

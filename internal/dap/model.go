@@ -246,6 +246,9 @@ func namedValuesFromMap(vars map[string]vm.Value) []namedValue {
 func previewValue(value vm.Value) string { return previewValueDepth(value, 0) }
 
 func previewValueDepth(value vm.Value, depth int) string {
+	if text, ok := value.DirectStringValue(); ok {
+		return truncatePreview(text)
+	}
 	// A fitting collection can contain more than 64 short values. Allow enough
 	// nodes and metadata for such values while keeping exact rendering bounded.
 	budget, bytes := 256, 4096
