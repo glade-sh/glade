@@ -2586,7 +2586,7 @@ func appendUniqueStringFold(values []string, value string) []string {
 // describePlainDeveloperTier preserves the captured descriptor on tokens that
 // cross the named helper boundary, without modifying shared cache templates.
 func (vm *VM) describePlainDeveloperTier(objectName string) (Value, error) {
-	desc, err := vm.describeSyntheticFieldValue(objectName, "Tier", plainDeveloperTierField())
+	desc, err := vm.buildSyntheticFieldValue(objectName, "Tier", plainDeveloperTierField())
 	if err != nil {
 		return desc, err
 	}
@@ -2612,6 +2612,15 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	if cached, ok := vm.fieldDescribeCache[cacheKey]; ok {
 		return cached, nil
 	}
+	desc, err := vm.buildSyntheticFieldValue(objectName, fieldName, field)
+	if err == nil {
+		vm.fieldDescribeCache[cacheKey] = desc
+	}
+	return desc, err
+}
+
+// Token-backed descriptors must not populate the caller's ordinary field cache.
+func (vm *VM) buildSyntheticFieldValue(objectName, fieldName string, field storage.Field) (Value, error) {
 	if field.APIName == "" {
 		field.APIName = fieldName
 	}
@@ -2667,7 +2676,6 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	token := vm.sObjectFieldTokenFromField(objectName, field)
 	desc.Fields["sObjectField"] = token
 	vm.completeDescribeFieldResult(&desc, objectName, field)
-	vm.fieldDescribeCache[cacheKey] = desc
 	return desc, nil
 }
 
