@@ -770,6 +770,7 @@ type TestContext struct {
 	ReadOnlyApplication      bool
 	Draining                 bool
 	StopDraining             bool
+	StopOrderCaptured        bool // stopTest queue matched a captured shape
 	HTTPMock                 Value
 	httpMockSourceUnit       string
 	httpMockDependency       bool
