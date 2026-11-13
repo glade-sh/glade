@@ -4770,11 +4770,9 @@ func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefini
 	options := dml.FormulaEvaluationOptions{}
 	if field.Type == storage.FieldCalculated && strings.EqualFold(strings.TrimSpace(field.FormulaTreatBlanksAs), "BlankAsBlank") {
 		switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
-		case "DOUBLE", "DECIMAL":
+		case "DOUBLE", "DECIMAL", "CURRENCY":
 			options.PreserveNumericNull = true
-			options.QueryBlankNumberRound = true
-		case "CURRENCY":
-			options.PreserveNumericNull = true
+			options.QueryBlankNumber = true
 		}
 	}
 	if len(userIDs) != 0 {

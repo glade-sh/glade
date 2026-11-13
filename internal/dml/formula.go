@@ -152,12 +152,13 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 // defaults used by stored formulas, validation rules and workflow evaluation.
 type FormulaEvaluationOptions struct {
 	PreserveNumericNull bool
-	// QueryBlankNumberRound preserves null through ROUND on queried numeric
-	// calculated fields with an explicit BlankAsBlank policy.
-	QueryBlankNumberRound bool
-	Template              bool
-	UserID                storage.ID
-	PermissionUserFields  map[string]storage.Value
+	// QueryBlankNumber preserves null through ROUND, ABS, FLOOR, MOD, MIN and
+	// MAX on queried numeric calculated fields with an explicit BlankAsBlank
+	// policy. Other callers keep the prior null-as-zero behavior.
+	QueryBlankNumber     bool
+	Template             bool
+	UserID               storage.ID
+	PermissionUserFields map[string]storage.Value
 	// SetupUserID selects hierarchy settings without changing other global variables.
 	SetupUserID storage.ID
 	// FormulaSurface selects FormulaEval/recalculateFormulas result semantics.
@@ -236,7 +237,7 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 		evaluating:                    make(map[string]bool),
 		namespace:                     formulaFieldSourceNamespace("", definition, field),
 		preserveNumericNull:           options.PreserveNumericNull,
-		queryBlankNumberRound:         options.QueryBlankNumberRound,
+		queryBlankNumber:              options.QueryBlankNumber,
 		blankNumericAsZero:            currencyFormulaBlankAsZero(field) && !options.PreserveNumericNull,
 		formulaSurface:                options.FormulaSurface,
 		flowFinishFields:              options.FlowContext,
@@ -635,27 +636,27 @@ func isFormulaIdentPart(ch byte) bool {
 }
 
 type formulaParser struct {
-	tokens                []formulaToken
-	pos                   int
-	record                storage.Record
-	org                   *storage.OrgState
-	definition            storage.ObjectDefinition
-	namespace             string
-	evaluating            map[string]bool
-	prior                 *storage.Record
-	isNew                 bool
-	validationRule        bool
-	validationError       bool
-	preserveNumericNull   bool
-	queryBlankNumberRound bool
-	blankNumericAsZero    bool
-	formulaSurface        bool
-	validating            bool
-	validationMessage     string
-	failure               *FormulaError
-	storedFormula         bool
-	flowTextNulls         bool
-	flowRecordContext     bool
+	tokens              []formulaToken
+	pos                 int
+	record              storage.Record
+	org                 *storage.OrgState
+	definition          storage.ObjectDefinition
+	namespace           string
+	evaluating          map[string]bool
+	prior               *storage.Record
+	isNew               bool
+	validationRule      bool
+	validationError     bool
+	preserveNumericNull bool
+	queryBlankNumber    bool
+	blankNumericAsZero  bool
+	formulaSurface      bool
+	validating          bool
+	validationMessage   string
+	failure             *FormulaError
+	storedFormula       bool
+	flowTextNulls       bool
+	flowRecordContext   bool
 	// flowFinishFields reads a stored formula field as its finished value
 	// (BR() as a line feed) when a flow formula references it.
 	flowFinishFields              bool
@@ -1822,6 +1823,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
+		if p.queryBlankNumber && args[0].kind == formulaNull {
+			return args[0], true
+		}
 		number, ok := args[0].asNumber()
 		if !ok {
 			return formulaValue{}, false
@@ -1834,7 +1838,7 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 2 {
 			return formulaValue{}, false
 		}
-		if p.queryBlankNumberRound && args[0].kind == formulaNull {
+		if p.queryBlankNumber && args[0].kind == formulaNull {
 			return args[0], true
 		}
 		number, ok := args[0].asNumber()
@@ -1854,6 +1858,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
+		if p.queryBlankNumber && args[0].kind == formulaNull {
+			return args[0], true
+		}
 		number, ok := args[0].asNumber()
 		if !ok {
 			return formulaValue{}, false
@@ -1862,6 +1869,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 	case "MOD":
 		if len(args) != 2 {
 			return formulaValue{}, false
+		}
+		if p.queryBlankNumber && (args[0].kind == formulaNull || args[1].kind == formulaNull) {
+			return formulaValue{kind: formulaNull}, true
 		}
 		dividend, ok := args[0].asNumber()
 		if !ok {

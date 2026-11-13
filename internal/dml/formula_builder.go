@@ -364,6 +364,13 @@ func (p *formulaParser) evaluateExtendedFormulaFunction(name string, args []form
 		if len(args) == 0 || (name == "POWER" && len(args) != 2) {
 			return formulaValue{}, true, false
 		}
+		if p.queryBlankNumber && (name == "MIN" || name == "MAX") {
+			for _, a := range args {
+				if a.kind == formulaNull {
+					return formulaValue{kind: formulaNull}, true, true
+				}
+			}
+		}
 		n, ok := args[0].asNumber()
 		if !ok {
 			return formulaValue{}, true, false
