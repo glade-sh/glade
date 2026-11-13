@@ -50,3 +50,21 @@ func TestMetadataReadersDefaultToProjectInputs(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadWithInputsObservesSourceDirectoryMembership(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "force-app", "main", "default", "objects")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	v := inputview.New()
+	if _, err := LoadWithInputs(root, v); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "Added.object-meta.xml"), []byte("<CustomObject/>"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := v.Recheck(); err == nil {
+		t.Fatal("source directory membership was not observed")
+	}
+}
