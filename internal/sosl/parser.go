@@ -34,6 +34,8 @@ type SearchTerm struct {
 	NeedsMatcher bool
 	// NameWordGlob is an unquoted ASCII name word with one interior *, ? or ??.
 	NameWordGlob bool
+	// PhoneDigits identifies a bare seven- or ten-digit search term.
+	PhoneDigits bool
 }
 
 type SelectExpr struct {

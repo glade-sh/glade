@@ -2803,6 +2803,11 @@ func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchSc
 			if term.NameWordGlob {
 				// The parser approved only letters and the interior wildcard group.
 				if matched, _ := path.Match(pattern, word); matched {
+					// The indexed controls distinguish zero, one and two letters
+					// at '*'. Leave a longer expansion at the matcher boundary.
+					if strings.Contains(pattern, "*") && len(word)-(len(pattern)-1) > 2 {
+						return false, unsupportedCallError("SOSL wildcard index matching")
+					}
 					return true, nil
 				}
 			} else if strings.HasPrefix(word, pattern) {
@@ -2811,7 +2816,7 @@ func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchSc
 		}
 		return false, nil
 	}
-	if scope == sosl.SearchScopePhone && !term.Prefix && (len(term.Text) == 7 || len(term.Text) == 10) && strings.Trim(term.Text, "0123456789") == "" {
+	if scope == sosl.SearchScopePhone && term.PhoneDigits {
 		// The observed international-format NANP number can be found by
 		// its ten national or seven local digits.
 		if parts := soslNorthAmericanPhone.FindStringSubmatch(text); parts != nil {

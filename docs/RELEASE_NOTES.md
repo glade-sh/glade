@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- SOSL name searches over space-separated ASCII names match word prefixes and the interior `*`, `?` and `??` forms. Phone searches can find an international-format North American number by its seven local digits or ten national digits.
+- SOSL name searches over space-separated ASCII names match word prefixes and the interior `?`, `??`, and `*` forms, with up to two letters matched by `*`. Unquoted phone searches can find an international-format North American number by its seven local digits or ten national digits.
 
 ### Performance
 
