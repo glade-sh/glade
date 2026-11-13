@@ -1,0 +1,49 @@
+api	route	locale	type	input	output
+62.0	istest-runAs	fr_FR	Decimal	0	0
+62.0	istest-runAs	fr_FR	Decimal	-1234567.89	-1 234 567,89
+62.0	istest-runAs	fr_FR	Decimal	1234.500	1 234,5
+62.0	istest-runAs	fr_FR	Decimal	-0.0005	-0
+62.0	istest-runAs	fr_FR	Decimal	0.0015	0,002
+62.0	istest-runAs	fr_FR	Decimal	12.34	12,34
+62.0	istest-runAs	fr_FR	Decimal	42	42
+62.0	istest-runAs	fr_FR	Decimal	123456789.123456	123 456 789,123
+62.0	istest-runAs	fr_FR	Decimal	1.005	1,005
+62.0	istest-runAs	fr_FR	Decimal	-1.005	-1,005
+62.0	istest-runAs	fr_FR	Integer	1234567	1 234 567
+62.0	istest-runAs	fr_FR	Long	1234567	1 234 567
+62.0	istest-runAs	en_US	Decimal	0	0
+62.0	istest-runAs	en_US	Decimal	-1234567.89	-1,234,567.89
+62.0	istest-runAs	en_US	Decimal	1234.500	1,234.5
+62.0	istest-runAs	en_US	Decimal	-0.0005	-0
+62.0	istest-runAs	en_US	Decimal	0.0015	0.002
+62.0	istest-runAs	en_US	Decimal	12.34	12.34
+62.0	istest-runAs	en_US	Decimal	42	42
+62.0	istest-runAs	en_US	Decimal	123456789.123456	123,456,789.123
+62.0	istest-runAs	en_US	Decimal	1.005	1.005
+62.0	istest-runAs	en_US	Decimal	-1.005	-1.005
+62.0	istest-runAs	en_US	Integer	1234567	1,234,567
+62.0	istest-runAs	en_US	Long	1234567	1,234,567
+67.0	istest-runAs	fr_FR	Decimal	0	0
+67.0	istest-runAs	fr_FR	Decimal	-1234567.89	-1 234 567,89
+67.0	istest-runAs	fr_FR	Decimal	1234.500	1 234,5
+67.0	istest-runAs	fr_FR	Decimal	-0.0005	-0
+67.0	istest-runAs	fr_FR	Decimal	0.0015	0,002
+67.0	istest-runAs	fr_FR	Decimal	12.34	12,34
+67.0	istest-runAs	fr_FR	Decimal	42	42
+67.0	istest-runAs	fr_FR	Decimal	123456789.123456	123 456 789,123
+67.0	istest-runAs	fr_FR	Decimal	1.005	1,005
+67.0	istest-runAs	fr_FR	Decimal	-1.005	-1,005
+67.0	istest-runAs	fr_FR	Integer	1234567	1 234 567
+67.0	istest-runAs	fr_FR	Long	1234567	1 234 567
+67.0	istest-runAs	en_US	Decimal	0	0
+67.0	istest-runAs	en_US	Decimal	-1234567.89	-1,234,567.89
+67.0	istest-runAs	en_US	Decimal	1234.500	1,234.5
+67.0	istest-runAs	en_US	Decimal	-0.0005	-0
+67.0	istest-runAs	en_US	Decimal	0.0015	0.002
+67.0	istest-runAs	en_US	Decimal	12.34	12.34
+67.0	istest-runAs	en_US	Decimal	42	42
+67.0	istest-runAs	en_US	Decimal	123456789.123456	123,456,789.123
+67.0	istest-runAs	en_US	Decimal	1.005	1.005
+67.0	istest-runAs	en_US	Decimal	-1.005	-1.005
+67.0	istest-runAs	en_US	Integer	1234567	1,234,567
+67.0	istest-runAs	en_US	Long	1234567	1,234,567
