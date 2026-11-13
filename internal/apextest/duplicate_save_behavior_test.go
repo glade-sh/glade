@@ -114,6 +114,13 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 					helpers = append(helpers, "BoundaryBehavior")
 				case "leadNames":
 					helpers = append(helpers, "LeadNamesBehavior")
+				case "phoneCriteria":
+					for _, name := range []string{"matchingRules", "duplicateRules"} {
+						if err := os.CopyFS(filepath.Join(base, name), os.DirFS(filepath.Join(dir, "criteria", name))); err != nil {
+							t.Fatal(err)
+						}
+					}
+					helpers = append(helpers, "CriteriaBehavior")
 				case "calibration":
 					helpers = append(helpers, "CalibrationBehavior")
 				case "names":

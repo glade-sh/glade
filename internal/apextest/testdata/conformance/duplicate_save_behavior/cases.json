@@ -89,5 +89,8 @@
   "leadNames": {
     "initials": "LeadNamesBehavior.initials()",
     "surnames": "LeadNamesBehavior.surnames()"
+  },
+  "phoneCriteria": {
+    "editGate": "CriteriaBehavior.editGate()"
   }
 }
