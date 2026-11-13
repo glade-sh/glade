@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -97,4 +98,30 @@ func TestRefreshStaleGenerationRetriesOnce(t *testing.T) {
 	}
 	c.send(map[string]any{"id": 1, "method": "shutdown"})
 	<-c.served
+}
+
+func TestConcurrentRequestsDuringRefresh(t *testing.T) {
+	idx := sampleIndex(t)
+	h := NewHandler(idx)
+	h.SetRefresher(func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
+		return idx, func(typesys.Index) sema.Result { return sema.Result{} }, nil
+	})
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 10; j++ {
+				h.Hover(HoverParams{})
+				h.Completion(CompletionParams{})
+				h.References(ReferenceParams{})
+			}
+		}()
+	}
+	for i := 0; i < 10; i++ {
+		if err := h.Refresh(context.Background(), []string{"changed.cls"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	wg.Wait()
 }
