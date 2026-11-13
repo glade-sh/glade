@@ -557,6 +557,7 @@ func (h *requestHandler) HoverForName(name string, hoverRange *Range) *Hover {
 		}
 	}
 
+	h.generation.startAnalysis()
 	result, _ := h.analysisIfReady()
 	for _, ref := range result.Types {
 		if !strings.EqualFold(ref.Name, name) {

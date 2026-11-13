@@ -12,6 +12,7 @@ type generation struct {
 	seq                uint64
 	analyzer           func(typesys.Index) sema.Result
 	analysisOnce       sync.Once
+	analysisStart      sync.Once
 	analysisDone       chan struct{}
 	analysis           sema.Result
 	occurrenceOnce     sync.Once
@@ -31,6 +32,9 @@ func newGeneration(index typesys.Index, seq uint64, analyze func(typesys.Index) 
 func (g *generation) analysisResult() sema.Result {
 	g.analysisOnce.Do(func() { g.analysis = g.analyzer(g.index); close(g.analysisDone) })
 	return g.analysis
+}
+func (g *generation) startAnalysis() {
+	g.analysisStart.Do(func() { go g.analysisResult() })
 }
 func (g *generation) analysisIfReady() (sema.Result, bool) {
 	select {

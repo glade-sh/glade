@@ -98,6 +98,16 @@ func (s *server) dispatch(data []byte) {
 		s.write(Response{JSONRPC: "2.0", Error: &ResponseError{Code: errorCodeParseError, Message: err.Error()}})
 		return
 	}
+	if req.Method == "" && len(req.ID) != 0 {
+		var fields map[string]json.RawMessage
+		_ = json.Unmarshal(data, &fields)
+		if _, ok := fields["result"]; ok {
+			return
+		}
+		if _, ok := fields["error"]; ok {
+			return
+		}
+	}
 	if len(req.ID) == 0 {
 		s.notification(req)
 		return
@@ -227,7 +237,11 @@ func (s *server) runDiagnostics(uri DocumentURI, job *diagJob) {
 		delete(s.pending, uri)
 	}
 	s.mu.Unlock()
-	if !current || s.ctx.Err() != nil || (generation != nil && generation != s.h.gen.Load()) {
+	if !current || s.ctx.Err() != nil {
+		return
+	}
+	if generation != nil && generation != s.h.gen.Load() {
+		s.schedule(uri, 0)
 		return
 	}
 	for _, n := range notifications {

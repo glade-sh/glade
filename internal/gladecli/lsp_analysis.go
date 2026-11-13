@@ -3,6 +3,7 @@ package gladecli
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -97,6 +98,12 @@ func (l *lspProjectLoader) refresh(ctx context.Context, paths []string) (typesys
 					return next, l.analyzer(artifacts), nil
 				}
 			}
+		}
+		if _, err := os.Stat(paths[0]); os.IsNotExist(err) {
+			if err := l.load(); err != nil {
+				return typesys.Index{}, nil, err
+			}
+			return l.index, l.analyzer(l.artifacts), nil
 		}
 		parser := apexast.NewParser()
 		parsed, parseErr := parser.ParseFile(paths[0])
