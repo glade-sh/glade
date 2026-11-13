@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Doctor.** A busy toolchain installation no longer blocks the diagnostic indefinitely; the toolchain check reports that it was skipped.
+- **Doctor.** A busy toolchain installation no longer blocks the diagnostic indefinitely; the toolchain check reports that it was skipped and advises retrying. Discovered toolchains are checked under their own install lock.
 
 ## v0.3.8
 

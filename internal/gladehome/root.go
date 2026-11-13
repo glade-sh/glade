@@ -463,7 +463,7 @@ func ToolchainStatusBounded(ctx context.Context) (string, bool, string) {
 	if errors.Is(err, os.ErrPermission) || errors.Is(err, syscall.EROFS) {
 		return UserShareDir(), false, err.Error()
 	}
-	if strings.Contains(err.Error(), "recovery busy") || strings.Contains(err.Error(), "changed during status") {
+	if strings.Contains(err.Error(), "recovery busy") || strings.Contains(err.Error(), "interrupted installer transaction") || strings.Contains(err.Error(), "changed during status") {
 		return UserShareDir(), false, err.Error()
 	}
 	return UserShareDir(), false, "missing; reinstall the release or install from a Glade source checkout"
