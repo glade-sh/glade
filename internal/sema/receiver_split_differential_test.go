@@ -94,3 +94,35 @@ func TestReceiverSplitUncapturedAPI68(t *testing.T) {
 		}
 	}
 }
+
+// These API, completed-block and return contexts have no matching native row.
+func TestReceiverSplitUncapturedContexts(t *testing.T) {
+	for _, tc := range []struct{ api, source string }{
+		{"64.0", "ReceiverProbe\n.value();"},
+		{"67.0", "if (true) { }\nReceiverProbe\n.value();"},
+	} {
+		root := t.TempDir()
+		path := filepath.Join(root, "ReceiverProbe.cls")
+		writeSemaFile(t, path, "public class ReceiverProbe { public static String value() { return 'ok'; } }")
+		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: tc.api, ApexFiles: []string{path}}, schema.Schema{})
+		data, err := json.Marshal(AnalyzeAnonymous(index, tc.source, tc.api).Diagnostics)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(data) != "null" {
+			t.Errorf("api %s source %q: got %s, want origin/main null", tc.api, tc.source, data)
+		}
+	}
+	root := t.TempDir()
+	probe, caller := filepath.Join(root, "ReceiverProbe.cls"), filepath.Join(root, "Caller.cls")
+	writeSemaFile(t, probe, "public class ReceiverProbe { public static String value() { return 'ok'; } }")
+	writeSemaFile(t, caller, "public class Caller { public static String run() { return ReceiverProbe\n.value(); } }")
+	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "67.0", ApexFiles: []string{probe, caller}}, schema.Schema{})
+	data, err := json.Marshal(Analyze(index).Diagnostics)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "null" {
+		t.Errorf("return context: got %s, want origin/main null", data)
+	}
+}
