@@ -48,6 +48,7 @@ func TestPreviewValueRenderedBoundary(t *testing.T) {
 	items := make([]vm.Value, 65)
 	for i := range items {
 		items[i] = vm.Int(1)
+		items[i].Type = strings.Repeat("metadata", 100)
 	}
 	for name, value := range map[string]vm.Value{
 		"many short elements": vm.List(items...),

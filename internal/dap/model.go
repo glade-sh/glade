@@ -246,7 +246,9 @@ func namedValuesFromMap(vars map[string]vm.Value) []namedValue {
 func previewValue(value vm.Value) string { return previewValueDepth(value, 0) }
 
 func previewValueDepth(value vm.Value, depth int) string {
-	budget, bytes := 64, 256
+	// A fitting collection can contain more than 64 short values. Allow enough
+	// nodes and metadata for such values while keeping exact rendering bounded.
+	budget, bytes := 256, 4096
 	if previewWithinBudget(value, &budget, &bytes) {
 		return truncatePreview(value.String())
 	}
@@ -274,7 +276,7 @@ func previewValueDepth(value vm.Value, depth int) string {
 	}
 	header = truncatePreview(header)
 	if depth >= 1 {
-		return header
+		return truncatePreview(header + "...")
 	}
 	children := previewChildren(value)
 	parts := make([]string, 0, len(children))
@@ -283,6 +285,8 @@ func previewValueDepth(value vm.Value, depth int) string {
 	}
 	if len(parts) > 0 {
 		header += " [" + strings.Join(parts, ", ") + ", ...]"
+	} else {
+		header += "..."
 	}
 	return truncatePreview(header)
 }
@@ -301,7 +305,12 @@ func truncatePreview(s string) string {
 func previewWithinBudget(v vm.Value, budget, bytes *int) bool {
 	// Keep the exact renderer away from large input strings, including map keys
 	// and object field names. Its concatenation otherwise copies them repeatedly.
-	*bytes -= len(v.Text) + len(v.Type) + len(v.Runtime)
+	switch v.Kind {
+	case vm.ValueString, vm.ValueDecimal:
+		*bytes -= len(v.Text)
+	case vm.ValueObject, vm.ValueMap:
+		*bytes -= len(v.Text) + len(v.Type) + len(v.Runtime)
+	}
 	if *bytes < 0 {
 		return false
 	}
