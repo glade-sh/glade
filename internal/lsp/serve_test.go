@@ -1,6 +1,8 @@
 package lsp
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +12,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -291,5 +294,37 @@ func TestServeIgnoresClientResponses(t *testing.T) {
 	c.send(map[string]any{"id": 45, "method": "shutdown"})
 	if err := <-c.served; err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestDiagnosticsRetriesAfterGenerationChange(t *testing.T) {
+	idx := sampleIndex(t)
+	h := NewHandler(idx)
+	started, release := make(chan struct{}), make(chan struct{})
+	h.gen.Load().analyzer = func(typesys.Index) sema.Result { close(started); <-release; return sema.Result{} }
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
+	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {"}})
+	var out bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s := &server{h: h, w: &out, ctx: ctx, pending: make(map[DocumentURI]*diagJob)}
+	s.schedule(uri, 0)
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("analysis did not start")
+	}
+	s.pubMu.Lock()
+	h.gen.Store(newGeneration(idx, 1, func(typesys.Index) sema.Result { return sema.Result{} }))
+	s.pubMu.Unlock()
+	close(release)
+	s.diagWG.Wait()
+	data, err := NewProtocolReader(&out).Read()
+	if err != nil {
+		t.Fatalf("diagnostics not published after refresh: %v", err)
+	}
+	var n Notification
+	if err := json.Unmarshal(data, &n); err != nil || n.Method != "textDocument/publishDiagnostics" {
+		t.Fatalf("notification = %s, error = %v", data, err)
 	}
 }
