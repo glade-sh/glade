@@ -14,3 +14,5 @@ records scalar and homogeneous list calls. The counter deltas were measured for
 both APIs, including the two-row list case. `security_enforced_permission_messages.tsv`
 records dynamic-query messages for denied and field-denied projections. At API
 67 the clause is unsupported before permission evaluation.
+
+The immutable native capture packet source is commit `2c767902b461f900eab15771e499a612c2ed4d14`; measured list-DML deltas are in supplemental packet `a7430198ebf4da56594f0b704ba6b9f4bb656df1`.

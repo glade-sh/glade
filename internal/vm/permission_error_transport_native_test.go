@@ -133,7 +133,7 @@ func permissionTransportVM(api, principal string) *VM {
 	org.APIVersion = api
 	org.Objects["PermissionProbe__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "PermissionProbe__c", KeyPrefix: "a00", SharingModel: "ReadWrite", Fields: map[string]storage.Field{
-			"Id": {APIName: "Id", Type: storage.FieldID}, "Name": {APIName: "Name", Type: storage.FieldString}, "Summary__c": {APIName: "Summary__c", Type: storage.FieldString},
+			"Id": {APIName: "Id", Type: storage.FieldID}, "Name": {APIName: "Name", Type: storage.FieldString, DisplayType: "STRING"}, "Summary__c": {APIName: "Summary__c", Type: storage.FieldString, DisplayType: "STRING"},
 		}},
 		Records: map[storage.ID]storage.Record{},
 	}
