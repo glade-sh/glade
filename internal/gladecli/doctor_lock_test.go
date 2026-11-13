@@ -96,6 +96,44 @@ func TestDoctorReportsPendingToolchainRecovery(t *testing.T) {
 	}
 }
 
+func TestDoctorPendingSourceRecoveryCommand(t *testing.T) {
+	useDoctorTestToolchain(t)
+	share := filepath.Join(os.Getenv("XDG_DATA_HOME"), "glade")
+	if err := os.MkdirAll(filepath.Dir(share), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(os.Getenv("GLADE_HOME"), share); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_HOME", "")
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n")
+	if err := os.WriteFile(filepath.Join(share, ".install.lock"), []byte("P"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"--project", root}, {"--project", root, "--json"}} {
+		var out bytes.Buffer
+		if _, err := runDoctor(context.Background(), args, &out); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(out.String(), "glade toolchain status") {
+			t.Fatalf("missing recovery command: %s", out.String())
+		}
+	}
+	var status bytes.Buffer
+	if err := runToolchainStatus(nil, &status); err != nil {
+		t.Fatalf("recovery command: %v; %s", err, status.String())
+	}
+	var after bytes.Buffer
+	if _, err := runDoctor(context.Background(), []string{"--project", root, "--json"}, &after); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(after.String(), "recovery busy") || strings.Contains(after.String(), "glade toolchain status") {
+		t.Fatalf("doctor still reports pending recovery: %s", after.String())
+	}
+}
+
 func TestDoctorReportsInterruptedToolchainRecovery(t *testing.T) {
 	useDoctorTestToolchain(t)
 	root := t.TempDir()
