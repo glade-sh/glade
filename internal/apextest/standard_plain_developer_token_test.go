@@ -47,14 +47,14 @@ func TestPlainDeveloperTokenAdditionalFacets(t *testing.T) {
 			org := orgFromIndex(index)
 			org.APIVersion = api
 			machine := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org}).newMachine()
-			program, err := vm.CompileAnonymousWithOptions(`Schema.DescribeFieldResult d=DescribeProbe.token().getDescribe(); String a=d.getByteLength()+':'+d.getDigits()+':'+d.getCalculatedFormula()+':'+d.isHtmlFormatted()+':'+d.isEncrypted()+':'+d.getRelationshipName()+':'+d.getReferenceTo().size()+':'+d.getPicklistValues().size(); String b=d.getInlineHelpText()+':'+d.getController()+':'+d.getRelationshipOrder()+':'+d.getDefaultValue()+':'+d.getDefaultValueFormula(); String c=d.isCascadeDelete()+':'+d.isDeprecatedAndHidden()+':'+d.isHighScaleNumber()+':'+d.isNamePointing()+':'+d.isQueryByDistance()+':'+d.isRestrictedDelete()+':'+d.isSearchPrefilterable()+':'+d.isWriteRequiresMasterRead();`, vm.CompileOptions{APIVersion: api})
+			program, err := vm.CompileAnonymousWithOptions(`Schema.DescribeFieldResult d=DescribeProbe.token().getDescribe(); String a=d.getByteLength()+':'+d.getDigits()+':'+d.getCalculatedFormula()+':'+d.isHtmlFormatted()+':'+d.isEncrypted()+':'+d.getRelationshipName()+':'+d.getReferenceTo().size()+':'+d.getPicklistValues().size(); String b=d.getInlineHelpText()+':'+d.getController()+':'+d.getRelationshipOrder()+':'+d.getDefaultValue()+':'+d.getDefaultValueFormula(); String e=d.getLocalName()+':'+d.getCompoundFieldName()+':'+d.getReferenceTargetField()+':'+d.isRestrictedPicklist(); String f=d.isAiPredictionField()+':'+d.isDisplayLocationInDecimal()+':'+d.isFormulaTreatNullNumberAsZero(); String c=d.isCascadeDelete()+':'+d.isDeprecatedAndHidden()+':'+d.isHighScaleNumber()+':'+d.isNamePointing()+':'+d.isQueryByDistance()+':'+d.isRestrictedDelete()+':'+d.isSearchPrefilterable()+':'+d.isWriteRequiresMasterRead();`, vm.CompileOptions{APIVersion: api})
 			if err != nil {
 				t.Fatal(err)
 			}
 			if _, err = machine.Execute(program); err != nil {
 				t.Fatal(err)
 			}
-			for name, want := range map[string]string{"a": "6:0:null:false:false:null:0:0", "b": "null:null:null:null:null", "c": "false:false:false:false:false:false:false:false"} {
+			for name, want := range map[string]string{"a": "6:0:null:false:false:null:0:0", "b": "null:null:null:null:null", "c": "false:false:false:false:false:false:false:false", "e": "Tier:null:null:false", "f": "false:false:false"} {
 				if got := machine.Globals[name].Text; got != want {
 					t.Errorf("%s got %q want %q", name, got, want)
 				}
