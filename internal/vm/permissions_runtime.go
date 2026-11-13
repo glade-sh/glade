@@ -1169,57 +1169,90 @@ func dmlAccessRecords(value Value) []Value {
 	return []Value{value}
 }
 
-// userModePartialInsertObjectDenials translates homogeneous object-CRUD
-// denials on the captured explicit partial insert route into SaveResult rows.
-// Field denials and mixed allowed/denied lists stay on the existing path.
-func (vm *VM) userModePartialInsertObjectDenials(value, accessLevel Value) ([]dml.Result, bool) {
+// userModeInsertObjectDenial recognizes the captured named-user CRUD-only
+// denial shape and classifies access once for the partial and all-or-none APIs.
+func (vm *VM) userModeInsertObjectDenial(value Value) (string, string, bool) {
 	version := vm.currentSourceExecutionPolicy().APIVersion
-	if (version != "62.0" && version != "67.0") || !isUserModeAccessLevel(accessLevel) ||
-		accessLevelPermissionSetID(accessLevel) != "" || vm.testContext == nil || vm.testContext.RunAsDepth == 0 {
-		return nil, false
+	if (version != "62.0" && version != "67.0") || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.Org == nil {
+		return "", "", false
 	}
 	user := vm.executionUser
 	if vm.testContext.CurrentUser.Kind != "" {
 		user = vm.testContext.CurrentUser
 	}
 	if !strings.EqualFold(vm.currentUserProfileName(user), "Standard User") {
-		return nil, false
+		return "", "", false
 	}
 	records := dmlAccessRecords(value)
 	if (value.Kind != ValueObject || len(records) != 1) && (value.Kind != ValueList || len(records) != 2) {
-		return nil, false
+		return "", "", false
 	}
 	objectName := ""
 	for i, record := range records {
 		if record.Kind != ValueObject {
-			return nil, false
+			return "", "", false
 		}
 		name := vm.canonicalSObjectValueType(record)
 		if i == 0 {
 			objectName = name
-			if !isCustomSchemaName(objectName) || vm.Org == nil || !vm.ordinaryCustomPermissionObject(objectName) {
-				return nil, false
+			if !isCustomSchemaName(objectName) || !vm.ordinaryCustomPermissionObject(objectName) {
+				return "", "", false
 			}
 			state, ok := vm.Org.Objects[objectName]
 			if !ok || !strings.EqualFold(state.Definition.SharingModel, "ReadWrite") {
-				return nil, false
+				return "", "", false
 			}
 		} else if !strings.EqualFold(name, objectName) {
-			return nil, false
+			return "", "", false
 		}
 	}
 	if vm.currentUserObjectPermissionWithScope(objectName, "isCreateable", "") {
-		return nil, false
+		return "", "", false
 	}
 	message := fmt.Sprintf("DML operation INSERT not allowed on %s", objectName)
-	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "") {
+	accessible := vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "")
+	if !accessible {
 		message = fmt.Sprintf("Access to entity '%s' denied", objectName)
 	}
+	return objectName, message, true
+}
+
+func (vm *VM) userModePartialInsertObjectDenials(value Value) ([]dml.Result, bool) {
+	_, message, denied := vm.userModeInsertObjectDenial(value)
+	if !denied {
+		return nil, false
+	}
+	records := dmlAccessRecords(value)
 	results := make([]dml.Result, len(records))
 	for i := range results {
 		results[i] = dml.Result{StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", Error: message}
 	}
 	return results, true
+}
+
+// userModeAllOrNoneInsertObjectDenial preserves the captured statement-level
+// exception and accounting for homogeneous two-row object-CRUD denials.
+func (vm *VM) userModeAllOrNoneInsertObjectDenial(value, accessLevel Value) (error, bool) {
+	version := vm.currentSourceExecutionPolicy().APIVersion
+	if (version != "62.0" && version != "67.0") || !isUserModeAccessLevel(accessLevel) ||
+		accessLevelPermissionSetID(accessLevel) != "" || vm.testContext == nil || vm.testContext.RunAsDepth == 0 {
+		return nil, false
+	}
+	if value.Kind != ValueList || len(value.List) != 2 {
+		return nil, false
+	}
+	_, message, denied := vm.userModeInsertObjectDenial(value)
+	if !denied {
+		return nil, false
+	}
+	if strings.HasPrefix(message, "Access to entity ") {
+		return newExceptionError("SecurityException", message), true
+	}
+	return newExceptionError("TypeException", message), true
+}
+
+func (vm *VM) chargeUserModeInsertPermissionDenial(value Value) error {
+	return vm.chargeAccountPermissionDML(len(dmlAccessRecords(value)))
 }
 
 func userModeDMLPermissions(op string) (string, string) {
