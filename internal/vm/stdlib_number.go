@@ -332,6 +332,11 @@ func (vm *VM) callLocaleNumberFormatMember(receiver Value, method string, args [
 	switch vm.currentUserInfoField("LocaleSidKey", "en_US") {
 	case "de_DE", "it_IT", "es_ES", "pt_BR":
 		value = String(strings.NewReplacer(",", ".", ".", ",").Replace(value.Text))
+	case "fr_FR":
+		// The French numeric capture uses U+202F grouping and a decimal comma.
+		if receiver.Kind == ValueInt || (receiver.Kind == ValueDecimal && !isFloatBackedDecimal(receiver)) {
+			value = String(strings.NewReplacer(",", "\u202f", ".", ",").Replace(value.Text))
+		}
 	case "no_NO", "no":
 		// Org capture scratch_country_locale_no: a no-break space groups
 		// thousands and a comma marks the decimal.
