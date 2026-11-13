@@ -128,9 +128,9 @@ func TestAsyncStopBatchEmptyPreservesMain(t *testing.T) {
 // TestAsyncStopBatchEmptyBeforeFuturePreservesMain pins the local ordering of
 // an uncaptured empty batch followed by a future.
 func TestAsyncStopBatchEmptyBeforeFuturePreservesMain(t *testing.T) {
- index := loadTestIndex(t, filepath.Join("testdata", "conformance", "async_stop_boundary", "project"))
- run := Run(index, Options{SelectedClasses: []string{"StopBoundaryLocalTest"}, SelectedMethod: "emptyBeforeFuture", NoDiskCache: true, Parallelism: 1})
- if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-  t.Fatalf("empty batch before future: %+v; suites=%+v", got, run.Suites)
- }
+	index := loadTestIndex(t, filepath.Join("testdata", "conformance", "async_stop_boundary", "project"))
+	run := Run(index, Options{SelectedClasses: []string{"StopBoundaryLocalTest"}, SelectedMethod: "emptyBeforeFuture", NoDiskCache: true, Parallelism: 1})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("empty batch before future: %+v; suites=%+v", got, run.Suites)
+	}
 }
