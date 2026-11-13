@@ -27,7 +27,7 @@ func TestLoadDAPStartupStateSkipsPublicationWhenInputsDriftDuringBuild(t *testin
 	source := filepath.Join(root, "force-app", "main", "classes", "MathUtil.cls")
 
 	edited := false
-	dapBeforePublishHook = func() {
+	hook := func() {
 		if edited {
 			return
 		}
@@ -43,9 +43,8 @@ public class MathUtil {
 }
 `)
 	}
-	t.Cleanup(func() { dapBeforePublishHook = nil })
 
-	_, first, _, err := loadDAPStartupState(root)
+	_, first, _, err := loadDAPStartupStateWithSeams(root, dapLoadSeams{beforePublish: hook})
 	if err != nil {
 		t.Fatalf("first load: %v", err)
 	}
@@ -61,7 +60,6 @@ public class MathUtil {
 		t.Fatal("cache entry was published although inputs changed during the build")
 	}
 
-	dapBeforePublishHook = nil
 	_, second, _, err := loadDAPStartupState(root)
 	if err != nil {
 		t.Fatalf("second load: %v", err)
@@ -78,12 +76,11 @@ func TestLoadDAPStartupStateSkipsPublicationWhenNonApexInputDrifts(t *testing.T)
 	root := t.TempDir()
 	writeTestProject(t, root)
 	projectFile := filepath.Join(root, "sfdx-project.json")
-	dapBeforePublishHook = func() {
+	hook := func() {
 		writeTestFile(t, projectFile, `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"64.0"}`)
 	}
-	t.Cleanup(func() { dapBeforePublishHook = nil })
 
-	if _, _, _, err := loadDAPStartupState(root); err != nil {
+	if _, _, _, err := loadDAPStartupStateWithSeams(root, dapLoadSeams{beforePublish: hook}); err != nil {
 		t.Fatal(err)
 	}
 	if entry, _ := startupcache.Read(root, startupcache.SubdirDAP); entry != nil {
@@ -91,5 +88,52 @@ func TestLoadDAPStartupStateSkipsPublicationWhenNonApexInputDrifts(t *testing.T)
 	}
 	if _, err := os.Stat(filepath.Join(root, ".glade", "dap", "startup.json")); err == nil {
 		t.Fatal("startup cache file exists after drift")
+	}
+}
+
+// A source that changes or disappears while the runtime compiles and is then
+// restored with its original bytes and timestamp must not publish an entry.
+func TestLoadDAPStartupStateFailsClosedOnTransientSourceChangeDuringCompile(t *testing.T) {
+	cases := map[string]func(t *testing.T, path string){
+		"removed": func(t *testing.T, path string) {
+			if err := os.Remove(path); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"replaced": func(t *testing.T, path string) {
+			writeTestFile(t, path, "public class MathUtil { public static Integer other() { return 9; } }\n")
+		},
+	}
+	for name, change := range cases {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			writeTestProject(t, root)
+			source := filepath.Join(root, "force-app", "main", "classes", "MathUtil.cls")
+			original, err := os.ReadFile(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			info, err := os.Stat(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			seams := dapLoadSeams{
+				afterIndex: func() { change(t, source) },
+				beforePublish: func() {
+					if err := os.WriteFile(source, original, 0o644); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.Chtimes(source, info.ModTime(), info.ModTime()); err != nil {
+						t.Fatal(err)
+					}
+				},
+			}
+			if _, _, _, err := loadDAPStartupStateWithSeams(root, seams); err == nil {
+				t.Fatal("load succeeded although a source changed while the runtime compiled")
+			}
+			if entry, _ := startupcache.Read(root, startupcache.SubdirDAP); entry != nil {
+				t.Fatal("cache entry was published after a transient source change")
+			}
+		})
 	}
 }

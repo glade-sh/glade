@@ -10,10 +10,23 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// Require person-family metadata and the captured business-default fallback in the restored org.
-const dapCacheVersion = 18
+// Entries from version 18 and earlier may pair a runtime with a fingerprint
+// taken after the inputs changed. Reject them.
+const dapCacheVersion = 19
 
 func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
+	return loadDAPStartupStateWithSeams(projectRoot, dapLoadSeams{})
+}
+
+// dapLoadSeams lets tests change inputs mid-build. afterIndex runs after the
+// index is built and before the runtime compiles. beforePublish runs after the
+// build and before the freshness re-check.
+type dapLoadSeams struct {
+	afterIndex    func()
+	beforePublish func()
+}
+
+func loadDAPStartupStateWithSeams(projectRoot string, seams dapLoadSeams) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
@@ -38,9 +51,17 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
 	}
-	runtime := apextest.CompileProjectRuntimeForRequest(index)
-	if dapBeforePublishHook != nil {
-		dapBeforePublishHook()
+	if seams.afterIndex != nil {
+		seams.afterIndex()
+	}
+	// Compile from the source bytes the index read, and fail closed rather
+	// than publishing an empty runtime after a source read error.
+	runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(index, artifacts.SourceDigests)
+	if err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+	}
+	if seams.beforePublish != nil {
+		seams.beforePublish()
 	}
 	if beforeErr == nil {
 		if built, ok := dapPublishableEntry(root, before, artifacts.SourceDigests, org, runtime); ok {
@@ -51,10 +72,6 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 	}
 	return org, runtime, p.SourceAPIVersion, nil
 }
-
-// dapBeforePublishHook runs after the build and before the freshness re-check.
-// Tests use it to edit inputs mid-build.
-var dapBeforePublishHook func()
 
 // dapPublishableEntry binds the entry to the input proof taken before the
 // build. It reports false when the inputs drifted, so no entry pairs an old
