@@ -26,3 +26,10 @@ controls: four additional anonymous observations captured on the same deployed m
 sha256 single-ok.apex 9e738bdc0acb1b536e8822738dd05ff90a10d47325ba95585fe89224845f980a
 sha256 single-reject.apex 9b3de655da625f9cef978d760c385dbe2c92a5501e0a76f1fe5867dabf174aaf
 sha256 controls.tsv d46d70ebc6129c2a1dca2c589287b01d83d1bd6e98de20fe0ad8358605efffac
+siblings: second fresh scratch org used the same object, trigger, validation and permissions plus the RollupControlTest classes; all four native responses checked, org deletion verified
+sha256 siblings.tsv c8b1924dc05e21ae0858592f960ecc94a84be3095156913c07bfe23a0029d399
+sha256 siblings.apex 46b1fcaaa71086e99e8e3b15f53b8af87e458c23d18297c94e799db4ec2428ac
+sha256 force-app/main/default/classes/RollupControlTest67.cls-meta.xml 490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d
+sha256 force-app/main/default/classes/RollupControlTest67.cls 07dcd7feb67639eb1e5cd6c932e70b4da0a6756cafb86e27a769e880fea9cbc2
+sha256 force-app/main/default/classes/RollupControlTest62.cls f74876d2e2b67aff5afb18ee3664b73d922fea0dd3a0350789f5b8f948b00cff
+sha256 force-app/main/default/classes/RollupControlTest62.cls-meta.xml 2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa

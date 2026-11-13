@@ -15,14 +15,15 @@ import (
 func TestSaveOrderNativeConformance(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	t.Setenv("GLADE_ROOT", "")
-	replaySaveOrder(t, "combined", "SaveOrderTest", "combined", "ProbeResultException")
-	replaySaveOrder(t, "rollup", "RollupTest", "combined", "RollupResultException")
+	replaySaveOrder(t, "combined", "combined", "org.tsv", "anonymous.apex", "SaveOrderTest", "combined", "ProbeResultException")
+	replaySaveOrder(t, "rollup", "rollup", "org.tsv", "anonymous.apex", "RollupTest", "combined", "RollupResultException")
+	replaySaveOrder(t, "rollup", "control", "siblings.tsv", "siblings.apex", "RollupControlTest", "combined", "RollupResultException")
 }
 
-func replaySaveOrder(t *testing.T, fixture, classPrefix, method, exception string) {
+func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, method, exception string) {
 	t.Helper()
 	dir := filepath.Join("testdata", "save_order", fixture)
-	raw, err := os.ReadFile(filepath.Join(dir, "org.tsv"))
+	raw, err := os.ReadFile(filepath.Join(dir, table))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +31,7 @@ func replaySaveOrder(t *testing.T, fixture, classPrefix, method, exception strin
 	if len(lines) != 5 || lines[0] != "id\tapi\troute\tcompiled\ttransport\tobservation" {
 		t.Fatalf("%s: expected the four native API and route observations", fixture)
 	}
-	source, err := os.ReadFile(filepath.Join(dir, "anonymous.apex"))
+	source, err := os.ReadFile(filepath.Join(dir, script))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,9 +43,9 @@ func replaySaveOrder(t *testing.T, fixture, classPrefix, method, exception strin
 		project := fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api)
 		writeTestFile(t, filepath.Join(root, "sfdx-project.json"), project)
 		for j, route := range []string{"anonymous", "istest"} {
-			t.Run(fixture+"/"+api+"/"+route, func(t *testing.T) {
+			t.Run(rowID+"/"+api+"/"+route, func(t *testing.T) {
 				row := strings.Split(lines[1+2*i+j], "\t")
-				if len(row) != 6 || row[0] != fixture || row[1] != api || row[2] != route || row[3] != "true" {
+				if len(row) != 6 || row[0] != rowID || row[1] != api || row[2] != route || row[3] != "true" {
 					t.Fatalf("unexpected capture row %q", row)
 				}
 				var stdout, stderr bytes.Buffer
@@ -66,7 +67,7 @@ func replaySaveOrder(t *testing.T, fixture, classPrefix, method, exception strin
 				}
 			})
 		}
-		if fixture == "rollup" {
+		if rowID == "rollup" {
 			controls, err := os.ReadFile(filepath.Join(dir, "controls.tsv"))
 			if err != nil {
 				t.Fatal(err)
