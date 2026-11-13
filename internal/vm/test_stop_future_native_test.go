@@ -135,3 +135,46 @@ func TestQueueableStopStatusNative(t *testing.T) {
 		})
 	}
 }
+
+// This local contract keeps non-test and isolated-drain projections unchanged.
+func TestQueueableFailureNonTestDrainRemainsFailed(t *testing.T) {
+	for _, isolated := range []bool{false, true} {
+		t.Run(fmt.Sprintf("isolated=%t", isolated), func(t *testing.T) {
+			machine := New(nil)
+			org := testDataOrg()
+			machine.SetOrg(&org)
+			machine.isolateAsyncJobFailures = isolated
+			body, err := CompileAnonymous(`throw new IllegalArgumentException('failure');`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			class := Class{Name: "LiveQueueProbe", Interfaces: []string{"Queueable"}, Methods: map[string]Method{"execute": {Name: "LiveQueueProbe.execute", ClassName: "LiveQueueProbe", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: body}}}
+			if err := machine.RegisterClass(class); err != nil {
+				t.Fatal(err)
+			}
+			p, err := CompileAnonymous(`System.enqueueJob(new LiveQueueProbe());`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := machine.Execute(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = machine.DrainAsync(&result)
+			if (!isolated && err == nil) || (isolated && err != nil) {
+				t.Fatalf("drain error=%v", err)
+			}
+			state, ok := machine.Org.Objects["AsyncApexJob"]
+			if !ok || len(state.Records) != 1 {
+				t.Fatalf("job state=%+v", state)
+			}
+			for _, job := range state.Records {
+				status, _ := job.GetField("Status")
+				count, _ := job.GetField("NumberOfErrors")
+				if status.String != "Failed" || count.Integer != 1 {
+					t.Fatalf("status=%v errors=%v", status, count)
+				}
+			}
+		})
+	}
+}
