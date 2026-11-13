@@ -176,7 +176,7 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 
 // dapTestIndexLoader builds the index for a test launch when the startup load
 // did not return one. Tests replace it.
-var dapTestIndexLoader = loadIndex
+var dapTestIndexLoader = loadDAPTestIndex
 
 type dapStartup struct {
 	org        storage.OrgState
