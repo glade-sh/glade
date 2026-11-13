@@ -33,6 +33,7 @@
       "github.com/glade-sh/glade/internal/flagparse",
       "github.com/glade-sh/glade/internal/frontendcache",
       "github.com/glade-sh/glade/internal/gladehome",
+      "github.com/glade-sh/glade/internal/inputview",
       "github.com/glade-sh/glade/internal/ir",
       "github.com/glade-sh/glade/internal/lsp",
       "github.com/glade-sh/glade/internal/lwc",

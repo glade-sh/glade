@@ -671,6 +671,9 @@
       "TestRootWaitsWhenManagedToolchainIsBeingReplaced",
       "TestToolchainInstallTwoProcessesColdShare"
     ],
+    "./internal/inputview": [
+      "TestViewsAreIsolated"
+    ],
     "./internal/lsp": null,
     "./internal/lwc/compile": [
       "TestBrowserAPIParallelism",
