@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **SOQL text predicates.** Grouped and scalar aggregate evaluation retain the execution locale for HAVING text ranges, consistent with WHERE. The English GROUP BY representative rule remains provisional outside the captured case pairs.
+- **SOQL text predicates.** Grouped and scalar aggregate evaluation retain the execution locale for HAVING text ranges, consistent with WHERE. REST and Bulk queries pass the selected user’s locale to the same executor. The English GROUP BY representative rule remains provisional outside the captured case pairs.
 
 - **Restricted picklist ordering.** Source APIs 62–65 now apply the legacy picklist null-order policy to restricted picklists with configured values. Native source-version controls place the transition at API 66.0, which honors explicit NULLS clauses like 67.0.
 
