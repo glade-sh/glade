@@ -33,6 +33,7 @@ func TestPlainDeveloperDescribeScope(t *testing.T) {
 	profile.Fields["Name"] = String("System Administrator")
 	user.Fields["Profile"] = profile
 	user.Fields["LocaleSidKey"] = String("en_US")
+	user.Fields["LanguageLocaleKey"] = String("en_US")
 	machine.executionUser = user
 	machine.currentMethod = Method{APIVersion: "62.0"}
 	if !machine.plainDeveloperDescribe("Account") {
@@ -41,6 +42,18 @@ func TestPlainDeveloperDescribeScope(t *testing.T) {
 	machine.currentMethod.APIVersion = "63.0"
 	if machine.plainDeveloperDescribe("Account") {
 		t.Fatal("uncaptured API selected")
+	}
+	machine.currentMethod.APIVersion = "62.0"
+	for _, version := range []string{"62.0", "67.0"} {
+		machine.currentMethod.APIVersion = version
+		machine.executionUser.Fields["LanguageLocaleKey"] = String("fr")
+		if machine.plainDeveloperDescribe("Account") {
+			t.Fatalf("uncaptured language selected at %s", version)
+		}
+		machine.executionUser.Fields["LanguageLocaleKey"] = String("en_US")
+		if !machine.plainDeveloperDescribe("Account") {
+			t.Fatalf("English context not restored at %s", version)
+		}
 	}
 	machine.currentMethod.APIVersion = "62.0"
 	machine.executionUser.Fields["LocaleSidKey"] = String("fr_FR")
