@@ -1987,6 +1987,7 @@ func (vm *VM) testSetFixedSearchResults(args []Value) (Value, error) {
 		return Null, fmt.Errorf("Test.setFixedSearchResults expects List<Id>")
 	}
 	vm.fixedSearchResults = append([]Value(nil), args[0].List...)
+	vm.fixedSearchResultsRef = args[0].Ref
 	vm.fixedSearchResultsSet = true
 	return Null, nil
 }

@@ -2748,6 +2748,9 @@ func (vm *VM) recordCollectionMutation(ref uint64, updated ...Value) {
 		return
 	}
 	vm.rememberCollectionMutationRef(ref)
+	if ref == vm.fixedSearchResultsRef && len(updated) > 0 && updated[0].Kind == ValueList {
+		vm.fixedSearchResults = append(vm.fixedSearchResults[:0:0], updated[0].List...)
+	}
 	recorder := vm.perfRecorder
 	if recorder != nil {
 		recorder.recordScopeAliasMutationEpoch(vm.collectionMutationSeq)
