@@ -500,19 +500,18 @@ func standardAccountInsertRule(rule storage.DuplicateRule) bool {
 	return strings.EqualFold(match.Object, "Account") && len(match.Items) == 0 && storage.IsStandardMatchingRule(match.Object, match.Name)
 }
 
-// A sparse edit to unrelated fields leaves an existing fuzzy duplicate alone.
-// On a matched scalar upsert, changing a fuzzy rule field runs the edit action.
-// The rows exercise single-object, all-fuzzy rules with nonblank keys.
+// A sparse edit on an existing Contact phone or Person Account name duplicate
+// saves. A scalar upsert that changes the match fields runs the edit action.
 func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record, prior *storage.Record) (fuzzy, changed bool) {
 	if prior == nil || len(rule.MatchRules) != 1 {
 		return false, false
 	}
 	match := rule.MatchRules[0]
-	if len(match.Items) == 0 || !strings.EqualFold(match.Status, "Active") {
+	if !strings.EqualFold(match.Status, "Active") || !capturedFuzzyEditRule(rule, match, record, *prior) {
 		return false, false
 	}
 	for _, item := range match.Items {
-		if !FuzzyMethodSupported(item.Method) || !strings.EqualFold(item.BlankBehavior, "NullNotAllowed") {
+		if !strings.EqualFold(item.BlankBehavior, "NullNotAllowed") {
 			return false, false
 		}
 		before, beforeOK := prior.GetField(item.Field)
@@ -525,6 +524,44 @@ func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record,
 		}
 	}
 	return true, changed
+}
+
+func capturedFuzzyEditRule(rule storage.DuplicateRule, match storage.MatchingRule, record, prior storage.Record) bool {
+	hasItem := func(item storage.MatchingRuleItem, field string) bool {
+		return strings.EqualFold(item.Field, field) && strings.EqualFold(item.Method, field)
+	}
+	ops := rule.OperationsOnUpdate
+	allow := strings.EqualFold(rule.ActionOnUpdate, "Allow")
+	alert := allow && len(ops) == 1 && strings.EqualFold(ops[0], "Alert")
+	switch {
+	case strings.EqualFold(rule.Object, "Contact") && rule.Subtype == "" && strings.EqualFold(match.Object, "Contact"):
+		if len(match.Items) != 1 || !hasItem(match.Items[0], "Phone") || (match.BooleanFilter != "" && match.BooleanFilter != "1") {
+			return false
+		}
+		if len(rule.Filter.Items) != 1 || rule.Filter.BooleanFilter != "1" {
+			return false
+		}
+		criterion := rule.Filter.Items[0]
+		if !strings.EqualFold(criterion.Field, "Department") || !strings.EqualFold(criterion.Operation, "equals") {
+			return false
+		}
+		// The captured edits leave this condition unchanged.
+		before, ok := prior.GetField(criterion.Field)
+		after, found := record.GetField(criterion.Field)
+		if duplicateBlank(before, ok) || !found || !storageValuesEqual(storage.Field{}, before, after) {
+			return false
+		}
+		block := strings.EqualFold(rule.ActionOnUpdate, "Block") && len(ops) == 0
+		report := allow && len(ops) == 1 && strings.EqualFold(ops[0], "Report")
+		return block || alert || report
+	case strings.EqualFold(rule.Object, "Account") && strings.EqualFold(rule.Subtype, "PersonAccount") && strings.EqualFold(match.Object, "PersonAccount"):
+		if !alert || len(rule.Filter.Items) != 0 || rule.Filter.BooleanFilter != "" || len(match.Items) != 2 || !strings.EqualFold(match.BooleanFilter, "1 AND 2") {
+			return false
+		}
+		return (hasItem(match.Items[0], "FirstName") && hasItem(match.Items[1], "LastName")) ||
+			(hasItem(match.Items[0], "LastName") && hasItem(match.Items[1], "FirstName"))
+	}
+	return false
 }
 
 // Limit upsert update enforcement to changed, single-field exact matches.
