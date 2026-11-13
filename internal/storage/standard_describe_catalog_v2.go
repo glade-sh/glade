@@ -76,6 +76,10 @@ type standardDescribeCatalogV2RawCache struct {
 	// is set for the production pack, whose generated scalar table is checked
 	// against every member; injected decoders keep decoding.
 	scalars func(standardDescribeCatalogV2IndexEntry) (standardDescribeObject, bool)
+	// narrow answers a narrow lookup without decoding the whole member. It is
+	// set for the production pack; injected decoders answer from their full
+	// decode.
+	narrow func(standardDescribeCatalogV2IndexEntry) (standardDescribeNarrow, error)
 }
 
 type standardDescribeCatalogV2RawCacheEntry struct {
@@ -88,6 +92,12 @@ type standardDescribeCatalogV2RawCacheEntry struct {
 	scalarReady bool
 	scalar      standardDescribeObject
 	scalarErr   error
+	narrowReady bool
+	narrowValue standardDescribeNarrow
+	narrowErr   error
+	fieldsReady bool
+	fieldsValue standardDescribeObject
+	fieldsErr   error
 }
 
 var standardDescribeCatalogV2ProductionCache = newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
@@ -96,10 +106,14 @@ var standardDescribeCatalogV2ProductionCache = newStandardDescribeCatalogV2Cache
 // must not mutate the returned slices or nested values.
 var standardDescribeCatalogV2RawProductionCache = func() *standardDescribeCatalogV2RawCache {
 	cache := newStandardDescribeCatalogV2RawCache(func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
+		standardDescribeFullDecodes.Add(1)
 		return decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
 	})
 	cache.scalarOnly = true
 	cache.scalars = lookupStandardDescribeCatalogV2Scalar
+	cache.narrow = func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeNarrow, error) {
+		return decodeStandardDescribeCatalogV2Narrow(standardDescribeCatalogV2Pack, entry)
+	}
 	return cache
 }()
 
@@ -224,6 +238,66 @@ func (cache *standardDescribeCatalogV2RawCache) scalarForName(objectName string)
 	return cached.scalar, true, cached.scalarErr
 }
 
+// narrowForName answers the overlay check plan's question about an object. When
+// the member is already fully decoded the answer comes from that decode.
+// Otherwise the production cache scans the member once and keeps only the
+// narrow result, leaving the full decode to whoever needs it. The result is
+// memoized per object and is immutable.
+func (cache *standardDescribeCatalogV2RawCache) narrowForName(objectName string) (standardDescribeNarrow, bool, error) {
+	if cache.narrow == nil {
+		describe, found, err := cache.entryForName(objectName)
+		if err != nil || !found {
+			return standardDescribeNarrow{}, found, err
+		}
+		return standardDescribeNarrowFromDescribe(describe), true, nil
+	}
+	cached, found, err := cache.rawEntryForName(objectName)
+	if err != nil || !found {
+		return standardDescribeNarrow{}, found, err
+	}
+	cached.mu.Lock()
+	defer cached.mu.Unlock()
+	if !cached.narrowReady {
+		if cached.fullReady {
+			if cached.err == nil {
+				cached.narrowValue = standardDescribeNarrowFromDescribe(cached.value)
+			}
+			cached.narrowErr = cached.err
+		} else {
+			cached.narrowValue, cached.narrowErr = cache.narrow(cached.indexEntry)
+		}
+		cached.narrowReady = true
+	}
+	return cached.narrowValue, true, cached.narrowErr
+}
+
+// fieldsForName retains only the field and mergeable facets used by enrichment.
+func (cache *standardDescribeCatalogV2RawCache) fieldsForName(objectName string) (standardDescribeObject, bool, error) {
+	if cache.narrow == nil {
+		return cache.entryForName(objectName)
+	}
+	cached, found, err := cache.rawEntryForName(objectName)
+	if err != nil || !found {
+		return standardDescribeObject{}, found, err
+	}
+	cached.mu.Lock()
+	defer cached.mu.Unlock()
+	if !cached.fieldsReady {
+		if cached.fullReady {
+			cached.fieldsValue = standardDescribeObject{Fields: cached.value.Fields, Mergeable: cached.value.Mergeable}
+			cached.fieldsErr = cached.err
+		} else {
+			cached.fieldsValue, cached.fieldsErr = decodeStandardDescribeCatalogV2Fields(standardDescribeCatalogV2Pack, cached.indexEntry)
+		}
+		cached.fieldsReady = true
+	}
+	return cached.fieldsValue, true, cached.fieldsErr
+}
+
+func lookupStandardDescribeFieldsV2(objectName string) (standardDescribeObject, bool, error) {
+	return standardDescribeCatalogV2RawProductionCache.fieldsForName(objectName)
+}
+
 func validateResolvedStandardDescribeCatalogV2IndexEntry(entry standardDescribeCatalogV2IndexEntry) error {
 	canonical, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, entry.Name)
 	if !ok || canonical != entry {
@@ -234,6 +308,10 @@ func validateResolvedStandardDescribeCatalogV2IndexEntry(entry standardDescribeC
 
 func lookupStandardDescribeCatalogV2(objectName string) (standardDescribeObject, bool, error) {
 	return standardDescribeCatalogV2RawProductionCache.entryForName(objectName)
+}
+
+func lookupStandardDescribeNarrowV2(objectName string) (standardDescribeNarrow, bool, error) {
+	return standardDescribeCatalogV2RawProductionCache.narrowForName(objectName)
 }
 
 func lookupStandardDescribeChildRelationshipsV2(objectName string) (standardDescribeChildRelationshipsV2Member, bool, error) {

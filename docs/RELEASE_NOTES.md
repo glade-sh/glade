@@ -3,6 +3,9 @@
 ## Unreleased
 
 - **Language server refresh.** Diagnostics retry after project refreshes, deleted source files leave the index, and hover starts type analysis when needed. Client responses no longer receive a second response.
+
+- **Standard object startup memory.** Test runs retain a smaller projection of standard-object describe data while preparing stub fields.
+
 ## v0.3.9
 
 v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteria-based Case sharing and more native-matched Apex, SOQL and SOSL behavior. It lowers memory and startup cost for tests, and `glade doctor` no longer hangs on a busy toolchain.
