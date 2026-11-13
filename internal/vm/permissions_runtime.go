@@ -804,7 +804,13 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			// denied custom field returns DML field failures (standard user,
 			// standard_ext_upsert_standard_user rows at API 62 and 67).
 			standardExternalUpsert := op == "upsert" && len(externalKey) > 0 && vm.standardExternalUpsertKey(objectName, externalKey[0]) && isCustomSchemaName(canonicalField)
-			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert) {
+			// Native standard_custom_field_policy rows (Standard User, API 62.0
+			// and 67.0): a custom field of a standard object with no grant
+			// raises the same statement DmlException or failed row, not a
+			// SecurityException, on explicit USER_MODE at both APIs and on the
+			// default mode from source API 67.0.
+			standardObjectCustomField := !strings.Contains(objectName, "__") && isCustomSchemaName(canonicalField)
+			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert || standardObjectCustomField) {
 				policyFields = append(policyFields, canonicalField)
 				continue
 			}
