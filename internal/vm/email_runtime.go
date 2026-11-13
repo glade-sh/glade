@@ -58,12 +58,21 @@ func newRenderEmailTemplateBodyResult(mergedBody string) Value {
 	return result
 }
 
-func messagingTemplateResultString(value Value) (string, bool) {
+func writeMessagingTemplateResultText(w *textWriter, value Value) bool {
 	if value.projectClass || !strings.EqualFold(value.Type, "Messaging.RenderEmailTemplateBodyResult") {
-		return "", false
+		return false
 	}
-	return value.Type + "[getErrors=" + value.Fields["errors"].String() + ";getMergedBody=" + value.Fields["mergedBody"].String() + ";getSuccess=" + value.Fields["success"].String() + ";]", true
+	w.WriteString(value.Type)
+	w.WriteString("[getErrors=")
+	value.Fields["errors"].writeText(w)
+	w.WriteString(";getMergedBody=")
+	value.Fields["mergedBody"].writeText(w)
+	w.WriteString(";getSuccess=")
+	value.Fields["success"].writeText(w)
+	w.WriteString(";]")
+	return true
 }
+
 func newFailedSendEmailResult(message string) Value {
 	result := Object("Messaging.SendEmailResult")
 	result.Fields["success"] = Bool(false)

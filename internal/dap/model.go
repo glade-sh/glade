@@ -242,171 +242,26 @@ func namedValuesFromMap(vars map[string]vm.Value) []namedValue {
 	return out
 }
 
-// previewValue bounds work and output for the debugger without changing Apex text.
-func previewValue(value vm.Value) string { return previewValueDepth(value, 0) }
+// previewLimit bounds the text of a debugger variable or evaluate result.
+const previewLimit = 256
 
-func previewValueDepth(value vm.Value, depth int) string {
-	if text, ok := value.DirectStringValue(); ok {
-		return truncatePreview(text)
+// previewValue returns Value.String's exact text when it fits previewLimit.
+// Longer text is cut at previewLimit bytes, on a UTF-8 boundary, and marked
+// with "...". The bounded renderer stops once the limit is passed.
+func previewValue(value vm.Value) string {
+	text, truncated := value.BoundedString(previewLimit)
+	if !truncated {
+		return text
 	}
-	// A fitting collection can contain more than 64 short values. Allow enough
-	// nodes and metadata for such values while keeping exact rendering bounded.
-	budget, bytes := 256, 4096
-	if previewWithinBudget(value, &budget, &bytes, true) {
-		return truncatePreview(value.String())
+	// Drop a rune that the cut split; other bytes are kept as rendered.
+	start := len(text) - 1
+	for start > 0 && len(text)-start < utf8.UTFMax && !utf8.RuneStart(text[start]) {
+		start--
 	}
-	var header string
-	switch value.Kind {
-	case vm.ValueList:
-		header = fmt.Sprintf("List(%d)", len(value.List))
-	case vm.ValueSet:
-		header = fmt.Sprintf("Set(%d)", len(value.Set))
-	case vm.ValueMap:
-		header = fmt.Sprintf("Map(%d)", len(value.Map))
-	case vm.ValueDecimal:
-		// Numeric formatting can copy a large decimal payload several times.
-		if len(value.Text) > 256 {
-			return truncatePreview(value.Text)
-		}
-		return truncatePreview(value.String())
-	case vm.ValueObject:
-		header = value.Type
-		if header == "" {
-			header = "Object"
-		}
-	default:
-		return truncatePreview(value.String())
+	if start >= 0 && !utf8.FullRuneInString(text[start:]) {
+		text = text[:start]
 	}
-	header = truncatePreview(header)
-	if depth >= 1 {
-		return truncatePreview(header + "...")
-	}
-	children := previewChildren(value)
-	parts := make([]string, 0, len(children))
-	for _, child := range children {
-		parts = append(parts, previewValueDepth(child, depth+1))
-	}
-	if len(parts) > 0 {
-		header += " [" + strings.Join(parts, ", ") + ", ...]"
-	} else {
-		header += "..."
-	}
-	return truncatePreview(header)
-}
-
-func truncatePreview(s string) string {
-	if len(s) <= 256 {
-		return s
-	}
-	s = s[:256]
-	for !utf8.ValidString(s) {
-		s = s[:len(s)-1]
-	}
-	return s + "..."
-}
-
-func previewWithinBudget(v vm.Value, budget, bytes *int, direct bool) bool {
-	if direct {
-		if text, ok := v.DirectStringValue(); ok {
-			*budget--
-			*bytes -= len(text)
-			return *budget >= 0 && *bytes >= 0
-		}
-	}
-	// Keep the exact renderer away from large input strings, including map keys
-	// and object field names. Its concatenation otherwise copies them repeatedly.
-	switch v.Kind {
-	case vm.ValueString, vm.ValueDecimal:
-		*bytes -= len(v.Text)
-	case vm.ValueObject, vm.ValueMap:
-		*bytes -= len(v.Text) + len(v.Type) + len(v.Runtime)
-	}
-	if *bytes < 0 {
-		return false
-	}
-	*budget--
-	if *budget < 0 {
-		return false
-	}
-	switch v.Kind {
-	case vm.ValueList:
-		for _, child := range v.List {
-			if !previewWithinBudget(child, budget, bytes, direct) {
-				return false
-			}
-		}
-	case vm.ValueSet:
-		for _, child := range v.Set {
-			if !previewWithinBudget(child, budget, bytes, direct) {
-				return false
-			}
-		}
-	case vm.ValueMap:
-		for name, child := range v.Map {
-			if key, ok := v.MapKeys[name]; ok {
-				if !previewWithinBudget(key, budget, bytes, false) {
-					return false
-				}
-			} else {
-				*bytes -= len(name)
-				if *bytes < 0 {
-					return false
-				}
-			}
-			if !previewWithinBudget(child, budget, bytes, false) {
-				return false
-			}
-		}
-	case vm.ValueObject:
-		for name, child := range v.Fields {
-			*bytes -= len(name)
-			if *bytes < 0 {
-				return false
-			}
-			if !previewWithinBudget(child, budget, bytes, false) {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-func previewChildren(v vm.Value) []vm.Value {
-	switch v.Kind {
-	case vm.ValueList:
-		if len(v.List) > 3 {
-			return v.List[:3]
-		}
-		return v.List
-	case vm.ValueSet:
-		if len(v.Set) > 3 {
-			return v.Set[:3]
-		}
-		return v.Set
-	case vm.ValueMap, vm.ValueObject:
-		fields := v.Map
-		if v.Kind == vm.ValueObject {
-			fields = v.Fields
-		}
-		keys := make([]string, 0, 3)
-		for key := range fields {
-			i := sort.SearchStrings(keys, key)
-			if i < 3 {
-				keys = append(keys, "")
-				copy(keys[i+1:], keys[i:])
-				keys[i] = key
-				if len(keys) > 3 {
-					keys = keys[:3]
-				}
-			}
-		}
-		result := make([]vm.Value, 0, len(keys))
-		for _, key := range keys {
-			result = append(result, fields[key])
-		}
-		return result
-	}
-	return nil
+	return text + "..."
 }
 
 func variableFromValue(name string, value vm.Value, ref int) Variable {

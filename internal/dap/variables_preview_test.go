@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -25,7 +26,7 @@ func TestVariablesLargeListIsBounded(t *testing.T) {
 			Variables []Variable `json:"variables"`
 		}
 		decodeBody(t, response, &body)
-		if len(body.Variables) != 1 || len(body.Variables[0].Value) > 300 || !strings.HasPrefix(body.Variables[0].Value, "List(200000)") {
+		if len(body.Variables) != 1 || body.Variables[0].Value != previewPrefix(vm.List(values...).String()) {
 			t.Fatalf("unexpected preview: %#v", body.Variables)
 		}
 	case <-time.After(time.Second):
@@ -81,6 +82,8 @@ func TestPreviewValueEveryKind(t *testing.T) {
 }
 
 func TestPreviewValueRenderedBoundary(t *testing.T) {
+	cyclic := vm.List(vm.Null)
+	cyclic.List[0] = cyclic
 	items := make([]vm.Value, 65)
 	for i := range items {
 		items[i] = vm.Int(1)
@@ -90,15 +93,24 @@ func TestPreviewValueRenderedBoundary(t *testing.T) {
 		"many short elements": vm.List(items...),
 		"at limit":            vm.String(strings.Repeat("x", 256)),
 		"over limit":          vm.String(strings.Repeat("x", 257)),
+		"multibyte at limit":  vm.String(strings.Repeat("é", 128)),
+		"multibyte over":      vm.String("x" + strings.Repeat("é", 128)),
+		"cyclic list":         cyclic,
 	} {
 		t.Run(name, func(t *testing.T) {
-			want := value.String()
 			got := previewValue(value)
+			if name == "cyclic list" {
+				if got != strings.Repeat("List[", 52)[:256]+"..." {
+					t.Fatalf("preview = %q", got)
+				}
+				return
+			}
+			want := value.String()
 			if len(want) <= 256 {
 				if got != want {
 					t.Fatalf("preview = %q, want exact %q", got, want)
 				}
-			} else if got != want[:256]+"..." {
+			} else if got != previewPrefix(want) || len(got) > 259 {
 				t.Fatalf("preview = %q, want truncated value with marker", got)
 			}
 		})
@@ -148,7 +160,7 @@ func TestPreviewBoundsLargeMapKey(t *testing.T) {
 	go func() { done <- previewValue(value) }()
 	select {
 	case got := <-done:
-		if len(got) > 300 || !strings.HasPrefix(got, "Map(1)") {
+		if want := "{List[" + strings.Repeat("<>, ", 63)[:250] + "..."; got != want {
 			t.Fatalf("unbounded map key preview: %q", got)
 		}
 	case <-time.After(time.Second):
@@ -174,4 +186,14 @@ func TestPreviewBoundsNestedScalarAllocation(t *testing.T) {
 	if n := after.TotalAlloc - before.TotalAlloc; n > 2<<20 {
 		t.Fatalf("preview allocated %d bytes", n)
 	}
+}
+
+// previewPrefix is the expected over-bound preview: the first 256 bytes of
+// the rendered text, without a split rune, then the marker.
+func previewPrefix(text string) string {
+	text = text[:256]
+	for !utf8.ValidString(text) {
+		text = text[:len(text)-1]
+	}
+	return text + "..."
 }

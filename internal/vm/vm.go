@@ -3562,6 +3562,12 @@ func locationNewInstance(args []Value) (Value, error) {
 }
 
 func locationString(location Value) string {
+	var w textWriter
+	writeLocationText(&w, location)
+	return w.String()
+}
+
+func writeLocationText(w *textWriter, location Value) {
 	_, latitude, hasLatitude := objectFieldValue(location, "latitude")
 	_, longitude, hasLongitude := objectFieldValue(location, "longitude")
 	if !hasLatitude {
@@ -3570,7 +3576,11 @@ func locationString(location Value) string {
 	if !hasLongitude {
 		longitude = Null
 	}
-	return "System.Location[getLatitude=" + latitude.String() + ";getLongitude=" + longitude.String() + ";]"
+	w.WriteString("System.Location[getLatitude=")
+	latitude.writeText(w)
+	w.WriteString(";getLongitude=")
+	longitude.writeText(w)
+	w.WriteString(";]")
 }
 
 func newDomainFromHostname(hostname string) Value {
