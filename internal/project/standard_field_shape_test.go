@@ -40,19 +40,27 @@ func TestStandardFieldShapeDeclarationOwnership(t *testing.T) {
 }
 
 func TestPlainDeveloperDescribeShape(t *testing.T) {
- for _, row := range []struct{name, definition string; want bool}{
-  {"captured", `{"edition":"Developer","features":[],"settings":{}}`, true},
-  {"password feature", `{"edition":"Developer","features":["EnableSetPasswordInApi"],"settings":{}}`, false},
-  {"lightning setting", `{"edition":"Developer","features":[],"settings":{"lightningExperienceSettings":{"enableS1DesktopEnabled":true}}}`, false},
-  {"country", `{"edition":"Developer","country":"FR","features":[],"settings":{}}`, false},
-  {"language", `{"edition":"Developer","language":"fr","features":[],"settings":{}}`, false},
- } {
-  t.Run(row.name, func(t *testing.T) {
-   root := t.TempDir()
-   writeFile(t, filepath.Join(root, "sfdx-project.json"), `{}`)
-   writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), row.definition)
-   got := slices.Contains(StandardFieldPolicyFeatures(Project{Root: root}), "__glade_plain_developer_describe")
-   if got != row.want { t.Fatalf("describe shape=%t want %t", got, row.want) }
-  })
- }
+	for _, row := range []struct {
+		name, definition string
+		want             bool
+	}{
+		{"captured", `{"edition":"Developer","features":[],"settings":{}}`, true},
+		{"omitted", `{"edition":"Developer"}`, false},
+		{"null features", `{"edition":"Developer","features":null,"settings":{}}`, false},
+		{"null settings", `{"edition":"Developer","features":[],"settings":null}`, false},
+		{"password feature", `{"edition":"Developer","features":["EnableSetPasswordInApi"],"settings":{}}`, false},
+		{"lightning setting", `{"edition":"Developer","features":[],"settings":{"lightningExperienceSettings":{"enableS1DesktopEnabled":true}}}`, false},
+		{"country", `{"edition":"Developer","country":"FR","features":[],"settings":{}}`, false},
+		{"language", `{"edition":"Developer","language":"fr","features":[],"settings":{}}`, false},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{}`)
+			writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), row.definition)
+			got := slices.Contains(StandardFieldPolicyFeatures(Project{Root: root}), "__glade_plain_developer_describe")
+			if got != row.want {
+				t.Fatalf("describe shape=%t want %t", got, row.want)
+			}
+		})
+	}
 }
