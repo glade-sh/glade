@@ -28,7 +28,10 @@ type Handler struct {
 	parser       *apexast.Parser
 	parserClosed bool
 
-	analyzer func(typesys.Index) sema.Result
+	analyzer           func(typesys.Index) sema.Result
+	refresher          func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error)
+	refreshMu          sync.Mutex
+	validateGeneration func(typesys.Index) bool
 
 	docMu     sync.RWMutex
 	documents map[DocumentURI]openDocument
@@ -140,7 +143,7 @@ func (h *Handler) Shutdown() bool {
 func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
 	return InitializeResult{
 		Capabilities: ServerCapabilities{
-			TextDocumentSync:        textDocumentSyncIncremental,
+			TextDocumentSync:        TextDocumentSyncOptions{OpenClose: true, Change: textDocumentSyncIncremental, Save: SaveOptions{IncludeText: false}},
 			DocumentSymbolProvider:  true,
 			WorkspaceSymbolProvider: true,
 			HoverProvider:           true,

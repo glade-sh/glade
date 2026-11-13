@@ -132,6 +132,15 @@ func (h *Handler) handleContext(ctx context.Context, method string, params json.
 			return nil, invalidParams(err)
 		}
 		return notifications, nil
+	case "textDocument/didSave":
+		var p DidSaveTextDocumentParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		if err := h.Refresh(ctx, []string{pathFromURI(p.TextDocument.URI)}); err != nil {
+			return nil, indexError(err)
+		}
+		return nil, nil
 	case "textDocument/didClose":
 		var p DidCloseTextDocumentParams
 		if err := decodeParams(params, &p); err != nil {

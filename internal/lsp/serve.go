@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"reflect"
+	"sort"
+
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"sync"
 	"time"
 )
@@ -63,9 +67,12 @@ type server struct {
 	// inflight maps a request ID's JSON text to its cancel function.
 	inflight map[string]context.CancelFunc
 
-	diagWG  sync.WaitGroup
-	pubMu   sync.Mutex // orders diagnostic publishes against pending checks
-	pending map[DocumentURI]*diagJob
+	diagWG     sync.WaitGroup
+	pubMu      sync.Mutex // orders diagnostic publishes against pending checks
+	pending    map[DocumentURI]*diagJob
+	dirty      map[string]struct{}
+	refreshing bool
+	refreshWG  sync.WaitGroup
 }
 
 func (s *server) write(message any) {
@@ -160,6 +167,12 @@ func (s *server) notification(req Request) {
 			return
 		}
 		s.schedule(p.TextDocument.URI, s.h.debounce)
+	case "textDocument/didSave":
+		var p DidSaveTextDocumentParams
+		if decodeParams(req.Params, &p) != nil {
+			return
+		}
+		s.enqueueRefresh(pathFromURI(p.TextDocument.URI))
 	case "textDocument/didClose":
 		var p DidCloseTextDocumentParams
 		if decodeParams(req.Params, &p) != nil {
@@ -195,6 +208,7 @@ func (s *server) runDiagnostics(uri DocumentURI, job *diagJob) {
 	if superseded {
 		return
 	}
+	generation := s.h.gen.Load()
 	// Parse errors need no index; the semantic pass waits for it inside
 	// currentDiagnostics. Abandon the wait if the server shuts down first.
 	result := make(chan []Notification, 1)
@@ -213,7 +227,7 @@ func (s *server) runDiagnostics(uri DocumentURI, job *diagJob) {
 		delete(s.pending, uri)
 	}
 	s.mu.Unlock()
-	if !current || s.ctx.Err() != nil {
+	if !current || s.ctx.Err() != nil || (generation != nil && generation != s.h.gen.Load()) {
 		return
 	}
 	for _, n := range notifications {
@@ -242,6 +256,7 @@ func (s *server) drain() {
 	}
 	s.reqWG.Wait()
 	s.diagWG.Wait()
+	s.refreshWG.Wait()
 }
 
 // shutdownNow cancels outstanding work and waits for it to stop.
@@ -256,4 +271,113 @@ func (s *server) shutdownNow() {
 	s.mu.Unlock()
 	s.reqWG.Wait()
 	s.diagWG.Wait()
+	s.refreshWG.Wait()
+}
+
+func (s *server) enqueueRefresh(path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.ctx.Err() != nil {
+		return
+	}
+	if s.dirty == nil {
+		s.dirty = make(map[string]struct{})
+	}
+	s.dirty[path] = struct{}{}
+	if !s.refreshing {
+		s.refreshing = true
+		s.refreshWG.Add(1)
+		go s.refreshWorker()
+	}
+}
+
+func (s *server) refreshWorker() {
+	defer s.refreshWG.Done()
+	for {
+		s.mu.Lock()
+		if len(s.dirty) == 0 || s.ctx.Err() != nil {
+			s.refreshing = false
+			s.mu.Unlock()
+			return
+		}
+		paths := make([]string, 0, len(s.dirty))
+		for path := range s.dirty {
+			paths = append(paths, path)
+		}
+		s.dirty = make(map[string]struct{})
+		s.mu.Unlock()
+		sort.Strings(paths)
+		if s.h.waitReady(s.ctx) != nil {
+			return
+		}
+		before := s.h.gen.Load()
+		oldResult := make(chan []diagnostic.Diagnostic, 1)
+		go func() { oldResult <- before.analysisResult().Diagnostics }()
+		var old []diagnostic.Diagnostic
+		select {
+		case old = <-oldResult:
+		case <-s.ctx.Done():
+			return
+		}
+		err := s.h.refresh(s.ctx, paths, func(g *generation) {
+			s.pubMu.Lock()
+			s.h.gen.Store(g)
+			s.pubMu.Unlock()
+		})
+		after := s.h.gen.Load()
+		if err != nil || after == before {
+			continue
+		}
+		result := make(chan []diagnostic.Diagnostic, 1)
+		go func() { result <- after.analysisResult().Diagnostics }()
+		var next []diagnostic.Diagnostic
+		select {
+		case next = <-result:
+		case <-s.ctx.Done():
+			return
+		}
+		if s.h.validateGeneration != nil && !s.h.validateGeneration(after.index) {
+			// Retry this batch once when its inputs changed during analysis.
+			if len(paths) > 0 {
+				s.enqueueRefresh(paths[0])
+			}
+			continue
+		}
+		oldByFile, newByFile := diagnosticsByFile(old), diagnosticsByFile(next)
+		files := make(map[string]bool)
+		for file := range oldByFile {
+			files[file] = true
+		}
+		for file := range newByFile {
+			files[file] = true
+		}
+		for file := range files {
+			if reflect.DeepEqual(oldByFile[file], newByFile[file]) {
+				continue
+			}
+			uri := uriFromPath(file)
+			s.h.docMu.RLock()
+			_, open := s.h.documents[uri]
+			s.h.docMu.RUnlock()
+			if open {
+				s.schedule(uri, 0)
+				continue
+			}
+			s.pubMu.Lock()
+			if s.ctx.Err() == nil && s.h.gen.Load() == after {
+				s.write(Notification{JSONRPC: "2.0", Method: "textDocument/publishDiagnostics", Params: BuildPublishDiagnostics(uri, newByFile[file])})
+			}
+			s.pubMu.Unlock()
+		}
+	}
+}
+
+func diagnosticsByFile(diags []diagnostic.Diagnostic) map[string][]diagnostic.Diagnostic {
+	result := make(map[string][]diagnostic.Diagnostic)
+	for _, d := range diags {
+		if d.File != "" {
+			result[d.File] = append(result[d.File], d)
+		}
+	}
+	return result
 }
