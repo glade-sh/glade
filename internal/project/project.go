@@ -580,7 +580,7 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 	if stack == nil {
 		stack = make(map[string]bool)
 	}
-	cfg, err := loadSFDXProject(absRoot)
+	cfg, err := loadSFDXProjectWithInputs(absRoot, v)
 	if err != nil {
 		return Project{}, err
 	}
@@ -589,7 +589,7 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 		return Project{}, err
 	}
 	cfgPath := filepath.Join(absRoot, "glade.yml")
-	gladeCfg, cfgErr := config.LoadFile(cfgPath)
+	gladeCfg, cfgErr := config.LoadFileWithInputs(cfgPath, v)
 	if errors.Is(cfgErr, os.ErrNotExist) {
 		cfgErr = config.ErrNotFound
 	}
@@ -662,7 +662,7 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 		p.PackageShims, p.DependencyDiagnostics = loadPackageShims(gladeCfg.Project.PackageShims, v, stack, p.DependencyDiagnostics)
 	}
 	if cfgErr != nil {
-		if nearestCfg, _, err := config.LoadNearest(absRoot); err == nil {
+		if nearestCfg, _, err := config.LoadNearestWithInputs(absRoot, v); err == nil {
 			if !dependency {
 				p.Test = nearestCfg.Test
 			}
@@ -2118,9 +2118,11 @@ func validateManagedPackageArtifactMetadata(metadata managedPackageArtifactMetad
 	return issues
 }
 
-func loadSFDXProject(root string) (sfdxProject, error) {
+func loadSFDXProject(root string) (sfdxProject, error) { return loadSFDXProjectWithInputs(root, nil) }
+
+func loadSFDXProjectWithInputs(root string, v *inputview.View) (sfdxProject, error) {
 	path := filepath.Join(root, "sfdx-project.json")
-	data, err := os.ReadFile(path)
+	data, err := v.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return sfdxProject{PackageDirectories: []PackageDirectory{{Path: "."}}}, nil
