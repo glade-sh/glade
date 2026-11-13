@@ -22,6 +22,9 @@ private class StopOrderTest {
     @IsTest static void bqf() {
         Test.startTest(); Database.executeBatch(new StopOrderBatch()); q('k'); StopOrderMk.fut('b'); finish(false);
     }
+    @IsTest static void sqf() {
+        Test.startTest(); System.schedule('stopOrderJob', '0 0 0 1 1 ? 2099', new StopOrderSched()); q('k'); StopOrderMk.fut('b'); finish(true);
+    }
     @IsTest static void gen2f() {
         Test.startTest(); System.enqueueJob(new StopOrderQ('k', true)); q('t'); finish(false);
     }

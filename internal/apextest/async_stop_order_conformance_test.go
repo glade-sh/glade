@@ -14,8 +14,7 @@ import (
 // TestAsyncStopOrderNativeConformance replays native Test.stopTest ordering
 // observations: futures first in submission order, then queueables FIFO, batch
 // start in its submission slot after the future with execute/finish after the
-// queueable, and a top-level Schedulable last. The nested-Schedulable row (sqf)
-// is owned by a separate change and is not asserted here.
+// queueable, and a top-level Schedulable last.
 func TestAsyncStopOrderNativeConformance(t *testing.T) {
 	dir := filepath.Join("testdata", "conformance", "async_stop_order")
 	file, err := os.Open(filepath.Join(dir, "org.tsv"))
@@ -66,7 +65,7 @@ func TestAsyncStopOrderNativeConformance(t *testing.T) {
 					t.Fatalf("malformed native row: %v", row)
 				}
 				method, rowAPI, want := row[0], row[1], row[4]
-				if rowAPI != api || method == "sqf" {
+				if rowAPI != api {
 					continue
 				}
 				asserted++
@@ -85,8 +84,8 @@ func TestAsyncStopOrderNativeConformance(t *testing.T) {
 					}
 				})
 			}
-			if asserted != 12 {
-				t.Fatalf("asserted %d rows for API %s, want 12", asserted, api)
+			if asserted != 13 {
+				t.Fatalf("asserted %d rows for API %s, want 13", asserted, api)
 			}
 		})
 	}
