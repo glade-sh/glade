@@ -1,6 +1,8 @@
 package gladecli
 
 import (
+ "context"
+ "github.com/glade-sh/glade/internal/dap"
 	"os"
 	"path/filepath"
 	"testing"
@@ -63,4 +65,22 @@ func TestDAPWarmTestIndexSkipsBuild(t *testing.T) {
 	if builds != 1 {
 		t.Fatalf("warm access rebuilt index: %d builds", builds)
 	}
+}
+
+func TestDAPColdLaunchPopulatesWarmIndex(t *testing.T) {
+ t.Setenv("GLADE_DISABLE_DISK_CACHE", "")
+ restore := apextest.EnableDiskCacheForTesting()
+ t.Cleanup(restore)
+ root := t.TempDir()
+ t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg"))
+ writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+ writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `@isTest private class SampleTest { @isTest static void pass() {} }`)
+ launch := func() { t.Helper(); if err := handleDAPLaunch(context.Background(), dap.NewHandler(dap.Snapshot{}), dap.LaunchRequest{ClassName:"SampleTest", MethodName:"pass"}, root, "", true); err != nil { t.Fatal(err) } }
+ builds := 0
+ previous := dapTestIndexLoader
+ dapTestIndexLoader = func(root string) (typesys.Index, error) { return loadDAPTestIndexWithBuilder(root, func(p project.Project, s schema.Schema) (typesys.Index, typesys.BuildArtifacts) { builds++; return typesys.BuildWithArtifacts(p,s) }) }
+ t.Cleanup(func(){ dapTestIndexLoader = previous })
+ launch()
+ launch()
+ if builds != 0 { t.Fatalf("warm launch rebuilt index %d times", builds) }
 }

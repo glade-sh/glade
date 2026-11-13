@@ -2,6 +2,7 @@ package dap
 
 import (
 	"strings"
+ "runtime"
 	"testing"
 	"time"
 
@@ -71,4 +72,18 @@ func TestPreviewBoundsLargeMapKey(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("large map key preview exceeded one second")
 	}
+}
+
+func TestPreviewBoundsNestedScalarAllocation(t *testing.T) {
+ text := vm.String(strings.Repeat("x", 128<<10))
+ values := make([]vm.Value, 63)
+ for i := range values { values[i] = text }
+ value := vm.List(values...)
+ runtime.GC()
+ var before, after runtime.MemStats
+ runtime.ReadMemStats(&before)
+ got := previewValue(value)
+ runtime.ReadMemStats(&after)
+ if len(got) > 259 { t.Fatalf("preview length = %d", len(got)) }
+ if n := after.TotalAlloc-before.TotalAlloc; n > 2<<20 { t.Fatalf("preview allocated %d bytes", n) }
 }
