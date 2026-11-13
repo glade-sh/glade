@@ -3114,8 +3114,14 @@ func (vm *VM) currentExecutionNamespace() string {
 	if strings.TrimSpace(vm.currentClass) == "" {
 		return ""
 	}
-	if class, ok := vm.classEntry(vm.currentClass); ok {
-		return strings.TrimSpace(class.Namespace)
+	if memo := &vm.execNamespaceMemo; memo.valid && memo.generation == vm.classLookupGeneration && memo.class == vm.currentClass {
+		return memo.namespace
+	}
+	// The namespace sits on the lazy shell, so the unbuilt entry is enough.
+	if class, ok := vm.classEntryRaw(vm.currentClass); ok {
+		namespace := strings.TrimSpace(class.Namespace)
+		vm.execNamespaceMemo = execNamespaceMemo{class: vm.currentClass, generation: vm.classLookupGeneration, namespace: namespace, valid: true}
+		return namespace
 	}
 	for _, triggers := range vm.Triggers {
 		for _, trigger := range triggers {
