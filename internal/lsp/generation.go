@@ -14,6 +14,8 @@ type generation struct {
 	analysisOnce       sync.Once
 	analysisDone       chan struct{}
 	analysis           sema.Result
+	occurrenceOnce     sync.Once
+	occurrences        occurrenceIndex
 	completionCatalogs [3]struct {
 		once  sync.Once
 		items []CompletionItem

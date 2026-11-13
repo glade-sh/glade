@@ -112,7 +112,7 @@ func (h *requestHandler) referenceLocations(name string) []Location {
 		return nil
 	}
 	var locations []Location
-	for _, file := range h.sourceFiles() {
+	for _, file := range h.referenceCandidates(name) {
 		text, ok := h.documentText(file)
 		if !ok {
 			continue
@@ -160,12 +160,10 @@ func (h *requestHandler) sourceFiles() []string {
 
 func (h *Handler) documentText(path string) (string, bool) {
 	h.docMu.RLock()
-	for _, doc := range h.documents {
-		if sameDocument(doc.Path, path) {
-			text := doc.Text
-			h.docMu.RUnlock()
-			return text, true
-		}
+	if uri, ok := h.documentPaths[canonicalDocumentPath(path)]; ok {
+		text := h.documents[uri].Text
+		h.docMu.RUnlock()
+		return text, true
 	}
 	h.docMu.RUnlock()
 	data, err := os.ReadFile(path)

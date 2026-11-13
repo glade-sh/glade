@@ -33,8 +33,9 @@ type Handler struct {
 	refreshMu          sync.Mutex
 	validateGeneration func(typesys.Index) bool
 
-	docMu     sync.RWMutex
-	documents map[DocumentURI]openDocument
+	docMu         sync.RWMutex
+	documents     map[DocumentURI]openDocument
+	documentPaths map[string]DocumentURI
 
 	shutdown atomic.Bool
 
@@ -63,10 +64,11 @@ func NewHandler(index typesys.Index) *Handler {
 // for SetIndex or Fail.
 func NewPendingHandler() *Handler {
 	return &Handler{
-		ready:     make(chan struct{}),
-		parser:    apexast.NewParser(),
-		documents: make(map[DocumentURI]openDocument),
-		debounce:  DefaultDiagnosticsDebounce,
+		ready:         make(chan struct{}),
+		parser:        apexast.NewParser(),
+		documents:     make(map[DocumentURI]openDocument),
+		documentPaths: make(map[string]DocumentURI),
+		debounce:      DefaultDiagnosticsDebounce,
 	}
 }
 
@@ -175,6 +177,7 @@ func (h *Handler) applyOpen(params DidOpenTextDocumentParams) openDocument {
 	}
 	h.docMu.Lock()
 	h.documents[uri] = doc
+	h.documentPaths[canonicalDocumentPath(doc.Path)] = uri
 	h.docMu.Unlock()
 	return doc
 }
@@ -203,6 +206,7 @@ func (h *Handler) applyChange(params DidChangeTextDocumentParams) (openDocument,
 		doc.Text = next
 	}
 	h.documents[doc.URI] = doc
+	h.documentPaths[canonicalDocumentPath(doc.Path)] = doc.URI
 	return doc, nil
 }
 
@@ -213,6 +217,9 @@ func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
 
 func (h *Handler) applyClose(uri DocumentURI) {
 	h.docMu.Lock()
+	if doc, ok := h.documents[uri]; ok {
+		delete(h.documentPaths, canonicalDocumentPath(doc.Path))
+	}
 	delete(h.documents, uri)
 	h.docMu.Unlock()
 }
