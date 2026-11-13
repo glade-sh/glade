@@ -44,7 +44,7 @@ if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{Sy
 List<Database.SaveResult> results=Database.insert(new List<SObject>{first,second},false,AccessLevel.USER_MODE);
 System.assertEquals(2,results.size());System.assertEquals(` + row.success + `,results[0].isSuccess());System.assertEquals(` + row.success + `,results[1].isSuccess());
 ` + dmlCounters + `
-if(results[0].isSuccess()){System.assertEquals(0,results[0].getErrors().size());System.assertEquals(0,results[1].getErrors().size());}else{for(Database.SaveResult result:results){System.assertEquals(1,result.getErrors().size());System.assertEquals('` + row.status + `',String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + row.message + `',result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}}`
+for(Database.SaveResult result:results){System.assertEquals(` + row.idNull + `,result.getId()==null);if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals('` + row.status + `',String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + row.message + `',result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}}`
 			}
 			program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: row.api})
 			if err != nil {
