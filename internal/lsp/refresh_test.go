@@ -54,6 +54,9 @@ func TestRefreshCoalesces(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		c.send(msg(i))
 	}
+	// Initialize is handled synchronously after the preceding notifications.
+	c.send(map[string]any{"id": 99, "method": "initialize", "params": map[string]any{}})
+	c.mustNext(3 * time.Second)
 	close(release)
 	select {
 	case <-started:
