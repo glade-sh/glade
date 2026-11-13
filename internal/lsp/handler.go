@@ -580,7 +580,8 @@ func (h *requestHandler) Completion(params CompletionParams) CompletionList {
 		sortCompletionItems(context.items, completionContextDefault)
 		return CompletionList{Items: context.items}
 	}
-	return CompletionList{Items: h.defaultCompletionCatalog(context.kind)}
+	items, incomplete := filterCompletionCatalog(h.defaultCompletionCatalog(context.kind), context.prefix)
+	return CompletionList{Items: items, IsIncomplete: incomplete}
 }
 
 // defaultCompletionCatalog returns the sorted whole-project completion list for
@@ -645,8 +646,9 @@ func (h *requestHandler) buildDefaultCompletionCatalog(kind completionContext) [
 }
 
 type completionResultContext struct {
-	kind  completionContext
-	items []CompletionItem
+	kind   completionContext
+	items  []CompletionItem
+	prefix string
 }
 
 func (h *requestHandler) completionContext(params CompletionParams) completionResultContext {
@@ -667,21 +669,23 @@ func (h *requestHandler) completionContext(params CompletionParams) completionRe
 	if items := h.testMethodCompletionItems(text, offset); len(items) > 0 {
 		return completionResultContext{items: items}
 	}
+	start, _ := identifierBounds(text, offset)
+	typed := text[start:offset]
 	prefix := strings.ToLower(text[:offset])
 	queryStart := strings.LastIndex(prefix, "[")
 	if queryStart < 0 || strings.LastIndex(prefix, "]") > queryStart {
-		return completionResultContext{}
+		return completionResultContext{prefix: typed}
 	}
 	clause := prefix[queryStart+1:]
 	if strings.Contains(clause, "select") && !strings.Contains(clause, " from ") {
-		return completionResultContext{kind: completionContextSOQLSelect}
+		return completionResultContext{kind: completionContextSOQLSelect, prefix: typed}
 	}
 	for _, marker := range []string{" where", " order by", " group by"} {
 		if strings.Contains(clause, marker) {
-			return completionResultContext{kind: completionContextSOQLFieldClause}
+			return completionResultContext{kind: completionContextSOQLFieldClause, prefix: typed}
 		}
 	}
-	return completionResultContext{}
+	return completionResultContext{prefix: typed}
 }
 
 func (h *requestHandler) annotationCompletionItems(text string, offset int) []CompletionItem {
