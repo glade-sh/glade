@@ -13,3 +13,11 @@ dot_assign	anonymous	apex/dot_assign.apex
 dot_instance	anonymous	apex/dot_instance.apex
 static_space	anonymous	apex/static_space.apex
 split_statement	anonymous	apex/split_statement.apex
+repeat_first	anonymous	apex/repeat_first.apex
+repeat_second	anonymous	apex/repeat_second.apex
+repeat_both	anonymous	apex/repeat_both.apex
+repeat_same	anonymous	apex/repeat_same.apex
+comment_after	anonymous	apex/comment_after.apex
+comment_before_newline	anonymous	apex/comment_before_newline.apex
+chain_after	anonymous	apex/chain_after.apex
+chain_comment	anonymous	apex/chain_comment.apex
