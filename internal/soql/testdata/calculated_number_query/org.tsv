@@ -1,0 +1,13 @@
+api	route	input	blank	zero	rounded	value
+62.0	anonymous	empty	1.00	1.00	0.00	0.00
+62.0	anonymous	null	null	1.00	null	0.00
+62.0	anonymous	numeric	2.25	2.25	0.42	12.50
+62.0	istest	empty	1.00	1.00	0.00	0.00
+62.0	istest	null	null	1.00	null	0.00
+62.0	istest	numeric	2.25	2.25	0.42	12.50
+67.0	anonymous	empty	1.00	1.00	0.00	0.00
+67.0	anonymous	null	null	1.00	null	0.00
+67.0	anonymous	numeric	2.25	2.25	0.42	12.50
+67.0	istest	empty	1.00	1.00	0.00	0.00
+67.0	istest	null	null	1.00	null	0.00
+67.0	istest	numeric	2.25	2.25	0.42	12.50
