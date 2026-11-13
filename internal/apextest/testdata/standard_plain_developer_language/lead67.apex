@@ -1,0 +1,1 @@
+User u=[SELECT LanguageLocaleKey,LocaleSidKey,Profile.Name FROM User WHERE Id=:UserInfo.getUserId()]; System.debug('CONTEXT|'+u.LanguageLocaleKey+'|'+u.LocaleSidKey+'|'+u.Profile.Name); System.debug(StandardProbe67.pick('Lead','Status'));
