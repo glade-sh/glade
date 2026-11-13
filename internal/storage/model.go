@@ -1226,6 +1226,8 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// CriteriaSharingOwned identifies a share created by criteria reconciliation.
+	CriteriaSharingOwned bool `json:"criteriaSharingOwned,omitempty"`
 	// triggerAssignments tracks explicit before-trigger assignments during DML.
 	triggerAssignments uint8
 	// dmlNameUnassigned is transient provenance for a queried, unassigned Name.

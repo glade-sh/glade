@@ -12,6 +12,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dap"
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
@@ -157,6 +158,9 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 			return err
 		}
 		defer store.Close()
+		if err := dml.ReconcileCriteriaSharing(machine.Org); err != nil {
+			return err
+		}
 		return store.Save(storage.SnapshotRuntimeOrg(machine.Org))
 	})
 	return nil

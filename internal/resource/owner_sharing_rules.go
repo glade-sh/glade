@@ -112,14 +112,11 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 		}
 		name := trimKnownSuffix(trimKnownSuffix(filepath.Base(path), ".sharingRules-meta.xml"), ".sharingRules")
 		object, ok := org.Objects[name]
-		if !ok || object.Definition.SharingModel != "Private" {
+		if len(source.Rules) != 0 && (!ok || object.Definition.SharingModel != "Private") {
 			return fmt.Errorf("load owner sharing metadata %s: a Private object is required", path)
 		}
 		if len(source.Rules) != 0 && !strings.HasSuffix(name, "__c") {
 			return fmt.Errorf("load owner sharing metadata %s: a Private custom object is required", path)
-		}
-		if len(source.Criteria) != 0 && name != "Case" {
-			return fmt.Errorf("load owner sharing metadata %s: criteria rules are supported on Case only", path)
 		}
 		if _, duplicate := staged[name]; duplicate {
 			return fmt.Errorf("load owner sharing metadata %s: duplicate object rule source is not supported", path)
@@ -144,9 +141,12 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 		}
 		criteriaSeen := make(map[string]bool)
 		for _, r := range source.Criteria {
+			if !ok || name != "Case" || object.Definition.SharingModel != "Private" {
+				continue
+			}
 			rule, err := criteriaRuleFromXML(object.Definition, r)
 			if err != nil {
-				return fmt.Errorf("load owner sharing metadata %s: %w", path, err)
+				continue
 			}
 			key := strings.ToLower(rule.Name)
 			if criteriaSeen[key] {
@@ -154,11 +154,13 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 			}
 			criteriaSeen[key] = true
 			if err := requireGroup(path, rule.TargetGroup); err != nil {
-				return err
+				continue
 			}
 			rules.criteria = append(rules.criteria, rule)
 		}
-		staged[name] = rules
+		if ok {
+			staged[name] = rules
+		}
 	}
 	for name, rules := range staged {
 		object := org.Objects[name]
@@ -177,22 +179,21 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 	return nil
 }
 
-// criteriaRuleFromXML accepts the captured shape: a Read rule for one public
-// group whose items all compare a stored text field by equals or notEqual to
-// one literal. Everything else is refused at load, so no unmodeled rule runs.
+// criteriaRuleFromXML accepts the captured single Subject equality shape.
+// Unsupported criteria are ignored by the loader.
 func criteriaRuleFromXML(definition storage.ObjectDefinition, r criteriaSharingRuleXML) (storage.CriteriaSharingRule, error) {
 	name := strings.TrimSpace(r.FullName)
-	if name == "" || r.AccessLevel != "Read" || len(r.Other) != 0 || len(r.SharedTo.Other) != 0 || r.SharedTo.Group == "" || len(r.Items) == 0 {
+	if name == "" || r.AccessLevel != "Read" || len(r.Other) != 0 || len(r.SharedTo.Other) != 0 || r.SharedTo.Group == "" || len(r.Items) != 1 {
 		return storage.CriteriaSharingRule{}, fmt.Errorf("only Read criteria rules for one public group are supported")
 	}
 	rule := storage.CriteriaSharingRule{Name: name, TargetGroup: r.SharedTo.Group, AccessLevel: r.AccessLevel}
 	for _, item := range r.Items {
 		operation := strings.TrimSpace(item.Operation)
-		if len(item.Other) != 0 || operation != "equals" && operation != "notEqual" || strings.Contains(item.Value, ",") {
+		if len(item.Other) != 0 || operation != "equals" || strings.Contains(item.Value, ",") {
 			return storage.CriteriaSharingRule{}, fmt.Errorf("criteria rule %s: only equals and notEqual against one literal are supported", name)
 		}
 		field, ok := criteriaFieldDefinition(definition, strings.TrimSpace(item.Field))
-		if !ok || field.Type != storage.FieldString && field.Type != storage.FieldPicklist {
+		if !ok || field.APIName != "Subject" || field.Type != storage.FieldString {
 			return storage.CriteriaSharingRule{}, fmt.Errorf("criteria rule %s: field %s is not a supported text field", name, item.Field)
 		}
 		rule.Criteria = append(rule.Criteria, storage.CriteriaSharingCondition{Field: field.APIName, Operation: operation, Value: item.Value})

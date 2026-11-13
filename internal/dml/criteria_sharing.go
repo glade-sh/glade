@@ -2,7 +2,6 @@ package dml
 
 import (
 	"sort"
-	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -84,6 +83,7 @@ func (e *Engine) reconcileCaseCriteriaShares(cases storage.ObjectState, rules []
 	storage.EnsureStandardObject(e.Org, shareName)
 	share := e.Org.Objects[shareName]
 	var remove []storage.ID
+	present := make(map[criteriaShareKey]bool)
 	for id, row := range share.Records {
 		cause, _ := row.GetField("RowCause")
 		if row.System.IsDeleted || cause.String != "Rule" {
@@ -93,10 +93,15 @@ func (e *Engine) reconcileCaseCriteriaShares(cases storage.ObjectState, rules []
 		recipient, _ := row.GetField("UserOrGroupId")
 		key := newCriteriaShareKey(idFromStorageValue(parent), idFromStorageValue(recipient))
 		if wanted[key] {
-			delete(wanted, key)
+			present[key] = true
 			continue
 		}
-		remove = append(remove, id)
+		if row.CriteriaSharingOwned {
+			remove = append(remove, id)
+		}
+	}
+	for key := range present {
+		delete(wanted, key)
 	}
 	if len(remove) == 0 && len(wanted) == 0 {
 		return nil
@@ -139,7 +144,7 @@ func (e *Engine) reconcileCaseCriteriaShares(cases storage.ObjectState, rules []
 		if e.IsolationJournal != nil {
 			e.IsolationJournal.RecordInsert(shareName, id)
 		}
-		share.Records[id] = storage.Record{ID: id, Object: shareName, Fields: map[string]storage.Value{
+		share.Records[id] = storage.Record{ID: id, Object: shareName, CriteriaSharingOwned: true, Fields: map[string]storage.Value{
 			"CaseId":          storage.IDValue(key.parent),
 			"UserOrGroupId":   storage.IDValue(key.group),
 			"CaseAccessLevel": storage.StringValue("Read"),
@@ -152,18 +157,11 @@ func (e *Engine) reconcileCaseCriteriaShares(cases storage.ObjectState, rules []
 	return nil
 }
 
-// criteriaRuleMatches ANDs the rule's items. Text comparison is exact: no
-// captured row varies case, so none is inferred.
+// criteriaRuleMatches evaluates only the captured single Subject equality shape.
 func criteriaRuleMatches(rule storage.CriteriaSharingRule, record storage.Record) bool {
-	if len(rule.Criteria) == 0 {
+	if len(rule.Criteria) != 1 || rule.Criteria[0].Field != "Subject" || rule.Criteria[0].Operation != "equals" {
 		return false
 	}
-	for _, item := range rule.Criteria {
-		value, _ := record.GetField(item.Field)
-		equal := strings.TrimSpace(value.String) == strings.TrimSpace(item.Value)
-		if item.Operation == "equals" && !equal || item.Operation == "notEqual" && equal {
-			return false
-		}
-	}
-	return true
+	value, _ := record.GetField("Subject")
+	return value.String == rule.Criteria[0].Value
 }
