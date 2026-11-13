@@ -198,7 +198,7 @@ func assignmentDateCriteria(operation string, blank bool, value storage.Value, w
 		return false, false, false
 	}
 	if blank {
-		// A blank date sorts below every bound (rows D1, D5, D6, D7).
+		// A blank date sorts below every bound.
 		return operation == "lessthan", true, true
 	}
 	actual, err := time.Parse("2006-01-02", value.String)
