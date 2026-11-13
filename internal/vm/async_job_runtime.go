@@ -1401,12 +1401,13 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		previousFinalizer := vm.currentFinalizer
 		vm.currentFinalizer = Value{}
 		jobTransaction := vm.beginDMLRollbackPoint(vm.testContext == nil, false)
+		bodyEntered := false
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withQueueableJob(job, func() (Value, error) {
 				if staticExecute {
-					return vm.callAsyncEntry(target, Null, args, result, true)
+					return vm.callAsyncEntry(target, Null, args, result, true, &bodyEntered)
 				}
-				return vm.callAsyncEntry(target, job.Object, args, result, true)
+				return vm.callAsyncEntry(target, job.Object, args, result, true, &bodyEntered)
 			})
 		})
 		finalizer := vm.currentFinalizer
@@ -1429,7 +1430,7 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 			if err == nil {
 				err = finalizerErr
 			}
-		} else if err != nil {
+		} else if err != nil && bodyEntered {
 			// Only a body failure with no finalizer matches the native rows.
 			vm.queueableBodyFailureRetained = true
 		}
@@ -1497,7 +1498,7 @@ func (vm *VM) resolveAsyncCallbackForArgs(typeName, method string, args []Value)
 }
 
 // Override only the callback's caller frame; helpers retain normal dispatch.
-func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result *Result, queueable bool) (Value, error) {
+func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result *Result, queueable bool, entered ...*bool) (Value, error) {
 	if method.IsStatic {
 		receiver = Null
 	}
@@ -1516,7 +1517,11 @@ func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result
 	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
 		sharing = "with sharing"
 	}
-	return vm.callMethodWithReceiver(method, receiver, args, result, sharing)
+	var bodyEntered *bool
+	if len(entered) > 0 {
+		bodyEntered = entered[0]
+	}
+	return vm.callMethodWithReceiverEntry(method, receiver, args, result, bodyEntered, sharing)
 }
 
 func (vm *VM) withQueueableDuplicateSignatureTransaction(run func() (Value, error)) (Value, error) {
