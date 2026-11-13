@@ -25,7 +25,7 @@ func TestPlainDeveloperPicklistPreservesConfiguredValues(t *testing.T) {
 
 func TestPlainDeveloperDescribeScope(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Features = []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape}
+	org.Features = []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperDescribeShape}
 	machine := New(nil)
 	machine.SetOrg(&org)
 	user := Object("User")

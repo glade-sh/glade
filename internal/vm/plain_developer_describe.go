@@ -16,7 +16,7 @@ func (vm *VM) plainDeveloperDescribe(object string) bool {
 	default:
 		return false
 	}
-	if vm == nil || vm.Org == nil || vm.currentTrigger || !slices.Contains(vm.Org.Features, project.PlainDeveloperObjectShape) {
+	if vm == nil || vm.Org == nil || vm.currentTrigger || !slices.Contains(vm.Org.Features, project.PlainDeveloperDescribeShape) {
 		return false
 	}
 	version := vm.currentMethod.APIVersion
@@ -37,6 +37,8 @@ func (vm *VM) plainDeveloperNamedDescribe(object string) bool {
 	return ok && !class.PlatformType && !methodHasModifier(class.Modifiers, AnonymousClassModifier)
 }
 
+// Facets not covered by the native fixture retain synthetic-field defaults;
+// they are not qualified as native behavior.
 func plainDeveloperTierField() storage.Field {
 	return storage.Field{APIName: "Tier", Label: "Einstein Account Tier", Type: storage.FieldString, DisplayType: "STRING", Length: 2, Nillable: storage.BoolFlag(true), Accessible: storage.BoolFlag(false), Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false), Permissionable: storage.BoolFlag(false), Filterable: storage.BoolFlag(true), Sortable: storage.BoolFlag(true), Groupable: storage.BoolFlag(true)}
 }

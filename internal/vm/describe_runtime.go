@@ -493,7 +493,9 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 	if plainDeveloperAccount && vm.plainDeveloperNamedDescribe(name) {
 		if _, exists := storage.ResolveFieldName(definition, "", "Tier"); !exists {
 			field := plainDeveloperTierField()
-			vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, vm.sObjectFieldTokenFromField(name, field))
+			token := vm.sObjectFieldTokenFromField(name, field)
+			token.Fields["__plainDeveloperTier"] = Bool(true)
+			vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, token)
 		}
 	}
 	return fieldsMap
@@ -2042,7 +2044,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	if !ok {
 		fieldName = requestedFieldName
 		if strings.EqualFold(objectName, "Account") && strings.EqualFold(fieldName, "Tier") && vm.plainDeveloperNamedDescribe(objectName) {
-			return vm.describeSyntheticFieldValue(objectName, "Tier", plainDeveloperTierField())
+			return vm.describePlainDeveloperTier(objectName)
 		}
 		if systemField, systemOK := syntheticSObjectSystemField(fieldName); systemOK {
 			fieldName = systemField.APIName
@@ -2579,6 +2581,29 @@ func appendUniqueStringFold(values []string, value string) []string {
 		}
 	}
 	return append(values, value)
+}
+
+// describePlainDeveloperTier preserves the captured descriptor on tokens that
+// cross the named helper boundary, without modifying shared cache templates.
+func (vm *VM) describePlainDeveloperTier(objectName string) (Value, error) {
+	desc, err := vm.describeSyntheticFieldValue(objectName, "Tier", plainDeveloperTierField())
+	if err != nil {
+		return desc, err
+	}
+	fields := make(map[string]Value, len(desc.Fields))
+	for k, v := range desc.Fields {
+		fields[k] = v
+	}
+	desc.Fields = fields
+	desc.Fields["byteLength"] = Int(6)
+	desc.Fields["digits"] = Int(0)
+	desc.Fields["inlineHelpText"] = Null
+	desc.Fields["localName"] = String("Tier")
+	desc.Fields["relationshipOrder"] = Null
+	token := vm.sObjectFieldTokenFromField(objectName, plainDeveloperTierField())
+	token.Fields["__plainDeveloperTier"] = Bool(true)
+	desc.Fields["sObjectField"] = token
+	return desc, nil
 }
 
 func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field storage.Field) (Value, error) {

@@ -26,6 +26,9 @@ const (
 // Only then does the native plain object inventory establish object absence.
 const PlainDeveloperObjectShape = "__glade_plain_developer_objects"
 
+// PlainDeveloperDescribeShape identifies the narrower definition captured for field describes.
+const PlainDeveloperDescribeShape = "__glade_plain_developer_describe"
+
 // StandardFieldPolicyFeatures augments the effective project's positive feature
 // evidence with its field-policy certainty. Only the consuming project's own
 // declaration establishes its target shape. Dependency development definitions
@@ -38,6 +41,9 @@ func StandardFieldPolicyFeatures(p Project) []string {
 	if p.Root == "" || declaresStandardFieldShape(p.Root) {
 		if plainDeveloperObjectShape(p, features) {
 			features = append(features, PlainDeveloperObjectShape)
+			if plainDeveloperDescribeShape(p.Root) {
+				features = append(features, PlainDeveloperDescribeShape)
+			}
 		}
 		return features
 	}
@@ -177,6 +183,44 @@ func plainDeveloperDefinition(data []byte) bool {
 			}
 		default:
 			return false
+		}
+	}
+	return true
+}
+
+// The field capture used the default Developer definition, without feature,
+// setting, country or language overrides. Object inventory evidence is broader.
+func plainDeveloperDescribeShape(root string) bool {
+	for _, path := range scratchOrgConfigFiles(root) {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var definition map[string]json.RawMessage
+		if json.Unmarshal(data, &definition) != nil {
+			return false
+		}
+		featuresRaw, hasFeatures := definition["features"]
+		settingsRaw, hasSettings := definition["settings"]
+		if !hasFeatures || !hasSettings || string(featuresRaw) == "null" || string(settingsRaw) == "null" {
+			return false
+		}
+		for key, raw := range definition {
+			switch key {
+			case "orgName", "description", "edition":
+			case "features":
+				var features scratchFeatureNames
+				if json.Unmarshal(raw, &features) != nil || len(features) != 0 {
+					return false
+				}
+			case "settings":
+				var settings map[string]any
+				if json.Unmarshal(raw, &settings) != nil || len(settings) != 0 {
+					return false
+				}
+			default:
+				return false
+			}
 		}
 	}
 	return true

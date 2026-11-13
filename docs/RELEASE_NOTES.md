@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Standard describes.** Plain Developer orgs expose the captured Account field map and standard picklist values for the observed API 62 and 67 contexts.
+- **Standard describes.** The captured default Developer configuration exposes the observed Account field map and standard picklist values at APIs 62 and 67. Field tokens returned by a named helper remain describable by its caller.
 
 ## v0.3.8
 
