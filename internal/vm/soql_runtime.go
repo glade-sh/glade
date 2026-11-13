@@ -2810,6 +2810,11 @@ func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchSc
 					}
 					return true, nil
 				}
+				// No captured candidate begins with a complete wildcard match
+				// followed by additional letters. Keep that index boundary.
+				if prefix, _ := path.Match(pattern+"*", word); prefix {
+					return false, unsupportedCallError("SOSL wildcard index matching")
+				}
 			} else if strings.HasPrefix(word, pattern) {
 				return true, nil
 			}
