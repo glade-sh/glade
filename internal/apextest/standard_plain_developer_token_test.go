@@ -41,7 +41,9 @@ func TestPlainDeveloperTokenCrossesContext(t *testing.T) {
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
-			index := standardDescribeDeclaredBoundaryIndex(t, api, map[string]string{"DescribeProbe": string(source)}, nil)
+			index := nativeBoundaryIndexWithClassAPIs(t, api, map[string]string{"DescribeProbe": string(source)}, nil, map[string]string{"DescribeProbe": "62.0"})
+			writeFile(t, filepath.Join(index.Project.Root, "config/project-scratch-def.json"), `{"edition":"Developer","features":[],"settings":{}}`)
+			index = loadTestIndex(t, index.Project.Root)
 			org := orgFromIndex(index)
 			org.APIVersion = api
 			machine := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org}).newMachine()
@@ -69,7 +71,9 @@ func TestPlainDeveloperTokenAdditionalFacets(t *testing.T) {
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
-			index := standardDescribeDeclaredBoundaryIndex(t, api, map[string]string{"DescribeProbe": string(source)}, nil)
+			index := nativeBoundaryIndexWithClassAPIs(t, api, map[string]string{"DescribeProbe": string(source)}, nil, map[string]string{"DescribeProbe": "62.0"})
+			writeFile(t, filepath.Join(index.Project.Root, "config/project-scratch-def.json"), `{"edition":"Developer","features":[],"settings":{}}`)
+			index = loadTestIndex(t, index.Project.Root)
 			org := orgFromIndex(index)
 			org.APIVersion = api
 			machine := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org}).newMachine()
