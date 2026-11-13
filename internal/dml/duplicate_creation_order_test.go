@@ -8,7 +8,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// NATIVE earliest-created selection and stable ties ../apextest/testdata/conformance/duplicate_rule_evaluation/account_overflow/org.tsv:146 anonymous 62.0
+// NATIVE earliest-created selection and stable ties ../apextest/testdata/conformance/duplicate_rule_evaluation/account_overflow/org.tsv:142 anonymous 62.0
 // Give the captured 120 exact seeds reversed IDs so ID order cannot stand in
 // for creation order. Updating LastModifiedDate must not affect selection.
 func TestDuplicateMembersUseCreationOrder(t *testing.T) {

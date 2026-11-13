@@ -4,6 +4,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -20,20 +21,34 @@ type DuplicateMatch struct {
 	Confidences []float64
 }
 
-// byMatchRecordID orders a match's records and confidences together by ID.
-type byMatchRecordID struct{ m *DuplicateMatch }
+// byMatchCreation orders members by creation, with the ID breaking audit-time ties.
+type byMatchCreation struct{ m *DuplicateMatch }
 
-func (b byMatchRecordID) Len() int { return len(b.m.Records) }
-func (b byMatchRecordID) Less(i, j int) bool {
-	return b.m.Records[i].ID < b.m.Records[j].ID
+func (b byMatchCreation) Len() int { return len(b.m.Records) }
+func (b byMatchCreation) Less(i, j int) bool {
+	a, z := b.m.Records[i], b.m.Records[j]
+	if a.System.CreatedDate != z.System.CreatedDate {
+		at, ae := time.Parse(time.RFC3339Nano, a.System.CreatedDate)
+		zt, ze := time.Parse(time.RFC3339Nano, z.System.CreatedDate)
+		if ae == nil && ze == nil {
+			if !at.Equal(zt) {
+				return at.Before(zt)
+			}
+		} else {
+			return a.System.CreatedDate < z.System.CreatedDate
+		}
+	}
+	return a.ID < z.ID
 }
-func (b byMatchRecordID) Swap(i, j int) {
+func (b byMatchCreation) Swap(i, j int) {
 	b.m.Records[i], b.m.Records[j] = b.m.Records[j], b.m.Records[i]
 	b.m.Confidences[i], b.m.Confidences[j] = b.m.Confidences[j], b.m.Confidences[i]
 }
 
 // DuplicateResult mirrors Datacloud.DuplicateResult for one duplicate rule.
 type DuplicateResult struct {
+	// Detected remains true when a Bypass rule finds only undisclosed rows.
+	Detected  bool
 	Rule      string
 	RuleID    storage.ID
 	Object    string
@@ -203,6 +218,11 @@ func customDuplicateMatch(rule storage.MatchingRule, candidate, existing storage
 			var score float64
 			l, r := workflowValueString(left), workflowValueString(right)
 			matches[i], score = FuzzyScore(item.Method, l, r, matchBlanks)
+			// The active custom Person Account name panel also accepts an
+			// initial with exact surname and email corroboration.
+			if strings.EqualFold(rule.Object, "PersonAccount") && strings.EqualFold(item.Method, "FirstName") && standardFirstInitial(l, r) && duplicateFieldsEqual(candidate, existing, "LastName") && duplicateFieldsEqual(candidate, existing, "PersonEmail") {
+				matches[i], score = true, 100
+			}
 			if matches[i] {
 				scores[i] = fuzzyItemScore(item.Method, score)
 			} else {
@@ -232,13 +252,20 @@ func customDuplicateMatch(rule storage.MatchingRule, candidate, existing storage
 // cross-object, unsupported fuzzy methods or unresolved matching rules. Callers then leave the
 // rule unenforced, as before duplicate enforcement existed.
 func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (DuplicateResult, bool) {
+	return FindDuplicateMatchesWithAccess(org, rule, record, exclude, nil)
+}
+
+// FindDuplicateMatchesWithAccess shares the matcher with hosts that enforce
+// record visibility. Access decides detection separately from disclosure.
+func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, access func(storage.Record) (detect, disclose bool)) (DuplicateResult, bool) {
 	result := DuplicateResult{Rule: rule.Name, RuleID: rule.ID, Object: rule.Object}
 	personRule := strings.EqualFold(rule.Subtype, "PersonAccount")
 	if org == nil || (rule.Subtype != "" && !personRule) || len(rule.MatchRules) == 0 {
 		return result, false
 	}
 	for _, matching := range rule.MatchRules {
-		standard := storage.IsStandardMatchingRule(matching.Object, matching.Name) && len(matching.Items) == 0
+		personStandard := personRule && strings.EqualFold(matching.Object, "PersonAccount") && strings.EqualFold(matching.Name, "Standard_PersonAccount_Match_Rule_v1_0") && len(matching.Items) == 0
+		standard := (storage.IsStandardMatchingRule(matching.Object, matching.Name) && len(matching.Items) == 0) || personStandard
 		scanObject := matching.Object
 		if personRule && strings.EqualFold(matching.Object, "PersonAccount") {
 			// A Person Account rule compares person accounts with each other.
@@ -275,6 +302,9 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 		if standard {
 			match.Engine = storage.StandardMatchEngine
 			standardMatch = standardDuplicateMatcher(org, matching.Object, rule.Object, record)
+			if personStandard {
+				standardMatch = standardPersonAccountMatcher(org, record)
+			}
 			scan = standardMatch != nil
 		}
 		for _, existing := range org.Objects[objectName].Records {
@@ -284,7 +314,14 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
 				continue
 			}
-			if personRule && !isPersonAccountRecord(existing) {
+			if strings.EqualFold(scanObject, "Account") && personRule != isPersonAccountRecord(existing) {
+				continue
+			}
+			detect, disclose := true, true
+			if access != nil {
+				detect, disclose = access(existing)
+			}
+			if !detect {
 				continue
 			}
 			var matched bool
@@ -298,18 +335,22 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 				}
 			}
 			if matched {
+				result.Detected = true
+				if !disclose {
+					continue
+				}
 				match.Records = append(match.Records, existing.Clone())
 				match.Confidences = append(match.Confidences, confidence)
 			}
 		}
-		sort.Sort(byMatchRecordID{&match})
-		// The standard Account search and save error expose the same 100
-		// members in the overflow rows, including when a later row is exact.
-		// Keep confidence paired with each returned record.
-		if standard && strings.EqualFold(matching.Object, "Account") && len(match.Records) > 100 {
+		sort.Sort(byMatchCreation{&match})
+		// Native account_overflow rows select the earliest 100 for every kind
+		// of rule, then rank only that selected set by confidence and creation.
+		if len(match.Records) > 100 {
 			match.Records = match.Records[:100]
 			match.Confidences = match.Confidences[:100]
 		}
+		sort.Stable(byDuplicateConfidence{&match})
 		result.Matches = append(result.Matches, match)
 	}
 	return result, true
@@ -324,6 +365,9 @@ func standardCrossObject(ruleObject, matchObject string) bool {
 
 // HasRecords reports whether any matching rule found a record.
 func (r DuplicateResult) HasRecords() bool {
+	if r.Detected {
+		return true
+	}
 	for _, match := range r.Matches {
 		if len(match.Records) > 0 {
 			return true
@@ -372,7 +416,7 @@ func activeDuplicateRules(org *storage.OrgState, object, subtype string) []stora
 // does not bypass later blocking or alerting rules. Records inserted by the
 // same statement are not candidates.
 func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *string, prior *storage.Record) (*DuplicateReport, error) {
-	if !e.Options.EnforceDuplicateRules || (!update && stamp == nil) {
+	if (!e.Options.EnforceDuplicateRules && !(update && e.Options.EnforceUpsertIDInsertDuplicateRules)) || (!update && stamp == nil) {
 		return nil, nil
 	}
 	exclude := func(id storage.ID) bool { return !update && e.duplicates.stamp == stamp && e.duplicates.batch[id] }
@@ -382,11 +426,14 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 			continue
 		}
 		if update {
-			fuzzy, changed := customFuzzyFieldsChanged(rule, record, prior)
-			if fuzzy && !changed {
+			gated, changed := customFuzzyFieldsChanged(rule, record, prior)
+			if !e.Options.EnforceDuplicateRules && !gated {
 				continue
 			}
-			if e.Options.UpsertChangedExactDuplicatesOnly && !fuzzy && !upsertExactMatchChanged(rule, record, prior) {
+			if gated && !changed {
+				continue
+			}
+			if e.Options.UpsertChangedExactDuplicatesOnly && !gated && !upsertExactMatchChanged(rule, record, prior) {
 				continue
 			}
 		}
@@ -394,7 +441,7 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 		if !supported || !applies {
 			continue
 		}
-		found, supported := FindDuplicateMatches(e.Org, rule, record, exclude)
+		found, supported := e.findDuplicateMatches(rule, record, exclude)
 		if !supported || !found.HasRecords() {
 			continue
 		}
@@ -450,7 +497,7 @@ func (e *Engine) upsertSingleReportMatch(record storage.Record, exclude func(sto
 		if !applies {
 			continue
 		}
-		matches, supported := FindDuplicateMatches(e.Org, rule, record, exclude)
+		matches, supported := e.findDuplicateMatches(rule, record, exclude)
 		if !supported {
 			return false
 		}
@@ -494,77 +541,36 @@ func (e *Engine) enforceDuplicateRulesOnUpdate(record, prior storage.Record) err
 
 // The scalar external-key insert row uses the built-in business Account rule.
 func standardAccountInsertRule(rule storage.DuplicateRule) bool {
-	if !strings.EqualFold(rule.Object, "Account") || rule.Subtype != "" || len(rule.MatchRules) != 1 {
+	if !strings.EqualFold(rule.Object, "Account") || len(rule.MatchRules) != 1 {
 		return false
 	}
 	match := rule.MatchRules[0]
-	return strings.EqualFold(match.Object, "Account") && len(match.Items) == 0 && storage.IsStandardMatchingRule(match.Object, match.Name)
+	return len(match.Items) == 0 && ((rule.Subtype == "" && strings.EqualFold(match.Object, "Account") && storage.IsStandardMatchingRule(match.Object, match.Name)) ||
+		(strings.EqualFold(rule.Subtype, "PersonAccount") && strings.EqualFold(match.Object, "PersonAccount") && strings.EqualFold(match.Name, "Standard_PersonAccount_Match_Rule_v1_0")))
 }
 
-// A sparse edit on an existing Contact phone or Person Account name duplicate
-// saves. A scalar upsert that changes the match fields runs the edit action.
-func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record, prior *storage.Record) (fuzzy, changed bool) {
+// Custom edit rows cover exact and fuzzy items, AND and OR logic, and
+// zero, one or multiple filter conditions. Filters decide scope separately.
+// A nonblank matching value must change; sparse and same-value edits do not run.
+func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record, prior *storage.Record) (gated, changed bool) {
 	if prior == nil || len(rule.MatchRules) != 1 {
 		return false, false
 	}
 	match := rule.MatchRules[0]
-	if !strings.EqualFold(match.Status, "Active") || !capturedFuzzyEditRule(rule, match, record, *prior) {
+	if !strings.EqualFold(match.Status, "Active") || len(match.Items) == 0 {
 		return false, false
 	}
 	for _, item := range match.Items {
-		if !strings.EqualFold(item.BlankBehavior, "NullNotAllowed") {
+		if !strings.EqualFold(item.BlankBehavior, "NullNotAllowed") || (!strings.EqualFold(item.Method, "Exact") && !FuzzyMethodSupported(item.Method)) {
 			return false, false
 		}
-		before, beforeOK := prior.GetField(item.Field)
-		after, afterOK := record.GetField(item.Field)
-		if duplicateBlank(before, beforeOK) || duplicateBlank(after, afterOK) {
-			return false, false
-		}
-		if !storageValuesEqual(storage.Field{}, before, after) {
+		before, _ := prior.GetField(item.Field)
+		after, ok := record.GetField(item.Field)
+		if !duplicateBlank(after, ok) && !storageValuesEqual(storage.Field{}, before, after) {
 			changed = true
 		}
 	}
 	return true, changed
-}
-
-func capturedFuzzyEditRule(rule storage.DuplicateRule, match storage.MatchingRule, record, prior storage.Record) bool {
-	hasItem := func(item storage.MatchingRuleItem, field string) bool {
-		return strings.EqualFold(item.Field, field) && strings.EqualFold(item.Method, field)
-	}
-	ops := rule.OperationsOnUpdate
-	allow := strings.EqualFold(rule.ActionOnUpdate, "Allow")
-	alert := allow && len(ops) == 1 && strings.EqualFold(ops[0], "Alert")
-	switch {
-	case strings.EqualFold(rule.Object, "Contact") && rule.Subtype == "" && strings.EqualFold(match.Object, "Contact"):
-		if len(match.Items) != 1 || !hasItem(match.Items[0], "Phone") || (match.BooleanFilter != "" && match.BooleanFilter != "1") {
-			return false
-		}
-		if len(rule.Filter.Items) != 1 || rule.Filter.BooleanFilter != "1" {
-			return false
-		}
-		criterion := rule.Filter.Items[0]
-		// The rule filters the input. Entering or leaving a single text
-		// equality condition does not change the phone match key.
-		if !strings.EqualFold(criterion.Operation, "equals") || strings.TrimSpace(criterion.Value) == "" {
-			return false
-		}
-		before, beforeOK := prior.GetField(criterion.Field)
-		after, afterOK := record.GetField(criterion.Field)
-		if !beforeOK || !afterOK || before.Kind != storage.ValueString || after.Kind != storage.ValueString ||
-			strings.TrimSpace(before.String) == "" || strings.TrimSpace(after.String) == "" {
-			return false
-		}
-		block := strings.EqualFold(rule.ActionOnUpdate, "Block") && len(ops) == 0
-		report := allow && len(ops) == 1 && strings.EqualFold(ops[0], "Report")
-		return block || alert || report
-	case strings.EqualFold(rule.Object, "Account") && strings.EqualFold(rule.Subtype, "PersonAccount") && strings.EqualFold(match.Object, "PersonAccount"):
-		if !alert || len(rule.Filter.Items) != 0 || rule.Filter.BooleanFilter != "" || len(match.Items) != 2 || !strings.EqualFold(match.BooleanFilter, "1 AND 2") {
-			return false
-		}
-		return (hasItem(match.Items[0], "FirstName") && hasItem(match.Items[1], "LastName")) ||
-			(hasItem(match.Items[0], "LastName") && hasItem(match.Items[1], "FirstName"))
-	}
-	return false
 }
 
 // Limit upsert update enforcement to changed, single-field exact matches.
@@ -618,4 +624,36 @@ func StandardDuplicateRulesEnabled(org *storage.OrgState) bool {
 		return true
 	}
 	return false
+}
+
+// Creation order is stable for ties in confidence because the input is already
+// ordered by creation before capping.
+type byDuplicateConfidence struct{ m *DuplicateMatch }
+
+func (b byDuplicateConfidence) Len() int           { return len(b.m.Records) }
+func (b byDuplicateConfidence) Less(i, j int) bool { return b.m.Confidences[i] > b.m.Confidences[j] }
+func (b byDuplicateConfidence) Swap(i, j int)      { byMatchCreation{b.m}.Swap(i, j) }
+
+// The activated Person Account rows establish an exact surname and email,
+// with matching first names (including an initial). Every observed positive
+// reports 100. Other Person Account matching paths remain unproven.
+func standardPersonAccountMatcher(_ *storage.OrgState, record storage.Record) func(storage.Record) (bool, float64) {
+	first, _ := duplicateFieldText(record, "FirstName")
+	return func(existing storage.Record) (bool, float64) {
+		if !duplicateFieldsEqual(record, existing, "LastName") || !duplicateFieldsEqual(record, existing, "PersonEmail") {
+			return false, 0
+		}
+		other, _ := duplicateFieldText(existing, "FirstName")
+		if item := standardCompare(first, other, standardMethod("firstname")); item.ok() || standardFirstInitial(first, other) {
+			return true, 100
+		}
+		return false, 0
+	}
+}
+
+func (e *Engine) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (DuplicateResult, bool) {
+	if e.DuplicateMatcher != nil {
+		return e.DuplicateMatcher(rule, record, exclude)
+	}
+	return FindDuplicateMatches(e.Org, rule, record, exclude)
 }

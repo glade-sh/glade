@@ -17,7 +17,7 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID())) ||
 			vm.currentUserHasDirectAccountShare(record.ID, userID)
 	}
-	return vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
+	return vm.currentUserHasDirectContactShare(objectName, record, userID) || vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
 		vm.currentUserHasOwnerRuleRead(objectName, record, userID) ||
 		vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, false)
 }
@@ -503,4 +503,38 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 	}
 	// Read-only sharing and read shares do not grant write authority.
 	return record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID))
+}
+
+// Contact manual and committed criteria shares use the same direct recipient
+// and public-group resolution as Account shares. No criteria grant is inferred
+// from field values inside an Apex test transaction.
+func (vm *VM) currentUserHasDirectContactShare(object string, record storage.Record, userID string) bool {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(object, "Contact") || userID == "" {
+		return false
+	}
+	account, ok := record.GetField("AccountId")
+	if !ok {
+		if _, stored, found := storage.LookupRecordByID(vm.Org.Objects["Contact"].Records, record.ID); found {
+			account, ok = stored.GetField("AccountId")
+		}
+	}
+	if !ok || storageValueIDText(account) == "" {
+		return false
+	}
+	for _, share := range vm.Org.Objects["ContactShare"].Records {
+		if share.System.IsDeleted {
+			continue
+		}
+		parent, _ := share.GetField("ContactId")
+		target, _ := share.GetField("UserOrGroupId")
+		level, _ := share.GetField("ContactAccessLevel")
+		if !storage.IDsEqual(storage.ID(storageValueIDText(parent)), record.ID) || (!strings.EqualFold(level.String, "Read") && !strings.EqualFold(level.String, "Edit") && !strings.EqualFold(level.String, "All")) {
+			continue
+		}
+		recipient := storage.ID(storageValueIDText(target))
+		if storage.IDsEqual(recipient, storage.ID(userID)) || vm.currentUserCanSeeAccountShareTarget(recipient, userID) {
+			return true
+		}
+	}
+	return false
 }

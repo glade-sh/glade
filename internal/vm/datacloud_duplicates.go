@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -115,6 +116,11 @@ func duplicateMatchRecordValue(record storage.Record, find bool) Value {
 			}
 		}
 	}
+	selected := map[string]bool{}
+	for _, field := range fields {
+		selected[field] = true
+	}
+	out.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, selected)
 	return out
 }
 
@@ -214,7 +220,7 @@ func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, by
 		if !supported || !applies {
 			continue
 		}
-		found, supported := dml.FindDuplicateMatches(vm.Org, rule, record, nil)
+		found, supported := vm.findDuplicateMatches(rule, record, nil)
 		if !supported {
 			continue
 		}
@@ -284,6 +290,9 @@ func (vm *VM) findDuplicates(args []Value) (Value, error) {
 }
 
 func (vm *VM) findDuplicatesByIDs(args []Value) (Value, error) {
+	if len(args) == 1 && args[0].Kind == ValueList && len(args[0].List) > findDuplicatesBatchSize {
+		return Null, newExceptionError("System.HandledException", findDuplicatesBatchMessage)
+	}
 	if len(args) != 1 || args[0].Kind != ValueList {
 		return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
 	}
@@ -401,4 +410,81 @@ func (vm *VM) commitDuplicateReports(reports []dml.DuplicateReport) {
 		engine.Insert(items)
 	}
 	vm.rebuildDMLObjectIndexes([]storage.Record{{Object: "DuplicateRecordSet"}, {Object: "DuplicateRecordItem"}}, nil)
+}
+
+// Both Find and DML use the same record access policy. Enforce rules search
+// visible members; Bypass rules can detect hidden members without disclosing
+// them. The legacy explicit without-sharing route discloses Bypass members.
+func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+	policy := vm.currentSourceExecutionPolicy()
+	if vm.testContext == nil || policy.DataMode == "USER_MODE" {
+		for _, matching := range rule.MatchRules {
+			for _, item := range matching.Items {
+				if !vm.duplicateMatchingFieldAccessible(record.Object, item.Field) {
+					record = record.Clone()
+					record.Fields[item.Field] = storage.NullValue()
+				}
+			}
+		}
+	}
+	bypass := strings.EqualFold(rule.SecurityOption, "BypassSharingRules")
+	legacyWithout := false
+	if policy.DataMode == "SYSTEM_MODE" && strings.EqualFold(vm.currentSharingMode(), "without sharing") {
+		if mode, ok := vm.classSharingMode(vm.currentClass); ok && mode == "without sharing" {
+			legacyWithout = true
+		}
+		for _, frame := range vm.callStack {
+			if i := strings.LastIndex(frame.Symbol, "."); i > 0 {
+				if mode, ok := vm.classSharingMode(frame.Symbol[:i]); ok && mode == "without sharing" {
+					legacyWithout = true
+				}
+			}
+		}
+	}
+	return dml.FindDuplicateMatchesWithAccess(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
+		visible := vm.userModeRecordVisible(existing.Object, existing, vm.currentUserID())
+		if !bypass {
+			return visible, visible
+		}
+		return true, visible || legacyWithout
+	})
+}
+
+// The field-hidden Contact rows pin the default API 67 partial insert result
+// when an active matching rule reads a field the caller cannot access.
+func (vm *VM) duplicateMatchingFieldInsertFailures(op string, value Value) ([]dml.Result, bool) {
+	records := dmlAccessRecords(value)
+	if op != "insert" || len(records) != 1 || !strings.EqualFold(records[0].Type, "Contact") {
+		return nil, false
+	}
+	row := records[0]
+	denied := map[string]bool{}
+	for _, rule := range dml.ActiveDuplicateRules(vm.Org, row.Type) {
+		for _, matching := range rule.MatchRules {
+			for _, item := range matching.Items {
+				_, v, ok := objectFieldValue(row, item.Field)
+				if ok && v.Kind != ValueNull && !vm.duplicateMatchingFieldAccessible(row.Type, item.Field) {
+					denied[item.Field] = true
+				}
+			}
+		}
+	}
+	if len(denied) == 0 {
+		return nil, false
+	}
+	fields := make([]string, 0, len(denied))
+	for field := range denied {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
+	message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result!  fieldNames: %s", row.Type, strings.Join(fields, ", "))
+	return []dml.Result{{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}}, true
+}
+
+func (vm *VM) duplicateMatchingFieldAccessible(object, field string) bool {
+	user := vm.fieldPermissionPrincipal()
+	if strings.EqualFold(object, "Contact") && isCustomSchemaName(field) && !vm.customFieldHasIntrinsicAccess(object, field) && vm.currentUserProfileName(user) == "System Administrator" {
+		return vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), object, field, "isAccessible")
+	}
+	return vm.currentUserFieldPermission(object, field, "isAccessible")
 }
