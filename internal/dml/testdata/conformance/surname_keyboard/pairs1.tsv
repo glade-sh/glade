@@ -1,0 +1,529 @@
+method	panel	index	cls	obj	seed	cand	variant	ksum	mp3eq	tail	tailkind	stem	length	sub	target
+A_adjacent_fwd	A	0	A1s16	Contact	Riim	Riimn	std	16	True	n	adjacent	riim			
+A_adjacent_rev	A	0	A1s16	Contact	Riimn	Riim	std	21	True	n	adjacent	riim			
+A_column_fwd	A	0	A1s16	Contact	Riim	Riimj	std	16	False	j	column	riim			
+A_column_rev	A	0	A1s16	Contact	Riimj	Riim	std	19	False	j	column	riim			
+A_far_fwd	A	0	A1s16	Contact	Riim	Riimq	std	16	False	q	far	riim			
+A_far_rev	A	0	A1s16	Contact	Riimq	Riim	std	27	False	q	far	riim			
+A_vowel_fwd	A	0	A1s16	Contact	Riim	Riima	std	16	True	a	vowel	riim			
+A_vowel_rev	A	0	A1s16	Contact	Riima	Riim	std	29	True	a	vowel	riim			
+A_doubled_fwd	A	0	A1s16	Contact	Riim	Riimm	std	16	True	m	doubled	riim			
+A_doubled_rev	A	0	A1s16	Contact	Riimm	Riim	std	21	True	m	doubled	riim			
+A_s_fwd	A	0	A1s16	Contact	Riim	Riims	std	16	False	s	s	riim			
+A_s_rev	A	0	A1s16	Contact	Riims	Riim	std	27	False	s	s	riim			
+A_p_fwd	A	0	A1s16	Contact	Riim	Riimp	std	16	False	p	p	riim			
+A_p_rev	A	0	A1s16	Contact	Riimp	Riim	std	23	False	p	p	riim			
+A_z_fwd	A	0	A1s16	Contact	Riim	Riimz	std	16	False	z	z	riim			
+A_z_rev	A	0	A1s16	Contact	Riimz	Riim	std	31	False	z	z	riim			
+A_adjacent_fwd	A	1	A1s16	Contact	Ikir	Ikirt	std	16	False	t	adjacent	ikir			
+A_adjacent_rev	A	1	A1s16	Contact	Ikirt	Ikir	std	19	False	t	adjacent	ikir			
+A_column_fwd	A	1	A1s16	Contact	Ikir	Ikirf	std	16	False	f	column	ikir			
+A_column_rev	A	1	A1s16	Contact	Ikirf	Ikir	std	23	False	f	column	ikir			
+A_far_fwd	A	1	A1s16	Contact	Ikir	Ikiro	std	16	True	o	far	ikir			
+A_far_rev	A	1	A1s16	Contact	Ikiro	Ikir	std	21	True	o	far	ikir			
+A_vowel_fwd	A	1	A1s16	Contact	Ikir	Ikira	std	16	True	a	vowel	ikir			
+A_vowel_rev	A	1	A1s16	Contact	Ikira	Ikir	std	29	True	a	vowel	ikir			
+A_doubled_fwd	A	1	A1s16	Contact	Ikir	Ikirr	std	16	True	r	doubled	ikir			
+A_doubled_rev	A	1	A1s16	Contact	Ikirr	Ikir	std	21	True	r	doubled	ikir			
+A_s_fwd	A	1	A1s16	Contact	Ikir	Ikirs	std	16	False	s	s	ikir			
+A_s_rev	A	1	A1s16	Contact	Ikirs	Ikir	std	27	False	s	s	ikir			
+A_p_fwd	A	1	A1s16	Contact	Ikir	Ikirp	std	16	False	p	p	ikir			
+A_p_rev	A	1	A1s16	Contact	Ikirp	Ikir	std	23	False	p	p	ikir			
+A_z_fwd	A	1	A1s16	Contact	Ikir	Ikirz	std	16	False	z	z	ikir			
+A_z_rev	A	1	A1s16	Contact	Ikirz	Ikir	std	31	False	z	z	ikir			
+A_adjacent_fwd	A	2	A1s42	Contact	Sznc	Szncv	std	42	False	v	adjacent	sznc			
+A_adjacent_rev	A	2	A1s42	Contact	Szncv	Sznc	std	51	False	v	adjacent	sznc			
+A_column_fwd	A	2	A1s42	Contact	Sznc	Szncd	std	42	False	d	column	sznc			
+A_column_rev	A	2	A1s42	Contact	Szncd	Sznc	std	51	False	d	column	sznc			
+A_far_fwd	A	2	A1s42	Contact	Sznc	Sznco	std	42	True	o	far	sznc			
+A_far_rev	A	2	A1s42	Contact	Sznco	Sznc	std	47	True	o	far	sznc			
+A_vowel_fwd	A	2	A1s42	Contact	Sznc	Sznca	std	42	True	a	vowel	sznc			
+A_vowel_rev	A	2	A1s42	Contact	Sznca	Sznc	std	55	True	a	vowel	sznc			
+A_doubled_fwd	A	2	A1s42	Contact	Sznc	Szncc	std	42	True	c	doubled	sznc			
+A_doubled_rev	A	2	A1s42	Contact	Szncc	Sznc	std	53	True	c	doubled	sznc			
+A_s_fwd	A	2	A1s42	Contact	Sznc	Szncs	std	42	False	s	s	sznc			
+A_s_rev	A	2	A1s42	Contact	Szncs	Sznc	std	53	False	s	s	sznc			
+A_p_fwd	A	2	A1s42	Contact	Sznc	Szncp	std	42	False	p	p	sznc			
+A_p_rev	A	2	A1s42	Contact	Szncp	Sznc	std	49	False	p	p	sznc			
+A_z_fwd	A	2	A1s42	Contact	Sznc	Szncz	std	42	False	z	z	sznc			
+A_z_rev	A	2	A1s42	Contact	Szncz	Sznc	std	57	False	z	z	sznc			
+A_adjacent_fwd	A	3	A1s42	Contact	Ssxb	Ssxbn	std	42	False	n	adjacent	ssxb			
+A_adjacent_rev	A	3	A1s42	Contact	Ssxbn	Ssxb	std	47	False	n	adjacent	ssxb			
+A_column_fwd	A	3	A1s42	Contact	Ssxb	Ssxbg	std	42	False	g	column	ssxb			
+A_column_rev	A	3	A1s42	Contact	Ssxbg	Ssxb	std	47	False	g	column	ssxb			
+A_far_fwd	A	3	A1s42	Contact	Ssxb	Ssxbo	std	42	True	o	far	ssxb			
+A_far_rev	A	3	A1s42	Contact	Ssxbo	Ssxb	std	47	True	o	far	ssxb			
+A_vowel_fwd	A	3	A1s42	Contact	Ssxb	Ssxba	std	42	True	a	vowel	ssxb			
+A_vowel_rev	A	3	A1s42	Contact	Ssxba	Ssxb	std	55	True	a	vowel	ssxb			
+A_doubled_fwd	A	3	A1s42	Contact	Ssxb	Ssxbb	std	42	True	b	doubled	ssxb			
+A_doubled_rev	A	3	A1s42	Contact	Ssxbb	Ssxb	std	49	True	b	doubled	ssxb			
+A_s_fwd	A	3	A1s42	Contact	Ssxb	Ssxbs	std	42	False	s	s	ssxb			
+A_s_rev	A	3	A1s42	Contact	Ssxbs	Ssxb	std	53	False	s	s	ssxb			
+A_p_fwd	A	3	A1s42	Contact	Ssxb	Ssxbp	std	42	False	p	p	ssxb			
+A_p_rev	A	3	A1s42	Contact	Ssxbp	Ssxb	std	49	False	p	p	ssxb			
+A_z_fwd	A	3	A1s42	Contact	Ssxb	Ssxbz	std	42	False	z	z	ssxb			
+A_z_rev	A	3	A1s42	Contact	Ssxbz	Ssxb	std	57	False	z	z	ssxb			
+A_s_fwd	A	4	A2s12	Contact	Kuhj	Kuhjs	std	12	False	s	s	kuhj			
+A_s_rev	A	4	A2s12	Contact	Kuhjs	Kuhj	std	23	False	s	s	kuhj			
+A_p_fwd	A	4	A2s12	Contact	Kuhj	Kuhjp	std	12	False	p	p	kuhj			
+A_p_rev	A	4	A2s12	Contact	Kuhjp	Kuhj	std	19	False	p	p	kuhj			
+A_s_fwd	A	5	A2s20	Contact	Lunf	Lunfs	std	20	False	s	s	lunf			
+A_s_rev	A	5	A2s20	Contact	Lunfs	Lunf	std	31	False	s	s	lunf			
+A_p_fwd	A	5	A2s20	Contact	Lunf	Lunfp	std	20	False	p	p	lunf			
+A_p_rev	A	5	A2s20	Contact	Lunfp	Lunf	std	27	False	p	p	lunf			
+A_s_fwd	A	6	A2s26	Contact	Icgf	Icgfs	std	26	False	s	s	icgf			
+A_s_rev	A	6	A2s26	Contact	Icgfs	Icgf	std	37	False	s	s	icgf			
+A_p_fwd	A	6	A2s26	Contact	Icgf	Icgfp	std	26	False	p	p	icgf			
+A_p_rev	A	6	A2s26	Contact	Icgfp	Icgf	std	33	False	p	p	icgf			
+A_s_fwd	A	7	A2s32	Contact	Braf	Brafs	std	32	False	s	s	braf			
+A_s_rev	A	7	A2s32	Contact	Brafs	Braf	std	43	False	s	s	braf			
+A_p_fwd	A	7	A2s32	Contact	Braf	Brafp	std	32	False	p	p	braf			
+A_p_rev	A	7	A2s32	Contact	Brafp	Braf	std	39	False	p	p	braf			
+A_s_fwd	A	8	A2s38	Contact	Pzdf	Pzdfs	std	38	False	s	s	pzdf			
+A_s_rev	A	8	A2s38	Contact	Pzdfs	Pzdf	std	49	False	s	s	pzdf			
+A_p_fwd	A	8	A2s38	Contact	Pzdf	Pzdfp	std	38	False	p	p	pzdf			
+A_p_rev	A	8	A2s38	Contact	Pzdfp	Pzdf	std	45	False	p	p	pzdf			
+A_s_fwd	A	9	A2s46	Contact	Gzzc	Gzzcs	std	46	False	s	s	gzzc			
+A_s_rev	A	9	A2s46	Contact	Gzzcs	Gzzc	std	57	False	s	s	gzzc			
+A_p_fwd	A	9	A2s46	Contact	Gzzc	Gzzcp	std	46	False	p	p	gzzc			
+A_p_rev	A	9	A2s46	Contact	Gzzcp	Gzzc	std	53	False	p	p	gzzc			
+A_s_fwd	A	10	A2s50	Contact	Zzxf	Zzxfs	std	50	False	s	s	zzxf			
+A_s_rev	A	10	A2s50	Contact	Zzxfs	Zzxf	std	61	False	s	s	zzxf			
+A_p_fwd	A	10	A2s50	Contact	Zzxf	Zzxfp	std	50	False	p	p	zzxf			
+A_p_rev	A	10	A2s50	Contact	Zzxfp	Zzxf	std	57	False	p	p	zzxf			
+A_s_fwd	A	11	A2s54	Contact	Czzx	Czzxs	std	54	True	s	s	czzx			
+A_s_rev	A	11	A2s54	Contact	Czzxs	Czzx	std	65	True	s	s	czzx			
+A_p_fwd	A	11	A2s54	Contact	Czzx	Czzxp	std	54	False	p	p	czzx			
+A_p_rev	A	11	A2s54	Contact	Czzxp	Czzx	std	61	False	p	p	czzx			
+A_adjacent_fwd	A	4	A3old	Contact	Yent	Yenty	std	16	True	y	adjacent	yent			
+A_adjacent_rev	A	4	A3old	Contact	Yenty	Yent	std	17	True	y	adjacent	yent			
+A_column_fwd	A	4	A3old	Contact	Yent	Yentg	std	16	False	g	column	yent			
+A_column_rev	A	4	A3old	Contact	Yentg	Yent	std	21	False	g	column	yent			
+A_far_fwd	A	4	A3old	Contact	Yent	Yento	std	16	True	o	far	yent			
+A_far_rev	A	4	A3old	Contact	Yento	Yent	std	21	True	o	far	yent			
+A_vowel_fwd	A	4	A3old	Contact	Yent	Yenta	std	16	True	a	vowel	yent			
+A_vowel_rev	A	4	A3old	Contact	Yenta	Yent	std	29	True	a	vowel	yent			
+A_doubled_fwd	A	4	A3old	Contact	Yent	Yentt	std	16	True	t	doubled	yent			
+A_doubled_rev	A	4	A3old	Contact	Yentt	Yent	std	19	True	t	doubled	yent			
+A_s_fwd	A	12	A3old	Contact	Yent	Yents	std	16	False	s	s	yent			
+A_s_rev	A	12	A3old	Contact	Yents	Yent	std	27	False	s	s	yent			
+A_p_fwd	A	12	A3old	Contact	Yent	Yentp	std	16	False	p	p	yent			
+A_p_rev	A	12	A3old	Contact	Yentp	Yent	std	23	False	p	p	yent			
+A_z_fwd	A	4	A3old	Contact	Yent	Yentz	std	16	False	z	z	yent			
+A_z_rev	A	4	A3old	Contact	Yentz	Yent	std	31	False	z	z	yent			
+A_adjacent_fwd	A	5	A3old	Contact	Zela	Zelak	std	42	False	k	adjacent*	zela			
+A_adjacent_rev	A	5	A3old	Contact	Zelak	Zela	std	47	False	k	adjacent*	zela			
+A_column_fwd	A	5	A3old	Contact	Zela	Zelaq	std	42	False	q	column	zela			
+A_column_rev	A	5	A3old	Contact	Zelaq	Zela	std	53	False	q	column	zela			
+A_far_fwd	A	5	A3old	Contact	Zela	Zelao	std	42	True	o	far	zela			
+A_far_rev	A	5	A3old	Contact	Zelao	Zela	std	47	True	o	far	zela			
+A_vowel_fwd	A	5	A3old	Contact	Zela	Zelae	std	42	True	e	vowel	zela			
+A_vowel_rev	A	5	A3old	Contact	Zelae	Zela	std	49	True	e	vowel	zela			
+A_doubled_fwd	A	5	A3old	Contact	Zela	Zelaa	std	42	True	a	doubled	zela			
+A_doubled_rev	A	5	A3old	Contact	Zelaa	Zela	std	55	True	a	doubled	zela			
+A_s_fwd	A	13	A3old	Contact	Zela	Zelas	std	42	False	s	s	zela			
+A_s_rev	A	13	A3old	Contact	Zelas	Zela	std	53	False	s	s	zela			
+A_p_fwd	A	13	A3old	Contact	Zela	Zelap	std	42	False	p	p	zela			
+A_p_rev	A	13	A3old	Contact	Zelap	Zela	std	49	False	p	p	zela			
+A_z_fwd	A	5	A3old	Contact	Zela	Zelaz	std	42	False	z	z	zela			
+A_z_rev	A	5	A3old	Contact	Zelaz	Zela	std	57	False	z	z	zela			
+A_adjacent_fwd	A	6	A3old	Contact	Rume	Rumer	std	18	False	r	adjacent	rume			
+A_adjacent_rev	A	6	A3old	Contact	Rumer	Rume	std	23	False	r	adjacent	rume			
+A_column_fwd	A	6	A3old	Contact	Rume	Rumed	std	18	False	d	column	rume			
+A_column_rev	A	6	A3old	Contact	Rumed	Rume	std	27	False	d	column	rume			
+A_far_fwd	A	6	A3old	Contact	Rume	Rumeo	std	18	True	o	far	rume			
+A_far_rev	A	6	A3old	Contact	Rumeo	Rume	std	23	True	o	far	rume			
+A_vowel_fwd	A	6	A3old	Contact	Rume	Rumea	std	18	True	a	vowel	rume			
+A_vowel_rev	A	6	A3old	Contact	Rumea	Rume	std	31	True	a	vowel	rume			
+A_doubled_fwd	A	6	A3old	Contact	Rume	Rumee	std	18	True	e	doubled	rume			
+A_doubled_rev	A	6	A3old	Contact	Rumee	Rume	std	25	True	e	doubled	rume			
+A_s_fwd	A	14	A3old	Contact	Rume	Rumes	std	18	False	s	s	rume			
+A_s_rev	A	14	A3old	Contact	Rumes	Rume	std	29	False	s	s	rume			
+A_p_fwd	A	14	A3old	Contact	Rume	Rumep	std	18	False	p	p	rume			
+A_p_rev	A	14	A3old	Contact	Rumep	Rume	std	25	False	p	p	rume			
+A_z_fwd	A	6	A3old	Contact	Rume	Rumez	std	18	False	z	z	rume			
+A_z_rev	A	6	A3old	Contact	Rumez	Rume	std	33	False	z	z	rume			
+A_adjacent_fwd	A	7	A3old	Contact	Jlun	Jlunm	std	16	False	m	adjacent	jlun			
+A_adjacent_rev	A	7	A3old	Contact	Jlunm	Jlun	std	21	False	m	adjacent	jlun			
+A_column_fwd	A	7	A3old	Contact	Jlun	Jlunh	std	16	True	h	column	jlun			
+A_column_rev	A	7	A3old	Contact	Jlunh	Jlun	std	19	True	h	column	jlun			
+A_far_fwd	A	7	A3old	Contact	Jlun	Jlunq	std	16	False	q	far	jlun			
+A_far_rev	A	7	A3old	Contact	Jlunq	Jlun	std	27	False	q	far	jlun			
+A_vowel_fwd	A	7	A3old	Contact	Jlun	Jluna	std	16	True	a	vowel	jlun			
+A_vowel_rev	A	7	A3old	Contact	Jluna	Jlun	std	29	True	a	vowel	jlun			
+A_doubled_fwd	A	7	A3old	Contact	Jlun	Jlunn	std	16	True	n	doubled	jlun			
+A_doubled_rev	A	7	A3old	Contact	Jlunn	Jlun	std	21	True	n	doubled	jlun			
+A_s_fwd	A	15	A3old	Contact	Jlun	Jluns	std	16	False	s	s	jlun			
+A_s_rev	A	15	A3old	Contact	Jluns	Jlun	std	27	False	s	s	jlun			
+A_p_fwd	A	15	A3old	Contact	Jlun	Jlunp	std	16	False	p	p	jlun			
+A_p_rev	A	15	A3old	Contact	Jlunp	Jlun	std	23	False	p	p	jlun			
+A_z_fwd	A	7	A3old	Contact	Jlun	Jlunz	std	16	False	z	z	jlun			
+A_z_rev	A	7	A3old	Contact	Jlunz	Jlun	std	31	False	z	z	jlun			
+B_fwd	B	0	B34	Contact	Fhp	Fhpa	std	17	True						
+LeadB_fwd	B	0	B34	Lead	Fhp	Fhpa	std	17	True						
+B_fwd	B	1	B34	Contact	Ocj	Ocja	std	19	True						
+LeadB_fwd	B	1	B34	Lead	Ocj	Ocja	std	19	True						
+B_fwd	B	2	B34	Contact	Ngi	Ngia	std	13	True						
+LeadB_fwd	B	2	B34	Lead	Ngi	Ngia	std	13	True						
+B_fwd	B	3	B34	Contact	Xkk	Xkka	std	23	True						
+LeadB_fwd	B	3	B34	Lead	Xkk	Xkka	std	23	True						
+B_fwd	B	4	B34	Contact	Bpg	Bpga	std	19	True						
+LeadB_fwd	B	4	B34	Lead	Bpg	Bpga	std	19	True						
+B_fwd	B	5	B34	Contact	Dds	Ddsa	std	29	True						
+LeadB_fwd	B	5	B34	Lead	Dds	Ddsa	std	29	True						
+B_fwd	B	6	B45	Contact	Igrn	Igrna	std	18	True						
+LeadB_fwd	B	6	B45	Lead	Igrn	Igrna	std	18	True						
+B_fwd	B	7	B45	Contact	Xeuu	Xeuua	std	22	True						
+LeadB_fwd	B	7	B45	Lead	Xeuu	Xeuua	std	22	True						
+B_fwd	B	8	B45	Contact	Wflr	Wflra	std	28	True						
+LeadB_fwd	B	8	B45	Lead	Wflr	Wflra	std	28	True						
+B_fwd	B	9	B45	Contact	Gkhj	Gkhja	std	16	True						
+LeadB_fwd	B	9	B45	Lead	Gkhj	Gkhja	std	16	True						
+B_fwd	B	10	B45	Contact	Prnd	Prnda	std	26	True						
+LeadB_fwd	B	10	B45	Lead	Prnd	Prnda	std	26	True						
+B_fwd	B	11	B45	Contact	Cxcb	Cxcba	std	42	True						
+LeadB_fwd	B	11	B45	Lead	Cxcb	Cxcba	std	42	True						
+B_rev	B	0	B34	Contact	Fhpa	Fhp	std	30	True						
+LeadB_rev	B	0	B34	Lead	Fhpa	Fhp	std	30	True						
+B_rev	B	1	B34	Contact	Ocja	Ocj	std	32	True						
+LeadB_rev	B	1	B34	Lead	Ocja	Ocj	std	32	True						
+B_rev	B	2	B34	Contact	Ngia	Ngi	std	26	True						
+LeadB_rev	B	2	B34	Lead	Ngia	Ngi	std	26	True						
+B_rev	B	3	B34	Contact	Xkka	Xkk	std	36	True						
+LeadB_rev	B	3	B34	Lead	Xkka	Xkk	std	36	True						
+B_rev	B	4	B34	Contact	Bpga	Bpg	std	32	True						
+LeadB_rev	B	4	B34	Lead	Bpga	Bpg	std	32	True						
+B_rev	B	5	B34	Contact	Ddsa	Dds	std	42	True						
+LeadB_rev	B	5	B34	Lead	Ddsa	Dds	std	42	True						
+B_rev	B	6	B45	Contact	Igrna	Igrn	std	31	True						
+LeadB_rev	B	6	B45	Lead	Igrna	Igrn	std	31	True						
+B_rev	B	7	B45	Contact	Xeuua	Xeuu	std	35	True						
+LeadB_rev	B	7	B45	Lead	Xeuua	Xeuu	std	35	True						
+B_rev	B	8	B45	Contact	Wflra	Wflr	std	41	True						
+LeadB_rev	B	8	B45	Lead	Wflra	Wflr	std	41	True						
+B_rev	B	9	B45	Contact	Gkhja	Gkhj	std	29	True						
+LeadB_rev	B	9	B45	Lead	Gkhja	Gkhj	std	29	True						
+B_rev	B	10	B45	Contact	Prnda	Prnd	std	39	True						
+LeadB_rev	B	10	B45	Lead	Prnda	Prnd	std	39	True						
+B_rev	B	11	B45	Contact	Cxcba	Cxcb	std	55	True						
+LeadB_rev	B	11	B45	Lead	Cxcba	Cxcb	std	55	True						
+C_t1_fwd	C	0	C34	Contact	Uhv	Uhvs	std	13	False	s		uhv			
+C_t1_rev	C	0	C34	Contact	Uhvs	Uhv	std	24	False	s		uhv			
+C_t2_fwd	C	0	C34	Contact	Uhv	Uhvp	std	13	False	p		uhv			
+C_t2_rev	C	0	C34	Contact	Uhvp	Uhv	std	20	False	p		uhv			
+C_t3_fwd	C	0	C34	Contact	Uhv	Uhvk	std	13	False	k		uhv			
+C_t3_rev	C	0	C34	Contact	Uhvk	Uhv	std	18	False	k		uhv			
+C_t1_fwd	C	1	C34	Contact	Cpv	Cpvs	std	27	False	s		cpv			
+C_t1_rev	C	1	C34	Contact	Cpvs	Cpv	std	38	False	s		cpv			
+C_t2_fwd	C	1	C34	Contact	Cpv	Cpvp	std	27	False	p		cpv			
+C_t2_rev	C	1	C34	Contact	Cpvp	Cpv	std	34	False	p		cpv			
+C_t3_fwd	C	1	C34	Contact	Cpv	Cpvk	std	27	False	k		cpv			
+C_t3_rev	C	1	C34	Contact	Cpvk	Cpv	std	32	False	k		cpv			
+C_t1_fwd	C	2	C34	Contact	Cnh	Cnhs	std	19	False	s		cnh			
+C_t1_rev	C	2	C34	Contact	Cnhs	Cnh	std	30	False	s		cnh			
+C_t2_fwd	C	2	C34	Contact	Cnh	Cnhp	std	19	False	p		cnh			
+C_t2_rev	C	2	C34	Contact	Cnhp	Cnh	std	26	False	p		cnh			
+C_t3_fwd	C	2	C34	Contact	Cnh	Cnhk	std	19	False	k		cnh			
+C_t3_rev	C	2	C34	Contact	Cnhk	Cnh	std	24	False	k		cnh			
+C_t1_fwd	C	3	C34	Contact	Oyr	Oyrs	std	11	False	s		oyr			
+C_t1_rev	C	3	C34	Contact	Oyrs	Oyr	std	22	False	s		oyr			
+C_t2_fwd	C	3	C34	Contact	Oyr	Oyrp	std	11	False	p		oyr			
+C_t2_rev	C	3	C34	Contact	Oyrp	Oyr	std	18	False	p		oyr			
+C_t3_fwd	C	3	C34	Contact	Oyr	Oyrk	std	11	False	k		oyr			
+C_t3_rev	C	3	C34	Contact	Oyrk	Oyr	std	16	False	k		oyr			
+C_t1_fwd	C	4	C34	Contact	Bcw	Bcws	std	27	False	s		bcw			
+C_t1_rev	C	4	C34	Contact	Bcws	Bcw	std	38	False	s		bcw			
+C_t2_fwd	C	4	C34	Contact	Bcw	Bcwp	std	27	False	p		bcw			
+C_t2_rev	C	4	C34	Contact	Bcwp	Bcw	std	34	False	p		bcw			
+C_t3_fwd	C	4	C34	Contact	Bcw	Bcwk	std	27	False	k		bcw			
+C_t3_rev	C	4	C34	Contact	Bcwk	Bcw	std	32	False	k		bcw			
+C_t1_fwd	C	5	C34	Contact	Erj	Erjs	std	15	False	s		erj			
+C_t1_rev	C	5	C34	Contact	Erjs	Erj	std	26	False	s		erj			
+C_t2_fwd	C	5	C34	Contact	Erj	Erjp	std	15	False	p		erj			
+C_t2_rev	C	5	C34	Contact	Erjp	Erj	std	22	False	p		erj			
+C_t3_fwd	C	5	C34	Contact	Erj	Erjk	std	15	False	k		erj			
+C_t3_rev	C	5	C34	Contact	Erjk	Erj	std	20	False	k		erj			
+C_t1_fwd	C	6	C34	Contact	Zmj	Zmjs	std	23	False	s		zmj			
+C_t1_rev	C	6	C34	Contact	Zmjs	Zmj	std	34	False	s		zmj			
+C_t2_fwd	C	6	C34	Contact	Zmj	Zmjp	std	23	False	p		zmj			
+C_t2_rev	C	6	C34	Contact	Zmjp	Zmj	std	30	False	p		zmj			
+C_t3_fwd	C	6	C34	Contact	Zmj	Zmjk	std	23	False	k		zmj			
+C_t3_rev	C	6	C34	Contact	Zmjk	Zmj	std	28	False	k		zmj			
+C_t1_fwd	C	7	C34	Contact	Evj	Evjs	std	19	False	s		evj			
+C_t1_rev	C	7	C34	Contact	Evjs	Evj	std	30	False	s		evj			
+C_t2_fwd	C	7	C34	Contact	Evj	Evjp	std	19	False	p		evj			
+C_t2_rev	C	7	C34	Contact	Evjp	Evj	std	26	False	p		evj			
+C_t3_fwd	C	7	C34	Contact	Evj	Evjk	std	19	False	k		evj			
+C_t3_rev	C	7	C34	Contact	Evjk	Evj	std	24	False	k		evj			
+C_t1_fwd	C	8	C34	Contact	Vvh	Vvhs	std	21	False	s		vvh			
+C_t1_rev	C	8	C34	Contact	Vvhs	Vvh	std	32	False	s		vvh			
+C_t2_fwd	C	8	C34	Contact	Vvh	Vvhp	std	21	False	p		vvh			
+C_t2_rev	C	8	C34	Contact	Vvhp	Vvh	std	28	False	p		vvh			
+C_t3_fwd	C	8	C34	Contact	Vvh	Vvhk	std	21	False	k		vvh			
+C_t3_rev	C	8	C34	Contact	Vvhk	Vvh	std	26	False	k		vvh			
+C_t1_fwd	C	9	C34	Contact	Nox	Noxs	std	23	True	s		nox			
+C_t1_rev	C	9	C34	Contact	Noxs	Nox	std	34	True	s		nox			
+C_t2_fwd	C	9	C34	Contact	Nox	Noxp	std	23	False	p		nox			
+C_t2_rev	C	9	C34	Contact	Noxp	Nox	std	30	False	p		nox			
+C_t3_fwd	C	9	C34	Contact	Nox	Noxk	std	23	False	k		nox			
+C_t3_rev	C	9	C34	Contact	Noxk	Nox	std	28	False	k		nox			
+C_t1_fwd	C	10	C34	Contact	Hfx	Hfxs	std	23	True	s		hfx			
+C_t1_rev	C	10	C34	Contact	Hfxs	Hfx	std	34	True	s		hfx			
+C_t2_fwd	C	10	C34	Contact	Hfx	Hfxp	std	23	False	p		hfx			
+C_t2_rev	C	10	C34	Contact	Hfxp	Hfx	std	30	False	p		hfx			
+C_t3_fwd	C	10	C34	Contact	Hfx	Hfxk	std	23	False	k		hfx			
+C_t3_rev	C	10	C34	Contact	Hfxk	Hfx	std	28	False	k		hfx			
+C_t1_fwd	C	11	C34	Contact	Jgr	Jgrs	std	13	False	s		jgr			
+C_t1_rev	C	11	C34	Contact	Jgrs	Jgr	std	24	False	s		jgr			
+C_t2_fwd	C	11	C34	Contact	Jgr	Jgrp	std	13	False	p		jgr			
+C_t2_rev	C	11	C34	Contact	Jgrp	Jgr	std	20	False	p		jgr			
+C_t3_fwd	C	11	C34	Contact	Jgr	Jgrk	std	13	False	k		jgr			
+C_t3_rev	C	11	C34	Contact	Jgrk	Jgr	std	18	False	k		jgr			
+D1_fwd	D	0	D_mn	Contact	Xjm	Xjn	std	21	False				3	mn	
+LeadD1_fwd	D	0	D_mn	Lead	Xjm	Xjn	std	21	False				3	mn	
+D1_fwd	D	1	D_mn	Contact	Lpm	Lpn	std	19	False				3	mn	
+LeadD1_fwd	D	1	D_mn	Lead	Lpm	Lpn	std	19	False				3	mn	
+D1_fwd	D	2	D_mn	Contact	Uikm	Uikn	std	14	False				4	mn	
+LeadD1_fwd	D	2	D_mn	Lead	Uikm	Uikn	std	14	False				4	mn	
+D1_fwd	D	3	D_mn	Contact	Xkhm	Xkhn	std	26	False				4	mn	
+LeadD1_fwd	D	3	D_mn	Lead	Xkhm	Xkhn	std	26	False				4	mn	
+D1_fwd	D	4	D_mn	Contact	Pszkm	Pszkn	std	43	False				5	mn	
+LeadD1_fwd	D	4	D_mn	Lead	Pszkm	Pszkn	std	43	False				5	mn	
+D1_fwd	D	5	D_mn	Contact	Pslsm	Pslsn	std	41	False				5	mn	
+LeadD1_fwd	D	5	D_mn	Lead	Pslsm	Pslsn	std	41	False				5	mn	
+D1_fwd	D	6	D_mn	Contact	Uawhgm	Uawhgn	std	36	False				6	mn	
+LeadD1_fwd	D	6	D_mn	Lead	Uawhgm	Uawhgn	std	36	False				6	mn	
+D1_fwd	D	7	D_mn	Contact	Jhrxpm	Jhrxpn	std	36	False				6	mn	
+LeadD1_fwd	D	7	D_mn	Lead	Jhrxpm	Jhrxpn	std	36	False				6	mn	
+D1_fwd	D	8	D_mn	Contact	Ftjsfrm	Ftjsfrn	std	41	False				7	mn	
+LeadD1_fwd	D	8	D_mn	Lead	Ftjsfrm	Ftjsfrn	std	41	False				7	mn	
+D1_fwd	D	9	D_mn	Contact	Vrdtjkm	Vrdtjkn	std	39	False				7	mn	
+LeadD1_fwd	D	9	D_mn	Lead	Vrdtjkm	Vrdtjkn	std	39	False				7	mn	
+D1_fwd	D	10	D_mn	Contact	Hvvzswxm	Hvvzswxn	std	74	False				8	mn	
+LeadD1_fwd	D	10	D_mn	Lead	Hvvzswxm	Hvvzswxn	std	74	False				8	mn	
+D1_fwd	D	11	D_mn	Contact	Zxltkmnm	Zxltkmnn	std	58	True				8	mn	
+LeadD1_fwd	D	11	D_mn	Lead	Zxltkmnm	Zxltkmnn	std	58	True				8	mn	
+D1_fwd	D	12	D_mn5x	Contact	Flrym	Flryn	std	25	False				5	mn	
+LeadD1_fwd	D	12	D_mn5x	Lead	Flrym	Flryn	std	25	False				5	mn	
+D1_fwd	D	13	D_mn5x	Contact	Tmxrm	Tmxrn	std	31	False				5	mn	
+LeadD1_fwd	D	13	D_mn5x	Lead	Tmxrm	Tmxrn	std	31	False				5	mn	
+D1_fwd	D	14	D_mn5x	Contact	Vpwym	Vpwyn	std	31	False				5	mn	
+LeadD1_fwd	D	14	D_mn5x	Lead	Vpwym	Vpwyn	std	31	False				5	mn	
+D1_fwd	D	15	D_mn5x	Contact	Tmvum	Tmvun	std	23	False				5	mn	
+LeadD1_fwd	D	15	D_mn5x	Lead	Tmvum	Tmvun	std	23	False				5	mn	
+D1_fwd	D	16	D_adj	Contact	Vyckb	Vyckv	std	33	False				5	bv	
+LeadD1_fwd	D	16	D_adj	Lead	Vyckb	Vyckv	std	33	False				5	bv	
+D2_fwd	D	0	D_adj	Contact	Eckpb	Eckpv	std	37	False				5	bv	
+LeadD2_fwd	D	0	D_adj	Lead	Eckpb	Eckpv	std	37	False				5	bv	
+D2_fwd	D	1	D_adj	Contact	Ydcxc	Ydcxv	std	45	False				5	cv	
+LeadD2_fwd	D	1	D_adj	Lead	Ydcxc	Ydcxv	std	45	False				5	cv	
+D2_fwd	D	2	D_adj	Contact	Mguyc	Mguyv	std	23	False				5	cv	
+LeadD2_fwd	D	2	D_adj	Lead	Mguyc	Mguyv	std	23	False				5	cv	
+D2_fwd	D	3	D_adj	Contact	Nutvs	Nutvd	std	29	False				5	sd	
+LeadD2_fwd	D	3	D_adj	Lead	Nutvs	Nutvd	std	29	False				5	sd	
+D2_fwd	D	4	D_adj	Contact	Mppas	Mppad	std	43	False				5	sd	
+LeadD2_fwd	D	4	D_adj	Lead	Mppas	Mppad	std	43	False				5	sd	
+D2_fwd	D	5	D_adj	Contact	Kinzi	Kinzo	std	31	True				5	io	
+LeadD2_fwd	D	5	D_adj	Lead	Kinzi	Kinzo	std	31	True				5	io	
+D2_fwd	D	6	D_adj	Contact	Srpti	Srpto	std	29	True				5	io	
+LeadD2_fwd	D	6	D_adj	Lead	Srpti	Srpto	std	29	True				5	io	
+D2_fwd	D	7	D_adj	Contact	Vegrk	Vegrl	std	31	False				5	kl	
+LeadD2_fwd	D	7	D_adj	Lead	Vegrk	Vegrl	std	31	False				5	kl	
+D2_fwd	D	8	D_adj	Contact	Flvok	Flvol	std	33	False				5	kl	
+LeadD2_fwd	D	8	D_adj	Lead	Flvok	Flvol	std	33	False				5	kl	
+D2_fwd	D	9	D_far	Contact	Kcvhq	Kcvhp	std	39	False				5	qp	
+LeadD2_fwd	D	9	D_far	Lead	Kcvhq	Kcvhp	std	39	False				5	qp	
+D2_fwd	D	10	D_far	Contact	Ttjmq	Ttjmp	std	25	False				5	qp	
+LeadD2_fwd	D	10	D_far	Lead	Ttjmq	Ttjmp	std	25	False				5	qp	
+D2_fwd	D	11	D_far	Contact	Shslq	Shslp	std	43	False				5	qp	
+LeadD2_fwd	D	11	D_far	Lead	Shslq	Shslp	std	43	False				5	qp	
+D2_fwd	D	12	D_far	Contact	Dampq	Dampp	std	45	False				5	qp	
+LeadD2_fwd	D	12	D_far	Lead	Dampq	Dampp	std	45	False				5	qp	
+D2_fwd	D	13	D_far	Contact	Jjhez	Jjhem	std	31	False				5	zm	
+LeadD2_fwd	D	13	D_far	Lead	Jjhez	Jjhem	std	31	False				5	zm	
+D2_fwd	D	14	D_far	Contact	Parxz	Parxm	std	53	False				5	zm	
+LeadD2_fwd	D	14	D_far	Lead	Parxz	Parxm	std	53	False				5	zm	
+D2_fwd	D	15	D_far	Contact	Kytwz	Kytwm	std	33	False				5	zm	
+LeadD2_fwd	D	15	D_far	Lead	Kytwz	Kytwm	std	33	False				5	zm	
+D2_fwd	D	16	D_far	Contact	Vhssz	Vhssm	std	49	False				5	zm	
+LeadD2_fwd	D	16	D_far	Lead	Vhssz	Vhssm	std	49	False				5	zm	
+D1_rev	D	0	D_mn	Contact	Xjn	Xjm	std	21	False				3	mn	
+LeadD1_rev	D	0	D_mn	Lead	Xjn	Xjm	std	21	False				3	mn	
+D1_rev	D	1	D_mn	Contact	Lpn	Lpm	std	19	False				3	mn	
+LeadD1_rev	D	1	D_mn	Lead	Lpn	Lpm	std	19	False				3	mn	
+D1_rev	D	2	D_mn	Contact	Uikn	Uikm	std	14	False				4	mn	
+LeadD1_rev	D	2	D_mn	Lead	Uikn	Uikm	std	14	False				4	mn	
+D1_rev	D	3	D_mn	Contact	Xkhn	Xkhm	std	26	False				4	mn	
+LeadD1_rev	D	3	D_mn	Lead	Xkhn	Xkhm	std	26	False				4	mn	
+D1_rev	D	4	D_mn	Contact	Pszkn	Pszkm	std	43	False				5	mn	
+LeadD1_rev	D	4	D_mn	Lead	Pszkn	Pszkm	std	43	False				5	mn	
+D1_rev	D	5	D_mn	Contact	Pslsn	Pslsm	std	41	False				5	mn	
+LeadD1_rev	D	5	D_mn	Lead	Pslsn	Pslsm	std	41	False				5	mn	
+D1_rev	D	6	D_mn	Contact	Uawhgn	Uawhgm	std	36	False				6	mn	
+LeadD1_rev	D	6	D_mn	Lead	Uawhgn	Uawhgm	std	36	False				6	mn	
+D1_rev	D	7	D_mn	Contact	Jhrxpn	Jhrxpm	std	36	False				6	mn	
+LeadD1_rev	D	7	D_mn	Lead	Jhrxpn	Jhrxpm	std	36	False				6	mn	
+D1_rev	D	8	D_mn	Contact	Ftjsfrn	Ftjsfrm	std	41	False				7	mn	
+LeadD1_rev	D	8	D_mn	Lead	Ftjsfrn	Ftjsfrm	std	41	False				7	mn	
+D1_rev	D	9	D_mn	Contact	Vrdtjkn	Vrdtjkm	std	39	False				7	mn	
+LeadD1_rev	D	9	D_mn	Lead	Vrdtjkn	Vrdtjkm	std	39	False				7	mn	
+D1_rev	D	10	D_mn	Contact	Hvvzswxn	Hvvzswxm	std	74	False				8	mn	
+LeadD1_rev	D	10	D_mn	Lead	Hvvzswxn	Hvvzswxm	std	74	False				8	mn	
+D1_rev	D	11	D_mn	Contact	Zxltkmnn	Zxltkmnm	std	58	True				8	mn	
+LeadD1_rev	D	11	D_mn	Lead	Zxltkmnn	Zxltkmnm	std	58	True				8	mn	
+D1_rev	D	12	D_mn5x	Contact	Flryn	Flrym	std	25	False				5	mn	
+LeadD1_rev	D	12	D_mn5x	Lead	Flryn	Flrym	std	25	False				5	mn	
+D1_rev	D	13	D_mn5x	Contact	Tmxrn	Tmxrm	std	31	False				5	mn	
+LeadD1_rev	D	13	D_mn5x	Lead	Tmxrn	Tmxrm	std	31	False				5	mn	
+D1_rev	D	14	D_mn5x	Contact	Vpwyn	Vpwym	std	31	False				5	mn	
+LeadD1_rev	D	14	D_mn5x	Lead	Vpwyn	Vpwym	std	31	False				5	mn	
+D1_rev	D	15	D_mn5x	Contact	Tmvun	Tmvum	std	23	False				5	mn	
+LeadD1_rev	D	15	D_mn5x	Lead	Tmvun	Tmvum	std	23	False				5	mn	
+D1_rev	D	16	D_adj	Contact	Vyckv	Vyckb	std	35	False				5	bv	
+LeadD1_rev	D	16	D_adj	Lead	Vyckv	Vyckb	std	35	False				5	bv	
+D2_rev	D	0	D_adj	Contact	Eckpv	Eckpb	std	39	False				5	bv	
+LeadD2_rev	D	0	D_adj	Lead	Eckpv	Eckpb	std	39	False				5	bv	
+D2_rev	D	1	D_adj	Contact	Ydcxv	Ydcxc	std	43	False				5	cv	
+LeadD2_rev	D	1	D_adj	Lead	Ydcxv	Ydcxc	std	43	False				5	cv	
+D2_rev	D	2	D_adj	Contact	Mguyv	Mguyc	std	21	False				5	cv	
+LeadD2_rev	D	2	D_adj	Lead	Mguyv	Mguyc	std	21	False				5	cv	
+D2_rev	D	3	D_adj	Contact	Nutvd	Nutvs	std	27	False				5	sd	
+LeadD2_rev	D	3	D_adj	Lead	Nutvd	Nutvs	std	27	False				5	sd	
+D2_rev	D	4	D_adj	Contact	Mppad	Mppas	std	41	False				5	sd	
+LeadD2_rev	D	4	D_adj	Lead	Mppad	Mppas	std	41	False				5	sd	
+D2_rev	D	5	D_adj	Contact	Kinzo	Kinzi	std	33	True				5	io	
+LeadD2_rev	D	5	D_adj	Lead	Kinzo	Kinzi	std	33	True				5	io	
+D2_rev	D	6	D_adj	Contact	Srpto	Srpti	std	31	True				5	io	
+LeadD2_rev	D	6	D_adj	Lead	Srpto	Srpti	std	31	True				5	io	
+D2_rev	D	7	D_adj	Contact	Vegrl	Vegrk	std	33	False				5	kl	
+LeadD2_rev	D	7	D_adj	Lead	Vegrl	Vegrk	std	33	False				5	kl	
+D2_rev	D	8	D_adj	Contact	Flvol	Flvok	std	35	False				5	kl	
+LeadD2_rev	D	8	D_adj	Lead	Flvol	Flvok	std	35	False				5	kl	
+D2_rev	D	9	D_far	Contact	Kcvhp	Kcvhq	std	35	False				5	qp	
+LeadD2_rev	D	9	D_far	Lead	Kcvhp	Kcvhq	std	35	False				5	qp	
+D2_rev	D	10	D_far	Contact	Ttjmp	Ttjmq	std	21	False				5	qp	
+LeadD2_rev	D	10	D_far	Lead	Ttjmp	Ttjmq	std	21	False				5	qp	
+D2_rev	D	11	D_far	Contact	Shslp	Shslq	std	39	False				5	qp	
+LeadD2_rev	D	11	D_far	Lead	Shslp	Shslq	std	39	False				5	qp	
+D2_rev	D	12	D_far	Contact	Dampp	Dampq	std	41	False				5	qp	
+LeadD2_rev	D	12	D_far	Lead	Dampp	Dampq	std	41	False				5	qp	
+D2_rev	D	13	D_far	Contact	Jjhem	Jjhez	std	21	False				5	zm	
+LeadD2_rev	D	13	D_far	Lead	Jjhem	Jjhez	std	21	False				5	zm	
+D2_rev	D	14	D_far	Contact	Parxm	Parxz	std	43	False				5	zm	
+LeadD2_rev	D	14	D_far	Lead	Parxm	Parxz	std	43	False				5	zm	
+D2_rev	D	15	D_far	Contact	Kytwm	Kytwz	std	23	False				5	zm	
+LeadD2_rev	D	15	D_far	Lead	Kytwm	Kytwz	std	23	False				5	zm	
+D2_rev	D	16	D_far	Contact	Vhssm	Vhssz	std	39	False				5	zm	
+LeadD2_rev	D	16	D_far	Lead	Vhssm	Vhssz	std	39	False				5	zm	
+E_fwd	E	0	E3	Contact	Ykj	Yjk	std	9	False						9
+E_fwd	E	1	E3	Contact	Ntr	Nrt	std	13	False						13
+E_fwd	E	2	E3	Contact	Jdf	Jfd	std	19	False						19
+E_fwd	E	3	E3	Contact	Dbn	Dnb	std	21	False						21
+E_fwd	E	4	E3	Contact	Cbn	Cnb	std	23	False						23
+E_fwd	E	5	E3	Contact	Zbn	Znb	std	27	False						27
+E_fwd	E	6	E3	Contact	Rxc	Rcx	std	29	False						29
+E_fwd	E	7	E3	Contact	Bxc	Bcx	std	31	False						31
+E_fwd	E	8	E3	Contact	Zvb	Zbv	std	31	False						31
+E_fwd	E	9	E3	Contact	Vcx	Vxc	std	33	False						33
+E_fwd	E	10	E3	Contact	Lzx	Lxz	std	35	False						35
+E_fwd	E	11	E3	Contact	Fxz	Fzx	std	35	False						35
+E_fwd	E	12	E3	Contact	Xxc	Xcx	std	37	False						37
+E_fwd	E	13	E3	Contact	Xzx	Xxz	std	41	False						41
+E_rev	E	0	E3	Contact	Yjk	Ykj	std	9	False						9
+E_rev	E	1	E3	Contact	Nrt	Ntr	std	13	False						13
+E_rev	E	2	E3	Contact	Jfd	Jdf	std	19	False						19
+E_rev	E	3	E3	Contact	Dnb	Dbn	std	21	False						21
+E_rev	E	4	E3	Contact	Cnb	Cbn	std	23	False						23
+E_rev	E	5	E3	Contact	Znb	Zbn	std	27	False						27
+E_rev	E	6	E3	Contact	Rcx	Rxc	std	29	False						29
+E_rev	E	7	E3	Contact	Bcx	Bxc	std	31	False						31
+E_rev	E	8	E3	Contact	Zbv	Zvb	std	31	False						31
+E_rev	E	9	E3	Contact	Vxc	Vcx	std	33	False						33
+E_rev	E	10	E3	Contact	Lxz	Lzx	std	35	False						35
+E_rev	E	11	E3	Contact	Fzx	Fxz	std	35	False						35
+E_rev	E	12	E3	Contact	Xcx	Xxc	std	37	False						37
+E_rev	E	13	E3	Contact	Xxz	Xzx	std	41	False						41
+F_fwd	F	0	F_oneone	Contact	Hnhyt	Hnthy	std	15	False						15
+F_fwd	F	1	F_oneone	Contact	Ytgtr	Ytrgt	std	17	False						17
+F_fwd	F	2	F_oneone	Contact	Jtthg	Jtgth	std	17	False						17
+F_fwd	F	3	F_oneone	Contact	Hnthg	Hnhgt	std	19	False						19
+F_fwd	F	4	F_oneone	Contact	Nnnbh	Nnbhn	std	25	False						25
+F_fwd	F	5	F_oneone	Contact	Jzgth	Jzthg	std	29	False						29
+F_fwd	F	6	F_oneone	Contact	Wftgf	Wfftg	std	31	False						31
+F_fwd	F	7	F_oneone	Contact	Yzgnb	Yznbg	std	33	False						33
+F_fwd	F	8	F_oneone	Contact	Cftfg	Cffgt	std	33	False						33
+F_fwd	F	9	F_oneone	Contact	Pzghn	Pzngh	std	35	False						35
+F_fwd	F	10	F_oneone	Contact	Lysqw	Lyqws	std	39	False						39
+F_fwd	F	11	F_oneone	Contact	Hpdxs	Hpxsd	std	43	False						43
+F_fwd	F	12	F_vertical	Contact	Qzcde	Qzdec	std	53	False						53
+F_fwd	F	13	F_vertical	Contact	Rbtgb	Rbbtg	std	27	False						27
+F_fwd	F	14	F_vertical	Contact	Bsfvr	Bsrfv	std	39	False						39
+F_fwd	F	15	F_vertical	Contact	Zrgbt	Zrbtg	std	35	False						35
+F_fwd	F	16	F_wide	Contact	Lwxvz	Lwzxv	std	53	False						53
+F_fwd	F	17	F_wide	Contact	Kajgf	Kagfj	std	33	False						33
+F_fwd	F	18	F_wide	Contact	Gqxgb	Gqbxg	std	41	False						41
+F_fwd	F	19	F_wide	Contact	Wcbwf	Wcfbw	std	43	False						43
+F_rev	F	0	F_oneone	Contact	Hnthy	Hnhyt	std	15	False						15
+F_rev	F	1	F_oneone	Contact	Ytrgt	Ytgtr	std	17	False						17
+F_rev	F	2	F_oneone	Contact	Jtgth	Jtthg	std	17	False						17
+F_rev	F	3	F_oneone	Contact	Hnhgt	Hnthg	std	19	False						19
+F_rev	F	4	F_oneone	Contact	Nnbhn	Nnnbh	std	25	False						25
+F_rev	F	5	F_oneone	Contact	Jzthg	Jzgth	std	29	False						29
+F_rev	F	6	F_oneone	Contact	Wfftg	Wftgf	std	31	False						31
+F_rev	F	7	F_oneone	Contact	Yznbg	Yzgnb	std	33	False						33
+F_rev	F	8	F_oneone	Contact	Cffgt	Cftfg	std	33	False						33
+F_rev	F	9	F_oneone	Contact	Pzngh	Pzghn	std	35	False						35
+F_rev	F	10	F_oneone	Contact	Lyqws	Lysqw	std	39	False						39
+F_rev	F	11	F_oneone	Contact	Hpxsd	Hpdxs	std	43	False						43
+F_rev	F	12	F_vertical	Contact	Qzdec	Qzcde	std	53	False						53
+F_rev	F	13	F_vertical	Contact	Rbbtg	Rbtgb	std	27	False						27
+F_rev	F	14	F_vertical	Contact	Bsrfv	Bsfvr	std	39	False						39
+F_rev	F	15	F_vertical	Contact	Zrbtg	Zrgbt	std	35	False						35
+F_rev	F	16	F_wide	Contact	Lwzxv	Lwxvz	std	53	False						53
+F_rev	F	17	F_wide	Contact	Kagfj	Kajgf	std	33	False						33
+F_rev	F	18	F_wide	Contact	Gqbxg	Gqxgb	std	41	False						41
+F_rev	F	19	F_wide	Contact	Wcfbw	Wcbwf	std	43	False						43
+G1_fwd	G	0	G8	Contact	Qhblhytp	Qhblhypt	std	42	False						42
+G1_fwd	G	1	G8	Contact	Qyrktkrl	Qyrktklr	std	42	False						42
+G1_fwd	G	2	G8	Contact	Jhlflkgp	Jhlflkpg	std	44	False						44
+G1_fwd	G	3	G8	Contact	Nrnjhllv	Nrnjhlvl	std	44	False						44
+G1_fwd	G	4	G8	Contact	Gklnjdrl	Gklnjdlr	std	46	False						46
+G1_fwd	G	5	G8	Contact	Fqlyymkd	Fqlyymdk	std	46	False						46
+G1_fwd	G	6	G8	Contact	Nfpkkllr	Nfpkklrl	std	48	False						48
+G1_fwd	G	7	G8	Contact	Dyrpvyms	Dyrpvysm	std	48	False						48
+G1_fwd	G	8	G8	Contact	Zdrrygtp	Zdrrygpt	std	50	False						50
+G1_fwd	G	9	G8	Contact	Tklnhslv	Tklnhsvl	std	50	False						50
+G1_fwd	G	10	G8	Contact	Hqjhnzlr	Hqjhnzrl	std	52	False						52
+G2_fwd	G	0	G8	Contact	Lcegrhdk	Lcegrhkd	std	52	False						52
+G2_fwd	G	1	G8	Contact	Babetklr	Babetkrl	std	54	False						54
+G2_fwd	G	2	G8	Contact	Qhmcmyzh	Qhmcmyhz	std	54	False						54
+G2_fwd	G	3	G8	Contact	Wstlhbsm	Wstlhbms	std	56	False						56
+G2_fwd	G	4	G8	Contact	Gsldggfl	Gsldgglf	std	56	False						56
+G2_fwd	G	5	G8	Contact	Cltnmxfl	Cltnmxlf	std	58	False						58
+G2_fwd	G	6	G8	Contact	Lznhjwxj	Lznhjwjx	std	58	False						58
+G2_fwd	G	7	G8	Contact	Bgwdbbxj	Bgwdbbjx	std	60	False						60
+G2_fwd	G	8	G8	Contact	Qweevgrl	Qweevglr	std	60	False						60
+G2_fwd	G	9	G8	Contact	Bndjgzmx	Bndjgzxm	std	62	False						62
+G2_fwd	G	10	G8	Contact	Lllcvwrl	Lllcvwlr	std	62	False						62
+G1_rev	G	0	G8	Contact	Qhblhypt	Qhblhytp	std	42	False						42
+G1_rev	G	1	G8	Contact	Qyrktklr	Qyrktkrl	std	42	False						42
+G1_rev	G	2	G8	Contact	Jhlflkpg	Jhlflkgp	std	44	False						44
+G1_rev	G	3	G8	Contact	Nrnjhlvl	Nrnjhllv	std	44	False						44
+G1_rev	G	4	G8	Contact	Gklnjdlr	Gklnjdrl	std	46	False						46
+G1_rev	G	5	G8	Contact	Fqlyymdk	Fqlyymkd	std	46	False						46
+G1_rev	G	6	G8	Contact	Nfpkklrl	Nfpkkllr	std	48	False						48
+G1_rev	G	7	G8	Contact	Dyrpvysm	Dyrpvyms	std	48	False						48
+G1_rev	G	8	G8	Contact	Zdrrygpt	Zdrrygtp	std	50	False						50
+G1_rev	G	9	G8	Contact	Tklnhsvl	Tklnhslv	std	50	False						50
+G1_rev	G	10	G8	Contact	Hqjhnzrl	Hqjhnzlr	std	52	False						52
+G2_rev	G	0	G8	Contact	Lcegrhkd	Lcegrhdk	std	52	False						52
+G2_rev	G	1	G8	Contact	Babetkrl	Babetklr	std	54	False						54
+G2_rev	G	2	G8	Contact	Qhmcmyhz	Qhmcmyzh	std	54	False						54
+G2_rev	G	3	G8	Contact	Wstlhbms	Wstlhbsm	std	56	False						56
+G2_rev	G	4	G8	Contact	Gsldgglf	Gsldggfl	std	56	False						56
+G2_rev	G	5	G8	Contact	Cltnmxlf	Cltnmxfl	std	58	False						58
+G2_rev	G	6	G8	Contact	Lznhjwjx	Lznhjwxj	std	58	False						58
+G2_rev	G	7	G8	Contact	Bgwdbbjx	Bgwdbbxj	std	60	False						60
+G2_rev	G	8	G8	Contact	Qweevglr	Qweevgrl	std	60	False						60
+G2_rev	G	9	G8	Contact	Bndjgzxm	Bndjgzmx	std	62	False						62
+G2_rev	G	10	G8	Contact	Lllcvwlr	Lllcvwrl	std	62	False						62
