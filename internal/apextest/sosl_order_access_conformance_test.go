@@ -24,7 +24,7 @@ func TestSOSLOrderAccessConformance(t *testing.T) {
 	reader := csv.NewReader(file)
 	reader.Comma = '\t'
 	rows, err := reader.ReadAll()
-	if err != nil || len(rows) != 29 {
+	if err != nil || len(rows) != 37 {
 		t.Fatalf("native capture: %d rows, error %v", len(rows), err)
 	}
 	schema := filepath.Join("testdata", "conformance", "api67_sosl_locator_matching", "project", "force-app", "main", "default")
@@ -38,7 +38,7 @@ func TestSOSLOrderAccessConformance(t *testing.T) {
 				}
 			}
 			var classes []string
-			for _, name := range []string{"SearchAccess", "SearchInlineAccess"} {
+			for _, name := range []string{"SearchAccess", "SearchInlineAccess", "SearchModeAccess"} {
 				version := strings.TrimSuffix(api, ".0")
 				class := name + version
 				classes = append(classes, class)
@@ -65,7 +65,7 @@ func TestSOSLOrderAccessConformance(t *testing.T) {
 					observed[c.MethodName] = strings.TrimPrefix(c.Problem.Message, "Assertion Failed: OBS|")
 				}
 			}
-			if len(observed) != 11 {
+			if len(observed) != 15 {
 				t.Fatalf("observed %d restricted-user methods", len(observed))
 			}
 			org := orgFromIndex(index)

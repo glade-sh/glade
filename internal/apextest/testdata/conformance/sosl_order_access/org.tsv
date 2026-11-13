@@ -27,3 +27,11 @@ api	route	case	observation
 67.0	anonymous	empty	System.AssertException: Assertion Failed: OBS|groups=1,count=0
 62.0	istest	inlineUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
 67.0	istest	inlineUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	findModeReadable	records=mine
+62.0	istest	findModeUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+62.0	istest	queryModeReadable	records=mine
+62.0	istest	queryModeUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	istest	findModeReadable	records=mine
+67.0	istest	findModeUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	istest	queryModeReadable	records=mine
+67.0	istest	queryModeUnreadable	System.QueryException|No such column 'Secret__c' on entity 'Gl_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.

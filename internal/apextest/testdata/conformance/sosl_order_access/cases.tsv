@@ -6,3 +6,5 @@ anonymousFixed	anonymous	fixed.apex
 anonymousAllowed	anonymous	empty.apex
 inline62	istest	SearchInlineAccess62	62.0
 inline67	istest	SearchInlineAccess67	67.0
+mode62	istest	SearchModeAccess62	62.0
+mode67	istest	SearchModeAccess67	67.0

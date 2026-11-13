@@ -21,3 +21,9 @@ Inline finished: 2026-11-12T23:54:34Z
 Inline sf: @salesforce/cli/2.157.8
 Inline cases.tsv sha256: 5df26778f710064c
 Substitute 62 or 67 for {{API}} in each class template to reproduce the deployed bytes.
+
+The explicit AccessLevel.USER_MODE overloads used a third fresh 30-day scratch org. Deletion succeeded and lookup by alias failed after deletion. Same synthetic metadata and fixed candidates.
+Overload started: 2026-11-13T00:06:11Z
+Overload finished: 2026-11-13T00:08:00Z
+Overload sf: @salesforce/cli/2.157.8
+Overload cases.tsv sha256: c9c248c32e940799
