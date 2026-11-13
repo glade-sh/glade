@@ -1,0 +1,13 @@
+source_api	route	order	result
+62.0	anonymous	ASC	v3,v0,v1,v2
+62.0	anonymous	DESC	v2,v1,v0,v3
+62.0	anonymous	ASC NULLS FIRST	v3,v0,v1,v2
+62.0	anonymous	ASC NULLS LAST	v3,v0,v1,v2
+62.0	anonymous	DESC NULLS FIRST	v2,v1,v0,v3
+62.0	anonymous	DESC NULLS LAST	v2,v1,v0,v3
+67.0	anonymous	ASC	v3,v0,v1,v2
+67.0	anonymous	DESC	v3,v2,v1,v0
+67.0	anonymous	ASC NULLS FIRST	v3,v0,v1,v2
+67.0	anonymous	ASC NULLS LAST	v0,v1,v2,v3
+67.0	anonymous	DESC NULLS FIRST	v3,v2,v1,v0
+67.0	anonymous	DESC NULLS LAST	v2,v1,v0,v3

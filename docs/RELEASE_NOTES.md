@@ -8,6 +8,7 @@
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
 - Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
 - **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
+
 ### Duplicate rules
 
 - **Duplicate rule settings survive reloads.** Saved orgs and warm test runtimes honor the current standard-rule setting, including after upgrading an older saved org.
@@ -24,6 +25,10 @@
 - **Smaller platform type table.** The standard platform types (System, Database, Schema and the rest) are now built with exact-size member lists, and members that share a modifier list or a parameter list share one copy. Building the table allocates about 35 MB instead of 65 MB and keeps about 22 MB live instead of 31 MB, in every process. Symbols and their order are unchanged.
 - **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
 - **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, and peak memory can rise up to about 10% on small runs. Results are unchanged.
+- **SOQL text ordering.** SOQL text ordering is locale-aware for  locales.
+- **SOQL text predicates.** Grouped and scalar aggregate evaluation retain the execution locale for HAVING text ranges, consistent with WHERE. REST and Bulk queries pass the selected user’s locale to the same executor. The English GROUP BY representative rule remains provisional outside the captured case pairs.
+
+- **Restricted picklist ordering.** Source APIs 62–65 now apply the legacy picklist null-order policy to restricted picklists with configured values. Native source-version controls place the transition at API 66.0, which honors explicit NULLS clauses like 67.0.
 
 ## v0.3.8
 
