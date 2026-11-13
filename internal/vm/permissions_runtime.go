@@ -1168,6 +1168,60 @@ func dmlAccessRecords(value Value) []Value {
 	}
 	return []Value{value}
 }
+
+// userModePartialInsertObjectDenials translates homogeneous object-CRUD
+// denials on the captured explicit partial insert route into SaveResult rows.
+// Field denials and mixed allowed/denied lists stay on the existing path.
+func (vm *VM) userModePartialInsertObjectDenials(value, accessLevel Value) ([]dml.Result, bool) {
+	version := vm.currentSourceExecutionPolicy().APIVersion
+	if (version != "62.0" && version != "67.0") || !isUserModeAccessLevel(accessLevel) ||
+		accessLevelPermissionSetID(accessLevel) != "" || vm.testContext == nil || vm.testContext.RunAsDepth == 0 {
+		return nil, false
+	}
+	user := vm.executionUser
+	if vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	if !strings.EqualFold(vm.currentUserProfileName(user), "Standard User") {
+		return nil, false
+	}
+	records := dmlAccessRecords(value)
+	if (value.Kind != ValueObject || len(records) != 1) && (value.Kind != ValueList || len(records) != 2) {
+		return nil, false
+	}
+	objectName := ""
+	for i, record := range records {
+		if record.Kind != ValueObject {
+			return nil, false
+		}
+		name := vm.canonicalSObjectValueType(record)
+		if i == 0 {
+			objectName = name
+			if !isCustomSchemaName(objectName) || vm.Org == nil || !vm.ordinaryCustomPermissionObject(objectName) {
+				return nil, false
+			}
+			state, ok := vm.Org.Objects[objectName]
+			if !ok || !strings.EqualFold(state.Definition.SharingModel, "ReadWrite") {
+				return nil, false
+			}
+		} else if !strings.EqualFold(name, objectName) {
+			return nil, false
+		}
+	}
+	if vm.currentUserObjectPermissionWithScope(objectName, "isCreateable", "") {
+		return nil, false
+	}
+	message := fmt.Sprintf("DML operation INSERT not allowed on %s", objectName)
+	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "") {
+		message = fmt.Sprintf("Access to entity '%s' denied", objectName)
+	}
+	results := make([]dml.Result, len(records))
+	for i := range results {
+		results[i] = dml.Result{StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", Error: message}
+	}
+	return results, true
+}
+
 func userModeDMLPermissions(op string) (string, string) {
 	switch strings.ToLower(strings.TrimSpace(op)) {
 	case "insert":

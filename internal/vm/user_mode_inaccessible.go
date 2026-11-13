@@ -21,6 +21,68 @@ func (vm *VM) userModeInaccessibleSecureDenial(query soql.Query, permissionSetID
 	return vm.userModeInaccessibleFlatIDQuery(query)
 }
 
+// api62DynamicSecurePermissionDenial covers the dynamic projections captured
+// for an inaccessible ReadWrite custom object at source API 62. It does not
+// change static SOQL, other APIs, field-only denials, or other projections.
+func (vm *VM) api62DynamicSecurePermissionDenial(query soql.Query, permissionSetID string) bool {
+	if vm.testContext == nil || vm.testContext.RunAsDepth == 0 || permissionSetID != "" ||
+		vm.currentMethod.APIVersion != "62.0" || vm.dynamicSOQLBindRoute != "Database.query" ||
+		!strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") ||
+		query.Where != nil || query.Having != nil || len(query.Order) != 0 || query.OrderBy != "" ||
+		query.HasLimit || query.HasOffset || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 ||
+		len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || query.Count || query.ForUpdate ||
+		query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
+		return false
+	}
+	user := vm.executionUser
+	if vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	if !strings.EqualFold(vm.currentUserProfileName(user), "Standard User") || vm.Org == nil ||
+		!isCustomSchemaName(query.Object) {
+		return false
+	}
+	objectName, ok := vm.resolveObjectName(query.Object)
+	if !ok {
+		return false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	if !vm.ordinaryCustomPermissionObject(objectName) || !strings.EqualFold(definition.SharingModel, "ReadWrite") {
+		return false
+	}
+	fields := make([]string, len(query.Fields))
+	var customText string
+	for i, field := range query.Fields {
+		fields[i] = strings.TrimSpace(field)
+		if fields[i] == "" || strings.ContainsAny(fields[i], ". ()\t\r\n") {
+			return false
+		}
+		canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fields[i])
+		if !ok {
+			return false
+		}
+		fieldDefinition := definition.Fields[canonical]
+		if isCustomSchemaName(canonical) && fieldDefinition.Type == storage.FieldString && strings.EqualFold(fieldDefinition.DisplayType, "STRING") {
+			if customText != "" {
+				return false
+			}
+			customText = canonical
+		} else if !strings.EqualFold(canonical, "Id") && !strings.EqualFold(canonical, "Name") {
+			return false
+		}
+	}
+	switch {
+	case len(fields) == 1 && strings.EqualFold(fields[0], "Id"):
+		return true
+	case len(fields) == 1 && customText != "":
+		return true
+	case len(fields) == 2 && strings.EqualFold(fields[0], "Name") && customText != "" && strings.EqualFold(fields[1], customText):
+		return true
+	default:
+		return false
+	}
+}
+
 // The captured rows capture the same flat USER_MODE denial
 // map at 59/62/67/68. C138_FIELD_*/OBJECT_* bracket named-route answers at
 // every API 59-67; the same rule therefore covers 59-68. Anonymous twins reject

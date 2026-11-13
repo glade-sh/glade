@@ -3756,7 +3756,7 @@ func (vm *VM) enforceSOQLSecurityScanned(query soql.Query, permissionSetID strin
 	defer vm.beginPermissionCheckMemo()()
 	scanUserMode := !scanned && mode == "USER_MODE" && permissionSetID == "" && (apexversion.Range{Since: 62, Until: 69}).Allows(vm.currentMethod.APIVersion)
 	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
-		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) {
+		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) || vm.api62DynamicSecurePermissionDenial(query, permissionSetID) {
 			return newExceptionError("QueryException", "Insufficient permissions: secure query included inaccessible field")
 		}
 		if mode == "USER_MODE" && permissionSetID == "" {

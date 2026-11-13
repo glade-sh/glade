@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Apex
+
+- **User-mode DML and secure queries.** For named runAs Standard User tests at source APIs 62 and 67, denied object access in explicit partial `USER_MODE` inserts returns failed `SaveResult` rows. At API 62, captured dynamic `SECURITY_ENFORCED` projections report the native inaccessible-permission message.
 
 ## v0.3.8
 

@@ -274,6 +274,14 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 			return fieldKeyDMLResultsValue(op, args[0], failures), nil
 		}
 	}
+	if ordinaryDatabaseCall && op == "insert" && !allOrNone && dmlMode == "USER_MODE" && isDatabaseAccessLevelValue(accessLevel) {
+		if failures, handled := vm.userModePartialInsertObjectDenials(args[0], accessLevel); handled {
+			if err := vm.chargeAccountPermissionDML(len(dmlAccessRecords(args[0]))); err != nil {
+				return Null, err
+			}
+			return fieldKeyDMLResultsValue(op, args[0], failures), nil
+		}
+	}
 	if dmlMode == "USER_MODE" {
 		if err := vm.userModeUpsertKeyFieldDenial(op, args[0], externalIDField, accessLevelPermissionSetID(accessLevel)); err != nil {
 			return Null, err
