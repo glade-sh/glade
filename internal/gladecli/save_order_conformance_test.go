@@ -18,6 +18,8 @@ func TestSaveOrderNativeConformance(t *testing.T) {
 	replaySaveOrder(t, "combined", "combined", "org.tsv", "anonymous.apex", "SaveOrderTest", "combined", "ProbeResultException")
 	replaySaveOrder(t, "rollup", "rollup", "org.tsv", "anonymous.apex", "RollupTest", "combined", "RollupResultException")
 	replaySaveOrder(t, "rollup", "control", "siblings.tsv", "siblings.apex", "RollupControlTest", "combined", "RollupResultException")
+	replaySaveOrder(t, "rollup_events", "single", "single.tsv", "single.apex", "RollupSideSingle", "probe", "RollupResultException")
+	replaySaveOrder(t, "rollup_events", "mixed", "mixed.tsv", "mixed.apex", "RollupSideMixed", "probe", "RollupResultException")
 }
 
 func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, method, exception string) {
@@ -37,7 +39,8 @@ func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, m
 	}
 	for i, api := range []string{"62.0", "67.0"} {
 		root := t.TempDir()
-		if err := os.CopyFS(filepath.Join(root, "force-app"), os.DirFS(filepath.Join(dir, "force-app"))); err != nil {
+		projectFiles := filepath.Join(root, "force-app")
+		if err := os.CopyFS(projectFiles, os.DirFS(filepath.Join(dir, "force-app"))); err != nil {
 			t.Fatal(err)
 		}
 		project := fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api)
