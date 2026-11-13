@@ -16,7 +16,21 @@ import (
 // start in its submission slot after the future with execute/finish after the
 // queueable, and a top-level Schedulable last.
 func TestAsyncStopOrderNativeConformance(t *testing.T) {
-	dir := filepath.Join("testdata", "conformance", "async_stop_order")
+	runAsyncStopOrderRows(t, "async_stop_order", "StopOrderTest", 13)
+}
+
+// TestAsyncStopMixNativeConformance replays the mixed batch, future and
+// queueable stopTest rows. NATIVE async_stop_mix/org.tsv:2-49 istest 62.0 and
+// 67.0: futures first; queueables and batches FIFO with batch start, execute
+// and finish as separate queue entries appended to the tail; work enqueued in
+// a phase precedes the next phase; top-level Schedulables after batch
+// continuations; a throwing Queueable ends the drain.
+func TestAsyncStopMixNativeConformance(t *testing.T) {
+	runAsyncStopOrderRows(t, "async_stop_mix", "StopOrderMixTest", 24)
+}
+
+func runAsyncStopOrderRows(t *testing.T, fixture, class string, perAPI int) {
+	dir := filepath.Join("testdata", "conformance", fixture)
 	file, err := os.Open(filepath.Join(dir, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -26,7 +40,7 @@ func TestAsyncStopOrderNativeConformance(t *testing.T) {
 	reader.Comma = '\t'
 	reader.LazyQuotes = true
 	rows, err := reader.ReadAll()
-	if err != nil || len(rows) != 27 {
+	if err != nil || len(rows) != 2*perAPI+1 {
 		t.Fatalf("invalid native observations: %v (%d rows)", err, len(rows))
 	}
 	for _, api := range []string{"62.0", "67.0"} {
@@ -70,7 +84,7 @@ func TestAsyncStopOrderNativeConformance(t *testing.T) {
 				}
 				asserted++
 				t.Run(method, func(t *testing.T) {
-					run := Run(index, Options{SelectedClasses: []string{"StopOrderTest"}, SelectedMethod: method, RuntimeRESTAPIVersion: "68.0", NoDiskCache: true, Parallelism: 1})
+					run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: method, RuntimeRESTAPIVersion: "68.0", NoDiskCache: true, Parallelism: 1})
 					if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 {
 						t.Fatalf("expected selected method: %+v", run.Summary())
 					}
@@ -84,8 +98,8 @@ func TestAsyncStopOrderNativeConformance(t *testing.T) {
 					}
 				})
 			}
-			if asserted != 13 {
-				t.Fatalf("asserted %d rows for API %s, want 13", asserted, api)
+			if asserted != perAPI {
+				t.Fatalf("asserted %d rows for API %s, want %d", asserted, api, perAPI)
 			}
 		})
 	}
