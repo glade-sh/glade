@@ -49,10 +49,12 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 		}
 	}
 	var loadedRoots []string
+	readMarker := os.ReadFile
 	if capturedProject != nil {
 		loadedRoots = loadedProjectRoots(*capturedProject)
+		readMarker = capturedProject.ReadFile
 	}
-	units, err := captureRuntimeSourceUnitsInRoots(index, generation, bodies, loadedRoots)
+	units, err := captureRuntimeSourceUnitsInRoots(index, generation, bodies, loadedRoots, readMarker)
 	if err != nil {
 		return err
 	}
@@ -252,12 +254,14 @@ func containingSourceRoot(path, primary string, loaded []string) string {
 	return best
 }
 
-func readSourceRootFile(root, path string) ([]byte, error) {
+// readSourceRootFile reads through read, which is a project input view reader
+// when the caller has a loaded project.
+func readSourceRootFile(read func(string) ([]byte, error), root, path string) ([]byte, error) {
 	path, err := sourceRootPath(root, path)
 	if err != nil {
 		return nil, err
 	}
-	return os.ReadFile(filepath.Clean(path))
+	return read(filepath.Clean(path))
 }
 
 func readProjectMetadataFile(snapshot project.Project, path string) ([]byte, error) {
@@ -293,5 +297,5 @@ func readProjectMetadataFile(snapshot project.Project, path string) ([]byte, err
 	if root == "" {
 		return nil, fmt.Errorf("metadata path %q is outside source root %q", path, snapshot.Root)
 	}
-	return readSourceRootFile(root, path)
+	return readSourceRootFile(snapshot.ReadFile, root, path)
 }

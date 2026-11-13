@@ -13,13 +13,13 @@ import (
 // analysis: the nearest SFDX project and its source tree. Capture every probed
 // marker, including absence, so a metadata edit cannot reuse an old binding.
 func captureRuntimeSourceUnits(index typesys.Index, generation *runtimeMetadataGeneration, bodies map[string]string) (map[string]string, error) {
-	return captureRuntimeSourceUnitsInRoots(index, generation, bodies, nil)
+	return captureRuntimeSourceUnitsInRoots(index, generation, bodies, nil, os.ReadFile)
 }
 
 // captureRuntimeSourceUnitsInRoots also accepts the dependency and sibling
 // project roots the index loaded. Records from those projects live under their
 // own roots, not under the consumer's.
-func captureRuntimeSourceUnitsInRoots(index typesys.Index, generation *runtimeMetadataGeneration, bodies map[string]string, loadedRoots []string) (map[string]string, error) {
+func captureRuntimeSourceUnitsInRoots(index typesys.Index, generation *runtimeMetadataGeneration, bodies map[string]string, loadedRoots []string, read func(string) ([]byte, error)) (map[string]string, error) {
 	counts := make(map[string]int)
 	duplicate := false
 	for _, typ := range index.Types {
@@ -69,7 +69,7 @@ func captureRuntimeSourceUnitsInRoots(index typesys.Index, generation *runtimeMe
 			marker := filepath.Join(dir, "sfdx-project.json")
 			input, captured := generation.inputs[marker]
 			if !captured {
-				data, err := readSourceRootFile(root, marker)
+				data, err := readSourceRootFile(read, root, marker)
 				if err != nil && !os.IsNotExist(err) {
 					return nil, err
 				}

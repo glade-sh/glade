@@ -3611,6 +3611,23 @@ func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, diges
 	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
 }
 
+// CompileProjectRuntimeForProject compiles from the build artifacts of one
+// index build and binds runtime metadata generation to p, the project that
+// build loaded. Reads p makes go through its input view, so a caller that
+// rechecks the view after compiling covers the metadata the runtime used.
+func CompileProjectRuntimeForProject(index typesys.Index, p project.Project, artifacts typesys.BuildArtifacts) (CompiledProjectRuntime, error) {
+	sources := newSourceCache()
+	sources.seedProjectSnapshot(&p)
+	if err := sources.seedBuildArtifacts(index, &artifacts); err != nil {
+		return CompiledProjectRuntime{}, err
+	}
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, artifacts.SourceDigests, sources)
+	if err != nil {
+		return CompiledProjectRuntime{}, err
+	}
+	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
+}
+
 func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
 	registerVisualforcePages(machine, runtime.PageNames)
 	machine.AddExpressionTypeResolver(runtime.expressionTypes)
@@ -5196,8 +5213,8 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 			if err != nil {
 				return org, err
 			}
-			applyCustomApplicationRecords(&org, p.ApplicationFiles)
-			applyCustomNotificationTypeRecords(&org, p.Root)
+			applyCustomApplicationRecords(&org, p.ApplicationFiles, p.ReadFile)
+			applyCustomNotificationTypeRecords(&org, p.Root, p.ReadFile)
 			rejections, err := resource.ApplyProjectTolerant(&org, p, sources.readCapturedProjectMetadata)
 			if err != nil {
 				if len(project.EmailServiceMetadataFiles(p)) > 0 {
@@ -6923,14 +6940,14 @@ type permissionSetMetadataCacheEntry struct {
 	ok       bool
 }
 
-func readPermissionSetMetadata(file string, cache map[string]permissionSetMetadataCacheEntry) (permissionSetMetadata, bool) {
+func readPermissionSetMetadata(read func(string) ([]byte, error), file string, cache map[string]permissionSetMetadataCacheEntry) (permissionSetMetadata, bool) {
 	if cache == nil {
-		return readPermissionSetMetadataNoCache(file)
+		return readPermissionSetMetadataNoCache(read, file)
 	}
 	if cached, ok := cache[file]; ok {
 		return cached.metadata, cached.ok
 	}
-	metadata, ok := readPermissionSetMetadataNoCache(file)
+	metadata, ok := readPermissionSetMetadataNoCache(read, file)
 	cache[file] = permissionSetMetadataCacheEntry{
 		metadata: metadata,
 		ok:       ok,
@@ -6938,8 +6955,8 @@ func readPermissionSetMetadata(file string, cache map[string]permissionSetMetada
 	return metadata, ok
 }
 
-func readPermissionSetMetadataNoCache(file string) (permissionSetMetadata, bool) {
-	data, err := os.ReadFile(file)
+func readPermissionSetMetadataNoCache(read func(string) ([]byte, error), file string) (permissionSetMetadata, bool) {
+	data, err := read(file)
 	if err != nil {
 		return permissionSetMetadata{}, false
 	}
@@ -7209,7 +7226,7 @@ type customApplicationMetadata struct {
 	Label string `xml:"label"`
 }
 
-func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []string) {
+func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []string, read func(string) ([]byte, error)) {
 	if org == nil || len(applicationFiles) == 0 {
 		return
 	}
@@ -7233,7 +7250,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 			continue
 		}
 		label := developerName
-		if data, err := os.ReadFile(path); err == nil {
+		if data, err := read(path); err == nil {
 			var meta customApplicationMetadata
 			if xml.Unmarshal(data, &meta) == nil && strings.TrimSpace(meta.Label) != "" {
 				label = strings.TrimSpace(meta.Label)
@@ -7295,7 +7312,9 @@ type customNotificationTypeMetadata struct {
 	MasterLabel string `xml:"masterLabel"`
 }
 
-func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
+// The walk that finds notification types stays on the live tree, as the
+// startup manifest walk does; each file found is read through read.
+func applyCustomNotificationTypeRecords(org *storage.OrgState, root string, read func(string) ([]byte, error)) {
 	if org == nil || strings.TrimSpace(root) == "" {
 		return
 	}
@@ -7332,7 +7351,7 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 	for _, path := range files {
 		developerName := notificationTypeDeveloperName(path)
 		label := developerName
-		if data, err := os.ReadFile(path); err == nil {
+		if data, err := read(path); err == nil {
 			var meta customNotificationTypeMetadata
 			if xml.Unmarshal(data, &meta) == nil {
 				if strings.TrimSpace(meta.MasterLabel) != "" {
