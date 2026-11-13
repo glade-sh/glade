@@ -902,6 +902,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 }
 
 func numericDecimalValuesEqual(left, right Value) bool {
+	if equal, handled := signedDoubleZeroEqual(left, right); handled {
+		return equal
+	}
 	if isFloatBackedDecimal(left) && isFloatBackedDecimal(right) && math.IsNaN(left.Decimal) && math.IsNaN(right.Decimal) {
 		return true
 	}

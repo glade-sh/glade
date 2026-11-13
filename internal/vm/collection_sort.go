@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 )
@@ -906,6 +907,10 @@ func collectionNumericValue(value Value) float64 {
 	return value.Decimal
 }
 func collectionNumericLess(left, right Value) bool {
+	if _, handled := signedDoubleZeroEqual(left, right); handled {
+		// Native List.sort orders Double -0.0 before 0.0.
+		return math.Signbit(left.Decimal) && !math.Signbit(right.Decimal)
+	}
 	leftRat, leftOK := valueDecimalRat(left)
 	rightRat, rightOK := valueDecimalRat(right)
 	if leftOK && rightOK {
