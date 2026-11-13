@@ -149,7 +149,23 @@ func standardDuplicateMatcher(org *storage.OrgState, ruleObject, candidateObject
 			} else if v, ok := existing.GetField("LastName"); ok {
 				last = strings.TrimSpace(workflowValueString(v))
 			}
-			if last == "" || rawKeysOf(last).last != person.lastKey {
+			if last == "" {
+				return false, 0
+			}
+			if rawKeysOf(last).last != person.lastKey {
+				// Exact first name and email can also expose a surname variant
+				// outside the ordinary phonetic key. Read these two fields only.
+				if person.kind != object || person.email == "" || !standardSurnameLengthsMayMatch(person.last, last) {
+					return false, 0
+				}
+				email, _ := duplicateFieldText(existing, "Email")
+				if !strings.EqualFold(person.email, email) {
+					return false, 0
+				}
+				first, _ := duplicateFieldText(existing, "FirstName")
+				if person.first != "" && strings.EqualFold(person.first, first) {
+					return standardCorroboratedSurname(person.last, last)
+				}
 				return false, 0
 			}
 			return standardPersonMatch(object, person, standardPersonOf(org, ruleObject, existing))
@@ -287,6 +303,13 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			}
 		}
 		sort.Sort(byMatchRecordID{&match})
+		// The standard Account search and save error expose the same 100
+		// members in the overflow rows, including when a later row is exact.
+		// Keep confidence paired with each returned record.
+		if standard && strings.EqualFold(matching.Object, "Account") && len(match.Records) > 100 {
+			match.Records = match.Records[:100]
+			match.Confidences = match.Confidences[:100]
+		}
 		result.Matches = append(result.Matches, match)
 	}
 	return result, true
@@ -355,11 +378,17 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 	exclude := func(id storage.ID) bool { return !update && e.duplicates.stamp == stamp && e.duplicates.batch[id] }
 	var report *DuplicateReport
 	for _, rule := range ActiveDuplicateRulesForRecord(e.Org, record.Object, record) {
-		if !update && e.Options.UpsertCapturedInsertRulesOnly && !upsertCapturedEmailRule(rule, record) {
+		if !update && e.Options.UpsertCapturedInsertRulesOnly && !upsertCapturedEmailRule(rule, record) && !standardAccountInsertRule(rule) {
 			continue
 		}
-		if update && e.Options.UpsertChangedExactDuplicatesOnly && !upsertExactMatchChanged(rule, record, prior) {
-			continue
+		if update {
+			fuzzy, changed := customFuzzyFieldsChanged(rule, record, prior)
+			if fuzzy && !changed {
+				continue
+			}
+			if e.Options.UpsertChangedExactDuplicatesOnly && !fuzzy && !upsertExactMatchChanged(rule, record, prior) {
+				continue
+			}
 		}
 		applies, supported := DuplicateRuleApplies(e.Org, rule, record)
 		if !supported || !applies {
@@ -461,6 +490,81 @@ func (e *Engine) noteDuplicateInsert(stamp *string, report *DuplicateReport, id 
 func (e *Engine) enforceDuplicateRulesOnUpdate(record, prior storage.Record) error {
 	_, err := e.checkDuplicateRules(record, true, nil, &prior)
 	return err
+}
+
+// The scalar external-key insert row uses the built-in business Account rule.
+func standardAccountInsertRule(rule storage.DuplicateRule) bool {
+	if !strings.EqualFold(rule.Object, "Account") || rule.Subtype != "" || len(rule.MatchRules) != 1 {
+		return false
+	}
+	match := rule.MatchRules[0]
+	return strings.EqualFold(match.Object, "Account") && len(match.Items) == 0 && storage.IsStandardMatchingRule(match.Object, match.Name)
+}
+
+// A sparse edit on an existing Contact phone or Person Account name duplicate
+// saves. A scalar upsert that changes the match fields runs the edit action.
+func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record, prior *storage.Record) (fuzzy, changed bool) {
+	if prior == nil || len(rule.MatchRules) != 1 {
+		return false, false
+	}
+	match := rule.MatchRules[0]
+	if !strings.EqualFold(match.Status, "Active") || !capturedFuzzyEditRule(rule, match, record, *prior) {
+		return false, false
+	}
+	for _, item := range match.Items {
+		if !strings.EqualFold(item.BlankBehavior, "NullNotAllowed") {
+			return false, false
+		}
+		before, beforeOK := prior.GetField(item.Field)
+		after, afterOK := record.GetField(item.Field)
+		if duplicateBlank(before, beforeOK) || duplicateBlank(after, afterOK) {
+			return false, false
+		}
+		if !storageValuesEqual(storage.Field{}, before, after) {
+			changed = true
+		}
+	}
+	return true, changed
+}
+
+func capturedFuzzyEditRule(rule storage.DuplicateRule, match storage.MatchingRule, record, prior storage.Record) bool {
+	hasItem := func(item storage.MatchingRuleItem, field string) bool {
+		return strings.EqualFold(item.Field, field) && strings.EqualFold(item.Method, field)
+	}
+	ops := rule.OperationsOnUpdate
+	allow := strings.EqualFold(rule.ActionOnUpdate, "Allow")
+	alert := allow && len(ops) == 1 && strings.EqualFold(ops[0], "Alert")
+	switch {
+	case strings.EqualFold(rule.Object, "Contact") && rule.Subtype == "" && strings.EqualFold(match.Object, "Contact"):
+		if len(match.Items) != 1 || !hasItem(match.Items[0], "Phone") || (match.BooleanFilter != "" && match.BooleanFilter != "1") {
+			return false
+		}
+		if len(rule.Filter.Items) != 1 || rule.Filter.BooleanFilter != "1" {
+			return false
+		}
+		criterion := rule.Filter.Items[0]
+		// The rule filters the input. Entering or leaving a single text
+		// equality condition does not change the phone match key.
+		if !strings.EqualFold(criterion.Operation, "equals") || strings.TrimSpace(criterion.Value) == "" {
+			return false
+		}
+		before, beforeOK := prior.GetField(criterion.Field)
+		after, afterOK := record.GetField(criterion.Field)
+		if !beforeOK || !afterOK || before.Kind != storage.ValueString || after.Kind != storage.ValueString ||
+			strings.TrimSpace(before.String) == "" || strings.TrimSpace(after.String) == "" {
+			return false
+		}
+		block := strings.EqualFold(rule.ActionOnUpdate, "Block") && len(ops) == 0
+		report := allow && len(ops) == 1 && strings.EqualFold(ops[0], "Report")
+		return block || alert || report
+	case strings.EqualFold(rule.Object, "Account") && strings.EqualFold(rule.Subtype, "PersonAccount") && strings.EqualFold(match.Object, "PersonAccount"):
+		if !alert || len(rule.Filter.Items) != 0 || rule.Filter.BooleanFilter != "" || len(match.Items) != 2 || !strings.EqualFold(match.BooleanFilter, "1 AND 2") {
+			return false
+		}
+		return (hasItem(match.Items[0], "FirstName") && hasItem(match.Items[1], "LastName")) ||
+			(hasItem(match.Items[0], "LastName") && hasItem(match.Items[1], "FirstName"))
+	}
+	return false
 }
 
 // Limit upsert update enforcement to changed, single-field exact matches.

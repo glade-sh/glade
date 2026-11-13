@@ -11,9 +11,8 @@ import (
 // native Datacloud.FindDuplicates verdicts (docs/DUPLICATE_FUZZY_MATCHING.md,
 // "Standard rules"). The items are the fuzzy methods of the custom rules, so a
 // pair matches only when the item scorers of this package match it; the
-// standard rules match more pairs than that (a first name against its
-// initial, two names whose double metaphone codes agree), which Glade leaves
-// as misses.
+// standard Contact name paths also recognize corroborated initials and
+// surname edits in the Apex save and search rows.
 //
 // Every item compares two values with one of five relations: both present and
 // matching, both present and different, the candidate blank, the existing
@@ -414,11 +413,32 @@ func standardPersonOf(org *storage.OrgState, object string, record storage.Recor
 // candidate that has one. The phone and company paths need both first names.
 func standardPersonMatch(object string, candidate, existing standardPerson) (bool, float64) {
 	last := standardCompare(candidate.last, existing.last, standardLastName)
+	email := standardCompare(candidate.email, existing.email, standardExact)
+	if candidate.kind == existing.kind && email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
+		if matched, confidence := standardCorroboratedSurname(candidate.last, existing.last); matched {
+			return true, confidence
+		}
+		if !last.ok() {
+			return false, 0
+		}
+		if last.confidence < 100 && standardIsTerminalSwap(candidate.last, existing.last) {
+			return standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
+		}
+	}
 	if !last.ok() {
 		return false, 0
 	}
 	first := standardCompare(candidate.first, existing.first, standardMethod("firstname"))
-	email := standardCompare(candidate.email, existing.email, standardExact)
+	// The standard rule accepts one initial with an exact surname and email
+	// or phone. A custom FirstName item does not match the same pairs.
+	if !first.ok() && candidate.kind == existing.kind && strings.EqualFold(candidate.last, existing.last) && standardFirstInitial(candidate.first, existing.first) {
+		if email.ok() {
+			return true, 100
+		}
+		if candidate.phone != "" && candidate.phone == existing.phone {
+			return standardPhone(object)(candidate.phone, existing.phone)
+		}
+	}
 	best, found := 0.0, false
 	take := func(c float64) {
 		if !found || c > best {

@@ -1,0 +1,105 @@
+{
+  "business": {
+    "accountSeparate": "StandardBehavior.accountSeparate()",
+    "accountBulk": "StandardBehavior.accountBulk()",
+    "accountUpdate": "StandardBehavior.accountUpdate()",
+    "accountUpsert": "StandardBehavior.accountUpsert()",
+    "accountUpsertUpdate": "StandardBehavior.accountUpsertUpdate()",
+    "accountOptions": "StandardBehavior.accountOptions()",
+    "accountNoCity": "StandardBehavior.accountNoCity()",
+    "contactBlank": "StandardBehavior.contactBlank()",
+    "leadBlank": "StandardBehavior.leadBlank()",
+    "phoneInternational": "StandardBehavior.phoneInternational()",
+    "phoneExtension": "StandardBehavior.phoneExtension()"
+  },
+  "person": {
+    "personDefault": "PersonBehavior.personDefault()"
+  },
+  "custom": {
+    "CustomBlock": "CustomDuplicateProbe.run('CustomBlock')",
+    "CustomAlert": "CustomDuplicateProbe.run('CustomAlert')",
+    "CustomReport": "CustomDuplicateProbe.run('CustomReport')",
+    "PersonCustom": "CustomDuplicateProbe.run('PersonCustom')",
+    "CustomBlockUpsert": "CustomDuplicateProbe.run('CustomBlockUpsert')",
+    "CustomAlertUpsert": "CustomDuplicateProbe.run('CustomAlertUpsert')",
+    "CustomReportUpsert": "CustomDuplicateProbe.run('CustomReportUpsert')",
+    "PersonCustomUpsert": "CustomDuplicateProbe.run('PersonCustomUpsert')"
+  },
+  "extra": {
+    "externalNew": "ExtraBehavior.externalNew()",
+    "externalExisting": "ExtraBehavior.externalExisting()",
+    "initialForward": "ExtraBehavior.initialForward()",
+    "initialReverse": "ExtraBehavior.initialReverse()",
+    "transposedLast": "ExtraBehavior.transposedLast()"
+  },
+  "bound": {
+    "ordinary": "NonRuleBehavior.ordinary()",
+    "uncapped": "BoundBehavior.uncapped()"
+  },
+  "personActive": {
+    "lookup": "PersonLookupBehavior.lookup()"
+  },
+  "personInactive": {
+    "lookup": "PersonLookupBehavior.lookup()"
+  },
+  "names": {
+    "initials": "NamePanelBehavior.initials()",
+    "transpositions": "NamePanelBehavior.transpositions()"
+  },
+  "limit": {
+    "lateExact": "LimitBehavior.lateExact()"
+  },
+  "order": {
+    "overlap": "OrderBehavior.overlap()"
+  },
+  "calibration": {
+    "initials": "CalibrationBehavior.initials()",
+    "transpositions": "CalibrationBehavior.transpositions()"
+  },
+  "keyboard": {
+    "shortA": "KeyboardBehavior.shortA()",
+    "shortB": "KeyboardBehavior.shortB()",
+    "shortC": "KeyboardBehavior.shortC()",
+    "longA": "KeyboardBehavior.longA()",
+    "longB": "KeyboardBehavior.longB()",
+    "nearA": "KeyboardBehavior.nearA()",
+    "nearB": "KeyboardBehavior.nearB()"
+  },
+  "prefix": {
+    "stemA": "PrefixBehavior.stemA()",
+    "stemB": "PrefixBehavior.stemB()",
+    "stemC": "PrefixBehavior.stemC()",
+    "stemD": "PrefixBehavior.stemD()",
+    "stemE": "PrefixBehavior.stemE()"
+  },
+  "holdout": {
+    "blindA": "HoldoutBehavior.blindA()",
+    "blindB": "HoldoutBehavior.blindB()",
+    "blindC": "HoldoutBehavior.blindC()",
+    "blindD": "HoldoutBehavior.blindD()",
+    "blindE": "HoldoutBehavior.blindE()",
+    "blindF": "HoldoutBehavior.blindF()"
+  },
+  "keyboardBoundary": {
+    "sumA": "BoundaryBehavior.sumA()",
+    "sumB": "BoundaryBehavior.sumB()",
+    "sumC": "BoundaryBehavior.sumC()",
+    "sumD": "BoundaryBehavior.sumD()"
+  },
+  "leadNames": {
+    "initials": "LeadNamesBehavior.initials()",
+    "surnames": "LeadNamesBehavior.surnames()"
+  },
+  "phoneCriteria": {
+    "editGate": "CriteriaBehavior.editGate()"
+  },
+  "localEdits": {
+    "editsA": "LocalEditsBehavior.editsA()",
+    "editsB": "LocalEditsBehavior.editsB()",
+    "editsC": "LocalEditsBehavior.editsC()"
+  },
+  "gradeHoldout": {
+    "gradeA": "GradeBehavior.gradeA()",
+    "gradeB": "GradeBehavior.gradeB()"
+  }
+}
