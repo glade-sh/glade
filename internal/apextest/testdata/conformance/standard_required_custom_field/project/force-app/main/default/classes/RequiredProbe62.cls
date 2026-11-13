@@ -1,3 +1,0 @@
-@IsTest private class RequiredProbe62 {
- @IsTest static void requiredInsert() { Account a=new Account(Name='probe', Required_Probe__c='value'); try { Database.SaveResult r=Database.insert(a,false,AccessLevel.USER_MODE); System.assert(false,r.isSuccess()?'ok':('fail '+r.getErrors()[0].getStatusCode()+':'+r.getErrors()[0].getMessage())); } catch(System.AssertException e) { throw e; } catch(Exception e) { System.assert(false,e.getTypeName()+':'+e.getMessage()); } }
-}
