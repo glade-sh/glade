@@ -30,3 +30,6 @@ source_sha256:project/force-app/main/default/classes/StopOrderTest.cls=9ae7622c2
 source_sha256:project/force-app/main/default/classes/StopOrderTest.cls-meta.xml=51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d
 source_sha256:project/force-app/main/default/triggers/StopOrderContactTrigger.trigger=29c6e15fb96f7a81bf9782219277ed38f352166092cc6cf7ce0412b13b6f9009
 source_sha256:project/force-app/main/default/triggers/StopOrderContactTrigger.trigger-meta.xml=ac696b304f31bae8ad6078bd7181e103bb2c7d87b106d0815e73bcf38c1b6f4c
+edition=not recorded in available run facts
+driver=Salesforce CLI Apex test route; exact driver script not recorded
+identifiers=record and org identifiers omitted; markers are synthetic labels
