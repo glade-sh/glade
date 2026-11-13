@@ -560,6 +560,7 @@
       "TestCase339ServerBoundsSlowRequestBody",
       "TestCase340ListenerRejectsUntrustedAuthority",
       "TestCompatDispatchesToLinkedPlugin",
+      "TestConcurrentDAPLoadsDoNotInterfere",
       "TestConnectedMalformedFailedShardResponseWritesNoArtifacts",
       "TestConnectedRunKeepsArtifactPathsClientLocal",
       "TestConnectedRunUsesPublishedProjectSnapshot",
@@ -1301,6 +1302,7 @@
       "TestLoopScopeDynamicBindsNativeConformance": 30
     },
     "./internal/gladecli": {
+      "TestConcurrentDAPLoadsDoNotInterfere": 10,
       "TestGCFloorGoroutineEndsAtHandOver": 10,
       "TestGCFloorGoroutineEndsAtMaxAgeAndRestoresPolicy": 10,
       "TestCancelDuringPublishLockWaitSkipsWrite": 3,

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -256,6 +257,13 @@ func dirObservation(path string) ([]os.DirEntry, observation, error) {
 	o.mode = fs.ModeDir
 	h := sha256.New()
 	for _, e := range entries {
+		// Hidden entries (.glade, .git, editor swap files) are not project
+		// metadata membership. Leaving them out keeps the cache directory and
+		// editor noise from forcing a rebuild; a hidden file a loader reads
+		// by path is still pinned by that read.
+		if strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
 		fmt.Fprintf(h, "%s\x00%d\x00", e.Name(), e.Type())
 	}
 	copy(o.listing[:], h.Sum(nil))
