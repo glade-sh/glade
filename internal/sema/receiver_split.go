@@ -160,10 +160,11 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 		root, _, _ := strings.Cut(receiver, ".")
 		_, local := scope.lookup(root)
 		before, after := false, false
-		afterGap, beforeGap := "", ""
+		afterGap, beforeGap, beforeTrivia := "", "", ""
 		for i := first + 1; i <= last; i++ {
 			if tokens[i].text == "." {
 				before = before || tokens[i].gap != ""
+				beforeTrivia += tokens[i].gap
 				if i == last-1 {
 					beforeGap = tokens[i].gap
 					afterGap = tokens[i+1].gap
@@ -207,7 +208,43 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 			}
 			close++
 		}
+		// The captured declaration, expression and argument contexts have distinct
+		// parser messages. Return and other expression contexts are not captured.
+		stmt := first == 0
+		decl := first >= 3 && len(tokens) > 3 && tokens[2].text == "="
+		assign := first >= 2 && len(tokens) > 2 && tokens[1].text == "="
+		arg := depth > 0 && depth <= 2 && tokens[0].text != "return" && tokens[0].text != "throw"
 		if before {
+			if assign {
+				continue
+			}
+			if decl && tokens[last+2].text != ")" {
+				continue
+			}
+			if stmt && tokens[last+2].text != ")" && (!strings.ContainsAny(beforeTrivia, "\r\n") || (close < len(tokens) && tokens[close].text == ".")) {
+				continue
+			}
+			if depth > 0 && !previousArgument {
+				laterArgument := close < len(tokens) && tokens[close].text == ","
+				if (laterArgument && beforeTrivia != "\n") || (!laterArgument && (beforeGap != " " || after)) {
+					continue
+				}
+			}
+			if !scope.anonymous && depth > 0 && (!previousArgument || beforeTrivia != "\n") {
+				continue
+			}
+			// Standalone calls are captured with a line break or comment;
+			// declaration calls use a line break. Nested fluent and deeply
+			// nested before-dot calls are unobserved.
+			if decl && !strings.ContainsAny(beforeTrivia, "\r\n") {
+				continue
+			}
+			if stmt && !strings.ContainsAny(beforeTrivia, "\r\n") && !strings.Contains(beforeTrivia, "/*") {
+				continue
+			}
+			if depth > 1 || (depth > 0 && close < len(tokens) && tokens[close].text == ".") {
+				continue
+			}
 			// A single-part receiver with call arguments is captured as a
 			// statement, not inside an enclosing call.
 			if depth > 0 && !strings.Contains(receiver, ".") && tokens[last+2].text != ")" {
@@ -222,12 +259,6 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 				continue
 			}
 		}
-		// The captured declaration, expression and argument contexts have distinct
-		// parser messages. Return and other expression contexts are not captured.
-		stmt := first == 0
-		decl := first >= 3 && len(tokens) > 3 && tokens[2].text == "="
-		assign := first >= 2 && len(tokens) > 2 && tokens[1].text == "="
-		arg := depth > 0 && depth <= 2 && tokens[0].text != "return" && tokens[0].text != "throw"
 		var message string
 		if before && (!hasAfter || after) && !local && semaReceiverExprLooksLikeType(receiver, scope, model) {
 			message = "Variable does not exist: " + root
@@ -235,7 +266,13 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 			// Assignment and binary argument captures use a line break after
 			// the dot; space-only forms have no observed result.
 			lineBreak := strings.ContainsAny(afterGap, "\r\n")
-			if (decl || assign) && !lineBreak {
+			if ((decl || assign) || (arg && depth > 1)) && !lineBreak {
+				continue
+			}
+			if arg && tokens[last+2].text != ")" {
+				continue
+			}
+			if arg && depth == 1 && !previousArgument && (close >= len(tokens) || tokens[close].text != ",") {
 				continue
 			}
 			if arg && close < len(tokens) && tokens[close].text != ")" && tokens[close].text != "," {
