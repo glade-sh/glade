@@ -6,6 +6,9 @@
 ### Apex search
 
 - A user-mode SOSL search with fixed test results now reports an unreadable field used to sort a RETURNING group, including when its only candidate belongs to another user.
+### Apex search
+
+- SOSL divides the result limit among two or three `RETURNING` objects, including when an object has fewer matching rows than its share. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
 
 ### Performance
 
