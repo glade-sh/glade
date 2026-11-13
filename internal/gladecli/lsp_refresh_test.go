@@ -179,3 +179,29 @@ func TestSaveRefreshPublishesDependentsAndSymbols(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestRefreshRemovesDeletedSource(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	project := filepath.Join(root, "project")
+	writeTestProject(t, project)
+	file := filepath.Join(project, "force-app/main/classes/Deleted.cls")
+	writeTestFile(t, file, "public class Deleted {}")
+	l, err := newLSPProjectLoader(project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(file); err != nil {
+		t.Fatal(err)
+	}
+	index, _, err := l.refresh(context.Background(), []string{file})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, typ := range index.Types {
+		if typ.Name == "Deleted" {
+			t.Fatal("deleted type remains in index")
+		}
+	}
+}

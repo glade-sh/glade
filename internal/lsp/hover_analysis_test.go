@@ -41,3 +41,22 @@ func TestHoverDoesNotWaitForAnalysis(t *testing.T) {
 		t.Errorf("completed hover = %#v", got)
 	}
 }
+
+func TestHoverStartsAnalysisWithoutOpenDocument(t *testing.T) {
+	h := NewHandler(sampleIndex(t))
+	started := make(chan struct{})
+	h.gen.Load().analyzer = func(typesys.Index) sema.Result {
+		close(started)
+		return sema.Result{Types: map[string]sema.TypeReference{"fallback": {Name: "Fallback", Kind: sema.TypeBuiltin}}}
+	}
+	h.HoverForName("Fallback", nil)
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("hover did not start analysis")
+	}
+	h.gen.Load().analysisResult()
+	if got := h.HoverForName("Fallback", nil); got == nil || !strings.Contains(got.Contents.Value, "**Fallback**") {
+		t.Fatalf("hover = %#v", got)
+	}
+}

@@ -278,3 +278,18 @@ func TestServeDidOpenWithPendingIndexPublishesParseErrorsAtOnce(t *testing.T) {
 		t.Fatal("expected parse diagnostics without the index")
 	}
 }
+
+func TestServeIgnoresClientResponses(t *testing.T) {
+	c := startServe(t, NewHandler(sampleIndex(t)))
+	c.send(map[string]any{"id": 42, "result": nil})
+	c.send(map[string]any{"id": 43, "error": map[string]any{"code": -32601, "message": "unsupported"}})
+	c.send(map[string]any{"id": 44, "method": "initialize", "params": map[string]any{}})
+	m := c.mustNext(3 * time.Second)
+	if string(m["id"]) != "44" {
+		t.Fatalf("response to client response: %s", m["id"])
+	}
+	c.send(map[string]any{"id": 45, "method": "shutdown"})
+	if err := <-c.served; err != nil {
+		t.Fatal(err)
+	}
+}
