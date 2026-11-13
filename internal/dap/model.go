@@ -272,8 +272,9 @@ func previewValueDepth(value vm.Value, depth int) string {
 	default:
 		return truncatePreview(value.String())
 	}
+	header = truncatePreview(header)
 	if depth >= 1 {
-		return truncatePreview(header)
+		return header
 	}
 	children := previewChildren(value)
 	parts := make([]string, 0, len(children))
