@@ -314,7 +314,9 @@ func TestLoadDAPStartupStateRetriesTransientInputSwaps(t *testing.T) {
 			path: func(_, dep string) string {
 				return filepath.Join(dep, "force-app", "main", "objects", "Gadget__c", "Gadget__c.object-meta.xml")
 			},
-			swap: func(t *testing.T, path string) { writeDriftFile(t, path, strings.ReplaceAll(driftObjectB, "Widget", "Gadget")) },
+			swap: func(t *testing.T, path string) {
+				writeDriftFile(t, path, strings.ReplaceAll(driftObjectB, "Widget", "Gadget"))
+			},
 			assert: func(t *testing.T, root string, got dapDriftResult) {
 				if label := dependencyObjectLabel(got.org, "Gadget__c"); label != "Gadget Alpha" {
 					t.Fatalf("dependency label=%q, want the restored A label", label)
