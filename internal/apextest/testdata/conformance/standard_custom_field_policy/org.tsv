@@ -1,0 +1,73 @@
+api	method	observation
+62.0	A_dbi_f_def	ok;
+62.0	A_dbi_f_list2	ok;ok;
+62.0	A_dbi_f_sys	ok;
+62.0	A_dbi_f_user	ok;
+62.0	A_dbi_t_user	ok;
+62.0	A_ins_def	ok
+62.0	A_ins_list_def	ok
+62.0	A_ins_sys	ok
+62.0	A_ins_user	ok
+62.0	A_upd_def	ok
+62.0	A_upd_user	ok
+62.0	A_ups_def	ok
+62.0	Anops_dbi_f_def	ok;
+62.0	Anops_dbi_f_list2	ok;ok;
+62.0	Anops_dbi_f_sys	ok;
+62.0	Anops_dbi_f_user	fail CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Probe_A__c;
+62.0	Anops_dbi_t_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+62.0	Anops_ins_def	ok
+62.0	Anops_ins_list_def	ok
+62.0	Anops_ins_sys	ok
+62.0	Anops_ins_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+62.0	Anops_upd_def	ok
+62.0	Anops_upd_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+62.0	Anops_ups_def	ok
+62.0	B_dbi_f_def	ok;
+62.0	B_dbi_f_list2	ok;ok;
+62.0	B_dbi_f_sys	ok;
+62.0	B_dbi_f_user	fail CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Probe_B__c;
+62.0	B_dbi_t_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+62.0	B_ins_def	ok
+62.0	B_ins_list_def	ok
+62.0	B_ins_sys	ok
+62.0	B_ins_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+62.0	B_upd_def	ok
+62.0	B_upd_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+62.0	B_ups_def	ok
+67.0	A_dbi_f_def	ok;
+67.0	A_dbi_f_list2	ok;ok;
+67.0	A_dbi_f_sys	ok;
+67.0	A_dbi_f_user	ok;
+67.0	A_dbi_t_user	ok;
+67.0	A_ins_def	ok
+67.0	A_ins_list_def	ok
+67.0	A_ins_sys	ok
+67.0	A_ins_user	ok
+67.0	A_upd_def	ok
+67.0	A_upd_user	ok
+67.0	A_ups_def	ok
+67.0	Anops_dbi_f_def	fail CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Probe_A__c;
+67.0	Anops_dbi_f_list2	ok;fail CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Probe_A__c;
+67.0	Anops_dbi_f_sys	ok;
+67.0	Anops_dbi_f_user	fail CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Probe_A__c;
+67.0	Anops_dbi_t_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	Anops_ins_def	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	Anops_ins_list_def	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	Anops_ins_sys	ok
+67.0	Anops_ins_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	Anops_upd_def	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	Anops_upd_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	Anops_ups_def	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	B_dbi_f_def	fail CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Probe_B__c;
+67.0	B_dbi_f_list2	ok;fail CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Probe_B__c;
+67.0	B_dbi_f_sys	ok;
+67.0	B_dbi_f_user	fail CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Probe_B__c;
+67.0	B_dbi_t_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	B_ins_def	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	B_ins_list_def	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	B_ins_sys	ok
+67.0	B_ins_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	B_upd_def	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	B_upd_user	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
+67.0	B_ups_def	System.DmlException:Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!
