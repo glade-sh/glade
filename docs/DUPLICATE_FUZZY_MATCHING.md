@@ -1,6 +1,8 @@
 # Duplicate fuzzy matching: public spec, native rows and the model
 
-Two fixtures hold the native rows. `duplicate_standard_rules/` (second fixture,
+Three fixtures hold the native rows. The Apex save and search routes are
+covered by `duplicate_save_behavior/`, including default and custom rule
+actions, error members, Person Accounts, upsert, and controlled surname panels. `duplicate_standard_rules/` (second fixture,
 described under "Standard rules" below) covers the standard Account, Contact
 and Lead rules, the cross-object rules, custom rules with OR groups and three
 items, a custom Person Account rule and the Syllable Alignment pairs; its test
@@ -577,6 +579,16 @@ on both sides), so no row covers blank Account names or Contact last names.
   use a matching surname plus email or phone for an initial, and an exact first
   name and email for additional surname variants. Custom field-method rows
   have separate match-key behavior.
+  The short-name and six-letter terminal transposition panels separate native
+  saves from rejections even when the edited letters agree. The measured
+  correction is limited to an accepted keyboard comparison corroborated by
+  first name and email. For eligible six-letter names, exchanging letters four
+  columns apart on the same or neighboring QWERTY rows matched at 97 when
+  the sum of `abs(2*column-11) + 2*row` over the name was at least 44.
+  Row and column start at zero. Phonetic hits scored 100. The 80 unseen inputs
+  in the boundary fixture agreed on match identities, saves, and recorded
+  integer confidences at both APIs on the anonymous and test routes. The
+  underlying Salesforce distance function and wider input range remain open.
 - Street: native scores the street sections multiplicatively (a different
   suffix word 91, a different street number 95); Glade matches the pairs the
   custom Street method matches and approximates the confidence.
