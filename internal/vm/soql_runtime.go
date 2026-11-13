@@ -2373,15 +2373,9 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 	// object or field serves every record it scans.
 	defer vm.beginPermissionCheckMemo()()
 	groups := make([]soslResultGroup, 0, len(query.Returning))
-	// Native allocation and the indexed ceiling were measured with one,
-	// two and three objects. Wider searches retain their existing windows.
-	var groupLimits []int
-	remaining := -1
-	if len(query.Returning) <= 3 {
-		groupLimits = soslResultLimits(query)
-	} else if query.Limit.HasValue {
-		remaining = query.Limit.Value
-	}
+	// Native allocation was measured with one to five and ten objects on
+	// both routes (sosl_result_windows and sosl_result_windows_wide).
+	groupLimits := soslResultLimits(query)
 	for i, spec := range query.Returning {
 		specObjectName := spec.Object
 		if vm.Org != nil {
@@ -2423,22 +2417,11 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		}
 		sortSOSLRows(rows, spec.OrderBy)
 		applySOSLReturningOffset(&rows, spec)
-		limit := len(rows.List)
-		if groupLimits != nil {
-			limit = min(limit, groupLimits[i])
-			if !vm.fixedSearchResultsSet && len(query.Returning) > 1 {
-				// Fixed results use the full quota. Indexed groups each
-				// returned at most 250 rows.
-				limit = min(limit, 250)
-			}
-		} else {
-			if spec.Limit.HasValue {
-				limit = min(limit, spec.Limit.Value)
-			}
-			if remaining >= 0 {
-				limit = min(limit, remaining)
-				remaining -= limit
-			}
+		limit := min(len(rows.List), groupLimits[i])
+		if !vm.fixedSearchResultsSet && soslIndexedGroupCapped(query, spec, specObjectName) {
+			// Fixed results use the full quota. Indexed groups each
+			// returned at most 250 rows.
+			limit = min(limit, 250)
 		}
 		rows.List = rows.List[:limit]
 		// R141/R143/R144/R164 prove empty-result acceptance. Captured rows
@@ -3239,6 +3222,17 @@ func applySOSLReturningOffset(rows *Value, spec sosl.ReturningObject) {
 		return
 	}
 	rows.List = rows.List[spec.Offset.Value:]
+}
+
+// soslIndexedGroupCapped reports whether the hosted index returned at most
+// 250 rows for this group: every group of a multi-object search, and a single
+// object with neither WHERE nor ORDER BY. A larger LIMIT does not lift it.
+// EntityDefinition has no captured ceiling.
+func soslIndexedGroupCapped(query sosl.Query, spec sosl.ReturningObject, objectName string) bool {
+	if len(query.Returning) > 1 {
+		return true
+	}
+	return spec.Where == nil && len(spec.OrderBy) == 0 && !strings.EqualFold(objectName, "EntityDefinition")
 }
 
 // SOSL splits the declared budget before it reads records. An empty bucket
