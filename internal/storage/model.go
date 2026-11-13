@@ -500,7 +500,7 @@ type CriteriaSharingCondition struct {
 
 // CriteriaSharingRule is a declared Read rule that shares matching records with
 // one public group. Salesforce evaluates it at commit, never inside the writing
-// transaction (ROAD-450 grant rows), so the rule is configuration only until a
+// transaction (grant rows), so the rule is configuration only until a
 // commit reconciles its Rule share rows.
 type CriteriaSharingRule struct {
 	Name        string                     `json:"name"`

@@ -12,7 +12,7 @@ import (
 // transaction sees no access row and zero Rule share rows, the next
 // transaction sees one, and the grant stays. An update into the rule grants at
 // its commit; an update out revokes at its commit, so the updating transaction
-// still sees the old state (ROAD-450 grant observations, APIs 62.0 and 67.0).
+// still sees the old state (grant observations, APIs 62.0 and 67.0).
 // Named tests never commit, so they never reach this path.
 //
 // Only Case has captured rows. The reconcile adds and removes Rule share rows
