@@ -125,3 +125,13 @@ rhs_compound	62.0	anonymous	false	Unexpected token '('.
 rhs_compound	67.0	anonymous	false	Unexpected token '('.
 control_rhs_call	62.0	anonymous	true	ok
 control_rhs_call	67.0	anonymous	true	ok
+platform_string_variable	62.0	anonymous	false	Unexpected token 'debug'.
+platform_string_variable	67.0	anonymous	false	Unexpected token 'debug'.
+platform_string_binary	62.0	anonymous	false	Unexpected token 'debug'.
+platform_string_binary	67.0	anonymous	false	Unexpected token 'debug'.
+platform_string_call	62.0	anonymous	false	Unexpected token 'debug'.
+platform_string_call	67.0	anonymous	false	Unexpected token 'debug'.
+platform_string_parenthesized	62.0	anonymous	false	Unexpected token 'debug'.
+platform_string_parenthesized	67.0	anonymous	false	Unexpected token 'debug'.
+platform_string_control	62.0	anonymous	true	ok
+platform_string_control	67.0	anonymous	true	ok

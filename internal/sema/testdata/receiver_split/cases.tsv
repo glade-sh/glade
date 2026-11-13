@@ -62,3 +62,8 @@ rhs_variable	anonymous	apex/rhs_variable.apex
 rhs_parenthesized	anonymous	apex/rhs_parenthesized.apex
 rhs_compound	anonymous	apex/rhs_compound.apex
 control_rhs_call	anonymous	apex/control_rhs_call.apex
+platform_string_variable	anonymous	apex/platform_string_variable.apex
+platform_string_binary	anonymous	apex/platform_string_binary.apex
+platform_string_call	anonymous	apex/platform_string_call.apex
+platform_string_parenthesized	anonymous	apex/platform_string_parenthesized.apex
+platform_string_control	anonymous	apex/platform_string_control.apex
