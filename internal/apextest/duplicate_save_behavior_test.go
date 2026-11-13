@@ -224,7 +224,7 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 
 // These prospective panels record the ID and confidence separately in Find and
 // in the DML error. Preserve the exact seed ID, multiplicity and save verdict
-// for every input. Both accessors must return the same grade. Four inputs in
+// for every input. Both accessors must return the same grade. Two inputs in
 // each direction differ from the native grade, by at most two points.
 var shortEditGrades = regexp.MustCompile(`=([0-9]+)`)
 
@@ -234,9 +234,9 @@ func compareShortEditHoldout(t *testing.T, want, got string) {
 	if len(native) != len(actual) {
 		t.Fatalf("native %d inputs, Glade %d", len(native), len(actual))
 	}
-	// Only these four seed positions in each directional panel had a score residual.
+	// Only these two seed positions in each directional panel had a score residual.
 	// Every other seed, and both accessors on every seed, must agree exactly.
-	gradeBounds := map[int]int{1: 1, 10: 1, 13: 2, 15: 1}
+	gradeBounds := map[int]int{13: 2, 15: 1}
 	for i, expected := range native {
 		result := actual[i]
 		if expected == result {
