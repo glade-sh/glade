@@ -226,33 +226,24 @@ func TestReceiverSplitSuppliedShape(t *testing.T) {
 	}
 }
 
-// API 64 is within the captured 62 through 67 range. A completed block must
-// not hide a following split call.
+// The explicit local contract keeps uncaptured API and enclosing contexts at
+// origin/main behavior. Native captures cover APIs 62 and 67, not 64 or return.
 func TestReceiverSplitIntermediateAPIAndAfterBlock(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "ReceiverProbe.cls")
 	writeSemaFile(t, path, "public class ReceiverProbe { public static String value() { return 'ok'; } }")
-	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "64.0", ApexFiles: []string{path}}, schema.Schema{})
-	for _, source := range []string{"ReceiverProbe\n.value();", "if (true) { }\nReceiverProbe\n.value();"} {
-		result := AnalyzeAnonymous(index, source, "64.0")
-		found := false
-		for _, d := range result.Diagnostics {
-			if d.NativeMessage == "Variable does not exist: ReceiverProbe" {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("source %q: got %v", source, result.Diagnostics)
+	for _, tc := range []struct{ api, source string }{
+		{"64.0", "ReceiverProbe\n.value();"},
+		{"67.0", "if (true) { }\nReceiverProbe\n.value();"},
+	} {
+		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: tc.api, ApexFiles: []string{path}}, schema.Schema{})
+		result := AnalyzeAnonymous(index, tc.source, tc.api)
+		if result.HasErrors() {
+			t.Errorf("api %s source %q: got %v", tc.api, tc.source, result.Diagnostics)
 		}
 	}
 }
 
-// Before-dot name resolution is independent of the enclosing expression;
-// the class-route and anonymous initializer rows establish the predicate.
-// NATIVE class_statement_before_dot testdata/receiver_split/org.tsv:112 class 62.0
-// NATIVE class_statement_before_dot testdata/receiver_split/org.tsv:113 class 67.0
-// NATIVE declaration_before_dot testdata/receiver_split/org.tsv:66 anonymous 62.0
-// NATIVE declaration_before_dot testdata/receiver_split/org.tsv:67 anonymous 67.0
 func TestReceiverSplitBeforeDotInReturn(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		root := t.TempDir()
@@ -262,13 +253,7 @@ func TestReceiverSplitBeforeDotInReturn(t *testing.T) {
 		writeSemaFile(t, caller, "public class Caller { public static String run() { return ReceiverProbe\n.value(); } }")
 		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{probe, caller}}, schema.Schema{})
 		result := Analyze(index)
-		found := false
-		for _, d := range result.Diagnostics {
-			if d.NativeMessage == "Variable does not exist: ReceiverProbe" && d.Code == "GLADESEMA013" {
-				found = true
-			}
-		}
-		if !found {
+		if result.HasErrors() {
 			t.Errorf("api %s: got %v", api, result.Diagnostics)
 		}
 	}

@@ -105,7 +105,7 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 		return nil
 	}
 	major, _ := apexversion.Major(typ.EffectiveAPIVersion)
-	if major < 62 || major > 67 {
+	if major != 62 && major != 67 {
 		return nil
 	}
 	receiver, method, ok := splitSemaMethodPath(expr.Callee)
@@ -125,6 +125,11 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 	}
 	tokens, ok := splitReceiverStatement(source, pos)
 	if !ok {
+		return nil
+	}
+	// The captures cover calls inside blocks, not a statement following one,
+	// and do not cover a call in a return expression.
+	if tokens[0].text == "return" || strings.HasSuffix(strings.TrimSpace(source[:pos]), "}") {
 		return nil
 	}
 	// The named route is a class method body. Test classes and other hosts have
