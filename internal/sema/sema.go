@@ -1506,6 +1506,9 @@ func (s semaScopeModel) localInBlock(name string, start, end int) (semaLocal, bo
 
 func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
 	known := semaAnyKnownFieldInView(model, name, false)
+	if model != nil && model.state != nil && model.state.unknownHistory != nil && !known {
+		model.state.unknownHistory.missing(name)
+	}
 	if model != nil && model.state != nil && model.state.historyProbe != nil {
 		if !known {
 			model.state.historyProbe.Store(true)
