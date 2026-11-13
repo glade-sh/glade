@@ -208,3 +208,28 @@ func TestRefreshRemovesDeletedSource(t *testing.T) {
 		}
 	}
 }
+
+func TestRefreshCreatedSourceReloadsProject(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	project := filepath.Join(root, "project")
+	writeTestProject(t, project)
+	l, err := newLSPProjectLoader(project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	file := filepath.Join(project, "force-app/main/classes/Created.cls")
+	writeTestFile(t, file, "public class Created {}")
+	base, err := l.refresh(context.Background(), lsp.RefreshRequest{Created: []string{file}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, typ := range base.Index.Types {
+		found = found || typ.Name == "Created"
+	}
+	if !found {
+		t.Fatal("created source missing after refresh")
+	}
+}

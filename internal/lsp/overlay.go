@@ -75,6 +75,7 @@ func (h *Handler) installBaseLocked(b Base, publish func(*generation)) *generati
 	g.artifacts = b.Artifacts
 	g.baseSeq = g.seq
 	h.base, h.baseConfig = g, b
+	h.baseGen.Store(g)
 	h.overlayProject, h.overlayProjectOK = b.Project, b.Project.Root != ""
 	h.overlayProjectLoaded = h.overlayProjectOK
 	h.fallback.Store(nil)

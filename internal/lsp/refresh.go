@@ -16,10 +16,10 @@ func (h *Handler) SetGenerationValidator(fn func(typesys.Index) bool) { h.valida
 
 // Refresh replaces the generation after the refresher returns a complete index.
 func (h *Handler) Refresh(ctx context.Context, paths []string) error {
-	return h.refresh(ctx, paths, func(g *generation) { h.gen.Store(g) })
+	return h.refreshRequest(ctx, RefreshRequest{Changed: paths}, func(g *generation) { h.gen.Store(g) })
 }
 
-func (h *Handler) refresh(ctx context.Context, paths []string, publish func(*generation)) error {
+func (h *Handler) refreshRequest(ctx context.Context, request RefreshRequest, publish func(*generation)) error {
 	if err := h.waitReady(ctx); err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func (h *Handler) refresh(ctx context.Context, paths []string, publish func(*gen
 	if h.refresher == nil {
 		return nil
 	}
-	b, err := h.refresher(ctx, RefreshRequest{Changed: paths})
+	b, err := h.refresher(ctx, request)
 	if err != nil {
 		return err
 	}

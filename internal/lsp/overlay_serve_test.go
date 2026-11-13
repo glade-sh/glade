@@ -175,7 +175,8 @@ func TestSupersededOverlayAnalysisIsSkipped(t *testing.T) {
 	}
 }
 
-// Typing into two documents while a third is saved, under -race.
+// Typing into two documents while a third is saved and watched-file events
+// arrive, under -race.
 func TestOverlayTypingWhileSaving(t *testing.T) {
 	sources := map[string]string{
 		"First":  "public class First { void run() {} }",
@@ -213,6 +214,7 @@ func TestOverlayTypingWhileSaving(t *testing.T) {
 			t.Fatal(err)
 		}
 		c.send(map[string]any{"method": "textDocument/didSave", "params": map[string]any{"textDocument": map[string]any{"uri": uris["Third"]}}})
+		c.send(map[string]any{"method": "workspace/didChangeWatchedFiles", "params": DidChangeWatchedFilesParams{Changes: []FileEvent{{URI: uris["Third"], Type: fileChanged}, {URI: uris["Second"], Type: fileChanged}}}})
 		_ = h.DocumentSymbols(uris["First"])
 		time.Sleep(5 * time.Millisecond)
 	}

@@ -45,7 +45,17 @@ type VersionedTextDocumentIdentifier struct {
 }
 
 type InitializeParams struct {
-	RootURI string `json:"rootUri,omitempty"`
+	RootURI      string             `json:"rootUri,omitempty"`
+	Capabilities ClientCapabilities `json:"capabilities,omitempty"`
+}
+
+// ClientCapabilities holds the client capabilities the server reads.
+type ClientCapabilities struct {
+	Workspace struct {
+		DidChangeWatchedFiles struct {
+			DynamicRegistration bool `json:"dynamicRegistration,omitempty"`
+		} `json:"didChangeWatchedFiles,omitempty"`
+	} `json:"workspace,omitempty"`
 }
 
 type InitializeResult struct {

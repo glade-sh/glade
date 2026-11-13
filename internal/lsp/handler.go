@@ -41,7 +41,9 @@ type Handler struct {
 	overlayProjectOK     bool
 	overlayProjectLoaded bool
 	fallback             atomic.Pointer[overlayFallback]
-	overlayAnalysis      sync.Mutex // one overlay analysis at a time; never taken under refreshMu
+	baseGen              atomic.Pointer[generation] // h.base for readers outside refreshMu
+	watchFiles           atomic.Bool                // client supports watched-file registration
+	overlayAnalysis      sync.Mutex                 // one overlay analysis at a time; never taken under refreshMu
 	validateGeneration   func(typesys.Index) bool
 
 	docMu         sync.RWMutex
@@ -151,7 +153,8 @@ func (h *Handler) Shutdown() bool {
 	return h.shutdown.Load()
 }
 
-func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
+func (h *Handler) Initialize(params InitializeParams) InitializeResult {
+	h.watchFiles.Store(params.Capabilities.Workspace.DidChangeWatchedFiles.DynamicRegistration)
 	return InitializeResult{
 		Capabilities: ServerCapabilities{
 			TextDocumentSync:        TextDocumentSyncOptions{OpenClose: true, Change: textDocumentSyncIncremental, Save: SaveOptions{IncludeText: false}},

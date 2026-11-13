@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"reflect"
-	"sort"
 
 	"sync"
 	"time"
@@ -72,7 +71,7 @@ type server struct {
 	diagWG     sync.WaitGroup
 	pubMu      sync.Mutex // orders diagnostic publishes against pending checks
 	pending    map[DocumentURI]*diagJob
-	dirty      map[string]struct{}
+	dirty      map[string]int // path to LSP FileChangeType
 	refreshing bool
 	refreshWG  sync.WaitGroup
 
@@ -82,6 +81,12 @@ type server struct {
 	overlayCancel  context.CancelFunc
 	lastChange     time.Time
 	overlayCost    time.Duration
+
+	// Watched-file events waiting to settle, guarded by mu.
+	watchPending map[string]int
+	watchFirst   time.Time
+	watchTimer   *time.Timer
+	closed       bool // no new background work after drain or shutdown
 }
 
 func (s *server) write(message any) {
@@ -194,6 +199,16 @@ func (s *server) notification(req Request) {
 			return
 		}
 		s.enqueueRefresh(pathFromURI(p.TextDocument.URI))
+	case "initialized":
+		if s.h.watchFiles.Load() {
+			s.write(registerWatchersRequest())
+		}
+	case "workspace/didChangeWatchedFiles":
+		var p DidChangeWatchedFilesParams
+		if decodeParams(req.Params, &p) != nil {
+			return
+		}
+		s.enqueueWatched(s.h.watchedFileEvents(p))
 	case "textDocument/didClose":
 		var p DidCloseTextDocumentParams
 		if decodeParams(req.Params, &p) != nil {
@@ -286,15 +301,37 @@ func (s *server) drain() {
 	for _, j := range jobs {
 		s.runDiagnostics(j.uri, j.job)
 	}
+	s.mu.Lock()
+	if s.watchTimer != nil {
+		s.watchTimer.Stop()
+	}
+	s.flushWatchedLocked()
+	s.mu.Unlock()
 	s.reqWG.Wait()
-	s.diagWG.Wait()
-	s.refreshWG.Wait()
+	// Diagnostics and the worker can start each other; wait until both rest.
+	for {
+		s.diagWG.Wait()
+		s.refreshWG.Wait()
+		s.mu.Lock()
+		idle := len(s.pending) == 0 && !s.refreshing
+		if idle {
+			s.closed = true
+		}
+		s.mu.Unlock()
+		if idle {
+			return
+		}
+	}
 }
 
 // shutdownNow cancels outstanding work and waits for it to stop.
 func (s *server) shutdownNow() {
 	s.cancel()
 	s.mu.Lock()
+	s.closed = true
+	if s.watchTimer != nil {
+		s.watchTimer.Stop()
+	}
 	for _, job := range s.pending {
 		if job.timer != nil && job.timer.Stop() {
 			s.diagWG.Done()
@@ -313,9 +350,9 @@ func (s *server) enqueueRefresh(path string) {
 		return
 	}
 	if s.dirty == nil {
-		s.dirty = make(map[string]struct{})
+		s.dirty = make(map[string]int)
 	}
-	s.dirty[path] = struct{}{}
+	mergeKind(s.dirty, path, fileChanged)
 	s.startWorkerLocked()
 }
 
@@ -324,7 +361,7 @@ func (s *server) enqueueRefresh(path string) {
 func (s *server) enqueueOverlay() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.ctx.Err() != nil {
+	if s.ctx.Err() != nil || s.closed {
 		return
 	}
 	s.overlayPending = true
@@ -371,14 +408,10 @@ func (s *server) refreshWorker() {
 			return
 		}
 		if len(s.dirty) > 0 {
-			paths := make([]string, 0, len(s.dirty))
-			for path := range s.dirty {
-				paths = append(paths, path)
-			}
-			s.dirty = make(map[string]struct{})
+			request := refreshRequestFromKinds(s.dirty)
+			s.dirty = make(map[string]int)
 			s.mu.Unlock()
-			sort.Strings(paths)
-			if !s.refreshDisk(paths) {
+			if !s.refreshDisk(request) {
 				return
 			}
 			continue
@@ -396,7 +429,7 @@ func (s *server) refreshWorker() {
 }
 
 // refreshDisk runs one disk refresh. It returns false when the server stops.
-func (s *server) refreshDisk(paths []string) bool {
+func (s *server) refreshDisk(request RefreshRequest) bool {
 	if s.h.waitReady(s.ctx) != nil {
 		return false
 	}
@@ -416,7 +449,7 @@ func (s *server) refreshDisk(paths []string) bool {
 		// The first generation a refresh publishes is the disk base; an
 		// overlay may follow. Only the base is checked against disk.
 		var disk *generation
-		err := s.h.refresh(s.ctx, paths, func(g *generation) {
+		err := s.h.refreshRequest(s.ctx, request, func(g *generation) {
 			s.pubMu.Lock()
 			s.h.gen.Store(g)
 			s.pubMu.Unlock()
