@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -42,7 +41,7 @@ func flowValidateProjectTransformTargets(p project.Project, idx *Index) {
 	}
 	for i := range idx.Flows {
 		flow := &idx.Flows[i]
-		data, err := os.ReadFile(flow.File)
+		data, err := p.ReadFile(flow.File)
 		if err != nil || (!bytes.Contains(data, []byte("transformValues")) && !bytes.Contains(data, []byte("recordLookups"))) {
 			continue
 		}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html"
 	"math"
-	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -340,8 +339,8 @@ type flowValueXML struct {
 	Expression       string `xml:"expression"`
 }
 
-func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (Flow, []diagnostic.Diagnostic, error) {
-	source, err := os.ReadFile(path)
+func loadFlowWith(read func(string) ([]byte, error), path string, definitions ...map[string]storage.ObjectDefinition) (Flow, []diagnostic.Diagnostic, error) {
+	source, err := read(path)
 	if err != nil {
 		return Flow{}, nil, err
 	}
@@ -4384,7 +4383,7 @@ func flowProcessPriorValueSources(raw flowXML, variables map[string]flowVariable
 
 // processBuilderCapturedPair checks the two dependent, literal Text updates
 // captured in process_builder_review_multiprocess and process_builder_review_reverse.
-func processBuilderCapturedPair(object string, paths []string, definitions map[string]storage.ObjectDefinition) bool {
+func processBuilderCapturedPair(read func(string) ([]byte, error), object string, paths []string, definitions map[string]storage.ObjectDefinition) bool {
 	if len(paths) != 2 {
 		return false
 	}
@@ -4398,7 +4397,7 @@ func processBuilderCapturedPair(object string, paths []string, definitions map[s
 		}
 	}
 	for _, path := range paths {
-		source, err := os.ReadFile(path)
+		source, err := read(path)
 		if err != nil {
 			return false
 		}
@@ -4457,7 +4456,7 @@ func processBuilderCapturedPair(object string, paths []string, definitions map[s
 // leaveUncoveredProcessesUnrun applies the checks that read other flows.
 // The captured dependent pair is admitted; other multiple-process shapes stay
 // unrun. Flow-action targets must match the separately captured graphs.
-func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[string]storage.ObjectDefinition, features ...[]string) error {
+func leaveUncoveredProcessesUnrun(read func(string) ([]byte, error), idx *Index, paths []string, definitions map[string]storage.ObjectDefinition, features ...[]string) error {
 	counts := make(map[string]int)
 	processPaths := make(map[string][]string)
 	flows := make(map[string]storage.FlowRule)
@@ -4487,7 +4486,7 @@ func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[st
 			continue
 		}
 		skip := ""
-		if counts[strings.ToLower(flow.ObjectName)] > 1 && !processBuilderCapturedPair(flow.ObjectName, processPaths[strings.ToLower(flow.ObjectName)], definitions) {
+		if counts[strings.ToLower(flow.ObjectName)] > 1 && !processBuilderCapturedPair(read, flow.ObjectName, processPaths[strings.ToLower(flow.ObjectName)], definitions) {
 			skip = "several active processes on one object"
 		} else if after := afterSave[strings.ToLower(flow.ObjectName)]; len(after) > 1 {
 			if len(after) != 2 {
@@ -4498,7 +4497,7 @@ func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[st
 						break
 					}
 				}
-				if _, ok := storage.CapturedFourAfterSavePlan(after, def, definitions); !ok && !processBuilderCapturedMixedAfterSave(idx, flow.ObjectName, after, def, definitions) && !capturedCaseAfterSave(after, def) && !processBuilderCapturedBranchedAfterSave(idx, flow.ObjectName, after, def, definitions, features...) {
+				if _, ok := storage.CapturedFourAfterSavePlan(after, def, definitions); !ok && !processBuilderCapturedMixedAfterSave(read, idx, flow.ObjectName, after, def, definitions) && !capturedCaseAfterSave(after, def) && !processBuilderCapturedBranchedAfterSave(read, idx, flow.ObjectName, after, def, definitions, features...) {
 					skip = "several after-save flows on its object"
 				}
 			} else {
@@ -4515,7 +4514,7 @@ func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[st
 		if skip == "" {
 			continue
 		}
-		source, err := os.ReadFile(paths[i])
+		source, err := read(paths[i])
 		if err != nil {
 			return err
 		}

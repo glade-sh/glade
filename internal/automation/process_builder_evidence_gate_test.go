@@ -108,7 +108,7 @@ func TestProcessBuilderSubflowRejectsUncapturedFieldType(t *testing.T) {
 	}
 	defs := map[string]storage.ObjectDefinition{"Fern_Flow__c": {APIName: "Fern_Flow__c", Fields: map[string]storage.Field{"Note__c": {APIName: "Note__c", Type: storage.FieldDecimal}}}}
 	idx := Index{Flows: []Flow{process, subflow}}
-	if err := leaveUncoveredProcessesUnrun(&idx, []string{processPath, subflowPath}, defs); err != nil {
+	if err := leaveUncoveredProcessesUnrun(os.ReadFile, &idx, []string{processPath, subflowPath}, defs); err != nil {
 		t.Fatal(err)
 	}
 	if idx.Flows[0].ObjectName != "" {
@@ -384,7 +384,7 @@ func TestProcessBuilderUnrunProcessesDoNotShareEmptyObject(t *testing.T) {
 		idx.Flows = append(idx.Flows, Flow{File: path, Rules: []storage.FlowRule{{Name: filepath.Base(path), Active: true, ProcessType: "Workflow"}}})
 	}
 	before := len(idx.Diagnostics)
-	if err := leaveUncoveredProcessesUnrun(&idx, paths, nil); err != nil {
+	if err := leaveUncoveredProcessesUnrun(os.ReadFile, &idx, paths, nil); err != nil {
 		t.Fatal(err)
 	}
 	if len(idx.Diagnostics) != before {
@@ -481,7 +481,7 @@ func TestProcessBuilderDependentPairBoundaries(t *testing.T) {
 			if err := os.WriteFile(b, []byte(tc.second), 0600); err != nil {
 				t.Fatal(err)
 			}
-			if got := processBuilderCapturedPair("Fern_Mpr__c", []string{a, b}, defs); got != tc.accepted {
+			if got := processBuilderCapturedPair(os.ReadFile, "Fern_Mpr__c", []string{a, b}, defs); got != tc.accepted {
 				t.Fatalf("accepted = %v, want %v", got, tc.accepted)
 			}
 		})
@@ -493,7 +493,7 @@ func TestProcessBuilderDependentPairBoundaries(t *testing.T) {
 		t.Fatal(err)
 	}
 	fields["Old__c"] = storage.Field{APIName: "Old__c", Type: storage.FieldDecimal, DisplayType: "DOUBLE"}
-	if processBuilderCapturedPair("Fern_Mpr__c", []string{a, b}, defs) {
+	if processBuilderCapturedPair(os.ReadFile, "Fern_Mpr__c", []string{a, b}, defs) {
 		t.Fatal("non-Text output admitted")
 	}
 }

@@ -3,17 +3,16 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 )
 
-func flowCoreValidateProjectAssignments(_ project.Project, idx *Index) error {
+func flowCoreValidateProjectAssignments(p project.Project, idx *Index) error {
 	for i := range idx.Flows {
 		flow := &idx.Flows[i]
-		data, err := os.ReadFile(flow.File)
+		data, err := p.ReadFile(flow.File)
 		if err != nil {
 			continue
 		}
