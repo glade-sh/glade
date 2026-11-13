@@ -2089,18 +2089,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 			return Null, err
 		}
 	}
-	if !isDatabaseAccessLevelValue(accessLevel) {
-		accessLevel = vm.defaultAccessLevel()
-	}
-	if err := vm.incrementLimit("soslQueries", 1); err != nil {
-		return Null, err
-	}
-	_, query, err := vm.parseSOSLQuery(args[0].Text)
+	_, query, accessLevel, err := vm.prepareSOSLSearch(args[0].Text, false, accessLevel)
 	if err != nil {
 		return Null, err
-	}
-	if query.AccessMode != "" {
-		accessLevel = soslAccessLevel(query.AccessMode)
 	}
 	groups, err := vm.executeSOSLQuery(query, accessLevel)
 	if err != nil {
@@ -2286,6 +2277,13 @@ func (vm *VM) parseSOSLQuerySource(raw string, inline bool) (string, sosl.Query,
 		return "", sosl.Query{}, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
 	}
 	query, err := sosl.Parse(queryText)
+	if err != nil && originalErr == nil && !inline && vm.hasSOSLNullDatetimeBind(original) {
+		// The source parser has already rejected ordered *literal* nulls.
+		// Only retry the specific expanded-bind shape with a native answer.
+		if retry, retryErr := sosl.ParseExpandedBinds(queryText); retryErr == nil && markSOSLNullDatetimeBind(&retry) {
+			query, err = retry, nil
+		}
+	}
 	if err != nil {
 		return "", sosl.Query{}, vm.soslParseError(err)
 	}
@@ -2297,9 +2295,6 @@ func (vm *VM) parseSOSLQuerySource(raw string, inline bool) (string, sosl.Query,
 				query.Returning[i].EmptyNegativeOffset = true
 			}
 		}
-	}
-	if len([]rune(query.SearchText)) < 2 || query.Expression != nil && query.Expression.Operator == "INVALID_SEARCH_TERM" {
-		return "", sosl.Query{}, newExceptionError("SearchException", "search term must be longer than one character: "+query.SearchText)
 	}
 	switch query.Scope {
 	case sosl.SearchScopeAll, sosl.SearchScopeName, sosl.SearchScopeEmail, sosl.SearchScopePhone, sosl.SearchScopeSidebar:
@@ -2323,19 +2318,34 @@ func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessL
 	return vm.executeSOSLSource(raw, execResult, accessLevel, false)
 }
 
-func (vm *VM) executeSOSLSource(raw string, execResult *Result, accessLevel Value, inline bool) (Value, error) {
-	if !isDatabaseAccessLevelValue(accessLevel) {
-		accessLevel = vm.defaultAccessLevel()
-	}
-	if err := vm.incrementLimit("soslQueries", 1); err != nil {
-		return Null, err
-	}
+// prepareSOSLSearch separates admission from the counted operation. Malformed
+// syntax, invalid projections and an anonymous SYSTEM_MODE suffix cost no query.
+func (vm *VM) prepareSOSLSearch(raw string, inline bool, accessLevel Value) (string, sosl.Query, Value, error) {
 	queryText, query, err := vm.parseSOSLQuerySource(raw, inline)
 	if err != nil {
-		return Null, err
+		return "", query, Null, err
 	}
 	if query.AccessMode != "" {
 		accessLevel = soslAccessLevel(query.AccessMode)
+		if err := vm.validateExplicitAccessLevel(accessLevel); err != nil {
+			return "", query, Null, err
+		}
+	} else if !isDatabaseAccessLevelValue(accessLevel) {
+		accessLevel = vm.defaultAccessLevel()
+	}
+	if err := vm.incrementLimit("soslQueries", 1); err != nil {
+		return "", query, Null, err
+	}
+	if vm.testContext == nil && (len([]rune(query.SearchText)) < 2 || query.Expression != nil && query.Expression.Operator == "INVALID_SEARCH_TERM") {
+		return "", query, Null, newExceptionError("SearchException", "search term must be longer than one character: "+query.SearchText)
+	}
+	return queryText, query, accessLevel, nil
+}
+
+func (vm *VM) executeSOSLSource(raw string, execResult *Result, accessLevel Value, inline bool) (Value, error) {
+	queryText, query, accessLevel, err := vm.prepareSOSLSearch(raw, inline, accessLevel)
+	if err != nil {
+		return Null, err
 	}
 	groups, err := vm.executeSOSLQuery(query, accessLevel)
 	if err != nil {
@@ -2512,7 +2522,7 @@ func (vm *VM) soslRecordsForSpec(spec sosl.ReturningObject, objectName string, p
 			if knowledgeView {
 				_, record, ok = storage.LookupRecordByID(state.Records, storage.ID(id))
 			}
-			if !ok {
+			if !ok || record.System.IsDeleted {
 				continue
 			}
 			recordID := record.ID
@@ -2985,7 +2995,7 @@ func soslWhereResult(record storage.Record, where *sosl.Condition, fieldType fun
 		matches, known := soslWhereResult(record, &positive, fieldType, fieldValue, relativeDate)
 		return known && !matches, known
 	}
-	if where == nil {
+	if where == nil || where.NullDatetimeBound {
 		return true, true
 	}
 	if len(where.And) > 0 {
