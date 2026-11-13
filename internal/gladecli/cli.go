@@ -1075,7 +1075,9 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	info.ExitCode = exitCodeForOK(ok)
 	if !info.ToolchainOK {
 		advisory := "LWC compilation and Lightning runtime routes need the bundled toolchain. Reinstall the Glade release, or install it from a Glade source checkout."
-		if strings.Contains(toolchainDetail, "busy") || strings.Contains(toolchainDetail, "retry") {
+		if strings.Contains(toolchainDetail, "recovery busy") {
+			advisory = "If installation has stopped, run glade toolchain status in the original managed toolchain environment to recover it, then retry glade doctor."
+		} else if strings.Contains(toolchainDetail, "busy") || strings.Contains(toolchainDetail, "retry") {
 			advisory = "The toolchain check did not complete. Retry glade doctor after installation or recovery finishes."
 		} else if strings.Contains(toolchainDetail, "interrupted installer transaction") {
 			advisory = "Rerun the installer to recover the interrupted toolchain transaction, then retry glade doctor."
