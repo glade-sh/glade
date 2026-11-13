@@ -14,9 +14,9 @@ func TestPicklistSourcePolicyPreservesCachedQueries(t *testing.T) {
 		restricted        bool
 	}{
 		{"62.0", "67.0", true, true},
-		{"64.0", "67.0", true, false},
-		{"65.0", "67.0", true, false},
-		{"63.0", "67.0", true, false},
+		{"64.0", "67.0", true, true},
+		{"65.0", "67.0", true, true},
+		{"63.0", "67.0", true, true},
 		{"66.0", "67.0", false, false},
 		{"67.0", "62.0", false, false},
 		// Uncaptured missing/older source retains the local zero-value policy.

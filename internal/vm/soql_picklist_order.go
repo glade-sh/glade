@@ -5,15 +5,15 @@ import (
 	"github.com/glade-sh/glade/internal/soql"
 )
 
-// Owned picklist-order observations distinguish source 62/64/65 from 66/67,
+// Owned picklist-order observations distinguish source 62–65 from 66/67,
 // including mixed source/transport calls. The source policy follows the method.
 func (vm *VM) applyPicklistSourcePolicy(query soql.Query) soql.Query {
 	major, ok := apexversion.Major(vm.currentSourceExecutionPolicy().APIVersion)
 	if !ok || major < 62 || major >= 66 {
 		return query
 	}
-	// Restricted picklists were captured only at source 62.0 and 67.0.
-	return withLegacyPicklistNullOrder(query, major == 62)
+	// Restricted source-version captures confirm the same transition at 66.0.
+	return withLegacyPicklistNullOrder(query, true)
 }
 
 func withLegacyPicklistNullOrder(query soql.Query, restricted bool) soql.Query {
