@@ -41,6 +41,8 @@
 
 - **User-mode DML and secure queries.** For named runAs Standard User tests at source APIs 62 and 67, denied object access in explicit partial `USER_MODE` inserts returns failed `SaveResult` rows, and explicit all-or-none inserts return the captured exception and DML counters. At API 67, the omitted-mode partial insert returns native `SaveResult` failures. These results apply to the captured Text Name object and record shapes; other shapes retain their previous behavior. Captured API 62 dynamic `SECURITY_ENFORCED` projections on Text Name objects report the native inaccessible-permission message.
 
+- **Test and async boundaries.** `Test.stopTest()` outside a test now reports the native `System.FinalException`. Future callbacks drained by `Test.stopTest()` report the native default queueable-job limit, and failed Queueable callbacks retain their test-visible Processing status.
+
 ## v0.3.8
 
 v0.3.8 turns more Salesforce compile and runtime differences into matching errors, enforces fuzzy duplicate rules, makes dependency resolution deterministic, and cuts test startup time, memory and check time.
