@@ -1209,12 +1209,10 @@ func (vm *VM) userModeInsertObjectDenial(value Value) (string, string, bool) {
 	if vm.currentUserObjectPermissionWithScope(objectName, "isCreateable", "") {
 		return "", "", false
 	}
-	message := fmt.Sprintf("DML operation INSERT not allowed on %s", objectName)
-	accessible := vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "")
-	if !accessible {
-		message = fmt.Sprintf("Access to entity '%s' denied", objectName)
+	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", "") {
+		return "SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName), true
 	}
-	return objectName, message, true
+	return "TypeException", fmt.Sprintf("DML operation INSERT not allowed on %s", objectName), true
 }
 
 func (vm *VM) userModePartialInsertObjectDenials(value Value) ([]dml.Result, bool) {
@@ -1241,14 +1239,11 @@ func (vm *VM) userModeAllOrNoneInsertObjectDenial(value, accessLevel Value) (err
 	if value.Kind != ValueList || len(value.List) != 2 {
 		return nil, false
 	}
-	_, message, denied := vm.userModeInsertObjectDenial(value)
+	exceptionType, message, denied := vm.userModeInsertObjectDenial(value)
 	if !denied {
 		return nil, false
 	}
-	if strings.HasPrefix(message, "Access to entity ") {
-		return newExceptionError("SecurityException", message), true
-	}
-	return newExceptionError("TypeException", message), true
+	return newExceptionError(exceptionType, message), true
 }
 
 func (vm *VM) chargeUserModeInsertPermissionDenial(value Value) error {
