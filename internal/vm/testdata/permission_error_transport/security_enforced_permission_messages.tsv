@@ -1,0 +1,6 @@
+api	principal	projection	exception	message
+62.0	ungranted	Id	System.QueryException	Insufficient permissions: secure query included inaccessible field
+62.0	ungranted	Note__c	System.QueryException	Insufficient permissions: secure query included inaccessible field
+62.0	fieldControl	Note__c	System.QueryException	Insufficient permissions: secure query included inaccessible field
+67.0	ungranted	Id	System.QueryException	WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.
+67.0	fieldControl	Note__c	System.QueryException	WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.

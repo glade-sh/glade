@@ -1,0 +1,15 @@
+# Permission error transport observations
+
+The expected rows were captured in a fresh Developer scratch org with a
+synthetic Standard User. The native project declared a ReadWrite custom object
+and a text field. The user had no object grant, read-only object access, or an
+assigned permission set granting read/create/edit and field read/edit. Named
+`@IsTest` runs covered source APIs 62 and 67; anonymous runs were the
+administrator control. The scratch org was deleted and deletion was verified.
+
+`user_mode_dml_transport.tsv` carries exact partial-insert SaveResult status,
+message, ID-null state, field count, and measured DML statement/row deltas. It
+records scalar and homogeneous list calls. The counter deltas were measured for
+both APIs, including the two-row list case. `security_enforced_permission_messages.tsv`
+records dynamic-query messages for denied and field-denied projections. At API
+67 the clause is unsupported before permission evaluation.

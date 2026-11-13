@@ -1,0 +1,17 @@
+api	principal	operation	success	status	message	fields	idNull	dmlStatements	dmlRows
+62.0	admin	single	true				false	1	1
+62.0	granted	single	true				false	1	1
+62.0	ungranted	single	false	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	Access to entity 'PermissionProbe__c' denied		true	1	1
+62.0	readOnly	single	false	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	DML operation INSERT not allowed on PermissionProbe__c		true	1	1
+62.0	admin	list	true				false	1	2
+62.0	granted	list	true				false	1	2
+62.0	ungranted	list	false	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	Access to entity 'PermissionProbe__c' denied		true	1	2
+62.0	readOnly	list	false	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	DML operation INSERT not allowed on PermissionProbe__c		true	1	2
+67.0	admin	single	true				false	1	1
+67.0	granted	single	true				false	1	1
+67.0	ungranted	single	false	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	Access to entity 'PermissionProbe__c' denied		true	1	1
+67.0	readOnly	single	false	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	DML operation INSERT not allowed on PermissionProbe__c		true	1	1
+67.0	admin	list	true				false	1	2
+67.0	granted	list	true				false	1	2
+67.0	ungranted	list	false	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	Access to entity 'PermissionProbe__c' denied		true	1	2
+67.0	readOnly	list	false	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	DML operation INSERT not allowed on PermissionProbe__c		true	1	2
