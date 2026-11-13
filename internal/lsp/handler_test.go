@@ -341,6 +341,7 @@ func TestWorkspaceSymbolsIncludeApexSchemaAndFields(t *testing.T) {
 func TestHoverForKnownTypes(t *testing.T) {
 	idx := sampleIndex(t)
 	handler := NewHandler(idx)
+	handler.analysisResult()
 
 	apexHover := handler.HoverForName("InvoiceService", nil)
 	if apexHover == nil || !strings.Contains(apexHover.Contents.Value, "class InvoiceService") {

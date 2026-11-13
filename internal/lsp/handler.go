@@ -33,6 +33,7 @@ type Handler struct {
 	analyzer     func(typesys.Index) sema.Result
 	analysisOnce sync.Once
 	analysis     sema.Result
+	analysisDone chan struct{}
 
 	docMu     sync.RWMutex
 	documents map[DocumentURI]openDocument
@@ -70,10 +71,11 @@ func NewHandler(index typesys.Index) *Handler {
 // for SetIndex or Fail.
 func NewPendingHandler() *Handler {
 	return &Handler{
-		ready:     make(chan struct{}),
-		parser:    apexast.NewParser(),
-		documents: make(map[DocumentURI]openDocument),
-		debounce:  DefaultDiagnosticsDebounce,
+		ready:        make(chan struct{}),
+		analysisDone: make(chan struct{}),
+		parser:       apexast.NewParser(),
+		documents:    make(map[DocumentURI]openDocument),
+		debounce:     DefaultDiagnosticsDebounce,
 	}
 }
 
@@ -134,8 +136,19 @@ func (h *Handler) analysisResult() sema.Result {
 			analyze = sema.Analyze
 		}
 		h.analysis = analyze(h.index)
+		close(h.analysisDone)
 	})
 	return h.analysis
+}
+
+// analysisIfReady returns only fully published analysis without waiting.
+func (h *Handler) analysisIfReady() (sema.Result, bool) {
+	select {
+	case <-h.analysisDone:
+		return h.analysis, true
+	default:
+		return sema.Result{}, false
+	}
 }
 
 // SetAnalyzer replaces the whole-project semantic pass, for callers that can
@@ -564,7 +577,8 @@ func (h *Handler) HoverForName(name string, hoverRange *Range) *Hover {
 		}
 	}
 
-	for _, ref := range h.analysisResult().Types {
+	result, _ := h.analysisIfReady()
+	for _, ref := range result.Types {
 		if !strings.EqualFold(ref.Name, name) {
 			continue
 		}

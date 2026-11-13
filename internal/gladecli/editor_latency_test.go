@@ -56,6 +56,7 @@ func writeGeneratedLatencyProject(t *testing.T, root string, classes int) {
 	for i := 0; i < classes; i++ {
 		var b strings.Builder
 		fmt.Fprintf(&b, "public with sharing class LatencyService%04d {\n", i)
+		b.WriteString("  public String label;\n")
 		for m := 0; m < 25; m++ {
 			fmt.Fprintf(&b, "  public static Integer step%02d(Integer value) {\n    Integer total = value + %d;\n    List<Integer> items = new List<Integer>{ total, value };\n    for (Integer item : items) { total += item; }\n    return total;\n  }\n", m, m)
 		}
@@ -172,6 +173,10 @@ func measureLSPLatency(t *testing.T, project string, record func(string, time.Du
 	uri := "file://" + file
 	openStart := time.Now()
 	client.send(map[string]any{"method": "textDocument/didOpen", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "apex", "version": 1, "text": string(text)}}})
+	hoverStart := time.Now()
+	client.send(map[string]any{"id": 4, "method": "textDocument/hover", "params": map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]any{"line": 1, "character": 16}}})
+	client.wait("hover", limit, isResponse(4))
+	record("lsp_first_hover", time.Since(hoverStart))
 	client.wait("diagnostics", limit, func(m map[string]any) bool {
 		if m["method"] != "textDocument/publishDiagnostics" {
 			return false
