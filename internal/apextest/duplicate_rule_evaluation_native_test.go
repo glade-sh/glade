@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -64,9 +65,7 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 				root := t.TempDir()
 				base := filepath.Join(root, "force-app/main/default")
 				writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
-				if strings.HasPrefix(group, "share") {
-					t.Skip("sharing replay uses its own actor and committed fixture setup")
-				}
+				sharing := strings.HasPrefix(group, "share")
 				copyInputs := func(name string) {
 					path := filepath.Join(dir, "inputs", name)
 					if _, err := os.Stat(path); err == nil {
@@ -105,6 +104,8 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 						}
 					}
 					writeCapturedAssignments(t, root, "ExtAccess")
+				case sharing:
+					helpers = []string{"ShareBehavior", "ShareWith", "ShareWithout", "ShareInherited", "SharingReplay"}
 				case strings.HasPrefix(group, "edit"):
 					helpers = []string{"EditBehavior"}
 					writeCapturedAssignments(t, root, "ExtAccessCL")
@@ -117,10 +118,17 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 				fmt.Fprintf(&testClass, "@IsTest private class %s {\n", class)
 				expressions := map[string]string{}
 				for _, method := range slices.Sorted(maps.Keys(cases)) {
+					if sharing && method == "overflow" {
+						continue
+					} // sharing/RUN-FACTS.txt: unsettled indexing.
 					call := cases[method]
 					source := "String observation = " + call + "; System.assert(false, 'OBS|" + method + "|' + Test.isRunningTest() + '|' + observation.length() + '|' + observation + '|ENDOBS');"
 					expressions[method] = source
-					fmt.Fprintf(&testClass, "@IsTest static void %s() { %s }\n", method, source)
+					setup := ""
+					if sharing {
+						setup = "SharingReplay.prepare();"
+					}
+					fmt.Fprintf(&testClass, "@IsTest static void %s() { %s %s }\n", method, setup, source)
 				}
 				testClass.WriteString("}")
 				for _, name := range append(helpers, class) {
@@ -157,23 +165,63 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 				}
 				for _, method := range slices.Sorted(maps.Keys(expressions)) {
 					source := expressions[method]
-					t.Run("anonymous/"+method, func(t *testing.T) {
-						program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
-						if err != nil {
-							t.Fatal(err)
-						}
-						_, err = runner.newMachine().Execute(program)
-						var fault *vm.RuntimeError
-						if !errors.As(err, &fault) || !strings.HasSuffix(fault.Type, "AssertException") {
-							t.Fatalf("missing Apex observation: %v", err)
-						}
-						check(t, "anonymous", method, fault.ExceptionMessage())
-					})
+					routes := []string{"anonymous"}
+					if sharing {
+						routes = append(routes, "anonuser")
+					}
+					for _, route := range routes {
+						t.Run(route+"/"+method, func(t *testing.T) {
+							machine := runner.newMachine()
+							if sharing {
+								setup, err := vm.CompileAnonymousWithOptions("SharingReplay.prepare(); ShareBehavior.committedFixtures();", vm.CompileOptions{APIVersion: api})
+								if err != nil {
+									t.Fatal(err)
+								}
+								if _, err := machine.Execute(setup); err != nil {
+									t.Fatal(err)
+								}
+								// Replay the committed criteria grant captured in sharing/RUN-FACTS.
+								// Test-created criteria shares are deliberately absent.
+								var actor storage.Record
+								for _, user := range machine.Org.Objects["User"].Records {
+									if user.Fields["LastName"].String == "Sharing Reader" {
+										actor = user
+									}
+								}
+								if actor.ID == "" {
+									t.Fatal("missing sharing actor")
+								}
+								for _, row := range machine.Org.Objects["Contact"].Records {
+									if row.Fields["Title"].String != "crit" {
+										continue
+									}
+									fixture := storage.NewFixture()
+									fixture.Objects = []storage.FixtureObject{{Name: "ContactShare", Records: []storage.FixtureRecord{{Fields: map[string]storage.Value{"ContactId": storage.IDValue(row.ID), "UserOrGroupId": storage.IDValue(actor.ID), "ContactAccessLevel": storage.StringValue("Read"), "RowCause": storage.StringValue("Rule")}}}}}
+									if err := storage.ApplyFixture(machine.Org, fixture); err != nil {
+										t.Fatal(err)
+									}
+								}
+								if route == "anonuser" {
+									machine.SetCurrentUser(actor)
+								}
+							}
+							program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
+							if err != nil {
+								t.Fatal(err)
+							}
+							_, err = machine.Execute(program)
+							var fault *vm.RuntimeError
+							if !errors.As(err, &fault) || !strings.HasSuffix(fault.Type, "AssertException") {
+								t.Fatalf("missing Apex observation: %v", err)
+							}
+							check(t, route, method, fault.ExceptionMessage())
+						})
+					}
 				}
 				options := Options{SelectedClasses: []string{class}, NoDiskCache: true, Parallelism: 1}
 				selected := Discover(index, options)
-				if len(selected) != len(cases) {
-					t.Fatalf("discovered %d of %d methods", len(selected), len(cases))
+				if len(selected) != len(expressions) {
+					t.Fatalf("discovered %d of %d methods", len(selected), len(expressions))
 				}
 				report := RunCasesContext(context.Background(), index, options, selected)
 				count := 0
@@ -188,8 +236,8 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 						})
 					}
 				}
-				if count != len(cases) {
-					t.Fatalf("ran %d of %d methods", count, len(cases))
+				if count != len(expressions) {
+					t.Fatalf("ran %d of %d methods", count, len(expressions))
 				}
 			})
 		}
