@@ -1,0 +1,1 @@
+Native Salesforce fresh plain Developer scratch, default administrator, en_US. Matching source and transport API 62.0 and 67.0; direct anonymous, anonymous invoking version-matched helper and named test helper routes. org.tsv retains 30 synthetic observations. Original capture packet: familyprobe/road-461-standard-supp; values and field facets are org configuration observations.
