@@ -695,7 +695,7 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 	includeConventionalRoots := !dependency && !cfg.HasManifest
 	ignore := newForceIgnoreSet()
 	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories, includeConventionalRoots) {
-		if _, err := os.Stat(pkgRoot); err != nil {
+		if _, err := p.Stat(pkgRoot); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
@@ -708,7 +708,7 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 	}
 
 	for _, dir := range p.ExtraMetadataDirs {
-		info, err := os.Stat(dir)
+		info, err := p.Stat(dir)
 		if err != nil {
 			return Project{}, fmt.Errorf("project.extraMetadataDirs: %w", err)
 		}
@@ -2244,7 +2244,7 @@ func recordSourceNamespace(dir string, p *Project) {
 // deploy-time .forceignore rules; package directories pass it, while
 // glade-only extra metadata dirs and setup stages do not.
 func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
-	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	return p.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
