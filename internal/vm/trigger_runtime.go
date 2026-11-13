@@ -400,7 +400,7 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollb
 				return nil, false, dmlExceptionFromTriggerError("update", err)
 			}
 			if hasDMLFailures(failures) {
-				return nil, false, fmt.Errorf("summary update trigger failed for %s", objectName)
+				return nil, false, fmt.Errorf("summary update trigger failed for %s: %s", objectName, failures[0].Error)
 			}
 			valid := make([]storage.Record, 0, len(records))
 			validBefore := make([]storage.Record, 0, len(records))
@@ -427,22 +427,23 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollb
 			if err := vm.storeTriggerRecords(objectName, valid); err != nil {
 				return nil, false, err
 			}
-			afterFailures, err := vm.runTriggers(triggerTimingAfter, "update", valid, validBefore, result)
-			if err != nil {
+			// Parent after-trigger row errors are not captured for this path.
+			// Like the other summary path, ignore them.
+			if _, err := vm.runTriggers(triggerTimingAfter, "update", valid, validBefore, result); err != nil {
 				return nil, false, dmlExceptionFromTriggerError("update", err)
 			}
-			if hasDMLFailures(afterFailures) {
-				return nil, false, fmt.Errorf("summary update trigger failed for %s", objectName)
-			}
-			if err := vm.applyDeferredAutomation(engine, valid, validBefore, allOrNone, vmDMLRollbackPoint{}, result); err != nil {
+			if err := vm.applyDeferredAutomation(engine, valid, validBefore, allOrNone, rollback, result); err != nil {
 				return nil, false, err
 			}
 			return survivors, failed, nil
 		}
 		survivors, failed, err := attempt(group)
 		if err != nil {
-			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
-				return nil, rollbackErr
+			vm.finishDMLRollbackPoint(parentPoint)
+			if allOrNone {
+				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 			}
 			return nil, err
 		}
@@ -453,8 +454,10 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollb
 			if len(survivors) > 0 {
 				_, _, err = attempt(survivors)
 				if err != nil {
-					if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
-						return nil, rollbackErr
+					if allOrNone {
+						if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+							return nil, rollbackErr
+						}
 					}
 					return nil, err
 				}

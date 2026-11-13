@@ -702,6 +702,11 @@ func (e *Engine) SummaryValidationRelation(childObject string) (parent, foreignK
 	if relation.field.Type != storage.FieldSummary || !strings.EqualFold(relation.field.SummaryOperation, "count") || len(relation.field.SummaryFilterItems) != 0 {
 		return "", ""
 	}
+	// A parent that is itself rolled up queues grandparent updates; those
+	// chains have no native evidence.
+	if len(e.summaryRelationsForChild(relation.parentObject)) != 0 {
+		return "", ""
+	}
 	for _, rule := range e.Org.Objects[relation.parentObject].Definition.ValidationRules {
 		if rule.Active {
 			return relation.parentObject, relation.fkFieldName

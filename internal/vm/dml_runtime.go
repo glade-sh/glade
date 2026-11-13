@@ -2792,7 +2792,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		return vm.applyTriggerDMLChunks(op, value, targets, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode)
 	}
 	var summaryParent, summaryKey string
-	if op == "insert" && len(records) > 0 && vm.hasSummarySideEffectsForDML(records) && recordsShareSingleObject(records) {
+	if op == "insert" && len(records) > 0 && len(records) <= 200 && vm.hasSummarySideEffectsForDML(records) && recordsShareSingleObject(records) {
 		schema := dml.Engine{Org: vm.Org, SummaryByChild: vm.dmlSummaryByChild}
 		summaryParent, summaryKey = schema.SummaryValidationRelation(records[0].Object)
 	}
