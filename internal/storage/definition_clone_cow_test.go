@@ -144,15 +144,18 @@ func TestRecordTypeSeedMatchesCloneFirstAndKeepsSharedDefinition(t *testing.T) {
 			if !reflect.DeepEqual(sibling.Objects[template.APIName].Definition, pristine) {
 				t.Fatalf("sibling org definition changed by the seed step")
 			}
-			// Mutating the result in place must not reach the sharers either.
+			// What the step wrote is private: mutating it must not reach the
+			// sharers. Maps the step did not write stay shared by design.
 			for i := range got.RecordTypes {
 				got.RecordTypes[i].Name = "mutated"
 			}
-			if got.Metadata != nil {
+			if reflect.ValueOf(got.Fields).Pointer() != reflect.ValueOf(template.Fields).Pointer() {
+				got.Fields["Wide000__c"] = Field{APIName: "Wide000__c", Label: "mutated"}
+			}
+			if reflect.ValueOf(got.Metadata).Pointer() != reflect.ValueOf(template.Metadata).Pointer() {
 				got.Metadata["owner"] = "mutated-owner"
 				got.Metadata[standardConfiguredPolicyFields] = "mutated"
 			}
-			got.Fields["Wide000__c"] = Field{APIName: "Wide000__c", Label: "mutated"}
 			if !reflect.DeepEqual(template, pristine) {
 				t.Fatalf("mutating the seeded definition reached the shared template")
 			}
@@ -277,7 +280,7 @@ func TestMultiCurrencyFieldMatchesCloneFirstAndKeepsSharedDefinition(t *testing.
 			if !reflect.DeepEqual(template, pristine) {
 				t.Fatalf("shared definition changed by applyMultiCurrencyField")
 			}
-			if got.Fields != nil {
+			if got.Fields != nil && reflect.ValueOf(got.Fields).Pointer() != reflect.ValueOf(template.Fields).Pointer() {
 				got.Fields["Wide000__c"] = Field{APIName: "Wide000__c", Label: "mutated"}
 				if !reflect.DeepEqual(template, pristine) {
 					t.Fatalf("mutating the result reached the shared definition")
