@@ -3,7 +3,6 @@ package resource
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -17,7 +16,7 @@ func ApplyProjectNetworks(org *storage.OrgState, p project.Project, readers ...f
 	if org == nil || !org.HasFeature("NetworksEnabled") || len(p.NetworkFiles) == 0 {
 		return nil
 	}
-	read := os.ReadFile
+	read := p.ReadFile
 	if len(readers) > 0 && readers[0] != nil {
 		read = readers[0]
 	}

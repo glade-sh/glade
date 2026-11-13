@@ -3,7 +3,6 @@ package resource
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func loadDataWeaveResources(contentPaths, metadataPaths []string, namespace, fallbackAPI string) ([]storage.DataWeaveResourceMetadata, error) {
+func loadDataWeaveResources(in inputs, contentPaths, metadataPaths []string, namespace, fallbackAPI string) ([]storage.DataWeaveResourceMetadata, error) {
 	byName := make(map[string]*storage.DataWeaveResourceMetadata)
 	resourceFor := func(name string) *storage.DataWeaveResourceMetadata {
 		key := lookupKey(name)
@@ -28,7 +27,7 @@ func loadDataWeaveResources(contentPaths, metadataPaths []string, namespace, fal
 		if entry.ContentPath != "" && filepath.Clean(entry.ContentPath) != filepath.Clean(path) {
 			return nil, fmt.Errorf("duplicate DataWeave source %s: %s and %s", name, entry.ContentPath, path)
 		}
-		data, err := os.ReadFile(path)
+		data, err := in.ReadFile(path)
 		if err != nil {
 			return nil, fmt.Errorf("load DataWeave source %s: %w", path, err)
 		}
@@ -44,7 +43,7 @@ func loadDataWeaveResources(contentPaths, metadataPaths []string, namespace, fal
 		if entry.ContentPath != "" && filepath.Clean(entry.ContentPath+"-meta.xml") != filepath.Clean(path) {
 			return nil, fmt.Errorf("DataWeave metadata %s is not the companion of %s", path, entry.ContentPath)
 		}
-		data, err := os.ReadFile(path)
+		data, err := in.ReadFile(path)
 		if err != nil {
 			return nil, fmt.Errorf("load DataWeave metadata %s: %w", path, err)
 		}

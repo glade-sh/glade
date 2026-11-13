@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -39,7 +38,7 @@ func ApplyProjectQueues(org *storage.OrgState, p project.Project) error {
 	sort.Strings(paths)
 	queues := make([]queueXML, 0, len(paths))
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("load Queue metadata %s: %w", path, err)
 		}

@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 func TestLoadTabPreservesPageAndWebProvenance(t *testing.T) {
@@ -20,7 +22,7 @@ func TestLoadTabPreservesPageAndWebProvenance(t *testing.T) {
 			if err := os.WriteFile(path, []byte("<CustomTab>"+tc.xml+"</CustomTab>"), 0600); err != nil {
 				t.Fatal(err)
 			}
-			tab, err := loadTab(path)
+			tab, err := loadTab(project.Project{}, path)
 			if err != nil {
 				t.Fatal(err)
 			}

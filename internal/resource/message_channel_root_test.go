@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 // Native source-format deploys at API 62.0 and 67.0 accept any root element
@@ -16,7 +18,7 @@ func TestLoadMessageChannelAcceptsAnyRootElement(t *testing.T) {
 			if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			channel, err := loadMessageChannel(path, "")
+			channel, err := loadMessageChannel(project.Project{}, path, "")
 			if err != nil {
 				t.Fatalf("root %s rejected: %v", root, err)
 			}

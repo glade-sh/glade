@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -76,7 +75,7 @@ func loadPlatformCachePartitions(org *storage.OrgState, p project.Project) error
 	paths := append([]string(nil), p.CachePartitionFiles...)
 	sort.Strings(paths)
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("load PlatformCachePartition metadata %s: %w", path, err)
 		}
