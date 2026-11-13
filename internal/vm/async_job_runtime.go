@@ -93,9 +93,12 @@ func (vm *VM) prepareTestStopAsyncJobs() {
 }
 
 // splitBatchAtStop reports whether a test-submitted batch should pause after
-// start at stopTest. Batches submitted by async work, and captured fault
-// projections, keep their single-pass path.
-func (vm *VM) splitBatchAtStop(job AsyncJob, projectNative bool) bool {
+// start at stopTest. Unobserved scope shapes, batches submitted by async work,
+// and captured fault projections keep their single-pass path.
+func (vm *VM) splitBatchAtStop(job AsyncJob, projectNative, locatorStart, stateful bool, scope []Value) bool {
+	if len(scope) != 1 || (locatorStart && (!stateful || scope[0].Kind != ValueObject)) || (!locatorStart && scope[0].Kind != ValueInt) {
+		return false
+	}
 	return vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining && vm.testContext.StopDraining &&
 		job.Kind == "BatchApex" && job.DirectBatchSubmission && !job.SuppressWorkerRecords && !projectNative
 }
@@ -1767,7 +1770,7 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		vm.recordAsyncJob(job, "Failed", err.Error())
 		return err
 	}
-	if resume == nil && vm.splitBatchAtStop(job, projectNative) {
+	if resume == nil && vm.splitBatchAtStop(job, projectNative, locatorStart, stateful, scope) {
 		// Native stopTest runs batch start in its submission slot, then
 		// execute and finish as separate continuations at the queue tail
 		// (async_stop_order bqf, async_stop_mix bb, bqb, bxq).
