@@ -143,3 +143,20 @@ func TestReconcileCriteriaSharingOperations(t *testing.T) {
 		}
 	}
 }
+
+func TestCriteriaSharingPreservesUnownedRuleRows(t *testing.T) {
+	org := criteriaRuleOrg()
+	storage.EnsureStandardObject(&org, "CaseShare")
+	shares := org.Objects["CaseShare"]
+	shares.Records["50b000000000099"] = storage.Record{ID: "50b000000000099", Object: "CaseShare", Fields: map[string]storage.Value{"CaseId": storage.IDValue("500000000000099"), "UserOrGroupId": storage.IDValue("00G000000000099"), "RowCause": storage.StringValue("Rule")}}
+	org.Objects["CaseShare"] = shares
+	cases := org.Objects["Case"]
+	cases.Definition.CriteriaSharingRules = nil
+	org.Objects["Case"] = cases
+	if err := ReconcileCriteriaSharing(&org); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := org.Objects["CaseShare"].Records["50b000000000099"]; !ok {
+		t.Fatal("unowned Rule share removed")
+	}
+}
