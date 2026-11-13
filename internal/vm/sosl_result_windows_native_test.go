@@ -45,7 +45,7 @@ func TestSOSLResultWindowsNative(t *testing.T) {
 			named := parts[0] == "istest"
 			api := parts[1] + ".0"
 			machine := searchWindowMachine(t, api, named, parts[2], false)
-			var bulkMachine *VM
+			var bulkMachine, denseMachine *VM
 			for i, input := range queries[1:] {
 				id, entry, query := input[0], input[1], input[2]
 				row := oracle[i+1]
@@ -57,6 +57,7 @@ func TestSOSLResultWindowsNative(t *testing.T) {
 					continue
 				}
 				bulk := strings.HasPrefix(id, "bulk")
+				dense := strings.HasPrefix(id, "dense")
 				selected := machine
 				if bulk {
 					if bulkMachine == nil {
@@ -64,9 +65,15 @@ func TestSOSLResultWindowsNative(t *testing.T) {
 					}
 					selected = bulkMachine
 				}
+				if dense {
+					if denseMachine == nil {
+						denseMachine = searchWindowDenseMachine(api)
+					}
+					selected = denseMachine
+				}
 				selected.ResetLimits()
 				groups, err := searchWindowGroups(selected, entry, query)
-				got := searchWindowObservation(t, groups, err, bulk)
+				got := searchWindowObservation(t, groups, err, bulk, dense)
 				// The hosted index ranks before it truncates. For anonymous
 				// groups without ORDER BY, only the slot count is a window
 				// contract. Fixed order and explicitly ordered fields are exact.
@@ -141,7 +148,7 @@ func searchWindowGroups(machine *VM, entry, query string) (Value, error) {
 	}
 }
 
-func searchWindowObservation(t *testing.T, groups Value, err error, bulk bool) string {
+func searchWindowObservation(t *testing.T, groups Value, err error, bulk, dense bool) string {
 	t.Helper()
 	if err != nil {
 		var thrown *apexThrowError
@@ -152,6 +159,10 @@ func searchWindowObservation(t *testing.T, groups Value, err error, bulk bool) s
 	}
 	var result strings.Builder
 	for _, bucket := range groups.List {
+		if dense {
+			fmt.Fprintf(&result, "[%d]", len(bucket.List))
+			continue
+		}
 		var labels []string
 		for _, record := range bucket.List {
 			field := "LastName"
@@ -222,5 +233,27 @@ func searchWindowMachine(t *testing.T, api string, named bool, repeat string, bu
 			t.Fatal(err)
 		}
 	}
+	return machine
+}
+
+func searchWindowDenseMachine(api string) *VM {
+	org := storage.NewOrgState()
+	org.APIVersion = api
+	for _, spec := range []struct{ object, field, prefix string }{
+		{"Account", "Name", "001"}, {"Contact", "LastName", "003"}, {"Lead", "LastName", "00Q"},
+	} {
+		storage.EnsureStandardObject(&org, spec.object)
+		state := org.Objects[spec.object]
+		for i := range 321 {
+			id := storage.ID(fmt.Sprintf("%s%012d", spec.prefix, i+1))
+			state.Records[id] = storage.Record{Object: spec.object, ID: id, Fields: map[string]storage.Value{
+				spec.field: storage.StringValue(fmt.Sprintf("Opalwindow %03d", i)),
+			}}
+		}
+		org.Objects[spec.object] = state
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.currentMethod.APIVersion = api
 	return machine
 }

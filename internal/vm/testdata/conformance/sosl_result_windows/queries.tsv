@@ -253,3 +253,42 @@ bulkoverall501	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Nam
 bulkoverall502	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 502
 bulkoverall510	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 510
 bulkoverall600	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 600
+denseACDefault	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName)
+denseAC499	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 499
+denseAC501	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 501
+denseAC749	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 749
+denseAC752	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 752
+denseAC2000	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 2000
+denseCADefault	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name)
+denseCA499	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 499
+denseCA501	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 501
+denseCA749	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 749
+denseCA752	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 752
+denseCA2000	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 2000
+denseCLDefault	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName)
+denseCL499	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 499
+denseCL501	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 501
+denseCL749	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 749
+denseCL752	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 752
+denseCL2000	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 2000
+denseLCADefault	query	FIND {Opalwindow} RETURNING Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name)
+denseLCA499	query	FIND {Opalwindow} RETURNING Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 499
+denseLCA501	query	FIND {Opalwindow} RETURNING Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 501
+denseLCA749	query	FIND {Opalwindow} RETURNING Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 749
+denseLCA752	query	FIND {Opalwindow} RETURNING Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 752
+denseLCA2000	query	FIND {Opalwindow} RETURNING Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 2000
+denseACLDefault	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName)
+denseACL499	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 499
+denseACL501	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 501
+denseACL749	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 749
+denseACL752	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 752
+denseACL2000	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName) LIMIT 2000
+denseCALDefault	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName)
+denseCAL499	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName) LIMIT 499
+denseCAL501	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName) LIMIT 501
+denseCAL749	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName) LIMIT 749
+denseCAL752	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName) LIMIT 752
+denseCAL2000	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName) LIMIT 2000
+denseCDefault	query	FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName)
+denseADefault	query	FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name)
+denseLDefault	query	FIND {Opalwindow} RETURNING Lead(Id,LastName ORDER BY LastName)
