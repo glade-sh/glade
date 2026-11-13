@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Double signed zero.** Equality and typed List membership distinguish positive and negative Double zero in the captured cases.
+- **Double signed zero.** Equality and typed List membership distinguish positive and negative Double zero in the captured cases. Sorting Double and Object lists places negative Double zero first.
 
 ## v0.3.8
 
