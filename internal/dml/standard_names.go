@@ -27,7 +27,12 @@ func standardNameWord(s string) bool {
 }
 
 func standardSurnameLengthsMayMatch(a, b string) bool {
-	return len(a) >= 2 && len(b) >= 2 && len(a) <= maxFuzzyInputRunes && len(b) <= maxFuzzyInputRunes && abs(len(a)-len(b)) <= 1
+	// The extra corroborated comparisons have native positives at lengths
+	// 2 through 8. The inherited last-name item handles all other lengths.
+	if len(a) != len(b) {
+		return min(len(a), len(b)) == 4 && max(len(a), len(b)) == 5
+	}
+	return len(a) >= 2 && len(a) <= 8
 }
 
 // With an exact first name and email the standard rule can also match local
@@ -51,25 +56,24 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 		score, ok := keyboardSimilarity(a, b)
 		return ok && score >= 90, averageWith100(score)
 	}
-	start := 0
-	for start < len(a) && a[start] == b[start] {
-		start++
+	// All new two-character swaps are terminal. The single three-character
+	// rotation in the native name panel is its five-letter terminal control.
+	i := len(a) - 2
+	if a[:i] != b[:i] {
+		if len(a) != 5 || a[:i-1] != b[:i-1] {
+			return false, 0
+		}
+		i--
 	}
-	end := len(a)
-	for end > start && a[end-1] == b[end-1] {
-		end--
+	left, right := a[i:], b[i:]
+	if left == right {
+		return false, 0
 	}
-	left, right := a[start:end], b[start:end]
-	switch len(left) {
-	case 2:
+	if len(left) == 2 {
 		if left[0] != right[1] || left[1] != right[0] {
 			return false, 0
 		}
-	case 3:
-		if left[1:]+left[:1] != right && left[2:]+left[:2] != right {
-			return false, 0
-		}
-	default:
+	} else if left[1:]+left[:1] != right && left[2:]+left[:2] != right {
 		return false, 0
 	}
 	if lastNameMetaphone3Equal(a, b) {
@@ -81,7 +85,7 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	}
 	score := 100 * (1 - cost/float64(len(a)))
 	confidence := averageWith100(score)
-	if len(left) == 2 && end == len(a) && score >= 92 {
+	if len(left) == 2 && score >= 92 {
 		return standardTerminalSwap(a, confidence)
 	}
 	return score >= 92, confidence
