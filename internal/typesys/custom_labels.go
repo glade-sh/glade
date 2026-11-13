@@ -2,7 +2,6 @@ package typesys
 
 import (
 	"encoding/xml"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -22,7 +21,7 @@ func projectCustomLabels(p project.Project) ([]string, bool) {
 		if !filepath.IsAbs(path) {
 			path = filepath.Join(p.Root, path)
 		}
-		data, err := os.ReadFile(path) // #nosec G304 -- discovered project metadata path.
+		data, err := p.ReadFile(path) // #nosec G304 -- discovered project metadata path.
 		if err != nil {
 			return nil, false
 		}

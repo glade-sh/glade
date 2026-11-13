@@ -242,7 +242,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		}
 		if dep.Status != "loaded" || dep.Project == nil {
 			if dep.Status == "loaded" && dep.ArtifactPath != "" {
-				appendArtifactDependency(&idx, dep)
+				appendArtifactDependency(&idx, p.ReadFile, dep)
 			}
 			continue
 		}
@@ -373,8 +373,8 @@ func appendPackageShimSymbols(idx *Index, parser *apexast.Parser, shim project.P
 	})
 }
 
-func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) {
-	artifact, err := packageartifact.ReadJSON(dep.ArtifactPath)
+func appendArtifactDependency(idx *Index, read func(string) ([]byte, error), dep project.ManagedPackageDependency) {
+	artifact, err := packageartifact.ReadJSONWith(read, dep.ArtifactPath)
 	if err != nil {
 		diag := diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
@@ -693,8 +693,8 @@ func setApexMetadataCaptureHookForTesting(hook func(string)) func() {
 	}
 }
 
-func captureApexMetadataInput(path, fallback string) (ApexMetadataInput, string) {
-	data, err := os.ReadFile(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for an indexed Apex source.
+func captureApexMetadataInput(read func(string) ([]byte, error), path, fallback string) (ApexMetadataInput, string) {
+	data, err := read(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for an indexed Apex source.
 	input := ApexMetadataInput{}
 	effective := fallback
 	if err == nil {
@@ -715,8 +715,8 @@ func sourceStillMatches(path string, expected [sha256.Size]byte) bool {
 	return err == nil && sha256.Sum256(data) == expected
 }
 
-func metadataStillMatches(path string, expected ApexMetadataInput) bool {
-	data, err := os.ReadFile(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for the indexed Apex source.
+func metadataStillMatches(read func(string) ([]byte, error), path string, expected ApexMetadataInput) bool {
+	data, err := read(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for the indexed Apex source.
 	if err != nil {
 		return !expected.Present && os.IsNotExist(err)
 	}
@@ -733,7 +733,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 		if !dependency {
 			fileNamespace = p.SourceNamespaceForFile(p.ApexFiles[0], namespace)
 		}
-		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources)}
+		return []projectSymbolFile{projectSymbolFileFromPath(p.ReadFile, parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -770,7 +770,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 				}
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources),
+					File:  projectSymbolFileFromPath(p.ReadFile, localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources),
 				}
 			}
 		}()
@@ -791,7 +791,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 	return out
 }
 
-func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVersion string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
+func projectSymbolFileFromPath(read func(string) ([]byte, error), parser *apexast.Parser, path, root, fallbackAPIVersion string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
 	var out projectSymbolFile
 	source, err := sources.load(SourceMetadata{
 		RequestedPath:   path,
@@ -812,8 +812,8 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVe
 	}
 	out.Source = &source
 	var effectiveAPIVersion string
-	out.Metadata, effectiveAPIVersion = captureApexMetadataInput(path, fallbackAPIVersion)
-	if !sourceStillMatches(path, source.Digest()) || !metadataStillMatches(path, out.Metadata) {
+	out.Metadata, effectiveAPIVersion = captureApexMetadataInput(read, path, fallbackAPIVersion)
+	if !sourceStillMatches(path, source.Digest()) || !metadataStillMatches(read, path, out.Metadata) {
 		out.Diagnostics = append(out.Diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADETYPE001", Message: "Apex source changed while capturing companion metadata", File: path})
 		return out
 	}
@@ -1226,7 +1226,7 @@ func permissionMutingDigests(p project.Project) map[string]string {
 	}
 	digests := make(map[string]string, len(files))
 	for _, path := range files {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			digests[path] = "unreadable"
 			continue
@@ -1250,7 +1250,7 @@ func emailServiceDigests(p project.Project) map[string]string {
 	}
 	digests := make(map[string]string, len(files))
 	for _, path := range files {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			digests[path] = "unreadable"
 			continue
@@ -1710,11 +1710,11 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		}
 		idx.sourceDigests = idx.sourceDigests.withSourceDigest(path, data)
 		metadata := changedSource.owner.metadata
-		capturedMetadata, effectiveAPIVersion := captureApexMetadataInput(path, metadata.apiVersion)
+		capturedMetadata, effectiveAPIVersion := captureApexMetadataInput(os.ReadFile, path, metadata.apiVersion)
 		if !sourceStillMatches(path, sha256.Sum256(data)) {
 			return Index{}, false
 		}
-		if !metadataStillMatches(path, capturedMetadata) {
+		if !metadataStillMatches(os.ReadFile, path, capturedMetadata) {
 			return Index{}, false
 		}
 		if idx.apexMetadataInputs == nil {
