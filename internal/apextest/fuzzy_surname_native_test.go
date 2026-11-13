@@ -17,12 +17,20 @@ import (
 )
 
 func TestFuzzySurnameNativeRoutes(t *testing.T) {
+	surnameNativeRoutes(t, "../dml/testdata/conformance/surname_keyboard", []string{"stage1", "stage1b", "stage2"})
+}
+
+func TestFuzzySurnameSubstitutionNativeRoutes(t *testing.T) {
+	surnameNativeRoutes(t, "../dml/testdata/conformance/surname_substitution", []string{"panel"})
+}
+
+func surnameNativeRoutes(t *testing.T, dir string, stages []string) {
+	t.Helper()
 	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
-	const dir = "../dml/testdata/conformance/surname_keyboard"
 	groups := map[string]map[string]string{}
 	rows := map[string]string{}
 	methodPattern := regexp.MustCompile(`public static String (m_[A-Za-z0-9_]+)\(\)`)
-	for _, stage := range []string{"stage1", "stage1b", "stage2"} {
+	for _, stage := range stages {
 		body, err := os.ReadFile(filepath.Join(dir, stage+".cls"))
 		if err != nil {
 			t.Fatal(err)

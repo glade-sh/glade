@@ -13,9 +13,9 @@ import (
 
 const surnameNativeDir = "testdata/conformance/surname_keyboard/"
 
-func surnameTable(t *testing.T, name string) []map[string]string {
+func surnameTable(t *testing.T, dir, name string) []map[string]string {
 	t.Helper()
-	f, err := os.Open(surnameNativeDir + name)
+	f, err := os.Open(dir + name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,21 +63,38 @@ var surnameKnownExactDifferences = map[string][2]int{
 // NATIVE surname_keyboard/org.tsv:2 anonymous 62.0; all APIs, routes and repeats
 // are checked, including the Lead mirrors and corroboration negative controls.
 func TestFuzzySurnameNativeRows(t *testing.T) {
+	surnameNativeRows(t, surnameNativeDir, []string{"pairs1.tsv", "pairs1b.tsv", "pairs2.tsv"}, 496, 62, surnameKnownExactDifferences)
+}
+
+// NATIVE first, middle and final substitutions at both APIs and routes:
+// testdata/conformance/surname_substitution/org.tsv. Each method repeats twice.
+func TestFuzzySurnameSubstitutionNativeRows(t *testing.T) {
+	surnameNativeRows(t, "testdata/conformance/surname_substitution/", []string{"pairs.tsv"}, 512, 64, nil)
+}
+
+func surnameNativeRows(t *testing.T, dir string, tables []string, observations, methods int, residuals map[string][2]int) {
+	t.Helper()
 	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
 	inputs := map[string][]map[string]string{}
-	for _, name := range []string{"pairs1.tsv", "pairs1b.tsv", "pairs2.tsv"} {
-		for _, p := range surnameTable(t, name) {
+	for _, name := range tables {
+		for _, p := range surnameTable(t, dir, name) {
 			inputs["m_"+p["method"]] = append(inputs["m_"+p["method"]], p)
 		}
 	}
 	type counts struct{ total, exact, membership, falseMatches int }
 	panels := map[string]*counts{}
-	rows := surnameTable(t, "org.tsv")
-	if len(rows) != 496 || len(inputs) != 62 {
+	rows := surnameTable(t, dir, "org.tsv")
+	if len(rows) != observations || len(inputs) != methods {
 		t.Fatalf("matrix: %d observations, %d methods", len(rows), len(inputs))
 	}
 	seenResidual := map[string]bool{}
+	seenRows := map[string]bool{}
 	for _, row := range rows {
+		key := row["method"] + "/" + row["api"] + "/" + row["route"] + "/" + row["repeat"]
+		if seenRows[key] || (row["api"] != "62.0" && row["api"] != "67.0") || (row["route"] != "anonymous" && row["route"] != "istest") || (row["repeat"] != "1" && row["repeat"] != "2") {
+			t.Fatalf("invalid or duplicate observation %s", key)
+		}
+		seenRows[key] = true
 		pairs := inputs[row["method"]]
 		if len(pairs) == 0 {
 			t.Fatalf("missing inputs: %v", row)
@@ -146,7 +163,7 @@ func TestFuzzySurnameNativeRows(t *testing.T) {
 			}
 			key := p["seed"] + "/" + p["cand"]
 			expected := want
-			if diff, ok := surnameKnownExactDifferences[key]; ok && panel == "A" {
+			if diff, ok := residuals[key]; ok && panel == "A" {
 				if want != diff[0] {
 					t.Fatalf("stale native residual %s", key)
 				}
@@ -161,7 +178,7 @@ func TestFuzzySurnameNativeRows(t *testing.T) {
 	for panel, c := range panels {
 		t.Logf("PANEL %s exact=%d/%d membership=%d/%d false_matches=%d", panel, c.exact, c.total, c.membership, c.total, c.falseMatches)
 	}
-	for key := range surnameKnownExactDifferences {
+	for key := range residuals {
 		if !seenResidual[key] {
 			t.Errorf("unused residual %s", key)
 		}
