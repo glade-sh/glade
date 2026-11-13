@@ -26,7 +26,9 @@ func (vm *VM) plainDeveloperDescribe(object string) bool {
 	if version != "62.0" && version != "67.0" {
 		return false
 	}
-	return vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator" && strings.EqualFold(vm.currentUserInfoField("LocaleSidKey", "en_US"), "en_US")
+	return vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator" &&
+		strings.EqualFold(vm.currentUserInfoField("LocaleSidKey", "en_US"), "en_US") &&
+		strings.EqualFold(vm.currentUserInfoField("LanguageLocaleKey", "en_US"), "en_US")
 }
 
 func (vm *VM) plainDeveloperNamedDescribe(object string) bool {
