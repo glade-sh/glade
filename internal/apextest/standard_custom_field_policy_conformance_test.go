@@ -18,6 +18,10 @@ func TestStandardCustomFieldPolicyNativeConformance(t *testing.T) {
 	runStandardCustomFieldPolicy(t, "standard_custom_field_policy", "PolicyProbe", 72)
 }
 
+func TestStandardRequiredCustomFieldNativeConformance(t *testing.T) {
+	runStandardCustomFieldPolicy(t, "standard_required_custom_field", "RequiredProbe", 3)
+}
+
 func TestStandardCustomFieldScopedNativeConformance(t *testing.T) {
 	runStandardCustomFieldPolicy(t, "standard_custom_field_scoped", "Probe", 15)
 }
