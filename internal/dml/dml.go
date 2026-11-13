@@ -18,8 +18,11 @@ type Engine struct {
 	PermissionUserFields map[string]storage.Value
 	// UserHasCustomPermission consults the host's current execution-user context.
 	UserHasCustomPermission func(string) bool
-	Options                 Options
-	FlowActionInvoker       func(storage.FlowAction, storage.Record) error
+	// DuplicateMatcher lets Apex apply its current sharing and field access
+	// through the common duplicate evaluator. Non-Apex callers use the evaluator directly.
+	DuplicateMatcher  func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (DuplicateResult, bool)
+	Options           Options
+	FlowActionInvoker func(storage.FlowAction, storage.Record) error
 	// FlowMatchObserver is called once each time a flow rule matches a record.
 	// It is advisory and must not change execution.
 	FlowMatchObserver func()

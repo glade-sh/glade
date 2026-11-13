@@ -175,9 +175,7 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 					if !ok || !sized || !ended || size != strconv.Itoa(len(got)) {
 						t.Fatalf("invalid observation frame: %s", message)
 					}
-					if got != want {
-						t.Errorf("native=%s\nGlade=%s", want, got)
-					}
+					compareDuplicateNativeObservation(t, group, method, want, got)
 				}
 				for _, method := range slices.Sorted(maps.Keys(expressions)) {
 					source := expressions[method]

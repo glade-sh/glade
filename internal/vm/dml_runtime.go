@@ -344,6 +344,12 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 		// SaveResults for the ordinary custom field policy (native
 		// admin_optional_field_api_matrix rows, API 67.0 and 68.0).
 		if ordinaryDatabaseCall && !allOrNone && externalIDField == "" && !isDatabaseAccessLevelValue(accessLevel) && !isDatabaseDMLOptionsValue(args[1]) {
+			if failures, handled := vm.duplicateMatchingFieldInsertFailures(permissionOp, args[0]); handled {
+				if err := vm.chargeAccountPermissionDML(len(failures)); err != nil {
+					return Null, err
+				}
+				return fieldKeyDMLResultsValue(op, args[0], failures), nil
+			}
 			if failures, handled := vm.userModeFieldPolicyPartialFailures(permissionOp, args[0]); handled {
 				denied := 0
 				var allowed []Value
