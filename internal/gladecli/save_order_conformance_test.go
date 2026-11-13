@@ -8,7 +8,21 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
+
+func TestSaveOrderFixtureDoesNotEnterImplicitProject(t *testing.T) {
+	p, err := project.Load(".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, file := range p.FlowFiles {
+		if strings.Contains(filepath.ToSlash(file), "/testdata/save_order/") {
+			t.Fatalf("save-order fixture discovered as implicit project Flow: %s", file)
+		}
+	}
+}
 
 // Each native row records the observation returned by an intentional exception
 // or assertion. Compare its full payload, including the route and saved state.
