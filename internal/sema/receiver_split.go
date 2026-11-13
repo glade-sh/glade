@@ -270,7 +270,15 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 				// The only captured argument-bearing standalone call is on
 				// a platform receiver and has a line break after the dot.
 				members, known := model.lookupName(receiver)
-				if !known || !members.platform || !lineBreak {
+				matched := false
+				if known && members.platform && lineBreak {
+					for _, candidate := range members.methods[normalizeName(method)] {
+						if strings.EqualFold(candidate.Type, "void") && len(candidate.Parameters) == 1 && strings.EqualFold(candidate.Parameters[0].Type, "Object") {
+							matched = true
+						}
+					}
+				}
+				if !matched {
 					continue
 				}
 			}
