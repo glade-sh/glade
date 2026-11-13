@@ -40,6 +40,8 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 			"ReceiverProbe.\nvalue(1);",
 			"String.\nvalueOf(1);",
 			"System.\nassert(true);",
+			"System.\nnow();",
+			"System.\ndebug(LoggingLevel.INFO, 'x');",
 			"String x = ReceiverProbe\n.value(1);",
 			"System.assertEquals('ok', String.valueOf(ReceiverProbe. value()));",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue().length();",
