@@ -722,7 +722,7 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 	p.ForceIgnoreConfigs = ignore.Files()
 	sort.Strings(p.ForceIgnoreConfigs)
 	if !dependency {
-		for _, dir := range setupMetadataRoots(absRoot) {
+		for _, dir := range p.SetupMetadataRoots() {
 			if err := collectFiles(dir, &p, nil); err != nil {
 				return Project{}, err
 			}
@@ -2202,14 +2202,14 @@ func (p Project) SetupMetadataRoots() []string {
 	if strings.TrimSpace(p.Root) == "" {
 		return nil
 	}
-	return setupMetadataRoots(p.Root)
+	return setupMetadataRoots(p.Root, p.inputs)
 }
 
-func setupMetadataRoots(root string) []string {
+func setupMetadataRoots(root string, v *inputview.View) []string {
 	var roots []string
 	for _, stage := range []string{"pre", "post"} {
 		dir := filepath.Join(root, "unpackaged", stage)
-		if info, err := os.Stat(dir); err == nil && info.IsDir() {
+		if info, err := v.Stat(dir); err == nil && info.IsDir() {
 			roots = append(roots, dir)
 		}
 	}
