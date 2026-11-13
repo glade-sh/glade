@@ -542,13 +542,15 @@ func capturedFuzzyEditRule(rule storage.DuplicateRule, match storage.MatchingRul
 			return false
 		}
 		criterion := rule.Filter.Items[0]
-		if !strings.EqualFold(criterion.Field, "Department") || !strings.EqualFold(criterion.Operation, "equals") {
+		// The rule filters the input. Entering or leaving a single text
+		// equality condition does not change the phone match key.
+		if !strings.EqualFold(criterion.Operation, "equals") || strings.TrimSpace(criterion.Value) == "" {
 			return false
 		}
-		// The captured edits leave this condition unchanged.
-		before, ok := prior.GetField(criterion.Field)
-		after, found := record.GetField(criterion.Field)
-		if duplicateBlank(before, ok) || !found || !storageValuesEqual(storage.Field{}, before, after) {
+		before, beforeOK := prior.GetField(criterion.Field)
+		after, afterOK := record.GetField(criterion.Field)
+		if !beforeOK || !afterOK || before.Kind != storage.ValueString || after.Kind != storage.ValueString ||
+			strings.TrimSpace(before.String) == "" || strings.TrimSpace(after.String) == "" {
 			return false
 		}
 		block := strings.EqualFold(rule.ActionOnUpdate, "Block") && len(ops) == 0
