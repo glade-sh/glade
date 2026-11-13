@@ -16,7 +16,7 @@ func missingObjectError(name string) error {
 // lazy.
 func TestMissingObjectKeepsLazySpreadWhenNoCatalogObjectMatches(t *testing.T) {
 	for _, features := range [][]string{nil, {"MultiCurrency", "Quotes"}} {
-		for _, name := range []string{"NoSuchThing__c", "NoSuchThing", "Fooo__Share", "zzz", "Foo__r", "ns__Thing__c", "Nope__mdt", "Nope__x", "Nope__e"} {
+		for _, name := range []string{"NoSuchThing__c", "NoSuchThing", "Fooo__Share", "zzz", "Foo__r", "ns__Thing__c", "Nope__mdt", "Nope__x", "Nope__e", "kav", "ns__Account", "ns__Opportunity__Feed"} {
 			org := shapedLazyOrg(features)
 			machine := New(nil)
 			machine.SetOrg(&org)
@@ -34,7 +34,7 @@ func TestMissingObjectKeepsLazySpreadWhenNoCatalogObjectMatches(t *testing.T) {
 // namespace token, or one the catalog holds under a namespace token, keeps the
 // retry: the spread completes.
 func TestMissingObjectCompletesSpreadWhenCatalogObjectMatches(t *testing.T) {
-	for _, name := range []string{"Account", "account", "ACCOUNTSHARE", "Time_Dependency__c", "FSL__Time_Dependency__c", "kav", "Knowledge__kav", "ns__Account", "ns__Opportunity__Feed"} {
+	for _, name := range []string{"Account", "account", "ACCOUNTSHARE", "Time_Dependency__c", "FSL__Time_Dependency__c", "ns__Time_Dependency__c", "Knowledge__kav", "Knowledge__Feed", "AccountFeed"} {
 		org := shapedLazyOrg(nil)
 		machine := New(nil)
 		machine.SetOrg(&org)
