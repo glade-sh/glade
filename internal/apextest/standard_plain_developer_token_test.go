@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"encoding/csv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -8,8 +9,32 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+func plainDeveloperTokenRows(t *testing.T) map[string]string {
+	t.Helper()
+	f, err := os.Open(filepath.Join("testdata", "standard_plain_developer_token", "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 13 {
+		t.Fatalf("native rows: %d", len(rows)-1)
+	}
+	result := make(map[string]string)
+	for _, row := range rows[1:] {
+		result[row[0]+"/"+row[1]] = row[3]
+	}
+	return result
+}
+
 // NATIVE testdata/standard_plain_developer_token/org.tsv:2-3 anonymous 62.0 and 67.0.
 func TestPlainDeveloperTokenCrossesContext(t *testing.T) {
+	rows := plainDeveloperTokenRows(t)
 	source, err := os.ReadFile(filepath.Join("testdata", "standard_plain_developer_token", "classes", "DescribeProbe.cls"))
 	if err != nil {
 		t.Fatal(err)
@@ -27,7 +52,7 @@ func TestPlainDeveloperTokenCrossesContext(t *testing.T) {
 			if _, err = machine.Execute(program); err != nil {
 				t.Fatal(err)
 			}
-			want := "Tier:STRING:2:true:0:0:STRING:false:false:false:false:false:false:false:false:false:false"
+			want := rows["cross/"+api]
 			if got := machine.Globals["result"].Text; got != want {
 				t.Fatalf("got %q want %q", got, want)
 			}
@@ -37,6 +62,7 @@ func TestPlainDeveloperTokenCrossesContext(t *testing.T) {
 
 // NATIVE testdata/standard_plain_developer_token/org.tsv:4-9 anonymous 62.0 and 67.0.
 func TestPlainDeveloperTokenAdditionalFacets(t *testing.T) {
+	rows := plainDeveloperTokenRows(t)
 	source, err := os.ReadFile(filepath.Join("testdata", "standard_plain_developer_token", "classes", "DescribeProbe.cls"))
 	if err != nil {
 		t.Fatal(err)
@@ -54,7 +80,8 @@ func TestPlainDeveloperTokenAdditionalFacets(t *testing.T) {
 			if _, err = machine.Execute(program); err != nil {
 				t.Fatal(err)
 			}
-			for name, want := range map[string]string{"a": "6:0:null:false:false:null:0:0", "b": "null:null:null:null:null", "c": "false:false:false:false:false:false:false:false", "e": "Tier:null:null:false", "f": "false:false:false"} {
+			for name, id := range map[string]string{"a": "facets_a", "b": "facets_b", "c": "facets_c", "e": "facets_d", "f": "facets_e"} {
+				want := rows[id+"/"+api]
 				if got := machine.Globals[name].Text; got != want {
 					t.Errorf("%s got %q want %q", name, got, want)
 				}
