@@ -1,0 +1,255 @@
+case_id	entry	query
+ac0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 0
+ac1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 1
+ac2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 2
+ac3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+ac4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 4
+ac5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 5
+ac6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 6
+ca0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC) LIMIT 0
+ca1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC) LIMIT 1
+ca2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC) LIMIT 2
+ca3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC) LIMIT 3
+ca4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC) LIMIT 4
+ca5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC) LIMIT 5
+ca6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC) LIMIT 6
+alc0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 0
+alc1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 1
+alc2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 2
+alc3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+alc4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 4
+alc5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 5
+alc6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 6
+lac0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 0
+lac1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 1
+lac2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 2
+lac3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+lac4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 4
+lac5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 5
+lac6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName ASC),Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 6
+emptyFirst1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 1
+emptyFirst2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 2
+emptyFirst3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+emptyFirst4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 4
+emptyFirst5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 5
+emptyFirst6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 6
+emptyFirst9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 9
+emptyLast1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Absent') LIMIT 1
+emptyLast2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Absent') LIMIT 2
+emptyLast3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Absent') LIMIT 3
+emptyLast4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Absent') LIMIT 4
+emptyLast5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Absent') LIMIT 5
+emptyLast6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Absent') LIMIT 6
+emptyLast9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Absent') LIMIT 9
+emptyMid1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName WHERE LastName = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 1
+emptyMid2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName WHERE LastName = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 2
+emptyMid3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName WHERE LastName = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+emptyMid4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName WHERE LastName = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 4
+emptyMid5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName WHERE LastName = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 5
+emptyMid6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName WHERE LastName = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 6
+emptyMid9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName WHERE LastName = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 9
+firstOne1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Copperwindow E'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 1
+firstOne2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Copperwindow E'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 2
+firstOne3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Copperwindow E'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+firstOne4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Copperwindow E'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 4
+firstOne5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Copperwindow E'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 5
+firstOne6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Copperwindow E'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 6
+firstOne9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Copperwindow E'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 9
+lastOne1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Copperwindow M') LIMIT 1
+lastOne2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Copperwindow M') LIMIT 2
+lastOne3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Copperwindow M') LIMIT 3
+lastOne4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Copperwindow M') LIMIT 4
+lastOne5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Copperwindow M') LIMIT 5
+lastOne6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Copperwindow M') LIMIT 6
+lastOne9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName WHERE LastName = 'Copperwindow M') LIMIT 9
+firstCap1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC LIMIT 1),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 1
+firstCap2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC LIMIT 1),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 2
+firstCap3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC LIMIT 1),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+firstCap4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC LIMIT 1),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 4
+firstCap5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC LIMIT 1),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 5
+firstCap6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC LIMIT 1),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 6
+firstCap9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC LIMIT 1),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 9
+lastCap1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName DESC LIMIT 1) LIMIT 1
+lastCap2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName DESC LIMIT 1) LIMIT 2
+lastCap3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName DESC LIMIT 1) LIMIT 3
+lastCap4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName DESC LIMIT 1) LIMIT 4
+lastCap5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName DESC LIMIT 1) LIMIT 5
+lastCap6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName DESC LIMIT 1) LIMIT 6
+lastCap9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName DESC LIMIT 1) LIMIT 9
+middleCap1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName DESC LIMIT 0),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 1
+middleCap2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName DESC LIMIT 0),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 2
+middleCap3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName DESC LIMIT 0),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+middleCap4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName DESC LIMIT 0),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 4
+middleCap5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName DESC LIMIT 0),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 5
+middleCap6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName DESC LIMIT 0),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 6
+middleCap9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Lead(Id,LastName ORDER BY LastName DESC LIMIT 0),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 9
+noOrder1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name),Contact(Id,LastName) LIMIT 1
+noOrder2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name),Contact(Id,LastName) LIMIT 2
+noOrder3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name),Contact(Id,LastName) LIMIT 3
+noOrder4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name),Contact(Id,LastName) LIMIT 4
+noOrder5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name),Contact(Id,LastName) LIMIT 5
+noOrder6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name),Contact(Id,LastName) LIMIT 6
+noOrder9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name),Contact(Id,LastName) LIMIT 9
+reverseSort1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC),Contact(Id,LastName ORDER BY LastName DESC) LIMIT 1
+reverseSort2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC),Contact(Id,LastName ORDER BY LastName DESC) LIMIT 2
+reverseSort3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC),Contact(Id,LastName ORDER BY LastName DESC) LIMIT 3
+reverseSort4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC),Contact(Id,LastName ORDER BY LastName DESC) LIMIT 4
+reverseSort5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC),Contact(Id,LastName ORDER BY LastName DESC) LIMIT 5
+reverseSort6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC),Contact(Id,LastName ORDER BY LastName DESC) LIMIT 6
+reverseSort9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name DESC),Contact(Id,LastName ORDER BY LastName DESC) LIMIT 9
+singleOffset0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 0)
+firstOffset0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 0),Contact(Id,LastName ORDER BY LastName ASC)
+secondOffset0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName OFFSET 0)
+bothOffset0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName OFFSET 0),Account(Id,Name ORDER BY Name OFFSET 0)
+emptyOtherOffset0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName OFFSET 0)
+threeOffset0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC),Lead(Id,LastName OFFSET 0)
+singleOffset1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 1)
+firstOffset1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 1),Contact(Id,LastName ORDER BY LastName ASC)
+secondOffset1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName OFFSET 1)
+bothOffset1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName OFFSET 1),Account(Id,Name ORDER BY Name OFFSET 1)
+emptyOtherOffset1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName OFFSET 1)
+threeOffset1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC),Lead(Id,LastName OFFSET 1)
+singleOffset2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 2)
+firstOffset2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 2),Contact(Id,LastName ORDER BY LastName ASC)
+secondOffset2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName OFFSET 2)
+bothOffset2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName OFFSET 2),Account(Id,Name ORDER BY Name OFFSET 2)
+emptyOtherOffset2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName OFFSET 2)
+threeOffset2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC),Lead(Id,LastName OFFSET 2)
+threeFull7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC),Lead(Id,LastName ORDER BY LastName ASC) LIMIT 7
+threeFull8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC),Lead(Id,LastName ORDER BY LastName ASC) LIMIT 8
+threeFull9	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC),Lead(Id,LastName ORDER BY LastName ASC) LIMIT 9
+threeFull10	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC),Lead(Id,LastName ORDER BY LastName ASC) LIMIT 10
+threeFull11	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC),Lead(Id,LastName ORDER BY LastName ASC) LIMIT 11
+leftFour0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 0
+leftFour1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 1
+leftFour2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 2
+leftFour3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 3
+leftFour4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 4
+leftFour5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 5
+leftFour6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 6
+leftFour7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 7
+leftFour8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName) LIMIT 8
+leftFourNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName)
+rightTwo0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 0
+rightTwo1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 1
+rightTwo2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 2
+rightTwo3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 3
+rightTwo4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 4
+rightTwo5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 5
+rightTwo6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 6
+rightTwo7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 7
+rightTwo8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 8
+rightTwoNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2)
+bothFourTwo0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 0
+bothFourTwo1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 1
+bothFourTwo2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 2
+bothFourTwo3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 3
+bothFourTwo4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 4
+bothFourTwo5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 5
+bothFourTwo6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 6
+bothFourTwo7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 7
+bothFourTwo8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 8
+bothFourTwoNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 4),Contact(Id,LastName ORDER BY LastName LIMIT 2)
+bothTwoFour0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 0
+bothTwoFour1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 1
+bothTwoFour2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 2
+bothTwoFour3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 3
+bothTwoFour4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 4
+bothTwoFour5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 5
+bothTwoFour6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 6
+bothTwoFour7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 7
+bothTwoFour8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 8
+bothTwoFourNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2),Contact(Id,LastName ORDER BY LastName LIMIT 4)
+twoOne40	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 0
+twoOne41	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 1
+twoOne42	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 2
+twoOne43	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 3
+twoOne44	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 4
+twoOne45	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 5
+twoOne46	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 6
+twoOne47	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 7
+twoOne48	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4) LIMIT 8
+twoOne4No	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 1),Lead(Id,LastName ORDER BY LastName LIMIT 4)
+zeroThree0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 0
+zeroThree1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 1
+zeroThree2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 2
+zeroThree3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 3
+zeroThree4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 4
+zeroThree5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 5
+zeroThree6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 6
+zeroThree7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 7
+zeroThree8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 8
+zeroThreeNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 0),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName LIMIT 3)
+allThree0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 0
+allThree1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 1
+allThree2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 2
+allThree3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 3
+allThree4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 4
+allThree5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 5
+allThree6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 6
+allThree7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 7
+allThree8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3) LIMIT 8
+allThreeNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 3),Contact(Id,LastName ORDER BY LastName LIMIT 3),Lead(Id,LastName ORDER BY LastName LIMIT 3)
+noneFirst0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 0
+noneFirst1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 1
+noneFirst2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 2
+noneFirst3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 3
+noneFirst4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 4
+noneFirst5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 5
+noneFirst6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 6
+noneFirst7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 7
+noneFirst8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2) LIMIT 8
+noneFirstNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName LIMIT 2)
+cappedFirst0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 0
+cappedFirst1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 1
+cappedFirst2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 2
+cappedFirst3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 3
+cappedFirst4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 4
+cappedFirst5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 5
+cappedFirst6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 6
+cappedFirst7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 7
+cappedFirst8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 8
+cappedFirstNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName LIMIT 2),Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName)
+moreCap0	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 0
+moreCap1	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 1
+moreCap2	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 2
+moreCap3	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 3
+moreCap4	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 4
+moreCap5	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 5
+moreCap6	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 6
+moreCap7	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 7
+moreCap8	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName) LIMIT 8
+moreCapNo	query	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 9),Contact(Id,LastName ORDER BY LastName)
+findac3	find	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+findfirstOffset0	find	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 0),Contact(Id,LastName ORDER BY LastName ASC)
+findfirstOffset1	find	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 1),Contact(Id,LastName ORDER BY LastName ASC)
+findsingleOffset1	find	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 1)
+findemptyFirst3	find	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+inlineac3	inline	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name ASC),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+inlinefirstOffset0	inline	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 0),Contact(Id,LastName ORDER BY LastName ASC)
+inlinefirstOffset1	inline	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 1),Contact(Id,LastName ORDER BY LastName ASC)
+inlinesingleOffset1	inline	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 2 OFFSET 1)
+inlineemptyFirst3	inline	FIND {Copperwindow} IN NAME FIELDS RETURNING Account(Id,Name WHERE Name = 'Absent'),Contact(Id,LastName ORDER BY LastName ASC) LIMIT 3
+bulksingle	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name)
+bulkdual	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName)
+bulkswapped	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name)
+bulktwoThousand	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 2000
+bulksingleTwoThousand	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name) LIMIT 2000
+bulkperOnly	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 10),Contact(Id,LastName ORDER BY LastName)
+bulkcapOther	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName LIMIT 2)
+bulkspecified249implicit	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 249),Contact(Id,LastName ORDER BY LastName)
+bulkspecified249global	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 249),Contact(Id,LastName ORDER BY LastName) LIMIT 2000
+bulkspecified250implicit	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 250),Contact(Id,LastName ORDER BY LastName)
+bulkspecified250global	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 250),Contact(Id,LastName ORDER BY LastName) LIMIT 2000
+bulkspecified251implicit	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 251),Contact(Id,LastName ORDER BY LastName)
+bulkspecified251global	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 251),Contact(Id,LastName ORDER BY LastName) LIMIT 2000
+bulkspecified300implicit	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 300),Contact(Id,LastName ORDER BY LastName)
+bulkspecified300global	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 300),Contact(Id,LastName ORDER BY LastName) LIMIT 2000
+bulkspecified1000implicit	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 1000),Contact(Id,LastName ORDER BY LastName)
+bulkspecified1000global	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name LIMIT 1000),Contact(Id,LastName ORDER BY LastName) LIMIT 2000
+bulkoverall499	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 499
+bulkoverall500	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 500
+bulkoverall501	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 501
+bulkoverall502	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 502
+bulkoverall510	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 510
+bulkoverall600	query	FIND {Lindenwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName) LIMIT 600
