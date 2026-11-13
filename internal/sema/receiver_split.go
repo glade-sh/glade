@@ -301,7 +301,7 @@ func (a *Analyzer) semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesy
 				// a platform receiver and has a line break after the dot.
 				members, known := model.lookupName(receiver)
 				matched := false
-				if known && members.platform && afterGap == "\n" && len(expr.Args) == 1 && expr.Args[0].Kind == ir.ExprLiteral && strings.EqualFold(a.inferIRExprType(expr.Args[0], scope, model, typ.Name), "String") {
+				if known && members.platform && afterGap == "\n" && len(expr.Args) == 1 && strings.EqualFold(a.inferIRExprType(expr.Args[0], scope, model, typ.Name), "String") {
 					for _, candidate := range members.methods[normalizeName(method)] {
 						if strings.EqualFold(candidate.Type, "void") && len(candidate.Parameters) == 1 && strings.EqualFold(candidate.Parameters[0].Type, "Object") {
 							matched = true
