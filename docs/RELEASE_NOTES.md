@@ -2,12 +2,15 @@
 
 ## Unreleased
 
-### Performance
+### Changes
 
 - **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
 - Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
 - **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
+
+### Performance
+
 - **Fewer source re-reads and a cached binary digest.** A warm test daemon request no longer reads and hashes every source and `-meta.xml` file at each stage; a file that has not changed since it was last hashed, and was already two seconds old then, is trusted by device, inode, size, mtime and ctime. Each process also remembers the SHA-256 of its own executable under the same stamp, which removes about 0.7 s from every cached `check` and `test`. Edited, replaced and recently written files are always hashed again, and results do not change.
 - **Visualforce controller gate computed once per project state.** A Visualforce page request, `glade exec` with a project and each warm one-class `glade test` no longer compile the whole project again to decide which controllers a page may use. The result is kept per project state, keyed by the project value and the content of every file it names, so any edit recomputes it. Which pages register does not change, and an edit to any named file recomputes the result.
 - **Unset field reads keep the lazy schema lazy.** Reading a field that is not set, or any name that is not a child relationship, after a record is saved no longer builds every standard object. A generated list of the child relationship names the standard objects declare rules the name out first. On a test project that saves and reads records, peak memory fell from about 560 MiB to about 340 MiB and instructions fell about 45 percent. Results are identical.
@@ -16,6 +19,15 @@
 - **Pooled hashing buffer for source digests.** Hashing a project file for the Visualforce generation key and for source-digest validation no longer allocates a 32 KiB copy buffer per file; the buffers come from a shared pool. A 500-class project allocates about 120 MB less in one cold `glade test`. Digests and results are unchanged.
 - **Seeding no longer copies whole object definitions.** The record type, currency field and platform object setup steps used to copy an object's entire definition before checking whether they change anything. They now copy only what they write, and leave a definition alone when it is already complete. Results are identical.
 - **Smaller platform type table.** The standard platform types (System, Database, Schema and the rest) are now built with exact-size member lists, and members that share a modifier list or a parameter list share one copy. Building the table allocates about 35 MB instead of 65 MB and keeps about 22 MB live instead of 31 MB, in every process. Symbols and their order are unchanged.
+
+- **Standard duplicate rules.** Standard duplicate rules are opt-in.
+- **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process. Watch, daemon and server runs are unchanged. Results are unchanged.
+- **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. On the standard object set one lookup takes about a sixth of the time and allocates nothing. Results are unchanged.
+- **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
+- **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
+- **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
+- **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
+- **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, with peak memory can rise up to about 10% on small runs. Results are unchanged.
 
 ## v0.3.8
 
@@ -83,13 +95,6 @@ Results are unchanged by every item in this section.
 ### Toolchain
 
 - Build with Go 1.26.11 (net/http fix GO-2026-6859).
-- **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process. Watch, daemon and server runs are unchanged. Results are unchanged.
-- **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. On the standard object set one lookup takes about a sixth of the time and allocates nothing. Results are unchanged.
-- **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
-- **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
-- **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
-- **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
-- **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, with peak memory up about 6% on the smallest project and within noise on the others. Results are unchanged.
 
 ## v0.3.7
 

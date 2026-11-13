@@ -43,19 +43,19 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 }
 
 type dapLoadSeams struct {
- afterIndex func()
- beforePublish func()
+	afterIndex    func()
+	beforePublish func()
 }
 
 func loadDAPStartupStateWithSeams(root string, seams dapLoadSeams) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
- org, runtime, api, _, err := loadDAPStartupStateWithIndexAndSeams(context.Background(), root, seams)
- return org, runtime, api, err
+	org, runtime, api, _, err := loadDAPStartupStateWithIndexAndSeams(context.Background(), root, seams)
+	return org, runtime, api, err
 }
 
 // loadDAPStartupStateWithIndex also returns the project index when this call
 // had to build it (a startup cache miss). On a cache hit the index is nil.
 func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
- return loadDAPStartupStateWithIndexAndSeams(ctx, projectRoot, dapLoadSeams{})
+	return loadDAPStartupStateWithIndexAndSeams(ctx, projectRoot, dapLoadSeams{})
 }
 
 func loadDAPStartupStateWithIndexAndSeams(ctx context.Context, projectRoot string, seams dapLoadSeams) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
@@ -72,7 +72,7 @@ func loadDAPStartupStateWithIndexAndSeams(ctx context.Context, projectRoot strin
 		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil, nil
 	}
 	before, beforeErr := startupcache.ValidateInputWithSourceDigests(root, nil)
- p, err := project.Load(root)
+	p, err := project.Load(root)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
@@ -84,21 +84,29 @@ func loadDAPStartupStateWithIndexAndSeams(ctx context.Context, projectRoot strin
 	if err := ctx.Err(); err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
- if seams.afterIndex != nil { seams.afterIndex() }
- runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(index, artifacts.SourceDigests)
- if err != nil { return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err }
- if seams.beforePublish != nil { seams.beforePublish() }
- lockRoot, _ := normalizedDAPRoot(root)
- publish := dapPublishLock(lockRoot)
- publish.Lock()
- defer publish.Unlock()
- if err := ctx.Err(); err != nil { return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err }
- if beforeErr == nil {
-  if built, ok := dapPublishableEntry(root, before, artifacts.SourceDigests, org, runtime); ok {
-   _ = startupcache.Write(&built, startupcache.SubdirDAP)
-  }
- }
- return org, runtime, p.SourceAPIVersion, &index, nil
+	if seams.afterIndex != nil {
+		seams.afterIndex()
+	}
+	runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(index, artifacts.SourceDigests)
+	if err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
+	}
+	if seams.beforePublish != nil {
+		seams.beforePublish()
+	}
+	lockRoot, _ := normalizedDAPRoot(root)
+	publish := dapPublishLock(lockRoot)
+	publish.Lock()
+	defer publish.Unlock()
+	if err := ctx.Err(); err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
+	}
+	if beforeErr == nil {
+		if built, ok := dapPublishableEntry(root, before, artifacts.SourceDigests, org, runtime); ok {
+			_ = startupcache.Write(&built, startupcache.SubdirDAP)
+		}
+	}
+	return org, runtime, p.SourceAPIVersion, &index, nil
 }
 
 // dapPublishableEntry binds the entry to the input proof taken before the
