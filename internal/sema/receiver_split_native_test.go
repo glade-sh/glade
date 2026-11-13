@@ -58,3 +58,24 @@ func TestReceiverSplitNative(t *testing.T) {
 		})
 	}
 }
+
+// The supplied anonymous native rows reject a class name followed by a
+// newline and a static call at both API 62.0 and 67.0. This uses a synthetic
+// equivalent because the original capture does not include its source file.
+func TestReceiverSplitSuppliedShape(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "ReceiverProbe.cls")
+			writeSemaFile(t, path, "public class ReceiverProbe { public static void value() {} }")
+			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
+			result := AnalyzeAnonymous(index, "ReceiverProbe\n.value();", api)
+			for _, d := range result.Diagnostics {
+				if d.NativeMessage == "Variable does not exist: ReceiverProbe" {
+					return
+				}
+			}
+			t.Fatalf("expected receiver rejection, got %v", result.Diagnostics)
+		})
+	}
+}
