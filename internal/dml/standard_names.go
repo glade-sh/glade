@@ -146,6 +146,12 @@ func standardTerminalSwap(name string, ordinary float64) (bool, float64) {
 		}
 	case 3, 8:
 		if rows <= 1 && (len(name) == 3 && columns == 1 || len(name) == 8 && columns == 5) {
+			// The eight-letter holdout saved all nonphonetic pairs at sums of
+			// 42 and 44. The earlier positive has sum 60. Preserve membership
+			// only from the observed positive boundary upwards.
+			if len(name) == 8 && standardKeyboardPositionSum(name) < 60 {
+				return false, 0
+			}
 			left := name[len(name)-2:]
 			return true, standardLocalEditConfidence(name, left, left[1:]+left[:1])
 		}

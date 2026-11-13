@@ -169,17 +169,17 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 						t.Fatal("missing native row")
 					}
 					prefix := fmt.Sprintf("OBS|%s|%t|", method, route == "istest")
-                    _, frame, ok := strings.Cut(message, prefix)
-                    size, payload, sized := strings.Cut(frame, "|")
-                    got, ended := strings.CutSuffix(payload, "|ENDOBS")
-                    if !ok || !sized || !ended || size != strconv.Itoa(len(got)) {
-                        t.Fatalf("invalid observation frame: %s", message)
-                    }
-                    if group == "gradeHoldout" {
-                        compareShortEditHoldout(t, want, got)
-                    } else if got != want {
-                        t.Errorf("native=%s\nGlade=%s", want, got)
-                    }
+					_, frame, ok := strings.Cut(message, prefix)
+					size, payload, sized := strings.Cut(frame, "|")
+					got, ended := strings.CutSuffix(payload, "|ENDOBS")
+					if !ok || !sized || !ended || size != strconv.Itoa(len(got)) {
+						t.Fatalf("invalid observation frame: %s", message)
+					}
+					if group == "gradeHoldout" {
+						compareShortEditHoldout(t, want, got)
+					} else if got != want {
+						t.Errorf("native=%s\nGlade=%s", want, got)
+					}
 				}
 				for _, method := range slices.Sorted(maps.Keys(expressions)) {
 					source := expressions[method]
@@ -229,27 +229,33 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 var shortEditGrades = regexp.MustCompile(`=([0-9]+)`)
 
 func compareShortEditHoldout(t *testing.T, want, got string) {
-    t.Helper()
-    native, actual := strings.Split(want, ","), strings.Split(got, ",")
-    if len(native) != len(actual) { t.Fatalf("native %d inputs, Glade %d", len(native), len(actual)) }
-    gradeDifferences := 0
-    for i, expected := range native {
-        result := actual[i]
-        if expected == result { continue }
-        if shortEditGrades.ReplaceAllString(result, "=#") != shortEditGrades.ReplaceAllString(expected, "=#") {
-            t.Errorf("input %d: native %s, Glade %s", i, expected, result)
-            continue
-        }
-        a, b := shortEditGrades.FindAllStringSubmatch(result,-1), shortEditGrades.FindAllStringSubmatch(expected,-1)
-        if len(a) != 2 || len(b) != 2 || a[0][1] != a[1][1] || b[0][1] != b[1][1] {
-            t.Errorf("input %d: inconsistent grades: native %s, Glade %s", i, expected, result)
-            continue
-        }
-        x, ex := strconv.Atoi(a[0][1]); y, ey := strconv.Atoi(b[0][1])
-        if ex != nil || ey != nil || x > 100 || x-y > 2 || y-x > 2 {
-            t.Errorf("input %d: native grade %s, Glade %s", i, b[0][1], a[0][1])
-        }
-        gradeDifferences++
-    }
-    if gradeDifferences > 4 { t.Errorf("%d inputs differ in confidence, maximum 4",gradeDifferences) }
+	t.Helper()
+	native, actual := strings.Split(want, ","), strings.Split(got, ",")
+	if len(native) != len(actual) {
+		t.Fatalf("native %d inputs, Glade %d", len(native), len(actual))
+	}
+	// Only these four seed positions in each directional panel had a score residual.
+	// Every other seed, and both accessors on every seed, must agree exactly.
+	gradeBounds := map[int]int{1: 1, 10: 1, 13: 2, 15: 1}
+	for i, expected := range native {
+		result := actual[i]
+		if expected == result {
+			continue
+		}
+		if shortEditGrades.ReplaceAllString(result, "=#") != shortEditGrades.ReplaceAllString(expected, "=#") {
+			t.Errorf("input %d: native %s, Glade %s", i, expected, result)
+			continue
+		}
+		a, b := shortEditGrades.FindAllStringSubmatch(result, -1), shortEditGrades.FindAllStringSubmatch(expected, -1)
+		if len(a) != 2 || len(b) != 2 || a[0][1] != a[1][1] || b[0][1] != b[1][1] {
+			t.Errorf("input %d: inconsistent grades: native %s, Glade %s", i, expected, result)
+			continue
+		}
+		x, ex := strconv.Atoi(a[0][1])
+		y, ey := strconv.Atoi(b[0][1])
+		bound := gradeBounds[i]
+		if ex != nil || ey != nil || x > 100 || x-y > bound || y-x > bound {
+			t.Errorf("input %d: native grade %s, Glade %s", i, b[0][1], a[0][1])
+		}
+	}
 }

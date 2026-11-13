@@ -588,6 +588,13 @@ on both sides), so no row covers blank Account names or Contact last names.
   Row and column start at zero. Phonetic hits scored 100. The 80 unseen inputs
   in the boundary fixture agreed on match identities, saves, and recorded
   integer confidences at both APIs on the anonymous and test routes.
+  On 40 further short-edit inputs, all eight-letter nonphonetic five-column
+  swaps with sums of 42 or 44 saved. A previously measured positive at 60
+  matched at 97. Glade uses that observed positive bound. The interval
+  between 44 and 60 remains unmeasured. Four other short pairs matched the
+  right records and differed on reported confidence by one or two points
+  in both directions. The fixture asserts exact save decisions, member IDs
+  and bounds each of those eight score differences.
   Lead probes also cover corroborated and uncorroborated initial and surname
   pairs with distinct companies. A second custom Contact phone rule captured
   a filter-field change into and out of scope: both edits saved with an
