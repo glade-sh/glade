@@ -343,38 +343,3 @@ func (h *Handler) startArtifactsLocked(start *generation) (*typesys.BuildArtifac
 	h.base.artifacts = &artifacts
 	return h.base.artifacts, nil
 }
-
-// primeOverlayState runs the overlay analysis once on the base generation,
-// after its own analysis is ready, and discards the result. A disk analysis
-// answered from a persistent cache leaves the incremental state empty; this
-// pass fills it so the first unsaved edit rechecks incrementally.
-func (h *Handler) primeOverlayState(ctx context.Context) {
-	if h.waitReady(ctx) != nil {
-		return
-	}
-	h.refreshMu.Lock()
-	base, config := h.base, h.baseConfig
-	var artifacts *typesys.BuildArtifacts
-	if base != nil {
-		// startArtifactsLocked may fill base.artifacts; read it under refreshMu.
-		artifacts = base.artifacts
-	}
-	h.refreshMu.Unlock()
-	if base == nil || config.AnalyzeOverlay == nil || artifacts == nil {
-		return
-	}
-	done := make(chan struct{})
-	go func() { base.analysisResult(); close(done) }()
-	select {
-	case <-done:
-	case <-ctx.Done():
-		return
-	}
-	h.overlayAnalysis.Lock()
-	defer h.overlayAnalysis.Unlock()
-	// An overlay or a newer base already exercised the state.
-	if ctx.Err() != nil || h.gen.Load() != base {
-		return
-	}
-	config.AnalyzeOverlay(base.index, artifacts)
-}
