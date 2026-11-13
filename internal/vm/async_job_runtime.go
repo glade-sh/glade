@@ -100,20 +100,34 @@ func (vm *VM) splitBatchAtStop(job AsyncJob, projectNative bool) bool {
 		job.Kind == "BatchApex" && job.DirectBatchSubmission && !job.SuppressWorkerRecords && !projectNative
 }
 
-// stopAsyncKindRank orders work at stopTest: futures, then batch start, then
-// queueables FIFO, then top-level Schedulable. ok is false for other kinds.
+// stopAsyncKindRank orders work at stopTest: futures, then batches and
+// queueables in submission order, then top-level Schedulable (async_stop_order
+// and async_stop_mix rows). ok is false for other kinds.
 func stopAsyncKindRank(kind string) (int, bool) {
 	switch kind {
 	case "Future":
 		return 0, true
-	case "BatchApex":
+	case "BatchApex", "Queueable":
 		return 1, true
-	case "Queueable":
-		return 2, true
 	case "ScheduledApex":
-		return 3, true
+		return 2, true
 	}
 	return 0, false
+}
+
+// queueStopBatchContinuation queues the next phase of a split stopTest batch
+// at the tail, ahead of pending Schedulables (async_stop_mix bsch: the
+// Schedulable runs after the batch finish).
+func (vm *VM) queueStopBatchContinuation(job AsyncJob) {
+	jobs := vm.testContext.AsyncJobs
+	at := len(jobs)
+	for i := max(0, vm.testContext.AsyncStartIndex); i < len(jobs); i++ {
+		if jobs[i].Kind == "ScheduledApex" {
+			at = i
+			break
+		}
+	}
+	vm.testContext.AsyncJobs = slices.Insert(jobs, at, job)
 }
 
 // orderStopAsyncJobs stably sorts the ranked kinds among the slots they
@@ -1356,10 +1370,14 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	if vm.currentAsyncKind == "BatchApex" {
 		return true
 	}
-	// Owned API 62/67 F04/F12 and the stopTest order rows (gen2q): a future's
-	// first-generation Queueable starts during stopTest, capped or not.
+	// Owned API 62/67 F04/F12: a future's explicit-depth Queueable starts
+	// during stopTest; the gen2q rows add the uncapped child at stopTest only.
+	// Explicit test-context drains keep the uncapped child deferred.
 	if vm.currentAsyncKind == "Future" {
-		return job.QueueableDepth == 1 && job.QueueableMaxDepth >= 0
+		if job.QueueableDepth != 1 {
+			return false
+		}
+		return job.QueueableMaxDepth >= job.QueueableDepth || (vm.testContext != nil && vm.testContext.StopDraining && job.QueueableMaxDepth >= 0)
 	}
 	if vm.currentAsyncKind != "Queueable" {
 		return false
@@ -1750,13 +1768,15 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		return err
 	}
 	if resume == nil && vm.splitBatchAtStop(job, projectNative) {
-		// Native stopTest runs batch start in its submission slot and execute
-		// and finish as continuations behind the queued Queueables.
+		// Native stopTest runs batch start in its submission slot, then
+		// execute and finish as separate continuations at the queue tail
+		// (async_stop_order bqf, async_stop_mix bb, bqb, bxq).
 		job.batchResume = &batchResumeState{scope: scope, locatorStart: locatorStart, statefulObject: statefulObject}
-		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
+		vm.queueStopBatchContinuation(job)
 		markProjection()
 		return nil
 	}
+	runExecute := resume == nil || !resume.finishOnly
 	executeArgs := []Value{asyncContext("Database.BatchableContext", job.ID), List()}
 	execute, ok, ambiguous := vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", executeArgs)
 	if ambiguous {
@@ -1775,7 +1795,7 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 			return vm.ambiguousOverloadError(job.Object.Type+".execute", nil)
 		}
 	}
-	if ok {
+	if ok && runExecute {
 		vm.recordAsyncJobTotals(job, len(chunks), 0, 0)
 		processed := 0
 		processedItems := 0
@@ -1832,6 +1852,13 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 				vm.recordBatchWorkerJob(job, processed, processedItems, chunk, "Completed", "")
 			}
 		}
+	}
+	if resume != nil && runExecute {
+		// Work the execute phase enqueued runs before finish (async_stop_mix bxq).
+		job.batchResume = &batchResumeState{scope: scope, locatorStart: locatorStart, statefulObject: statefulObject, finishOnly: true}
+		vm.queueStopBatchContinuation(job)
+		markProjection()
+		return nil
 	}
 	if finish, ok := vm.resolveInstanceMethod(job.Object.Type, "finish"); ok {
 		vm.recordAsyncJob(job, "Completed", "")
