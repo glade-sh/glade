@@ -43,6 +43,10 @@ func readInstallLockAt(dir string) (*os.File, error) {
 }
 
 func readInstallLockAtWith(dir string, open func(string, int, os.FileMode) (*os.File, error), lock func(*os.File, bool) error) (*os.File, error) {
+	return readInstallLockAtWithMode(dir, open, lock, false)
+}
+
+func readInstallLockAtWithMode(dir string, open func(string, int, os.FileMode) (*os.File, error), lock func(*os.File, bool) error, noRecovery bool) (*os.File, error) {
 	path := filepath.Join(dir, ".install.lock")
 	file, err := open(path, os.O_RDONLY, 0)
 	if os.IsNotExist(err) {
@@ -57,6 +61,16 @@ func readInstallLockAtWith(dir string, open func(string, int, os.FileMode) (*os.
 	if err := lock(file, false); err != nil {
 		file.Close()
 		return nil, fmt.Errorf("wait for toolchain install: %w", err)
+	}
+	if noRecovery {
+		marker, markerErr := readInstallMarker(file)
+		if markerErr != nil || marker == 'P' {
+			file.Close()
+			if markerErr != nil {
+				return nil, markerErr
+			}
+			return nil, fmt.Errorf("toolchain recovery busy; retry after installation")
+		}
 	}
 	file, err = recoverReadLockAt(file, dir)
 	if err != nil {

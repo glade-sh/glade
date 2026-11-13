@@ -1,0 +1,161 @@
+//go:build unix
+
+package gladecli
+
+import (
+	"bytes"
+	"context"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestDoctorReportsBusyToolchain(t *testing.T) {
+	useDoctorTestToolchain(t)
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n")
+	lockPath := filepath.Join(os.Getenv("GLADE_HOME"), ".install.lock")
+	ready := filepath.Join(t.TempDir(), "ready")
+	holder := exec.Command("python3", "-c", `import fcntl,sys,time
+f=open(sys.argv[1], 'w')
+fcntl.lockf(f, fcntl.LOCK_EX)
+open(sys.argv[2], 'w').close()
+time.sleep(120)`, lockPath, ready)
+	if err := holder.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = holder.Process.Kill(); _ = holder.Wait() }()
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		if _, err := os.Stat(ready); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("lock holder did not start")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	done := make(chan string, 1)
+	go func() {
+		for _, format := range []string{"text", "json"} {
+			var out bytes.Buffer
+			args := []string{"--project", root}
+			if format == "json" {
+				args = append(args, "--json")
+			}
+			_, err := runDoctor(context.Background(), args, &out)
+			if err != nil {
+				done <- err.Error()
+				return
+			}
+			output := strings.ToLower(out.String())
+			if !strings.Contains(output, "busy") || !strings.Contains(output, "retry") || strings.Contains(output, "reinstall") {
+				done <- format + ": " + out.String()
+				return
+			}
+		}
+		done <- "ok"
+	}()
+	select {
+	case out := <-done:
+		if out != "ok" {
+			t.Fatalf("doctor busy guidance: %s", out)
+		}
+	case <-time.After(20 * time.Second):
+		t.Fatal("doctor blocked on the toolchain install lock")
+	}
+}
+
+func TestDoctorReportsPendingToolchainRecovery(t *testing.T) {
+	useDoctorTestToolchain(t)
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n")
+	if err := os.WriteFile(filepath.Join(os.Getenv("GLADE_HOME"), ".install.lock"), []byte("P"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, format := range []string{"text", "json"} {
+		t.Run(format, func(t *testing.T) {
+			var out bytes.Buffer
+			args := []string{"--project", root}
+			if format == "json" {
+				args = append(args, "--json")
+			}
+			if _, err := runDoctor(context.Background(), args, &out); err != nil {
+				t.Fatal(err)
+			}
+			output := strings.ToLower(out.String())
+			if !strings.Contains(output, "recovery busy") || !strings.Contains(output, "retry") || strings.Contains(output, "reinstall") {
+				t.Fatalf("doctor recovery guidance: %s", out.String())
+			}
+		})
+	}
+}
+
+func TestDoctorPendingSourceRecoveryCommand(t *testing.T) {
+	useDoctorTestToolchain(t)
+	share := filepath.Join(os.Getenv("XDG_DATA_HOME"), "glade")
+	if err := os.MkdirAll(filepath.Dir(share), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(os.Getenv("GLADE_HOME"), share); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_HOME", "")
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n")
+	if err := os.WriteFile(filepath.Join(share, ".install.lock"), []byte("P"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"--project", root}, {"--project", root, "--json"}} {
+		var out bytes.Buffer
+		if _, err := runDoctor(context.Background(), args, &out); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(out.String(), "glade toolchain status") {
+			t.Fatalf("missing recovery command: %s", out.String())
+		}
+	}
+	var status bytes.Buffer
+	if err := runToolchainStatus(nil, &status); err != nil {
+		t.Fatalf("recovery command: %v; %s", err, status.String())
+	}
+	var after bytes.Buffer
+	if _, err := runDoctor(context.Background(), []string{"--project", root, "--json"}, &after); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(after.String(), "recovery busy") || strings.Contains(after.String(), "glade toolchain status") {
+		t.Fatalf("doctor still reports pending recovery: %s", after.String())
+	}
+}
+
+func TestDoctorReportsInterruptedToolchainRecovery(t *testing.T) {
+	useDoctorTestToolchain(t)
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n")
+	if err := os.WriteFile(filepath.Join(os.Getenv("GLADE_HOME"), ".install.lock"), []byte("S"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, format := range []string{"text", "json"} {
+		t.Run(format, func(t *testing.T) {
+			var out bytes.Buffer
+			args := []string{"--project", root}
+			if format == "json" {
+				args = append(args, "--json")
+			}
+			if _, err := runDoctor(context.Background(), args, &out); err != nil {
+				t.Fatal(err)
+			}
+			output := strings.ToLower(out.String())
+			if !strings.Contains(output, "interrupted installer transaction") || !strings.Contains(output, "recover") || strings.Contains(output, "reinstall") {
+				t.Fatalf("doctor recovery guidance: %s", out.String())
+			}
+		})
+	}
+}
