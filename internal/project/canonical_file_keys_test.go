@@ -30,9 +30,9 @@ func TestCanonicalFileKeysMatchPerPathResolution(t *testing.T) {
 		filepath.Join(root, "linkdir", "missing.cls"),
 		filepath.Join(root, "nodir", "x.cls"),
 	}
-	keys := newCanonicalFileKeys()
+	keys := newCanonicalFileKeys(nil)
 	for _, path := range paths {
-		if got, want := keys.key(path), canonicalFileKey(path); got != want {
+		if got, want := keys.key(path), canonicalFileKey(nil, path); got != want {
 			t.Fatalf("key(%q) = %q, want %q", path, got, want)
 		}
 	}

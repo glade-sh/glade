@@ -67,7 +67,7 @@ func referencePersonAccountRecordTypePaths(root string) []string {
 		if name != "objects" {
 			return nil
 		}
-		found = append(found, personAccountRecordTypesIn(path)...)
+		found = append(found, personAccountRecordTypesIn(nil, path)...)
 		return filepath.SkipDir
 	})
 	return found
@@ -75,7 +75,7 @@ func referencePersonAccountRecordTypePaths(root string) []string {
 
 func assertOrgShapeEvidenceScanMatches(t *testing.T, root string) {
 	t.Helper()
-	settings, personAccounts := orgShapeEvidenceScan(root)
+	settings, personAccounts := orgShapeEvidenceScan(nil, root)
 	if want := referenceSourceSettingsFiles(root); !reflect.DeepEqual(settings, want) {
 		t.Fatalf("%s: settings files = %v, want %v", root, settings, want)
 	}
@@ -116,7 +116,7 @@ func TestOrgShapeEvidenceScanMatchesSeparateWalks(t *testing.T) {
 	write("settings/Root.settings-meta.xml", "<RootSettings/>")
 
 	assertOrgShapeEvidenceScanMatches(t, root)
-	settings, personAccounts := orgShapeEvidenceScan(root)
+	settings, personAccounts := orgShapeEvidenceScan(nil, root)
 	if len(settings) != 3 || len(personAccounts) != 4 {
 		t.Fatalf("fixture coverage: settings %v, person accounts %v", settings, personAccounts)
 	}
@@ -124,7 +124,7 @@ func TestOrgShapeEvidenceScanMatchesSeparateWalks(t *testing.T) {
 		assertOrgShapeEvidenceScanMatches(t, filepath.Join(root, filepath.FromSlash(sub)))
 	}
 	assertOrgShapeEvidenceScanMatches(t, "")
-	if s, p := orgShapeEvidenceScan(""); s != nil || p != nil {
+	if s, p := orgShapeEvidenceScan(nil, ""); s != nil || p != nil {
 		t.Fatalf("empty root returned %v %v", s, p)
 	}
 	// The repository tree holds the fixture projects.

@@ -2,10 +2,10 @@ package project
 
 import (
 	"encoding/json"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/config"
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 // scratchCountryUsers maps a scratch definition country to the locale and time
@@ -21,15 +21,15 @@ var scratchCountryUsers = map[string]config.TestUserConfig{
 // ScratchCountryDefaults returns the upper-case country of the project's
 // scratch definition and the locale and time zone native assigns it, when the
 // country is one of the captured ones.
-func ScratchCountryDefaults(root string) (string, config.TestUserConfig, bool) {
+func scratchCountryDefaults(v *inputview.View, root string) (string, config.TestUserConfig, bool) {
 	if strings.TrimSpace(root) == "" {
 		return "", config.TestUserConfig{}, false
 	}
-	defPath := scratchOrgConfigFiles(root)[0]
-	if !PathInsideRoot(root, defPath) {
+	defPath := scratchOrgConfigFiles(v, root)[0]
+	if !pathInsideRoot(v, root, defPath) {
 		return "", config.TestUserConfig{}, false
 	}
-	data, err := os.ReadFile(defPath) // #nosec G304 -- fixed config path under the loaded project root.
+	data, err := v.ReadFile(defPath) // #nosec G304 -- fixed config path under the loaded project root.
 	if err != nil {
 		return "", config.TestUserConfig{}, false
 	}
@@ -47,11 +47,11 @@ func ScratchCountryDefaults(root string) (string, config.TestUserConfig, bool) {
 // ScratchCountryUserDefaults fills the user locale and time zone that the
 // project's scratch definition country implies. Settings the project already
 // configures keep their value.
-func ScratchCountryUserDefaults(root string, user config.TestUserConfig) config.TestUserConfig {
+func scratchCountryUserDefaults(v *inputview.View, root string, user config.TestUserConfig) config.TestUserConfig {
 	if user.Locale != "" && user.TimeZone != "" {
 		return user
 	}
-	_, defaults, ok := ScratchCountryDefaults(root)
+	_, defaults, ok := scratchCountryDefaults(v, root)
 	if !ok {
 		return user
 	}

@@ -3,10 +3,11 @@ package project
 import (
 	"encoding/json"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 // maxExtraScratchDepth bounds the walk below <root>/config.
@@ -28,11 +29,11 @@ func StaticOnlyShapeFeatures(p Project) []string {
 	var out []string
 	for _, root := range effectiveOrgShapeRoots(p) {
 		named := make(map[string]bool)
-		for _, feature := range OrgShapeFeatures(root) {
+		for _, feature := range orgShapeFeatures(p.inputs, root) {
 			named[strings.ToLower(feature)] = true
 		}
-		for _, path := range extraScratchDefinitionFiles(root) {
-			data, err := os.ReadFile(path)
+		for _, path := range extraScratchDefinitionFiles(p.inputs, root) {
+			data, err := p.ReadFile(path)
 			if err != nil {
 				continue
 			}
@@ -54,13 +55,13 @@ func StaticOnlyShapeFeatures(p Project) []string {
 // <root>/config (for example config/scratch-orgs/advanced-scratch-def.json)
 // that no sfdx-project.json definitionFile or CumulusCI task names. See
 // StaticOnlyShapeFeatures for how they are used.
-func extraScratchDefinitionFiles(root string) []string {
+func extraScratchDefinitionFiles(v *inputview.View, root string) []string {
 	if root == "" {
 		return nil
 	}
 	base := filepath.Join(root, "config")
 	var paths []string
-	_ = filepath.WalkDir(base, func(path string, entry fs.DirEntry, err error) error {
+	_ = v.WalkDir(base, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			if entry != nil && entry.IsDir() {
 				return fs.SkipDir

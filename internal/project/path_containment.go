@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 // PathInsideRoot reports whether full stays inside root once symlinks are
@@ -13,8 +15,8 @@ import (
 // exist is judged by its nearest existing ancestor, so a missing file under a
 // real in-project directory is inside, a missing file under an escaping link
 // is not, and a dangling link is refused.
-func PathInsideRoot(root, full string) bool {
-	realRoot, err := filepath.EvalSymlinks(root)
+func pathInsideRoot(v *inputview.View, root, full string) bool {
+	realRoot, err := v.EvalSymlinks(root)
 	if err != nil {
 		return false
 	}
@@ -22,7 +24,7 @@ func PathInsideRoot(root, full string) bool {
 	probe := filepath.Clean(full)
 	var tail []string
 	for {
-		resolved, err := filepath.EvalSymlinks(probe)
+		resolved, err := v.EvalSymlinks(probe)
 		if err == nil {
 			target := filepath.Join(append([]string{resolved}, tail...)...)
 			return target != realRoot && strings.HasPrefix(target, realRoot+string(os.PathSeparator))
@@ -30,7 +32,7 @@ func PathInsideRoot(root, full string) bool {
 		if !errors.Is(err, os.ErrNotExist) {
 			return false
 		}
-		if _, lerr := os.Lstat(probe); lerr == nil {
+		if _, lerr := v.Lstat(probe); lerr == nil {
 			// A dangling symlink: its target cannot be placed, so refuse it.
 			return false
 		}

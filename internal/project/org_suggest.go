@@ -497,7 +497,7 @@ func missingDependencySuggestions(p Project) []OrgSetupSuggestion {
 
 func scratchFeatureSuggestions(root string) []OrgSetupSuggestion {
 	features := map[string][]string{}
-	for _, path := range scratchOrgConfigFiles(root) {
+	for _, path := range scratchOrgConfigFiles(nil, root) {
 		data, err := os.ReadFile(path)
 		if err != nil {
 			continue

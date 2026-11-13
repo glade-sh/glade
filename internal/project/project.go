@@ -215,13 +215,13 @@ func ObjectDefaultRecordTypeFeatureFor(object string) string {
 // sets objectSettings.<object>.defaultRecordType to that developer name.
 // Scratch creation makes the record type; the running administrator does not
 // see it (record_type_visibility Opportunity rows).
-func ScratchObjectDefaultRecordTypes(root string) map[string]string {
+func scratchObjectDefaultRecordTypes(v *inputview.View, root string) map[string]string {
 	out := map[string]string{}
 	if strings.TrimSpace(root) == "" {
 		return out
 	}
-	for _, path := range scratchOrgConfigFiles(root) {
-		data, err := os.ReadFile(path)
+	for _, path := range scratchOrgConfigFiles(v, root) {
+		data, err := v.ReadFile(path)
 		if err != nil {
 			continue
 		}
@@ -261,17 +261,17 @@ func (features *scratchFeatureNames) UnmarshalJSON(data []byte) error {
 
 // OrgDomainURL returns the optional canonical org-origin seed from the nearest
 // glade.yml. The VM resolves the local default when this seed and saved state are unset.
-func OrgDomainURL(root string) (string, error) {
-	domain, _, err := OrgRuntimeSettings(root)
+func orgDomainURL(v *inputview.View, root string) (string, error) {
+	domain, _, err := orgRuntimeSettings(v, root)
 	return domain, err
 }
 
 // OrgRuntimeSettings returns the org settings included in a runtime seed.
-func OrgRuntimeSettings(root string) (string, []string, error) {
+func orgRuntimeSettings(v *inputview.View, root string) (string, []string, error) {
 	if strings.TrimSpace(root) == "" {
 		return "", nil, nil
 	}
-	cfg, _, err := config.LoadNearest(root)
+	cfg, _, err := config.LoadNearestWithInputs(root, v)
 	if errors.Is(err, config.ErrNotFound) {
 		return "", nil, nil
 	}
@@ -281,13 +281,13 @@ func OrgRuntimeSettings(root string) (string, []string, error) {
 	return cfg.Org.DomainURL, cfg.Org.HierarchyAccessObjects, nil
 }
 
-func OrgShapeFeatures(root string) []string {
+func orgShapeFeatures(v *inputview.View, root string) []string {
 	features := make([]string, 0)
-	if cfg, _, err := config.LoadNearest(root); err == nil {
+	if cfg, _, err := config.LoadNearestWithInputs(root, v); err == nil {
 		features = append(features, cfg.Org.Features...)
 	}
-	for _, path := range scratchOrgConfigFiles(root) {
-		data, err := os.ReadFile(path)
+	for _, path := range scratchOrgConfigFiles(v, root) {
+		data, err := v.ReadFile(path)
 		if err != nil {
 			continue
 		}
@@ -297,8 +297,8 @@ func OrgShapeFeatures(root string) []string {
 		}
 	}
 	// Deployed settings files reach the same trigger table as scratch settings.
-	settingsFiles, personAccounts := orgShapeEvidenceScan(root)
-	if def, ok := sourceSettingsDefinitionFromFiles(settingsFiles); ok {
+	settingsFiles, personAccounts := orgShapeEvidenceScan(v, root)
+	if def, ok := sourceSettingsDefinitionFromFiles(v, settingsFiles); ok {
 		features = append(features, scratchDefinitionFeatures(def)...)
 	}
 	if len(personAccounts) > 0 {
@@ -338,11 +338,11 @@ func scratchDefinitionFeatures(def scratchOrgDefinition) []string {
 	return features
 }
 
-func cumulusCIOrgConfigFiles(root string) []string {
+func cumulusCIOrgConfigFiles(v *inputview.View, root string) []string {
 	seen := make(map[string]bool)
 	var paths []string
 	for _, name := range []string{"cumulusci.yml", "cumulusci.template.yml"} {
-		data, err := os.ReadFile(filepath.Join(root, name))
+		data, err := v.ReadFile(filepath.Join(root, name))
 		if err != nil {
 			continue
 		}
@@ -357,7 +357,7 @@ func cumulusCIOrgConfigFiles(root string) []string {
 				continue
 			}
 			full := filepath.Clean(filepath.Join(root, path))
-			if !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) || !PathInsideRoot(root, full) {
+			if !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) || !pathInsideRoot(v, root, full) {
 				continue
 			}
 			if !seen[full] {
@@ -694,7 +694,8 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 
 	includeConventionalRoots := !dependency && !cfg.HasManifest
 	ignore := newForceIgnoreSet()
-	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories, includeConventionalRoots) {
+	ignore.inputs = v
+	for _, pkgRoot := range packageRoots(v, absRoot, p.PackageDirectories, includeConventionalRoots) {
 		if _, err := p.Stat(pkgRoot); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
@@ -809,7 +810,7 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 }
 
 func dedupeProjectFiles(p *Project) {
-	keys := newCanonicalFileKeys()
+	keys := newCanonicalFileKeys(p.inputs)
 	p.ApexFiles = dedupeFilePaths(keys, p.ApexFiles)
 	p.ObjectFiles = dedupeFilePaths(keys, p.ObjectFiles)
 	p.FieldFiles = dedupeFilePaths(keys, p.FieldFiles)
@@ -942,37 +943,38 @@ func dedupeFilePaths(keys *canonicalFileKeys, paths []string) []string {
 // file. A file whose own entry is a symlink, or whose directory cannot be
 // resolved, takes the full per-path resolution.
 type canonicalFileKeys struct {
-	dirs map[string]string
+	inputs *inputview.View
+	dirs   map[string]string
 }
 
-func newCanonicalFileKeys() *canonicalFileKeys {
-	return &canonicalFileKeys{dirs: make(map[string]string)}
+func newCanonicalFileKeys(v *inputview.View) *canonicalFileKeys {
+	return &canonicalFileKeys{inputs: v, dirs: make(map[string]string)}
 }
 
 func (c *canonicalFileKeys) key(path string) string {
 	dir, base := filepath.Split(path)
-	info, err := os.Lstat(path)
+	info, err := c.inputs.Lstat(path)
 	if err != nil || info.Mode()&os.ModeSymlink != 0 || base == "" || base == "." || base == ".." {
-		return canonicalFileKey(path)
+		return canonicalFileKey(c.inputs, path)
 	}
 	resolvedDir, ok := c.dirs[dir]
 	if !ok {
-		resolved, err := filepath.EvalSymlinks(filepath.Clean(dir))
+		resolved, err := c.inputs.EvalSymlinks(filepath.Clean(dir))
 		if err != nil {
 			c.dirs[dir] = ""
-			return canonicalFileKey(path)
+			return canonicalFileKey(c.inputs, path)
 		}
 		resolvedDir = filepath.Clean(resolved)
 		c.dirs[dir] = resolvedDir
 	}
 	if resolvedDir == "" {
-		return canonicalFileKey(path)
+		return canonicalFileKey(c.inputs, path)
 	}
 	return filepath.Join(resolvedDir, base)
 }
 
-func canonicalFileKey(path string) string {
-	resolved, err := filepath.EvalSymlinks(path)
+func canonicalFileKey(v *inputview.View, path string) string {
+	resolved, err := v.EvalSymlinks(path)
 	if err == nil {
 		return filepath.Clean(resolved)
 	}
@@ -1109,7 +1111,7 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 			continue
 		}
 		if dep.ArtifactPath != "" {
-			if err := loadManagedPackageArtifactMetadata(dep.ArtifactPath, &projectDep); err != nil {
+			if err := loadManagedPackageArtifactMetadata(v, dep.ArtifactPath, &projectDep); err != nil {
 				status, code := managedPackageArtifactDiagnostic(err)
 				projectDep.Status = status
 				diagnostics = append(diagnostics, DependencyDiagnostic{
@@ -1127,7 +1129,7 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 			deps = append(deps, projectDep)
 			continue
 		}
-		info, err := os.Stat(dep.SourceRoot)
+		info, err := v.Stat(dep.SourceRoot)
 		if err != nil || !info.IsDir() {
 			projectDep.Status = "missing"
 			message := "managed package dependency source root not found"
@@ -1211,7 +1213,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 			}
 			configDeps, configDiagnostics := loadManagedPackageDependencies(configured, dependencyCfg.Project.NamespaceRemaps, p.inputs, stack)
 			for _, dep := range configDeps {
-				if managedPackageDependencySourceLoaded(deps, dep.SourceRoot) || managedPackageDependencyNamespaceLoaded(deps, dep.Namespace) {
+				if managedPackageDependencySourceLoaded(p.inputs, deps, dep.SourceRoot) || managedPackageDependencyNamespaceLoaded(deps, dep.Namespace) {
 					continue
 				}
 				deps = append(deps, dep)
@@ -1232,7 +1234,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		// a dependency. Looking in the directories beside the project is an
 		// opt-in (project.siblingDependencyScan or --sibling-dependencies),
 		// because it makes the result depend on what else is on disk.
-		depRoots := findLocalSFDXPackageDependencyRoots(root, packageName, siblingScan, siblingScan && sfdxProjectHasPackageAlias(cfg, packageName), dependencyPaths)
+		depRoots := findLocalSFDXPackageDependencyRoots(p.inputs, root, packageName, siblingScan, siblingScan && sfdxProjectHasPackageAlias(cfg, packageName), dependencyPaths)
 		if len(depRoots) == 0 {
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				Namespace: packageName,
@@ -1257,7 +1259,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 			continue
 		}
 		depRoot := depRoots[0]
-		if managedPackageDependencySourceLoaded(deps, depRoot) {
+		if managedPackageDependencySourceLoaded(p.inputs, deps, depRoot) {
 			continue
 		}
 		loaded, err := load(depRoot, p.inputs, stack, true, packageNames...)
@@ -1285,7 +1287,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		})
 	}
 	for _, depRoot := range findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root, packageNames, p, siblingScan) {
-		if sameFilePath(depRoot, root) || managedPackageDependencySourceLoaded(deps, depRoot) {
+		if sameFilePath(p.inputs, depRoot, root) || managedPackageDependencySourceLoaded(p.inputs, deps, depRoot) {
 			continue
 		}
 		loaded, err := load(depRoot, p.inputs, stack, true)
@@ -1364,7 +1366,7 @@ func loadConfiguredLocalPackageDependencies(consumer sfdxProject, configured []c
 	var diagnostics []DependencyDiagnostic
 	for _, configuredDep := range configured {
 		root := configuredDep.Path
-		info, err := os.Stat(root)
+		info, err := v.Stat(root)
 		if err != nil {
 			status, code := "load_error", "dependency_load_error"
 			if errors.Is(err, os.ErrNotExist) {
@@ -1545,7 +1547,7 @@ func SiblingDependencyScanEnabled(cfg config.Config, cfgOK bool) bool {
 	return false
 }
 
-func findLocalSFDXPackageDependencyRoots(root, packageName string, allowSiblingScan, allowWorkspaceScan bool, dependencyPaths []string) []string {
+func findLocalSFDXPackageDependencyRoots(v *inputview.View, root, packageName string, allowSiblingScan, allowWorkspaceScan bool, dependencyPaths []string) []string {
 	wanted := normalizeSFDXPackageName(packageName)
 	if wanted == "" {
 		return nil
@@ -1553,18 +1555,18 @@ func findLocalSFDXPackageDependencyRoots(root, packageName string, allowSiblingS
 	root = filepath.Clean(root)
 	seen := make(map[string]bool)
 	var matches []string
-	for _, candidate := range localSFDXPackageDependencyCandidates(root, packageName, allowSiblingScan, allowWorkspaceScan, dependencyPaths) {
-		if sameFilePath(candidate, root) || seen[candidate] {
+	for _, candidate := range localSFDXPackageDependencyCandidates(v, root, packageName, allowSiblingScan, allowWorkspaceScan, dependencyPaths) {
+		if sameFilePath(v, candidate, root) || seen[candidate] {
 			continue
 		}
 		seen[candidate] = true
-		cfg, err := loadSFDXProject(candidate)
+		cfg, err := loadSFDXProjectWithInputs(candidate, v)
 		if err != nil || !sfdxProjectDeclaresPackage(cfg, wanted) {
 			continue
 		}
 		duplicate := false
 		for _, match := range matches {
-			if sameFilePath(match, candidate) {
+			if sameFilePath(v, match, candidate) {
 				duplicate = true
 				break
 			}
@@ -1593,8 +1595,8 @@ func findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root string, packa
 	}
 	parent := filepath.Dir(filepath.Clean(root))
 	var candidates []struct{ root, namespace string }
-	for _, candidate := range localSFDXSiblingProjectCandidates(parent) {
-		if sameFilePath(candidate, root) {
+	for _, candidate := range localSFDXSiblingProjectCandidates(p.inputs, parent) {
+		if sameFilePath(p.inputs, candidate, root) {
 			continue
 		}
 		cfg, err := loadSFDXProject(candidate)
@@ -1614,8 +1616,8 @@ func findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root string, packa
 	for _, candidate := range candidates {
 		tokens[candidate.namespace+"__"] = false
 	}
-	for _, pkgRoot := range packageRoots(root, p.PackageDirectories, true) {
-		referencesNamespaceTokensInRoot(pkgRoot, tokens)
+	for _, pkgRoot := range packageRoots(p.inputs, root, p.PackageDirectories, true) {
+		referencesNamespaceTokensInRoot(p.inputs, pkgRoot, tokens)
 	}
 	var roots []string
 	for _, candidate := range candidates {
@@ -1626,7 +1628,7 @@ func findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root string, packa
 	return roots
 }
 
-func localSFDXPackageDependencyCandidates(root, packageName string, allowSiblingScan, allowWorkspaceScan bool, dependencyPaths []string) []string {
+func localSFDXPackageDependencyCandidates(v *inputview.View, root, packageName string, allowSiblingScan, allowWorkspaceScan bool, dependencyPaths []string) []string {
 	seen := make(map[string]bool)
 	var candidates []string
 	add := func(dir string) {
@@ -1653,7 +1655,7 @@ func localSFDXPackageDependencyCandidates(root, packageName string, allowSibling
 				add(filepath.Join(base, "packages", name))
 			}
 		}
-		for _, candidate := range localSFDXSiblingProjectCandidates(parent) {
+		for _, candidate := range localSFDXSiblingProjectCandidates(v, parent) {
 			add(candidate)
 		}
 	}
@@ -1661,7 +1663,7 @@ func localSFDXPackageDependencyCandidates(root, packageName string, allowSibling
 	// project or a directory whose children are candidate projects.
 	for _, dir := range dependencyPaths {
 		add(dir)
-		for _, candidate := range localSFDXSiblingProjectCandidates(dir) {
+		for _, candidate := range localSFDXSiblingProjectCandidates(v, dir) {
 			add(candidate)
 		}
 	}
@@ -1671,8 +1673,8 @@ func localSFDXPackageDependencyCandidates(root, packageName string, allowSibling
 		// flow_screen_components). The packageAliases entry is the explicit
 		// Salesforce identity that makes this bounded workspace lookup safe;
 		// without it, retain the historical parent/grandparent-only search.
-		for _, category := range localSFDXDirectoryChildren(grandparent) {
-			for _, candidate := range localSFDXDirectoryChildren(category) {
+		for _, category := range localSFDXDirectoryChildren(v, grandparent) {
+			for _, candidate := range localSFDXDirectoryChildren(v, category) {
 				add(candidate)
 			}
 		}
@@ -1680,8 +1682,8 @@ func localSFDXPackageDependencyCandidates(root, packageName string, allowSibling
 	return candidates
 }
 
-func localSFDXDirectoryChildren(parent string) []string {
-	entries, err := os.ReadDir(parent)
+func localSFDXDirectoryChildren(v *inputview.View, parent string) []string {
+	entries, err := v.ReadDir(parent)
 	if err != nil {
 		return nil
 	}
@@ -1709,8 +1711,8 @@ func sfdxProjectHasPackageAlias(cfg sfdxProject, packageName string) bool {
 	return false
 }
 
-func localSFDXSiblingProjectCandidates(parent string) []string {
-	entries, err := os.ReadDir(parent)
+func localSFDXSiblingProjectCandidates(v *inputview.View, parent string) []string {
+	entries, err := v.ReadDir(parent)
 	if err != nil {
 		return nil
 	}
@@ -1720,7 +1722,7 @@ func localSFDXSiblingProjectCandidates(parent string) []string {
 			continue
 		}
 		candidate := filepath.Join(parent, entry.Name())
-		info, err := os.Stat(filepath.Join(candidate, "sfdx-project.json"))
+		info, err := v.Stat(filepath.Join(candidate, "sfdx-project.json"))
 		if err == nil && !info.IsDir() {
 			candidates = append(candidates, candidate)
 		}
@@ -1771,21 +1773,21 @@ func projectRootReferencesNamespaceToken(root string, p Project, namespace strin
 		return false
 	}
 	token := namespace + "__"
-	for _, pkgRoot := range packageRoots(root, p.PackageDirectories, true) {
-		if referencesNamespaceTokenInRoot(pkgRoot, token) {
+	for _, pkgRoot := range packageRoots(p.inputs, root, p.PackageDirectories, true) {
+		if referencesNamespaceTokenInRoot(p.inputs, pkgRoot, token) {
 			return true
 		}
 	}
 	return false
 }
 
-func referencesNamespaceTokenInRoot(root, token string) bool {
+func referencesNamespaceTokenInRoot(v *inputview.View, root, token string) bool {
 	tokens := map[string]bool{token: false}
-	referencesNamespaceTokensInRoot(root, tokens)
+	referencesNamespaceTokensInRoot(v, root, tokens)
 	return tokens[token]
 }
 
-func referencesNamespaceTokensInRoot(root string, tokens map[string]bool) {
+func referencesNamespaceTokensInRoot(v *inputview.View, root string, tokens map[string]bool) {
 	remaining := 0
 	for _, found := range tokens {
 		if !found {
@@ -1795,7 +1797,7 @@ func referencesNamespaceTokensInRoot(root string, tokens map[string]bool) {
 	if remaining == 0 {
 		return
 	}
-	_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	_ = v.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -1814,7 +1816,7 @@ func referencesNamespaceTokensInRoot(root string, tokens map[string]bool) {
 		if !namespaceReferenceCandidatePath(path) {
 			return nil
 		}
-		data, err := os.ReadFile(path)
+		data, err := v.ReadFile(path)
 		if err != nil {
 			return nil
 		}
@@ -1866,9 +1868,9 @@ func normalizeSFDXPackageName(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
 }
 
-func managedPackageDependencySourceLoaded(deps []ManagedPackageDependency, sourceRoot string) bool {
+func managedPackageDependencySourceLoaded(v *inputview.View, deps []ManagedPackageDependency, sourceRoot string) bool {
 	for _, dep := range deps {
-		if dep.SourceRoot != "" && sameFilePath(dep.SourceRoot, sourceRoot) {
+		if dep.SourceRoot != "" && sameFilePath(v, dep.SourceRoot, sourceRoot) {
 			return true
 		}
 	}
@@ -1888,12 +1890,12 @@ func managedPackageDependencyNamespaceLoaded(deps []ManagedPackageDependency, na
 	return false
 }
 
-func sameFilePath(left, right string) bool {
+func sameFilePath(v *inputview.View, left, right string) bool {
 	if left == "" || right == "" {
 		return false
 	}
-	if leftInfo, leftErr := os.Stat(left); leftErr == nil {
-		if rightInfo, rightErr := os.Stat(right); rightErr == nil && os.SameFile(leftInfo, rightInfo) {
+	if leftInfo, leftErr := v.Stat(left); leftErr == nil {
+		if rightInfo, rightErr := v.Stat(right); rightErr == nil && os.SameFile(leftInfo, rightInfo) {
 			return true
 		}
 	}
@@ -1966,7 +1968,7 @@ func loadPackageShims(configured []config.PackageShim, v *inputview.View, stack 
 			shims = append(shims, projectShim)
 			continue
 		}
-		info, err := os.Stat(shim.SourceRoot)
+		info, err := v.Stat(shim.SourceRoot)
 		if err != nil || !info.IsDir() {
 			projectShim.Status = "missing"
 			message := "package shim source root not found"
@@ -2044,8 +2046,8 @@ func managedPackageArtifactDiagnostic(err error) (string, string) {
 	return "load_error", "dependency_load_error"
 }
 
-func loadManagedPackageArtifactMetadata(path string, dep *ManagedPackageDependency) error {
-	info, err := os.Stat(path)
+func loadManagedPackageArtifactMetadata(v *inputview.View, path string, dep *ManagedPackageDependency) error {
+	info, err := v.Stat(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return newManagedPackageArtifactError("missing", "dependency_missing", "managed package dependency artifact not found")
@@ -2055,7 +2057,7 @@ func loadManagedPackageArtifactMetadata(path string, dep *ManagedPackageDependen
 	if info.IsDir() {
 		return newManagedPackageArtifactError("load_error", "dependency_load_error", "managed package dependency artifact path is a directory")
 	}
-	data, err := os.ReadFile(path)
+	data, err := v.ReadFile(path)
 	if err != nil {
 		return newManagedPackageArtifactError("load_error", "dependency_load_error", err.Error())
 	}
@@ -2144,10 +2146,10 @@ func (p Project) PackageRoots() []string {
 	if strings.TrimSpace(p.Root) == "" {
 		return nil
 	}
-	return packageRoots(p.Root, p.PackageDirectories, false)
+	return packageRoots(p.inputs, p.Root, p.PackageDirectories, false)
 }
 
-func packageRoots(root string, packageDirs []PackageDirectory, includeConventionalRoots bool) []string {
+func packageRoots(v *inputview.View, root string, packageDirs []PackageDirectory, includeConventionalRoots bool) []string {
 	seen := make(map[string]bool)
 	var roots []string
 	add := func(rel string) {
@@ -2172,7 +2174,7 @@ func packageRoots(root string, packageDirs []PackageDirectory, includeConvention
 		if hasCoveredRoot(abs, roots) {
 			continue
 		}
-		if fi, err := os.Stat(abs); err == nil && fi.IsDir() {
+		if fi, err := v.Stat(abs); err == nil && fi.IsDir() {
 			add(rel)
 		}
 	}

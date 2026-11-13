@@ -3,7 +3,6 @@ package project
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -22,7 +21,7 @@ func validateTestPermissions(p Project) error {
 		if !ok {
 			return fmt.Errorf("glade.yml: test.permissionSetGroups: permission set group %q is not in project metadata", name)
 		}
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}

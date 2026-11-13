@@ -88,7 +88,7 @@ func TestLoadDependencyPathsBoundedDeclaredLookup(t *testing.T) {
 					t.Fatalf("undeclared package loaded: %#v", p.ManagedPackageDependencies)
 				}
 			default:
-				if len(p.DependencyDiagnostics) != 0 || len(p.ManagedPackageDependencies) != 1 || !sameFilePath(p.ManagedPackageDependencies[0].SourceRoot, library) {
+				if len(p.DependencyDiagnostics) != 0 || len(p.ManagedPackageDependencies) != 1 || !sameFilePath(nil, p.ManagedPackageDependencies[0].SourceRoot, library) {
 					t.Fatalf("dependencies=%#v diagnostics=%#v", p.ManagedPackageDependencies, p.DependencyDiagnostics)
 				}
 			}

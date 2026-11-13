@@ -5,13 +5,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/glade-sh/glade/internal/inputview"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 )
 
