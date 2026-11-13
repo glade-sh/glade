@@ -67,8 +67,32 @@ func splitReceiverTrivia(text, callee string) (before, after string, ok bool) {
 	return "", "", false
 }
 
-var splitReceiverAssignment = regexp.MustCompile(`^[A-Za-z_][A-Za-z_0-9.]*\s+([A-Za-z_][A-Za-z_0-9]*)\s*=\s*$`)
-var splitReceiverArgument = regexp.MustCompile(`^[A-Za-z_][A-Za-z_0-9.]*\s*\(`)
+var splitReceiverAssignment = regexp.MustCompile(`^[A-Za-z_][A-Za-z_0-9]*\s+([A-Za-z_][A-Za-z_0-9]*)\s*=\s*$`)
+
+// Before-dot captures cover standalone calls and calls in a two-argument
+// assertion-shaped expression, including qualified receivers and repeats.
+var splitReceiverBeforeShape = func() *regexp.Regexp {
+	id := `[A-Za-z_][A-Za-z_0-9]*`
+	path := id + `(?:\.` + id + `)*`
+	trivia := `(?:\s|/\*[^*]*\*+(?:[^/*][^*]*\*+)*/)*`
+	literal := `'(?:[^'\\]|\\.)*'`
+	call := path + trivia + `\.\s*` + id + `\s*\(\s*(?:` + literal + `|[0-9]+)?\s*\)`
+	args := `(?:` + literal + `\s*,\s*` + call + `|` + call + `\s*,\s*` + call + `)`
+	return regexp.MustCompile(`(?s)^\s*(?:` + call + `|` + path + `\s*\(\s*` + args + `\s*\))\s*;`)
+}()
+
+// Restrict after-dot handling to the statement, assignment and argument
+// shapes observed in the anonymous captures. In particular, a matching
+// prefix alone does not establish the rest of the expression's shape.
+var splitReceiverAfterShape = func() *regexp.Regexp {
+	id := `[A-Za-z_][A-Za-z_0-9]*`
+	path := id + `(?:\.` + id + `)*`
+	trivia := `(?:\s*|/\*[^*]*\*+(?:[^/*][^*]*\*+)*/\s*)`
+	call := id + `\.` + trivia + id + `\s*\(\s*\)`
+	literal := `'(?:[^'\\]|\\.)*'`
+	args := `(?:` + literal + `\s*,\s*` + call + `|` + call + `\s*,\s*` + call + `|` + literal + `\s*,\s*` + path + `\s*\(\s*` + call + `\s*\))`
+	return regexp.MustCompile(`(?s)^\s*(?:` + call + `|` + id + `\s+` + id + `\s*=\s*` + call + `|` + path + `\s*\(\s*` + args + `\s*\))\s*;`)
+}()
 
 func semaSplitStaticReceiver(typ typesys.TypeSymbol, expr ir.Expr, scope irSemaScope, pos int, source string, model *semaTypeMemberView) *diagnostic.Diagnostic {
 	major, _ := apexversion.Major(typ.EffectiveAPIVersion)
@@ -83,52 +107,37 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, expr ir.Expr, scope irSemaS
 	if !ok {
 		return nil
 	}
-	// The IR does not retain occurrence offsets. Inspect every matching call
-	// in this statement for a split static receiver, and report its source
-	// span. This also handles a split in either argument of a repeated call.
-	if semaReceiverExprLooksLikeType(receiver, scope, model) {
+	if splitReceiverBeforeShape.MatchString(source[pos:]) && semaReceiverExprLooksLikeType(receiver, scope, model) {
 		for at, last, found := start, end, true; found; at, last, found = semaIRNameSpan(source, last, expr.Callee) {
 			before, after, valid := splitReceiverTrivia(source[at:last], expr.Callee)
 			if valid && before != "" && !strings.ContainsAny(after, "\r\n") && strings.HasPrefix(strings.TrimSpace(source[last:]), "(") {
 				root, _, _ := strings.Cut(receiver, ".")
 				message := "Variable does not exist: " + root
-				return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, at, at+len(receiver))}
+				return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_RECEIVER_SPLIT", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, at, at+len(receiver))}
 			}
 		}
 	}
-	if _, _, repeated := semaIRNameSpan(source, end, expr.Callee); repeated {
+	if strings.Contains(receiver, ".") || !splitReceiverAfterShape.MatchString(source[pos:]) {
 		return nil
 	}
-	before, after, ok := splitReceiverTrivia(source[start:end], expr.Callee)
-	if !ok {
-		return nil
-	}
-	var message string
-	if strings.ContainsAny(after, "\r\n") {
-		// The after-dot observations cover a single receiver identifier.
-		// Multiline block trivia is captured only in an argument context.
-		prefix := strings.TrimSpace(source[pos:start])
-		if strings.Contains(receiver, ".") || (strings.Contains(after, "/*") && !splitReceiverArgument.MatchString(prefix)) {
-			return nil
+	for at, last, found := start, end, true; found; at, last, found = semaIRNameSpan(source, last, expr.Callee) {
+		before, after, valid := splitReceiverTrivia(source[at:last], expr.Callee)
+		if !valid || before != "" || !strings.ContainsAny(after, "\r\n") {
+			continue
 		}
+		prefix := strings.TrimSpace(source[pos:at])
+		var message string
 		switch {
 		case prefix == "":
 			message = "Invalid type: " + receiver + "."
 		case splitReceiverAssignment.MatchString(prefix):
 			message = "Unexpected token '" + splitReceiverAssignment.FindStringSubmatch(prefix)[1] + "'."
-		case splitReceiverArgument.MatchString(prefix):
-			message = "Unexpected token '('."
 		default:
-			return nil
+			message = "Unexpected token '('."
 		}
-	} else {
-		if before == "" || !semaReceiverExprLooksLikeType(receiver, scope, model) {
-			return nil
-		}
-		root, _, _ := strings.Cut(receiver, ".")
-		message = "Variable does not exist: " + root
+		return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_RECEIVER_SPLIT", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, at, at+len(receiver))}
 	}
-	return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, start, start+len(receiver))}
+	return nil
 }
 
 // Repeated IR calls may identify the same source occurrence. Keep one report
@@ -137,7 +146,8 @@ func dedupeSplitReceiverDiagnostics(items []diagnostic.Diagnostic) []diagnostic.
 	seen := make(map[diagnostic.Position]map[string]bool)
 	out := make([]diagnostic.Diagnostic, 0, len(items))
 	for _, d := range items {
-		if d.Code == "GLADESEMA013" && d.Range != nil && strings.HasPrefix(d.NativeMessage, "Variable does not exist: ") {
+		if d.Code == "GLADESEMA_RECEIVER_SPLIT" && d.Range != nil {
+			d.Code = "GLADESEMA013"
 			pos := d.Range.Start
 			if seen[pos] == nil {
 				seen[pos] = make(map[string]bool)
