@@ -782,6 +782,10 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 
+	if gcFloorRouteEligible(daemonMode, watchMode, debug, connectMode) {
+		startTestGCFloorIfEnabled()
+	}
+
 	if daemonMode {
 		perfExecution.ExecutionMode = "daemon"
 		daemon, err := testdaemon.New(root)

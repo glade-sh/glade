@@ -89,6 +89,7 @@ Results are unchanged by every item in this section.
 - **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
 - **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
 - **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
+- **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, with peak memory up about 6% on the smallest project and within noise on the others. Results are unchanged.
 
 ## v0.3.7
 
