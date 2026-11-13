@@ -303,7 +303,7 @@ func TestDiagnosticsRetriesAfterGenerationChange(t *testing.T) {
 	started, release := make(chan struct{}), make(chan struct{})
 	h.gen.Load().analyzer = func(typesys.Index) sema.Result { close(started); <-release; return sema.Result{} }
 	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
-	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {"}})
+	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {}"}})
 	var out bytes.Buffer
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -314,6 +314,7 @@ func TestDiagnosticsRetriesAfterGenerationChange(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("analysis did not start")
 	}
+	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {"}})
 	s.pubMu.Lock()
 	h.gen.Store(newGeneration(idx, 1, func(typesys.Index) sema.Result { return sema.Result{} }))
 	s.pubMu.Unlock()
