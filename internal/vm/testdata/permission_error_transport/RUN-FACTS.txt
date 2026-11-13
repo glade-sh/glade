@@ -3,8 +3,8 @@
 The expected rows were captured in a fresh Developer scratch org with a
 synthetic Standard User. The native project declared a ReadWrite custom object
 and a custom text field. The local synthetic fixture uses a different object and
-field name while preserving the captured object and field types. The user had no object grant, read-only object access, or an
-assigned permission set granting read/create/edit and field read/edit. Named
+field name while preserving the captured object and field types. The user had no object grant, read-only object access, or an assigned
+permission set granting read/create/edit and field read/edit. Named
 `@IsTest` runs covered source APIs 62 and 67; anonymous runs were the
 administrator control. The scratch org was deleted and deletion was verified.
 
@@ -15,6 +15,6 @@ both APIs, including the two-row list case. `security_enforced_permission_messag
 records dynamic-query messages for denied and field-denied projections. At API
 67 the clause is unsupported before permission evaluation.
 
-The immutable native capture packet source is commit `2c767902b461f900eab15771e499a612c2ed4d14`; measured list-DML deltas are in supplemental packet `a7430198ebf4da56594f0b704ba6b9f4bb656df1`.
+The immutable native capture packet source is commit `2c767902b461f900eab15771e499a612c2ed4d14`; the measured list-DML supplement is `a7430198ebf4da56594f0b704ba6b9f4bb656df1`.
 
-`failed_write_overloads.tsv` records the native two-row all-or-none USER_MODE outcomes and omitted-mode scalar outcomes, with exact DML statement/row deltas and post-transaction persistence counts. Route provenance for the initial exception/message rows is in `probes/ROAD-463-failure-details.tsv`; the subsequent counter/persistence measurements used a fresh scratch org and were deleted after capture.
+`failed_write_overloads.tsv` records 16 named-test outcomes for two-row all-or-none USER_MODE and omitted-mode scalar calls, with exact DML statement/row deltas and post-call record counts visible before the @IsTest transaction rolls back. Four anonymous administrator control calls are covered by the native command-line capture, not this named-run fixture. The fresh write-delta capture source is `familyprobe/road-463-permission-errors/write-deltas/evidence/org.tsv` at tools commit `d2610c8deb2764324c47c79208f10e3f336a63df`; that scratch org was deleted and teardown verified.
