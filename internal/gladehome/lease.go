@@ -108,7 +108,24 @@ func leaseActiveRootContext(ctx context.Context, ensure bool, open func(string, 
 	if filepath.Clean(root) != filepath.Clean(dir) && !sameDirectory(root, dir) {
 		release()
 		if bounded {
-			return "", nil, fmt.Errorf("toolchain changed during status check; retry")
+			file, replacement, err := acquireReadLeaseContext(ctx, root, open, lock, true)
+			if err != nil {
+				return "", nil, err
+			}
+			if file == nil {
+				replacement()
+				return "", nil, fmt.Errorf("toolchain install lock unavailable")
+			}
+			selected, _, selectErr := findActiveToolchainRoot()
+			if selectErr != nil || (filepath.Clean(selected) != filepath.Clean(root) && !sameDirectory(selected, root)) {
+				replacement()
+				return "", nil, fmt.Errorf("toolchain changed during status check; retry")
+			}
+			if _, ok := validateRoot(root); !ok {
+				replacement()
+				return "", nil, fmt.Errorf("toolchain changed during status check; retry")
+			}
+			return root, replacement, nil
 		}
 		replacement, err := leaseManagedRoot(root, open)
 		if err != nil {
