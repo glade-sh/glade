@@ -1062,9 +1062,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if stack, ok := receiver.Fields["__stackTrace"]; ok {
 				if stack.Kind == ValueString {
-					// Captures distinguish this unthrown DmlException construction
-					// from the thrown IllegalArgumentException helper. Do not infer
-					// the same rule for other types or deeper call chains.
+					// The single-helper captures distinguish an unthrown DmlException
+					// from a thrown IllegalArgumentException. Deeper captured chains
+					// carry their own projection count below.
 					callers := 0
 					thrown := receiver.Fields["__thrown"].Bool
 					switch exceptionTypeName(receiver.Type) {
@@ -1077,6 +1077,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 							callers = 1
 						}
 					}
+					if receiver.exceptionAnonymousCallerFrames > 0 {
+						callers = receiver.exceptionAnonymousCallerFrames
+					}
 					if receiver.exceptionAnonymousCallerLine > 0 {
 						for i := 0; i < callers; i++ {
 							stack.Text += fmt.Sprintf("\nAnonymousBlock: line %d, column 1", receiver.exceptionAnonymousCallerLine)
@@ -1084,6 +1087,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					}
 					if cause, ok := receiver.Fields["__cause"]; ok && cause.Kind == ValueObject {
 						if causeStack, ok := cause.Fields["__stackTrace"]; ok && causeStack.Kind == ValueString && causeStack.Text != "" {
+							for i := 0; i < cause.exceptionAnonymousCallerFrames && cause.exceptionAnonymousCallerLine > 0; i++ {
+								causeStack.Text += fmt.Sprintf("\nAnonymousBlock: line %d, column 1", cause.exceptionAnonymousCallerLine)
+							}
 							return String(stack.Text + "\nCaused by\n" + causeStack.Text), receiver, false, true, nil
 						}
 					}

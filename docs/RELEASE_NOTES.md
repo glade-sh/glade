@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Exception stacks.** Exceptions caught through a helper chain from one-line anonymous Apex now retain the captured anonymous caller frames, including constructed causes.
 
 ## v0.3.8
 

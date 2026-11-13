@@ -877,6 +877,7 @@ func valueSameHeaderAndBacking(before, after Value) bool {
 		before.lexicalClassLiteral == after.lexicalClassLiteral &&
 		before.dependencyClassLiteral == after.dependencyClassLiteral &&
 		before.exceptionAnonymousCallerLine == after.exceptionAnonymousCallerLine &&
+		before.exceptionAnonymousCallerFrames == after.exceptionAnonymousCallerFrames &&
 		before.exceptionMessageConstructor == after.exceptionMessageConstructor &&
 		before.idOriginalDisplay == after.idOriginalDisplay &&
 		before.reportEmptyDimension == after.reportEmptyDimension &&

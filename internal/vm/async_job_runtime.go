@@ -1920,6 +1920,7 @@ func projectBatchFaultExceptionStack(err error, parentDepth int) error {
 	}
 	value.Fields["__stackTrace"] = String(stackTraceString(thrown.stack[parentDepth:]))
 	value.exceptionAnonymousCallerLine = 0
+	value.exceptionAnonymousCallerFrames = 0
 	return &apexThrowError{value: value, stack: thrown.stack}
 }
 

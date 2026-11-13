@@ -32,8 +32,9 @@ type Value struct {
 	lexicalClassLiteral bool
 	// Preserve class-literal origin for the legacy dependency construction path.
 	dependencyClassLiteral bool
-	// Retained only for the captured single-helper exception text boundary.
-	exceptionAnonymousCallerLine int
+	// Projection-only anonymous callers for captured exception text boundaries.
+	exceptionAnonymousCallerLine   int
+	exceptionAnonymousCallerFrames int
 	// Keep the observed String-constructor display separate from runtime faults,
 	// cause constructors and default exception construction.
 	exceptionMessageConstructor bool

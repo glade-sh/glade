@@ -733,9 +733,10 @@ type callFrame struct {
 	Column    int
 	statement bool
 	// Projection-only anonymous caller location; structured frames stay intact.
-	anonymousCallerLine int
-	APIVersion          string
-	SharingMode         string
+	anonymousCallerLine    int
+	anonymousCallerHasArgs bool
+	APIVersion             string
+	SharingMode            string
 
 	invocableFlowOutput *invocableFlowOutputObservation
 }

@@ -465,13 +465,17 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		APIVersion:  method.APIVersion,
 		SharingMode: callerSharingMode,
 	}
+	// Assignment statements currently retain only their starting position;
+	// preserve the established zero-argument path without projecting that
+	// position as the call line for the newly supported argument-bearing path.
 	if callerClass == "" && callerMethod.Name == "" && !callerTrigger &&
-		callerHasStatement && len(vm.callStack) == 0 && method.IsStatic && len(args) == 0 &&
+		callerHasStatement && len(vm.callStack) == 0 && method.IsStatic && (len(args) == 0 || callerStatement.Symbol != "assign") &&
 		method.APIVersion == callerMethod.APIVersion && method.Namespace == "" &&
 		vm.currentNamespace == "" && (vm.Org == nil || vm.Org.Namespace == "") {
 		switch callerMethod.APIVersion {
 		case "62.0", "67.0", "68.0":
 			entryFrame.anonymousCallerLine = callerStatement.Line
+			entryFrame.anonymousCallerHasArgs = len(args) != 0
 		}
 	}
 	vm.callStack = append(vm.callStack, entryFrame)
