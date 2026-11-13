@@ -95,3 +95,29 @@ func TestDoctorReportsPendingToolchainRecovery(t *testing.T) {
 		})
 	}
 }
+
+func TestDoctorReportsInterruptedToolchainRecovery(t *testing.T) {
+	useDoctorTestToolchain(t)
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n")
+	if err := os.WriteFile(filepath.Join(os.Getenv("GLADE_HOME"), ".install.lock"), []byte("S"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, format := range []string{"text", "json"} {
+		t.Run(format, func(t *testing.T) {
+			var out bytes.Buffer
+			args := []string{"--project", root}
+			if format == "json" {
+				args = append(args, "--json")
+			}
+			if _, err := runDoctor(context.Background(), args, &out); err != nil {
+				t.Fatal(err)
+			}
+			output := strings.ToLower(out.String())
+			if !strings.Contains(output, "interrupted installer transaction") || !strings.Contains(output, "recover") || strings.Contains(output, "reinstall") {
+				t.Fatalf("doctor recovery guidance: %s", out.String())
+			}
+		})
+	}
+}
