@@ -50,9 +50,13 @@ func FuzzyMatch(method, left, right string) bool {
 // the item's blank handling, which the Street method applies to a blank
 // street-number section.
 func FuzzyScore(method, left, right string, matchBlanks bool) (bool, float64) {
-	scorer, ok := fuzzyScorers[strings.ToLower(strings.TrimSpace(method))]
+	key := strings.ToLower(strings.TrimSpace(method))
+	scorer, ok := fuzzyScorers[key]
 	if !ok {
 		return false, 0
+	}
+	if custom, ok := customFuzzyScorers[key]; ok {
+		scorer = custom
 	}
 	left, right = strings.TrimSpace(left), strings.TrimSpace(right)
 	if left == "" || right == "" {
@@ -969,6 +973,15 @@ func titleInitials(words []string) string {
 // Title with an exact Last Name item).
 var titleConfidence = map[[2]int]float64{{1, 2}: 93, {1, 3}: 89, {1, 4}: 88, {2, 3}: 95, {2, 4}: 93, {2, 5}: 91, {3, 4}: 97, {3, 5}: 94, {4, 5}: 97}
 
+// titleConfidenceSix extends titleConfidence to six content words, by shared
+// word count (NATIVE duplicate_fuzzy_panels, every direction).
+var titleConfidenceSix = map[int]float64{2: 89, 3: 93, 4: 95, 5: 98}
+
+// titleShortSide is the confidence of the one-direction matches of a short
+// candidate title inside a five or six word existing title, by shared and
+// larger word count.
+var titleShortSide = map[[2]int]float64{{1, 5}: 88, {2, 5}: 90, {2, 6}: 89}
+
 func uniqueWords(words []string) []string {
 	seen := map[string]bool{}
 	var out []string
@@ -1048,10 +1061,23 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	n := max(len(ua), len(ub))
+	if k == len(ua) && len(ub) == n && (n == 5 || n == 6) && (k == 1 || (k == 2 && !sameOrder)) {
+		// NATIVE (duplicate_fuzzy_panels): a candidate whose content words
+		// all occur in a longer existing title finds it from the short side
+		// only: one word in five at 88, two words out of order in five at 90
+		// and in six at 89. One word in six matches neither way.
+		if confidence, ok := titleShortSide[[2]int{k, n}]; ok {
+			return true, confidence
+		}
+	}
 	if n >= 5 && (k == 1 || (k == 2 && !sameOrder)) {
 		return false, 0
 	}
 	confidence, ok := titleConfidence[[2]int{min(k, n-1), min(n, 5)}]
+	if n == 6 {
+		// NATIVE (duplicate_fuzzy_panels): six content words.
+		confidence, ok = titleConfidenceSix[min(k, n-1)]
+	}
 	if !ok {
 		confidence = 88
 	}

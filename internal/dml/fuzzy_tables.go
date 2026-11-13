@@ -141,6 +141,8 @@ barb barbara barbie
 barbara barb barbie
 barbie barb barbara
 barney bernard bernie
+bart bartholomew
+bartholomew bart
 beata beatrice
 beatrice beata beatrix beatriz
 beatrix beatrice beatriz
@@ -418,6 +420,7 @@ estelle estela
 eva ava eve
 eve ava eva
 evelyn ava
+ezekiel zeke
 fabian fabio
 fabio fabian
 fanny fran frances francesca francis frankie frannie
@@ -964,6 +967,8 @@ mikel mick mickey micky miguel mihkel mika mikael mike mikhail
 mikey michael mick mickey micky miguel mihkel mika mikael mike mikel mikhail
 mikhail mick mickey micky miguel mihkel mika mikael mike mikel
 miles milo
+millicent millie
+millie millicent
 milo miles
 mimi mamie
 minnie minnieh
@@ -978,9 +983,12 @@ monica monika monique mónica
 monika monica monique
 monique monica monika
 monte monty
-monty monte
+montgomery monty
+monty monte montgomery
 moritz maurice mauricio mauro morris
 morris maurice mauricio mauro moritz
+mort mortimer
+mortimer mort
 muhammad mohamed mohammed
 mónica monica
 nadezhda nadia nadine
@@ -1071,6 +1079,8 @@ pierce pierre
 pierre pierce
 pieter pedro pete peter petr piotr
 piotr pedro pete peter petr pieter
+prudence prue
+prue prudence
 quentin quincy quinton
 quincy quentin quinton
 quinton quentin quincy
@@ -1102,6 +1112,8 @@ rebecca becky reba rebeca rebeccah rebekah
 rebeccah reba rebecca rebekah
 rebekah becky reba rebecca rebeccah
 reed reid
+reg reggie
+reggie reg
 reid reed
 reiko reikoh
 reikoh reiko
@@ -1283,6 +1295,8 @@ terry tess theresa
 tess terry theresa
 tessa tessie
 tessie tessa
+thad thaddeus
+thaddeus thad
 theodore ted teddy
 theresa terry tess
 thomas tom tomas tomasz tommaso tommie tommy
@@ -1393,6 +1407,7 @@ zahrah zara zaria
 zander xander
 zara zahrah zaria
 zaria zahrah zara
+zeke ezekiel
 zoe zoey zoë
 zoey zoe zoë
 zoë zoe zoey
