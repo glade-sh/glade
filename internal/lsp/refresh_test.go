@@ -67,3 +67,34 @@ func TestRefreshCoalesces(t *testing.T) {
 		t.Fatalf("refresh calls = %d, want 2", n)
 	}
 }
+
+func TestRefreshStaleGenerationRetriesOnce(t *testing.T) {
+	idx := sampleIndex(t)
+	h := NewHandler(idx)
+	h.gen.Load().analyzer = func(typesys.Index) sema.Result { return sema.Result{} }
+	calls := make(chan struct{}, 10)
+	h.SetRefresher(func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
+		select {
+		case calls <- struct{}{}:
+		default:
+		}
+		return idx, func(typesys.Index) sema.Result { return sema.Result{} }, nil
+	})
+	h.SetGenerationValidator(func(typesys.Index) bool { return false })
+	c := startServe(t, h)
+	c.send(map[string]any{"method": "textDocument/didSave", "params": map[string]any{"textDocument": map[string]any{"uri": "file:///save.cls"}}})
+	for i := 0; i < 2; i++ {
+		select {
+		case <-calls:
+		case <-time.After(3 * time.Second):
+			t.Fatal("missing refresh attempt")
+		}
+	}
+	select {
+	case <-calls:
+		t.Error("stale refresh retried more than once")
+	case <-time.After(200 * time.Millisecond):
+	}
+	c.send(map[string]any{"id": 1, "method": "shutdown"})
+	<-c.served
+}

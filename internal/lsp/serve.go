@@ -319,28 +319,32 @@ func (s *server) refreshWorker() {
 		case <-s.ctx.Done():
 			return
 		}
-		err := s.h.refresh(s.ctx, paths, func(g *generation) {
-			s.pubMu.Lock()
-			s.h.gen.Store(g)
-			s.pubMu.Unlock()
-		})
-		after := s.h.gen.Load()
-		if err != nil || after == before {
-			continue
-		}
-		result := make(chan []diagnostic.Diagnostic, 1)
-		go func() { result <- after.analysisResult().Diagnostics }()
+		var after *generation
 		var next []diagnostic.Diagnostic
-		select {
-		case next = <-result:
-		case <-s.ctx.Done():
-			return
-		}
-		if s.h.validateGeneration != nil && !s.h.validateGeneration(after.index) {
-			// Retry this batch once when its inputs changed during analysis.
-			if len(paths) > 0 {
-				s.enqueueRefresh(paths[0])
+		valid := false
+		for attempt := 0; attempt < 2; attempt++ {
+			err := s.h.refresh(s.ctx, paths, func(g *generation) {
+				s.pubMu.Lock()
+				s.h.gen.Store(g)
+				s.pubMu.Unlock()
+			})
+			after = s.h.gen.Load()
+			if err != nil || after == before {
+				break
 			}
+			result := make(chan []diagnostic.Diagnostic, 1)
+			go func(g *generation) { result <- g.analysisResult().Diagnostics }(after)
+			select {
+			case next = <-result:
+			case <-s.ctx.Done():
+				return
+			}
+			if s.h.validateGeneration == nil || s.h.validateGeneration(after.index) {
+				valid = true
+				break
+			}
+		}
+		if !valid {
 			continue
 		}
 		oldByFile, newByFile := diagnosticsByFile(old), diagnosticsByFile(next)
