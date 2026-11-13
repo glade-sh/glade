@@ -1,0 +1,17 @@
+shape: Developer Edition scratch org; recursive Account after-insert trigger with savepoints
+routes: anonymous and source-versioned named tests at APIs 62 and 67; targets 15, 16 and 17
+source: private tools packet familyprobe/save-order-20261112/depth
+teardown: scratch deletion status 0, subsequent display returned NamedOrgNotFoundError
+messages: full native diagnostic retained; the numeric conformance assertion compares status, entries and persistence. ROAD-459 owns the difference in nested error wording.
+sha256 depth.apex ea853be6c5b730762ac511cd64a3dcce5bfc866ebd686089e4841dedece55b3f
+sha256 force-app/main/default/classes/DepthResultException.cls bc7cd223714212b613f6a158269a592629ccc907a2d30e30b00bea01ddff1eab
+sha256 force-app/main/default/classes/DepthResultException.cls-meta.xml 2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa
+sha256 force-app/main/default/classes/DepthTest62.cls cd25313eb223b754e68c97a76d6636233d2d965efa2aa5041520c6a20c77c6be
+sha256 force-app/main/default/classes/DepthTest62.cls-meta.xml 2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa
+sha256 force-app/main/default/classes/DepthTest67.cls fd8de27052feaf43e370cfecc563df70f2b98be3b1a618ebae16518869b01c62
+sha256 force-app/main/default/classes/DepthTest67.cls-meta.xml 490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d
+sha256 force-app/main/default/classes/DepthTrace.cls 5be940be424f06ae79cce17c8ddae0676fe9db69a61d9eb1d1428a53856e9145
+sha256 force-app/main/default/classes/DepthTrace.cls-meta.xml 2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa
+sha256 force-app/main/default/triggers/DepthProbe.trigger 113f30b0718d5c8242ed0be34a6c60ea5cc8ce5262d2935ddb68b492b695972f
+sha256 force-app/main/default/triggers/DepthProbe.trigger-meta.xml 33ade1f2c93058c16e91218278a24c461db734e4f4778ed0c743e19e43f96b85
+sha256 org.tsv c6e1ff1b7051acf251eec6aa90ff78090fe7ae984cd79b398ae0ed5c7a460a0e

@@ -15,6 +15,7 @@ import (
 func TestSaveOrderNativeConformance(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	t.Setenv("GLADE_ROOT", "")
+	replaySaveOrder(t, "depth", "depth", "org.tsv", "depth.apex", "DepthTest", "boundary", "DepthResultException")
 	replaySaveOrder(t, "combined", "combined", "org.tsv", "anonymous.apex", "SaveOrderTest", "combined", "ProbeResultException")
 	replaySaveOrder(t, "rollup", "rollup", "org.tsv", "anonymous.apex", "RollupTest", "combined", "RollupResultException")
 	replaySaveOrder(t, "rollup", "control", "siblings.tsv", "siblings.apex", "RollupControlTest", "combined", "RollupResultException")
@@ -33,7 +34,11 @@ func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, m
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
-	if len(lines) != 5 || lines[0] != "id\tapi\troute\tcompiled\ttransport\tobservation" {
+	header := "id\tapi\troute\tcompiled\ttransport\tobservation"
+	if fixture == "depth" {
+		header += " (newlines escaped)"
+	}
+	if len(lines) != 5 || lines[0] != header {
 		t.Fatalf("%s: expected the four native API and route observations", fixture)
 	}
 	source, err := os.ReadFile(filepath.Join(dir, script))
@@ -48,7 +53,7 @@ func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, m
 		}
 		project := fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api)
 		writeTestFile(t, filepath.Join(root, "sfdx-project.json"), project)
-		if fixture != "combined" {
+		if fixture == "rollup" || fixture == "rollup_events" || fixture == "retry_validation" {
 			// The scratch org assigned this deployed permission set before running Apex.
 			writeTestFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [Probe_Access]\n")
 		}
@@ -72,7 +77,7 @@ func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, m
 				}
 				c := run.Suites[0].Cases[0]
 				want := "Assertion Failed: Expected: EXPECTED, Actual: " + row[5]
-				if c.ClassName != class || c.MethodName != method || c.Problem == nil || c.Problem.Type != "System.AssertException" || c.Problem.Message != want {
+				if c.ClassName != class || c.MethodName != method || c.Problem == nil || c.Problem.Type != "System.AssertException" || saveOrderObservation(t, exception, c.Problem.Message) != saveOrderObservation(t, exception, want) {
 					t.Fatalf("Glade %s.%s: %+v\nnative: %s", c.ClassName, c.MethodName, c.Problem, want)
 				}
 			})
@@ -109,7 +114,26 @@ func checkAnonymousSave(t *testing.T, root string, source []byte, exception, obs
 	args := []string{"exec", "--project", root, "--json", string(source)}
 	code := Run(context.Background(), args, &stdout, &stderr)
 	want := "glade: " + exception + ": " + observation
-	if got := strings.TrimSpace(stderr.String()); code == 0 || got != want {
+	if got := strings.TrimSpace(stderr.String()); code == 0 || saveOrderObservation(t, exception, got) != saveOrderObservation(t, exception, want) {
 		t.Fatalf("exit %d\nGlade: %s\nnative: %s", code, got, want)
 	}
+}
+
+// ROAD-459 owns the nested trigger diagnostic. Retain the error code, entry
+// count, full trace and stored row count in the depth comparison.
+func saveOrderObservation(t *testing.T, exception, value string) string {
+	t.Helper()
+	if exception != "DepthResultException" {
+		return value
+	}
+	const code = "|17:false:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:"
+	before, messageAndState, ok := strings.Cut(value, code)
+	if !ok {
+		t.Fatalf("missing depth error in %q", value)
+	}
+	message, state, ok := strings.Cut(messageAndState, ":entries=")
+	if !ok || message == "" {
+		t.Fatalf("missing depth diagnostic or entry count in %q", value)
+	}
+	return before + code + ":entries=" + state
 }
