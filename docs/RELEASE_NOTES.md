@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Apex search
+
+- SOSL divides the result limit among the objects in `RETURNING`, including when an object has fewer matching rows than its share. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
+
 ### Performance
 
 - **Fewer source re-reads and a cached binary digest.** A warm test daemon request no longer reads and hashes every source and `-meta.xml` file at each stage; a file that has not changed since it was last hashed, and was already two seconds old then, is trusted by device, inode, size, mtime and ctime. Each process also remembers the SHA-256 of its own executable under the same stamp, which removes about 0.7 s from every cached `check` and `test`. Edited, replaced and recently written files are always hashed again, and results do not change.

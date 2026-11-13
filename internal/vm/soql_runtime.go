@@ -2219,6 +2219,13 @@ func (vm *VM) soslParseError(err error) error {
 }
 
 func validateSOSLRuntimeFeatures(query sosl.Query) error {
+	if len(query.Returning) > 1 {
+		for _, spec := range query.Returning {
+			if spec.Offset.HasValue && spec.Offset.Value > 0 {
+				return &sosl.ContractError{Type: "SearchException", Message: "SOSL only supports OFFSET clause for single entity search"}
+			}
+		}
+	}
 	if query.UpdateViewStat || query.UpdateTracking {
 		option := "VIEWSTAT"
 		if !query.UpdateViewStat {
@@ -2366,11 +2373,8 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 	// object or field serves every record it scans.
 	defer vm.beginPermissionCheckMemo()()
 	groups := make([]soslResultGroup, 0, len(query.Returning))
-	remaining := -1
-	if query.Limit.HasValue {
-		remaining = query.Limit.Value
-	}
-	for _, spec := range query.Returning {
+	groupLimits := soslResultLimits(query)
+	for i, spec := range query.Returning {
 		specObjectName := spec.Object
 		if vm.Org != nil {
 			if canonical, ok := vm.resolveObjectName(spec.Object); ok {
@@ -2411,12 +2415,14 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		}
 		sortSOSLRows(rows, spec.OrderBy)
 		applySOSLReturningOffset(&rows, spec)
-		applySOSLReturningLimit(&rows, spec)
-		if remaining >= 0 {
-			if remaining < len(rows.List) {
-				rows.List = rows.List[:remaining]
-			}
-			remaining -= len(rows.List)
+		limit := groupLimits[i]
+		if !vm.fixedSearchResultsSet && len(query.Returning) > 1 {
+			// Multi-entity indexed searches returned at most 250 hits per
+			// entity. Fixed test results use the full allocated quota.
+			limit = min(limit, 250)
+		}
+		if len(rows.List) > limit {
+			rows.List = rows.List[:limit]
 		}
 		// R141/R143/R144/R164 prove empty-result acceptance. Captured rows
 		// do not establish the index's highlight or target-length formatting.
@@ -3218,11 +3224,32 @@ func applySOSLReturningOffset(rows *Value, spec sosl.ReturningObject) {
 	rows.List = rows.List[spec.Offset.Value:]
 }
 
-func applySOSLReturningLimit(rows *Value, spec sosl.ReturningObject) {
-	if rows == nil || rows.Kind != ValueList || !spec.Limit.HasValue || spec.Limit.Value >= len(rows.List) {
-		return
+// SOSL splits the declared budget before it reads records. An empty bucket
+// keeps its share. Smaller explicit caps get the first remainder slots, with
+// RETURNING order breaking ties.
+func soslResultLimits(query sosl.Query) []int {
+	const maxResults = 2000
+	remaining := maxResults
+	if query.Limit.HasValue {
+		remaining = query.Limit.Value
 	}
-	rows.List = rows.List[:spec.Limit.Value]
+	limits := make([]int, len(query.Returning))
+	order := make([]int, len(limits))
+	for i, spec := range query.Returning {
+		order[i] = i
+		limits[i] = maxResults
+		if spec.Limit.HasValue {
+			limits[i] = spec.Limit.Value
+		}
+	}
+	sort.SliceStable(order, func(i, j int) bool { return limits[order[i]] < limits[order[j]] })
+	for pos, index := range order {
+		count := len(order) - pos
+		share := (remaining + count - 1) / count
+		limits[index] = min(share, limits[index])
+		remaining -= limits[index]
+	}
+	return limits
 }
 
 func compareSOSLRows(left, right Value, orderBy []sosl.OrderSpec) int {
