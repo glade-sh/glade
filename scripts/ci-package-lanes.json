@@ -105,7 +105,7 @@
     "./internal/sema": 658,
     "./internal/semanticcache": 6,
     "./internal/server": 12,
-    "./internal/soql": 4,
+    "./internal/soql": 5,
     "./internal/storage": 9,
     "./internal/testdaemon": 35,
     "./internal/testutil/toolchaininstall": 5,

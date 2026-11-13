@@ -720,7 +720,7 @@
     "./internal/sema": 605,
     "./internal/semanticcache": 126,
     "./internal/server": 874,
-    "./internal/soql": 89,
+    "./internal/soql": 110,
     "./internal/storage": 353,
     "./internal/testdaemon": 325,
     "./internal/testutil/browserapi": 30,

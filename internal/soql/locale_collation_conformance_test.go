@@ -277,7 +277,7 @@ func TestLocaleTextCollationNativeRows(t *testing.T) {
 				legacy.observation = strings.Replace(row.observation, "loc:"+locale+"/", "loc:/", 1)
 				current := collationLabels(localeQuery(t, org, row, "SELECT BillingCity FROM Account ORDER BY Name, BillingCity"), "BillingCity")
 				fallback := collationLabels(localeQuery(t, org, legacy, "SELECT BillingCity FROM Account ORDER BY Name, BillingCity"), "BillingCity")
-				if current != fallback || result.matched != 0 || result.ordered != 564 || len(result.differences) == 0 {
+				if newTextComparator(locale) != nil || current != fallback || result.matched != 0 || result.ordered != 564 || len(result.differences) == 0 {
 					t.Fatal("known-difference fallback changed")
 				}
 				t.Logf("known difference %s: %d/%d checks, %d/%d adjacent pairs; %s", locale, result.matched, result.checks, result.ordered, result.adjacent, strings.Join(result.differences, ","))
