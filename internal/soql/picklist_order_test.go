@@ -104,3 +104,41 @@ func TestPicklistOrderUsesDefinitionSequence(t *testing.T) {
 		}
 	})
 }
+
+// ROAD-451 restricted picklist native capture uses configured Zulu, Alpha,
+// Middle and null values. Source 62 DESC with no NULLS clause places null last.
+func TestRestrictedPicklistLegacyDescendingImplicitNulls(t *testing.T) {
+	org := storage.NewOrgState()
+	definition := storage.ObjectDefinition{APIName: "Item__c", Fields: map[string]storage.Field{
+		"Name":    {APIName: "Name", Type: storage.FieldString},
+		"Rank__c": {APIName: "Rank__c", Type: storage.FieldPicklist, RestrictedPicklist: true, PicklistValues: []storage.PicklistValue{{Value: "Zulu"}, {Value: "Alpha"}, {Value: "Middle"}}},
+	}}
+	records := []storage.Record{
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("null")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("z"), "Rank__c": storage.StringValue("Zulu")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("a"), "Rank__c": storage.StringValue("Alpha")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("m"), "Rank__c": storage.StringValue("Middle")}},
+	}
+	org.Objects["Item__c"] = storage.ObjectState{Definition: definition}
+	for _, tc := range []struct {
+		name         string
+		desc, legacy bool
+		want         []string
+	}{
+		{"source62 asc default", false, true, []string{"null", "z", "a", "m"}},
+		{"source62 desc default", true, true, []string{"m", "a", "z", "null"}},
+		{"source67 desc default", true, false, []string{"null", "m", "a", "z"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rows := append([]storage.Record(nil), records...)
+			sortRecordsByOrder(org, definition, rows, []OrderSpec{{Field: "Rank__c", Desc: tc.desc}}, tc.legacy)
+			var got []string
+			for _, record := range rows {
+				got = append(got, record.Fields["Name"].String)
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
