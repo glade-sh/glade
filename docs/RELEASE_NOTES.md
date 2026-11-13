@@ -1,5 +1,9 @@
 # Release Notes
 
+## Unreleased
+
+No changes yet.
+
 ## v0.3.9
 
 v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteria-based Case sharing and more native-matched Apex, SOQL and SOSL behavior. It lowers memory and startup cost for tests, and `glade doctor` no longer hangs on a busy toolchain.
