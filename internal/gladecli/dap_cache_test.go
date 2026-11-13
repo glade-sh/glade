@@ -132,7 +132,7 @@ func TestDAPRejectsPriorCacheVersions(t *testing.T) {
 	// Share the project within this invocation, including under -count.
 	root := t.TempDir()
 	writeTestProject(t, root)
-	for _, version := range []int{4, 5, 6} {
+	for _, version := range []int{4, 5, 6, 18} {
 		t.Run(fmt.Sprint(version), func(t *testing.T) {
 			if _, _, _, err := loadDAPStartupState(root); err != nil {
 				t.Fatal(err)

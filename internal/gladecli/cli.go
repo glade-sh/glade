@@ -2742,17 +2742,24 @@ func loadProjectIndex(root string) (project.Project, typesys.Index, error) {
 }
 
 func buildProjectIndex(p project.Project) typesys.Index {
+	index, _ := buildProjectIndexWithArtifacts(p)
+	return index
+}
+
+// buildProjectIndexWithArtifacts also returns the digests of the sources the
+// build read.
+func buildProjectIndexWithArtifacts(p project.Project) (typesys.Index, typesys.BuildArtifacts) {
 	s, err := gladeschema.LoadProject(p)
 	if err != nil {
-		index := typesys.Build(p, gladeschema.Schema{})
+		index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
 		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
 			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
 		})
-		return index
+		return index, artifacts
 	}
-	return typesys.Build(p, s)
+	return typesys.BuildWithArtifacts(p, s)
 }
 
 func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (project.Project, typesys.Index, error) {
