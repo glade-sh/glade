@@ -155,13 +155,20 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 		root, _, _ := strings.Cut(receiver, ".")
 		_, local := scope.lookup(root)
 		before, after := false, false
+		afterGap, beforeGap := "", ""
 		for i := first + 1; i <= last; i++ {
 			if tokens[i].text == "." {
 				before = before || tokens[i].gap != ""
 				if i == last-1 {
-					after = tokens[i+1].gap != ""
+					beforeGap = tokens[i].gap
+					afterGap = tokens[i+1].gap
+					after = afterGap != ""
 				}
 			}
+		}
+		// Both sides split are captured only for a single space on each side.
+		if before && after && !(beforeGap == " " && afterGap == " ") {
+			continue
 		}
 		depth := 0
 		for _, t := range tokens[:first] {
@@ -182,6 +189,27 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 		if before && (!hasAfter || after) && !local && semaReceiverExprLooksLikeType(receiver, scope, model) {
 			message = "Variable does not exist: " + root
 		} else if after {
+			// Assignment and binary argument captures use a line break after
+			// the dot; space-only forms have no observed result.
+			lineBreak := strings.ContainsAny(afterGap, "\r\n")
+			if (decl || assign) && !lineBreak {
+				continue
+			}
+			if arg && !lineBreak {
+				depth, close := 1, last+2
+				for close < len(tokens) && depth > 0 {
+					if tokens[close].text == "(" {
+						depth++
+					}
+					if tokens[close].text == ")" {
+						depth--
+					}
+					close++
+				}
+				if close < len(tokens) && tokens[close].text != ")" && tokens[close].text != "," {
+					continue
+				}
+			}
 			if !stmt && !decl && !assign && !arg {
 				continue
 			}
