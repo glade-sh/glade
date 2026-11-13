@@ -266,6 +266,14 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 			// Assignment and binary argument captures use a line break after
 			// the dot; space-only forms have no observed result.
 			lineBreak := strings.ContainsAny(afterGap, "\r\n")
+			if stmt && tokens[last+2].text != ")" {
+				// The only captured argument-bearing standalone call is on
+				// a platform receiver and has a line break after the dot.
+				members, known := model.lookupName(receiver)
+				if !known || !members.platform || !lineBreak {
+					continue
+				}
+			}
 			if ((decl || assign) || (arg && depth > 1)) && !lineBreak {
 				continue
 			}
