@@ -5,6 +5,7 @@
 ### Changes
 
 - **Language server refresh.** Diagnostics retry after project refreshes, deleted source files leave the index, and hover starts type analysis when needed. Client responses no longer receive a second response.
+- **Unsaved edits.** Language server diagnostics follow unsaved edits. External file changes are picked up when the client supports watched-file registration; otherwise the server refreshes on save.
 
 - **Standard duplicate rules.** Standard duplicate rules are opt-in.
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
