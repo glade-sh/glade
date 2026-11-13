@@ -111,36 +111,18 @@ func TestReconcileCriteriaSharingGrantsAndRevokes(t *testing.T) {
 	}
 }
 
-// A rule only grants on the operations it declares: notEqual matches a value
-// other than the literal, every item must hold, and a rule whose group is not
-// loaded grants nothing.
-func TestReconcileCriteriaSharingOperations(t *testing.T) {
+// Unsupported condition shapes do not grant access without native evidence.
+func TestReconcileCriteriaSharingUnsupportedOperations(t *testing.T) {
 	org := criteriaRuleOrg()
 	cases := org.Objects["Case"]
-	cases.Definition.Fields["Origin"] = storage.Field{APIName: "Origin", Type: storage.FieldPicklist}
-	cases.Definition.CriteriaSharingRules = []storage.CriteriaSharingRule{
-		{Name: "Both", TargetGroup: "CriteriaTarget", AccessLevel: "Read", Criteria: []storage.CriteriaSharingCondition{{Field: "Subject", Operation: "notEqual", Value: "SKIP"}, {Field: "Origin", Operation: "equals", Value: "Web"}}},
-		{Name: "NoGroup", TargetGroup: "Missing", AccessLevel: "Read", Criteria: []storage.CriteriaSharingCondition{{Field: "Subject", Operation: "notEqual", Value: "SKIP"}}},
-	}
-	for id, fields := range map[storage.ID]map[string]string{"500000000000001": {"Subject": "A", "Origin": "Web"}, "500000000000002": {"Subject": "SKIP", "Origin": "Web"}, "500000000000003": {"Subject": "A", "Origin": "Phone"}} {
-		record := storage.Record{Object: "Case", ID: id, Fields: map[string]storage.Value{}}
-		for name, value := range fields {
-			record.Fields[name] = storage.StringValue(value)
-		}
-		cases.Records[id] = record
-	}
+	cases.Definition.CriteriaSharingRules[0].Criteria[0].Operation = "notEqual"
 	org.Objects["Case"] = cases
+	setCriteriaCase(&org, "500000000000001", "OTHER", false)
 	if err := ReconcileCriteriaSharing(&org); err != nil {
 		t.Fatal(err)
 	}
-	rows := criteriaRuleRows(&org)
-	if len(rows) != 1 {
-		t.Fatalf("rows=%v", rows)
-	}
-	for _, row := range rows {
-		if row.Fields["CaseId"].ID != "500000000000001" {
-			t.Fatalf("wrong record granted: %v", row)
-		}
+	if len(criteriaRuleRows(&org)) != 0 {
+		t.Fatal("unsupported condition granted access")
 	}
 }
 

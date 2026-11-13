@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/fs"
+
+	"github.com/glade-sh/glade/internal/dap"
 	"os"
 	"path/filepath"
 	"strings"
@@ -254,4 +257,42 @@ for (String tag : new List<String>{'N', 'M'}) {
   + ':rule=' + [SELECT COUNT() FROM CaseShare WHERE CaseId = :c.Id AND RowCause = 'Rule'];
 }
 System.debug('OBS|' + out);`
+}
+
+func TestCriteriaSharingDebugCommitGrantAndRevoke(t *testing.T) {
+	root, db, _ := criteriaSharingProject(t, "67.0")
+	debug := func(source string) {
+		t.Helper()
+		inR, inW := io.Pipe()
+		outR, outW := io.Pipe()
+		done := make(chan error, 1)
+		go func() {
+			defer outW.Close()
+			done <- runDAP(context.Background(), []string{"--project", root, "--db", db}, inR, outW)
+		}()
+		messages := make(chan map[string]any, 16)
+		go readDAPMessages(t, outR, messages)
+		writeDAPRequest(t, inW, dap.CommandInitialize, 1, nil)
+		writeDAPRequest(t, inW, dap.CommandLaunch, 2, map[string]any{"source": source})
+		writeDAPRequest(t, inW, dap.CommandConfigurationDone, 3, nil)
+		stderr := waitForDAPTerminatedAndStderr(t, messages)
+		if stderr != "" {
+			t.Fatalf("debug error: %s", stderr)
+		}
+		_ = inW.Close()
+		if err := <-done; err != nil {
+			t.Fatal(err)
+		}
+	}
+	observe := func() string {
+		return runCriteriaExec(t, root, db, `System.debug('OBS|' + [SELECT COUNT() FROM CaseShare WHERE RowCause = 'Rule']);`)
+	}
+	debug(`insert new Case(Subject='NATIVE_CASE_SHARE_PROBE', Status='New', Origin='Web');`)
+	if got := observe(); got != "1" {
+		t.Fatalf("grant count = %s", got)
+	}
+	debug(`Case c = [SELECT Id FROM Case WHERE Subject='NATIVE_CASE_SHARE_PROBE' LIMIT 1]; c.Subject='OTHER'; update c;`)
+	if got := observe(); got != "0" {
+		t.Fatalf("revoke count = %s", got)
+	}
 }
