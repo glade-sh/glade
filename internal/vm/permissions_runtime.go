@@ -178,6 +178,9 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if vm.profileHasCapturedAccountLicenseRestriction(profileID, objectName) {
 		return false
 	}
+	if allowed, known := vm.externalCommunityCaseLeadPermission(profileID, objectName, method); known {
+		return allowed
+	}
 	if vm.profileHasExternalCollaborationLicense(profileID) && !isSetupObject(objectName) {
 		return false
 	}
@@ -1915,6 +1918,38 @@ func (vm *VM) isBaselineWritableField(objectName, fieldName string) bool {
 	}
 	field := definition.Fields[fieldName]
 	return field.Required || isNameFieldDescribe(field)
+}
+
+// externalCommunityCaseLeadPermission is the Case and Lead object access of a
+// Customer Community, Customer Community Plus or Customer Community Login
+// profile with no explicit grant. external_user_case_lead_sharing (APIs 62.0
+// and 67.0): all three users report Case isAccessible true and Lead
+// isAccessible false, and their UserRecordAccess Lead rows read and edit false
+// under every internal sharing model. The license refuses the Read Lead
+// permission (lead_grant rows), and create, update and delete need read, so
+// Lead has no object access of any kind. Case create, update and delete have
+// no row and keep the earlier behavior. Other objects are not covered.
+func (vm *VM) externalCommunityCaseLeadPermission(profileID, objectName, method string) (allowed, known bool) {
+	if !vm.profileHasCommunityLicense(profileID) {
+		return false, false
+	}
+	switch {
+	case strings.EqualFold(objectName, "Lead") &&
+		(method == "isAccessible" || method == "isCreateable" || method == "isUpdateable" || method == "isDeletable"):
+		return false, true
+	case strings.EqualFold(objectName, "Case") && method == "isAccessible":
+		return true, true
+	}
+	return false, false
+}
+
+func (vm *VM) profileHasCommunityLicense(profileID string) bool {
+	for _, key := range []string{"PID_Customer_Community", "PID_Customer_Community_Plus", "PID_Customer_Community_Login"} {
+		if vm.profileHasLicenseKey(profileID, key) {
+			return true
+		}
+	}
+	return false
 }
 
 // profileHasExternalCollaborationLicense keeps the former fallback: a license

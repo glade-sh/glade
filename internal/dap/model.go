@@ -1,6 +1,7 @@
 package dap
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -35,6 +36,8 @@ const (
 	CommandPause             = "pause"
 	CommandEvaluate          = "evaluate"
 	CommandDisconnect        = "disconnect"
+	CommandCancel            = "cancel"
+	CommandTerminate         = "terminate"
 )
 
 type LaunchRequest struct {
@@ -49,6 +52,8 @@ type LaunchRequest struct {
 }
 
 type LaunchHandler func(request LaunchRequest) error
+
+type LaunchHandlerContext func(ctx context.Context, request LaunchRequest) error
 
 type Request struct {
 	Seq       int             `json:"seq"`
@@ -263,6 +268,44 @@ func variableChildren(value vm.Value) []Variable {
 		out = append(out, variableFromValue(child.name, child.value, 0))
 	}
 	return out
+}
+
+// hasChildValues reports len(childValues(value)) > 0 without building them.
+func hasChildValues(value vm.Value) bool {
+	switch value.Kind {
+	case vm.ValueList:
+		return len(value.List) > 0
+	case vm.ValueSet:
+		return len(value.Set) > 0
+	case vm.ValueMap:
+		return len(value.Map) > 0
+	case vm.ValueObject:
+		return len(value.Fields) > 0
+	default:
+		return false
+	}
+}
+
+// pagedChildValues returns the children needed for one variables page and the
+// start/count to apply to them. Lists and sets build only the requested
+// window, named by their real index; maps and objects need their sorted keys,
+// so they return every child and the caller's window.
+func pagedChildValues(value vm.Value, start, count int) ([]namedValue, int, int) {
+	var items []vm.Value
+	switch value.Kind {
+	case vm.ValueList:
+		items = value.List
+	case vm.ValueSet:
+		items = value.Set
+	default:
+		return childValues(value), start, count
+	}
+	from, to := variableWindow(len(items), start, count)
+	out := make([]namedValue, 0, to-from)
+	for i := from; i < to; i++ {
+		out = append(out, namedValue{name: strconv.Itoa(i), value: items[i]})
+	}
+	return out, 0, 0
 }
 
 func childValues(value vm.Value) []namedValue {

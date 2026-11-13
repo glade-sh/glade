@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -136,10 +137,15 @@ func datacloudDuplicateResultValue(result dml.DuplicateResult, find bool) Value 
 		item.Fields["success"] = Bool(true)
 		item.Fields["errors"] = typedList("List<Database.Error>")
 		records := typedList("List<Datacloud.MatchRecord>")
-		for _, record := range match.Records {
+		for i, record := range match.Records {
 			matchRecord := Object("Datacloud.MatchRecord")
 			matchRecord.Fields["record"] = duplicateMatchRecordValue(record, find)
-			matchRecord.Fields["matchConfidence"] = decimalAsDouble(Decimal(100))
+			confidence := 100.0
+			if i < len(match.Confidences) {
+				// Native reports the rule's confidence as a whole number.
+				confidence = math.Floor(match.Confidences[i] + 0.5)
+			}
+			matchRecord.Fields["matchConfidence"] = decimalAsDouble(Decimal(confidence))
 			matchRecord.Fields["additionalInformation"] = typedList("List<Datacloud.AdditionalInformationMap>")
 			matchRecord.Fields["fieldDiffs"] = typedList("List<Datacloud.FieldDiff>")
 			records.List = append(records.List, matchRecord)
@@ -190,7 +196,7 @@ func callDatacloudDuplicateMember(_ *VM, receiver Value, method string, args []V
 
 func (vm *VM) duplicateResultsForRecord(record storage.Record, object string) []Value {
 	var out []Value
-	for _, rule := range dml.ActiveDuplicateRules(vm.Org, object) {
+	for _, rule := range dml.ActiveDuplicateRulesForRecord(vm.Org, object, record) {
 		applies, supported := dml.DuplicateRuleApplies(vm.Org, rule, record)
 		if !supported || !applies {
 			continue

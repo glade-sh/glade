@@ -753,6 +753,41 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 		}
 	}
 	if hasBinding {
+		// The current project setting controls each open, including both
+		// directions of a configuration change.
+		settingChanged := org.StandardDuplicateRules != projectOrg.StandardDuplicateRules
+		org.StandardDuplicateRules = projectOrg.StandardDuplicateRules
+		// A legacy saved rule has no origin marker. Project metadata is the
+		// authority when it defines a rule, even if it resembles a seed.
+		for name, source := range projectOrg.Objects {
+			target, ok := org.Objects[name]
+			if !ok {
+				continue
+			}
+			for _, rule := range source.Definition.DuplicateRules {
+				if rule.Seeded {
+					continue
+				}
+				found := false
+				for i, existing := range target.Definition.DuplicateRules {
+					if strings.EqualFold(existing.Name, rule.Name) && strings.EqualFold(existing.Subtype, rule.Subtype) {
+						target.Definition.DuplicateRules[i] = rule
+						found = true
+						break
+					}
+				}
+				if !found {
+					target.Definition.DuplicateRules = append(target.Definition.DuplicateRules, rule)
+				}
+			}
+			org.Objects[name] = target
+		}
+		if settingChanged {
+			if err := store.Save(org); err != nil {
+				_ = store.Close()
+				return nil, storage.OrgState{}, err
+			}
+		}
 		resource.SyncProjectEventSubscribers(&org, &projectOrg)
 		// Hierarchy grants are org configuration, not part of the structural
 		// schema fingerprint. Reapply them even when the saved schema matches.
@@ -1079,7 +1114,7 @@ func reconcileFlowOnlyStandardObjects(current, projectOrg storage.OrgState, root
 			if have != want {
 				return false, nil
 			}
-			object.Records = make(map[storage.ID]storage.Record)
+			object.SetRecords(make(map[storage.ID]storage.Record))
 			dst.Objects[name] = object
 			changed = true
 		}
@@ -1124,9 +1159,9 @@ func refreshDBProjectSchema(store *storage.SQLiteStore, dbPath, root string, cur
 		if !ok {
 			continue
 		}
-		target.Records = make(map[storage.ID]storage.Record, len(existingObject.Records))
+		target.SetRecords(make(map[storage.ID]storage.Record, len(existingObject.Records)))
 		for id, record := range existingObject.Records {
-			target.Records[id] = record.Clone()
+			target.PutRecord(id, record.Clone())
 		}
 		refreshed.Objects[name] = target
 	}
@@ -1275,6 +1310,11 @@ func buildExecOrgState(root string, p project.Project, index typesys.Index, cata
 		return storage.OrgState{}, err
 	}
 	if automationIndex, err := automation.LoadProject(p); err == nil {
+		for _, rule := range automationIndex.DuplicateRules {
+			if _, ok := storage.ResolveKnownStandardObjectName(rule.Object); ok {
+				storage.EnsureStandardObject(&org, rule.Object)
+			}
+		}
 		for _, flow := range automationIndex.Flows {
 			if _, ok := storage.ResolveKnownStandardObjectName(flow.ObjectName); ok {
 				storage.EnsureStandardObject(&org, flow.ObjectName)

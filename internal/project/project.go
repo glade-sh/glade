@@ -54,6 +54,7 @@ type Project struct {
 	SourceNamespaceRoots        map[string]string          `json:"sourceNamespaceRoots,omitempty"`
 	SourceAPIVersion            string                     `json:"sourceApiVersion,omitempty"`
 	OrgDomainURL                string                     `json:"orgDomainUrl,omitempty"`
+	StandardDuplicateRules      bool                       `json:"standardDuplicateRules,omitempty"`
 	HierarchyAccessObjects      []string                   `json:"hierarchyAccessObjects,omitempty"`
 	SchemaSnapshot              string                     `json:"schemaSnapshot,omitempty"`
 	SchemaSnapshotSHA256        string                     `json:"schemaSnapshotSHA256,omitempty"`
@@ -638,6 +639,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 		p.PDF = gladeCfg.PDF
 		p.ExtraMetadataDirs = gladeCfg.Project.ExtraMetadataDirs
 		p.OrgDomainURL = gladeCfg.Org.DomainURL
+		p.StandardDuplicateRules = gladeCfg.DuplicateRules.Standard
 		p.HierarchyAccessObjects = append([]string(nil), gladeCfg.Org.HierarchyAccessObjects...)
 		p.SchemaSnapshot = gladeCfg.Project.SchemaSnapshot
 		p.SchemaSnapshotSHA256 = gladeCfg.Project.SchemaSnapshotSHA256
@@ -652,6 +654,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 			}
 			p.PDF = nearestCfg.PDF
 			p.OrgDomainURL = nearestCfg.Org.DomainURL
+			p.StandardDuplicateRules = nearestCfg.DuplicateRules.Standard
 			p.HierarchyAccessObjects = append([]string(nil), nearestCfg.Org.HierarchyAccessObjects...)
 			dependencyCfg = nearestCfg
 			dependencyCfgOK = true
@@ -792,71 +795,72 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 }
 
 func dedupeProjectFiles(p *Project) {
-	p.ApexFiles = dedupeFilePaths(p.ApexFiles)
-	p.ObjectFiles = dedupeFilePaths(p.ObjectFiles)
-	p.FieldFiles = dedupeFilePaths(p.FieldFiles)
-	p.FieldSetFiles = dedupeFilePaths(p.FieldSetFiles)
-	p.RecordTypeFiles = dedupeFilePaths(p.RecordTypeFiles)
-	p.ValidationRuleFiles = dedupeFilePaths(p.ValidationRuleFiles)
-	p.LabelFiles = dedupeFilePaths(p.LabelFiles)
-	p.TranslationFiles = dedupeFilePaths(p.TranslationFiles)
-	p.StaticResourceFiles = dedupeFilePaths(p.StaticResourceFiles)
-	p.StaticResourceMetas = dedupeFilePaths(p.StaticResourceMetas)
-	p.DataCategoryGroupFiles = dedupeFilePaths(p.DataCategoryGroupFiles)
-	p.PlatformEventChannelMemberFiles = dedupeFilePaths(p.PlatformEventChannelMemberFiles)
-	p.CachePartitionFiles = dedupeFilePaths(p.CachePartitionFiles)
-	p.DataWeaveFiles = dedupeFilePaths(p.DataWeaveFiles)
-	p.DataWeaveMetas = dedupeFilePaths(p.DataWeaveMetas)
-	p.ContentAssetFiles = dedupeFilePaths(p.ContentAssetFiles)
-	p.ContentAssetMetas = dedupeFilePaths(p.ContentAssetMetas)
-	p.EmailTemplateFiles = dedupeFilePaths(p.EmailTemplateFiles)
-	p.EmailServiceFiles = dedupeFilePaths(p.EmailServiceFiles)
-	p.FolderFiles = dedupeFilePaths(p.FolderFiles)
-	p.PaymentGatewayProviderFiles = dedupeFilePaths(p.PaymentGatewayProviderFiles)
-	p.ReportFiles = dedupeFilePaths(p.ReportFiles)
-	p.DashboardFiles = dedupeFilePaths(p.DashboardFiles)
-	p.NamedCredentialFiles = dedupeFilePaths(p.NamedCredentialFiles)
-	p.RemoteSiteFiles = dedupeFilePaths(p.RemoteSiteFiles)
-	p.CustomPermissionFiles = dedupeFilePaths(p.CustomPermissionFiles)
-	p.CustomMetadataFiles = dedupeFilePaths(p.CustomMetadataFiles)
-	p.FeatureParameterFiles = dedupeFilePaths(p.FeatureParameterFiles)
-	p.AutoResponseRuleFiles = dedupeFilePaths(p.AutoResponseRuleFiles)
-	p.ApprovalProcessFiles = dedupeFilePaths(p.ApprovalProcessFiles)
-	p.AssignmentRuleFiles = dedupeFilePaths(p.AssignmentRuleFiles)
-	p.WorkflowFiles = dedupeFilePaths(p.WorkflowFiles)
-	p.FlowFiles = dedupeFilePaths(p.FlowFiles)
-	p.OwnerSharingRuleFiles = dedupeFilePaths(p.OwnerSharingRuleFiles)
-	p.GroupFiles = dedupeFilePaths(p.GroupFiles)
-	p.QueueFiles = dedupeFilePaths(p.QueueFiles)
-	p.RoleFiles = dedupeFilePaths(p.RoleFiles)
-	p.ProfileFiles = dedupeFilePaths(p.ProfileFiles)
-	p.NetworkFiles = dedupeFilePaths(p.NetworkFiles)
-	p.PermissionSetFiles = dedupeFilePaths(p.PermissionSetFiles)
-	p.PermissionSetGroupFiles = dedupeFilePaths(p.PermissionSetGroupFiles)
-	p.MutingPermissionSetFiles = dedupeFilePaths(p.MutingPermissionSetFiles)
-	p.BusinessHoursSettingsFiles = dedupeFilePaths(p.BusinessHoursSettingsFiles)
-	p.DuplicateRuleFiles = dedupeFilePaths(p.DuplicateRuleFiles)
-	p.MatchingRuleFiles = dedupeFilePaths(p.MatchingRuleFiles)
-	p.PermissionAssignmentFiles = dedupeFilePaths(p.PermissionAssignmentFiles)
-	p.ListViewFiles = dedupeFilePaths(p.ListViewFiles)
-	p.LayoutFiles = dedupeFilePaths(p.LayoutFiles)
-	p.CompactLayoutFiles = dedupeFilePaths(p.CompactLayoutFiles)
-	p.TabFiles = dedupeFilePaths(p.TabFiles)
-	p.WebLinkFiles = dedupeFilePaths(p.WebLinkFiles)
-	p.QuickActionFiles = dedupeFilePaths(p.QuickActionFiles)
-	p.GlobalValueSetFiles = dedupeFilePaths(p.GlobalValueSetFiles)
-	p.StandardValueSetFiles = dedupeFilePaths(p.StandardValueSetFiles)
-	p.ValueSetTranslationFiles = dedupeFilePaths(p.ValueSetTranslationFiles)
-	p.FlexiPageFiles = dedupeFilePaths(p.FlexiPageFiles)
-	p.ApplicationFiles = dedupeFilePaths(p.ApplicationFiles)
-	p.VisualforcePageFiles = dedupeFilePaths(p.VisualforcePageFiles)
-	p.VisualforceComponentFiles = dedupeFilePaths(p.VisualforceComponentFiles)
-	p.AuraFiles = dedupeFilePaths(p.AuraFiles)
-	p.LWCFiles = dedupeFilePaths(p.LWCFiles)
-	p.LWCHTMLFiles = dedupeFilePaths(p.LWCHTMLFiles)
-	p.LWCCSSFiles = dedupeFilePaths(p.LWCCSSFiles)
-	p.LWCMetaFiles = dedupeFilePaths(p.LWCMetaFiles)
-	p.MessageChannelFiles = dedupeFilePaths(p.MessageChannelFiles)
+	keys := newCanonicalFileKeys()
+	p.ApexFiles = dedupeFilePaths(keys, p.ApexFiles)
+	p.ObjectFiles = dedupeFilePaths(keys, p.ObjectFiles)
+	p.FieldFiles = dedupeFilePaths(keys, p.FieldFiles)
+	p.FieldSetFiles = dedupeFilePaths(keys, p.FieldSetFiles)
+	p.RecordTypeFiles = dedupeFilePaths(keys, p.RecordTypeFiles)
+	p.ValidationRuleFiles = dedupeFilePaths(keys, p.ValidationRuleFiles)
+	p.LabelFiles = dedupeFilePaths(keys, p.LabelFiles)
+	p.TranslationFiles = dedupeFilePaths(keys, p.TranslationFiles)
+	p.StaticResourceFiles = dedupeFilePaths(keys, p.StaticResourceFiles)
+	p.StaticResourceMetas = dedupeFilePaths(keys, p.StaticResourceMetas)
+	p.DataCategoryGroupFiles = dedupeFilePaths(keys, p.DataCategoryGroupFiles)
+	p.PlatformEventChannelMemberFiles = dedupeFilePaths(keys, p.PlatformEventChannelMemberFiles)
+	p.CachePartitionFiles = dedupeFilePaths(keys, p.CachePartitionFiles)
+	p.DataWeaveFiles = dedupeFilePaths(keys, p.DataWeaveFiles)
+	p.DataWeaveMetas = dedupeFilePaths(keys, p.DataWeaveMetas)
+	p.ContentAssetFiles = dedupeFilePaths(keys, p.ContentAssetFiles)
+	p.ContentAssetMetas = dedupeFilePaths(keys, p.ContentAssetMetas)
+	p.EmailTemplateFiles = dedupeFilePaths(keys, p.EmailTemplateFiles)
+	p.EmailServiceFiles = dedupeFilePaths(keys, p.EmailServiceFiles)
+	p.FolderFiles = dedupeFilePaths(keys, p.FolderFiles)
+	p.PaymentGatewayProviderFiles = dedupeFilePaths(keys, p.PaymentGatewayProviderFiles)
+	p.ReportFiles = dedupeFilePaths(keys, p.ReportFiles)
+	p.DashboardFiles = dedupeFilePaths(keys, p.DashboardFiles)
+	p.NamedCredentialFiles = dedupeFilePaths(keys, p.NamedCredentialFiles)
+	p.RemoteSiteFiles = dedupeFilePaths(keys, p.RemoteSiteFiles)
+	p.CustomPermissionFiles = dedupeFilePaths(keys, p.CustomPermissionFiles)
+	p.CustomMetadataFiles = dedupeFilePaths(keys, p.CustomMetadataFiles)
+	p.FeatureParameterFiles = dedupeFilePaths(keys, p.FeatureParameterFiles)
+	p.AutoResponseRuleFiles = dedupeFilePaths(keys, p.AutoResponseRuleFiles)
+	p.ApprovalProcessFiles = dedupeFilePaths(keys, p.ApprovalProcessFiles)
+	p.AssignmentRuleFiles = dedupeFilePaths(keys, p.AssignmentRuleFiles)
+	p.WorkflowFiles = dedupeFilePaths(keys, p.WorkflowFiles)
+	p.FlowFiles = dedupeFilePaths(keys, p.FlowFiles)
+	p.OwnerSharingRuleFiles = dedupeFilePaths(keys, p.OwnerSharingRuleFiles)
+	p.GroupFiles = dedupeFilePaths(keys, p.GroupFiles)
+	p.QueueFiles = dedupeFilePaths(keys, p.QueueFiles)
+	p.RoleFiles = dedupeFilePaths(keys, p.RoleFiles)
+	p.ProfileFiles = dedupeFilePaths(keys, p.ProfileFiles)
+	p.NetworkFiles = dedupeFilePaths(keys, p.NetworkFiles)
+	p.PermissionSetFiles = dedupeFilePaths(keys, p.PermissionSetFiles)
+	p.PermissionSetGroupFiles = dedupeFilePaths(keys, p.PermissionSetGroupFiles)
+	p.MutingPermissionSetFiles = dedupeFilePaths(keys, p.MutingPermissionSetFiles)
+	p.BusinessHoursSettingsFiles = dedupeFilePaths(keys, p.BusinessHoursSettingsFiles)
+	p.DuplicateRuleFiles = dedupeFilePaths(keys, p.DuplicateRuleFiles)
+	p.MatchingRuleFiles = dedupeFilePaths(keys, p.MatchingRuleFiles)
+	p.PermissionAssignmentFiles = dedupeFilePaths(keys, p.PermissionAssignmentFiles)
+	p.ListViewFiles = dedupeFilePaths(keys, p.ListViewFiles)
+	p.LayoutFiles = dedupeFilePaths(keys, p.LayoutFiles)
+	p.CompactLayoutFiles = dedupeFilePaths(keys, p.CompactLayoutFiles)
+	p.TabFiles = dedupeFilePaths(keys, p.TabFiles)
+	p.WebLinkFiles = dedupeFilePaths(keys, p.WebLinkFiles)
+	p.QuickActionFiles = dedupeFilePaths(keys, p.QuickActionFiles)
+	p.GlobalValueSetFiles = dedupeFilePaths(keys, p.GlobalValueSetFiles)
+	p.StandardValueSetFiles = dedupeFilePaths(keys, p.StandardValueSetFiles)
+	p.ValueSetTranslationFiles = dedupeFilePaths(keys, p.ValueSetTranslationFiles)
+	p.FlexiPageFiles = dedupeFilePaths(keys, p.FlexiPageFiles)
+	p.ApplicationFiles = dedupeFilePaths(keys, p.ApplicationFiles)
+	p.VisualforcePageFiles = dedupeFilePaths(keys, p.VisualforcePageFiles)
+	p.VisualforceComponentFiles = dedupeFilePaths(keys, p.VisualforceComponentFiles)
+	p.AuraFiles = dedupeFilePaths(keys, p.AuraFiles)
+	p.LWCFiles = dedupeFilePaths(keys, p.LWCFiles)
+	p.LWCHTMLFiles = dedupeFilePaths(keys, p.LWCHTMLFiles)
+	p.LWCCSSFiles = dedupeFilePaths(keys, p.LWCCSSFiles)
+	p.LWCMetaFiles = dedupeFilePaths(keys, p.LWCMetaFiles)
+	p.MessageChannelFiles = dedupeFilePaths(keys, p.MessageChannelFiles)
 }
 
 func duplicateApexClassSourceWarnings(root string, files []string) []string {
@@ -903,14 +907,14 @@ func duplicateApexClassSourceWarnings(root string, files []string) []string {
 	return warnings
 }
 
-func dedupeFilePaths(paths []string) []string {
+func dedupeFilePaths(keys *canonicalFileKeys, paths []string) []string {
 	if len(paths) < 2 {
 		return paths
 	}
 	seen := make(map[string]bool, len(paths))
 	out := make([]string, 0, len(paths))
 	for _, path := range paths {
-		key := canonicalFileKey(path)
+		key := keys.key(path)
 		if seen[key] {
 			continue
 		}
@@ -918,6 +922,39 @@ func dedupeFilePaths(paths []string) []string {
 		out = append(out, path)
 	}
 	return out
+}
+
+// canonicalFileKeys resolves symlinks once per directory instead of once per
+// file. A file whose own entry is a symlink, or whose directory cannot be
+// resolved, takes the full per-path resolution.
+type canonicalFileKeys struct {
+	dirs map[string]string
+}
+
+func newCanonicalFileKeys() *canonicalFileKeys {
+	return &canonicalFileKeys{dirs: make(map[string]string)}
+}
+
+func (c *canonicalFileKeys) key(path string) string {
+	dir, base := filepath.Split(path)
+	info, err := os.Lstat(path)
+	if err != nil || info.Mode()&os.ModeSymlink != 0 || base == "" || base == "." || base == ".." {
+		return canonicalFileKey(path)
+	}
+	resolvedDir, ok := c.dirs[dir]
+	if !ok {
+		resolved, err := filepath.EvalSymlinks(filepath.Clean(dir))
+		if err != nil {
+			c.dirs[dir] = ""
+			return canonicalFileKey(path)
+		}
+		resolvedDir = filepath.Clean(resolved)
+		c.dirs[dir] = resolvedDir
+	}
+	if resolvedDir == "" {
+		return canonicalFileKey(path)
+	}
+	return filepath.Join(resolvedDir, base)
 }
 
 func canonicalFileKey(path string) string {
@@ -965,6 +1002,45 @@ func dependencyPackageDirectories(dirs []PackageDirectory, requestedPackages ...
 		return defaults
 	}
 	return dirs
+}
+
+// PackageNamespaceBinding says which namespaces the project's declared package
+// dependencies bind. Narrow is false when the project declares no dependency,
+// or declares one whose namespace is unknown (an SFDX alias with no namespace
+// binding); the caller then keeps its open tolerance. Sourceless lists the
+// declared namespaces whose package source is absent: the package is installed
+// in the org but Glade cannot see its fields.
+type PackageNamespaceBinding struct {
+	Narrow     bool
+	Sourceless []string
+}
+
+// PackageNamespaceBinding reads the declared dependencies of this project only.
+func (p Project) PackageNamespaceBinding() PackageNamespaceBinding {
+	known := make(map[string]bool, len(p.ManagedPackageDependencies))
+	var binding PackageNamespaceBinding
+	for _, dep := range p.ManagedPackageDependencies {
+		namespace := strings.TrimSpace(dep.Namespace)
+		if namespace == "" {
+			return PackageNamespaceBinding{}
+		}
+		key := strings.ToLower(namespace)
+		known[key] = true
+		sourcePresent := dep.Status == "loaded" && (dep.Project != nil || dep.ArtifactPath != "")
+		if !sourcePresent {
+			binding.Sourceless = append(binding.Sourceless, namespace)
+		}
+	}
+	for _, diag := range p.DependencyDiagnostics {
+		if !known[strings.ToLower(strings.TrimSpace(diag.Namespace))] {
+			return PackageNamespaceBinding{}
+		}
+	}
+	binding.Narrow = len(known) > 0
+	if !binding.Narrow {
+		binding.Sourceless = nil
+	}
+	return binding
 }
 
 // DependencyStatusDeclared marks a namespace-only declaration from glade.yml
@@ -1129,6 +1205,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 			diagnostics = append(diagnostics, configDiagnostics...)
 		}
 	}
+	siblingScan := SiblingDependencyScanEnabled(dependencyCfg, dependencyCfgOK)
 	for _, packageName := range packageNames {
 		if explicitNames[normalizeSFDXPackageName(packageName)] {
 			continue
@@ -1136,14 +1213,12 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		if managedPackageDependencyNamespaceLoaded(deps, packageName) {
 			continue
 		}
-		// A sibling project in the same source workspace is an unambiguous local
-		// dependency when its manifest declares the requested package.  This is
-		// the normal SFDX monorepo layout (for example, a plugin next to its
-		// package source), and does not broaden discovery to unrelated
-		// grandchildren or arbitrary filesystem paths.  Ancestor glade.yml
-		// configuration remains the escape hatch for dependencies outside the
-		// workspace.
-		depRoots := findLocalSFDXPackageDependencyRoots(root, packageName, true, sfdxProjectHasPackageAlias(cfg, packageName), dependencyPaths)
+		// Resolution is deterministic by default: only project.dependencies,
+		// project.managedPackageDependencies and project.dependencyPaths supply
+		// a dependency. Looking in the directories beside the project is an
+		// opt-in (project.siblingDependencyScan or --sibling-dependencies),
+		// because it makes the result depend on what else is on disk.
+		depRoots := findLocalSFDXPackageDependencyRoots(root, packageName, siblingScan, siblingScan && sfdxProjectHasPackageAlias(cfg, packageName), dependencyPaths)
 		if len(depRoots) == 0 {
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				Namespace: packageName,
@@ -1152,7 +1227,9 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 				Message: fmt.Sprintf("declared SFDX package dependency %q has no configured source or artifact; "+
 					"add the directory that holds its sfdx-project.json (or a parent of it) to glade.yml, "+
 					"for example project.dependencyPaths: [\"../path/to/%s\"], "+
-					"or project.managedPackageDependencies for a namespaced package", packageName, packageName),
+					"or project.managedPackageDependencies for a namespaced package; "+
+					"sibling directories are searched only with project.siblingDependencyScan: true "+
+					"or --sibling-dependencies", packageName, packageName),
 			})
 			continue
 		}
@@ -1193,7 +1270,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 			Status:     "loaded",
 		})
 	}
-	for _, depRoot := range findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root, packageNames, p, true) {
+	for _, depRoot := range findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root, packageNames, p, siblingScan) {
 		if sameFilePath(depRoot, root) || managedPackageDependencySourceLoaded(deps, depRoot) {
 			continue
 		}
@@ -1434,6 +1511,26 @@ func sfdxPackageDependencyNames(cfg sfdxProject) []string {
 	return names
 }
 
+// SiblingDependencyScanEnvVar turns on sibling-directory dependency lookup for
+// the process. The CLI sets it for --sibling-dependencies so child processes
+// such as the test daemon see the same choice.
+const SiblingDependencyScanEnvVar = "GLADE_SIBLING_DEPENDENCIES"
+
+// SiblingDependencyScanEnabled reports whether declared SFDX package
+// dependencies may be resolved from sibling project directories. It is off
+// unless the project's glade.yml sets project.siblingDependencyScan: true or the
+// process opted in with --sibling-dependencies.
+func SiblingDependencyScanEnabled(cfg config.Config, cfgOK bool) bool {
+	if cfgOK && cfg.Project.SiblingDependencyScan {
+		return true
+	}
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(SiblingDependencyScanEnvVar))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
+}
+
 func findLocalSFDXPackageDependencyRoots(root, packageName string, allowSiblingScan, allowWorkspaceScan bool, dependencyPaths []string) []string {
 	wanted := normalizeSFDXPackageName(packageName)
 	if wanted == "" {
@@ -1528,20 +1625,20 @@ func localSFDXPackageDependencyCandidates(root, packageName string, allowSibling
 	}
 	parent := filepath.Dir(filepath.Clean(root))
 	grandparent := filepath.Dir(parent)
-	for _, base := range []string{parent, grandparent} {
-		if base == "" || base == "." {
-			continue
-		}
-		add(base)
-		for _, name := range localSFDXPackageDependencyDirNames(packageName) {
-			if name == "" {
+	if allowSiblingScan {
+		for _, base := range []string{parent, grandparent} {
+			if base == "" || base == "." {
 				continue
 			}
-			add(filepath.Join(base, name))
-			add(filepath.Join(base, "packages", name))
+			add(base)
+			for _, name := range localSFDXPackageDependencyDirNames(packageName) {
+				if name == "" {
+					continue
+				}
+				add(filepath.Join(base, name))
+				add(filepath.Join(base, "packages", name))
+			}
 		}
-	}
-	if allowSiblingScan {
 		for _, candidate := range localSFDXSiblingProjectCandidates(parent) {
 			add(candidate)
 		}

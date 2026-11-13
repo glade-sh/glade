@@ -507,7 +507,7 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 		e.IsolationJournal.RecordUpdate("Account", account.ID, stored)
 	}
 	stored.Fields["PersonContactId"] = storage.IDValue(contactID)
-	accountObject.Records[account.ID] = stored
+	accountObject.PutRecord(account.ID, stored)
 	e.Org.Objects["Account"] = accountObject
 	return nil
 }
@@ -585,7 +585,7 @@ func (e *Engine) syncPersonContact(account storage.Record) error {
 		delete(contact.ExplicitNulls, field)
 	}
 	clearExplicitPersonContactFields(&contact, account, e.personAccountFieldMappings())
-	contactObject.Records[contactID] = contact
+	contactObject.PutRecord(contactID, contact)
 	e.Org.Objects["Contact"] = contactObject
 	return nil
 }
@@ -679,7 +679,7 @@ func (e *Engine) syncPersonAccountCustomFields(contact storage.Record) {
 			delete(account.ExplicitNulls, mapping.account)
 		}
 	}
-	object.Records[storedID] = account
+	object.PutRecord(storedID, account)
 	e.Org.Objects["Account"] = object
 }
 

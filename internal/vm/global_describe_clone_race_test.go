@@ -26,7 +26,7 @@ func TestGlobalDescribeTypedRebindDoesNotWriteSharedKeys(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !sameMapBacking(writerView.MapKeys, readerView.MapKeys) {
-				t.Skip("clones no longer share global describe keys")
+				t.Fatal("clones no longer share global describe keys")
 			}
 			wantKeys := len(readerView.MapKeys)
 			start := make(chan struct{})

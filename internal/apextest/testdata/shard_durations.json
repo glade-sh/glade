@@ -1,7 +1,7 @@
 {
   "version": 1,
   "package": "github.com/glade-sh/glade/internal/apextest",
-  "source": "e712d4c63; darwin/arm64 Go 1.26.10 GOMAXPROCS=2; complete registry in 85 bounded selections; process wall and CPU measured separately; merged maximum spans from separate selections; scheduling hints, not a matched full-package measurement; 2026-11-02 (34b21e602): 364 tests added from one laptop -test.v run of exactly those tests (darwin/arm64 Go 1.26.10 GOMAXPROCS=2 GOMEMLIMIT=3GiB; parallel parents weigh max(parent, sum of children)); stale entries pruned against -test.list",
+  "source": "e712d4c63; darwin/arm64 Go 1.26.10 GOMAXPROCS=2; complete registry in 85 bounded selections; process wall and CPU measured separately; merged maximum spans from separate selections; scheduling hints, not a matched full-package measurement; 2026-11-02 (34b21e602): 364 tests added from one laptop -test.v run of exactly those tests (darwin/arm64 Go 1.26.10 GOMAXPROCS=2 GOMEMLIMIT=3GiB; parallel parents weigh max(parent, sum of children)); stale entries pruned against -test.list; 2026-11-12: two tests added from one CI shard-11 run, where both had taken the median duration (the lazy-spread parity test alone ran 675 s; it is now ten tests of about 80 s)",
   "tests": [
     {
       "name": "TestAPIVersionDiagnosticNativeConformance",
@@ -8986,6 +8986,50 @@
     {
       "name": "TestXMLOrgConformance",
       "durationMillis": 3585
+    },
+    {
+      "name": "TestEntityDefinitionSoslNativeConformance",
+      "durationMillis": 71730
+    },
+    {
+      "name": "TestLazyStandardSpreadParityNoInputsDescribe0",
+      "durationMillis": 80000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityNoInputsDescribe1",
+      "durationMillis": 80000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityNoInputsDescribe2",
+      "durationMillis": 80000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityNoInputsDescribe3",
+      "durationMillis": 80000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityNoInputsRest",
+      "durationMillis": 45000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityFeaturesDescribe0",
+      "durationMillis": 80000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityFeaturesDescribe1",
+      "durationMillis": 80000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityFeaturesDescribe2",
+      "durationMillis": 80000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityFeaturesDescribe3",
+      "durationMillis": 80000
+    },
+    {
+      "name": "TestLazyStandardSpreadParityFeaturesRest",
+      "durationMillis": 45000
     }
   ]
 }

@@ -1,6 +1,10 @@
 package storage
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/glade-sh/glade/internal/project"
+)
 
 // StandardFieldAssignmentRequiresEmptyID records standard fields whose Apex
 // setter rejects an ID-bearing receiver, including a synthetic or sparse ID.
@@ -41,6 +45,55 @@ func StandardFieldAssignmentReadOnly(objectName, fieldName string) bool {
 		}
 	}
 	return false
+}
+
+// StandardFeatureEnabledFieldAssignmentReadOnly is the assignment rule for a
+// field that a declared org feature switches on (Case.Division). It applies
+// only to a known scratch shape that has the feature; an unknown shape keeps
+// the earlier behavior.
+func StandardFeatureEnabledFieldAssignmentReadOnly(objectName, fieldName string, features []string) bool {
+	if StandardObjectUnsuppliedFieldRejected(objectName, fieldName, features) {
+		return false
+	}
+	policy := standardFieldPolicyFor(objectName)
+	if policy == nil || hasCanonicalFeature(features, project.UnspecifiedStandardFieldShape) {
+		return false
+	}
+	field, enabled := standardFeatureEnabledField(objectName, fieldName)
+	return enabled && field.Type != FieldID && !FieldFlagValue(field.Createable, false) && !FieldFlagValue(field.Updateable, false)
+}
+
+// standardFeatureEnabledField returns the generated catalog field that a
+// feature switches on (surface file feature_enabled_fields). The baseline
+// definition omits it, so writability follows the catalog facets.
+func standardFeatureEnabledField(objectName, fieldName string) (Field, bool) {
+	policy := standardFieldPolicyFor(objectName)
+	if policy == nil {
+		return Field{}, false
+	}
+	groups, ok := standardPolicyLookup(policy.featureEnabledFields, fieldName)
+	if !ok || len(groups) == 0 {
+		return Field{}, false
+	}
+	definition := ObjectDefinition{APIName: objectName, Fields: map[string]Field{}}
+	EnsureStandardObjectFieldsForFeatures(&definition, groups[0])
+	if name, found := ResolveFieldName(definition, "", fieldName); found {
+		return definition.Fields[name], true
+	}
+	return Field{}, false
+}
+
+// StandardFeatureEnabledFieldDynamicPutReadOnly reports a field that an org
+// feature switches on (Case.Division) and that describe marks neither
+// createable nor updateable. A name-based put rejects it as not editable, but
+// only once the org has the field, so callers check existence first.
+func StandardFeatureEnabledFieldDynamicPutReadOnly(definition ObjectDefinition, fieldName string) bool {
+	signature, applied := definition.Metadata[standardFieldsOverlayMarker]
+	if !applied || featureSignatureHas(signature, project.UnspecifiedStandardFieldShape) {
+		return false
+	}
+	field, enabled := standardFeatureEnabledField(definition.APIName, fieldName)
+	return enabled && field.Type != FieldID && !FieldFlagValue(field.Createable, false) && !FieldFlagValue(field.Updateable, false)
 }
 
 // These setters compile in named Apex at API 62 and 67. Execute Anonymous

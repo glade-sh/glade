@@ -1,7 +1,9 @@
 package gladecli
 
 import (
+	"context"
 	"path/filepath"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/project"
@@ -10,44 +12,123 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// Require person-family metadata and the captured business-default fallback in the restored org.
-const dapCacheVersion = 18
+// Reject entries that may pair a runtime with a later fingerprint.
+const dapCacheVersion = 19
 
-func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
+// normalizedDAPRoot is the absolute, cleaned, symlink-resolved project root.
+// Load slots and publish locks are keyed on it so two spellings of one project
+// share them.
+func normalizedDAPRoot(projectRoot string) (string, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+		return "", err
+	}
+	root = filepath.Clean(root)
+	if resolved, err := filepath.EvalSymlinks(root); err == nil {
+		root = resolved
+	}
+	return root, nil
+}
+
+var dapPublishLocks sync.Map // normalized root -> *sync.Mutex
+
+func dapPublishLock(root string) *sync.Mutex {
+	lock, _ := dapPublishLocks.LoadOrStore(root, &sync.Mutex{})
+	return lock.(*sync.Mutex)
+}
+
+func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
+	org, runtime, apiVersion, _, err := loadDAPStartupStateWithIndex(context.Background(), projectRoot)
+	return org, runtime, apiVersion, err
+}
+
+type dapLoadSeams struct {
+	afterIndex    func()
+	beforePublish func()
+}
+
+func loadDAPStartupStateWithSeams(root string, seams dapLoadSeams) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
+	org, runtime, api, _, err := loadDAPStartupStateWithIndexAndSeams(context.Background(), root, seams)
+	return org, runtime, api, err
+}
+
+// loadDAPStartupStateWithIndex also returns the project index when this call
+// had to build it (a startup cache miss). On a cache hit the index is nil.
+func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
+	return loadDAPStartupStateWithIndexAndSeams(ctx, projectRoot, dapLoadSeams{})
+}
+
+func loadDAPStartupStateWithIndexAndSeams(ctx context.Context, projectRoot string, seams dapLoadSeams) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
+	root, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
 	root = filepath.Clean(root)
 	cache, err := startupcache.Read(root, startupcache.SubdirDAP)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
 	if cache != nil && startupcache.Fresh(cache, root, dapCacheVersion) {
-		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil
+		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil, nil
 	}
-	p, index, err := loadProjectIndex(root)
+	before, beforeErr := startupcache.ValidateInputWithSourceDigests(root, nil)
+	p, err := project.Load(root)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
+	index, artifacts := buildProjectIndexWithArtifacts(p)
 	org, err := orgStateFromIndex(root, p, index)
 	if err != nil {
-		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", err
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
-	runtime := apextest.CompileProjectRuntimeForRequest(index)
-	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
-	built.Version = dapCacheVersion
-	if err := startupcache.Write(&built, startupcache.SubdirDAP); err != nil {
-		// Caching is an optimization; keep serving from rebuilt state even if
-		// cache persistence fails.
+	if err := ctx.Err(); err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
-	return built.Org, runtime, p.SourceAPIVersion, nil
+	if seams.afterIndex != nil {
+		seams.afterIndex()
+	}
+	runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(index, artifacts.SourceDigests)
+	if err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
+	}
+	if seams.beforePublish != nil {
+		seams.beforePublish()
+	}
+	lockRoot, _ := normalizedDAPRoot(root)
+	publish := dapPublishLock(lockRoot)
+	publish.Lock()
+	defer publish.Unlock()
+	if err := ctx.Err(); err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
+	}
+	if beforeErr == nil {
+		if built, ok := dapPublishableEntry(root, before, artifacts.SourceDigests, org, runtime); ok {
+			_ = startupcache.Write(&built, startupcache.SubdirDAP)
+		}
+	}
+	return org, runtime, p.SourceAPIVersion, &index, nil
+}
+
+// dapPublishableEntry binds the entry to the input proof taken before the
+// build. It reports false when the inputs drifted, so no entry pairs an old
+// runtime with a newer fingerprint.
+func dapPublishableEntry(root string, before *startupcache.ValidatedInput, digests *typesys.SourceDigestSet, org storage.OrgState, runtime apextest.CompiledProjectRuntime) (startupcache.Entry, bool) {
+	after, err := startupcache.ValidateInputWithSourceDigests(root, digests)
+	if err != nil || after.Digest() != before.Digest() {
+		return startupcache.Entry{}, false
+	}
+	entry, err := startupcache.NewEntryWithValidatedInput(before, org, compiledRuntimeToCache(runtime))
+	if err != nil {
+		return startupcache.Entry{}, false
+	}
+	entry.Version = dapCacheVersion
+	return entry, true
 }
 
 func compiledRuntimeFromCache(runtime startupcache.CompiledRuntime) apextest.CompiledProjectRuntime {
 	return apextest.CompiledProjectRuntime{
 		Methods:   runtime.Methods,
-		Classes:   runtime.Classes,
+		Classes:   apextest.RestoreLazyClasses(runtime.Classes),
 		Triggers:  runtime.Triggers,
 		PageNames: runtime.PageNames,
 	}
@@ -56,7 +137,7 @@ func compiledRuntimeFromCache(runtime startupcache.CompiledRuntime) apextest.Com
 func compiledRuntimeToCache(runtime apextest.CompiledProjectRuntime) startupcache.CompiledRuntime {
 	return startupcache.CompiledRuntime{
 		Methods:   runtime.Methods,
-		Classes:   runtime.Classes,
+		Classes:   apextest.PersistableClasses(runtime.Classes),
 		Triggers:  runtime.Triggers,
 		PageNames: runtime.PageNames,
 	}

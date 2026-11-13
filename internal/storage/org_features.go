@@ -101,6 +101,6 @@ func clearOrganizationFeatureFlagRecords(org *OrgState) {
 				}
 			}
 		}
-		object.Records[id] = record
+		object.PutRecord(id, record)
 	}
 }

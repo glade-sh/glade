@@ -15,7 +15,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v34"
+const testRuntimeCacheABI = "apextest-runtime-v35"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -126,7 +126,7 @@ func persistDiskRuntimeWithValidatedInput(index typesys.Index, key runtimeCacheK
 	}
 	cacheEntry, err := startupcache.NewEntryWithValidatedInput(input, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
-		Classes:   entry.Classes,
+		Classes:   PersistableClasses(entry.Classes),
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
@@ -163,7 +163,7 @@ func persistDiskRuntimeWithPerfValidatedInput(index typesys.Index, key runtimeCa
 	}
 	cacheEntry, err := startupcache.NewEntryWithValidatedInput(input, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
-		Classes:   entry.Classes,
+		Classes:   PersistableClasses(entry.Classes),
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
@@ -198,7 +198,7 @@ func validatedDiskRuntimeInputForPublication(index typesys.Index, digests *types
 func runtimeCacheEntryFromStartup(entry startupcache.Entry) (runtimeCacheEntry, bool) {
 	runtime := CompiledProjectRuntime{
 		Methods:   entry.Runtime.Methods,
-		Classes:   entry.Runtime.Classes,
+		Classes:   RestoreLazyClasses(entry.Runtime.Classes),
 		Triggers:  entry.Runtime.Triggers,
 		PageNames: entry.Runtime.PageNames,
 	}
@@ -223,7 +223,7 @@ func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *ru
 	projectStarted := time.Now()
 	runtime := CompiledProjectRuntime{
 		Methods:   entry.Runtime.Methods,
-		Classes:   entry.Runtime.Classes,
+		Classes:   RestoreLazyClasses(entry.Runtime.Classes),
 		Triggers:  entry.Runtime.Triggers,
 		PageNames: entry.Runtime.PageNames,
 	}

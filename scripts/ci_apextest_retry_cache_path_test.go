@@ -12,8 +12,8 @@ func TestCICase319RetryCacheSaveRestorePathMatches(t *testing.T) {
 		t.Fatal(err)
 	}
 	jobs := workflowJobBlocks(t, string(data))
-	restore := workflowStepBlock(t, jobs["apextest-history-input"], "      - name: Restore Apex retry scheduling profile")
-	save := workflowStepBlock(t, jobs["apextest-history"], "      - name: Cache Apex scheduling profile after balance failure")
+	restore := workflowStepBlock(t, jobs["history-input"], "      - name: Restore Apex retry scheduling profile")
+	save := workflowStepBlock(t, jobs["history"], "      - name: Cache Apex scheduling profile after balance failure")
 	for _, step := range []string{restore, save} {
 		if !strings.Contains(step, "path: /tmp/apextest-scheduling-profile") {
 			t.Errorf("retry cache save and restore must use the same path: %s", step)
@@ -35,8 +35,8 @@ func TestCICase319RetryCacheKeysUseBenchmarkPairPrefix(t *testing.T) {
 	}
 	jobs := workflowJobBlocks(t, string(data))
 	for _, tc := range []struct{ job, name, attempt string }{
-		{"apextest-history-input", "Restore Apex retry scheduling profile", "${{ steps.retry.outputs.attempt }}"},
-		{"apextest-history", "Cache Apex scheduling profile after balance failure", "${{ github.run_attempt }}"},
+		{"history-input", "Restore Apex retry scheduling profile", "${{ steps.retry.outputs.attempt }}"},
+		{"history", "Cache Apex scheduling profile after balance failure", "${{ github.run_attempt }}"},
 	} {
 		t.Run(tc.job, func(t *testing.T) {
 			step := workflowStepBlock(t, jobs[tc.job], "      - name: "+tc.name)

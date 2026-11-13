@@ -72,7 +72,7 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 	if !compiled {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_ANONYMOUS_PARSE", Message: "anonymous Apex could not be compiled", Range: &rng})
 	}
-	return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: NativeLifecycleDiagnostics(index, diagnostics)}
+	return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: nativeLifecycleDiagnostics(index, diagnostics, setup.typeMembers, analyzer.sources)}
 }
 
 func anonymousExecuteSymbols(apiVersion string, rng diagnostic.Range) (typesys.TypeSymbol, typesys.MemberSymbol) {

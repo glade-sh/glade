@@ -1,0 +1,1 @@
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>RejectRule</fullName><active>true</active><errorConditionFormula>Reject__c = true</errorConditionFormula><errorMessage>Rejected by rule</errorMessage></ValidationRule>

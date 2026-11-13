@@ -245,11 +245,11 @@ func TestFirstColdRuntimePassiveClassesMatchCachedRegistration(t *testing.T) {
 		t.Fatal("first-cold preparation constructed a VM before org construction")
 	}
 	wantPassive := freshPassiveStandardRuntimeClasses(index.Types, private)
-	if len(prepared.classes) < len(private) || !reflect.DeepEqual(prepared.classes[len(private):], wantPassive) {
+	if len(prepared.classes) < len(private) || !sameClassLists(prepared.classes[len(private):], wantPassive) {
 		t.Fatal("first-cold passive suffix changed class values, order or exclusions")
 	}
 	want := compileProjectClasses(index, nil, newSourceCache())
-	if !reflect.DeepEqual(prepared.classes, want) || !reflect.DeepEqual(prepared.unregistered, want) {
+	if !sameClassLists(prepared.classes, want) || !sameClassLists(prepared.unregistered, want) {
 		t.Fatal("first-cold class list differs from cached compilation")
 	}
 
@@ -291,6 +291,9 @@ System.debug(Type.forName('LoggingLevel'));`)
 	// Mutating the first runtime's maps and nested slices must not reach the
 	// later cache, nor the immutable symbols used to build fresh declarations.
 	for _, class := range prepared.classes[len(private):] {
+		if class.IsLazy() {
+			continue
+		}
 		class.Fields["OwnedMutation"] = vm.Field{Name: "OwnedMutation", Type: "String"}
 		class.StaticFields["OwnedMutation"] = vm.Field{Name: "OwnedMutation", Type: "Integer", Static: true}
 		for name, method := range class.Methods {
@@ -316,7 +319,7 @@ System.debug(Type.forName('LoggingLevel'));`)
 			}
 		}
 	}
-	if got := passiveStandardRuntimeClasses(index.Types, private); !reflect.DeepEqual(got, wantPassive) {
+	if got := passiveStandardRuntimeClasses(index.Types, private); !sameClassLists(got, wantPassive) {
 		t.Fatal("mutating first-cold declarations changed cached passive classes")
 	}
 	if got := freshPassiveStandardRuntimeClasses(index.Types, private); !reflect.DeepEqual(got, wantPassive) {
@@ -420,7 +423,8 @@ func TestStandardRuntimeBaseAllocationBudget(t *testing.T) {
 	legacy := func() {
 		sources := newSourceCache()
 		methods := compileProjectMethods(index, sources)
-		classes := compileProjectClasses(index, methods, sources)
+		// Full registration builds every platform class, as before lazy shells.
+		classes := eagerClasses(compileProjectClasses(index, methods, sources))
 		org, err := orgFromIndexWithError(index, sources)
 		if err != nil {
 			t.Fatal(err)

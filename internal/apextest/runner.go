@@ -65,6 +65,12 @@ type Options struct {
 	Parallelism     int
 	ParallelMethods bool
 	NoDiskCache     bool
+	// OneShotProcess marks a run whose process exits after this run and keeps
+	// no later runtime transition. Set it only on the CLI's one-shot local
+	// route, never for the daemon, server, watch or dev loops. The runtime
+	// patch authority then skips the ambient org fingerprint it could only
+	// use in a later transition, and fails closed instead.
+	OneShotProcess bool
 	// RestoredRuntimeMultiWorker is an internal, default-off experiment that
 	// permits disk-restored runtimes with parallel method workers. Product
 	// configuration and CLI surfaces intentionally do not expose it.
@@ -346,6 +352,7 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 // project subset without its invalid classes and their dependents.
 func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases []TestCase, hooks semanticGateHooks, runState *runExecution, gate *compileGate) (report testreport.Run) {
 	started := time.Now()
+	visualforce.SetPersistentGateCache(!opts.NoDiskCache && diskCacheEnabled())
 	if gate != nil && opts.Progress != nil {
 		opts.Progress = compileGateNestedProgress(opts.Progress)
 	}
@@ -399,6 +406,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		return compileErrorRun(cases, gateErr, started, opts)
 	}
 	generation.controllerCompilation = visualforceControllerCompilationHint(index, diagnostics)
+	generation.oneShot = opts.OneShotProcess
 	diagnostics = gate.withoutScopedDependencyErrors(diagnostics)
 	if compileErr := indexCompileError(diagnostics); compileErr != nil {
 		return runWithCompileGate(ctx, index, opts, cases, hooks, runState, gate, sources, diagnostics, compileErr, started)
@@ -464,7 +472,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	recordCloneReason("", "run-base", "vm-runtime", runState.counters)
 	machineCloneStarted := time.Now()
 	baseMachine := runtime.restored.CloneMachine(nil)
-	baseMachine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	baseMachine.SetExpressionTypeResolver(runtimeExpressionResolver(runtimeKey, index))
 	recordCloneRuntimeMachineDuration(time.Since(machineCloneStarted), runState.counters)
 	baseMachine.SetTestDocumentBaseline(&org)
 	baseMachine.SetTestReportBaseline(&org)
@@ -872,7 +880,7 @@ func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts
 				perfCounters.phases.semanticBuilds.Add(1)
 				perfCounters.phases.semanticAnalyses.Add(1)
 			}
-			analyzed := sema.AnalyzeWithOptions(analysisIndex, analyzeOptions)
+			analyzed := analyzeSemantic(ctx, analysisIndex, analyzeOptions)
 			if hooks.afterAnalysis != nil {
 				hooks.afterAnalysis()
 			}
@@ -1045,11 +1053,10 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -1077,14 +1084,13 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 }
 
 func validateApexMetadataInput(path string, expected typesys.ApexMetadataInput) error {
-	data, err := os.ReadFile(path) // #nosec G304 -- fixed metadata companion for an indexed Apex source.
+	actual, err := currentFileDigest(path)
 	if err != nil {
 		if os.IsNotExist(err) && !expected.Present {
 			return nil
 		}
 		return sourceSnapshotMismatch(path, expected.Digest, nil, err)
 	}
-	actual := sha256.Sum256(data)
 	if !expected.Present || actual != expected.Digest {
 		return sourceSnapshotMismatch(path, expected.Digest, &actual, nil)
 	}
@@ -1389,9 +1395,10 @@ const (
 )
 
 type runtimeMetadataGeneration struct {
-	authority   runtimeMetadataAuthority
-	inputs      map[string]typesys.ApexMetadataInput
-	apiVersions map[string]string
+	standardDuplicateRules bool
+	authority              runtimeMetadataAuthority
+	inputs                 map[string]typesys.ApexMetadataInput
+	apiVersions            map[string]string
 }
 
 type runtimeSourceInput struct {
@@ -1416,6 +1423,9 @@ type runtimeGeneration struct {
 	// generation, offered to the Visualforce controller compile gate so page
 	// registration does not build and analyze the project a second time.
 	controllerCompilation *visualforce.ControllerCompilation
+	// oneShot is Options.OneShotProcess for the run that prepared this
+	// generation. It is not part of any cache key.
+	oneShot bool
 }
 
 func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration) runtimeCacheKey {
@@ -1442,6 +1452,7 @@ func runtimeKeyWithMetadataGeneration(base runtimeCacheKey, generation runtimeMe
 	write("apextest-runtime-metadata-v1")
 	write(string(base))
 	write(string(generation.authority))
+	write("standard-duplicate-rules:" + strconv.FormatBool(generation.standardDuplicateRules))
 	paths := make([]string, 0, len(generation.inputs))
 	for path := range generation.inputs {
 		paths = append(paths, path)
@@ -1688,11 +1699,10 @@ func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDi
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		data, err := os.ReadFile(file) // #nosec G304 -- indexed source path.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -1913,7 +1923,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		executionProjectionValidated: true,
 		standardPrefix:               classRuntime.prefix,
 	}
-	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
+	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org, generation.oneShot)
 	projected, projectOK := project(entry)
 	if !projectOK {
 		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
@@ -2081,7 +2091,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		executionProjectionValidated: true,
 		standardPrefix:               classRuntime.prefix,
 	}
-	entry.patchAuthority = newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, counters)
+	entry.patchAuthority = newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, counters, generation.oneShot)
 	counters.recordObservedPhaseDuration(&counters.phases.projectCompileNS, time.Since(authorityStarted))
 	projected, projectOK := project(entry)
 	if !projectOK {
@@ -3486,7 +3496,7 @@ func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
 // the documented legacy live-read behavior.
 func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index, digests *typesys.SourceDigestSet) error {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return err
 	}
@@ -3498,7 +3508,7 @@ func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index
 		return triggerErrors[0]
 	}
 	registerVisualforcePages(machine, runtime.PageNames)
-	machine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	machine.SetExpressionTypeResolver(runtimeExpressionResolver(key, index))
 	return registerBaseRuntime(machine, methods, classes, triggers)
 }
 
@@ -3516,7 +3526,7 @@ func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error
 // second time.
 func NewProjectRuntimeForRequest(index typesys.Index) (*vm.VM, error) {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexForExecutionWithSourceDigests(index, nil, sources)
+	key, runtime, err := runtimeFromIndexForExecutionWithSourceDigests(index, nil, sources)
 	if err != nil {
 		return nil, err
 	}
@@ -3524,7 +3534,7 @@ func NewProjectRuntimeForRequest(index typesys.Index) (*vm.VM, error) {
 		return nil, runtime.BaseErr
 	}
 	machine := runtime.restored.CloneMachine(nil)
-	machine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	machine.SetExpressionTypeResolver(runtimeExpressionResolver(key, index))
 	return machine, nil
 }
 
@@ -3578,11 +3588,11 @@ func RegisterUncachedProjectRuntimeForRequest(machine *vm.VM, index typesys.Inde
 // the documented legacy live-read behavior of RegisterProjectRuntimeForRequest.
 func RegisterProjectRuntimeForRequestWithSourceDigests(machine *vm.VM, index typesys.Index, digests *typesys.SourceDigestSet) error {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return err
 	}
-	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime, index))
+	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromKeyedEntry(key, runtime, index))
 }
 
 func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime {
@@ -3594,11 +3604,11 @@ func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime
 // snapshot that produced index when building runtime cache keys.
 func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) (CompiledProjectRuntime, error) {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return CompiledProjectRuntime{}, err
 	}
-	return compiledProjectRuntimeFromEntry(runtime, index), nil
+	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
 }
 
 func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
@@ -3634,6 +3644,13 @@ func RegisterTestMethodForRequest(machine *vm.VM, index typesys.Index, className
 		return fmt.Errorf("test method %s.%s was not compiled", className, methodName)
 	}
 	return registerTestRuntime(machine, []vm.Method{method})
+}
+
+// compiledProjectRuntimeFromKeyedEntry shares the generation's resolver.
+func compiledProjectRuntimeFromKeyedEntry(key runtimeCacheKey, runtime runtimeCacheEntry, index typesys.Index) CompiledProjectRuntime {
+	compiled := compiledProjectRuntimeFromEntry(runtime)
+	compiled.expressionTypes = runtimeExpressionResolver(key, index)
+	return compiled
 }
 
 func compiledProjectRuntimeFromEntry(runtime runtimeCacheEntry, indexes ...typesys.Index) CompiledProjectRuntime {
@@ -4077,11 +4094,10 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	}
 	cache.mu.RUnlock()
 	for file, expected := range files {
-		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return cache.recordSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return cache.recordSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -4298,16 +4314,33 @@ func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []v
 		if seen[template.key] {
 			continue
 		}
-		out = append(out, clonePassiveRuntimeClass(template.class))
+		out = append(out, template.registrable())
 	}
 	return out
 }
 
 // passiveStandardRuntimeClassTemplate is one passive platform class built from
 // the immutable standard symbol view. key is its lower-cased runtime name.
+//
+// A class with no static members is a lazy shell: it carries only its name,
+// namespace and flags, and its fields, methods and constructors are built when
+// a lookup first needs them. The shell and its build state are shared by every
+// runtime that registers it. A class with static members keeps its full
+// declaration, because a runtime writes static values into the class it owns.
 type passiveStandardRuntimeClassTemplate struct {
 	key   string
 	class vm.Class
+	lazy  bool
+}
+
+// registrable returns the value to register: the shared shell of a lazy class,
+// or a private copy of an eager one, since RegisterClass writes the maps and
+// slices it is given.
+func (template passiveStandardRuntimeClassTemplate) registrable() vm.Class {
+	if template.lazy {
+		return template.class
+	}
+	return clonePassiveRuntimeClass(template.class)
 }
 
 var passiveStandardRuntimeClassCache struct {
@@ -4317,8 +4350,7 @@ var passiveStandardRuntimeClassCache struct {
 
 // passiveStandardRuntimeClassTemplates builds the passive platform classes once
 // per symbol view, in symbol-view order with the first spelling of each runtime
-// name. Callers filter by project names and clone; RegisterClass writes the maps
-// and slices it is given, so templates are never handed out directly.
+// name. Callers filter by project names and register through registrable.
 func passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplate {
 	return passiveStandardRuntimeClassCache.templates.Get(func(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 		passiveStandardRuntimeClassCache.builds++
@@ -4328,8 +4360,9 @@ func passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplat
 
 func buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 	seen := make(map[string]bool)
+	set := vm.NewLazyClassSet(len(view))
 	var out []passiveStandardRuntimeClassTemplate
-	for _, typ := range view {
+	for i, typ := range view {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
 		}
@@ -4338,10 +4371,36 @@ func buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []pass
 		if name == "" || seen[key] || (typ.Kind != apexast.DeclarationEnum && !isPassiveStandardRuntimeType(name)) {
 			continue
 		}
-		out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: passiveRuntimeClassFromTypeSymbol(typ, name)})
 		seen[key] = true
+		if passiveLazyEligible(typ) {
+			index := i
+			if shell, ok := set.Add(passiveRuntimeClassHeader(typ, name), func() vm.Class {
+				return passiveRuntimeClassFromTypeSymbol(view[index], name)
+			}); ok {
+				out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: shell, lazy: true})
+				continue
+			}
+		}
+		out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: passiveRuntimeClassFromTypeSymbol(typ, name)})
 	}
 	return out
+}
+
+// passiveLazyEligible reports whether a passive class can be registered as a
+// lazy shell: it is a class or interface with no static field or property.
+func passiveLazyEligible(typ typesys.TypeSymbol) bool {
+	if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
+		return false
+	}
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationField, apexast.DeclarationProperty:
+			if hasModifier(member.Modifiers, "static") {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // clonePassiveRuntimeClass copies every map and slice a passive class owns, so
@@ -4428,8 +4487,10 @@ func isPassiveStandardRuntimeType(name string) bool {
 	}
 }
 
-func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.Class {
-	class := vm.Class{
+// passiveRuntimeClassHeader is a passive class's name, namespace and flags, with
+// no members.
+func passiveRuntimeClassHeader(typ typesys.TypeSymbol, name string) vm.Class {
+	return vm.Class{
 		PlatformType: typ.File == "<standard-platform>",
 		Name:         name,
 		Namespace:    typ.Namespace,
@@ -4440,10 +4501,14 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 		Modifiers:    append([]string(nil), typ.Modifiers...),
 		IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
 		IsInterface:  typ.Kind == apexast.DeclarationInterface,
-		Fields:       make(map[string]vm.Field),
-		StaticFields: make(map[string]vm.Field),
-		Methods:      make(map[string]vm.Method),
 	}
+}
+
+func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.Class {
+	class := passiveRuntimeClassHeader(typ, name)
+	class.Fields = make(map[string]vm.Field)
+	class.StaticFields = make(map[string]vm.Field)
+	class.Methods = make(map[string]vm.Method)
 	for _, member := range typ.Members {
 		switch member.Kind {
 		case apexast.DeclarationField, apexast.DeclarationProperty:
@@ -4890,6 +4955,29 @@ var standardApexTestOrgCache struct {
 	org   storage.OrgState
 }
 
+// eagerStandardSpread makes every test org start from the whole standard
+// catalog instead of the source-backed lazy spread. The lazy spread must give
+// the same answers; tests flip this to compare the two.
+var eagerStandardSpread atomic.Bool
+
+// lazyStandardApexTestOrg is the empty org of the source-backed lazy spread:
+// catalog objects arrive on first reference with the definition the eager
+// spread holds.
+func lazyStandardApexTestOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	org.OrgID = storage.DefaultOrgID
+	org.EnableStandardSpreadSource()
+	return org
+}
+
+// standardApexTestOrgForRun starts the org of a test run.
+func standardApexTestOrgForRun() storage.OrgState {
+	if eagerStandardSpread.Load() {
+		return standardApexTestOrg()
+	}
+	return lazyStandardApexTestOrg()
+}
+
 func standardApexTestOrg() storage.OrgState {
 	standardApexTestOrgCache.mu.Lock()
 	if !standardApexTestOrgCache.built {
@@ -4976,10 +5064,11 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 	key, _ := json.Marshal(struct {
 		Features  []string
 		DomainURL string
-	}{features, domainURL})
+		Eager     bool
+	}{features, domainURL, eagerStandardSpread.Load()})
 	shapedStandardApexTestOrgCache.mu.Lock()
 	if shapedStandardApexTestOrgCache.key != string(key) {
-		org := standardApexTestOrg()
+		org := standardApexTestOrgForRun()
 		org.APIVersion = storage.DefaultRESTAPIVersion
 		org.DomainURL = domainURL
 		storage.ApplyProjectOrgShape(&org, features)
@@ -4993,6 +5082,16 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 }
 
 func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState {
+	org := orgFromIndexLazy(index, caches...)
+	// This host-facing API returns the complete schema a caller can enumerate.
+	storage.MaterializeStandardObjectSpread(&org)
+	return org
+}
+
+// orgFromIndexLazy is orgFromIndex for callers that fingerprint or compare the
+// org and treat catalog objects the lazy spread has not installed as absent
+// from both sides.
+func orgFromIndexLazy(index typesys.Index, caches ...*sourceCache) storage.OrgState {
 	org, _ := orgFromIndexWithError(index, caches...)
 	// This host-facing API exposes mutable schema maps. Internal runtime
 	// construction retains frozen definitions and detaches only its overlays.
@@ -5024,7 +5123,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	if shapedSeed {
 		org = shapedStandardApexTestOrg(features, domainURL)
 	} else {
-		org = standardApexTestOrg()
+		org = standardApexTestOrgForRun()
 		// The shaped route released the catalogs when its seed was built. This
 		// route reads them while the project objects and shape apply, so it
 		// releases once the org is complete, and only once per process.
@@ -5278,7 +5377,7 @@ func foldPersonAccountObjectIntoAccount(org *storage.OrgState) {
 	if recordTypes, ok := org.Objects["RecordType"]; ok {
 		for id, record := range recordTypes.Records {
 			if strings.EqualFold(record.Fields["SobjectType"].String, "PersonAccount") {
-				delete(recordTypes.Records, id)
+				recordTypes.DeleteRecord(id)
 			}
 		}
 		org.Objects["RecordType"] = recordTypes
@@ -7042,7 +7141,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 	state := org.Objects["ApexClass"]
 	state.Definition = definition
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	generator := storage.NewIDGenerator(map[string]string{"ApexClass": "01p"})
 	sources := sourceCacheFor(caches)
@@ -7075,7 +7174,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 		if !typ.Dependency {
 			sourceUnit = projectClassUnit
 		}
-		state.Records[id] = storage.Record{
+		state.PutRecord(id, storage.Record{
 			ID:                 id,
 			Object:             "ApexClass",
 			MetadataSourceUnit: sourceUnit,
@@ -7092,7 +7191,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 				CreatedDate: apexClassSeedTimestamp, LastModifiedDate: apexClassSeedTimestamp, SystemModstamp: apexClassSeedTimestamp,
 				CreatedByID: storage.ID(storage.DefaultUserID), LastModifiedByID: storage.ID(storage.DefaultUserID),
 			},
-		}
+		})
 	}
 	org.Objects["ApexClass"] = state
 }
@@ -7118,11 +7217,11 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 	storage.EnsureStandardObject(org, "AppMenuItem")
 	apps := org.Objects["CustomApplication"]
 	if apps.Records == nil {
-		apps.Records = make(map[storage.ID]storage.Record)
+		apps.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	menu := org.Objects["AppMenuItem"]
 	if menu.Records == nil {
-		menu.Records = make(map[storage.ID]storage.Record)
+		menu.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	paths := append([]string(nil), applicationFiles...)
 	sort.Strings(paths)
@@ -7144,7 +7243,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 		menuID := storage.ID(fmt.Sprintf("0DS%012d", menuSeq))
 		appSeq++
 		menuSeq++
-		apps.Records[appID] = storage.Record{
+		apps.PutRecord(appID, storage.Record{
 			ID:     appID,
 			Object: "CustomApplication",
 			Fields: map[string]storage.Value{
@@ -7152,8 +7251,8 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 				"Label":         storage.StringValue(label),
 				"Name":          storage.StringValue(developerName),
 			},
-		}
-		menu.Records[menuID] = storage.Record{
+		})
+		menu.PutRecord(menuID, storage.Record{
 			ID:     menuID,
 			Object: "AppMenuItem",
 			Fields: map[string]storage.Value{
@@ -7163,7 +7262,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 				"Type":          storage.StringValue("TabSet"),
 				"SortOrder":     storage.IntegerValue(int64(menuSeq - 1)),
 			},
-		}
+		})
 	}
 	org.Objects["CustomApplication"] = apps
 	org.Objects["AppMenuItem"] = menu
@@ -7226,7 +7325,7 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 		}
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	sort.Strings(files)
 	seq := len(state.Records) + 1
@@ -7248,14 +7347,14 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 		}
 		id := storage.ID(fmt.Sprintf("0ML%012d", seq))
 		seq++
-		state.Records[id] = storage.Record{
+		state.PutRecord(id, storage.Record{
 			ID:     id,
 			Object: "CustomNotificationType",
 			Fields: map[string]storage.Value{
 				"DeveloperName": storage.StringValue(developerName),
 				"MasterLabel":   storage.StringValue(label),
 			},
-		}
+		})
 	}
 	org.Objects["CustomNotificationType"] = state
 }

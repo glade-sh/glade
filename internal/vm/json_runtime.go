@@ -603,7 +603,7 @@ func (vm *VM) isEnumObjectValue(value Value) bool {
 		strings.EqualFold(value.Type, "Metadata.MetadataType"):
 		return true
 	}
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(value.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(value.Type)); ok && generated.Kind == apexast.DeclarationEnum {
 		return true
 	}
 	if _, ok := vm.resolveEnumClass(value.Type); ok {
@@ -3030,7 +3030,7 @@ func (vm *VM) jsonAbstractObjectFieldError(fieldType string, raw any, strict boo
 		}
 		return nil
 	}
-	if platform, known := generatedPlatformTypes()[strings.ToLower(typeName)]; known && platform.Kind == apexast.DeclarationInterface {
+	if platform, known := lookupGeneratedPlatformType(strings.ToLower(typeName)); known && platform.Kind == apexast.DeclarationInterface {
 		name := platform.Name
 		if qualified, system := typeExceptionSystemTypeName(name); system {
 			name = qualified
@@ -3578,11 +3578,27 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 		if cached, ok := index[relationshipKey]; ok {
 			return cached.Type, cached.OK
 		}
+		// An index built while the spread stayed lazy has not seen the owed
+		// objects. A complete org would have, so this name still needs the
+		// filter's answer.
+		if _, declined := vm.jsonChildRelTypeCache.load(childRelFilterDeclinedKey(parentKey)); declined &&
+			!vm.childRelFilterMissIsFinal(parentObject, relationshipKey) && vm.materializeLazyStandardSpread() {
+			return vm.jsonSObjectChildRelationshipType(typeName, relationshipName)
+		}
 		return "", false
 	}
 	index := vm.buildJSONSObjectChildRelationshipTypeIndex(parentObject)
+	cached, hit := index[relationshipKey]
+	if !hit && vm.Org.LazyStandardSpreadEnabled() && vm.childRelFilterMissIsFinal(parentObject, relationshipKey) {
+		// No owed catalog object declares this name: skip the spread. Mark
+		// the index before storing it so a later name the filter cannot rule
+		// out still completes the spread.
+		vm.jsonChildRelTypeCache.store(childRelFilterDeclinedKey(parentKey), jsonRelationshipTypeLookup{})
+		vm.jsonChildRelTypeCache.storeParent(parentKey, index)
+		return "", false
+	}
 	vm.jsonChildRelTypeCache.storeParent(parentKey, index)
-	if cached, ok := index[relationshipKey]; ok {
+	if hit {
 		return cached.Type, cached.OK
 	}
 	// A lazy org may not hold the child object yet. Complete the spread once
@@ -4621,7 +4637,7 @@ func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
 	if !vm.isSObjectLikeType(typeName) {
 		return false
 	}
-	if _, ok := vm.classEntry(typeName); ok {
+	if _, ok := vm.classEntryRaw(typeName); ok {
 		return false
 	}
 	if vm.Org == nil {

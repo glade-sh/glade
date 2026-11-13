@@ -63,7 +63,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		// Native rows call.CredentialPrincipalType.valueOf.null (APIs 62/67).
 		if className, methodName, ok := vm.splitClassMember(strings.TrimPrefix(callee, "System.")); ok && strings.EqualFold(methodName, "valueOf") &&
 			len(args) == 1 && args[0].Kind == ValueNull {
-			if generated, found := generatedPlatformTypes()[strings.ToLower(className)]; found && generated.Kind == apexast.DeclarationEnum {
+			if generated, found := lookupGeneratedPlatformType(strings.ToLower(className)); found && generated.Kind == apexast.DeclarationEnum {
 				return Null, newExceptionError("System.NoSuchElementException", "No enum value found called null")
 			}
 		}
@@ -574,7 +574,7 @@ platformStaticCall:
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("Database.query expects AccessLevel")
 		}
-		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, false); err != nil {
+		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, false, true); err != nil {
 			return Null, err
 		}
 		if err := vm.validateDynamicSOQLBinds(args[0].Text, Null); err != nil {
@@ -635,10 +635,13 @@ platformStaticCall:
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("Database.countQuery expects AccessLevel")
 		}
-		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, true); err != nil {
+		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, true, true); err != nil {
 			return Null, err
 		}
 		if err := vm.validateDynamicSOQLCountHavingNames(args[0].Text); err != nil {
+			return Null, err
+		}
+		if err := vm.validateDynamicSOQLExceptionBinds(args[0].Text); err != nil {
 			return Null, err
 		}
 		// COUNT(field) and ordinary selections use query().

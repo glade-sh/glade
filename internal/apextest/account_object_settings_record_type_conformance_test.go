@@ -15,10 +15,7 @@ const accountObjectSettingsFixture = "testdata/native-capture/account_object_set
 
 // accountObjectSettingsKnownGaps lists captured rows Glade does not match yet,
 // with the reason. Each must still differ.
-var accountObjectSettingsKnownGaps = map[string]string{
-	"62.0 S6 compile": "static Contact.RecordTypeId compiles in Glade without a Contact record type (internal/sema)",
-	"67.0 S6 compile": "static Contact.RecordTypeId compiles in Glade without a Contact record type (internal/sema)",
-}
+var accountObjectSettingsKnownGaps = map[string]string{}
 
 // TestAccountObjectSettingsRecordTypeNativeConformance replays the
 // account_object_settings_record_type capture (fresh Developer scratch org

@@ -361,11 +361,11 @@ func mergeOrgSchema(base storage.OrgState, schemaOrg storage.OrgState) storage.O
 		}
 		existing.Definition = mergeObjectDefinition(existing.Definition, incoming.Definition)
 		if existing.Records == nil {
-			existing.Records = make(map[storage.ID]storage.Record)
+			existing.SetRecords(make(map[storage.ID]storage.Record))
 		}
 		for id, record := range incoming.Records {
 			if _, hasRecord := existing.Records[id]; !hasRecord {
-				existing.Records[id] = record.Clone()
+				existing.PutRecord(id, record.Clone())
 			}
 		}
 		out.Objects[name] = existing

@@ -849,6 +849,7 @@ func (vm *VM) setGraphFieldValue(object *Value, name string, value Value) {
 	if object.Fields == nil {
 		object.Fields = make(map[string]Value)
 	}
+	object.detachSharedFields()
 	object.Fields[name] = value
 	vm.registerSObjectAliasField(*object, name, value)
 }
@@ -912,7 +913,15 @@ func (vm *VM) setExplicitSObjectFieldValue(object *Value, name string, value Val
 		vm.markCollectionRefsEscaped(value)
 		vm.registerSObjectAliasField(*object, name, value)
 	}
-	vm.advanceAliasContainmentMutation()
+	// Storing a reference-free scalar can only remove containment, never add
+	// it, so cached containment misses stay valid. Only the receiver cache is
+	// cleared.
+	if value.Ref == 0 && (value.Kind == ValueNull || value.Kind == ValueInt || value.Kind == ValueDecimal ||
+		value.Kind == ValueBool || value.Kind == ValueString) {
+		vm.clearNestedReceiverCache()
+	} else {
+		vm.advanceAliasContainmentMutation()
+	}
 	setExplicitSObjectField(object, name, value)
 }
 
@@ -3184,6 +3193,7 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 		if current.Kind == ValueNull {
 			return newNullDereferenceError("while assigning " + strings.Join(parts[:i+1], "."))
 		}
+		vm.privatizeSharedDescribeToken(&current)
 		if current.Kind != ValueObject {
 			return fmt.Errorf("cannot assign field %s on %s", part, current.Kind)
 		}
@@ -3284,7 +3294,10 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 			}
 		}
 	}
+	// The pre-write value stays the elision baseline: a privatized token must
+	// still be propagated to its other holders.
 	previousLeafValue = current
+	vm.privatizeSharedDescribeToken(&current)
 	previousLeaf = snapshotAlias(current)
 	if reason, ok := sobjectReadOnlyReason(current); ok {
 		if isTriggerSObject(current) {

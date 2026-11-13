@@ -1,0 +1,1 @@
+try { String m; try { throw new DmlException('x'); } catch (DmlException ex) { m = 'x'; } List<Account> l = Database.query('SELECT Id FROM Account WHERE Name = :ex'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

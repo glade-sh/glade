@@ -87,7 +87,7 @@ func (s *Server) handlePartnerUpsert(w http.ResponseWriter, r *http.Request, pay
 
 	var engineResults []dml.Result
 	if len(records) > 0 {
-		next := s.Org.Clone()
+		next := s.Org.CloneCopyOnWrite()
 		engine := s.newDMLEngine(r, &next)
 		engineResults = engine.UpsertWithExternalID(records, externalField)
 		commit := false

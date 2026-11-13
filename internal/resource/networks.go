@@ -69,9 +69,9 @@ func ApplyProjectNetworks(org *storage.OrgState, p project.Project, readers ...f
 			return fmt.Errorf("Network schema is unavailable")
 		}
 		if mutable.Records == nil {
-			mutable.Records = make(map[storage.ID]storage.Record)
+			mutable.SetRecords(make(map[storage.ID]storage.Record))
 		}
-		mutable.Records[id] = storage.Record{ID: id, Object: "Network", Fields: fields}
+		mutable.PutRecord(id, storage.Record{ID: id, Object: "Network", Fields: fields})
 		org.Objects["Network"] = *mutable
 	}
 	org.IDSequences = generator.Sequences

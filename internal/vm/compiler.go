@@ -194,8 +194,8 @@ func lex(source string) ([]token, error) {
 	return lexWithAnnotations(source, false)
 }
 
-func lexWithAnnotations(source string, annotations bool) ([]token, error) {
-	var tokens []token
+// lexScan appends to tokens, which the caller owns and may reuse.
+func lexScan(source string, annotations bool, tokens []token) ([]token, error) {
 	bracketDepth, queryDepth := 0, 0
 	for i := 0; i < len(source); {
 		r := rune(source[i])

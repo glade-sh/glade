@@ -651,7 +651,7 @@ func connectAPIReadOnlyHarnessReturn(returnType string) bool {
 }
 
 func (vm *VM) generatedPlatformStaticMethodByNameArity(className, methodName string, arity int) (Method, bool) {
-	methodsByName := generatedPlatformMethods()[strings.ToLower(className)]
+	methodsByName := lookupGeneratedPlatformMethods(strings.ToLower(className))
 	if len(methodsByName) == 0 {
 		return Method{}, false
 	}
@@ -733,7 +733,7 @@ func (vm *VM) callCartExtensionCartTestUtilStaticDefault(methodName string, args
 }
 
 func (vm *VM) newGeneratedOptionalWrapper(typeName string, present bool, value Value) Value {
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 		object := vm.newGeneratedPlatformObject(generated)
 		object.Fields["__optional_present"] = Bool(present)
 		object.Fields["__optional_value"] = value
@@ -1890,7 +1890,7 @@ func (vm *VM) generatedPlatformReceiverTypes(receiverName string, receiver Value
 }
 
 func (vm *VM) generatedPlatformMethodForArgs(className, methodName string, args []Value, static bool) (Method, bool) {
-	methodsByName := generatedPlatformMethods()[strings.ToLower(className)]
+	methodsByName := lookupGeneratedPlatformMethods(strings.ToLower(className))
 	if len(methodsByName) == 0 {
 		return Method{}, false
 	}
@@ -1989,7 +1989,7 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 		return value
 	case strings.EqualFold(method.ClassName, "CartExtension.CheckoutPlaceOrder") &&
 		commerceLocalHarnessRuntimeMethod(method.ClassName, apexMethodMemberName(method.Name)):
-		if generated, ok := generatedPlatformTypes()[strings.ToLower(returnType)]; ok &&
+		if generated, ok := lookupGeneratedPlatformType(strings.ToLower(returnType)); ok &&
 			generated.Kind == apexast.DeclarationClass {
 			return vm.newGeneratedPlatformObject(generated)
 		}

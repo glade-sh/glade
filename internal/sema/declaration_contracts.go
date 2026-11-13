@@ -12,7 +12,8 @@ import (
 
 const maxApexParameters = 32
 
-func (a *Analyzer) checkDeclarationContracts(index typesys.Index) []diagnostic.Diagnostic {
+func (a *Analyzer) checkDeclarationContracts(index typesys.Index, state *semaTypeMemberState) []diagnostic.Diagnostic {
+	views := &semaLazyView{state: state, index: index}
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
@@ -21,7 +22,7 @@ func (a *Analyzer) checkDeclarationContracts(index typesys.Index) []diagnostic.D
 		diagnostics = append(diagnostics, declarationIdentityDiagnostics(typ)...)
 		if declarationFromParsedSource(typ) {
 			diagnostics = append(diagnostics, declarationModifierDiagnostics(typ)...)
-			diagnostics = append(diagnostics, capturedAbstractRedeclarationDiagnostics(index, typ, memberModifierDiagnostics(typ))...)
+			diagnostics = append(diagnostics, capturedAbstractRedeclarationDiagnostics(views, typ, memberModifierDiagnostics(typ))...)
 			diagnostics = append(diagnostics, lifecycleGlobalFieldDiagnostics(index, typ)...)
 		}
 		diagnostics = append(diagnostics, memberIdentityDiagnostics(typ)...)

@@ -782,6 +782,10 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 
+	if gcFloorRouteEligible(daemonMode, watchMode, debug, connectMode) {
+		startTestGCFloorIfEnabled()
+	}
+
 	if daemonMode {
 		perfExecution.ExecutionMode = "daemon"
 		daemon, err := testdaemon.New(root)
@@ -883,6 +887,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		outputHandled = true
 		return runWatchTests(ctx, root, loadedProject, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
+	// The watch and daemon routes returned above. This process runs once and
+	// no runtime transition can follow, so skip the ambient org fingerprint.
+	testOpts.OneShotProcess = true
 	var result testreport.Run
 	var impactReport apextest.ImpactReport
 	if strings.TrimSpace(changedSince) != "" {

@@ -4005,6 +4005,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			engine := vm.newDMLEngine(result)
 			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
 			if err != nil {
+				if detail, ok := dml.FlowUnhandledDetail(err); ok {
+					return Null, receiver, false, true, newExceptionError("System.FlowException", detail)
+				}
 				if _, inputFailure := dml.FlowActionInputFailureResult(err); inputFailure || dml.IsFlowRecordUpdateMissingID(err) || dml.IsFlowLookupCollectionFault(err) {
 					return Null, receiver, false, true, newExceptionError("System.FlowException", err.Error())
 				}
@@ -4647,9 +4650,27 @@ func newRichMessagingProcessPaymentResult() Value {
 	return out
 }
 
+// passiveDTOMemberReadOnly names the members that never write the receiver:
+// getters, is-accessors, and the Object methods.
+func passiveDTOMemberReadOnly(method string) bool {
+	lower := strings.ToLower(method)
+	switch lower {
+	case "equals", "hashcode", "tostring", "clone":
+		return true
+	}
+	return strings.HasPrefix(lower, "get") || strings.HasPrefix(lower, "is")
+}
+
 func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	if !vm.isPassivePlatformDTOObject(receiver) {
 		return Null, receiver, false, false, nil
+	}
+	// A shared describe value (child relationship or token) is read-only until
+	// written. Every passive member below that is not a pure read may write the
+	// receiver's Fields, so such a call works on a private copy; the caller
+	// stores the updated receiver when the member reports a mutation.
+	if receiver.fieldsShared && !passiveDTOMemberReadOnly(method) {
+		receiver.detachSharedFields()
 	}
 	if value, updated, mutated, handled := vm.reportsDTOAccessor(receiver, method, args); handled {
 		return value, updated, mutated, true, nil
@@ -4714,6 +4735,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
 		}
 		field := passiveAccessorFieldName(receiver, suffix)
+		receiver.detachSharedFields()
 		receiver.Fields[field] = args[0]
 		return Null, receiver, true, true, nil
 	}
@@ -4721,6 +4743,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		if len(args) != 1 && len(args) != 2 {
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 or 2 arguments", receiver.Type, method)
 		}
+		receiver.detachSharedFields()
 		if len(args) == 2 {
 			field := passiveAccessorFieldName(receiver, suffix)
 			actual, mapValue, ok := objectFieldValue(receiver, field)
@@ -4753,6 +4776,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		if len(args) != 1 {
 			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
 		}
+		receiver.detachSharedFields()
 		field := passiveAccessorFieldName(receiver, suffix+"s")
 		actual, listValue, ok := objectFieldValue(receiver, field)
 		if !ok {
@@ -4776,7 +4800,7 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		}
 		if ok && listValue.Kind == ValueList {
 			filtered := listValue
-			filtered.List = filtered.List[:0]
+			filtered.List = make([]Value, 0, len(listValue.List))
 			for _, item := range listValue.List {
 				if !item.Equal(args[0]) {
 					filtered.List = append(filtered.List, item)
@@ -5051,7 +5075,7 @@ func (vm *VM) passivePlatformDTOCollectionMethod(typeName, method string, args [
 	if !vm.isPassivePlatformDTOType(typeName) {
 		return Method{}, false
 	}
-	methodsByName := generatedPlatformMethods()[strings.ToLower(typeName)]
+	methodsByName := lookupGeneratedPlatformMethods(strings.ToLower(typeName))
 	candidates := methodsByName[strings.ToLower(method)]
 	for _, candidate := range candidates {
 		if candidate.IsStatic || len(candidate.Params) != len(args) || !generatedPlatformPassiveCollectionMethod(candidate) {
@@ -5303,7 +5327,7 @@ func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
 	if typeName == "" || !strings.Contains(typeName, ".") {
 		return false
 	}
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 		if safeSchemaPassiveDTOTypeName(generated.Name) {
 			return true
 		}
@@ -5355,7 +5379,7 @@ func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) 
 		return true
 	}
 	hasDataShape := len(generated.Fields) != 0 || len(generated.Constructors) != 0 || strings.HasSuffix(generated.Name, ".Builder")
-	for _, overloads := range generatedPlatformMethods()[strings.ToLower(generated.Name)] {
+	for _, overloads := range lookupGeneratedPlatformMethods(strings.ToLower(generated.Name)) {
 		for _, method := range overloads {
 			if hasTypePrefixFold(generated.Name, "ConnectApi") && method.IsStatic && !generatedConnectAPIPassiveStaticMethod(generated.Name, method) {
 				return false
@@ -5384,7 +5408,7 @@ func generatedPlatformPassiveCollectionShape(generated generatedPlatformType) bo
 		return false
 	}
 	hasCollectionMethod := false
-	for _, overloads := range generatedPlatformMethods()[strings.ToLower(generated.Name)] {
+	for _, overloads := range lookupGeneratedPlatformMethods(strings.ToLower(generated.Name)) {
 		for _, method := range overloads {
 			if !generatedPlatformPassiveCollectionMethod(method) {
 				return false

@@ -75,11 +75,23 @@ type Engine struct {
 	// PlatformEventPublisher publishes an event record that an event-triggered
 	// Flow interview created, once the interview finishes without a fault.
 	PlatformEventPublisher func([]storage.Record) error
+	// PlatformEventDirectPublisher publishes an event record that a Flow other
+	// than an event-triggered one created, as soon as its element runs.
+	PlatformEventDirectPublisher func([]storage.Record) error
 	// FlowFaultDetail renders an Apex action's failure as the text of
 	// $Flow.FaultMessage, or "" when the failure did not come from Apex.
 	FlowFaultDetail func(error) string
+	// FlowFaultInTest reports a run inside a test, where Salesforce words a
+	// duplicate-value fault without the field or the record.
+	FlowFaultInTest func() bool
 
-	platformEventInterview    bool
+	platformEventInterview bool
+	// recordTriggeredFlow is positive while a record-triggered after-save flow
+	// runs: its Create and Update Records elements save under the duplicate
+	// rules, and its unhandled Apex action failures surface as the flow's
+	// process failure (native rows in automation_residual_paths).
+	recordTriggeredFlow       int
+	activeFlowName            string
 	pendingInterviewEvents    []storage.Record
 	capturedMixedAfterSave    bool
 	capturedCaseAfterSave     bool
@@ -641,7 +653,7 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 		stored.System.LastModifiedDate = stamp
 		stored.System.SystemModstamp = stamp
 		stored.System.LastModifiedByID = e.systemUserID()
-		object.Records[storedID] = stored
+		object.PutRecord(storedID, stored)
 		e.Org.Objects[objectName] = object
 		e.addUniqueIndexRecord(objectName, object.Definition, stored)
 		e.restoreCascadeDeletedChildren(objectName, storedID, make(map[string]bool))
@@ -693,9 +705,9 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 		}
 		if e.Options.RetainEmptiedRecycleBinRecords {
 			stored.System.RecycleBinEmptied = true
-			object.Records[storedID] = stored
+			object.PutRecord(storedID, stored)
 		} else {
-			delete(object.Records, storedID)
+			object.DeleteRecord(storedID)
 		}
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
@@ -784,7 +796,7 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		storedDuplicate.System.LastModifiedDate = stamp
 		storedDuplicate.System.SystemModstamp = stamp
 		storedDuplicate.System.LastModifiedByID = e.systemUserID()
-		object.Records[storedDuplicateID] = storedDuplicate
+		object.PutRecord(storedDuplicateID, storedDuplicate)
 		e.Org.Objects[objectName] = object
 		e.removeUniqueIndexRecord(objectName, object.Definition, storedDuplicate)
 		if e.ChangeObserver != nil {
@@ -840,7 +852,7 @@ func (e *Engine) setLock(records []storage.Record, locked bool) []Result {
 			e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
 		}
 		stored.System.Locked = locked
-		object.Records[storedID] = stored
+		object.PutRecord(storedID, stored)
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
 	}
@@ -868,7 +880,7 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 					e.IsolationJournal.RecordUpdate(childObjectName, id, record)
 				}
 				record.Fields[relation.Field] = storage.IDValue(newID)
-				childObject.Records[id] = record
+				childObject.PutRecord(id, record)
 				seen[id] = struct{}{}
 				changed = true
 			}
@@ -1175,7 +1187,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		record.System.OwnerID = userID
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordInsert(objectName, record.ID)
@@ -1188,7 +1200,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	storedRecord.ParentRelationships = nil
 	storedRecord.LoadedReferences = nil
 	storedRecord.ClearClearedLookupHistory()
-	object.Records[record.ID] = storedRecord
+	object.PutRecord(record.ID, storedRecord)
 	e.Org.Objects[objectName] = object
 	e.RecordCreations.Record(record.ID)
 	e.addUniqueIndexRecord(objectName, object.Definition, record)

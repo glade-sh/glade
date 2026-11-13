@@ -46,7 +46,8 @@ func KnowledgeArticleVersionReadView(org *OrgState) *OrgState {
 	for name, object := range org.Objects {
 		out.Objects[name] = object
 	}
-	target.Records, target.Indexes = records, nil
+	target.SetRecords(records)
+	target.Indexes = nil
 	target.RecordsShared, target.IndexesShared = false, false
 	out.Objects[targetName] = target
 	if !exists {

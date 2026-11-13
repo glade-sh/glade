@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DuplicateRule xmlns="http://soap.sforce.com/2006/04/metadata"><actionOnInsert>Block</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Residual_Email_Block duplicate</alertText><duplicateRuleMatchRules><matchRuleSObjectType>Lead</matchRuleSObjectType><matchingRule>Residual_Email</matchingRule></duplicateRuleMatchRules><isActive>true</isActive><masterLabel>Residual_Email_Block</masterLabel><securityOption>EnforceSharingRules</securityOption><sortOrder>1</sortOrder></DuplicateRule>

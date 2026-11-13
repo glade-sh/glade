@@ -56,6 +56,10 @@ func (s *Server) commitOrg(org storage.OrgState) error {
 
 func (s *Server) newDMLEngine(r *http.Request, org *storage.OrgState) dml.Engine {
 	engine := dml.NewEngine(org)
+	// A journal lets each row's rollback point undo its own changes. Without
+	// one the engine snapshots the org per row, which shares every record map
+	// and copies the written object's records again on the next row.
+	engine.IsolationJournal = storage.NewIsolationJournal(org)
 	if user := s.currentUser(r, ""); user.ID != "" {
 		engine.UserID = user.ID
 	}
@@ -87,7 +91,8 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 	if allRows {
 		query.AllRows = true
 	}
-	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: s.currentUser(r, "").ID})
+	user := s.currentUser(r, "")
+	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: user.ID, Locale: userString(user, "LocaleSidKey", "")})
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return

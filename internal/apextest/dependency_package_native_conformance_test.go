@@ -10,6 +10,7 @@ import (
 )
 
 func TestRequestedDependencyPackagesNativeConformance(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	runFlowRecordAssignmentNativeConformance(t, "flow_lookup_source_assignment", "GroveLookupSourceProbe", "GroveLookupSourceProbeTest", "observeLookupSource", "Grove_Lookup_Source", "FLOW_LOOKUP_SOURCE_ASSIGNMENT", []string{"P01", "P02", "P03"}, flowRequestedDependencyIndex)
 }
 

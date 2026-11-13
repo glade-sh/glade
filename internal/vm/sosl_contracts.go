@@ -10,6 +10,36 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// A direct Datetime field > a null Datetime variable matched every candidate
+// (including null fields); a literal null instead raises "invalid operator".
+// Do not infer other operators, scalar types or compound predicates.
+func (vm *VM) hasSOSLNullDatetimeBind(source sosl.Query) bool {
+	if len(source.Returning) != 1 {
+		return false
+	}
+	spec := source.Returning[0]
+	cond := spec.Where
+	if cond == nil || cond.Operator != ">" || cond.Not || cond.Bind == "" || !strings.EqualFold(vm.declaredReceiverType(cond.Bind), "Datetime") {
+		return false
+	}
+	_, field, ok := vm.sObjectFieldDefinition(spec.Object, cond.Field)
+	return ok && field.Type == storage.FieldDateTime
+}
+
+func markSOSLNullDatetimeBind(expanded *sosl.Query) bool {
+	if len(expanded.Returning) != 1 {
+		return false
+	}
+	cond := expanded.Returning[0].Where
+	if cond == nil || !cond.ValueIsNull || cond.Operator != ">" {
+		return false
+	}
+	// Retain the field for permission/reference checks; the filter itself is
+	// absent when applying the captured bound-null comparison to records.
+	cond.NullDatetimeBound = true
+	return true
+}
+
 // Metadata errors are checked before candidate filtering, including empty
 // results. SOSL shares SELECT's field and relationship resolver.
 func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) error {

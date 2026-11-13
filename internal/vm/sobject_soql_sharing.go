@@ -490,9 +490,15 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 		}
 		if canonical, ok := vm.resolveObjectName(objectName); ok && vm.Org != nil {
 			model := strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel)
-			if model == "" {
+			// An external user's default is Private for Case.
+			if vm.currentUserHasUndeclaredPrivateExternalDefault(canonical) {
+				model = "Private"
+			} else if model == "" {
 				switch standardObjectDefaultSharingModel(canonical) {
 				case "ReadWrite", "ReadWriteTransfer":
+					return true
+				}
+				if vm.leadScratchDefaultEdit(canonical, record) {
 					return true
 				}
 			}
@@ -503,4 +509,34 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 	}
 	// Read-only sharing and read shares do not grant write authority.
 	return record.System.OwnerID == "" || storage.IDsEqual(record.System.OwnerID, storage.ID(userID))
+}
+
+// leadHasDeclaredShapeDefaultModel reports a Lead with no declared sharing
+// model in a declared scratch shape: the ReadWriteTransfer scratch default,
+// which a Standard User reads and edits when another user owns the record
+// (external_user_case_lead_sharing default/org.tsv:8-9, APIs 62.0 and 67.0).
+// An unknown shape keeps its earlier behavior.
+func (vm *VM) leadHasDeclaredShapeDefaultModel(canonical string) bool {
+	if vm == nil || vm.Org == nil || !strings.EqualFold(canonical, "Lead") {
+		return false
+	}
+	definition := vm.Org.Objects[canonical].Definition
+	// The rows are a Standard User; other user types have no Lead sharing row.
+	return strings.TrimSpace(definition.SharingModel) == "" && storage.StandardObjectShapeDeclared(definition) &&
+		strings.EqualFold(vm.currentUserInfoField("UserType", ""), "Standard")
+}
+
+// leadScratchDefaultEdit is the edit half of the scratch default: the captured
+// HasEditAccess row is a Standard User profile user on a Lead owned by a user
+// (external_user_case_lead_sharing default/org.tsv:8-9, APIs 62.0 and 67.0).
+// Queue-owned Leads and other profiles have no write row.
+func (vm *VM) leadScratchDefaultEdit(canonical string, record storage.Record) bool {
+	if !vm.leadHasDeclaredShapeDefaultModel(canonical) || !strings.HasPrefix(string(record.System.OwnerID), "005") {
+		return false
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	return vm.currentUserProfileName(user) == "Standard User"
 }

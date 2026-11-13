@@ -174,8 +174,8 @@ func TestCILWCHistoryRechecksNestedResults(t *testing.T) {
 
 func TestCILWCHistoryWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
-	input, matrix, refresh := jobs["lwc-compile-history-input"], jobs["lwc-vf"], jobs["lwc-compile-history"]
-	for _, marker := range []string{"needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]", "name: lwc-compile-history-input", "CI_LWC_COMPILE_HISTORY_PATH", "name: Download shared LWC duration history"} {
+	input, matrix, refresh := jobs["history-input"], jobs["lwc-vf"], jobs["history"]
+	for _, marker := range []string{"needs: [history-input, test-binaries]", "name: lwc-compile-history-input", "CI_LWC_COMPILE_HISTORY_PATH", "name: Download shared LWC duration history"} {
 		if !strings.Contains(matrix, marker) {
 			t.Errorf("matrix does not consume shared input: missing %q", marker)
 		}
@@ -183,17 +183,17 @@ func TestCILWCHistoryWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	if strings.Contains(matrix, "lwc-compile-duration-history-v1") {
 		t.Error("workers must not independently restore mutable timing inputs")
 	}
-	for _, marker := range []string{"actions: read", "-f head_sha=\"$CI_DURATION_HISTORY_CACHE_REF\"", "-f status=success", "run-id: ${{ steps.predecessor.outputs.run_id }}", "go-test-lwc-compile-shard-{0..7}", "using deterministic scheduling fallback"} {
+	for _, marker := range []string{"actions: read", "-f head_sha=\"$CI_DURATION_HISTORY_CACHE_REF\"", "-f status=success", "run-id: ${{ steps.lwc_predecessor.outputs.run_id }}", "go-test-lwc-compile-shard-{0..7}", "using deterministic scheduling fallback"} {
 		if !strings.Contains(input, marker) {
 			t.Errorf("validated predecessor bootstrap missing %q", marker)
 		}
 	}
-	for _, marker := range []string{"needs: lwc-vf", "if: ${{ success() }}", "pattern: go-test-lwc-compile-shard-*", "lwc-compile-history-refresh", "go-test-lwc-compile-shard-{0..7}", "actions/cache/save@"} {
+	for _, marker := range []string{"needs: [gladecli, vm, sema, apextest, lwc-vf]", "needs.lwc-vf.result == 'success'", "pattern: go-test-lwc-compile-shard-*", "lwc-compile-history-refresh", "go-test-lwc-compile-shard-{0..7}", "actions/cache/save@"} {
 		if !strings.Contains(refresh, marker) {
 			t.Errorf("validated eight-shard publisher missing %q", marker)
 		}
 	}
-	if !strings.Contains(jobs["required-ci"], "      - lwc-compile-history\n") {
+	if !strings.Contains(jobs["required-ci"], "      - history\n") {
 		t.Error("required CI must depend on successful complete LWC union validation")
 	}
 }

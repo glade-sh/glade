@@ -163,14 +163,67 @@ type Class struct {
 	// Nested records a type declared inside another type, from the type system.
 	Nested     bool
 	Dependency bool
+
+	// lazy marks a header-only shell whose members are built on first use; see
+	// LazyClassSet.
+	lazy *lazyClass
 }
 
 func (vm *VM) RegisterClass(class Class) error {
 	if class.Name == "" {
 		return fmt.Errorf("class name is required")
 	}
+	if class.lazy != nil {
+		if vm.canRegisterLazy(class) {
+			vm.registerLazyShell(class)
+			return nil
+		}
+		// The name is taken, or the VM holds shells from another set: register
+		// the class eagerly, from a private copy, through the merge path below.
+		class = class.FreshClass()
+	}
 	initializeReportsRuntimeClass(&class)
 	ownerName := runtimeClassName(class)
+	prepareRegisteredClass(&class)
+	if vm.Classes == nil {
+		vm.Classes = make(map[string]Class)
+	}
+	vm.methodResolveCache = nil
+	vm.uniqueNestedTypeCache = nil
+	vm.onlyNestedTypeCache = nil
+	vm.topLevelTypeCache = nil
+	vm.classNameSearchCache = nil
+	if vm.lazySet != nil {
+		// A shell this class would replace or merge with becomes the class an
+		// eager registration would have made first.
+		vm.realizeLazyClassAt(class.Name)
+		if ownerName != class.Name {
+			vm.realizeLazyClassAt(ownerName)
+		}
+	}
+	existingClass, mergeWithExisting := vm.duplicateClassForMerge(class)
+	if mergeWithExisting {
+		vm.unregisterClassMethods(existingClass)
+		class = mergeDuplicateClass(existingClass, class)
+	}
+	// Duplicate definitions can share a method name under distinct source
+	// keys. Materializing the same merge on a fresh or cloned VM must not
+	// give it a different order. Ordinary registration keeps its map order.
+	for _, method := range stampRegisteredMethods(&class, ownerName, mergeWithExisting) {
+		if err := vm.RegisterMethod(method); err != nil {
+			return err
+		}
+	}
+	vm.storeClassAliases(class)
+	vm.markStaticInitializationUninitialized(class)
+	return nil
+}
+
+// prepareRegisteredClass gives a class the maps, field order, accessor owners,
+// static defaults and source provenance RegisterClass stamps before it
+// registers anything. initializeReportsRuntimeClass runs first.
+func prepareRegisteredClass(class *Class) {
+	ownerName := runtimeClassName(*class)
 	if class.Fields == nil {
 		class.Fields = make(map[string]Field)
 	}
@@ -194,30 +247,22 @@ func (vm *VM) RegisterClass(class Class) error {
 	if class.Methods == nil {
 		class.Methods = make(map[string]Method)
 	}
-	stampClassProvenance(&class)
-	if vm.Classes == nil {
-		vm.Classes = make(map[string]Class)
-	}
-	vm.methodResolveCache = nil
-	vm.uniqueNestedTypeCache = nil
-	vm.onlyNestedTypeCache = nil
-	vm.topLevelTypeCache = nil
-	vm.classNameSearchCache = nil
-	existingClass, mergeWithExisting := vm.duplicateClassForMerge(class)
-	if mergeWithExisting {
-		vm.unregisterClassMethods(existingClass)
-		class = mergeDuplicateClass(existingClass, class)
-	}
+	stampClassProvenance(class)
+}
+
+// stampRegisteredMethods stamps the owner onto the class's methods and
+// constructors and returns the method registrations RegisterClass makes, in
+// order: each method, then its namespace-qualified alias. sorted orders the
+// methods by key; otherwise the order is the map's.
+func stampRegisteredMethods(class *Class, ownerName string, sorted bool) []Method {
 	methodNames := make([]string, 0, len(class.Methods))
 	for name := range class.Methods {
 		methodNames = append(methodNames, name)
 	}
-	if mergeWithExisting {
-		// Duplicate definitions can share a method name under distinct source
-		// keys. Materializing the same merge on a fresh or cloned VM must not
-		// give it a different order. Ordinary registration keeps its map order.
+	if sorted {
 		sort.Strings(methodNames)
 	}
+	registrations := make([]Method, 0, len(methodNames))
 	for _, name := range methodNames {
 		method := class.Methods[name]
 		if method.Name == "" {
@@ -227,18 +272,14 @@ func (vm *VM) RegisterClass(class Class) error {
 			method.ClassName = ownerName
 		}
 		class.Methods[name] = method
-		if err := vm.RegisterMethod(method); err != nil {
-			return err
-		}
+		registrations = append(registrations, method)
 		if class.Namespace != "" && !strings.HasPrefix(method.Name, class.Namespace+".") {
 			alias := method
 			alias.Name = class.Namespace + "." + method.Name
 			if alias.ClassName != "" && !strings.HasPrefix(alias.ClassName, class.Namespace+".") {
 				alias.ClassName = class.Namespace + "." + alias.ClassName
 			}
-			if err := vm.RegisterMethod(alias); err != nil {
-				return err
-			}
+			registrations = append(registrations, alias)
 		}
 	}
 	for i := range class.Constructors {
@@ -250,9 +291,7 @@ func (vm *VM) RegisterClass(class Class) error {
 		}
 		class.Constructors[i].IsConstructor = true
 	}
-	vm.storeClassAliases(class)
-	vm.markStaticInitializationUninitialized(class)
-	return nil
+	return registrations
 }
 
 func stampFieldAccessorOwners(ownerName, className, fieldName string, field Field) Field {

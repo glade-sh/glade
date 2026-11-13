@@ -666,7 +666,7 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 				record.Fields = make(map[string]storage.Value)
 			}
 			record.Fields["Status"] = storage.StringValue("Aborted")
-			object.Records[record.ID] = record
+			object.PutRecord(record.ID, record)
 			vm.Org.Objects["AsyncApexJob"] = object
 		}
 	}
@@ -692,7 +692,7 @@ func (vm *VM) releaseScheduledCron(cronID string) {
 			record.Fields["State"] = storage.StringValue("Deleted")
 			record.System.IsDeleted = true
 			delete(record.Fields, "NextFireTime")
-			object.Records[record.ID] = record
+			object.PutRecord(record.ID, record)
 			vm.Org.Objects["CronTrigger"] = object
 		}
 	}
@@ -708,7 +708,7 @@ func (vm *VM) releaseScheduledCron(cronID string) {
 		if storedID, record, found := storage.LookupRecordByID(object.Records, detailID); found && !record.System.IsDeleted {
 			vm.recordIsolationJournalMutation("CronJobDetail", storedID, record, true)
 			record.System.IsDeleted = true
-			object.Records[storedID] = record
+			object.PutRecord(storedID, record)
 			vm.Org.Objects["CronJobDetail"] = object
 		}
 	}
@@ -1161,7 +1161,7 @@ func (vm *VM) asyncJobDue(job AsyncJob) bool {
 }
 func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		fields := make(map[string]Value, len(class.StaticFields))
 		for fieldName, field := range class.StaticFields {
 			fields[fieldName] = field.Value
@@ -1172,7 +1172,7 @@ func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 }
 func (vm *VM) testAsyncStaticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if !classHasStaticCollectionField(class) {
 			continue
 		}
@@ -2732,7 +2732,7 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	} else {
 		delete(record.Fields, "CompletedDate")
 	}
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	vm.Org.Objects["AsyncApexJob"] = object
 }
 
@@ -2800,7 +2800,7 @@ func (vm *VM) recordAsyncJobTotals(job AsyncJob, total, processed, errors int) {
 	record.Fields["TotalJobItems"] = storage.IntegerValue(int64(total))
 	record.Fields["JobItemsProcessed"] = storage.IntegerValue(int64(processed))
 	record.Fields["NumberOfErrors"] = storage.IntegerValue(int64(errors))
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	vm.Org.Objects["AsyncApexJob"] = object
 }
 func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
@@ -2849,7 +2849,7 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	if strings.EqualFold(state, "Deleted") {
 		delete(record.Fields, "NextFireTime")
 	}
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	vm.Org.Objects["CronTrigger"] = object
 	vm.recordCronJobDetail(job)
 }
@@ -3122,14 +3122,14 @@ func (vm *VM) recordCronJobDetail(job AsyncJob) {
 		return
 	}
 	vm.recordIsolationJournalMutation("CronJobDetail", id, storage.Record{}, false)
-	object.Records[id] = storage.Record{
+	object.PutRecord(id, storage.Record{
 		ID:     id,
 		Object: "CronJobDetail",
 		Fields: map[string]storage.Value{
 			"Name":    storage.StringValue(job.Name),
 			"JobType": storage.StringValue(cronJobType(job)),
 		},
-	}
+	})
 	vm.Org.Objects["CronJobDetail"] = object
 }
 func asyncClassName(job AsyncJob) string {

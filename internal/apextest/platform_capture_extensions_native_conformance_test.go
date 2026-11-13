@@ -204,7 +204,17 @@ func TestPlatformCaptureExtensionNativeConformance(t *testing.T) {
 			t.Run(family+"/"+api, func(t *testing.T) {
 				anonymous := readPathExtensionNative(t, api, family, "anonymous")
 				named := readPathExtensionNative(t, api, family, "istest")
-				index := loadTestIndex(t, copyPathExtensionProject(t, api))
+				root := copyPathExtensionProject(t, api)
+				if family == "duplicate_rules" {
+					// These native observations used active standard duplicate rules.
+					configPath := filepath.Join(root, "glade.yml")
+					config, err := os.ReadFile(configPath)
+					if err != nil {
+						t.Fatal(err)
+					}
+					writeFile(t, configPath, string(config)+"\nduplicateRules:\n  standard: on\n")
+				}
+				index := loadTestIndex(t, root)
 				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
 				triggers, triggerErrors := compileProjectTriggers(index)

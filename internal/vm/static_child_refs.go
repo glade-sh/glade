@@ -21,7 +21,8 @@ func (vm *VM) rememberPublishedObjectFieldRefs(parent, previous, value Value) {
 	if vm.isSObjectLikeType(parent.Type) {
 		return
 	}
-	locations := vm.staticValueRefFields[parent.Ref]
+	staticIndex := vm.staticRefIndex()
+	locations := staticIndex.locations(parent.Ref)
 	locations.forEach(func(location staticFieldRef) {
 		// The write publishes exactly this subtree. Only refs inside it can gain
 		// another occurrence in the field; hints and direct-child entries for

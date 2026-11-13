@@ -239,6 +239,12 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 		},
 	},
 	{
+		Name: "SocialCustomerService",
+		Consumers: []FeatureConsumer{
+			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
+		},
+	},
+	{
 		Name: "LiveAgentEnabled",
 		Consumers: []FeatureConsumer{
 			{"storage-policy-data", "internal/storage/standard_field_policy.json"},

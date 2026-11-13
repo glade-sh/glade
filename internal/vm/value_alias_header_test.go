@@ -29,6 +29,8 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 	for name, mutate := range map[string]func(*Value){
 		"shared map backing":         func(value *Value) { value.mapBackingShared = true },
 		"canonical describe entries": func(value *Value) { value.globalDescribeEntriesCanonical = true },
+		"shared entries across VMs":  func(value *Value) { value.mapEntriesShared = true },
+		"shared fields across VMs":   func(value *Value) { value.fieldsShared = true },
 		"type":                       func(value *Value) { value.Type = "Contact" },
 		"text":                       func(value *Value) { value.Text = "changed" },
 		"hidden flag":                func(value *Value) { value.schemaIDConstructor = true },
@@ -56,7 +58,7 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 }
 
 func TestValueSameHeaderAndBackingGuardsValueFieldCount(t *testing.T) {
-	if got, want := reflect.TypeOf(Value{}).NumField(), 39; got != want {
+	if got, want := reflect.TypeOf(Value{}).NumField(), 41; got != want {
 		t.Fatalf("valueSameHeaderAndBacking must be updated for Value fields: got %d, want %d", got, want)
 	}
 }

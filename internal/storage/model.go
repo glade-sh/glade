@@ -77,19 +77,27 @@ type OrgState struct {
 	formulaUserID           ID
 	formulaPermissionFields map[string]Value
 
-	OrgID                  string                 `json:"orgId,omitempty"`
-	APIVersion             string                 `json:"apiVersion,omitempty"`
-	Namespace              string                 `json:"namespace,omitempty"`
-	DomainURL              string                 `json:"domainUrl,omitempty"`
-	Features               []string               `json:"features,omitzero"`
-	Metadata               MetadataRegistry       `json:"metadata,omitempty"`
-	Objects                map[string]ObjectState `json:"objects"`
-	IDSequences            map[string]uint64      `json:"idSequences,omitempty"`
-	Transactions           []TransactionFrame     `json:"transactions,omitempty"`
-	Now                    func() time.Time       `json:"-"`
-	Today                  func() time.Time       `json:"-"` // Execution user's local calendar for formula TODAY().
-	PlatformCache          *PlatformCacheState    `json:"-"`
-	PlatformCacheTestSetup *PlatformCacheState    `json:"-"`
+	OrgID      string                 `json:"orgId,omitempty"`
+	APIVersion string                 `json:"apiVersion,omitempty"`
+	Namespace  string                 `json:"namespace,omitempty"`
+	DomainURL  string                 `json:"domainUrl,omitempty"`
+	Features   []string               `json:"features,omitzero"`
+	Metadata   MetadataRegistry       `json:"metadata,omitempty"`
+	Objects    map[string]ObjectState `json:"objects"`
+	// StandardSpread marks an org whose standard catalog objects are installed
+	// on first reference from a shared per-shape source (see
+	// standard_spread_source.go). "plain" is before the org shape applied,
+	// "shaped" after. Empty means the org holds every object it will hold.
+	StandardSpread string `json:"standardSpread,omitempty"`
+	// StandardDuplicateRules turns on the seeded standard duplicate rules (the
+	// duplicateRules.standard setting); project metadata rules are always on.
+	StandardDuplicateRules bool                `json:"standardDuplicateRules,omitempty"`
+	IDSequences            map[string]uint64   `json:"idSequences,omitempty"`
+	Transactions           []TransactionFrame  `json:"transactions,omitempty"`
+	Now                    func() time.Time    `json:"-"`
+	Today                  func() time.Time    `json:"-"` // Execution user's local calendar for formula TODAY().
+	PlatformCache          *PlatformCacheState `json:"-"`
+	PlatformCacheTestSetup *PlatformCacheState `json:"-"`
 
 	SystemTimestampBase     string `json:"-"`
 	SystemTimestampSequence int64  `json:"-"`
@@ -98,11 +106,17 @@ type OrgState struct {
 	objectNameCache                 *sync.Map
 	keyPrefixesValidated            bool
 	lazyStandardSpread              bool
+	spreadPrefixSeed                map[string]string
 	keyPrefixesValidatedObjectCount int
 	keyPrefixesValidatedPrefixes    []keyPrefixSnapshotEntry
 	keyPrefixesValidatedGeneration  uint64
 	schemaGeneration                uint64
 	runtimeGeneration               *orgRuntimeGeneration
+
+	// spreadPrefixesPlanned records that a source-backed lazy org has had its
+	// prefixes validated. Clearing the schema stamp does not clear it: the cold
+	// objects still take their prefixes from the unique assignment.
+	spreadPrefixesPlanned bool
 }
 
 type orgRuntimeGeneration struct {
@@ -244,20 +258,27 @@ type MetadataRegistry struct {
 	Labels                 []LabelMetadata               `json:"labels,omitempty"`
 	ValueSetTranslations   []StandardValueSetTranslation `json:"standardValueSetTranslations,omitempty"`
 	ManagedLabelNamespaces []string                      `json:"managedLabelNamespaces,omitempty"`
-	Tabs                   []TabMetadata                 `json:"tabs,omitempty"`
-	Applications           []ApplicationMetadata         `json:"applications,omitempty"`
-	DataCategoryGroups     []DataCategoryGroup           `json:"dataCategoryGroups,omitempty"`
-	QuickActions           []QuickActionMetadata         `json:"quickActions,omitempty"`
-	FieldSets              []FieldSetMetadata            `json:"fieldSets,omitempty"`
-	StaticResources        []StaticResourceMetadata      `json:"staticResources,omitempty"`
-	ContentAssets          []ContentAssetMetadata        `json:"contentAssets,omitempty"`
-	Endpoints              []EndpointMetadata            `json:"endpoints,omitempty"`
-	EmailTemplates         []EmailTemplateMetadata       `json:"emailTemplates,omitempty"`
-	MessageChannels        []MessageChannelMetadata      `json:"messageChannels,omitempty"`
-	FeatureParameters      []FeatureParameterMetadata    `json:"featureParameters,omitempty"`
-	Layouts                []LayoutMetadata              `json:"layouts,omitempty"`
-	ProjectReports         []ProjectReportMetadata       `json:"projectReports,omitempty"`
-	ReportFolderShares     []ProjectReportFolderShare    `json:"reportFolderShares,omitempty"`
+	// PackageFieldsNarrow is set when the project declares package
+	// dependencies with known namespaces. A namespaced custom field that a
+	// standard object lacks is then accepted only for a namespace listed in
+	// SourcelessPackageNamespaces (installed, source absent). When unset the
+	// project declared nothing and every ns__X__c name stays accepted.
+	PackageFieldsNarrow         bool                       `json:"packageFieldsNarrow,omitempty"`
+	SourcelessPackageNamespaces []string                   `json:"sourcelessPackageNamespaces,omitempty"`
+	Tabs                        []TabMetadata              `json:"tabs,omitempty"`
+	Applications                []ApplicationMetadata      `json:"applications,omitempty"`
+	DataCategoryGroups          []DataCategoryGroup        `json:"dataCategoryGroups,omitempty"`
+	QuickActions                []QuickActionMetadata      `json:"quickActions,omitempty"`
+	FieldSets                   []FieldSetMetadata         `json:"fieldSets,omitempty"`
+	StaticResources             []StaticResourceMetadata   `json:"staticResources,omitempty"`
+	ContentAssets               []ContentAssetMetadata     `json:"contentAssets,omitempty"`
+	Endpoints                   []EndpointMetadata         `json:"endpoints,omitempty"`
+	EmailTemplates              []EmailTemplateMetadata    `json:"emailTemplates,omitempty"`
+	MessageChannels             []MessageChannelMetadata   `json:"messageChannels,omitempty"`
+	FeatureParameters           []FeatureParameterMetadata `json:"featureParameters,omitempty"`
+	Layouts                     []LayoutMetadata           `json:"layouts,omitempty"`
+	ProjectReports              []ProjectReportMetadata    `json:"projectReports,omitempty"`
+	ReportFolderShares          []ProjectReportFolderShare `json:"reportFolderShares,omitempty"`
 }
 
 // ProjectReportMetadata is the immutable project definition associated with a
@@ -463,6 +484,10 @@ type ObjectState struct {
 	Indexes       map[string]IndexSet `json:"indexes,omitempty"`
 	RecordsShared bool                `json:"-"`
 	IndexesShared bool                `json:"-"`
+
+	// recordsClock versions the Records map. Write it through the record
+	// write methods, never through the map directly.
+	recordsClock *recordsClockTag
 }
 
 // OwnerSharingRule is a supported declared owner-based Read rule between public groups.
@@ -1804,6 +1829,10 @@ func StripNamespaceToken(namespace, name string) string {
 }
 
 func ResolveObjectName(org OrgState, name string) (string, bool) {
+	if org.StandardSpread != "" {
+		// Objects is shared by value copies, so this installs for the caller.
+		installSpreadObject(&org, name)
+	}
 	org.objectNameCache = ownedObjectNameCache(org)
 	cacheKey := strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" + strconv.Itoa(len(org.Objects)) + "|" + strings.ToLower(strings.TrimSpace(name))
 	if org.objectNameCache != nil {
@@ -2323,9 +2352,9 @@ func (o ObjectState) Clone() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {
@@ -2777,9 +2806,9 @@ func (o ObjectState) CloneRuntime() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {
@@ -2833,4 +2862,20 @@ func (m Mutation) Clone() Mutation {
 		out.After = &after
 	}
 	return out
+}
+
+// PackageFieldNamespaceAllowed reports whether an undefined namespaced custom
+// field of namespace may be tolerated on a standard object: the project
+// declared nothing (narrow is false) or declared the namespace with its
+// source absent.
+func PackageFieldNamespaceAllowed(narrow bool, sourceless []string, namespace string) bool {
+	if !narrow {
+		return true
+	}
+	for _, candidate := range sourceless {
+		if strings.EqualFold(candidate, namespace) {
+			return true
+		}
+	}
+	return false
 }

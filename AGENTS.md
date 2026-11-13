@@ -77,7 +77,7 @@ bash scripts/pr-check.sh
 ```
 
 - Run focused tests while iterating. Hosted CI runs every package.
-- Never run the whole `internal/apextest` package locally; CI runs it in 14
+- Never run the whole `internal/apextest` package locally; CI runs it in 16
   shards (`GLADE_APEXTEST_SHARD=i/n` reproduces one).
 - Use `-timeout=0` for `internal/vm`, `internal/gladecli` and
   `internal/visualforce`.

@@ -74,12 +74,14 @@ Supported keys:
 | `project.dependencies` | Declared package names or SFDX aliases mapped to local source paths. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `project.dependencyPaths` | Inline list of local directories to search for declared SFDX package dependencies, relative to the supplying `glade.yml`. |
+| `project.siblingDependencyScan` | `true` lets Glade also look for declared SFDX package dependencies in directories beside the project. Default `false`. The `--sibling-dependencies` flag or `GLADE_SIBLING_DEPENDENCIES=1` turns it on for one run. |
 | `project.externalNamespaces` | Inline list of installed managed-package namespaces with no local source. Each stays open; see [External namespaces](#external-namespaces). |
 | `project.schemaSnapshot` | Schema snapshot path, relative to `glade.yml`; requires `schemaSnapshotSHA256`. |
 | `project.schemaSnapshotSHA256` | Paired 64-character hexadecimal SHA-256 digest for `schemaSnapshot`. |
 
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `pdf.command` | Absolute executable path for optional external HTML-to-PDF rendering; empty uses the local text writer. |
+| `duplicateRules.standard` | `on` enforces the standard Account, Contact and Lead duplicate rules that no project metadata defines; `off` (the default) leaves them unenforced. `GLADE_STANDARD_DUPLICATE_RULES=on` turns them on for one run. A project's `duplicateRules` metadata for a standard rule is always honored, active or inactive, and custom duplicate rules are always enforced. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 | `org.hierarchyAccessObjects` | Inline list of private custom object API names for which the source org grants read access through the owner's role hierarchy. Unlisted objects do not receive that grant. |
 | `test.permissionSets` | Inline list of project permission-set API names to assign to the running test user. |
@@ -226,14 +228,21 @@ Lookup steps:
 1. A matching explicit `project.dependencies` mapping.
 2. A matching `project.managedPackageDependencies` entry that loads; this skips
    local lookup.
-3. The parent and grandparent directories themselves, plus `<base>/<name>` and
-   `<base>/packages/<name>` for package-name variants, and sibling project
-   directories directly under the parent that contain an
-   `sfdx-project.json`.
+3. Sibling scan only (off by default): the parent and grandparent directories
+   themselves, plus `<base>/<name>` and `<base>/packages/<name>` for
+   package-name variants, and sibling project directories directly under the
+   parent that contain an `sfdx-project.json`.
 4. Each `dependencyPaths` entry, in the order listed.
-5. If the consumer manifest's `packageAliases` object has a key matching the
-   dependency name, immediate child directories under each immediate directory
-   beneath the project root's grandparent.
+5. Sibling scan only, and only if the consumer manifest's `packageAliases`
+   object has a key matching the dependency name: immediate child directories
+   under each immediate directory beneath the project root's grandparent.
+
+Resolution is deterministic by default. Steps 3 and 5 and the namespace-based
+sibling pickup run only when you opt in with `project.siblingDependencyScan:
+true` in `glade.yml`, the `--sibling-dependencies` flag on any command, or
+`GLADE_SIBLING_DEPENDENCIES=1`. Without it, a project resolves the same
+standalone and beside other checkouts, and a dependency that only a neighbor
+would supply reports `dependency_missing`.
 
 Local candidates from all applicable locations count together. A candidate
 matches only when one of its package directories declares the

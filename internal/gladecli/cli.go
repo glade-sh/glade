@@ -208,8 +208,32 @@ func diagnosticTry(code string) []string {
 	}
 }
 
+// siblingDependenciesFlag opts in to resolving declared SFDX package
+// dependencies from sibling project directories (off by default).
+const siblingDependenciesFlag = "--sibling-dependencies"
+
+// applySiblingDependenciesFlag removes the global --sibling-dependencies flag
+// (anywhere before a "--" terminator) and records the choice in the environment
+// so every project load in this process and its children sees it.
+func applySiblingDependenciesFlag(args []string) []string {
+	out := args[:0:0]
+	for i, arg := range args {
+		if arg == "--" {
+			out = append(out, args[i:]...)
+			break
+		}
+		if arg == siblingDependenciesFlag {
+			_ = os.Setenv(project.SiblingDependencyScanEnvVar, "1")
+			continue
+		}
+		out = append(out, arg)
+	}
+	return out
+}
+
 // Run executes the glade CLI and returns a process exit code.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	args = applySiblingDependenciesFlag(args)
 	if len(args) == 0 {
 		_ = cliui.WriteHelp(stdout)
 		return 0
@@ -2718,17 +2742,24 @@ func loadProjectIndex(root string) (project.Project, typesys.Index, error) {
 }
 
 func buildProjectIndex(p project.Project) typesys.Index {
+	index, _ := buildProjectIndexWithArtifacts(p)
+	return index
+}
+
+// buildProjectIndexWithArtifacts also returns the digests of the sources the
+// build read.
+func buildProjectIndexWithArtifacts(p project.Project) (typesys.Index, typesys.BuildArtifacts) {
 	s, err := gladeschema.LoadProject(p)
 	if err != nil {
-		index := typesys.Build(p, gladeschema.Schema{})
+		index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
 		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
 			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
 		})
-		return index
+		return index, artifacts
 	}
-	return typesys.Build(p, s)
+	return typesys.BuildWithArtifacts(p, s)
 }
 
 func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (project.Project, typesys.Index, error) {
@@ -2827,6 +2858,7 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	if err != nil {
 		return err
 	}
+	visualforce.SetPersistentGateCache(apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{}).Enabled)
 	jsonOut := parsed.Bool("json")
 	debug = parsed.Bool("debug")
 	projectRoot := strings.TrimSpace(parsed.String("project"))
@@ -3205,20 +3237,37 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
+	if !parsed.Bool("diagnostics-once") {
+		// Serve at once and index in the background. Requests that need the
+		// index wait for it; initialize and document sync do not.
+		handler := lsp.NewPendingHandler()
+		go func() {
+			index, analyze, err := loadLSPProject(root)
+			if err != nil {
+				handler.Fail(err)
+				return
+			}
+			handler.SetAnalyzer(analyze)
+			handler.SetIndex(index)
+			handler.StartAnalysis()
+		}()
+		serveErr := lsp.Serve(os.Stdin, w, handler)
+		if serveErr != nil {
+			return serveErr
+		}
+		return handler.LoadError()
+	}
 	index, err := loadIndex(root)
 	if err != nil {
 		return err
 	}
 	handler := lsp.NewHandler(index)
-	if parsed.Bool("diagnostics-once") {
-		for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
-			if err := lsp.WriteMessage(w, notification); err != nil {
-				return err
-			}
+	for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
+		if err := lsp.WriteMessage(w, notification); err != nil {
+			return err
 		}
-		return nil
 	}
-	return lsp.Serve(os.Stdin, w, handler)
+	return nil
 }
 
 func runProfile(ctx context.Context, args []string, w io.Writer) error {

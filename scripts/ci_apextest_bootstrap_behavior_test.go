@@ -71,8 +71,8 @@ func runCase319BehaviorRoute(t *testing.T, f case319BehaviorFixture, attempt str
 		t.Fatal(err)
 	}
 	workflow := string(data)
-	start := strings.Index(workflow, "  apextest-history-input:\n")
-	end := strings.Index(workflow, "\n  apextest:\n")
+	start := strings.Index(workflow, "  history-input:\n")
+	end := strings.Index(workflow, "\n  gladecli:\n")
 	if start < 0 || end <= start {
 		t.Fatal("missing input job")
 	}

@@ -744,7 +744,7 @@ func TestRuntimePatchAuthorityUsesRetainedVerifiedSources(t *testing.T) {
 	classes := compileProjectClasses(index, methods, sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	entry := runtimeCacheEntry{Methods: methods, Classes: classes, Triggers: triggers, TriggerErrors: triggerErrors, PageNames: pageNames}
-	if authority := newRuntimePatchAuthority(index, key, digests, sources, entry, org); authority == nil {
+	if authority := newRuntimePatchAuthority(index, key, digests, sources, entry, org, false); authority == nil {
 		t.Fatal("authority reread files instead of using retained verified sources")
 	}
 }
@@ -2417,6 +2417,9 @@ func TestRuntimeTransitionCanonicalOrgSortsRelationshipsWithoutMutatingInput(t *
 func runtimeTransitionCanonicalJSON(t testing.TB, value any) string {
 	t.Helper()
 	if org, ok := value.(storage.OrgState); ok {
+		// Compare the logical org: a lazy org holds the catalog objects it has
+		// touched, so complete it first. The callers pass private clones.
+		storage.MaterializeStandardObjectSpread(&org)
 		data, err := json.Marshal(runtimeTransitionCanonicalOrg(org))
 		if err != nil {
 			t.Fatal(err)

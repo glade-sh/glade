@@ -8,11 +8,13 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -46,8 +48,13 @@ func runDAP(ctx context.Context, args []string, r io.Reader, w io.Writer) error 
 	}
 
 	handler := dap.NewHandler(dap.Snapshot{})
-	handler.SetLaunchHandler(func(request dap.LaunchRequest) error {
-		return handleDAPLaunch(ctx, handler, request, projectRoot, dbPath, dryRun)
+	handler.SetLaunchHandlerContext(func(launchCtx context.Context, request dap.LaunchRequest) error {
+		// End the launch when either the command or the client cancels it.
+		merged, cancel := context.WithCancel(launchCtx)
+		defer cancel()
+		stop := context.AfterFunc(ctx, cancel)
+		defer stop()
+		return handleDAPLaunch(merged, handler, request, projectRoot, dbPath, dryRun)
 	})
 	return dap.Serve(r, w, handler)
 }
@@ -75,11 +82,18 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return err
 	}
 	trace.mark("source")
-	org, runtime, apiVersion, err := loadDAPStartupState(projectRoot)
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	state, err := awaitDAPStartup(ctx, projectRoot)
 	if err != nil {
 		return err
 	}
+	org, runtime, apiVersion := state.org, state.runtime, state.apiVersion
 	trace.mark("load-startup-state")
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	preparedAnonymous, err := prepareAnonymousSource(source, apiVersion)
 	if err != nil {
 		return err
@@ -90,6 +104,9 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return err
 	}
 	trace.mark("compile-anonymous")
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if dbPath != "" {
 		loadedStore, dbOrg, err := openDBStore(dbPath, projectRoot)
 		if err != nil {
@@ -118,9 +135,17 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 			return err
 		}
 	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if testLaunch {
-		index, err := loadIndex(projectRoot)
-		if err != nil {
+		var index typesys.Index
+		if state.index != nil {
+			index = *state.index
+		} else if index, err = awaitDAPTestIndex(ctx, projectRoot); err != nil {
+			return err
+		}
+		if err := ctx.Err(); err != nil {
 			return err
 		}
 		if err := apextest.RegisterTestMethodForRequest(machine, index, launch.ClassName, launch.MethodName); err != nil {
@@ -128,6 +153,10 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		}
 	}
 	trace.mark("register-project-runtime")
+	// Never install a pending session for a launch that was cancelled.
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	handler.PrepareLiveSessionInClassWithHooks(machine, program, strings.TrimSpace(launch.ClassName), func(machine *vm.VM) {
 		visualforce.SetVMLazyRenderEnvironment(machine, projectRoot)
 	}, func(machine *vm.VM, execErr error) error {
@@ -143,6 +172,94 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return store.Save(storage.SnapshotRuntimeOrg(machine.Org))
 	})
 	return nil
+}
+
+// dapTestIndexLoader builds the index for a test launch when the startup load
+// did not return one. Tests replace it.
+var dapTestIndexLoader = loadIndex
+
+type dapStartup struct {
+	org        storage.OrgState
+	runtime    apextest.CompiledProjectRuntime
+	apiVersion string
+	// index is the project index the load built, nil when the startup cache
+	// answered. A test launch reuses it instead of building the index again.
+	index *typesys.Index
+	err   error
+}
+
+// dapStartupLoader builds the launch state for a project root. Tests replace it.
+// It should stop early and publish nothing once ctx ends.
+var dapStartupLoader = func(ctx context.Context, root string) dapStartup {
+	org, runtime, apiVersion, index, err := loadDAPStartupStateWithIndex(ctx, root)
+	return dapStartup{org: org, runtime: runtime, apiVersion: apiVersion, index: index, err: err}
+}
+
+// dapLoadSlots allows one project load per root at a time, so repeated
+// launch and cancel cycles cannot pile up background builds.
+var dapLoadSlots sync.Map // root -> chan struct{}
+
+func acquireDAPLoadSlot(ctx context.Context, root string) (release func(), err error) {
+	value, _ := dapLoadSlots.LoadOrStore(root, make(chan struct{}, 1))
+	slot := value.(chan struct{})
+	select {
+	case slot <- struct{}{}:
+		return func() { <-slot }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+// runCancellable runs work and returns its result, or ctx.Err() as soon as ctx
+// ends. The work gets a context that ends with ctx and keeps running until it
+// notices, but only one load per root runs at once and a cancelled load does
+// not publish cache state. Results are never shared between launches.
+func runCancellable[T any](ctx context.Context, root string, work func(context.Context) T) (T, error) {
+	var zero T
+	if normalized, err := normalizedDAPRoot(root); err == nil {
+		root = normalized
+	}
+	release, err := acquireDAPLoadSlot(ctx, root)
+	if err != nil {
+		return zero, err
+	}
+	result := make(chan T, 1)
+	go func() {
+		defer release()
+		result <- work(ctx)
+	}()
+	select {
+	case value := <-result:
+		return value, nil
+	case <-ctx.Done():
+		return zero, ctx.Err()
+	}
+}
+
+func awaitDAPStartup(ctx context.Context, root string) (dapStartup, error) {
+	state, err := runCancellable(ctx, root, func(c context.Context) dapStartup { return dapStartupLoader(c, root) })
+	if err != nil {
+		return dapStartup{}, err
+	}
+	return state, state.err
+}
+
+type dapIndexResult struct {
+	index typesys.Index
+	err   error
+}
+
+// awaitDAPTestIndex builds the index for a warm test launch without blocking
+// the launch past a cancel.
+func awaitDAPTestIndex(ctx context.Context, root string) (typesys.Index, error) {
+	res, err := runCancellable(ctx, root, func(context.Context) dapIndexResult {
+		index, err := dapTestIndexLoader(root)
+		return dapIndexResult{index, err}
+	})
+	if err != nil {
+		return typesys.Index{}, err
+	}
+	return res.index, res.err
 }
 
 type dapStartupTrace struct {

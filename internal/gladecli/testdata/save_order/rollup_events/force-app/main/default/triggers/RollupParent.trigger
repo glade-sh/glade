@@ -1,0 +1,1 @@
+trigger RollupParent on Probe_Parent__c (before update, after update) { List<Task> logs=new List<Task>(); for (Probe_Parent__c p : Trigger.new) { RollupTrace.events += (Trigger.isBefore ? 'before:' : 'after:') + p.Name + ':' + p.Child_Count__c + ';'; if (Trigger.isAfter && p.Name == 'ok') logs.add(new Task(Subject='probe-side-effect')); } if (!logs.isEmpty()) insert logs; }

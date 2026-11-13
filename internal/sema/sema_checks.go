@@ -371,6 +371,10 @@ type querySemanticsChecker struct {
 	bindingTypes   []typesys.TypeSymbol
 	hasBaseline    bool
 	shapeFeatures  []string
+	// packageFieldsNarrow and sourcelessPackageNamespaces come from the
+	// project's declared dependencies (typesys.ProjectInfo).
+	packageFieldsNarrow         bool
+	sourcelessPackageNamespaces []string
 	// namedApexReferenceObjects is set for files declaring named classes.
 	namedApexReferenceObjects bool
 	// anonymousRoute is set for the execute-anonymous body.
@@ -388,6 +392,9 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		bindingTypes:   index.Types,
 		hasBaseline:    len(declaredObjects) > 0,
 		shapeFeatures:  index.OrgShapeFeatures,
+
+		packageFieldsNarrow:         index.Project.PackageFieldsNarrow,
+		sourcelessPackageNamespaces: strings.FieldsFunc(index.Project.SourcelessPackageNamespaces, func(r rune) bool { return r == ',' }),
 	}
 	checker.apiVersion, _ = apexversion.Major(index.Project.SourceAPIVersion)
 	for _, typ := range index.Types {
@@ -1687,6 +1694,13 @@ func (c querySemanticsChecker) checkQueryField(objectName, fieldPath string, ctx
 		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
 		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
 	}
+	// Case lacks a name that no configured feature supplies, even when feature
+	// profiles made the schema object partial. A field the project declares
+	// itself stays.
+	if !strings.Contains(fieldPath, ".") && c.unsuppliedFieldLacking(objectName, fieldPath) {
+		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
+	}
 	// record_type_shape c2: RecordTypeId of an object with no record type in a
 	// declared shape is "No such column" (semaRecordTypeFieldAbsent).
 	if c.anonymousRoute && strings.EqualFold(fieldPath, "RecordTypeId") && c.recordTypeFieldUnavailable(objectName) {
@@ -1912,6 +1926,25 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 	return schema.Field{}, false
 }
 
+func (c querySemanticsChecker) unsuppliedFieldLacking(objectName, fieldName string) bool {
+	canonical, standard := storage.ResolveKnownStandardObjectName(objectName)
+	if !standard || !storage.StandardObjectUnsuppliedFieldRejected(canonical, fieldName, c.shapeFeatures) {
+		return false
+	}
+	if object, ok := c.object(objectName); ok {
+		if provider := c.providers[normalizeName(object.Name)]; provider != nil {
+			declared := false
+			provider.visitDeclared(func(field schema.Field) {
+				if field.File != "" && strings.EqualFold(field.Name, fieldName) {
+					declared = true
+				}
+			})
+			return !declared
+		}
+	}
+	return true
+}
+
 func (c querySemanticsChecker) featureFieldUnavailable(objectName, fieldName string) bool {
 	if !storage.StandardFeatureHasVersionedFields(objectName) && !storage.StandardFeatureHasNamedOnlyFields(objectName) {
 		return false
@@ -2004,8 +2037,13 @@ func (c querySemanticsChecker) allowsIncompleteExternalManagedPackageField(objec
 	if objectNamespace := semaNamespaceFromAPIName(object.Name); objectNamespace != "" {
 		return !strings.EqualFold(objectNamespace, c.namespace)
 	}
-	_, ok = storage.StandardObjectDefinition(object.Name)
-	return ok
+	if _, ok = storage.StandardObjectDefinition(object.Name); !ok {
+		return false
+	}
+	// Native rows accept a namespaced field on a standard object only for an
+	// installed package. Declared dependencies stand for installed packages;
+	// a project that declares none keeps every namespace open.
+	return storage.PackageFieldNamespaceAllowed(c.packageFieldsNarrow, c.sourcelessPackageNamespaces, fieldNamespace)
 }
 
 func (c querySemanticsChecker) relationshipField(objectName, relationshipName string) (schema.Field, string, bool) {

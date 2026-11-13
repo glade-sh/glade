@@ -15,18 +15,18 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-SHARDS = {'apextest': 14, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3}
+SHARDS = {'apextest': 16, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3}
 # CodeQL runs from Security, not Required CI; the local codeql step below stays as an extra check.
 MAPPING = {
     # PR selection is covered by the full suite and scripts tests locally.
     'pr-tests': 'full-suite',
     'workflow-lint': 'workflow-lint', 'site': 'site',
     'test-binaries': 'test-binaries', 'test-binaries-apextest': 'test-binaries', 'lwc-vf': 'lwc-compile and visualforce shards', 'vet': 'vet', 'apextest': 'apextest',
-    'apextest-history': 'apextest-history', 'lwc-compile-history': 'lwc-compile-history',
-    'visualforce-history': 'visualforce-history', 'gladecli': 'gladecli',
-    'gladecli-history': 'gladecli-history', 'vm': 'vm', 'vm-history': 'vm-history',
+    # One CI history job refreshes every package's history; locally each package has its own refresh step.
+    'history': 'apextest, lwc-compile, visualforce, gladecli, vm and sema history refreshes', 'gladecli': 'gladecli',
+    'vm': 'vm',
     'node-integration': 'node-integration', 'nested-sources': 'nested-sources',
-    'sema': 'sema', 'sema-history': 'sema-history',
+    'sema': 'sema',
     'server-and-playground': 'server-and-playground', 'server-process-builder': 'server-process-builder', 'test': 'test',
     'smoke-runtime': 'smoke-runtime', 'smoke-distribution': 'smoke-distribution',
     'leak-scan': 'leak-scan',
@@ -81,7 +81,7 @@ class Runner:
         self.go = bool(shutil.which('go'))
         if self.go:
             version = subprocess.run(['go', 'version'], capture_output=True, text=True)
-            self.go = version.returncode == 0 and bool(re.search(r'\bgo1\.26\.10\b', version.stdout))
+            self.go = version.returncode == 0 and bool(re.search(r'\bgo1\.26\.11\b', version.stdout))
 
     def command(self, name, command, env=None, prerequisites=()):
         if self.cancelled.is_set():
@@ -155,7 +155,7 @@ class Runner:
         return p.returncode == 0 and Path(p.stdout).is_file()
 
     def run(self):
-        go = (self.go, 'Go 1.26.10 toolchain')
+        go = (self.go, 'Go 1.26.11 toolchain')
         node = (self.node, 'Node 22 and npm')
         for prefix, label in [('third_party/lwc', 'lwc'), ('lwcruntime', 'runtime'), ('site', 'site'), ('internal/playground/web', 'playground')]:
             self.command('npm-ci-'+label, ['npm', 'ci', '--prefix', prefix], prerequisites=[node])

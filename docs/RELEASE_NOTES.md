@@ -2,9 +2,107 @@
 
 ## Unreleased
 
+### Changes
+
+- **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
+- Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
+- **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
+
+### Duplicate rules
+
+- **Duplicate rule settings survive reloads.** Saved orgs and warm test runtimes honor the current standard-rule setting, including after upgrading an older saved org.
+- **Standard Account, Contact and Lead duplicate rules behind `duplicateRules.standard`.** The standard rules are available with `duplicateRules.standard: on` in `glade.yml` (or `GLADE_STANDARD_DUPLICATE_RULES=on`) and off by default; a project's `duplicateRules` metadata for a standard rule is honored whatever the setting says, and custom duplicate rules stay always on. With the setting on, an Account matches on its name and a city or ZIP code, or its website, a city or ZIP code and a street or phone number. A Contact or Lead matches on last and first name with an email address, a phone number, or the same company (or email domain) with a title or street. The cross-object Contact and Lead rules and Person Account rules are enforced when active. Match confidences follow the captured values. Pairs that Salesforce matches by looser fuzzy rules (a first name against its initial, transposed last-name letters) still do not match, so no false duplicates are reported. Large Account scans with many same-city, similar-name records cost more per insert.
+- **Confidence of OR rules.** A custom matching rule with OR groups reports the mean over its filter, counting items that did not match, as Salesforce does. Company names that share a six-letter second word and one-word plurals now match as Syllable Alignment does.
+- Apex SOSL now distinguishes invalid queries from counted searches, rejects anonymous `WITH SYSTEM_MODE`, and allows short FIND terms in Apex tests. Fixed searches omit deleted records, and a direct Datetime greater-than filter bound to a null Datetime matches its candidates.
+
+### Apex search
+
+- A user-mode SOSL search with fixed test results now reports an unreadable field used to sort a RETURNING group, including when its only candidate belongs to another user.
+- SOSL divides the result limit among all `RETURNING` objects, including when an object has fewer matching rows than its share. Outside tests, each object of a multi-object search returns at most 250 rows, as does a single object with no `WHERE` or `ORDER BY`, except `EntityDefinition`, which has no captured ceiling and is not capped. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
+- SOSL name searches over space-separated ASCII names match word prefixes and the interior `?`, `??`, and `*` forms, with up to two letters matched by `*`. Unquoted phone searches can find an international-format North American number by its seven local digits or ten national digits.
+
+### Performance
+
+- **Unset field reads keep the lazy schema lazy.** Reading a field that is not set, or any name that is not a child relationship, after a record is saved no longer builds every standard object. A generated list of the child relationship names the standard objects declare rules the name out first. On a test project that saves and reads records, peak memory fell from about 560 MiB to about 340 MiB and instructions fell about 45 percent. Results are identical.
+- **Static reference index no longer copied per test.** The index that tracks which static fields hold each collection or record is shared between tests of one project. The first static write in a test used to copy all of it; it now records only what that test changes and leaves the shared index alone. Results are identical. On a 500-class project, peak memory fell about 8 percent and instructions about 3.6 percent; on a 150-class project, about 4 percent and 1 percent.
+- **Method bodies are lexed once per process.** Semantic analysis and the runtime compile used to lex the same method body twice. A bounded cache (24 MiB of tokens, least recently used first) now shares the lexed tokens, and the lexer builds each token list in one exact-size allocation. On a 500-class test project, allocation in the lexer fell from about 207 MB to about 61 MB and total allocation fell about 6 percent. Compile results and diagnostics are identical.
+- **Pooled hashing buffer for source digests.** Hashing a project file for the Visualforce generation key and for source-digest validation no longer allocates a 32 KiB copy buffer per file; the buffers come from a shared pool. A 500-class project allocates about 120 MB less in one cold `glade test`. Digests and results are unchanged.
+- **Seeding no longer copies whole object definitions.** The record type, currency field and platform object setup steps used to copy an object's entire definition before checking whether they change anything. They now copy only what they write, and leave a definition alone when it is already complete. Results are identical.
+- **Smaller platform type table.** The standard platform types (System, Database, Schema and the rest) are now built with exact-size member lists, and members that share a modifier list or a parameter list share one copy. Building the table allocates about 35 MB instead of 65 MB and keeps about 22 MB live instead of 31 MB, in every process. Symbols and their order are unchanged.
+- **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
+- **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, and peak memory can rise up to about 10% on small runs. Results are unchanged.
+- **SOQL text ordering.** SOQL text ordering is locale-aware for `en_*` locales.
+- **SOQL text predicates.** Grouped and scalar aggregate evaluation retain the execution locale for HAVING text ranges, consistent with WHERE. REST and Bulk queries pass the selected user’s locale to the same executor. The English GROUP BY representative rule remains provisional outside the captured case pairs.
+
+- **Restricted picklist ordering.** Source APIs 62–65 now apply the legacy picklist null-order policy to restricted picklists with configured values. Native source-version controls place the transition at API 66.0, which honors explicit NULLS clauses like 67.0.
+- **Double signed zero.** Equality and typed List membership distinguish positive and negative Double zero in the captured cases. Sorting Double and Object lists places negative Double zero first.
+
+## v0.3.8
+
+v0.3.8 turns more Salesforce compile and runtime differences into matching errors, enforces fuzzy duplicate rules, makes dependency resolution deterministic, and cuts test startup time, memory and check time.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v86`, `salesforce-platform-v67`, `apextest-runtime-v35`). The first run after upgrading rebuilds them.
+- **Sibling-directory dependency scanning is now opt-in.** Dependency resolution is deterministic: a project resolves the same alone and beside other checkouts. Glade no longer looks in the parent and grandparent directories, or in sibling project directories, for declared SFDX package dependencies unless you ask. Turn it on with `project.siblingDependencyScan: true` in `glade.yml`, the `--sibling-dependencies` flag, or `GLADE_SIBLING_DEPENDENCIES=1`. Without it, a dependency that only a neighboring directory would supply reports `dependency_missing`. The test daemon is keyed on the mode. See `docs/CONFIG.md`.
+- **Unknown custom fields are compile errors.** A field that does not exist on an object with a captured full field list (including `Case`, `User` and the captured `WebStore` rows) now fails at compile time with the Salesforce message, where it used to compile. `Case.SourceId` is accepted when Social Customer Service is enabled.
+- **Daemon directory checks.** An unsafe daemon directory is refused and replaced with a per-user cache directory (see Test daemon).
+
+### Apex
+
+- **Unknown fields and namespaced fields.** Compile-time field errors match Salesforce for unknown fields on objects with a captured field list. An undefined namespaced field on a standard object is accepted only for a declared package namespace that has no source, and only when the project declares dependencies.
+- **Local scope.** Variables declared in a `while` or `do`-`while` body are scoped to that body.
+- **Dynamic SOQL binds.** `Database.query` binds to String locals whose block has ended follow the captured visibility rules.
+- **Case field access.** Standard-field access on `Case` for the default administrator follows captured rows, and two Case reference fields were added to the catalog.
+- **Describe and relationships.** `getChildRelationships()` and `Schema.getGlobalDescribe()` results are shared across tests of one schema and copied only when a test writes them (see Performance).
+
+### Automation
+
+- **Flow fault paths.** `$Flow.FaultMessage` carries the native text for more DML error codes and for Update, Delete and Get Records. Record-triggered and autolaunched flows raise on an unhandled fault. Flows that are not event-triggered publish the platform events they create.
+- **Platform-event-triggered flows.** Faults in an event-triggered flow are swallowed and roll the interview back. Rollback, publish timing and chained events follow captured rows.
+- **Flow batches.** Action batches keep per-interview fault indexes, run the after-update trigger once per batch, handle filtered self-updates, and give `ReadWriteTransfer` records public read, as captured for Lead sharing.
+- **Duplicate rules with fuzzy matching items.** A custom matching rule whose items use the fuzzy methods for first name, last name, company name, phone, city, street, ZIP or title is now enforced by duplicate rules on insert and update, and returned by `Datacloud.FindDuplicates`. The scorers follow captured Salesforce verdicts and match confidences. Last Name uses a Metaphone 3 encoder (`github.com/dlclark/metaphone3`, BSD 3-Clause) for the sounds-alike score, so dropped vowels, silent letters and name-specific spellings match as natively (unbiased holdout 99.0% recall, no false matches). Name-variant and acronym dictionaries cover only the pairs the captures prove. Fuzzy input is length-capped and blank input is rejected. Standard-rule fuzzy equations, cross-object rules and Person Account rules are still not enforced; `docs/DUPLICATE_FUZZY_MATCHING.md` lists the formulas and the gaps.
+
+### LWC and Visualforce
+
+- **Aura and LWC action parameters.** Parameter conversion for `@AuraEnabled` calls follows captured behavior.
+- **LWC dynamic imports.** The compile preflight validates dynamic imports in utility modules and sibling modules, not only in the component entry.
+- **Visualforce.** Behaviors ported from captured Visualforce rows. The controller gate is also computed once per project state (see Performance).
+- **Shared LWC compiler dependencies.** `GLADE_LWC_DEPS_DIR` selects one prepared `node_modules` tree for both compiler passes.
+
+### Performance
+
+- **Lower memory.** Platform type and method indexes load lazily, stub overlay members are released, standard objects spread lazily from source, and class templates are built on first use. Retained heap and peak RSS fell about 7% from lazy class templates alone, with 1.5% fewer instructions on a warm run. Results are unchanged.
+- **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class, and method bodies are checked on up to `GOMAXPROCS` workers (at most 8). `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip the repeated work. Diagnostics keep their order and content.
+- **Fewer source re-reads and a cached binary digest.** A warm test daemon request no longer reads and hashes every source and `-meta.xml` file at each stage. A file that has not changed since it was last hashed, and was already two seconds old then, is trusted by device, inode, size, mtime and ctime, on file systems with a real ctime. Each process also remembers the SHA-256 of its own executable, which removes about 0.7 s from every cached `check` and `test`. Edited and recently written files are always hashed again.
+- **Visualforce controller gate computed once per project state.** A Visualforce page request, `glade exec` with a project and each warm one-class `glade test` no longer compile the whole project again to decide which controllers a page may use. The result is keyed by the project value and the content of every file it names, so any edit recomputes it.
+- **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process.
+- **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. One lookup takes about a sixth of the time and allocates nothing.
+- **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark.
+- **Global describe maps.** `Schema.getGlobalDescribe()` no longer copies the 5,400-entry map three times for every test. Tests of one schema share the map until one writes it. On a project whose tests call it, instructions fell about 3%.
+- **Child relationship describes.** `getChildRelationships()` no longer clones every relationship value for each test. On a describe-heavy suite, instructions fell about 7% and peak memory about 8%.
+
+Results are unchanged by every item in this section.
+
+### Editor
+
+- **Language server.** `initialize` no longer waits for the index to load, so the editor connects at once and features fill in as the index completes. The server honors `$/cancelRequest` and debounces `didChange` diagnostics by 250 ms.
+- **Debug adapter.** A launch can be cancelled while it starts.
+
 ### Test daemon
 
 - **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.
+- **File stamps.** The daemon skips re-hashing unchanged files, as described under Performance.
+
+### CI
+
+- **Shared inputs.** Duration-history, npm, Playwright and test binaries are produced or restored once and shared across shards, and Apex shards plan from one shared history.
+- **Train and release checks.** Train and release pull requests run the full suite and enforce an Apex and semantic shard-balance check. The concurrency inventory also catches helper-backed test re-execution.
+- **Conformance split.** The Visualforce conformance test is split into row-range parts.
+
+### Toolchain
+
+- Build with Go 1.26.11 (net/http fix GO-2026-6859).
 
 ## v0.3.7
 
@@ -52,7 +150,7 @@ v0.3.7 fixes more differences from Salesforce found with captured org behavior, 
 - **Faster Process Builder host tests.** The tests share one project load per API version, and review scenarios run in parallel. Test time is about half.
 - **Pull request lane.** Pull requests run a fast lane that includes the delegated CLI tests. The full suite runs in the merge queue.
 - **LWC conformance test split.** The L07 LWC conformance test runs once per API version, plus a prerequisites test. Each writes its own report.
-- **Wider Apex shards.** Main-branch CI runs Apex tests in 14 shards, within a 58-job budget that a test enforces.
+- **Wider Apex shards.** Main-branch CI runs Apex tests in 16 shards, within a 58-job budget that a test enforces.
 - **Public corpus check in CI.** Required CI runs a tier of pinned public Salesforce projects and compares the results with stored expectations.
 - **Shorter CI graph.** The apextest binary is built in its own job and the Go test matrix is split so shards start sooner. Every test still runs once.
 - **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.

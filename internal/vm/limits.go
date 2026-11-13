@@ -326,6 +326,8 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 			switch name {
 			case "queries":
 				message = fmt.Sprintf("Too many SOQL queries: %d", used)
+			case "soslQueries":
+				message = fmt.Sprintf("Too many SOSL queries: %d", used)
 			case "aggregateQueries":
 				message = fmt.Sprintf("Too many SOQL aggregate queries: %d", used)
 			case "dmlStatements":

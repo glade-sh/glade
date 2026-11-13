@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/watch"
@@ -30,6 +32,10 @@ type Daemon struct {
 	captureScopeFn   func(watch.Scope) (watch.Snapshot, error)
 	refreshGraphFn   func(*watch.RefGraph, typesys.Index, []watch.Change) (*watch.RefGraph, error)
 	warmRuntimeFn    func(context.Context, typesys.Index, *typesys.BuildArtifacts) error
+	// semaState carries the previous generation's per-type body diagnostics, so
+	// a one-line edit re-checks one type instead of the project. The semantic
+	// gate reads it from the context of Warm and of every run.
+	semaState *sema.IncrementalState
 	// runGenerationFn is a per-daemon test seam for proving a run receives one
 	// complete immutable generation. Production leaves it nil.
 	runGenerationFn func(context.Context, daemonGeneration, apextest.Options) testreport.Run
@@ -76,6 +82,7 @@ func New(root string) (*Daemon, error) {
 			return graph.Refreshed(index, changes), nil
 		},
 		warmRuntimeFn: apextest.WarmRuntimeWithBuildArtifacts,
+		semaState:     sema.NewIncrementalState(),
 	}, nil
 }
 
@@ -109,7 +116,7 @@ func (d *Daemon) Warm() error {
 	generation := d.daemonGeneration
 	defer d.mu.RUnlock()
 	artifacts := generation.artifacts
-	return d.warmRuntimeFn(context.Background(), generation.index, &artifacts)
+	return d.warmRuntimeFn(apextest.WithIncrementalSemantic(context.Background(), d.semaState), generation.index, &artifacts)
 }
 
 func (d *Daemon) RunFilter(filter string) testreport.Run {
@@ -178,11 +185,76 @@ func optionsForGeneration(opts apextest.Options, generation daemonGeneration) ap
 }
 
 func (d *Daemon) runGeneration(ctx context.Context, generation daemonGeneration, opts apextest.Options) testreport.Run {
-	opts = optionsForGeneration(opts, generation)
+	ctx = apextest.WithIncrementalSemantic(ctx, d.semaState)
 	if d.runGenerationFn != nil {
-		return d.runGenerationFn(ctx, generation, opts)
+		return d.runGenerationFn(ctx, generation, optionsForGeneration(opts, generation))
 	}
-	return apextest.RunContext(ctx, generation.index, opts)
+	run := apextest.RunContext(ctx, generation.index, optionsForGeneration(opts, generation))
+	if run.Summary().CompileErrors == 0 || ctx.Err() != nil {
+		return run
+	}
+	// A save can land after the watcher captured this generation and before it
+	// applies the update. The run then reports a source snapshot mismatch for a
+	// file the daemon is about to pick up anyway. Bring the generation up to the
+	// disk and run once more; a compile error that remains is a real one.
+	refreshed, ok := d.refreshStaleGeneration(generation)
+	if !ok {
+		return run
+	}
+	return apextest.RunContext(ctx, refreshed.index, optionsForGeneration(opts, refreshed))
+}
+
+// refreshStaleGeneration reports false when generation still matches the
+// files on disk. Otherwise it applies the drifted files and returns the
+// published generation.
+func (d *Daemon) refreshStaleGeneration(generation daemonGeneration) (daemonGeneration, bool) {
+	if typesys.ValidateSourceGeneration(generation.index, generation.artifacts.SourceDigests) == nil {
+		return daemonGeneration{}, false
+	}
+	d.updateMu.Lock()
+	defer d.updateMu.Unlock()
+	current := d.snapshotGeneration()
+	if current.serial != generation.serial {
+		return current, true
+	}
+	const maxIncremental = 8
+	for attempt := 0; ; attempt++ {
+		err := typesys.ValidateSourceGeneration(current.index, current.artifacts.SourceDigests)
+		if err == nil {
+			return current, attempt > 0
+		}
+		var mismatch *typesys.SourceSnapshotMismatchError
+		incremental := attempt < maxIncremental && errors.As(err, &mismatch) && driftChange(mismatch.File) != nil
+		if incremental {
+			exact, updateErr := d.tryUpdateChangesLocked([]watch.Change{*driftChange(mismatch.File)}, nil, true)
+			incremental = updateErr == nil && exact
+		}
+		if !incremental {
+			if reloadErr := d.reloadLocked(nil); reloadErr != nil {
+				return daemonGeneration{}, false
+			}
+			return d.snapshotGeneration(), true
+		}
+		current = d.snapshotGeneration()
+	}
+}
+
+// driftChange describes a drifted Apex source file as a watch change. It is nil
+// for anything the incremental route does not own.
+func driftChange(file string) *watch.Change {
+	kind := watch.FileKindApexClass
+	switch {
+	case strings.HasSuffix(file, ".trigger"):
+		kind = watch.FileKindApexTrigger
+	case strings.HasSuffix(file, ".cls"):
+	default:
+		return nil
+	}
+	op := watch.ChangeModified
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		op = watch.ChangeDeleted
+	}
+	return &watch.Change{Path: file, Op: op, Kind: kind}
 }
 
 func optionsForSelection(opts apextest.Options, selection watch.TestSelection) (apextest.Options, bool) {

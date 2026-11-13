@@ -54,6 +54,10 @@ type ProjectInfo struct {
 	Root             string `json:"root"`
 	Namespace        string `json:"namespace,omitempty"`
 	SourceAPIVersion string `json:"sourceApiVersion,omitempty"`
+	// PackageFieldsNarrow and SourcelessPackageNamespaces carry the declared
+	// package dependency binding (project.PackageNamespaceBinding).
+	PackageFieldsNarrow         bool   `json:"packageFieldsNarrow,omitempty"`
+	SourcelessPackageNamespaces string `json:"sourcelessPackageNamespaces,omitempty"` // comma-joined; keeps ProjectInfo comparable
 }
 
 // ApexMetadataForType returns the companion metadata identity retained in this
@@ -181,11 +185,15 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	labelNames, labelsKnown := projectCustomLabels(p)
 	parser := apexast.NewParser()
 	defer parser.Close()
+	projectBinding := p.PackageNamespaceBinding()
 	idx = Index{
 		Project: ProjectInfo{
 			Root:             p.Root,
 			Namespace:        p.Namespace,
 			SourceAPIVersion: p.SourceAPIVersion,
+
+			PackageFieldsNarrow:         projectBinding.Narrow,
+			SourcelessPackageNamespaces: strings.Join(projectBinding.Sourceless, ","),
 		},
 		Objects:               s.Objects,
 		SourceNamespaces:      append([]string(nil), p.SourceNamespaces...),

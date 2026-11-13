@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"os"
 	"sort"
 	"strings"
 
@@ -14,6 +15,21 @@ type DuplicateMatch struct {
 	Rule    string
 	Engine  string
 	Records []storage.Record
+	// Confidences holds each record's match confidence (Datacloud
+	// MatchRecord.matchConfidence), parallel to Records.
+	Confidences []float64
+}
+
+// byMatchRecordID orders a match's records and confidences together by ID.
+type byMatchRecordID struct{ m *DuplicateMatch }
+
+func (b byMatchRecordID) Len() int { return len(b.m.Records) }
+func (b byMatchRecordID) Less(i, j int) bool {
+	return b.m.Records[i].ID < b.m.Records[j].ID
+}
+func (b byMatchRecordID) Swap(i, j int) {
+	b.m.Records[i], b.m.Records[j] = b.m.Records[j], b.m.Records[i]
+	b.m.Confidences[i], b.m.Confidences[j] = b.m.Confidences[j], b.m.Confidences[i]
 }
 
 // DuplicateResult mirrors Datacloud.DuplicateResult for one duplicate rule.
@@ -104,120 +120,145 @@ func duplicateFieldText(record storage.Record, field string) (string, bool) {
 	return strings.TrimSpace(workflowValueString(value)), true
 }
 
-var accountStandardDuplicateFields = [...]string{"Name", "BillingStreet", "BillingCity", "BillingPostalCode"}
-
-// standardDuplicateMatcher applies only the discriminators the native rows
-// pin (ST02-ST05, ST07, ST08, ST11, DR12); builtin fuzzy scoring is not modeled.
-// The object name is already folded to lower case. The candidate's
-// discriminators are read once for the whole scan: every comparison is
-// duplicateFieldsEqual, which is false whenever the candidate side is blank,
-// so a candidate missing a required discriminator matches no existing record
-// and the matcher is nil.
-func standardDuplicateMatcher(lowerObject string, candidate storage.Record) func(existing storage.Record) bool {
-	switch lowerObject {
+// standardDuplicateMatcher returns the pair scorer of a builtin matching rule
+// for a candidate record, or nil when the candidate cannot match any record
+// (no last name). ruleObject is the matching rule's object, which is not the
+// candidate's object for a cross-object rule: it applies the matching rule's
+// structure to the candidate's own fields. The scorer reports the verdict and
+// the match confidence (standard_rules.go).
+func standardDuplicateMatcher(org *storage.OrgState, ruleObject, candidateObject string, candidate storage.Record) func(existing storage.Record) (bool, float64) {
+	switch strings.ToLower(ruleObject) {
 	case "account":
-		var keys [len(accountStandardDuplicateFields)]string
-		for i, field := range accountStandardDuplicateFields {
-			text, ok := duplicateFieldText(candidate, field)
-			if !ok {
-				return nil
-			}
-			keys[i] = text
-		}
-		return func(existing storage.Record) bool {
-			for i, field := range accountStandardDuplicateFields {
-				text, ok := duplicateFieldText(existing, field)
-				if !ok || !strings.EqualFold(keys[i], text) {
-					return false
-				}
-			}
-			return true
-		}
-	case "contact", "lead":
-		last, ok := duplicateFieldText(candidate, "LastName")
+		prepared, ok := newStandardAccountCandidate(candidate)
 		if !ok {
 			return nil
 		}
-		first, firstOK := duplicateFieldText(candidate, "FirstName")
-		email, emailOK := duplicateFieldText(candidate, "Email")
-		phone, phoneOK := duplicateFieldText(candidate, "Phone")
-		return func(existing storage.Record) bool {
-			existingLast, ok := duplicateFieldText(existing, "LastName")
-			if !ok || !strings.EqualFold(last, existingLast) {
-				return false
+		return func(existing storage.Record) (bool, float64) { return standardAccountMatch(prepared, existing) }
+	case "contact", "lead":
+		person := standardPersonOf(org, candidateObject, candidate)
+		if person.last == "" {
+			return nil
+		}
+		person.lastKey = rawKeysOf(person.last).last
+		object := strings.ToLower(ruleObject)
+		return func(existing storage.Record) (bool, float64) {
+			// The last name gates the pair; the other fields are read only after it.
+			last := ""
+			if v, ok := existing.Fields["LastName"]; ok {
+				last = strings.TrimSpace(workflowValueString(v))
+			} else if v, ok := existing.GetField("LastName"); ok {
+				last = strings.TrimSpace(workflowValueString(v))
 			}
-			existingFirst, existingFirstOK := duplicateFieldText(existing, "FirstName")
-			bothFirst := firstOK && existingFirstOK
-			if bothFirst && !strings.EqualFold(first, existingFirst) {
-				return false
+			if last == "" || rawKeysOf(last).last != person.lastKey {
+				return false, 0
 			}
-			if emailOK {
-				if existingEmail, ok := duplicateFieldText(existing, "Email"); ok && strings.EqualFold(email, existingEmail) {
-					return true
-				}
-			}
-			if !bothFirst || !phoneOK {
-				return false
-			}
-			existingPhone, ok := duplicateFieldText(existing, "Phone")
-			return ok && strings.EqualFold(phone, existingPhone)
+			return standardPersonMatch(object, person, standardPersonOf(org, ruleObject, existing))
 		}
 	}
 	return nil
 }
 
-func exactDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.Record) (bool, bool) {
+// customDuplicateMatch evaluates a custom matching rule's items. Exact items
+// compare text without letter case (DR10); fuzzy items score the pair with the
+// field-specific method. Blank handling is shared: MatchBlanks pairs two blank
+// values, NullNotAllowed never does, and one blank side never matches.
+//
+// The returned confidence is the matching rule's match confidence: the filter
+// logic's mean of means (duplicate_filter_confidence.go). An exact or blank
+// match scores 100, a fuzzy item its method score; an item that did not match
+// still counts with its raw score.
+func customDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.Record) (matched, supported bool, confidence float64) {
 	matches := make([]bool, len(rule.Items))
+	scores := make([]float64, len(rule.Items))
 	for i, item := range rule.Items {
 		left, lok := candidate.GetField(item.Field)
 		right, rok := existing.GetField(item.Field)
 		leftBlank, rightBlank := duplicateBlank(left, lok), duplicateBlank(right, rok)
+		matchBlanks := strings.EqualFold(item.BlankBehavior, "MatchBlanks")
 		switch {
 		case leftBlank || rightBlank:
 			// DR09: MatchBlanks pairs two blank keys; NullNotAllowed never does.
-			matches[i] = leftBlank && rightBlank && strings.EqualFold(item.BlankBehavior, "MatchBlanks")
+			matches[i] = leftBlank && rightBlank && matchBlanks
+			scores[i] = 100
+			if !matches[i] {
+				scores[i] = 50
+			}
+		case !strings.EqualFold(item.Method, "Exact"):
+			var score float64
+			l, r := workflowValueString(left), workflowValueString(right)
+			matches[i], score = FuzzyScore(item.Method, l, r, matchBlanks)
+			if matches[i] {
+				scores[i] = fuzzyItemScore(item.Method, score)
+			} else {
+				scores[i] = FuzzyRawConfidence(item.Method, l, r, matchBlanks)
+			}
 		default:
 			// DR10: Exact compares text without letter case.
 			matches[i] = strings.EqualFold(strings.TrimSpace(workflowValueString(left)), strings.TrimSpace(workflowValueString(right)))
+			scores[i] = 100
+			if !matches[i] {
+				scores[i] = 50
+			}
 		}
 	}
-	return evaluateLookupFilterLogic(rule.BooleanFilter, matches)
+	matched, supported = evaluateLookupFilterLogic(rule.BooleanFilter, matches)
+	if !matched || !supported {
+		return matched, supported, 0
+	}
+	if _, confidence, ok := filterRuleConfidence(rule.BooleanFilter, matches, scores); ok {
+		return true, true, confidence
+	}
+	return true, true, 100
 }
 
 // FindDuplicateMatches evaluates one duplicate rule for the record. supported
 // is false when the rule needs matching semantics outside the captured rows:
-// cross-object, fuzzy or unresolved matching rules. Callers then leave the
+// cross-object, unsupported fuzzy methods or unresolved matching rules. Callers then leave the
 // rule unenforced, as before duplicate enforcement existed.
 func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (DuplicateResult, bool) {
 	result := DuplicateResult{Rule: rule.Name, RuleID: rule.ID, Object: rule.Object}
-	if org == nil || rule.Subtype != "" || len(rule.MatchRules) == 0 {
+	personRule := strings.EqualFold(rule.Subtype, "PersonAccount")
+	if org == nil || (rule.Subtype != "" && !personRule) || len(rule.MatchRules) == 0 {
 		return result, false
 	}
 	for _, matching := range rule.MatchRules {
-		if !strings.EqualFold(matching.Object, rule.Object) {
+		standard := storage.IsStandardMatchingRule(matching.Object, matching.Name) && len(matching.Items) == 0
+		scanObject := matching.Object
+		if personRule && strings.EqualFold(matching.Object, "PersonAccount") {
+			// A Person Account rule compares person accounts with each other.
+			scanObject = "Account"
+		}
+		if !strings.EqualFold(scanObject, rule.Object) && !(standard && standardCrossObject(rule.Object, matching.Object)) {
 			return result, false
 		}
-		standard := storage.IsStandardMatchingRule(matching.Object, matching.Name) && len(matching.Items) == 0
+		fuzzy := false
 		if !standard {
 			if !strings.EqualFold(matching.Status, "Active") || len(matching.Items) == 0 {
 				return result, false
 			}
 			for _, item := range matching.Items {
-				if !strings.EqualFold(item.Method, "Exact") {
+				if !strings.EqualFold(item.Method, "Exact") && !FuzzyMethodSupported(item.Method) {
 					return result, false
+				}
+				if !strings.EqualFold(item.Method, "Exact") {
+					fuzzy = true
 				}
 			}
 		}
-		objectName, ok := storage.ResolveObjectName(*org, matching.Object)
+		objectName, ok := storage.ResolveObjectName(*org, scanObject)
 		if !ok {
 			return result, false
 		}
 		match := DuplicateMatch{Object: objectName, Rule: matching.Name, Engine: exactMatchEngine}
-		var standardMatch func(existing storage.Record) bool
+		if fuzzy {
+			// Native custom rules with a fuzzy item report the fuzzy engine.
+			match.Engine = storage.StandardMatchEngine
+		}
+		var standardMatch func(existing storage.Record) (bool, float64)
 		scan := true
 		if standard {
 			match.Engine = storage.StandardMatchEngine
-			standardMatch = standardDuplicateMatcher(strings.ToLower(objectName), record)
+			standardMatch = standardDuplicateMatcher(org, matching.Object, rule.Object, record)
 			scan = standardMatch != nil
 		}
 		for _, existing := range org.Objects[objectName].Records {
@@ -227,23 +268,35 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
 				continue
 			}
+			if personRule && !isPersonAccountRecord(existing) {
+				continue
+			}
 			var matched bool
+			confidence := 100.0
 			if standard {
-				matched = standardMatch(existing)
+				matched, confidence = standardMatch(existing)
 			} else {
 				var supported bool
-				if matched, supported = exactDuplicateMatch(matching, record, existing); !supported {
+				if matched, supported, confidence = customDuplicateMatch(matching, record, existing); !supported {
 					return result, false
 				}
 			}
 			if matched {
 				match.Records = append(match.Records, existing.Clone())
+				match.Confidences = append(match.Confidences, confidence)
 			}
 		}
-		sort.Slice(match.Records, func(i, j int) bool { return match.Records[i].ID < match.Records[j].ID })
+		sort.Sort(byMatchRecordID{&match})
 		result.Matches = append(result.Matches, match)
 	}
 	return result, true
+}
+
+// standardCrossObject reports the one cross-object shape the native rows pin:
+// the Contact and Lead standard rules applied to a record of the other object.
+func standardCrossObject(ruleObject, matchObject string) bool {
+	r, m := strings.ToLower(ruleObject), strings.ToLower(matchObject)
+	return (r == "contact" && m == "lead") || (r == "lead" && m == "contact")
 }
 
 // HasRecords reports whether any matching rule found a record.
@@ -256,8 +309,24 @@ func (r DuplicateResult) HasRecords() bool {
 	return false
 }
 
+// ActiveDuplicateRulesForRecord returns the active rules that apply to the
+// record: for a person account the Person Account rules, otherwise the
+// object's own. Natively a person account candidate is checked only against
+// the Person Account rules (findDuplicates with no active Person Account rule
+// reports "No active duplicate rules are defined for the Account object type").
+func ActiveDuplicateRulesForRecord(org *storage.OrgState, object string, record storage.Record) []storage.DuplicateRule {
+	if !isPersonAccountRecord(record) {
+		return ActiveDuplicateRules(org, object)
+	}
+	return activeDuplicateRules(org, object, "PersonAccount")
+}
+
 // ActiveDuplicateRules returns the object's active rules in evaluation order.
 func ActiveDuplicateRules(org *storage.OrgState, object string) []storage.DuplicateRule {
+	return activeDuplicateRules(org, object, "")
+}
+
+func activeDuplicateRules(org *storage.OrgState, object, subtype string) []storage.DuplicateRule {
 	if org == nil {
 		return nil
 	}
@@ -267,7 +336,7 @@ func ActiveDuplicateRules(org *storage.OrgState, object string) []storage.Duplic
 	}
 	var rules []storage.DuplicateRule
 	for _, rule := range org.Objects[name].Definition.DuplicateRules {
-		if rule.Active && rule.Subtype == "" {
+		if rule.Active && strings.EqualFold(rule.Subtype, subtype) && (!rule.Seeded || StandardDuplicateRulesEnabled(org)) {
 			rules = append(rules, rule)
 		}
 	}
@@ -285,7 +354,7 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 	}
 	exclude := func(id storage.ID) bool { return !update && e.duplicates.stamp == stamp && e.duplicates.batch[id] }
 	var report *DuplicateReport
-	for _, rule := range ActiveDuplicateRules(e.Org, record.Object) {
+	for _, rule := range ActiveDuplicateRulesForRecord(e.Org, record.Object, record) {
 		if !update && e.Options.UpsertCapturedInsertRulesOnly && !upsertCapturedEmailRule(rule, record) {
 			continue
 		}
@@ -341,7 +410,7 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 // matching record. Leave fanout on the prior upsert path until captured.
 func (e *Engine) upsertSingleReportMatch(record storage.Record, exclude func(storage.ID) bool) bool {
 	rules, records := 0, 0
-	for _, rule := range ActiveDuplicateRules(e.Org, record.Object) {
+	for _, rule := range ActiveDuplicateRulesForRecord(e.Org, record.Object, record) {
 		if !strings.EqualFold(rule.ActionOnInsert, "Allow") || !duplicateOperationsInclude(rule.OperationsOnInsert, "Report") {
 			continue
 		}
@@ -430,4 +499,19 @@ func (e *Engine) TakeDuplicateReports() []DuplicateReport {
 	reports := e.duplicates.reports
 	e.duplicates.reports = nil
 	return reports
+}
+
+// StandardDuplicateRulesEnabled reports whether the seeded standard duplicate
+// rules are enforced: the duplicateRules.standard setting or
+// GLADE_STANDARD_DUPLICATE_RULES=on. The setting is off by default. A rule a
+// project's metadata defines is never seeded and is always honored.
+func StandardDuplicateRulesEnabled(org *storage.OrgState) bool {
+	if org != nil && org.StandardDuplicateRules {
+		return true
+	}
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("GLADE_STANDARD_DUPLICATE_RULES"))) {
+	case "on", "1", "true":
+		return true
+	}
+	return false
 }

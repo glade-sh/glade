@@ -18,7 +18,7 @@ import (
 
 // Replay the exact owned fixed-search sources. Anonymous execution cannot use
 // fixed search results, so its native rejection is retained as context evidence.
-// Bound-null RHS and SOQL observations are explicit carries, not SOSL oracles.
+// The original packet carried D18; independent bound-null captures now verify it.
 func TestSOSLDatetimeNullOrgConformance(t *testing.T) {
 	type observation struct {
 		ID               string         `json:"id"`
@@ -206,7 +206,7 @@ func TestSOSLDatetimeNullOrgConformance(t *testing.T) {
 			for _, row := range rows {
 				t.Run(row, func(t *testing.T) {
 					want, got := wantCells[api+"/istest/"+row], observed[row]
-					if reason, carry := carries[row]; carry {
+					if reason, carry := carries[row]; carry && row != "D18" {
 						t.Logf("native carry: %s; native=%#v; local=%#v", reason, want, got)
 						return
 					}

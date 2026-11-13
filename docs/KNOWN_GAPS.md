@@ -24,7 +24,7 @@ No required local support gaps are currently tracked.
 ### `automation.duplicate.matching`: Duplicate matching scope
 
 - Status: `unsupported`
-- Gap: Local duplicate matching does not enforce fuzzy, cross-object or Person Account matching.
+- Gap: Local duplicate matching enforces custom same-object rules with Exact items and the First Name, Last Name, Company Name, Phone, City, Street, ZIP and Title fuzzy methods, reproducing native verdicts and match confidences for the captured rows. It does not enforce cross-object or Person Account rules, and it leaves standard Account, Contact and Lead fuzzy equations, fuzzy items under OR and rules with three or more fuzzy items unenforced. Metaphone 3 and Syllable Alignment are approximated, so some native matches are missed. See [DUPLICATE_FUZZY_MATCHING.md](DUPLICATE_FUZZY_MATCHING.md).
 
 ## Automation
 

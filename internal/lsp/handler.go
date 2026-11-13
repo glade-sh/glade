@@ -1,10 +1,13 @@
 package lsp
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlang"
@@ -16,13 +19,38 @@ import (
 )
 
 type Handler struct {
-	index        typesys.Index
+	// index is written once, before ready closes. Readers that need it wait on
+	// ready first, which orders the write before every read.
+	index     typesys.Index
+	ready     chan struct{}
+	readyOnce sync.Once
+	loadErr   error
+
+	parserMu     sync.Mutex
 	parser       *apexast.Parser
+	parserClosed bool
+
+	analyzer     func(typesys.Index) sema.Result
 	analysisOnce sync.Once
 	analysis     sema.Result
-	documents    map[DocumentURI]openDocument
-	shutdown     bool
+
+	docMu     sync.RWMutex
+	documents map[DocumentURI]openDocument
+
+	shutdown atomic.Bool
+
+	debounce time.Duration
+
+	// completionCatalogs caches the default completion list per ordering.
+	completionCatalogs [3]struct {
+		once  sync.Once
+		items []CompletionItem
+	}
 }
+
+// DefaultDiagnosticsDebounce is how long Serve waits after the last
+// textDocument/didChange before it publishes diagnostics for that document.
+const DefaultDiagnosticsDebounce = 250 * time.Millisecond
 
 type openDocument struct {
 	URI     DocumentURI
@@ -32,22 +60,98 @@ type openDocument struct {
 }
 
 func NewHandler(index typesys.Index) *Handler {
+	h := NewPendingHandler()
+	h.SetIndex(index)
+	return h
+}
+
+// NewPendingHandler returns a handler whose project index is not built yet.
+// initialize and document sync work at once. Requests that need the index wait
+// for SetIndex or Fail.
+func NewPendingHandler() *Handler {
 	return &Handler{
-		index:     index,
+		ready:     make(chan struct{}),
 		parser:    apexast.NewParser(),
 		documents: make(map[DocumentURI]openDocument),
+		debounce:  DefaultDiagnosticsDebounce,
+	}
+}
+
+// SetIndex publishes the project index and releases waiting requests.
+func (h *Handler) SetIndex(index typesys.Index) {
+	h.readyOnce.Do(func() {
+		h.index = index
+		close(h.ready)
+	})
+}
+
+// Fail records an index load error and releases waiting requests with it.
+func (h *Handler) Fail(err error) {
+	h.readyOnce.Do(func() {
+		h.loadErr = err
+		close(h.ready)
+	})
+}
+
+// LoadError returns the error passed to Fail, once the handler is ready.
+func (h *Handler) LoadError() error {
+	select {
+	case <-h.ready:
+		return h.loadErr
+	default:
+		return nil
+	}
+}
+
+// SetDiagnosticsDebounce sets the didChange debounce used by Serve. Zero
+// publishes without delay.
+func (h *Handler) SetDiagnosticsDebounce(d time.Duration) {
+	h.debounce = d
+}
+
+func (h *Handler) waitReady(ctx context.Context) error {
+	select {
+	case <-h.ready:
+		return h.loadErr
+	default:
+	}
+	select {
+	case <-h.ready:
+		return h.loadErr
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }
 
 func (h *Handler) analysisResult() sema.Result {
+	<-h.ready
+	if h.loadErr != nil {
+		return sema.Result{}
+	}
 	h.analysisOnce.Do(func() {
-		h.analysis = sema.Analyze(h.index)
+		analyze := h.analyzer
+		if analyze == nil {
+			analyze = sema.Analyze
+		}
+		h.analysis = analyze(h.index)
 	})
 	return h.analysis
 }
 
+// SetAnalyzer replaces the whole-project semantic pass, for callers that can
+// answer from a cache. Call it before the index is published.
+func (h *Handler) SetAnalyzer(analyze func(typesys.Index) sema.Result) {
+	h.analyzer = analyze
+}
+
+// StartAnalysis runs the semantic pass in the background once the index is
+// ready, so the first diagnostics request finds it done or already running.
+func (h *Handler) StartAnalysis() {
+	go h.analysisResult()
+}
+
 func (h *Handler) Shutdown() bool {
-	return h.shutdown
+	return h.shutdown.Load()
 }
 
 func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
@@ -71,6 +175,11 @@ func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
 }
 
 func (h *Handler) DidOpen(params DidOpenTextDocumentParams) []Notification {
+	doc := h.applyOpen(params)
+	return h.documentDiagnostics(doc)
+}
+
+func (h *Handler) applyOpen(params DidOpenTextDocumentParams) openDocument {
 	uri := params.TextDocument.URI
 	doc := openDocument{
 		URI:     uri,
@@ -78,11 +187,23 @@ func (h *Handler) DidOpen(params DidOpenTextDocumentParams) []Notification {
 		Version: params.TextDocument.Version,
 		Text:    params.TextDocument.Text,
 	}
+	h.docMu.Lock()
 	h.documents[uri] = doc
-	return h.documentDiagnostics(doc)
+	h.docMu.Unlock()
+	return doc
 }
 
 func (h *Handler) DidChange(params DidChangeTextDocumentParams) ([]Notification, error) {
+	doc, err := h.applyChange(params)
+	if err != nil {
+		return nil, err
+	}
+	return h.documentDiagnostics(doc), nil
+}
+
+func (h *Handler) applyChange(params DidChangeTextDocumentParams) (openDocument, error) {
+	h.docMu.Lock()
+	defer h.docMu.Unlock()
 	doc, ok := h.documents[params.TextDocument.URI]
 	if !ok {
 		doc = openDocument{URI: params.TextDocument.URI, Path: pathFromURI(params.TextDocument.URI)}
@@ -91,26 +212,52 @@ func (h *Handler) DidChange(params DidChangeTextDocumentParams) ([]Notification,
 	for _, change := range params.ContentChanges {
 		next, err := applyTextChange(doc.Text, change)
 		if err != nil {
-			return nil, err
+			return openDocument{}, err
 		}
 		doc.Text = next
 	}
 	h.documents[doc.URI] = doc
-	return h.documentDiagnostics(doc), nil
+	return doc, nil
 }
 
 func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
-	delete(h.documents, params.TextDocument.URI)
+	h.applyClose(params.TextDocument.URI)
+	return h.closeNotifications(params.TextDocument.URI)
+}
+
+func (h *Handler) applyClose(uri DocumentURI) {
+	h.docMu.Lock()
+	delete(h.documents, uri)
+	h.docMu.Unlock()
+}
+
+func (h *Handler) closeNotifications(uri DocumentURI) []Notification {
 	return []Notification{{
 		JSONRPC: "2.0",
 		Method:  "textDocument/publishDiagnostics",
-		Params:  BuildPublishDiagnostics(params.TextDocument.URI, h.diagnosticsForDocument(params.TextDocument.URI)),
+		Params:  BuildPublishDiagnostics(uri, h.diagnosticsForDocument(uri)),
 	}}
 }
 
+// currentDiagnostics publishes diagnostics for uri from its latest state: the
+// open document if there is one, the closed-document view otherwise.
+func (h *Handler) currentDiagnostics(uri DocumentURI) []Notification {
+	h.docMu.RLock()
+	doc, ok := h.documents[uri]
+	h.docMu.RUnlock()
+	if !ok {
+		return h.closeNotifications(uri)
+	}
+	return h.documentDiagnostics(doc)
+}
+
 func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
-	file := h.parser.ParseSource(doc.Path, doc.Text)
-	diagnostics := file.Diagnostics
+	var diagnostics []diagnostic.Diagnostic
+	h.parserMu.Lock()
+	if !h.parserClosed {
+		diagnostics = h.parser.ParseSource(doc.Path, doc.Text).Diagnostics
+	}
+	h.parserMu.Unlock()
 	if len(diagnostics) == 0 {
 		diagnostics = h.diagnosticsForDocument(doc.URI)
 	}
@@ -446,6 +593,19 @@ func (h *Handler) Completion(params CompletionParams) CompletionList {
 		sortCompletionItems(context.items, completionContextDefault)
 		return CompletionList{Items: context.items}
 	}
+	return CompletionList{Items: h.defaultCompletionCatalog(context.kind)}
+}
+
+// defaultCompletionCatalog returns the sorted whole-project completion list for
+// one ordering. The index never changes after it is published, so each ordering
+// is built once and shared. Callers must not modify the returned items.
+func (h *Handler) defaultCompletionCatalog(kind completionContext) []CompletionItem {
+	slot := &h.completionCatalogs[kind]
+	slot.once.Do(func() { slot.items = h.buildDefaultCompletionCatalog(kind) })
+	return slot.items
+}
+
+func (h *Handler) buildDefaultCompletionCatalog(kind completionContext) []CompletionItem {
 	items := make([]CompletionItem, 0, len(h.index.Types)+len(h.index.Objects))
 	seen := make(map[string]bool)
 	add := func(item CompletionItem) {
@@ -493,8 +653,8 @@ func (h *Handler) Completion(params CompletionParams) CompletionList {
 	for _, keyword := range []string{"class", "trigger", "interface", "enum", "public", "private", "protected", "global", "static", "void", "return", "new", "for", "if", "else"} {
 		add(CompletionItem{Label: keyword, Kind: completionItemKindKeyword, Detail: "Apex keyword"})
 	}
-	sortCompletionItems(items, context.kind)
-	return CompletionList{Items: items}
+	sortCompletionItems(items, kind)
+	return items
 }
 
 type completionResultContext struct {

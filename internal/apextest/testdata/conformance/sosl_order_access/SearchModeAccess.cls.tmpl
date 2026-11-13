@@ -1,0 +1,51 @@
+@IsTest private class SearchModeAccess{{API}} {
+  static User mkUser() {
+    Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    String un = 'gl' + String.valueOf(Crypto.getRandomInteger()).replace('-','') + '@example.com';
+    User u = new User(Alias='gl', Email=un, EmailEncodingKey='UTF-8', LastName='GlStd', LanguageLocaleKey='en_US', LocaleSidKey='en_US', TimeZoneSidKey='America/Los_Angeles', Username=un, ProfileId=p.Id);
+    PermissionSet ps = [SELECT Id FROM PermissionSet WHERE Name = 'Gl_Access'];
+    PermissionSet pa = [SELECT Id FROM PermissionSet WHERE Name = 'Gl_Admin_Access'];
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert u;
+      insert new PermissionSetAssignment(AssigneeId=u.Id, PermissionSetId=ps.Id);
+      insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(), PermissionSetId=pa.Id);
+    }
+    return u;
+  }
+
+    static void observe(String selection, String candidates, Boolean useFind) {
+        User restricted = mkUser();
+        Gl_Obj__c mine = new Gl_Obj__c(Name='Mine', Open__c='Visible', Secret__c='Constant', OwnerId=restricted.Id);
+        Gl_Obj__c other = new Gl_Obj__c(Name='Other', Open__c='Hidden', Secret__c='Constant');
+        insert new List<Gl_Obj__c>{other, mine};
+        String answer;
+        System.runAs(restricted) {
+            List<Id> ids = new List<Id>();
+            if (candidates == 'mixed') ids.add(mine.Id);
+            if (candidates != 'empty') ids.add(other.Id);
+            Test.setFixedSearchResults(ids);
+            try {
+                String query = 'FIND {unrelated} RETURNING Gl_Obj__c(' + selection + ')';
+                List<String> labels = new List<String>();
+                if (useFind) {
+                    for (Search.SearchResult hit : Search.find(query, AccessLevel.USER_MODE).get('Gl_Obj__c')) {
+                        SObject row = hit.getSObject();
+                        labels.add((Id)row.get('Id') == mine.Id ? 'mine' : 'other');
+                    }
+                } else {
+                    for (SObject row : Search.query(query, AccessLevel.USER_MODE)[0]) {
+                        labels.add((Id)row.get('Id') == mine.Id ? 'mine' : 'other');
+                    }
+                }
+                answer = 'records=' + String.join(labels, ',');
+            } catch(Exception e) {
+                answer = e.getTypeName() + '|' + e.getMessage();
+            }
+        }
+        System.assert(false, 'OBS|' + answer);
+    }
+    @IsTest static void queryModeUnreadable() { observe('Id ORDER BY Secret__c', 'mixed', false); }
+    @IsTest static void queryModeReadable() { observe('Id ORDER BY Open__c', 'mixed', false); }
+    @IsTest static void findModeUnreadable() { observe('Id ORDER BY Secret__c', 'mixed', true); }
+    @IsTest static void findModeReadable() { observe('Id ORDER BY Open__c', 'mixed', true); }
+}

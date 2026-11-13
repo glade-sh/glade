@@ -159,6 +159,8 @@ type VM struct {
 	scopeStack            []map[string]Value
 	finalLocals           map[string]bool // active frame; bool records initialization
 	closedSOQLLocals      map[string]Value
+	bindFrame             bindFrameState
+	bindBodySiteCache     map[*ir.Instruction]map[int]struct{}
 	dynamicSOQLBindRoute  string
 	currentClass          string
 	forBodyReusable       map[*ir.Instruction]bool
@@ -282,9 +284,12 @@ type VM struct {
 	// cloneRuntime starts with a fresh registry through newVM.
 	queryCursors map[string]Value
 	// Alternate query sources belong to this VM, including cursor JSON copies.
-	queryHandleSources        map[string]*storage.OrgState
-	fixedSearchResults        []Value
-	fixedSearchResultsSet     bool
+	queryHandleSources    map[string]*storage.OrgState
+	fixedSearchResults    []Value
+	fixedSearchResultsSet bool
+	// The caller's list keeps feeding later searches: in-place changes to it
+	// after Test.setFixedSearchResults reach fixedSearchResults.
+	fixedSearchResultsRef     uint64
 	sfsqlqueryRows            []Value
 	sfsqlqueryMetadata        []Value
 	platformCache             map[string]map[string]cacheEntry
@@ -337,6 +342,8 @@ type VM struct {
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
+	// Last shared-backing map whose keys were verified; see fillGlobalDescribeProjectionKeys.
+	globalDescribeKeysVerified   globalDescribeKeysVerifiedMemo
 	describeTabsCache            *Value
 	describeDefCache             map[string]storage.ObjectDefinition
 	customDataCache              map[string]Value
@@ -367,11 +374,17 @@ type VM struct {
 	// Field-map owners outlive invalidation: earlier roots can still be in use.
 	describeShare            *describeShareCache
 	describeShareDefinitions []*describeShareDefinition
-	sharedDescribeFieldMaps  map[uintptr]*describeShareFieldMap
+	// describeTokenShares lists the shares whose global describe tokens this VM holds.
+	describeTokenShares     []*describeShareCache
+	sharedDescribeFieldMaps map[uintptr]*describeShareFieldMap
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs       map[uint64]bool
 	staticValueRefFields  map[uint64]staticFieldRefSet
 	staticValueRefsShared bool
+	// staticRefBase* hold the frozen shared index when staticValueRefs and
+	// staticValueRefFields are this VM's private overlay (see staticRefIdx).
+	staticRefBaseRefs   map[uint64]bool
+	staticRefBaseFields map[uint64]staticFieldRefSet
 	// Serializes lazy collection/publication by concurrent template clones.
 	// Executing a VM concurrently with cloning it is still unsupported.
 	staticValueRefsMu     sync.Mutex
@@ -401,6 +414,10 @@ type VM struct {
 	mapKeySetBackings           map[uint64]mapKeySetSourceRef
 	mapKeySetBinds              uint64
 	aliasContainmentMutationSeq uint64
+	aliasContainmentLog         [aliasContainmentMutationLogSize]aliasContainmentMutation
+	// disableAliasMissCarry turns off carrying cached misses across logged
+	// List bumps. Tests use it to compare results with the carry on and off.
+	disableAliasMissCarry       bool
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
 	mapPutParentContainment     *mapPutParentContainmentCache
 	perfRecorder                *PerfRecorder
@@ -408,6 +425,9 @@ type VM struct {
 	scopeAliasTraversalObserver scopeAliasTraversalObserver
 	runtimeArtifactsShared      atomic.Bool
 	methodOverlay               *methodTableOverlay
+	// lazySet is the set whose shells this VM's Classes hold, shared by every
+	// clone; see LazyClassSet.
+	lazySet *LazyClassSet
 	// String == support: the Turkish-dotting decision for the running user and
 	// the full case transformers, created once per machine.
 	localeCase localeCaseCache
@@ -750,6 +770,7 @@ type TestContext struct {
 	changeJournal            []changeDataCaptureEntry
 	changeSavepoints         map[string][]changeDataCaptureEntry
 	changeSequence           int64
+	changeMerging            bool
 	changeTransaction        string
 	ReadOnlyApplication      bool
 	Draining                 bool
@@ -963,6 +984,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// via ensureRuntimeArtifactsOwned, so the source VM (and any cached runtime
 	// template) is never corrupted. The shared maps stay read-only across
 	// parallel workers, which is safe for concurrent map reads.
+	clone.lazySet = vm.lazySet
 	clone.Methods = vm.Methods
 	clone.MethodOverloads = vm.MethodOverloads
 	clone.MethodFolded = vm.MethodFolded
@@ -1023,8 +1045,9 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		vm.staticValueRefsMu.Lock()
 		if shareStaticValueRefs {
 			if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
-				vm.staticValueRefs, vm.staticValueRefFields = vm.collectStaticValueRefs()
+				vm.buildStaticValueRefs()
 			}
+			vm.flattenStaticValueRefs()
 			clone.staticValueRefs = vm.staticValueRefs
 			clone.staticValueRefFields = vm.staticValueRefFields
 			clone.staticValueRefsShared = true
@@ -1074,6 +1097,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
 		clone.describeShare = vm.describeShare
+		clone.describeTokenShares = append([]*describeShareCache(nil), vm.describeTokenShares...)
 	} else {
 		clone.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		clone.childRelCache = newChildRelationshipCache()
@@ -1114,7 +1138,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		// their types against the source schema during this private scan;
 		// callers still install their own org on the returned runtime.
 		clone.Org = vm.Org
-		for _, class := range clone.ClassEntries() {
+		for _, class := range clone.classEntriesNoLazy() {
 			for _, field := range class.StaticFields {
 				clone.registerSObjectAliasRecord(field.Value)
 				clone.registerSObjectAliasRecord(field.InitialValue)
@@ -1199,6 +1223,9 @@ func (vm *VM) classMapCopy() map[string]Class {
 // overlay, so a first static write no longer copies every class entry.
 func (vm *VM) writeExistingClassEntry(name string, class Class) {
 	vm.heapStaticFlatOK = false
+	if previous, exists := vm.classEntryRaw(name); exists && previous.lazy != nil {
+		vm.releaseReplacedLazy(previous, exists, class)
+	}
 	if vm.heapStaticRootsOK {
 		previous, exists := vm.classEntry(name)
 		vm.noteClassStaticRootsWrite(previous, exists, class)
@@ -1214,8 +1241,20 @@ func (vm *VM) writeExistingClassEntry(name string, class Class) {
 }
 
 // classEntry reads one vm.Classes key: the value this VM wrote while sharing
-// the map, else the map's value. Read Classes entries through it.
+// the map, else the map's value. Read Classes entries through it. A lazy shell
+// is returned with its members built; classEntryRaw leaves it unbuilt.
 func (vm *VM) classEntry(name string) (class Class, ok bool) {
+	class, ok = vm.classEntryRaw(name)
+	if ok && class.lazy != nil {
+		class = class.lazy.materialized()
+	}
+	return class, ok
+}
+
+// classEntryRaw is classEntry without building a lazy shell. A shell holds
+// the name, namespace and flags of its class and nothing else, so callers that
+// read only those may use it.
+func (vm *VM) classEntryRaw(name string) (class Class, ok bool) {
 	if vm.classValueOverlay != nil {
 		if class, ok = vm.classValueOverlay[name]; ok {
 			return class, ok
@@ -1230,28 +1269,9 @@ func (vm *VM) classEntry(name string) (class Class, ok bool) {
 // that map is shared, values the loop body writes are not seen, as when a first
 // write copied the map. A range that starts with overlay values reads each
 // key's current value when the loop reaches it, as a range over a private map
-// does.
+// does. Lazy shells are built as the loop reaches them.
 func (vm *VM) ClassEntries() iter.Seq2[string, Class] {
-	return func(yield func(string, Class) bool) {
-		classes := vm.Classes
-		if vm.classValueOverlay == nil {
-			for name, class := range classes {
-				if !yield(name, class) {
-					return
-				}
-			}
-			return
-		}
-		for name := range classes {
-			class, ok := vm.classEntry(name)
-			if !ok {
-				continue
-			}
-			if !yield(name, class) {
-				return
-			}
-		}
-	}
+	return vm.rangeClassEntries(true, false)
 }
 
 func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
@@ -1499,6 +1519,7 @@ func sameClassValue(a, b Class) bool {
 		a.IsTest == b.IsTest &&
 		a.Nested == b.Nested &&
 		a.Dependency == b.Dependency &&
+		a.lazy == b.lazy &&
 		sameMap(a.Fields, b.Fields) &&
 		sameMap(a.StaticFields, b.StaticFields) &&
 		sameMap(a.Methods, b.Methods) &&
@@ -1874,7 +1895,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	for _, value := range vm.Globals {
 		vm.registerSObjectAliasRecord(value)
 	}
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesNoLazy() {
 		for _, field := range class.StaticFields {
 			vm.registerSObjectAliasRecord(field.Value)
 			vm.registerSObjectAliasRecord(field.InitialValue)
@@ -2372,9 +2393,13 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 		return vm.invokeFlowAction(action, record, result)
 	}
 	engine.FlowFaultDetail = vm.flowApexFaultDetail
+	engine.FlowFaultInTest = func() bool { return vm.testContext != nil }
 	engine.BeginPlatformEventInterview = vm.beginPlatformEventInterview
 	engine.PlatformEventPublisher = func(records []storage.Record) error {
 		return vm.publishFlowEvents(records, result)
+	}
+	engine.PlatformEventDirectPublisher = func(records []storage.Record) error {
+		return vm.publishFlowCreatedEvents(records, result)
 	}
 	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
 		return vm.invokeFlowActionWithContext(action, record, context, result)
@@ -2833,7 +2858,7 @@ func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, boo
 // own-namespace invocable resolves as both gladens004__Q3Act and Q3Act at APIs
 // 62.0 and 67.0 (flow_action_namespace rows).
 func (vm *VM) flowActionClassKey(className string) string {
-	if _, ok := vm.classEntry(className); ok {
+	if _, ok := vm.classEntryRaw(className); ok {
 		return className
 	}
 	idx := strings.Index(className, "__")
@@ -2841,11 +2866,11 @@ func (vm *VM) flowActionClassKey(className string) string {
 		return className
 	}
 	namespace, local := className[:idx], className[idx+2:]
-	if _, ok := vm.classEntry(namespace + "." + local); ok {
+	if _, ok := vm.classEntryRaw(namespace + "." + local); ok {
 		return namespace + "." + local
 	}
 	if vm.Org != nil && strings.EqualFold(strings.TrimSpace(vm.Org.Namespace), namespace) {
-		if _, ok := vm.classEntry(local); ok {
+		if _, ok := vm.classEntryRaw(local); ok {
 			return local
 		}
 	}
@@ -3257,7 +3282,7 @@ func (vm *VM) defaultOrgUserRecord() (storage.Record, bool) {
 }
 
 func (vm *VM) ResetStatics() error {
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
@@ -3276,7 +3301,7 @@ func (vm *VM) ResetStatics() error {
 
 func (vm *VM) ResetTestAsyncStaticCollections() error {
 	resetClasses := make(map[string]Class)
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
@@ -3437,10 +3462,13 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 	defer restoreCreations()
 	finishDuplicateReports := vm.beginDuplicateReportTransaction()
 	defer func() { finishDuplicateReports(err == nil) }()
-	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
-	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
+	callerClosedLocals, callerBindRoute, callerBindFrame := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame
+	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = nil, "", bindFrameState{}
+	if className == "" {
+		vm.bindFrame.anonymous, vm.bindFrame.anonymousBody = true, program.Instructions
+	}
 	defer func() {
-		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
+		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
 	}()
 	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled, traceOutputLimit: vm.traceOutputLimit}
 	if vm.traceEnabled {

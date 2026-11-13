@@ -1807,8 +1807,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v34" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v34", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v35" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v35", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -7995,6 +7995,8 @@ private class SetupRandomTest {
 }
 
 func TestRunUpsertUsesNamespacedExternalIDFromSiblingDependency(t *testing.T) {
+	// The dependency lives in a sibling directory of the consumer; it loads only with the sibling scan.
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	depRoot := filepath.Join(workspaceRoot, "dep-package")

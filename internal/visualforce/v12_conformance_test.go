@@ -69,8 +69,18 @@ type v12Result struct {
 // Only fixture controls go to Chromium; native answers never go to the browser.
 // CI uses exported testdata without Salesforce or glade-tools.
 // GLADE_V12_CAPTURE=1 reports row differences without failing on mismatches;
-// GLADE_V12_REPORT selects the per-row TSV output path.
-func TestV12SalesforceConformance(t *testing.T) {
+// GLADE_V12_REPORT selects the per-row TSV output path; part N writes the file
+// name with ".partNofM" inserted before its extension.
+// The 262 rows are split into v12PartCount contiguous ranges, one top-level
+// test each, so the CI shard planner can spread them. The parts cover every row
+// exactly once per API. GLADE_V12_ROW_RANGE selects a zero-based, half-open
+// start:end range that each part intersects with its own.
+const v12PartCount = 2
+
+func TestV12SalesforceConformancePart1of2(t *testing.T) { v12RunConformance(t, 0) }
+func TestV12SalesforceConformancePart2of2(t *testing.T) { v12RunConformance(t, 1) }
+
+func v12RunConformance(t *testing.T, part int) {
 	capture := os.Getenv("GLADE_V12_CAPTURE") != ""
 	data, err := os.ReadFile("testdata/v12_salesforce.json")
 	if err != nil {
@@ -180,6 +190,28 @@ func TestV12SalesforceConformance(t *testing.T) {
 		t.Fatalf("V12 requires 153 compile/metadata and 109 DOM rows, including 16 mixed-control, 18 parameter/error and 32 unique-action rows, across all four groups, got %v/%v", counts, groups)
 	}
 
+	start, end, selected, err := selectedPartRows(part, v12PartCount, len(table.Cases), os.Getenv("GLADE_V12_ROW_RANGE"))
+	if err != nil {
+		t.Fatalf("invalid GLADE_V12_ROW_RANGE: %v", err)
+	}
+	if !selected {
+		t.Skipf("GLADE_V12_ROW_RANGE selects no row of part %d", part+1)
+	}
+	// Everything above validated the whole table. From here the part replays
+	// only its own rows; the other parts replay the rest.
+	cases := table.Cases[start:end]
+	partTotal, partOriginal, partCompile, partDOM := len(cases), 0, 0, 0
+	for _, c := range cases {
+		if c.MixedControl == nil && c.ParameterName == "" && !c.ErrorDocument {
+			partOriginal++
+		}
+		if c.Kind == "compile" {
+			partCompile++
+		} else {
+			partDOM++
+		}
+	}
+
 	var report strings.Builder
 	tsv := csv.NewWriter(&report)
 	tsv.Comma = '\t'
@@ -192,7 +224,7 @@ func TestV12SalesforceConformance(t *testing.T) {
 	matches, compileMatches, acceptanceMatches, diagnosticMatches, domMatches := 0, 0, 0, 0, 0
 	for _, api := range versions {
 		results, runtimeRoots := map[string]v12Result{}, map[string]string{}
-		for _, c := range table.Cases {
+		for _, c := range cases {
 			root := v12WriteFixture(t, c.Inputs[api])
 			if c.Kind == "compile" {
 				text, diagnostics := v10Execute(t, root, c.Inputs[api].Name, v10Case{Kind: "compile"})
@@ -201,13 +233,13 @@ func TestV12SalesforceConformance(t *testing.T) {
 				runtimeRoots["/apex/"+c.Inputs[api].Name] = root
 			}
 		}
-		observed := v12BrowserObservations(t, table.Cases, api, runtimeRoots)
+		observed := v12BrowserObservations(t, cases, api, runtimeRoots)
 		for id, raw := range observed {
 			results[id] = v12Result{Text: v12DOM(t, v12Decode(t, raw)), Diagnostics: []v10Diagnostic{}}
 		}
 		apiMatches, apiCompileMatches, apiAcceptanceMatches, apiDiagnosticMatches, apiDOMMatches := 0, 0, 0, 0, 0
 		apiOriginalMatches := 0
-		for _, c := range table.Cases {
+		for _, c := range cases {
 			result, ok := results[c.ID]
 			if !ok {
 				t.Fatalf("V12 omitted %s at API %s", c.ID, api)
@@ -247,30 +279,31 @@ func TestV12SalesforceConformance(t *testing.T) {
 				t.Errorf("API %s %s: actual <%s> expected <%s>; diagnostics <%s> expected <%s>", api, c.ID, result.Text, c.Expected[api], actualDiagnostic, expectedDiagnostic)
 			}
 		}
-		writeRow("API_TOTAL", api, fmt.Sprintf("%d/262", apiMatches))
-		writeRow("ORIGINAL_API_TOTAL", api, fmt.Sprintf("%d/196", apiOriginalMatches))
-		writeRow("COMPILE_API_TOTAL", api, fmt.Sprintf("%d/153", apiCompileMatches))
-		writeRow("COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/153", apiAcceptanceMatches))
-		writeRow("DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/153", apiDiagnosticMatches))
-		writeRow("DOM_API_TOTAL", api, fmt.Sprintf("%d/109", apiDOMMatches))
-		t.Logf("V12 API %s exact %d/262; original %d/196; compile %d/153, acceptance %d/153, diagnostics %d/153; DOM %d/109", api, apiMatches, apiOriginalMatches, apiCompileMatches, apiAcceptanceMatches, apiDiagnosticMatches, apiDOMMatches)
+		writeRow("API_TOTAL", api, fmt.Sprintf("%d/%d", apiMatches, partTotal))
+		writeRow("ORIGINAL_API_TOTAL", api, fmt.Sprintf("%d/%d", apiOriginalMatches, partOriginal))
+		writeRow("COMPILE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiCompileMatches, partCompile))
+		writeRow("COMPILE_ACCEPTANCE_API_TOTAL", api, fmt.Sprintf("%d/%d", apiAcceptanceMatches, partCompile))
+		writeRow("DIAGNOSTIC_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDiagnosticMatches, partCompile))
+		writeRow("DOM_API_TOTAL", api, fmt.Sprintf("%d/%d", apiDOMMatches, partDOM))
+		t.Logf("V12 API %s exact %d/%d; original %d/%d; compile %d/%d, acceptance %d/%d, diagnostics %d/%d; DOM %d/%d", api, apiMatches, partTotal, apiOriginalMatches, partOriginal, apiCompileMatches, partCompile, apiAcceptanceMatches, partCompile, apiDiagnosticMatches, partCompile, apiDOMMatches, partDOM)
 		matches += apiMatches
 		compileMatches += apiCompileMatches
 		acceptanceMatches += apiAcceptanceMatches
 		diagnosticMatches += apiDiagnosticMatches
 		domMatches += apiDOMMatches
 	}
-	writeRow("TOTAL", fmt.Sprintf("%d/524", matches))
-	writeRow("COMPILE_TOTAL", fmt.Sprintf("%d/306", compileMatches))
-	writeRow("COMPILE_ACCEPTANCE_TOTAL", fmt.Sprintf("%d/306", acceptanceMatches))
-	writeRow("DIAGNOSTIC_TOTAL", fmt.Sprintf("%d/306", diagnosticMatches))
-	writeRow("DOM_TOTAL", fmt.Sprintf("%d/218", domMatches))
-	t.Logf("V12 Salesforce conformance: exact %d/524; compile %d/306, acceptance %d/306, diagnostics %d/306; DOM %d/218", matches, compileMatches, acceptanceMatches, diagnosticMatches, domMatches)
+	writeRow("TOTAL", fmt.Sprintf("%d/%d", matches, partTotal*len(versions)))
+	writeRow("COMPILE_TOTAL", fmt.Sprintf("%d/%d", compileMatches, partCompile*len(versions)))
+	writeRow("COMPILE_ACCEPTANCE_TOTAL", fmt.Sprintf("%d/%d", acceptanceMatches, partCompile*len(versions)))
+	writeRow("DIAGNOSTIC_TOTAL", fmt.Sprintf("%d/%d", diagnosticMatches, partCompile*len(versions)))
+	writeRow("DOM_TOTAL", fmt.Sprintf("%d/%d", domMatches, partDOM*len(versions)))
+	t.Logf("V12 Salesforce conformance: exact %d/%d; compile %d/%d, acceptance %d/%d, diagnostics %d/%d; DOM %d/%d", matches, partTotal*len(versions), compileMatches, partCompile*len(versions), acceptanceMatches, partCompile*len(versions), diagnosticMatches, partCompile*len(versions), domMatches, partDOM*len(versions))
 	tsv.Flush()
 	if err := tsv.Error(); err != nil {
 		t.Fatal(err)
 	}
 	if path := os.Getenv("GLADE_V12_REPORT"); path != "" {
+		path = rowPartReportPath(path, part, v12PartCount)
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)
 		}

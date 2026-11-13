@@ -28,6 +28,7 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 	if index.Project.Root != "" {
 		if loaded, err := cache.capturedProjectSnapshot(index.Project.Root); err == nil {
 			capturedProject = &loaded
+			generation.standardDuplicateRules = loaded.StandardDuplicateRules
 			paths := append([]string(nil), loaded.ListViewFiles...)
 			paths = append(paths, resource.LayoutMetadataFiles(loaded)...)
 			paths = append(paths, resource.FolderItemMetadataFiles(loaded)...)

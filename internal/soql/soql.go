@@ -265,6 +265,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 	if err := validateAggregateQuery(query); err != nil {
 		return Result{}, err
 	}
+	query = withTextCollation(query, context.Locale)
 	if strings.EqualFold(query.Object, "PlatformCachePartition") {
 		if _, ok := org.Objects["PlatformCachePartition"]; !ok {
 			org = org.Clone()
@@ -392,8 +393,9 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 			return Result{}, err
 		}
 		if len(query.Order) > 0 {
+			order := collateOrder(query.Order, query.textCollation)
 			sort.SliceStable(records, func(i, j int) bool {
-				return aggregateOrderedBefore(records[i], records[j], query.Order)
+				return aggregateOrderedBefore(records[i], records[j], order)
 			})
 		}
 		if !scalarCount {
@@ -409,7 +411,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		}, nil
 	}
 	if len(query.Order) > 0 {
-		sortRecordsByOrder(org, object.Definition, matchedRecords, query.Order, query.LegacyPicklistNullOrder, context.formulaActor())
+		sortRecordsByOrder(org, object.Definition, matchedRecords, collateOrder(query.Order, query.textCollation), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	if query.ForUpdate {
@@ -587,7 +589,7 @@ func virtualSchemaQueryOrg(org storage.OrgState, query Query, cache *ExecutionCa
 			continue
 		}
 		definition := shared.definitions[name]
-		definition.Records = map[storage.ID]storage.Record{}
+		definition.SetRecords(map[storage.ID]storage.Record{})
 		definition.Indexes = map[string]storage.IndexSet{}
 		out.Objects[name] = definition
 	}
@@ -760,7 +762,8 @@ func (c *ExecutionCache) sharedVirtualSchema(org storage.OrgState, runtimeStamp,
 	definitions := make(map[string]storage.ObjectState, len(virtualSchemaObjectNames))
 	for _, name := range virtualSchemaObjectNames {
 		object := view.Objects[name]
-		object.Records, object.Indexes = nil, nil
+		object.SetRecords(nil)
+		object.Indexes = nil
 		definitions[name] = object
 	}
 	shared = &sharedVirtualSchema{runtimeStamp: runtimeStamp, hydrationStamp: hydrationStamp, definitions: definitions, tables: map[string]storage.ObjectState{}}
@@ -858,22 +861,22 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 	userEntityAccess := org.Objects["UserEntityAccess"]
 	userFieldAccess := org.Objects["UserFieldAccess"]
 	if entityDefinitions.Records == nil {
-		entityDefinitions.Records = make(map[storage.ID]storage.Record)
+		entityDefinitions.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if entityParticles.Records == nil {
-		entityParticles.Records = make(map[storage.ID]storage.Record)
+		entityParticles.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if fieldDefinitions.Records == nil {
-		fieldDefinitions.Records = make(map[storage.ID]storage.Record)
+		fieldDefinitions.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if relationshipDomains.Records == nil {
-		relationshipDomains.Records = make(map[storage.ID]storage.Record)
+		relationshipDomains.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if userEntityAccess.Records == nil {
-		userEntityAccess.Records = make(map[storage.ID]storage.Record)
+		userEntityAccess.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if userFieldAccess.Records == nil {
-		userFieldAccess.Records = make(map[storage.ID]storage.Record)
+		userFieldAccess.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	wantEntity, wantParticle, wantField := want["EntityDefinition"], want["EntityParticle"], want["FieldDefinition"]
 	wantDomain, wantEntityAccess, wantFieldAccess := want["RelationshipDomain"], want["UserEntityAccess"], want["UserFieldAccess"]
@@ -881,7 +884,7 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 	// do not participate in ordinary field and access-record hydration.
 	selfID := storage.ID(entityDefinitions.Definition.APIName)
 	if _, exists := entityDefinitions.Records[selfID]; wantEntity && !exists {
-		entityDefinitions.Records[selfID] = virtualEntityDefinitionRecord(entityDefinitions.Definition)
+		entityDefinitions.PutRecord(selfID, virtualEntityDefinitionRecord(entityDefinitions.Definition))
 	}
 	for objectName, object := range org.Objects {
 		if isVirtualSchemaObjectName(objectName) {
@@ -892,10 +895,10 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 		}
 		entityID := storage.ID(object.Definition.APIName)
 		if _, exists := entityDefinitions.Records[entityID]; wantEntity && !exists {
-			entityDefinitions.Records[entityID] = virtualEntityDefinitionRecord(object.Definition)
+			entityDefinitions.PutRecord(entityID, virtualEntityDefinitionRecord(object.Definition))
 		}
 		if _, exists := userEntityAccess.Records[entityID]; wantEntityAccess && !exists {
-			userEntityAccess.Records[entityID] = virtualUserEntityAccessRecord(object.Definition.APIName)
+			userEntityAccess.PutRecord(entityID, virtualUserEntityAccessRecord(object.Definition.APIName))
 		}
 		if wantParticle || wantField || wantFieldAccess {
 			for fieldName, field := range object.Definition.Fields {
@@ -904,13 +907,13 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 				}
 				particleID := storage.ID(object.Definition.APIName + "." + field.APIName)
 				if _, exists := entityParticles.Records[particleID]; wantParticle && !exists {
-					entityParticles.Records[particleID] = virtualEntityParticleRecord(object.Definition, field)
+					entityParticles.PutRecord(particleID, virtualEntityParticleRecord(object.Definition, field))
 				}
 				if _, exists := fieldDefinitions.Records[particleID]; wantField && !exists {
-					fieldDefinitions.Records[particleID] = virtualFieldDefinitionRecord(object.Definition, field)
+					fieldDefinitions.PutRecord(particleID, virtualFieldDefinitionRecord(object.Definition, field))
 				}
 				if _, exists := userFieldAccess.Records[particleID]; wantFieldAccess && !exists {
-					userFieldAccess.Records[particleID] = virtualUserFieldAccessRecord(particleID, object.Definition.APIName)
+					userFieldAccess.PutRecord(particleID, virtualUserFieldAccessRecord(particleID, object.Definition.APIName))
 				}
 			}
 		}
@@ -925,7 +928,7 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 					}
 					domainID := storage.ID(parentName + "." + object.Definition.APIName + "." + relation.Field)
 					if _, exists := relationshipDomains.Records[domainID]; !exists {
-						relationshipDomains.Records[domainID] = virtualRelationshipDomainRecord(domainID, parentName, object.Definition.APIName, relation)
+						relationshipDomains.PutRecord(domainID, virtualRelationshipDomainRecord(domainID, parentName, object.Definition.APIName, relation))
 					}
 				}
 			}
@@ -1307,7 +1310,7 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 			return nil, err
 		}
 		record := storage.Record{Object: "AggregateResult", Fields: fields}
-		if query.Having != nil && !matches(org, storage.ObjectDefinition{}, record, query.Having) {
+		if query.Having != nil && !matchesWithContext(org, storage.ObjectDefinition{}, record, query.Having, ExecutionContext{Locale: query.textLocale}) {
 			return nil, nil
 		}
 		removeHiddenAggregateFields(record.Fields, query.HavingAggregates)
@@ -1355,7 +1358,11 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 					value = storage.DateValue(value.String)
 				}
 				scratch[i] = value
-				parts = append(parts, "0:"+groupValueKey(value, kinds[i]))
+				if query.textCollation && value.Kind == storage.ValueString {
+					parts = append(parts, "0:"+string(storage.ValueString)+":"+textGroupKey(value.String))
+				} else {
+					parts = append(parts, "0:"+groupValueKey(value, kinds[i]))
+				}
 			}
 			key := strings.Join(parts, "\x00")
 			current, ok := groups[key]
@@ -1371,6 +1378,16 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 				current = &group{key: key, values: values, grouping: grouping}
 				groups[key] = current
 				order = append(order, key)
+			}
+			if query.textCollation {
+				// Captured case variants report the binary-smallest spelling,
+				// including reversed insertion and record ID assignment. Other
+				// spellings remain unproven by those observations.
+				for i, field := range query.GroupBy {
+					if held := current.values[field]; active[field] && scratch[i].Kind == storage.ValueString && held.Kind == storage.ValueString && scratch[i].String < held.String {
+						current.values[field] = scratch[i]
+					}
+				}
 			}
 			current.records = append(current.records, record)
 		}
@@ -1432,7 +1449,7 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 			return nil, err
 		}
 		record := storage.Record{Object: "AggregateResult", Fields: fields}
-		if query.Having != nil && !matches(org, storage.ObjectDefinition{}, record, query.Having) {
+		if query.Having != nil && !matchesWithContext(org, storage.ObjectDefinition{}, record, query.Having, ExecutionContext{Locale: query.textLocale}) {
 			continue
 		}
 		removeHiddenAggregateFields(record.Fields, query.HavingAggregates)
@@ -1699,7 +1716,7 @@ func aggregateValue(org storage.OrgState, definition storage.ObjectDefinition, r
 			if ranks != nil {
 				cmp = ranks[value.String] - ranks[best.String]
 			} else {
-				cmp = compareValues(value, best)
+				cmp = compareValuesCollated(value, best, aggregate.textCollation)
 			}
 			if aggregate.Func == "MIN" && cmp < 0 {
 				best = value.Clone()
@@ -1872,6 +1889,7 @@ func matchesWithContext(org storage.OrgState, definition storage.ObjectDefinitio
 }
 
 func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition, context ExecutionContext, scratch *predicateScratch) bool {
+	collate := englishTextLocale(context.Locale)
 	if condition == nil {
 		return true
 	}
@@ -1930,12 +1948,12 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 	switch condition.Op {
 	case "=":
 		if condition.Range {
-			return compareValues(left, condition.Value) >= 0 && compareValues(left, condition.Value2) < 0
+			return compareValuesCollated(left, condition.Value, collate) >= 0 && compareValuesCollated(left, condition.Value2, collate) < 0
 		}
 		return equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, condition.Value, context.Locale, scratch)
 	case "!=":
 		if condition.Range {
-			return compareValues(left, condition.Value) < 0 || compareValues(left, condition.Value2) >= 0
+			return compareValuesCollated(left, condition.Value, collate) < 0 || compareValuesCollated(left, condition.Value2, collate) >= 0
 		}
 		return !equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, condition.Value, context.Locale, scratch)
 	case ">":
@@ -1949,7 +1967,7 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		if left.Kind == storage.ValueNull || bound.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValues(left, bound) > 0
+		return compareValuesCollated(left, bound, collate) > 0
 	case ">=":
 		if entityDefinitionNullLowerBound(definition, condition.Field, condition.Value) {
 			return left.Kind != storage.ValueNull
@@ -1957,12 +1975,12 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValues(left, condition.Value) >= 0
+		return compareValuesCollated(left, condition.Value, collate) >= 0
 	case "<":
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValues(left, condition.Value) < 0
+		return compareValuesCollated(left, condition.Value, collate) < 0
 	case "<=":
 		bound := condition.Value
 		if condition.Range {
@@ -1972,9 +1990,9 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 			return false
 		}
 		if condition.Range {
-			return compareValues(left, bound) < 0
+			return compareValuesCollated(left, bound, collate) < 0
 		}
-		return compareValues(left, bound) <= 0
+		return compareValuesCollated(left, bound, collate) <= 0
 	case "LIKE":
 		return likeMatchWithScratch(left, condition.Value, scratch)
 	case "NOT LIKE":
@@ -2446,7 +2464,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 	}
 	if len(query.Order) > 0 {
-		sortRecordsByOrder(org, childObject.Definition, matched, query.Order, query.LegacyPicklistNullOrder, context.formulaActor())
+		sortRecordsByOrder(org, childObject.Definition, matched, collateOrder(query.Order, englishTextLocale(context.Locale)), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
 	}
 	matched = applyWindow(matched, query.Offset, query.Limit, query.HasLimit)
 	out := make([]storage.Record, 0, len(matched))
@@ -2594,11 +2612,18 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 		return index
 	}
 	index := make(map[storage.ID][]string)
+	plainField, plain := childRelationshipPlainReferenceField(org, childObject.Definition, field)
 	for id, record := range childObject.Records {
 		if record.System.IsDeleted {
 			continue
 		}
-		value, ok := recordValue(org, childObject.Definition, record, field)
+		var value storage.Value
+		var ok bool
+		if plain {
+			value, ok = childRelationshipPlainReferenceValue(org, record, plainField)
+		} else {
+			value, ok = recordValue(org, childObject.Definition, record, field)
+		}
 		if !ok {
 			continue
 		}
@@ -2614,6 +2639,50 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 	}
 	childCache.indexes[key] = index
 	return index
+}
+
+// childRelationshipPlainReferenceField resolves a child relationship field
+// once for the whole index build. It answers true only for a stored
+// reference field that recordValue would read straight from the record:
+// no expression, no path, no system-field override, no formula, summary or
+// custom metadata handling. Every other field keeps the recordValue route.
+func childRelationshipPlainReferenceField(org storage.OrgState, definition storage.ObjectDefinition, field string) (string, bool) {
+	if strings.ContainsAny(field, "(.") {
+		return "", false
+	}
+	if _, system := canonicalSystemFieldName(field); system {
+		return "", false
+	}
+	canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field)
+	if !ok || canonical == "Id" || canonicalSystemFieldNameIs(canonical) {
+		return "", false
+	}
+	fieldDef, ok := definition.Fields[canonical]
+	if !ok || strings.TrimSpace(fieldDef.Formula) != "" {
+		return "", false
+	}
+	if fieldDef.Type != storage.FieldReference && fieldDef.Type != storage.FieldID {
+		return "", false
+	}
+	if storage.IsCustomMetadataDefinition(definition) || strings.EqualFold(definition.APIName, "Organization") {
+		return "", false
+	}
+	return canonical, true
+}
+
+func canonicalSystemFieldNameIs(name string) bool {
+	_, ok := canonicalSystemFieldName(name)
+	return ok
+}
+
+// childRelationshipPlainReferenceValue mirrors recordValue for a field that
+// childRelationshipPlainReferenceField accepted. A missing value is skipped by
+// the index either way, so the not-found tail needs no further probing.
+func childRelationshipPlainReferenceValue(org storage.OrgState, record storage.Record, canonical string) (storage.Value, bool) {
+	if record.HasExplicitNull(canonical) {
+		return storage.NullValue(), true
+	}
+	return recordFieldValue(org, record, canonical)
 }
 
 func childRelationshipCached(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string, childCache *childRelationshipQueryCache) (string, storage.Relationship, bool) {
@@ -3728,7 +3797,7 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 		_, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 		return ok
 	}
-	if namespacedCustomFieldLikeSOQLName(field) {
+	if namespacedCustomFieldTolerated(org, field) {
 		return true
 	}
 	if len(definition.Fields) == 0 && !strings.Contains(field, ".") {
@@ -4588,7 +4657,7 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if !ok && customObjectLikeSOQLName(definition.APIName) && customFieldLikeSOQLName(canonicalField) {
 		return storage.NullValue(), true
 	}
-	if !ok && namespacedCustomFieldLikeSOQLName(canonicalField) {
+	if !ok && namespacedCustomFieldTolerated(org, canonicalField) {
 		return storage.NullValue(), true
 	}
 	if !ok && storage.IsCustomMetadataDefinition(definition) {
@@ -4624,6 +4693,20 @@ func customFieldLikeSOQLName(name string) bool {
 	}
 	lower := strings.ToLower(strings.TrimSpace(name))
 	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__pc")
+}
+
+// namespacedCustomFieldTolerated accepts an undefined ns__X__c name on a
+// standard object. Native rows (namespaced_standard_field_soql) accept it only
+// when that managed package is installed and has the field. Glade knows
+// installed packages from the project's declared dependencies: when the
+// project declares none, or one with no namespace binding, every such name
+// stays accepted; otherwise only a declared namespace whose source is absent.
+func namespacedCustomFieldTolerated(org storage.OrgState, name string) bool {
+	if !namespacedCustomFieldLikeSOQLName(name) {
+		return false
+	}
+	namespace := strings.TrimSpace(name)[:strings.Index(strings.TrimSpace(name), "__")]
+	return storage.PackageFieldNamespaceAllowed(org.Metadata.PackageFieldsNarrow, org.Metadata.SourcelessPackageNamespaces, namespace)
 }
 
 func namespacedCustomFieldLikeSOQLName(name string) bool {
@@ -4754,10 +4837,30 @@ func calculatedSummaryFieldValue(org storage.OrgState, definition storage.Object
 
 func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field, userIDs ...storage.ID) (storage.Value, bool) {
 	options := dml.FormulaEvaluationOptions{}
+	if field.Type == storage.FieldCalculated && strings.EqualFold(strings.TrimSpace(field.FormulaTreatBlanksAs), "BlankAsBlank") {
+		switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
+		case "DOUBLE", "DECIMAL", "CURRENCY":
+			options.PreserveNumericNull = true
+			options.QueryBlankNumber = true
+		}
+	}
 	if len(userIDs) != 0 {
 		options.SetupUserID = userIDs[0]
 	}
 	if value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(field.Formula, field, &org, definition, record, options); ok {
+		// Apply Number formula scale only on the SOQL field surface. Currency
+		// retains its own materialization path, and nulls remain null.
+		if field.Type == storage.FieldCalculated && value.Kind == storage.ValueDecimal &&
+			(strings.EqualFold(field.DisplayType, "DOUBLE") || strings.EqualFold(field.DisplayType, "DECIMAL")) &&
+			field.Scale >= 0 && field.Scale <= 18 && (field.ScaleSpecified || field.Scale > 0) {
+			if number, ok := new(big.Rat).SetString(value.Decimal); ok {
+				text := number.FloatString(field.Scale)
+				if text == "-0" {
+					text = "0"
+				}
+				value = storage.DecimalValue(text)
+			}
+		}
 		return value, true
 	}
 	return storage.Value{}, false
@@ -4932,6 +5035,12 @@ func idEqualsInteger(id storage.ID, value int64) bool {
 }
 
 func compareValues(left, right storage.Value) int {
+	return compareValuesCollated(left, right, false)
+}
+
+// compareValuesCollated is compareValues with the captured en_* text collation
+// when collate is set; see compareSOQLTextCollated.
+func compareValuesCollated(left, right storage.Value, collate bool) int {
 	if left.Kind == storage.ValueNull || right.Kind == storage.ValueNull {
 		if left.Kind == right.Kind {
 			return 0
@@ -4960,6 +5069,9 @@ func compareValues(left, right storage.Value) int {
 	case storage.ValueString:
 		// SOQL ORDER BY uses folded text ordering with the original text as a stable
 		// tie-breaker; this intentionally differs from Apex String comparisons.
+		if collate {
+			return compareSOQLTextCollated(left.String, right.String)
+		}
 		return compareSOQLText(left.String, right.String)
 	case storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return strings.Compare(left.String, right.String)
@@ -5019,7 +5131,7 @@ func compareSOQLTextFolded(left, right string) int {
 	return 1
 }
 
-func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder bool, userIDs ...storage.ID) {
+func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder bool, userIDs ...storage.ID) {
 	// picklist_order_native.json observes setup order and one unlisted value
 	// after configured values. Keep unobserved incomplete shapes on their
 	// existing whole-column fallback so comparisons retain a total order.
@@ -5056,7 +5168,9 @@ func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinitio
 			ranks[unknown] = len(fields[0].PicklistValues)
 		}
 		picklistRanks[i] = ranks
-		legacyNulls[i] = ranks != nil && !fields[0].RestrictedPicklist && legacyPicklistNullOrder
+		// Restricted picklists follow the legacy policy only where captured
+		// (source API 62.0), when every stored value has configured rank metadata.
+		legacyNulls[i] = ranks != nil && legacyPicklistNullOrder && (!fields[0].RestrictedPicklist || legacyRestrictedPicklistNullOrder)
 	}
 	nullsIgnored := make([]bool, len(order))
 	for i, spec := range order {
@@ -5124,7 +5238,7 @@ func orderCompare(left, right storage.Value, spec OrderSpec) int {
 		}
 		return -1
 	}
-	cmp := compareValues(left, right)
+	cmp := compareValuesCollated(left, right, spec.textCollation)
 	if spec.Desc {
 		return -cmp
 	}

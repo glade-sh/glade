@@ -259,11 +259,11 @@ type runtimePatchOutcome struct {
 	TemplateValid    bool
 }
 
-func newRuntimePatchAuthority(index typesys.Index, key runtimeCacheKey, digests *typesys.SourceDigestSet, sources *sourceCache, entry runtimeCacheEntry, org storage.OrgState) *runtimePatchAuthority {
-	return newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, nil)
+func newRuntimePatchAuthority(index typesys.Index, key runtimeCacheKey, digests *typesys.SourceDigestSet, sources *sourceCache, entry runtimeCacheEntry, org storage.OrgState, oneShot bool) *runtimePatchAuthority {
+	return newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, nil, oneShot)
 }
 
-func newRuntimePatchAuthorityWithPerf(index typesys.Index, key runtimeCacheKey, digests *typesys.SourceDigestSet, sources *sourceCache, entry runtimeCacheEntry, org storage.OrgState, counters *runPerfCounters) *runtimePatchAuthority {
+func newRuntimePatchAuthorityWithPerf(index typesys.Index, key runtimeCacheKey, digests *typesys.SourceDigestSet, sources *sourceCache, entry runtimeCacheEntry, org storage.OrgState, counters *runPerfCounters, oneShot bool) *runtimePatchAuthority {
 	if digests == nil || !runtimePatchDigestSetsEqual(index, digests.Digest) {
 		return nil
 	}
@@ -275,7 +275,7 @@ func newRuntimePatchAuthorityWithPerf(index typesys.Index, key runtimeCacheKey, 
 	if !ok {
 		return nil
 	}
-	runtimeInputs := newRuntimePatchDeferredRuntimeInputs(org, entry.PageNames, apiVersionFingerprint, entry.restored)
+	runtimeInputs := newRuntimePatchDeferredRuntimeInputs(org, entry.PageNames, apiVersionFingerprint, entry.restored, oneShot)
 	return runtimePatchAuthorityFromRetainedSources(index, key, sources, runtimeInputs, payloadFingerprint)
 }
 
@@ -304,11 +304,23 @@ type runtimePatchDeferredRuntimeInputs struct {
 // runtimePatchAmbientFingerprintCalls counts ambient org fingerprints.
 var runtimePatchAmbientFingerprintCalls atomic.Int64
 
+// RuntimePatchAmbientFingerprintCalls reports how many ambient org
+// fingerprints this process has computed. It is a diagnostic for route tests.
+func RuntimePatchAmbientFingerprintCalls() int64 {
+	return runtimePatchAmbientFingerprintCalls.Load()
+}
+
 // runtimePatchVerifyDeferredRuntimeInputs, when set by a test, receives each
 // deferred fingerprint together with the fingerprint of the org as built.
 var runtimePatchVerifyDeferredRuntimeInputs func(deferred, asBuilt string)
 
-func newRuntimePatchDeferredRuntimeInputs(org storage.OrgState, pageNames []string, apiVersionFingerprint string, template vm.RestoredRuntimeTemplate) *runtimePatchDeferredRuntimeInputs {
+func newRuntimePatchDeferredRuntimeInputs(org storage.OrgState, pageNames []string, apiVersionFingerprint string, template vm.RestoredRuntimeTemplate, oneShot bool) *runtimePatchDeferredRuntimeInputs {
+	if oneShot {
+		// The patch authority lives only in this process's runtime cache, and a
+		// one-shot process makes no later transition. Fail closed without
+		// encoding every object definition.
+		return &runtimePatchDeferredRuntimeInputs{apiVersionFingerprint: apiVersionFingerprint, failClosed: true}
+	}
 	deferred := &runtimePatchDeferredRuntimeInputs{
 		org:                   org,
 		pageNames:             append([]string(nil), pageNames...),
@@ -508,7 +520,7 @@ func tryRuntimePatchTransitionContext(ctx context.Context, previous, current typ
 	}
 
 	ambientStarted := time.Now()
-	currentOrg := orgFromIndex(current, sources)
+	currentOrg := orgFromIndexLazy(current, sources)
 	currentPageNames := visualforcePageNames(current)
 	currentAmbientFingerprint, ambientOK := runtimePatchAmbientFingerprint(currentOrg, currentPageNames)
 	if counters != nil {
@@ -668,7 +680,7 @@ func buildRuntimePatchTransition(previous, current typesys.Index, digests *types
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
 	}
 	ambientStarted := time.Now()
-	currentOrg := orgFromIndex(current, sources)
+	currentOrg := orgFromIndexLazy(current, sources)
 	currentPageNames := visualforcePageNames(current)
 	currentAmbientFingerprint, ambientOK := runtimePatchAmbientFingerprint(currentOrg, currentPageNames)
 	if counters != nil {
@@ -1743,6 +1755,14 @@ func runtimePatchAmbientFingerprint(org storage.OrgState, pageNames []string) (s
 	ambientOrg := org
 	ambientOrg.Objects = maps.Clone(org.Objects)
 	delete(ambientOrg.Objects, "ApexClass")
+	// A lazy org holds only what something touched. Catalog objects it still
+	// holds exactly as installed depend only on the feature shape, so they stay
+	// out of the fingerprint, whenever they were installed.
+	for name := range ambientOrg.Objects {
+		if org.SpreadObjectUntouched(name) {
+			delete(ambientOrg.Objects, name)
+		}
+	}
 	// JSON only reads field definitions. Avoid cloning their large maps, while
 	// retaining Clone's nil/empty normalization for the rest of the payload.
 	// The field slices that Clone normalizes all have omitempty JSON tags.

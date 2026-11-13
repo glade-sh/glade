@@ -548,10 +548,10 @@ func (vm *VM) hasExactRuntimeClass(name string) bool {
 	if vm == nil || strings.TrimSpace(name) == "" {
 		return false
 	}
-	if _, ok := vm.classEntry(name); ok {
+	if _, ok := vm.classEntryRaw(name); ok {
 		return true
 	}
-	if _, ok := generatedPlatformTypes()[strings.ToLower(name)]; ok {
+	if _, ok := lookupGeneratedPlatformType(strings.ToLower(name)); ok {
 		return true
 	}
 	if class, ok := vm.resolveEnumClass(name); ok && class.Name == name {
@@ -832,7 +832,7 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 		}
 		if complete {
 			if existing.Records == nil {
-				existing.Records = make(map[storage.ID]storage.Record)
+				existing.SetRecords(make(map[storage.ID]storage.Record))
 				org.Objects[definition.APIName] = existing
 			}
 			return
@@ -840,7 +840,7 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 		org.ClearRuntimeSchemaStamp()
 		existing.Definition = existing.Definition.Clone()
 		if existing.Records == nil {
-			existing.Records = make(map[storage.ID]storage.Record)
+			existing.SetRecords(make(map[storage.ID]storage.Record))
 		}
 		if existing.Definition.Fields == nil {
 			existing.Definition.Fields = definition.Fields
@@ -893,14 +893,14 @@ func (vm *VM) recordApexClassRecord(className string) storage.ID {
 		return fallbackID
 	}
 	vm.recordIsolationJournalMutation("ApexClass", fallbackID, storage.Record{}, false)
-	object.Records[fallbackID] = storage.Record{
+	object.PutRecord(fallbackID, storage.Record{
 		ID:     fallbackID,
 		Object: "ApexClass",
 		Fields: map[string]storage.Value{
 			"Name":            storage.StringValue(localName),
 			"NamespacePrefix": apexClassNamespaceValue(namespace),
 		},
-	}
+	})
 	vm.Org.Objects["ApexClass"] = object
 	return fallbackID
 }
@@ -954,17 +954,16 @@ func apexClassNamespaceValue(namespace string) storage.Value {
 
 func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 	if vm.Org != nil {
-		names := make([]string, 0, len(vm.Org.Objects))
-		for name := range vm.Org.Objects {
-			names = append(names, name)
+		if name, ok := vm.orgObjectNameForKeyPrefix(prefix); ok {
+			return name, true
 		}
-		sort.Strings(names)
-		for _, name := range names {
-			if vm.Org.Objects[name].Definition.KeyPrefix == prefix {
-				return name, true
-			}
+		owner := storage.StandardKeyPrefixOwner(prefix)
+		// A lazy org installs an object with the prefix the unique assignment
+		// gives it, which can differ from the catalog prefix.
+		if spreadOwner := vm.Org.SpreadKeyPrefixOwner(prefix); spreadOwner != "" {
+			owner = spreadOwner
 		}
-		if owner := storage.StandardKeyPrefixOwner(prefix); owner != "" {
+		if owner != "" {
 			if name, ok := vm.lazyStandardObject(owner); ok {
 				return name, true
 			}
@@ -974,25 +973,72 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 	return name, ok
 }
 
+// orgObjectNameForKeyPrefix returns the first object in name order whose key
+// prefix is prefix. One pass keeps the smallest matching name, which is the
+// object a scan of the sorted names would reach first.
+func (vm *VM) orgObjectNameForKeyPrefix(prefix string) (string, bool) {
+	return orgObjectNameForKeyPrefix(vm.Org, prefix)
+}
+
+func scanOrgObjectNameForKeyPrefix(objects map[string]storage.ObjectState, prefix string) (string, bool) {
+	keyPrefixScans.Add(1)
+	name, found := "", false
+	for candidate := range objects {
+		if found && candidate >= name {
+			continue
+		}
+		if objects[candidate].Definition.KeyPrefix == prefix {
+			name, found = candidate, true
+		}
+	}
+	return name, found
+}
+
 func (vm *VM) sObjectNameForID(idText string) (string, bool) {
 	if len(idText) < 3 {
 		return "", false
 	}
 	if vm.Org != nil {
-		names := make([]string, 0, len(vm.Org.Objects))
-		for name := range vm.Org.Objects {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		id := storage.ID(idText)
-		for _, name := range names {
-			object := vm.Org.Objects[name]
-			if _, _, ok := storage.LookupRecordByID(object.Records, id); ok {
-				return name, true
-			}
+		if name, ok := vm.orgObjectNameHoldingID(storage.ID(idText)); ok {
+			return name, true
 		}
 	}
 	return vm.sObjectNameForIDPrefix(idText[:3])
+}
+
+// orgObjectNameHoldingID returns the first object in name order that stores
+// id, in its 15 or 18 character form: the object a scan of the sorted names
+// would reach first.
+func (vm *VM) orgObjectNameHoldingID(id storage.ID) (string, bool) {
+	if id == "" {
+		return "", false
+	}
+	objects := vm.Org.Objects
+	name, found := "", false
+	// An exact key is a map lookup. Find the smallest name that holds one.
+	for candidate := range objects {
+		if found && candidate >= name {
+			continue
+		}
+		if _, ok := objects[candidate].Records[id]; ok {
+			name, found = candidate, true
+		}
+	}
+	// The other form of the Id needs a walk of an object's records. Only an
+	// object that sorts before the exact holder can still win.
+	for candidate := range objects {
+		if found && candidate >= name {
+			continue
+		}
+		records := objects[candidate].Records
+		if len(records) == 0 {
+			continue
+		}
+		if _, _, ok := storage.LookupRecordByID(records, id); ok {
+			name, found = candidate, true
+		}
+	}
+	return name, found
 }
 
 func idTextFromValue(value Value) (string, bool) {
@@ -4523,7 +4569,7 @@ func (vm *VM) classNameSearchEntries() []classNameSearchEntry {
 		return vm.classNameSearchCache
 	}
 	classNames := make([]string, 0, len(vm.Classes))
-	for name := range vm.ClassEntries() {
+	for name := range vm.classEntriesRaw() {
 		classNames = append(classNames, name)
 	}
 	sort.Strings(classNames)
@@ -4671,7 +4717,7 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 
 func (vm *VM) rebuildEnumSuffixLookup() {
 	vm.enumSuffixLookup = make(map[string]enumClassLookup)
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue
 		}
