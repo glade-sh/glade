@@ -242,9 +242,13 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if x == y || lastNameMetaphone3Equal(x, y) {
 		return true, 100
 	}
-	if standardIsTerminalSwap(x, y) && len(x) == 8 {
-		ordinary, ok := keyboardSimilarity(x, y)
-		return standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
+	if len(x) == 8 && standardIsTerminalSwap(x, y) {
+		a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
+		// Only the captured five-column geometry overrides ordinary membership.
+		if abs(a[0]-b[0]) <= 1 && abs(a[1]-b[1]) == 5 {
+			ordinary, ok := keyboardSimilarity(x, y)
+			return standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
+		}
 	}
 	score, ok := keyboardSimilarity(x, y)
 	return ok && score >= 90, averageWith100(score)
