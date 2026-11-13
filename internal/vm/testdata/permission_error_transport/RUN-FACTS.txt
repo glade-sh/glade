@@ -2,7 +2,8 @@
 
 The expected rows were captured in a fresh Developer scratch org with a
 synthetic Standard User. The native project declared a ReadWrite custom object
-and a text field. The user had no object grant, read-only object access, or an
+and a custom text field. The local synthetic fixture uses a different object and
+field name while preserving the captured object and field types. The user had no object grant, read-only object access, or an
 assigned permission set granting read/create/edit and field read/edit. Named
 `@IsTest` runs covered source APIs 62 and 67; anonymous runs were the
 administrator control. The scratch org was deleted and deletion was verified.

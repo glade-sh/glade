@@ -33,18 +33,18 @@ func TestUserModeDeniedInsertPartialErrorTransport(t *testing.T) {
 				dmlCounters = "System.assertEquals(" + fmt.Sprint(row.dmlStatements) + ",Limits.getDmlStatements());System.assertEquals(" + fmt.Sprint(row.dmlRows) + ",Limits.getDmlRows());"
 			}
 			if row.operation == "single" {
-				source = `SObject record=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();record.put('Name','Synthetic');record.put('Note__c','value');
+				source = `SObject record=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();record.put('Name','Synthetic');record.put('Summary__c','value');
 Database.SaveResult result=Database.insert(record,false,AccessLevel.USER_MODE);
 System.assertEquals(` + row.success + `,result.isSuccess());
 System.assertEquals(` + row.idNull + `,result.getId()==null);
 ` + dmlCounters + `
-if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals('` + row.status + `',String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + row.message + `',result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}`
+if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals('` + row.status + `',String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + strings.ReplaceAll(row.message, "Probe463__c", "PermissionProbe__c") + `',result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}`
 			} else {
-				source = `SObject first=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();first.put('Name','One');first.put('Note__c','value');SObject second=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();second.put('Name','Two');second.put('Note__c','value');
+				source = `SObject first=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();first.put('Name','One');first.put('Summary__c','value');SObject second=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();second.put('Name','Two');second.put('Summary__c','value');
 List<Database.SaveResult> results=Database.insert(new List<SObject>{first,second},false,AccessLevel.USER_MODE);
 System.assertEquals(2,results.size());System.assertEquals(` + row.success + `,results[0].isSuccess());System.assertEquals(` + row.success + `,results[1].isSuccess());
 ` + dmlCounters + `
-for(Database.SaveResult result:results){System.assertEquals(` + row.idNull + `,result.getId()==null);if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals('` + row.status + `',String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + row.message + `',result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}}`
+for(Database.SaveResult result:results){System.assertEquals(` + row.idNull + `,result.getId()==null);if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals('` + row.status + `',String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + strings.ReplaceAll(row.message, "Probe463__c", "PermissionProbe__c") + `',result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}}`
 			}
 			program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: row.api})
 			if err != nil {
@@ -76,9 +76,10 @@ func TestDynamicSecurityEnforcedPermissionMessages(t *testing.T) {
 		if len(row) != 5 {
 			t.Fatalf("invalid query transport row: %#v", row)
 		}
+		projection := strings.ReplaceAll(row[2], "Note__c", "Summary__c")
 		t.Run(row[0]+"/"+row[1]+"/"+row[2], func(t *testing.T) {
 			machine := permissionTransportVM(row[0], row[1])
-			program, err := CompileAnonymousWithOptions(`try { Database.query('SELECT `+row[2]+` FROM PermissionProbe__c WITH SECURITY_ENFORCED'); System.assert(false,'expected denial'); }
+			program, err := CompileAnonymousWithOptions(`try { Database.query('SELECT `+projection+` FROM PermissionProbe__c WITH SECURITY_ENFORCED'); System.assert(false,'expected denial'); }
 catch(QueryException error) { System.assertEquals('`+row[3]+`',error.getTypeName());System.assertEquals('`+row[4]+`',error.getMessage()); }`, CompileOptions{APIVersion: row[0]})
 			if err != nil {
 				t.Fatal(err)
@@ -132,7 +133,7 @@ func permissionTransportVM(api, principal string) *VM {
 	org.APIVersion = api
 	org.Objects["PermissionProbe__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "PermissionProbe__c", KeyPrefix: "a00", SharingModel: "ReadWrite", Fields: map[string]storage.Field{
-			"Id": {APIName: "Id", Type: storage.FieldID}, "Name": {APIName: "Name", Type: storage.FieldString}, "Note__c": {APIName: "Note__c", Type: storage.FieldString},
+			"Id": {APIName: "Id", Type: storage.FieldID}, "Name": {APIName: "Name", Type: storage.FieldString}, "Summary__c": {APIName: "Summary__c", Type: storage.FieldString},
 		}},
 		Records: map[storage.ID]storage.Record{},
 	}
@@ -177,7 +178,7 @@ func permissionTransportVM(api, principal string) *VM {
 	org.Objects["FieldPermissions"] = storage.ObjectState{Records: map[storage.ID]storage.Record{
 		"0FP000000000001": {ID: "0FP000000000001", Object: "FieldPermissions", Fields: map[string]storage.Value{
 			"ParentId": storage.IDValue(permissionParent), "SObjectType": storage.StringValue("PermissionProbe__c"),
-			"Field": storage.StringValue("PermissionProbe__c.Note__c"), "PermissionsRead": storage.BooleanValue(fieldRead),
+			"Field": storage.StringValue("PermissionProbe__c.Summary__c"), "PermissionsRead": storage.BooleanValue(fieldRead),
 			"PermissionsEdit": storage.BooleanValue(fieldWrite),
 		}},
 	}}
