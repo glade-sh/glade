@@ -166,21 +166,24 @@ func TestGCFloorTunerStandsDownWhenAnotherPolicyChangesPercent(t *testing.T) {
 }
 
 func TestGCFloorBackstopLimitIsInstalledAndRestored(t *testing.T) {
+	// Other CLI tests retain more than half the production floor. This test
+	// exercises the backstop, so keep its floor well above the suite's heap.
+	const floor = 1 << 40
+	const priorLimit = 4 * floor
 	oldGC := debug.SetGCPercent(100)
-	oldLimit := debug.SetMemoryLimit(8 << 30)
+	oldLimit := debug.SetMemoryLimit(priorLimit)
 	defer debug.SetGCPercent(oldGC)
 	defer debug.SetMemoryLimit(oldLimit)
-	const floor = 256 << 20
 	tuner := newGCFloorTuner(floor)
 	if tuner == nil {
-		t.Fatal("runtime metrics unavailable")
+		t.Fatal("tuner did not start below the synthetic backstop test floor")
 	}
 	if got := debug.SetMemoryLimit(-1); got != 2*floor {
 		t.Fatalf("limit while floor is in force = %d, want %d", got, int64(2*floor))
 	}
 	tuner.release()
-	if got := debug.SetMemoryLimit(-1); got != 8<<30 {
-		t.Fatalf("limit after floor = %d, want the prior 8 GiB", got)
+	if got := debug.SetMemoryLimit(-1); got != priorLimit {
+		t.Fatalf("limit after floor = %d, want the prior %d", got, int64(priorLimit))
 	}
 }
 
@@ -189,9 +192,10 @@ func TestGCFloorBackstopKeepsLowerExplicitLimit(t *testing.T) {
 	oldLimit := debug.SetMemoryLimit(300 << 20)
 	defer debug.SetGCPercent(oldGC)
 	defer debug.SetMemoryLimit(oldLimit)
-	tuner := newGCFloorTuner(256 << 20)
+	// Match the large synthetic floor in the backstop installation test.
+	tuner := newGCFloorTuner(1 << 40)
 	if tuner == nil {
-		t.Fatal("runtime metrics unavailable")
+		t.Fatal("tuner did not start below the synthetic backstop test floor")
 	}
 	if got := debug.SetMemoryLimit(-1); got != 300<<20 {
 		t.Fatalf("explicit lower limit changed to %d", got)

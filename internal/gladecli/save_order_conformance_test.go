@@ -65,6 +65,19 @@ func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, m
 		if err := os.CopyFS(projectFiles, os.DirFS(filepath.Join(dir, "force-app"))); err != nil {
 			t.Fatal(err)
 		}
+		// Keep Flow inputs inactive during implicit discovery of this package.
+		// Restore their deployed filenames only in the isolated replay project.
+		if err := filepath.WalkDir(projectFiles, func(path string, entry os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if !entry.IsDir() && strings.HasSuffix(path, ".fixture") {
+				return os.Rename(path, strings.TrimSuffix(path, ".fixture"))
+			}
+			return nil
+		}); err != nil {
+			t.Fatal(err)
+		}
 		project := fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api)
 		writeTestFile(t, filepath.Join(root, "sfdx-project.json"), project)
 		if fixture == "rollup" || fixture == "rollup_events" || fixture == "retry_validation" {
