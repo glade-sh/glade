@@ -297,7 +297,7 @@ func (v Value) writeText(w *textWriter) {
 	}
 	switch v.Kind {
 	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
-		w.WriteString(v.scalarText())
+		w.WriteString(v.String())
 	case ValueList:
 		w.WriteString("List")
 		writeValuesText(w, v.List)

@@ -63,16 +63,6 @@ func (v Value) BoundedString(limit int) (string, bool) {
 
 func (v Value) String() string {
 	switch v.Kind {
-	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
-		return v.scalarText()
-	}
-	var w textWriter
-	v.writeText(&w)
-	return w.String()
-}
-
-func (v Value) scalarText() string {
-	switch v.Kind {
 	case ValueNull:
 		return "null"
 	case ValueInt:
@@ -84,7 +74,10 @@ func (v Value) scalarText() string {
 			return "true"
 		}
 		return "false"
-	default:
+	case ValueString:
 		return v.Text
 	}
+	var w textWriter
+	v.writeText(&w)
+	return w.String()
 }
