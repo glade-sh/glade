@@ -246,8 +246,8 @@ func namedValuesFromMap(vars map[string]vm.Value) []namedValue {
 func previewValue(value vm.Value) string { return previewValueDepth(value, 0) }
 
 func previewValueDepth(value vm.Value, depth int) string {
-	budget := 64
-	if previewWithinBudget(value, &budget) {
+	budget, bytes := 64, 256
+	if previewWithinBudget(value, &budget, &bytes) {
 		return truncatePreview(value.String())
 	}
 	var header string
@@ -258,6 +258,9 @@ func previewValueDepth(value vm.Value, depth int) string {
 		header = fmt.Sprintf("Set(%d)", len(value.Set))
 	case vm.ValueMap:
 		header = fmt.Sprintf("Map(%d)", len(value.Map))
+	case vm.ValueDecimal:
+		// Numeric formatting can copy a large decimal payload several times.
+		return truncatePreview(value.Text)
 	case vm.ValueObject:
 		header = value.Type
 		if header == "" {
@@ -291,7 +294,13 @@ func truncatePreview(s string) string {
 	return s + "..."
 }
 
-func previewWithinBudget(v vm.Value, budget *int) bool {
+func previewWithinBudget(v vm.Value, budget, bytes *int) bool {
+	// Keep the exact renderer away from large input strings, including map keys
+	// and object field names. Its concatenation otherwise copies them repeatedly.
+	*bytes -= len(v.Text) + len(v.Type) + len(v.Runtime)
+	if *bytes < 0 {
+		return false
+	}
 	*budget--
 	if *budget < 0 {
 		return false
@@ -299,30 +308,38 @@ func previewWithinBudget(v vm.Value, budget *int) bool {
 	switch v.Kind {
 	case vm.ValueList:
 		for _, child := range v.List {
-			if !previewWithinBudget(child, budget) {
+			if !previewWithinBudget(child, budget, bytes) {
 				return false
 			}
 		}
 	case vm.ValueSet:
 		for _, child := range v.Set {
-			if !previewWithinBudget(child, budget) {
+			if !previewWithinBudget(child, budget, bytes) {
 				return false
 			}
 		}
 	case vm.ValueMap:
 		for _, key := range v.MapKeys {
-			if !previewWithinBudget(key, budget) {
+			if !previewWithinBudget(key, budget, bytes) {
 				return false
 			}
 		}
-		for _, child := range v.Map {
-			if !previewWithinBudget(child, budget) {
+		for name, child := range v.Map {
+			*bytes -= len(name)
+			if *bytes < 0 {
+				return false
+			}
+			if !previewWithinBudget(child, budget, bytes) {
 				return false
 			}
 		}
 	case vm.ValueObject:
-		for _, child := range v.Fields {
-			if !previewWithinBudget(child, budget) {
+		for name, child := range v.Fields {
+			*bytes -= len(name)
+			if *bytes < 0 {
+				return false
+			}
+			if !previewWithinBudget(child, budget, bytes) {
 				return false
 			}
 		}
