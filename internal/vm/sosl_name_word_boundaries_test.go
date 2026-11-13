@@ -18,6 +18,7 @@ func TestSOSLNameTokenUnmeasuredBoundaries(t *testing.T) {
 		{`"5551287"`, "+1 (415) 555-1287", sosl.SearchScopePhone, false, false},
 		{`"1287"`, "+1 (415) 555-1287", sosl.SearchScopePhone, true, false},
 		{"B*ta", "Baxeta", sosl.SearchScopeName, false, true},
+		{"B?ta", "Betamax", sosl.SearchScopeName, false, true},
 		{"B*ta", "Betta", sosl.SearchScopeName, true, false},
 	} {
 		t.Run(tc.term+"_"+tc.text, func(t *testing.T) {

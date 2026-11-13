@@ -135,6 +135,29 @@ func TestSOSLNameTokenConformance(t *testing.T) {
 						}
 					})
 				}
+				// Local agreement across entry points. The native rows used Search.query.
+				for _, tc := range []struct{ id, term, scope string }{
+					{"middleQuestion", "B?ta", "NAME"}, {"phoneLocal", "5551287", "PHONE"},
+				} {
+					suffix := " IN " + tc.scope + " FIELDS RETURNING Contact(Id,Department ORDER BY Department ASC)"
+					query := conformanceApexString("FIND {" + tc.term + "}" + suffix)
+					want := rows[key{tc.id, api, "anonymous"}].want
+					for _, call := range []struct{ name, loop string }{
+						{"inline", "List<List<SObject>> hits=[FIND '" + tc.term + "'" + suffix + "]; for(SObject rec:hits[0]){labels.add((String)rec.get('Department'));}"},
+						{"querySystem", "for(SObject rec:Search.query(" + query + ",AccessLevel.SYSTEM_MODE)[0]){labels.add((String)rec.get('Department'));}"},
+						{"find", "for(Search.SearchResult hit:Search.find(" + query + ").get('Contact')){labels.add((String)hit.getSObject().get('Department'));}"},
+						{"findSystem", "for(Search.SearchResult hit:Search.find(" + query + ",AccessLevel.SYSTEM_MODE).get('Contact')){labels.add((String)hit.getSObject().get('Department'));}"},
+					} {
+						t.Run("localEntryPoints/"+tc.id+"/"+call.name, func(t *testing.T) {
+							m := runner.newMachine()
+							m.SetToolingExecuteAnonymous(true)
+							result, err := execute(m, "List<String> labels=new List<String>();"+call.loop+"System.debug(String.join(labels,','));")
+							if err != nil || len(result.Debug) != 1 || result.Debug[0] != want {
+								t.Fatalf("%s got %v, %v; want %q", call.name, result.Debug, err, want)
+							}
+						})
+					}
+				}
 			})
 		})
 	}
