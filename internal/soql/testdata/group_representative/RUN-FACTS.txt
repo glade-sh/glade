@@ -1,0 +1,11 @@
+capture: group-representative-cap
+started: 2026-11-13T14:08:05Z
+finished: 2026-11-13T14:08:46Z
+apis: 62.0 67.0
+routes: anonymous istest 
+cases: 4
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+cases.tsv sha256: 01e953ff5e960b91
+mode: live
+The default user locale was en_US. Each case inserts synthetic Account names, runs GROUP BY Name with and without COUNT(Id), and reports values. For the two pairs it records names in ascending Id order, swaps names across those records, and queries again. API-specific probe and test classes have matching metadata versions. Assertion failures intentionally carry the complete observation; they are not passing Salesforce tests. The four observation payloads agree. The first org was deleted after a test-class deployment error and supplied no rows.

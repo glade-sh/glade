@@ -1,0 +1,5 @@
+id	api	route	outcome
+anonymous62	62.0	anonymous	0=ABC/ABC:2|id0=abc,ABC|swap0=ABC:2|1=ABC/ABC:2|id1=ABC,abc|swap1=ABC:2|2=ABC/ABC:3|3=ABC/ABC:3|4=ECLAIR,ÉCLAIR,éclair/ECLAIR:2,ÉCLAIR:1,éclair:1|5=ECLAIR,ÉCLAIR,éclair/ECLAIR:2,ÉCLAIR:1,éclair:1|6=MIX/MIX:4
+test62	62.0	istest	0=ABC/ABC:2|id0=abc,ABC|swap0=ABC:2|1=ABC/ABC:2|id1=ABC,abc|swap1=ABC:2|2=ABC/ABC:3|3=ABC/ABC:3|4=ECLAIR,ÉCLAIR,éclair/ECLAIR:2,ÉCLAIR:1,éclair:1|5=ECLAIR,ÉCLAIR,éclair/ECLAIR:2,ÉCLAIR:1,éclair:1|6=MIX/MIX:4
+anonymous67	67.0	anonymous	0=ABC/ABC:2|id0=abc,ABC|swap0=ABC:2|1=ABC/ABC:2|id1=ABC,abc|swap1=ABC:2|2=ABC/ABC:3|3=ABC/ABC:3|4=ECLAIR,ÉCLAIR,éclair/ECLAIR:2,ÉCLAIR:1,éclair:1|5=ECLAIR,ÉCLAIR,éclair/ECLAIR:2,ÉCLAIR:1,éclair:1|6=MIX/MIX:4
+test67	67.0	istest	0=ABC/ABC:2|id0=abc,ABC|swap0=ABC:2|1=ABC/ABC:2|id1=ABC,abc|swap1=ABC:2|2=ABC/ABC:3|3=ABC/ABC:3|4=ECLAIR,ÉCLAIR,éclair/ECLAIR:2,ÉCLAIR:1,éclair:1|5=ECLAIR,ÉCLAIR,éclair/ECLAIR:2,ÉCLAIR:1,éclair:1|6=MIX/MIX:4

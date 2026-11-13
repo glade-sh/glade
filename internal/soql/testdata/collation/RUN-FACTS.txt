@@ -15,3 +15,5 @@ first-pass note: an earlier pass wrote Probe_Text__c in the T8 insert. At API 62
 non-claims: nothing about SOSL, LIKE, restricted picklists, or characters outside the sets in maps/. Apex List<String>.sort() was recorded as a control only (binary code point order).
 
 Evidence limit: the M group representatives establish A rather than a and Z rather than z in the captured groups. The binary-smallest representative for other merged spellings is provisional. No native HAVING row is supplied; HAVING coverage checks the local contract that predicate evaluation retains the query execution locale.
+
+Follow-up: ../group_representative/org.tsv records additional case variants, reversed insertion and ID assignment at API 62.0 and 67.0 on both routes. Other merged spellings remain unproven.

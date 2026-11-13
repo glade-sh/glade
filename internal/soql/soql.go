@@ -1379,9 +1379,9 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 				order = append(order, key)
 			}
 			if query.textCollation {
-				// The captured A/a and Z/z groups report the binary-smallest
-				// spelling. Using that representative for other merged spellings
-				// is provisional; these rows do not prove a universal rule.
+				// Captured case variants report the binary-smallest spelling,
+				// including reversed insertion and record ID assignment. Other
+				// spellings remain unproven by those observations.
 				for i, field := range query.GroupBy {
 					if held := current.values[field]; active[field] && scratch[i].Kind == storage.ValueString && held.Kind == storage.ValueString && scratch[i].String < held.String {
 						current.values[field] = scratch[i]
