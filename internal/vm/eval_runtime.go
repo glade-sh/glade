@@ -683,16 +683,7 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 		if len(left.List) != len(right.List) {
 			return false, nil
 		}
-		doubleLists := isDoubleList(left) && isDoubleList(right)
 		for i := range left.List {
-			if doubleLists {
-				if equal, handled := signedDoubleZeroEqual(left.List[i], right.List[i]); handled {
-					if !equal {
-						return false, nil
-					}
-					continue
-				}
-			}
 			if listElementValuesEqual(left.List[i], right.List[i], make(map[[2]uint64]bool)) {
 				continue
 			}

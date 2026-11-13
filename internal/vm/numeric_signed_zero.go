@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-// signedDoubleZeroEqual covers the captured Double zero comparisons only.
+// signedDoubleZeroEqual orders and compares two Double zeros by sign, as the
+// captured native rows do for every Double-to-Double equality route.
 func signedDoubleZeroEqual(left, right Value) (bool, bool) {
 	if !isFloatBackedDecimal(left) || !isFloatBackedDecimal(right) || left.Decimal != 0 || right.Decimal != 0 {
 		return false, false
@@ -21,9 +22,4 @@ func signedDoubleIntegerZeroEqual(left, right Value) (bool, bool) {
 		return false, false
 	}
 	return !math.Signbit(left.Decimal), true
-}
-
-func isDoubleList(value Value) bool {
-	element, ok := collectionElementType(value.Type)
-	return ok && strings.EqualFold(element, "Double")
 }
