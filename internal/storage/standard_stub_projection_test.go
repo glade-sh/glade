@@ -167,7 +167,7 @@ func TestStandardStubEnrichmentAvoidsFullDecode(t *testing.T) {
 	before := standardDescribeFullDecodes.Load()
 	for _, name := range names {
 		fields, _ := standardSObjectStubFieldsFor(name)
-		definition := ObjectDefinition{APIName: name, Fields: fields}
+		definition := (ObjectDefinition{APIName: name, Fields: fields}).Clone()
 		enrichStandardFieldsFromV2Describe(&definition)
 		enrichRequiredStandardStubFieldsFromV2Describe(&definition)
 	}
