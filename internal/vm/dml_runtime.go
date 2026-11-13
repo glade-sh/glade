@@ -2464,6 +2464,11 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if len(records) == 0 {
 		return nil, nil
 	}
+	// Preserve the original operation size across chunking and partial retries.
+	operationSize := len(records)
+	if len(triggerRetries) > 1 {
+		operationSize = triggerRetries[1]
+	}
 	if err := vm.generatedHistoryDMLBoundary(op, records); err != nil {
 		return nil, err
 	}
@@ -2789,10 +2794,10 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	assignmentUpdateTriggers := (op == "insert" || op == "update") && vm.hasAssignmentRuleUpdateTriggers(records, targets, options)
 	if len(records) > 200 && (op == "insert" || op == "update") && recordsShareSingleObject(records) && !hasSuffixFold(records[0].Object, "__e") &&
 		(vm.hasTriggerForDML(triggerTimingBefore, op, records) || vm.hasAfterTriggerForDML(op, records) || assignmentUpdateTriggers) {
-		return vm.applyTriggerDMLChunks(op, value, targets, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode)
+		return vm.applyTriggerDMLChunks(op, value, targets, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, operationSize)
 	}
 	var summaryParent, summaryKey string
-	if op == "insert" && len(records) > 0 && len(records) <= 200 && vm.hasSummarySideEffectsForDML(records) && recordsShareSingleObject(records) {
+	if op == "insert" && len(records) > 0 && operationSize <= 200 && vm.hasSummarySideEffectsForDML(records) && recordsShareSingleObject(records) {
 		schema := dml.Engine{Org: vm.Org, SummaryByChild: vm.dmlSummaryByChild}
 		summaryParent, summaryKey = schema.SummaryValidationRelation(records[0].Object)
 	}
@@ -3232,7 +3237,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		if len(triggerRetries) > 0 {
 			attempt = triggerRetries[0]
 		}
-		return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, results, rollback, attempt)
+		return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, results, rollback, attempt, operationSize)
 	}
 	summaryResults, err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, summaryParent, summaryKey, records, engineResults)
 	if err != nil {
@@ -3254,7 +3259,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		if len(triggerRetries) > 0 {
 			attempt = triggerRetries[0]
 		}
-		return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, results, rollback, attempt)
+		return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, results, rollback, attempt, operationSize)
 	}
 	if op == "insert" || op == "update" || op == "upsert" {
 		if err := vm.applyDeferredAutomation(&engine, afterRecords, afterInputBefore, allOrNone, rollback, result); err != nil {
@@ -3276,7 +3281,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 				if len(triggerRetries) > 0 {
 					attempt = triggerRetries[0]
 				}
-				return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, failures, rollback, attempt)
+				return vm.retryPartialTriggerDML(op, triggerInput, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, failures, rollback, attempt, operationSize)
 			}
 			return nil, err
 		}

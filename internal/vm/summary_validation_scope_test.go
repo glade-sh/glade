@@ -126,24 +126,35 @@ System.assertEquals(true, r.isSuccess());
 // Trigger chunking must not bring an unqualified bulk operation into the
 // parent-validation path. The 200-row control remains within captured scope.
 func TestSummaryValidationTriggeredBulkScope(t *testing.T) {
- for _, tc := range []struct{ size int; success bool }{{200, false}, {201, true}} {
-  t.Run(fmt.Sprint(tc.size), func(t *testing.T) {
-   org := summaryValidationScopeOrg(false)
-   machine := New(nil)
-   machine.SetOrg(&org)
-   trigger, err := CompileAnonymous(`Integer n = Trigger.new.size();`)
-   if err != nil { t.Fatal(err) }
-   if err := machine.RegisterTrigger(Trigger{Name: "LineBeforeInsert", Object: "Line__c", Timing: triggerTimingBefore, Operation: "insert", Program: trigger}); err != nil { t.Fatal(err) }
-   source := fmt.Sprintf(`
+	for _, tc := range []struct {
+		size    int
+		success bool
+	}{{200, false}, {201, true}} {
+		t.Run(fmt.Sprint(tc.size), func(t *testing.T) {
+			org := summaryValidationScopeOrg(false)
+			machine := New(nil)
+			machine.SetOrg(&org)
+			trigger, err := CompileAnonymous(`Integer n = Trigger.new.size();`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := machine.RegisterTrigger(Trigger{Name: "LineBeforeInsert", Object: "Line__c", Timing: triggerTimingBefore, Operation: "insert", Program: trigger}); err != nil {
+				t.Fatal(err)
+			}
+			source := fmt.Sprintf(`
 Account parent = new Account(Name = 'A'); insert parent;
 List<Line__c> lines = new List<Line__c>();
 for (Integer i = 0; i < %d; i++) { lines.add(new Line__c(Account__c = parent.Id)); }
 List<Database.SaveResult> rs = Database.insert(lines, false);
 for (Database.SaveResult r : rs) { System.assertEquals(%t, r.isSuccess()); }
 `, tc.size, tc.success)
-   program, err := CompileAnonymous(source)
-   if err != nil { t.Fatal(err) }
-   if _, err := machine.Execute(program); err != nil { t.Fatal(err) }
-  })
- }
+			program, err := CompileAnonymous(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
 }

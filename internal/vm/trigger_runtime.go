@@ -1122,7 +1122,7 @@ func (vm *VM) recordsFromTriggerRetryInput(value Value) ([]storage.Record, []*Va
 	return records, targets, nil
 }
 
-func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string, results []dml.Result, rollback vmDMLRollbackPoint, attempt int) ([]dml.Result, error) {
+func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string, results []dml.Result, rollback vmDMLRollbackPoint, attempt, operationSize int) ([]dml.Result, error) {
 	// Complete the first trigger cycle,
 	// roll back its writes, then rerun both events on the surviving inputs.
 	// Apex static observations remain visible across these storage rollbacks.
@@ -1158,7 +1158,7 @@ func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField str
 			next.List = append(next.List, row)
 		}
 	}
-	retried, err := vm.applyDMLWithAccessPolicy(op, next, false, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, attempt+1)
+	retried, err := vm.applyDMLWithAccessPolicy(op, next, false, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, attempt+1, operationSize)
 	if err != nil {
 		return nil, err
 	}
@@ -1179,7 +1179,7 @@ func (vm *VM) snapshotTriggerDMLInput(value Value, targets []*Value) Value {
 	return out
 }
 
-func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string) ([]dml.Result, error) {
+func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string, operationSize int) ([]dml.Result, error) {
 	// Only insert/update split here, and each
 	// chunk completes its before/after cycle before the next chunk begins.
 	input := vm.snapshotTriggerDMLInput(value, targets)
@@ -1192,7 +1192,7 @@ func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, al
 		chunk.List = input.List[start:min(start+200, len(input.List))]
 		// The outer call already counted the full DML operation. Attempt zero
 		// gives this chunk its own native two-retry budget without recounting it.
-		saved, err := vm.applyDMLWithAccessPolicy(op, chunk, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, 0)
+		saved, err := vm.applyDMLWithAccessPolicy(op, chunk, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, 0, operationSize)
 		if err != nil {
 			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 				return nil, rollbackErr
