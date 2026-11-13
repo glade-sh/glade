@@ -21,3 +21,11 @@ comment_after	anonymous	apex/comment_after.apex
 comment_before_newline	anonymous	apex/comment_before_newline.apex
 chain_after	anonymous	apex/chain_after.apex
 chain_comment	anonymous	apex/chain_comment.apex
+after_first	anonymous	apex/after_first.apex
+after_second	anonymous	apex/after_second.apex
+after_both	anonymous	apex/after_both.apex
+nested	anonymous	apex/nested.apex
+instance_arg	anonymous	apex/instance_arg.apex
+instance_assign	anonymous	apex/instance_assign.apex
+comment_statement	anonymous	apex/comment_statement.apex
+comment_assignment	anonymous	apex/comment_assignment.apex

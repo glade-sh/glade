@@ -1,0 +1,2 @@
+ReceiverProbe./* a
+b */value();

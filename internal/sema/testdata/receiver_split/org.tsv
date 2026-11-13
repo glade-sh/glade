@@ -43,3 +43,19 @@ chain_after	62.0	anonymous	true	ok
 chain_after	67.0	anonymous	true	ok
 chain_comment	62.0	anonymous	true	ok
 chain_comment	67.0	anonymous	true	ok
+after_first	62.0	anonymous	false	Unexpected token '('.
+after_first	67.0	anonymous	false	Unexpected token '('.
+after_second	62.0	anonymous	false	Unexpected token '('.
+after_second	67.0	anonymous	false	Unexpected token '('.
+after_both	62.0	anonymous	false	Unexpected token '('.
+after_both	67.0	anonymous	false	Unexpected token '('.
+nested	62.0	anonymous	false	Unexpected token '('.
+nested	67.0	anonymous	false	Unexpected token '('.
+instance_arg	62.0	anonymous	false	Unexpected token '('.
+instance_arg	67.0	anonymous	false	Unexpected token '('.
+instance_assign	62.0	anonymous	false	Unexpected token 'y'.
+instance_assign	67.0	anonymous	false	Unexpected token 'y'.
+comment_statement	62.0	anonymous	false	Invalid type: ReceiverProbe.
+comment_statement	67.0	anonymous	false	Invalid type: ReceiverProbe.
+comment_assignment	62.0	anonymous	false	Unexpected token 'x'.
+comment_assignment	67.0	anonymous	false	Unexpected token 'x'.

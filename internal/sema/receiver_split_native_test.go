@@ -56,6 +56,22 @@ import (
 // NATIVE chain_after testdata/receiver_split/org.tsv:43 anonymous 67.0
 // NATIVE chain_comment testdata/receiver_split/org.tsv:44 anonymous 62.0
 // NATIVE chain_comment testdata/receiver_split/org.tsv:45 anonymous 67.0
+// NATIVE after_first testdata/receiver_split/org.tsv:46 anonymous 62.0
+// NATIVE after_first testdata/receiver_split/org.tsv:47 anonymous 67.0
+// NATIVE after_second testdata/receiver_split/org.tsv:48 anonymous 62.0
+// NATIVE after_second testdata/receiver_split/org.tsv:49 anonymous 67.0
+// NATIVE after_both testdata/receiver_split/org.tsv:50 anonymous 62.0
+// NATIVE after_both testdata/receiver_split/org.tsv:51 anonymous 67.0
+// NATIVE nested testdata/receiver_split/org.tsv:52 anonymous 62.0
+// NATIVE nested testdata/receiver_split/org.tsv:53 anonymous 67.0
+// NATIVE instance_arg testdata/receiver_split/org.tsv:54 anonymous 62.0
+// NATIVE instance_arg testdata/receiver_split/org.tsv:55 anonymous 67.0
+// NATIVE instance_assign testdata/receiver_split/org.tsv:56 anonymous 62.0
+// NATIVE instance_assign testdata/receiver_split/org.tsv:57 anonymous 67.0
+// NATIVE comment_statement testdata/receiver_split/org.tsv:58 anonymous 62.0
+// NATIVE comment_statement testdata/receiver_split/org.tsv:59 anonymous 67.0
+// NATIVE comment_assignment testdata/receiver_split/org.tsv:60 anonymous 62.0
+// NATIVE comment_assignment testdata/receiver_split/org.tsv:61 anonymous 67.0
 func TestReceiverSplitNative(t *testing.T) {
 	const fixture = "testdata/receiver_split"
 	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
