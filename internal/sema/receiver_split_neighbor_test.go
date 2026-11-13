@@ -20,6 +20,7 @@ func TestReceiverSplitUncapturedNeighbors(t *testing.T) {
 		"System.assertEquals('ok', String.valueOf(String.valueOf(ReceiverProbe.\nvalue())));",
 		"System.assertEquals('ok', ReceiverProbe.// comment\nvalue());",
 		"System.assertEquals('ok', ReceiverProbe.\nvalue() + '');",
+		"String x = ReceiverProbe\n.value();",
 	}
 	for _, source := range cases {
 		result := AnalyzeAnonymous(index, source, "67.0")
