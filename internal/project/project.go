@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/config"
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 )
 
@@ -40,6 +42,7 @@ func EffectiveSourceAPIVersionFromMetadata(data []byte, fallback string) string 
 }
 
 type Project struct {
+	inputs                          *inputview.View
 	PlatformEventChannelMemberFiles []string `json:"platformEventChannelMemberFiles,omitempty"`
 
 	PDF       config.PDFConfig  `json:"pdf,omitempty"`
@@ -555,10 +558,20 @@ type sfdxProject struct {
 }
 
 func Load(root string) (Project, error) {
-	return load(root, nil, false)
+	return load(root, nil, nil, false)
 }
 
-func load(root string, stack map[string]bool, dependency bool, requestedPackages ...string) (Project, error) {
+func LoadWithInputs(root string, v *inputview.View) (Project, error) {
+	return load(root, v, nil, false)
+}
+
+func (p Project) Inputs() *inputview.View                      { return p.inputs }
+func (p Project) ReadFile(path string) ([]byte, error)         { return p.inputs.ReadFile(path) }
+func (p Project) ReadDir(path string) ([]os.DirEntry, error)   { return p.inputs.ReadDir(path) }
+func (p Project) Stat(path string) (os.FileInfo, error)        { return p.inputs.Stat(path) }
+func (p Project) WalkDir(root string, fn fs.WalkDirFunc) error { return p.inputs.WalkDir(root, fn) }
+
+func load(root string, v *inputview.View, stack map[string]bool, dependency bool, requestedPackages ...string) (Project, error) {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
 		return Project{}, err
@@ -602,7 +615,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 				}
 				stack[redirectKey] = true
 				defer delete(stack, redirectKey)
-				return load(cleaned, stack, dependency, requestedPackages...)
+				return load(cleaned, v, stack, dependency, requestedPackages...)
 			}
 		}
 		if len(gladeCfg.Project.PackageDirs) > 0 {
@@ -627,6 +640,7 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 	defer delete(stack, viewKey)
 
 	p := Project{
+		inputs:             v,
 		Root:               absRoot,
 		Namespace:          cfg.Namespace,
 		SourceAPIVersion:   cfg.SourceAPIVersion,
@@ -644,8 +658,8 @@ func load(root string, stack map[string]bool, dependency bool, requestedPackages
 		p.SchemaSnapshot = gladeCfg.Project.SchemaSnapshot
 		p.SchemaSnapshotSHA256 = gladeCfg.Project.SchemaSnapshotSHA256
 		p.NamespaceRemaps = gladeCfg.Project.NamespaceRemaps
-		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, gladeCfg.Project.NamespaceRemaps, stack)
-		p.PackageShims, p.DependencyDiagnostics = loadPackageShims(gladeCfg.Project.PackageShims, stack, p.DependencyDiagnostics)
+		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, gladeCfg.Project.NamespaceRemaps, v, stack)
+		p.PackageShims, p.DependencyDiagnostics = loadPackageShims(gladeCfg.Project.PackageShims, v, stack, p.DependencyDiagnostics)
 	}
 	if cfgErr != nil {
 		if nearestCfg, _, err := config.LoadNearest(absRoot); err == nil {
@@ -1071,7 +1085,7 @@ func appendDeclaredExternalNamespaces(deps []ManagedPackageDependency, namespace
 	return deps
 }
 
-func loadManagedPackageDependencies(configured []config.ManagedPackageDependency, remaps []namespaceremap.Rule, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
+func loadManagedPackageDependencies(configured []config.ManagedPackageDependency, remaps []namespaceremap.Rule, v *inputview.View, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
 	deps := make([]ManagedPackageDependency, 0, len(configured))
 	var diagnostics []DependencyDiagnostic
 	for _, dep := range configured {
@@ -1131,7 +1145,7 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 			deps = append(deps, projectDep)
 			continue
 		}
-		loaded, err := load(dep.SourceRoot, stack, true)
+		loaded, err := load(dep.SourceRoot, v, stack, true)
 		if err != nil {
 			projectDep.Status = "load_error"
 			diagnostics = append(diagnostics, DependencyDiagnostic{
@@ -1182,7 +1196,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		if len(explicitNames) > 0 {
 			deps, diagnostics = removeManagedDependencyOverrides(deps, diagnostics, explicitNames)
 		}
-		localDeps, localDiagnostics := loadConfiguredLocalPackageDependencies(cfg, configuredLocal, stack)
+		localDeps, localDiagnostics := loadConfiguredLocalPackageDependencies(cfg, configuredLocal, p.inputs, stack)
 		for _, dep := range localDeps {
 			if !managedPackageDependencyViewLoaded(deps, dep) {
 				deps = append(deps, dep)
@@ -1195,7 +1209,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 			if len(explicitNames) > 0 {
 				configured = filterManagedDependencies(configured, explicitNames)
 			}
-			configDeps, configDiagnostics := loadManagedPackageDependencies(configured, dependencyCfg.Project.NamespaceRemaps, stack)
+			configDeps, configDiagnostics := loadManagedPackageDependencies(configured, dependencyCfg.Project.NamespaceRemaps, p.inputs, stack)
 			for _, dep := range configDeps {
 				if managedPackageDependencySourceLoaded(deps, dep.SourceRoot) || managedPackageDependencyNamespaceLoaded(deps, dep.Namespace) {
 					continue
@@ -1246,7 +1260,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		if managedPackageDependencySourceLoaded(deps, depRoot) {
 			continue
 		}
-		loaded, err := load(depRoot, stack, true, packageNames...)
+		loaded, err := load(depRoot, p.inputs, stack, true, packageNames...)
 		if err != nil {
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				SourceRoot: depRoot,
@@ -1274,7 +1288,7 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 		if sameFilePath(depRoot, root) || managedPackageDependencySourceLoaded(deps, depRoot) {
 			continue
 		}
-		loaded, err := load(depRoot, stack, true)
+		loaded, err := load(depRoot, p.inputs, stack, true)
 		if err != nil {
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				SourceRoot: depRoot,
@@ -1345,7 +1359,7 @@ func filterManagedDependencies(configured []config.ManagedPackageDependency, nam
 	return filtered
 }
 
-func loadConfiguredLocalPackageDependencies(consumer sfdxProject, configured []config.LocalPackageDependency, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
+func loadConfiguredLocalPackageDependencies(consumer sfdxProject, configured []config.LocalPackageDependency, v *inputview.View, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
 	deps := make([]ManagedPackageDependency, 0, len(configured))
 	var diagnostics []DependencyDiagnostic
 	for _, configuredDep := range configured {
@@ -1405,7 +1419,7 @@ func loadConfiguredLocalPackageDependencies(consumer sfdxProject, configured []c
 			requestedPackages = []string{configuredDep.Name}
 		}
 
-		loaded, err := load(root, stack, true, requestedPackages...)
+		loaded, err := load(root, v, stack, true, requestedPackages...)
 		if err != nil {
 			diagnostics = append(diagnostics, DependencyDiagnostic{
 				SourceRoot: root,
@@ -1933,7 +1947,7 @@ func namespaceRemapKey(rule namespaceremap.Rule) string {
 	return strings.ToLower(rule.From) + "\x00" + strings.ToLower(rule.To)
 }
 
-func loadPackageShims(configured []config.PackageShim, stack map[string]bool, diagnostics []DependencyDiagnostic) ([]PackageShim, []DependencyDiagnostic) {
+func loadPackageShims(configured []config.PackageShim, v *inputview.View, stack map[string]bool, diagnostics []DependencyDiagnostic) ([]PackageShim, []DependencyDiagnostic) {
 	shims := make([]PackageShim, 0, len(configured))
 	for _, shim := range configured {
 		projectShim := PackageShim{
@@ -1969,7 +1983,7 @@ func loadPackageShims(configured []config.PackageShim, stack map[string]bool, di
 			shims = append(shims, projectShim)
 			continue
 		}
-		loaded, err := load(shim.SourceRoot, stack, true)
+		loaded, err := load(shim.SourceRoot, v, stack, true)
 		if err != nil {
 			projectShim.Status = "load_error"
 			diagnostics = append(diagnostics, DependencyDiagnostic{
