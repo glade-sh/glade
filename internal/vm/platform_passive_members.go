@@ -6126,7 +6126,13 @@ func (vm *VM) callSObjectFieldDescribe(receiver Value, args []Value, result *Res
 	if !ok || fieldValue.Kind != ValueString {
 		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing field")
 	}
-	describe, err := vm.describeFieldValue(objectValue.Text, fieldValue.Text)
+	var describe Value
+	var err error
+	if receiver.Fields["__plainDeveloperTier"].Bool {
+		describe, err = vm.describePlainDeveloperTier(objectValue.Text)
+	} else {
+		describe, err = vm.describeFieldValue(objectValue.Text, fieldValue.Text)
+	}
 	if err != nil {
 		return Null, receiver, false, true, err
 	}

@@ -1,0 +1,6 @@
+Fresh 30-day Developer scratch org with empty features and settings; deleted and deletion verified.
+Captured 2026-11-13 11:37:26 to 11:38:13 UTC, Salesforce CLI 2.157.8.
+Anonymous Apex at APIs 62.0 and 67.0 called a named helper compiled at API 62.0.
+The context probe returned en_US and System Administrator in the same org at both APIs.
+The rows combine debug lines from each successful capture case; all values were repeated in prior captures.
+Other Tier descriptor facets retain the runtime's generic synthetic-field defaults and were not qualified by this capture.

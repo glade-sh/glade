@@ -64,6 +64,7 @@
 - **Exception caller lines.** Property getters, setters and field initializers evaluated inside a call preserve the enclosing call-token line in exception stacks.
 
 - **Exception stacks.** Exceptions caught through a helper chain from one-line anonymous Apex now retain the captured anonymous caller frames, including constructed causes.
+- **Standard describes.** The captured default Developer configuration exposes the observed Account field map and standard picklist values at APIs 62 and 67. Field tokens returned by a named helper remain describable by its caller.
 
 ## v0.3.8
 
