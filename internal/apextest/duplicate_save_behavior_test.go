@@ -110,6 +110,8 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 					helpers = append(helpers, "PrefixBehavior")
 				case "holdout":
 					helpers = append(helpers, "HoldoutBehavior")
+				case "keyboardBoundary":
+					helpers = append(helpers, "BoundaryBehavior")
 				case "calibration":
 					helpers = append(helpers, "CalibrationBehavior")
 				case "names":

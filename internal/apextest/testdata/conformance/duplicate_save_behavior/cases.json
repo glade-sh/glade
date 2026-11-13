@@ -79,5 +79,11 @@
     "blindD": "HoldoutBehavior.blindD()",
     "blindE": "HoldoutBehavior.blindE()",
     "blindF": "HoldoutBehavior.blindF()"
+  },
+  "keyboardBoundary": {
+    "sumA": "BoundaryBehavior.sumA()",
+    "sumB": "BoundaryBehavior.sumB()",
+    "sumC": "BoundaryBehavior.sumC()",
+    "sumD": "BoundaryBehavior.sumD()"
   }
 }
