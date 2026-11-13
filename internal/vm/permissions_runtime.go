@@ -800,9 +800,10 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		}
 		allowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
 		// The captured test-runner administrator insert checks explicit grants
-		// for custom fields on standard objects, including a scoped grant.
+		// for optional custom fields on standard objects, including a scoped grant.
+		// Universally required fields retain their intrinsic access.
 		user := vm.fieldPermissionPrincipal()
-		if op == "insert" && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.currentUserProfileName(user) == "System Administrator" && !strings.Contains(objectName, "__") && isCustomSchemaName(canonicalField) {
+		if op == "insert" && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.currentUserProfileName(user) == "System Administrator" && !strings.Contains(objectName, "__") && isCustomSchemaName(canonicalField) && !vm.customFieldHasIntrinsicAccess(objectName, canonicalField) {
 			allowed = vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), objectName, canonicalField, fieldPermission)
 			if !allowed && scopedPermissionSetID != "" {
 				allowed, _ = vm.explicitFieldPermission(vm.canonicalPermissionSetKey(scopedPermissionSetID), objectName, canonicalField, fieldPermission)
