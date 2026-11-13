@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Lower retained memory after a completed schema spread.** A process that completes the standard object spread now frees the decoded describe catalog (about 130 MB) and keeps it bounded to 512 objects while a lazy org grows. Outcomes do not change.
 
 ## v0.3.9
 
