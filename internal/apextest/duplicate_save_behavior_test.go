@@ -121,6 +121,8 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 						}
 					}
 					helpers = append(helpers, "CriteriaBehavior")
+				case "localEdits":
+					helpers = append(helpers, "LocalEditsBehavior")
 				case "calibration":
 					helpers = append(helpers, "CalibrationBehavior")
 				case "names":

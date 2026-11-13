@@ -92,5 +92,10 @@
   },
   "phoneCriteria": {
     "editGate": "CriteriaBehavior.editGate()"
+  },
+  "localEdits": {
+    "editsA": "LocalEditsBehavior.editsA()",
+    "editsB": "LocalEditsBehavior.editsB()",
+    "editsC": "LocalEditsBehavior.editsC()"
   }
 }
