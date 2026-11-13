@@ -59,3 +59,57 @@ comment_statement	62.0	anonymous	false	Invalid type: ReceiverProbe.
 comment_statement	67.0	anonymous	false	Invalid type: ReceiverProbe.
 comment_assignment	62.0	anonymous	false	Unexpected token 'x'.
 comment_assignment	67.0	anonymous	false	Unexpected token 'x'.
+argument_newline	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+argument_newline	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+argument_message	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+argument_message	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+declaration_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+declaration_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+debug_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+debug_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+builtin_before_dot	62.0	anonymous	false	Variable does not exist: String
+builtin_before_dot	67.0	anonymous	false	Variable does not exist: String
+statement_argument_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+statement_argument_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+fluent_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+fluent_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+line_comment_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+line_comment_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+qualified_inner_before_dot	62.0	anonymous	false	Variable does not exist: System
+qualified_inner_before_dot	67.0	anonymous	false	Variable does not exist: System
+class_literal_before_dot	62.0	anonymous	true	ok
+class_literal_before_dot	67.0	anonymous	true	ok
+sobject_member_before_dot	62.0	anonymous	false	Variable does not exist: Account
+sobject_member_before_dot	67.0	anonymous	false	Variable does not exist: Account
+block_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+block_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+fluent_space_control	62.0	anonymous	true	ok
+fluent_space_control	67.0	anonymous	true	ok
+statement_space_after_dot	62.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_space_after_dot	67.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_comment_after_dot	62.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_comment_after_dot	67.0	anonymous	false	Invalid type: ReceiverProbe.
+argument_space_after_dot	62.0	anonymous	false	Unexpected token '('.
+argument_space_after_dot	67.0	anonymous	false	Unexpected token '('.
+statement_line_comment_after_dot	62.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_line_comment_after_dot	67.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_blank_after_dot	62.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_blank_after_dot	67.0	anonymous	false	Invalid type: ReceiverProbe.
+fluent_after_dot	62.0	anonymous	false	Unexpected token 'value'.
+fluent_after_dot	67.0	anonymous	false	Unexpected token 'value'.
+assignment_after_dot	62.0	anonymous	false	Unexpected token '='.
+assignment_after_dot	67.0	anonymous	false	Unexpected token '='.
+binary_argument_after_dot	62.0	anonymous	false	Unexpected token '('.
+binary_argument_after_dot	67.0	anonymous	false	Unexpected token '('.
+block_after_dot	62.0	anonymous	false	Missing ';' at 'value'
+block_after_dot	67.0	anonymous	false	Missing ';' at 'value'
+mixed_before_after_dot	62.0	anonymous	false	Unexpected token '('.
+mixed_before_after_dot	67.0	anonymous	false	Unexpected token '('.
+builtin_after_dot	62.0	anonymous	false	Unexpected token 'debug'.
+builtin_after_dot	67.0	anonymous	false	Unexpected token 'debug'.
+class_argument_before_dot	62.0	class	false	Variable does not exist: ReceiverProbe
+class_argument_before_dot	67.0	class	false	Variable does not exist: ReceiverProbe
+class_statement_before_dot	62.0	class	false	Variable does not exist: ReceiverProbe
+class_statement_before_dot	67.0	class	false	Variable does not exist: ReceiverProbe
+class_statement_after_dot	62.0	class	false	Missing ';' at 'value' | Variable does not exist: | Method does not exist or incorrect signature: void value() from the type ReceiverRouteProbe
+class_statement_after_dot	67.0	class	false	Missing ';' at 'value' | Variable does not exist: | Method does not exist or incorrect signature: void value() from the type ReceiverRouteProbe

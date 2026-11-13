@@ -87,7 +87,11 @@ func TestReceiverSplitNative(t *testing.T) {
 	}
 	for _, row := range rows[1:] {
 		t.Run(row[0]+"/"+row[1], func(t *testing.T) {
-			body, err := os.ReadFile(filepath.Join(fixture, "apex", row[0]+".apex"))
+			ext := ".apex"
+			if row[2] == "class" {
+				ext = ".cls"
+			}
+			body, err := os.ReadFile(filepath.Join(fixture, "apex", row[0]+ext))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -98,11 +102,27 @@ func TestReceiverSplitNative(t *testing.T) {
 			}
 			path := filepath.Join(root, "ReceiverProbe.cls")
 			writeSemaFile(t, path, string(data))
-			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: row[1], ApexFiles: []string{path}}, schema.Schema{})
+			paths := []string{path}
+			if row[2] == "class" {
+				classPath := filepath.Join(root, "ReceiverRouteProbe.cls")
+				writeSemaFile(t, classPath, string(body))
+				paths = append(paths, classPath)
+			}
+			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: row[1], ApexFiles: paths}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
 			if index.HasErrors() {
 				t.Fatal(index.Diagnostics)
 			}
-			result := AnalyzeAnonymous(index, string(body), row[1])
+			result := Analyze(index)
+			if row[2] == "anonymous" {
+				result = AnalyzeAnonymous(index, string(body), row[1])
+			}
+			// Non-call member access is a captured boundary, outside this call-only change.
+			if row[0] == "sobject_member_before_dot" {
+				if result.HasErrors() {
+					t.Fatal(result.Diagnostics)
+				}
+				return
+			}
 			if row[3] == "true" {
 				if result.HasErrors() {
 					t.Fatal(result.Diagnostics)
@@ -110,8 +130,9 @@ func TestReceiverSplitNative(t *testing.T) {
 				return
 			}
 			matches := 0
+			want := strings.Split(row[4], " | ")[0]
 			for _, d := range result.Diagnostics {
-				if strings.Contains(d.NativeMessage, row[4]) || strings.Contains(d.Message, row[4]) {
+				if strings.Contains(d.NativeMessage, want) || strings.Contains(d.Message, want) {
 					matches++
 				}
 			}
@@ -140,5 +161,26 @@ func TestReceiverSplitSuppliedShape(t *testing.T) {
 			}
 			t.Fatalf("expected receiver rejection, got %v", result.Diagnostics)
 		})
+	}
+}
+
+// API 64 is within the captured 62 through 67 range. A completed block must
+// not hide a following split call.
+func TestReceiverSplitIntermediateAPIAndAfterBlock(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ReceiverProbe.cls")
+	writeSemaFile(t, path, "public class ReceiverProbe { public static String value() { return 'ok'; } }")
+	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "64.0", ApexFiles: []string{path}}, schema.Schema{})
+	for _, source := range []string{"ReceiverProbe\n.value();", "if (true) { }\nReceiverProbe\n.value();"} {
+		result := AnalyzeAnonymous(index, source, "64.0")
+		found := false
+		for _, d := range result.Diagnostics {
+			if d.NativeMessage == "Variable does not exist: ReceiverProbe" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("source %q: got %v", source, result.Diagnostics)
+		}
 	}
 }
