@@ -128,17 +128,17 @@ func (vm *VM) ensureUserProfilePermissionSetAssignment(record storage.Record) {
 		state = vm.Org.Objects["PermissionSetAssignment"]
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	vm.recordIsolationJournalMutation("PermissionSetAssignment", id, storage.Record{}, false)
-	state.Records[id] = storage.Record{
+	state.PutRecord(id, storage.Record{
 		ID:     id,
 		Object: "PermissionSetAssignment",
 		Fields: map[string]storage.Value{
 			"AssigneeId":      storage.IDValue(record.ID),
 			"PermissionSetId": storage.IDValue(storage.ID(permissionSetID)),
 		},
-	}
+	})
 	vm.Org.IDSequences = copyOrgIDSequences(generator.Sequences)
 	vm.Org.Objects["PermissionSetAssignment"] = state
 }
@@ -176,7 +176,7 @@ func (vm *VM) ensureUserRoleGroupType(record storage.Record, groupType string) {
 		state = vm.Org.Objects["Group"]
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	fields := map[string]storage.Value{
 		"Type": storage.StringValue(groupType), "RelatedId": storage.IDValue(record.ID),
@@ -185,7 +185,7 @@ func (vm *VM) ensureUserRoleGroupType(record storage.Record, groupType string) {
 		fields["Name"] = storage.StringValue(record.Fields["Name"].String)
 	}
 	vm.recordIsolationJournalMutation("Group", id, storage.Record{}, false)
-	state.Records[id] = storage.Record{ID: id, Object: "Group", Fields: fields}
+	state.PutRecord(id, storage.Record{ID: id, Object: "Group", Fields: fields})
 	vm.Org.IDSequences = copyOrgIDSequences(generator.Sequences)
 	vm.Org.Objects["Group"] = state
 }

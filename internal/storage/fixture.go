@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
+	"reflect"
 	"slices"
 	"sort"
 	"strconv"
@@ -173,7 +175,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 			org.Objects[objectName] = object
 		}
 		if object.Records == nil {
-			object.Records = make(map[ID]Record)
+			object.SetRecords(make(map[ID]Record))
 			org.Objects[objectName] = object
 		}
 		assignedIDs[objectIndex] = make([]ID, len(objectFixture.Records))
@@ -235,7 +237,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 				delete(record.ExplicitNulls, fieldName)
 			}
 			// Fields and explicit nulls are already owned by this record.
-			object.Records[record.ID] = record
+			object.PutRecord(record.ID, record)
 		}
 		org.Objects[objectName] = object
 	}
@@ -454,11 +456,8 @@ func applyMultiCurrencyField(org *OrgState, name string) {
 	if !ok || !multiCurrencyObjectSupportsCurrencyISOCode(obj.Definition) {
 		return
 	}
-	obj.Definition = obj.Definition.Clone()
-	if obj.Definition.Fields == nil {
-		obj.Definition.Fields = make(map[string]Field)
-	}
-	field := obj.Definition.Fields["CurrencyIsoCode"]
+	existing, hasField := obj.Definition.Fields["CurrencyIsoCode"]
+	field := existing
 	field.APIName = "CurrencyIsoCode"
 	if field.Label == "" {
 		field.Label = "Currency ISO Code"
@@ -468,7 +467,16 @@ func applyMultiCurrencyField(org *OrgState, name string) {
 	field.DefaultedOnCreate = BoolFlag(true)
 	// Currency defaults depend on the execution user and DML phase. Do not
 	// store a literal default that would change ordinary SObject field reads.
-	obj.Definition.Fields["CurrencyIsoCode"] = field
+	if hasField && reflect.DeepEqual(existing, field) {
+		return
+	}
+	// Only the field map is written, and only one entry in it, so copy the
+	// map (Field values replace whole) instead of the whole definition. The
+	// definition may be shared with the spread template or other orgs.
+	fields := make(map[string]Field, len(obj.Definition.Fields)+1)
+	maps.Copy(fields, obj.Definition.Fields)
+	fields["CurrencyIsoCode"] = field
+	obj.Definition.Fields = fields
 	org.Objects[name] = obj
 }
 
@@ -1582,10 +1590,9 @@ func ensureRecordTypeRecordsForObjectWithContext(org *OrgState, objectName strin
 		return
 	}
 	// Record-type IDs, defaults and the lookup field are written below.
-	// Runtime seeds can share this definition with other orgs.
-	if len(object.Definition.RecordTypes) != 0 || objectName == "Account" {
-		object.Definition = object.Definition.Clone()
-	}
+	// Runtime seeds can share this definition with other orgs, so privatize
+	// what is written: the record type list always, and the field map and
+	// metadata only when RecordTypeId or the policy snapshot must be added.
 	if len(object.Definition.RecordTypes) == 0 && objectName == "Account" {
 		object.Definition.RecordTypes = []RecordTypeInfo{{
 			DeveloperName: "Business",
@@ -1594,6 +1601,13 @@ func ensureRecordTypeRecordsForObjectWithContext(org *OrgState, objectName strin
 			Available:     true,
 			Default:       true,
 		}}
+	}
+	if recordTypeIDFieldNeedsWrite(object.Definition) {
+		object.Definition = object.Definition.Clone()
+	} else if len(object.Definition.RecordTypes) != 0 {
+		// Entries are replaced whole below; PicklistDefaults maps are never
+		// written, so a shallow copy of the list is enough.
+		object.Definition.RecordTypes = append([]RecordTypeInfo(nil), object.Definition.RecordTypes...)
 	}
 	defaultedPersonAccount := false
 	if objectName == "Account" {
@@ -1705,7 +1719,7 @@ func nextUnusedRecordTypeID(used map[ID]bool, start uint64) (ID, uint64) {
 
 func ResetData(org *OrgState) {
 	for name, object := range org.Objects {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		org.Objects[name] = object
 	}
 	org.IDSequences = make(map[string]uint64)
@@ -1718,13 +1732,13 @@ func ResetNonPlatformData(org *OrgState) {
 			continue
 		}
 		previous := object.Records
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		if name == "Group" {
 			// Organization groups are setup rows; regular and role groups are data.
 			for id, record := range previous {
 				switch record.Fields["Type"].String {
 				case "Organization", "AllCustomerPortal", "PRMOrganization":
-					object.Records[id] = record.Clone()
+					object.PutRecord(id, record.Clone())
 				}
 			}
 		}
@@ -1741,7 +1755,7 @@ func ResetPlatformData(org *OrgState) {
 		if !IsPlatformObject(name) {
 			continue
 		}
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		org.Objects[name] = object
 		delete(org.IDSequences, name)
 	}
@@ -1800,6 +1814,9 @@ func objectNamesFromOrg(org OrgState) []string {
 
 func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 	object := org.Objects[name]
+	if ensureObjectIsComplete(object, prefix, fields) {
+		return
+	}
 	object.Definition = object.Definition.Clone()
 	if object.Definition.APIName == "" {
 		object.Definition.APIName = name
@@ -1851,7 +1868,7 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 		}
 	}
 	if object.Records == nil {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 	}
 	org.Objects[name] = object
 }
@@ -1890,7 +1907,7 @@ func existingAutomatedProcessUserID(org OrgState) ID {
 func putSeedRecord(org *OrgState, objectName string, record Record) {
 	object := org.Objects[objectName]
 	if object.Records == nil {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 	}
 	if existing, exists := object.Records[record.ID]; exists {
 		if existing.Fields == nil {
@@ -1902,13 +1919,13 @@ func putSeedRecord(org *OrgState, objectName string, record Record) {
 			}
 		}
 		stampSeedSystemFields(&existing)
-		object.Records[record.ID] = existing
+		object.PutRecord(record.ID, existing)
 		org.Objects[objectName] = object
 		return
 	}
 	seeded := record.Clone()
 	stampSeedSystemFields(&seeded)
-	object.Records[record.ID] = seeded
+	object.PutRecord(record.ID, seeded)
 	org.Objects[objectName] = object
 }
 

@@ -92,7 +92,12 @@ func (e *Engine) assignmentEntryMatches(entry storage.AssignmentRuleEntry, recor
 	}
 	matches := make([]bool, len(entry.Criteria))
 	for i, item := range entry.Criteria {
-		matched, ok := evaluateWorkflowCriteria(item, record, definition, e.Org.Namespace)
+		// The criteria rows are Lead rows; other objects keep the shared evaluator.
+		evaluate := evaluateWorkflowCriteria
+		if strings.EqualFold(record.Object, "Lead") {
+			evaluate = evaluateAssignmentCriteria
+		}
+		matched, ok := evaluate(item, record, definition, e.Org.Namespace)
 		if !ok {
 			return false, false
 		}
@@ -126,7 +131,7 @@ func (e *Engine) ApplyAssignmentRules(input storage.Record) error {
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordUpdate(input.Object, storedID, before)
 	}
-	state.Records[storedID] = record
+	state.PutRecord(storedID, record)
 	e.Org.Objects[input.Object] = state
 	return e.reconcilePrivateOwnerShares(input.Object, storedID)
 }

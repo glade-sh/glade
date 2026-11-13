@@ -12,8 +12,8 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// Require person-family metadata and the captured business-default fallback in the restored org.
-const dapCacheVersion = 18
+// Reject entries that may pair a runtime with a later fingerprint.
+const dapCacheVersion = 19
 
 // normalizedDAPRoot is the absolute, cleaned, symlink-resolved project root.
 // Load slots and publish locks are keyed on it so two spellings of one project
@@ -42,9 +42,23 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 	return org, runtime, apiVersion, err
 }
 
+type dapLoadSeams struct {
+	afterIndex    func()
+	beforePublish func()
+}
+
+func loadDAPStartupStateWithSeams(root string, seams dapLoadSeams) (storage.OrgState, apextest.CompiledProjectRuntime, string, error) {
+	org, runtime, api, _, err := loadDAPStartupStateWithIndexAndSeams(context.Background(), root, seams)
+	return org, runtime, api, err
+}
+
 // loadDAPStartupStateWithIndex also returns the project index when this call
 // had to build it (a startup cache miss). On a cache hit the index is nil.
 func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
+	return loadDAPStartupStateWithIndexAndSeams(ctx, projectRoot, dapLoadSeams{})
+}
+
+func loadDAPStartupStateWithIndexAndSeams(ctx context.Context, projectRoot string, seams dapLoadSeams) (storage.OrgState, apextest.CompiledProjectRuntime, string, *typesys.Index, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
@@ -57,10 +71,12 @@ func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (stor
 	if cache != nil && startupcache.Fresh(cache, root, dapCacheVersion) {
 		return cache.Org, compiledRuntimeFromCache(cache.Runtime), cache.Manifest.SourceAPIVersion, nil, nil
 	}
-	p, index, err := loadProjectIndex(root)
+	before, beforeErr := startupcache.ValidateInputWithSourceDigests(root, nil)
+	p, err := project.Load(root)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
+	index, artifacts := buildProjectIndexWithArtifacts(p)
 	org, err := orgStateFromIndex(root, p, index)
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
@@ -68,15 +84,16 @@ func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (stor
 	if err := ctx.Err(); err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
-	runtime := apextest.CompileProjectRuntimeForRequest(index)
-	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
-	built.Version = dapCacheVersion
-	// A load that was cancelled before it got here skips the write, so an
-	// abandoned build does not refresh the cache. This only narrows the old
-	// window: NewEntry still fingerprints the files when it runs, so a file
-	// edited between indexing and fingerprinting can pair old compiled state
-	// with a new hash. That predates cancellation and is not fixed here; it needs
-	// the fingerprint taken before the build and compared after it.
+	if seams.afterIndex != nil {
+		seams.afterIndex()
+	}
+	runtime, err := apextest.CompileProjectRuntimeForRequestWithSourceDigests(index, artifacts.SourceDigests)
+	if err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
+	}
+	if seams.beforePublish != nil {
+		seams.beforePublish()
+	}
 	lockRoot, _ := normalizedDAPRoot(root)
 	publish := dapPublishLock(lockRoot)
 	publish.Lock()
@@ -84,11 +101,28 @@ func loadDAPStartupStateWithIndex(ctx context.Context, projectRoot string) (stor
 	if err := ctx.Err(); err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, "", nil, err
 	}
-	if err := startupcache.Write(&built, startupcache.SubdirDAP); err != nil {
-		// Caching is an optimization; keep serving from rebuilt state even if
-		// cache persistence fails.
+	if beforeErr == nil {
+		if built, ok := dapPublishableEntry(root, before, artifacts.SourceDigests, org, runtime); ok {
+			_ = startupcache.Write(&built, startupcache.SubdirDAP)
+		}
 	}
-	return built.Org, runtime, p.SourceAPIVersion, &index, nil
+	return org, runtime, p.SourceAPIVersion, &index, nil
+}
+
+// dapPublishableEntry binds the entry to the input proof taken before the
+// build. It reports false when the inputs drifted, so no entry pairs an old
+// runtime with a newer fingerprint.
+func dapPublishableEntry(root string, before *startupcache.ValidatedInput, digests *typesys.SourceDigestSet, org storage.OrgState, runtime apextest.CompiledProjectRuntime) (startupcache.Entry, bool) {
+	after, err := startupcache.ValidateInputWithSourceDigests(root, digests)
+	if err != nil || after.Digest() != before.Digest() {
+		return startupcache.Entry{}, false
+	}
+	entry, err := startupcache.NewEntryWithValidatedInput(before, org, compiledRuntimeToCache(runtime))
+	if err != nil {
+		return startupcache.Entry{}, false
+	}
+	entry.Version = dapCacheVersion
+	return entry, true
 }
 
 func compiledRuntimeFromCache(runtime startupcache.CompiledRuntime) apextest.CompiledProjectRuntime {

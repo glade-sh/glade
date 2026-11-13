@@ -100,7 +100,7 @@ func ApplyProjectGroups(org *storage.OrgState, p project.Project) error {
 		record.Fields["Name"] = storage.StringValue(group.Name)
 		record.Fields["Type"] = storage.StringValue("Regular")
 		record.Fields["DoesIncludeBosses"] = storage.BooleanValue(*group.DoesIncludeBosses)
-		state.Records[id] = record
+		state.PutRecord(id, record)
 	}
 	if org.Objects == nil {
 		org.Objects = make(map[string]storage.ObjectState)

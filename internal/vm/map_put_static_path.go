@@ -85,7 +85,8 @@ func (vm *VM) forgetStaticMapPutPathsForRef(ref uint64) {
 		}
 		return
 	}
-	vm.staticValueRefFields[ref].forEach(func(location staticFieldRef) { vm.forgetStaticMapPutPathsInField(location) })
+	staticIndex := vm.staticRefIndex()
+	staticIndex.locations(ref).forEach(func(location staticFieldRef) { vm.forgetStaticMapPutPathsInField(location) })
 }
 
 func (vm *VM) forgetStaticMapPutPathsInField(location staticFieldRef) {

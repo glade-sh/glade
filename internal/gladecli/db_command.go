@@ -1079,7 +1079,7 @@ func reconcileFlowOnlyStandardObjects(current, projectOrg storage.OrgState, root
 			if have != want {
 				return false, nil
 			}
-			object.Records = make(map[storage.ID]storage.Record)
+			object.SetRecords(make(map[storage.ID]storage.Record))
 			dst.Objects[name] = object
 			changed = true
 		}
@@ -1124,9 +1124,9 @@ func refreshDBProjectSchema(store *storage.SQLiteStore, dbPath, root string, cur
 		if !ok {
 			continue
 		}
-		target.Records = make(map[storage.ID]storage.Record, len(existingObject.Records))
+		target.SetRecords(make(map[storage.ID]storage.Record, len(existingObject.Records)))
 		for id, record := range existingObject.Records {
-			target.Records[id] = record.Clone()
+			target.PutRecord(id, record.Clone())
 		}
 		refreshed.Objects[name] = target
 	}

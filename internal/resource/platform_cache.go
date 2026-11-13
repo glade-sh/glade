@@ -112,18 +112,18 @@ func loadPlatformCachePartitions(org *storage.OrgState, p project.Project) error
 				if !configured {
 					seed = seed.Clone()
 					seed.Fields["IsDefaultPartition"] = storage.BooleanValue(false)
-					partitions.Records[seedID] = seed
+					partitions.PutRecord(seedID, seed)
 				}
 			}
 		}
-		partitions.Records[id] = storage.Record{ID: id, Object: "PlatformCachePartition", Fields: map[string]storage.Value{
+		partitions.PutRecord(id, storage.Record{ID: id, Object: "PlatformCachePartition", Fields: map[string]storage.Value{
 			"Id":                 storage.IDValue(id),
 			"DeveloperName":      storage.StringValue(name),
 			"NamespacePrefix":    storage.StringValue(namespace),
 			"MasterLabel":        storage.StringValue(raw.MasterLabel),
 			"Description":        storage.StringValue(raw.Description),
 			"IsDefaultPartition": storage.BooleanValue(raw.IsDefaultPartition),
-		}}
+		}})
 		for _, allocation := range raw.Types {
 			typeID := metadataRecordIDForIdentity(*types, func(record storage.Record) bool {
 				return record.Fields["PlatformCachePartitionId"].ID == id && strings.EqualFold(record.Fields["CacheType"].String, allocation.CacheType)
@@ -143,7 +143,7 @@ func loadPlatformCachePartitions(org *storage.OrgState, p project.Project) error
 					fields[field] = storage.IntegerValue(*value)
 				}
 			}
-			types.Records[typeID] = storage.Record{ID: typeID, Object: "PlatformCachePartitionType", Fields: fields}
+			types.PutRecord(typeID, storage.Record{ID: typeID, Object: "PlatformCachePartitionType", Fields: fields})
 		}
 		org.Objects["PlatformCachePartition"] = *partitions
 		org.Objects["PlatformCachePartitionType"] = *types

@@ -143,19 +143,19 @@ func (e *Engine) afterInsertUser(record storage.Record) {
 		state = e.Org.Objects["UserLogin"]
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordInsert("UserLogin", id)
 	}
-	state.Records[id] = storage.Record{
+	state.PutRecord(id, storage.Record{
 		ID:     id,
 		Object: "UserLogin",
 		Fields: map[string]storage.Value{
 			"UserId":   storage.IDValue(record.ID),
 			"IsFrozen": storage.BooleanValue(false),
 		},
-	}
+	})
 	e.Org.Objects["UserLogin"] = state
 	e.RecordCreations.Record(id)
 }
@@ -186,19 +186,19 @@ func (e *Engine) ensureUserProfilePermissionSetAssignment(record storage.Record)
 		state = e.Org.Objects["PermissionSetAssignment"]
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordInsert("PermissionSetAssignment", id)
 	}
-	state.Records[id] = storage.Record{
+	state.PutRecord(id, storage.Record{
 		ID:     id,
 		Object: "PermissionSetAssignment",
 		Fields: map[string]storage.Value{
 			"AssigneeId":      storage.IDValue(record.ID),
 			"PermissionSetId": storage.IDValue(permissionSetID),
 		},
-	}
+	})
 	e.Org.Objects["PermissionSetAssignment"] = state
 	e.RecordCreations.Record(id)
 }

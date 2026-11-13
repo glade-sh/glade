@@ -832,7 +832,7 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 		}
 		if complete {
 			if existing.Records == nil {
-				existing.Records = make(map[storage.ID]storage.Record)
+				existing.SetRecords(make(map[storage.ID]storage.Record))
 				org.Objects[definition.APIName] = existing
 			}
 			return
@@ -840,7 +840,7 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 		org.ClearRuntimeSchemaStamp()
 		existing.Definition = existing.Definition.Clone()
 		if existing.Records == nil {
-			existing.Records = make(map[storage.ID]storage.Record)
+			existing.SetRecords(make(map[storage.ID]storage.Record))
 		}
 		if existing.Definition.Fields == nil {
 			existing.Definition.Fields = definition.Fields
@@ -893,14 +893,14 @@ func (vm *VM) recordApexClassRecord(className string) storage.ID {
 		return fallbackID
 	}
 	vm.recordIsolationJournalMutation("ApexClass", fallbackID, storage.Record{}, false)
-	object.Records[fallbackID] = storage.Record{
+	object.PutRecord(fallbackID, storage.Record{
 		ID:     fallbackID,
 		Object: "ApexClass",
 		Fields: map[string]storage.Value{
 			"Name":            storage.StringValue(localName),
 			"NamespacePrefix": apexClassNamespaceValue(namespace),
 		},
-	}
+	})
 	vm.Org.Objects["ApexClass"] = object
 	return fallbackID
 }

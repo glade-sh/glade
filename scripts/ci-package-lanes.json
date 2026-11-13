@@ -92,10 +92,11 @@
   },
   "concurrentTestCounts": {
     "./internal/lsp": 7,
-    "./internal/apextest": 535,
+    "./internal/apextest": 541,
     "./internal/dap": 9,
     "./internal/frontendcache": 1,
-    "./internal/gladecli": 100,
+    "./internal/filestamp": 1,
+    "./internal/gladecli": 102,
     "./internal/gladehome": 8,
     "./internal/lwcbrowser": 2,
     "./internal/playground": 4,
@@ -106,12 +107,12 @@
     "./internal/semanticcache": 6,
     "./internal/server": 13,
     "./internal/soql": 4,
-    "./internal/storage": 9,
+    "./internal/storage": 11,
     "./internal/testdaemon": 35,
     "./internal/testutil/toolchaininstall": 5,
-    "./internal/typesys": 1,
+    "./internal/typesys": 2,
     "./internal/visualforce": 7,
-    "./internal/vm": 65,
+    "./internal/vm": 68,
     "./internal/watch": 1
   }
 }

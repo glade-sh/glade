@@ -250,7 +250,12 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	// ungranted administrator these standard fields.
 	savedFLSRoute := vm.adminStandardFLSRoute
 	vm.adminStandardFLSRoute = savedFLSRoute || defaultMode
-	securityErr := vm.enforceSOQLSecurity(query, permissionSetID)
+	// The license denial precedes the API 67 secure-default object check, which
+	// would otherwise raise QueryException (external_user_query_denial, 67.0).
+	securityErr := vm.licenseExcludedObjectError(query.Object)
+	if securityErr == nil {
+		securityErr = vm.enforceSOQLSecurity(query, permissionSetID)
+	}
 	vm.adminStandardFLSRoute = savedFLSRoute
 	if securityErr != nil {
 		return nil, securityErr
@@ -479,7 +484,7 @@ func (vm *VM) orgWithTestBaselineVisibility(objectName string, baselineIDs map[s
 	for name, state := range vm.Org.Objects {
 		org.Objects[name] = state
 	}
-	object.Records = records
+	object.SetRecords(records)
 	object.Indexes = nil
 	object.RecordsShared, object.IndexesShared = false, false
 	org.Objects[objectName] = object
@@ -1221,7 +1226,7 @@ func (vm *VM) orgWithSyntheticRecentlyViewed() storage.OrgState {
 	org := cloneRuntimeOrgState(*vm.Org)
 	storage.EnsureStandardObject(&org, "RecentlyViewed")
 	object := org.Objects["RecentlyViewed"]
-	object.Records = make(map[storage.ID]storage.Record)
+	object.SetRecords(make(map[storage.ID]storage.Record))
 	userID := vm.currentUserInfoField("Id", storage.DefaultUserID)
 	views := vm.recentlyViewed[userID]
 	ids := make([]string, 0, len(views))
@@ -1240,7 +1245,7 @@ func (vm *VM) orgWithSyntheticRecentlyViewed() storage.OrgState {
 		if strings.TrimSpace(view.ReferencedAt) != "" {
 			lastReferencedDate = storage.DateTimeValue(view.ReferencedAt)
 		}
-		object.Records[id] = storage.Record{
+		object.PutRecord(id, storage.Record{
 			ID:     id,
 			Object: "RecentlyViewed",
 			Fields: map[string]storage.Value{
@@ -1249,7 +1254,7 @@ func (vm *VM) orgWithSyntheticRecentlyViewed() storage.OrgState {
 				"LastViewedDate":     lastViewedDate,
 				"LastReferencedDate": lastReferencedDate,
 			},
-		}
+		})
 	}
 	org.Objects["RecentlyViewed"] = object
 	return org
@@ -1268,9 +1273,9 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 	definitions := org.Objects["FlowDefinitionView"]
 	variables := org.Objects["FlowVariableView"]
 	versions := org.Objects["FlowVersionView"]
-	definitions.Records = make(map[storage.ID]storage.Record)
-	variables.Records = make(map[storage.ID]storage.Record)
-	versions.Records = make(map[storage.ID]storage.Record)
+	definitions.SetRecords(make(map[storage.ID]storage.Record))
+	variables.SetRecords(make(map[storage.ID]storage.Record))
+	versions.SetRecords(make(map[storage.ID]storage.Record))
 	rules := append([]storage.FlowRule(nil), vm.Org.Metadata.Flows...)
 	rules = append(rules, vm.Org.Metadata.FlowDeclarations...)
 	sort.Slice(rules, func(i, j int) bool { return strings.ToLower(rules[i].Name) < strings.ToLower(rules[j].Name) })
@@ -1294,7 +1299,7 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 		if (strings.EqualFold(rule.ProcessType, "AutoLaunchedFlow") || strings.EqualFold(rule.ProcessType, "Flow")) && rule.TriggerType == "" {
 			triggerType = storage.NullValue()
 		}
-		definitions.Records[definitionID] = storage.Record{
+		definitions.PutRecord(definitionID, storage.Record{
 			ID:     definitionID,
 			Object: "FlowDefinitionView",
 			Fields: map[string]storage.Value{
@@ -1307,11 +1312,11 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 				"ProcessType":     storage.StringValue(rule.ProcessType),
 				"TriggerType":     triggerType,
 			},
-		}
+		})
 		if !active {
 			record := definitions.Records[definitionID]
 			record.Fields["ActiveVersionId"] = storage.NullValue()
-			definitions.Records[definitionID] = record
+			definitions.PutRecord(definitionID, record)
 		}
 		status := rule.SourceStatus
 		if status == "" && active {
@@ -1328,13 +1333,13 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 			fields["ApiVersionRuntime"] = storage.DecimalValue(rule.APIVersion)
 			fields["ApiVersion"] = storage.DecimalValue(rule.APIVersion)
 		}
-		versions.Records[versionID] = storage.Record{ID: versionID, Object: "FlowVersionView", Fields: fields}
+		versions.PutRecord(versionID, storage.Record{ID: versionID, Object: "FlowVersionView", Fields: fields})
 		for variableIndex, variable := range rule.Variables {
 			if strings.TrimSpace(variable.Name) == "" {
 				continue
 			}
 			variableID := storage.ID(fmt.Sprintf("3FW%09d%03d", index+1, variableIndex+1))
-			variables.Records[variableID] = storage.Record{
+			variables.PutRecord(variableID, storage.Record{
 				ID:     variableID,
 				Object: "FlowVariableView",
 				Fields: map[string]storage.Value{
@@ -1347,7 +1352,7 @@ func (vm *VM) orgWithSyntheticFlowMetadata() storage.OrgState {
 					"IsOutput":          storage.BooleanValue(variable.IsOutput),
 					"ObjectType":        storage.StringValue(variable.ObjectType),
 				},
-			}
+			})
 		}
 	}
 	org.Objects["FlowDefinitionView"] = definitions
@@ -1844,7 +1849,7 @@ func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) 
 	org := cloneRuntimeOrgState(*vm.Org)
 	storage.EnsureStandardObject(&org, "UserRecordAccess")
 	accessObject := org.Objects["UserRecordAccess"]
-	accessObject.Records = make(map[storage.ID]storage.Record)
+	accessObject.SetRecords(make(map[storage.ID]storage.Record))
 	objectNames := make([]string, 0, len(vm.Org.Objects))
 	for objectName := range vm.Org.Objects {
 		if strings.EqualFold(objectName, "UserRecordAccess") {
@@ -1877,7 +1882,7 @@ func (vm *VM) orgWithSyntheticUserRecordAccess(userMode bool, queryText string) 
 			sequence++
 			access := vm.userRecordAccessDirect(objectName, record, userMode)
 			access.ID = accessID
-			accessObject.Records[accessID] = access
+			accessObject.PutRecord(accessID, access)
 		}
 	}
 	vm.appendOtherUserRecordAccess(&accessObject, objectNames, userMode, queryText, &sequence)
@@ -1890,8 +1895,9 @@ var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[
 // appendOtherUserRecordAccess adds the rows of a queried user other than the
 // actor, computed as that user (portal_sharing_timing_c4: an administrator
 // test reads a portal user's HasReadAccess for its own and the child
-// Accounts, APIs 62.0 and 67.0). Only portal users named by Id in the query
-// qualify.
+// Accounts, APIs 62.0 and 67.0). Only portal and Standard users named by Id in
+// the query qualify (external_user_case_lead_sharing: a named Standard User
+// returns its own rows, APIs 62.0 and 67.0).
 func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, objectNames []string, userMode bool, queryText string, sequence *int) {
 	if vm.testContext == nil || vm.Org == nil {
 		return
@@ -1900,13 +1906,17 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	seen := map[string]bool{}
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
-		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portalUserTypeRecord(user) {
+		portal := portalUserTypeRecord(user)
+		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) {
 			continue
 		}
 		seen[string(user.ID)] = true
 		previous := vm.testContext.CurrentUser
 		vm.testContext.CurrentUser = vm.vmValueFromRecord(user)
 		for _, objectName := range objectNames {
+			if !portal && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
+				continue
+			}
 			object := vm.Org.Objects[objectName]
 			ids := make([]string, 0, len(object.Records))
 			for id, record := range object.Records {
@@ -1922,7 +1932,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 				access := vm.userRecordAccessDirect(objectName, record, userMode)
 				access.ID = storage.ID(fmt.Sprintf("0UR%012d", *sequence))
 				*sequence++
-				accessObject.Records[access.ID] = access
+				accessObject.PutRecord(access.ID, access)
 			}
 		}
 		vm.testContext.CurrentUser = previous
@@ -1974,6 +1984,41 @@ func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, e
 	return rows, true, nil
 }
 
+// currentUserLicenseExcludesObject reports a Customer Community, Community Plus
+// or Community Login user querying Lead, and a Guest-type user querying Case or
+// Lead. external_user_case_lead_sharing and external_guest_case_lead_access
+// (APIs 62.0 and 67.0): the countQuery raises under runAs as each of these
+// users, at the floor as well as 67.0, where the unqualified-query defaults do
+// not apply, so the license excludes the object rather than a CRUD check
+// denying it. The exception is SecurityException "Access to entity 'Case' denied"
+// (external_user_query_denial/org.tsv).
+func (vm *VM) licenseExcludedObjectError(objectName string) error {
+	if vm != nil && vm.Org != nil {
+		if resolved, ok := vm.resolveObjectName(objectName); ok {
+			objectName = resolved
+		}
+	}
+	if vm.currentUserLicenseExcludesObject(objectName) {
+		return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
+	}
+	return nil
+}
+
+func (vm *VM) currentUserLicenseExcludesObject(objectName string) bool {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth == 0 {
+		return false
+	}
+	isLead, isCase := strings.EqualFold(objectName, "Lead"), strings.EqualFold(objectName, "Case")
+	if !isLead && !isCase {
+		return false
+	}
+	profileID := vm.currentUserInfoField("ProfileId", "")
+	if vm.currentProfileHasUserType(profileID, "Guest") {
+		return true
+	}
+	return isLead && vm.profileHasCommunityLicense(profileID)
+}
+
 func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
 	if vm == nil || vm.Org == nil {
 		return nil
@@ -1986,6 +2031,9 @@ func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
 	if !vm.allowsStandardObject(objectName) ||
 		strings.EqualFold(objectName, "DatedConversionRate") && !vm.Org.HasFeature("MultiCurrency") {
 		return newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
+	}
+	if err := vm.licenseExcludedObjectError(objectName); err != nil {
+		return err
 	}
 	for _, child := range query.ChildQueries {
 		childQuery := child.Query
@@ -2061,7 +2109,7 @@ func (vm *VM) testSetCreatedDate(args []Value) (Value, error) {
 		}
 		vm.recordIsolationJournalMutation(objectName, storedID, record, true)
 		record.System.CreatedDate = createdDate
-		object.Records[storedID] = record
+		object.PutRecord(storedID, record)
 		vm.Org.Objects[objectName] = object
 		return Null, nil
 	}
@@ -4400,8 +4448,17 @@ func (vm *VM) soqlObjectHasPublicReadSharing(objectName string) bool {
 	// (Account externalSharingModel Private hides the child Accounts).
 	if external := strings.TrimSpace(definition.ExternalSharingModel); external != "" && vm.currentUserIsCapturedPortalUser() {
 		model = external
+	} else if vm.currentUserHasUndeclaredPrivateExternalDefault(canonical) {
+		return false
 	}
 	if model == "" && standardObjectDefaultsToPublicRead(canonical) {
+		return true
+	}
+	// external_user_case_lead_sharing default rows (APIs 62.0 and 67.0): in a
+	// declared scratch shape that omits the Lead model, a Standard User reads and
+	// counts a Lead another user owns, the ReadWriteTransfer scratch default.
+	// An unknown shape keeps its earlier behavior.
+	if model == "" && vm.leadHasDeclaredShapeDefaultModel(canonical) {
 		return true
 	}
 	switch strings.ToLower(model) {
@@ -4425,6 +4482,61 @@ func portalUserTypeRecord(user storage.Record) bool {
 		}
 	}
 	return false
+}
+
+// namedUserIsCapturedStandard reports a stored user on the Standard User
+// profile whose UserType is Standard or unset. external_user_case_lead_sharing
+// default/org.tsv:8-9 captured exactly that user, so no other profile or user
+// type qualifies, whatever UserType its profile would resolve to.
+func (vm *VM) namedUserIsCapturedStandard(user storage.Record) bool {
+	for name, value := range user.Fields {
+		if strings.EqualFold(name, "UserType") {
+			if userType := strings.TrimSpace(value.String); userType != "" && !strings.EqualFold(userType, "Standard") {
+				return false
+			}
+		}
+	}
+	profileID := ""
+	for name, value := range user.Fields {
+		if strings.EqualFold(name, "ProfileId") {
+			profileID = storageValueIDText(value)
+		}
+	}
+	return profileID != "" && vm.currentProfileName(profileID) == "Standard User"
+}
+
+// namedUserIsCapturedGuest reports a stored user on a Guest-type profile,
+// captured for Case and Lead (external_guest_case_lead_access/org.tsv:2-3).
+func (vm *VM) namedUserIsCapturedGuest(user storage.Record) bool {
+	for name, value := range user.Fields {
+		if strings.EqualFold(name, "ProfileId") {
+			return vm.currentProfileHasUserType(storageValueIDText(value), "Guest")
+		}
+	}
+	return false
+}
+
+// capturedStandardNamedObject lists the objects the Standard User rows cover.
+func capturedStandardNamedObject(objectName string) bool {
+	return strings.EqualFold(objectName, "Case") || strings.EqualFold(objectName, "Lead")
+}
+
+// currentUserHasUndeclaredPrivateExternalDefault reports a captured portal user
+// reading Case when the project declares no external sharing model.
+// external_user_case_lead_sharing (APIs 62.0 and 67.0): the external default
+// was Private in the scratch default, with Public Read/Write and with Public
+// Read internal models, and the community users read neither Case. Lead is
+// not covered: the Community licenses refuse Lead read natively
+// (lead_grant rows), so no row isolates its sharing default. Other objects
+// keep the internal model for external users until a row covers them.
+func (vm *VM) currentUserHasUndeclaredPrivateExternalDefault(canonicalObject string) bool {
+	if vm == nil || vm.Org == nil || !vm.currentUserIsCapturedPortalUser() {
+		return false
+	}
+	if !strings.EqualFold(canonicalObject, "Case") || !storage.StandardObjectShapeDeclared(vm.Org.Objects[canonicalObject].Definition) {
+		return false
+	}
+	return strings.TrimSpace(vm.Org.Objects[canonicalObject].Definition.ExternalSharingModel) == ""
 }
 
 func (vm *VM) currentUserIsCapturedPortalUser() bool {

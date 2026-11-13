@@ -587,7 +587,7 @@ func virtualSchemaQueryOrg(org storage.OrgState, query Query, cache *ExecutionCa
 			continue
 		}
 		definition := shared.definitions[name]
-		definition.Records = map[storage.ID]storage.Record{}
+		definition.SetRecords(map[storage.ID]storage.Record{})
 		definition.Indexes = map[string]storage.IndexSet{}
 		out.Objects[name] = definition
 	}
@@ -760,7 +760,8 @@ func (c *ExecutionCache) sharedVirtualSchema(org storage.OrgState, runtimeStamp,
 	definitions := make(map[string]storage.ObjectState, len(virtualSchemaObjectNames))
 	for _, name := range virtualSchemaObjectNames {
 		object := view.Objects[name]
-		object.Records, object.Indexes = nil, nil
+		object.SetRecords(nil)
+		object.Indexes = nil
 		definitions[name] = object
 	}
 	shared = &sharedVirtualSchema{runtimeStamp: runtimeStamp, hydrationStamp: hydrationStamp, definitions: definitions, tables: map[string]storage.ObjectState{}}
@@ -858,22 +859,22 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 	userEntityAccess := org.Objects["UserEntityAccess"]
 	userFieldAccess := org.Objects["UserFieldAccess"]
 	if entityDefinitions.Records == nil {
-		entityDefinitions.Records = make(map[storage.ID]storage.Record)
+		entityDefinitions.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if entityParticles.Records == nil {
-		entityParticles.Records = make(map[storage.ID]storage.Record)
+		entityParticles.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if fieldDefinitions.Records == nil {
-		fieldDefinitions.Records = make(map[storage.ID]storage.Record)
+		fieldDefinitions.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if relationshipDomains.Records == nil {
-		relationshipDomains.Records = make(map[storage.ID]storage.Record)
+		relationshipDomains.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if userEntityAccess.Records == nil {
-		userEntityAccess.Records = make(map[storage.ID]storage.Record)
+		userEntityAccess.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if userFieldAccess.Records == nil {
-		userFieldAccess.Records = make(map[storage.ID]storage.Record)
+		userFieldAccess.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	wantEntity, wantParticle, wantField := want["EntityDefinition"], want["EntityParticle"], want["FieldDefinition"]
 	wantDomain, wantEntityAccess, wantFieldAccess := want["RelationshipDomain"], want["UserEntityAccess"], want["UserFieldAccess"]
@@ -881,7 +882,7 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 	// do not participate in ordinary field and access-record hydration.
 	selfID := storage.ID(entityDefinitions.Definition.APIName)
 	if _, exists := entityDefinitions.Records[selfID]; wantEntity && !exists {
-		entityDefinitions.Records[selfID] = virtualEntityDefinitionRecord(entityDefinitions.Definition)
+		entityDefinitions.PutRecord(selfID, virtualEntityDefinitionRecord(entityDefinitions.Definition))
 	}
 	for objectName, object := range org.Objects {
 		if isVirtualSchemaObjectName(objectName) {
@@ -892,10 +893,10 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 		}
 		entityID := storage.ID(object.Definition.APIName)
 		if _, exists := entityDefinitions.Records[entityID]; wantEntity && !exists {
-			entityDefinitions.Records[entityID] = virtualEntityDefinitionRecord(object.Definition)
+			entityDefinitions.PutRecord(entityID, virtualEntityDefinitionRecord(object.Definition))
 		}
 		if _, exists := userEntityAccess.Records[entityID]; wantEntityAccess && !exists {
-			userEntityAccess.Records[entityID] = virtualUserEntityAccessRecord(object.Definition.APIName)
+			userEntityAccess.PutRecord(entityID, virtualUserEntityAccessRecord(object.Definition.APIName))
 		}
 		if wantParticle || wantField || wantFieldAccess {
 			for fieldName, field := range object.Definition.Fields {
@@ -904,13 +905,13 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 				}
 				particleID := storage.ID(object.Definition.APIName + "." + field.APIName)
 				if _, exists := entityParticles.Records[particleID]; wantParticle && !exists {
-					entityParticles.Records[particleID] = virtualEntityParticleRecord(object.Definition, field)
+					entityParticles.PutRecord(particleID, virtualEntityParticleRecord(object.Definition, field))
 				}
 				if _, exists := fieldDefinitions.Records[particleID]; wantField && !exists {
-					fieldDefinitions.Records[particleID] = virtualFieldDefinitionRecord(object.Definition, field)
+					fieldDefinitions.PutRecord(particleID, virtualFieldDefinitionRecord(object.Definition, field))
 				}
 				if _, exists := userFieldAccess.Records[particleID]; wantFieldAccess && !exists {
-					userFieldAccess.Records[particleID] = virtualUserFieldAccessRecord(particleID, object.Definition.APIName)
+					userFieldAccess.PutRecord(particleID, virtualUserFieldAccessRecord(particleID, object.Definition.APIName))
 				}
 			}
 		}
@@ -925,7 +926,7 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 					}
 					domainID := storage.ID(parentName + "." + object.Definition.APIName + "." + relation.Field)
 					if _, exists := relationshipDomains.Records[domainID]; !exists {
-						relationshipDomains.Records[domainID] = virtualRelationshipDomainRecord(domainID, parentName, object.Definition.APIName, relation)
+						relationshipDomains.PutRecord(domainID, virtualRelationshipDomainRecord(domainID, parentName, object.Definition.APIName, relation))
 					}
 				}
 			}
@@ -4819,10 +4820,30 @@ func calculatedSummaryFieldValue(org storage.OrgState, definition storage.Object
 
 func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field, userIDs ...storage.ID) (storage.Value, bool) {
 	options := dml.FormulaEvaluationOptions{}
+	if field.Type == storage.FieldCalculated && strings.EqualFold(strings.TrimSpace(field.FormulaTreatBlanksAs), "BlankAsBlank") {
+		switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
+		case "DOUBLE", "DECIMAL", "CURRENCY":
+			options.PreserveNumericNull = true
+			options.QueryBlankNumber = true
+		}
+	}
 	if len(userIDs) != 0 {
 		options.SetupUserID = userIDs[0]
 	}
 	if value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(field.Formula, field, &org, definition, record, options); ok {
+		// Apply Number formula scale only on the SOQL field surface. Currency
+		// retains its own materialization path, and nulls remain null.
+		if field.Type == storage.FieldCalculated && value.Kind == storage.ValueDecimal &&
+			(strings.EqualFold(field.DisplayType, "DOUBLE") || strings.EqualFold(field.DisplayType, "DECIMAL")) &&
+			field.Scale >= 0 && field.Scale <= 18 && (field.ScaleSpecified || field.Scale > 0) {
+			if number, ok := new(big.Rat).SetString(value.Decimal); ok {
+				text := number.FloatString(field.Scale)
+				if text == "-0" {
+					text = "0"
+				}
+				value = storage.DecimalValue(text)
+			}
+		}
 		return value, true
 	}
 	return storage.Value{}, false

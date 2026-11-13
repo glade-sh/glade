@@ -2,7 +2,6 @@ package apextest
 
 import (
 	"crypto/sha256"
-	"io"
 	"os"
 	"sync"
 	"time"
@@ -66,7 +65,7 @@ func currentFileDigest(path string) ([sha256.Size]byte, error) {
 	hashedAt := fileDigestNow()
 	before, beforeOK := filestamp.Fstat(file)
 	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
+	if _, err := filestamp.CopyPooled(hash, file); err != nil {
 		return [sha256.Size]byte{}, err
 	}
 	var digest [sha256.Size]byte

@@ -82,15 +82,15 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 	for _, pendingRecord := range pending {
 		state := org.Objects[pendingRecord.objectName]
 		if state.Records == nil {
-			state.Records = make(map[ID]Record)
+			state.SetRecords(make(map[ID]Record))
 		}
-		state.Records[pendingRecord.id] = Record{
+		state.PutRecord(pendingRecord.id, Record{
 			MetadataSourceUnit: pendingRecord.source.SourceUnit,
 			ID:                 pendingRecord.id,
 			Object:             pendingRecord.objectName,
 			Fields:             cloneValues(pendingRecord.fields),
 			System:             SystemFields{SystemModstamp: deterministicSeedSystemTimestamp},
-		}
+		})
 		org.Objects[pendingRecord.objectName] = state
 	}
 	for _, pendingRecord := range pending {
@@ -110,7 +110,7 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 			}
 			record.Fields[field] = IDValue(id)
 		}
-		state.Records[pendingRecord.id] = record
+		state.PutRecord(pendingRecord.id, record)
 		org.Objects[pendingRecord.objectName] = state
 	}
 	for object, sequence := range generator.Sequences {
@@ -197,7 +197,7 @@ func customMetadataState(org *OrgState, source schema.CustomMetadataRecord) (str
 	}
 	EnsureStandardObjectFields(&state.Definition)
 	if state.Records == nil {
-		state.Records = make(map[ID]Record)
+		state.SetRecords(make(map[ID]Record))
 	}
 	org.Objects[objectName] = state
 	return objectName, state, nil

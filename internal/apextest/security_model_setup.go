@@ -46,7 +46,7 @@ func insertProjectSecurityRows(org *storage.OrgState, objectName string, rows []
 	storage.EnsureStandardObject(org, objectName)
 	state := org.Objects[objectName]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	generator.Prefixes[objectName] = state.Definition.KeyPrefix
 	occupied := make(map[string]bool, len(state.Records)+len(rows))
@@ -66,7 +66,7 @@ func insertProjectSecurityRows(org *storage.OrgState, objectName string, rows []
 				continue
 			}
 			occupied[key] = true
-			state.Records[id] = storage.Record{ID: id, Object: objectName, Fields: fields}
+			state.PutRecord(id, storage.Record{ID: id, Object: objectName, Fields: fields})
 			ids = append(ids, id)
 			break
 		}
@@ -303,7 +303,7 @@ func applyProjectPermissionSetGroupGrants(org *storage.OrgState) {
 							combined.Fields[field] = storage.BooleanValue(true)
 						}
 					}
-					state.Records[target] = combined
+					state.PutRecord(target, combined)
 				} else {
 					pending = append(pending, row.Fields)
 				}

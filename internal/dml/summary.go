@@ -60,7 +60,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			}
 			parentRecord.Fields[relation.parentField] = value
 			e.applyQuoteDerivedFields(&parentRecord)
-			parentObject.Records[storedParentID] = parentRecord
+			parentObject.PutRecord(storedParentID, parentRecord)
 			e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
 			updatedParents[parentObjectName] = append(updatedParents[parentObjectName], parentRecord)
 			changed = true
@@ -676,4 +676,41 @@ func summaryNumericValue(value storage.Value) (float64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+// ValidateSummaryUpdate evaluates parent validation rules after its before trigger.
+func (e *Engine) ValidateSummaryUpdate(update SummaryUpdate, record storage.Record) Result {
+	object, ok := e.Org.Objects[update.Object]
+	if !ok {
+		return Result{Success: true}
+	}
+	if err := e.validateValidationRules(update.Object, object.Definition, record, &update.Before, false); err != nil {
+		return resultFromError("", err)
+	}
+	return Result{Success: true}
+}
+
+// SummaryValidationRelation returns the parent and foreign key for a direct,
+// unfiltered COUNT whose parent has an active validation rule. Other summary
+// shapes need their own evidence for attributing parent errors to child rows.
+func (e *Engine) SummaryValidationRelation(childObject string) (parent, foreignKey string) {
+	relations := e.summaryRelationsForChild(childObject)
+	if len(relations) != 1 {
+		return "", ""
+	}
+	relation := relations[0]
+	if relation.field.Type != storage.FieldSummary || !strings.EqualFold(relation.field.SummaryOperation, "count") || len(relation.field.SummaryFilterItems) != 0 {
+		return "", ""
+	}
+	// A parent that is itself rolled up queues grandparent updates; those
+	// chains have no native evidence.
+	if len(e.summaryRelationsForChild(relation.parentObject)) != 0 {
+		return "", ""
+	}
+	for _, rule := range e.Org.Objects[relation.parentObject].Definition.ValidationRules {
+		if rule.Active {
+			return relation.parentObject, relation.fkFieldName
+		}
+	}
+	return "", ""
 }

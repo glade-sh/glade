@@ -2,9 +2,23 @@
 
 ## Unreleased
 
+### Changes
+
+- **Standard duplicate rules.** Standard duplicate rules are opt-in.
+- **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
+- Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
+- **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
+
 ### Performance
 
+- **Unset field reads keep the lazy schema lazy.** Reading a field that is not set, or any name that is not a child relationship, after a record is saved no longer builds every standard object. A generated list of the child relationship names the standard objects declare rules the name out first. On a test project that saves and reads records, peak memory fell from about 560 MiB to about 340 MiB and instructions fell about 45 percent. Results are identical.
+- **Static reference index no longer copied per test.** The index that tracks which static fields hold each collection or record is shared between tests of one project. The first static write in a test used to copy all of it; it now records only what that test changes and leaves the shared index alone. Results are identical. On a 500-class project, peak memory fell about 8 percent and instructions about 3.6 percent; on a 150-class project, about 4 percent and 1 percent.
+- **Method bodies are lexed once per process.** Semantic analysis and the runtime compile used to lex the same method body twice. A bounded cache (24 MiB of tokens, least recently used first) now shares the lexed tokens, and the lexer builds each token list in one exact-size allocation. On a 500-class test project, allocation in the lexer fell from about 207 MB to about 61 MB and total allocation fell about 6 percent. Compile results and diagnostics are identical.
+- **Pooled hashing buffer for source digests.** Hashing a project file for the Visualforce generation key and for source-digest validation no longer allocates a 32 KiB copy buffer per file; the buffers come from a shared pool. A 500-class project allocates about 120 MB less in one cold `glade test`. Digests and results are unchanged.
+- **Seeding no longer copies whole object definitions.** The record type, currency field and platform object setup steps used to copy an object's entire definition before checking whether they change anything. They now copy only what they write, and leave a definition alone when it is already complete. Results are identical.
+- **Smaller platform type table.** The standard platform types (System, Database, Schema and the rest) are now built with exact-size member lists, and members that share a modifier list or a parameter list share one copy. Building the table allocates about 35 MB instead of 65 MB and keeps about 22 MB live instead of 31 MB, in every process. Symbols and their order are unchanged.
 - **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
+- **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, and peak memory can rise up to about 10% on small runs. Results are unchanged.
 
 ## v0.3.8
 

@@ -1013,7 +1013,7 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project, permis
 		return
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
@@ -1096,7 +1096,7 @@ func applyProjectProfileLicenseObjectPermissions(org *storage.OrgState, parentID
 	storage.EnsureStandardObject(org, "ObjectPermissions")
 	state := org.Objects["ObjectPermissions"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	for _, row := range rows {
 		key := objectPermissionRecordKey(parentID, row.object)
@@ -1107,12 +1107,12 @@ func applyProjectProfileLicenseObjectPermissions(org *storage.OrgState, parentID
 		if err != nil {
 			continue
 		}
-		state.Records[id] = storage.Record{ID: id, Object: "ObjectPermissions", Fields: map[string]storage.Value{
+		state.PutRecord(id, storage.Record{ID: id, Object: "ObjectPermissions", Fields: map[string]storage.Value{
 			"ParentId": storage.IDValue(storage.ID(parentID)), "SobjectType": storage.StringValue(row.object),
 			"PermissionsRead": storage.BooleanValue(row.read), "PermissionsCreate": storage.BooleanValue(row.create),
 			"PermissionsEdit": storage.BooleanValue(row.edit), "PermissionsDelete": storage.BooleanValue(row.drop),
 			"PermissionsViewAllRecords": storage.BooleanValue(false), "PermissionsModifyAllRecords": storage.BooleanValue(false),
-		}}
+		}})
 		objectPermissionKeys[key] = true
 	}
 	org.Objects["ObjectPermissions"] = state
@@ -1152,7 +1152,7 @@ func applyProjectProfileUserPermissions(org *storage.OrgState, profileID storage
 				record.Fields = make(map[string]storage.Value)
 			}
 			setUserPermissionFields(org.Objects["PermissionSet"].Definition, record.Fields, permissions)
-			state.Records[id] = record
+			state.PutRecord(id, record)
 		}
 	}
 	setOnRecord("Profile", func(record storage.Record) bool { return storage.IDsEqual(record.ID, profileID) })
@@ -1196,11 +1196,11 @@ func applyProjectProfileLicense(org *storage.OrgState, profileID storage.ID, lic
 			return
 		}
 		if licenses.Records == nil {
-			licenses.Records = make(map[storage.ID]storage.Record)
+			licenses.SetRecords(make(map[storage.ID]storage.Record))
 		}
-		licenses.Records[licenseID] = storage.Record{ID: licenseID, Object: "UserLicense", Fields: map[string]storage.Value{
+		licenses.PutRecord(licenseID, storage.Record{ID: licenseID, Object: "UserLicense", Fields: map[string]storage.Value{
 			"Name": storage.StringValue(licenseName), "LicenseDefinitionKey": storage.StringValue(key),
-		}}
+		}})
 		org.Objects["UserLicense"] = licenses
 	}
 	profiles := org.Objects["Profile"]
@@ -1209,7 +1209,7 @@ func applyProjectProfileLicense(org *storage.OrgState, profileID storage.ID, lic
 	if userType != "" {
 		profile.Fields["UserType"] = storage.StringValue(userType)
 	}
-	profiles.Records[profileID] = profile
+	profiles.PutRecord(profileID, profile)
 	org.Objects["Profile"] = profiles
 }
 
@@ -1222,11 +1222,11 @@ func addProjectProfileRecord(org *storage.OrgState, state *storage.ObjectState, 
 	if licenseID, ok := projectProfileLicenseID(org, name); ok {
 		fields["UserLicenseId"] = storage.IDValue(licenseID)
 	}
-	state.Records[id] = storage.Record{
+	state.PutRecord(id, storage.Record{
 		ID:     id,
 		Object: "Profile",
 		Fields: fields,
-	}
+	})
 }
 
 func projectProfileLicenseID(org *storage.OrgState, name string) (storage.ID, bool) {
@@ -1269,7 +1269,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 	storage.EnsureStandardObject(org, "PermissionSet")
 	state := org.Objects["PermissionSet"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
@@ -1297,7 +1297,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 			if hasMetadata && strings.TrimSpace(metadata.Label) != "" {
 				label = strings.TrimSpace(metadata.Label)
 			}
-			state.Records[id] = storage.Record{
+			state.PutRecord(id, storage.Record{
 				ID:     id,
 				Object: "PermissionSet",
 				Fields: map[string]storage.Value{
@@ -1306,7 +1306,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 					"Type":             storage.StringValue("Regular"),
 					"IsOwnedByProfile": storage.BooleanValue(false),
 				},
-			}
+			})
 		}
 		// Metadata-deployed permission sets materialize omitted permission
 		// checkboxes as false (deployed_permissions_defaults, APIs 62 and 67).
@@ -1321,7 +1321,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 				}
 			}
 		}
-		state.Records[id] = record
+		state.PutRecord(id, record)
 		metadata, metadataOK := readPermissionSetMetadata(file, permissionSetMetadataCache)
 		if metadataOK {
 			if p.Namespace == "" {
@@ -1334,7 +1334,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 					record.Fields = make(map[string]storage.Value)
 				}
 				record.Fields["CustomPermissions"] = storage.ListValue(customPermissions...)
-				state.Records[id] = record
+				state.PutRecord(id, record)
 				applyProjectCustomPermissionGrants(org, id, customPermissions, &generator)
 			}
 		}
@@ -1344,7 +1344,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 				record.Fields = make(map[string]storage.Value)
 			}
 			setUserPermissionFields(state.Definition, record.Fields, metadata.UserPermissions)
-			state.Records[id] = record
+			state.PutRecord(id, record)
 		}
 		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
 		if assignGuestFixtures {
@@ -1398,7 +1398,7 @@ func seedDependencyPermissionSets(org *storage.OrgState, dep project.Project, na
 	storage.EnsureStandardObject(org, "PermissionSet")
 	state := org.Objects["PermissionSet"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
@@ -1446,7 +1446,7 @@ func seedDependencyPermissionSets(org *storage.OrgState, dep project.Project, na
 				pendingGrants = append(pendingGrants, pendingGrant{id, grants})
 			}
 		}
-		state.Records[id] = storage.Record{ID: id, Object: "PermissionSet", Fields: fields}
+		state.PutRecord(id, storage.Record{ID: id, Object: "PermissionSet", Fields: fields})
 	}
 	org.Objects["PermissionSet"] = state
 	for _, grant := range pendingGrants {
@@ -1466,7 +1466,7 @@ func applyProjectGuestPermissionSetAssignment(org *storage.OrgState, permissionS
 	storage.EnsureStandardObject(org, "PermissionSetAssignment")
 	state := org.Objects["PermissionSetAssignment"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	for _, record := range state.Records {
 		assignee, hasAssignee := record.GetField("AssigneeId")
@@ -1481,14 +1481,14 @@ func applyProjectGuestPermissionSetAssignment(org *storage.OrgState, permissionS
 	if err != nil {
 		return
 	}
-	state.Records[id] = storage.Record{
+	state.PutRecord(id, storage.Record{
 		ID:     id,
 		Object: "PermissionSetAssignment",
 		Fields: map[string]storage.Value{
 			"AssigneeId":      storage.IDValue(guestUserID),
 			"PermissionSetId": storage.IDValue(permissionSetID),
 		},
-	}
+	})
 	org.Objects["PermissionSetAssignment"] = state
 }
 
@@ -1526,11 +1526,11 @@ func ensureProjectGuestUser(org *storage.OrgState) (storage.ID, bool) {
 	storage.EnsureStandardObject(org, "User")
 	state := org.Objects["User"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	id := storage.ID("005000000000G01")
 	if _, exists := state.Records[id]; !exists {
-		state.Records[id] = storage.Record{
+		state.PutRecord(id, storage.Record{
 			ID:     id,
 			Object: "User",
 			Fields: map[string]storage.Value{
@@ -1544,7 +1544,7 @@ func ensureProjectGuestUser(org *storage.OrgState) (storage.ID, bool) {
 				"TimeZoneSidKey":    storage.StringValue("UTC"),
 				"EmailEncodingKey":  storage.StringValue("UTF-8"),
 			},
-		}
+		})
 	}
 	org.Objects["User"] = state
 	return id, true
@@ -1562,11 +1562,11 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 	storage.EnsureStandardObject(org, "FieldPermissions")
 	objectState := org.Objects["ObjectPermissions"]
 	if objectState.Records == nil {
-		objectState.Records = make(map[storage.ID]storage.Record)
+		objectState.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	fieldState := org.Objects["FieldPermissions"]
 	if fieldState.Records == nil {
-		fieldState.Records = make(map[storage.ID]storage.Record)
+		fieldState.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	for _, permission := range metadata.ObjectPermission {
 		objectName := strings.TrimSpace(permission.Object)
@@ -1579,7 +1579,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 		if err != nil {
 			continue
 		}
-		objectState.Records[id] = storage.Record{
+		objectState.PutRecord(id, storage.Record{
 			ID:     id,
 			Object: "ObjectPermissions",
 			Fields: map[string]storage.Value{
@@ -1592,7 +1592,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 				"PermissionsViewAllRecords":   storage.BooleanValue(permission.ViewAllRecords),
 				"PermissionsModifyAllRecords": storage.BooleanValue(permission.ModifyAllRecords),
 			},
-		}
+		})
 		objectPermissionKeys[key] = true
 	}
 	for _, permission := range metadata.FieldPermissions {
@@ -1610,7 +1610,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 		if err != nil {
 			continue
 		}
-		fieldState.Records[id] = storage.Record{
+		fieldState.PutRecord(id, storage.Record{
 			ID:     id,
 			Object: "FieldPermissions",
 			Fields: map[string]storage.Value{
@@ -1620,7 +1620,7 @@ func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, p
 				"PermissionsRead": storage.BooleanValue(permission.Readable),
 				"PermissionsEdit": storage.BooleanValue(permission.Editable),
 			},
-		}
+		})
 		fieldPermissionKeys[key] = true
 	}
 	for _, visibility := range metadata.RecordTypeVisibilities {
@@ -1674,10 +1674,10 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 	state := org.Objects["PermissionSetGroup"]
 	permissionSets := org.Objects["PermissionSet"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if permissionSets.Records == nil {
-		permissionSets.Records = make(map[storage.ID]storage.Record)
+		permissionSets.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
@@ -1707,7 +1707,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 			if err != nil {
 				continue
 			}
-			state.Records[id] = storage.Record{
+			state.PutRecord(id, storage.Record{
 				ID:     id,
 				Object: "PermissionSetGroup",
 				Fields: map[string]storage.Value{
@@ -1715,7 +1715,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 					"MasterLabel":   storage.StringValue(label),
 					"Status":        storage.StringValue("Updated"),
 				},
-			}
+			})
 		}
 		if recordFieldExists(permissionSets, "PermissionSetGroupId", string(id)) {
 			continue
@@ -1724,7 +1724,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 		if err != nil {
 			continue
 		}
-		permissionSets.Records[permissionSetID] = storage.Record{
+		permissionSets.PutRecord(permissionSetID, storage.Record{
 			ID:     permissionSetID,
 			Object: "PermissionSet",
 			Fields: map[string]storage.Value{
@@ -1735,7 +1735,7 @@ func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Proj
 				"IsCustom":             storage.BooleanValue(true),
 				"IsOwnedByProfile":     storage.BooleanValue(false),
 			},
-		}
+		})
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["PermissionSetGroup"] = state

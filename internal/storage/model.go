@@ -481,6 +481,10 @@ type ObjectState struct {
 	Indexes       map[string]IndexSet `json:"indexes,omitempty"`
 	RecordsShared bool                `json:"-"`
 	IndexesShared bool                `json:"-"`
+
+	// recordsClock versions the Records map. Write it through the record
+	// write methods, never through the map directly.
+	recordsClock *recordsClockTag
 }
 
 // OwnerSharingRule is a supported declared owner-based Read rule between public groups.
@@ -2345,9 +2349,9 @@ func (o ObjectState) Clone() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {
@@ -2799,9 +2803,9 @@ func (o ObjectState) CloneRuntime() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {

@@ -185,7 +185,7 @@ func seedProjectMutingPermissionSet(org *storage.OrgState, p project.Project, na
 	storage.EnsureStandardObject(org, "MutingPermissionSet")
 	state := org.Objects["MutingPermissionSet"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if id, ok := recordFieldID(state, "DeveloperName", name); ok {
 		return id, true
@@ -204,10 +204,10 @@ func seedProjectMutingPermissionSet(org *storage.OrgState, p project.Project, na
 	if metadata, ok := readPermissionSetMetadata(file, cache); ok && strings.TrimSpace(metadata.Label) != "" {
 		label = strings.TrimSpace(metadata.Label)
 	}
-	state.Records[id] = storage.Record{ID: id, Object: "MutingPermissionSet", Fields: map[string]storage.Value{
+	state.PutRecord(id, storage.Record{ID: id, Object: "MutingPermissionSet", Fields: map[string]storage.Value{
 		"DeveloperName": storage.StringValue(name),
 		"MasterLabel":   storage.StringValue(label),
-	}}
+	}})
 	org.Objects["MutingPermissionSet"] = state
 	applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator, objectPermissionRecordKeys(org.Objects["ObjectPermissions"]), fieldPermissionRecordKeys(org.Objects["FieldPermissions"]), cache)
 	org.IDSequences = generator.Sequences

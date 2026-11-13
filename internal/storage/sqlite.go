@@ -182,9 +182,9 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 			return OrgState{}, fmt.Errorf("storage: orphan record row for undefined object %s/%s", objectName, id)
 		}
 		if object.Records == nil {
-			object.Records = make(map[ID]Record)
+			object.SetRecords(make(map[ID]Record))
 		}
-		object.Records[id] = record
+		object.PutRecord(id, record)
 		org.Objects[objectName] = object
 	}
 	if err := recordRows.Err(); err != nil {
