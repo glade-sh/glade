@@ -42,6 +42,7 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 			"System.\nassert(true);",
 			"System.\nnow();",
 			"System.\ndebug(1);",
+			"System./* note */\ndebug('x');",
 			"String y = 'x'; System.\ndebug(y);",
 			"System.\ndebug('x' + 'y');",
 			"System.\ndebug(LoggingLevel.INFO, 'x');",
