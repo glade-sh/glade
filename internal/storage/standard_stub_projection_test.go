@@ -144,3 +144,35 @@ func TestStandardStubMetadataProjectionMatchesFull(t *testing.T) {
 		}
 	}
 }
+
+func TestStandardStubEnrichmentProjectionMatchesFull(t *testing.T) {
+	for _, entry := range standardDescribeCatalogV2Index {
+		full, err := decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
+		if err != nil {
+			t.Fatal(err)
+		}
+		projected, err := decodeStandardDescribeCatalogV2Fields(standardDescribeCatalogV2Pack, entry)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(projected.Fields, full.Fields) || !reflect.DeepEqual(projected.Mergeable, full.Mergeable) {
+			t.Fatalf("%s: enrichment fields differ", entry.Name)
+		}
+	}
+}
+
+func TestStandardStubEnrichmentAvoidsFullDecode(t *testing.T) {
+	names := standardStubDescribeObjectNames(t)
+	standardDescribeCatalogV2RawProductionCache.release()
+	before := standardDescribeFullDecodes.Load()
+	for _, name := range names {
+		fields, _ := standardSObjectStubFieldsFor(name)
+		definition := ObjectDefinition{APIName: name, Fields: fields}
+		enrichStandardFieldsFromV2Describe(&definition)
+		enrichRequiredStandardStubFieldsFromV2Describe(&definition)
+	}
+	if got := standardDescribeFullDecodes.Load() - before; got != 0 {
+		t.Fatalf("%d stub enrichments caused %d full decodes", len(names), got)
+	}
+	t.Logf("%d stub enrichments avoided full decode", len(names))
+}
