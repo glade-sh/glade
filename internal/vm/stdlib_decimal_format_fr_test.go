@@ -48,7 +48,7 @@ System.assertEquals('1,234,567.89', Decimal.valueOf('1234567.89').format());
 	}
 }
 
-// NATIVE testdata/decimal_format_fr/numeric.tsv rows 2–49 capture the
+// NATIVE testdata/decimal_format_fr/numeric.tsv rows 2–73 capture the
 // named runAs numeric controls, including the half-even fractional cases.
 func TestFrenchNumericFormatNative(t *testing.T) {
 	data, err := os.ReadFile("testdata/decimal_format_fr/numeric.tsv")
@@ -56,7 +56,7 @@ func TestFrenchNumericFormatNative(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 49 || lines[0] != "api\troute\tlocale\ttype\tinput\toutput" {
+	if len(lines) != 73 || lines[0] != "api\troute\tlocale\ttype\tinput\toutput" {
 		t.Fatal("invalid native table")
 	}
 	for _, line := range lines[1:] {
