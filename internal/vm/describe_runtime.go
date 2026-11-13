@@ -31,6 +31,8 @@ type describeCacheKey struct {
 	API68CapturedShape          bool
 	API68NamedRoute             bool
 	AnonymousFieldPolicy        bool
+	PlainDeveloperNamed         bool
+	PlainDeveloperProjection    bool
 }
 
 // childRelationshipCache memoizes parent-object -> child relationship describe
@@ -411,8 +413,12 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 	namedOnly := storage.StandardFeatureHasNamedOnlyFields(name)
 	namedSource := vm.featureNamedSource(name)
 	anonymousPolicy := vm.anonymousFieldPolicyScope() && (vm.ordinaryCustomPermissionObject(name) || hasAdminFLSStandardFields(name))
+	plainDeveloperAccount := strings.EqualFold(name, "Account") && vm.plainDeveloperDescribe(name)
 	for _, fieldName := range fieldNames {
 		field := definition.Fields[fieldName]
+		if plainDeveloperAccount && strings.EqualFold(fieldName, "IsCustomerPortal") && !storage.StandardFieldPolicyPreservesConfiguredField(definition, fieldName) {
+			continue
+		}
 		apiName := field.APIName
 		if strings.TrimSpace(apiName) == "" {
 			apiName = fieldName
@@ -483,6 +489,12 @@ func (vm *VM) describeSObjectFieldMap(name string, definition storage.ObjectDefi
 		}
 		token := vm.sObjectFieldToken(name, fieldName)
 		vm.addSObjectFieldMapEntry(&fieldsMap, name, fieldName, token)
+	}
+	if plainDeveloperAccount && vm.plainDeveloperNamedDescribe(name) {
+		if _, exists := storage.ResolveFieldName(definition, "", "Tier"); !exists {
+			field := plainDeveloperTierField()
+			vm.addSObjectFieldMapFieldEntry(&fieldsMap, name, definition, field, vm.sObjectFieldTokenFromField(name, field))
+		}
 	}
 	return fieldsMap
 }
@@ -2029,6 +2041,9 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	fieldName, ok = storage.ResolveFieldName(definition, namespace, fieldName)
 	if !ok {
 		fieldName = requestedFieldName
+		if strings.EqualFold(objectName, "Account") && strings.EqualFold(fieldName, "Tier") && vm.plainDeveloperNamedDescribe(objectName) {
+			return vm.describeSyntheticFieldValue(objectName, "Tier", plainDeveloperTierField())
+		}
 		if systemField, systemOK := syntheticSObjectSystemField(fieldName); systemOK {
 			fieldName = systemField.APIName
 			field := fieldKeyIdDescribeFacets(definition, systemField)
@@ -2226,6 +2241,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	customMetadataFieldDescribeFlags(&desc, definition, field, namedMetadata)
 	field.PicklistValues = vm.userLocaleDescribeValues(objectName, field)
 	values := field.PicklistValues
+	if vm.plainDeveloperDescribe(objectName) && desc.Fields["accessible"].Bool {
+		if captured, ok := plainDeveloperPicklist(objectName, field); ok {
+			values = captured
+		}
+	}
 	if profile, major, named, known := vm.standardAPI68Context(); known && major == 68 && named && storage.StandardAPI68DescribeAccessRule(profile, objectName, field.APIName) == "explicit_read" && !vm.standardAPI68ExplicitFieldRead(objectName, field.APIName) {
 		// The added picklist was observed only after an explicit field grant.
 		values = nil
@@ -2366,6 +2386,10 @@ func (vm *VM) describeSObjectCacheKey(objectName string) describeCacheKey {
 	key.OmitPermissionViewAllFields = vm.omitPermissionViewAllFields(objectName)
 	key.FeatureAPIVersion = vm.featureDescribeVersion(objectName)
 	key.FeatureNamedSource = vm.featureNamedSource(objectName)
+	key.PlainDeveloperProjection = vm.plainDeveloperDescribe(objectName)
+	if key.PlainDeveloperProjection && strings.EqualFold(objectName, "Account") {
+		key.PlainDeveloperNamed = vm.plainDeveloperNamedDescribe(objectName)
+	}
 	_, major, named, known := vm.standardAPI68Context()
 	key.API68CapturedShape = known && major == 68
 	key.API68NamedRoute = key.API68CapturedShape && named
@@ -2441,6 +2465,10 @@ func (vm *VM) permissionViewAllFieldsHidden(objectName, field string) bool {
 
 func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) describeCacheKey {
 	key := vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)), strings.ToLower(strings.TrimSpace(fieldName)))
+	key.PlainDeveloperProjection = vm.plainDeveloperDescribe(objectName)
+	if key.PlainDeveloperProjection && strings.EqualFold(objectName, "Account") && strings.EqualFold(fieldName, "Tier") {
+		key.PlainDeveloperNamed = vm.plainDeveloperNamedDescribe(objectName)
+	}
 	_, major, named, known := vm.standardAPI68Context()
 	key.API68CapturedShape = known && major == 68
 	key.API68NamedRoute = key.API68CapturedShape && named

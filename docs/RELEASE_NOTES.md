@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Standard describes.** Plain Developer orgs expose the captured Account field map and standard picklist values for the observed API 62 and 67 contexts.
 
 ## v0.3.8
 

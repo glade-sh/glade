@@ -556,6 +556,11 @@ func snapshotConfiguredStandardPolicyFields(definition *ObjectDefinition) {
 	definition.Metadata[standardConfiguredPolicyFields] = strings.Join(fields, ",")
 }
 
+// StandardFieldPolicyPreservesConfiguredField reports captured project field provenance.
+func StandardFieldPolicyPreservesConfiguredField(definition ObjectDefinition, field string) bool {
+	return standardFieldPolicyPreservesConfiguredField(definition, field)
+}
+
 func standardFieldPolicyPreservesConfiguredField(definition ObjectDefinition, field string) bool {
 	for remaining := definition.Metadata[standardConfiguredPolicyFields]; remaining != ""; {
 		name, rest, _ := strings.Cut(remaining, ",")
