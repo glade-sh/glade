@@ -150,9 +150,9 @@ func TestSOSLResultWindowsWideNative(t *testing.T) {
 				machine.ResetLimits()
 				groups, err := machine.searchQuery([]Value{String(query)})
 				got := searchWideObservation(t, groups, err, population != "small")
-				// The query-count suffix depends on admission order, which
-				// this fixture does not exercise.
-				want, _, _ = strings.Cut(want, "@sosl")
+				if strings.Contains(want, "@sosl") {
+					got += fmt.Sprintf("@sosl+%d", machine.limits.SOSLQueries)
+				}
 				if got != want {
 					t.Errorf("org.tsv:%d %s: got %s, want %s", i+2, id, got, want)
 				}

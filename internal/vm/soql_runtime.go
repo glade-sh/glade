@@ -2210,14 +2210,20 @@ func (vm *VM) soslParseError(err error) error {
 	return newExceptionError("QueryException", err.Error())
 }
 
-func validateSOSLRuntimeFeatures(query sosl.Query) error {
+// A positive OFFSET in a multi-object search is rejected after the search is
+// counted (sosl_result_windows_wide/org.tsv OFF rows), unlike a parse error.
+func soslMultiObjectOffsetError(query sosl.Query) error {
 	if len(query.Returning) > 1 {
 		for _, spec := range query.Returning {
 			if spec.Offset.HasValue && spec.Offset.Value > 0 {
-				return &sosl.ContractError{Type: "SearchException", Message: "SOSL only supports OFFSET clause for single entity search"}
+				return newExceptionError("SearchException", "SOSL only supports OFFSET clause for single entity search")
 			}
 		}
 	}
+	return nil
+}
+
+func validateSOSLRuntimeFeatures(query sosl.Query) error {
 	if query.UpdateViewStat || query.UpdateTracking {
 		option := "VIEWSTAT"
 		if !query.UpdateViewStat {
@@ -2342,6 +2348,9 @@ func (vm *VM) prepareSOSLSearch(raw string, inline bool, accessLevel Value) (str
 		accessLevel = vm.defaultAccessLevel()
 	}
 	if err := vm.incrementLimit("soslQueries", 1); err != nil {
+		return "", query, Null, err
+	}
+	if err := soslMultiObjectOffsetError(query); err != nil {
 		return "", query, Null, err
 	}
 	if vm.testContext == nil && (len([]rune(query.SearchText)) < 2 || query.Expression != nil && query.Expression.Operator == "INVALID_SEARCH_TERM") {
