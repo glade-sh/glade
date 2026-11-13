@@ -1,6 +1,6 @@
 # Duplicate rule evaluation captures
 
-Captured 2026-11-13 at API 62.0 and 67.0. Each area contains the captured `org.tsv` and `RUN-FACTS.txt`. The replay uses synthetic masked inputs and no private capture material. Helper renames distinguish successive input panels. Metadata inputs reconstruct the activation state described in RUN-FACTS; the custom exact overflow rule is activated for its own stage.
+Captured 2026-11-13 at API 62.0 and 67.0. Evidence lives under `internal/apextest/testdata/conformance/duplicate_rule_evaluation/`. Each area contains the captured `org.tsv` and `RUN-FACTS.txt`. The replay uses synthetic masked inputs and no private capture material. Helper renames distinguish successive input panels. Metadata inputs reconstruct the activation state described in RUN-FACTS; the custom exact overflow rule is activated for its own stage.
 
 Anonymous replay and the project test runner execute the same expressions. Sharing also replays anonymous standard-user access. Setup users are created in a separate setup transaction; committed criteria grants are replayed as ContactShare Rule records. No criteria grant is created for a test transaction.
 
