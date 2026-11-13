@@ -104,6 +104,8 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 					helpers = append(helpers, "LimitBehavior")
 				case "bound":
 					helpers = append(helpers, "BoundBehavior", "NonRuleBehavior")
+				case "calibration":
+					helpers = append(helpers, "CalibrationBehavior")
 				case "names":
 					helpers = append(helpers, "NamePanelBehavior")
 				case "business":
@@ -144,23 +146,9 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 						t.Fatal("missing native row")
 					}
 					suffix := fmt.Sprintf("OBS|%s|%t|%d|%s|ENDOBS", method, route == "istest", len(want), want)
-					if strings.HasSuffix(message, suffix) {
-						return
+					if !strings.HasSuffix(message, suffix) {
+						t.Errorf("native=%s\nGlade=%s", want, message)
 					}
-					// Three surname confidence readings differ by one point in both
-					// directions of the Apex observation (Find and save error).
-					// Accept only the measured alternative for each exact cell.
-					if group == "names" && method == "transpositions" {
-						control := strings.NewReplacer(
-							"6:6=97/6=97,", "6:6=96/6=96,",
-							"7:7=97/7=97,", "7:7=96/7=96,",
-							"23:23=97/23=97,", "23:23=98/23=98,",
-						).Replace(suffix)
-						if strings.HasSuffix(message, control) {
-							return
-						}
-					}
-					t.Errorf("native=%s\nGlade=%s", want, message)
 				}
 				for _, method := range slices.Sorted(maps.Keys(expressions)) {
 					source := expressions[method]
