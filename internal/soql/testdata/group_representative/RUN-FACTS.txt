@@ -8,4 +8,6 @@ sf: @salesforce/cli/2.157.8
 hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
 cases.tsv sha256: 01e953ff5e960b91
 mode: live
-The default user locale was en_US. Each case inserts synthetic Account names, runs GROUP BY Name with and without COUNT(Id), and reports values. For the two pairs it records names in ascending Id order, swaps names across those records, and queries again. API-specific probe and test classes have matching metadata versions. Assertion failures intentionally carry the complete observation; they are not passing Salesforce tests. The four observation payloads agree. The first org was deleted after a test-class deployment error and supplied no rows.
+The first capture did not record the user locale. Each case inserts synthetic Account names, runs GROUP BY Name with and without COUNT(Id), and reports values. For the two pairs it records names in ascending Id order, swaps names across those records, and queries again. API-specific probe and test classes have matching metadata versions. Assertion failures intentionally carry the complete observation; they are not passing Salesforce tests. The four observation payloads agree. The first org was deleted after a test-class deployment error and supplied no rows.
+
+A repeat in a second fresh 30-day scratch org recorded UserInfo.getLocale() as en_US on both routes at both APIs. It ran from 2026-11-13T14:10:51Z; see repeat/ for the modified probe classes. All group outputs matched the first capture. The org was deleted and verified gone.

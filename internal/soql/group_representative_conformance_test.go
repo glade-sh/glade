@@ -74,7 +74,7 @@ func TestGroupRepresentativeNative(t *testing.T) {
 	if err := scan.Err(); err != nil {
 		t.Fatal(err)
 	}
-	if rows != 4 {
-		t.Fatalf("got %d native rows, want 4", rows)
+	if rows != 8 {
+		t.Fatalf("got %d native rows, want 8", rows)
 	}
 }
