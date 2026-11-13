@@ -68,3 +68,18 @@ func TestLoadWithInputsObservesSourceDirectoryMembership(t *testing.T) {
 		t.Fatal("source directory membership was not observed")
 	}
 }
+
+func TestSetupMetadataRootsObservesAbsentStages(t *testing.T) {
+	root := t.TempDir()
+	v := inputview.New()
+	p := Project{Root: root, inputs: v}
+	if roots := p.SetupMetadataRoots(); len(roots) != 0 {
+		t.Fatalf("unexpected roots: %v", roots)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "unpackaged", "pre"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := v.Recheck(); err == nil {
+		t.Fatal("new setup stage was not observed")
+	}
+}
