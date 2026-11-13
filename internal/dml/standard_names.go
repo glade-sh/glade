@@ -5,6 +5,10 @@ import "strings"
 // A standard Contact can match J or J. with a one-word first name beginning
 // with J. Two-letter prefixes and unrelated initials do not establish a match.
 func standardFirstInitial(a, b string) bool {
+	// This fallback accepts only ASCII, so the byte limit also bounds runes.
+	if len(a) > maxFuzzyInputRunes || len(b) > maxFuzzyInputRunes || len(a) > 2 && len(b) > 2 {
+		return false
+	}
 	a, b = strings.ToLower(a), strings.ToLower(b)
 	if len(a) > len(b) || len(a) == len(b) && strings.HasSuffix(b, ".") {
 		a, b = b, a
@@ -22,19 +26,19 @@ func standardFirstInitial(a, b string) bool {
 }
 
 func standardSurnameLengthsMayMatch(a, b string) bool {
-	return len(a) >= 2 && len(b) >= 2 && abs(len(a)-len(b)) <= 1
+	return len(a) >= 2 && len(b) >= 2 && len(a) <= maxFuzzyInputRunes && len(b) <= maxFuzzyInputRunes && abs(len(a)-len(b)) <= 1
 }
 
 // With an exact first name and email the standard rule can also match local
 // edits to a surname whose phonetic key differs. Preserve the keyboard
 // threshold for neighboring-letter swaps. A phone alone does not qualify.
 func standardCorroboratedSurname(a, b string) (bool, float64) {
+	if !standardSurnameLengthsMayMatch(a, b) {
+		return false, 0
+	}
 	a, b = strings.ToLower(a), strings.ToLower(b)
 	if len(a) > len(b) {
 		a, b = b, a
-	}
-	if !standardSurnameLengthsMayMatch(a, b) {
-		return false, 0
 	}
 	for i := range len(b) {
 		if b[i] < 'a' || b[i] > 'z' || i < len(a) && (a[i] < 'a' || a[i] > 'z') {
