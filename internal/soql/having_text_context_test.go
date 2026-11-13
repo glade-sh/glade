@@ -3,6 +3,8 @@ package soql
 import (
 	"fmt"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // Local contract: HAVING evaluates text ranges in the same execution context
@@ -16,12 +18,32 @@ func TestHavingTextRangesKeepExecutionLocale(t *testing.T) {
 				want := len(collationQuery(t, org, locale, "SELECT Name FROM Account WHERE Name "+op+" '9'").Records)
 				for _, query := range []string{
 					"SELECT Name, COUNT(Id) c FROM Account GROUP BY Name HAVING Name " + op + " '9'",
-					"SELECT MIN(Name) mn FROM Account HAVING MIN(Name) " + op + " '9'",
 				} {
 					if got := len(collationQuery(t, org, locale, query).Records); got != want {
 						t.Errorf("%s: got %d rows, WHERE got %d", query, got, want)
 					}
 				}
+
+				// Scalar HAVING is rejected by the public query validator.
+				// Exercise the scalar aggregate evaluator directly, without
+				// widening the accepted SOQL surface.
+				scalar, err := Parse("SELECT MIN(Name) mn FROM Account HAVING MIN(Name) " + op + " '9'")
+				if err != nil {
+					t.Fatal(err)
+				}
+				var records []storage.Record
+				for _, record := range org.Objects["Account"].Records {
+					records = append(records, record)
+				}
+				scalar = withTextCollation(scalar, englishTextLocale(locale))
+				got, err := aggregateRecords(org, org.Objects["Account"].Definition, records, scalar)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(got) != want {
+					t.Errorf("scalar evaluator: got %d rows, WHERE got %d", len(got), want)
+				}
+
 			})
 		}
 	}
