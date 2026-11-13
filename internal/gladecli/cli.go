@@ -23,6 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/frontendcache"
 	"github.com/glade-sh/glade/internal/gladehome"
@@ -3023,6 +3024,13 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	}
 	if execErr != nil {
 		return execErr
+	}
+	if !dryRun && machine.Org != nil {
+		// Criteria sharing rules take effect when the transaction commits, so the
+		// grant is visible to the next execution and never to this one.
+		if err := dml.ReconcileCriteriaSharing(machine.Org); err != nil {
+			return err
+		}
 	}
 	if store != nil && !dryRun && machine.Org != nil {
 		if err := store.Save(storage.SnapshotRuntimeOrg(machine.Org)); err != nil {

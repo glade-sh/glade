@@ -19,6 +19,7 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 	}
 	return vm.currentUserHasHierarchyOwnerRead(objectName, record, userID) ||
 		vm.currentUserHasOwnerRuleRead(objectName, record, userID) ||
+		vm.currentUserHasCriteriaRuleRead(objectName, record, userID) ||
 		vm.currentUserHasDirectCustomShare(objectName, record.ID, userID, false)
 }
 

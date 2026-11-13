@@ -111,3 +111,56 @@ func (vm *VM) currentUserHasDirectCustomShare(objectName string, recordID storag
 	}
 	return false
 }
+
+// A criteria rule grants Read to its target group through a Rule row on the
+// object's share table, written when a transaction commits. Read the committed
+// row, not the rule: a record that matches but has not committed has no row and
+// no access, the same as natively inside its own transaction. Case is the one
+// captured object. The reader holds the grant as a direct user or a direct
+// member of the group.
+func (vm *VM) currentUserHasCriteriaRuleRead(objectName string, record storage.Record, userID string) bool {
+	if vm == nil || vm.Org == nil || record.ID == "" || userID == "" {
+		return false
+	}
+	if canonical, ok := vm.resolveObjectName(objectName); !ok || canonical != "Case" {
+		return false
+	}
+	shares := vm.Org.Objects["CaseShare"].Records
+	if len(shares) == 0 {
+		return false
+	}
+	for _, share := range shares {
+		if share.System.IsDeleted {
+			continue
+		}
+		cause, _ := share.GetField("RowCause")
+		parent, _ := share.GetField("CaseId")
+		recipient, _ := share.GetField("UserOrGroupId")
+		access, _ := share.GetField("CaseAccessLevel")
+		if cause.String != "Rule" || !storage.IDsEqual(storage.ID(storageValueIDText(parent)), record.ID) {
+			continue
+		}
+		if !strings.EqualFold(access.String, "Read") && !strings.EqualFold(access.String, "Edit") && !strings.EqualFold(access.String, "All") {
+			continue
+		}
+		target := storage.ID(storageValueIDText(recipient))
+		if storage.IDsEqual(target, storage.ID(userID)) || vm.userIsDirectGroupMember(target, storage.ID(userID)) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) userIsDirectGroupMember(group, user storage.ID) bool {
+	for _, member := range vm.Org.Objects["GroupMember"].Records {
+		if member.System.IsDeleted {
+			continue
+		}
+		groupID, groupOK := member.GetField("GroupId")
+		userValue, userOK := member.GetField("UserOrGroupId")
+		if groupOK && userOK && storage.IDsEqual(storage.ID(storageValueIDText(groupID)), group) && storage.IDsEqual(storage.ID(storageValueIDText(userValue)), user) {
+			return true
+		}
+	}
+	return false
+}

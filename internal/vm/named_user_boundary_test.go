@@ -194,3 +194,50 @@ func TestLeadScratchDefaultEditBoundaries(t *testing.T) {
 		}
 	}
 }
+
+// An anonymous execution has no test context. A UserRecordAccess query naming
+// a Standard User still returns that user's rows, computed as that user
+// (case_phase anonymous rows, APIs 62.0 and 67.0: an explicit false row for a
+// Case the reader cannot read), and the actor's own rows are unchanged.
+func TestUserRecordAccessNamedUserWithoutTestContext(t *testing.T) {
+	const named = "005000000000017"
+	program, err := CompileAnonymous(`
+Case c = new Case(Subject = 'S');
+insert c;
+List<UserRecordAccess> other = Database.query('SELECT RecordId, UserId, HasReadAccess FROM UserRecordAccess WHERE UserId = \'` + named + `\' AND RecordId = \'' + c.Id + '\'');
+System.assertEquals(1, other.size(), 'named user rows');
+System.assertEquals(false, (Boolean) other[0].get('HasReadAccess'), 'named user read');
+System.assertEquals('` + named + `', String.valueOf(other[0].get('UserId')).substring(0, 15), 'named user id');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	for _, object := range []string{"Case", "UserRecordAccess", "User"} {
+		storage.EnsureStandardObject(&org, object)
+	}
+	caseState := org.Objects["Case"]
+	caseState.Definition.SharingModel = "Private"
+	org.Objects["Case"] = caseState
+	boundaryProfiles(&org)
+	users := org.Objects["User"]
+	if users.Records == nil {
+		users.Records = map[storage.ID]storage.Record{}
+	}
+	users.Records[named] = storage.Record{ID: named, Object: "User", Fields: boundaryUserFields("Standard", boundaryStandardProfile)}
+	const actor storage.ID = "005000000000001"
+	users.Records[actor] = storage.Record{ID: actor, Object: "User", Fields: boundaryUserFields("Standard", boundaryCustomProfile)}
+	org.Objects["User"] = users
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.SetCurrentUser(users.Records[actor])
+	if machine.testContext != nil {
+		t.Fatal("fixture has a test context")
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if machine.executionUser.Kind == "" || stringField(machine.executionUser, "Id") != string(actor) {
+		t.Fatal("the execution user was not restored")
+	}
+}

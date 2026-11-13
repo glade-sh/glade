@@ -1871,7 +1871,7 @@ var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[
 // the query qualify (external_user_case_lead_sharing: a named Standard User
 // returns its own rows, APIs 62.0 and 67.0).
 func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, objectNames []string, userMode bool, queryText string, sequence *int) {
-	if vm.testContext == nil || vm.Org == nil {
+	if vm.Org == nil {
 		return
 	}
 	current := vm.currentUserInfoField("Id", "")
@@ -1883,8 +1883,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 			continue
 		}
 		seen[string(user.ID)] = true
-		previous := vm.testContext.CurrentUser
-		vm.testContext.CurrentUser = vm.vmValueFromRecord(user)
+		restore := vm.actAsNamedUser(vm.vmValueFromRecord(user))
 		for _, objectName := range objectNames {
 			if !portal && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
 				continue
@@ -1907,8 +1906,22 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 				accessObject.Records[access.ID] = access
 			}
 		}
-		vm.testContext.CurrentUser = previous
+		restore()
 	}
+}
+
+// actAsNamedUser makes the named user the current user and returns the undo. A
+// test run switches its run-as user; an anonymous execution has no test
+// context and switches the execution user, which the same checks read.
+func (vm *VM) actAsNamedUser(user Value) func() {
+	if vm.testContext != nil {
+		previous := vm.testContext.CurrentUser
+		vm.testContext.CurrentUser = user
+		return func() { vm.testContext.CurrentUser = previous }
+	}
+	previous := vm.executionUser
+	vm.executionUser = user
+	return func() { vm.executionUser = previous }
 }
 
 func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, execResult *Result) ([]Value, bool, error) {
