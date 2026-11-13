@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets.
 
 ## v0.3.8
 
