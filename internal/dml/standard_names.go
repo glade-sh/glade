@@ -87,24 +87,20 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	return score >= 92, confidence
 }
 
-// The standard name panels isolate terminal exchanges one and four columns
-// apart on the same or neighboring keyboard rows. The observed point penalty
-// scales with horizontal distance and inversely with surname length. At a
-// half point the stagger between rows distinguishes the two diagonal slopes.
-// Other keyboard geometries keep the ordinary score.
+// Only two terminal-swap geometries need a different rounded confidence in
+// the standard name panels. The signs of the row and column displacements
+// agree when the lower key is to the right, in either matching direction.
 func standardTerminalSwapConfidence(letters string, length int, ordinary float64) float64 {
 	a, b := qwertyPosition[rune(letters[0])], qwertyPosition[rune(letters[1])]
 	rowDelta, colDelta := a[0]-b[0], a[1]-b[1]
 	columns := abs(colDelta)
-	if (columns != 1 && columns != 4) || abs(rowDelta) > 1 {
+	rightDiagonal := abs(rowDelta) == 1 && rowDelta*colDelta > 0
+	switch {
+	case length == 2 && columns == 1 && (rowDelta == 0 || rightDiagonal):
+		return 97
+	case length == 6 && columns == 4 && rightDiagonal:
+		return 97
+	default:
 		return ordinary
 	}
-	loss := 5 * columns / length
-	twiceRemainder := 2 * (5 * columns % length)
-	// The lower row is offset to the right. A leftward diagonal across
-	// rows is shorter; rightward diagonals and same-row ties round up.
-	if twiceRemainder > length || twiceRemainder == length && rowDelta*colDelta >= 0 {
-		loss++
-	}
-	return float64(100 - loss)
 }
