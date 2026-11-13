@@ -167,3 +167,19 @@ func TestFuzzySurnameNativeRows(t *testing.T) {
 		}
 	}
 }
+
+// Local contract: unmeasured eight-letter swap geometries keep the inherited
+// keyboard gate. The native five-column boundary must not admit wider swaps.
+func TestFuzzySurnameUnmeasuredSwapKeepsKeyboardGate(t *testing.T) {
+	const a, b = "Gklnjdpq", "Gklnjdqp"
+	if lastNameCode(foldText(a)) != lastNameCode(foldText(b)) || lastNameMetaphone3Equal(foldText(a), foldText(b)) {
+		t.Fatal("control must reach the ordinary same-key keyboard branch")
+	}
+	score, eligible := keyboardSimilarity(foldText(a), foldText(b))
+	if eligible || score >= 90 {
+		t.Fatal("control must miss the ordinary keyboard gate")
+	}
+	if match, confidence := FuzzyScore("LastName", a, b, false); match {
+		t.Fatalf("unmeasured wide swap bypasses the ordinary keyboard gate: %.2f", confidence)
+	}
+}
