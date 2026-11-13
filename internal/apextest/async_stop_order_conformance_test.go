@@ -39,7 +39,7 @@ func TestAsyncStopBatchBoundaryNativeConformance(t *testing.T) {
 // TestAsyncStopBatchShapeNativeConformance replays shape observations at API
 // 62.0 and 67.0 from async_stop_shape/org.tsv.
 func TestAsyncStopBatchShapeNativeConformance(t *testing.T) {
- runAsyncStopOrderRows(t, "async_stop_shape", "async_stop_boundary", "StopShapeTest", 8)
+	runAsyncStopOrderRows(t, "async_stop_shape", "async_stop_boundary", "StopShapeTest", 8)
 }
 
 func runAsyncStopOrderRows(t *testing.T, fixture, projectFixture, class string, perAPI int, apis ...string) {
@@ -120,4 +120,3 @@ func runAsyncStopOrderRows(t *testing.T, fixture, projectFixture, class string, 
 		})
 	}
 }
-
