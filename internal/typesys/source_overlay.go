@@ -37,11 +37,13 @@ func NewSourceOverlay(texts map[string]string) *SourceOverlay {
 	return o
 }
 func (o *SourceOverlay) ReadFile(path string) ([]byte, error) {
-	if o != nil {
+	if o != nil && len(o.texts) > 0 {
 		key := cleanedAbsolutePath(path)
-		physical := o.requestedPhysical[key]
-		if physical == "" {
-			physical = key
+		physical, registered := o.requestedPhysical[key]
+		if !registered {
+			// An alias the overlay was not built with still names the
+			// buffered file when it resolves to the same physical file.
+			physical = cleanedAbsolutePath(canonicalPhysicalPath(path))
 		}
 		if o.ambiguous[physical] {
 			return nil, errors.New("conflicting overlay aliases")
@@ -49,7 +51,7 @@ func (o *SourceOverlay) ReadFile(path string) ([]byte, error) {
 		if value, ok := o.texts[key]; ok {
 			return []byte(value), nil
 		}
-		if value, ok := o.physical[cleanedAbsolutePath(path)]; ok {
+		if value, ok := o.physical[physical]; ok {
 			return []byte(value), nil
 		}
 	}

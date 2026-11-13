@@ -187,3 +187,27 @@ func TestOverlayConflictingAliasesDecline(t *testing.T) {
 		t.Fatal("conflicting aliases accepted")
 	}
 }
+
+func TestOverlayReadsThroughUnregisteredAlias(t *testing.T) {
+	root := t.TempDir()
+	real := filepath.Join(root, "real")
+	if err := os.MkdirAll(real, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(real, "First.cls")
+	writeFile(t, path, "public class First {}")
+	link := filepath.Join(root, "link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Fatal(err)
+	}
+	o := NewSourceOverlay(map[string]string{path: "public class First { void buffered() {} }"})
+	got, err := o.ReadFile(filepath.Join(link, "First.cls"))
+	if err != nil || string(got) != "public class First { void buffered() {} }" {
+		t.Fatalf("alias read = %q, %v", got, err)
+	}
+	other := filepath.Join(real, "Other.cls")
+	writeFile(t, other, "public class Other {}")
+	if got, err := o.ReadFile(filepath.Join(link, "Other.cls")); err != nil || string(got) != "public class Other {}" {
+		t.Fatalf("unbuffered alias read = %q, %v", got, err)
+	}
+}
