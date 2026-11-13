@@ -4,5 +4,5 @@ Rows: 22 anonymous frame-count (11 cases x 2 APIs) + 12 line observations (3 cas
 Helpers FrameLeaf/FrameMid/FrameTop (class and source version 62 or 67 each); FrameLineTest62/67 are the named twins. Transport: anonymous script ends with a thrown FrameResultException carrying type, line and base64 of getStackTraceString(); named twins carry the same string in a failed assertion. Stack decoded in the TSV, newlines escaped as \n.
 Deviation: plan chain-split (receiver on its own line before ".capture(") does not compile natively for a static class receiver (row chain-recv: "Variable does not exist: FrameTop6x"; "FrameTop6x." then newline also fails). chain-split uses an instance receiver (t / .captureI( / 'null');) instead. x-throw-ex (throw new Exception) is refused by the compiler: "Type cannot be constructed: Exception".
 Anonymous line caveat: anonymous file lines are as written; named twin lines are class-file lines.
-Hub order used: glade-devhub-01 (first deploy attempts failed on my own source errors), glade-dev-hub2, glade-dev-hub3. Three compile/deploy failures on my own helper source were fixed and rerun; no rows kept from failed deploys.
+Three campaign Dev Hubs were used; the first deploy attempts failed on helper source errors. Three compile/deploy failures on my own helper source were fixed and rerun; no rows kept from failed deploys.
 
