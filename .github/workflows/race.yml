@@ -144,7 +144,9 @@ jobs:
       - name: Validate LWC duration history
         if: steps.classify.outputs.mode == 'full' && steps.lwc-history.outputs.run_id != '' && steps.lwc-timing-download.outcome == 'success'
         run: |
-          if scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}; then
+          shards=(/tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7})
+          if [[ -d /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-11 ]]; then shards=(/tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..11}); fi
+          if scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" "${shards[@]}"; then
             :
           else
             status=$?

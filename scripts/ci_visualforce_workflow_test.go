@@ -58,7 +58,7 @@ func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	}
 	for _, marker := range []string{
 		"needs: [gladecli, vm, sema, apextest, lwc-vf]", "needs.lwc-vf.result == 'success'", "pattern: go-test-visualforce-shard-*",
-		"scripts/ci-go-test.sh visualforce-history-refresh", "go-test-visualforce-shard-{0..3}",
+		"scripts/ci-go-test.sh visualforce-history-refresh", "go-test-visualforce-shard-{0..7}",
 		"actions/cache/save@", "visualforce-duration-history-v1", "github.sha",
 	} {
 		if !strings.Contains(refresh, marker) {

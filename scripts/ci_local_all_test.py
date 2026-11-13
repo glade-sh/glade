@@ -479,7 +479,7 @@ except KeyboardInterrupt:
                 self.assertFalse(r.browser_available('lwcruntime'))
 
     def test_shard_inventory_matches_workflow(self):
-        self.assertEqual(runner.SHARDS, {'apextest': 16, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3})
+        self.assertEqual(runner.SHARDS, {'apextest': 16, 'sema': 2, 'lwc-compile': 12, 'visualforce': 8, 'gladecli': 2, 'vm': 3})
 
 
 if __name__ == '__main__':
