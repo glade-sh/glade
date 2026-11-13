@@ -77,7 +77,7 @@ function tmpl($api, $cmp) {
     };
     if (!isTextarea) props.checked = $cmp.checked;
     children.push(element(isTextarea ? "textarea" : "input", {
-      classMap: { "slds-input": !isTextarea, "slds-textarea": isTextarea },
+      className: isTextarea ? "slds-textarea" : "slds-input",
       attrs, props, key: 2,
       on: { input: bind($cmp.handleInput), change: bind($cmp.handleChange), focus: bind($cmp.handleFocus), blur: bind($cmp.handleBlur), invalid: bind($cmp.handleInvalid) }
     }));
@@ -104,7 +104,7 @@ function tmpl($api, $cmp) {
     }
     children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { role: "alert" }, key: 3 }, help));
   }
-  return [element("label", { classMap: { "slds-form-element": true, "slds-has-error": Boolean($cmp._message) }, key: 0 }, flatten(children))];
+  return [element("label", { className: $cmp._message ? "slds-form-element slds-has-error" : "slds-form-element", key: 0 }, flatten(children))];
 }
 tmpl.stylesheets = [];
 const template = registerTemplate(tmpl);

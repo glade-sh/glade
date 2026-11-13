@@ -1335,7 +1335,7 @@ func buttonTemplateJS() string {
 }
 
 func buttonStatefulTemplateJS() string {
-	return `[api_element("button", { classMap: { ...buttonClassMap($cmp.variant), "slds-button_stateful": true, "slds-is-selected": Boolean($cmp.selected || $cmp.checked), "slds-not-selected": !Boolean($cmp.selected || $cmp.checked) }, attrs: { type: "button", "aria-pressed": String(Boolean($cmp.selected || $cmp.checked)) }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.label || ((($cmp.selected || $cmp.checked) ? $cmp.labelWhenOn : $cmp.labelWhenOff) || $cmp.labelWhenHover || ""))])]`
+	return `[api_element("button", { className: Object.entries({ ...buttonClassMap($cmp.variant), "slds-button_stateful": true, "slds-is-selected": Boolean($cmp.selected || $cmp.checked), "slds-not-selected": !Boolean($cmp.selected || $cmp.checked) }).filter(([, on]) => on).map(([name]) => name).join(" "), attrs: { type: "button", "aria-pressed": String(Boolean($cmp.selected || $cmp.checked)) }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.label || ((($cmp.selected || $cmp.checked) ? $cmp.labelWhenOn : $cmp.labelWhenOff) || $cmp.labelWhenHover || ""))])]`
 }
 
 func iconButtonTemplateJS() string {
@@ -1377,7 +1377,7 @@ func comboboxTemplateJS() string {
   const open = Boolean($cmp.__comboboxOpen);
   return [api_element("div", { classMap: { "slds-form-element": true }, key: 0 }, [
     api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]),
-    api_element("div", { classMap: { "slds-combobox": true, "slds-is-open": open }, key: 2 }, [
+    api_element("div", { className: open ? "slds-combobox slds-is-open" : "slds-combobox", key: 2 }, [
       api_element("button", {
         classMap: { "slds-combobox__input": true, "slds-input_faux": true },
         attrs: { type: "button", role: "combobox", "aria-label": $cmp.label || "", "aria-expanded": String(open), "aria-haspopup": "listbox" },

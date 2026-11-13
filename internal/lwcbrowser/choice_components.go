@@ -61,9 +61,9 @@ function tmpl($api, $cmp) {
   const help = $cmp._message ? [
     element("span", { classMap: { "slds-assistive-text": true }, key: 6 }, [text($cmp.label || "")]), text($cmp._message)
   ] : [];
-  return [element(kind === "radiogroup" ? "fieldset" : "div", { classMap: { "slds-form-element": true, "slds-has-error": Boolean($cmp._message) }, key: 0 }, [
+  return [element(kind === "radiogroup" ? "fieldset" : "div", { className: $cmp._message ? "slds-form-element slds-has-error" : "slds-form-element", key: 0 }, [
     label,
-    element("div", { classMap: { "slds-form-element__control": true, "slds-combobox": kind === "combobox", "slds-is-open": $cmp._open }, key: 4 }, flatten(controls)),
+    element("div", { className: Object.entries({ "slds-form-element__control": true, "slds-combobox": kind === "combobox", "slds-is-open": Boolean($cmp._open) }).filter(([, on]) => on).map(([name]) => name).join(" "), key: 4 }, flatten(controls)),
     element("div", { classMap: { "slds-form-element__help": true }, attrs: { role: "alert" }, key: 5 }, help)
   ])];
 }
