@@ -32,6 +32,53 @@ private class MissingObjectParity {
 		try { Database.countQuery('SELECT count() FROM Nope__c'); report('no error'); }
 		catch (Exception e) { report(e.getTypeName() + ' ' + e.getMessage()); }
 	}
+	@IsTest static void typoStandard() { report(probe('SELECT Id FROM Acount') + ' ' + probe('SELECT Id FROM Opportunty') + ' ' + probe('SELECT Id FROM Contact__c')); }
+	@IsTest static void lowercaseUnknown() { report(probe('select id from nosuchthing__c') + ' ' + probe('select id from nosuchthing') + ' ' + probe('select id from ns__nosuchthing__c')); }
+	@IsTest static void lowercaseKnown() { report(probe('select id from account') + ' ' + probe('select id from contentversion') + ' ' + probe('select id from accountfeed') + ' ' + probe('select id from knowledge__kav')); }
+	@IsTest static void namespacedPrefixes() { report(probe('SELECT Id FROM ns__Account') + ' ' + probe('SELECT Id FROM FSL__Time_Dependency__c') + ' ' + probe('SELECT Id FROM ns__Time_Dependency__c') + ' ' + probe('SELECT Id FROM Knowledge__kav')); }
+	@IsTest static void missThenLazyObjects() {
+		String a = probe('SELECT Id FROM Acount');
+		String b = probe('SELECT Id FROM ContentVersion') + ' ' + probe('SELECT Id FROM AccountFeed') + ' ' + probe('SELECT Id FROM Knowledge__kav') + ' ' + probe('SELECT Id FROM Time_Dependency__c');
+		report(a + ' ' + b + ' ' + Schema.getGlobalDescribe().containsKey('contentversion') + ' ' + Schema.getGlobalDescribe().size());
+	}
+	@IsTest static void entityDefinition() {
+		String a = probe('SELECT QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = \'Nope__c\'');
+		String b = probe('SELECT QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName IN (\'Account\', \'ContentVersion\', \'AccountFeed\') ORDER BY QualifiedApiName');
+		String c = probe('SELECT Id FROM Nope__c');
+		String d = probe('SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = \'ContentVersion\' AND QualifiedApiName = \'Title\'');
+		report(a + ' | ' + b + ' | ' + c + ' | ' + d);
+	}
+	@IsTest static void soslUnknownAndKnown() {
+		String out = '';
+		for (String q : new List<String>{
+			'FIND \'x\' RETURNING Nope__c(Id)', 'FIND \'x\' RETURNING Acount(Id)', 'FIND \'x\' RETURNING account(Id)',
+			'FIND \'x\' RETURNING ContentVersion(Id)', 'FIND \'x\' RETURNING ns__Nope__c(Id)', 'FIND \'x\' RETURNING Account(Id), Nope__c(Id)'}) {
+			try { List<List<SObject>> r = Search.query(q); out += 'ok ' + r.size() + ';'; }
+			catch (Exception e) { out += e.getTypeName() + ' ' + e.getMessage() + ';'; }
+		}
+		report(out);
+	}
+	@IsTest static void describeAndTypes() {
+		String out = '';
+		for (String n : new List<String>{'Nope__c', 'Acount', 'account', 'ContentVersion', 'ns__Account', 'Knowledge__kav', 'nope__c'}) {
+			try { out += Schema.describeSObjects(new List<String>{n})[0].getName() + ';'; }
+			catch (Exception e) { out += e.getTypeName() + ' ' + e.getMessage() + ';'; }
+			out += (Schema.getGlobalDescribe().get(n) != null) + ';' + (Type.forName('Schema.' + n) != null) + ';';
+		}
+		report(out);
+	}
+	@IsTest static void dmlOnUnknownAndLazy() {
+		String out = '';
+		for (String n : new List<String>{'Nope__c', 'Acount', 'ContentVersion', 'Account'}) {
+			try {
+				Schema.SObjectType t = Schema.getGlobalDescribe().get(n);
+				SObject s = t.newSObject();
+				Database.SaveResult r = Database.insert(s, false);
+				out += n + ' ' + r.isSuccess() + ';';
+			} catch (Exception e) { out += n + ' ' + e.getTypeName() + ' ' + e.getMessage() + ';'; }
+		}
+		report(out + probe('SELECT Id FROM Nope__c'));
+	}
 	@IsTest static void knownStandard() { report(probe('SELECT Id FROM Account') + ' ' + probe('SELECT Id FROM accountshare') + ' ' + probe('SELECT Id FROM Opportunity__Feed')); }
 	@IsTest static void knownThenUnknown() {
 		String a = probe('SELECT Id FROM Contact LIMIT 1');
@@ -68,8 +115,8 @@ func TestLazyStandardSpreadMissingObjectMatchesEagerSpread(t *testing.T) {
 	}
 	eager := run(true)
 	lazy := run(false)
-	if len(eager) != 15 {
-		t.Fatalf("eager run answered %d methods, want 15: %v", len(eager), eager)
+	if len(eager) != 24 {
+		t.Fatalf("eager run answered %d methods, want 24: %v", len(eager), eager)
 	}
 	if !reflect.DeepEqual(eager, lazy) {
 		for name, want := range eager {

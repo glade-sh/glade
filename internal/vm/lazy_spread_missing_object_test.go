@@ -59,3 +59,37 @@ func TestMissingObjectUnparsedMessageCompletesSpread(t *testing.T) {
 		t.Fatal("an unrecognized not-supported message no longer completes the spread")
 	}
 }
+
+// With an org namespace the resolution also tries the namespaced and stripped
+// forms of a name. A miss the catalog answers under any of them keeps the retry.
+func TestMissingObjectWithOrgNamespace(t *testing.T) {
+	cases := []struct {
+		name     string
+		complete bool
+	}{
+		{"NoSuchThing__c", false},
+		{"nosuchthing__c", false},
+		{"Acount", false},
+		{"Time_Dependency__c", true},
+		{"time_dependency__c", true},
+		{"FSL__Time_Dependency__c", true},
+		{"Knowledge__kav", true},
+		{"knowledge__kav", true},
+		{"ContentVersion", true},
+		{"contentversion", true},
+	}
+	for _, c := range cases {
+		org := shapedLazyOrg(nil)
+		org.Namespace = "ns"
+		machine := New(nil)
+		machine.SetOrg(&org)
+		delete(org.Objects, "ContentVersion")
+		got := machine.lazySpreadCompletesMissingObject(missingObjectError(c.name))
+		if got != c.complete {
+			t.Errorf("%q: completed=%v, want %v", c.name, got, c.complete)
+		}
+		if got == org.LazyStandardSpreadEnabled() {
+			t.Errorf("%q: lazy flag %v disagrees with completion %v", c.name, org.LazyStandardSpreadEnabled(), got)
+		}
+	}
+}
