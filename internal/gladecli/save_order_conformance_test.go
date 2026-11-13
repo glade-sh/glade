@@ -16,6 +16,7 @@ func TestSaveOrderNativeConformance(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	t.Setenv("GLADE_ROOT", "")
 	replaySaveOrder(t, "combined", "SaveOrderTest", "combined", "ProbeResultException")
+	replaySaveOrder(t, "rollup", "RollupTest", "combined", "RollupResultException")
 }
 
 func replaySaveOrder(t *testing.T, fixture, classPrefix, method, exception string) {

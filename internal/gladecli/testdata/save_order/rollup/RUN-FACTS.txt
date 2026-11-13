@@ -1,0 +1,23 @@
+source: synthetic parent/child master-detail count, parent validation rule and update trigger
+shape: Developer Edition, parent and child accessible via assigned permission set
+capture: fresh scratch org, 2026-11-13 UTC
+routes: anonymous requests at API 62.0 and 67.0 and named test classes at source API 62.0 and 67.0; record-trigger metadata held constant
+transport: full deliberate exception or assertion from each CLI response; verified route markers and four mixed-parent observations
+sha256 anonymous.apex cd5e46cebd3d1aa82716aad2ea4f45bbb3846c0486946830d1f779fe9ad1e176
+sha256 force-app/main/default/classes/RollupResultException.cls 31804984ef98cc5bddbbe732250cd45d783df2bf3e4ce2f5101ee9868627b6ac
+sha256 force-app/main/default/classes/RollupResultException.cls-meta.xml 2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa
+sha256 force-app/main/default/classes/RollupTest62.cls a0a8b1f109d558ea532e43e896ab8b13a3ac584467c423d94db84a3951b5e626
+sha256 force-app/main/default/classes/RollupTest62.cls-meta.xml 2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa
+sha256 force-app/main/default/classes/RollupTest67.cls c4ac909f69aacfd98dc6d3d3435c62eb2590bcd48c314687103c694892bc5b56
+sha256 force-app/main/default/classes/RollupTest67.cls-meta.xml 490d62ecfd7a0b715fb004a7629e76ef50158140203b42aac81fc48ec906bb5d
+sha256 force-app/main/default/classes/RollupTrace.cls 416c6d65a459485d4b62b155284f851313a7b327724c9489bb1daa6702db2ac6
+sha256 force-app/main/default/classes/RollupTrace.cls-meta.xml 2be5e8f4a55f95bd0f4c8fe6515c22875d773a18afbbd5a43ba94d6beb54a0aa
+sha256 force-app/main/default/objects/Probe_Child__c/Probe_Child__c.object-meta.xml 2785d6abf3df203c96ead9210ce43651c5f583009c5090f9609117ac040b173f
+sha256 force-app/main/default/objects/Probe_Child__c/fields/Parent__c.field-meta.xml fbe5fc6747beba33d8719ec2c094b962cb77627c53c77fdb78346360e584bb40
+sha256 force-app/main/default/objects/Probe_Parent__c/Probe_Parent__c.object-meta.xml e9640c7b77690ae35b16bb1cd502c0e719ee44a3b2e7c4f12a5b59ba7ed2718c
+sha256 force-app/main/default/objects/Probe_Parent__c/fields/Child_Count__c.field-meta.xml 1094718b8ed33bc254847711906c4ecd78c4652e184beb4f0cd88857fb31e23a
+sha256 force-app/main/default/objects/Probe_Parent__c/validationRules/Reject_Rollup.validationRule-meta.xml 6dab64775180f4a7909f0d436ef0dfec402536d2b4bdca16b0e71a306362f6a9
+sha256 force-app/main/default/permissionsets/Probe_Access.permissionset-meta.xml c065dbae0b59ae33d339e0b427edfaa20790672827edaaf2c6de2401cf62dfaf
+sha256 force-app/main/default/triggers/RollupParent.trigger 2ffc74c18ff038f002f4e3def3bd652438956d0b30002d88080f72b3ff80944a
+sha256 force-app/main/default/triggers/RollupParent.trigger-meta.xml 33ade1f2c93058c16e91218278a24c461db734e4f4778ed0c743e19e43f96b85
+sha256 org.tsv a0c77abfba64661f0cd0acdab385ca601b39c7d76a17bfe0f964a45395d54ea6
