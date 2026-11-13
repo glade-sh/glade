@@ -156,13 +156,13 @@ func (h *Handler) resolveOverlayProjectLocked() (project.Project, bool) {
 	return h.overlayProject, h.overlayProjectOK
 }
 
-func (h *Handler) syncOverlay(ctx context.Context) error {
+func (h *Handler) syncOverlay(ctx context.Context, publish func(*generation)) error {
 	if err := h.waitReady(ctx); err != nil {
 		return err
 	}
 	h.refreshMu.Lock()
 	defer h.refreshMu.Unlock()
-	return h.syncOverlayLocked(ctx, func(g *generation) { h.gen.Store(g) })
+	return h.syncOverlayLocked(ctx, publish)
 }
 
 // syncOverlayLocked makes the current generation match the open buffers:
@@ -285,7 +285,18 @@ func (h *Handler) syncOverlayLocked(ctx context.Context, publish func(*generatio
 	}
 	h.nextSeq++
 	captured := &artifacts
-	g := newGeneration(index, h.nextSeq, func(i typesys.Index) sema.Result { return analyze(i, captured) })
+	g := newGeneration(index, h.nextSeq, nil)
+	// One overlay analysis runs at a time. A generation superseded before its
+	// turn is abandoned unanalyzed, so typing never queues a backlog.
+	g.analyzer = func(i typesys.Index) sema.Result {
+		h.overlayAnalysis.Lock()
+		defer h.overlayAnalysis.Unlock()
+		if h.gen.Load() != g {
+			g.abandoned.Store(true)
+			return sema.Result{}
+		}
+		return analyze(i, captured)
+	}
 	g.artifacts = captured
 	g.overlay = target
 	g.baseSeq = h.base.seq

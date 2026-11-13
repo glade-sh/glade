@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -18,6 +19,7 @@ type generation struct {
 	analysisStart      sync.Once
 	analysisDone       chan struct{}
 	analysis           sema.Result
+	abandoned          atomic.Bool // superseded before its overlay analysis ran
 	occurrenceOnce     sync.Once
 	occurrences        occurrenceIndex
 	completionCatalogs [3]struct {

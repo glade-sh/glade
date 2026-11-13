@@ -41,6 +41,7 @@ type Handler struct {
 	overlayProjectOK     bool
 	overlayProjectLoaded bool
 	fallback             atomic.Pointer[overlayFallback]
+	overlayAnalysis      sync.Mutex // one overlay analysis at a time; never taken under refreshMu
 	validateGeneration   func(typesys.Index) bool
 
 	docMu         sync.RWMutex
@@ -222,7 +223,7 @@ func (h *Handler) applyChange(params DidChangeTextDocumentParams) (openDocument,
 
 func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
 	h.applyClose(params.TextDocument.URI)
-	_ = h.syncOverlay(context.Background())
+	_ = h.syncOverlay(context.Background(), func(g *generation) { h.gen.Store(g) })
 	return h.closeNotifications(params.TextDocument.URI)
 }
 
@@ -292,7 +293,7 @@ func (h *Handler) semanticDiagnostics(doc openDocument, sync bool) ([]diagnostic
 		return nil, true
 	}
 	if sync {
-		_ = h.syncOverlay(context.Background())
+		_ = h.syncOverlay(context.Background(), func(g *generation) { h.gen.Store(g) })
 	}
 	g := h.gen.Load()
 	if _, known := g.index.SourceDigest(doc.Path); known && !reflects(g, doc) {

@@ -7,9 +7,11 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/glade-sh/glade/internal/diagnostic"
 	"sync"
 	"time"
+
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/sema"
 )
 
 // Serve reads LSP messages from r and writes responses and notifications to w
@@ -73,6 +75,13 @@ type server struct {
 	dirty      map[string]struct{}
 	refreshing bool
 	refreshWG  sync.WaitGroup
+
+	// Overlay sync state, guarded by mu. overlayCancel stops an overlay
+	// sync in flight; lastChange and overlayCost drive the adaptive wait.
+	overlayPending bool
+	overlayCancel  context.CancelFunc
+	lastChange     time.Time
+	overlayCost    time.Duration
 }
 
 func (s *server) write(message any) {
@@ -168,6 +177,7 @@ func (s *server) notification(req Request) {
 		}
 		s.h.applyOpen(p)
 		s.schedule(p.TextDocument.URI, 0)
+		s.enqueueOverlay()
 	case "textDocument/didChange":
 		var p DidChangeTextDocumentParams
 		if decodeParams(req.Params, &p) != nil {
@@ -176,6 +186,7 @@ func (s *server) notification(req Request) {
 		if _, err := s.h.applyChange(p); err != nil {
 			return
 		}
+		s.noteChange()
 		s.schedule(p.TextDocument.URI, s.h.debounce)
 	case "textDocument/didSave":
 		var p DidSaveTextDocumentParams
@@ -190,6 +201,7 @@ func (s *server) notification(req Request) {
 		}
 		s.h.applyClose(p.TextDocument.URI)
 		s.schedule(p.TextDocument.URI, 0)
+		s.enqueueOverlay()
 	default:
 		_, _ = s.h.handleContext(s.ctx, req.Method, req.Params)
 	}
@@ -242,6 +254,12 @@ func (s *server) runDiagnostics(uri DocumentURI, job *diagJob) {
 	}
 	if generation != nil && generation != s.h.gen.Load() {
 		s.schedule(uri, 0)
+		return
+	}
+	if notifications == nil {
+		// A clean buffer the current generation does not reflect: publish
+		// nothing stale and let the worker build its overlay.
+		s.enqueueOverlay()
 		return
 	}
 	for _, n := range notifications {
@@ -298,6 +316,22 @@ func (s *server) enqueueRefresh(path string) {
 		s.dirty = make(map[string]struct{})
 	}
 	s.dirty[path] = struct{}{}
+	s.startWorkerLocked()
+}
+
+// enqueueOverlay asks the worker to bring the overlay up to date with the
+// open buffers. Disk refreshes queued at the same time run first.
+func (s *server) enqueueOverlay() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.ctx.Err() != nil {
+		return
+	}
+	s.overlayPending = true
+	s.startWorkerLocked()
+}
+
+func (s *server) startWorkerLocked() {
 	if !s.refreshing {
 		s.refreshing = true
 		s.refreshWG.Add(1)
@@ -305,94 +339,217 @@ func (s *server) enqueueRefresh(path string) {
 	}
 }
 
+// noteChange records an edit and cancels the overlay sync in flight, which
+// stores nothing once cancelled.
+func (s *server) noteChange() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.lastChange = time.Now()
+	if s.overlayCancel != nil {
+		s.overlayCancel()
+	}
+}
+
+// Overlay passes wait for quiet: the last pass's analysis time, clamped to
+// the debounce floor and maxOverlayQuiet.
+const maxOverlayQuiet = 2 * time.Second
+
+func overlayQuiet(cost, floor time.Duration) time.Duration {
+	if floor <= 0 {
+		return 0
+	}
+	return min(max(cost, floor), maxOverlayQuiet)
+}
+
 func (s *server) refreshWorker() {
 	defer s.refreshWG.Done()
 	for {
 		s.mu.Lock()
-		if len(s.dirty) == 0 || s.ctx.Err() != nil {
+		if s.ctx.Err() != nil || (len(s.dirty) == 0 && !s.overlayPending) {
 			s.refreshing = false
 			s.mu.Unlock()
 			return
 		}
-		paths := make([]string, 0, len(s.dirty))
-		for path := range s.dirty {
-			paths = append(paths, path)
-		}
-		s.dirty = make(map[string]struct{})
-		s.mu.Unlock()
-		sort.Strings(paths)
-		if s.h.waitReady(s.ctx) != nil {
-			return
-		}
-		before := s.h.gen.Load()
-		oldResult := make(chan []diagnostic.Diagnostic, 1)
-		go func() { oldResult <- before.analysisResult().Diagnostics }()
-		var old []diagnostic.Diagnostic
-		select {
-		case old = <-oldResult:
-		case <-s.ctx.Done():
-			return
-		}
-		var after *generation
-		var next []diagnostic.Diagnostic
-		valid := false
-		for attempt := 0; attempt < 2; attempt++ {
-			// The first generation a refresh publishes is the disk base; an
-			// overlay may follow. Only the base is checked against disk.
-			var disk *generation
-			err := s.h.refresh(s.ctx, paths, func(g *generation) {
-				s.pubMu.Lock()
-				s.h.gen.Store(g)
-				s.pubMu.Unlock()
-				if disk == nil {
-					disk = g
-				}
-			})
-			after = s.h.gen.Load()
-			if err != nil || after == before {
-				break
+		if len(s.dirty) > 0 {
+			paths := make([]string, 0, len(s.dirty))
+			for path := range s.dirty {
+				paths = append(paths, path)
 			}
-			result := make(chan []diagnostic.Diagnostic, 1)
-			go func(g *generation) { result <- g.analysisResult().Diagnostics }(after)
-			select {
-			case next = <-result:
-			case <-s.ctx.Done():
+			s.dirty = make(map[string]struct{})
+			s.mu.Unlock()
+			sort.Strings(paths)
+			if !s.refreshDisk(paths) {
 				return
 			}
-			if s.h.validateGeneration == nil || disk == nil || s.h.validateGeneration(disk.index) {
-				valid = true
-				break
-			}
-		}
-		if !valid {
 			continue
 		}
-		oldByFile, newByFile := diagnosticsByFile(old), diagnosticsByFile(next)
-		files := make(map[string]bool)
-		for file := range oldByFile {
-			files[file] = true
-		}
-		for file := range newByFile {
-			files[file] = true
-		}
-		for file := range files {
-			if reflect.DeepEqual(oldByFile[file], newByFile[file]) {
-				continue
-			}
-			uri := uriFromPath(file)
-			s.h.docMu.RLock()
-			_, open := s.h.documents[uri]
-			s.h.docMu.RUnlock()
-			if open {
-				s.schedule(uri, 0)
-				continue
-			}
+		s.overlayPending = false
+		ctx, cancel := context.WithCancel(s.ctx)
+		s.overlayCancel = cancel
+		s.mu.Unlock()
+		s.overlayPass(ctx)
+		cancel()
+		s.mu.Lock()
+		s.overlayCancel = nil
+		s.mu.Unlock()
+	}
+}
+
+// refreshDisk runs one disk refresh. It returns false when the server stops.
+func (s *server) refreshDisk(paths []string) bool {
+	if s.h.waitReady(s.ctx) != nil {
+		return false
+	}
+	before := s.h.gen.Load()
+	oldResult := make(chan []diagnostic.Diagnostic, 1)
+	go func() { oldResult <- before.analysisResult().Diagnostics }()
+	var old []diagnostic.Diagnostic
+	select {
+	case old = <-oldResult:
+	case <-s.ctx.Done():
+		return false
+	}
+	var after *generation
+	var next []diagnostic.Diagnostic
+	valid := false
+	for attempt := 0; attempt < 2; attempt++ {
+		// The first generation a refresh publishes is the disk base; an
+		// overlay may follow. Only the base is checked against disk.
+		var disk *generation
+		err := s.h.refresh(s.ctx, paths, func(g *generation) {
 			s.pubMu.Lock()
-			if s.ctx.Err() == nil && s.h.gen.Load() == after {
-				s.write(Notification{JSONRPC: "2.0", Method: "textDocument/publishDiagnostics", Params: BuildPublishDiagnostics(uri, newByFile[file])})
-			}
+			s.h.gen.Store(g)
 			s.pubMu.Unlock()
+			if disk == nil {
+				disk = g
+			}
+		})
+		after = s.h.gen.Load()
+		if err != nil || after == before {
+			break
 		}
+		result := make(chan []diagnostic.Diagnostic, 1)
+		go func(g *generation) { result <- g.analysisResult().Diagnostics }(after)
+		select {
+		case next = <-result:
+		case <-s.ctx.Done():
+			return false
+		}
+		if s.h.validateGeneration == nil || disk == nil || s.h.validateGeneration(disk.index) {
+			valid = true
+			break
+		}
+	}
+	if valid {
+		s.publishChanged(old, next, after)
+	}
+	return true
+}
+
+// overlayPass syncs the overlay, waits for its analysis, and republishes.
+// A cancelled pass stores nothing; the next debounce enqueues another.
+func (s *server) overlayPass(ctx context.Context) {
+	if s.h.waitReady(ctx) != nil {
+		return
+	}
+	for {
+		s.mu.Lock()
+		wait := overlayQuiet(s.overlayCost, s.h.debounce) - time.Since(s.lastChange)
+		s.mu.Unlock()
+		if wait <= 0 {
+			break
+		}
+		timer := time.NewTimer(wait)
+		select {
+		case <-timer.C:
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		}
+	}
+	before := s.h.gen.Load()
+	beforeFallback := s.h.fallback.Load()
+	err := s.h.syncOverlay(ctx, func(g *generation) {
+		s.pubMu.Lock()
+		s.h.gen.Store(g)
+		s.pubMu.Unlock()
+	})
+	after := s.h.gen.Load()
+	if err != nil {
+		return
+	}
+	if after == before {
+		// Documents the overlay could not represent may now publish their
+		// fallback diagnostics.
+		if s.h.fallback.Load() != beforeFallback {
+			s.scheduleOpenDocuments()
+		}
+		return
+	}
+	started := time.Now()
+	result := make(chan sema.Result, 1)
+	go func() { result <- after.analysisResult() }()
+	var next sema.Result
+	select {
+	case next = <-result:
+	case <-ctx.Done():
+		return
+	}
+	if after.abandoned.Load() {
+		return
+	}
+	s.mu.Lock()
+	s.overlayCost = time.Since(started)
+	s.mu.Unlock()
+	var old []diagnostic.Diagnostic
+	if previous, ok := before.analysisIfReady(); ok && !before.abandoned.Load() {
+		old = previous.Diagnostics
+	}
+	s.publishChanged(old, next.Diagnostics, after)
+	s.scheduleOpenDocuments()
+}
+
+func (s *server) scheduleOpenDocuments() {
+	s.h.docMu.RLock()
+	uris := make([]DocumentURI, 0, len(s.h.documents))
+	for uri := range s.h.documents {
+		uris = append(uris, uri)
+	}
+	s.h.docMu.RUnlock()
+	for _, uri := range uris {
+		s.schedule(uri, 0)
+	}
+}
+
+// publishChanged republishes every file whose diagnostics differ between old
+// and next: open documents through schedule, closed files directly while
+// after is still the current generation.
+func (s *server) publishChanged(old, next []diagnostic.Diagnostic, after *generation) {
+	oldByFile, newByFile := diagnosticsByFile(old), diagnosticsByFile(next)
+	files := make(map[string]bool)
+	for file := range oldByFile {
+		files[file] = true
+	}
+	for file := range newByFile {
+		files[file] = true
+	}
+	for file := range files {
+		if reflect.DeepEqual(oldByFile[file], newByFile[file]) {
+			continue
+		}
+		uri := uriFromPath(file)
+		s.h.docMu.RLock()
+		_, open := s.h.documents[uri]
+		s.h.docMu.RUnlock()
+		if open {
+			s.schedule(uri, 0)
+			continue
+		}
+		s.pubMu.Lock()
+		if s.ctx.Err() == nil && s.h.gen.Load() == after {
+			s.write(Notification{JSONRPC: "2.0", Method: "textDocument/publishDiagnostics", Params: BuildPublishDiagnostics(uri, newByFile[file])})
+		}
+		s.pubMu.Unlock()
 	}
 }
 
