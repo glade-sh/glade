@@ -62,7 +62,8 @@ func (vm *VM) api62DynamicSecurePermissionDenial(query soql.Query, permissionSet
 			return false
 		}
 		fieldDefinition := definition.Fields[canonical]
-		if isCustomSchemaName(canonical) && fieldDefinition.Type == storage.FieldString && strings.EqualFold(fieldDefinition.DisplayType, "STRING") {
+		if isCustomSchemaName(canonical) && fieldDefinition.Type == storage.FieldString &&
+			strings.EqualFold(fieldDefinition.DisplayType, "STRING") && fieldDefinition.Formula == "" && !fieldDefinition.AutoNumber {
 			if customText != "" {
 				return false
 			}
