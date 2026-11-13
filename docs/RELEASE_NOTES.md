@@ -4,7 +4,7 @@
 
 ### Changes
 
-- **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
+- **Standard duplicate rules.** Standard duplicate rules are opt-in.
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
 - Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
 - **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
@@ -20,14 +20,13 @@
 - **Seeding no longer copies whole object definitions.** The record type, currency field and platform object setup steps used to copy an object's entire definition before checking whether they change anything. They now copy only what they write, and leave a definition alone when it is already complete. Results are identical.
 - **Smaller platform type table.** The standard platform types (System, Database, Schema and the rest) are now built with exact-size member lists, and members that share a modifier list or a parameter list share one copy. Building the table allocates about 35 MB instead of 65 MB and keeps about 22 MB live instead of 31 MB, in every process. Symbols and their order are unchanged.
 
-- **Standard duplicate rules.** Standard duplicate rules are opt-in.
 - **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process. Watch, daemon and server runs are unchanged. Results are unchanged.
 - **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. On the standard object set one lookup takes about a sixth of the time and allocates nothing. Results are unchanged.
 - **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
 - **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
 - **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
 - **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
-- **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, with peak memory can rise up to about 10% on small runs. Results are unchanged.
+- **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, and peak memory can rise up to about 10% on small runs. Results are unchanged.
 
 ## v0.3.8
 
