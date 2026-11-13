@@ -44,6 +44,30 @@ func TestPreviewValueKeepsSmallValues(t *testing.T) {
 	}
 }
 
+func TestPreviewValueRenderedBoundary(t *testing.T) {
+	items := make([]vm.Value, 65)
+	for i := range items {
+		items[i] = vm.Int(1)
+	}
+	for name, value := range map[string]vm.Value{
+		"many short elements": vm.List(items...),
+		"at limit":            vm.String(strings.Repeat("x", 256)),
+		"over limit":          vm.String(strings.Repeat("x", 257)),
+	} {
+		t.Run(name, func(t *testing.T) {
+			want := value.String()
+			got := previewValue(value)
+			if len(want) <= 256 {
+				if got != want {
+					t.Fatalf("preview = %q, want exact %q", got, want)
+				}
+			} else if got != want[:256]+"..." {
+				t.Fatalf("preview = %q, want truncated value with marker", got)
+			}
+		})
+	}
+}
+
 func TestVariablesConcurrentPauses(t *testing.T) {
 	h := NewHandler(Snapshot{})
 	done := make(chan struct{})
