@@ -9,16 +9,17 @@ func standardFirstInitial(a, b string) bool {
 	if len(a) > maxFuzzyInputRunes || len(b) > maxFuzzyInputRunes || len(a) > 2 && len(b) > 2 {
 		return false
 	}
-	a, b = strings.ToLower(a), strings.ToLower(b)
 	if len(a) > len(b) || len(a) == len(b) && strings.HasSuffix(b, ".") {
 		a, b = b, a
 	}
 	a = strings.TrimSuffix(a, ".")
-	if len(a) != 1 || len(b) < 2 || a[0] != b[0] {
-		return false
-	}
-	for i := range len(b) {
-		if b[i] < 'a' || b[i] > 'z' {
+	return len(a) == 1 && len(b) >= 2 && standardNameWord(a) && standardNameWord(b) && strings.EqualFold(a, b[:1])
+}
+
+func standardNameWord(s string) bool {
+	for i := range len(s) {
+		c := s[i]
+		if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z') {
 			return false
 		}
 	}
@@ -36,14 +37,12 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	if !standardSurnameLengthsMayMatch(a, b) {
 		return false, 0
 	}
+	if !standardNameWord(a) || !standardNameWord(b) {
+		return false, 0
+	}
 	a, b = strings.ToLower(a), strings.ToLower(b)
 	if len(a) > len(b) {
 		a, b = b, a
-	}
-	for i := range len(b) {
-		if b[i] < 'a' || b[i] > 'z' || i < len(a) && (a[i] < 'a' || a[i] > 'z') {
-			return false, 0
-		}
 	}
 	if len(a) != len(b) {
 		if a != b[:len(a)] {
