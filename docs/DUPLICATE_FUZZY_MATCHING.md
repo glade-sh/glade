@@ -1,6 +1,8 @@
 # Duplicate fuzzy matching: public spec, native rows and the model
 
-Two fixtures hold the native rows. `duplicate_standard_rules/` (second fixture,
+Three fixtures hold the native rows. The Apex save and search routes are
+covered by `duplicate_save_behavior/`, including default and custom rule
+actions, error members, Person Accounts, upsert, and controlled surname panels. `duplicate_standard_rules/` (second fixture,
 described under "Standard rules" below) covers the standard Account, Contact
 and Lead rules, the cross-object rules, custom rules with OR groups and three
 items, a custom Person Account rule and the Syllable Alignment pairs; its test
@@ -577,17 +579,82 @@ on both sides), so no row covers blank Account names or Contact last names.
 
 ### Standard rule gaps
 
-- The standard rules match more pairs than their field methods do: a first name
-  against its initial (`Jonathan` finds `J`), first names whose double metaphone
-  codes agree (`Jon` finds `Jane`), last names with transposed letters
-  (`Smith` finds `Smiht`), seven digit phone numbers in the fit rows. Glade reaches 78 to 85 percent of the first and last name
-  matches. The confidences of those extra pairs are not modeled.
+- The standard rules still miss some phonetic first names and surname variants.
+  The `duplicate_save_behavior` fixture exercises single-letter initials,
+  approximate surnames, explicit Person Account record types, edit actions,
+  scalar upserts and two overfull Account searches through Apex at both APIs.
+  The table above records the earlier scorer fit. The new standard-name checks
+  use a matching surname plus email or phone for an initial, and an exact first
+  name and email for additional surname variants. Custom field-method rows
+  have separate match-key behavior.
+  The short-name and six-letter terminal transposition panels separate native
+  saves from rejections even when the edited letters agree. The measured
+  correction is limited to an accepted keyboard comparison corroborated by
+  first name and email. For eligible six-letter names, exchanging letters four
+  columns apart on the same or neighboring QWERTY rows matched at 97 when
+  the sum of `abs(2*column-11) + 2*row` over the name was at least 44.
+  Row and column start at zero. Phonetic hits scored 100. The 80 unseen inputs
+  in the boundary fixture agreed on match identities, saves, and recorded
+  integer confidences at both APIs on the anonymous and test routes.
+  The `surname_keyboard` fixture adds 672 directed inputs in panels A through
+  I, including Contact and Lead mirrors. Each method has two matching native
+  repeats at APIs 62.0 and 67.0 on anonymous and named test routes. Equal
+  Metaphone 3 trailing-letter pairs score 100. Four-to-five extensions always
+  qualify with the same first name and email: p scores 99; s scores 98 below
+  sum 42 and 99 from 42; z scores 97 at sum 16 and 98 from 18. Other tails
+  keep their ordinary grade. Three-to-four extensions also qualify, with the
+  captured s, p and k grade buckets pinned by the tests.
+  The `surname_substitution` fixture adds panels J and K: 624 directed inputs
+  plus exact and unrelated sentinels, with the same API, route and repeat
+  matrix. Panel J measures first, middle and final substitutions, lengths
+  four through eight, both directions and both objects. Same-row adjacent,
+  vertical and diagonal neighbors all match with exact first name and email.
+  Five through eight letters score 100. Four-letter neighbors score 99,
+  except captured cross-row pairs whose smaller keyboard position sum is
+  at least 34, which score 100. High-sum same-row four-letter grades remain
+  unmeasured and keep 99. Three-letter supplementary substitutions remain
+  limited to panel D's terminal, same-row neighbors, at 99.
+  Far-key controls are position-sensitive through the whole-name sum: bottom
+  row substitutions six columns apart score 97 at length four from smaller
+  sum 40, and at length five; length six scores 97 below smaller sum 50 and
+  98 from 50; lengths seven and eight score 98. Top row substitutions nine
+  columns apart miss at lengths four through six; length seven misses below
+  smaller sum 51 and scores 97 from 51, while length eight scores 97.
+  Other far-key geometries retain the inherited gate. These are measured
+  buckets, not a claim about the native distance formula or its unmeasured
+  boundaries. Panel K holds missing email, different email, different first
+  name and phone-only controls across positions and neighbor geometries.
+  Panels J and K compare exact confidence, membership and save decisions
+  without any new residuals; all 4992 comparisons agree with zero false matches.
+  Predictions were frozen before native capture; the fresh 30-day scratch org
+  was deleted and deletion verified. Three-letter same-row adjacent swaps score 98 through sum 29 and 99
+  from 31. Five-letter terminal rotations in the one-row/one-column group
+  score 98 through sum 35 and 99 from 39; vertical controls score 98 and
+  wide same-row controls score 97. Wide rotations below keyboard score 94
+  miss. Eight-letter nonphonetic five-column terminal swaps on the same or
+  neighboring rows miss through sum 44 and score 97 from 46 through 62.
+  Other geometries and higher sums retain the ordinary keyboard gate.
+  Case, accents, hyphens and a shared leading token are normalized for the
+  additional surname comparison. Panel H includes an ordinary same-key
+  eight-letter swap at sum 46 that scores 97 with an exact first name and
+  shared phone; it does not need the supplementary email path.
+  All captured membership decisions now agree. Nine four-to-five pairs still
+  differ by one confidence point in both directions for other trailing
+  letters. The tests list each native and current grade exactly. The older
+  short-edit holdout now compares the entire observation exactly, including
+  the previously differing Metaphone and p-extension inputs.
+  Lead probes also cover corroborated and uncorroborated initial and surname
+  pairs with distinct companies. A second custom Contact phone rule captured
+  a filter-field change into and out of scope: both edits saved with an
+  unchanged phone, while a changed-phone upsert into a match was rejected.
+  The underlying Salesforce distance function and wider input range remain open.
 - Street: native scores the street sections multiplicatively (a different
   suffix word 91, a different street number 95); Glade matches the pairs the
   custom Street method matches and approximates the confidence.
-- Phone: natively many more Account phone pairs match than Glade matches (35
-  percent of the holdout pairs); Glade matches numbers that agree up to the
-  last four digits and every other pair is a miss, not a false match.
+- Phone: on the Account phone panels, the website, ZIP and street also supply
+  matching paths. Missing records on those panels cannot all be attributed to
+  the phone comparison. Identical international and extension strings in the
+  Contact save fixture return no match with only the names as corroboration.
 - Standard Person Account matching rule: not activatable by metadata deploy,
   so not captured; unenforced in Glade.
 - Raw (below threshold) item scores for Company Name and Title count 50 in an

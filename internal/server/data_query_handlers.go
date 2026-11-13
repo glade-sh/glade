@@ -40,6 +40,10 @@ func (s *Server) objectNameForRecordID(id storage.ID) string {
 }
 
 func (s *Server) commitOrg(org storage.OrgState) error {
+	// Criteria sharing rules take effect when the transaction commits.
+	if err := dml.ReconcileCriteriaSharing(&org); err != nil {
+		return err
+	}
 	if err := s.persistOrg(org); err != nil {
 		return err
 	}

@@ -38,7 +38,7 @@ func TestDynamicBindScopePathsNativeConformance(t *testing.T) {
 	}
 	classDir := filepath.Join(dir, "project", "force-app", "main", "default", "classes")
 	rows := readTSV("org.tsv")
-	if len(rows) != 200 {
+	if len(rows) != 206 {
 		t.Fatalf("native rows: %d", len(rows))
 	}
 	for _, row := range rows {
@@ -73,6 +73,13 @@ func TestDynamicBindScopePathsNativeConformance(t *testing.T) {
 					t.Fatal(err)
 				}
 				body := string(src)
+				// The native anonymous runs shared their org and retained prior records.
+				if id == "order67" || id == "order68" {
+					body = "insert new Account(Name='before'); insert new Account(Name='after');\n" + body
+				}
+				if id == "order68" {
+					body = "insert new Account(Name='before'); insert new Account(Name='after');\n" + body
+				}
 				if result := sema.AnalyzeAnonymous(index, body, api); result.HasErrors() {
 					t.Fatal(result.Diagnostics)
 				}

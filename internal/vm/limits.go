@@ -397,9 +397,9 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getQueueableJobs":
 		return Int(int64(vm.limits.QueueableJobs)), true
 	case "getLimitQueueableJobs":
-		// batch_limit_c09 (API 62/67): batch start, execute and finish report
-		// the same single-job cap as a Queueable body.
-		if vm.limitCaps.nativeDefaults && (vm.currentAsyncKind == "Queueable" || vm.currentAsyncKind == "BatchApex") {
+		// Native test callbacks for Queueable, Batch Apex and Future report
+		// a single queueable job limit. Explicit local caps remain unchanged.
+		if vm.limitCaps.nativeDefaults && (vm.currentAsyncKind == "Queueable" || vm.currentAsyncKind == "BatchApex" || (vm.currentAsyncKind == "Future" && vm.testContext != nil && vm.testContext.StopDraining)) {
 			return Int(1), true
 		}
 		return Int(int64(vm.limitCaps.QueueableJobs)), true

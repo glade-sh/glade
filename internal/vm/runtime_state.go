@@ -244,6 +244,9 @@ type VM struct {
 	currentQueueableDelaySet     bool
 	queueableDuplicateSignatures map[string]string
 	currentFinalizer             Value
+	// queueableBodyFailureRetained marks a Queueable body error with no
+	// finalizer, for the native post-stopTest status projection.
+	queueableBodyFailureRetained bool
 	// success callbacks expose SYSTEM_MODE reads as their captured user.
 	// The dispatch scope restores this ID; nested runAs users do not inherit it.
 	eventPublishReadUserID string
@@ -252,7 +255,11 @@ type VM struct {
 	eventSubscriberTriggerDepth int
 	activeExceptions            []activeException
 	// --- Exception / statement / trigger-depth tracking ---
-	currentStatement        callFrame
+	currentStatement callFrame
+	// currentSource is the source text currentStatement's offsets index;
+	// callPos is the pending call token offset in that source.
+	currentSource           string
+	callPos                 int
 	hasStatement            bool
 	toolingExecuteAnonymous bool
 	triggerDepth            int
@@ -2364,6 +2371,7 @@ func (vm *VM) SetContext(ctx context.Context) {
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	vm.ensureMetadataCacheGeneration()
 	engine := dml.NewEngine(vm.Org)
+	engine.DuplicateMatcher = vm.newDuplicateMatcher()
 	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
 	if vm.work.tracking {
 		engine.FlowMatchObserver = func() { vm.work.flowRuns++ }

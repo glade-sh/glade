@@ -36,7 +36,7 @@ func (vm *VM) testStart() (Value, error) {
 }
 func (vm *VM) testStop(result *Result) (Value, error) {
 	if vm.testContext == nil {
-		return Null, fmt.Errorf("Test.stopTest is only available in test context")
+		return Null, &RuntimeError{Type: "System.FinalException", Message: "Method only allowed during testing", Stack: vm.stackFrames()}
 	}
 	if !vm.testContext.Started {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing has not started", Stack: vm.stackFrames()}
@@ -1050,7 +1050,10 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		if vm.isolateAsyncJobFailures {
 			isolationMark, isolated = vm.beginBatchChunkTransaction()
 		}
+		vm.queueableBodyFailureRetained = false
 		err := vm.runAsyncJob(job, result, &batchProjection)
+		bodyFailureRetained := vm.queueableBodyFailureRetained
+		vm.queueableBodyFailureRetained = false
 		if err != nil && isolated {
 			// Each drained job is its own transaction: undo what the failed job
 			// wrote, record it as Failed and keep draining the others.
@@ -1071,7 +1074,10 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
 		}
 		if err != nil {
-			if !job.ScheduledAborted && !batchProjection {
+			// Failed Queueable bodies observed at stopTest retain the Processing
+			// projection and their body writes while the error propagates.
+			retainProcessing := vm.testContext != nil && vm.testContext.StopDraining && job.Kind == "Queueable" && bodyFailureRetained && vm.asyncJobRecordStatus(job.ID) == "Processing"
+			if !job.ScheduledAborted && !batchProjection && !retainProcessing {
 				vm.recordAsyncJob(job, "Failed", err.Error())
 			}
 			return err
@@ -1395,12 +1401,13 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		previousFinalizer := vm.currentFinalizer
 		vm.currentFinalizer = Value{}
 		jobTransaction := vm.beginDMLRollbackPoint(vm.testContext == nil, false)
+		bodyEntered := false
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withQueueableJob(job, func() (Value, error) {
 				if staticExecute {
-					return vm.callAsyncEntry(target, Null, args, result, true)
+					return vm.callAsyncEntry(target, Null, args, result, true, &bodyEntered)
 				}
-				return vm.callAsyncEntry(target, job.Object, args, result, true)
+				return vm.callAsyncEntry(target, job.Object, args, result, true, &bodyEntered)
 			})
 		})
 		finalizer := vm.currentFinalizer
@@ -1423,6 +1430,9 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 			if err == nil {
 				err = finalizerErr
 			}
+		} else if err != nil && bodyEntered {
+			// Only a body failure with no finalizer matches the native rows.
+			vm.queueableBodyFailureRetained = true
 		}
 		return err
 	case "BatchApex":
@@ -1488,7 +1498,7 @@ func (vm *VM) resolveAsyncCallbackForArgs(typeName, method string, args []Value)
 }
 
 // Override only the callback's caller frame; helpers retain normal dispatch.
-func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result *Result, queueable bool) (Value, error) {
+func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result *Result, queueable bool, entered ...*bool) (Value, error) {
 	if method.IsStatic {
 		receiver = Null
 	}
@@ -1507,7 +1517,11 @@ func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result
 	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
 		sharing = "with sharing"
 	}
-	return vm.callMethodWithReceiver(method, receiver, args, result, sharing)
+	var bodyEntered *bool
+	if len(entered) > 0 {
+		bodyEntered = entered[0]
+	}
+	return vm.callMethodWithReceiverEntry(method, receiver, args, result, bodyEntered, sharing)
 }
 
 func (vm *VM) withQueueableDuplicateSignatureTransaction(run func() (Value, error)) (Value, error) {

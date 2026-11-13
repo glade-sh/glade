@@ -11,9 +11,8 @@ import (
 // native Datacloud.FindDuplicates verdicts (docs/DUPLICATE_FUZZY_MATCHING.md,
 // "Standard rules"). The items are the fuzzy methods of the custom rules, so a
 // pair matches only when the item scorers of this package match it; the
-// standard rules match more pairs than that (a first name against its
-// initial, two names whose double metaphone codes agree), which Glade leaves
-// as misses.
+// standard Contact name paths also recognize corroborated initials and
+// surname edits in the Apex save and search rows.
 //
 // Every item compares two values with one of five relations: both present and
 // matching, both present and different, the candidate blank, the existing
@@ -328,10 +327,10 @@ func standardAccountMatch(candidate standardAccountCandidate, existing storage.R
 		if website := standardCompare(candidate.website, field("Website"), standardWebsite); website.ok() {
 			var street, phone standardItem
 			if candidate.street != "" {
-				street = standardCompare(candidate.street, field("BillingStreet"), standardStreet)
+				street = standardCompare(candidate.street, field("BillingStreet"), standardAccountStreet)
 			}
 			if candidate.phone != "" {
-				phone = standardCompare(candidate.phone, field("Phone"), standardPhone("account"))
+				phone = standardCompare(candidate.phone, field("Phone"), standardAccountPhone)
 			}
 			if streetOrPhone, ok := bestOf(street, phone); ok {
 				if c := standardProduct(website.confidence, streetOrPhone); !found || c > best {
@@ -414,11 +413,32 @@ func standardPersonOf(org *storage.OrgState, object string, record storage.Recor
 // candidate that has one. The phone and company paths need both first names.
 func standardPersonMatch(object string, candidate, existing standardPerson) (bool, float64) {
 	last := standardCompare(candidate.last, existing.last, standardLastName)
+	email := standardCompare(candidate.email, existing.email, standardExact)
+	if candidate.kind == existing.kind && email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
+		if matched, confidence := standardCorroboratedSurname(candidate.last, existing.last); matched {
+			return true, confidence
+		}
+		if !last.ok() {
+			return false, 0
+		}
+		if last.confidence < 100 && standardIsTerminalSwap(candidate.last, existing.last) {
+			return standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
+		}
+	}
 	if !last.ok() {
 		return false, 0
 	}
 	first := standardCompare(candidate.first, existing.first, standardMethod("firstname"))
-	email := standardCompare(candidate.email, existing.email, standardExact)
+	// The standard rule accepts one initial with an exact surname and email
+	// or phone. A custom FirstName item does not match the same pairs.
+	if !first.ok() && candidate.kind == existing.kind && strings.EqualFold(candidate.last, existing.last) && standardFirstInitial(candidate.first, existing.first) {
+		if email.ok() {
+			return true, 100
+		}
+		if candidate.phone != "" && candidate.phone == existing.phone {
+			return standardPhone(object)(candidate.phone, existing.phone)
+		}
+	}
 	best, found := 0.0, false
 	take := func(c float64) {
 		if !found || c > best {
@@ -483,4 +503,57 @@ func standardCompanyPath(candidate, existing standardPerson) (float64, bool) {
 		return confidence, true
 	}
 	return 0, false
+}
+
+// The standard Account rule accepts one house-number digit edit, with the
+// street name, suffix and unit unchanged, at 97 (street/phone grid S1/S3).
+// Other street changes keep the shared street scorer's verdict.
+func standardAccountStreet(a, b string) (bool, float64) {
+	if matched, confidence := standardStreet(a, b); matched {
+		return true, confidence
+	}
+	x, y := parseStreet(a), parseStreet(b)
+	// The captured number edits preserve the rest of the spelling. Earlier
+	// street panels reject number edits paired with a suffix spelling change.
+	aw, bw := strings.Fields(a), strings.Fields(b)
+	if len(aw) < 2 || len(bw) < 2 || !strings.EqualFold(strings.Join(aw[1:], " "), strings.Join(bw[1:], " ")) {
+		return false, 0
+	}
+	if x.number == "" || y.number == "" || x.name == "" || x.name != y.name || x.suffix != y.suffix || x.suite != "" || y.suite != "" || strings.ContainsAny(a+b, "#") || standardDigits(x.number) != x.number || standardDigits(y.number) != y.number {
+		return false, 0
+	}
+	if len(x.number) > len(y.number) {
+		x, y = y, x
+	}
+	if len(x.number) == len(y.number) {
+		if x.number[:len(x.number)-1] == y.number[:len(y.number)-1] && x.number != y.number {
+			return true, averageWith100(editSimilarity(streetClean(a), streetClean(b)))
+		}
+	} else if len(y.number) == len(x.number)+1 && strings.HasPrefix(y.number, x.number) {
+		return true, averageWith100(editSimilarity(streetClean(a), streetClean(b)))
+	}
+	return false, 0
+}
+
+// Seven-digit local numbers match the same exchange and line on an Account.
+// Extensions and other invalid characters retain the shared phone rejection.
+func standardAccountPhone(a, b string) (bool, float64) {
+	valid := func(s string) bool {
+		for _, r := range s {
+			if !(r >= '0' && r <= '9') && !strings.ContainsRune("()+-./ \t", r) {
+				return false
+			}
+		}
+		return true
+	}
+	if valid(a) && valid(b) {
+		x, y := standardDigits(a), standardDigits(b)
+		if len(x) > len(y) {
+			x, y = y, x
+		}
+		if len(x) == 7 && (len(y) == 10 || len(y) == 11 && y[0] == '1') && strings.HasSuffix(y, x) {
+			return true, 100
+		}
+	}
+	return standardPhone("account")(a, b)
 }

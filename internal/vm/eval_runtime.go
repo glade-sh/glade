@@ -15,6 +15,19 @@ import (
 )
 
 func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
+	if expr.Pos > 0 {
+		// Name the call token for the frame the callee pushes. Arguments and
+		// receivers evaluate first and restore this value as they return.
+		previous := vm.callPos
+		vm.callPos = expr.Pos
+		value, err := vm.evalExpr(expr, result)
+		vm.callPos = previous
+		return value, err
+	}
+	return vm.evalExpr(expr, result)
+}
+
+func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 	switch expr.Kind {
 	case ir.ExprLiteral:
 		return parseLiteral(expr.Value)

@@ -23,6 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/frontendcache"
 	"github.com/glade-sh/glade/internal/gladehome"
@@ -1009,7 +1010,7 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	}
 
 	parserStatus := parserSelfCheck()
-	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatus()
+	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatusBounded(ctx)
 	loadedProject := project.Project{}
 	projectErr := rootProblem
 	if projectErr == nil {
@@ -1075,6 +1076,13 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	info.ExitCode = exitCodeForOK(ok)
 	if !info.ToolchainOK {
 		advisory := "LWC compilation and Lightning runtime routes need the bundled toolchain. Reinstall the Glade release, or install it from a Glade source checkout."
+		if strings.Contains(toolchainDetail, "recovery busy") {
+			advisory = "If installation has stopped, run glade toolchain status in the original managed toolchain environment to recover it, then retry glade doctor."
+		} else if strings.Contains(toolchainDetail, "busy") || strings.Contains(toolchainDetail, "retry") {
+			advisory = "The toolchain check did not complete. Retry glade doctor after installation or recovery finishes."
+		} else if strings.Contains(toolchainDetail, "interrupted installer transaction") {
+			advisory = "Rerun the installer to recover the interrupted toolchain transaction, then retry glade doctor."
+		}
 		if ok {
 			advisory = "Apex check and test are available; " + advisory
 		}
@@ -3031,6 +3039,13 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	}
 	if execErr != nil {
 		return execErr
+	}
+	if !dryRun && machine.Org != nil {
+		// Criteria sharing rules take effect when the transaction commits, so the
+		// grant is visible to the next execution and never to this one.
+		if err := dml.ReconcileCriteriaSharing(machine.Org); err != nil {
+			return err
+		}
 	}
 	if store != nil && !dryRun && machine.Org != nil {
 		if err := store.Save(storage.SnapshotRuntimeOrg(machine.Org)); err != nil {
