@@ -790,7 +790,7 @@ func (e *Engine) applyFlowEffects(flowName, objectName string, record *storage.R
 			return changed, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s requires Apex action execution support", action.Name)
 		}
 		if err := e.FlowActionInvoker(action, record.Clone()); err != nil {
-			return changed, flowActionFailure(action.Name, err)
+			return changed, e.flowActionError(action.Name, err)
 		}
 	}
 	for _, create := range creates {
@@ -1220,7 +1220,7 @@ func (e *Engine) applyFlowStep(flowName, objectName string, record *storage.Reco
 				frame.actionOutputFieldReceiver(step.Action)(prepared.fields)
 			}
 			if prepared.err != nil {
-				return false, flowActionFailure(step.Action.Name, prepared.err)
+				return false, e.flowActionError(step.Action.Name, prepared.err)
 			}
 			return false, nil
 		}

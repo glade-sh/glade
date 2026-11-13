@@ -229,6 +229,13 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 	if !fault.inTest && (fault.verb == "delete" || fault.verb == "look up" || fault.code == "DUPLICATES_DETECTED") {
 		errorID = " Error ID: 0-0 (0)"
 	}
+	if fault.verb == flowApexActionVerb {
+		if !fault.inTest {
+			errorID = " Error ID: 0-0 (0)"
+		}
+		message := processFailureMessage(rule, "CANNOT_EXECUTE_FLOW_TRIGGER: "+fault.text+"\n"+errorID)
+		return &flowCoreRecordCreateFailure{cause: dmlErrorf(fault.code, nil, "%s", message), saved: true}, true
+	}
 	if fault.verb == "look up" {
 		message := processFailureMessage(rule, "<b>An unhandled fault has occurred in this flow</b><br>"+flowUnhandledGeneric+errorID)
 		return &flowCoreRecordCreateFailure{cause: dmlErrorf("CANNOT_EXECUTE_FLOW_TRIGGER", nil, "%s", message)}, true
@@ -247,7 +254,7 @@ func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (
 // for these elements: a test sees the element's text, any other run the generic text.
 func FlowUnhandledDetail(err error) (string, bool) {
 	var fault *flowElementFault
-	if !errors.As(err, &fault) || !fault.unhandledCaptured() {
+	if !errors.As(err, &fault) || !fault.unhandledCaptured() || fault.verb == flowApexActionVerb {
 		return "", false
 	}
 	if !fault.inTest {
