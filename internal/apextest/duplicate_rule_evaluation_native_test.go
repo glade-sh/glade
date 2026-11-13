@@ -75,6 +75,13 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 					}
 				}
 				copyInputs(group)
+				if sharing {
+					// Captured grants are explicit in the replay shape. Omitted
+					// project grants cannot imply a real-org hidden field.
+					for _, profile := range []string{"Admin", "Standard User"} {
+						writeFile(t, filepath.Join(base, "profiles", profile+".profile-meta.xml"), `<Profile><fieldPermissions><field>Contact.Hid__c</field><readable>false</readable><editable>false</editable></fieldPermissions></Profile>`)
+					}
+				}
 				helpers := []string{}
 				switch {
 				case group == "account":

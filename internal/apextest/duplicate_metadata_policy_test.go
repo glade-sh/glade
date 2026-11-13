@@ -91,17 +91,48 @@ const duplicateReaderSetup = `Profile p=[SELECT Id FROM Profile WHERE Name='Stan
 
 func TestDuplicateUndeclaredSharingKeepsBaseline(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
-		t.Run(api, func(t *testing.T) {
-			source := `@IsTest class DuplicatePolicyTest {@IsTest static void defaults(){` + duplicateReaderSetup + `
- Account a=new Account(Name='Account Seed'); insert a;
- insert new Contact(LastName='Parented',AccountId=a.Id,Email='parented@example.invalid');
- insert new Contact(LastName='Orphan',Email='orphan@example.invalid');
- insert new Lead(LastName='Lead Seed',Company='Synthetic',Email='lead@example.invalid');
- System.runAs(u){
- List<SObject> candidates=new List<SObject>{new Account(Name='Account Seed'),new Contact(LastName='Parented',AccountId=a.Id,Email='parented@example.invalid'),new Contact(LastName='Orphan',Email='orphan@example.invalid'),new Lead(LastName='Lead Seed',Company='Synthetic',Email='lead@example.invalid')};
- for(SObject row:candidates){Database.SaveResult result=Database.insert(row,false);System.assertEquals(false,result.isSuccess(),row.getSObjectType()+' duplicate');System.assertEquals(StatusCode.DUPLICATES_DETECTED,result.getErrors()[0].getStatusCode());}
- }}}`
-			runDuplicatePolicy(t, duplicatePolicyProject(t, api, source, false, false), "defaults")
+		for _, tc := range []struct{ name, seed, candidate string }{
+			{"Account", "insert new Account(Name='Seed');", "new Account(Name='Seed')"},
+			{"ContactParent", "Account a=new Account(Name='Parent');insert a;insert new Contact(LastName='Seed',AccountId=a.Id,Email='seed@example.invalid');", "new Contact(LastName='Candidate',AccountId=a.Id,Email='seed@example.invalid')"},
+			{"ContactOrphan", "insert new Contact(LastName='Seed',Email='seed@example.invalid');", "new Contact(LastName='Candidate',Email='seed@example.invalid')"},
+			{"Lead", "insert new Lead(LastName='Seed',Company='Synthetic',Email='seed@example.invalid');", "new Lead(LastName='Candidate',Company='Synthetic',Email='seed@example.invalid')"},
+		} {
+			t.Run(api+"/"+tc.name, func(t *testing.T) {
+				source := `@IsTest class DuplicatePolicyTest {@IsTest static void defaults(){` + duplicateReaderSetup + tc.seed + `System.runAs(u){Database.SaveResult result=Database.insert(` + tc.candidate + `,false);System.assertEquals(false,result.isSuccess());System.assertEquals(StatusCode.DUPLICATES_DETECTED,result.getErrors()[0].getStatusCode());}}}`
+				runDuplicatePolicy(t, duplicatePolicyProject(t, api, source, false, false), "defaults")
+			})
+		}
+	}
+}
+
+// NATIVE public-default Lead duplicate outcomes testdata/conformance/duplicate_public_defaults/org.tsv:2 istest 62.0
+// NATIVE public-default Lead duplicate outcomes testdata/conformance/duplicate_public_defaults/org.tsv:3 istest 67.0
+// Replay only the duplicate outcomes: the capture also checks SOQL visibility,
+// whose undeclared-shape gap is outside this change.
+func TestDuplicatePublicDefaultLeadNative(t *testing.T) {
+	body, err := os.ReadFile("testdata/conformance/duplicate_public_defaults/org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := strings.Split(strings.TrimSpace(string(body)), "\n")
+	if len(rows) != 3 {
+		t.Fatalf("want two native rows, got %d", len(rows)-1)
+	}
+	for _, line := range rows[1:] {
+		f := strings.Split(line, "\t")
+		if len(f) != 6 || f[2] != "istest" || f[3] != "true" || f[4] != "Passed" || strings.TrimSpace(f[5]) != "publicDefault=Pass" {
+			t.Fatalf("invalid native observation: %q", line)
+		}
+		t.Run(f[1], func(t *testing.T) {
+			source := `@IsTest class DuplicatePolicyTest {@IsTest static void publicDefault(){` + duplicateReaderSetup + `
+   insert new Lead(LastName='Seed',Company='Synthetic',Email='publiclead@example.invalid');
+   System.runAs(u){
+    Database.SaveResult fresh=Database.insert(new Lead(LastName='Fresh',Company='Synthetic',Email='fresh@example.invalid'),false);System.assert(fresh.isSuccess());
+    Database.SaveResult dup=Database.insert(new Lead(LastName='Candidate',Company='Synthetic',Email='publiclead@example.invalid'),false);System.assertEquals(false,dup.isSuccess());System.assertEquals(StatusCode.DUPLICATES_DETECTED,dup.getErrors()[0].getStatusCode());
+    Database.SaveResult blank=Database.insert(new Lead(LastName='Blank',Company='Synthetic'),false);System.assert(blank.isSuccess());
+    Boolean blocked=false;try{insert new Lead(LastName='Statement',Company='Synthetic',Email='publiclead@example.invalid');}catch(DmlException e){blocked=e.getDmlStatusCode(0)=='DUPLICATES_DETECTED';}System.assert(blocked);
+   }}}`
+			runDuplicatePolicy(t, duplicatePolicyProject(t, f[1], source, false, false), "publicDefault")
 		})
 	}
 }

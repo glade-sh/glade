@@ -1,0 +1,1 @@
+<MatchingRules xmlns="http://soap.sforce.com/2006/04/metadata"><matchingRules><fullName>PublicEmail</fullName><label>Public Email</label><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>Email</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules></MatchingRules>
