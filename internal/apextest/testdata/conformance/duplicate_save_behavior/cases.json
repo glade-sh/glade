@@ -97,5 +97,9 @@
     "editsA": "LocalEditsBehavior.editsA()",
     "editsB": "LocalEditsBehavior.editsB()",
     "editsC": "LocalEditsBehavior.editsC()"
+  },
+  "gradeHoldout": {
+    "gradeA": "GradeBehavior.gradeA()",
+    "gradeB": "GradeBehavior.gradeB()"
   }
 }
