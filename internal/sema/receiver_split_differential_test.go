@@ -60,7 +60,6 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 			"System.assertEquals('ok', 'x' + ReceiverProbe\n.value());",
 			"ReceiverProbe\n.value().toUpperCase().trim();",
 			"ReceiverProbe.\nvalue().toUpperCase().trim();",
-			"System.assertEquals('ok', ReceiverProbe.\nvalue() + String.valueOf(1));",
 			"System.assertEquals('ok', String.valueOf(ReceiverProbe. value()));",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue().length();",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue(1);",

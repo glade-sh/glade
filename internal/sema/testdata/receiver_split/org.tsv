@@ -113,3 +113,15 @@ class_statement_before_dot	62.0	class	false	Variable does not exist: ReceiverPro
 class_statement_before_dot	67.0	class	false	Variable does not exist: ReceiverProbe
 class_statement_after_dot	62.0	class	false	Missing ';' at 'value' | Variable does not exist: | Method does not exist or incorrect signature: void value() from the type ReceiverRouteProbe
 class_statement_after_dot	67.0	class	false	Missing ';' at 'value' | Variable does not exist: | Method does not exist or incorrect signature: void value() from the type ReceiverRouteProbe
+rhs_call	62.0	anonymous	false	Unexpected token '('.
+rhs_call	67.0	anonymous	false	Unexpected token '('.
+rhs_number	62.0	anonymous	false	Unexpected token '('.
+rhs_number	67.0	anonymous	false	Unexpected token '('.
+rhs_variable	62.0	anonymous	false	Unexpected token '('.
+rhs_variable	67.0	anonymous	false	Unexpected token '('.
+rhs_parenthesized	62.0	anonymous	false	Unexpected token '('.
+rhs_parenthesized	67.0	anonymous	false	Unexpected token '('.
+rhs_compound	62.0	anonymous	false	Unexpected token '('.
+rhs_compound	67.0	anonymous	false	Unexpected token '('.
+control_rhs_call	62.0	anonymous	true	ok
+control_rhs_call	67.0	anonymous	true	ok

@@ -127,6 +127,18 @@ import (
 // NATIVE class_statement_before_dot testdata/receiver_split/org.tsv:113 class 67.0
 // NATIVE class_statement_after_dot testdata/receiver_split/org.tsv:114 class 62.0
 // NATIVE class_statement_after_dot testdata/receiver_split/org.tsv:115 class 67.0
+// NATIVE rhs_call testdata/receiver_split/org.tsv:116 anonymous 62.0
+// NATIVE rhs_call testdata/receiver_split/org.tsv:117 anonymous 67.0
+// NATIVE rhs_number testdata/receiver_split/org.tsv:118 anonymous 62.0
+// NATIVE rhs_number testdata/receiver_split/org.tsv:119 anonymous 67.0
+// NATIVE rhs_variable testdata/receiver_split/org.tsv:120 anonymous 62.0
+// NATIVE rhs_variable testdata/receiver_split/org.tsv:121 anonymous 67.0
+// NATIVE rhs_parenthesized testdata/receiver_split/org.tsv:122 anonymous 62.0
+// NATIVE rhs_parenthesized testdata/receiver_split/org.tsv:123 anonymous 67.0
+// NATIVE rhs_compound testdata/receiver_split/org.tsv:124 anonymous 62.0
+// NATIVE rhs_compound testdata/receiver_split/org.tsv:125 anonymous 67.0
+// NATIVE control_rhs_call testdata/receiver_split/org.tsv:126 anonymous 62.0
+// NATIVE control_rhs_call testdata/receiver_split/org.tsv:127 anonymous 67.0
 func TestReceiverSplitNative(t *testing.T) {
 	const fixture = "testdata/receiver_split"
 	f, err := os.Open(filepath.Join(fixture, "org.tsv"))

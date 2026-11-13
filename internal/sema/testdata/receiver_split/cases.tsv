@@ -56,3 +56,9 @@ builtin_after_dot	anonymous	apex/builtin_after_dot.apex
 class_argument_before_dot	class	apex/class_argument_before_dot.cls
 class_statement_before_dot	class	apex/class_statement_before_dot.cls
 class_statement_after_dot	class	apex/class_statement_after_dot.cls
+rhs_call	anonymous	apex/rhs_call.apex
+rhs_number	anonymous	apex/rhs_number.apex
+rhs_variable	anonymous	apex/rhs_variable.apex
+rhs_parenthesized	anonymous	apex/rhs_parenthesized.apex
+rhs_compound	anonymous	apex/rhs_compound.apex
+control_rhs_call	anonymous	apex/control_rhs_call.apex
