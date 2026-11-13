@@ -266,6 +266,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		return Result{}, err
 	}
 	query = withTextCollation(query, context.Locale)
+	context.textComparator = query.textComparator
 	if strings.EqualFold(query.Object, "PlatformCachePartition") {
 		if _, ok := org.Objects["PlatformCachePartition"]; !ok {
 			org = org.Clone()
@@ -393,7 +394,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 			return Result{}, err
 		}
 		if len(query.Order) > 0 {
-			order := collateOrder(query.Order, query.textCollation)
+			order := collateOrder(query.Order, query.textComparator)
 			sort.SliceStable(records, func(i, j int) bool {
 				return aggregateOrderedBefore(records[i], records[j], order)
 			})
@@ -411,7 +412,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		}, nil
 	}
 	if len(query.Order) > 0 {
-		sortRecordsByOrder(org, object.Definition, matchedRecords, collateOrder(query.Order, query.textCollation), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
+		sortRecordsByOrder(org, object.Definition, matchedRecords, collateOrder(query.Order, query.textComparator), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	if query.ForUpdate {
@@ -1310,7 +1311,7 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 			return nil, err
 		}
 		record := storage.Record{Object: "AggregateResult", Fields: fields}
-		if query.Having != nil && !matchesWithContext(org, storage.ObjectDefinition{}, record, query.Having, ExecutionContext{Locale: query.textLocale}) {
+		if query.Having != nil && !matchesWithContext(org, storage.ObjectDefinition{}, record, query.Having, ExecutionContext{Locale: query.textLocale, textComparator: query.textComparator}) {
 			return nil, nil
 		}
 		removeHiddenAggregateFields(record.Fields, query.HavingAggregates)
@@ -1358,8 +1359,8 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 					value = storage.DateValue(value.String)
 				}
 				scratch[i] = value
-				if query.textCollation && value.Kind == storage.ValueString {
-					parts = append(parts, "0:"+string(storage.ValueString)+":"+textGroupKey(value.String))
+				if query.textComparator != nil && value.Kind == storage.ValueString {
+					parts = append(parts, "0:"+string(storage.ValueString)+":"+query.textComparator.groupKey(value.String))
 				} else {
 					parts = append(parts, "0:"+groupValueKey(value, kinds[i]))
 				}
@@ -1379,10 +1380,10 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 				groups[key] = current
 				order = append(order, key)
 			}
-			if query.textCollation {
-				// Captured case variants report the binary-smallest spelling,
-				// including reversed insertion and record ID assignment. Other
-				// spellings remain unproven by those observations.
+			if query.textComparator != nil && query.textComparator.english {
+				// The captured A/a and Z/z groups report the binary-smallest
+				// spelling. Using that representative for other merged spellings
+				// is provisional; these rows do not prove a universal rule.
 				for i, field := range query.GroupBy {
 					if held := current.values[field]; active[field] && scratch[i].Kind == storage.ValueString && held.Kind == storage.ValueString && scratch[i].String < held.String {
 						current.values[field] = scratch[i]
@@ -1449,7 +1450,7 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 			return nil, err
 		}
 		record := storage.Record{Object: "AggregateResult", Fields: fields}
-		if query.Having != nil && !matchesWithContext(org, storage.ObjectDefinition{}, record, query.Having, ExecutionContext{Locale: query.textLocale}) {
+		if query.Having != nil && !matchesWithContext(org, storage.ObjectDefinition{}, record, query.Having, ExecutionContext{Locale: query.textLocale, textComparator: query.textComparator}) {
 			continue
 		}
 		removeHiddenAggregateFields(record.Fields, query.HavingAggregates)
@@ -1716,7 +1717,7 @@ func aggregateValue(org storage.OrgState, definition storage.ObjectDefinition, r
 			if ranks != nil {
 				cmp = ranks[value.String] - ranks[best.String]
 			} else {
-				cmp = compareValuesCollated(value, best, aggregate.textCollation)
+				cmp = compareValuesForCollation(value, best, aggregate.textComparator, true)
 			}
 			if aggregate.Func == "MIN" && cmp < 0 {
 				best = value.Clone()
@@ -1889,7 +1890,7 @@ func matchesWithContext(org storage.OrgState, definition storage.ObjectDefinitio
 }
 
 func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition, context ExecutionContext, scratch *predicateScratch) bool {
-	collate := englishTextLocale(context.Locale)
+	comparator := context.textComparatorForQuery()
 	if condition == nil {
 		return true
 	}
@@ -1948,12 +1949,12 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 	switch condition.Op {
 	case "=":
 		if condition.Range {
-			return compareValuesCollated(left, condition.Value, collate) >= 0 && compareValuesCollated(left, condition.Value2, collate) < 0
+			return compareValuesForCollation(left, condition.Value, comparator, true) >= 0 && compareValuesForCollation(left, condition.Value2, comparator, true) < 0
 		}
 		return equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, condition.Value, context.Locale, scratch)
 	case "!=":
 		if condition.Range {
-			return compareValuesCollated(left, condition.Value, collate) < 0 || compareValuesCollated(left, condition.Value2, collate) >= 0
+			return compareValuesForCollation(left, condition.Value, comparator, true) < 0 || compareValuesForCollation(left, condition.Value2, comparator, true) >= 0
 		}
 		return !equalFieldValuesInOrgWithScratch(org, definition, condition.Field, left, condition.Value, context.Locale, scratch)
 	case ">":
@@ -1967,7 +1968,7 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		if left.Kind == storage.ValueNull || bound.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValuesCollated(left, bound, collate) > 0
+		return compareValuesForCollation(left, bound, comparator, true) > 0
 	case ">=":
 		if entityDefinitionNullLowerBound(definition, condition.Field, condition.Value) {
 			return left.Kind != storage.ValueNull
@@ -1975,12 +1976,12 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValuesCollated(left, condition.Value, collate) >= 0
+		return compareValuesForCollation(left, condition.Value, comparator, true) >= 0
 	case "<":
 		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
 			return false
 		}
-		return compareValuesCollated(left, condition.Value, collate) < 0
+		return compareValuesForCollation(left, condition.Value, comparator, true) < 0
 	case "<=":
 		bound := condition.Value
 		if condition.Range {
@@ -1990,9 +1991,9 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 			return false
 		}
 		if condition.Range {
-			return compareValuesCollated(left, bound, collate) < 0
+			return compareValuesForCollation(left, bound, comparator, true) < 0
 		}
-		return compareValuesCollated(left, bound, collate) <= 0
+		return compareValuesForCollation(left, bound, comparator, true) <= 0
 	case "LIKE":
 		return likeMatchWithScratch(left, condition.Value, scratch)
 	case "NOT LIKE":
@@ -2464,7 +2465,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 	}
 	if len(query.Order) > 0 {
-		sortRecordsByOrder(org, childObject.Definition, matched, collateOrder(query.Order, englishTextLocale(context.Locale)), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
+		sortRecordsByOrder(org, childObject.Definition, matched, collateOrder(query.Order, context.textComparatorForQuery()), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
 	}
 	matched = applyWindow(matched, query.Offset, query.Limit, query.HasLimit)
 	out := make([]storage.Record, 0, len(matched))
@@ -5238,7 +5239,7 @@ func orderCompare(left, right storage.Value, spec OrderSpec) int {
 		}
 		return -1
 	}
-	cmp := compareValuesCollated(left, right, spec.textCollation)
+	cmp := compareValuesForCollation(left, right, spec.textComparator, false)
 	if spec.Desc {
 		return -cmp
 	}

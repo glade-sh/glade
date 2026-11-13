@@ -24,8 +24,10 @@ func TestQueryRoutesKeepUserTextLocale(t *testing.T) {
 	addUser(&org, actor, "synthetic@example.invalid", "synthetic@example.invalid", "Synthetic User")
 	addAccountForTest(&org, "001000000000001", "_")
 	addAccountForTest(&org, "001000000000002", "9")
+	addAccountForTest(&org, "001000000000003", "ä")
+	addAccountForTest(&org, "001000000000004", "z")
 	handler := New(&org)
-	for _, locale := range []string{"en_US", "de_DE", "en_GB", "en_US"} {
+	for _, locale := range []string{"en_US", "de_DE", "sv_SE", "af_ZA", "en_GB", "en_US"} {
 		users := org.Objects["User"]
 		user := users.Records[actor]
 		user.Fields["LocaleSidKey"] = storage.StringValue(locale)

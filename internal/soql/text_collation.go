@@ -7,15 +7,10 @@ import (
 
 //go:generate go run collation_weights_generate.go
 
-// Text collation for English locales. Native rows in testdata/collation show
-// that, for a user whose LocaleSidKey is en_*, SOQL compares text character by
-// character: ASCII characters use a fixed weight (asciiCollationWeight, derived
-// from the captured single-character order, letters case-insensitive), every
-// character at or above U+0080 sorts after z in code point order without case
-// folding or expansion, and a shorter prefix sorts first. ORDER BY, WHERE
-// ranges, MIN and MAX share this order, and GROUP BY merges text values that
-// differ only in ASCII case. Other locales keep compareSOQLText until they are
-// captured.
+// Legacy text collation for en_* and the captured English-fallback locales.
+// ASCII characters use the captured weights with case ties. Non-ASCII code
+// points sort after ASCII, without folding or expansion. The additional
+// locale comparators and generated tables are in locale_collation.go.
 
 // englishTextLocale reports whether locale is an en_* LocaleSidKey. An empty
 // locale keeps the folded comparator.
@@ -73,41 +68,42 @@ func compareSOQLTextCollated(left, right string) int {
 
 // collateOrder returns order with the collation flag set. The caller's slice
 // is shared with the cached query and is never modified.
-func collateOrder(order []OrderSpec, collate bool) []OrderSpec {
-	if !collate || len(order) == 0 {
+func collateOrder(order []OrderSpec, comparator *textComparator) []OrderSpec {
+	if comparator == nil || len(order) == 0 {
 		return order
 	}
 	stamped := make([]OrderSpec, len(order))
 	copy(stamped, order)
 	for i := range stamped {
-		stamped[i].textCollation = true
+		stamped[i].textComparator = comparator
 	}
 	return stamped
 }
 
-func collateAggregates(aggregates []Aggregate) []Aggregate {
+func collateAggregates(aggregates []Aggregate, comparator *textComparator) []Aggregate {
 	if len(aggregates) == 0 {
 		return aggregates
 	}
 	stamped := make([]Aggregate, len(aggregates))
 	copy(stamped, aggregates)
 	for i := range stamped {
-		stamped[i].textCollation = true
+		stamped[i].textComparator = comparator
 	}
 	return stamped
 }
 
-// withTextCollation returns a query copy that carries the execution-time
-// collation to aggregate evaluation.
+// withTextCollation carries execution-private collation into aggregate
+// evaluation. It copies slices before replacing their comparator state.
 func withTextCollation(query Query, locale string) Query {
+	wasCollated := query.textComparator != nil
 	query.textLocale = locale
-	if !englishTextLocale(locale) {
+	query.textComparator = newTextComparator(locale)
+	if query.textComparator == nil && !wasCollated {
 		return query
 	}
-	query.textCollation = true
-	query.Aggregates = collateAggregates(query.Aggregates)
-	query.HavingAggregates = collateAggregates(query.HavingAggregates)
-	query.orderAggregates = collateAggregates(query.orderAggregates)
+	query.Aggregates = collateAggregates(query.Aggregates, query.textComparator)
+	query.HavingAggregates = collateAggregates(query.HavingAggregates, query.textComparator)
+	query.orderAggregates = collateAggregates(query.orderAggregates, query.textComparator)
 	return query
 }
 

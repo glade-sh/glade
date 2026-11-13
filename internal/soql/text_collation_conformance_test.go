@@ -13,8 +13,9 @@ import (
 )
 
 // The rows in testdata/collation are native org captures (RUN-FACTS.txt).
-// Every en_* row must match. Rows for non-English locales are not captured
-// well enough to model; they must keep the pre-collation comparator.
+// Every English row must match. The locale_collation fixture now supplies
+// broad native rows for the T8 locales, so those rows also check native order
+// instead of asserting the previous unmodeled fallback.
 
 type collationRow struct {
 	id, api, route, run, valueSet, observation string
@@ -151,6 +152,19 @@ func foldedSequence(values []string, labels string) []string {
 	return keys
 }
 
+func collatedSequence(values []string, labels, locale string) []string {
+	comparator := newTextComparator(locale)
+	if comparator == nil {
+		return foldedSequence(values, labels)
+	}
+	var keys []string
+	for i := 0; i+2 <= len(labels); i += 2 {
+		index, _ := strconv.ParseInt(labels[i:i+2], 36, 32)
+		keys = append(keys, comparator.groupKey(values[index]))
+	}
+	return keys
+}
+
 func sortedLabels(labels string) []string {
 	var out []string
 	for i := 0; i+2 <= len(labels); i += 2 {
@@ -207,8 +221,10 @@ func TestTextCollationNativeRows(t *testing.T) {
 				want, _ := row.field(dir)
 				query := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s %s, Id ASC", labelField, object, field, strings.ToUpper(dir))
 				got := collationLabels(collationQuery(t, org, locale, query), labelField)
-				if !englishTextLocale(locale) {
-					// Not captured: keep the folded comparator.
+				if newTextComparator(locale) == nil {
+					// A locale without a captured fitting model retains the
+					// previous comparator. The locale fixture now supplies
+					// the full native rows for the other T8 locales.
 					if legacy := collationLabels(collationQuery(t, org, "", query), labelField); got != legacy {
 						t.Fatalf("%s %s: non-English locale %s changed from the folded comparator", row.id, dir, locale)
 					}
@@ -217,8 +233,8 @@ func TestTextCollationNativeRows(t *testing.T) {
 				if !reflect.DeepEqual(sortedLabels(got), sortedLabels(want)) {
 					t.Fatalf("%s %s: row sets differ", row.id, dir)
 				}
-				if !reflect.DeepEqual(foldedSequence(values, got), foldedSequence(values, want)) {
-					t.Fatalf("%s %s order\n got  %v\n want %v", row.id, dir, foldedSequence(values, got), foldedSequence(values, want))
+				if !reflect.DeepEqual(collatedSequence(values, got, locale), collatedSequence(values, want, locale)) {
+					t.Fatalf("%s %s order\n got  %v\n want %v", row.id, dir, collatedSequence(values, got, locale), collatedSequence(values, want, locale))
 				}
 			}
 		})
@@ -230,7 +246,7 @@ func TestTextCollationNativeRows(t *testing.T) {
 			notEnglish++
 		}
 	}
-	t.Logf("en_* rows matched %d; non-English rows kept on the folded comparator %d; facts rows %d; total %d", matched, notEnglish, excluded, matched+notEnglish+excluded)
+	t.Logf("en_* rows matched %d; non-English rows checked against their native order %d; facts rows %d; total %d", matched, notEnglish, excluded, matched+notEnglish+excluded)
 	if matched+notEnglish+excluded != 70 {
 		t.Fatalf("rows accounted %d; want 70", matched+notEnglish+excluded)
 	}
