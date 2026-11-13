@@ -17,4 +17,4 @@ records dynamic-query messages for denied and field-denied projections. At API
 
 The immutable native capture packet source is commit `2c767902b461f900eab15771e499a612c2ed4d14`; measured list-DML deltas are in supplemental packet `a7430198ebf4da56594f0b704ba6b9f4bb656df1`.
 
-`failed_write_overloads.tsv` records the native all-or-none two-row USER_MODE TypeException and omitted-mode API 67 partial-result messages; those overload checks assert transport only until the separate counter/persistence capture is complete. Rows correspond to immutable `evidence/org.tsv` lines 5, 10 and 11 in the native packet.
+`failed_write_overloads.tsv` records the native two-row all-or-none USER_MODE outcomes and omitted-mode scalar outcomes, with exact DML statement/row deltas and post-transaction persistence counts. Route provenance for the initial exception/message rows is in `probes/ROAD-463-failure-details.tsv`; the subsequent counter/persistence measurements used a fresh scratch org and were deleted after capture.

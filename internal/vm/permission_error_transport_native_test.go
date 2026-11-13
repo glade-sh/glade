@@ -103,32 +103,39 @@ func TestFailedWriteOverloadTransport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) < 2 || strings.Join(rows[0], "\t") != "api\tprincipal\toperation\texception\tmessage\tsuccess\tidNull\tstatus\tfields" {
+	const header = "api\tprincipal\toperation\ttransport\texception\tmessage\tsuccess\tidNull\tstatus\terrorCount\tfields\tdmlStatements\tdmlRows\tpersisted"
+	if len(rows) < 2 || strings.Join(rows[0], "\t") != header {
 		t.Fatalf("invalid overload fixture header: %#v", rows)
 	}
 	for _, row := range rows[1:] {
-		if len(row) != 9 {
+		if len(row) != 14 {
 			t.Fatalf("invalid overload fixture row: %#v", row)
 		}
 		t.Run(row[0]+"/"+row[1]+"/"+row[2], func(t *testing.T) {
 			machine := permissionTransportVM(row[0], row[1])
-			message := strings.ReplaceAll(row[4], "Probe463__c", "PermissionProbe__c")
+			message := strings.ReplaceAll(row[5], "Probe463__c", "PermissionProbe__c")
 			var source string
 			if row[2] == "listTrue" {
-				source = `SObject first=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();first.put('Name','One');first.put('Summary__c','value');SObject second=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();second.put('Name','Two');second.put('Summary__c','value');
-try { Database.insert(new List<SObject>{first,second},true,AccessLevel.USER_MODE); System.assert(false,'expected write denial'); }
-catch(Exception error) { System.assertEquals(` + apexStringLiteral(row[3]) + `,error.getTypeName());System.assertEquals(` + apexStringLiteral(message) + `,error.getMessage()); }`
+				write := `SObject first=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();first.put('Name','One');SObject second=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();second.put('Name','Two');`
+				if row[3] == "throw" {
+					source = write + `try { Database.insert(new List<SObject>{first,second},true,AccessLevel.USER_MODE);System.assert(false,'expected write denial'); }catch(Exception error){System.assertEquals(` + apexStringLiteral(row[4]) + `,error.getTypeName());System.assertEquals(` + apexStringLiteral(message) + `,error.getMessage());}`
+				} else {
+					source = write + `List<Database.SaveResult> results=Database.insert(new List<SObject>{first,second},true,AccessLevel.USER_MODE);System.assertEquals(2,results.size());for(Database.SaveResult result:results){System.assertEquals(` + row[6] + `,result.isSuccess());System.assertEquals(` + row[7] + `,result.getId()==null);System.assertEquals(` + row[9] + `,result.getErrors().size());}`
+				}
 			} else {
-				source = `SObject record=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();record.put('Name','Synthetic');record.put('Summary__c','value');
-Database.SaveResult result=Database.insert(record,false);
-System.assertEquals(` + row[5] + `,result.isSuccess());System.assertEquals(` + row[6] + `,result.getId()==null);System.assertEquals(1,result.getErrors().size());System.assertEquals(` + apexStringLiteral(row[7]) + `,String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals(` + apexStringLiteral(message) + `,result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(len(strings.Split(row[8], ","))) + `,result.getErrors()[0].getFields().size());`
+				source = `SObject record=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();record.put('Name','Synthetic');Database.SaveResult result=Database.insert(record,false);System.assertEquals(` + row[6] + `,result.isSuccess());System.assertEquals(` + row[7] + `,result.getId()==null);System.assertEquals(` + row[9] + `,result.getErrors().size());if(!result.isSuccess()){System.assertEquals(` + apexStringLiteral(row[8]) + `,String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals(` + apexStringLiteral(message) + `,result.getErrors()[0].getMessage());System.assertEquals(0,result.getErrors()[0].getFields().size());}`
 			}
+			source += `System.assertEquals(` + row[11] + `,Limits.getDmlStatements());System.assertEquals(` + row[12] + `,Limits.getDmlRows());`
 			program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: row[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
 			if _, err := machine.Execute(program); err != nil {
 				t.Fatalf("failed-write overload: %v", err)
+			}
+			persisted := len(machine.Org.Objects["PermissionProbe__c"].Records)
+			if persisted, want := persisted, row[13]; fmt.Sprint(persisted) != want {
+				t.Fatalf("persisted rows=%d, want %s", persisted, want)
 			}
 		})
 	}

@@ -1,5 +1,17 @@
-api	principal	operation	exception	message	success	idNull	status	fields
-62.0	readOnly	listTrue	System.TypeException	DML operation INSERT not allowed on Probe463__c	NA	NA	NA	NA
-67.0	readOnly	listTrue	System.TypeException	DML operation INSERT not allowed on Probe463__c	NA	NA	NA	NA
-67.0	readOnly	plain	NA	DML operation INSERT not allowed on Probe463__c	false	true	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	empty
-67.0	ungranted	plain	NA	Access to entity 'Probe463__c' denied	false	true	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	empty
+api	principal	operation	transport	exception	message	success	idNull	status	errorCount	fields	dmlStatements	dmlRows	persisted
+62.0	admin	listTrue	rows	NA	NA	true	false	NA	0	empty	1	2	2
+62.0	granted	listTrue	rows	NA	NA	true	false	NA	0	empty	1	2	2
+62.0	readOnly	listTrue	throw	System.TypeException	DML operation INSERT not allowed on Probe463__c	NA	NA	NA	NA	NA	1	2	0
+62.0	ungranted	listTrue	throw	System.SecurityException	Access to entity 'Probe463__c' denied	NA	NA	NA	NA	NA	1	2	0
+67.0	admin	listTrue	rows	NA	NA	true	false	NA	0	empty	1	2	2
+67.0	granted	listTrue	rows	NA	NA	true	false	NA	0	empty	1	2	2
+67.0	readOnly	listTrue	throw	System.TypeException	DML operation INSERT not allowed on Probe463__c	NA	NA	NA	NA	NA	1	2	0
+67.0	ungranted	listTrue	throw	System.SecurityException	Access to entity 'Probe463__c' denied	NA	NA	NA	NA	NA	1	2	0
+62.0	admin	plain	single	NA	NA	true	false	NA	0	empty	1	1	1
+62.0	granted	plain	single	NA	NA	true	false	NA	0	empty	1	1	1
+62.0	readOnly	plain	single	NA	NA	true	false	NA	0	empty	1	1	1
+62.0	ungranted	plain	single	NA	NA	true	false	NA	0	empty	1	1	1
+67.0	admin	plain	single	NA	NA	true	false	NA	0	empty	1	1	1
+67.0	granted	plain	single	NA	NA	true	false	NA	0	empty	1	1	1
+67.0	readOnly	plain	single	NA	DML operation INSERT not allowed on Probe463__c	false	true	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	1	empty	1	1	0
+67.0	ungranted	plain	single	NA	Access to entity 'Probe463__c' denied	false	true	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	1	empty	1	1	0
