@@ -5070,9 +5070,9 @@ func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinitio
 			ranks[unknown] = len(fields[0].PicklistValues)
 		}
 		picklistRanks[i] = ranks
-		// The restricted-picklist capture establishes the legacy default DESC
-		// null position; explicit NULLS clauses remain on their existing path.
-		legacyNulls[i] = ranks != nil && legacyPicklistNullOrder && (!fields[0].RestrictedPicklist || (spec.Desc && spec.Nulls == ""))
+		// The legacy source policy also applies to restricted picklists when
+		// every stored value is represented by the configured rank metadata.
+		legacyNulls[i] = ranks != nil && legacyPicklistNullOrder
 	}
 	nullsIgnored := make([]bool, len(order))
 	for i, spec := range order {
