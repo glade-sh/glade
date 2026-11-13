@@ -69,6 +69,15 @@ func TestPreviewValueRenderedBoundary(t *testing.T) {
 	}
 }
 
+func TestPreviewValueOmitsUnusedObjectFields(t *testing.T) {
+	object := vm.Object("Example")
+	object.Fields["value"] = vm.String("short")
+	object.Fields["unused"] = vm.String(strings.Repeat("x", 128<<10))
+	if got, want := previewValue(object), object.String(); got != want {
+		t.Fatalf("preview = %q, want %q", got, want)
+	}
+}
+
 func TestVariablesConcurrentPauses(t *testing.T) {
 	h := NewHandler(Snapshot{})
 	done := make(chan struct{})
