@@ -16,7 +16,7 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		root := t.TempDir()
 		path := filepath.Join(root, "ReceiverProbe.cls")
-		writeSemaFile(t, path, "public class ReceiverProbe { public static String value() { return 'ok'; } public String instanceValue() { return 'ok'; } public String instanceValue(Integer i) { return 'ok'; } }")
+		writeSemaFile(t, path, "public class ReceiverProbe { public static String value() { return 'ok'; } public static String value(Integer n) { return 'ok'; } public String instanceValue() { return 'ok'; } public String instanceValue(Integer i) { return 'ok'; } }")
 		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
 		for _, source := range []string{
 			"System.assertEquals('ok', String.valueOf(String.valueOf(ReceiverProbe.\nvalue())));",
@@ -29,6 +29,7 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 			"System.debug(ReceiverProbe\n. value());",
 			"System.debug(ReceiverProbe . value());",
 			"System.debug(ReceiverProbe\n.value() + '');",
+			"System.debug(ReceiverProbe\n.value(1));",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue().length();",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue(1);",
 		} {
