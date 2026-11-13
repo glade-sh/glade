@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
@@ -91,6 +92,34 @@ func childRelFilterSignatures() [][]string {
 	return append(sets, all)
 }
 
+// childRelPairsShard assigns the lexicographic pair ordinal modulo shards.
+// Shards are zero-based and together enumerate every unordered pair once.
+func childRelPairsShard(count, shard, shards int) [][2]int {
+	var pairs [][2]int
+	ordinal := 0
+	for i := 0; i < count; i++ {
+		for j := i + 1; j < count; j++ {
+			if ordinal%shards == shard {
+				pairs = append(pairs, [2]int{i, j})
+			}
+			ordinal++
+		}
+	}
+	return pairs
+}
+
+func childRelPairsShardConfig(index, total string) (int, int, error) {
+	if index == "" && total == "" {
+		return 0, 1, nil
+	}
+	shard, errIndex := strconv.Atoi(index)
+	shards, errTotal := strconv.Atoi(total)
+	if errIndex != nil || errTotal != nil || shards < 1 || shard < 0 || shard >= shards {
+		return 0, 0, fmt.Errorf("set GLADE_CHILD_REL_PAIRS_SHARD and GLADE_CHILD_REL_PAIRS_SHARDS to a zero-based shard and positive count with shard < count")
+	}
+	return shard, shards, nil
+}
+
 // Regenerates child_relationship_filter.txt. Without the variable it only
 // checks that the checked-in file decodes. GLADE_UPDATE_CHILD_REL_FILTER=check
 // regenerates in memory and fails when the bytes differ from the checked-in file.
@@ -100,6 +129,15 @@ func TestChildRelationshipFilterGenerate(t *testing.T) {
 			t.Fatal("child_relationship_filter.txt does not decode against this catalog; regenerate it with GLADE_UPDATE_CHILD_REL_FILTER=1")
 		}
 		return
+	}
+	var shard, shards int
+	if os.Getenv("GLADE_UPDATE_CHILD_REL_FILTER") == "pairs" {
+		var err error
+		shard, shards, err = childRelPairsShardConfig(os.Getenv("GLADE_CHILD_REL_PAIRS_SHARD"), os.Getenv("GLADE_CHILD_REL_PAIRS_SHARDS"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("pairs mode: building filter union for shard %d/%d", shard, shards)
 	}
 	facts := newChildRelFilterFacts()
 	for _, set := range childRelFilterSignatures() {
@@ -139,35 +177,62 @@ func TestChildRelationshipFilterGenerate(t *testing.T) {
 		}
 	}
 	if os.Getenv("GLADE_UPDATE_CHILD_REL_FILTER") == "pairs" {
-		// Exhaustive check of the superset assumption: every unordered pair
-		// of covered features. Reports what the union lacks and writes nothing.
 		all := append(slices.Clone(childRelFilterFeatureNames), childRelFilterShapeTokens...)
+		pairs := childRelPairsShard(len(all), shard, shards)
+		started := time.Now()
+		t.Logf("pairs mode: shard %d/%d, %d pairs of %d total", shard, shards, len(pairs), len(all)*(len(all)-1)/2)
+		// Each worker owns its org, VM and collected facts. The union is read-only.
+		jobs := make(chan [2]int)
+		var workers sync.WaitGroup
+		var mu sync.Mutex
 		checked, added := 0, 0
-		for i := 0; i < len(all); i++ {
-			for j := i + 1; j < len(all); j++ {
-				set := []string{all[i], all[j]}
-				extra := newChildRelFilterFacts()
-				org := completeShapedOrg(set)
-				extra.collect(&org)
-				for h, pair := range extra.pairs {
-					if _, ok := facts.pairs[h]; !ok {
-						added++
-						t.Errorf("%s adds %v", childRelFilterName(set), pair)
+		for range min(runtime.GOMAXPROCS(0), len(pairs)) {
+			workers.Go(func() {
+				for pair := range jobs {
+					set := []string{all[pair[0]], all[pair[1]]}
+					extra := newChildRelFilterFacts()
+					org := completeShapedOrg(set)
+					extra.collect(&org)
+					var missing []string
+					for h, value := range extra.pairs {
+						if _, ok := facts.pairs[h]; !ok {
+							missing = append(missing, fmt.Sprintf("%s adds %v", childRelFilterName(set), value))
+						}
 					}
-				}
-				for h, key := range extra.keys {
-					if _, ok := facts.keys[h]; !ok {
-						added++
-						t.Errorf("%s adds parent key %v", childRelFilterName(set), key)
+					for h, key := range extra.keys {
+						if _, ok := facts.keys[h]; !ok {
+							missing = append(missing, fmt.Sprintf("%s adds parent key %v", childRelFilterName(set), key))
+						}
 					}
+					mu.Lock()
+					for _, message := range missing {
+						t.Error(message)
+					}
+					checked++
+					added += len(missing)
+					if checked%10 == 0 || checked == len(pairs) {
+						t.Logf("pairs mode: %d/%d pairs, elapsed %s, %d additions", checked, len(pairs), time.Since(started).Round(time.Millisecond), added)
+						// Logf flushes the testing writer; Sync requests a flush for
+						// regular-file logs too (pipes do not support Sync).
+						_ = os.Stdout.Sync()
+					}
+					mu.Unlock()
+					runtime.GC()
 				}
-				checked++
-				runtime.GC()
-			}
+			})
 		}
-		t.Logf("pairs mode: %d feature pairs checked, %d additions", checked, added)
+		for _, pair := range pairs {
+			jobs <- pair
+		}
+		close(jobs)
+		workers.Wait()
+		if len(pairs) == 0 {
+			t.Logf("pairs mode: 0/0 pairs, elapsed %s, 0 additions", time.Since(started).Round(time.Millisecond))
+			_ = os.Stdout.Sync()
+		}
 		return
 	}
+
 	blob := encodeChildRelFilter(storage.StandardCatalogStamp(), sortedHashes(facts.pairs), sortedHashes(facts.keys))
 	if os.Getenv("GLADE_UPDATE_CHILD_REL_FILTER") == "check" {
 		// Drift check: regenerate from the generator and compare bytes with
