@@ -185,7 +185,7 @@ func TestQueueableFailureNonTestDrainRemainsFailed(t *testing.T) {
 // Outside the captured no-finalizer body failure, post-stop status keeps the
 // Failed projection. Neither route has a native post-stop row.
 func TestQueueableStopStatusOutsideCapturedScopeRemainsFailed(t *testing.T) {
-	for _, route := range []string{"finalizer", "nobody"} {
+	for _, route := range []string{"finalizer", "nobody", "unsupported"} {
 		t.Run(route, func(t *testing.T) {
 			machine := New(nil)
 			org := testDataOrg()
@@ -204,6 +204,8 @@ func TestQueueableStopStatusOutsideCapturedScopeRemainsFailed(t *testing.T) {
 			switch route {
 			case "finalizer":
 				classes = append(classes, Class{Name: "StopQProbe", Interfaces: []string{"Queueable"}, Methods: map[string]Method{"execute": {Name: "StopQProbe.execute", ClassName: "StopQProbe", ReturnType: "void", Params: qParams, Program: mk(`System.attachFinalizer(new StopFinProbe()); throw new IllegalArgumentException('failure');`)}}})
+			case "unsupported":
+				classes = append(classes, Class{Name: "StopQProbe", Interfaces: []string{"Queueable"}, Methods: map[string]Method{"execute": {Name: "StopQProbe.execute", ClassName: "StopQProbe", ReturnType: "void", Params: qParams, Unsupported: "local boundary"}}})
 			case "nobody":
 				// Queueable without an execute method fails before any body runs.
 				classes = append(classes, Class{Name: "StopQProbe", Interfaces: []string{"Queueable"}, Methods: map[string]Method{}})
