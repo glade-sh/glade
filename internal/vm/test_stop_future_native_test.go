@@ -79,3 +79,59 @@ func TestFutureQueueableGetterPreservesExplicitCap(t *testing.T) {
 		t.Fatalf("explicit getter = %v, %t", got, ok)
 	}
 }
+
+// NATIVE testdata/test_stop_future_caps/queueable.tsv rows 2–7 capture
+// post-stop Queueable status for a successful callback and two failure causes.
+func TestQueueableStopStatusNative(t *testing.T) {
+	data, err := os.ReadFile("testdata/test_stop_future_caps/queueable.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) != 7 || lines[0] != "api\troute\tcase\tstop\tafter\tbody" {
+		t.Fatal("invalid native table")
+	}
+	for _, line := range lines[1:] {
+		row := strings.Split(line, "\t")
+		if len(row) != 6 || row[1] != "istest" {
+			t.Fatalf("invalid row %q", line)
+		}
+		t.Run(row[0]+"/"+row[2], func(t *testing.T) {
+			suffix := ""
+			switch row[2] {
+			case "leaf":
+			case "failure":
+				suffix = "throw new IllegalArgumentException('failure');"
+			case "child":
+				suffix = "System.enqueueJob(new StopQueueProbe());"
+			default:
+				t.Fatalf("invalid case %q", row[2])
+			}
+			body, err := CompileAnonymousWithOptions(`insert new Account(Name='owned-marker');`+suffix, CompileOptions{APIVersion: row[0]})
+			if err != nil {
+				t.Fatal(err)
+			}
+			class := Class{Name: "StopQueueProbe", Interfaces: []string{"Queueable"}, Methods: map[string]Method{"execute": {Name: "StopQueueProbe.execute", ClassName: "StopQueueProbe", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: body}}}
+			machine := New(nil)
+			org := testDataOrg()
+			machine.SetOrg(&org)
+			machine.EnableTestContext()
+			if err := machine.RegisterClass(class); err != nil {
+				t.Fatal(err)
+			}
+			expectedStop := row[3] == "caught"
+			fields := strings.Split(row[4], ":")
+			if len(fields) != 5 {
+				t.Fatalf("invalid status %q", row[4])
+			}
+			source := fmt.Sprintf(`Test.startTest(); Id id=System.enqueueJob(new StopQueueProbe()); Boolean caught=false; try { Test.stopTest(); } catch(Exception e) { caught=true; } System.assertEquals(%t,caught); AsyncApexJob j=[SELECT Status,JobType,NumberOfErrors,JobItemsProcessed,TotalJobItems FROM AsyncApexJob WHERE Id=:id]; System.assertEquals('%s',j.Status); System.assertEquals('%s',j.JobType); System.assertEquals(%s,j.NumberOfErrors); System.assertEquals(%s,j.JobItemsProcessed); System.assertEquals(%s,j.TotalJobItems); System.assertEquals(%s,[SELECT COUNT() FROM Account WHERE Name='owned-marker']);`, expectedStop, fields[0], fields[1], fields[2], fields[3], fields[4], row[5])
+			p, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: row[0]})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.Execute(p); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
