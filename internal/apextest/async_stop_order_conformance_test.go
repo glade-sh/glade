@@ -16,7 +16,7 @@ import (
 // start in its submission slot after the future with execute/finish after the
 // queueable, and a top-level Schedulable last.
 func TestAsyncStopOrderNativeConformance(t *testing.T) {
-	runAsyncStopOrderRows(t, "async_stop_order", "StopOrderTest", 13)
+	runAsyncStopOrderRows(t, "async_stop_order", "async_stop_order", "StopOrderTest", 13)
 }
 
 // TestAsyncStopMixNativeConformance replays the mixed batch, future and
@@ -26,17 +26,23 @@ func TestAsyncStopOrderNativeConformance(t *testing.T) {
 // a phase precedes the next phase; top-level Schedulables after batch
 // continuations; a throwing Queueable ends the drain.
 func TestAsyncStopMixNativeConformance(t *testing.T) {
-	runAsyncStopOrderRows(t, "async_stop_mix", "StopOrderMixTest", 24)
+	runAsyncStopOrderRows(t, "async_stop_mix", "async_stop_mix", "StopOrderMixTest", 24)
 }
 
 // TestAsyncStopBatchBoundaryNativeConformance covers pre-start batches,
 // stateful Iterables, and stateful QueryLocators. NATIVE async_stop_boundary/
 // org.tsv:2-10 istest 62.0, 67.0 and 68.0.
 func TestAsyncStopBatchBoundaryNativeConformance(t *testing.T) {
-	runAsyncStopOrderRows(t, "async_stop_boundary", "StopBoundaryTest", 3, "62.0", "67.0", "68.0")
+	runAsyncStopOrderRows(t, "async_stop_boundary", "async_stop_boundary", "StopBoundaryTest", 3, "62.0", "67.0", "68.0")
 }
 
-func runAsyncStopOrderRows(t *testing.T, fixture, class string, perAPI int, apis ...string) {
+// TestAsyncStopBatchShapeNativeConformance replays shape observations at API
+// 62.0 and 67.0 from async_stop_shape/org.tsv.
+func TestAsyncStopBatchShapeNativeConformance(t *testing.T) {
+ runAsyncStopOrderRows(t, "async_stop_shape", "async_stop_boundary", "StopShapeTest", 8)
+}
+
+func runAsyncStopOrderRows(t *testing.T, fixture, projectFixture, class string, perAPI int, apis ...string) {
 	if len(apis) == 0 {
 		apis = []string{"62.0", "67.0"}
 	}
@@ -56,7 +62,7 @@ func runAsyncStopOrderRows(t *testing.T, fixture, class string, perAPI int, apis
 	for _, api := range apis {
 		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
-			project := filepath.Join(dir, "project")
+			project := filepath.Join("testdata", "conformance", projectFixture, "project")
 			err := filepath.WalkDir(project, func(path string, entry fs.DirEntry, err error) error {
 				if err != nil || entry.IsDir() {
 					return err
@@ -115,22 +121,3 @@ func runAsyncStopOrderRows(t *testing.T, fixture, class string, perAPI int, apis
 	}
 }
 
-// TestAsyncStopBatchEmptyPreservesMain pins the pre-change local behavior for
-// an empty Iterable, a shape not covered by the native ordering observations.
-func TestAsyncStopBatchEmptyPreservesMain(t *testing.T) {
-	index := loadTestIndex(t, filepath.Join("testdata", "conformance", "async_stop_boundary", "project"))
-	run := Run(index, Options{SelectedClasses: []string{"StopBoundaryLocalTest"}, SelectedMethod: "empty", NoDiskCache: true, Parallelism: 1})
-	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("empty batch regression: %+v; suites=%+v", got, run.Suites)
-	}
-}
-
-// TestAsyncStopBatchEmptyBeforeFuturePreservesMain pins the local ordering of
-// an uncaptured empty batch followed by a future.
-func TestAsyncStopBatchEmptyBeforeFuturePreservesMain(t *testing.T) {
-	index := loadTestIndex(t, filepath.Join("testdata", "conformance", "async_stop_boundary", "project"))
-	run := Run(index, Options{SelectedClasses: []string{"StopBoundaryLocalTest"}, SelectedMethod: "emptyBeforeFuture", NoDiskCache: true, Parallelism: 1})
-	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("empty batch before future: %+v; suites=%+v", got, run.Suites)
-	}
-}
