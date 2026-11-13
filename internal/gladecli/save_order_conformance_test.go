@@ -1,0 +1,74 @@
+package gladecli
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// Each native row records the observation returned by an intentional exception
+// or assertion. Compare its full payload, including the route and saved state.
+func TestSaveOrderNativeConformance(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("GLADE_ROOT", "")
+	replaySaveOrder(t, "combined", "SaveOrderTest", "combined", "ProbeResultException")
+}
+
+func replaySaveOrder(t *testing.T, fixture, classPrefix, method, exception string) {
+	t.Helper()
+	dir := filepath.Join("testdata", "save_order", fixture)
+	raw, err := os.ReadFile(filepath.Join(dir, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
+	if len(lines) != 5 || lines[0] != "id\tapi\troute\tcompiled\ttransport\tobservation" {
+		t.Fatalf("%s: expected the four native API and route observations", fixture)
+	}
+	source, err := os.ReadFile(filepath.Join(dir, "anonymous.apex"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, api := range []string{"62.0", "67.0"} {
+		root := t.TempDir()
+		if err := os.CopyFS(filepath.Join(root, "force-app"), os.DirFS(filepath.Join(dir, "force-app"))); err != nil {
+			t.Fatal(err)
+		}
+		project := fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api)
+		writeTestFile(t, filepath.Join(root, "sfdx-project.json"), project)
+		for j, route := range []string{"anonymous", "istest"} {
+			t.Run(fixture+"/"+api+"/"+route, func(t *testing.T) {
+				row := strings.Split(lines[1+2*i+j], "\t")
+				if len(row) != 6 || row[0] != fixture || row[1] != api || row[2] != route || row[3] != "true" {
+					t.Fatalf("unexpected capture row %q", row)
+				}
+				var stdout, stderr bytes.Buffer
+				if route == "anonymous" {
+					args := []string{"exec", "--project", root, "--json", string(source)}
+					code := Run(context.Background(), args, &stdout, &stderr)
+					want := "glade: " + exception + ": " + row[5]
+					if got := strings.TrimSpace(stderr.String()); code == 0 || got != want {
+						t.Fatalf("exit %d\nGlade: %s\nnative: %s", code, got, want)
+					}
+					return
+				}
+				class := classPrefix + strings.TrimSuffix(api, ".0")
+				args := []string{"test", "--project", root, "--no-serve", "--class", class, "--method", method, "--json"}
+				code := Run(context.Background(), args, &stdout, &stderr)
+				run, err := decodeTestRunJSON(stdout.Bytes())
+				if err != nil || code != 1 || len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 {
+					t.Fatalf("expected one assertion, exit %d: %v %s %s", code, err, stderr.String(), stdout.String())
+				}
+				c := run.Suites[0].Cases[0]
+				want := "Assertion Failed: Expected: EXPECTED, Actual: " + row[5]
+				if c.ClassName != class || c.MethodName != method || c.Problem == nil || c.Problem.Type != "System.AssertException" || c.Problem.Message != want {
+					t.Fatalf("Glade %s.%s: %+v\nnative: %s", c.ClassName, c.MethodName, c.Problem, want)
+				}
+			})
+		}
+	}
+}

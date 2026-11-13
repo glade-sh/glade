@@ -1,0 +1,23 @@
+started: 2026-11-13T00:12:30Z
+finished: 2026-11-13T00:15:28Z
+sf: @salesforce/cli/2.157.8
+fixture: standard Account.Description with active before-save flow, validation rule and before/after insert trigger
+shape: Developer Edition scratch org, default settings; creation, metadata deploy and deletion succeeded
+routes: Tooling executeAnonymous at 62.0 and 67.0; named Apex tests at class source 62.0 and 67.0
+automation: flow and trigger metadata held at their deployed versions for all four calls
+transport: complete intentional exception message (anonymous) or full failing assertion (named); route marker verified
+rows: 4
+org.tsv sha256: 5a9d7c376e1c5e3d96883f098d7a7f443a087704f1d74bfeb13c259df4d84a3a
+sha256 anonymous.apex f9420d1894b4dd494fecd0c64c9483eff0c67d8505b4ebd1cc1019c10e12dfed
+sha256 force-app/main/default/classes/ProbeResultException.cls 3659f1c3fc0c42de6943ea6ac5982ec356fecc7db2e00bfad9ee07e8d5f08756
+sha256 force-app/main/default/classes/ProbeResultException.cls-meta.xml da4734888bce35ef4049b50165acdd9cf59812633aba42cdb64ec85b9c4c0e62
+sha256 force-app/main/default/classes/SaveOrderTest62.cls e2ac7f5a7d6fa7cd62eaf02b5a46e2bc3c662afaaaac15ac845134cebf713b7f
+sha256 force-app/main/default/classes/SaveOrderTest62.cls-meta.xml da4734888bce35ef4049b50165acdd9cf59812633aba42cdb64ec85b9c4c0e62
+sha256 force-app/main/default/classes/SaveOrderTest67.cls 0eb423afd81a97a3fa2055b421ea300b8ff0a57b291c5a56da25cdbb8e187900
+sha256 force-app/main/default/classes/SaveOrderTest67.cls-meta.xml 6d12d2d7f42b1b2abee0c3e3ac82e40374fae5850aeae1a30115bc3e0b7a2016
+sha256 force-app/main/default/classes/SaveOrderTrace.cls b02d7773311de3b421fe46b64b1e6693878ed0c4303db8d6afaa27fc846c6f83
+sha256 force-app/main/default/classes/SaveOrderTrace.cls-meta.xml da4734888bce35ef4049b50165acdd9cf59812633aba42cdb64ec85b9c4c0e62
+sha256 force-app/main/default/flows/Probe_Before_Save.flow-meta.xml d45e71ec65aaeee123b302860905444a269d1f9866589358f6aacaea9522cc6c
+sha256 force-app/main/default/objects/Account/validationRules/Probe_Order_Reject.validationRule-meta.xml 930f9c64564195541b4c526e4dea6b5e2c58364690c7c1b5e06c40a6989a8f32
+sha256 force-app/main/default/triggers/SaveOrder.trigger 07c659f8fe7738f21b788b4c35ab6a36183700faf030aaeb53514664e410f380
+sha256 force-app/main/default/triggers/SaveOrder.trigger-meta.xml f48d39c4897dd3c0a5913071b7f48770f265a3b9082bdebf485dacd8feefefb1
