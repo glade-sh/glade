@@ -934,7 +934,7 @@ func (vm *VM) validateSOQLSelectionLiteralSource(objectName string, condition *s
 func (vm *VM) validateDynamicSOQLBinds(raw string, binds Value) error {
 	lookup := vm.lookupSOQLBind
 	if binds.Kind == ValueMap {
-		lookup = func(name string) (Value, error) { return soqlBindMapValue(binds, name) }
+		lookup = vm.soqlBindMapLookup(binds)
 	}
 	return vm.validateDynamicSOQLBindsWith(raw, lookup)
 }
@@ -951,8 +951,8 @@ func (vm *VM) validateDynamicSOQLExceptionBinds(raw string) error {
 	// Only plain locals and ended variables are read: a lookup here must not
 	// evaluate a property getter or any other code.
 	lookup := func(name string) (Value, error) {
-		if value, ok := vm.Globals[name]; ok {
-			return value, nil
+		if live, ok := vm.lookupGlobalName(name); ok {
+			return vm.Globals[live], nil
 		}
 		if departed, ok := vm.closedSOQLLocals[strings.ToLower(name)]; ok {
 			return departed, nil
@@ -4620,18 +4620,23 @@ func (vm *VM) expandSOQLBindsFromMap(raw string, binds Value) (string, error) {
 	if binds.Kind != ValueMap {
 		return "", fmt.Errorf("queryWithBinds bind values must be a Map")
 	}
-	return vm.expandSOQLBindsWith(raw, func(name string) (Value, error) {
-		// A dotted bind whose root is a local in scope never matches a map
-		// key spelled with the dot: the lookup uses the member after it
-		// (dynamic_bind_scope_paths E09). A dotted key with no such local
-		// keeps the full-name lookup; no native row covers it.
+	return vm.expandSOQLBindsWith(raw, vm.soqlBindMapLookup(binds), nil)
+}
+
+// soqlBindMapLookup is the one bind-map lookup that validation and expansion
+// share. A dotted bind whose root is a local in scope never matches a map key
+// spelled with the dot: the lookup uses the member after it
+// (dynamic_bind_scope_paths E09). A dotted key with no such local keeps the
+// full-name lookup; no native row covers it.
+func (vm *VM) soqlBindMapLookup(binds Value) func(string) (Value, error) {
+	return func(name string) (Value, error) {
 		if dot := strings.LastIndexByte(name, '.'); dot >= 0 {
 			if _, local := vm.lookupGlobalName(name[:strings.IndexByte(name, '.')]); local {
 				name = name[dot+1:]
 			}
 		}
 		return soqlBindMapValue(binds, name)
-	}, nil)
+	}
 }
 
 func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error), call func(string) (Value, error)) (string, error) {

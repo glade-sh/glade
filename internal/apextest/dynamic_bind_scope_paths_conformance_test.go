@@ -11,19 +11,6 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Rows whose native outcome is not modeled yet. Each is a dotted bind
-// expression on a dynamic route (native: "Variable does not exist: <dotted
-// name>") or a Map.get call in a bind (native: "unexpected token: '('"). They
-// stay at the pre-existing behavior until that work lands.
-var dynamicBindScopePathsParked = map[string]bool{
-	"D14_dotted_declared": true, "D16_dotted_null_root": true, "D17_dotted_bad_field": true,
-	"D19_dotted_count": true, "D21_dotted_locator": true, "D27_map_get": true,
-	"E01_static_class_field": true, "E02_this_field": true, "E03_instance_field_dotted": true,
-	"E04_nested_dotted": true, "E05_dotted_id": true, "E06_list_size_dotted": true,
-	"E07_dotted_in_set": true, "E08_dotted_select_loc": true, "E18_catch_map_get_count": true,
-	"E19_map_get_locator": true,
-}
-
 // Replays the native dynamic-bind scope rows (anonymous and @IsTest routes at
 // API 62.0 and 67.0) against the shared runner.
 func TestDynamicBindScopePathsNativeConformance(t *testing.T) {
@@ -57,9 +44,6 @@ func TestDynamicBindScopePathsNativeConformance(t *testing.T) {
 	for _, row := range rows {
 		id, api, route, outcome := row[0], row[1], row[2], row[5]
 		t.Run(id+"/"+api, func(t *testing.T) {
-			if dynamicBindScopePathsParked[strings.TrimSuffix(id, "_t")] {
-				t.Skip("native outcome not modeled yet")
-			}
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"`+api+`"}`)
 			classes := filepath.Join(root, "force-app", "main", "default", "classes")
