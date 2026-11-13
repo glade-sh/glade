@@ -4052,7 +4052,16 @@ func annotateExceptionContext(value Value, stack []callFrame) Value {
 	// An exception raised below an anonymous caller carries that caller's
 	// line. How many AnonymousBlock frames follow depends on the type.
 	if len(stack) >= 2 && stack[0].anonymousCallerLine > 0 && stack[len(stack)-1].statement {
-		value.exceptionAnonymousCallerLine = stack[0].anonymousCallerLine
+		triggerBoundary := false
+		for _, frame := range stack {
+			if hasSuffixFold(frame.File, ".trigger") {
+				triggerBoundary = true
+				break
+			}
+		}
+		if !triggerBoundary {
+			value.exceptionAnonymousCallerLine = stack[0].anonymousCallerLine
+		}
 	}
 	return value
 }
