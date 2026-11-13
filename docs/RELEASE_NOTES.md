@@ -15,6 +15,7 @@
 - **Method bodies are lexed once per process.** Semantic analysis and the runtime compile used to lex the same method body twice. A bounded cache (24 MiB of tokens, least recently used first) now shares the lexed tokens, and the lexer builds each token list in one exact-size allocation. On a 500-class test project, allocation in the lexer fell from about 207 MB to about 61 MB and total allocation fell about 6 percent. Compile results and diagnostics are identical.
 - **Pooled hashing buffer for source digests.** Hashing a project file for the Visualforce generation key and for source-digest validation no longer allocates a 32 KiB copy buffer per file; the buffers come from a shared pool. A 500-class project allocates about 120 MB less in one cold `glade test`. Digests and results are unchanged.
 - **Seeding no longer copies whole object definitions.** The record type, currency field and platform object setup steps used to copy an object's entire definition before checking whether they change anything. They now copy only what they write, and leave a definition alone when it is already complete. Results are identical.
+- **Smaller platform type table.** The standard platform types (System, Database, Schema and the rest) are now built with exact-size member lists, and members that share a modifier list or a parameter list share one copy. Building the table allocates about 35 MB instead of 65 MB and keeps about 22 MB live instead of 31 MB, in every process. Symbols and their order are unchanged.
 
 ## v0.3.8
 
