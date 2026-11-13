@@ -258,6 +258,15 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 		return value, err
 	}
 	defaultInsertOverload := len(args) == 1 || (len(args) == 2 && args[1].Kind == ValueBool)
+	if ordinaryDatabaseCall && op == "insert" && len(args) == 2 && args[0].Kind == ValueObject && args[1].Kind == ValueBool &&
+		!args[1].Bool && !allOrNone && dmlMode == "USER_MODE" && vm.currentSourceExecutionPolicy().APIVersion == "67.0" {
+		if failures, handled := vm.userModePartialInsertObjectDenials(args[0], false); handled {
+			if err := vm.chargeUserModeInsertPermissionDenial(args[0]); err != nil {
+				return Null, err
+			}
+			return fieldKeyDMLResultsValue(op, args[0], failures), nil
+		}
+	}
 	if op == "insert" && defaultInsertOverload && vm.runAsSecureDefaults() {
 		if !allOrNone {
 			if failures, handled := vm.defaultRunAsInsertFailures(args[0]); handled {
@@ -274,7 +283,25 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 			return fieldKeyDMLResultsValue(op, args[0], failures), nil
 		}
 	}
+	if ordinaryDatabaseCall && op == "insert" && len(args) == 3 && args[1].Kind == ValueBool &&
+		!args[1].Bool && isDatabaseAccessLevelValue(args[2]) && accessLevelPermissionSetID(args[2]) == "" && !allOrNone && dmlMode == "USER_MODE" {
+		if failures, handled := vm.userModePartialInsertObjectDenials(args[0], true); handled {
+			if err := vm.chargeUserModeInsertPermissionDenial(args[0]); err != nil {
+				return Null, err
+			}
+			return fieldKeyDMLResultsValue(op, args[0], failures), nil
+		}
+	}
 	if dmlMode == "USER_MODE" {
+		if ordinaryDatabaseCall && op == "insert" && len(args) == 3 && args[1].Kind == ValueBool &&
+			args[1].Bool && isDatabaseAccessLevelValue(args[2]) && allOrNone && externalIDField == "" {
+			if err, handled := vm.userModeAllOrNoneInsertObjectDenial(args[0], accessLevel); handled {
+				if chargeErr := vm.chargeUserModeInsertPermissionDenial(args[0]); chargeErr != nil {
+					return Null, chargeErr
+				}
+				return Null, err
+			}
+		}
 		if err := vm.userModeUpsertKeyFieldDenial(op, args[0], externalIDField, accessLevelPermissionSetID(accessLevel)); err != nil {
 			return Null, err
 		}

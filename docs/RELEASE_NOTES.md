@@ -37,6 +37,10 @@
 - **Restricted picklist ordering.** Source APIs 62–65 now apply the legacy picklist null-order policy to restricted picklists with configured values. Native source-version controls place the transition at API 66.0, which honors explicit NULLS clauses like 67.0.
 - **Double signed zero.** Equality and typed List membership distinguish positive and negative Double zero in the captured cases. Sorting Double and Object lists places negative Double zero first.
 
+### Apex
+
+- **User-mode DML and secure queries.** For named runAs Standard User tests at source APIs 62 and 67, denied object access in explicit partial `USER_MODE` inserts returns failed `SaveResult` rows, and explicit all-or-none inserts return the captured exception and DML counters. At API 67, the omitted-mode partial insert returns native `SaveResult` failures. These results apply to the captured Text Name object and record shapes; other shapes retain their previous behavior. Captured API 62 dynamic `SECURITY_ENFORCED` projections on Text Name objects report the native inaccessible-permission message.
+
 ## v0.3.8
 
 v0.3.8 turns more Salesforce compile and runtime differences into matching errors, enforces fuzzy duplicate rules, makes dependency resolution deterministic, and cuts test startup time, memory and check time.
