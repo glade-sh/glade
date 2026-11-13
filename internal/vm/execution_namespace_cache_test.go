@@ -3,7 +3,41 @@ package vm
 import (
 	"os"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/ir"
 )
+
+func TestCurrentExecutionNamespaceAfterAnonymousLocalCleanup(t *testing.T) {
+	machine := New(os.Stderr)
+	if err := machine.RegisterTrigger(Trigger{Name: "anon", Namespace: "pkg", Object: "Account", Timing: "before", Operation: "insert"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.currentClass = "anon"
+	for i := 0; i < 2; i++ {
+		cleanup, err := machine.registerAnonymousLocalMethods(ir.Program{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := machine.currentExecutionNamespace(); got != "" {
+			t.Fatalf("cycle %d during registration: namespace = %q, want empty", i, got)
+		}
+		cleanup()
+		if got := machine.currentExecutionNamespace(); got != "pkg" {
+			t.Fatalf("cycle %d after cleanup: namespace = %q, want pkg", i, got)
+		}
+	}
+	if err := machine.RegisterClass(Class{Name: "anon", Namespace: "existing"}); err != nil {
+		t.Fatal(err)
+	}
+	cleanup, err := machine.registerAnonymousLocalMethods(ir.Program{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanup()
+	if got := machine.currentExecutionNamespace(); got != "existing" {
+		t.Fatalf("after cleanup with existing class: namespace = %q, want existing", got)
+	}
+}
 
 func TestCurrentExecutionNamespaceFollowsClassRegistration(t *testing.T) {
 	machine := New(os.Stderr)
