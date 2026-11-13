@@ -27,6 +27,8 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 			"System.debug(ReceiverProbe.\nvalue() + '');",
 			"System.debug(ReceiverProbe. value() == 'ok');",
 			"System.debug(ReceiverProbe\n. value());",
+			"System.debug(ReceiverProbe . value());",
+			"System.debug(ReceiverProbe\n.value() + '');",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue().length();",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue(1);",
 		} {
