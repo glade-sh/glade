@@ -415,22 +415,14 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 	last := standardCompare(candidate.last, existing.last, standardLastName)
 	email := standardCompare(candidate.email, existing.email, standardExact)
 	if candidate.kind == existing.kind && email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
-		if !last.ok() {
-			return standardCorroboratedSurname(candidate.last, existing.last)
+		if matched, confidence := standardCorroboratedSurname(candidate.last, existing.last); matched {
+			return true, confidence
 		}
-		if last.confidence < 100 {
-			if standardIsTerminalSwap(candidate.last, existing.last) {
-				return standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
-			}
-			// Some four-to-five trailing letters qualify via the inherited
-			// phonetic key and keyboard item before the supplementary scorer.
-			a, b := candidate.last, existing.last
-			if len(a) > len(b) {
-				a, b = b, a
-			}
-			if len(a) == 4 && len(b) == 5 && standardNameWord(a) && standardNameWord(b) && strings.EqualFold(a, b[:4]) {
-				return true, standardTrailingLetterConfidence(strings.ToLower(a), last.confidence)
-			}
+		if !last.ok() {
+			return false, 0
+		}
+		if last.confidence < 100 && standardIsTerminalSwap(candidate.last, existing.last) {
+			return standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
 		}
 	}
 	if !last.ok() {

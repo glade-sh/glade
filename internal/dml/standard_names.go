@@ -26,12 +26,34 @@ func standardNameWord(s string) bool {
 	return true
 }
 
+// Normalize the captured case, accent, hyphen and shared leading-token forms
+// before applying the same surname geometry. Keep the input cap before folding.
+func standardSurnameText(s string) string {
+	s = strings.ReplaceAll(stripAccents(strings.ToLower(s)), "-", "")
+	return s
+}
+
+func standardSurnamePair(a, b string) (string, string) {
+	a, b = standardSurnameText(a), standardSurnameText(b)
+	// A shared leading token does not change the last token's score.
+	x, y := strings.Fields(a), strings.Fields(b)
+	if len(x) == 2 && len(y) == 2 && x[0] == y[0] {
+		a, b = x[1], y[1]
+	}
+	return a, b
+}
+
 func standardSurnameLengthsMayMatch(a, b string) bool {
+	if len(a) > maxFuzzyInputRunes || len(b) > maxFuzzyInputRunes {
+		return false
+	}
+	accented := a != stripAccents(a) || b != stripAccents(b)
+	a, b = standardSurnamePair(a, b)
 	// The extra corroborated comparisons have native positives at lengths
 	// 2 through 8. The inherited last-name item handles all other lengths.
 	if len(a) != len(b) {
 		short, long := min(len(a), len(b)), max(len(a), len(b))
-		return (short == 3 || short == 4) && long == short+1
+		return (short == 3 || short == 4 || short == 5 && accented) && long == short+1
 	}
 	return len(a) >= 2 && len(a) <= 8
 }
@@ -43,10 +65,10 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	if !standardSurnameLengthsMayMatch(a, b) {
 		return false, 0
 	}
+	a, b = standardSurnamePair(a, b)
 	if !standardNameWord(a) || !standardNameWord(b) {
 		return false, 0
 	}
-	a, b = strings.ToLower(a), strings.ToLower(b)
 	if len(a) > len(b) {
 		a, b = b, a
 	}
@@ -54,16 +76,37 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 		if a != b[:len(a)] {
 			return false, 0
 		}
-		score, ok := keyboardSimilarity(a, b)
-		return ok && score >= 90, standardTrailingLetterConfidence(a, averageWith100(score))
+		if lastNameMetaphone3Equal(a, b) {
+			return true, 100
+		}
+		score, _ := keyboardSimilarity(a, b)
+		return true, standardTrailingConfidence(a, b, averageWith100(score))
 	}
-	// LocalEditsBehavior finds a five-letter surname when only its final nasal
-	// consonant changes between the neighboring m and n keys, in either order.
-	if len(a) == 5 && a[:4] == b[:4] && (a[4] == 'm' && b[4] == 'n' || a[4] == 'n' && b[4] == 'm') {
-		return true, 100
+	different, cost := 0, 0.0
+	for i := range len(a) {
+		if a[i] != b[i] {
+			different++
+			cost = keyboardCost(rune(a[i]), rune(b[i]))
+		}
 	}
-	// All new two-character swaps are terminal. The single three-character
-	// rotation in the native name panel is its five-letter terminal control.
+	if different == 1 && len(a) >= 3 {
+		if lastNameMetaphone3Equal(a, b) {
+			return true, 100
+		}
+		if cost == 0.05 {
+			if len(a) >= 5 {
+				return true, 100
+			}
+			return true, 99
+		}
+		// The far-key z/m controls cost 0.4, while q/p costs 0.64 and misses.
+		if cost == 0.4 && len(a) == 5 {
+			return true, 97
+		}
+		return false, 0
+	}
+	// Captured two-character swaps are terminal; three-character terminal
+	// rotations are measured only for five-letter names.
 	i := len(a) - 2
 	if a[:i] != b[:i] {
 		if len(a) != 5 || a[:i-1] != b[:i-1] {
@@ -85,12 +128,15 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	if lastNameMetaphone3Equal(a, b) {
 		return true, 100
 	}
-	cost := 0.0
+	cost = 0.0
 	for i := range len(left) {
 		cost += keyboardCost(rune(left[i]), rune(right[i]))
 	}
 	score := 100 * (1 - cost/float64(len(a)))
 	confidence := averageWith100(score)
+	if len(left) == 3 && score < 94 {
+		return false, 0
+	}
 	if score >= 92 {
 		if len(left) == 2 {
 			return standardTerminalSwap(a, confidence, false)
@@ -100,9 +146,9 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	return score >= 92, confidence
 }
 
-// A five-letter terminal rotation spanning exactly one row and one column
-// scored 98 at position sums 17 and 33. Wider and purely vertical rotations
-// keep the ordinary keyboard confidence, as do unmeasured sums.
+// Panel F measures five-letter terminal rotations: the one-row/one-column
+// group scores 98 through sum 35 and 99 from 39. Vertical rotations retain
+// 98; wide same-row controls retain 97. Wide controls below 94 miss.
 func standardRotationConfidence(name, left, right string, ordinary float64) float64 {
 	maxRows, maxColumns := 0, 0
 	for i := range len(left) {
@@ -112,18 +158,51 @@ func standardRotationConfidence(name, left, right string, ordinary float64) floa
 	}
 	if maxRows == 1 && maxColumns == 1 {
 		sum := standardKeyboardPositionSum(name)
-		if sum == 17 || sum == 33 {
+		if sum <= 35 {
 			return 98
 		}
 	}
 	return ordinary
 }
 
-func standardTrailingLetterConfidence(short string, ordinary float64) float64 {
-	// The high-position four-letter stem in the extension panel scores 99.
-	// The lower sums include conflicting native grades for the same sum.
-	if len(short) == 4 && standardKeyboardPositionSum(short) == 42 {
-		return 99
+// Panels A and C pin the p/s/z and three-letter s/p/k grades. Other
+// extension letters keep their ordinary grade; tests enumerate the residuals.
+func standardTrailingConfidence(short, long string, ordinary float64) float64 {
+	sum := standardKeyboardPositionSum(short)
+	tail := long[len(long)-1]
+	if len(short) >= 4 {
+		switch tail {
+		case 'p':
+			return 99
+		case 's':
+			if sum >= 42 {
+				return 99
+			}
+			return 98
+		case 'z':
+			if sum >= 18 {
+				return 98
+			}
+			if sum == 16 {
+				return 97
+			}
+		}
+	}
+	if len(short) == 3 {
+		switch tail {
+		case 's':
+			return 98
+		case 'p':
+			if sum >= 19 {
+				return 99
+			}
+			return 98
+		case 'k':
+			if sum >= 15 {
+				return 98
+			}
+			return 97
+		}
 	}
 	return ordinary
 }
@@ -150,27 +229,26 @@ func standardTerminalSwap(name string, ordinary float64, ordinaryMatched bool) (
 			return true, 97
 		}
 	case 3:
-		// One-column exchanges in the same row scored 99 at sums 31 and
-		// 35. The observed sums 11 and 25 retained the ordinary grade.
+		// Panel E: same-row adjacent swaps score 98 through sum 29,
+		// and 99 from sum 31.
 		if rows == 0 && columns == 1 {
 			sum := standardKeyboardPositionSum(name)
-			if sum == 31 || sum == 35 {
+			if sum >= 31 {
 				return true, 99
 			}
 		}
 	case 8:
 		if rows <= 1 && columns == 5 {
-			// The independent panel saved all nonphonetic pairs at sums 42
-			// and 44. The earlier positive has sum 60 and confidence 97.
+			// Panel G: five-column swaps miss through sum 44, and score
+			// 97 from sum 46 through 62, on both phonetic-key paths.
 			sum := standardKeyboardPositionSum(name)
-			if sum == 42 || sum == 44 {
+			if sum <= 44 {
 				return false, 0
 			}
-			if sum == 60 {
+			if sum >= 46 && sum <= 62 {
 				return true, 97
 			}
-			// Unmeasured sums retain the ordinary surname verdict. Do not
-			// introduce a match or veto one that the ordinary item found.
+			// Above the captured interval, retain the ordinary surname verdict.
 			return ordinaryMatched, ordinary
 		}
 	case 6:
