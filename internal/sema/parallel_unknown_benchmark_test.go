@@ -35,7 +35,7 @@ func BenchmarkParallelUnknownAssignment(b *testing.B) {
 		files = append(files, file)
 	}
 	index := typesys.Build(project.Project{Root: root, ApexFiles: files}, schema.Schema{})
-	want := bodyDiagnosticsWithWorkers(index, 1)
+	want := NewAnalyzer().checkMethodBodiesWithViewWorkers(index, buildSemaTypeMemberState(index, nil).view(), nil, 1)
 	if len(want) == 0 {
 		b.Fatal("fixture did not produce an unknown assignment diagnostic")
 	}
