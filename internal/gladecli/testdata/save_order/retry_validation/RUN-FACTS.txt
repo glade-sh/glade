@@ -1,6 +1,5 @@
 shape: Developer Edition scratch org, direct master-detail COUNT, parent validation on a field changed by a before-update trigger during retry
 routes: native anonymous requests and versioned named tests at 62 and 67; Probe_Access assigned
-source: private tools familyprobe/save-order-20261112/rollup-retry-validation; uncalled test classes omitted
 teardown: delete returned status 0, subsequent display returned NamedOrgNotFoundError
 sha256 atomic.apex c513df8a6657031d0f2baa2c96bf702dc884de2de523a524a3619452312afb00
 sha256 atomic.tsv f9151034f8aafa25720a9f20dd17aa2874c2e26a34164aafc9f7e9051809b304

@@ -119,8 +119,8 @@ func checkAnonymousSave(t *testing.T, root string, source []byte, exception, obs
 	}
 }
 
-// ROAD-459 owns the nested trigger diagnostic. Retain the error code, entry
-// count, full trace and stored row count in the depth comparison.
+// Compare the trigger-depth error code, entry count, full trace and stored
+// row count. The native nested diagnostic is preserved in the captured row.
 func saveOrderObservation(t *testing.T, exception, value string) string {
 	t.Helper()
 	if exception != "DepthResultException" {
