@@ -63,3 +63,44 @@ func TestExceptionCallPositionAfterImplicitGetter(t *testing.T) {
 		}
 	}
 }
+
+// A trigger entered from either DML form reports its own getter call site.
+func TestTriggerExceptionCallPositionAfterImplicitGetter(t *testing.T) {
+	for _, entry := range []string{"insert new Account(Name='a');", "Database.insert(new Account(Name='a'));"} {
+		t.Run(entry, func(t *testing.T) {
+			machine := New(nil)
+			org := testDataOrg()
+			machine.SetOrg(&org)
+			getter, err := CompileAnonymous("Thrower.fail(); return 1;")
+			if err != nil {
+				t.Fatal(err)
+			}
+			fail, err := CompileAnonymous("throw new IllegalArgumentException('failure');")
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, class := range []Class{
+				{Name: "Holder", Fields: map[string]Field{"Inst": {Name: "Inst", Type: "Integer", Property: true, Getter: &Method{Name: "Holder.Inst.get", ClassName: "Holder", ReturnType: "Integer", Program: getter}}}},
+				{Name: "Thrower", Methods: map[string]Method{"fail": {Name: "Thrower.fail", ClassName: "Thrower", IsStatic: true, Program: fail}}},
+			} {
+				if err := machine.RegisterClass(class); err != nil {
+					t.Fatal(err)
+				}
+			}
+			trigger, err := CompileAnonymous("Holder h = new Holder();\ntry {\n\nInteger v = h.Inst;\n} catch (Exception e) {\nString stack = e.getStackTraceString();\nSystem.assert(stack.contains('AccountTrigger: line 4, column 1'), stack);\n}\n\n\n")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := machine.RegisterTrigger(Trigger{Name: "AccountTrigger", Object: "Account", Timing: "before", Operation: "insert", APIVersion: "67.0", Program: trigger}); err != nil {
+				t.Fatal(err)
+			}
+			program, err := CompileAnonymous("// padding padding padding padding padding padding padding padding padding padding padding padding\n" + entry)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
