@@ -53,12 +53,16 @@ func TestConformanceAPIShardManifest(t *testing.T) {
 			return false
 		})
 		// The family's parent tests, and the function that holds the API loop.
-		// V09 is split by row range into top-level parts that share one runner.
+		// V09 and V14 are split by row range into top-level parts that share one runner.
 		parents, runner := []string{"TestV" + family[1:] + "SalesforceConformance"}, ""
-		if family == "v09" {
-			parents, runner = nil, "v09RunConformance"
-			for part := 1; part <= 4; part++ {
-				parents = append(parents, fmt.Sprintf("TestV09SalesforceConformancePart%dof4", part))
+		if family == "v09" || family == "v14" {
+			partCount := 4
+			if family == "v14" {
+				partCount = 2
+			}
+			parents, runner = nil, family+"RunConformance"
+			for part := 1; part <= partCount; part++ {
+				parents = append(parents, fmt.Sprintf("TestV%sSalesforceConformancePart%dof%d", family[1:], part, partCount))
 			}
 		}
 		parent := runner

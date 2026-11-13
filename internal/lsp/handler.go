@@ -30,6 +30,7 @@ type Handler struct {
 	parser       *apexast.Parser
 	parserClosed bool
 
+	analyzer     func(typesys.Index) sema.Result
 	analysisOnce sync.Once
 	analysis     sema.Result
 
@@ -39,6 +40,12 @@ type Handler struct {
 	shutdown atomic.Bool
 
 	debounce time.Duration
+
+	// completionCatalogs caches the default completion list per ordering.
+	completionCatalogs [3]struct {
+		once  sync.Once
+		items []CompletionItem
+	}
 }
 
 // DefaultDiagnosticsDebounce is how long Serve waits after the last
@@ -122,9 +129,25 @@ func (h *Handler) analysisResult() sema.Result {
 		return sema.Result{}
 	}
 	h.analysisOnce.Do(func() {
-		h.analysis = sema.Analyze(h.index)
+		analyze := h.analyzer
+		if analyze == nil {
+			analyze = sema.Analyze
+		}
+		h.analysis = analyze(h.index)
 	})
 	return h.analysis
+}
+
+// SetAnalyzer replaces the whole-project semantic pass, for callers that can
+// answer from a cache. Call it before the index is published.
+func (h *Handler) SetAnalyzer(analyze func(typesys.Index) sema.Result) {
+	h.analyzer = analyze
+}
+
+// StartAnalysis runs the semantic pass in the background once the index is
+// ready, so the first diagnostics request finds it done or already running.
+func (h *Handler) StartAnalysis() {
+	go h.analysisResult()
 }
 
 func (h *Handler) Shutdown() bool {
@@ -570,6 +593,19 @@ func (h *Handler) Completion(params CompletionParams) CompletionList {
 		sortCompletionItems(context.items, completionContextDefault)
 		return CompletionList{Items: context.items}
 	}
+	return CompletionList{Items: h.defaultCompletionCatalog(context.kind)}
+}
+
+// defaultCompletionCatalog returns the sorted whole-project completion list for
+// one ordering. The index never changes after it is published, so each ordering
+// is built once and shared. Callers must not modify the returned items.
+func (h *Handler) defaultCompletionCatalog(kind completionContext) []CompletionItem {
+	slot := &h.completionCatalogs[kind]
+	slot.once.Do(func() { slot.items = h.buildDefaultCompletionCatalog(kind) })
+	return slot.items
+}
+
+func (h *Handler) buildDefaultCompletionCatalog(kind completionContext) []CompletionItem {
 	items := make([]CompletionItem, 0, len(h.index.Types)+len(h.index.Objects))
 	seen := make(map[string]bool)
 	add := func(item CompletionItem) {
@@ -617,8 +653,8 @@ func (h *Handler) Completion(params CompletionParams) CompletionList {
 	for _, keyword := range []string{"class", "trigger", "interface", "enum", "public", "private", "protected", "global", "static", "void", "return", "new", "for", "if", "else"} {
 		add(CompletionItem{Label: keyword, Kind: completionItemKindKeyword, Detail: "Apex keyword"})
 	}
-	sortCompletionItems(items, context.kind)
-	return CompletionList{Items: items}
+	sortCompletionItems(items, kind)
+	return items
 }
 
 type completionResultContext struct {

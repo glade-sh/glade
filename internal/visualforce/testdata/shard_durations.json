@@ -980,8 +980,12 @@
    "durationMillis": 0
   },
   {
-   "name": "TestV12SalesforceConformance",
-   "durationMillis": 625680
+   "name": "TestV12SalesforceConformancePart1of2",
+   "durationMillis": 312840
+  },
+  {
+   "name": "TestV12SalesforceConformancePart2of2",
+   "durationMillis": 312840
   },
   {
    "name": "TestV13OnDemandRemotingRender",
@@ -992,8 +996,12 @@
    "durationMillis": 457460
   },
   {
-   "name": "TestV14SalesforceConformance",
-   "durationMillis": 520580
+   "name": "TestV14SalesforceConformancePart1of2",
+   "durationMillis": 260290
+  },
+  {
+   "name": "TestV14SalesforceConformancePart2of2",
+   "durationMillis": 260290
   },
   {
    "name": "TestV15CartesianLayoutTolerance",

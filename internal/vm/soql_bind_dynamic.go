@@ -10,6 +10,13 @@ import (
 // substitution can turn it into a value. Uncaptured expression shapes keep
 // their existing expansion behavior.
 func (vm *VM) validateDynamicSOQLBindSyntax(raw string, countQuery bool) error {
+	return vm.validateDynamicSOQLBindSyntaxMode(raw, countQuery, false)
+}
+
+// validateDynamicSOQLBindSyntaxMode adds the scope-bind rules of query,
+// countQuery and getQueryLocator when scopeBinds is set. queryWithBinds
+// resolves a dotted name as a bind-map key, so it leaves them off.
+func (vm *VM) validateDynamicSOQLBindSyntaxMode(raw string, countQuery, scopeBinds bool) error {
 	previousWord := ""
 	orderBy := false
 	depth, orderDepth := 0, 0
@@ -72,6 +79,8 @@ func (vm *VM) validateDynamicSOQLBindSyntax(raw string, countQuery bool) error {
 			return dynamicSOQLUnexpectedToken(raw[start:i])
 		}
 		member := ""
+		path := raw[start:i]
+		dotted, called := false, false
 		for {
 			i = skipDynamicSOQLWhitespace(raw, i)
 			if i >= len(raw) {
@@ -84,6 +93,11 @@ func (vm *VM) validateDynamicSOQLBindSyntax(raw string, countQuery bool) error {
 				// BP113/136/159 capture only the empty toUpperCase() call.
 				// In particular, retain the existing Map.values() path.
 				close := skipDynamicSOQLWhitespace(raw, i+1)
+				if scopeBinds && close < len(raw) && raw[close] != ')' {
+					// A call that takes an argument, such as Map.get('k').
+					return dynamicSOQLUnexpectedToken("(")
+				}
+				called = true
 				if strings.EqualFold(member, "toUpperCase") && close < len(raw) && raw[close] == ')' {
 					return dynamicSOQLUnexpectedToken("(")
 				}
@@ -101,6 +115,16 @@ func (vm *VM) validateDynamicSOQLBindSyntax(raw string, countQuery bool) error {
 				i++
 			}
 			member = raw[start:i]
+			path += "." + member
+			dotted = true
+		}
+		if next := skipDynamicSOQLWhitespace(raw, i); scopeBinds && dotted && !called && path != "" && (path[0] < '0' || path[0] > '9') && !(next < len(raw) && strings.ContainsRune("+-*/", rune(raw[next]))) {
+			// Dynamic SOQL resolves a bind by its whole spelled name: a dotted
+			// path never names a variable, declared or not. A leading digit is
+			// not a bind at all: it is the colon of a datetime literal and falls
+			// through to the query grammar. An arithmetic
+			// continuation has no captured row and keeps its prior handling.
+			return newExceptionError("QueryException", "Variable does not exist: "+path)
 		}
 		if i < len(raw) && raw[i] == '?' {
 			return dynamicSOQLUnexpectedToken("?")

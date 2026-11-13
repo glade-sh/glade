@@ -12,7 +12,7 @@ import (
 
 // CD-076's static-final and private cross-owner twins retain their rejections.
 // Supply the measured native text without widening constructor admission.
-func capturedInheritedFinalDiagnostics(index typesys.Index, state *semaTypeMemberState, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+func capturedInheritedFinalDiagnostics(index typesys.Index, state *semaTypeMemberState, shared *semaSources, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
 	views := &semaLazyView{state: state, index: index}
 	var model *semaTypeMemberView
 	var sources *semaSources
@@ -45,7 +45,7 @@ func capturedInheritedFinalDiagnostics(index typesys.Index, state *semaTypeMembe
 		}
 		if model == nil {
 			model = views.get()
-			sources = newSemaSources(nil, nil)
+			sources = semaSourcesOrDisk(shared)
 		}
 		source, ok := sources.rawForType(typ)
 		if !ok || d.Range.Start.Offset < 0 || d.Range.End.Offset <= d.Range.Start.Offset || d.Range.End.Offset > len(source) ||
@@ -95,13 +95,13 @@ func capturedInheritedFinalDiagnostics(index typesys.Index, state *semaTypeMembe
 		}
 		out = append(out, d)
 	}
-	return capturedInheritedStaticFinalWrites(index, views, out)
+	return capturedInheritedStaticFinalWrites(index, views, shared, out)
 }
 
 // CD-076 STATIC and PROTECTED_STATIC_BASE contain one class-qualified static
 // final write in a sibling or direct-base constructor. Check that assignment
 // even when earlier body analysis produced no diagnostic (for example x=7).
-func capturedInheritedStaticFinalWrites(index typesys.Index, views *semaLazyView, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+func capturedInheritedStaticFinalWrites(index typesys.Index, views *semaLazyView, shared *semaSources, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
 	var model *semaTypeMemberView
 	var sources *semaSources
 	appendUnique := func(d diagnostic.Diagnostic) {
@@ -125,7 +125,7 @@ func capturedInheritedStaticFinalWrites(index typesys.Index, views *semaLazyView
 			}
 			if model == nil {
 				model = views.get()
-				sources = newSemaSources(nil, nil)
+				sources = semaSourcesOrDisk(shared)
 			}
 			source, ok := sources.rawForType(typ)
 			if !ok {

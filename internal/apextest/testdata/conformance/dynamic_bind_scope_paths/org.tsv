@@ -1,0 +1,201 @@
+id	api	route	compiled	success	outcome
+D01_undeclared_query	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: nope
+D01_undeclared_query_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: nope
+D02_declared_query	67.0	anonymous	true	true	R|ok
+D02_declared_query_t	67.0	istest	true	true	run=Pass
+D03_ended_if_query	67.0	anonymous	true	true	R|ok
+D03_ended_if_query_t	67.0	istest	true	true	run=Pass
+D04_ended_for_query	67.0	anonymous	true	true	R|ok
+D04_ended_for_query_t	67.0	istest	true	true	run=Pass
+D05_ended_block_query	67.0	anonymous	true	true	R|ok
+D05_ended_block_query_t	67.0	istest	true	true	run=Pass
+D06_undeclared_count	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: nope
+D06_undeclared_count_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: nope
+D07_declared_count	67.0	anonymous	true	true	R|ok
+D07_declared_count_t	67.0	istest	true	true	run=Pass
+D08_ended_if_count	67.0	anonymous	true	true	R|ok
+D08_ended_if_count_t	67.0	istest	true	true	run=Pass
+D09_ended_for_count	67.0	anonymous	true	true	R|ok
+D09_ended_for_count_t	67.0	istest	true	true	run=Pass
+D10_undeclared_locator	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: nope
+D10_undeclared_locator_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: nope
+D11_declared_locator	67.0	anonymous	true	true	R|ok
+D11_declared_locator_t	67.0	istest	true	true	run=Pass
+D12_ended_if_locator	67.0	anonymous	true	true	R|ok
+D12_ended_if_locator_t	67.0	istest	true	true	run=Pass
+D13_ended_for_locator	67.0	anonymous	true	true	R|ok
+D13_ended_for_locator_t	67.0	istest	true	true	run=Pass
+D14_dotted_declared	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D14_dotted_declared_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D15_dotted_undeclared	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D15_dotted_undeclared_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D16_dotted_null_root	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D16_dotted_null_root_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D17_dotted_bad_field	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Bogus__c
+D17_dotted_bad_field_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Bogus__c
+D18_dotted_ended_if	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D18_dotted_ended_if_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D19_dotted_count	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D19_dotted_count_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D20_dotted_count_undeclared	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D20_dotted_count_undeclared_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D21_dotted_locator	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D21_dotted_locator_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D22_dotted_locator_undeclared	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D22_dotted_locator_undeclared_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D23_zero_iter_foreach_after	67.0	anonymous	true	true	R|ok
+D23_zero_iter_foreach_after_t	67.0	istest	true	true	run=Pass
+D24_foreach_var_in_loop_zero	67.0	anonymous	true	true	R|ok
+D24_foreach_var_in_loop_zero_t	67.0	istest	true	true	run=Pass
+D25_declared_after	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: late
+D25_declared_after_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: late
+D26_list_index	67.0	anonymous	true	true	R|System.QueryException: unexpected token: '['
+D26_list_index_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: unexpected token: '['
+D27_map_get	67.0	anonymous	true	true	R|System.QueryException: unexpected token: '('
+D27_map_get_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: unexpected token: '('
+D28_dotted_ended_for_count	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D28_dotted_ended_for_count_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D29_helper_caller_local	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: callerLocal
+D29_helper_caller_local_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: callerLocal
+D30_helper_param	67.0	anonymous	true	true	R|ok
+D30_helper_param_t	67.0	istest	true	true	run=Pass
+D31_instance_field	67.0	anonymous	true	true	R|ok
+D31_instance_field_t	67.0	istest	true	true	run=Pass
+D32_static_field	67.0	anonymous	true	true	R|ok
+D32_static_field_t	67.0	istest	true	true	run=Pass
+D33_with_binds_control	67.0	anonymous	true	true	R|ok
+D33_with_binds_control_t	67.0	istest	true	true	run=Pass
+D34_with_binds_undeclared_key	67.0	anonymous	true	true	R|System.QueryException: Key 'nope' does not exist in the bindMap
+D34_with_binds_undeclared_key_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Key 'nope' does not exist in the bindMap
+D35_count_with_binds_control	67.0	anonymous	true	true	R|ok
+D35_count_with_binds_control_t	67.0	istest	true	true	run=Pass
+D36_locator_with_binds_control	67.0	anonymous	true	true	R|ok
+D36_locator_with_binds_control_t	67.0	istest	true	true	run=Pass
+D37_catch_var	67.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+D37_catch_var_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+D38_catch_var_inside	67.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+D38_catch_var_inside_t	67.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+D39_nested_ended_i1	67.0	anonymous	true	true	R|ok
+D39_nested_ended_i1_t	67.0	istest	true	true	run=Pass
+D40_case_insensitive	67.0	anonymous	true	true	R|ok
+D40_case_insensitive_t	67.0	istest	true	true	run=Pass
+D01_undeclared_query	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: nope
+D01_undeclared_query_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: nope
+D02_declared_query	62.0	anonymous	true	true	R|ok
+D02_declared_query_t	62.0	istest	true	true	run=Pass
+D03_ended_if_query	62.0	anonymous	true	true	R|ok
+D03_ended_if_query_t	62.0	istest	true	true	run=Pass
+D04_ended_for_query	62.0	anonymous	true	true	R|ok
+D04_ended_for_query_t	62.0	istest	true	true	run=Pass
+D05_ended_block_query	62.0	anonymous	true	true	R|ok
+D05_ended_block_query_t	62.0	istest	true	true	run=Pass
+D06_undeclared_count	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: nope
+D06_undeclared_count_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: nope
+D07_declared_count	62.0	anonymous	true	true	R|ok
+D07_declared_count_t	62.0	istest	true	true	run=Pass
+D08_ended_if_count	62.0	anonymous	true	true	R|ok
+D08_ended_if_count_t	62.0	istest	true	true	run=Pass
+D09_ended_for_count	62.0	anonymous	true	true	R|ok
+D09_ended_for_count_t	62.0	istest	true	true	run=Pass
+D10_undeclared_locator	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: nope
+D10_undeclared_locator_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: nope
+D11_declared_locator	62.0	anonymous	true	true	R|ok
+D11_declared_locator_t	62.0	istest	true	true	run=Pass
+D12_ended_if_locator	62.0	anonymous	true	true	R|ok
+D12_ended_if_locator_t	62.0	istest	true	true	run=Pass
+D13_ended_for_locator	62.0	anonymous	true	true	R|ok
+D13_ended_for_locator_t	62.0	istest	true	true	run=Pass
+D14_dotted_declared	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D14_dotted_declared_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D15_dotted_undeclared	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D15_dotted_undeclared_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D16_dotted_null_root	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D16_dotted_null_root_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D17_dotted_bad_field	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Bogus__c
+D17_dotted_bad_field_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Bogus__c
+D18_dotted_ended_if	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D18_dotted_ended_if_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D19_dotted_count	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D19_dotted_count_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D20_dotted_count_undeclared	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D20_dotted_count_undeclared_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D21_dotted_locator	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D21_dotted_locator_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D22_dotted_locator_undeclared	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D22_dotted_locator_undeclared_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D23_zero_iter_foreach_after	62.0	anonymous	true	true	R|ok
+D23_zero_iter_foreach_after_t	62.0	istest	true	true	run=Pass
+D24_foreach_var_in_loop_zero	62.0	anonymous	true	true	R|ok
+D24_foreach_var_in_loop_zero_t	62.0	istest	true	true	run=Pass
+D25_declared_after	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: late
+D25_declared_after_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: late
+D26_list_index	62.0	anonymous	true	true	R|System.QueryException: unexpected token: '['
+D26_list_index_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: unexpected token: '['
+D27_map_get	62.0	anonymous	true	true	R|System.QueryException: unexpected token: '('
+D27_map_get_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: unexpected token: '('
+D28_dotted_ended_for_count	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+D28_dotted_ended_for_count_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: acc.Name
+D29_helper_caller_local	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: callerLocal
+D29_helper_caller_local_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: callerLocal
+D30_helper_param	62.0	anonymous	true	true	R|ok
+D30_helper_param_t	62.0	istest	true	true	run=Pass
+D31_instance_field	62.0	anonymous	true	true	R|ok
+D31_instance_field_t	62.0	istest	true	true	run=Pass
+D32_static_field	62.0	anonymous	true	true	R|ok
+D32_static_field_t	62.0	istest	true	true	run=Pass
+D33_with_binds_control	62.0	anonymous	true	true	R|ok
+D33_with_binds_control_t	62.0	istest	true	true	run=Pass
+D34_with_binds_undeclared_key	62.0	anonymous	true	true	R|System.QueryException: Key 'nope' does not exist in the bindMap
+D34_with_binds_undeclared_key_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Key 'nope' does not exist in the bindMap
+D35_count_with_binds_control	62.0	anonymous	true	true	R|ok
+D35_count_with_binds_control_t	62.0	istest	true	true	run=Pass
+D36_locator_with_binds_control	62.0	anonymous	true	true	R|ok
+D36_locator_with_binds_control_t	62.0	istest	true	true	run=Pass
+D37_catch_var	62.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+D37_catch_var_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+D38_catch_var_inside	62.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+D38_catch_var_inside_t	62.0	istest	true	false	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+D39_nested_ended_i1	62.0	anonymous	true	true	R|ok
+D39_nested_ended_i1_t	62.0	istest	true	true	run=Pass
+D40_case_insensitive	62.0	anonymous	true	true	R|ok
+D40_case_insensitive_t	62.0	istest	true	true	run=Pass
+E01_static_class_field	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: H423.s
+E01_static_class_field	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: H423.s
+E02_this_field	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: this.f
+E02_this_field	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: this.f
+E03_instance_field_dotted	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: h.f
+E03_instance_field_dotted	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: h.f
+E04_nested_dotted	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: c.Account.Name
+E04_nested_dotted	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: c.Account.Name
+E05_dotted_id	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Id
+E05_dotted_id	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Id
+E06_list_size_dotted	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: xs.size
+E06_list_size_dotted	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: xs.size
+E07_dotted_in_set	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+E07_dotted_in_set	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+E08_dotted_select_loc	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+E08_dotted_select_loc	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+E09_dotted_with_binds	62.0	anonymous	true	true	R|System.QueryException: Key 'Name' does not exist in the bindMap
+E09_dotted_with_binds	67.0	anonymous	true	true	R|System.QueryException: Key 'Name' does not exist in the bindMap
+E10_zero_iter_loop_inside_count	62.0	anonymous	true	true	R|ok
+E10_zero_iter_loop_inside_count	67.0	anonymous	true	true	R|ok
+E11_zero_iter_locator	62.0	anonymous	true	true	R|ok
+E11_zero_iter_locator	67.0	anonymous	true	true	R|ok
+E12_zero_iter_for_var_typed_int	62.0	anonymous	true	true	R|ok
+E12_zero_iter_for_var_typed_int	67.0	anonymous	true	true	R|ok
+E13_nonzero_foreach_after	62.0	anonymous	true	true	R|ok
+E13_nonzero_foreach_after	67.0	anonymous	true	true	R|ok
+E14_catch_var_count	62.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+E14_catch_var_count	67.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+E15_catch_var_string_msg	62.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+E15_catch_var_string_msg	67.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+E16_catch_unthrown	62.0	anonymous	true	true	R|ok
+E16_catch_unthrown	67.0	anonymous	true	true	R|ok
+E17_catch_locator	62.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+E17_catch_locator	67.0	anonymous	true	true	R|System.QueryException: Invalid bind expression type of System.DmlException for column of type String
+E18_catch_map_get_count	62.0	anonymous	true	true	R|System.QueryException: unexpected token: '('
+E18_catch_map_get_count	67.0	anonymous	true	true	R|System.QueryException: unexpected token: '('
+E19_map_get_locator	62.0	anonymous	true	true	R|System.QueryException: unexpected token: '('
+E19_map_get_locator	67.0	anonymous	true	true	R|System.QueryException: unexpected token: '('
+E20_dotted_no_scope_after_ended	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+E20_dotted_no_scope_after_ended	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name

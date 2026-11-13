@@ -61,9 +61,9 @@ var prLaneHistory = []struct {
 	job, artifact, env, dir, ifRange string
 	base, count                      int
 }{
-	{"apextest-history-input", "apextest-history-input", "CI_APEXTEST_HISTORY_PATH", "/tmp/glade-apextest-duration-history", "", 0, 12},
-	{"lwc-compile-history-input", "lwc-compile-history-input", "CI_LWC_COMPILE_HISTORY_PATH", "/tmp/glade-lwc-compile-duration-history", "", 24, 8},
-	{"visualforce-history-input", "visualforce-history-input", "CI_VISUALFORCE_HISTORY_PATH", "/tmp/glade-visualforce-duration-history", "", 32, 4},
+	{"history-input", "apextest-history-input", "CI_APEXTEST_HISTORY_PATH", "/tmp/glade-apextest-duration-history", "", 0, 12},
+	{"history-input", "lwc-compile-history-input", "CI_LWC_COMPILE_HISTORY_PATH", "/tmp/glade-lwc-compile-duration-history", "", 24, 8},
+	{"history-input", "visualforce-history-input", "CI_VISUALFORCE_HISTORY_PATH", "/tmp/glade-visualforce-duration-history", "", 32, 4},
 }
 
 func TestCIPRLaneHistoryInputsRunOnPullRequests(t *testing.T) {

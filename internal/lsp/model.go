@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -302,15 +303,39 @@ func sameDocument(a, b string) bool {
 	if a == b {
 		return true
 	}
-	ap := filepath.Clean(pathFromURI(DocumentURI(a)))
-	bp := filepath.Clean(pathFromURI(DocumentURI(b)))
-	if abs, err := filepath.Abs(ap); err == nil {
-		ap = abs
+	return canonicalDocumentPath(a) == canonicalDocumentPath(b)
+}
+
+// canonicalPaths memoizes canonicalDocumentPath for absolute inputs, whose
+// result does not depend on the working directory. Request handlers compare
+// one document against every indexed file, so each path is normalized once.
+var canonicalPaths = struct {
+	sync.RWMutex
+	byInput map[string]string
+}{byInput: make(map[string]string)}
+
+const canonicalPathLimit = 1 << 18
+
+func canonicalDocumentPath(value string) string {
+	canonicalPaths.RLock()
+	cached, ok := canonicalPaths.byInput[value]
+	canonicalPaths.RUnlock()
+	if ok {
+		return cached
 	}
-	if abs, err := filepath.Abs(bp); err == nil {
-		bp = abs
+	path := filepath.Clean(pathFromURI(DocumentURI(value)))
+	absolute := filepath.IsAbs(path)
+	if abs, err := filepath.Abs(path); err == nil {
+		path = abs
 	}
-	return ap == bp
+	if absolute {
+		canonicalPaths.Lock()
+		if len(canonicalPaths.byInput) < canonicalPathLimit {
+			canonicalPaths.byInput[value] = path
+		}
+		canonicalPaths.Unlock()
+	}
+	return path
 }
 
 func toLSPRange(r diagnostic.Range) Range {

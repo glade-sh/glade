@@ -162,6 +162,11 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 	} else {
 		binds = typedMap("Map<String,Object>")
 	}
+	if !cursor && !mapBinds {
+		if err := vm.validateDynamicSOQLExceptionBinds(query.Text); err != nil {
+			return Null, err
+		}
+	}
 	// Validate restrictions on query handles before the ordinary SOQL engine.
 	// Normal queries still support COUNT, aggregates, OFFSET and FOR UPDATE.
 	if parsed, err := vm.parseSOQLAt(query.Text); err == nil {
@@ -202,6 +207,11 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 				message = "You cannot lock records with Cursor using FOR UPDATE"
 			}
 			return Null, newExceptionError("QueryException", message)
+		}
+	}
+	if !cursor && !mapBinds {
+		if err := vm.validateDynamicSOQLBindSyntaxMode(query.Text, false, true); err != nil {
+			return Null, err
 		}
 	}
 	accounting := soqlLocatorAccounting

@@ -1,0 +1,1 @@
+try { try { throw new DmlException('x'); } catch (DmlException ex) { } Database.QueryLocator ql = Database.getQueryLocator('SELECT Id FROM Account WHERE Name = :ex'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

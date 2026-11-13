@@ -1323,6 +1323,10 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		// null (see soql_bind_scope.go).
 		if iterated && isStringBindType(inst.Type) {
 			vm.rememberDepartedString(inst.Name, inst.Pos, Null)
+		} else if !iterated && !existed {
+			// A loop that never ran still leaves its variable bindable, as
+			// null and of any type (dynamic_bind_scope_paths D23, E10-E12).
+			vm.rememberEndedBindValue(inst.Name, inst.Pos, Null)
 		}
 		if existed {
 			vm.Globals[inst.Name] = previous
@@ -1419,7 +1423,36 @@ func chunkValuesForEnhancedFor(loopType string, values []Value, size int) []Valu
 	return chunks
 }
 
+// endedCatch is the catch clause that ran in a try statement, if any.
+type endedCatch struct {
+	clause ir.CatchClause
+	value  Value
+	ran    bool
+}
+
 func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
+	var ended endedCatch
+	out, err := vm.executeTryScoped(source, inst, result, &ended)
+	// Catch variables stay bindable in dynamic SOQL after the statement:
+	// the thrown value where the clause ran, null for the others
+	// (dynamic_bind_scope_paths D37, E14-E17).
+	for _, clause := range vmCatchClauses(inst) {
+		if clause.Name == "" {
+			continue
+		}
+		if _, live := vm.Globals[clause.Name]; live {
+			continue
+		}
+		if ended.ran && clause.Pos == ended.clause.Pos && clause.Name == ended.clause.Name {
+			vm.rememberEndedBindValue(clause.Name, clause.Pos, ended.value)
+		} else {
+			vm.rememberEndedBindValue(clause.Name, clause.Pos, Null)
+		}
+	}
+	return out, err
+}
+
+func (vm *VM) executeTryScoped(source string, inst ir.Instruction, result *Result, ended *endedCatch) (execOutcome, error) {
 	out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 	if err != nil {
 		var thrown *apexThrowError
@@ -1446,6 +1479,9 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 				vm.VarTypes[catchClause.Name] = catchType
 			}
 			vm.Globals[catchClause.Name] = caught
+			if len(vm.bindFrame.slots) != 0 {
+				vm.dropEndedBindSite(catchClause.Name, catchClause.Pos)
+			}
 			vm.activeExceptions = append(vm.activeExceptions, activeException{value: out.thrown, stack: out.thrownStack})
 			out, err = vm.executeProgram(ir.Program{Instructions: catchClause.Body, Source: source}, result)
 			vm.activeExceptions = vm.activeExceptions[:len(vm.activeExceptions)-1]
@@ -1459,6 +1495,7 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 			} else {
 				delete(vm.VarTypes, catchClause.Name)
 			}
+			ended.clause, ended.value, ended.ran = catchClause, caught, true
 			if err != nil {
 				return execOutcome{}, err
 			}

@@ -176,7 +176,7 @@ func (h *Handler) handleEvaluate(request Request) Response {
 		return h.failure(request, fmt.Sprintf("unknown expression %q", args.Expression))
 	}
 	ref := 0
-	if len(childValues(value)) > 0 {
+	if hasChildValues(value) {
 		ref = h.variableReferenceLocked("eval."+args.Expression, value)
 	}
 	h.stateMu.Unlock()
@@ -381,19 +381,19 @@ func (h *Handler) handleVariables(request Request) Response {
 	var variables []Variable
 	h.stateMu.Lock()
 	if args.VariablesReference == localsReference {
-		variables = h.variablesFromNamedValuesLocked("locals", h.localsLocked())
+		variables = h.variablesFromNamedValuesLocked("locals", h.localsLocked(), args.Start, args.Count)
 	} else if args.VariablesReference == staticsReference {
-		variables = h.variablesFromNamedValuesLocked("statics", namedValuesFromMap(h.snapshot.Statics))
+		variables = h.variablesFromNamedValuesLocked("statics", namedValuesFromMap(h.snapshot.Statics), args.Start, args.Count)
 	} else if args.VariablesReference == triggerReference {
-		variables = h.variablesFromNamedValuesLocked("trigger", h.triggerContextLocked())
+		variables = h.variablesFromNamedValuesLocked("trigger", h.triggerContextLocked(), args.Start, args.Count)
 	} else if value, ok := h.varRefs[args.VariablesReference]; ok {
-		variables = h.variablesFromNamedValuesLocked(fmt.Sprintf("ref:%d", args.VariablesReference), childValues(value))
+		children, start, count := pagedChildValues(value, args.Start, args.Count)
+		variables = h.variablesFromNamedValuesLocked(fmt.Sprintf("ref:%d", args.VariablesReference), children, start, count)
 	} else {
 		h.stateMu.Unlock()
 		return h.failure(request, fmt.Sprintf("unknown variablesReference %d", args.VariablesReference))
 	}
 	h.stateMu.Unlock()
-	variables = sliceVariables(variables, args.Start, args.Count)
 	return h.success(request, map[string]any{"variables": variables})
 }
 
@@ -459,6 +459,11 @@ func (h *Handler) handleLaunch(request Request) []any {
 	cancelled := ctx.Err() != nil
 	cancel()
 	if cancelled {
+		// A launch that installed its session just before the cancel must not
+		// leave it for configurationDone to start.
+		h.stateMu.Lock()
+		h.pending = nil
+		h.stateMu.Unlock()
 		return []any{h.failure(request, "cancelled")}
 	}
 	if err != nil {
@@ -660,11 +665,14 @@ func (h *Handler) triggerContextLocked() []namedValue {
 	return namedValuesFromMap(values)
 }
 
-func (h *Handler) variablesFromNamedValuesLocked(prefix string, values []namedValue) []Variable {
-	variables := make([]Variable, 0, len(values))
-	for _, value := range values {
+// variablesFromNamedValuesLocked formats only the requested window of values,
+// so a small page of a large collection formats and references only that page.
+func (h *Handler) variablesFromNamedValuesLocked(prefix string, values []namedValue, start, count int) []Variable {
+	from, to := variableWindow(len(values), start, count)
+	variables := make([]Variable, 0, to-from)
+	for _, value := range values[from:to] {
 		ref := 0
-		if len(childValues(value.value)) > 0 {
+		if hasChildValues(value.value) {
 			ref = h.variableReferenceLocked(prefix+"."+value.name, value.value)
 		}
 		variables = append(variables, variableFromValue(value.name, value.value, ref))
@@ -701,18 +709,20 @@ func breakpointID(path string, index, line, column int) int {
 	return id
 }
 
-func sliceVariables(variables []Variable, start, count int) []Variable {
+// variableWindow clamps a DAP start/count pair to [0, total]. A count of zero
+// or less means every remaining item.
+func variableWindow(total, start, count int) (int, int) {
 	if start < 0 {
 		start = 0
 	}
-	if start > len(variables) {
-		start = len(variables)
+	if start > total {
+		start = total
 	}
-	end := len(variables)
+	end := total
 	if count > 0 && start+count < end {
 		end = start + count
 	}
-	return variables[start:end]
+	return start, end
 }
 
 func evaluateSnapshotExpression(vars, statics map[string]vm.Value, expression string) (vm.Value, bool) {

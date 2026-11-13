@@ -2594,11 +2594,18 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 		return index
 	}
 	index := make(map[storage.ID][]string)
+	plainField, plain := childRelationshipPlainReferenceField(org, childObject.Definition, field)
 	for id, record := range childObject.Records {
 		if record.System.IsDeleted {
 			continue
 		}
-		value, ok := recordValue(org, childObject.Definition, record, field)
+		var value storage.Value
+		var ok bool
+		if plain {
+			value, ok = childRelationshipPlainReferenceValue(org, record, plainField)
+		} else {
+			value, ok = recordValue(org, childObject.Definition, record, field)
+		}
 		if !ok {
 			continue
 		}
@@ -2614,6 +2621,50 @@ func childRelationshipIndex(org storage.OrgState, childObjectName string, childO
 	}
 	childCache.indexes[key] = index
 	return index
+}
+
+// childRelationshipPlainReferenceField resolves a child relationship field
+// once for the whole index build. It answers true only for a stored
+// reference field that recordValue would read straight from the record:
+// no expression, no path, no system-field override, no formula, summary or
+// custom metadata handling. Every other field keeps the recordValue route.
+func childRelationshipPlainReferenceField(org storage.OrgState, definition storage.ObjectDefinition, field string) (string, bool) {
+	if strings.ContainsAny(field, "(.") {
+		return "", false
+	}
+	if _, system := canonicalSystemFieldName(field); system {
+		return "", false
+	}
+	canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field)
+	if !ok || canonical == "Id" || canonicalSystemFieldNameIs(canonical) {
+		return "", false
+	}
+	fieldDef, ok := definition.Fields[canonical]
+	if !ok || strings.TrimSpace(fieldDef.Formula) != "" {
+		return "", false
+	}
+	if fieldDef.Type != storage.FieldReference && fieldDef.Type != storage.FieldID {
+		return "", false
+	}
+	if storage.IsCustomMetadataDefinition(definition) || strings.EqualFold(definition.APIName, "Organization") {
+		return "", false
+	}
+	return canonical, true
+}
+
+func canonicalSystemFieldNameIs(name string) bool {
+	_, ok := canonicalSystemFieldName(name)
+	return ok
+}
+
+// childRelationshipPlainReferenceValue mirrors recordValue for a field that
+// childRelationshipPlainReferenceField accepted. A missing value is skipped by
+// the index either way, so the not-found tail needs no further probing.
+func childRelationshipPlainReferenceValue(org storage.OrgState, record storage.Record, canonical string) (storage.Value, bool) {
+	if record.HasExplicitNull(canonical) {
+		return storage.NullValue(), true
+	}
+	return recordFieldValue(org, record, canonical)
 }
 
 func childRelationshipCached(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string, childCache *childRelationshipQueryCache) (string, storage.Relationship, bool) {

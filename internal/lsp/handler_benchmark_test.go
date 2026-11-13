@@ -56,3 +56,26 @@ func benchmarkLSPIndex(classes int) typesys.Index {
 	}
 	return index
 }
+
+func BenchmarkDefaultCompletion(b *testing.B) {
+	index := benchmarkLSPIndex(2000)
+	for i := range index.Types {
+		for m := 0; m < 20; m++ {
+			index.Types[i].Members = append(index.Types[i].Members, typesys.MemberSymbol{
+				Kind: apexast.DeclarationMethod,
+				Name: fmt.Sprintf("member%02d", m),
+			})
+		}
+	}
+	for f := 0; f < 400; f++ {
+		index.Objects[0].Fields = append(index.Objects[0].Fields, schema.Field{Name: fmt.Sprintf("Field%03d__c", f), Type: "Text"})
+	}
+	handler := NewHandler(index)
+	params := CompletionParams{}
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		if list := handler.Completion(params); len(list.Items) == 0 {
+			b.Fatal("no completion items")
+		}
+	}
+}

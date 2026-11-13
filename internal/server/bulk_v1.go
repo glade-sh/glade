@@ -243,7 +243,7 @@ func (s *Server) runBulkV1CSVBatch(w http.ResponseWriter, r *http.Request, job b
 	if len(records) == 0 {
 		return results, true
 	}
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	var dmlResults []dml.Result
 	switch job.Operation {

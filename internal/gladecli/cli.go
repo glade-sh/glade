@@ -2851,6 +2851,7 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	if err != nil {
 		return err
 	}
+	visualforce.SetPersistentGateCache(apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{}).Enabled)
 	jsonOut := parsed.Bool("json")
 	debug = parsed.Bool("debug")
 	projectRoot := strings.TrimSpace(parsed.String("project"))
@@ -3234,12 +3235,14 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 		// index wait for it; initialize and document sync do not.
 		handler := lsp.NewPendingHandler()
 		go func() {
-			index, err := loadIndex(root)
+			index, analyze, err := loadLSPProject(root)
 			if err != nil {
 				handler.Fail(err)
 				return
 			}
+			handler.SetAnalyzer(analyze)
 			handler.SetIndex(index)
+			handler.StartAnalysis()
 		}()
 		serveErr := lsp.Serve(os.Stdin, w, handler)
 		if serveErr != nil {

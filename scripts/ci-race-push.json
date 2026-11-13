@@ -364,6 +364,7 @@
       "TestRunPerfCountersOwnVMRecordersAcrossOverlapAndPostRunActivity",
       "TestRunUsesWorkerJournalsForParallelMethods",
       "TestRuntimeCacheReturnedPayloadCanMutateConcurrently",
+      "TestRuntimeExpressionResolverSharedAcrossGoroutines",
       "TestRuntimeTransitionConcurrentPublicationKeepsOneAuthoritativeResult",
       "TestRuntimeTransitionFlightResetSeparatesSameKeyEpochs",
       "TestRuntimeTransitionFlightWaitDrainsCancelledCreatorWork",
@@ -548,6 +549,7 @@
     "./internal/filestamp": null,
     "./internal/frontendcache": null,
     "./internal/gladecli": [
+      "TestCancelDuringPublishLockWaitSkipsWrite",
       "TestCase339ServerBoundsSlowRequestBody",
       "TestCase340ListenerRejectsUntrustedAuthority",
       "TestCompatDispatchesToLinkedPlugin",
@@ -558,11 +560,15 @@
       "TestConnectedShardPlanPreservesExactSelectorFailures",
       "TestConnectedShardPlanRequiresExactUniqueIndexesBeforeArtifacts",
       "TestConnectedShardPlanWritesOnlyClientFiles",
+      "TestDAPLaunchCancelEndsWhileProjectLoadIsRunning",
+      "TestDAPLoadSlotsShareOneProjectAcrossSpellings",
+      "TestDAPLoadsForOneRootRunOneAtATime",
       "TestDAPPageContentNative",
       "TestDaemonClassShardFilesEquivalent",
       "TestDaemonClassShardFilesSelectedRoutesRejectLocalFallback",
       "TestDaemonEquivalenceMatrix",
       "TestDaemonEquivalenceSelectedRoutesRejectLocalFallback",
+      "TestEditorLatencyHarness",
       "TestGracefulStopBeforeFinalReportProjectRoutes",
       "TestGracefulStopCompletedProjectWriterRoutes",
       "TestGracefulStopConnectedPartialErrorAndRejection",
@@ -641,6 +647,7 @@
       "TestToolchainInstallProjectTwoProcessesColdShare",
       "TestTryTestServerRunAutoConnect",
       "TestTryTestServerRunFailsClosedOnProtocolMismatch",
+      "TestWarmTestLaunchCancelEndsDuringIndexBuild",
       "TestWriteClassShardsValidatesImplicitParallelismBeforeArtifacts"
     ],
     "./internal/gladehome": [
@@ -684,10 +691,12 @@
     "./internal/typesys": null,
     "./internal/visualforce": [
       "TestControllerGateSharedByConcurrentCallers",
+      "TestPersistedControllerGateConcurrentProcesses",
       "TestRenderEnvironmentConcurrentAccess",
       "TestShardPartitionMatchesUnshardedTestSet",
       "TestV13SalesforceConformance",
-      "TestV14SalesforceConformance"
+      "TestV14SalesforceConformancePart1of2",
+      "TestV14SalesforceConformancePart2of2"
     ],
     "./internal/vm": null,
     "./internal/watch": null,
@@ -734,6 +743,7 @@
   },
   "testSeconds": {
     "./internal/apextest": {
+      "TestRuntimeExpressionResolverSharedAcrossGoroutines": 1,
       "TestAbstractHierarchyOrgConformance": 60,
       "TestAbstractRedeclarationOrgConformance": 80,
       "TestActivityFieldProjectionNativeConformance": 60,
@@ -1279,6 +1289,12 @@
       "TestLoopScopeDynamicBindsNativeConformance": 30
     },
     "./internal/gladecli": {
+      "TestCancelDuringPublishLockWaitSkipsWrite": 3,
+      "TestDAPLaunchCancelEndsWhileProjectLoadIsRunning": 1,
+      "TestDAPLoadSlotsShareOneProjectAcrossSpellings": 1,
+      "TestDAPLoadsForOneRootRunOneAtATime": 1,
+      "TestEditorLatencyHarness": 2,
+      "TestWarmTestLaunchCancelEndsDuringIndexBuild": 1,
       "TestCompatDispatchesToLinkedPlugin": 20,
       "TestConnectedMalformedFailedShardResponseWritesNoArtifacts": 20,
       "TestConnectedRunKeepsArtifactPathsClientLocal": 20,

@@ -169,12 +169,19 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
-  gladecli-history-input:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
+  history-input:
+    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 15
     env:
       CI_GLADECLI_HISTORY_PATH: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
+      CI_VM_HISTORY_PATH: /tmp/glade-vm-duration-history/vm-duration-history.json
+      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
+      CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
+      CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
       CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -200,10 +207,199 @@ jobs:
           name: gladecli-history-input
           path: ci-artifacts/gladecli-history-input/
           if-no-files-found: error
-
+      - name: Restore vm duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-vm-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Stage vm duration history
+        run: |
+          mkdir -p ci-artifacts/vm-history-input
+          if [[ -s "$CI_VM_HISTORY_PATH" ]]; then
+            cp "$CI_VM_HISTORY_PATH" ci-artifacts/vm-history-input/vm-duration-history.json
+          fi
+          : >ci-artifacts/vm-history-input/ready
+      - name: Upload vm duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: vm-history-input
+          path: ci-artifacts/vm-history-input/
+          if-no-files-found: error
+      - name: Restore LWC compile duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-lwc-compile-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Find predecessor LWC shard evidence
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}
+        id: lwc_predecessor
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then exit 0; fi
+          if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+            echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
+            exit 0
+          fi
+          if [[ -z "$run_id" && -n "${DEFAULT_BRANCH:-}" ]]; then
+            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$DEFAULT_BRANCH" -f event=push -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+              echo "::warning::Default-branch timing lookup unavailable; using deterministic scheduling fallback"
+              run_id=""
+            fi
+          fi
+          echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
+      - name: Download predecessor LWC shard evidence
+        if: steps.lwc_predecessor.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.lwc_predecessor.outputs.run_id }}
+          pattern: go-test-lwc-compile-shard-*
+          path: /tmp/lwc-compile-predecessor
+      - name: Bootstrap validated LWC duration history
+        if: steps.lwc_predecessor.outputs.run_id != ''
+        run: |
+          if ! scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/lwc-compile-predecessor/go-test-lwc-compile-shard-{0..7}; then
+            rm -f "$CI_LWC_COMPILE_HISTORY_PATH"
+            echo "::warning::Predecessor LWC timing evidence unavailable or invalid; using deterministic scheduling fallback"
+          fi
+      - name: Stage LWC compile duration history
+        run: |
+          mkdir -p ci-artifacts/lwc-compile-history-input
+          if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then
+            cp "$CI_LWC_COMPILE_HISTORY_PATH" ci-artifacts/lwc-compile-history-input/lwc-compile-duration-history.json
+          fi
+          : >ci-artifacts/lwc-compile-history-input/ready
+      - name: Upload LWC compile duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: lwc-compile-history-input
+          path: ci-artifacts/lwc-compile-history-input/
+          if-no-files-found: error
+      - name: Restore Visualforce duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-visualforce-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Find predecessor Visualforce evidence
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}
+        id: vf_predecessor
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ -s "$CI_VISUALFORCE_HISTORY_PATH" ]]; then exit 0; fi
+          if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+            echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
+            exit 0
+          fi
+          if [[ -z "$run_id" && -n "${DEFAULT_BRANCH:-}" ]]; then
+            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$DEFAULT_BRANCH" -f event=push -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
+              echo "::warning::Default-branch timing lookup unavailable; using deterministic scheduling fallback"
+              run_id=""
+            fi
+          fi
+          if [[ -z "$run_id" ]]; then exit 0; fi
+          if ! artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false) | .name')"; then
+            echo "::warning::Predecessor artifacts unavailable; using deterministic scheduling fallback"
+            exit 0
+          fi
+          complete=true
+          for index in {0..3}; do
+            if ! grep -Fxq "go-test-visualforce-shard-$index" <<<"$artifacts"; then complete=false; fi
+          done
+          if [[ "$complete" == true ]]; then
+            format=shards
+          elif grep -Fxq go-test-remaining-go <<<"$artifacts"; then
+            format=serial
+          else
+            echo "::warning::Predecessor Visualforce evidence unavailable; using deterministic scheduling fallback"
+            exit 0
+          fi
+          echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
+          echo "format=$format" >>"$GITHUB_OUTPUT"
+      - name: Download predecessor Visualforce shard evidence
+        if: steps.vf_predecessor.outputs.format == 'shards'
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.vf_predecessor.outputs.run_id }}
+          pattern: go-test-visualforce-shard-*
+          path: /tmp/visualforce-predecessor
+      - name: Download predecessor serial Visualforce evidence
+        if: steps.vf_predecessor.outputs.format == 'serial'
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.vf_predecessor.outputs.run_id }}
+          name: go-test-remaining-go
+          path: /tmp/visualforce-predecessor
+      - name: Bootstrap validated Visualforce duration history
+        if: steps.vf_predecessor.outputs.run_id != ''
+        run: |
+          if [[ "${{ steps.vf_predecessor.outputs.format }}" == shards ]]; then
+            command=(scripts/ci-go-test.sh visualforce-history-refresh "$CI_VISUALFORCE_HISTORY_PATH" /tmp/visualforce-predecessor/go-test-visualforce-shard-{0..3})
+          else
+            command=(scripts/ci-go-test.sh visualforce-history-bootstrap "$CI_VISUALFORCE_HISTORY_PATH" /tmp/visualforce-predecessor/test-remaining-go-visualforce.json)
+          fi
+          if ! "${command[@]}"; then
+            rm -f "$CI_VISUALFORCE_HISTORY_PATH"
+            echo "::warning::Predecessor Visualforce timing evidence unavailable or invalid; using deterministic scheduling fallback"
+          fi
+      - name: Stage Visualforce duration history
+        run: |
+          mkdir -p ci-artifacts/visualforce-history-input
+          if [[ -s "$CI_VISUALFORCE_HISTORY_PATH" ]]; then
+            cp "$CI_VISUALFORCE_HISTORY_PATH" ci-artifacts/visualforce-history-input/visualforce-duration-history.json
+          fi
+          : >ci-artifacts/visualforce-history-input/ready
+      - name: Upload Visualforce duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: visualforce-history-input
+          path: ci-artifacts/visualforce-history-input/
+          if-no-files-found: error
+      - name: Restore Apex duration history
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-apextest-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-wall-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
+      - name: Select prior Apex scheduling attempt
+        if: ${{ github.run_attempt > 1 && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
+        id: retry
+        run: echo "attempt=$((GITHUB_RUN_ATTEMPT - 1))" >> "$GITHUB_OUTPUT"
+      - name: Restore Apex retry scheduling profile
+        if: steps.retry.outputs.attempt != ''
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/apextest-scheduling-profile
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-scheduling-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ steps.retry.outputs.attempt }}
+      - name: Stage validated Apex scheduling input
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_APEXTEST_BENCHMARK_PAIR: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair || 0 }}
+          CI_DURATION_HISTORY_FALLBACK_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          mkdir -p ci-artifacts/apextest-history-input
+          scripts/ci-apex-history-input.sh
+      - name: Upload Apex duration history input
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: apextest-history-input
+          path: ci-artifacts/apextest-history-input/
+          if-no-files-found: error
   gladecli:
     if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
-    needs: gladecli-history-input
+    needs: history-input
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     strategy:
@@ -272,68 +468,9 @@ jobs:
           path: ci-artifacts/gladecli-${{ matrix.shard }}/
           if-no-files-found: error
 
-  gladecli-history:
-    needs: gladecli
-    if: ${{ success() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download successful gladecli shard evidence
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          pattern: gladecli-shard-*
-          path: /tmp/gladecli-history-input
-      - name: Refresh and guard gladecli duration history
-        run: scripts/ci-go-test.sh gladecli-history-refresh /tmp/glade-gladecli-duration-history/gladecli-duration-history.json /tmp/gladecli-history-input/gladecli-shard-0 /tmp/gladecli-history-input/gladecli-shard-1
-      - name: Save gladecli duration history
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-gladecli-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
-      - name: Upload gladecli duration history evidence
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: gladecli-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
-          if-no-files-found: error
-
-  vm-history-input:
-    if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    env:
-      CI_VM_HISTORY_PATH: /tmp/glade-vm-duration-history/vm-duration-history.json
-      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Validate benchmark cache pair
-        if: github.event_name == 'workflow_dispatch'
-        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
-      - name: Restore vm duration history
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-vm-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
-      - name: Stage vm duration history
-        run: |
-          mkdir -p ci-artifacts/vm-history-input
-          if [[ -s "$CI_VM_HISTORY_PATH" ]]; then
-            cp "$CI_VM_HISTORY_PATH" ci-artifacts/vm-history-input/vm-duration-history.json
-          fi
-          : >ci-artifacts/vm-history-input/ready
-      - name: Upload vm duration history input
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: vm-history-input
-          path: ci-artifacts/vm-history-input/
-          if-no-files-found: error
-
   vm:
     if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
-    needs: vm-history-input
+    needs: history-input
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     strategy:
@@ -400,35 +537,6 @@ jobs:
         with:
           name: vm-shard-${{ matrix.shard }}
           path: ci-artifacts/vm-${{ matrix.shard }}/
-          if-no-files-found: error
-
-  vm-history:
-    needs: vm
-    if: ${{ success() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    env:
-      CI_VM_HISTORY_COMPLETE: "1"
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download successful vm shard evidence
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          pattern: vm-shard-*
-          path: /tmp/vm-history-input
-      - name: Refresh and guard vm duration history
-        run: scripts/ci-go-test.sh vm-history-refresh /tmp/glade-vm-duration-history/vm-duration-history.json /tmp/vm-history-input/vm-shard-0 /tmp/vm-history-input/vm-shard-1 /tmp/vm-history-input/vm-shard-2
-      - name: Save vm duration history
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-vm-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
-      - name: Upload vm duration history evidence
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: vm-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-vm-duration-history/vm-duration-history.json
           if-no-files-found: error
 
   node-integration:
@@ -611,33 +719,6 @@ jobs:
         with:
           name: sema-shard-${{ matrix.shard }}
           path: ci-artifacts/sema-${{ matrix.shard }}/
-          if-no-files-found: error
-
-  sema-history:
-    needs: sema
-    if: ${{ success() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Download successful sema shard evidence
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          pattern: sema-shard-*
-          path: /tmp/sema-history-input
-      - name: Refresh sema duration history
-        run: scripts/ci-go-test.sh sema-history-refresh /tmp/sema-history-input/sema-shard-0 /tmp/sema-history-input/sema-shard-1 /tmp/glade-sema-duration-history/sema-duration-history.json
-      - name: Save sema duration history
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-sema-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
-      - name: Upload sema duration history evidence
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
-          path: /tmp/glade-sema-duration-history/sema-duration-history.json
           if-no-files-found: error
 
   sema-full:
@@ -838,178 +919,6 @@ jobs:
           path: |
             ci-artifacts/go-test/test-server-process-builder.json
             ci-artifacts/go-test/resource-server-process-builder.json
-          if-no-files-found: error
-
-  lwc-compile-history-input:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      actions: read
-    timeout-minutes: 5
-    env:
-      CI_LWC_COMPILE_HISTORY_PATH: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
-      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Validate benchmark cache pair
-        if: github.event_name == 'workflow_dispatch'
-        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
-      - name: Restore LWC compile duration history
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-lwc-compile-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
-      - name: Find predecessor LWC shard evidence
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}
-        id: predecessor
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then exit 0; fi
-          if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
-            echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
-            exit 0
-          fi
-          if [[ -z "$run_id" && -n "${DEFAULT_BRANCH:-}" ]]; then
-            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$DEFAULT_BRANCH" -f event=push -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
-              echo "::warning::Default-branch timing lookup unavailable; using deterministic scheduling fallback"
-              run_id=""
-            fi
-          fi
-          echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
-      - name: Download predecessor LWC shard evidence
-        if: steps.predecessor.outputs.run_id != ''
-        continue-on-error: true
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          github-token: ${{ github.token }}
-          run-id: ${{ steps.predecessor.outputs.run_id }}
-          pattern: go-test-lwc-compile-shard-*
-          path: /tmp/lwc-compile-predecessor
-      - name: Bootstrap validated LWC duration history
-        if: steps.predecessor.outputs.run_id != ''
-        run: |
-          if ! scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/lwc-compile-predecessor/go-test-lwc-compile-shard-{0..7}; then
-            rm -f "$CI_LWC_COMPILE_HISTORY_PATH"
-            echo "::warning::Predecessor LWC timing evidence unavailable or invalid; using deterministic scheduling fallback"
-          fi
-      - name: Stage LWC compile duration history
-        run: |
-          mkdir -p ci-artifacts/lwc-compile-history-input
-          if [[ -s "$CI_LWC_COMPILE_HISTORY_PATH" ]]; then
-            cp "$CI_LWC_COMPILE_HISTORY_PATH" ci-artifacts/lwc-compile-history-input/lwc-compile-duration-history.json
-          fi
-          : >ci-artifacts/lwc-compile-history-input/ready
-      - name: Upload LWC compile duration history input
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: lwc-compile-history-input
-          path: ci-artifacts/lwc-compile-history-input/
-          if-no-files-found: error
-
-  visualforce-history-input:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      actions: read
-    timeout-minutes: 5
-    env:
-      CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
-      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Validate benchmark cache pair
-        if: github.event_name == 'workflow_dispatch'
-        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
-      - name: Restore Visualforce duration history
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-visualforce-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
-      - name: Find predecessor Visualforce evidence
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}
-        id: predecessor
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          if [[ -s "$CI_VISUALFORCE_HISTORY_PATH" ]]; then exit 0; fi
-          if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
-            echo "::warning::Predecessor timing lookup unavailable; using deterministic scheduling fallback"
-            exit 0
-          fi
-          if [[ -z "$run_id" && -n "${DEFAULT_BRANCH:-}" ]]; then
-            if ! run_id="$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" -f branch="$DEFAULT_BRANCH" -f event=push -f status=success -f per_page=1 --jq '.workflow_runs[0].id // empty')"; then
-              echo "::warning::Default-branch timing lookup unavailable; using deterministic scheduling fallback"
-              run_id=""
-            fi
-          fi
-          if [[ -z "$run_id" ]]; then exit 0; fi
-          if ! artifacts="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts?per_page=100" --jq '.artifacts[] | select(.expired == false) | .name')"; then
-            echo "::warning::Predecessor artifacts unavailable; using deterministic scheduling fallback"
-            exit 0
-          fi
-          complete=true
-          for index in {0..3}; do
-            if ! grep -Fxq "go-test-visualforce-shard-$index" <<<"$artifacts"; then complete=false; fi
-          done
-          if [[ "$complete" == true ]]; then
-            format=shards
-          elif grep -Fxq go-test-remaining-go <<<"$artifacts"; then
-            format=serial
-          else
-            echo "::warning::Predecessor Visualforce evidence unavailable; using deterministic scheduling fallback"
-            exit 0
-          fi
-          echo "run_id=$run_id" >>"$GITHUB_OUTPUT"
-          echo "format=$format" >>"$GITHUB_OUTPUT"
-      - name: Download predecessor Visualforce shard evidence
-        if: steps.predecessor.outputs.format == 'shards'
-        continue-on-error: true
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          github-token: ${{ github.token }}
-          run-id: ${{ steps.predecessor.outputs.run_id }}
-          pattern: go-test-visualforce-shard-*
-          path: /tmp/visualforce-predecessor
-      - name: Download predecessor serial Visualforce evidence
-        if: steps.predecessor.outputs.format == 'serial'
-        continue-on-error: true
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          github-token: ${{ github.token }}
-          run-id: ${{ steps.predecessor.outputs.run_id }}
-          name: go-test-remaining-go
-          path: /tmp/visualforce-predecessor
-      - name: Bootstrap validated Visualforce duration history
-        if: steps.predecessor.outputs.run_id != ''
-        run: |
-          if [[ "${{ steps.predecessor.outputs.format }}" == shards ]]; then
-            command=(scripts/ci-go-test.sh visualforce-history-refresh "$CI_VISUALFORCE_HISTORY_PATH" /tmp/visualforce-predecessor/go-test-visualforce-shard-{0..3})
-          else
-            command=(scripts/ci-go-test.sh visualforce-history-bootstrap "$CI_VISUALFORCE_HISTORY_PATH" /tmp/visualforce-predecessor/test-remaining-go-visualforce.json)
-          fi
-          if ! "${command[@]}"; then
-            rm -f "$CI_VISUALFORCE_HISTORY_PATH"
-            echo "::warning::Predecessor Visualforce timing evidence unavailable or invalid; using deterministic scheduling fallback"
-          fi
-      - name: Stage Visualforce duration history
-        run: |
-          mkdir -p ci-artifacts/visualforce-history-input
-          if [[ -s "$CI_VISUALFORCE_HISTORY_PATH" ]]; then
-            cp "$CI_VISUALFORCE_HISTORY_PATH" ci-artifacts/visualforce-history-input/visualforce-duration-history.json
-          fi
-          : >ci-artifacts/visualforce-history-input/ready
-      - name: Upload Visualforce duration history input
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: visualforce-history-input
-          path: ci-artifacts/visualforce-history-input/
           if-no-files-found: error
 
   test-binaries-apextest:
@@ -1349,7 +1258,7 @@ jobs:
   lwc-vf:
     name: ${{ matrix.name }}
     if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
-    needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]
+    needs: [history-input, test-binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 100
     strategy:
@@ -1638,62 +1547,15 @@ jobs:
           path: ~/.cache/go-build
           key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
 
-  apextest-history-input:
-    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      actions: read
-    timeout-minutes: 5
-    env:
-      CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
-      CI_DURATION_HISTORY_CACHE_REF: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Validate benchmark cache pair
-        if: github.event_name == 'workflow_dispatch'
-        run: scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
-      - name: Restore Apex duration history
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/glade-apextest-duration-history
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-wall-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ env.CI_DURATION_HISTORY_CACHE_REF }}
-      - name: Select prior Apex scheduling attempt
-        if: ${{ github.run_attempt > 1 && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
-        id: retry
-        run: echo "attempt=$((GITHUB_RUN_ATTEMPT - 1))" >> "$GITHUB_OUTPUT"
-      - name: Restore Apex retry scheduling profile
-        if: steps.retry.outputs.attempt != ''
-        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        continue-on-error: true
-        with:
-          path: /tmp/apextest-scheduling-profile
-          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-scheduling-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ steps.retry.outputs.attempt }}
-      - name: Stage validated Apex scheduling input
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CI_APEXTEST_BENCHMARK_PAIR: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair || 0 }}
-          CI_DURATION_HISTORY_FALLBACK_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          mkdir -p ci-artifacts/apextest-history-input
-          scripts/ci-apex-history-input.sh
-      - name: Upload Apex duration history input
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: apextest-history-input
-          path: ci-artifacts/apextest-history-input/
-          if-no-files-found: error
-
   apextest:
     if: ${{ (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
-    needs: [apextest-history-input, test-binaries-apextest]
+    needs: [history-input, test-binaries-apextest]
     runs-on: ubuntu-24.04
     timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     env:
       CGO_ENABLED: "1"
       CI_TEST_BIN_DIR: /tmp/glade-test-binaries
@@ -1705,7 +1567,7 @@ jobs:
       GOMAXPROCS: "4"
       GOMEMLIMIT: "12GiB"
       CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
-      CI_APEXTEST_SHARDS: "14"
+      CI_APEXTEST_SHARDS: "16"
       CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -1764,104 +1626,183 @@ jobs:
             ci-artifacts/apextest-${{ matrix.shard }}/resource-usage.json
           if-no-files-found: error
 
-  apextest-history:
-    needs: apextest
-    if: ${{ success() }}
+  history:
+    needs: [gladecli, vm, sema, apextest, lwc-vf]
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || startsWith(github.head_ref, 'train/') || startsWith(github.head_ref, 'release/')) && (github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999)) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    env:
-      CI_APEXTEST_HISTORY_COMPLETE: "1"
-      CI_APEXTEST_SCHEDULING_PROFILE: /tmp/apextest-scheduling-profile/profile.json
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Download successful gladecli shard evidence
+        if: ${{ !cancelled() && needs.gladecli.result == 'success' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: gladecli-shard-*
+          path: /tmp/gladecli-history-input
+      - name: Refresh and guard gladecli duration history
+        id: gladecli_refresh
+        if: ${{ !cancelled() && needs.gladecli.result == 'success' }}
+        run: scripts/ci-go-test.sh gladecli-history-refresh /tmp/glade-gladecli-duration-history/gladecli-duration-history.json /tmp/gladecli-history-input/gladecli-shard-0 /tmp/gladecli-history-input/gladecli-shard-1
+      - name: Save gladecli duration history
+        if: ${{ !cancelled() && needs.gladecli.result == 'success' && steps.gladecli_refresh.outcome == 'success' }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-gladecli-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}gladecli-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
+      - name: Upload gladecli duration history evidence
+        if: ${{ !cancelled() && needs.gladecli.result == 'success' && steps.gladecli_refresh.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: gladecli-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-gladecli-duration-history/gladecli-duration-history.json
+          if-no-files-found: error
+      - name: Download successful vm shard evidence
+        if: ${{ !cancelled() && needs.vm.result == 'success' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: vm-shard-*
+          path: /tmp/vm-history-input
+      - name: Refresh and guard vm duration history
+        id: vm_refresh
+        if: ${{ !cancelled() && needs.vm.result == 'success' }}
+        env:
+          CI_VM_HISTORY_COMPLETE: "1"
+        run: scripts/ci-go-test.sh vm-history-refresh /tmp/glade-vm-duration-history/vm-duration-history.json /tmp/vm-history-input/vm-shard-0 /tmp/vm-history-input/vm-shard-1 /tmp/vm-history-input/vm-shard-2
+      - name: Save vm duration history
+        if: ${{ !cancelled() && needs.vm.result == 'success' && steps.vm_refresh.outcome == 'success' }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-vm-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}vm-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
+      - name: Upload vm duration history evidence
+        if: ${{ !cancelled() && needs.vm.result == 'success' && steps.vm_refresh.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: vm-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-vm-duration-history/vm-duration-history.json
+          if-no-files-found: error
+      - name: Download successful sema shard evidence
+        if: ${{ !cancelled() && needs.sema.result == 'success' }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: sema-shard-*
+          path: /tmp/sema-history-input
+      - name: Refresh sema duration history
+        id: sema_refresh
+        if: ${{ !cancelled() && needs.sema.result == 'success' }}
+        run: scripts/ci-go-test.sh sema-history-refresh /tmp/sema-history-input/sema-shard-0 /tmp/sema-history-input/sema-shard-1 /tmp/glade-sema-duration-history/sema-duration-history.json
+      - name: Save sema duration history
+        if: ${{ !cancelled() && needs.sema.result == 'success' && steps.sema_refresh.outcome == 'success' }}
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: /tmp/glade-sema-duration-history
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
+      - name: Upload sema duration history evidence
+        if: ${{ !cancelled() && needs.sema.result == 'success' && steps.sema_refresh.outcome == 'success' }}
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-sema-duration-history/sema-duration-history.json
+          if-no-files-found: error
       - name: Download successful Apex shard evidence
+        if: ${{ !cancelled() && needs.apextest.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: apex-shard-*
           path: /tmp/apextest-history-input
       - name: Refresh and guard Apex duration history
-        id: refresh
-        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5 /tmp/apextest-history-input/apex-shard-6 /tmp/apextest-history-input/apex-shard-7 /tmp/apextest-history-input/apex-shard-8 /tmp/apextest-history-input/apex-shard-9 /tmp/apextest-history-input/apex-shard-10 /tmp/apextest-history-input/apex-shard-11 /tmp/apextest-history-input/apex-shard-12 /tmp/apextest-history-input/apex-shard-13
+        id: apextest_refresh
+        if: ${{ !cancelled() && needs.apextest.result == 'success' }}
+        env:
+          CI_APEXTEST_HISTORY_COMPLETE: "1"
+          CI_APEXTEST_SCHEDULING_PROFILE: /tmp/apextest-scheduling-profile/profile.json
+        run: scripts/ci-go-test.sh apex-history-refresh /tmp/glade-apextest-duration-history/apextest-duration-history.json /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/apextest-history-input/apex-shard-2 /tmp/apextest-history-input/apex-shard-3 /tmp/apextest-history-input/apex-shard-4 /tmp/apextest-history-input/apex-shard-5 /tmp/apextest-history-input/apex-shard-6 /tmp/apextest-history-input/apex-shard-7 /tmp/apextest-history-input/apex-shard-8 /tmp/apextest-history-input/apex-shard-9 /tmp/apextest-history-input/apex-shard-10 /tmp/apextest-history-input/apex-shard-11 /tmp/apextest-history-input/apex-shard-12 /tmp/apextest-history-input/apex-shard-13 /tmp/apextest-history-input/apex-shard-14 /tmp/apextest-history-input/apex-shard-15
       - name: Cache Apex scheduling profile after balance failure
-        if: ${{ failure() && steps.refresh.outcome == 'failure' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
+        if: ${{ failure() && steps.apextest_refresh.outcome == 'failure' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0) }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/apextest-scheduling-profile
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-scheduling-v1-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload Apex scheduling profile after balance failure
-        if: ${{ failure() && steps.refresh.outcome == 'failure' }}
+        if: ${{ failure() && steps.apextest_refresh.outcome == 'failure' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: apextest-scheduling-profile-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/apextest-scheduling-profile/profile.json
           if-no-files-found: ignore
       - name: Save Apex duration history
+        if: ${{ !cancelled() && needs.apextest.result == 'success' && steps.apextest_refresh.outcome == 'success' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-apextest-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}apextest-duration-history-v1-wall-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload Apex duration history evidence
+        if: ${{ !cancelled() && needs.apextest.result == 'success' && steps.apextest_refresh.outcome == 'success' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: apextest-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-apextest-duration-history/apextest-duration-history.json
           if-no-files-found: error
-
-  lwc-compile-history:
-    needs: lwc-vf
-    if: ${{ success() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Download successful LWC compile shard evidence
+        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: go-test-lwc-compile-shard-*
           path: /tmp/lwc-compile-history-input
       - name: Refresh and guard LWC compile duration history
+        id: lwc_refresh
+        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' }}
         run: scripts/ci-go-test.sh lwc-compile-history-refresh /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json /tmp/lwc-compile-history-input/go-test-lwc-compile-shard-{0..7}
       - name: Save LWC compile duration history
+        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' && steps.lwc_refresh.outcome == 'success' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-lwc-compile-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}lwc-compile-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload LWC compile duration history evidence
+        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' && steps.lwc_refresh.outcome == 'success' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: lwc-compile-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-lwc-compile-duration-history/lwc-compile-duration-history.json
           if-no-files-found: error
-
-  visualforce-history:
-    needs: lwc-vf
-    if: ${{ success() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Download successful Visualforce shard evidence
+        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' }}
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           pattern: go-test-visualforce-shard-*
           path: /tmp/visualforce-history-input
       - name: Refresh and guard Visualforce duration history
+        id: vf_refresh
+        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' }}
         run: scripts/ci-go-test.sh visualforce-history-refresh /tmp/glade-visualforce-duration-history/visualforce-duration-history.json /tmp/visualforce-history-input/go-test-visualforce-shard-{0..3}
       - name: Save Visualforce duration history
+        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' && steps.vf_refresh.outcome == 'success' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         continue-on-error: true
         with:
           path: /tmp/glade-visualforce-duration-history
           key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}visualforce-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('go.sum') }}-${{ github.sha }}
       - name: Upload Visualforce duration history evidence
+        if: ${{ !cancelled() && needs.lwc-vf.result == 'success' && steps.vf_refresh.outcome == 'success' }}
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: visualforce-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json
           if-no-files-found: error
+      - name: Require every history producer
+        if: ${{ !cancelled() && (needs.gladecli.result != 'success' || needs.vm.result != 'success' || needs.sema.result != 'success' || needs.apextest.result != 'success' || needs.lwc-vf.result != 'success') }}
+        env:
+          PRODUCER_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | .key as $job | .value.result as $result | select($result != "success") | "\($job)=\($result)"' <<<"$PRODUCER_RESULTS"
+          exit 1
 
   leak-scan:
     name: Leak scan
@@ -1892,7 +1833,7 @@ jobs:
 
   pr-tests:
     if: ${{ github.event_name == 'pull_request' && !startsWith(github.head_ref, 'train/') && !startsWith(github.head_ref, 'release/') }}
-    needs: [apextest-history-input, lwc-compile-history-input, visualforce-history-input, test-binaries-apextest, test-binaries]
+    needs: [history-input, test-binaries-apextest, test-binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -2079,17 +2020,12 @@ jobs:
       - test-binaries-apextest
       - vet
       - apextest
-      - apextest-history
-      - lwc-compile-history
-      - visualforce-history
+      - history
       - gladecli
-      - gladecli-history
       - vm
-      - vm-history
       - node-integration
       - nested-sources
       - sema
-      - sema-history
       - server-and-playground
       - server-process-builder
       - test

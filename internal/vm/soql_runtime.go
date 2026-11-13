@@ -934,12 +934,35 @@ func (vm *VM) validateSOQLSelectionLiteralSource(objectName string, condition *s
 func (vm *VM) validateDynamicSOQLBinds(raw string, binds Value) error {
 	lookup := vm.lookupSOQLBind
 	if binds.Kind == ValueMap {
-		lookup = func(name string) (Value, error) { return soqlBindMapValue(binds, name) }
+		lookup = vm.soqlBindMapLookup(binds)
 	}
 	return vm.validateDynamicSOQLBindsWith(raw, lookup)
 }
 
 func (vm *VM) validateDynamicSOQLBindsWith(raw string, lookup func(string) (Value, error)) error {
+	return vm.validateDynamicSOQLBindsOnly(raw, lookup, false)
+}
+
+// validateDynamicSOQLExceptionBinds reports only a bound exception value, the
+// one bind type the countQuery and getQueryLocator routes are captured to
+// reject (dynamic_bind_scope_paths E14, E17). Other value types keep their
+// existing handling on those routes.
+func (vm *VM) validateDynamicSOQLExceptionBinds(raw string) error {
+	// Only plain locals and ended variables are read: a lookup here must not
+	// evaluate a property getter or any other code.
+	lookup := func(name string) (Value, error) {
+		if live, ok := vm.lookupGlobalName(name); ok {
+			return vm.Globals[live], nil
+		}
+		if departed, ok := vm.closedSOQLLocals[strings.ToLower(name)]; ok {
+			return departed, nil
+		}
+		return Null, newExceptionError("QueryException", "Variable does not exist: "+name)
+	}
+	return vm.validateDynamicSOQLBindsOnly(raw, lookup, true)
+}
+
+func (vm *VM) validateDynamicSOQLBindsOnly(raw string, lookup func(string) (Value, error), exceptionsOnly bool) error {
 	query, err := vm.parseSOQLAt(raw)
 	if err != nil {
 		return nil // The execution parser supplies the syntax diagnostic.
@@ -964,11 +987,13 @@ func (vm *VM) validateDynamicSOQLBindsWith(raw string, lookup func(string) (Valu
 		}
 		return nil
 	}
-	if err := window(query.LimitBind, "LIMIT"); err != nil {
-		return err
-	}
-	if err := window(query.OffsetBind, "OFFSET"); err != nil {
-		return err
+	if !exceptionsOnly {
+		if err := window(query.LimitBind, "LIMIT"); err != nil {
+			return err
+		}
+		if err := window(query.OffsetBind, "OFFSET"); err != nil {
+			return err
+		}
 	}
 	var check func(soql.Query, *soql.Condition) error
 	check = func(query soql.Query, condition *soql.Condition) error {
@@ -1003,6 +1028,9 @@ func (vm *VM) validateDynamicSOQLBindsWith(raw string, lookup func(string) (Valu
 				continue // Preserve expression lookup and missing-name diagnostics.
 			}
 			value = value.currentMapKeySet()
+			if exceptionsOnly && !(value.Kind == ValueObject && isExceptionType(value.Type)) {
+				continue
+			}
 			if value.Kind == ValueNull {
 				if collection {
 					return newExceptionError("NullPointerException", "Attempt to de-reference a null object")
@@ -1059,7 +1087,7 @@ func (vm *VM) validateDynamicSOQLBindsWith(raw string, lookup func(string) (Valu
 					}
 				}
 				if columnType != "" {
-					return newExceptionError("QueryException", "Invalid bind expression type of "+valueTypeName(item)+" for column of type "+columnType)
+					return newExceptionError("QueryException", "Invalid bind expression type of "+vm.bindValueTypeName(item)+" for column of type "+columnType)
 				}
 			}
 		}
@@ -4592,9 +4620,23 @@ func (vm *VM) expandSOQLBindsFromMap(raw string, binds Value) (string, error) {
 	if binds.Kind != ValueMap {
 		return "", fmt.Errorf("queryWithBinds bind values must be a Map")
 	}
-	return vm.expandSOQLBindsWith(raw, func(name string) (Value, error) {
+	return vm.expandSOQLBindsWith(raw, vm.soqlBindMapLookup(binds), nil)
+}
+
+// soqlBindMapLookup is the one bind-map lookup that validation and expansion
+// share. A dotted bind whose root is a local in scope never matches a map key
+// spelled with the dot: the lookup uses the member after it
+// (dynamic_bind_scope_paths E09). A dotted key with no such local keeps the
+// full-name lookup; no native row covers it.
+func (vm *VM) soqlBindMapLookup(binds Value) func(string) (Value, error) {
+	return func(name string) (Value, error) {
+		if dot := strings.LastIndexByte(name, '.'); dot >= 0 {
+			if _, local := vm.lookupGlobalName(name[:strings.IndexByte(name, '.')]); local {
+				name = name[dot+1:]
+			}
+		}
 		return soqlBindMapValue(binds, name)
-	}, nil)
+	}
 }
 
 func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error), call func(string) (Value, error)) (string, error) {

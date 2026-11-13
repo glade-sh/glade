@@ -8,13 +8,13 @@ import (
 
 func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
-	input, matrix, refresh := jobs["visualforce-history-input"], jobs["lwc-vf"], jobs["visualforce-history"]
+	input, matrix, refresh := jobs["history-input"], jobs["lwc-vf"], jobs["history"]
 	for _, marker := range []string{
 		"actions: read", `-f head_sha="$CI_DURATION_HISTORY_CACHE_REF" -f status=success`,
 		"select(.expired == false)", `for index in {0..3}`, "format=shards", "format=serial",
-		"if: steps.predecessor.outputs.format == 'shards'", "if: steps.predecessor.outputs.format == 'serial'",
+		"if: steps.vf_predecessor.outputs.format == 'shards'", "if: steps.vf_predecessor.outputs.format == 'serial'",
 		"pattern: go-test-visualforce-shard-*", "name: go-test-remaining-go",
-		"run-id: ${{ steps.predecessor.outputs.run_id }}", "github-token: ${{ github.token }}",
+		"run-id: ${{ steps.vf_predecessor.outputs.run_id }}", "github-token: ${{ github.token }}",
 		"visualforce-history-bootstrap", "/tmp/visualforce-predecessor/test-remaining-go-visualforce.json",
 		"visualforce-history-refresh", "go-test-visualforce-shard-{0..3}",
 		`rm -f "$CI_VISUALFORCE_HISTORY_PATH"`, "using deterministic scheduling fallback",
@@ -27,7 +27,7 @@ func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 	if strings.Contains(input, "actions/cache/save@") {
 		t.Error("history producer must not publish unvalidated run results")
 	}
-	if strings.Count(input, "if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}") != 1 {
+	if strings.Count(input, "if: ${{ github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0 }}") != 2 {
 		t.Error("ordinary predecessor evidence must not seed a positive benchmark pair")
 	}
 	for index := range 4 {
@@ -43,7 +43,7 @@ func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 		}
 	}
 	for _, marker := range []string{
-		"needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]",
+		"needs: [history-input, test-binaries]",
 		"CI_VISUALFORCE_HISTORY_PATH: /tmp/glade-visualforce-duration-history/visualforce-duration-history.json",
 		"name: visualforce-history-input", "path: /tmp/glade-visualforce-duration-history",
 		`scripts/ci-go-test.sh visualforce-shard "${{ matrix.shard }}"`,
@@ -57,7 +57,7 @@ func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 		t.Error("workers must consume the same immutable history input")
 	}
 	for _, marker := range []string{
-		"needs: lwc-vf", "if: ${{ success() }}", "pattern: go-test-visualforce-shard-*",
+		"needs: [gladecli, vm, sema, apextest, lwc-vf]", "needs.lwc-vf.result == 'success'", "pattern: go-test-visualforce-shard-*",
 		"scripts/ci-go-test.sh visualforce-history-refresh", "go-test-visualforce-shard-{0..3}",
 		"actions/cache/save@", "visualforce-duration-history-v1", "github.sha",
 	} {
@@ -65,7 +65,7 @@ func TestCIVisualforceWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 			t.Errorf("Visualforce coverage/history guard missing %q", marker)
 		}
 	}
-	if !strings.Contains(jobs["required-ci"], "      - visualforce-history\n") {
+	if !strings.Contains(jobs["required-ci"], "      - history\n") {
 		t.Error("required CI must require the complete Visualforce union")
 	}
 }

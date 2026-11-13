@@ -574,7 +574,7 @@ platformStaticCall:
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("Database.query expects AccessLevel")
 		}
-		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, false); err != nil {
+		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, false, true); err != nil {
 			return Null, err
 		}
 		if err := vm.validateDynamicSOQLBinds(args[0].Text, Null); err != nil {
@@ -635,10 +635,13 @@ platformStaticCall:
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("Database.countQuery expects AccessLevel")
 		}
-		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, true); err != nil {
+		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, true, true); err != nil {
 			return Null, err
 		}
 		if err := vm.validateDynamicSOQLCountHavingNames(args[0].Text); err != nil {
+			return Null, err
+		}
+		if err := vm.validateDynamicSOQLExceptionBinds(args[0].Text); err != nil {
 			return Null, err
 		}
 		// COUNT(field) and ordinary selections use query().
