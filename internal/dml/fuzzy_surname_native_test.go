@@ -200,3 +200,23 @@ func TestFuzzySurnameUnmeasuredSwapKeepsKeyboardGate(t *testing.T) {
 		t.Fatalf("unmeasured wide swap bypasses the ordinary keyboard gate: %.2f", confidence)
 	}
 }
+
+// Local contract: the new panel measures lengths 4 to 8. Three-letter
+// nonterminal/cross-row substitutions and other far-key geometries retain the
+// inherited surname gate; they cannot gain supplementary membership.
+func TestFuzzySurnameUnmeasuredSubstitutionKeepsKeyboardGate(t *testing.T) {
+	for _, pair := range [][2]string{
+		{"Mtq", "Ntq"}, {"Qma", "Qna"}, {"Rfq", "Rfa"},
+		{"Qskjh", "Uskjh"}, {"Askjh", "Jskjh"},
+	} {
+		t.Run(pair[0]+"/"+pair[1], func(t *testing.T) {
+			a, b := strings.ToLower(pair[0]), strings.ToLower(pair[1])
+			if lastNameMetaphone3Equal(a, b) || lastNameCode(a) == lastNameCode(b) {
+				t.Fatal("control must reach the supplementary surname path")
+			}
+			if match, confidence := standardCorroboratedSurname(a, b); match {
+				t.Fatalf("unmeasured substitution bypasses the inherited gate: %.2f", confidence)
+			}
+		})
+	}
+}
