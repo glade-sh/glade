@@ -7,9 +7,14 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// Shipping-preservation controls for uncaptured upsert rule shapes. These do
-// not claim Salesforce parity; the native row covers one nonblank exact email.
-func TestUpsertDuplicateUncapturedRuleShapesPreserveShipping(t *testing.T) {
+// NATIVE changed matching fields, single and multi-item edit rules
+// ../apextest/testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:26 anonymous 62.0
+// ../apextest/testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:30 anonymous 67.0
+// ../apextest/testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:58 anonymous 62.0
+// ../apextest/testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:62 anonymous 67.0
+// E1 and E11existing supersede the earlier matching-field edit controls.
+// Standard rules, MatchBlanks and uncaptured inserts retain their local contract.
+func TestUpsertDuplicateRuleShapeBoundaries(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, shape := range []string{"standard", "multi_field", "blank_match", "other_field"} {
 			for _, operation := range []string{"insert", "update"} {
@@ -65,6 +70,12 @@ func TestUpsertDuplicateUncapturedRuleShapesPreserveShipping(t *testing.T) {
 						row.ID = targetID
 					}
 					got := engine.UpsertWithExternalID([]storage.Record{row}, "RouteKey__c")
+					if operation == "update" && (shape == "multi_field" || shape == "other_field") {
+						if len(got) != 1 || got[0].Success || got[0].StatusCode != "DUPLICATES_DETECTED" {
+							t.Fatalf("changed matching fields must run the %s edit rule: %+v", shape, got)
+						}
+						return
+					}
 					if len(got) != 1 || !got[0].Success {
 						t.Fatalf("uncaptured %s %s should preserve shipping success: %+v", shape, operation, got)
 					}
