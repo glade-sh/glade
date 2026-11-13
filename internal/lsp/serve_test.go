@@ -1,6 +1,8 @@
 package lsp
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +12,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -276,5 +279,70 @@ func TestServeDidOpenWithPendingIndexPublishesParseErrorsAtOnce(t *testing.T) {
 	c.send(openMessage(uri, "public class Draft {\n"))
 	if n := diagnosticCount(t, c.mustNext(2*time.Second)); n == 0 {
 		t.Fatal("expected parse diagnostics without the index")
+	}
+}
+
+func TestServeIgnoresClientResponses(t *testing.T) {
+	var out bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s := &server{h: NewHandler(sampleIndex(t)), w: &out, ctx: ctx, inflight: make(map[string]context.CancelFunc)}
+	s.dispatch([]byte(`{"jsonrpc":"2.0","id":42,"result":null}`))
+	s.dispatch([]byte(`{"jsonrpc":"2.0","id":43,"error":{"code":-32601,"message":"unsupported"}}`))
+	s.reqWG.Wait()
+	if out.Len() != 0 {
+		t.Fatalf("response to client response: %s", out.String())
+	}
+	s.dispatch([]byte(`{"jsonrpc":"2.0","id":44,"method":"initialize","params":{}}`))
+	data, err := NewProtocolReader(&out).Read()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var response struct {
+		ID json.RawMessage `json:"id"`
+	}
+	if err := json.Unmarshal(data, &response); err != nil || string(response.ID) != "44" {
+		t.Fatalf("initialize response = %s, error = %v", data, err)
+	}
+}
+
+func TestDiagnosticsRetriesAfterGenerationChange(t *testing.T) {
+	idx := sampleIndex(t)
+	h := NewHandler(idx)
+	started, release := make(chan struct{}), make(chan struct{})
+	h.gen.Load().analyzer = func(typesys.Index) sema.Result { close(started); <-release; return sema.Result{} }
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
+	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {}"}})
+	var out bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s := &server{h: h, w: &out, ctx: ctx, pending: make(map[DocumentURI]*diagJob)}
+	s.schedule(uri, 0)
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("analysis did not start")
+	}
+	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {"}})
+	s.pubMu.Lock()
+	h.gen.Store(newGeneration(idx, 1, func(typesys.Index) sema.Result { return sema.Result{} }))
+	s.pubMu.Unlock()
+	close(release)
+	s.diagWG.Wait()
+	data, err := NewProtocolReader(&out).Read()
+	if err != nil {
+		t.Fatalf("diagnostics not published after refresh: %v", err)
+	}
+	var n Notification
+	if err := json.Unmarshal(data, &n); err != nil || n.Method != "textDocument/publishDiagnostics" {
+		t.Fatalf("notification = %s, error = %v", data, err)
+	}
+	var message struct {
+		Params struct {
+			Diagnostics []json.RawMessage `json:"diagnostics"`
+		} `json:"params"`
+	}
+	if err := json.Unmarshal(data, &message); err != nil || len(message.Params.Diagnostics) == 0 {
+		t.Fatalf("missing parser diagnostics: %s, error = %v", data, err)
 	}
 }

@@ -56,6 +56,7 @@ func writeGeneratedLatencyProject(t *testing.T, root string, classes int) {
 	for i := 0; i < classes; i++ {
 		var b strings.Builder
 		fmt.Fprintf(&b, "public with sharing class LatencyService%04d {\n", i)
+		b.WriteString("  public String label;\n")
 		for m := 0; m < 25; m++ {
 			fmt.Fprintf(&b, "  public static Integer step%02d(Integer value) {\n    Integer total = value + %d;\n    List<Integer> items = new List<Integer>{ total, value };\n    for (Integer item : items) { total += item; }\n    return total;\n  }\n", m, m)
 		}
@@ -87,6 +88,10 @@ func (c *lspClient) send(message map[string]any) {
 // wait blocks until a message matching match arrives and returns the time since
 // the client started.
 func (c *lspClient) wait(what string, limit time.Duration, match func(map[string]any) bool) time.Duration {
+	return c.waitAfter(what, limit, 0, match)
+}
+
+func (c *lspClient) waitAfter(what string, limit time.Duration, next int, match func(map[string]any) bool) time.Duration {
 	c.t.Helper()
 	deadline := time.Now().Add(limit)
 	timer := time.AfterFunc(limit, func() {
@@ -97,7 +102,6 @@ func (c *lspClient) wait(what string, limit time.Duration, match func(map[string
 	defer timer.Stop()
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	next := 0
 	for {
 		for ; next < len(c.seen); next++ {
 			if match(c.seen[next]) {
@@ -172,6 +176,10 @@ func measureLSPLatency(t *testing.T, project string, record func(string, time.Du
 	uri := "file://" + file
 	openStart := time.Now()
 	client.send(map[string]any{"method": "textDocument/didOpen", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "apex", "version": 1, "text": string(text)}}})
+	hoverStart := time.Now()
+	client.send(map[string]any{"id": 4, "method": "textDocument/hover", "params": map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]any{"line": 1, "character": 16}}})
+	client.wait("hover", limit, isResponse(4))
+	record("lsp_first_hover", time.Since(hoverStart))
 	client.wait("diagnostics", limit, func(m map[string]any) bool {
 		if m["method"] != "textDocument/publishDiagnostics" {
 			return false
@@ -180,6 +188,69 @@ func measureLSPLatency(t *testing.T, project string, record func(string, time.Du
 		return params["uri"] == uri
 	})
 	record("lsp_first_didopen_diagnostics", time.Since(openStart))
+
+	// Measure end-to-end protocol response cost, including JSON serialization.
+	for _, op := range []struct {
+		id             int
+		method, metric string
+		position       int
+	}{
+		{5, "textDocument/completion", "lsp_completion", 29},
+		{6, "textDocument/references", "lsp_references", 32},
+		{7, "textDocument/rename", "lsp_rename", 32},
+	} {
+		params := map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]any{"line": 0, "character": op.position}}
+		if op.method == "textDocument/references" {
+			params["context"] = map[string]any{"includeDeclaration": true}
+		}
+		if op.method == "textDocument/rename" {
+			params["newName"] = "RenamedService"
+		}
+		start := time.Now()
+		client.send(map[string]any{"id": op.id, "method": op.method, "params": params})
+		client.wait(op.metric, limit, isResponse(op.id))
+		record(op.metric, time.Since(start))
+		if op.method == "textDocument/completion" && os.Getenv("GLADE_EDITOR_LATENCY") != "" {
+			client.mu.Lock()
+			for _, msg := range client.seen {
+				if isResponse(op.id)(msg) {
+					data, _ := json.Marshal(msg)
+					t.Logf("latency lsp_completion_bytes %d", len(data))
+					break
+				}
+			}
+			client.mu.Unlock()
+		}
+	}
+
+	if os.Getenv("GLADE_LATENCY_NO_SAVE") == "" {
+		broken := strings.Replace(string(text), "Integer total = value + 0;", "Integer total = missing + 0;", 1)
+		for i, body := range []string{broken, string(text)} {
+			if err := os.WriteFile(file, []byte(body), 0600); err != nil {
+				t.Fatal(err)
+			}
+			client.send(map[string]any{"method": "textDocument/didChange", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "version": i + 2}, "contentChanges": []any{map[string]any{"text": body}}}})
+			client.mu.Lock()
+			startIndex := len(client.seen)
+			client.mu.Unlock()
+			start := time.Now()
+			client.send(map[string]any{"method": "textDocument/didSave", "params": map[string]any{"textDocument": map[string]any{"uri": uri}}})
+			client.waitAfter("save diagnostics", limit, startIndex, func(m map[string]any) bool {
+				if m["method"] != "textDocument/publishDiagnostics" {
+					return false
+				}
+				params, _ := m["params"].(map[string]any)
+				if params["uri"] != uri {
+					return false
+				}
+				diags, _ := params["diagnostics"].([]any)
+				return (i == 0 && len(diags) > 0) || (i == 1 && len(diags) == 0)
+			})
+			if i == 1 {
+				record("lsp_save_refresh_diagnostics", time.Since(start))
+			}
+		}
+	}
 
 	client.send(map[string]any{"id": 3, "method": "shutdown"})
 	client.wait("shutdown", limit, isResponse(3))

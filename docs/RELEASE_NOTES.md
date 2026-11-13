@@ -2,8 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
-
+- **Language server refresh.** Diagnostics retry after project refreshes, deleted source files leave the index, and hover starts type analysis when needed. Client responses no longer receive a second response.
 ## v0.3.9
 
 v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteria-based Case sharing and more native-matched Apex, SOQL and SOSL behavior. It lowers memory and startup cost for tests, and `glade doctor` no longer hangs on a busy toolchain.

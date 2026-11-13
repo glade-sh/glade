@@ -19,9 +19,7 @@ import (
 )
 
 type Handler struct {
-	// index is written once, before ready closes. Readers that need it wait on
-	// ready first, which orders the write before every read.
-	index     typesys.Index
+	gen       atomic.Pointer[generation]
 	ready     chan struct{}
 	readyOnce sync.Once
 	loadErr   error
@@ -30,22 +28,18 @@ type Handler struct {
 	parser       *apexast.Parser
 	parserClosed bool
 
-	analyzer     func(typesys.Index) sema.Result
-	analysisOnce sync.Once
-	analysis     sema.Result
+	analyzer           func(typesys.Index) sema.Result
+	refresher          func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error)
+	refreshMu          sync.Mutex
+	validateGeneration func(typesys.Index) bool
 
-	docMu     sync.RWMutex
-	documents map[DocumentURI]openDocument
+	docMu         sync.RWMutex
+	documents     map[DocumentURI]openDocument
+	documentPaths map[string]DocumentURI
 
 	shutdown atomic.Bool
 
 	debounce time.Duration
-
-	// completionCatalogs caches the default completion list per ordering.
-	completionCatalogs [3]struct {
-		once  sync.Once
-		items []CompletionItem
-	}
 }
 
 // DefaultDiagnosticsDebounce is how long Serve waits after the last
@@ -70,17 +64,18 @@ func NewHandler(index typesys.Index) *Handler {
 // for SetIndex or Fail.
 func NewPendingHandler() *Handler {
 	return &Handler{
-		ready:     make(chan struct{}),
-		parser:    apexast.NewParser(),
-		documents: make(map[DocumentURI]openDocument),
-		debounce:  DefaultDiagnosticsDebounce,
+		ready:         make(chan struct{}),
+		parser:        apexast.NewParser(),
+		documents:     make(map[DocumentURI]openDocument),
+		documentPaths: make(map[string]DocumentURI),
+		debounce:      DefaultDiagnosticsDebounce,
 	}
 }
 
 // SetIndex publishes the project index and releases waiting requests.
 func (h *Handler) SetIndex(index typesys.Index) {
 	h.readyOnce.Do(func() {
-		h.index = index
+		h.gen.Store(newGeneration(index, 1, h.analyzer))
 		close(h.ready)
 	})
 }
@@ -128,14 +123,7 @@ func (h *Handler) analysisResult() sema.Result {
 	if h.loadErr != nil {
 		return sema.Result{}
 	}
-	h.analysisOnce.Do(func() {
-		analyze := h.analyzer
-		if analyze == nil {
-			analyze = sema.Analyze
-		}
-		h.analysis = analyze(h.index)
-	})
-	return h.analysis
+	return h.gen.Load().analysisResult()
 }
 
 // SetAnalyzer replaces the whole-project semantic pass, for callers that can
@@ -157,7 +145,7 @@ func (h *Handler) Shutdown() bool {
 func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
 	return InitializeResult{
 		Capabilities: ServerCapabilities{
-			TextDocumentSync:        textDocumentSyncIncremental,
+			TextDocumentSync:        TextDocumentSyncOptions{OpenClose: true, Change: textDocumentSyncIncremental, Save: SaveOptions{IncludeText: false}},
 			DocumentSymbolProvider:  true,
 			WorkspaceSymbolProvider: true,
 			HoverProvider:           true,
@@ -189,6 +177,7 @@ func (h *Handler) applyOpen(params DidOpenTextDocumentParams) openDocument {
 	}
 	h.docMu.Lock()
 	h.documents[uri] = doc
+	h.documentPaths[canonicalDocumentPath(doc.Path)] = uri
 	h.docMu.Unlock()
 	return doc
 }
@@ -217,6 +206,7 @@ func (h *Handler) applyChange(params DidChangeTextDocumentParams) (openDocument,
 		doc.Text = next
 	}
 	h.documents[doc.URI] = doc
+	h.documentPaths[canonicalDocumentPath(doc.Path)] = doc.URI
 	return doc, nil
 }
 
@@ -227,6 +217,9 @@ func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
 
 func (h *Handler) applyClose(uri DocumentURI) {
 	h.docMu.Lock()
+	if doc, ok := h.documents[uri]; ok {
+		delete(h.documentPaths, canonicalDocumentPath(doc.Path))
+	}
 	delete(h.documents, uri)
 	h.docMu.Unlock()
 }
@@ -386,7 +379,7 @@ func BuildPublishDiagnostics(uri DocumentURI, diagnostics []diagnostic.Diagnosti
 	return out
 }
 
-func (h *Handler) DocumentSymbols(uri DocumentURI) []DocumentSymbol {
+func (h *requestHandler) DocumentSymbols(uri DocumentURI) []DocumentSymbol {
 	path := pathFromURI(uri)
 	var out []DocumentSymbol
 
@@ -436,7 +429,7 @@ func (h *Handler) DocumentSymbols(uri DocumentURI) []DocumentSymbol {
 	return out
 }
 
-func (h *Handler) WorkspaceSymbols(query string) []SymbolInformation {
+func (h *requestHandler) WorkspaceSymbols(query string) []SymbolInformation {
 	query = strings.ToLower(strings.TrimSpace(query))
 	matches := func(name string) bool {
 		return query == "" || strings.Contains(strings.ToLower(name), query)
@@ -501,7 +494,7 @@ func (h *Handler) WorkspaceSymbols(query string) []SymbolInformation {
 	return out
 }
 
-func (h *Handler) Hover(params HoverParams) *Hover {
+func (h *requestHandler) Hover(params HoverParams) *Hover {
 	path := pathFromURI(params.TextDocument.URI)
 	for _, typ := range h.index.Types {
 		if !sameDocument(path, typ.File) && !sameDocument(string(params.TextDocument.URI), typ.File) {
@@ -535,7 +528,7 @@ func (h *Handler) Hover(params HoverParams) *Hover {
 	return nil
 }
 
-func (h *Handler) HoverForName(name string, hoverRange *Range) *Hover {
+func (h *requestHandler) HoverForName(name string, hoverRange *Range) *Hover {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil
@@ -564,7 +557,9 @@ func (h *Handler) HoverForName(name string, hoverRange *Range) *Hover {
 		}
 	}
 
-	for _, ref := range h.analysisResult().Types {
+	h.generation.startAnalysis()
+	result, _ := h.analysisIfReady()
+	for _, ref := range result.Types {
 		if !strings.EqualFold(ref.Name, name) {
 			continue
 		}
@@ -587,25 +582,26 @@ const (
 	completionContextSOQLFieldClause
 )
 
-func (h *Handler) Completion(params CompletionParams) CompletionList {
+func (h *requestHandler) Completion(params CompletionParams) CompletionList {
 	context := h.completionContext(params)
 	if context.items != nil {
 		sortCompletionItems(context.items, completionContextDefault)
 		return CompletionList{Items: context.items}
 	}
-	return CompletionList{Items: h.defaultCompletionCatalog(context.kind)}
+	items, incomplete := filterCompletionCatalog(h.defaultCompletionCatalog(context.kind), context.prefix)
+	return CompletionList{Items: items, IsIncomplete: incomplete}
 }
 
 // defaultCompletionCatalog returns the sorted whole-project completion list for
 // one ordering. The index never changes after it is published, so each ordering
 // is built once and shared. Callers must not modify the returned items.
-func (h *Handler) defaultCompletionCatalog(kind completionContext) []CompletionItem {
-	slot := &h.completionCatalogs[kind]
+func (h *requestHandler) defaultCompletionCatalog(kind completionContext) []CompletionItem {
+	slot := &h.generation.completionCatalogs[kind]
 	slot.once.Do(func() { slot.items = h.buildDefaultCompletionCatalog(kind) })
 	return slot.items
 }
 
-func (h *Handler) buildDefaultCompletionCatalog(kind completionContext) []CompletionItem {
+func (h *requestHandler) buildDefaultCompletionCatalog(kind completionContext) []CompletionItem {
 	items := make([]CompletionItem, 0, len(h.index.Types)+len(h.index.Objects))
 	seen := make(map[string]bool)
 	add := func(item CompletionItem) {
@@ -658,11 +654,12 @@ func (h *Handler) buildDefaultCompletionCatalog(kind completionContext) []Comple
 }
 
 type completionResultContext struct {
-	kind  completionContext
-	items []CompletionItem
+	kind   completionContext
+	items  []CompletionItem
+	prefix string
 }
 
-func (h *Handler) completionContext(params CompletionParams) completionResultContext {
+func (h *requestHandler) completionContext(params CompletionParams) completionResultContext {
 	text, ok := h.documentText(pathFromURI(params.TextDocument.URI))
 	if !ok {
 		return completionResultContext{}
@@ -680,24 +677,26 @@ func (h *Handler) completionContext(params CompletionParams) completionResultCon
 	if items := h.testMethodCompletionItems(text, offset); len(items) > 0 {
 		return completionResultContext{items: items}
 	}
+	start, _ := identifierBounds(text, offset)
+	typed := text[start:offset]
 	prefix := strings.ToLower(text[:offset])
 	queryStart := strings.LastIndex(prefix, "[")
 	if queryStart < 0 || strings.LastIndex(prefix, "]") > queryStart {
-		return completionResultContext{}
+		return completionResultContext{prefix: typed}
 	}
 	clause := prefix[queryStart+1:]
 	if strings.Contains(clause, "select") && !strings.Contains(clause, " from ") {
-		return completionResultContext{kind: completionContextSOQLSelect}
+		return completionResultContext{kind: completionContextSOQLSelect, prefix: typed}
 	}
 	for _, marker := range []string{" where", " order by", " group by"} {
 		if strings.Contains(clause, marker) {
-			return completionResultContext{kind: completionContextSOQLFieldClause}
+			return completionResultContext{kind: completionContextSOQLFieldClause, prefix: typed}
 		}
 	}
-	return completionResultContext{}
+	return completionResultContext{prefix: typed}
 }
 
-func (h *Handler) annotationCompletionItems(text string, offset int) []CompletionItem {
+func (h *requestHandler) annotationCompletionItems(text string, offset int) []CompletionItem {
 	prefix := text[:offset]
 	lineStart := strings.LastIndex(prefix, "\n") + 1
 	if strings.TrimSpace(prefix[lineStart:]) != "@" {
@@ -713,7 +712,7 @@ func (h *Handler) annotationCompletionItems(text string, offset int) []Completio
 	return out
 }
 
-func (h *Handler) testMethodCompletionItems(text string, offset int) []CompletionItem {
+func (h *requestHandler) testMethodCompletionItems(text string, offset int) []CompletionItem {
 	prefix := text[:offset]
 	lineStart := strings.LastIndex(prefix, "\n") + 1
 	line := strings.ToLower(prefix[lineStart:])
@@ -727,7 +726,7 @@ func (h *Handler) testMethodCompletionItems(text string, offset int) []Completio
 	}
 }
 
-func (h *Handler) memberCompletionItems(text string, offset int) []CompletionItem {
+func (h *requestHandler) memberCompletionItems(text string, offset int) []CompletionItem {
 	if offset == 0 || text[offset-1] != '.' {
 		return nil
 	}
@@ -768,7 +767,7 @@ func (h *Handler) memberCompletionItems(text string, offset int) []CompletionIte
 	return nil
 }
 
-func (h *Handler) localVariableType(prefix, name string) string {
+func (h *requestHandler) localVariableType(prefix, name string) string {
 	lines := strings.Split(prefix, "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := strings.TrimSpace(lines[i])
@@ -792,7 +791,7 @@ func (h *Handler) localVariableType(prefix, name string) string {
 	return ""
 }
 
-func (h *Handler) objectByName(name string) (schema.Object, bool) {
+func (h *requestHandler) objectByName(name string) (schema.Object, bool) {
 	for _, object := range h.index.Objects {
 		if strings.EqualFold(object.Name, name) {
 			return object, true
@@ -826,7 +825,7 @@ func schemaTokenCompletionItems() []CompletionItem {
 	return methodCompletionItems("Schema token method", "getDescribe", "newSObject")
 }
 
-func (h *Handler) Definition(params DefinitionParams) []Location {
+func (h *requestHandler) Definition(params DefinitionParams) []Location {
 	name := h.wordAt(params.TextDocument.URI, params.Position)
 	if name == "" {
 		return nil
@@ -837,7 +836,7 @@ func (h *Handler) Definition(params DefinitionParams) []Location {
 	return nil
 }
 
-func (h *Handler) References(params ReferenceParams) []Location {
+func (h *requestHandler) References(params ReferenceParams) []Location {
 	name := h.wordAt(params.TextDocument.URI, params.Position)
 	if name == "" {
 		return nil
@@ -859,7 +858,7 @@ func (h *Handler) References(params ReferenceParams) []Location {
 	return locations
 }
 
-func (h *Handler) PrepareRename(params RenameParams) *Range {
+func (h *requestHandler) PrepareRename(params RenameParams) *Range {
 	name := h.wordAt(params.TextDocument.URI, params.Position)
 	if name == "" {
 		return nil
@@ -874,7 +873,7 @@ func (h *Handler) PrepareRename(params RenameParams) *Range {
 	return &wordRange
 }
 
-func (h *Handler) Rename(params RenameParams) *WorkspaceEdit {
+func (h *requestHandler) Rename(params RenameParams) *WorkspaceEdit {
 	if strings.TrimSpace(params.NewName) == "" {
 		return nil
 	}
@@ -892,7 +891,7 @@ func (h *Handler) Rename(params RenameParams) *WorkspaceEdit {
 	return edit
 }
 
-func (h *Handler) SemanticTokensFull(params SemanticTokensParams) SemanticTokens {
+func (h *requestHandler) SemanticTokensFull(params SemanticTokensParams) SemanticTokens {
 	var raw []semanticToken
 	path := pathFromURI(params.TextDocument.URI)
 	for _, typ := range h.index.Types {
@@ -919,7 +918,7 @@ func (h *Handler) SemanticTokensFull(params SemanticTokensParams) SemanticTokens
 	return SemanticTokens{Data: encodeSemanticTokens(raw)}
 }
 
-func (h *Handler) hoverForTypeExpression(typeRef string, hoverRange Range) *Hover {
+func (h *requestHandler) hoverForTypeExpression(typeRef string, hoverRange Range) *Hover {
 	for _, name := range candidateTypeNames(typeRef) {
 		if hover := h.HoverForName(name, rangePtr(hoverRange)); hover != nil {
 			return hover

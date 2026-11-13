@@ -59,15 +59,27 @@ type ServerInfo struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync        int                   `json:"textDocumentSync,omitempty"`
-	DocumentSymbolProvider  bool                  `json:"documentSymbolProvider"`
-	WorkspaceSymbolProvider bool                  `json:"workspaceSymbolProvider"`
-	HoverProvider           bool                  `json:"hoverProvider"`
-	CompletionProvider      CompletionOptions     `json:"completionProvider"`
-	DefinitionProvider      bool                  `json:"definitionProvider"`
-	ReferencesProvider      bool                  `json:"referencesProvider"`
-	RenameProvider          RenameOptions         `json:"renameProvider"`
-	SemanticTokensProvider  SemanticTokensOptions `json:"semanticTokensProvider"`
+	TextDocumentSync        TextDocumentSyncOptions `json:"textDocumentSync"`
+	DocumentSymbolProvider  bool                    `json:"documentSymbolProvider"`
+	WorkspaceSymbolProvider bool                    `json:"workspaceSymbolProvider"`
+	HoverProvider           bool                    `json:"hoverProvider"`
+	CompletionProvider      CompletionOptions       `json:"completionProvider"`
+	DefinitionProvider      bool                    `json:"definitionProvider"`
+	ReferencesProvider      bool                    `json:"referencesProvider"`
+	RenameProvider          RenameOptions           `json:"renameProvider"`
+	SemanticTokensProvider  SemanticTokensOptions   `json:"semanticTokensProvider"`
+}
+
+type TextDocumentSyncOptions struct {
+	OpenClose bool        `json:"openClose"`
+	Change    int         `json:"change"`
+	Save      SaveOptions `json:"save"`
+}
+type SaveOptions struct {
+	IncludeText bool `json:"includeText"`
+}
+type DidSaveTextDocumentParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 }
 
 type CompletionOptions struct {
