@@ -1,0 +1,74 @@
+package dap
+
+import (
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/glade-sh/glade/internal/vm"
+)
+
+func TestVariablesLargeListIsBounded(t *testing.T) {
+	values := make([]vm.Value, 200000)
+	for i := range values {
+		values[i] = vm.Int(int64(i))
+	}
+	h := NewHandler(Snapshot{Vars: map[string]vm.Value{"items": vm.List(values...)}})
+	done := make(chan Response, 1)
+	go func() {
+		done <- h.handleVariables(request(1, CommandVariables, map[string]any{"variablesReference": localsReference}))
+	}()
+	select {
+	case response := <-done:
+		var body struct {
+			Variables []Variable `json:"variables"`
+		}
+		decodeBody(t, response, &body)
+		if len(body.Variables) != 1 || len(body.Variables[0].Value) > 300 || !strings.HasPrefix(body.Variables[0].Value, "List(200000)") {
+			t.Fatalf("unexpected preview: %#v", body.Variables)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("large list preview exceeded one second")
+	}
+}
+
+func TestPreviewValueKeepsSmallValues(t *testing.T) {
+	object := vm.Object("Example")
+	object.Fields["name"] = vm.String("sample")
+	values := []vm.Value{vm.Int(7), vm.String("hello"), vm.List(vm.Int(1), vm.Int(2), vm.Int(3)), {Kind: vm.ValueMap, Map: map[string]vm.Value{"one": vm.Int(1)}}, object}
+	for _, value := range values {
+		if got, want := previewValue(value), value.String(); got != want {
+			t.Errorf("preview = %q, want %q", got, want)
+		}
+	}
+}
+
+func TestVariablesConcurrentPauses(t *testing.T) {
+	h := NewHandler(Snapshot{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for i := 0; i < 100; i++ {
+			h.ApplyPause(vm.DebugPause{Vars: map[string]vm.Value{"items": vm.List(vm.Int(int64(i)))}})
+		}
+	}()
+	for i := 0; i < 100; i++ {
+		h.handleVariables(request(1, CommandVariables, map[string]any{"variablesReference": localsReference}))
+	}
+	<-done
+}
+
+func TestPreviewBoundsLargeMapKey(t *testing.T) {
+	key := vm.List(make([]vm.Value, 200000)...)
+	value := vm.Value{Kind: vm.ValueMap, Map: map[string]vm.Value{"key": vm.Int(1)}, MapKeys: map[string]vm.Value{"key": key}}
+	done := make(chan string, 1)
+	go func() { done <- previewValue(value) }()
+	select {
+	case got := <-done:
+		if len(got) > 300 || !strings.HasPrefix(got, "Map(1)") {
+			t.Fatalf("unbounded map key preview: %q", got)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("large map key preview exceeded one second")
+	}
+}

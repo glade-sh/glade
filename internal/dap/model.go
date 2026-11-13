@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/trace"
 	"github.com/glade-sh/glade/internal/vm"
@@ -241,10 +242,136 @@ func namedValuesFromMap(vars map[string]vm.Value) []namedValue {
 	return out
 }
 
+// previewValue bounds work and output for the debugger without changing Apex text.
+func previewValue(value vm.Value) string { return previewValueDepth(value, 0) }
+
+func previewValueDepth(value vm.Value, depth int) string {
+	budget := 64
+	if previewWithinBudget(value, &budget) {
+		return truncatePreview(value.String())
+	}
+	var header string
+	switch value.Kind {
+	case vm.ValueList:
+		header = fmt.Sprintf("List(%d)", len(value.List))
+	case vm.ValueSet:
+		header = fmt.Sprintf("Set(%d)", len(value.Set))
+	case vm.ValueMap:
+		header = fmt.Sprintf("Map(%d)", len(value.Map))
+	case vm.ValueObject:
+		header = value.Type
+		if header == "" {
+			header = "Object"
+		}
+	default:
+		return truncatePreview(value.String())
+	}
+	if depth >= 1 {
+		return truncatePreview(header)
+	}
+	children := previewChildren(value)
+	parts := make([]string, 0, len(children))
+	for _, child := range children {
+		parts = append(parts, previewValueDepth(child, depth+1))
+	}
+	if len(parts) > 0 {
+		header += " [" + strings.Join(parts, ", ") + ", ...]"
+	}
+	return truncatePreview(header)
+}
+
+func truncatePreview(s string) string {
+	if len(s) <= 256 {
+		return s
+	}
+	s = s[:256]
+	for !utf8.ValidString(s) {
+		s = s[:len(s)-1]
+	}
+	return s + "..."
+}
+
+func previewWithinBudget(v vm.Value, budget *int) bool {
+	*budget--
+	if *budget < 0 {
+		return false
+	}
+	switch v.Kind {
+	case vm.ValueList:
+		for _, child := range v.List {
+			if !previewWithinBudget(child, budget) {
+				return false
+			}
+		}
+	case vm.ValueSet:
+		for _, child := range v.Set {
+			if !previewWithinBudget(child, budget) {
+				return false
+			}
+		}
+	case vm.ValueMap:
+		for _, key := range v.MapKeys {
+			if !previewWithinBudget(key, budget) {
+				return false
+			}
+		}
+		for _, child := range v.Map {
+			if !previewWithinBudget(child, budget) {
+				return false
+			}
+		}
+	case vm.ValueObject:
+		for _, child := range v.Fields {
+			if !previewWithinBudget(child, budget) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func previewChildren(v vm.Value) []vm.Value {
+	switch v.Kind {
+	case vm.ValueList:
+		if len(v.List) > 3 {
+			return v.List[:3]
+		}
+		return v.List
+	case vm.ValueSet:
+		if len(v.Set) > 3 {
+			return v.Set[:3]
+		}
+		return v.Set
+	case vm.ValueMap, vm.ValueObject:
+		fields := v.Map
+		if v.Kind == vm.ValueObject {
+			fields = v.Fields
+		}
+		keys := make([]string, 0, 3)
+		for key := range fields {
+			i := sort.SearchStrings(keys, key)
+			if i < 3 {
+				keys = append(keys, "")
+				copy(keys[i+1:], keys[i:])
+				keys[i] = key
+				if len(keys) > 3 {
+					keys = keys[:3]
+				}
+			}
+		}
+		result := make([]vm.Value, 0, len(keys))
+		for _, key := range keys {
+			result = append(result, fields[key])
+		}
+		return result
+	}
+	return nil
+}
+
 func variableFromValue(name string, value vm.Value, ref int) Variable {
 	out := Variable{
 		Name:               name,
-		Value:              value.String(),
+		Value:              previewValue(value),
 		Type:               string(value.Kind),
 		VariablesReference: ref,
 	}
