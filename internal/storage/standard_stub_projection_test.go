@@ -218,3 +218,14 @@ func TestStandardFieldReadersAvoidFullDescribe(t *testing.T) {
 		t.Fatalf("field-only readers caused %d full decodes", got)
 	}
 }
+
+func TestStandardFieldFacetLookupAvoidsFullDescribe(t *testing.T) {
+	standardDescribeCatalogV2RawProductionCache.release()
+	before := standardDescribeFullDecodes.Load()
+	for _, entry := range standardDescribeCatalogV2Index {
+		standardDescribeFieldForName(entry.Name, "Name")
+	}
+	if got := standardDescribeFullDecodes.Load() - before; got != 0 {
+		t.Fatalf("field facet lookups caused %d full decodes", got)
+	}
+}
