@@ -43,6 +43,8 @@ type Query struct {
 	// orderAggregates contains execution-only values for ORDER BY expressions
 	// absent from SELECT. They are removed after sorting and windowing.
 	orderAggregates []Aggregate
+	// textCollation is execution state set from the user locale.
+	textCollation bool
 	// LegacyPicklistNullOrder is execution state, separate from cached syntax.
 	LegacyPicklistNullOrder bool `json:"-"`
 	// LegacyRestrictedPicklistNullOrder extends the legacy policy to restricted
@@ -57,6 +59,9 @@ type OrderSpec struct {
 	// RewrittenAggregate distinguishes a selected aggregate expression from
 	// an author-written exprN selector.
 	RewrittenAggregate bool
+
+	// textCollation is execution state: text compares use the en_* collation.
+	textCollation bool
 }
 type ChildQuery struct {
 	Relationship string
@@ -76,6 +81,9 @@ type Aggregate struct {
 	Func  string
 	Field string
 	Alias string
+
+	// textCollation is execution state for MIN and MAX over text.
+	textCollation bool
 }
 type Condition struct {
 	Parenthesized bool
