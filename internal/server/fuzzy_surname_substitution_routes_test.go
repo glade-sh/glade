@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
@@ -78,13 +79,20 @@ func TestFuzzySurnameSubstitutionHostRoutes(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					org := storage.NewOrgState()
+					index := typesys.Build(p, schema)
+					org := apextest.OrgFromIndex(index)
 					org.APIVersion = api
 					org.StandardDuplicateRules = true
-					storage.EnsureDeterministicPlatformData(&org)
 					srv := newLightningTestServer(t, &org, source)
 					configureVisualforceTestPrincipal(t, srv)
-					srv.SetProjectIndex(typesys.Build(p, schema))
+					// Match the capture's administrator principal and complete standard
+					// schema/defaults, including Lead Status and Phone.
+					profiles := srv.Org.Objects["Profile"]
+					profile := profiles.Records[visualforceTestProfileID]
+					profile.Fields["Name"] = storage.StringValue("System Administrator")
+					profiles.Records[visualforceTestProfileID] = profile
+					srv.Org.Objects["Profile"] = profiles
+					srv.SetProjectIndex(index)
 					if srv.runtimeErr != nil {
 						t.Fatal(srv.runtimeErr)
 					}
@@ -97,6 +105,12 @@ func TestFuzzySurnameSubstitutionHostRoutes(t *testing.T) {
 						}
 						rec := httptest.NewRecorder()
 						srv.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v"+api+"/tooling/executeAnonymous", strings.NewReader(string(data))))
+						if api == "62.0" {
+							if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "unsupported API version") {
+								t.Fatalf("REST version boundary: status=%d body=%s", rec.Code, rec.Body.String())
+							}
+							return
+						}
 						if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"success":true`) {
 							t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
 						}
