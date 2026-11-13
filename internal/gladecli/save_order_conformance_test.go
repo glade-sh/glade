@@ -45,6 +45,10 @@ func replaySaveOrder(t *testing.T, fixture, rowID, table, script, classPrefix, m
 		}
 		project := fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api)
 		writeTestFile(t, filepath.Join(root, "sfdx-project.json"), project)
+		if fixture == "rollup" || fixture == "rollup_events" {
+			// The scratch org assigned this deployed permission set before running Apex.
+			writeTestFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [Probe_Access]\n")
+		}
 		for j, route := range []string{"anonymous", "istest"} {
 			t.Run(rowID+"/"+api+"/"+route, func(t *testing.T) {
 				row := strings.Split(lines[1+2*i+j], "\t")
