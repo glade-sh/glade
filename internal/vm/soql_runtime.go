@@ -2373,7 +2373,15 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 	// object or field serves every record it scans.
 	defer vm.beginPermissionCheckMemo()()
 	groups := make([]soslResultGroup, 0, len(query.Returning))
-	groupLimits := soslResultLimits(query)
+	// Native allocation and the indexed ceiling were measured with one,
+	// two and three objects. Wider searches retain their existing windows.
+	var groupLimits []int
+	remaining := -1
+	if len(query.Returning) <= 3 {
+		groupLimits = soslResultLimits(query)
+	} else if query.Limit.HasValue {
+		remaining = query.Limit.Value
+	}
 	for i, spec := range query.Returning {
 		specObjectName := spec.Object
 		if vm.Org != nil {
@@ -2415,15 +2423,24 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		}
 		sortSOSLRows(rows, spec.OrderBy)
 		applySOSLReturningOffset(&rows, spec)
-		limit := groupLimits[i]
-		if !vm.fixedSearchResultsSet && len(query.Returning) > 1 {
-			// Multi-entity indexed searches returned at most 250 hits per
-			// entity. Fixed test results use the full allocated quota.
-			limit = min(limit, 250)
+		limit := len(rows.List)
+		if groupLimits != nil {
+			limit = min(limit, groupLimits[i])
+			if !vm.fixedSearchResultsSet && len(query.Returning) > 1 {
+				// Fixed results use the full quota. Indexed groups each
+				// returned at most 250 rows.
+				limit = min(limit, 250)
+			}
+		} else {
+			if spec.Limit.HasValue {
+				limit = min(limit, spec.Limit.Value)
+			}
+			if remaining >= 0 {
+				limit = min(limit, remaining)
+				remaining -= limit
+			}
 		}
-		if len(rows.List) > limit {
-			rows.List = rows.List[:limit]
-		}
+		rows.List = rows.List[:limit]
 		// R141/R143/R144/R164 prove empty-result acceptance. Captured rows
 		// do not establish the index's highlight or target-length formatting.
 		if len(rows.List) > 0 && query.WithHighlight {

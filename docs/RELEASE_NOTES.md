@@ -4,7 +4,7 @@
 
 ### Apex search
 
-- SOSL divides the result limit among the objects in `RETURNING`, including when an object has fewer matching rows than its share. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
+- SOSL divides the result limit among two or three `RETURNING` objects, including when an object has fewer matching rows than its share. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
 
 ### Performance
 
