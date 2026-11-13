@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	goparser "go/parser"
@@ -91,7 +92,8 @@ func childRelFilterSignatures() [][]string {
 }
 
 // Regenerates child_relationship_filter.txt. Without the variable it only
-// checks that the checked-in file decodes.
+// checks that the checked-in file decodes. GLADE_UPDATE_CHILD_REL_FILTER=check
+// regenerates in memory and fails when the bytes differ from the checked-in file.
 func TestChildRelationshipFilterGenerate(t *testing.T) {
 	if os.Getenv("GLADE_UPDATE_CHILD_REL_FILTER") == "" {
 		if loadChildRelFilter() == nil {
@@ -167,6 +169,19 @@ func TestChildRelationshipFilterGenerate(t *testing.T) {
 		return
 	}
 	blob := encodeChildRelFilter(storage.StandardCatalogStamp(), sortedHashes(facts.pairs), sortedHashes(facts.keys))
+	if os.Getenv("GLADE_UPDATE_CHILD_REL_FILTER") == "check" {
+		// Drift check: regenerate from the generator and compare bytes with
+		// the committed file. Writes nothing.
+		committed, err := os.ReadFile("child_relationship_filter.txt")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(blob, committed) {
+			t.Fatalf("child_relationship_filter.txt is stale: regenerated %d bytes differ from committed %d bytes; regenerate it with GLADE_UPDATE_CHILD_REL_FILTER=1", len(blob), len(committed))
+		}
+		t.Logf("regenerated filter is byte-identical to the committed file (%d bytes, %d pairs, %d parent keys)", len(blob), len(facts.pairs), len(facts.keys))
+		return
+	}
 	if err := os.WriteFile("child_relationship_filter.txt", blob, 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -277,6 +292,45 @@ func TestChildRelationshipFilterCoversEagerOrgs(t *testing.T) {
 			}
 			if missing > 0 {
 				t.Fatalf("%s %s: %d pairs missing", kind, childRelFilterName(set), missing)
+			}
+		}
+		runtime.GC()
+	}
+}
+
+// A deterministic sample of feature pairs, checked against the committed
+// filter itself: no pair or parent key an org holds may be missing from it.
+// The exhaustive version over every pair is GLADE_UPDATE_CHILD_REL_FILTER=pairs.
+func TestChildRelationshipFilterCoversFeaturePairSample(t *testing.T) {
+	if testing.Short() {
+		t.Skip("pair sample builds several complete orgs")
+	}
+	filter := loadChildRelFilter()
+	if filter == nil {
+		t.Fatal("filter data does not decode against this catalog; regenerate it")
+	}
+	all := append(slices.Clone(childRelFilterFeatureNames), childRelFilterShapeTokens...)
+	var pairs [][]string
+	for i := 0; i < len(all); i++ {
+		for j := i + 1; j < len(all); j++ {
+			pairs = append(pairs, []string{all[i], all[j]})
+		}
+	}
+	const sampleSize = 8
+	stride := len(pairs) / sampleSize
+	for n := 0; n < sampleSize; n++ {
+		set := pairs[n*stride+n%stride]
+		org := completeShapedOrg(set)
+		facts := newChildRelFilterFacts()
+		facts.collect(&org)
+		for h, pair := range facts.pairs {
+			if !childRelFilterContains(filter.pairs, h) {
+				t.Errorf("%s: pair %v is not in the filter; regenerate it", childRelFilterName(set), pair)
+			}
+		}
+		for h, key := range facts.keys {
+			if !childRelFilterContains(filter.keys, h) {
+				t.Errorf("%s: parent key %q is not in the filter; regenerate it", childRelFilterName(set), key)
 			}
 		}
 		runtime.GC()
