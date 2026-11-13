@@ -108,8 +108,8 @@ func TestStandardStubWriteFlagsProjectionMatchesFull(t *testing.T) {
 				definition.Fields[name] = field
 			}
 			want, got := definition.Clone(), definition.Clone()
-			legacyStubWriteFlags(&want)
 			enrichStandardStubWriteFlagsFromV2Describe(&got)
+			legacyStubWriteFlags(&want)
 			if !reflect.DeepEqual(got, want) {
 				t.Fatalf("%s existing=%v: projected write flags differ", entry.Name, existing)
 			}
