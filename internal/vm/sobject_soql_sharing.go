@@ -35,6 +35,12 @@ func (vm *VM) userModeRecordVisible(objectName string, record storage.Record, us
 	if vm.userModeUnrestrictedObject(objectName, userID) {
 		return true
 	}
+	return vm.userModeRestrictedRecordVisible(objectName, record, userID)
+}
+
+// userModeRestrictedRecordVisible applies the record-dependent policy after
+// the caller has resolved object-wide sharing for this principal.
+func (vm *VM) userModeRestrictedRecordVisible(objectName string, record storage.Record, userID string) bool {
 	if allowed, applicable := vm.junctionParentsReadable(objectName, record, userID); applicable {
 		return allowed
 	}

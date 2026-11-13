@@ -317,13 +317,6 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 			if strings.EqualFold(scanObject, "Account") && personRule != isPersonAccountRecord(existing) {
 				continue
 			}
-			detect, disclose := true, true
-			if access != nil {
-				detect, disclose = access(existing)
-			}
-			if !detect {
-				continue
-			}
 			var matched bool
 			confidence := 100.0
 			if standard {
@@ -335,6 +328,13 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 				}
 			}
 			if matched {
+				detect, disclose := true, true
+				if access != nil {
+					detect, disclose = access(existing)
+				}
+				if !detect {
+					continue
+				}
 				result.Detected = true
 				if !disclose {
 					continue

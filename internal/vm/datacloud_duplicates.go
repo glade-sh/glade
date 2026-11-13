@@ -441,8 +441,31 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 			}
 		}
 	}
+	// Resolve object-wide access lazily on the first match, once per scan
+	// object. A nonmatching candidate needs no principal or sharing work.
+	userID := ""
+	principalResolved := false
+	var unrestricted map[string]bool
 	return dml.FindDuplicateMatchesWithAccess(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
-		visible := vm.userModeRecordVisible(existing.Object, existing, vm.currentUserID())
+		if !principalResolved {
+			userID = vm.currentUserID()
+			principalResolved = true
+			unrestricted = map[string]bool{}
+		}
+		key := strings.ToLower(existing.Object)
+		visible, resolved := unrestricted[key]
+		if !resolved {
+			canonical, ok := vm.resolveObjectName(existing.Object)
+			// Private capture rows do not establish undeclared project defaults.
+			undeclared := ok && strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel) == ""
+			visible = undeclared || vm.userModeUnrestrictedObject(existing.Object, userID)
+			unrestricted[key] = visible
+		}
+		if vm.guestUserReadsOnlySelf(existing.Object) {
+			visible = storage.IDsEqual(existing.ID, storage.ID(userID))
+		} else if !visible {
+			visible = vm.userModeRestrictedRecordVisible(existing.Object, existing, userID)
+		}
 		if !bypass {
 			return visible, visible
 		}
@@ -481,10 +504,32 @@ func (vm *VM) duplicateMatchingFieldInsertFailures(op string, value Value) ([]dm
 	return []dml.Result{{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}}, true
 }
 
+// Only an explicit project denial activates the captured hidden-field policy.
+// Missing real-org grants cannot be reconstructed from an omitted metadata row.
 func (vm *VM) duplicateMatchingFieldAccessible(object, field string) bool {
-	user := vm.fieldPermissionPrincipal()
-	if strings.EqualFold(object, "Contact") && isCustomSchemaName(field) && !vm.customFieldHasIntrinsicAccess(object, field) && vm.currentUserProfileName(user) == "System Administrator" {
-		return vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), object, field, "isAccessible")
+	// The captured fieldHidden shape is an optional custom Contact field.
+	// Other objects and standard fields retain the prior matching behavior.
+	if !strings.EqualFold(object, "Contact") || !isCustomSchemaName(field) || vm.customFieldHasIntrinsicAccess(object, field) {
+		return true
 	}
-	return vm.currentUserFieldPermission(object, field, "isAccessible")
+	user := vm.fieldPermissionPrincipal()
+	profileID := stringField(user, "ProfileId")
+	denied := false
+	for _, parent := range []string{vm.profileOwnedPermissionSetID(profileID), profileID} {
+		if allowed, explicit := vm.explicitFieldPermission(parent, object, field, "isAccessible"); explicit {
+			if allowed {
+				return true
+			}
+			denied = true
+		}
+	}
+	for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+		if vm.sourceFieldPermission(source, object, field, "isAccessible") {
+			return true
+		}
+		if allowed, explicit := vm.explicitFieldPermission(source.ID, object, field, "isAccessible"); explicit && !allowed {
+			denied = true
+		}
+	}
+	return !denied
 }
