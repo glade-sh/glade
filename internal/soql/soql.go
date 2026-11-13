@@ -4768,10 +4768,32 @@ func calculatedSummaryFieldValue(org storage.OrgState, definition storage.Object
 
 func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field, userIDs ...storage.ID) (storage.Value, bool) {
 	options := dml.FormulaEvaluationOptions{}
+	if field.Type == storage.FieldCalculated && strings.EqualFold(strings.TrimSpace(field.FormulaTreatBlanksAs), "BlankAsBlank") {
+		switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
+		case "DOUBLE", "DECIMAL":
+			options.PreserveNumericNull = true
+			options.QueryBlankNumberRound = true
+		case "CURRENCY":
+			options.PreserveNumericNull = true
+		}
+	}
 	if len(userIDs) != 0 {
 		options.SetupUserID = userIDs[0]
 	}
 	if value, _, ok := dml.EvaluateRecordFormulaValueInOrgWithOptions(field.Formula, field, &org, definition, record, options); ok {
+		// Apply Number formula scale only on the SOQL field surface. Currency
+		// retains its own materialization path, and nulls remain null.
+		if field.Type == storage.FieldCalculated && value.Kind == storage.ValueDecimal &&
+			(strings.EqualFold(field.DisplayType, "DOUBLE") || strings.EqualFold(field.DisplayType, "DECIMAL")) &&
+			field.Scale >= 0 && field.Scale <= 18 && (field.ScaleSpecified || field.Scale > 0) {
+			if number, ok := new(big.Rat).SetString(value.Decimal); ok {
+				text := number.FloatString(field.Scale)
+				if text == "-0" {
+					text = "0"
+				}
+				value = storage.DecimalValue(text)
+			}
+		}
 		return value, true
 	}
 	return storage.Value{}, false

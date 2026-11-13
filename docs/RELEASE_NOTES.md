@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
 
 ## v0.3.8
 
