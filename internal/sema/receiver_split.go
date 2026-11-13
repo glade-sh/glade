@@ -200,21 +200,38 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 			if (decl || assign) && !lineBreak {
 				continue
 			}
-			if arg && !lineBreak {
-				depth, close := 1, last+2
-				for close < len(tokens) && depth > 0 {
+			if arg {
+				nesting, close := 1, last+2
+				for close < len(tokens) && nesting > 0 {
 					if tokens[close].text == "(" {
-						depth++
+						nesting++
 					}
 					if tokens[close].text == ")" {
-						depth--
+						nesting--
 					}
 					close++
 				}
 				if close < len(tokens) && tokens[close].text != ")" && tokens[close].text != "," {
-					continue
+					// The only captured compound argument is a later argument
+					// using + and a newline after the receiver dot.
+					previousArgument, level := false, 0
+					for _, token := range tokens[:first] {
+						if token.text == "(" {
+							level++
+						}
+						if token.text == ")" {
+							level--
+						}
+						if token.text == "," && level == depth {
+							previousArgument = true
+						}
+					}
+					if !lineBreak || tokens[close].text != "+" || !previousArgument {
+						continue
+					}
 				}
 			}
+
 			if !stmt && !decl && !assign && !arg {
 				continue
 			}
@@ -226,7 +243,7 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 			if local && (last+2 >= len(tokens) || tokens[last+2].text != ")") {
 				continue
 			}
-			if !scope.anonymous && (!stmt || last+3 >= len(tokens) || tokens[last+2].text != ")" || tokens[last+3].text != ";") {
+			if !scope.anonymous && (afterGap != "\n" || !stmt || last+3 >= len(tokens) || tokens[last+2].text != ")" || tokens[last+3].text != ";") {
 				continue
 			}
 			switch {
