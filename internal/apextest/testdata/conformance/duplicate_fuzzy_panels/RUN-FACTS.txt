@@ -1,0 +1,16 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for custom matching rules (fit panels)
+org: one fresh 30-day Developer Edition scratch org on a campaign Dev Hub, deleted after the run; deletion verified (active scratch record 1 -> 0, local target no longer resolves)
+date: 2026-11-13
+rules: Contact G4Last (LastName LastName), G4First (FirstName FirstName), G4Title (Title Title AND LastName Exact); Account G4Company (Name CompanyName), G4Street (BillingStreet Street), G4Three (Name CompanyName AND BillingCity City AND BillingStreet Street); all NullNotAllowed; duplicate rules Allow with alert
+probe: FuzzyPanel.run inserts one record per value (DMLOptions allowSave), then calls findDuplicates on unsaved copies of every value; each match of the probed rule is candidate index, existing index (base 36) and the confidence when not 100; record ids are compared inside Apex and never exported
+apis: 62.0 and 67.0; class ApiVersion read back after each deploy
+routes: anonymous Apex and named @IsTest methods; two repeats each
+result: all 104 observations of the 13 cases agree across API, route and repeat
+log guard: the run fails on Apex log truncation, an incomplete observation frame or a class API mismatch; none occurred
+predictions: frozen before the native run from origin/main 0574a2848 (glade exec, API 67.0, GLADE_STANDARD_DUPLICATE_RULES=on); predicted.json sha256: 02a0a4cec64091ab27472e14d239f49fc58044053cbabdf46a4655bfa75502ca
+before (frozen predictions, API 67.0 @IsTest): 758 of 1496 native pairs matched, 4 false matches (J.R./J. R. both ways, Fennimore and Callowmere plurals)
+ids: no record, org or user id, username or alias is stored
+
+cases.json sha256: d501b5b800f6de31394711c789eceddad28abeb4291e21c57f50d29d1c21f7a6
+FuzzyPanel.cls sha256: 84c8cf5feb12044b138599f5268b9d2e453413741a4360fbaa66cb8b5d4d3ab2
+org.tsv sha256: b7d1276b24040d6c51c4b81b0cf3e974fe389a3ce1da0aadf1fc6a2cf1606191
