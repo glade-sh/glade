@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Test and async boundaries.** `Test.stopTest()` outside a test now reports the native `System.FinalException`. Future callbacks drained by `Test.stopTest()` report the native default queueable-job limit, and failed Queueable callbacks retain their test-visible Processing status.
 
 ## v0.3.8
 

@@ -36,7 +36,7 @@ func (vm *VM) testStart() (Value, error) {
 }
 func (vm *VM) testStop(result *Result) (Value, error) {
 	if vm.testContext == nil {
-		return Null, fmt.Errorf("Test.stopTest is only available in test context")
+		return Null, &RuntimeError{Type: "System.FinalException", Message: "Method only allowed during testing", Stack: vm.stackFrames()}
 	}
 	if !vm.testContext.Started {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing has not started", Stack: vm.stackFrames()}
@@ -1071,7 +1071,10 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
 		}
 		if err != nil {
-			if !job.ScheduledAborted && !batchProjection {
+			// Failed Queueable bodies observed at stopTest retain the Processing
+			// projection and their body writes while the error propagates.
+			retainProcessing := vm.testContext != nil && vm.testContext.StopDraining && job.Kind == "Queueable" && vm.asyncJobRecordStatus(job.ID) == "Processing"
+			if !job.ScheduledAborted && !batchProjection && !retainProcessing {
 				vm.recordAsyncJob(job, "Failed", err.Error())
 			}
 			return err
