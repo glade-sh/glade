@@ -4030,21 +4030,17 @@ func annotateException(value Value, stack []callFrame) Value {
 		return value
 	}
 	value.Fields["__thrown"] = Bool(true)
-	return annotateExceptionContextWithAnonymousFrames(value, stack, 2)
+	return annotateExceptionContext(value, stack)
 }
 
 func annotateConstructedException(value Value, stack []callFrame) Value {
 	if value.Kind != ValueObject || !isExceptionType(value.Type) {
 		return value
 	}
-	return annotateExceptionContextWithAnonymousFrames(value, stack, 1)
+	return annotateExceptionContext(value, stack)
 }
 
 func annotateExceptionContext(value Value, stack []callFrame) Value {
-	return annotateExceptionContextWithAnonymousFrames(value, stack, 0)
-}
-
-func annotateExceptionContextWithAnonymousFrames(value Value, stack []callFrame, deepFrames int) Value {
 	if len(stack) == 0 {
 		return value
 	}
@@ -4053,12 +4049,10 @@ func annotateExceptionContextWithAnonymousFrames(value Value, stack []callFrame,
 	}
 	value.Fields["__lineNumber"] = Int(int64(stack[len(stack)-1].Line))
 	value.Fields["__stackTrace"] = String(stackTraceString(stack))
-	if len(stack) == 2 && stack[0].anonymousCallerLine > 0 && !stack[0].anonymousCallerHasArgs && stack[1].statement &&
-		stack[0].Symbol == stack[1].Symbol {
+	// An exception raised below an anonymous caller carries that caller's
+	// line. How many AnonymousBlock frames follow depends on the type.
+	if len(stack) >= 2 && stack[0].anonymousCallerLine > 0 && stack[len(stack)-1].statement {
 		value.exceptionAnonymousCallerLine = stack[0].anonymousCallerLine
-	} else if len(stack) >= 3 && deepFrames > 0 && stack[0].anonymousCallerLine > 0 && stack[len(stack)-1].statement {
-		value.exceptionAnonymousCallerLine = stack[0].anonymousCallerLine
-		value.exceptionAnonymousCallerFrames = deepFrames
 	}
 	return value
 }

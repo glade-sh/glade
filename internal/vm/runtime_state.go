@@ -252,7 +252,11 @@ type VM struct {
 	eventSubscriberTriggerDepth int
 	activeExceptions            []activeException
 	// --- Exception / statement / trigger-depth tracking ---
-	currentStatement        callFrame
+	currentStatement callFrame
+	// currentSource is the source text currentStatement's offsets index;
+	// callPos is the pending call token offset in that source.
+	currentSource           string
+	callPos                 int
 	hasStatement            bool
 	toolingExecuteAnonymous bool
 	triggerDepth            int
@@ -733,10 +737,9 @@ type callFrame struct {
 	Column    int
 	statement bool
 	// Projection-only anonymous caller location; structured frames stay intact.
-	anonymousCallerLine    int
-	anonymousCallerHasArgs bool
-	APIVersion             string
-	SharingMode            string
+	anonymousCallerLine int
+	APIVersion          string
+	SharingMode         string
 
 	invocableFlowOutput *invocableFlowOutputObservation
 }

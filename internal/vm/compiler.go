@@ -1744,7 +1744,7 @@ func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
 			if safe {
 				callee = "__safe_call:" + callee
 			}
-			expr = ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, Left: &receiver}
+			expr = ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, Left: &receiver, Pos: member.pos}
 			continue
 		}
 		if p.match(tokenSymbol, "++") || p.match(tokenSymbol, "--") {
@@ -1789,19 +1789,21 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 			if literalArgs {
 				callee = "newlit:" + typeName
 			}
-			return ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, NamedArgs: namedArgs}, nil
+			return ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, NamedArgs: namedArgs, Pos: tok.pos}, nil
 		}
 		switch strings.ToLower(tok.text) {
 		case "true", "false", "null":
 			return ir.Expr{Kind: ir.ExprLiteral, Value: strings.ToLower(tok.text)}, nil
 		}
 		name := tok.text
+		namePos := tok.pos
 		for p.match(tokenSymbol, ".") {
 			next, err := p.expect(tokenIdent, "")
 			if err != nil {
 				return ir.Expr{}, err
 			}
 			name += "." + next.text
+			namePos = next.pos
 		}
 		if classLiteral, ok, err := p.parseClassLiteralSuffix(name); ok || err != nil {
 			return classLiteral, err
@@ -1811,7 +1813,7 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 			if err != nil {
 				return ir.Expr{}, err
 			}
-			return ir.Expr{Kind: ir.ExprCall, Callee: name, Args: args}, nil
+			return ir.Expr{Kind: ir.ExprCall, Callee: name, Args: args, Pos: namePos}, nil
 		}
 		return ir.Expr{Kind: ir.ExprVariable, Name: name}, nil
 	case tokenSymbol:

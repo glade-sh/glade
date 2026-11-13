@@ -33,8 +33,7 @@ type Value struct {
 	// Preserve class-literal origin for the legacy dependency construction path.
 	dependencyClassLiteral bool
 	// Projection-only anonymous callers for captured exception text boundaries.
-	exceptionAnonymousCallerLine   int
-	exceptionAnonymousCallerFrames int
+	exceptionAnonymousCallerLine int
 	// Keep the observed String-constructor display separate from runtime faults,
 	// cause constructors and default exception construction.
 	exceptionMessageConstructor bool
