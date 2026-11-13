@@ -1882,9 +1882,15 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) {
 			continue
 		}
+		if vm.testContext == nil && !vm.namedUserIsCapturedStandard(user) {
+			continue
+		}
 		seen[string(user.ID)] = true
 		restore := vm.actAsNamedUser(vm.vmValueFromRecord(user))
 		for _, objectName := range objectNames {
+			if vm.testContext == nil && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
+				continue
+			}
 			if !portal && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
 				continue
 			}
