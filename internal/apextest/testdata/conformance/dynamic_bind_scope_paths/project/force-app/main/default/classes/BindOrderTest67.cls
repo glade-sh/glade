@@ -1,0 +1,1 @@
+@IsTest private class BindOrderTest67 { @IsTest static void run() { System.assertEquals('1,1,1,0,0,0,1,0', BindOrder67.check()); } }
