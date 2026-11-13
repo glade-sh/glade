@@ -378,6 +378,10 @@ type VM struct {
 	staticValueRefs       map[uint64]bool
 	staticValueRefFields  map[uint64]staticFieldRefSet
 	staticValueRefsShared bool
+	// staticRefBase* hold the frozen shared index when staticValueRefs and
+	// staticValueRefFields are this VM's private overlay (see staticRefIdx).
+	staticRefBaseRefs   map[uint64]bool
+	staticRefBaseFields map[uint64]staticFieldRefSet
 	// Serializes lazy collection/publication by concurrent template clones.
 	// Executing a VM concurrently with cloning it is still unsupported.
 	staticValueRefsMu     sync.Mutex
@@ -1037,8 +1041,9 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		vm.staticValueRefsMu.Lock()
 		if shareStaticValueRefs {
 			if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
-				vm.staticValueRefs, vm.staticValueRefFields = vm.collectStaticValueRefs()
+				vm.buildStaticValueRefs()
 			}
+			vm.flattenStaticValueRefs()
 			clone.staticValueRefs = vm.staticValueRefs
 			clone.staticValueRefFields = vm.staticValueRefFields
 			clone.staticValueRefsShared = true
