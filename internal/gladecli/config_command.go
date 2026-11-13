@@ -26,6 +26,7 @@ type configShowInfo struct {
 	PackageDirs                []string                          `json:"packageDirs"`
 	ExtraMetadataDirs          []string                          `json:"extraMetadataDirs,omitempty"`
 	OrgFeatures                []string                          `json:"orgFeatures,omitempty"`
+	StandardDuplicateRules     bool                              `json:"duplicateRulesStandard"`
 	NamespaceRemaps            []namespaceremap.Rule             `json:"namespaceRemaps,omitempty"`
 	Dependencies               []config.LocalPackageDependency   `json:"dependencies,omitempty"`
 	ManagedPackageDependencies []config.ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
@@ -99,6 +100,9 @@ func runConfigShow(args []string, w io.Writer) error {
 	}
 	if len(info.OrgFeatures) > 0 {
 		fmt.Fprintf(w, "org.features: %s\n", strings.Join(info.OrgFeatures, ", "))
+	}
+	if info.StandardDuplicateRules {
+		fmt.Fprintln(w, "duplicateRules.standard: on")
 	}
 	if len(info.NamespaceRemaps) > 0 {
 		fmt.Fprintf(w, "namespaceRemaps: %d\n", len(info.NamespaceRemaps))
@@ -247,6 +251,7 @@ func loadConfigShowInfo(root string) (configShowInfo, error) {
 		info.ConfigFound = true
 		info.ConfigPath = cfgPath
 		info.OrgFeatures = cfg.Org.Features
+		info.StandardDuplicateRules = cfg.DuplicateRules.Standard
 		info.NamespaceRemaps = cfg.Project.NamespaceRemaps
 		info.Dependencies = cfg.Project.Dependencies
 		info.ManagedPackageDependencies = cfg.Project.ManagedPackageDependencies
