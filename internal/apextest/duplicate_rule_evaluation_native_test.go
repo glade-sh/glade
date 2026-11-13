@@ -116,6 +116,9 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 				const class = "ObservationTest"
 				var testClass strings.Builder
 				fmt.Fprintf(&testClass, "@IsTest private class %s {\n", class)
+				if sharing {
+					testClass.WriteString("@TestSetup static void prepare() { SharingReplay.prepare(); }\n")
+				}
 				expressions := map[string]string{}
 				for _, method := range slices.Sorted(maps.Keys(cases)) {
 					if sharing && method == "overflow" {
@@ -125,9 +128,7 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 					source := "String observation = " + call + "; System.assert(false, 'OBS|" + method + "|' + Test.isRunningTest() + '|' + observation.length() + '|' + observation + '|ENDOBS');"
 					expressions[method] = source
 					setup := ""
-					if sharing {
-						setup = "SharingReplay.prepare();"
-					}
+
 					fmt.Fprintf(&testClass, "@IsTest static void %s() { %s %s }\n", method, setup, source)
 				}
 				testClass.WriteString("}")
@@ -146,6 +147,15 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 				index := loadTestIndex(t, root)
 				org := capturedFixtureOrg(t, index, api)
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+				triggers, triggerErrors := compileProjectTriggers(index)
+				if len(triggerErrors) > 0 {
+					t.Fatal(triggerErrors)
+				}
+				for _, trigger := range triggers {
+					if err := runner.base.RegisterTrigger(trigger); err != nil {
+						t.Fatal(err)
+					}
+				}
 				check := func(t *testing.T, route, method, message string) {
 					t.Helper()
 					want := rows[strings.Join([]string{api, route, group, method}, "/")]
@@ -173,11 +183,18 @@ func TestDuplicateRuleEvaluationNativeRoutes(t *testing.T) {
 						t.Run(route+"/"+method, func(t *testing.T) {
 							machine := runner.newMachine()
 							if sharing {
-								setup, err := vm.CompileAnonymousWithOptions("SharingReplay.prepare(); ShareBehavior.committedFixtures();", vm.CompileOptions{APIVersion: api})
+								setup, err := vm.CompileAnonymousWithOptions("SharingReplay.prepare();", vm.CompileOptions{APIVersion: api})
 								if err != nil {
 									t.Fatal(err)
 								}
 								if _, err := machine.Execute(setup); err != nil {
+									t.Fatal(err)
+								}
+								seed, err := vm.CompileAnonymousWithOptions("ShareBehavior.committedFixtures();", vm.CompileOptions{APIVersion: api})
+								if err != nil {
+									t.Fatal(err)
+								}
+								if _, err := machine.Execute(seed); err != nil {
 									t.Fatal(err)
 								}
 								// Replay the committed criteria grant captured in sharing/RUN-FACTS.
