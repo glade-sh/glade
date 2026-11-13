@@ -7,6 +7,7 @@ import (
 	gotoken "go/token"
 	"math/rand"
 	"os"
+	"regexp"
 	"runtime"
 	"slices"
 	"sort"
@@ -538,5 +539,47 @@ func TestChildRelationshipFilterConcurrentVMs(t *testing.T) {
 	close(errs)
 	for msg := range errs {
 		t.Error(msg)
+	}
+}
+
+// Every line is twelve digit letters, so no hex or id pattern can match it,
+// and a table round-trips through the in-place search for the extreme values.
+func TestChildRelationshipFilterEncoding(t *testing.T) {
+	values := []uint64{0, 1, 15, 16, childRelFilterHashMask, childRelFilterHashMask - 1, 0x1a2b3c4d5e6f}
+	random := rand.New(rand.NewSource(5))
+	for i := 0; i < 2000; i++ {
+		values = append(values, random.Uint64()&childRelFilterHashMask)
+	}
+	slices.Sort(values)
+	values = slices.Compact(values)
+	blob := encodeChildRelFilter("stamp", values, values[:10])
+	filter := decodeChildRelFilter(blob, "stamp")
+	if filter == nil {
+		t.Fatal("encoded table does not decode")
+	}
+	line := regexp.MustCompile(`^[` + childRelFilterDigits + `]{12}$`)
+	lines := strings.Split(strings.TrimSuffix(string(filter.pairs), "\n"), "\n")
+	for _, text := range lines {
+		if !line.MatchString(text) {
+			t.Fatalf("line %q is not twelve digit letters", text)
+		}
+	}
+	if !slices.IsSorted(lines) {
+		t.Error("lines do not sort as their values do")
+	}
+	for _, v := range values {
+		if !childRelFilterContains(filter.pairs, v) {
+			t.Fatalf("value %x is not found", v)
+		}
+	}
+	for _, v := range []uint64{2, 17, 0xffff_ffff_fffe} {
+		if _, found := slices.BinarySearch(values, v); !found && childRelFilterContains(filter.pairs, v) {
+			t.Errorf("absent value %x is found", v)
+		}
+	}
+	for _, v := range values[:10] {
+		if !childRelFilterContains(filter.keys, v) {
+			t.Fatalf("key %x is not found", v)
+		}
 	}
 }

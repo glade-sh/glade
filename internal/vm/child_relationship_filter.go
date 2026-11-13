@@ -3,7 +3,6 @@ package vm
 import (
 	"bytes"
 	_ "embed"
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -71,7 +70,7 @@ var childRelFilterCovered = func() map[string]struct{} {
 	return covered
 }()
 
-const childRelFilterMagic = "glade-child-relationship-filter v1\n"
+const childRelFilterMagic = "glade-child-relationship-filter v2\n"
 
 // childRelFilter is the decoded header of the data file. The hash tables stay
 // in the embedded bytes and are searched in place.
@@ -97,12 +96,19 @@ func childRelFilterHash(parentKey, alias string) uint64 {
 
 // The data file is text so the leak scan can read it: a header, then two
 // sorted tables with one line per hash, each hash truncated to 48 bits and
-// written as 12 lowercase hex digits. A truncated hash can only collide into a
-// false positive, which falls back to the spread. Lines have a fixed width, so
-// the tables are searched in place.
+// written as 12 letters, one per nibble, from childRelFilterDigits. A truncated
+// hash can only collide into a false positive, which falls back to the spread.
+// Lines have a fixed width, so the tables are searched in place.
+//
+// The digits are sixteen consonants that are not hex digits (no vowels, no
+// a-f, no 0-9), in ascending order so lines sort as their values do. A line
+// holds no digit, no hex letter and no separator, so no hex-run, job id, ticket,
+// path, mail or record id pattern can match it, and it is 12 characters, under
+// the 15 a record id needs.
 const (
 	childRelFilterHashMask  = 1<<48 - 1
 	childRelFilterLineWidth = 13
+	childRelFilterDigits    = "ghjklmnpqrstvwxz"
 )
 
 func encodeChildRelFilter(stamp string, pairs, keys []uint64) []byte {
@@ -113,7 +119,14 @@ func encodeChildRelFilter(stamp string, pairs, keys []uint64) []byte {
 	out.WriteString("keys " + strconv.Itoa(len(keys)) + "\n")
 	for _, table := range [][]uint64{pairs, keys} {
 		for _, h := range table {
-			out.WriteString(fmt.Sprintf("%012x\n", h&childRelFilterHashMask))
+			h &= childRelFilterHashMask
+			var line [childRelFilterLineWidth]byte
+			for i := 11; i >= 0; i-- {
+				line[i] = childRelFilterDigits[h&15]
+				h >>= 4
+			}
+			line[12] = '\n'
+			out.Write(line[:])
 		}
 	}
 	return out.Bytes()
@@ -153,17 +166,23 @@ func decodeChildRelFilter(blob []byte, stamp string) *childRelFilter {
 	return &childRelFilter{pairs: rest[:split], keys: rest[split:]}
 }
 
+// childRelFilterDigitValue maps a digit letter to its value plus one; zero
+// marks a byte that is not a digit.
+var childRelFilterDigitValue = func() (table [256]uint8) {
+	for i := 0; i < len(childRelFilterDigits); i++ {
+		table[childRelFilterDigits[i]] = uint8(i + 1)
+	}
+	return table
+}()
+
 func childRelFilterLine(table []byte, i int) uint64 {
 	var value uint64
 	for _, c := range table[i*childRelFilterLineWidth : i*childRelFilterLineWidth+12] {
-		switch {
-		case c >= '0' && c <= '9':
-			value = value<<4 | uint64(c-'0')
-		case c >= 'a' && c <= 'f':
-			value = value<<4 | uint64(c-'a'+10)
-		default:
+		d := childRelFilterDigitValue[c]
+		if d == 0 {
 			return 1<<63 - 1 // malformed: sorts last, matches nothing
 		}
+		value = value<<4 | uint64(d-1)
 	}
 	return value
 }
