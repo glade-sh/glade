@@ -1,0 +1,17 @@
+capture=Test.stopTest batch shape ordering
+route=istest (StopShapeTest)
+apis=62.0 67.0 (one fresh 30-day scratch org per API; class and trigger metadata at that API; each org deleted and verified gone)
+transport=System.assert(false, observation) after Test.stopTest; Account markers record execution order
+rows=16
+api62_started: 2026-11-13T19:33:03Z
+api62_finished: 2026-11-13T19:33:27Z
+api62_sf: @salesforce/cli/2.157.8
+api67_started: 2026-11-13T19:33:41Z
+api67_finished: 2026-11-13T19:34:05Z
+api67_sf: @salesforce/cli/2.157.8
+sha256 0fabaf3b3e71343358187dab5141cae10eab9dcb106fe534c7d0cd1a6704f19d StopShapeLocator.cls
+sha256 51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d StopShapeLocator.cls-meta.xml
+sha256 3141c481e4d9ab0cea2c0afe68f6b577f0e70059212cbd6b8d9cbcdee672371d StopShapeMulti.cls
+sha256 51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d StopShapeMulti.cls-meta.xml
+sha256 e9b8b7b8248eb5f1d76b4c12ca2f56360dfd15dc8b9fa721a36cce488ad913fd StopShapeTest.cls
+sha256 51b31c15ddf5991795178fa5135ba357ff8763579b875a9708c066328670eb4d StopShapeTest.cls-meta.xml
