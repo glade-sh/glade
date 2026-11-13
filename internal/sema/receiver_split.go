@@ -100,7 +100,7 @@ func splitReceiverStatement(source string, pos int) ([]splitReceiverToken, bool)
 
 // semaSplitStaticReceiver examines trivia at the matched call occurrence.
 // Contexts without a captured diagnostic remain with the existing analyzer.
-func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos int, source string, model *semaTypeMemberView) *diagnostic.Diagnostic {
+func (a *Analyzer) semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos int, source string, model *semaTypeMemberView) *diagnostic.Diagnostic {
 	if expr.Left != nil || pos < 0 || pos >= len(source) {
 		return nil
 	}
@@ -214,6 +214,10 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 		decl := first >= 3 && len(tokens) > 3 && tokens[2].text == "="
 		assign := first >= 2 && len(tokens) > 2 && tokens[1].text == "="
 		arg := depth > 0 && depth <= 2 && tokens[0].text != "return" && tokens[0].text != "throw"
+		// Fluent initializers and assignments have no receiver-trivia capture.
+		if (decl || assign) && close < len(tokens) && tokens[close].text == "." {
+			continue
+		}
 		if before {
 			if assign {
 				continue
@@ -266,12 +270,18 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 			// Assignment and binary argument captures use a line break after
 			// the dot; space-only forms have no observed result.
 			lineBreak := strings.ContainsAny(afterGap, "\r\n")
+			if stmt && !local && tokens[last+2].text == ")" {
+				// The zero-argument statement captures have source or local receivers.
+				if members, known := model.lookupName(receiver); known && members.platform {
+					continue
+				}
+			}
 			if stmt && tokens[last+2].text != ")" {
 				// The only captured argument-bearing standalone call is on
 				// a platform receiver and has a line break after the dot.
 				members, known := model.lookupName(receiver)
 				matched := false
-				if known && members.platform && lineBreak {
+				if known && members.platform && afterGap == "\n" && len(expr.Args) == 1 && expr.Args[0].Kind == ir.ExprLiteral && strings.EqualFold(a.inferIRExprType(expr.Args[0], scope, model, typ.Name), "String") {
 					for _, candidate := range members.methods[normalizeName(method)] {
 						if strings.EqualFold(candidate.Type, "void") && len(candidate.Parameters) == 1 && strings.EqualFold(candidate.Parameters[0].Type, "Object") {
 							matched = true
