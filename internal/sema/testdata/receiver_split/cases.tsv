@@ -1,0 +1,10 @@
+id	route	file
+static_same	anonymous	apex/static_same.apex
+static_comment	anonymous	apex/static_comment.apex
+static_inline_comment	anonymous	apex/static_inline_comment.apex
+static_blank	anonymous	apex/static_blank.apex
+instance_split	anonymous	apex/instance_split.apex
+chain_split	anonymous	apex/chain_split.apex
+qualified_split	anonymous	apex/qualified_split.apex
+qualified_same	anonymous	apex/qualified_same.apex
+static_dot_before	anonymous	apex/static_dot_before.apex

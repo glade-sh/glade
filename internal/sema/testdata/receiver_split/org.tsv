@@ -1,0 +1,19 @@
+id	api	route	compiled	outcome
+static_same	62.0	anonymous	true	ok
+static_same	67.0	anonymous	true	ok
+static_comment	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_comment	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_inline_comment	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_inline_comment	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_blank	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_blank	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+instance_split	62.0	anonymous	true	ok
+instance_split	67.0	anonymous	true	ok
+chain_split	62.0	anonymous	true	ok
+chain_split	67.0	anonymous	true	ok
+qualified_split	62.0	anonymous	false	Variable does not exist: System
+qualified_split	67.0	anonymous	false	Variable does not exist: System
+qualified_same	62.0	anonymous	true	ok
+qualified_same	67.0	anonymous	true	ok
+static_dot_before	62.0	anonymous	false	Unexpected token '('.
+static_dot_before	67.0	anonymous	false	Unexpected token '('.
