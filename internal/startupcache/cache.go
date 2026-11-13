@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
@@ -54,6 +55,10 @@ type Entry struct {
 	Manifest    Manifest         `json:"manifest"`
 	Org         storage.OrgState `json:"org"`
 	Runtime     CompiledRuntime  `json:"runtime"`
+	// Inputs are the input-view observations the entry was built from. Only
+	// debugger entries carry them; the JSON cache persists them and the split
+	// test cache does not.
+	Inputs []inputview.Observation `json:"inputs,omitempty"`
 }
 
 type Manifest struct {
@@ -486,13 +491,18 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 		return Manifest{}, err
 	}
 	root = filepath.Clean(root)
+	inputs := p.Inputs()
+	if readFile != nil {
+		// An explicit reader keeps its own byte source.
+		inputs = nil
+	}
 	apexDigests, useSnapshot := completeApexSourceDigests(p, digests)
 	paths := make([]File, 0, 128)
 	for _, manifestProject := range manifestProjects(p) {
 		for _, file := range deduplicateStrings(appendProjectFilesFromProject(manifestProject)) {
 			abs := absoluteProjectPath(manifestProject.Root, file)
 			digest, isApex := apexDigests[filepath.Clean(abs)]
-			fp, err := fingerprintFileWithSourceDigest(root, abs, includeHashes, digest, useSnapshot && isApex, readFile)
+			fp, err := fingerprintInput(inputs, root, abs, includeHashes, digest, useSnapshot && isApex, readFile)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -500,7 +510,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 		}
 		for _, source := range manifestProject.ApexFiles {
 			sidecar := absoluteProjectPath(manifestProject.Root, source) + "-meta.xml"
-			fp, exists, err := fingerprintOptionalFileWithReader(root, sidecar, includeHashes, readFile)
+			fp, exists, err := fingerprintOptionalInput(inputs, root, sidecar, includeHashes, readFile)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -514,14 +524,14 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 		return incompleteManifest(root, p), err
 	}
 	for _, input := range runtimeInputs {
-		fp, err := fingerprintFileWithSourceDigest(root, input, includeHashes, [sha256.Size]byte{}, false, readFile)
+		fp, err := fingerprintInput(inputs, root, input, includeHashes, [sha256.Size]byte{}, false, readFile)
 		if err != nil {
 			return incompleteManifest(root, p), err
 		}
 		paths = append(paths, fp)
 	}
 	for _, artifactPath := range dependencyArtifactPaths(p) {
-		fp, err := fingerprintFileWithSourceDigest(root, artifactPath, includeHashes, [sha256.Size]byte{}, false, readFile)
+		fp, err := fingerprintInput(inputs, root, artifactPath, includeHashes, [sha256.Size]byte{}, false, readFile)
 		if err != nil {
 			return incompleteManifest(root, p), err
 		}
@@ -534,7 +544,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 			return incompleteManifest(root, p), err
 		}
 		for _, configPath := range candidates {
-			fp, exists, err := fingerprintOptionalFileWithReader(root, configPath, includeHashes, readFile)
+			fp, exists, err := fingerprintOptionalInput(inputs, root, configPath, includeHashes, readFile)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -546,7 +556,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 	packageRoots := make([]Directory, 0, len(p.PackageDirectories))
 	for _, manifestProject := range manifestProjects(p) {
 		for _, pkgRoot := range packageRootsForProject(manifestProject) {
-			fp, ok, err := statOptionalDirectory(root, pkgRoot)
+			fp, ok, err := statOptionalInputDirectory(inputs, root, pkgRoot)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -557,7 +567,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 	}
 	// Setup stages deploy before tests run; only the consumer project loads them.
 	for _, setupRoot := range p.SetupMetadataRoots() {
-		fp, ok, err := statOptionalDirectory(root, setupRoot)
+		fp, ok, err := statOptionalInputDirectory(inputs, root, setupRoot)
 		if err != nil {
 			return incompleteManifest(root, p), err
 		}
@@ -926,7 +936,11 @@ func fingerprintOptionalFileWithReader(projectRoot, path string, includeHash boo
 }
 
 func statOptionalDirectory(projectRoot, path string) (Directory, bool, error) {
-	info, err := os.Stat(path)
+	return statOptionalInputDirectory(nil, projectRoot, path)
+}
+
+func statOptionalInputDirectory(inputs *inputview.View, projectRoot, path string) (Directory, bool, error) {
+	info, err := inputs.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return Directory{}, false, nil
 	}
@@ -1242,7 +1256,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 	}
 	for dir := filepath.Clean(root); ; dir = filepath.Dir(dir) {
 		nearest := filepath.Join(dir, "glade.yml")
-		if _, err := os.Stat(nearest); err == nil {
+		if _, err := p.Stat(nearest); err == nil {
 			paths = append(paths, nearest)
 			break
 		} else if !errors.Is(err, os.ErrNotExist) {
@@ -1255,7 +1269,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 	}
 	for _, name := range []string{"cumulusci.yml", "cumulusci.template.yml"} {
 		configPath := filepath.Join(root, name)
-		data, err := os.ReadFile(configPath) // #nosec G304 -- configPath is constructed from the loaded project root and a fixed filename.
+		data, err := p.ReadFile(configPath) // #nosec G304 -- configPath is constructed from the loaded project root and a fixed filename.
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
@@ -1272,7 +1286,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 				continue
 			}
 			full := filepath.Clean(filepath.Join(root, filepath.FromSlash(path)))
-			if full == filepath.Clean(root) || !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) || !project.PathInsideRoot(root, full) {
+			if full == filepath.Clean(root) || !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) || !project.PathInsideRootWithInputs(p.Inputs(), root, full) {
 				continue
 			}
 			paths = append(paths, full)
