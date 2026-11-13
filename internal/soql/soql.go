@@ -265,7 +265,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 	if err := validateAggregateQuery(query); err != nil {
 		return Result{}, err
 	}
-	query = withTextCollation(query, englishTextLocale(context.Locale))
+	query = withTextCollation(query, context.Locale)
 	if strings.EqualFold(query.Object, "PlatformCachePartition") {
 		if _, ok := org.Objects["PlatformCachePartition"]; !ok {
 			org = org.Clone()
@@ -1309,7 +1309,7 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 			return nil, err
 		}
 		record := storage.Record{Object: "AggregateResult", Fields: fields}
-		if query.Having != nil && !matches(org, storage.ObjectDefinition{}, record, query.Having) {
+		if query.Having != nil && !matchesWithContext(org, storage.ObjectDefinition{}, record, query.Having, ExecutionContext{Locale: query.textLocale}) {
 			return nil, nil
 		}
 		removeHiddenAggregateFields(record.Fields, query.HavingAggregates)
@@ -1379,7 +1379,9 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 				order = append(order, key)
 			}
 			if query.textCollation {
-				// Groups merged across case report the binary-smallest spelling.
+				// The captured A/a and Z/z groups report the binary-smallest
+				// spelling. Using that representative for other merged spellings
+				// is provisional; these rows do not prove a universal rule.
 				for i, field := range query.GroupBy {
 					if held := current.values[field]; active[field] && scratch[i].Kind == storage.ValueString && held.Kind == storage.ValueString && scratch[i].String < held.String {
 						current.values[field] = scratch[i]
@@ -1446,7 +1448,7 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 			return nil, err
 		}
 		record := storage.Record{Object: "AggregateResult", Fields: fields}
-		if query.Having != nil && !matches(org, storage.ObjectDefinition{}, record, query.Having) {
+		if query.Having != nil && !matchesWithContext(org, storage.ObjectDefinition{}, record, query.Having, ExecutionContext{Locale: query.textLocale}) {
 			continue
 		}
 		removeHiddenAggregateFields(record.Fields, query.HavingAggregates)

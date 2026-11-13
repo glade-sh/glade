@@ -45,10 +45,11 @@ type Query struct {
 	orderAggregates []Aggregate
 	// textCollation is execution state set from the user locale.
 	textCollation bool
+	textLocale    string
 	// LegacyPicklistNullOrder is execution state, separate from cached syntax.
 	LegacyPicklistNullOrder bool `json:"-"`
 	// LegacyRestrictedPicklistNullOrder extends the legacy policy to restricted
-	// picklists; native rows capture that only at source API 62.0.
+	// picklists; native source-version rows place the transition at 66.0.
 	LegacyRestrictedPicklistNullOrder bool `json:"-"`
 }
 type OrderSpec struct {

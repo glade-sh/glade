@@ -99,8 +99,9 @@ func collateAggregates(aggregates []Aggregate) []Aggregate {
 
 // withTextCollation returns a query copy that carries the execution-time
 // collation to aggregate evaluation.
-func withTextCollation(query Query, collate bool) Query {
-	if !collate {
+func withTextCollation(query Query, locale string) Query {
+	query.textLocale = locale
+	if !englishTextLocale(locale) {
 		return query
 	}
 	query.textCollation = true

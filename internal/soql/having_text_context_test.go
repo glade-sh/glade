@@ -36,7 +36,7 @@ func TestHavingTextRangesKeepExecutionLocale(t *testing.T) {
 					records = append(records, record)
 				}
 				scalar.GroupBy = nil
-				scalar = withTextCollation(scalar, englishTextLocale(locale))
+				scalar = withTextCollation(scalar, locale)
 				got, err := aggregateRecords(org, org.Objects["Account"].Definition, records, scalar)
 				if err != nil {
 					t.Fatal(err)
