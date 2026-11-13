@@ -1,5 +1,5 @@
 capture: criteria-sharing grant checkpoints, private Case with an active criteria rule
-source rows: glade-roadmap probes/ROAD-450-grant-observations.tsv (copied verbatim as grant_observations.tsv), cross-listed in probes/ROAD-462-criteria-checkpoints.tsv
+source rows: grant_observations.tsv
 apis: 62.0 67.0
 rows: 24 (12 per API: commit-0 x2, commit-wait x2, update-into x3, update-out x3, cleanup, named-control)
 org shape: Case sharing model Private; one criteria rule sharing Subject = NATIVE_CASE_SHARE_PROBE to a public group; one Standard User reader who is a direct member of the group; the same project as ../case_phase
