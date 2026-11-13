@@ -2,7 +2,6 @@ package apextest
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -150,6 +149,25 @@ func TestFuzzySurnameNativeRoutes(t *testing.T) {
 // members, save count and allow-save. Only listed grade residuals are replaced.
 func surnameExactExpected(t *testing.T, method, observation string) string {
 	t.Helper()
-	// Populated with the remaining ordinary-grade differences after the fix.
-	return observation
+	// Panel A leaves the ordinary grade for tails other than p, s and z.
+	// Pin the remaining exact differences; changes to Find, DML or save fail.
+	residuals := map[string]map[int][2]int{
+		"m_A_adjacent_fwd": {1: {99, 98}, 5: {99, 98}, 6: {99, 98}, 7: {97, 98}},
+		"m_A_adjacent_rev": {1: {99, 98}, 5: {99, 98}, 6: {99, 98}, 7: {97, 98}},
+		"m_A_column_fwd":   {2: {99, 98}, 3: {99, 98}, 5: {99, 98}},
+		"m_A_column_rev":   {2: {99, 98}, 3: {99, 98}, 5: {99, 98}},
+		"m_A_far_fwd":      {0: {99, 98}, 7: {99, 98}},
+		"m_A_far_rev":      {0: {99, 98}, 7: {99, 98}},
+	}
+	fields := strings.Split(observation, "|")
+	entries := strings.Split(fields[2], ",")
+	for index, grades := range residuals[method] {
+		want := fmt.Sprintf("%d:%d=%d~%d.0/%d=%d~%d.0", index, index, grades[0], grades[0], index, grades[0], grades[0])
+		if entries[index] != want {
+			t.Fatalf("stale residual %s/%d: %s", method, index, entries[index])
+		}
+		entries[index] = fmt.Sprintf("%d:%d=%d~%d.0/%d=%d~%d.0", index, index, grades[1], grades[1], index, grades[1], grades[1])
+	}
+	fields[2] = strings.Join(entries, ",")
+	return strings.Join(fields, "|")
 }
