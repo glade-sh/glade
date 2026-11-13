@@ -16,7 +16,7 @@ import (
 
 // Coordinator contract: absent project sharing or field-denial metadata keeps
 // the prior duplicate outcome. Explicit metadata takes precedence.
-func duplicatePolicyProject(t testing.TB, api, source string, deny, private bool) typesys.Index {
+func duplicatePolicyProject(t testing.TB, api, source string, deny, private bool, grant ...bool) typesys.Index {
 	t.Helper()
 	root := t.TempDir()
 	put := func(name, body string) {
@@ -49,6 +49,9 @@ func duplicatePolicyProject(t testing.TB, api, source string, deny, private bool
 		if private {
 			put(base+"objects/"+object+"/"+object+".object-meta.xml", `<CustomObject><sharingModel>Private</sharingModel></CustomObject>`)
 		}
+	}
+	if len(grant) > 0 && grant[0] {
+		put(base+"profiles/Standard User.profile-meta.xml", `<Profile><fieldPermissions><field>Contact.Key__c</field><readable>true</readable><editable>true</editable></fieldPermissions></Profile>`)
 	}
 	if deny {
 		put(base+"profiles/Admin.profile-meta.xml", `<Profile><fieldPermissions><field>Contact.Key__c</field><readable>false</readable><editable>false</editable></fieldPermissions></Profile>`)
@@ -164,6 +167,14 @@ func TestDuplicateAdminMatchingFieldMetadata(t *testing.T) {
 // The same 1,000 Contact insert workload and duplicate rejection run under both
 // principals. Private metadata exercises access on the final matched record.
 func BenchmarkDuplicateContactInsertThousand(b *testing.B) {
+	benchmarkDuplicateContactInsertThousand(b, false)
+}
+
+func BenchmarkDuplicateContactKeyInsertThousand(b *testing.B) {
+	benchmarkDuplicateContactInsertThousand(b, true)
+}
+
+func benchmarkDuplicateContactInsertThousand(b *testing.B, customField bool) {
 	for _, runAs := range []bool{false, true} {
 		name := "admin"
 		if runAs {
@@ -174,18 +185,25 @@ func BenchmarkDuplicateContactInsertThousand(b *testing.B) {
 			if runAs {
 				setup = duplicateReaderSetup
 				open = "System.runAs(u){"
+				if customField {
+					open += "System.assert(Contact.Key__c.getDescribe().isAccessible());"
+				}
 				close = "}"
 			}
 			source := `@IsTest class DuplicatePolicyTest {@IsTest static void workload(){` + setup + open + `
    for(Integer batch=0;batch<5;batch++){
     List<Contact> rows=new List<Contact>();
-    for(Integer i=0;i<200;i++){rows.add(new Contact(LastName='Synthetic',Email='contact'+String.valueOf(batch*200+i)+'@example.invalid'));}
+    for(Integer i=0;i<200;i++){rows.add(new Contact(LastName='Synthetic',Key__c='contact'+String.valueOf(batch*200+i)));}
     insert rows;
    }
-   Database.SaveResult dup=Database.insert(new Contact(LastName='Synthetic',Email='contact42@example.invalid'),false);
+   Database.SaveResult dup=Database.insert(new Contact(LastName='Synthetic',Key__c='contact42'),false);
    System.assertEquals(false,dup.isSuccess());System.assertEquals(StatusCode.DUPLICATES_DETECTED,dup.getErrors()[0].getStatusCode());
    System.assertEquals(1000,[SELECT count() FROM Contact]);` + close + `}}`
-			index := duplicatePolicyProject(b, "67.0", source, false, true)
+			if !customField {
+				source = strings.ReplaceAll(source, "Key__c='contact'+String.valueOf(batch*200+i)", "Email='contact'+String.valueOf(batch*200+i)+'@example.invalid'")
+				source = strings.ReplaceAll(source, "Key__c='contact42'", "Email='contact42@example.invalid'")
+			}
+			index := duplicatePolicyProject(b, "67.0", source, false, true, customField)
 			runDuplicatePolicy(b, index, "workload")
 			b.ReportAllocs()
 			b.ResetTimer()

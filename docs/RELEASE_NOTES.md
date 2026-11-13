@@ -4,6 +4,8 @@
 
 ### Duplicate rules
 
+- At API 67, a single Contact insert returns `CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY` when a retrieved profile marks a field used by its duplicate rule as `readable=false` and no effective grant permits it.
+
 - Duplicate scans check record access only after matching. Projects without declared sharing or explicit matching-field denials preserve their prior duplicate decisions; public-default Lead duplicates remain blocked under `runAs`.
 
 - Duplicate checks honor captured Account street and local-phone matches, active Person Account rules, changed matching fields on edits and upserts, and Contact record sharing. Every matching rule caps results at the earliest 100 created members and orders them by confidence, then creation. FindDuplicatesByIds rejects batches larger than 50.

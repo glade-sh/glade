@@ -2355,7 +2355,7 @@ func (vm *VM) SetContext(ctx context.Context) {
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	vm.ensureMetadataCacheGeneration()
 	engine := dml.NewEngine(vm.Org)
-	engine.DuplicateMatcher = vm.findDuplicateMatches
+	engine.DuplicateMatcher = vm.newDuplicateMatcher()
 	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
 	if vm.work.tracking {
 		engine.FlowMatchObserver = func() { vm.work.flowRuns++ }

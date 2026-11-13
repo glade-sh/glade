@@ -200,7 +200,7 @@ func callDatacloudDuplicateMember(_ *VM, receiver Value, method string, args []V
 	return value, receiver, false, true, nil
 }
 
-func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, byID bool) ([]Value, error) {
+func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, byID bool, matcher duplicateMatcher) ([]Value, error) {
 	rules, person := dml.DuplicateSearchRules(vm.Org, object, record, byID)
 	if len(rules) == 0 {
 		if person {
@@ -220,7 +220,7 @@ func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, by
 		if !supported || !applies {
 			continue
 		}
-		found, supported := vm.findDuplicateMatches(rule, record, nil)
+		found, supported := matcher(rule, record, nil)
 		if !supported {
 			continue
 		}
@@ -279,8 +279,9 @@ func (vm *VM) findDuplicates(args []Value) (Value, error) {
 		records = append(records, record)
 	}
 	results := make([]Value, 0, len(records))
+	matcher := vm.newDuplicateMatcher()
 	for _, record := range records {
-		duplicates, err := vm.duplicateResultsForRecord(record, object, false)
+		duplicates, err := vm.duplicateResultsForRecord(record, object, false, matcher)
 		if err != nil {
 			return Null, err
 		}
@@ -323,11 +324,12 @@ func (vm *VM) findDuplicatesByIDs(args []Value) (Value, error) {
 		rows = append(rows, row)
 	}
 	results := make([]Value, 0, len(rows))
+	matcher := vm.newDuplicateMatcher()
 	for _, row := range rows {
 		var duplicates []Value
 		if row.found {
 			var err error
-			duplicates, err = vm.duplicateResultsForRecord(row.record, object, true)
+			duplicates, err = vm.duplicateResultsForRecord(row.record, object, true, matcher)
 			if err != nil {
 				return Null, err
 			}
@@ -412,15 +414,35 @@ func (vm *VM) commitDuplicateReports(reports []dml.DuplicateReport) {
 	vm.rebuildDMLObjectIndexes([]storage.Record{{Object: "DuplicateRecordSet"}, {Object: "DuplicateRecordItem"}}, nil)
 }
 
+type duplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (dml.DuplicateResult, bool)
+
+// The matcher belongs to one DML engine or Find call. Access decisions must
+// not survive that operation, since a later statement can change permissions.
+func (vm *VM) newDuplicateMatcher() duplicateMatcher {
+	type fieldKey struct{ principal, object, field string }
+	access := make(map[fieldKey]bool)
+	return func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+		return vm.findDuplicateMatches(rule, record, exclude, func(object, field string) bool {
+			key := fieldKey{vm.currentUserID(), strings.ToLower(object), strings.ToLower(field)}
+			allowed, ok := access[key]
+			if !ok {
+				allowed = vm.duplicateMatchingFieldAccessible(object, field)
+				access[key] = allowed
+			}
+			return allowed
+		})
+	}
+}
+
 // Both Find and DML use the same record access policy. Enforce rules search
 // visible members; Bypass rules can detect hidden members without disclosing
 // them. The legacy explicit without-sharing route discloses Bypass members.
-func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
 	policy := vm.currentSourceExecutionPolicy()
 	if vm.testContext == nil || policy.DataMode == "USER_MODE" {
 		for _, matching := range rule.MatchRules {
 			for _, item := range matching.Items {
-				if !vm.duplicateMatchingFieldAccessible(record.Object, item.Field) {
+				if !fieldAccessible(record.Object, item.Field) {
 					record = record.Clone()
 					record.Fields[item.Field] = storage.NullValue()
 				}
