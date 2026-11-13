@@ -2,7 +2,6 @@ package visualforce
 
 import (
 	"crypto/sha256"
-	"io"
 	"os"
 	"sync"
 	"time"
@@ -64,7 +63,7 @@ func fileContentDigest(path string) ([sha256.Size]byte, error) {
 	defer file.Close()
 	before, beforeOK := filestamp.Fstat(file)
 	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
+	if _, err := filestamp.CopyPooled(hash, file); err != nil {
 		return digest, err
 	}
 	copy(digest[:], hash.Sum(nil))
