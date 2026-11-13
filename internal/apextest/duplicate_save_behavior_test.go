@@ -5,14 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+// NATIVE fuzzy DML and Find member sets testdata/conformance/duplicate_save_behavior/org.tsv:2 anonymous 62.0
+// NATIVE changed upsert and unrelated edit testdata/conformance/duplicate_save_behavior/org.tsv:69 istest 67.0
 // Replay the same Apex expressions as the native anonymous and named test runs.
 // Match members are labelled by their seed IDs inside Apex, independently of
 // platform-assigned IDs. A failed assertion transports the complete observation.
@@ -46,7 +50,15 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 		}
 		rows[key] = fields[4]
 	}
-	for group, cases := range groups {
+	caseCount := 0
+	for _, cases := range groups {
+		caseCount += len(cases)
+	}
+	if caseCount == 0 || len(rows) != 4*caseCount {
+		t.Fatalf("native matrix has %d observations for %d cases", len(rows), caseCount)
+	}
+	for _, group := range slices.Sorted(maps.Keys(groups)) {
+		cases := groups[group]
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(group+"/"+api, func(t *testing.T) {
 				root := t.TempDir()
@@ -58,29 +70,36 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 						t.Fatal(err)
 					}
 				}
-				switch group {
-				case "custom", "person", "personActive", "personInactive":
+				if group == "person" || group == "custom" || group == "personActive" || group == "personInactive" || group == "order" {
 					writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"edition":"Developer","features":["PersonAccounts"]}`)
-					if group == "personActive" || group == "personInactive" {
-						helpers = append(helpers, "PersonLookupBehavior")
+				}
+				switch group {
+				case "person":
+					helpers = append(helpers, "PersonBehavior")
+				case "custom", "personActive", "personInactive", "order":
+					copyMeta("matchingRules")
+					copyMeta("duplicateRules")
+					if group == "personInactive" || group == "order" {
+						path := filepath.Join(base, "duplicateRules", "PersonAccount.ProbePersonAlert.duplicateRule-meta.xml")
+						body, err := os.ReadFile(path)
+						if err != nil {
+							t.Fatal(err)
+						}
+						writeFile(t, path, strings.Replace(string(body), "<isActive>true</isActive>", "<isActive>false</isActive>", 1))
 					}
-					if group == "custom" || group == "personActive" {
+					switch group {
+					case "custom":
 						helpers = append(helpers, "CustomDuplicateProbe")
-						copyMeta("matchingRules")
-						copyMeta("duplicateRules")
-					} else if group == "person" {
-						helpers = append(helpers, "PersonBehavior")
+					case "order":
+						helpers = append(helpers, "OrderBehavior")
+					default:
+						helpers = append(helpers, "PersonLookupBehavior")
 					}
 				case "extra":
 					helpers = append(helpers, "ExtraBehavior")
 					copyMeta("objects")
 					copyMeta("permissionsets")
 					writeCapturedAssignments(t, root, "ProbeKeyAccess")
-				case "order":
-					copyMeta("matchingRules")
-					copyMeta("duplicateRules")
-					writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"edition":"Developer","features":["PersonAccounts"]}`)
-					helpers = append(helpers, "OrderBehavior")
 				case "limit":
 					helpers = append(helpers, "LimitBehavior")
 				case "bound":
@@ -96,7 +115,8 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 				var testClass strings.Builder
 				fmt.Fprintf(&testClass, "@IsTest private class %s {\n", class)
 				expressions := map[string]string{}
-				for method, call := range cases {
+				for _, method := range slices.Sorted(maps.Keys(cases)) {
+					call := cases[method]
 					source := "String observation = " + call + "; System.assert(false, 'OBS|" + method + "|' + Test.isRunningTest() + '|' + observation.length() + '|' + observation + '|ENDOBS');"
 					expressions[method] = source
 					fmt.Fprintf(&testClass, "@IsTest static void %s() { %s }\n", method, source)
@@ -128,7 +148,8 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 						t.Errorf("native=%s\nGlade=%s", want, message)
 					}
 				}
-				for method, source := range expressions {
+				for _, method := range slices.Sorted(maps.Keys(expressions)) {
+					source := expressions[method]
 					t.Run("anonymous/"+method, func(t *testing.T) {
 						program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
 						if err != nil {

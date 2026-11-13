@@ -11,9 +11,8 @@ import (
 // native Datacloud.FindDuplicates verdicts (docs/DUPLICATE_FUZZY_MATCHING.md,
 // "Standard rules"). The items are the fuzzy methods of the custom rules, so a
 // pair matches only when the item scorers of this package match it; the
-// standard rules match more pairs than that (a first name against its
-// initial, two names whose double metaphone codes agree), which Glade leaves
-// as misses.
+// standard Contact name paths also recognize corroborated initials and
+// surname edits in the Apex save and search rows.
 //
 // Every item compares two values with one of five relations: both present and
 // matching, both present and different, the candidate blank, the existing

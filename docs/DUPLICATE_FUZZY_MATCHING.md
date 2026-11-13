@@ -569,17 +569,21 @@ on both sides), so no row covers blank Account names or Contact last names.
 
 ### Standard rule gaps
 
-- The standard rules match more pairs than their field methods do: a first name
-  against its initial (`Jonathan` finds `J`), first names whose double metaphone
-  codes agree (`Jon` finds `Jane`), last names with transposed letters
-  (`Smith` finds `Smiht`), seven digit phone numbers in the fit rows. Glade reaches 78 to 85 percent of the first and last name
-  matches. The confidences of those extra pairs are not modeled.
+- The standard rules still miss some phonetic first names and surname variants.
+  The `duplicate_save_behavior` fixture exercises single-letter initials,
+  approximate surnames, explicit Person Account record types, edit actions,
+  scalar upserts and two overfull Account searches through Apex at both APIs.
+  The table above records the earlier scorer fit. The new standard-name checks
+  use a matching surname plus email or phone for an initial, and an exact first
+  name and email for additional surname variants. Custom field-method rows
+  have separate match-key behavior.
 - Street: native scores the street sections multiplicatively (a different
   suffix word 91, a different street number 95); Glade matches the pairs the
   custom Street method matches and approximates the confidence.
-- Phone: natively many more Account phone pairs match than Glade matches (35
-  percent of the holdout pairs); Glade matches numbers that agree up to the
-  last four digits and every other pair is a miss, not a false match.
+- Phone: on the Account phone panels, the website, ZIP and street also supply
+  matching paths. Missing records on those panels cannot all be attributed to
+  the phone comparison. Identical international and extension strings in the
+  Contact save fixture return no match with only the names as corroboration.
 - Standard Person Account matching rule: not activatable by metadata deploy,
   so not captured; unenforced in Glade.
 - Raw (below threshold) item scores for Company Name and Title count 50 in an
