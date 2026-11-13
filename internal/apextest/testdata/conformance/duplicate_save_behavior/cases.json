@@ -55,5 +55,14 @@
   "calibration": {
     "initials": "CalibrationBehavior.initials()",
     "transpositions": "CalibrationBehavior.transpositions()"
+  },
+  "keyboard": {
+    "shortA": "KeyboardBehavior.shortA()",
+    "shortB": "KeyboardBehavior.shortB()",
+    "shortC": "KeyboardBehavior.shortC()",
+    "longA": "KeyboardBehavior.longA()",
+    "longB": "KeyboardBehavior.longB()",
+    "nearA": "KeyboardBehavior.nearA()",
+    "nearB": "KeyboardBehavior.nearB()"
   }
 }
