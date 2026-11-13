@@ -21,3 +21,8 @@ sha256 force-app/main/default/permissionsets/Probe_Access.permissionset-meta.xml
 sha256 force-app/main/default/triggers/RollupParent.trigger 2ffc74c18ff038f002f4e3def3bd652438956d0b30002d88080f72b3ff80944a
 sha256 force-app/main/default/triggers/RollupParent.trigger-meta.xml 33ade1f2c93058c16e91218278a24c461db734e4f4778ed0c743e19e43f96b85
 sha256 org.tsv a0c77abfba64661f0cd0acdab385ca601b39c7d76a17bfe0f964a45395d54ea6
+teardown: scratch deletion succeeded; authorization lookup verified alias absent
+controls: four additional anonymous observations captured on the same deployed metadata before teardown
+sha256 single-ok.apex 9e738bdc0acb1b536e8822738dd05ff90a10d47325ba95585fe89224845f980a
+sha256 single-reject.apex 9b3de655da625f9cef978d760c385dbe2c92a5501e0a76f1fe5867dabf174aaf
+sha256 controls.tsv d46d70ebc6129c2a1dca2c589287b01d83d1bd6e98de20fe0ad8358605efffac

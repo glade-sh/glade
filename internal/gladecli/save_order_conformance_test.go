@@ -49,12 +49,7 @@ func replaySaveOrder(t *testing.T, fixture, classPrefix, method, exception strin
 				}
 				var stdout, stderr bytes.Buffer
 				if route == "anonymous" {
-					args := []string{"exec", "--project", root, "--json", string(source)}
-					code := Run(context.Background(), args, &stdout, &stderr)
-					want := "glade: " + exception + ": " + row[5]
-					if got := strings.TrimSpace(stderr.String()); code == 0 || got != want {
-						t.Fatalf("exit %d\nGlade: %s\nnative: %s", code, got, want)
-					}
+					checkAnonymousSave(t, root, source, exception, row[5])
 					return
 				}
 				class := classPrefix + strings.TrimSuffix(api, ".0")
@@ -71,5 +66,39 @@ func replaySaveOrder(t *testing.T, fixture, classPrefix, method, exception strin
 				}
 			})
 		}
+		if fixture == "rollup" {
+			controls, err := os.ReadFile(filepath.Join(dir, "controls.tsv"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			rows := strings.Split(strings.TrimSpace(string(controls)), "\n")
+			if len(rows) != 5 || rows[0] != "case\tapi\tanonymous_observation" {
+				t.Fatal("expected both single-parent controls at both APIs")
+			}
+			for n, name := range []string{"single-ok", "single-reject"} {
+				t.Run(fixture+"/"+api+"/"+name, func(t *testing.T) {
+					row := strings.Split(rows[1+2*n+i], "\t")
+					if len(row) != 3 || row[0] != name || row[1] != api {
+						t.Fatalf("unexpected control row %q", row)
+					}
+					source, err := os.ReadFile(filepath.Join(dir, name+".apex"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					checkAnonymousSave(t, root, source, exception, row[2])
+				})
+			}
+		}
+	}
+}
+
+func checkAnonymousSave(t *testing.T, root string, source []byte, exception, observation string) {
+	t.Helper()
+	var stdout, stderr bytes.Buffer
+	args := []string{"exec", "--project", root, "--json", string(source)}
+	code := Run(context.Background(), args, &stdout, &stderr)
+	want := "glade: " + exception + ": " + observation
+	if got := strings.TrimSpace(stderr.String()); code == 0 || got != want {
+		t.Fatalf("exit %d\nGlade: %s\nnative: %s", code, got, want)
 	}
 }
