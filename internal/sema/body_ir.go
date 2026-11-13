@@ -2614,6 +2614,9 @@ func semaExprAtSwitchWhenLabel(source string, pos int, name string) bool {
 }
 
 func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
+	if d := semaSplitStaticReceiver(typ, expr, scope, bodyOffset+pos, source, model); d != nil {
+		return []diagnostic.Diagnostic{*d}
+	}
 	receiverPath, _, _ := splitSemaMethodPath(expr.Callee)
 	if expr.Left != nil && expr.Left.Kind == ir.ExprVariable {
 		receiverPath = expr.Left.Name
