@@ -93,7 +93,7 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	confidence := averageWith100(score)
 	if score >= 92 {
 		if len(left) == 2 {
-			return standardTerminalSwap(a, confidence)
+			return standardTerminalSwap(a, confidence, false)
 		}
 		confidence = standardRotationConfidence(a, left, right, confidence)
 	}
@@ -112,7 +112,7 @@ func standardRotationConfidence(name, left, right string, ordinary float64) floa
 	}
 	if maxRows == 1 && maxColumns == 1 {
 		sum := standardKeyboardPositionSum(name)
-		if sum >= 17 && sum <= 33 {
+		if sum == 17 || sum == 33 {
 			return 98
 		}
 	}
@@ -134,7 +134,7 @@ func standardTrailingLetterConfidence(short string, ordinary float64) float64 {
 // with the positions of the unchanged letters too. The captured groups split
 // by the sum of their Manhattan distances to the midpoint between Y and U.
 // Use doubled coordinates so the half-column origin and cutoffs are exact.
-func standardTerminalSwap(name string, ordinary float64) (bool, float64) {
+func standardTerminalSwap(name string, ordinary float64, ordinaryMatched bool) (bool, float64) {
 	a := qwertyPosition[rune(name[len(name)-2])]
 	b := qwertyPosition[rune(name[len(name)-1])]
 	rows, columns := abs(a[0]-b[0]), abs(a[1]-b[1])
@@ -154,7 +154,7 @@ func standardTerminalSwap(name string, ordinary float64) (bool, float64) {
 		// 35. The observed sums 11 and 25 retained the ordinary grade.
 		if rows == 0 && columns == 1 {
 			sum := standardKeyboardPositionSum(name)
-			if sum >= 31 && sum <= 35 {
+			if sum == 31 || sum == 35 {
 				return true, 99
 			}
 		}
@@ -163,12 +163,15 @@ func standardTerminalSwap(name string, ordinary float64) (bool, float64) {
 			// The independent panel saved all nonphonetic pairs at sums 42
 			// and 44. The earlier positive has sum 60 and confidence 97.
 			sum := standardKeyboardPositionSum(name)
-			if sum < 60 {
+			if sum == 42 || sum == 44 {
 				return false, 0
 			}
 			if sum == 60 {
 				return true, 97
 			}
+			// Unmeasured sums retain the ordinary surname verdict. Do not
+			// introduce a match or veto one that the ordinary item found.
+			return ordinaryMatched, ordinary
 		}
 	case 6:
 		if columns == 4 && rows <= 1 {

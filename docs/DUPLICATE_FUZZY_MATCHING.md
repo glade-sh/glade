@@ -590,7 +590,7 @@ on both sides), so no row covers blank Account names or Contact last names.
   integer confidences at both APIs on the anonymous and test routes.
   On 40 further short-edit inputs, all eight-letter nonphonetic five-column
   swaps with sums of 42 or 44 saved. A previously measured positive at 60
-  matched at 97. Glade uses that observed positive bound. The interval
+  matched at 97. Other sums keep the ordinary surname verdict. The interval
   between 44 and 60 remains unmeasured. Two other four-letter stems with a trailing letter matched the
   right records and differed on reported confidence by one or two points
   in both directions. The fixture asserts exact save decisions, member IDs

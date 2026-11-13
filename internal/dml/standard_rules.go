@@ -420,7 +420,7 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 		}
 		if last.confidence < 100 {
 			if standardIsTerminalSwap(candidate.last, existing.last) {
-				return standardTerminalSwap(strings.ToLower(candidate.last), last.confidence)
+				return standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
 			}
 			// Some four-to-five trailing letters qualify via the inherited
 			// phonetic key and keyboard item before the supplementary scorer.
