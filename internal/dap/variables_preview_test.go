@@ -44,6 +44,42 @@ func TestPreviewValueKeepsSmallValues(t *testing.T) {
 	}
 }
 
+func TestPreviewValueEveryKind(t *testing.T) {
+	page := vm.Object("PageReference")
+	page.Fields["url"] = vm.String("/short")
+	page.Fields["unused"] = vm.String(strings.Repeat("x", 5000))
+	object := vm.Object("Example")
+	object.Fields["value"] = vm.String("short")
+	object.Fields["unused"] = vm.String(strings.Repeat("x", 5000))
+	record := vm.Object("Account")
+	record.Fields["Name"] = vm.String("Acme")
+	values := map[string]vm.Value{
+		"null":                  vm.Null,
+		"integer":               vm.Int(42),
+		"decimal":               {Kind: vm.ValueDecimal, Text: "1.25"},
+		"boolean":               {Kind: vm.ValueBool, Bool: true},
+		"string":                vm.String("hello"),
+		"list":                  vm.List(vm.Int(1), vm.Null),
+		"set":                   {Kind: vm.ValueSet, Set: []vm.Value{vm.String("a"), vm.Int(2)}},
+		"map":                   {Kind: vm.ValueMap, Map: map[string]vm.Value{"a": vm.Int(1)}},
+		"sobject":               record,
+		"object omitted fields": object,
+		"page omitted fields":   page,
+		"nested omitted fields": vm.List(object, page),
+	}
+	for name, value := range values {
+		t.Run(name, func(t *testing.T) {
+			want := value.String()
+			if len(want) > 256 {
+				t.Fatalf("test value does not fit: %d", len(want))
+			}
+			if got := previewValue(value); got != want {
+				t.Fatalf("preview = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
 func TestPreviewValueRenderedBoundary(t *testing.T) {
 	items := make([]vm.Value, 65)
 	for i := range items {
