@@ -200,3 +200,21 @@ func TestStandardStubEnrichmentConcurrentLookups(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestStandardFieldReadersAvoidFullDescribe(t *testing.T) {
+	standardDescribeCatalogV2RawProductionCache.release()
+	before := standardDescribeFullDecodes.Load()
+	for _, name := range []string{"Account", "Contact", "Lead", "Order"} {
+		standardNativeIDLabel(name)
+	}
+	for _, name := range []string{"PermissionSet", "ObjectPermissions"} {
+		definition := ObjectDefinition{APIName: name, Fields: make(map[string]Field)}
+		permissionSetCheckboxSchemaNeedsRepair(definition)
+		applyPermissionSetCheckboxSchema(&definition)
+		objectPermissionCheckboxSchemaNeedsRepair(definition)
+		applyObjectPermissionCheckboxFacets(&definition)
+	}
+	if got := standardDescribeFullDecodes.Load() - before; got != 0 {
+		t.Fatalf("field-only readers caused %d full decodes", got)
+	}
+}
