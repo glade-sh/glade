@@ -20,7 +20,7 @@ type soslFidelityFixture struct {
 }
 
 type soslFidelityCase struct {
-	id, source, setup, route string
+	id, source, setup, route, scope string
 }
 
 type soslFidelityKey struct {
@@ -93,7 +93,7 @@ func (f soslFidelityFixture) replay(t *testing.T) {
 		}
 		known[fields[0]] = route
 		switch scope {
-		case "owned":
+		case "owned", "indexed-discovery":
 		case "discovery":
 			if !discovery {
 				continue
@@ -101,7 +101,7 @@ func (f soslFidelityFixture) replay(t *testing.T) {
 		default:
 			t.Fatalf("unknown scope %q for %s", scope, fields[0])
 		}
-		cases = append(cases, soslFidelityCase{fields[0], fields[1], fields[2], route})
+		cases = append(cases, soslFidelityCase{fields[0], fields[1], fields[2], route, scope})
 	}
 	results := map[soslFidelityKey]soslFidelityRow{}
 	for i, fields := range f.table(t, "org.tsv") {
@@ -182,7 +182,7 @@ func (f soslFidelityFixture) replay(t *testing.T) {
 				}
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: seedVM.Org})
 				for _, c := range cases {
-					if c.route == "istest" {
+					if c.route == "istest" || c.scope == "indexed-discovery" && !discovery {
 						continue
 					}
 
