@@ -1356,10 +1356,10 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	if vm.currentAsyncKind == "BatchApex" {
 		return true
 	}
-	// Owned API 62/67 F04/F12: a future's explicit-depth Queueable starts
-	// during stopTest. Uncapped future descendants retain their boundary.
+	// Owned API 62/67 F04/F12 and the stopTest order rows (gen2q): a future's
+	// first-generation Queueable starts during stopTest, capped or not.
 	if vm.currentAsyncKind == "Future" {
-		return job.QueueableDepth == 1 && job.QueueableMaxDepth >= job.QueueableDepth
+		return job.QueueableDepth == 1 && job.QueueableMaxDepth >= 0
 	}
 	if vm.currentAsyncKind != "Queueable" {
 		return false
