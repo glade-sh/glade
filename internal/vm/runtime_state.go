@@ -244,6 +244,9 @@ type VM struct {
 	currentQueueableDelaySet     bool
 	queueableDuplicateSignatures map[string]string
 	currentFinalizer             Value
+	// queueableBodyFailureRetained marks a Queueable body error with no
+	// finalizer, for the native post-stopTest status projection.
+	queueableBodyFailureRetained bool
 	// success callbacks expose SYSTEM_MODE reads as their captured user.
 	// The dispatch scope restores this ID; nested runAs users do not inherit it.
 	eventPublishReadUserID string

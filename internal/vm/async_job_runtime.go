@@ -1050,7 +1050,10 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		if vm.isolateAsyncJobFailures {
 			isolationMark, isolated = vm.beginBatchChunkTransaction()
 		}
+		vm.queueableBodyFailureRetained = false
 		err := vm.runAsyncJob(job, result, &batchProjection)
+		bodyFailureRetained := vm.queueableBodyFailureRetained
+		vm.queueableBodyFailureRetained = false
 		if err != nil && isolated {
 			// Each drained job is its own transaction: undo what the failed job
 			// wrote, record it as Failed and keep draining the others.
@@ -1073,7 +1076,7 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		if err != nil {
 			// Failed Queueable bodies observed at stopTest retain the Processing
 			// projection and their body writes while the error propagates.
-			retainProcessing := vm.testContext != nil && vm.testContext.StopDraining && job.Kind == "Queueable" && vm.asyncJobRecordStatus(job.ID) == "Processing"
+			retainProcessing := vm.testContext != nil && vm.testContext.StopDraining && job.Kind == "Queueable" && bodyFailureRetained && vm.asyncJobRecordStatus(job.ID) == "Processing"
 			if !job.ScheduledAborted && !batchProjection && !retainProcessing {
 				vm.recordAsyncJob(job, "Failed", err.Error())
 			}
@@ -1426,6 +1429,9 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 			if err == nil {
 				err = finalizerErr
 			}
+		} else if err != nil {
+			// Only a body failure with no finalizer matches the native rows.
+			vm.queueableBodyFailureRetained = true
 		}
 		return err
 	case "BatchApex":

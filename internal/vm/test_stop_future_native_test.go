@@ -3,6 +3,7 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"github.com/glade-sh/glade/internal/ir"
 	"os"
 	"strings"
 	"testing"
@@ -176,6 +177,56 @@ func TestQueueableFailureNonTestDrainRemainsFailed(t *testing.T) {
 				if status.String != "Failed" || count.Integer != 1 {
 					t.Fatalf("status=%v errors=%v", status, count)
 				}
+			}
+		})
+	}
+}
+
+// Outside the captured no-finalizer body failure, post-stop status keeps the
+// Failed projection. Neither route has a native post-stop row.
+func TestQueueableStopStatusOutsideCapturedScopeRemainsFailed(t *testing.T) {
+	for _, route := range []string{"finalizer", "nobody"} {
+		t.Run(route, func(t *testing.T) {
+			machine := New(nil)
+			org := testDataOrg()
+			machine.SetOrg(&org)
+			machine.EnableTestContext()
+			qParams := []Param{{Name: "context", Type: "QueueableContext"}}
+			fParams := []Param{{Name: "context", Type: "FinalizerContext"}}
+			mk := func(src string) ir.Program {
+				p, err := CompileAnonymous(src)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return p
+			}
+			classes := []Class{{Name: "StopFinProbe", Interfaces: []string{"Finalizer"}, Methods: map[string]Method{"execute": {Name: "StopFinProbe.execute", ClassName: "StopFinProbe", ReturnType: "void", Params: fParams, Program: mk(`Integer x = 1;`)}}}}
+			switch route {
+			case "finalizer":
+				classes = append(classes, Class{Name: "StopQProbe", Interfaces: []string{"Queueable"}, Methods: map[string]Method{"execute": {Name: "StopQProbe.execute", ClassName: "StopQProbe", ReturnType: "void", Params: qParams, Program: mk(`System.attachFinalizer(new StopFinProbe()); throw new IllegalArgumentException('failure');`)}}})
+			case "nobody":
+				// Queueable without an execute method fails before any body runs.
+				classes = append(classes, Class{Name: "StopQProbe", Interfaces: []string{"Queueable"}, Methods: map[string]Method{}})
+			}
+			for _, c := range classes {
+				if err := machine.RegisterClass(c); err != nil {
+					t.Fatal(err)
+				}
+			}
+			check := "AsyncApexJob j=[SELECT Status,NumberOfErrors FROM AsyncApexJob LIMIT 1]; System.assertEquals('Failed',j.Status); System.assertEquals(1,j.NumberOfErrors);"
+			if route == "finalizer" {
+				p := mk(`Test.startTest(); System.enqueueJob(new StopQProbe()); Boolean caught=false; try { Test.stopTest(); } catch(Exception e) { caught=true; } System.assertEquals(true,caught); ` + check)
+				if _, err := machine.Execute(p); err != nil {
+					t.Fatal(err)
+				}
+				return
+			}
+			// The missing-method error is not catchable Apex; it escapes stopTest.
+			if _, err := machine.Execute(mk(`Test.startTest(); System.enqueueJob(new StopQProbe()); Test.stopTest();`)); err == nil {
+				t.Fatal("expected stopTest error")
+			}
+			if _, err := machine.Execute(mk(check)); err != nil {
+				t.Fatal(err)
 			}
 		})
 	}
