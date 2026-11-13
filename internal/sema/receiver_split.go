@@ -83,6 +83,19 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, expr ir.Expr, scope irSemaS
 	if !ok {
 		return nil
 	}
+	// The IR does not retain occurrence offsets. Inspect every matching call
+	// in this statement for a split static receiver, and report its source
+	// span. This also handles a split in either argument of a repeated call.
+	if semaReceiverExprLooksLikeType(receiver, scope, model) {
+		for at, last, found := start, end, true; found; at, last, found = semaIRNameSpan(source, last, expr.Callee) {
+			before, after, valid := splitReceiverTrivia(source[at:last], expr.Callee)
+			if valid && before != "" && !strings.ContainsAny(after, "\r\n") && strings.HasPrefix(strings.TrimSpace(source[last:]), "(") {
+				root, _, _ := strings.Cut(receiver, ".")
+				message := "Variable does not exist: " + root
+				return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, at, at+len(receiver))}
+			}
+		}
+	}
 	if _, _, repeated := semaIRNameSpan(source, end, expr.Callee); repeated {
 		return nil
 	}
@@ -92,7 +105,12 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, expr ir.Expr, scope irSemaS
 	}
 	var message string
 	if strings.ContainsAny(after, "\r\n") {
+		// The after-dot observations cover a single receiver identifier.
+		// Multiline block trivia is captured only in an argument context.
 		prefix := strings.TrimSpace(source[pos:start])
+		if strings.Contains(receiver, ".") || (strings.Contains(after, "/*") && !splitReceiverArgument.MatchString(prefix)) {
+			return nil
+		}
 		switch {
 		case prefix == "":
 			message = "Invalid type: " + receiver + "."
@@ -111,4 +129,25 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, expr ir.Expr, scope irSemaS
 		message = "Variable does not exist: " + root
 	}
 	return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, File: typ.File, Range: semaRange(source, start, start+len(receiver))}
+}
+
+// Repeated IR calls may identify the same source occurrence. Keep one report
+// for that location without merging diagnostics at distinct locations.
+func dedupeSplitReceiverDiagnostics(items []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	seen := make(map[diagnostic.Position]map[string]bool)
+	out := make([]diagnostic.Diagnostic, 0, len(items))
+	for _, d := range items {
+		if d.Code == "GLADESEMA013" && d.Range != nil && strings.HasPrefix(d.NativeMessage, "Variable does not exist: ") {
+			pos := d.Range.Start
+			if seen[pos] == nil {
+				seen[pos] = make(map[string]bool)
+			}
+			if seen[pos][d.NativeMessage] {
+				continue
+			}
+			seen[pos][d.NativeMessage] = true
+		}
+		out = append(out, d)
+	}
+	return out
 }

@@ -93,12 +93,15 @@ func TestReceiverSplitNative(t *testing.T) {
 				}
 				return
 			}
+			matches := 0
 			for _, d := range result.Diagnostics {
 				if strings.Contains(d.NativeMessage, row[4]) || strings.Contains(d.Message, row[4]) {
-					return
+					matches++
 				}
 			}
-			t.Fatalf("want %s; got %v", row[4], result.Diagnostics)
+			if matches != 1 {
+				t.Fatalf("want one %s diagnostic; got %v", row[4], result.Diagnostics)
+			}
 		})
 	}
 }

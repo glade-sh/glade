@@ -68,7 +68,7 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 			return anonymousCompileFailure(index, source, rng, err)
 		}
 	}
-	diagnostics = append(diagnostics, bodyDiagnostics...)
+	diagnostics = append(diagnostics, dedupeSplitReceiverDiagnostics(bodyDiagnostics)...)
 	if !compiled {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_ANONYMOUS_PARSE", Message: "anonymous Apex could not be compiled", Range: &rng})
 	}
