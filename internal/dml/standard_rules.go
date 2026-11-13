@@ -414,10 +414,15 @@ func standardPersonOf(org *storage.OrgState, object string, record storage.Recor
 func standardPersonMatch(object string, candidate, existing standardPerson) (bool, float64) {
 	last := standardCompare(candidate.last, existing.last, standardLastName)
 	email := standardCompare(candidate.email, existing.email, standardExact)
-	if !last.ok() {
-		if candidate.kind == existing.kind && email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
+	if candidate.kind == existing.kind && email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
+		if !last.ok() {
 			return standardCorroboratedSurname(candidate.last, existing.last)
 		}
+		if last.confidence < 100 && standardIsTerminalSwap(candidate.last, existing.last) {
+			return standardTerminalSwap(strings.ToLower(candidate.last), last.confidence)
+		}
+	}
+	if !last.ok() {
 		return false, 0
 	}
 	first := standardCompare(candidate.first, existing.first, standardMethod("firstname"))
