@@ -1,0 +1,91 @@
+id	api	route	repeat	observation
+groups	62.0	anonymous	2	[C,B,A]/[M,K]
+groups	62.0	istest	2	[C,B,A]/[M,K]
+groups	67.0	anonymous	2	[C,B,A]/[M,K]
+groups	67.0	istest	2	[C,B,A]/[M,K]
+swap	62.0	anonymous	2	[M,K]/[C,B,A]
+swap	62.0	istest	2	[M,K]/[C,B,A]
+swap	67.0	anonymous	2	[M,K]/[C,B,A]
+swap	67.0	istest	2	[M,K]/[C,B,A]
+globalOne	62.0	anonymous	2	[C]/[]
+globalOne	62.0	istest	2	[C]/[]
+globalOne	67.0	anonymous	2	[C]/[]
+globalOne	67.0	istest	2	[C]/[]
+globalThree	62.0	anonymous	2	[C,B]/[M]
+globalThree	62.0	istest	2	[C,B]/[M]
+globalThree	67.0	anonymous	2	[C,B]/[M]
+globalThree	67.0	istest	2	[C,B]/[M]
+window	62.0	anonymous	2	System.SearchException|SOSL only supports OFFSET clause for single entity search
+window	62.0	istest	2	System.SearchException|SOSL only supports OFFSET clause for single entity search
+window	67.0	anonymous	2	System.SearchException|SOSL only supports OFFSET clause for single entity search
+window	67.0	istest	2	System.SearchException|SOSL only supports OFFSET clause for single entity search
+reversed	62.0	anonymous	2	[C,B,A]/[M,K]
+reversed	62.0	istest	2	[A,B,C]/[K,M]
+reversed	67.0	anonymous	2	[C,B,A]/[M,K]
+reversed	67.0	istest	2	[A,B,C]/[K,M]
+bypass	62.0	anonymous	2	[]/[]
+bypass	62.0	istest	2	[C,B,A]/[M,K]
+bypass	67.0	anonymous	2	[]/[]
+bypass	67.0	istest	2	[C,B,A]/[M,K]
+empty	62.0	anonymous	2	[C,B,A]/[M,K]
+empty	62.0	istest	2	[]/[]
+empty	67.0	anonymous	2	[C,B,A]/[M,K]
+empty	67.0	istest	2	[]/[]
+cleared	62.0	istest	2	[]/[]
+cleared	67.0	istest	2	[]/[]
+inlineRows	62.0	istest	2	2/1|A|B|K
+inlineRows	67.0	istest	2	2/1|A|B|K
+findRows	62.0	istest	2	C,B
+findRows	67.0	istest	2	C,B
+bareField	62.0	istest	2	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+bareField	67.0	istest	2	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+idField	62.0	istest	2	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+idField	67.0	istest	2	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+nameField	62.0	istest	2	true|Amberquartz Alpha
+nameField	67.0	istest	2	true|Amberquartz Alpha
+nullEntry	62.0	istest	2	[A]/[]
+nullEntry	67.0	istest	2	[A]/[]
+nullList	62.0	istest	2	[]/[]
+nullList	67.0	istest	2	[]/[]
+deleted	62.0	istest	2	[C]/[]
+deleted	67.0	istest	2	[C]/[]
+dateNull	62.0	istest	2	[]
+dateNull	67.0	istest	2	[]
+dateNullGt	62.0	istest	2	[C,B,A]
+dateNullGt	67.0	istest	2	[C,B,A]
+wordTwo	62.0	istest	2	[C,B,A]
+wordTwo	67.0	istest	2	[C,B,A]
+questionMark	62.0	istest	2	[C,B,A]
+questionMark	67.0	istest	2	[C,B,A]
+internalStar	62.0	istest	2	[C,B,A]
+internalStar	67.0	istest	2	[C,B,A]
+countOk	62.0	istest	2	3|1|0
+countOk	67.0	istest	2	3|1|0
+countFind	62.0	istest	2	3|1|0
+countFind	67.0	istest	2	3|1|0
+termError	62.0	istest	2	ok|1
+termError	67.0	istest	2	ok|1
+syntaxError	62.0	istest	2	System.QueryException|unexpected token: WRONG|0
+syntaxError	67.0	istest	2	System.QueryException|unexpected token: WRONG|0
+unknownField	62.0	istest	2	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+unknownField	67.0	istest	2	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryUser	62.0	istest	2	ok
+queryUser	67.0	istest	2	ok
+queryUserArg	62.0	istest	2	ok
+queryUserArg	67.0	istest	2	ok
+findUser	62.0	istest	2	ok
+findUser	67.0	istest	2	ok
+findUserArg	62.0	istest	2	ok
+findUserArg	67.0	istest	2	ok
+inlineUser	62.0	istest	2	ok
+inlineUser	67.0	istest	2	ok
+querySystem	62.0	istest	2	ok
+querySystem	67.0	istest	2	ok
+querySystemArg	62.0	istest	2	ok
+querySystemArg	67.0	istest	2	ok
+findSystem	62.0	istest	2	ok
+findSystem	67.0	istest	2	ok
+findSystemArg	62.0	istest	2	ok
+findSystemArg	67.0	istest	2	ok
+inlineSystem	62.0	istest	2	ok
+inlineSystem	67.0	istest	2	ok

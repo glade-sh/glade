@@ -2,6 +2,7 @@ package sosl
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -156,6 +157,10 @@ func (p *searchExpressionParser) primary() (*SearchExpression, error) {
 		literal = strings.TrimSuffix(literal, "*")
 	}
 	term := SearchTerm{Text: decodeSearchWildcardMarkers(literal), Prefix: prefix, NeedsMatcher: searchNeedsMatcher(literal)}
+	term.PhoneDigits = phoneDigits.MatchString(item)
+	if term.NeedsMatcher && !prefix {
+		term.NameWordGlob = nameWordGlob.MatchString(literal)
+	}
 	if strings.HasPrefix(item, "\"") && strings.HasSuffix(item, "\"") {
 		phrase := item[1 : len(item)-1]
 		term = SearchTerm{Text: decodeSearchWildcardMarkers(phrase), NeedsMatcher: searchNeedsMatcher(phrase)}
@@ -187,3 +192,9 @@ func searchNeedsMatcher(text string) bool {
 	}
 	return false
 }
+
+// Match only the interior wildcard forms established for ASCII name words.
+// Check the undecoded token so escaped punctuation stays literal.
+var nameWordGlob = regexp.MustCompile(`^[A-Za-z]+(\*|\?{1,2})[A-Za-z]+$`)
+
+var phoneDigits = regexp.MustCompile(`^([0-9]{7}|[0-9]{10})$`)

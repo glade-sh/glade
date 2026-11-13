@@ -1,0 +1,29 @@
+capture: SOSL RETURNING sort-field access
+started: 2026-11-12T23:46:33Z
+finished: 2026-11-12T23:48:23Z
+apis: 62.0 67.0
+routes: anonymous istest
+cases: 5
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+cases.tsv sha256: 682756970195d2a8
+mode: live
+Scratch org was deleted. CLI deletion succeeded and the org could no longer be resolved.
+Source metadata: use api67_sosl_locator_matching/project/force-app/main/default/{objects,permissionsets,profiles} beside this fixture.
+Each deployed test class has the source API version in its name. Both Apex test transport and anonymous execution used the corresponding API.
+The named methods run as a Standard User with Gl_Access. Their fixed IDs provide candidates independently of the asynchronous search index. The private object has a readable Open__c and an unreadable Secret__c.
+The bare anonymous controls run as the scratch administrator. No ordinary rows are inserted outside the test transaction. The empty search needs no index readiness and does not establish candidate-level FLS. Anonymous runAs and the fixed-results setter each fail before a restricted-user search.
+org.tsv decodes the method assertion after OBS| and preserves the complete anonymous exceptionMessage from the Salesforce CLI response. Intentional assertion failures carry observations. No record IDs are exported.
+
+Additional inline ORDER BY control used a second fresh 30-day scratch org. Deletion succeeded and lookup by alias failed after deletion.
+Inline started: 2026-11-12T23:53:18Z
+Inline finished: 2026-11-12T23:54:34Z
+Inline sf: @salesforce/cli/2.157.8
+Inline cases.tsv sha256: 5df26778f710064c
+Substitute 62 or 67 for {{API}} in each class template to reproduce the deployed bytes.
+
+The explicit AccessLevel.USER_MODE overloads used a third fresh 30-day scratch org. Deletion succeeded and lookup by alias failed after deletion. Same synthetic metadata and fixed candidates.
+Overload started: 2026-11-13T00:06:11Z
+Overload finished: 2026-11-13T00:08:00Z
+Overload sf: @salesforce/cli/2.157.8
+Overload cases.tsv sha256: c9c248c32e940799

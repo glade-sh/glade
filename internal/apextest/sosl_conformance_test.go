@@ -59,6 +59,23 @@ func TestSOSLOrgConformance(t *testing.T) {
 		t.Fatalf("oracle API coverage: primary %v controls %v shadow %v",
 			data.APIVersions, data.ControlAPIVersions, data.ShadowControlAPIVersions)
 	}
+	// Historical rows used anonymous answers for both routes. Direct named
+	// captures supersede only the named expectations listed in this table.
+	namedTermsRaw, err := os.ReadFile("testdata/conformance/sosl_test_terms/org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	namedTerms := map[string]string{}
+	for _, line := range strings.Split(strings.TrimSpace(string(namedTermsRaw)), "\n")[1:] {
+		c := strings.Split(line, "\t")
+		if len(c) != 4 || c[1] != "istest" {
+			t.Fatalf("invalid named SOSL term observation: %q", line)
+		}
+		namedTerms[c[0]+"/"+c[2]] = c[3]
+	}
+	if len(namedTerms) != 42 {
+		t.Fatal("incomplete named SOSL term observations")
+	}
 	seen := map[string]bool{}
 	for _, row := range data.Remaining {
 		if row.ID == "" || seen[row.ID] || row.Owner == "" || row.Owner == "A35" || row.Reason == "" || row.Expected == "" || row.Expected == "?" {
@@ -206,6 +223,9 @@ func TestSOSLOrgConformance(t *testing.T) {
 					continue
 				}
 				executable++
+				if named, ok := namedTerms[api+"/"+row.ID]; ok {
+					row.Expected = named
+				}
 				fmt.Fprintf(&namedSource, "@IsTest static void observed%s(){\n%s\n}\n", row.ID, body(row))
 			}
 			namedSource.WriteString("}\n")

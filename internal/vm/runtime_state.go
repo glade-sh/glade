@@ -284,9 +284,12 @@ type VM struct {
 	// cloneRuntime starts with a fresh registry through newVM.
 	queryCursors map[string]Value
 	// Alternate query sources belong to this VM, including cursor JSON copies.
-	queryHandleSources        map[string]*storage.OrgState
-	fixedSearchResults        []Value
-	fixedSearchResultsSet     bool
+	queryHandleSources    map[string]*storage.OrgState
+	fixedSearchResults    []Value
+	fixedSearchResultsSet bool
+	// The caller's list keeps feeding later searches: in-place changes to it
+	// after Test.setFixedSearchResults reach fixedSearchResults.
+	fixedSearchResultsRef     uint64
 	sfsqlqueryRows            []Value
 	sfsqlqueryMetadata        []Value
 	platformCache             map[string]map[string]cacheEntry
