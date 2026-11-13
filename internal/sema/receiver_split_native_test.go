@@ -72,6 +72,60 @@ import (
 // NATIVE comment_statement testdata/receiver_split/org.tsv:59 anonymous 67.0
 // NATIVE comment_assignment testdata/receiver_split/org.tsv:60 anonymous 62.0
 // NATIVE comment_assignment testdata/receiver_split/org.tsv:61 anonymous 67.0
+// NATIVE argument_newline testdata/receiver_split/org.tsv:62 anonymous 62.0
+// NATIVE argument_newline testdata/receiver_split/org.tsv:63 anonymous 67.0
+// NATIVE argument_message testdata/receiver_split/org.tsv:64 anonymous 62.0
+// NATIVE argument_message testdata/receiver_split/org.tsv:65 anonymous 67.0
+// NATIVE declaration_before_dot testdata/receiver_split/org.tsv:66 anonymous 62.0
+// NATIVE declaration_before_dot testdata/receiver_split/org.tsv:67 anonymous 67.0
+// NATIVE debug_before_dot testdata/receiver_split/org.tsv:68 anonymous 62.0
+// NATIVE debug_before_dot testdata/receiver_split/org.tsv:69 anonymous 67.0
+// NATIVE builtin_before_dot testdata/receiver_split/org.tsv:70 anonymous 62.0
+// NATIVE builtin_before_dot testdata/receiver_split/org.tsv:71 anonymous 67.0
+// NATIVE statement_argument_before_dot testdata/receiver_split/org.tsv:72 anonymous 62.0
+// NATIVE statement_argument_before_dot testdata/receiver_split/org.tsv:73 anonymous 67.0
+// NATIVE fluent_before_dot testdata/receiver_split/org.tsv:74 anonymous 62.0
+// NATIVE fluent_before_dot testdata/receiver_split/org.tsv:75 anonymous 67.0
+// NATIVE line_comment_before_dot testdata/receiver_split/org.tsv:76 anonymous 62.0
+// NATIVE line_comment_before_dot testdata/receiver_split/org.tsv:77 anonymous 67.0
+// NATIVE qualified_inner_before_dot testdata/receiver_split/org.tsv:78 anonymous 62.0
+// NATIVE qualified_inner_before_dot testdata/receiver_split/org.tsv:79 anonymous 67.0
+// NATIVE class_literal_before_dot testdata/receiver_split/org.tsv:80 anonymous 62.0
+// NATIVE class_literal_before_dot testdata/receiver_split/org.tsv:81 anonymous 67.0
+// NATIVE sobject_member_before_dot testdata/receiver_split/org.tsv:82 anonymous 62.0
+// NATIVE sobject_member_before_dot testdata/receiver_split/org.tsv:83 anonymous 67.0
+// NATIVE block_before_dot testdata/receiver_split/org.tsv:84 anonymous 62.0
+// NATIVE block_before_dot testdata/receiver_split/org.tsv:85 anonymous 67.0
+// NATIVE fluent_space_control testdata/receiver_split/org.tsv:86 anonymous 62.0
+// NATIVE fluent_space_control testdata/receiver_split/org.tsv:87 anonymous 67.0
+// NATIVE statement_space_after_dot testdata/receiver_split/org.tsv:88 anonymous 62.0
+// NATIVE statement_space_after_dot testdata/receiver_split/org.tsv:89 anonymous 67.0
+// NATIVE statement_comment_after_dot testdata/receiver_split/org.tsv:90 anonymous 62.0
+// NATIVE statement_comment_after_dot testdata/receiver_split/org.tsv:91 anonymous 67.0
+// NATIVE argument_space_after_dot testdata/receiver_split/org.tsv:92 anonymous 62.0
+// NATIVE argument_space_after_dot testdata/receiver_split/org.tsv:93 anonymous 67.0
+// NATIVE statement_line_comment_after_dot testdata/receiver_split/org.tsv:94 anonymous 62.0
+// NATIVE statement_line_comment_after_dot testdata/receiver_split/org.tsv:95 anonymous 67.0
+// NATIVE statement_blank_after_dot testdata/receiver_split/org.tsv:96 anonymous 62.0
+// NATIVE statement_blank_after_dot testdata/receiver_split/org.tsv:97 anonymous 67.0
+// NATIVE fluent_after_dot testdata/receiver_split/org.tsv:98 anonymous 62.0
+// NATIVE fluent_after_dot testdata/receiver_split/org.tsv:99 anonymous 67.0
+// NATIVE assignment_after_dot testdata/receiver_split/org.tsv:100 anonymous 62.0
+// NATIVE assignment_after_dot testdata/receiver_split/org.tsv:101 anonymous 67.0
+// NATIVE binary_argument_after_dot testdata/receiver_split/org.tsv:102 anonymous 62.0
+// NATIVE binary_argument_after_dot testdata/receiver_split/org.tsv:103 anonymous 67.0
+// NATIVE block_after_dot testdata/receiver_split/org.tsv:104 anonymous 62.0
+// NATIVE block_after_dot testdata/receiver_split/org.tsv:105 anonymous 67.0
+// NATIVE mixed_before_after_dot testdata/receiver_split/org.tsv:106 anonymous 62.0
+// NATIVE mixed_before_after_dot testdata/receiver_split/org.tsv:107 anonymous 67.0
+// NATIVE builtin_after_dot testdata/receiver_split/org.tsv:108 anonymous 62.0
+// NATIVE builtin_after_dot testdata/receiver_split/org.tsv:109 anonymous 67.0
+// NATIVE class_argument_before_dot testdata/receiver_split/org.tsv:110 class 62.0
+// NATIVE class_argument_before_dot testdata/receiver_split/org.tsv:111 class 67.0
+// NATIVE class_statement_before_dot testdata/receiver_split/org.tsv:112 class 62.0
+// NATIVE class_statement_before_dot testdata/receiver_split/org.tsv:113 class 67.0
+// NATIVE class_statement_after_dot testdata/receiver_split/org.tsv:114 class 62.0
+// NATIVE class_statement_after_dot testdata/receiver_split/org.tsv:115 class 67.0
 func TestReceiverSplitNative(t *testing.T) {
 	const fixture = "testdata/receiver_split"
 	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
@@ -133,6 +187,9 @@ func TestReceiverSplitNative(t *testing.T) {
 			want := strings.Split(row[4], " | ")[0]
 			for _, d := range result.Diagnostics {
 				if strings.Contains(d.NativeMessage, want) || strings.Contains(d.Message, want) {
+					if row[2] == "class" && d.Code != "GLADESEMA013" {
+						t.Errorf("named diagnostic code = %s, want GLADESEMA013", d.Code)
+					}
 					matches++
 				}
 			}
@@ -181,6 +238,33 @@ func TestReceiverSplitIntermediateAPIAndAfterBlock(t *testing.T) {
 		}
 		if !found {
 			t.Errorf("source %q: got %v", source, result.Diagnostics)
+		}
+	}
+}
+
+// Before-dot name resolution is independent of the enclosing expression;
+// the class-route and anonymous initializer rows establish the predicate.
+// NATIVE class_statement_before_dot testdata/receiver_split/org.tsv:112 class 62.0
+// NATIVE class_statement_before_dot testdata/receiver_split/org.tsv:113 class 67.0
+// NATIVE declaration_before_dot testdata/receiver_split/org.tsv:66 anonymous 62.0
+// NATIVE declaration_before_dot testdata/receiver_split/org.tsv:67 anonymous 67.0
+func TestReceiverSplitBeforeDotInReturn(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		root := t.TempDir()
+		probe := filepath.Join(root, "ReceiverProbe.cls")
+		caller := filepath.Join(root, "Caller.cls")
+		writeSemaFile(t, probe, "public class ReceiverProbe { public static String value() { return 'ok'; } }")
+		writeSemaFile(t, caller, "public class Caller { public static String run() { return ReceiverProbe\n.value(); } }")
+		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{probe, caller}}, schema.Schema{})
+		result := Analyze(index)
+		found := false
+		for _, d := range result.Diagnostics {
+			if d.NativeMessage == "Variable does not exist: ReceiverProbe" && d.Code == "GLADESEMA013" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("api %s: got %v", api, result.Diagnostics)
 		}
 	}
 }

@@ -4,7 +4,7 @@
 
 ### Changes
 
-- Anonymous Apex now reports captured receiver-split errors for static class calls at API 62.0 and 67.0.
+- Apex now reports captured receiver-trivia errors in anonymous code and class method bodies at API versions 62 through 67.
 
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
 - Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.

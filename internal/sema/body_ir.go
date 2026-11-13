@@ -48,6 +48,7 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 	diagnostics = semaVisualforceLocalAssignmentDiagnostics(diagnostics, typ.Name, body, bodyOffset, scopes, model, bodyScan.localDeclMatches)
 	diagnostics = append(diagnostics, staticThisDiagnostics(typ, member, body, bodyOffset, source)...)
 	irDiagnostics, irOK := a.checkBodyIRWithCompileStatus(typ, member, body, bodyOffset, source, baseScope, model, constructability)
+	irDiagnostics = dedupeSplitReceiverDiagnostics(irDiagnostics)
 	diagnostics = append(diagnostics, irDiagnostics...)
 	for _, ctor := range constructorTypes(body) {
 		for _, ref := range extractTypeNames(ctor.text) {
@@ -2614,7 +2615,7 @@ func semaExprAtSwitchWhenLabel(source string, pos int, name string) bool {
 }
 
 func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
-	if d := semaSplitStaticReceiver(typ, expr, scope, bodyOffset+pos, source, model); d != nil {
+	if d := semaSplitStaticReceiver(typ, member, expr, scope, bodyOffset+pos, source, model); d != nil {
 		return []diagnostic.Diagnostic{*d}
 	}
 	receiverPath, _, _ := splitSemaMethodPath(expr.Callee)
