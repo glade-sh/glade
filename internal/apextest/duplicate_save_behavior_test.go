@@ -8,7 +8,6 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -23,6 +22,7 @@ import (
 // Match members are labelled by their seed IDs inside Apex, independently of
 // platform-assigned IDs. A failed assertion transports the complete observation.
 func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
+	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
 	const dir = "testdata/conformance/duplicate_save_behavior"
 	var groups map[string]map[string]string
 	body, err := os.ReadFile(filepath.Join(dir, "cases.json"))
@@ -175,9 +175,7 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 					if !ok || !sized || !ended || size != strconv.Itoa(len(got)) {
 						t.Fatalf("invalid observation frame: %s", message)
 					}
-					if group == "gradeHoldout" {
-						compareShortEditHoldout(t, want, got)
-					} else if got != want {
+					if got != want {
 						t.Errorf("native=%s\nGlade=%s", want, got)
 					}
 				}
@@ -218,44 +216,6 @@ func TestDuplicateSaveBehaviorNativeRoutes(t *testing.T) {
 					t.Fatalf("ran %d of %d methods", count, len(cases))
 				}
 			})
-		}
-	}
-}
-
-// These prospective panels record the ID and confidence separately in Find and
-// in the DML error. Preserve the exact seed ID, multiplicity and save verdict
-// for every input. Both accessors must return the same grade. Two inputs in
-// each direction differ from the native grade, by at most two points.
-var shortEditGrades = regexp.MustCompile(`=([0-9]+)`)
-
-func compareShortEditHoldout(t *testing.T, want, got string) {
-	t.Helper()
-	native, actual := strings.Split(want, ","), strings.Split(got, ",")
-	if len(native) != len(actual) {
-		t.Fatalf("native %d inputs, Glade %d", len(native), len(actual))
-	}
-	// Only these two seed positions in each directional panel had a score residual.
-	// Every other seed, and both accessors on every seed, must agree exactly.
-	gradeBounds := map[int]int{13: 2, 15: 1}
-	for i, expected := range native {
-		result := actual[i]
-		if expected == result {
-			continue
-		}
-		if shortEditGrades.ReplaceAllString(result, "=#") != shortEditGrades.ReplaceAllString(expected, "=#") {
-			t.Errorf("input %d: native %s, Glade %s", i, expected, result)
-			continue
-		}
-		a, b := shortEditGrades.FindAllStringSubmatch(result, -1), shortEditGrades.FindAllStringSubmatch(expected, -1)
-		if len(a) != 2 || len(b) != 2 || a[0][1] != a[1][1] || b[0][1] != b[1][1] {
-			t.Errorf("input %d: inconsistent grades: native %s, Glade %s", i, expected, result)
-			continue
-		}
-		x, ex := strconv.Atoi(a[0][1])
-		y, ey := strconv.Atoi(b[0][1])
-		bound := gradeBounds[i]
-		if ex != nil || ey != nil || x > 100 || x-y > bound || y-x > bound {
-			t.Errorf("input %d: native grade %s, Glade %s", i, b[0][1], a[0][1])
 		}
 	}
 }
