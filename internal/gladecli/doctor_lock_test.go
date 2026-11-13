@@ -41,19 +41,22 @@ time.sleep(120)`, lockPath, ready)
 	}
 	done := make(chan string, 1)
 	go func() {
-		var out bytes.Buffer
-		_, err := runDoctor(context.Background(), []string{"--project", root, "--json"}, &out)
-		if err != nil {
-			done <- err.Error()
-			return
-		}
-		done <- out.String()
+        for _, format := range []string{"text", "json"} {
+            var out bytes.Buffer
+            args := []string{"--project", root}
+            if format == "json" { args = append(args, "--json") }
+            _, err := runDoctor(context.Background(), args, &out)
+            if err != nil { done <- err.Error(); return }
+            output := strings.ToLower(out.String())
+            if !strings.Contains(output, "busy") || !strings.Contains(output, "retry") || strings.Contains(output, "reinstall") {
+                done <- format + ": " + out.String(); return
+            }
+        }
+        done <- "ok"
 	}()
 	select {
 	case out := <-done:
-		if !strings.Contains(strings.ToLower(out), "busy") {
-			t.Fatalf("doctor did not report busy toolchain: %s", out)
-		}
+        if out != "ok" { t.Fatalf("doctor busy guidance: %s", out) }
 	case <-time.After(20 * time.Second):
 		t.Fatal("doctor blocked on the toolchain install lock")
 	}
