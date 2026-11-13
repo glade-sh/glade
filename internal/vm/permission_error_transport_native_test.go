@@ -38,13 +38,13 @@ Database.SaveResult result=Database.insert(record,false,AccessLevel.USER_MODE);
 System.assertEquals(` + row.success + `,result.isSuccess());
 System.assertEquals(` + row.idNull + `,result.getId()==null);
 ` + dmlCounters + `
-if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals('` + row.status + `',String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + strings.ReplaceAll(row.message, "Probe463__c", "PermissionProbe__c") + `',result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}`
+if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals(` + apexStringLiteral(row.status) + `,String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals(` + apexStringLiteral(strings.ReplaceAll(row.message, "Probe463__c", "PermissionProbe__c")) + `,result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}`
 			} else {
 				source = `SObject first=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();first.put('Name','One');first.put('Summary__c','value');SObject second=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();second.put('Name','Two');second.put('Summary__c','value');
 List<Database.SaveResult> results=Database.insert(new List<SObject>{first,second},false,AccessLevel.USER_MODE);
 System.assertEquals(2,results.size());System.assertEquals(` + row.success + `,results[0].isSuccess());System.assertEquals(` + row.success + `,results[1].isSuccess());
 ` + dmlCounters + `
-for(Database.SaveResult result:results){System.assertEquals(` + row.idNull + `,result.getId()==null);if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals('` + row.status + `',String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals('` + strings.ReplaceAll(row.message, "Probe463__c", "PermissionProbe__c") + `',result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}}`
+for(Database.SaveResult result:results){System.assertEquals(` + row.idNull + `,result.getId()==null);if(result.isSuccess()){System.assertEquals(0,result.getErrors().size());}else{System.assertEquals(1,result.getErrors().size());System.assertEquals(` + apexStringLiteral(row.status) + `,String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals(` + apexStringLiteral(strings.ReplaceAll(row.message, "Probe463__c", "PermissionProbe__c")) + `,result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(fieldCount) + `,result.getErrors()[0].getFields().size());}}`
 			}
 			program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: row.api})
 			if err != nil {
@@ -80,7 +80,7 @@ func TestDynamicSecurityEnforcedPermissionMessages(t *testing.T) {
 		t.Run(row[0]+"/"+row[1]+"/"+row[2], func(t *testing.T) {
 			machine := permissionTransportVM(row[0], row[1])
 			program, err := CompileAnonymousWithOptions(`try { Database.query('SELECT `+projection+` FROM PermissionProbe__c WITH SECURITY_ENFORCED'); System.assert(false,'expected denial'); }
-catch(QueryException error) { System.assertEquals('`+row[3]+`',error.getTypeName());System.assertEquals('`+row[4]+`',error.getMessage()); }`, CompileOptions{APIVersion: row[0]})
+catch(QueryException error) { System.assertEquals(`+apexStringLiteral(row[3])+`,error.getTypeName());System.assertEquals(`+apexStringLiteral(row[4])+`,error.getMessage()); }`, CompileOptions{APIVersion: row[0]})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -89,6 +89,55 @@ catch(QueryException error) { System.assertEquals('`+row[3]+`',error.getTypeName
 			}
 		})
 	}
+}
+
+func TestFailedWriteOverloadTransport(t *testing.T) {
+	f, err := os.Open("testdata/permission_error_transport/failed_write_overloads.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	reader := csv.NewReader(f)
+	reader.Comma = '\t'
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) < 2 || strings.Join(rows[0], "\t") != "api\tprincipal\toperation\texception\tmessage\tsuccess\tidNull\tstatus\tfields" {
+		t.Fatalf("invalid overload fixture header: %#v", rows)
+	}
+	for _, row := range rows[1:] {
+		if len(row) != 9 {
+			t.Fatalf("invalid overload fixture row: %#v", row)
+		}
+		t.Run(row[0]+"/"+row[1]+"/"+row[2], func(t *testing.T) {
+			machine := permissionTransportVM(row[0], row[1])
+			message := strings.ReplaceAll(row[4], "Probe463__c", "PermissionProbe__c")
+			var source string
+			if row[2] == "listTrue" {
+				source = `SObject first=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();first.put('Name','One');first.put('Summary__c','value');SObject second=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();second.put('Name','Two');second.put('Summary__c','value');
+try { Database.insert(new List<SObject>{first,second},true,AccessLevel.USER_MODE); System.assert(false,'expected write denial'); }
+catch(Exception error) { System.assertEquals(` + apexStringLiteral(row[3]) + `,error.getTypeName());System.assertEquals(` + apexStringLiteral(message) + `,error.getMessage()); }`
+			} else {
+				source = `SObject record=Schema.getGlobalDescribe().get('PermissionProbe__c').newSObject();record.put('Name','Synthetic');record.put('Summary__c','value');
+Database.SaveResult result=Database.insert(record,false);
+System.assertEquals(` + row[5] + `,result.isSuccess());System.assertEquals(` + row[6] + `,result.getId()==null);System.assertEquals(1,result.getErrors().size());System.assertEquals(` + apexStringLiteral(row[7]) + `,String.valueOf(result.getErrors()[0].getStatusCode()));System.assertEquals(` + apexStringLiteral(message) + `,result.getErrors()[0].getMessage());System.assertEquals(` + fmt.Sprint(len(strings.Split(row[8], ","))) + `,result.getErrors()[0].getFields().size());`
+			}
+			program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: row[0]})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.Execute(program); err != nil {
+				t.Fatalf("failed-write overload: %v", err)
+			}
+		})
+	}
+}
+
+func apexStringLiteral(value string) string {
+	value = strings.ReplaceAll(value, `\`, `\\`)
+	value = strings.ReplaceAll(value, `'`, `\'`)
+	return `'` + value + `'`
 }
 
 func loadPermissionTransportRows(t *testing.T) []permissionTransportRow {

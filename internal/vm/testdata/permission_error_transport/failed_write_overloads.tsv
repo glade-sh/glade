@@ -1,0 +1,5 @@
+api	principal	operation	exception	message	success	idNull	status	fields
+62.0	readOnly	listTrue	System.TypeException	DML operation INSERT not allowed on Probe463__c	NA	NA	NA	NA
+67.0	readOnly	listTrue	System.TypeException	DML operation INSERT not allowed on Probe463__c	NA	NA	NA	NA
+67.0	readOnly	plain	NA	DML operation INSERT not allowed on Probe463__c	false	true	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	empty
+67.0	ungranted	plain	NA	Access to entity 'Probe463__c' denied	false	true	CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY	empty
