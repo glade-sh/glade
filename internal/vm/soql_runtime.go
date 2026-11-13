@@ -1878,13 +1878,17 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	seen := map[string]bool{}
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
-		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portalUserTypeRecord(user) && !standardUserTypeRecord(user) {
+		portal := portalUserTypeRecord(user)
+		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) {
 			continue
 		}
 		seen[string(user.ID)] = true
 		previous := vm.testContext.CurrentUser
 		vm.testContext.CurrentUser = vm.vmValueFromRecord(user)
 		for _, objectName := range objectNames {
+			if !portal && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
+				continue
+			}
 			object := vm.Org.Objects[objectName]
 			ids := make([]string, 0, len(object.Records))
 			for id, record := range object.Records {
@@ -4452,16 +4456,41 @@ func portalUserTypeRecord(user storage.Record) bool {
 	return false
 }
 
-// standardUserTypeRecord reports a stored internal User: UserType Standard, or
-// unset, which Glade treats as Standard (see currentUserInfoField callers).
-func standardUserTypeRecord(user storage.Record) bool {
+// namedUserIsCapturedStandard reports a stored user on the Standard User
+// profile whose UserType is Standard or unset. external_user_case_lead_sharing
+// default/org.tsv:8-9 captured exactly that user, so no other profile or user
+// type qualifies, whatever UserType its profile would resolve to.
+func (vm *VM) namedUserIsCapturedStandard(user storage.Record) bool {
 	for name, value := range user.Fields {
 		if strings.EqualFold(name, "UserType") {
-			userType := strings.TrimSpace(value.String)
-			return userType == "" || strings.EqualFold(userType, "Standard")
+			if userType := strings.TrimSpace(value.String); userType != "" && !strings.EqualFold(userType, "Standard") {
+				return false
+			}
 		}
 	}
-	return true
+	profileID := ""
+	for name, value := range user.Fields {
+		if strings.EqualFold(name, "ProfileId") {
+			profileID = storageValueIDText(value)
+		}
+	}
+	return profileID != "" && vm.currentProfileName(profileID) == "Standard User"
+}
+
+// namedUserIsCapturedGuest reports a stored user on a Guest-type profile,
+// captured for Case and Lead (external_guest_case_lead_access/org.tsv:2-3).
+func (vm *VM) namedUserIsCapturedGuest(user storage.Record) bool {
+	for name, value := range user.Fields {
+		if strings.EqualFold(name, "ProfileId") {
+			return vm.currentProfileHasUserType(storageValueIDText(value), "Guest")
+		}
+	}
+	return false
+}
+
+// capturedStandardNamedObject lists the objects the Standard User rows cover.
+func capturedStandardNamedObject(objectName string) bool {
+	return strings.EqualFold(objectName, "Case") || strings.EqualFold(objectName, "Lead")
 }
 
 // currentUserHasUndeclaredPrivateExternalDefault reports a captured portal user

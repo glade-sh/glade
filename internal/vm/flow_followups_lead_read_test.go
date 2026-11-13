@@ -12,9 +12,9 @@ import (
 // source APIs. No row has a reader who neither owns nor created the Lead, so
 // the read grant is scoped to that creator and queue state. Every other
 // omitted-model Lead read behaves as it did before the follow-up change, except
-// a Standard User in a declared scratch shape: external_user_case_lead_sharing
-// default/org.tsv:8-9 (APIs 62.0 and 67.0) reads and edits a Lead another user
-// owns, the ReadWriteTransfer scratch default.
+// a Standard User in a declared scratch shape reads a Lead another user owns
+// (external_user_case_lead_sharing default/org.tsv:8-9, the ReadWriteTransfer
+// scratch default, APIs 62.0 and 67.0). Writes need the Standard User profile.
 func TestFlowFollowupsLeadReadSharing(t *testing.T) {
 	const (
 		actor      storage.ID = "005000000000002"
@@ -81,8 +81,9 @@ func TestFlowFollowupsLeadReadSharing(t *testing.T) {
 							}
 							if owner != actor {
 								for _, operation := range []string{"update", "upsert", "delete", "undelete"} {
-									// The scratch default edits; deletion and undeletion stay with the owner.
-									writable := scratchDefault && (operation == "update" || operation == "upsert")
+									// The scratch default edit row is a Standard User profile user on a
+									// user-owned Lead; this fixture user has no profile, so no write.
+									writable := false
 									if got := machine.currentUserCanWriteRecord("Lead", lead, string(actor), operation); got != writable {
 										t.Errorf("another owner's %s allowed=%t, want %t", operation, got, writable)
 									}

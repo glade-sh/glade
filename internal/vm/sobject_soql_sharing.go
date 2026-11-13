@@ -498,7 +498,7 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 				case "ReadWrite", "ReadWriteTransfer":
 					return true
 				}
-				if vm.leadHasDeclaredShapeDefaultModel(canonical) {
+				if vm.leadScratchDefaultEdit(canonical, record) {
 					return true
 				}
 			}
@@ -524,4 +524,19 @@ func (vm *VM) leadHasDeclaredShapeDefaultModel(canonical string) bool {
 	// The rows are a Standard User; other user types have no Lead sharing row.
 	return strings.TrimSpace(definition.SharingModel) == "" && storage.StandardObjectShapeDeclared(definition) &&
 		strings.EqualFold(vm.currentUserInfoField("UserType", ""), "Standard")
+}
+
+// leadScratchDefaultEdit is the edit half of the scratch default: the captured
+// HasEditAccess row is a Standard User profile user on a Lead owned by a user
+// (external_user_case_lead_sharing default/org.tsv:8-9, APIs 62.0 and 67.0).
+// Queue-owned Leads and other profiles have no write row.
+func (vm *VM) leadScratchDefaultEdit(canonical string, record storage.Record) bool {
+	if !vm.leadHasDeclaredShapeDefaultModel(canonical) || !strings.HasPrefix(string(record.System.OwnerID), "005") {
+		return false
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	return vm.currentUserProfileName(user) == "Standard User"
 }

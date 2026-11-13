@@ -1,0 +1,9 @@
+capture: editreq
+started: 2026-11-13T01:12:08Z
+finished: 2026-11-13T01:13:11Z
+apis: 62.0 67.0
+routes: istes
+cases: 2
+sf: @salesforce/cli/2.157.8
+cases.tsv sha256: 3e87b155268c18cb
+mode: live

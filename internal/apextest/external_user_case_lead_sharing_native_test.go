@@ -60,9 +60,10 @@ func TestExternalUserCaseLeadSharingNativeConformance(t *testing.T) {
 					}
 					_, got, _ := strings.Cut(run.Suites[0].Cases[0].Problem.Message, "Assertion Failed: ")
 					if variant == "public_read" && tag == "std" {
-						// Native reports the Standard User's Lead edit true although the
-						// deployed Lead model is Read, and a declared Read Case model that
-						// the org did not apply; only the read bits and counts are shared.
+						// This row was observed before sharing recalculated after the Lead
+						// model change (lead_read_model_recalculation/org.tsv:2-5 shows the
+						// later answer: no Lead edit) and the declared Read Case model was
+						// not applied natively. Only the read bits and counts are asserted.
 						editBits := regexp.MustCompile(`\|e=[01]+`)
 						got, want = editBits.ReplaceAllString(got, ""), editBits.ReplaceAllString(want, "")
 					}
