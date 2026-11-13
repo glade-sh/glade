@@ -21,6 +21,9 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 		for _, source := range []string{
 			"System.assertEquals('ok', String.valueOf(String.valueOf(ReceiverProbe.\nvalue())));",
 			"System.Integer.\nvalueOf(1);",
+			"String x; x = ReceiverProbe. value();",
+			"System.debug(ReceiverProbe. value() + '');",
+			"System.debug(ReceiverProbe\n. value());",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue().length();",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue(1);",
 		} {

@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -170,32 +171,24 @@ func TestReceiverSplitNative(t *testing.T) {
 			if row[2] == "anonymous" {
 				result = AnalyzeAnonymous(index, string(body), row[1])
 			}
-			// Non-call member access is a captured boundary, outside this call-only change.
-			if row[0] == "sobject_member_before_dot" {
-				if result.HasErrors() {
-					t.Fatal(result.Diagnostics)
-				}
-				return
-			}
-			if row[3] == "true" {
-				if result.HasErrors() {
-					t.Fatal(result.Diagnostics)
-				}
-				return
-			}
-			matches := 0
-			want := strings.Split(row[4], " | ")[0]
+			var got []string
 			for _, d := range result.Diagnostics {
-				if strings.Contains(d.NativeMessage, want) || strings.Contains(d.Message, want) {
-					if row[2] == "class" && d.Code != "GLADESEMA013" {
-						t.Errorf("named diagnostic code = %s, want GLADESEMA013", d.Code)
+				if d.Severity == "error" {
+					message := d.NativeMessage
+					if message == "" {
+						message = d.Message
 					}
-					matches++
+					got = append(got, message)
 				}
 			}
-			if matches != 1 {
-				t.Fatalf("want one %s diagnostic; got %v", row[4], result.Diagnostics)
+			var want []string
+			if row[3] != "true" {
+				want = strings.Split(row[4], " | ")
 			}
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("native outcome %q; got diagnostics %#v, want %#v", row[4], got, want)
+			}
+
 		})
 	}
 }
