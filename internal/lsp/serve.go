@@ -337,10 +337,16 @@ func (s *server) refreshWorker() {
 		var next []diagnostic.Diagnostic
 		valid := false
 		for attempt := 0; attempt < 2; attempt++ {
+			// The first generation a refresh publishes is the disk base; an
+			// overlay may follow. Only the base is checked against disk.
+			var disk *generation
 			err := s.h.refresh(s.ctx, paths, func(g *generation) {
 				s.pubMu.Lock()
 				s.h.gen.Store(g)
 				s.pubMu.Unlock()
+				if disk == nil {
+					disk = g
+				}
 			})
 			after = s.h.gen.Load()
 			if err != nil || after == before {
@@ -353,7 +359,7 @@ func (s *server) refreshWorker() {
 			case <-s.ctx.Done():
 				return
 			}
-			if s.h.validateGeneration == nil || s.h.validateGeneration(after.index) {
+			if s.h.validateGeneration == nil || disk == nil || s.h.validateGeneration(disk.index) {
 				valid = true
 				break
 			}

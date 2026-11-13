@@ -9,6 +9,9 @@ import (
 
 type generation struct {
 	index              typesys.Index
+	artifacts          *typesys.BuildArtifacts
+	overlay            *typesys.SourceOverlay
+	baseSeq            uint64
 	seq                uint64
 	analyzer           func(typesys.Index) sema.Result
 	analysisOnce       sync.Once
