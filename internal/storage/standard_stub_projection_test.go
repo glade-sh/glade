@@ -3,6 +3,7 @@ package storage
 import (
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -175,4 +176,27 @@ func TestStandardStubEnrichmentAvoidsFullDecode(t *testing.T) {
 		t.Fatalf("%d stub enrichments caused %d full decodes", len(names), got)
 	}
 	t.Logf("%d stub enrichments avoided full decode", len(names))
+}
+
+func TestStandardStubEnrichmentConcurrentLookups(t *testing.T) {
+	standardDescribeCatalogV2RawProductionCache.release()
+	var wg sync.WaitGroup
+	for i := 0; i < 12; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < 10; j++ {
+				if i%2 == 0 {
+					if _, ok, err := lookupStandardDescribeFieldsV2("AccountBrand"); err != nil || !ok {
+						t.Errorf("fields lookup: %v", err)
+					}
+				} else {
+					if _, ok, err := lookupStandardDescribeCatalogV2("AccountBrand"); err != nil || !ok {
+						t.Errorf("full lookup: %v", err)
+					}
+				}
+			}
+		}(i)
+	}
+	wg.Wait()
 }
