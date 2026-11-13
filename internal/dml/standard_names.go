@@ -30,7 +30,8 @@ func standardSurnameLengthsMayMatch(a, b string) bool {
 	// The extra corroborated comparisons have native positives at lengths
 	// 2 through 8. The inherited last-name item handles all other lengths.
 	if len(a) != len(b) {
-		return min(len(a), len(b)) == 4 && max(len(a), len(b)) == 5
+		short, long := min(len(a), len(b)), max(len(a), len(b))
+		return (short == 3 || short == 4) && long == short+1
 	}
 	return len(a) >= 2 && len(a) <= 8
 }
@@ -55,6 +56,11 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 		}
 		score, ok := keyboardSimilarity(a, b)
 		return ok && score >= 90, averageWith100(score)
+	}
+	// LocalEditsBehavior finds a five-letter surname when only its final nasal
+	// consonant changes between the neighboring m and n keys, in either order.
+	if len(a) == 5 && a[:4] == b[:4] && (a[4] == 'm' && b[4] == 'n' || a[4] == 'n' && b[4] == 'm') {
+		return true, 100
 	}
 	// All new two-character swaps are terminal. The single three-character
 	// rotation in the native name panel is its five-letter terminal control.
