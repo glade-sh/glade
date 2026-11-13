@@ -278,8 +278,8 @@ func (h *Handler) ApplyPause(pause vm.DebugPause) Event {
 	h.snapshot = Snapshot{
 		Threads: []Thread{{ID: 1, Name: "main"}},
 		Frames:  stackFramesFromPause(pause),
-		Vars:    pause.Vars,
-		Statics: pause.Statics,
+		Vars:    isolateSnapshotValues(pause.Vars),
+		Statics: isolateSnapshotValues(pause.Statics),
 	}
 	h.varRefs = make(map[int]vm.Value)
 	h.varRefKeys = make(map[string]int)
