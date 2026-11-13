@@ -73,7 +73,7 @@ func encodeSemanticTokens(tokens []semanticToken) []int {
 	return data
 }
 
-func (h *Handler) definitionForName(name string) (Location, bool) {
+func (h *requestHandler) definitionForName(name string) (Location, bool) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return Location{}, false
@@ -106,7 +106,7 @@ func (h *Handler) definitionForName(name string) (Location, bool) {
 	return Location{}, false
 }
 
-func (h *Handler) referenceLocations(name string) []Location {
+func (h *requestHandler) referenceLocations(name string) []Location {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil
@@ -133,7 +133,7 @@ func (h *Handler) referenceLocations(name string) []Location {
 	return locations
 }
 
-func (h *Handler) sourceFiles() []string {
+func (h *requestHandler) sourceFiles() []string {
 	seen := make(map[string]bool)
 	var files []string
 	add := func(file string) {
@@ -175,7 +175,7 @@ func (h *Handler) documentText(path string) (string, bool) {
 	return string(data), true
 }
 
-func (h *Handler) wordAt(uri DocumentURI, position Position) string {
+func (h *requestHandler) wordAt(uri DocumentURI, position Position) string {
 	text, ok := h.documentText(pathFromURI(uri))
 	if !ok {
 		return h.symbolNameAt(uri, position)
@@ -191,7 +191,7 @@ func (h *Handler) wordAt(uri DocumentURI, position Position) string {
 	return text[start:end]
 }
 
-func (h *Handler) wordRangeAt(uri DocumentURI, position Position) (Range, bool) {
+func (h *requestHandler) wordRangeAt(uri DocumentURI, position Position) (Range, bool) {
 	text, ok := h.documentText(pathFromURI(uri))
 	if !ok {
 		name := h.symbolNameAt(uri, position)
@@ -214,7 +214,7 @@ func (h *Handler) wordRangeAt(uri DocumentURI, position Position) (Range, bool) 
 	return rangeForOffsets(text, start, end), true
 }
 
-func (h *Handler) symbolNameAt(uri DocumentURI, position Position) string {
+func (h *requestHandler) symbolNameAt(uri DocumentURI, position Position) string {
 	path := pathFromURI(uri)
 	for _, typ := range h.index.Types {
 		if !sameDocument(path, typ.File) && !sameDocument(string(uri), typ.File) {
