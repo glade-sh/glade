@@ -87,6 +87,7 @@ type server struct {
 	watchFirst   time.Time
 	watchTimer   *time.Timer
 	closed       bool // no new background work after drain or shutdown
+	primed       bool // the incremental state prime has started
 }
 
 func (s *server) write(message any) {
@@ -180,9 +181,12 @@ func (s *server) notification(req Request) {
 		if decodeParams(req.Params, &p) != nil {
 			return
 		}
-		s.h.applyOpen(p)
+		doc := s.h.applyOpen(p)
 		s.schedule(p.TextDocument.URI, 0)
 		s.enqueueOverlay()
+		if isApexSourcePath(doc.Path) {
+			s.primeOnce()
+		}
 	case "textDocument/didChange":
 		var p DidChangeTextDocumentParams
 		if decodeParams(req.Params, &p) != nil {
@@ -374,6 +378,18 @@ func (s *server) startWorkerLocked() {
 		s.refreshWG.Add(1)
 		go s.refreshWorker()
 	}
+}
+
+// primeOnce starts the one background prime of the overlay analysis state.
+// It writes nothing, so shutdown does not wait for it.
+func (s *server) primeOnce() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.primed || s.closed || s.ctx.Err() != nil {
+		return
+	}
+	s.primed = true
+	go s.h.primeOverlayState(s.ctx)
 }
 
 // noteChange records an edit and cancels the overlay sync in flight, which
