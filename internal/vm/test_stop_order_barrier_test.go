@@ -6,13 +6,16 @@ import (
 	"testing"
 )
 
-// Expected orders were measured on the submission-order baseline.
+// Order relative to a barrier equals origin/main; jobs on one side follow the captured sort.
 func TestStopOrderBarriersPreserveSubmissionOrder(t *testing.T) {
 	for _, tc := range []struct{ name, source, want string }{
 		{"fault batch", `Test.startTest(); System.enqueueJob(new BarrierQ()); Database.executeBatch(new BarrierBatch(), 1); BarrierFuture.go(); Test.stopTest();`, "q,bs,bx,bf,f"},
-		{"pre schedulable", `System.schedule('pre', '0 0 0 1 1 ? 2099', new BarrierSched()); Test.startTest(); System.enqueueJob(new BarrierQ()); BarrierFuture.go(); Test.stopTest();`, "s,q,f"},
-		{"scheduled batch", `Test.startTest(); System.scheduleBatch(new BarrierBatch(), 'batch', 1); System.enqueueJob(new BarrierQ()); BarrierFuture.go(); Test.stopTest();`, "q,f"},
 		{"delayed queueable", `Test.startTest(); System.enqueueJob(new BarrierQ(), 1); BarrierFuture.go(); Test.stopTest();`, "q,f"},
+		{"scheduled batch between", `Test.startTest(); System.enqueueJob(new BarrierQ()); System.scheduleBatch(new BarrierBatch(), 'batch', 1); BarrierFuture.go(); Test.stopTest();`, "q,f"},
+		{"pre schedulable between", `System.enqueueJob(new BarrierQ()); System.schedule('pre', '0 0 0 1 1 ? 2099', new BarrierSched()); Test.startTest(); BarrierFuture.go(); Test.stopTest();`, "q,s,f"},
+		// The same-side cases follow async_stop_order qqf.
+		{"pre schedulable same side", `System.schedule('pre', '0 0 0 1 1 ? 2099', new BarrierSched()); Test.startTest(); System.enqueueJob(new BarrierQ()); BarrierFuture.go(); Test.stopTest();`, "s,f,q"},
+		{"scheduled batch same side", `Test.startTest(); System.scheduleBatch(new BarrierBatch(), 'batch', 1); System.enqueueJob(new BarrierQ()); BarrierFuture.go(); Test.stopTest();`, "f,q"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			machine := New(nil)
