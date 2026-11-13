@@ -79,7 +79,7 @@ func TestCIRelease2ApexHistoryRetainsValidatedDeferredOutcomes(t *testing.T) {
 			cmd.Env = append(cmd.Env, variable)
 		}
 	}
-	cmd.Env = append(cmd.Env, "CI_APEXTEST_HISTORY_COMPLETE=1", "GITHUB_EVENT_NAME=pull_request")
+	cmd.Env = append(cmd.Env, "CI_APEXTEST_HISTORY_COMPLETE=1", "GITHUB_EVENT_NAME=pull_request", "GITHUB_HEAD_REF=")
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("history refresh failed: %v\n%s", err, out)
 	}

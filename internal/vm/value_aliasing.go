@@ -2616,7 +2616,7 @@ func (vm *VM) collectStaticValueRefs() (map[uint64]bool, map[uint64]staticFieldR
 	fields := make(map[uint64]staticFieldRefSet)
 	seen := make(map[uint64]bool)
 	seenLocations := make(map[staticFieldRef]bool)
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		for fieldName, field := range class.StaticFields {
 			location := canonicalStaticFieldLocationForClass(class, className, fieldName)
 			if seenLocations[location] {
@@ -4495,7 +4495,7 @@ func (vm *VM) staticFieldValueByRef(ref uint64) (Value, bool) {
 	return found, foundOK
 }
 func (vm *VM) scanStaticFieldValueByRef(ref uint64) (Value, bool) {
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesNoLazy() {
 		for _, field := range class.StaticFields {
 			if field.Value.Ref == ref {
 				return field.Value, true

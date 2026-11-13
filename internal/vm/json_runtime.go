@@ -4621,7 +4621,7 @@ func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
 	if !vm.isSObjectLikeType(typeName) {
 		return false
 	}
-	if _, ok := vm.classEntry(typeName); ok {
+	if _, ok := vm.classEntryRaw(typeName); ok {
 		return false
 	}
 	if vm.Org == nil {

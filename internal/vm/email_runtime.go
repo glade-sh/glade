@@ -1907,7 +1907,7 @@ func (vm *VM) visualforceEmailContentValue(key string) string {
 	if key == "" {
 		return ""
 	}
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesRaw() {
 		if !strings.EqualFold(className, "EmailContent") && !strings.EqualFold(class.Name, "EmailContent") && !hasSuffixFold(class.Name, ".emailcontent") {
 			continue
 		}

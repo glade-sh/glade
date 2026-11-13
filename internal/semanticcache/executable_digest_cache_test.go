@@ -3,6 +3,7 @@ package semanticcache
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -243,5 +244,30 @@ func TestExecutableDigestRefusesSharedCacheDirectory(t *testing.T) {
 	}
 	if entries, _ := os.ReadDir(cacheDir); len(entries) != 0 {
 		t.Fatalf("entries written into a world-writable directory: %d", len(entries))
+	}
+}
+
+func TestExecutableDigestCacheDirIsEmptyInTests(t *testing.T) {
+	if dir := executableDigestCacheDir(); dir != "" {
+		t.Fatalf("test binary would use the user cache %q", dir)
+	}
+}
+
+func TestExecutableDigestPrunesPastFirstHundreds(t *testing.T) {
+	requireStamps(t)
+	cacheDir := t.TempDir()
+	old := time.Now().Add(-90 * 24 * time.Hour)
+	for i := range 1500 {
+		stale := filepath.Join(cacheDir, fmt.Sprintf("stale-%04d", i))
+		if err := os.WriteFile(stale, []byte(sha("x")), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(stale, old, old); err != nil {
+			t.Fatal(err)
+		}
+	}
+	digestOf(t, writeExe(t, "executable bytes"), cacheDir, inAnHour)
+	if entries, _ := os.ReadDir(cacheDir); len(entries) != 1 {
+		t.Fatalf("want only the fresh entry, have %d", len(entries))
 	}
 }

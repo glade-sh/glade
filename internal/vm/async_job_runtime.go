@@ -1161,7 +1161,7 @@ func (vm *VM) asyncJobDue(job AsyncJob) bool {
 }
 func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		fields := make(map[string]Value, len(class.StaticFields))
 		for fieldName, field := range class.StaticFields {
 			fields[fieldName] = field.Value
@@ -1172,7 +1172,7 @@ func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 }
 func (vm *VM) testAsyncStaticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if !classHasStaticCollectionField(class) {
 			continue
 		}

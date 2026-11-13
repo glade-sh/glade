@@ -127,7 +127,7 @@ func debugFileMatches(breakpointFile, statementFile string) bool {
 
 func (vm *VM) debugStaticValues() map[string]Value {
 	out := make(map[string]Value)
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		fields := orderedFieldNames(class.StaticFields, class.StaticFieldOrder)
 		if len(fields) == 0 {
 			continue

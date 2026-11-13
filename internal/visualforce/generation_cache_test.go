@@ -127,13 +127,14 @@ func TestControllerGateNeverServesStaleGeneration(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			edited := []byte(rejectedProbeController)
-			// Pad to the original size so only the content differs.
+			// A short rejected controller (unknown local type), padded to the
+			// accepted body's size so only the content differs.
+			edited := []byte("public with sharing class ProbeController {\n  public void run() { Missing__Type x; }\n}\n")
 			for len(edited) < int(info.Size()) {
 				edited = append(edited, ' ')
 			}
 			if len(edited) != int(info.Size()) {
-				t.Skip("rejected body is longer than the accepted one")
+				t.Fatalf("rejected body is %d bytes, longer than the accepted %d", len(edited), info.Size())
 			}
 			if err := os.WriteFile(path, edited, 0o644); err != nil {
 				t.Fatal(err)

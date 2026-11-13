@@ -775,6 +775,7 @@ func runDurationHistoryRoute(t *testing.T, route, entry string, fixture apexHist
 }
 
 func TestCIDurationHistoryTimingEventRoutes(t *testing.T) {
+	t.Setenv("GITHUB_HEAD_REF", "")
 	for _, route := range []string{"sema", "apex"} {
 		for _, entry := range []string{"cli", "sourced"} {
 			for _, tc := range []struct {

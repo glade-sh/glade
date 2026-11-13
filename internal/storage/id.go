@@ -284,6 +284,9 @@ type keyPrefixSnapshotEntry struct {
 // markKeyPrefixesValidated records every object's prefix. The snapshot is a
 // fresh slice on every mark because org clones share it by value copy.
 func markKeyPrefixesValidated(org *OrgState) {
+	if org.StandardSpread != "" {
+		org.spreadPrefixesPlanned = true
+	}
 	org.keyPrefixesValidated = true
 	org.keyPrefixesValidatedObjectCount = len(org.Objects)
 	org.keyPrefixesValidatedGeneration = org.RuntimeGenerationID()

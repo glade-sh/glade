@@ -859,7 +859,7 @@ func (vm *VM) lookupNamespaceStaticField(namespace, fieldName string) (Field, st
 	var best Field
 	var owner string
 	bestScore := -1
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesNoLazy() {
 		if !strings.EqualFold(class.Namespace, namespace) {
 			continue
 		}

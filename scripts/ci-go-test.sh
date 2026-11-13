@@ -1771,6 +1771,8 @@ try:
     # observed durations for scheduling without failing a PR on runner noise.
     # The advisory is a ::warning:: annotation. Apex and sema enforce balance
     # at every shard count outside PRs when duration history drove the plan.
+    # Train and release PRs (head ref train/ or release/) enforce it too, so
+    # an unbalanced plan fails before the push to main.
     # LWC's indivisible long tests can exceed 1.5x its eight-shard median
     # even with an optimal plan;
     # rejecting that evidence would prevent the next run from balancing it.
@@ -1782,7 +1784,9 @@ try:
         for index, elapsed in enumerate(shard_elapsed):
             if elapsed > 1.5 * median:
                 message = f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x {SHARD_COUNT}-shard median {median:.6f}s"
-                if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+                head_ref = os.environ.get("GITHUB_HEAD_REF", "")
+                enforced_pr = head_ref.startswith("train/") or head_ref.startswith("release/")
+                if os.environ.get("GITHUB_EVENT_NAME") == "pull_request" and not enforced_pr:
                     print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}", file=sys.stderr)
                 elif plan["historyUsed"] is not True:
                     print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}; plan used the deterministic fallback", file=sys.stderr)

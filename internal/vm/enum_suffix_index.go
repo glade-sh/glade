@@ -31,7 +31,7 @@ func (vm *VM) enumSuffixClassCandidates(suffix string) []string {
 func (vm *VM) buildEnumSuffixClassIndex() *enumSuffixClassIndex {
 	index := &enumSuffixClassIndex{generation: vm.classLookupGeneration, classCount: len(vm.Classes), bySuffix: make(map[string][]string)}
 	keys := make([]string, 0, len(vm.Classes))
-	for key, class := range vm.ClassEntries() {
+	for key, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue
 		}
