@@ -24,6 +24,7 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 			"String x; x = ReceiverProbe. value();",
 			"String x = ReceiverProbe. value();",
 			"System.debug(ReceiverProbe. value() + '');",
+			"System.debug(ReceiverProbe.\nvalue() + '');",
 			"System.debug(ReceiverProbe. value() == 'ok');",
 			"System.debug(ReceiverProbe\n. value());",
 			"ReceiverProbe obj = new ReceiverProbe();\nobj.\ninstanceValue().length();",
@@ -116,7 +117,7 @@ func TestReceiverSplitUncapturedContexts(t *testing.T) {
 	root := t.TempDir()
 	probe, caller := filepath.Join(root, "ReceiverProbe.cls"), filepath.Join(root, "Caller.cls")
 	writeSemaFile(t, probe, "public class ReceiverProbe { public static String value() { return 'ok'; } }")
-	writeSemaFile(t, caller, "public class Caller { public static String run() { return ReceiverProbe\n.value(); } }")
+	writeSemaFile(t, caller, "public class Caller { public static String run() { return ReceiverProbe\n.value(); } public static void other() { ReceiverProbe. value(); } }")
 	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "67.0", ApexFiles: []string{probe, caller}}, schema.Schema{})
 	data, err := json.Marshal(Analyze(index).Diagnostics)
 	if err != nil {
