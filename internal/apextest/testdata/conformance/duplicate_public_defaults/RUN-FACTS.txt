@@ -2,7 +2,7 @@ capture: duplicate-public-default
 started: 2026-11-13T14:42:25Z
 finished: 2026-11-13T14:43:01Z
 apis: 62.0 67.0
-routes: istest 
+routes: istest
 cases: 2
 sf: @salesforce/cli/2.157.8
 hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
