@@ -17,7 +17,7 @@ func applyProjectApexClassGrants(org *storage.OrgState, parentID storage.ID, ent
 	storage.EnsureStandardObject(org, "SetupEntityAccess")
 	state := org.Objects["SetupEntityAccess"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	for _, entry := range entries {
 		name := strings.TrimSpace(entry.ApexClass)
@@ -62,9 +62,9 @@ func applyProjectApexClassGrants(org *storage.OrgState, parentID storage.ID, ent
 		if err != nil {
 			continue
 		}
-		state.Records[id] = storage.Record{ID: id, Object: "SetupEntityAccess", Fields: map[string]storage.Value{
+		state.PutRecord(id, storage.Record{ID: id, Object: "SetupEntityAccess", Fields: map[string]storage.Value{
 			"ParentId": storage.IDValue(parentID), "SetupEntityId": storage.IDValue(targetID), "SetupEntityType": storage.StringValue("ApexClass"),
-		}}
+		}})
 	}
 	org.Objects["SetupEntityAccess"] = state
 }

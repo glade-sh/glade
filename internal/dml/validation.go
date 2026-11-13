@@ -34,7 +34,7 @@ func (e *Engine) object(name string) (storage.ObjectState, string, error) {
 		e.Org.ClearRuntimeSchemaStamp()
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	return object, objectName, nil
 }

@@ -1470,7 +1470,7 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace, 
 			}
 		}
 		id := storage.ID("066" + leftPad(i+1, 12))
-		object.Records[id] = storage.Record{ID: id, Object: "ApexPage", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "ApexPage", Fields: map[string]storage.Value{
 			"Id":                          storage.IDValue(id),
 			"Name":                        storage.StringValue(name),
 			"NamespacePrefix":             storage.StringValue(namespace),
@@ -1482,7 +1482,7 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace, 
 			"IsConfirmationTokenRequired": storage.BooleanValue(meta.ConfirmationTokenRequired != nil && *meta.ConfirmationTokenRequired),
 			"Markup":                      storage.StringValue(markup),
 			"MasterLabel":                 storage.StringValue(firstNonEmpty(meta.Label, name)),
-		}}
+		}})
 	}
 	org.Objects["ApexPage"] = object
 	return nil
@@ -1543,7 +1543,7 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 	}
 	for i, resource := range org.Metadata.StaticResources {
 		id := storage.ID("081" + leftPad(i+1, 12))
-		object.Records[id] = storage.Record{ID: id, Object: "StaticResource", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "StaticResource", Fields: map[string]storage.Value{
 			"Name":            storage.StringValue(resource.Name),
 			"Body":            storage.BlobValue(resource.Content),
 			"BodyLength":      storage.IntegerValue(int64(len(resource.Content))),
@@ -1552,7 +1552,7 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 			"NamespacePrefix": staticResourceNamespaceValue(resource.NamespacePrefix),
 			"SystemModStamp":  storage.DateTimeValue("2026-01-01T00:00:00Z"),
 			"URL":             storage.StringValue(resourceURL(resource)),
-		}}
+		}})
 	}
 	org.Objects["StaticResource"] = object
 }
@@ -1574,7 +1574,7 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 			folder = storage.IDValue(folderID)
 		}
 		id := storage.ID("00X" + leftPad(i+100001, 12))
-		object.Records[id] = storage.Record{ID: id, Object: "EmailTemplate", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "EmailTemplate", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"Name":            storage.StringValue(firstNonEmpty(template.Name, template.DeveloperName)),
 			"DeveloperName":   storage.StringValue(firstNonEmpty(template.DeveloperName, developerNameFromFullName(template.Name))),
@@ -1589,7 +1589,7 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 			"TemplateStyle":   storage.StringValue(template.TemplateStyle),
 			"FolderId":        folder,
 			"IsActive":        storage.BooleanValue(template.Active),
-		}}
+		}})
 	}
 	org.Objects["EmailTemplate"] = object
 }
@@ -1616,7 +1616,7 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 		object.Definition.KeyPrefix = "00l"
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	ensureFolderFields(&object.Definition)
 
@@ -1645,7 +1645,7 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 				org.Metadata.ReportFolderShares = append(org.Metadata.ReportFolderShares, storage.ProjectReportFolderShare{FolderID: id, AccessLevel: strings.TrimSpace(share.AccessLevel), SharedTo: strings.TrimSpace(share.SharedTo), SharedToType: strings.TrimSpace(share.SharedToType)})
 			}
 		}
-		object.Records[id] = storage.Record{ID: id, Object: "Folder", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "Folder", Fields: map[string]storage.Value{
 			"Id":                 storage.IDValue(id),
 			"Name":               storage.StringValue(name),
 			"DeveloperName":      storage.StringValue(developerName),
@@ -1653,7 +1653,7 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 			"NamespacePrefix":    namespaceValue,
 			"AccessType":         storage.StringValue(strings.TrimSpace(meta.AccessType)),
 			"PublicFolderAccess": storage.StringValue(strings.TrimSpace(meta.PublicFolderAccess)),
-		}}
+		}})
 	}
 	org.Objects["Folder"] = object
 	return nil
@@ -1729,7 +1729,7 @@ func loadFolderDocuments(org *storage.OrgState, folderPath, namespace string) er
 		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
 			return record.Fields["FolderId"].ID == folderID && strings.EqualFold(record.Fields["DeveloperName"].String, developerName)
 		})
-		object.Records[id] = storage.Record{ID: id, Object: "Document", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "Document", Fields: map[string]storage.Value{
 			"Id":                storage.IDValue(id),
 			"Name":              storage.StringValue(documentName),
 			"DeveloperName":     storage.StringValue(developerName),
@@ -1740,7 +1740,7 @@ func loadFolderDocuments(org *storage.OrgState, folderPath, namespace string) er
 			"IsPublic":          storage.BooleanValue(meta.Public != nil && *meta.Public),
 			"NamespacePrefix":   nullableNamespace(namespace),
 			"Type":              storage.StringValue(strings.TrimPrefix(filepath.Ext(fileName), ".")),
-		}}
+		}})
 	}
 	org.Objects["Document"] = object
 	return nil
@@ -1801,14 +1801,14 @@ func loadFolderReports(org *storage.OrgState, folderPath, namespace string) erro
 		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
 			return strings.EqualFold(record.Fields["DeveloperName"].String, developerName) && strings.EqualFold(record.Fields["NamespacePrefix"].String, strings.TrimSpace(namespace))
 		})
-		object.Records[id] = storage.Record{ID: id, Object: "Report", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "Report", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"Name":            storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Name), developerName)),
 			"DeveloperName":   storage.StringValue(developerName),
 			"FolderName":      storage.StringValue(folderLabel),
 			"Format":          storage.StringValue(strings.TrimSpace(meta.Format)),
 			"NamespacePrefix": nullableNamespace(namespace),
-		}}
+		}})
 	}
 	org.Objects["Report"] = object
 	return nil
@@ -1853,7 +1853,7 @@ func loadFolderDashboards(org *storage.OrgState, folderPath, namespace string) e
 		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
 			return strings.EqualFold(record.Fields["DeveloperName"].String, developerName) && strings.EqualFold(record.Fields["NamespacePrefix"].String, strings.TrimSpace(namespace))
 		})
-		object.Records[id] = storage.Record{ID: id, Object: "Dashboard", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "Dashboard", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"DeveloperName":   storage.StringValue(developerName),
 			"Title":           storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Title), developerName)),
@@ -1861,7 +1861,7 @@ func loadFolderDashboards(org *storage.OrgState, folderPath, namespace string) e
 			"FolderName":      storage.StringValue(folderLabel),
 			"Type":            storage.StringValue(strings.TrimSpace(meta.Type)),
 			"NamespacePrefix": nullableNamespace(namespace),
-		}}
+		}})
 	}
 	org.Objects["Dashboard"] = object
 	return nil

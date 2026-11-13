@@ -107,12 +107,12 @@ func (e *Engine) insertPortalSetupRecord(objectName string, fields map[string]st
 	storage.EnsureMutableObjectRecords(e.Org, objectName)
 	state := e.Org.Objects[objectName]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordInsert(objectName, id)
 	}
-	state.Records[id] = storage.Record{ID: id, Object: objectName, Fields: fields}
+	state.PutRecord(id, storage.Record{ID: id, Object: objectName, Fields: fields})
 	e.Org.Objects[objectName] = state
 	e.RecordCreations.Record(id)
 	return id, true

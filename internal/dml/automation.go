@@ -112,7 +112,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) (bo
 	record.System.LastModifiedDate = stamp
 	record.System.SystemModstamp = stamp
 	record.System.LastModifiedByID = e.systemUserID()
-	object.Records[id] = record
+	object.PutRecord(id, record)
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, previous)
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
@@ -660,7 +660,7 @@ func (e *Engine) storeFlowFieldUpdates(objectName string, previous, record stora
 	record.System.LastModifiedDate = stamp
 	record.System.SystemModstamp = stamp
 	record.System.LastModifiedByID = e.systemUserID()
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, previous)
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
@@ -3345,7 +3345,7 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 	}
 	target := e.Org.Objects[targetName]
 	if target.Records == nil {
-		target.Records = make(map[storage.ID]storage.Record)
+		target.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	record := storage.Record{
 		Object:        targetName,
@@ -4756,7 +4756,7 @@ func (e *Engine) pauseFlowInterview(flowName string, step storage.FlowStep, fram
 	storage.EnsureMutableObjectRecords(e.Org, "FlowInterview")
 	object := e.Org.Objects["FlowInterview"]
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	id, err := e.IDs.Next("FlowInterview")
 	if err != nil {
@@ -4771,7 +4771,7 @@ func (e *Engine) pauseFlowInterview(flowName string, step storage.FlowStep, fram
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordInsert("FlowInterview", id)
 	}
-	object.Records[id] = record
+	object.PutRecord(id, record)
 	e.Org.Objects["FlowInterview"] = object
 	return nil
 }

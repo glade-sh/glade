@@ -132,7 +132,7 @@ func (e *Engine) reconcilePrivateOwnerShares(objectName string, parentID storage
 	storage.EnsureMutableObjectRecords(e.Org, shareName)
 	share = e.Org.Objects[shareName]
 	if share.Records == nil {
-		share.Records = make(map[storage.ID]storage.Record)
+		share.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	for _, change := range changes {
 		if e.IsolationJournal != nil {
@@ -143,9 +143,9 @@ func (e *Engine) reconcilePrivateOwnerShares(objectName string, parentID storage
 			}
 		}
 		if change.remove {
-			delete(share.Records, change.id)
+			share.DeleteRecord(change.id)
 		} else {
-			share.Records[change.id] = change.next
+			share.PutRecord(change.id, change.next)
 		}
 	}
 	share.Indexes = nil

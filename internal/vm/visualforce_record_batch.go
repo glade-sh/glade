@@ -124,10 +124,10 @@ func visualforceSetCandidateOrg(org *storage.OrgState, objectName string, object
 		queryOrg.Objects[name] = state
 	}
 	bounded := object
-	bounded.Records = make(map[storage.ID]storage.Record, len(ids))
+	bounded.SetRecords(make(map[storage.ID]storage.Record, len(ids)))
 	bounded.Indexes = nil
 	for _, id := range ids {
-		bounded.Records[id] = object.Records[id]
+		bounded.PutRecord(id, object.Records[id])
 	}
 	queryOrg.Objects[objectName] = bounded
 	return queryOrg

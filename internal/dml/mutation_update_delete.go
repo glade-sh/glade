@@ -187,7 +187,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 		e.IsolationJournal.RecordUpdate(objectName, storedID, oldRecord)
 	}
 	existing.ClearDMLNameUnassigned()
-	object.Records[storedID] = existing
+	object.PutRecord(storedID, existing)
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, oldRecord)
 	e.addUniqueIndexRecord(objectName, object.Definition, existing)
@@ -355,7 +355,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	stored.System.LastModifiedDate = stamp
 	stored.System.SystemModstamp = stamp
 	stored.System.LastModifiedByID = e.systemUserID()
-	object.Records[storedID] = stored
+	object.PutRecord(storedID, stored)
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, stored)
 	e.recalculateSummaryFieldsForChildren(objectName, stored)

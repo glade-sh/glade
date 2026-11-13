@@ -20,7 +20,7 @@ func applyScratchCountryOrg(org *storage.OrgState, root string) {
 		record.Fields["Country"] = storage.StringValue(country)
 		record.Fields["DefaultLocaleSidKey"] = storage.StringValue(defaults.Locale)
 		record.Fields["TimeZoneSidKey"] = storage.StringValue(defaults.TimeZone)
-		organizations.Records[id] = record
+		organizations.PutRecord(id, record)
 	}
 	org.Objects["Organization"] = organizations
 	users := org.Objects["User"]
@@ -28,7 +28,7 @@ func applyScratchCountryOrg(org *storage.OrgState, root string) {
 		if record, found := users.Records[id]; found {
 			record = record.Clone()
 			record.Fields["Country"] = storage.StringValue(country)
-			users.Records[id] = record
+			users.PutRecord(id, record)
 		}
 	}
 	org.Objects["User"] = users
@@ -63,7 +63,7 @@ func ApplyScratchCountryAnonymousOrg(org *storage.OrgState, p project.Project) {
 				record.Fields[field] = storage.StringValue(value)
 			}
 		}
-		users.Records[id] = record
+		users.PutRecord(id, record)
 		org.Objects["User"] = users
 		return
 	}

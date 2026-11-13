@@ -737,7 +737,7 @@ func (vm *VM) applyCustomMetadataDeployment(item Value) error {
 	if mutable, _ := storage.EnsureMutableObjectRecords(vm.Org, objectName); mutable != nil {
 		state = *mutable
 	}
-	state.Records[recordID] = record
+	state.PutRecord(recordID, record)
 	vm.Org.Objects[definition.APIName] = state
 	vm.clearMetadataCaches()
 	return nil
@@ -779,7 +779,7 @@ func (vm *VM) applyCustomObjectDeployment(item Value) error {
 	}
 	storage.EnsureStandardObjectFields(&state.Definition)
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	vm.Org.Objects[objectName] = state
 	vm.clearMetadataCaches()
@@ -851,7 +851,7 @@ func (vm *VM) metadataCustomMetadataState(objectName string) storage.ObjectState
 	}
 	storage.EnsureStandardObjectFields(&state.Definition)
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	vm.Org.Objects[objectName] = state
 	return state

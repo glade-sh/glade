@@ -173,7 +173,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 			org.Objects[objectName] = object
 		}
 		if object.Records == nil {
-			object.Records = make(map[ID]Record)
+			object.SetRecords(make(map[ID]Record))
 			org.Objects[objectName] = object
 		}
 		assignedIDs[objectIndex] = make([]ID, len(objectFixture.Records))
@@ -235,7 +235,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 				delete(record.ExplicitNulls, fieldName)
 			}
 			// Fields and explicit nulls are already owned by this record.
-			object.Records[record.ID] = record
+			object.PutRecord(record.ID, record)
 		}
 		org.Objects[objectName] = object
 	}
@@ -1705,7 +1705,7 @@ func nextUnusedRecordTypeID(used map[ID]bool, start uint64) (ID, uint64) {
 
 func ResetData(org *OrgState) {
 	for name, object := range org.Objects {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		org.Objects[name] = object
 	}
 	org.IDSequences = make(map[string]uint64)
@@ -1718,13 +1718,13 @@ func ResetNonPlatformData(org *OrgState) {
 			continue
 		}
 		previous := object.Records
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		if name == "Group" {
 			// Organization groups are setup rows; regular and role groups are data.
 			for id, record := range previous {
 				switch record.Fields["Type"].String {
 				case "Organization", "AllCustomerPortal", "PRMOrganization":
-					object.Records[id] = record.Clone()
+					object.PutRecord(id, record.Clone())
 				}
 			}
 		}
@@ -1741,7 +1741,7 @@ func ResetPlatformData(org *OrgState) {
 		if !IsPlatformObject(name) {
 			continue
 		}
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 		org.Objects[name] = object
 		delete(org.IDSequences, name)
 	}
@@ -1851,7 +1851,7 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 		}
 	}
 	if object.Records == nil {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 	}
 	org.Objects[name] = object
 }
@@ -1890,7 +1890,7 @@ func existingAutomatedProcessUserID(org OrgState) ID {
 func putSeedRecord(org *OrgState, objectName string, record Record) {
 	object := org.Objects[objectName]
 	if object.Records == nil {
-		object.Records = make(map[ID]Record)
+		object.SetRecords(make(map[ID]Record))
 	}
 	if existing, exists := object.Records[record.ID]; exists {
 		if existing.Fields == nil {
@@ -1902,13 +1902,13 @@ func putSeedRecord(org *OrgState, objectName string, record Record) {
 			}
 		}
 		stampSeedSystemFields(&existing)
-		object.Records[record.ID] = existing
+		object.PutRecord(record.ID, existing)
 		org.Objects[objectName] = object
 		return
 	}
 	seeded := record.Clone()
 	stampSeedSystemFields(&seeded)
-	object.Records[record.ID] = seeded
+	object.PutRecord(record.ID, seeded)
 	org.Objects[objectName] = object
 }
 

@@ -228,9 +228,9 @@ func (vm *VM) ensureConnectAPIChatterParent(parentID string) {
 		return
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
-	object.Records[storage.ID(parentID)] = storage.Record{Object: objectName, ID: storage.ID(parentID)}
+	object.PutRecord(storage.ID(parentID), storage.Record{Object: objectName, ID: storage.ID(parentID)})
 	vm.Org.Objects[objectName] = object
 }
 

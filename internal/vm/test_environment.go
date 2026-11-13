@@ -57,7 +57,7 @@ func (vm *VM) ConfigureTestEnvironment(settings config.TestConfig) error {
 		}
 	}
 	users := vm.Org.Objects["User"]
-	users.Records[record.ID] = record
+	users.PutRecord(record.ID, record)
 	vm.Org.Objects["User"] = users
 	return nil
 }
