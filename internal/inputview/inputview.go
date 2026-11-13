@@ -319,21 +319,22 @@ func (v *View) Recheck() error {
 		sort.Strings(kinds)
 		for _, k := range kinds {
 			var o observation
-			var e error
 			switch k {
 			case "file":
-				_, o, e = fileObservation(p)
+				_, o, _ = fileObservation(p)
 			case "dir":
-				_, o, e = dirObservation(p)
+				_, o, _ = dirObservation(p)
 			case "stat":
-				_, o, e = statObservation(p, false)
+				_, o, _ = statObservation(p, false)
 			case "lstat":
-				_, o, e = statObservation(p, true)
+				_, o, _ = statObservation(p, true)
 			case "symlink":
-				_, o, e = symlinkObservation(p)
+				_, o, _ = symlinkObservation(p)
 			}
 			old := pins[p][k]
-			if (e != nil && !errors.Is(e, fs.ErrNotExist)) || o != old {
+			// A pinned error that repeats unchanged is not a change; any other
+			// difference, including a new I/O error, is.
+			if o != old {
 				v.mu.Lock()
 				err := v.change(p, changedWhat(old, o))
 				v.mu.Unlock()
