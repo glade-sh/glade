@@ -358,6 +358,9 @@ except KeyboardInterrupt:
             options = self.capture_plan(root)['apextest-dispatch'][1]['env']
             env = {**os.environ, **options, 'FIXTURES': str(root), 'FLAG': str(root / 'flag'), 'REAL': str(ROOT / 'scripts/ci-go-test.sh'), 'GITHUB_EVENT_NAME': 'pull_request'}
             env.pop('GLADE_DATAWEAVE_APEX_TEST_HOME', None)
+            # Exercise the helper's default history path inside this fixture,
+            # even when the surrounding CI job supplies a shared history path.
+            env.pop('CI_APEXTEST_HISTORY_PATH', None)
             result = subprocess.run(['bash', str(root / 'scripts/apextest-shards.sh'), str(root / 'evidence')], env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual((root / 'flag').read_text(), '1')
