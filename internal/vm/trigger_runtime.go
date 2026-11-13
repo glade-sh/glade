@@ -699,6 +699,8 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
 	callerSource := vm.currentSource
+	callerCallPos := vm.callPos
+	vm.callPos = 0
 	frame := make(map[string]Value)
 	ctx := triggerContext(trigger, records, oldRecords)
 	vm.applyTriggerFormulaSurface(trigger.Object, ctx, records)
@@ -758,6 +760,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.eventBusTriggerContext = callerEventBusContext
 		vm.currentStatement = callerStatement
 		vm.currentSource = callerSource
+		vm.callPos = callerCallPos
 		vm.hasStatement = callerHasStatement
 	}()
 	out, err := vm.executeProgram(trigger.Program, result)

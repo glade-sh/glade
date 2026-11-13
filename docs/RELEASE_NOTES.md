@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Trigger exception lines.** Trigger stacks retain the getter call site when entered through `Database.insert`.
 - **Exception caller lines.** Property getters, setters and field initializers evaluated inside a call preserve the enclosing call-token line in exception stacks.
 
 - **Exception stacks.** Exceptions caught through a helper chain from one-line anonymous Apex now retain the captured anonymous caller frames, including constructed causes.
