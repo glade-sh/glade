@@ -184,6 +184,39 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 				depth--
 			}
 		}
+		// Determine the surrounding argument and the token following this call.
+		previousArgument, level := false, 0
+		for _, token := range tokens[:first] {
+			if token.text == "(" {
+				level++
+			}
+			if token.text == ")" {
+				level--
+			}
+			if token.text == "," && level == depth {
+				previousArgument = true
+			}
+		}
+		nesting, close := 1, last+2
+		for close < len(tokens) && nesting > 0 {
+			if tokens[close].text == "(" {
+				nesting++
+			}
+			if tokens[close].text == ")" {
+				nesting--
+			}
+			close++
+		}
+		if before {
+			// Two-sided trivia is observed in a later call argument only;
+			// compound expressions with before-dot trivia are unobserved.
+			if after && !previousArgument {
+				continue
+			}
+			if close < len(tokens) && tokens[close].text != ")" && tokens[close].text != "," && tokens[close].text != ";" && tokens[close].text != "." {
+				continue
+			}
+		}
 		// The captured declaration, expression and argument contexts have distinct
 		// parser messages. Return and other expression contexts are not captured.
 		stmt := first == 0
@@ -200,35 +233,11 @@ func semaSplitStaticReceiver(typ typesys.TypeSymbol, member typesys.MemberSymbol
 			if (decl || assign) && !lineBreak {
 				continue
 			}
-			if arg {
-				nesting, close := 1, last+2
-				for close < len(tokens) && nesting > 0 {
-					if tokens[close].text == "(" {
-						nesting++
-					}
-					if tokens[close].text == ")" {
-						nesting--
-					}
-					close++
-				}
-				if close < len(tokens) && tokens[close].text != ")" && tokens[close].text != "," {
-					// The only captured compound argument is a later argument
-					// using + and a newline after the receiver dot.
-					previousArgument, level := false, 0
-					for _, token := range tokens[:first] {
-						if token.text == "(" {
-							level++
-						}
-						if token.text == ")" {
-							level--
-						}
-						if token.text == "," && level == depth {
-							previousArgument = true
-						}
-					}
-					if !lineBreak || tokens[close].text != "+" || !previousArgument {
-						continue
-					}
+			if arg && close < len(tokens) && tokens[close].text != ")" && tokens[close].text != "," {
+				// The only captured compound argument is a later argument
+				// using + and a newline after the receiver dot.
+				if !lineBreak || tokens[close].text != "+" || !previousArgument {
+					continue
 				}
 			}
 

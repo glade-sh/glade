@@ -171,12 +171,18 @@ func TestReceiverSplitNative(t *testing.T) {
 			if row[2] == "anonymous" {
 				result = AnalyzeAnonymous(index, string(body), row[1])
 			}
+			if row[3] == "true" && row[4] != "ok" {
+				t.Fatalf("successful native row has unexpected outcome %q", row[4])
+			}
 			var got []string
 			for _, d := range result.Diagnostics {
 				if d.Severity == "error" {
 					message := d.NativeMessage
 					if message == "" {
 						message = d.Message
+					}
+					if row[2] == "class" && message == strings.Split(row[4], " | ")[0] && d.Code != "GLADESEMA013" {
+						t.Errorf("named diagnostic code = %s, want GLADESEMA013", d.Code)
 					}
 					got = append(got, message)
 				}
