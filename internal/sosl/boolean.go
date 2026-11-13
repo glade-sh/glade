@@ -2,6 +2,7 @@ package sosl
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -157,7 +158,7 @@ func (p *searchExpressionParser) primary() (*SearchExpression, error) {
 	}
 	term := SearchTerm{Text: decodeSearchWildcardMarkers(literal), Prefix: prefix, NeedsMatcher: searchNeedsMatcher(literal)}
 	if term.NeedsMatcher && !prefix {
-		term.NameWordGlob = nameWordGlob(literal)
+		term.NameWordGlob = nameWordGlob.MatchString(literal)
 	}
 	if strings.HasPrefix(item, "\"") && strings.HasSuffix(item, "\"") {
 		phrase := item[1 : len(item)-1]
@@ -191,17 +192,6 @@ func searchNeedsMatcher(text string) bool {
 	return false
 }
 
-// Inspect the undecoded token so a literal escaped star beside a wildcard
-// cannot become a second wildcard when the markers are decoded.
-func nameWordGlob(s string) bool {
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		switch {
-		case c >= 'A' && c <= 'Z', c >= 'a' && c <= 'z', c >= '0' && c <= '9':
-		case (c == '*' || c == '?') && i > 0 && i < len(s)-1:
-		default:
-			return false
-		}
-	}
-	return true
-}
+// Match only the interior wildcard forms established for ASCII name words.
+// Check the undecoded token so escaped punctuation stays literal.
+var nameWordGlob = regexp.MustCompile(`^[A-Za-z]+(\*|\?{1,2})[A-Za-z]+$`)

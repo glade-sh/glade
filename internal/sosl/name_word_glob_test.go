@@ -8,7 +8,8 @@ func TestNameWordGlobKeepsEscapeAndQuotedBoundaries(t *testing.T) {
 		glob bool
 	}{
 		{"B?ta", true}, {"B*ta", true}, {"B??ta", true},
-		{"Alpha?", false}, {"?Alpha", false}, {"B?ta*", false},
+		{"B*t?a", false}, {"B???ta", false}, {"B*2a", false},
+		{"B?é", false}, {"B*t*a", false}, {"Alpha?", false}, {"?Alpha", false}, {"B?ta*", false},
 		{`B\*t?a`, false}, {`"B?ta"`, false},
 	} {
 		query, err := Parse("FIND {" + tc.term + "} IN NAME FIELDS RETURNING Contact(Id)")
