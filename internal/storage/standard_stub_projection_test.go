@@ -116,3 +116,31 @@ func TestStandardStubWriteFlagsProjectionMatchesFull(t *testing.T) {
 		}
 	}
 }
+
+func TestStandardStubMetadataProjectionMatchesFull(t *testing.T) {
+	for _, entry := range standardDescribeCatalogV2Index {
+		full, err := decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
+		if err != nil {
+			t.Fatal(err)
+		}
+		narrow, err := decodeStandardDescribeCatalogV2Narrow(standardDescribeCatalogV2Pack, entry)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(narrow.mergeable, full.Mergeable) {
+			t.Fatalf("%s: mergeable projection differs", entry.Name)
+		}
+		for _, configured := range []bool{false, true} {
+			want := ObjectDefinition{APIName: entry.Name}
+			if configured {
+				want.Metadata = map[string]string{"mergeable": "custom"}
+			}
+			got := want.Clone()
+			enrichStandardDescribeMetadata(&want, full)
+			enrichStandardDescribeMetadataFromV2(&got)
+			if !reflect.DeepEqual(got.Metadata, want.Metadata) {
+				t.Fatalf("%s configured=%v: metadata got %v, want %v", entry.Name, configured, got.Metadata, want.Metadata)
+			}
+		}
+	}
+}
