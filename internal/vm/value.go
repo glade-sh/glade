@@ -382,13 +382,8 @@ func (v Value) DirectStringValue() (string, bool) {
 	if v.Kind != ValueObject || len(v.Type) > 4096 {
 		return "", false
 	}
-	raw, ok := v.Fields["value"]
-	if !ok || raw.Kind != ValueString {
-		return "", false
-	}
 	if strings.EqualFold(v.Runtime, "System.Location") || strings.EqualFold(v.Type, "AccessLevel") ||
-		strings.EqualFold(v.Type, "PageReference") || strings.EqualFold(v.Type, "Schema.SObjectType") ||
-		strings.EqualFold(v.Type, "Schema.SObjectField") || (v.projectClass && !isExceptionType(v.Type)) {
+		(v.projectClass && !isExceptionType(v.Type)) {
 		return "", false
 	}
 	if _, ok := stubProxyTypeName(v); ok {
@@ -405,6 +400,31 @@ func (v Value) DirectStringValue() (string, bool) {
 		return "", false
 	}
 	if _, ok := automationDTOString(empty, nil); ok {
+		return "", false
+	}
+	if strings.EqualFold(v.Type, "PageReference") {
+		if url := v.Fields["url"]; url.Kind == ValueString {
+			return url.Text, true
+		}
+		return "", true
+	}
+	if strings.EqualFold(v.Type, "Schema.SObjectType") {
+		if object := v.Fields["object"]; object.Kind == ValueString {
+			return object.Text, true
+		}
+	}
+	if strings.EqualFold(v.Type, "Schema.SObjectField") {
+		object, field := v.Fields["object"], v.Fields["field"]
+		if object.Kind == ValueString && field.Kind == ValueString {
+			return field.Text, true
+		}
+	}
+	raw, ok := v.Fields["value"]
+	if !ok || raw.Kind != ValueString {
+		message := v.Fields["message"]
+		if message.Kind == ValueString {
+			return message.Text, true
+		}
 		return "", false
 	}
 	if strings.EqualFold(v.Type, "Id") {

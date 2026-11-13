@@ -252,7 +252,7 @@ func previewValueDepth(value vm.Value, depth int) string {
 	// A fitting collection can contain more than 64 short values. Allow enough
 	// nodes and metadata for such values while keeping exact rendering bounded.
 	budget, bytes := 256, 4096
-	if previewWithinBudget(value, &budget, &bytes) {
+	if previewWithinBudget(value, &budget, &bytes, true) {
 		return truncatePreview(value.String())
 	}
 	var header string
@@ -305,7 +305,14 @@ func truncatePreview(s string) string {
 	return s + "..."
 }
 
-func previewWithinBudget(v vm.Value, budget, bytes *int) bool {
+func previewWithinBudget(v vm.Value, budget, bytes *int, direct bool) bool {
+	if direct {
+		if text, ok := v.DirectStringValue(); ok {
+			*budget--
+			*bytes -= len(text)
+			return *budget >= 0 && *bytes >= 0
+		}
+	}
 	// Keep the exact renderer away from large input strings, including map keys
 	// and object field names. Its concatenation otherwise copies them repeatedly.
 	switch v.Kind {
@@ -324,28 +331,29 @@ func previewWithinBudget(v vm.Value, budget, bytes *int) bool {
 	switch v.Kind {
 	case vm.ValueList:
 		for _, child := range v.List {
-			if !previewWithinBudget(child, budget, bytes) {
+			if !previewWithinBudget(child, budget, bytes, direct) {
 				return false
 			}
 		}
 	case vm.ValueSet:
 		for _, child := range v.Set {
-			if !previewWithinBudget(child, budget, bytes) {
+			if !previewWithinBudget(child, budget, bytes, direct) {
 				return false
 			}
 		}
 	case vm.ValueMap:
-		for _, key := range v.MapKeys {
-			if !previewWithinBudget(key, budget, bytes) {
-				return false
-			}
-		}
 		for name, child := range v.Map {
-			*bytes -= len(name)
-			if *bytes < 0 {
-				return false
+			if key, ok := v.MapKeys[name]; ok {
+				if !previewWithinBudget(key, budget, bytes, false) {
+					return false
+				}
+			} else {
+				*bytes -= len(name)
+				if *bytes < 0 {
+					return false
+				}
 			}
-			if !previewWithinBudget(child, budget, bytes) {
+			if !previewWithinBudget(child, budget, bytes, false) {
 				return false
 			}
 		}
@@ -355,7 +363,7 @@ func previewWithinBudget(v vm.Value, budget, bytes *int) bool {
 			if *bytes < 0 {
 				return false
 			}
-			if !previewWithinBudget(child, budget, bytes) {
+			if !previewWithinBudget(child, budget, bytes, false) {
 				return false
 			}
 		}
