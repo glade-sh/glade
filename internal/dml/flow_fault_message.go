@@ -24,6 +24,7 @@ var flowFaultCreateCodes = map[string]bool{
 	"REQUIRED_FIELD_MISSING":            true,
 	"FIELD_CUSTOM_VALIDATION_EXCEPTION": true,
 	"DUPLICATE_VALUE":                   true,
+	"DUPLICATES_DETECTED":               true,
 }
 
 func flowCreateFaultText(code, text string) string {
@@ -97,7 +98,7 @@ func (e *Engine) flowCreateTypedFault(err error) error {
 // single-record update has a captured text (native E07 and R07).
 func (e *Engine) flowUpdateError(failure, cause error, ids []storage.ID) error {
 	var rejected dmlError
-	if len(ids) != 1 || !errors.As(cause, &rejected) || rejected.code != "STRING_TOO_LONG" {
+	if len(ids) != 1 || !errors.As(cause, &rejected) || (rejected.code != "STRING_TOO_LONG" && rejected.code != "DUPLICATES_DETECTED") {
 		return &flowElementFault{err: failure}
 	}
 	return &flowElementFault{err: failure, message: flowRecordsFaultText("update", ids, rejected.code, rejected.message), verb: "update", code: rejected.code, text: rejected.message, inTest: e.flowFaultInTest(), current: e.flowFaultCurrentAPI()}
@@ -218,13 +219,14 @@ const flowUnhandledGeneric = "An unhandled fault has occurred while processing t
 // connector. Native R08, R11, R14, R16 and R17 (APIs 62.0 and 67.0, anonymous
 // and deliver routes): the statement fails with the element's own status code
 // and text, except a failed Get Records, which reports the generic fault. A
-// delete or a lookup adds an Error ID outside tests.
+// delete, a lookup or a duplicate-rule rejection (rows in
+// automation_residual_paths) adds an Error ID outside tests.
 func flowUnhandledTriggerError(rule storage.FlowRule, fault *flowElementFault) (error, bool) {
 	if !fault.unhandledCaptured() {
 		return nil, false
 	}
 	errorID := ""
-	if !fault.inTest && (fault.verb == "delete" || fault.verb == "look up") {
+	if !fault.inTest && (fault.verb == "delete" || fault.verb == "look up" || fault.code == "DUPLICATES_DETECTED") {
 		errorID = " Error ID: 0-0 (0)"
 	}
 	if fault.verb == "look up" {
@@ -272,5 +274,8 @@ func (f *flowElementFault) unhandledCaptured() bool {
 	if f.verb == "" {
 		return false
 	}
-	return f.verb != "create" || f.code == "STRING_TOO_LONG"
+	if f.verb == flowApexActionVerb {
+		return true
+	}
+	return f.verb != "create" || f.code == "STRING_TOO_LONG" || f.code == "DUPLICATES_DETECTED"
 }
