@@ -94,15 +94,16 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 // Other keyboard geometries keep the ordinary score.
 func standardTerminalSwapConfidence(letters string, length int, ordinary float64) float64 {
 	a, b := qwertyPosition[rune(letters[0])], qwertyPosition[rune(letters[1])]
-	columns := abs(a[0] - b[0])
-	if (columns != 1 && columns != 4) || abs(a[1]-b[1]) > 1 {
+	rowDelta, colDelta := a[0]-b[0], a[1]-b[1]
+	columns := abs(colDelta)
+	if (columns != 1 && columns != 4) || abs(rowDelta) > 1 {
 		return ordinary
 	}
 	loss := 5 * columns / length
 	twiceRemainder := 2 * (5 * columns % length)
 	// The lower row is offset to the right. A leftward diagonal across
 	// rows is shorter; rightward diagonals and same-row ties round up.
-	if twiceRemainder > length || twiceRemainder == length && (a[0]-b[0])*(a[1]-b[1]) >= 0 {
+	if twiceRemainder > length || twiceRemainder == length && rowDelta*colDelta >= 0 {
 		loss++
 	}
 	return float64(100 - loss)
