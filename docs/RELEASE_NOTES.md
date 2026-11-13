@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
 
 ## v0.3.8
 
