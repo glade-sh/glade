@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -2666,7 +2667,7 @@ func (vm *VM) soslRecordMatchesExpression(objectName string, record storage.Reco
 	}
 	switch expression.Operator {
 	case "TERM":
-		if expression.Term.NeedsMatcher {
+		if expression.Term.NeedsMatcher && !(scope == sosl.SearchScopeName && expression.Term.NameWordGlob) {
 			return false, unsupportedCallError("SOSL wildcard index matching")
 		}
 		return vm.soslRecordMatchesSearchPattern(objectName, record, expression.Term, scope, accessLevel), nil
@@ -2740,7 +2741,7 @@ func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.R
 		if !ok {
 			continue
 		}
-		if soslTextMatchesPattern(storageValueText(value), pattern) {
+		if soslFieldTextMatches(storageValueText(value), pattern, scope) {
 			return true
 		}
 	}
@@ -2786,6 +2787,53 @@ func soslIsPhoneField(fieldName string, field storage.Field) bool {
 	name := strings.ToLower(strings.TrimSpace(fieldName))
 	label := strings.ToLower(strings.TrimSpace(field.Label))
 	return name == "phone" || strings.HasSuffix(name, "phone") || strings.Contains(label, "phone")
+}
+
+// The owned NAME FIELDS captures distinguish interior word fragments, word
+// prefixes, and interior wildcards. Other scopes and phrase/escape matching
+// keep their existing contracts.
+func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchScope) bool {
+	if scope == sosl.SearchScopeName && (term.NameWordGlob || soslASCIIWord(term.Text)) {
+		pattern := strings.ToLower(term.Text)
+		for _, word := range strings.Fields(strings.ToLower(text)) {
+			if term.NameWordGlob {
+				// The parser approved only letters, digits, '*' and '?' here.
+				if matched, _ := path.Match(pattern, word); matched {
+					return true
+				}
+			} else if strings.HasPrefix(word, pattern) {
+				return true
+			}
+		}
+		return false
+	}
+	if scope == sosl.SearchScopePhone && !term.Prefix && term.Text != "" && strings.Trim(term.Text, "0123456789") == "" {
+		// Preserve local exact/substring matching; additionally recognize a
+		// digit suffix across formatting separators in the stored number.
+		digits := strings.Map(func(r rune) rune {
+			if r >= '0' && r <= '9' {
+				return r
+			}
+			return -1
+		}, text)
+		if strings.HasSuffix(digits, term.Text) {
+			return true
+		}
+	}
+	return soslTextMatchesPattern(text, term)
+}
+
+func soslASCIIWord(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i := range len(s) {
+		c := s[i]
+		if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9') {
+			return false
+		}
+	}
+	return true
 }
 
 func soslTextMatchesPattern(text string, pattern sosl.SearchTerm) bool {

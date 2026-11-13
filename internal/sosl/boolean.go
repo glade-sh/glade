@@ -156,6 +156,9 @@ func (p *searchExpressionParser) primary() (*SearchExpression, error) {
 		literal = strings.TrimSuffix(literal, "*")
 	}
 	term := SearchTerm{Text: decodeSearchWildcardMarkers(literal), Prefix: prefix, NeedsMatcher: searchNeedsMatcher(literal)}
+	if term.NeedsMatcher && !prefix {
+		term.NameWordGlob = nameWordGlob(literal)
+	}
 	if strings.HasPrefix(item, "\"") && strings.HasSuffix(item, "\"") {
 		phrase := item[1 : len(item)-1]
 		term = SearchTerm{Text: decodeSearchWildcardMarkers(phrase), NeedsMatcher: searchNeedsMatcher(phrase)}
@@ -186,4 +189,19 @@ func searchNeedsMatcher(text string) bool {
 		}
 	}
 	return false
+}
+
+// Inspect the undecoded token so a literal escaped star beside a wildcard
+// cannot become a second wildcard when the markers are decoded.
+func nameWordGlob(s string) bool {
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c >= 'A' && c <= 'Z', c >= 'a' && c <= 'z', c >= '0' && c <= '9':
+		case (c == '*' || c == '?') && i > 0 && i < len(s)-1:
+		default:
+			return false
+		}
+	}
+	return true
 }

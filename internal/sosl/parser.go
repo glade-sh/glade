@@ -32,6 +32,8 @@ type SearchTerm struct {
 	Text         string
 	Prefix       bool
 	NeedsMatcher bool
+	// NameWordGlob is an unquoted ASCII word with interior, unescaped wildcards.
+	NameWordGlob bool
 }
 
 type SelectExpr struct {
