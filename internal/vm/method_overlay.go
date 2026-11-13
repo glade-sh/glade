@@ -1,6 +1,9 @@
 package vm
 
-import "strings"
+import (
+	"strings"
+	"sync/atomic"
+)
 
 // methodTableOverlay holds methods registered on a clone whose Methods,
 // MethodOverloads and MethodFolded maps are still shared with the source VM.
@@ -13,28 +16,51 @@ type methodTableOverlay struct {
 	methods   map[string]Method
 	overloads map[string][]Method
 	folded    map[string][]Method
+
+	// published is set once the maps are visible to another overlay. A
+	// published overlay copies its maps before its next write. borrowed marks
+	// an overlay whose maps came from clone and are not yet private. Clones
+	// are made concurrently from a frozen source, hence the atomic flag.
+	published atomic.Bool
+	borrowed  bool
 }
 
+// clone returns an overlay that reads the same entries. It copies nothing:
+// both sides copy their maps on their first write (privatize).
 func (o *methodTableOverlay) clone() *methodTableOverlay {
 	if o == nil {
 		return nil
 	}
-	// Overlay slices are never appended in place, so sharing them is safe.
-	out := &methodTableOverlay{
-		methods:   make(map[string]Method, len(o.methods)),
-		overloads: make(map[string][]Method, len(o.overloads)),
-		folded:    make(map[string][]Method, len(o.folded)),
+	o.published.Store(true)
+	return &methodTableOverlay{
+		methods:   o.methods,
+		overloads: o.overloads,
+		folded:    o.folded,
+		borrowed:  true,
 	}
+}
+
+// privatize gives the overlay its own maps if they are shared. Overlay slices
+// are never appended in place, so the copies keep sharing them.
+func (o *methodTableOverlay) privatize() {
+	if !o.borrowed && !o.published.Load() {
+		return
+	}
+	methods := make(map[string]Method, len(o.methods)+1)
 	for name, method := range o.methods {
-		out.methods[name] = method
+		methods[name] = method
 	}
-	for name, methods := range o.overloads {
-		out.overloads[name] = methods
+	overloads := make(map[string][]Method, len(o.overloads)+1)
+	for name, list := range o.overloads {
+		overloads[name] = list
 	}
-	for name, methods := range o.folded {
-		out.folded[name] = methods
+	folded := make(map[string][]Method, len(o.folded)+1)
+	for name, list := range o.folded {
+		folded[name] = list
 	}
-	return out
+	o.methods, o.overloads, o.folded = methods, overloads, folded
+	o.borrowed = false
+	o.published.Store(false)
 }
 
 // registerSharedMethod is RegisterMethod for a VM whose method maps are shared.
@@ -49,6 +75,7 @@ func (vm *VM) registerSharedMethod(method Method) {
 		}
 	}
 	overlay := vm.methodOverlay
+	overlay.privatize()
 	overlay.methods[method.Name] = method
 	overlay.overloads[method.Name] = appendMethodCopy(vm.registeredOverloads(method.Name), method)
 	foldedName := strings.ToLower(method.Name)

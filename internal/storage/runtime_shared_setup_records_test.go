@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -241,5 +242,24 @@ func TestCloneRuntimeFrozenSharedSetupRowsParallelClasses(t *testing.T) {
 	wg.Wait()
 	if got := rowsDigest(template); !reflect.DeepEqual(got, want) {
 		t.Fatal("parallel clone writes reached the template")
+	}
+}
+
+func TestIsRuntimeSharedSetupObjectMatchesLowerCase(t *testing.T) {
+	names := []string{"", "UserLicense", "USERLICENSE", "userlicense ", "UserLicenses", "TasKStatus", "TaskKStatus", "Account",
+		"PermissionSetLicense", "PermissionSetLicenseX", "MatchingRule", "matchingrulé", strings.Repeat("a", 40) + "é"}
+	names = append(names, KnownStandardObjectNames()...)
+	for _, name := range names {
+		_, want := runtimeSharedSetupObjects[strings.ToLower(name)]
+		if got := isRuntimeSharedSetupObject(name); got != want {
+			t.Errorf("isRuntimeSharedSetupObject(%q) = %v, want %v", name, got, want)
+		}
+	}
+	if allocs := testing.AllocsPerRun(100, func() {
+		for _, name := range []string{"UserLicense", "Account", "PermissionSetLicenseLonger"} {
+			_ = isRuntimeSharedSetupObject(name)
+		}
+	}); allocs != 0 {
+		t.Fatalf("isRuntimeSharedSetupObject allocated %.1f times per run", allocs)
 	}
 }
