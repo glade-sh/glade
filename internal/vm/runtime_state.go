@@ -88,7 +88,10 @@ type VM struct {
 	// namespaceClassLookup keys. It is reset with the access caches.
 	namespaceClassRawLookup map[namespaceClassRawKey]namespaceClassLookup
 	classNamespaceCache     map[string]string
-	classForAccessCache     map[classForAccessKey]classForAccessLookup
+	// execNamespaceMemo remembers the namespace of the current class for one
+	// class lookup generation so hot call paths skip the class read.
+	execNamespaceMemo   execNamespaceMemo
+	classForAccessCache map[classForAccessKey]classForAccessLookup
 	// accessScopeCache memoizes sameAccessScope. Its inputs are the two names
 	// plus the current class and namespace that classForAccess reads, so the
 	// key carries all four. It is reset with the access caches.
@@ -3589,3 +3592,11 @@ func (vm *VM) DrainAsync(result *Result) (err error) {
 }
 
 type controlSignal string
+
+// execNamespaceMemo holds the last class-derived execution namespace.
+type execNamespaceMemo struct {
+	class      string
+	generation uint64
+	namespace  string
+	valid      bool
+}
