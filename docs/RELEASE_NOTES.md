@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
 
 ## v0.3.8
 
