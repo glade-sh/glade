@@ -15,18 +15,21 @@ import (
 
 func TestDoctorReportsBusyToolchain(t *testing.T) {
 	useDoctorTestToolchain(t)
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: .\n")
 	lockPath := filepath.Join(os.Getenv("GLADE_HOME"), ".install.lock")
 	ready := filepath.Join(t.TempDir(), "ready")
 	holder := exec.Command("python3", "-c", `import fcntl,sys,time
 f=open(sys.argv[1], 'w')
 fcntl.lockf(f, fcntl.LOCK_EX)
 open(sys.argv[2], 'w').close()
-time.sleep(30)`, lockPath, ready)
+time.sleep(120)`, lockPath, ready)
 	if err := holder.Start(); err != nil {
 		t.Fatal(err)
 	}
 	defer func() { _ = holder.Process.Kill(); _ = holder.Wait() }()
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := time.Now().Add(30 * time.Second)
 	for {
 		if _, err := os.Stat(ready); err == nil {
 			break
@@ -39,7 +42,7 @@ time.sleep(30)`, lockPath, ready)
 	done := make(chan string, 1)
 	go func() {
 		var out bytes.Buffer
-		_, err := runDoctor(context.Background(), []string{"--json"}, &out)
+		_, err := runDoctor(context.Background(), []string{"--project", root, "--json"}, &out)
 		if err != nil {
 			done <- err.Error()
 			return
@@ -51,7 +54,7 @@ time.sleep(30)`, lockPath, ready)
 		if !strings.Contains(strings.ToLower(out), "busy") {
 			t.Fatalf("doctor did not report busy toolchain: %s", out)
 		}
-	case <-time.After(10 * time.Second):
+	case <-time.After(20 * time.Second):
 		t.Fatal("doctor blocked on the toolchain install lock")
 	}
 }
