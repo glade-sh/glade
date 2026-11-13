@@ -3,6 +3,7 @@ package apextest
 import (
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -87,31 +88,92 @@ private class MissingObjectParity {
 	}
 }`
 
+func runMissingObjectParity(t *testing.T, className, source string, eager bool) map[string]string {
+	t.Helper()
+	prior := eagerStandardSpread.Load()
+	eagerStandardSpread.Store(eager)
+	defer eagerStandardSpread.Store(prior)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/"+className+".cls"), source)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/"+className+".cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
+	index := loadTestIndex(t, root)
+	report := Run(index, Options{NoDiskCache: true, Parallelism: 1})
+	out := make(map[string]string)
+	for _, suite := range report.Suites {
+		for _, c := range suite.Cases {
+			answer := string(c.Status)
+			if c.Problem != nil {
+				answer += ": " + c.Problem.Message
+			}
+			out[c.MethodName] = answer
+		}
+	}
+	return out
+}
+
+// Names a catalog object answers to must resolve and return rows after a miss
+// has run, exactly as under the eager spread. The eager answer is asserted on
+// its own, so a name that the lazy path wrongly treats as final cannot pass by
+// failing the same way in both modes.
+const lazySpreadAnswerableClass = `@IsTest
+private class AnswerableParity {
+	static void report(String s) { System.assert(false, s); }
+	static String probe(String soql) {
+		try { List<SObject> rows = Database.query(soql); return 'rows ' + rows.size(); }
+		catch (Exception e) { return e.getTypeName() + ' ' + e.getMessage(); }
+	}
+	static String afterMiss(String soql) { String a = probe('SELECT Id FROM Zzz__c'); return a.substring(0, 30) + ' ' + probe(soql); }
+	@IsTest static void kav() { report(afterMiss('SELECT Id FROM Knowledge__kav')); }
+	@IsTest static void kavLower() { report(afterMiss('select id from knowledge__kav')); }
+	@IsTest static void ka() { report(afterMiss('SELECT Id FROM Knowledge__ka')); }
+	@IsTest static void kaLower() { report(afterMiss('select id from KNOWLEDGE__KA')); }
+	@IsTest static void feed() { report(afterMiss('SELECT Id FROM AccountFeed') + ' ' + probe('SELECT Id FROM Knowledge__Feed')); }
+	@IsTest static void history() { report(afterMiss('SELECT Id FROM AccountHistory') + ' ' + probe('select id from contacthistory')); }
+	@IsTest static void share() { report(afterMiss('SELECT Id FROM AccountShare') + ' ' + probe('select id from contactshare')); }
+	@IsTest static void changeEvent() { report(afterMiss('SELECT Id FROM AccountChangeEvent') + ' ' + probe('SELECT Id FROM ContactChangeEvent')); }
+	@IsTest static void namespaced() { report(afterMiss('SELECT Id FROM FSL__Time_Dependency__c') + ' ' + probe('SELECT Id FROM Time_Dependency__c') + ' ' + probe('SELECT Id FROM fsl__time_dependency__c')); }
+	@IsTest static void alias() { report(afterMiss('SELECT a.Id FROM Account a') + ' ' + probe('SELECT Id FROM Account AS a') + ' ' + probe('SELECT c.Id FROM contact c WHERE c.Id != null')); }
+	@IsTest static void dataCategory() { report(afterMiss('SELECT Id FROM Knowledge__DataCategorySelection') + ' ' + probe('SELECT Id FROM ArticleType__DataCategorySelection')); }
+}`
+
+func TestLazyStandardSpreadAnswerableNamesAfterMissMatchEagerSpread(t *testing.T) {
+	if testing.Short() {
+		t.Skip("infrastructure test; full suite runs in acceptance lanes")
+	}
+	eager := runMissingObjectParity(t, "AnswerableParity", lazySpreadAnswerableClass, true)
+	lazy := runMissingObjectParity(t, "AnswerableParity", lazySpreadAnswerableClass, false)
+	for k, v := range eager {
+		t.Logf("DBG %s => %s", k, v)
+	}
+	if len(eager) != 11 {
+		t.Fatalf("eager run answered %d methods, want 11: %v", len(eager), eager)
+	}
+	// Independent assertion on the eager answers: names the catalog holds
+	// answer with rows, not with a missing-object error. The names that the
+	// eager org does not hold are listed so a change in the catalog is noticed.
+	notHeld := map[string]bool{"changeEvent": true}
+	for name, got := range eager {
+		if notHeld[name] {
+			continue
+		}
+		if !strings.Contains(got, " rows ") || strings.Contains(got, "is not supported") {
+			t.Errorf("%s: eager answer is not all row results: %s", name, got)
+		}
+	}
+	for name, want := range eager {
+		if got := lazy[name]; got != want {
+			t.Errorf("%s:\n eager %s\n lazy  %s", name, want, got)
+		}
+	}
+}
+
 func TestLazyStandardSpreadMissingObjectMatchesEagerSpread(t *testing.T) {
 	if testing.Short() {
 		t.Skip("infrastructure test; full suite runs in acceptance lanes")
 	}
 	run := func(eager bool) map[string]string {
-		prior := eagerStandardSpread.Load()
-		eagerStandardSpread.Store(eager)
-		defer eagerStandardSpread.Store(prior)
-		root := t.TempDir()
-		writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
-		writeFile(t, filepath.Join(root, "force-app/main/default/classes/MissingObjectParity.cls"), lazySpreadMissingObjectClass)
-		writeFile(t, filepath.Join(root, "force-app/main/default/classes/MissingObjectParity.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
-		index := loadTestIndex(t, root)
-		report := Run(index, Options{NoDiskCache: true, Parallelism: 1})
-		out := make(map[string]string)
-		for _, suite := range report.Suites {
-			for _, c := range suite.Cases {
-				answer := string(c.Status)
-				if c.Problem != nil {
-					answer += ": " + c.Problem.Message
-				}
-				out[c.MethodName] = answer
-			}
-		}
-		return out
+		return runMissingObjectParity(t, "MissingObjectParity", lazySpreadMissingObjectClass, eager)
 	}
 	eager := run(true)
 	lazy := run(false)

@@ -2,9 +2,11 @@ package vm
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/soql"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func missingObjectError(name string) error {
@@ -90,6 +92,57 @@ func TestMissingObjectWithOrgNamespace(t *testing.T) {
 		}
 		if got == org.LazyStandardSpreadEnabled() {
 			t.Errorf("%q: lazy flag %v disagrees with completion %v", c.name, org.LazyStandardSpreadEnabled(), got)
+		}
+	}
+}
+
+// The guard is sound when no name that an eagerly built org resolves is called
+// final. Every catalog name is tried in several case, namespace, suffix and typo
+// forms, with and without an org namespace. The eager org is the oracle, so a
+// misclassified answerable name fails here whatever the executor does first.
+func TestMissingObjectFinalNeverHidesAnEagerHit(t *testing.T) {
+	suffixes := []string{"", "__Share", "__History", "__Feed", "__ChangeEvent", "__kav", "__ka", "__x", "__mdt", "__e", "__c", "__r"}
+	for _, namespace := range []string{"", "ns"} {
+		eager := shapedLazyOrg(nil)
+		eager.Namespace = namespace
+		storage.MaterializeStandardObjectSpread(&eager)
+		oracle := New(nil)
+		oracle.SetOrg(&eager)
+		lazy := shapedLazyOrg(nil)
+		lazy.Namespace = namespace
+		guard := New(nil)
+		guard.SetOrg(&lazy)
+
+		seen := make(map[string]struct{})
+		check := func(name string) {
+			if _, done := seen[name]; done {
+				return
+			}
+			seen[name] = struct{}{}
+			resolved, ok := oracle.resolveObjectName(name)
+			if !ok {
+				_, ok = storage.ResolveObjectName(eager, name)
+			}
+			if ok && guard.lazyMissingObjectIsFinal(name) {
+				t.Errorf("namespace %q: %q resolves to %q on the eager org but the guard calls it final", namespace, name, resolved)
+			}
+		}
+		for _, base := range storage.KnownStandardObjectNames() {
+			stripped := storage.StripAnyNamespaceToken(base)
+			for _, form := range []string{base, stripped, "ns__" + stripped, "ns__" + base} {
+				for _, suffix := range suffixes {
+					for _, name := range []string{form + suffix, strings.ToLower(form + suffix), strings.ToUpper(form + suffix)} {
+						check(name)
+					}
+				}
+			}
+			if len(base) > 2 {
+				check(base[:len(base)-1])
+				check(base + "x")
+			}
+		}
+		if len(seen) < 100000 {
+			t.Fatalf("namespace %q: only %d names were checked", namespace, len(seen))
 		}
 	}
 }
