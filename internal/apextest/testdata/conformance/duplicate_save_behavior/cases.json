@@ -85,5 +85,9 @@
     "sumB": "BoundaryBehavior.sumB()",
     "sumC": "BoundaryBehavior.sumC()",
     "sumD": "BoundaryBehavior.sumD()"
+  },
+  "leadNames": {
+    "initials": "LeadNamesBehavior.initials()",
+    "surnames": "LeadNamesBehavior.surnames()"
   }
 }
