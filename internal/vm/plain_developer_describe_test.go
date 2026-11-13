@@ -71,3 +71,33 @@ func TestPlainDeveloperDescribeScope(t *testing.T) {
 		t.Fatal("unspecified shape selected")
 	}
 }
+
+func TestPlainDeveloperTokenDoesNotWarmOrdinaryFieldCache(t *testing.T) {
+	for _, language := range []string{"en_US", "fr"} {
+		t.Run(language, func(t *testing.T) {
+			org := testDataOrg()
+			org.Features = []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperDescribeShape}
+			machine := New(nil)
+			machine.SetOrg(&org)
+			user := Object("User")
+			profile := Object("Profile")
+			profile.Fields["Name"] = String("System Administrator")
+			user.Fields["Profile"] = profile
+			user.Fields["LocaleSidKey"] = String("en_US")
+			user.Fields["LanguageLocaleKey"] = String(language)
+			machine.executionUser = user
+			machine.currentMethod = Method{APIVersion: "62.0"}
+			if _, err := machine.describeFieldValue("Account", "Tier"); err == nil {
+				t.Fatal("cold ordinary lookup unexpectedly succeeded")
+			}
+			token := machine.sObjectFieldTokenFromField("Account", plainDeveloperTierField())
+			token.Fields["__plainDeveloperTier"] = Bool(true)
+			if _, _, _, _, err := machine.callSObjectFieldDescribe(token, nil, nil, false); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.describeFieldValue("Account", "Tier"); err == nil {
+				t.Fatal("token warmed ordinary field cache")
+			}
+		})
+	}
+}
