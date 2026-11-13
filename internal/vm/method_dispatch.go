@@ -3112,7 +3112,21 @@ func (vm *VM) callListValueMember(receiverName string, receiver Value, method st
 		}
 		index := -1
 		var err error
-		if receiver.nativeListMembership {
+		if isDoubleList(receiver) && !receiver.nativeListMembership {
+			for i, item := range receiver.List {
+				equal, handled := signedDoubleZeroEqual(item, args[0])
+				if !handled {
+					equal, err = vm.apexCollectionElementEquals(item, args[0], result)
+					if err != nil {
+						break
+					}
+				}
+				if equal {
+					index = i
+					break
+				}
+			}
+		} else if receiver.nativeListMembership {
 			for i, item := range receiver.List {
 				if item.nativeListElement {
 					continue

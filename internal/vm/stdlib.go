@@ -3997,6 +3997,9 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 		if equal, handled := datetimeMethodEquals(receiver, args[0]); handled {
 			return Bool(equal), true, nil
 		}
+		if equal, handled := signedDoubleZeroEqual(receiver, args[0]); handled {
+			return Bool(equal), true, nil
+		}
 		return Bool(receiver.Equal(args[0])), true, nil
 	case "hashCode":
 		if len(args) != 0 {

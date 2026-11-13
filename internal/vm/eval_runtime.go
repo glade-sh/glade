@@ -609,6 +609,12 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 			}
 			return Bool(equal), nil
 		}
+		if equal, handled := signedDoubleZeroEqual(left, right); handled {
+			return Bool(equal == (op == "==")), nil
+		}
+		if equal, handled := signedDoubleIntegerZeroEqual(left, right); handled {
+			return Bool(equal == (op == "==")), nil
+		}
 		equal, err := vm.apexEquals(left, right, result)
 		if err != nil {
 			return Null, err
@@ -677,7 +683,16 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 		if len(left.List) != len(right.List) {
 			return false, nil
 		}
+		doubleLists := isDoubleList(left) && isDoubleList(right)
 		for i := range left.List {
+			if doubleLists {
+				if equal, handled := signedDoubleZeroEqual(left.List[i], right.List[i]); handled {
+					if !equal {
+						return false, nil
+					}
+					continue
+				}
+			}
 			if listElementValuesEqual(left.List[i], right.List[i], make(map[[2]uint64]bool)) {
 				continue
 			}
