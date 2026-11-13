@@ -6,9 +6,7 @@
 ### Apex search
 
 - A user-mode SOSL search with fixed test results now reports an unreadable field used to sort a RETURNING group, including when its only candidate belongs to another user.
-### Apex search
-
-- SOSL divides the result limit among all `RETURNING` objects, including when an object has fewer matching rows than its share. Outside tests, each object of a multi-object search returns at most 250 rows, as does a single object with no `WHERE` or `ORDER BY`. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
+- SOSL divides the result limit among all `RETURNING` objects, including when an object has fewer matching rows than its share. Outside tests, each object of a multi-object search returns at most 250 rows, as does a single object with no `WHERE` or `ORDER BY`, except `EntityDefinition`, which has no captured ceiling and is not capped. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
 - SOSL name searches over space-separated ASCII names match word prefixes and the interior `?`, `??`, and `*` forms, with up to two letters matched by `*`. Unquoted phone searches can find an international-format North American number by its seven local digits or ten national digits.
 
 ### Performance
