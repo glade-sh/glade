@@ -1,0 +1,32 @@
+@IsTest private class SearchInlineAccess{{API}} {
+  static User mkUser() {
+    Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    String un = 'gl' + String.valueOf(Crypto.getRandomInteger()).replace('-','') + '@example.com';
+    User u = new User(Alias='gl', Email=un, EmailEncodingKey='UTF-8', LastName='GlStd', LanguageLocaleKey='en_US', LocaleSidKey='en_US', TimeZoneSidKey='America/Los_Angeles', Username=un, ProfileId=p.Id);
+    PermissionSet ps = [SELECT Id FROM PermissionSet WHERE Name = 'Gl_Access'];
+    PermissionSet pa = [SELECT Id FROM PermissionSet WHERE Name = 'Gl_Admin_Access'];
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+      insert u;
+      insert new PermissionSetAssignment(AssigneeId=u.Id, PermissionSetId=ps.Id);
+      insert new PermissionSetAssignment(AssigneeId=UserInfo.getUserId(), PermissionSetId=pa.Id);
+    }
+    return u;
+  }
+
+    @IsTest static void inlineUnreadable() {
+        User restricted = mkUser();
+        Gl_Obj__c mine = new Gl_Obj__c(Name='Mine', Open__c='Visible', Secret__c='Constant', OwnerId=restricted.Id);
+        insert mine;
+        String answer;
+        System.runAs(restricted) {
+            Test.setFixedSearchResults(new List<Id>{mine.Id});
+            try {
+                List<List<SObject>> groups = [FIND 'unrelated' RETURNING Gl_Obj__c(Id ORDER BY Secret__c) WITH USER_MODE];
+                answer = 'records=' + groups[0].size();
+            } catch(Exception e) {
+                answer = e.getTypeName() + '|' + e.getMessage();
+            }
+        }
+        System.assert(false, 'OBS|' + answer);
+    }
+}

@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Apex SOSL now distinguishes invalid queries from counted searches, rejects anonymous `WITH SYSTEM_MODE`, and allows short FIND terms in Apex tests. Fixed searches omit deleted records, and a direct Datetime greater-than filter bound to a null Datetime matches its candidates.
+### Apex search
+
+- A user-mode SOSL search with fixed test results now reports an unreadable field used to sort a RETURNING group, including when its only candidate belongs to another user.
 
 ### Performance
 
