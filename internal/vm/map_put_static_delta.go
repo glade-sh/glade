@@ -107,26 +107,21 @@ func (vm *VM) rememberStaticIndexDeltaInField(delta *staticAliasIndexDelta, loca
 		return false
 	}
 	location = vm.canonicalStaticFieldLocation(location)
-	if !vm.staticValueRefs[delta.root.Ref] || !vm.staticValueRefFields[delta.root.Ref].contains(location) {
+	if staticIndex := vm.staticRefIndex(); !staticIndex.known(delta.root.Ref) || !staticIndex.locations(delta.root.Ref).contains(location) {
 		return false
 	}
 	vm.ensureStaticValueRefsOwned()
+	index := vm.staticRefIndex()
 	vm.scanStaticAliasIndexDeltaChildren(delta)
 	// Register the map identity without marking it visited. If an inserted
 	// subtree links back to this map, that entire reachable graph must still
 	// be scanned: known identities may have gained unindexed descendants.
-	vm.staticValueRefs[delta.root.Ref] = true
-	locations := vm.staticValueRefFields[delta.root.Ref]
-	locations.add(location)
-	vm.staticValueRefFields[delta.root.Ref] = locations
+	index.add(delta.root.Ref, location)
 	if vm.perfRecorder != nil {
 		vm.perfRecorder.recordStaticAliasRefScanVisits(1)
 	}
 	for ref := range delta.childRefs {
-		vm.staticValueRefs[ref] = true
-		locations := vm.staticValueRefFields[ref]
-		locations.add(location)
-		vm.staticValueRefFields[ref] = locations
+		index.add(ref, location)
 	}
 	vm.invalidateStaticHintsForDelta(location, delta, delta.childRefs)
 	return true

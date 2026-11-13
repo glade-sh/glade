@@ -11,6 +11,7 @@
 - **Fewer source re-reads and a cached binary digest.** A warm test daemon request no longer reads and hashes every source and `-meta.xml` file at each stage; a file that has not changed since it was last hashed, and was already two seconds old then, is trusted by device, inode, size, mtime and ctime. Each process also remembers the SHA-256 of its own executable under the same stamp, which removes about 0.7 s from every cached `check` and `test`. Edited, replaced and recently written files are always hashed again, and results do not change.
 - **Visualforce controller gate computed once per project state.** A Visualforce page request, `glade exec` with a project and each warm one-class `glade test` no longer compile the whole project again to decide which controllers a page may use. The result is kept per project state, keyed by the project value and the content of every file it names, so any edit recomputes it. Which pages register does not change, and an edit to any named file recomputes the result.
 - **Unset field reads keep the lazy schema lazy.** Reading a field that is not set, or any name that is not a child relationship, after a record is saved no longer builds every standard object. A generated list of the child relationship names the standard objects declare rules the name out first. On a test project that saves and reads records, peak memory fell from about 560 MiB to about 340 MiB and instructions fell about 45 percent. Results are identical.
+- **Static reference index no longer copied per test.** The index that tracks which static fields hold each collection or record is shared between tests of one project. The first static write in a test used to copy all of it; it now records only what that test changes and leaves the shared index alone. Results are identical. On a 500-class project, peak memory fell about 8 percent and instructions about 3.6 percent; on a 150-class project, about 4 percent and 1 percent.
 
 ## v0.3.8
 
@@ -78,6 +79,12 @@ Results are unchanged by every item in this section.
 ### Toolchain
 
 - Build with Go 1.26.11 (net/http fix GO-2026-6859).
+- **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process. Watch, daemon and server runs are unchanged. Results are unchanged.
+- **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. On the standard object set one lookup takes about a sixth of the time and allocates nothing. Results are unchanged.
+- **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark. Results are unchanged.
+- **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class. `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip that repeated work. Diagnostics are unchanged.
+- **Parallel method-body checks.** Semantic analysis checks method bodies on up to `GOMAXPROCS` workers (at most 8) instead of one. Diagnostics keep their order and content.
+- **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
 
 ## v0.3.7
 

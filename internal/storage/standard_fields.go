@@ -2190,22 +2190,94 @@ func appendUniqueStringsFold(values []string, additions ...string) []string {
 		}
 		return values
 	}
-	seen := make(map[string]struct{}, len(values)+len(additions))
+	seen := foldSeenPool.Get().(*foldSeen)
+	defer seen.release()
 	for _, value := range values {
-		seen[asciiFoldKey(value)] = struct{}{}
+		seen.add(value)
 	}
 	for _, addition := range additions {
 		if addition == "" {
 			continue
 		}
-		key := asciiFoldKey(addition)
-		if _, ok := seen[key]; ok {
+		if !seen.add(addition) {
 			continue
 		}
-		seen[key] = struct{}{}
 		values = append(values, addition)
 	}
 	return values
+}
+
+// foldSeen is a reusable ASCII case-insensitive string set. Reusing the map
+// avoids building and growing one per call; lookups of mixed-case strings use
+// a scratch buffer, so only inserted mixed-case keys allocate.
+type foldSeen struct {
+	m   map[string]struct{}
+	buf []byte
+}
+
+var foldSeenPool = sync.Pool{New: func() any {
+	return &foldSeen{m: make(map[string]struct{}, 512)}
+}}
+
+// maxPooledFoldSeen bounds the map size kept in the pool.
+const maxPooledFoldSeen = 8192
+
+// add inserts s and reports whether it was absent.
+func (f *foldSeen) add(s string) bool {
+	key := s
+	upper := false
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c >= 'A' && c <= 'Z' {
+			upper = true
+			break
+		}
+	}
+	if upper {
+		f.buf = append(f.buf[:0], s...)
+		for i, c := range f.buf {
+			if c >= 'A' && c <= 'Z' {
+				f.buf[i] = c + 'a' - 'A'
+			}
+		}
+		if _, ok := f.m[string(f.buf)]; ok {
+			return false
+		}
+		key = string(f.buf)
+	} else if _, ok := f.m[key]; ok {
+		return false
+	}
+	f.m[key] = struct{}{}
+	return true
+}
+
+func (f *foldSeen) release() {
+	if len(f.m) > maxPooledFoldSeen {
+		return
+	}
+	clear(f.m)
+	foldSeenPool.Put(f)
+}
+
+// asciiFoldEqual reports asciiFoldKey(a) == asciiFoldKey(b) without
+// allocating. It compares every byte, unlike stringsEqualFold, which steps
+// through the string by rune.
+func asciiFoldEqual(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		l, r := a[i], b[i]
+		if l >= 'A' && l <= 'Z' {
+			l += 'a' - 'A'
+		}
+		if r >= 'A' && r <= 'Z' {
+			r += 'a' - 'A'
+		}
+		if l != r {
+			return false
+		}
+	}
+	return true
 }
 
 // asciiFoldKey returns a lowercase ASCII fold of s without allocating when
@@ -2382,9 +2454,76 @@ func enrichStandardField(existing *Field, field Field) {
 	}
 }
 
+// mergeStandardReferenceTargets returns a fresh slice holding standard followed
+// by every non-empty element of existing that is not fold-equal to an element
+// already present (first occurrence wins). The result never aliases either
+// input.
+//
+// Callers repeat this merge for the same object with existing already equal to
+// (or a subset of) standard. That case is decided by comparing in place,
+// without the per-call map appendUniqueStringsFold builds for long lists.
 func mergeStandardReferenceTargets(existing, standard []string) []string {
-	merged := append([]string(nil), standard...)
-	return appendUniqueStringsFold(merged, existing...)
+	if len(existing) == 0 {
+		return append([]string(nil), standard...)
+	}
+	// Room for every existing element avoids regrowing when the merge adds
+	// most of them.
+	merged := append(make([]string, 0, len(standard)+len(existing)), standard...)
+	if len(standard)+len(existing) <= 8 {
+		// appendUniqueStringsFold compares with stringsEqualFold on this
+		// path and allocates nothing beyond the appended elements.
+		return appendUniqueStringsFold(merged, existing...)
+	}
+	const maxSlowLookups = 16
+	var extras []string
+	slow := 0
+	hint := 0
+	for _, value := range existing {
+		if value == "" {
+			continue
+		}
+		at := -1
+		// In-order input hits at the hint.
+		for i := hint; i < len(standard); i++ {
+			if asciiFoldEqual(standard[i], value) {
+				at = i
+				break
+			}
+		}
+		if at < 0 {
+			for i := 0; i < hint; i++ {
+				if asciiFoldEqual(standard[i], value) {
+					at = i
+					break
+				}
+			}
+		}
+		if at >= 0 {
+			if at != hint {
+				slow++
+			}
+			hint = at + 1
+			if slow > maxSlowLookups {
+				return appendUniqueStringsFold(merged, existing...)
+			}
+			continue
+		}
+		slow++
+		if slow > maxSlowLookups {
+			return appendUniqueStringsFold(merged, existing...)
+		}
+		duplicate := false
+		for _, extra := range extras {
+			if asciiFoldEqual(extra, value) {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			extras = append(extras, value)
+		}
+	}
+	return append(merged, extras...)
 }
 
 func mergeStandardRelationships(definition *ObjectDefinition, relationships []Relationship) {
