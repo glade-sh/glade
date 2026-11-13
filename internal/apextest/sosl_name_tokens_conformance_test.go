@@ -144,9 +144,9 @@ func TestSOSLNameTokenConformance(t *testing.T) {
 					want := rows[key{tc.id, api, "anonymous"}].want
 					for _, call := range []struct{ name, loop string }{
 						{"inline", "List<List<SObject>> hits=[FIND '" + tc.term + "'" + suffix + "]; for(SObject rec:hits[0]){labels.add((String)rec.get('Department'));}"},
-						{"querySystem", "for(SObject rec:Search.query(" + query + ",AccessLevel.SYSTEM_MODE)[0]){labels.add((String)rec.get('Department'));}"},
+						{"queryUser", "for(SObject rec:Search.query(" + query + ",AccessLevel.USER_MODE)[0]){labels.add((String)rec.get('Department'));}"},
 						{"find", "for(Search.SearchResult hit:Search.find(" + query + ").get('Contact')){labels.add((String)hit.getSObject().get('Department'));}"},
-						{"findSystem", "for(Search.SearchResult hit:Search.find(" + query + ",AccessLevel.SYSTEM_MODE).get('Contact')){labels.add((String)hit.getSObject().get('Department'));}"},
+						{"findUser", "for(Search.SearchResult hit:Search.find(" + query + ",AccessLevel.USER_MODE).get('Contact')){labels.add((String)hit.getSObject().get('Department'));}"},
 					} {
 						t.Run("localEntryPoints/"+tc.id+"/"+call.name, func(t *testing.T) {
 							m := runner.newMachine()
