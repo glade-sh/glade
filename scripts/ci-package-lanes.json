@@ -92,11 +92,11 @@
   },
   "concurrentTestCounts": {
     "./internal/lsp": 7,
-    "./internal/apextest": 541,
+    "./internal/apextest": 542,
     "./internal/dap": 9,
     "./internal/frontendcache": 1,
     "./internal/filestamp": 1,
-    "./internal/gladecli": 103,
+    "./internal/gladecli": 104,
     "./internal/gladehome": 8,
     "./internal/lwcbrowser": 2,
     "./internal/playground": 4,

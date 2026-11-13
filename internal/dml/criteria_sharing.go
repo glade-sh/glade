@@ -119,14 +119,11 @@ func (e *Engine) reconcileCaseCriteriaShares(cases storage.ObjectState, rules []
 	})
 	storage.EnsureMutableObjectRecords(e.Org, shareName)
 	share = e.Org.Objects[shareName]
-	if share.Records == nil {
-		share.Records = make(map[storage.ID]storage.Record)
-	}
 	for _, id := range remove {
 		if e.IsolationJournal != nil {
 			e.IsolationJournal.RecordUpdate(shareName, id, share.Records[id])
 		}
-		delete(share.Records, id)
+		share.DeleteRecord(id)
 	}
 	for _, key := range add {
 		e.recordJournalSequence(shareName)
@@ -144,12 +141,12 @@ func (e *Engine) reconcileCaseCriteriaShares(cases storage.ObjectState, rules []
 		if e.IsolationJournal != nil {
 			e.IsolationJournal.RecordInsert(shareName, id)
 		}
-		share.Records[id] = storage.Record{ID: id, Object: shareName, CriteriaSharingOwned: true, Fields: map[string]storage.Value{
+		share.PutRecord(id, storage.Record{ID: id, Object: shareName, CriteriaSharingOwned: true, Fields: map[string]storage.Value{
 			"CaseId":          storage.IDValue(key.parent),
 			"UserOrGroupId":   storage.IDValue(key.group),
 			"CaseAccessLevel": storage.StringValue("Read"),
 			"RowCause":        storage.StringValue("Rule"),
-		}}
+		}})
 	}
 	share.Indexes = nil
 	e.Org.Objects[shareName] = share
