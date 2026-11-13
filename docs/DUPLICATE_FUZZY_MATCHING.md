@@ -382,6 +382,14 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
 
 ## Standard rules
 
+The standard rules are off by default. `duplicateRules.standard: on` in
+`glade.yml` (or `GLADE_STANDARD_DUPLICATE_RULES=on`) turns on the standard
+Account, Contact and Lead rules that no project metadata defines. A project's
+`duplicateRules` metadata for a standard rule (for example
+`Standard_Account_Duplicate_Rule`, active or inactive) is honored exactly, and
+custom duplicate rules from project metadata are always enforced, fuzzy
+methods included. The conformance tests run with the setting on.
+
 Fixture: `internal/apextest/testdata/conformance/duplicate_standard_rules/`
 (`org.tsv`, `cases.json`, `RUN-FACTS.txt`); test `TestStandardRulesNativeRows`;
 scorers in `internal/dml/standard_rules.go`, `duplicate_filter_confidence.go`
