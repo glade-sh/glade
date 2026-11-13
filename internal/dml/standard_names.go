@@ -87,31 +87,45 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	return score >= 92, confidence
 }
 
-// The short keyboard panels in duplicate_save_behavior enumerate adjacent
-// horizontal keys and one-column diagonals. Nonphonetic reversed two-letter
-// names match only near keys. The lower-left part of each keyboard row has
-// a one-point smaller penalty, including exchanges across neighboring rows.
+// KeyboardBehavior, PrefixBehavior and HoldoutBehavior in duplicate_save_behavior
+// measure nonphonetic terminal swaps with an equal first name and email. At a
+// fixed key separation and length, eligibility and rounded confidence vary
+// with the positions of the unchanged letters too. The captured groups split
+// by the sum of their Manhattan distances to the midpoint between Y and U.
+// Use doubled coordinates so the half-column origin and cutoffs are exact.
 func standardTerminalSwap(name string, ordinary float64) (bool, float64) {
 	a := qwertyPosition[rune(name[len(name)-2])]
 	b := qwertyPosition[rune(name[len(name)-1])]
-	rowDelta, colDelta := a[0]-b[0], a[1]-b[1]
-	columns := abs(colDelta)
-	rightDiagonal := abs(rowDelta) == 1 && rowDelta*colDelta > 0
-	switch {
-	case len(name) == 2:
-		if columns > 1 || abs(rowDelta) > 1 {
+	rows, columns := abs(a[0]-b[0]), abs(a[1]-b[1])
+	switch len(name) {
+	case 2:
+		if columns > 1 || rows > 1 {
 			return false, 0
 		}
-		if columns == 1 && (rowDelta == 0 || rightDiagonal) {
-			if min(a[1], b[1]) <= max(a[0], b[0]) {
+		if columns == 1 {
+			if standardKeyboardPositionSum(name) >= 18 {
 				return true, 98
 			}
 			return true, 97
 		}
-	case len(name) == 6 && columns == 4 && rightDiagonal:
-		return true, 97
+	case 6:
+		if columns == 4 && rows <= 1 {
+			if standardKeyboardPositionSum(name) < 44 {
+				return false, 0
+			}
+			return true, 97
+		}
 	}
 	return true, ordinary
+}
+
+func standardKeyboardPositionSum(name string) int {
+	total := 0
+	for _, c := range name {
+		key := qwertyPosition[c]
+		total += abs(2*key[1]-11) + 2*key[0]
+	}
+	return total
 }
 
 // A same-key pair may already have qualified through the standard last-name
