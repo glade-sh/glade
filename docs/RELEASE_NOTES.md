@@ -21,6 +21,8 @@
 - SOSL divides the result limit among all `RETURNING` objects, including when an object has fewer matching rows than its share. Outside tests, each object of a multi-object search returns at most 250 rows, as does a single object with no `WHERE` or `ORDER BY`, except `EntityDefinition`, which has no captured ceiling and is not capped. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
 - SOSL name searches over space-separated ASCII names match word prefixes and the interior `?`, `??`, and `*` forms, with up to two letters matched by `*`. Unquoted phone searches can find an international-format North American number by its seven local digits or ten national digits.
 
+- **Criteria-based Case sharing.** Matching Case sharing rules grant access at commit. Reconciliation preserves unrelated Rule shares, applies to persisted anonymous debug sessions, and ignores unsupported criteria rules while retaining supported rules.
+
 ### Performance
 
 - **Unset field reads keep the lazy schema lazy.** Reading a field that is not set, or any name that is not a child relationship, after a record is saved no longer builds every standard object. A generated list of the child relationship names the standard objects declare rules the name out first. On a test project that saves and reads records, peak memory fell from about 560 MiB to about 340 MiB and instructions fell about 45 percent. Results are identical.

@@ -90,7 +90,6 @@ func TestProjectOwnerSharingMetadataUnsupportedShapesAreAtomic(t *testing.T) {
 		strings.Replace(ownedReadRuleSource, "Read</accessLevel>", "Edit</accessLevel>", 1),
 		strings.Replace(ownedReadRuleSource, "<group>OwnedTarget</group>", "<role>OwnedTarget</role>", 1),
 		strings.Replace(ownedReadRuleSource, "<group>OwnedTarget</group>", "<group>Absent</group>", 1),
-		strings.Replace(ownedReadRuleSource, "</SharingRules>", "<sharingCriteriaRules/></SharingRules>", 1),
 		strings.Replace(ownedReadRuleSource, "</sharingOwnerRules>", "<includeRecordsOwnedByAll>true</includeRecordsOwnedByAll></sharingOwnerRules>", 1),
 		strings.Replace(ownedReadRuleSource, "</SharingRules>", strings.TrimSuffix(strings.TrimPrefix(ownedReadRuleSource, "<SharingRules>"), "</SharingRules>")+"</SharingRules>", 1),
 	} {
@@ -184,5 +183,32 @@ func TestProjectOwnerSharingRefreshIgnoresUnrelatedUnsupportedGroup(t *testing.T
 	}
 	if got := len(org.Objects["OwnedBox__c"].Definition.OwnerSharingRules); got != 1 {
 		t.Fatalf("rules: %d", got)
+	}
+}
+
+func TestCriteriaSharingUnsupportedRulesDoNotBlockSupported(t *testing.T) {
+	org, p := ownerSharingMetadataFixture(t, ownedReadRuleSource)
+	storage.EnsureStandardObject(&org, "Case")
+	c := org.Objects["Case"]
+	c.Definition.SharingModel = "Private"
+	org.Objects["Case"] = c
+	path := filepath.Join(t.TempDir(), "Case.sharingRules-meta.xml")
+	rule := `<sharingCriteriaRules><fullName>Supported</fullName><accessLevel>Read</accessLevel><sharedTo><group>OwnedTarget</group></sharedTo><criteriaItems><field>Subject</field><operation>equals</operation><value>MATCH</value></criteriaItems></sharingCriteriaRules>`
+	writeFile(t, path, `<SharingRules>`+rule+strings.Replace(rule, "<operation>equals</operation>", "<operation>notEqual</operation>", 1)+`</SharingRules>`)
+	p.OwnerSharingRuleFiles = append(p.OwnerSharingRuleFiles, path)
+	other := filepath.Join(t.TempDir(), "Account.sharingRules-meta.xml")
+	writeFile(t, other, `<SharingRules>`+rule+`</SharingRules>`)
+	p.OwnerSharingRuleFiles = append(p.OwnerSharingRuleFiles, other)
+	if err := ApplyProjectOwnerSharingRules(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(org.Objects["Case"].Definition.CriteriaSharingRules); n != 1 {
+		t.Fatalf("supported rules = %d", n)
+	}
+	if err := RefreshProjectOwnerSharingRules(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(org.Objects["Case"].Definition.CriteriaSharingRules); n != 1 {
+		t.Fatalf("refreshed rules = %d", n)
 	}
 }
