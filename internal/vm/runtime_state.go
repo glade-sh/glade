@@ -54,7 +54,10 @@ const (
 type VM struct {
 	// adminStandardFLSRoute marks the routes where the default administrator's
 	// standard-field grant rule applies (anonymous_field_policy.go).
-	adminStandardFLSRoute  bool
+	adminStandardFLSRoute bool
+	// explicitUserModeDML marks the field check of a Database DML call with an
+	// explicit AccessLevel.USER_MODE (adminStandardCustomFieldDMLDenied).
+	explicitUserModeDML    bool
 	knowledgeIssuedParents map[storage.ID]bool
 	case174WarmOrderAccess map[string]bool
 	case174PermissionStamp map[string]string
