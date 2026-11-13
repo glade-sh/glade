@@ -95,30 +95,106 @@ func spreadTemplate(org *OrgState, canonical string) (ObjectState, bool) {
 	}
 	cellAny, _ := spreadTemplates.LoadOrStore(key, &spreadTemplateCell{})
 	cell := cellAny.(*spreadTemplateCell)
+	built := false
 	cell.once.Do(func() {
-		scratch := OrgState{
-			OrgID:    org.OrgID,
-			Features: slices.Clone(org.Features),
-			Objects:  make(map[string]ObjectState),
-		}
-		if hasRecordType {
-			ensureRecordTypeObject(&scratch)
-		}
-		before := len(scratch.Objects)
-		ensureStandardObjectWithProfile(&scratch, canonical, nil)
-		if key.phase == standardSpreadShaped {
-			applyShapeToLazyObject(&scratch, canonical)
-		}
-		// A template is only safe when ensuring the object touched nothing
-		// else: no other object and no record type row.
-		if len(scratch.Objects) != before+1 || len(scratch.Objects["RecordType"].Records) != 0 {
-			return
-		}
-		cell.state = scratch.Objects[canonical]
-		cell.ok = true
+		built = true
+		buildSpreadTemplateCell(cell, key, org.OrgID, org.Features, hasRecordType)
 	})
 	cell.done.Store(true)
+	if built && StandardCatalogReleaseEnabled() && spreadTemplatesBuilt.Add(1)%spreadTemplateReleaseEvery == 0 {
+		// A lazily growing org decodes catalog members one by one. Bound what
+		// they leave behind: a later template decodes again, same bytes.
+		ReleaseStandardCatalogCaches()
+	}
 	return cell.state, cell.ok
+}
+
+// spreadTemplateReleaseEvery is how many built templates pass between catalog
+// releases, which bounds the decoded catalog to about that many objects.
+const spreadTemplateReleaseEvery = 512
+
+var spreadTemplatesBuilt atomic.Uint64
+
+// droppedPlainTemplates remembers the keys of plain-phase cells that
+// dropPlainSpreadTemplates removed, so SpreadObjectUntouched can rebuild one on
+// demand and answer as it did before the drop.
+var droppedPlainTemplates struct {
+	mu   sync.Mutex
+	keys map[spreadTemplateKey]struct{}
+}
+
+// buildSpreadTemplateCell fills a cell with the template for key. A template
+// is a pure function of its key and the org id.
+func buildSpreadTemplateCell(cell *spreadTemplateCell, key spreadTemplateKey, orgID string, features []string, hasRecordType bool) {
+	scratch := OrgState{
+		OrgID:    orgID,
+		Features: slices.Clone(features),
+		Objects:  make(map[string]ObjectState),
+	}
+	if hasRecordType {
+		ensureRecordTypeObject(&scratch)
+	}
+	before := len(scratch.Objects)
+	ensureStandardObjectWithProfile(&scratch, key.object, nil)
+	if key.phase == standardSpreadShaped {
+		applyShapeToLazyObject(&scratch, key.object)
+	}
+	// A template is only safe when ensuring the object touched nothing
+	// else: no other object and no record type row.
+	if len(scratch.Objects) != before+1 || len(scratch.Objects["RecordType"].Records) != 0 {
+		return
+	}
+	cell.state = scratch.Objects[key.object]
+	cell.ok = true
+}
+
+// dropPlainSpreadTemplates removes the plain-phase templates once a shaped
+// group exists: the shaped seed holds its own definitions, so the plain cells
+// are reachable only from the map. A later plain org builds them again.
+func dropPlainSpreadTemplates() {
+	shaped := false
+	spreadTemplates.Range(func(k, _ any) bool {
+		if k.(spreadTemplateKey).phase == standardSpreadShaped {
+			shaped = true
+			return false
+		}
+		return true
+	})
+	if !shaped {
+		return
+	}
+	droppedPlainTemplates.mu.Lock()
+	defer droppedPlainTemplates.mu.Unlock()
+	spreadTemplates.Range(func(k, _ any) bool {
+		key := k.(spreadTemplateKey)
+		if key.phase != standardSpreadPlain {
+			return true
+		}
+		if droppedPlainTemplates.keys == nil {
+			droppedPlainTemplates.keys = map[spreadTemplateKey]struct{}{}
+		}
+		droppedPlainTemplates.keys[key] = struct{}{}
+		spreadTemplates.Delete(k)
+		return true
+	})
+}
+
+// rebuiltPlainTemplate returns the cell for a key that dropPlainSpreadTemplates
+// removed, rebuilding it. It reports false for a key that never had a cell.
+func rebuiltPlainTemplate(key spreadTemplateKey, org OrgState, hasRecordType bool) (*spreadTemplateCell, bool) {
+	droppedPlainTemplates.mu.Lock()
+	_, dropped := droppedPlainTemplates.keys[key]
+	droppedPlainTemplates.mu.Unlock()
+	if !dropped {
+		return nil, false
+	}
+	cellAny, _ := spreadTemplates.LoadOrStore(key, &spreadTemplateCell{})
+	cell := cellAny.(*spreadTemplateCell)
+	cell.once.Do(func() {
+		buildSpreadTemplateCell(cell, key, org.OrgID, org.Features, hasRecordType)
+	})
+	cell.done.Store(true)
+	return cell, true
 }
 
 // spreadObjectOwed resolves a name to a catalog object this lazy org still
@@ -200,6 +276,9 @@ func materializeSpreadSource(org *OrgState) bool {
 		}
 	}
 	org.StandardSpread = ""
+	// Every template of this shape is built and the decoded members have no
+	// reader left for this org.
+	ReleaseStandardCatalogCaches()
 	return true
 }
 
@@ -337,17 +416,21 @@ func (o OrgState) SpreadObjectUntouched(name string) bool {
 		return false
 	}
 	_, hasRecordType := o.Objects["RecordType"]
-	cellAny, ok := spreadTemplates.Load(spreadTemplateKey{
+	key := spreadTemplateKey{
 		phase:      o.StandardSpread,
 		signature:  canonicalFeatureSignature(o.Features),
 		multiCurr:  o.HasFeature("MultiCurrency"),
 		recordType: hasRecordType,
 		object:     name,
-	})
-	if !ok {
+	}
+	var cell *spreadTemplateCell
+	if cellAny, ok := spreadTemplates.Load(key); ok {
+		cell = cellAny.(*spreadTemplateCell)
+	} else if rebuilt, ok := rebuiltPlainTemplate(key, o, hasRecordType); ok {
+		cell = rebuilt
+	} else {
 		return false
 	}
-	cell := cellAny.(*spreadTemplateCell)
 	template, built := cell.peek()
 	if !built {
 		return false

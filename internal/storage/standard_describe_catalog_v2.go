@@ -289,6 +289,7 @@ func standardDescribeNameAtLeast(name, key string) bool {
 }
 
 func decodeStandardDescribeCatalogV2Member(pack []byte, entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
+	standardCatalogMemberDecodes.Add(1)
 	var describe standardDescribeObject
 	err := withStandardDescribeCatalogV2MemberBytes(pack, entry, standardDescribeCatalogV2Magic, len(standardDescribeCatalogV2Index), func(data []byte) error {
 		var decodeErr error
@@ -499,9 +500,17 @@ func ReleaseStandardCatalogCaches() {
 	standardDescribeCatalogV2RawProductionCache.release()
 	releaseStandardSObjectStubMembers()
 	standardCatalogReleases.Add(1)
+	dropPlainSpreadTemplates()
 }
 
 var standardCatalogReleases atomic.Uint64
+
+var standardCatalogMemberDecodes atomic.Uint64
+
+// StandardCatalogMemberDecodeCount reports how many catalog members were
+// decoded in this process. Tests use it to see that a release makes a later
+// lookup decode again.
+func StandardCatalogMemberDecodeCount() uint64 { return standardCatalogMemberDecodes.Load() }
 
 // StandardCatalogReleaseCount reports how many releases ran. Tests use it to
 // bound the releases a sequence of org builds performs.
