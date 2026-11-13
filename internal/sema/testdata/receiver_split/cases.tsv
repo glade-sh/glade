@@ -8,3 +8,8 @@ chain_split	anonymous	apex/chain_split.apex
 qualified_split	anonymous	apex/qualified_split.apex
 qualified_same	anonymous	apex/qualified_same.apex
 static_dot_before	anonymous	apex/static_dot_before.apex
+dot_statement	anonymous	apex/dot_statement.apex
+dot_assign	anonymous	apex/dot_assign.apex
+dot_instance	anonymous	apex/dot_instance.apex
+static_space	anonymous	apex/static_space.apex
+split_statement	anonymous	apex/split_statement.apex

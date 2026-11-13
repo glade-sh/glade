@@ -17,3 +17,13 @@ qualified_same	62.0	anonymous	true	ok
 qualified_same	67.0	anonymous	true	ok
 static_dot_before	62.0	anonymous	false	Unexpected token '('.
 static_dot_before	67.0	anonymous	false	Unexpected token '('.
+dot_statement	62.0	anonymous	false	Invalid type: ReceiverProbe.
+dot_statement	67.0	anonymous	false	Invalid type: ReceiverProbe.
+dot_assign	62.0	anonymous	false	Unexpected token 'x'.
+dot_assign	67.0	anonymous	false	Unexpected token 'x'.
+dot_instance	62.0	anonymous	false	Invalid type: x.
+dot_instance	67.0	anonymous	false	Invalid type: x.
+static_space	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_space	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+split_statement	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+split_statement	67.0	anonymous	false	Variable does not exist: ReceiverProbe
