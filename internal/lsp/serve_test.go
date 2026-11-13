@@ -283,17 +283,26 @@ func TestServeDidOpenWithPendingIndexPublishesParseErrorsAtOnce(t *testing.T) {
 }
 
 func TestServeIgnoresClientResponses(t *testing.T) {
-	c := startServe(t, NewHandler(sampleIndex(t)))
-	c.send(map[string]any{"id": 42, "result": nil})
-	c.send(map[string]any{"id": 43, "error": map[string]any{"code": -32601, "message": "unsupported"}})
-	c.send(map[string]any{"id": 44, "method": "initialize", "params": map[string]any{}})
-	m := c.mustNext(3 * time.Second)
-	if string(m["id"]) != "44" {
-		t.Fatalf("response to client response: %s", m["id"])
+	var out bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s := &server{h: NewHandler(sampleIndex(t)), w: &out, ctx: ctx, inflight: make(map[string]context.CancelFunc)}
+	s.dispatch([]byte(`{"jsonrpc":"2.0","id":42,"result":null}`))
+	s.dispatch([]byte(`{"jsonrpc":"2.0","id":43,"error":{"code":-32601,"message":"unsupported"}}`))
+	s.reqWG.Wait()
+	if out.Len() != 0 {
+		t.Fatalf("response to client response: %s", out.String())
 	}
-	c.send(map[string]any{"id": 45, "method": "shutdown"})
-	if err := <-c.served; err != nil {
+	s.dispatch([]byte(`{"jsonrpc":"2.0","id":44,"method":"initialize","params":{}}`))
+	data, err := NewProtocolReader(&out).Read()
+	if err != nil {
 		t.Fatal(err)
+	}
+	var response struct {
+		ID json.RawMessage `json:"id"`
+	}
+	if err := json.Unmarshal(data, &response); err != nil || string(response.ID) != "44" {
+		t.Fatalf("initialize response = %s, error = %v", data, err)
 	}
 }
 
@@ -327,5 +336,13 @@ func TestDiagnosticsRetriesAfterGenerationChange(t *testing.T) {
 	var n Notification
 	if err := json.Unmarshal(data, &n); err != nil || n.Method != "textDocument/publishDiagnostics" {
 		t.Fatalf("notification = %s, error = %v", data, err)
+	}
+	var message struct {
+		Params struct {
+			Diagnostics []json.RawMessage `json:"diagnostics"`
+		} `json:"params"`
+	}
+	if err := json.Unmarshal(data, &message); err != nil || len(message.Params.Diagnostics) == 0 {
+		t.Fatalf("missing parser diagnostics: %s, error = %v", data, err)
 	}
 }
