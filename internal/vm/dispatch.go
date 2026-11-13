@@ -641,6 +641,9 @@ platformStaticCall:
 		if err := vm.validateDynamicSOQLCountHavingNames(args[0].Text); err != nil {
 			return Null, err
 		}
+		if err := vm.validateDynamicSOQLExceptionBinds(args[0].Text); err != nil {
+			return Null, err
+		}
 		// COUNT(field) and ordinary selections use query().
 		if query, err := vm.parseSOQLAt(args[0].Text); err != nil {
 			if nativeErr := vm.countQueryParseError(err, args[0].Text); nativeErr != nil {
