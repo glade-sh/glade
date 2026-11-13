@@ -260,7 +260,7 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	defaultInsertOverload := len(args) == 1 || (len(args) == 2 && args[1].Kind == ValueBool)
 	if ordinaryDatabaseCall && op == "insert" && len(args) == 2 && args[0].Kind == ValueObject && args[1].Kind == ValueBool &&
 		!args[1].Bool && !allOrNone && dmlMode == "USER_MODE" && vm.currentSourceExecutionPolicy().APIVersion == "67.0" {
-		if failures, handled := vm.userModePartialInsertObjectDenials(args[0]); handled {
+		if failures, handled := vm.userModePartialInsertObjectDenials(args[0], false); handled {
 			if err := vm.chargeUserModeInsertPermissionDenial(args[0]); err != nil {
 				return Null, err
 			}
@@ -285,7 +285,7 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	}
 	if ordinaryDatabaseCall && op == "insert" && len(args) == 3 && args[1].Kind == ValueBool &&
 		!args[1].Bool && isDatabaseAccessLevelValue(args[2]) && accessLevelPermissionSetID(args[2]) == "" && !allOrNone && dmlMode == "USER_MODE" {
-		if failures, handled := vm.userModePartialInsertObjectDenials(args[0]); handled {
+		if failures, handled := vm.userModePartialInsertObjectDenials(args[0], true); handled {
 			if err := vm.chargeUserModeInsertPermissionDenial(args[0]); err != nil {
 				return Null, err
 			}

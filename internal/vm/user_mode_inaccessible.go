@@ -21,6 +21,11 @@ func (vm *VM) userModeInaccessibleSecureDenial(query soql.Query, permissionSetID
 	return vm.userModeInaccessibleFlatIDQuery(query)
 }
 
+func plainTextNameField(definition storage.ObjectDefinition) bool {
+	name, ok := definition.Fields["Name"]
+	return ok && strings.EqualFold(definition.Metadata["nameFieldType"], "Text") && name.Type == storage.FieldString && strings.EqualFold(name.DisplayType, "STRING") && name.Formula == "" && !name.AutoNumber
+}
+
 // api62DynamicSecurePermissionDenial covers the dynamic projections captured
 // for an inaccessible ReadWrite custom object at source API 62. It does not
 // change static SOQL, other APIs, field-only denials, or other projections.
@@ -47,7 +52,7 @@ func (vm *VM) api62DynamicSecurePermissionDenial(query soql.Query, permissionSet
 		return false
 	}
 	definition := vm.Org.Objects[objectName].Definition
-	if !vm.ordinaryCustomPermissionObject(objectName) || !strings.EqualFold(definition.SharingModel, "ReadWrite") {
+	if !vm.ordinaryCustomPermissionObject(objectName) || !strings.EqualFold(definition.SharingModel, "ReadWrite") || !plainTextNameField(definition) {
 		return false
 	}
 	fields := make([]string, len(query.Fields))

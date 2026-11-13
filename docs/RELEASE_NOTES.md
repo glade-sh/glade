@@ -4,7 +4,7 @@
 
 ### Apex
 
-- **User-mode DML and secure queries.** For named runAs Standard User tests at source APIs 62 and 67, denied object access in explicit partial `USER_MODE` inserts returns failed `SaveResult` rows, and explicit all-or-none inserts return the captured exception and DML counters. At API 67, the omitted-mode partial insert returns native `SaveResult` failures. Captured API 62 dynamic `SECURITY_ENFORCED` projections report the native inaccessible-permission message.
+- **User-mode DML and secure queries.** For named runAs Standard User tests at source APIs 62 and 67, denied object access in explicit partial `USER_MODE` inserts returns failed `SaveResult` rows, and explicit all-or-none inserts return the captured exception and DML counters. At API 67, the omitted-mode partial insert returns native `SaveResult` failures. These results apply to the captured Text Name object and record shapes; other shapes retain their previous behavior. Captured API 62 dynamic `SECURITY_ENFORCED` projections on Text Name objects report the native inaccessible-permission message.
 
 ## v0.3.8
 

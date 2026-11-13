@@ -30,7 +30,7 @@ func TestPermissionTransportUncapturedShapes(t *testing.T) {
 			v.Fields["Name"] = String("x")
 			v.Fields["Summary__c"] = String("value")
 			tc.mutate(vm, &v)
-			if _, _, ok := vm.userModeInsertObjectDenial(v); ok {
+			if _, _, ok := vm.userModeInsertObjectDenial(v, true); ok {
 				t.Fatal("uncaptured shape accepted")
 			}
 		})

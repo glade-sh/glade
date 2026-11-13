@@ -1171,7 +1171,7 @@ func dmlAccessRecords(value Value) []Value {
 
 // userModeInsertObjectDenial recognizes the captured named-user CRUD-only
 // denial shape and classifies access once for the partial and all-or-none APIs.
-func (vm *VM) userModeInsertObjectDenial(value Value) (string, string, bool) {
+func (vm *VM) userModeInsertObjectDenial(value Value, customTextRequired bool) (string, string, bool) {
 	version := vm.currentSourceExecutionPolicy().APIVersion
 	if (version != "62.0" && version != "67.0") || vm.testContext == nil || vm.testContext.RunAsDepth == 0 || vm.Org == nil {
 		return "", "", false
@@ -1188,6 +1188,7 @@ func (vm *VM) userModeInsertObjectDenial(value Value) (string, string, bool) {
 		return "", "", false
 	}
 	objectName := ""
+	customField := ""
 	for i, record := range records {
 		if record.Kind != ValueObject {
 			return "", "", false
@@ -1199,10 +1200,37 @@ func (vm *VM) userModeInsertObjectDenial(value Value) (string, string, bool) {
 				return "", "", false
 			}
 			state, ok := vm.Org.Objects[objectName]
-			if !ok || !strings.EqualFold(state.Definition.SharingModel, "ReadWrite") {
+			if !ok || !strings.EqualFold(state.Definition.SharingModel, "ReadWrite") || !plainTextNameField(state.Definition) {
 				return "", "", false
 			}
 		} else if !strings.EqualFold(name, objectName) {
+			return "", "", false
+		}
+		definition := vm.Org.Objects[objectName].Definition
+		nameSeen, textSeen := false, false
+		for field, value := range record.Fields {
+			if field == sobjectUserSetFieldsField || field == sobjectSetFieldsField || field == sobjectExplicitFieldsField {
+				continue
+			}
+			canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field)
+			if !ok || value.Kind != ValueString {
+				return "", "", false
+			}
+			if strings.EqualFold(canonical, "Name") {
+				nameSeen = true
+				continue
+			}
+			f := definition.Fields[canonical]
+			if textSeen || !isCustomSchemaName(canonical) || f.Type != storage.FieldString || !strings.EqualFold(f.DisplayType, "STRING") || f.Formula != "" || f.AutoNumber {
+				return "", "", false
+			}
+			if customField != "" && !strings.EqualFold(customField, canonical) {
+				return "", "", false
+			}
+			customField = canonical
+			textSeen = true
+		}
+		if !nameSeen || textSeen != customTextRequired {
 			return "", "", false
 		}
 	}
@@ -1215,8 +1243,8 @@ func (vm *VM) userModeInsertObjectDenial(value Value) (string, string, bool) {
 	return "TypeException", fmt.Sprintf("DML operation INSERT not allowed on %s", objectName), true
 }
 
-func (vm *VM) userModePartialInsertObjectDenials(value Value) ([]dml.Result, bool) {
-	_, message, denied := vm.userModeInsertObjectDenial(value)
+func (vm *VM) userModePartialInsertObjectDenials(value Value, customTextRequired bool) ([]dml.Result, bool) {
+	_, message, denied := vm.userModeInsertObjectDenial(value, customTextRequired)
 	if !denied {
 		return nil, false
 	}
@@ -1239,7 +1267,7 @@ func (vm *VM) userModeAllOrNoneInsertObjectDenial(value, accessLevel Value) (err
 	if value.Kind != ValueList || len(value.List) != 2 {
 		return nil, false
 	}
-	exceptionType, message, denied := vm.userModeInsertObjectDenial(value)
+	exceptionType, message, denied := vm.userModeInsertObjectDenial(value, false)
 	if !denied {
 		return nil, false
 	}
