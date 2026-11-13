@@ -1,0 +1,9 @@
+capture: r-knowledge
+started: 2026-11-12T17:47:16Z
+finished: 2026-11-12T17:52:29Z
+apis: 62.0 67.0
+routes: anonymous 
+cases: 36
+sf: @salesforce/cli/2.157.8
+cases.tsv sha256: 35888b221206df71
+mode: live

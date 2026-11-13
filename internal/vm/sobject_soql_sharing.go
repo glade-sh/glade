@@ -490,7 +490,10 @@ func (vm *VM) currentUserCanWriteRecord(objectName string, record storage.Record
 		}
 		if canonical, ok := vm.resolveObjectName(objectName); ok && vm.Org != nil {
 			model := strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel)
-			if model == "" {
+			// An external user's default is Private for Case.
+			if vm.currentUserHasUndeclaredPrivateExternalDefault(canonical) {
+				model = "Private"
+			} else if model == "" {
 				switch standardObjectDefaultSharingModel(canonical) {
 				case "ReadWrite", "ReadWriteTransfer":
 					return true

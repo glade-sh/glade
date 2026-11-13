@@ -17,10 +17,6 @@
     "CaseNumber",
     "ClosedDate",
     "Comments",
-    "ConnectionReceived",
-    "ConnectionReceivedId",
-    "ConnectionSent",
-    "ConnectionSentId",
     "Contact",
     "ContactEmail",
     "ContactFax",
@@ -44,7 +40,6 @@
     "IsSelfServiceClosed",
     "IsStopped",
     "IsVisibleInSelfService",
-    "Language",
     "LastModifiedBy",
     "LastModifiedById",
     "LastModifiedDate",
@@ -78,7 +73,17 @@
     "SuppliedPhone",
     "SystemModstamp",
     "Type"
-   ]
+   ],
+   "unspecified_shape_fields": [
+    "Language",
+    "ConnectionReceivedId",
+    "ConnectionSentId",
+    "ConnectionReceived",
+    "ConnectionSent"
+   ],
+   "feature_enabled_fields": {
+    "Division": [["Division"]]
+   }
   },
   "User": {
    "constructor_fields": [
