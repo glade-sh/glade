@@ -1807,8 +1807,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v35" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v35", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v36" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v36", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
