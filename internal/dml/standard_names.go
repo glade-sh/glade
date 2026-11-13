@@ -1,6 +1,9 @@
 package dml
 
-import "strings"
+import (
+	"math"
+	"strings"
+)
 
 // A standard Contact can match J or J. with a one-word first name beginning
 // with J. Two-letter prefixes and unrelated initials do not establish a match.
@@ -55,7 +58,7 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 			return false, 0
 		}
 		score, ok := keyboardSimilarity(a, b)
-		return ok && score >= 90, averageWith100(score)
+		return ok && score >= 90, standardTrailingLetterConfidence(a, averageWith100(score))
 	}
 	// LocalEditsBehavior finds a five-letter surname when only its final nasal
 	// consonant changes between the neighboring m and n keys, in either order.
@@ -91,10 +94,33 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	}
 	score := 100 * (1 - cost/float64(len(a)))
 	confidence := averageWith100(score)
-	if len(left) == 2 && score >= 92 {
-		return standardTerminalSwap(a, confidence)
+	if score >= 92 {
+		if len(left) == 2 {
+			return standardTerminalSwap(a, confidence)
+		}
+		confidence = standardLocalEditConfidence(a, left, right)
 	}
 	return score >= 92, confidence
+}
+
+// These rounded grades are fitted to the local-edit panels. They use the
+// whole-name key positions to distinguish the same edit at different stems.
+func standardLocalEditConfidence(name, left, right string) float64 {
+	steps := 0
+	for i := range len(left) {
+		if left[i] != right[i] {
+			a, b := qwertyPosition[rune(left[i])], qwertyPosition[rune(right[i])]
+			steps += max(1, abs(a[1]-b[1]))
+		}
+	}
+	return math.Round(100 - float64(60*steps)/float64(16*len(name)+standardKeyboardPositionSum(name)))
+}
+
+func standardTrailingLetterConfidence(short string, ordinary float64) float64 {
+	if len(short) != 4 {
+		return ordinary
+	}
+	return math.Round(100 - 80/float64(4*len(short)+standardKeyboardPositionSum(short)))
 }
 
 // KeyboardBehavior, PrefixBehavior and HoldoutBehavior in duplicate_save_behavior
@@ -117,6 +143,11 @@ func standardTerminalSwap(name string, ordinary float64) (bool, float64) {
 				return true, 98
 			}
 			return true, 97
+		}
+	case 3, 8:
+		if rows <= 1 && (len(name) == 3 && columns == 1 || len(name) == 8 && columns == 5) {
+			left := name[len(name)-2:]
+			return true, standardLocalEditConfidence(name, left, left[1:]+left[:1])
 		}
 	case 6:
 		if columns == 4 && rows <= 1 {
@@ -141,7 +172,7 @@ func standardKeyboardPositionSum(name string) int {
 // A same-key pair may already have qualified through the standard last-name
 // item's keyboard branch. Apply the same corroborated swap verdict there.
 func standardIsTerminalSwap(a, b string) bool {
-	if (len(a) != 2 && len(a) != 6) || len(a) != len(b) || !standardNameWord(a) || !standardNameWord(b) {
+	if (len(a) != 2 && len(a) != 3 && len(a) != 6 && len(a) != 8) || len(a) != len(b) || !standardNameWord(a) || !standardNameWord(b) {
 		return false
 	}
 	a, b = strings.ToLower(a), strings.ToLower(b)
