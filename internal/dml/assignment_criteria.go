@@ -70,7 +70,8 @@ func evaluateAssignmentCriteria(item storage.WorkflowCriteriaItem, record storag
 			// selection must equal one of them as a whole.
 			text := strings.ToLower(strings.TrimSpace(workflowValueString(value)))
 			for _, element := range strings.FieldsFunc(want, func(r rune) bool { return r == ',' || r == ';' }) {
-				if !blank && text == strings.ToLower(strings.TrimSpace(element)) {
+				normalized := strings.ToLower(strings.TrimSpace(element))
+				if !blank && text == normalized {
 					return true, true
 				}
 			}
