@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Standard Contact and Lead duplicate rules now follow captured surname
+  substitution confidence and far-key boundaries at first, middle and final
+  positions, with native replay coverage for horizontal, vertical and diagonal
+  neighbors at APIs 62.0 and 67.0.
+
 ### Duplicate rules
 
 - **Duplicate rule settings survive reloads.** Saved orgs and warm test runtimes honor the current standard-rule setting, including after upgrading an older saved org.

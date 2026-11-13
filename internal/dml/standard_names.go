@@ -47,6 +47,8 @@ func standardSurnameLengthsMayMatch(a, b string) bool {
 	if len(a) > maxFuzzyInputRunes || len(b) > maxFuzzyInputRunes {
 		return false
 	}
+	// The four accented five-to-six pairs also fit dropping the accented
+	// letter. Keep the conservative accent gate; that mechanism is unproven.
 	accented := a != stripAccents(a) || b != stripAccents(b)
 	a, b = standardSurnamePair(a, b)
 	// The extra corroborated comparisons have native positives at lengths
@@ -82,10 +84,11 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 		score, _ := keyboardSimilarity(a, b)
 		return true, standardTrailingConfidence(a, b, averageWith100(score))
 	}
-	different, cost := 0, 0.0
+	different, changed, cost := 0, 0, 0.0
 	for i := range len(a) {
 		if a[i] != b[i] {
 			different++
+			changed = i
 			cost = keyboardCost(rune(a[i]), rune(b[i]))
 		}
 	}
@@ -93,14 +96,41 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 		if lastNameMetaphone3Equal(a, b) {
 			return true, 100
 		}
+		left, right := qwertyPosition[rune(a[changed])], qwertyPosition[rune(b[changed])]
+		sum := min(standardKeyboardPositionSum(a), standardKeyboardPositionSum(b))
+		// Panel J measures first, middle and final positions, both directions,
+		// with same-row, vertical and diagonal neighbors at lengths 4 to 8.
+		// The earlier panel D also measures three-letter terminal neighbors.
 		if cost == 0.05 {
-			if len(a) >= 5 {
+			if len(a) == 3 && (changed != len(a)-1 || left[0] != right[0]) {
+				return false, 0
+			}
+			if len(a) >= 5 || len(a) == 4 && left[0] != right[0] && sum >= 34 {
 				return true, 100
 			}
 			return true, 99
 		}
-		// The far-key z/m controls cost 0.4, while q/p costs 0.64 and misses.
-		if cost == 0.4 && len(a) == 5 {
+		// Panels D and J's far-key rules use only the captured geometry,
+		// never every equal-cost pair. Use the smaller position sum so both
+		// directions reach the same boundary.
+		if left[0] == 2 && right[0] == 2 && abs(left[1]-right[1]) == 6 {
+			switch len(a) {
+			case 4:
+				if sum >= 40 {
+					return true, 97
+				}
+			case 5:
+				return true, 97
+			case 6:
+				if sum >= 50 {
+					return true, 98
+				}
+				return true, 97
+			case 7, 8:
+				return true, 98
+			}
+		}
+		if left[0] == 0 && right[0] == 0 && abs(left[1]-right[1]) == 9 && (len(a) == 8 || len(a) == 7 && sum >= 51) {
 			return true, 97
 		}
 		return false, 0

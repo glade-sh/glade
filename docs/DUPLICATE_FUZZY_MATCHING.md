@@ -604,10 +604,30 @@ on both sides), so no row covers blank Account names or Contact last names.
   sum 42 and 99 from 42; z scores 97 at sum 16 and 98 from 18. Other tails
   keep their ordinary grade. Three-to-four extensions also qualify, with the
   captured s, p and k grade buckets pinned by the tests.
-  One-letter substitutions use keyboard distance, including adjacent keys
-  and m/n: lengths three and four score 99, and five through eight score 100.
-  The five-letter far-key controls at cost 0.4 score 97; the wider q/p controls
-  miss. Three-letter same-row adjacent swaps score 98 through sum 29 and 99
+  The `surname_substitution` fixture adds panels J and K: 624 directed inputs
+  plus exact and unrelated sentinels, with the same API, route and repeat
+  matrix. Panel J measures first, middle and final substitutions, lengths
+  four through eight, both directions and both objects. Same-row adjacent,
+  vertical and diagonal neighbors all match with exact first name and email.
+  Five through eight letters score 100. Four-letter neighbors score 99,
+  except captured cross-row pairs whose smaller keyboard position sum is
+  at least 34, which score 100. High-sum same-row four-letter grades remain
+  unmeasured and keep 99. Three-letter supplementary substitutions remain
+  limited to panel D's terminal, same-row neighbors, at 99.
+  Far-key controls are position-sensitive through the whole-name sum: bottom
+  row substitutions six columns apart score 97 at length four from smaller
+  sum 40, and at length five; length six scores 97 below smaller sum 50 and
+  98 from 50; lengths seven and eight score 98. Top row substitutions nine
+  columns apart miss at lengths four through six; length seven misses below
+  smaller sum 51 and scores 97 from 51, while length eight scores 97.
+  Other far-key geometries retain the inherited gate. These are measured
+  buckets, not a claim about the native distance formula or its unmeasured
+  boundaries. Panel K holds missing email, different email, different first
+  name and phone-only controls across positions and neighbor geometries.
+  Panels J and K compare exact confidence, membership and save decisions
+  without any new residuals; all 4992 comparisons agree with zero false matches.
+  Predictions were frozen before native capture; the fresh 30-day scratch org
+  was deleted and deletion verified. Three-letter same-row adjacent swaps score 98 through sum 29 and 99
   from 31. Five-letter terminal rotations in the one-row/one-column group
   score 98 through sum 35 and 99 from 39; vertical controls score 98 and
   wide same-row controls score 97. Wide rotations below keyboard score 94
