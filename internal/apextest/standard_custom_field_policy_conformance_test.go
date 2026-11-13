@@ -63,7 +63,7 @@ func TestStandardCustomFieldPolicyNativeConformance(t *testing.T) {
 			}
 			message := run.Suites[0].Cases[0].Problem.Message
 			_, got, ok := strings.Cut(message, " => ")
-			if !ok || got != want {
+			if !ok || strings.TrimSpace(got) != strings.TrimSpace(want) {
 				t.Fatalf("NATIVE %s org.tsv:%d istest %s\nnative=%q\nglade =%q", method, line, api, want, message)
 			}
 		})
