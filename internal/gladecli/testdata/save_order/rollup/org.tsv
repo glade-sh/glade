@@ -1,0 +1,5 @@
+id	api	route	compiled	transport	observation
+rollup	62.0	anonymous	true	intentional exception	test:false|ok,FIELD_CUSTOM_VALIDATION_EXCEPTION|before:ok:1;before:reject:1;after:ok:1;before:ok:1;after:ok:1;before:ok:1;after:ok:1;|counts:1,0|children:1
+rollup	62.0	istest	true	intentional assertion	test:true|ok,FIELD_CUSTOM_VALIDATION_EXCEPTION|before:ok:1;before:reject:1;after:ok:1;before:ok:1;after:ok:1;before:ok:1;after:ok:1;|counts:1,0|children:1
+rollup	67.0	anonymous	true	intentional exception	test:false|ok,FIELD_CUSTOM_VALIDATION_EXCEPTION|before:ok:1;before:reject:1;after:ok:1;before:ok:1;after:ok:1;before:ok:1;after:ok:1;|counts:1,0|children:1
+rollup	67.0	istest	true	intentional assertion	test:true|ok,FIELD_CUSTOM_VALIDATION_EXCEPTION|before:ok:1;before:reject:1;after:ok:1;before:ok:1;after:ok:1;before:ok:1;after:ok:1;|counts:1,0|children:1

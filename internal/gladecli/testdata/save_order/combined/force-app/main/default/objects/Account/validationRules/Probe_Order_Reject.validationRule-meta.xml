@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Probe_Order_Reject</fullName><active>true</active><errorConditionFormula>AND(Name = "reject-validation", Description = "FB")</errorConditionFormula><errorMessage>probe validation reject</errorMessage></ValidationRule>

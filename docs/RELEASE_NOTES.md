@@ -6,6 +6,7 @@
 
 - **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
+- Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
 
 ## v0.3.8
 
