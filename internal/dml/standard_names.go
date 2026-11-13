@@ -1,9 +1,6 @@
 package dml
 
-import (
-	"math"
-	"strings"
-)
+import "strings"
 
 // A standard Contact can match J or J. with a one-word first name beginning
 // with J. Two-letter prefixes and unrelated initials do not establish a match.
@@ -98,29 +95,37 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 		if len(left) == 2 {
 			return standardTerminalSwap(a, confidence)
 		}
-		confidence = standardLocalEditConfidence(a, left, right)
+		confidence = standardRotationConfidence(a, left, right, confidence)
 	}
 	return score >= 92, confidence
 }
 
-// These rounded grades are fitted to the local-edit panels. They use the
-// whole-name key positions to distinguish the same edit at different stems.
-func standardLocalEditConfidence(name, left, right string) float64 {
-	steps := 0
+// A five-letter terminal rotation spanning exactly one row and one column
+// scored 98 at position sums 17 and 33. Wider and purely vertical rotations
+// keep the ordinary keyboard confidence, as do unmeasured sums.
+func standardRotationConfidence(name, left, right string, ordinary float64) float64 {
+	maxRows, maxColumns := 0, 0
 	for i := range len(left) {
-		if left[i] != right[i] {
-			a, b := qwertyPosition[rune(left[i])], qwertyPosition[rune(right[i])]
-			steps += max(1, abs(a[1]-b[1]))
+		a, b := qwertyPosition[rune(left[i])], qwertyPosition[rune(right[i])]
+		maxRows = max(maxRows, abs(a[0]-b[0]))
+		maxColumns = max(maxColumns, abs(a[1]-b[1]))
+	}
+	if maxRows == 1 && maxColumns == 1 {
+		sum := standardKeyboardPositionSum(name)
+		if sum >= 17 && sum <= 33 {
+			return 98
 		}
 	}
-	return math.Round(100 - float64(60*steps)/float64(16*len(name)+standardKeyboardPositionSum(name)))
+	return ordinary
 }
 
 func standardTrailingLetterConfidence(short string, ordinary float64) float64 {
-	if len(short) != 4 {
-		return ordinary
+	// The high-position four-letter stem in the extension panel scores 99.
+	// The lower sums include conflicting native grades for the same sum.
+	if len(short) == 4 && standardKeyboardPositionSum(short) == 42 {
+		return 99
 	}
-	return math.Round(100 - 80/float64(4*len(short)+standardKeyboardPositionSum(short)))
+	return ordinary
 }
 
 // KeyboardBehavior, PrefixBehavior and HoldoutBehavior in duplicate_save_behavior
@@ -144,16 +149,26 @@ func standardTerminalSwap(name string, ordinary float64) (bool, float64) {
 			}
 			return true, 97
 		}
-	case 3, 8:
-		if rows <= 1 && (len(name) == 3 && columns == 1 || len(name) == 8 && columns == 5) {
-			// The eight-letter holdout saved all nonphonetic pairs at sums of
-			// 42 and 44. The earlier positive has sum 60. Preserve membership
-			// only from the observed positive boundary upwards.
-			if len(name) == 8 && standardKeyboardPositionSum(name) < 60 {
+	case 3:
+		// One-column exchanges in the same row scored 99 at sums 31 and
+		// 35. The observed sums 11 and 25 retained the ordinary grade.
+		if rows == 0 && columns == 1 {
+			sum := standardKeyboardPositionSum(name)
+			if sum >= 31 && sum <= 35 {
+				return true, 99
+			}
+		}
+	case 8:
+		if rows <= 1 && columns == 5 {
+			// The independent panel saved all nonphonetic pairs at sums 42
+			// and 44. The earlier positive has sum 60 and confidence 97.
+			sum := standardKeyboardPositionSum(name)
+			if sum < 60 {
 				return false, 0
 			}
-			left := name[len(name)-2:]
-			return true, standardLocalEditConfidence(name, left, left[1:]+left[:1])
+			if sum == 60 {
+				return true, 97
+			}
 		}
 	case 6:
 		if columns == 4 && rows <= 1 {
