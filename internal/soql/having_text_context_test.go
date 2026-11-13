@@ -27,7 +27,7 @@ func TestHavingTextRangesKeepExecutionLocale(t *testing.T) {
 				// Scalar HAVING is rejected by the public query validator.
 				// Exercise the scalar aggregate evaluator directly, without
 				// widening the accepted SOQL surface.
-				scalar, err := Parse("SELECT MIN(Name) mn FROM Account HAVING MIN(Name) " + op + " '9'")
+				scalar, err := Parse("SELECT MIN(Name) mn FROM Account GROUP BY Name HAVING MIN(Name) " + op + " '9'")
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -35,6 +35,7 @@ func TestHavingTextRangesKeepExecutionLocale(t *testing.T) {
 				for _, record := range org.Objects["Account"].Records {
 					records = append(records, record)
 				}
+				scalar.GroupBy = nil
 				scalar = withTextCollation(scalar, englishTextLocale(locale))
 				got, err := aggregateRecords(org, org.Objects["Account"].Definition, records, scalar)
 				if err != nil {
