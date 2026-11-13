@@ -3,6 +3,7 @@ package apextest
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -18,16 +19,18 @@ import (
 // NATIVE a Community license refuses the Read Lead permission, so no row isolates Lead sharing
 // testdata/conformance/external_user_case_lead_sharing/lead_grant/org.tsv:2-5 istest 62.0 67.0
 //
-// The project declares only the internal model. A Standard User control reads
-// all three records (default/org.tsv:8-9).
+// NATIVE a Community user reads Case and not Lead through isAccessible, a Login user too
+// testdata/conformance/external_user_case_lead_sharing/default/org.tsv:2-7 istest 62.0 67.0
+// NATIVE a named Standard User reads, edits and counts all three records
+// testdata/conformance/external_user_case_lead_sharing/default/org.tsv:8-9 istest 62.0 67.0
+//
+// The project declares only the internal model. Each observation is compared
+// whole: UserRecordAccess read and edit bits, three count queries and the Case
+// and Lead isAccessible flags.
 func TestExternalUserCaseLeadSharingNativeConformance(t *testing.T) {
 	const base = "testdata/conformance/external_user_case_lead_sharing"
 	variants := []string{"default", "public_read_write", "public_read"}
-	// Case record visibility only. The Lead reads, the Login profile's object
-	// access and the Standard User control stay out: their rows differ for
-	// reasons outside record sharing (portal profile object permissions and
-	// UserRecordAccess rows for a named internal user).
-	classes := map[string]string{"PclCcTest": "cc", "PclCcpTest": "ccp"}
+	classes := map[string]string{"PclCcTest": "cc", "PclCcpTest": "ccp", "PclCclTest": "ccl", "PclStdTest": "std"}
 	for _, variant := range variants {
 		rows := readNativeTSV(t, filepath.Join(base, variant, "org.tsv"))
 		for _, api := range []string{"62.0", "67.0"} {
@@ -56,29 +59,21 @@ func TestExternalUserCaseLeadSharingNativeConformance(t *testing.T) {
 						t.Fatalf("%s: expected one asserted observation: %+v", class, run.Summary())
 					}
 					_, got, _ := strings.Cut(run.Suites[0].Cases[0].Problem.Message, "Assertion Failed: ")
-					if caseVisibility(got) != caseVisibility(want) || caseVisibility(want) == "" {
+					if variant == "public_read" && tag == "std" {
+						// This row was observed before sharing recalculated after the Lead
+						// model change (lead_read_model_recalculation/org.tsv:2-5 shows the
+						// later answer: no Lead edit) and the declared Read Case model was
+						// not applied natively. Only the read bits and counts are asserted.
+						editBits := regexp.MustCompile(`\|e=[01]+`)
+						got, want = editBits.ReplaceAllString(got, ""), editBits.ReplaceAllString(want, "")
+					}
+					if got != want {
 						t.Errorf("%s (%s) %s/%s: Glade=%q native=%q", class, tag, variant, api, got, want)
 					}
 				}
 			})
 		}
 	}
-}
-
-// caseVisibility keeps the read and edit bits of the two Case records and the
-// first two query counts of an observation such as
-// "cc|r=000|e=000|q=0,0,E|a=10".
-func caseVisibility(observation string) string {
-	parts := strings.Split(observation, "|")
-	if len(parts) != 5 {
-		return ""
-	}
-	bits := func(part, prefix string) string { return strings.TrimPrefix(part, prefix)[:2] }
-	counts := strings.Split(strings.TrimPrefix(parts[3], "q="), ",")
-	if len(counts) != 3 {
-		return ""
-	}
-	return bits(parts[1], "r=") + "/" + bits(parts[2], "e=") + "/" + counts[0] + "," + counts[1]
 }
 
 func readNativeTSV(t *testing.T, path string) []map[string]string {
@@ -124,4 +119,20 @@ func copyTree(t *testing.T, src, dst, api string) {
 	for _, entry := range entries {
 		copyTree(t, filepath.Join(src, entry.Name()), filepath.Join(dst, entry.Name()), api)
 	}
+}
+
+// caseVisibility keeps the read and edit bits of the two Case records and the
+// first two query counts of an observation such as
+// "cc|r=000|e=000|q=0,0,E|a=10".
+func caseVisibility(observation string) string {
+	parts := strings.Split(observation, "|")
+	if len(parts) != 5 {
+		return ""
+	}
+	bits := func(part, prefix string) string { return strings.TrimPrefix(part, prefix)[:2] }
+	counts := strings.Split(strings.TrimPrefix(parts[3], "q="), ",")
+	if len(counts) != 3 {
+		return ""
+	}
+	return bits(parts[1], "r=") + "/" + bits(parts[2], "e=") + "/" + counts[0] + "," + counts[1]
 }
