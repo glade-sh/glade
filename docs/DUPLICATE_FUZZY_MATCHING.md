@@ -587,8 +587,12 @@ on both sides), so no row covers blank Account names or Contact last names.
   the sum of `abs(2*column-11) + 2*row` over the name was at least 44.
   Row and column start at zero. Phonetic hits scored 100. The 80 unseen inputs
   in the boundary fixture agreed on match identities, saves, and recorded
-  integer confidences at both APIs on the anonymous and test routes. The
-  underlying Salesforce distance function and wider input range remain open.
+  integer confidences at both APIs on the anonymous and test routes.
+  Lead probes also cover corroborated and uncorroborated initial and surname
+  pairs with distinct companies. A second custom Contact phone rule captured
+  a filter-field change into and out of scope: both edits saved with an
+  unchanged phone, while a changed-phone upsert into a match was rejected.
+  The underlying Salesforce distance function and wider input range remain open.
 - Street: native scores the street sections multiplicatively (a different
   suffix word 91, a different street number 95); Glade matches the pairs the
   custom Street method matches and approximates the confidence.
