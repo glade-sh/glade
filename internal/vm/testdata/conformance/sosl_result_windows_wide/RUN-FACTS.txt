@@ -1,0 +1,7 @@
+API versions: 62.0 and 67.0. Route: isolated @IsTest classes deployed at the matching source version, run as named tests. Fresh 30-day Developer scratch org, synthetic data, deleted after capture and verified gone.
+Each test method seeded its own data, passed every seeded Id to Test.setFixedSearchResults in a shuffled mixed order, ran Search.query, and transported the observation through an intentional assertion failure. Columns _1 and _2 use two different fixed-Id orders.
+Population for G and OFF rows: five each of Account (Name A-E), Contact (LastName K-O), Lead (LastName P-T), Opportunity (Name U-Y), Case (Subject 1-5), Campaign (m1-m5), Product2 (n1-n5), Solution (SolutionName o1-o5), Pricebook2 (p1-p5), Asset (q1-q5). Every text is 'Wideterm <label>'. Every RETURNING group orders by its label field.
+Population for B rows: B3 700 each of Account, Contact, Lead; B4 510 each of Account, Contact, Lead, Opportunity; B5 410 each of those four and Case. Labels are zero-padded. Cells are [count:first label:last label].
+G4e1 and G4e3 rows empty the first or third group with WHERE Name = 'Absent'.
+OFF rows end with @sosl+N, the Limits.getSoslQueries() delta around the single call with the exception caught.
+A dash marks a cell observed once per API. No cell differed between APIs or between Id orders.
