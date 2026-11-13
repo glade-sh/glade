@@ -65,7 +65,7 @@ Use `--force` to replace an existing file.
 | `project.packageShims` | string list | no local method bodies from shims | A captured artifact still owns the contract. |
 | `project.schemaSnapshot` | path string | no imported describe snapshot | Requires `schemaSnapshotSHA256`. |
 | `project.schemaSnapshotSHA256` | string | no snapshot digest | Requires a snapshot and 64 hexadecimal characters matching its exact bytes. |
-| `duplicateRules.standard` | `on` enforces the standard Account, Contact and Lead duplicate rules that no project metadata defines; `off` (the default) leaves them unenforced. `GLADE_STANDARD_DUPLICATE_RULES=on` turns them on for one run. A project's `duplicateRules` metadata for a standard rule is always honored, active or inactive, and custom duplicate rules are always enforced. |
+| `duplicateRules.standard` | `on` or `off` | `off` | `on` enforces the standard Account, Contact and Lead duplicate rules that no project metadata defines; `off` (the default) leaves them unenforced. `GLADE_STANDARD_DUPLICATE_RULES=on` turns them on for one run. A project's `duplicateRules` metadata for a standard rule is always honored, active or inactive, and custom duplicate rules are always enforced. |
 | `org.features` | string list | discovered/default local feature set | Features without a local implementation do not add functionality. |
 | `org.domainUrl` | string | `https://local.glade.example` at runtime | Absolute HTTP(S) origin; no credentials, path, query, or fragment. |
 | `test.permissionSets` | string list | no configured assignments | Project permission-set API names assigned to the running test user. |
