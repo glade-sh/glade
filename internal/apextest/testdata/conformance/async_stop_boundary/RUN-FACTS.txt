@@ -1,0 +1,6 @@
+capture=Test.stopTest batch boundary ordering
+route=istest (StopBoundaryTest)
+apis=62.0 67.0 68.0 (one fresh 30-day scratch org per API; class and trigger metadata at that API; each org deleted and verified gone)
+captured=2026-11-13
+transport=System.assert(false, observation) after Test.stopTest; Account markers record execution order
+rows=9

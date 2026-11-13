@@ -29,7 +29,17 @@ func TestAsyncStopMixNativeConformance(t *testing.T) {
 	runAsyncStopOrderRows(t, "async_stop_mix", "StopOrderMixTest", 24)
 }
 
-func runAsyncStopOrderRows(t *testing.T, fixture, class string, perAPI int) {
+// TestAsyncStopBatchBoundaryNativeConformance covers pre-start batches,
+// stateful Iterables, and stateful QueryLocators. NATIVE async_stop_boundary/
+// org.tsv:2-10 istest 62.0, 67.0 and 68.0.
+func TestAsyncStopBatchBoundaryNativeConformance(t *testing.T) {
+	runAsyncStopOrderRows(t, "async_stop_boundary", "StopBoundaryTest", 3, "62.0", "67.0", "68.0")
+}
+
+func runAsyncStopOrderRows(t *testing.T, fixture, class string, perAPI int, apis ...string) {
+	if len(apis) == 0 {
+		apis = []string{"62.0", "67.0"}
+	}
 	dir := filepath.Join("testdata", "conformance", fixture)
 	file, err := os.Open(filepath.Join(dir, "org.tsv"))
 	if err != nil {
@@ -40,10 +50,10 @@ func runAsyncStopOrderRows(t *testing.T, fixture, class string, perAPI int) {
 	reader.Comma = '\t'
 	reader.LazyQuotes = true
 	rows, err := reader.ReadAll()
-	if err != nil || len(rows) != 2*perAPI+1 {
+	if err != nil || len(rows) != len(apis)*perAPI+1 {
 		t.Fatalf("invalid native observations: %v (%d rows)", err, len(rows))
 	}
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range apis {
 		runConformanceAPIVersion(t, api, func(t *testing.T) {
 			root := t.TempDir()
 			project := filepath.Join(dir, "project")
@@ -102,5 +112,15 @@ func runAsyncStopOrderRows(t *testing.T, fixture, class string, perAPI int) {
 				t.Fatalf("asserted %d rows for API %s, want %d", asserted, api, perAPI)
 			}
 		})
+	}
+}
+
+// TestAsyncStopBatchEmptyPreservesMain pins the pre-change local behavior for
+// an empty Iterable, a shape not covered by the native ordering observations.
+func TestAsyncStopBatchEmptyPreservesMain(t *testing.T) {
+	index := loadTestIndex(t, filepath.Join("testdata", "conformance", "async_stop_boundary", "project"))
+	run := Run(index, Options{SelectedClasses: []string{"StopBoundaryLocalTest"}, SelectedMethod: "empty", NoDiskCache: true, Parallelism: 1})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("empty batch regression: %+v; suites=%+v", got, run.Suites)
 	}
 }
