@@ -15,7 +15,16 @@ import (
 // source API 67.0; SYSTEM_MODE and a granted field always save. Denials are a
 // statement DmlException or a failed SaveResult, never a SecurityException.
 func TestStandardCustomFieldPolicyNativeConformance(t *testing.T) {
-	const family = "testdata/conformance/standard_custom_field_policy"
+	runStandardCustomFieldPolicy(t, "standard_custom_field_policy", "PolicyProbe", 72)
+}
+
+func TestStandardCustomFieldScopedNativeConformance(t *testing.T) {
+	runStandardCustomFieldPolicy(t, "standard_custom_field_scoped", "Probe", 15)
+}
+
+func runStandardCustomFieldPolicy(t *testing.T, name, prefix string, count int) {
+	t.Helper()
+	family := filepath.Join("testdata/conformance", name)
 	raw, err := os.Open(filepath.Join(family, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -28,7 +37,7 @@ func TestStandardCustomFieldPolicyNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 1+2*36 || strings.Join(rows[0], ",") != "api,method,observation" {
+	if len(rows) != 1+count || strings.Join(rows[0], ",") != "api,method,observation" {
 		t.Fatalf("incomplete native rows: %d", len(rows))
 	}
 	root := t.TempDir()
@@ -54,7 +63,7 @@ func TestStandardCustomFieldPolicyNativeConformance(t *testing.T) {
 	index := loadTestIndex(t, root)
 	for i, row := range rows[1:] {
 		api, method, want := row[0], row[1], row[2]
-		class := "PolicyProbe" + strings.TrimSuffix(api, ".0")
+		class := prefix + strings.TrimSuffix(api, ".0")
 		line := i + 2
 		t.Run(api+"/"+method, func(t *testing.T) {
 			run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
@@ -63,6 +72,9 @@ func TestStandardCustomFieldPolicyNativeConformance(t *testing.T) {
 			}
 			message := run.Suites[0].Cases[0].Problem.Message
 			_, got, ok := strings.Cut(message, " => ")
+			if !ok {
+				_, got, ok = strings.Cut(message, "Assertion Failed: ")
+			}
 			if !ok || strings.TrimSpace(got) != strings.TrimSpace(want) {
 				t.Fatalf("NATIVE %s org.tsv:%d istest %s\nnative=%q\nglade =%q", method, line, api, want, message)
 			}
