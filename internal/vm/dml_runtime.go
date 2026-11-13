@@ -1952,7 +1952,13 @@ func (vm *VM) executeDatabaseMergeWithMode(args []Value, mode ir.DMLMode, result
 		return vm.mergeResultValue(master[0].ID, args[1].Kind == ValueList, beforeDeleteFailures), nil
 	}
 	engine := vm.newDMLEngine(result)
+	if vm.testContext != nil {
+		vm.testContext.changeMerging = true
+	}
 	results := engine.Merge(master[0], mergeDuplicates)
+	if vm.testContext != nil {
+		vm.testContext.changeMerging = false
+	}
 	engineRolledBack := len(results) == 0 || hasDMLFailures(results)
 	if engineRolledBack {
 		*vm.Org = backup
