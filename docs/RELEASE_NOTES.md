@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Restricted picklist ordering.** The existing source API 62–65 picklist null-order policy now also covers restricted picklists with configured values. Native controls captured the behavior at API 62.0 and the newer behavior at 67.0.
+- **Restricted picklist ordering.** Source API 62 now applies the legacy picklist null-order policy to restricted picklists with configured values. Native controls captured this at API 62.0 and the newer behavior at 67.0. Source APIs 63–65 keep their previous restricted-picklist ordering until captured.
 
 ## v0.3.8
 

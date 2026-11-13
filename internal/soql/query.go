@@ -45,6 +45,9 @@ type Query struct {
 	orderAggregates []Aggregate
 	// LegacyPicklistNullOrder is execution state, separate from cached syntax.
 	LegacyPicklistNullOrder bool `json:"-"`
+	// LegacyRestrictedPicklistNullOrder extends the legacy policy to restricted
+	// picklists; native rows capture that only at source API 62.0.
+	LegacyRestrictedPicklistNullOrder bool `json:"-"`
 }
 type OrderSpec struct {
 	Field string

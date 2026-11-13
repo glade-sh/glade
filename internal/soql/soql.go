@@ -409,7 +409,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		}, nil
 	}
 	if len(query.Order) > 0 {
-		sortRecordsByOrder(org, object.Definition, matchedRecords, query.Order, query.LegacyPicklistNullOrder, context.formulaActor())
+		sortRecordsByOrder(org, object.Definition, matchedRecords, query.Order, query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	if query.ForUpdate {
@@ -2446,7 +2446,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 	}
 	if len(query.Order) > 0 {
-		sortRecordsByOrder(org, childObject.Definition, matched, query.Order, query.LegacyPicklistNullOrder, context.formulaActor())
+		sortRecordsByOrder(org, childObject.Definition, matched, query.Order, query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
 	}
 	matched = applyWindow(matched, query.Offset, query.Limit, query.HasLimit)
 	out := make([]storage.Record, 0, len(matched))
@@ -5033,7 +5033,7 @@ func compareSOQLTextFolded(left, right string) int {
 	return 1
 }
 
-func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder bool, userIDs ...storage.ID) {
+func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder bool, userIDs ...storage.ID) {
 	// picklist_order_native.json observes setup order and one unlisted value
 	// after configured values. Keep unobserved incomplete shapes on their
 	// existing whole-column fallback so comparisons retain a total order.
@@ -5070,9 +5070,9 @@ func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinitio
 			ranks[unknown] = len(fields[0].PicklistValues)
 		}
 		picklistRanks[i] = ranks
-		// The legacy source policy also applies to restricted picklists when
-		// every stored value is represented by the configured rank metadata.
-		legacyNulls[i] = ranks != nil && legacyPicklistNullOrder
+		// Restricted picklists follow the legacy policy only where captured
+		// (source API 62.0), when every stored value has configured rank metadata.
+		legacyNulls[i] = ranks != nil && legacyPicklistNullOrder && (!fields[0].RestrictedPicklist || legacyRestrictedPicklistNullOrder)
 	}
 	nullsIgnored := make([]bool, len(order))
 	for i, spec := range order {

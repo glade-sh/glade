@@ -11,15 +11,17 @@ func TestPicklistSourcePolicyPreservesCachedQueries(t *testing.T) {
 	for _, tc := range []struct {
 		source, transport string
 		legacy            bool
+		restricted        bool
 	}{
-		{"62.0", "67.0", true},
-		{"64.0", "67.0", true},
-		{"65.0", "67.0", true},
-		{"66.0", "67.0", false},
-		{"67.0", "62.0", false},
+		{"62.0", "67.0", true, true},
+		{"64.0", "67.0", true, false},
+		{"65.0", "67.0", true, false},
+		{"63.0", "67.0", true, false},
+		{"66.0", "67.0", false, false},
+		{"67.0", "62.0", false, false},
 		// Uncaptured missing/older source retains the local zero-value policy.
-		{"", "62.0", false},
-		{"61.0", "67.0", false},
+		{"", "62.0", false, false},
+		{"61.0", "67.0", false, false},
 	} {
 		t.Run(tc.source+"/"+tc.transport, func(t *testing.T) {
 			machine := New(nil)
@@ -33,6 +35,9 @@ func TestPicklistSourcePolicyPreservesCachedQueries(t *testing.T) {
 			got := machine.applyPicklistSourcePolicy(query)
 			if got.LegacyPicklistNullOrder != tc.legacy || got.ChildQueries[0].Query.LegacyPicklistNullOrder != tc.legacy || got.ChildQueries[0].Query.ChildQueries[0].Query.LegacyPicklistNullOrder != tc.legacy {
 				t.Fatal("query policy did not follow the declaring source")
+			}
+			if got.LegacyRestrictedPicklistNullOrder != tc.restricted || got.ChildQueries[0].Query.ChildQueries[0].Query.LegacyRestrictedPicklistNullOrder != tc.restricted {
+				t.Fatal("restricted policy did not follow the captured source")
 			}
 			if query.LegacyPicklistNullOrder || query.ChildQueries[0].Query.LegacyPicklistNullOrder || query.ChildQueries[0].Query.ChildQueries[0].Query.LegacyPicklistNullOrder || query.Order[0].Nulls != "LAST" {
 				t.Fatal("source policy mutated cached query syntax")

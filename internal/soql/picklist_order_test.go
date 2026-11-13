@@ -108,6 +108,27 @@ func TestPicklistOrderUsesDefinitionSequence(t *testing.T) {
 }
 
 // org.tsv rows 2–13 capture restricted picklist order at source API 62/67.
+// Outside the captured source APIs (62.0, 67.0) a restricted picklist keeps the
+// pre-change null policy: the legacy policy alone must not reorder it.
+func TestRestrictedPicklistLegacyPolicyOutsideCaptureUnchanged(t *testing.T) {
+	org := storage.NewOrgState()
+	definition := storage.ObjectDefinition{APIName: "Item__c", Fields: map[string]storage.Field{
+		"Name":    {APIName: "Name", Type: storage.FieldString},
+		"Rank__c": {APIName: "Rank__c", Type: storage.FieldPicklist, RestrictedPicklist: true, PicklistValues: []storage.PicklistValue{{Value: "Zulu"}, {Value: "Alpha"}}},
+	}}
+	org.Objects["Item__c"] = storage.ObjectState{Definition: definition}
+	rows := []storage.Record{
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("n")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("z"), "Rank__c": storage.StringValue("Zulu")}},
+		{Fields: map[string]storage.Value{"Name": storage.StringValue("a"), "Rank__c": storage.StringValue("Alpha")}},
+	}
+	sortRecordsByOrder(org, definition, rows, []OrderSpec{{Field: "Rank__c", Desc: true}}, true, false)
+	got := rows[0].Fields["Name"].String + rows[1].Fields["Name"].String + rows[2].Fields["Name"].String
+	if got != "naz" {
+		t.Fatalf("restricted DESC with legacy policy only = %s, want origin/main order naz", got)
+	}
+}
+
 func TestRestrictedPicklistNullOrderBySourcePolicy(t *testing.T) {
 	org := storage.NewOrgState()
 	definition := storage.ObjectDefinition{APIName: "Item__c", Fields: map[string]storage.Field{
@@ -153,7 +174,7 @@ func TestRestrictedPicklistNullOrderBySourcePolicy(t *testing.T) {
 		}
 		t.Run(key, func(t *testing.T) {
 			rows := append([]storage.Record(nil), records...)
-			sortRecordsByOrder(org, definition, rows, []OrderSpec{{Field: "Rank__c", Desc: parts[0] == "DESC", Nulls: nulls}}, cells[0] == "62.0")
+			sortRecordsByOrder(org, definition, rows, []OrderSpec{{Field: "Rank__c", Desc: parts[0] == "DESC", Nulls: nulls}}, cells[0] == "62.0", cells[0] == "62.0")
 			var got []string
 			for _, record := range rows {
 				got = append(got, record.Fields["Name"].String)
