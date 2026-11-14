@@ -835,7 +835,7 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			capturedShape := scopedPermissionSetID == "" && (api == "62.0" || api == "67.0") ||
 				scopedPermissionSetID != "" && op == "insert" && vm.userModeSingleRecord && (api == "62.0" || api == "67.0" || api == "68.0") ||
 				scopedPermissionSetID == "" && op == "insert" && api == "68.0" && vm.explicitUserModePartialRecord && vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator"
-			standardObjectCustomField := capturedShape && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedTextCustomField(objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
+			standardObjectCustomField := capturedShape && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedAdminAccountRecord(record, objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
 			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert || standardObjectCustomField) {
 				policyFields = append(policyFields, canonicalField)
 				continue
@@ -943,7 +943,7 @@ func (vm *VM) capturedAdminAccountRecord(record Value, objectName, fieldName str
 // Universally required fields keep their intrinsic access.
 func (vm *VM) adminStandardCustomFieldDMLDenied(op string, record Value, objectName, fieldName, method, scopedPermissionSetID string) bool {
 	capturedDefault := vm.currentSourceExecutionPolicy().APIVersion == "67.0" && !vm.explicitUserModeAccess && vm.userModeSingleRecord && (op == "insert" || op == "update") && vm.capturedAdminAccountRecord(record, objectName, fieldName)
-	if !capturedDefault && (op != "insert" || !vm.explicitUserModePartialRecord) {
+	if !capturedDefault && (op != "insert" || !vm.explicitUserModePartialRecord || !vm.capturedAdminAccountRecord(record, objectName, fieldName)) {
 		return false
 	}
 	if !vm.capturedTextCustomField(objectName, fieldName) {
