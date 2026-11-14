@@ -20,6 +20,9 @@ func TestChildRelationshipParentFallbackDoesNotInstall(t *testing.T) {
 	}
 	baseline := org.CloneRuntimeFrozenDefinition()
 	want, ok := storage.ResolveObjectName(baseline, parent)
+	if len(baseline.Objects) == len(org.Objects) {
+		t.Fatalf("baseline did not install the pending object for %q", parent)
+	}
 	if !ok {
 		want = parent
 	}
