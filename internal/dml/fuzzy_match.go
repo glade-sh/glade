@@ -130,6 +130,13 @@ func stripAccents(s string) string {
 func isASCIILetter(r rune) bool { return r >= 'a' && r <= 'z' }
 
 func levenshtein(a, b []rune) int {
+	// Equal prefixes and suffixes do not contribute to edit distance.
+	for len(a) > 0 && len(b) > 0 && a[0] == b[0] {
+		a, b = a[1:], b[1:]
+	}
+	for len(a) > 0 && len(b) > 0 && a[len(a)-1] == b[len(b)-1] {
+		a, b = a[:len(a)-1], b[:len(b)-1]
+	}
 	if len(a) == 0 {
 		return len(b)
 	}
