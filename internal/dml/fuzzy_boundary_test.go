@@ -1,27 +1,9 @@
 package dml
 
 import (
-	"math"
 	"strings"
 	"testing"
 )
-
-func TestCustomFuzzyBoundaries(t *testing.T) {
-	for _, c := range []struct {
-		method, a, b string
-		match        bool
-		score        float64
-	}{
-		{"FirstName", "J", "J R S", false, 88},
-	} {
-		t.Run(c.method+"/"+c.a, func(t *testing.T) {
-			m, s := FuzzyScore(c.method, c.a, c.b, false)
-			if m != c.match || math.Floor(s+0.5) != c.score {
-				t.Errorf("%s %q/%q: got %v %.4f; want %v %.0f", c.method, c.a, c.b, m, s, c.match, c.score)
-			}
-		})
-	}
-}
 
 func BenchmarkCustomFuzzyPanel(b *testing.B) {
 	cases := [][3]string{
@@ -100,17 +82,6 @@ func TestReorderedSixWordTitleNativeConfidence(t *testing.T) {
 		m, score := FuzzyScore("Title", p[0], p[1], false)
 		if !m || score != 96 {
 			t.Errorf("title: got %v %.0f; native 96", m, score)
-		}
-	}
-}
-
-// Contradictory plural confidence rows remain on the shared base scorer.
-func TestCustomCompanyKeepsUncertainPluralBaseline(t *testing.T) {
-	for _, p := range [][2]string{{"Quandrys", "Quandry"}, {"Brisennas", "Brisenna"}, {"Ravensbys", "Ravensby"}} {
-		got, score := FuzzyScore("CompanyName", p[0], p[1], false)
-		want, baseline := fuzzyCompany(p[0], p[1], false)
-		if got != want || score != baseline {
-			t.Errorf("%q/%q: got %v %.0f, baseline %v %.0f", p[0], p[1], got, score, want, baseline)
 		}
 	}
 }

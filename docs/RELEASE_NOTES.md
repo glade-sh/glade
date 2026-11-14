@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Custom duplicate matching.** Fuzzy first-name, company, street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
+- **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 
 ## v0.3.9
 

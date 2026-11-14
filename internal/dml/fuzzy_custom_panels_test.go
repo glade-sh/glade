@@ -28,22 +28,6 @@ func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
 		{"LastName", "Kellingsworth", "Kellingswortz", true, 98.7692},
 		{"LastName", "Tolvermandel", "Tolverwanqez", false, 95.3333},
 		{"LastName", "Brandenstock", "Brandewxtovz", false, 95.9167},
-		{"FirstName", "J", "Jo", false, 0.0000},
-		{"FirstName", "J R", "J K", false, 0.0000},
-		{"FirstName", "JR", "J.R.", false, 92.5000},
-		{"FirstName", "Jane", "J", false, 0.0000},
-		{"FirstName", "Robert", "Bob", true, 100.0000},
-		{"FirstName", "J.", "Jay", false, 80.5556},
-		{"CompanyName", "Brightwater Logistics", "Brightwaters Freight", false, 0.0000},
-		{"CompanyName", "Brightwater Logistics", "Brightwqter Logistics", false, 0.0000},
-		{"CompanyName", "Brightwatre Logistics", "Brightwater Logistics", false, 0.0000},
-		{"CompanyName", "Acme Logistics", "Acmes Logistics", false, 0.0000},
-		{"CompanyName", "Nordstrom", "Nordstroms", true, 95.0000},
-		{"CompanyName", "Nordstroms", "Nordstrom", false, 0.0000},
-		{"CompanyName", "Willows", "Willow", false, 0.0000},
-		{"CompanyName", "Encore", "Encores", true, 91.0000},
-		{"CompanyName", "Halverson", "Halversons", true, 95.0000},
-		{"CompanyName", "Bright-water Logistics", "Brightwaters Logistics", false, 97.0000},
 		{"Street", "418 Larkwhistle St", "418 Larkwhistle Sreet", false, 80.2521},
 		{"Street", "418 Larkwhistle St N", "418 Larkwhistle Strt N", false, 84.2938},
 		{"Street", "Larkwhistle St", "Larkwhistle Strt", false, 68.3036},
@@ -57,10 +41,6 @@ func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
 		{"Title", "Brand Strategist", "Strategist Deputy Senior Global Principal Retail Brand", false, 0.0000},
 		{"Title", "Brand Strategist Lead", "Strategist Global Principal Retail Brand", false, 0.0000},
 		{"Title", "Senior Strategist", "Senior Retail Strategist", true, 95.0000},
-		{"CompanyName", "Americas", "America", true, 100.0000},
-		{"CompanyName", "America", "Americas", true, 98.0000},
-		{"FirstName", "É", "É.", false, 92.5000},
-		{"FirstName", "Ł", "Ł M", false, 90.0000},
 	} {
 		match, score := FuzzyScore(c.method, c.a, c.b, false)
 		if match != c.match || math.Abs(score-c.score) > 1e-3 {
@@ -77,12 +57,6 @@ func TestCustomFuzzyExtensionsCapturedPairs(t *testing.T) {
 		method, a, b string
 		score        float64
 	}{
-		{"FirstName", "J", "J. R.", 100},
-		{"FirstName", "R.", "R J", 100},
-		{"CompanyName", "Brightwater Logistics", "Brightwaters Logistics", 100},
-		{"CompanyName", "Brightwater Logistics", "Brightwaters Logistics Group", 91},
-		{"CompanyName", "Drummondo", "Drummondos", 98},
-		{"CompanyName", "Drummondos", "Drummondo", 97},
 		{"Street", "418 Larkwhistle St", "418 Larkwhistle Strt", 84},
 		{"Street", "72 Dunholt Drive", "72 Dunholt Drv", 81},
 		{"Title", "Strategist", "Global Principal Retail Brand Strategist", 88},
@@ -95,9 +69,6 @@ func TestCustomFuzzyExtensionsCapturedPairs(t *testing.T) {
 		}
 	}
 	for _, c := range []struct{ method, a, b string }{
-		{"FirstName", "J.R.", "J. R."},
-		{"FirstName", "J R", "J. R."},
-		{"CompanyName", "Fennimore", "Fennimores"},
 		{"Street", "418 Larkwhistle St", "418 Larkwhistle Sreet"},
 		{"Title", "Global Principal Retail Brand Strategist", "Strategist"},
 	} {
@@ -109,18 +80,7 @@ func TestCustomFuzzyExtensionsCapturedPairs(t *testing.T) {
 	if match, _ := fuzzyLastName("Brandenstock", "Brandepswohk", false); match {
 		t.Error("shared Last Name scorer changed")
 	}
-	if match, _ := fuzzyCompany("Brightwater Logistics", "Brightwaters Logistics", false); match {
-		t.Error("shared Company Name scorer changed")
-	}
 	if match, _ := fuzzyStreet("418 Larkwhistle St", "418 Larkwhistle Strt", false); match {
 		t.Error("shared Street scorer changed")
-	}
-}
-
-// The new custom dictionary rows do not establish standard-rule behavior.
-func TestStandardFirstNameKeepsBaselineForCustomVariants(t *testing.T) {
-	matched, score := standardMethod("firstname")("Bart", "Bartholomew")
-	if matched || math.Abs(score-93.2507) > 1e-4 {
-		t.Fatalf("standard first-name neighbor: got %v %.4f, want origin/main false 93.2507", matched, score)
 	}
 }

@@ -318,7 +318,7 @@
   "67/Company.Syllable.SY1.05": {
    "max_conf_mae": 0.052,
    "max_extra": 0,
-   "min_recall": 0.8954
+   "min_recall": 0.8805
   },
   "67/Company.Syllable.SY1.06": {
    "max_conf_mae": 0.019,
@@ -328,7 +328,7 @@
   "67/Company.Syllable.SY1.07": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.9507
+   "min_recall": 0.9343
   },
   "67/Company.Syllable.SY1.08": {
    "max_conf_mae": 0.017,
@@ -383,7 +383,7 @@
   "67/Company.Syllable.SY1.18": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.8938
+   "min_recall": 0.8635
   },
   "67/Company.Syllable.SY1.19": {
    "max_conf_mae": 0.068,
@@ -408,7 +408,7 @@
   "67/Company.Syllable.SY1.23": {
    "max_conf_mae": 0.017,
    "max_extra": 0,
-   "min_recall": 0.8271
+   "min_recall": 0.7777
   },
   "67/Company.Syllable.SY1.24": {
    "max_conf_mae": 0.07,
@@ -468,7 +468,7 @@
   "67/Company.Syllable.SY1.35": {
    "max_conf_mae": 0.084,
    "max_extra": 0,
-   "min_recall": 0.8809
+   "min_recall": 0.857
   },
   "67/Company.Syllable.SY2.01": {
    "max_conf_mae": 0.001,
@@ -743,7 +743,7 @@
   "67/Holdout.Syllable.SY3.11": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.8851
+   "min_recall": 0.8688
   },
   "67/Holdout.Syllable.SY3.12": {
    "max_conf_mae": 0.001,

@@ -197,10 +197,7 @@ const firstNameJaroWinkler = 0.89
 // alias and not from its own spelling ("Kate" is keyed as "Katherine", so it
 // matches neither "Katie" nor "Katte") never matches by Jaro-Winkler.
 func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
-	return fuzzyFirstNameFolded(foldText(a), foldText(b))
-}
-
-func fuzzyFirstNameFolded(x, y string) (bool, float64) {
+	x, y := foldText(a), foldText(b)
 	if x == y || nameVariantOf(x, y) {
 		return true, 100
 	}
@@ -904,10 +901,7 @@ func companySingleWordMatch(candidate, existing string) (bool, float64) {
 }
 
 func fuzzyCompany(a, b string, _ bool) (bool, float64) {
-	return fuzzyCompanyWithCustom(a, b, false)
-}
 
-func fuzzyCompanyWithCustom(a, b string, custom bool) (bool, float64) {
 	x, y := foldText(a), foldText(b)
 	if companyAlignedWords[strings.TrimSpace(x)] || companyAlignedWords[strings.TrimSpace(y)] {
 		// NATIVE: a name that is only "Partner" matches nothing, itself included.
@@ -917,13 +911,6 @@ func fuzzyCompanyWithCustom(a, b string, custom bool) (bool, float64) {
 		return true, 100
 	}
 	wa, wb := companyWords(a), companyWords(b)
-	if custom {
-		return customCompanyWords(a, b, wa, wb)
-	}
-	return fuzzyCompanyWords(a, b, wa, wb)
-}
-
-func fuzzyCompanyWords(a, b string, wa, wb []string) (bool, float64) {
 	if len(wa) == 0 || len(wb) == 0 {
 		return false, 0
 	}

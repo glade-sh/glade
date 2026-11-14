@@ -4,7 +4,7 @@ Generated from the first-party compat plugin capability catalog.
 
 ## Known limits of the local runtime
 
-This internal checklist does not establish complete Salesforce parity.
+This checklist does not establish complete Salesforce parity.
 
 - Required complete: 22/22
 - Required incomplete: 0
@@ -19,10 +19,14 @@ No required local support gaps are currently tracked.
 - Status: `unsupported`
 - Gap: The local assignment rule implementation is bounded to the supported Lead and Case metadata and checked selection paths; it does not establish full hosted assignment behavior.
 
+## Automation
+
 ### `automation.duplicate.matching`: Duplicate matching scope
 
 - Status: `unsupported`
-- Gap: Local duplicate matching models captured custom and standard rule shapes, including fuzzy, cross-object, Person Account custom, OR and multi-item rules. Fuzzy methods and confidences remain approximations, with some native matches missed; standard Person Account matching remains unenforced. See [DUPLICATE_FUZZY_MATCHING.md](DUPLICATE_FUZZY_MATCHING.md).
+- Gap: Local duplicate matching enforces custom same-object rules with Exact items and the First Name, Last Name, Company Name, Phone, City, Street, ZIP and Title fuzzy methods, reproducing native verdicts and match confidences for the captured rows. It does not enforce cross-object or Person Account rules, and it leaves standard Account, Contact and Lead fuzzy equations, fuzzy items under OR and rules with three or more fuzzy items unenforced. Metaphone 3 and Syllable Alignment are approximated, so some native matches are missed. See [DUPLICATE_FUZZY_MATCHING.md](DUPLICATE_FUZZY_MATCHING.md).
+
+## Automation
 
 ### `automation.flow.hosted`: Hosted Flow and unsupported nodes
 
@@ -55,7 +59,8 @@ No required local support gaps are currently tracked.
 ### `platform.exclusions`: Excluded platforms
 
 - Status: `unsupported`
-- Gap: DataWeave and Slack are excluded and unsupported. ConnectApi types are passive shapes; its hosted services are not implemented (see release policy).
+- Gap: DataWeave and Slack are excluded and unsupported. ConnectApi types are passive
+  shapes; its hosted services are not implemented (see release policy).
 
 ## Security
 

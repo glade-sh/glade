@@ -5,8 +5,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -49,12 +47,8 @@ func TestFuzzyNameTablesMatchNativeRows(t *testing.T) {
 			proven[x+"\x00"+y] = true
 		}
 	}
-	for pair := range fuzzyPanelNameVariants(t) {
-		proven[pair] = true
-	}
 	for pair := range proven {
-		left, right, _ := strings.Cut(pair, "\x00")
-		if !nameVariants[pair] && !customNameVariants[[2]string{left, right}] {
+		if !nameVariants[pair] {
 			t.Errorf("native Name Variant pair %q is missing from nameVariantTable", strings.ReplaceAll(pair, "\x00", " -> "))
 		}
 	}
@@ -63,67 +57,4 @@ func TestFuzzyNameTablesMatchNativeRows(t *testing.T) {
 			t.Errorf("nameVariantTable entry %q has no native row", strings.ReplaceAll(pair, "\x00", " -> "))
 		}
 	}
-	for pair := range customNameVariants {
-		if !proven[pair[0]+"\x00"+pair[1]] {
-			t.Errorf("custom Name Variant entry %q has no native row", pair)
-		}
-	}
-}
-
-const fuzzyPanelsFixture = "../apextest/testdata/conformance/duplicate_fuzzy_panels"
-
-// fuzzyPanelNameVariants reads the First Name panels of the second fixture
-// (API 67.0, @IsTest; every API, route and repeat is identical and compared
-// in TestDuplicateFuzzyPanelsNativeRoutes) and returns the pairs native scores
-// 100 that Jaro-Winkler under the match key does not explain.
-func fuzzyPanelNameVariants(t *testing.T) map[string]bool {
-	t.Helper()
-	var groups map[string]map[string]string
-	raw, err := os.ReadFile(filepath.Join(fuzzyPanelsFixture, "cases.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := json.Unmarshal(raw, &groups); err != nil {
-		t.Fatal(err)
-	}
-	raw, err = os.ReadFile(filepath.Join(fuzzyPanelsFixture, "org.tsv"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	quoted := regexp.MustCompile(`'([^']*)'`)
-	const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
-	proven := map[string]bool{}
-	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n")[1:] {
-		f := strings.Split(line, "\t")
-		if len(f) != 6 || f[0] != "67.0" || f[1] != "istest" || f[2] != "1" || f[3] != "first" {
-			continue
-		}
-		_, list, _ := strings.Cut(groups[f[3]][f[4]], "{")
-		var values []string
-		for _, m := range quoted.FindAllStringSubmatch(list, -1) {
-			values = append(values, m[1])
-		}
-		_, body, _ := strings.Cut(f[5], ":")
-		for _, token := range strings.Split(body, ",") {
-			i, j := strings.IndexByte(digits, token[0]), strings.IndexByte(digits, token[1])
-			if len(token) > 2 {
-				if c, err := strconv.ParseFloat(token[2:], 64); err != nil || c != 100 {
-					continue
-				}
-			}
-			x, y := foldText(values[i]), foldText(values[j])
-			if i == j || x == y || firstNameInitials(x) || firstNameInitials(y) {
-				continue
-			}
-			score := jaroWinkler(x, y)
-			if doubleMetaphone(x, firstNameKeyLength) == doubleMetaphone(y, firstNameKeyLength) && score >= firstNameJaroWinkler-1e-9 && math.Floor(averageWith100(100*score)+0.5) == 100 {
-				continue
-			}
-			proven[x+"\x00"+y] = true
-		}
-	}
-	if len(proven) == 0 {
-		t.Fatal("no First Name panel rows")
-	}
-	return proven
 }
