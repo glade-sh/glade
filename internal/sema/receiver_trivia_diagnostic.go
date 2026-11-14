@@ -18,7 +18,7 @@ type receiverEnclosure struct {
 
 // receiverBoundDiagnostic classifies the parser's enclosing construct for a
 // bound name dot. Unmeasured constructs are left to the existing parser.
-func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *diagnostic.Diagnostic {
+func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, resolvedCall func() bool) *diagnostic.Diagnostic {
 	if item.kind != receiverBoundBreak {
 		return nil
 	}
@@ -49,8 +49,11 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 			return nil
 		}
 	}
-	if leading == "when" && (dot+2 >= len(ts) || ts[dot+2].text != "(") {
-		return nil
+	if leading == "when" {
+		end := receiverDirectCallEnd(ts, dot)
+		if receiverNameRoot(ts, dot) != statement+1 || end < 0 || end >= len(ts) || ts[end].text != "{" || !resolvedCall() {
+			return nil
+		}
 	}
 	switch leading {
 	case "if", "for", "while", "switch", "return", "throw", "else":
@@ -146,12 +149,12 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 			}
 			return report(member, "Expecting ')' but was: '"+member.text+"'")
 		case "if", "while":
-			if frame.kind == "if" && frame.start >= 2 && strings.EqualFold(ts[frame.start-2].text, "else") && !receiverDirectCallEquality(ts, frame.start, dot) {
+			if frame.kind == "if" && frame.start >= 2 && strings.EqualFold(ts[frame.start-2].text, "else") && (!receiverDirectCallEquality(ts, frame.start, dot) || !resolvedCall()) {
 				return nil
 			}
 			return report(member, "Missing ')' at '"+member.text+"'")
 		case "dowhile":
-			if receiverDirectCallEquality(ts, frame.start, dot) {
+			if receiverDirectCallEquality(ts, frame.start, dot) && resolvedCall() {
 				return report(member, "Expecting ')' but was: '"+member.text+"'")
 			}
 			return nil
@@ -161,11 +164,15 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 					if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
 						return report(member, "Extra ')', at '"+member.text+"'.")
 					}
+					end := receiverDirectCallEnd(ts, dot)
+					if receiverNameRoot(ts, dot) != frame.start+4 || !ts[frame.start+1].word || !ts[frame.start+2].word || ts[frame.start+3].text != ":" || end < 0 || end+5 >= len(ts) || ts[end].text != "." || !ts[end+1].word || ts[end+2].text != "(" || !strings.HasPrefix(ts[end+3].text, "'") || ts[end+4].text != ")" || ts[end+5].text != ")" || !resolvedCall() {
+						return nil
+					}
 					return report(member, "Missing ')' at '"+member.text+"'")
 				}
 				root := receiverNameRoot(ts, dot)
 				end := receiverDirectCallEnd(ts, dot)
-				if root != frame.start+4 || !ts[frame.start+1].word || !ts[frame.start+2].word || ts[frame.start+3].text != "=" || end < 0 || end >= len(ts) || ts[end].text != ";" {
+				if root != frame.start+4 || !ts[frame.start+1].word || !ts[frame.start+2].word || ts[frame.start+3].text != "=" || end < 0 || end >= len(ts) || ts[end].text != ";" || !resolvedCall() {
 					return nil
 				}
 				return report(member, "Missing ';' at '"+member.text+"'")
@@ -192,6 +199,23 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 		return report(member, "Extra ';', at '"+member.text+"'.")
 	}
 	return report(member, "Missing ';' at '"+member.text+"'")
+}
+
+// Only a resolved zero-argument static call has been captured in these
+// control expressions. Unknown and invalid calls keep ordinary diagnostics.
+func receiverResolvedDirectCall(source string, item receiverTrivia, model *semaTypeMemberView) bool {
+	ts, dot := item.tokens, item.dot
+	if receiverDirectCallEnd(ts, dot) < 0 {
+		return false
+	}
+	root := receiverNameRoot(ts, dot)
+	if root < 0 || dot <= root {
+		return false
+	}
+	owner := source[ts[root].start:ts[dot-1].end]
+	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, owner, ts[dot+1].text), "class")
+	member, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, nil, model)
+	return ok && !ambiguous && hasModifier(member.member.Modifiers, "static")
 }
 
 // receiverDirectCallEnd recognizes the captured zero-argument call.

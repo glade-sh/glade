@@ -34,6 +34,7 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 		return anonymousCompileFailure(index, source, rng, err)
 	}
 	if major >= 62 && major <= 67 {
+		var receiverModel *semaTypeMemberView
 		for _, item := range receiverTrivia {
 			if d := receiverControlDiagnostic(source, item); d != nil {
 				return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{*d}, ReceiverTriviaDiagnostic: true}
@@ -44,7 +45,13 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 					continue
 				}
 			}
-			if d := receiverBoundDiagnostic(source, "", "anonymous", item); d != nil {
+			resolvedCall := func() bool {
+				if receiverModel == nil {
+					receiverModel = anonymousSetupFor(index, apiVersion).typeMembers.anonymousView()
+				}
+				return receiverResolvedDirectCall(source, item, receiverModel)
+			}
+			if d := receiverBoundDiagnostic(source, "", "anonymous", item, resolvedCall); d != nil {
 				return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{*d}, ReceiverTriviaDiagnostic: true}
 			}
 		}

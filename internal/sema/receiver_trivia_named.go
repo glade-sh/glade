@@ -140,7 +140,7 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 				msg := "Unexpected token '" + token.text + "'."
 				d = &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: msg, NativeMessage: msg, File: file, Range: receiverTriviaRange(source, token.start, token.end)}
 			} else if item.kind == receiverBoundBreak {
-				d = receiverBoundDiagnostic(source, file, route, item)
+				d = receiverBoundDiagnostic(source, file, route, item, func() bool { return receiverResolvedDirectCall(source, item, model) })
 			} else if route == "trigger" && item.dot > 0 && strings.EqualFold(item.tokens[item.dot-1].text, "Trigger") && item.dot+1 < len(item.tokens) && strings.EqualFold(item.tokens[item.dot+1].text, "old") && depth > 1 {
 				token := item.tokens[item.dot-1]
 				msg := "Expecting ')' but was: '" + token.text + "'"
@@ -152,7 +152,7 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 			} else if route == "trigger" && item.dot > 0 && strings.EqualFold(item.tokens[item.dot-1].text, "Trigger") && item.dot+1 < len(item.tokens) && strings.EqualFold(item.tokens[item.dot+1].text, "new") {
 				candidate := item
 				candidate.kind = receiverBoundBreak
-				d = receiverBoundDiagnostic(source, file, route, candidate)
+				d = receiverBoundDiagnostic(source, file, route, candidate, func() bool { return receiverResolvedDirectCall(source, candidate, model) })
 			} else {
 				// Scopes depend only on the enclosing member; a body with many
 				// detached dots collects them once.
