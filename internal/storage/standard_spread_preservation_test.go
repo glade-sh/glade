@@ -159,3 +159,13 @@ func TestExplicitSpreadInstallSurvivesSourceSerialization(t *testing.T) {
 		t.Fatal("serialized source org lost explicit install")
 	}
 }
+
+func TestRepeatedEagerSpreadDoesNotMarkCatalogObjectsExplicit(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObjectSpread(&org)
+	EnsureStandardObjectSpread(&org)
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := org.Objects["AIFeatureExtractor"]; ok {
+		t.Fatal("repeated spread preserved a spread-owned object")
+	}
+}
