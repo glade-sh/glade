@@ -31,6 +31,7 @@ func TestFixedIndexPublishesOnlyCurrentParseDiagnostics(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := NewPendingHandler()
+	t.Cleanup(func() { h.parser.Close() })
 	h.SetBase(Base{Index: typesys.Build(p, schema.Schema{}), Project: project.Project{Root: root}})
 	uri := uriFromPath(path)
 	if got := diagnosticsCount(t, overlayOpen(h, uri, original)); got == 0 {
