@@ -439,7 +439,8 @@ func TestLoadDAPStartupStateRebuildsAfterApexEditDuringBuild(t *testing.T) {
 	writeTestProject(t, root)
 	source := filepath.Join(root, "force-app", "main", "classes", "MathUtil.cls")
 	edited := false
-	if _, _, _, err := loadDAPStartupStateWithSeams(root, dapLoadSeams{afterIndex: func(int) {
+	attempts := 0
+	_, first, _, err := loadDAPStartupStateWithSeams(root, dapLoadSeams{beforeLoad: func(attempt int) { attempts = attempt }, afterIndex: func(int) {
 		if edited {
 			return
 		}
@@ -454,9 +455,17 @@ public class MathUtil {
   }
 }
 `)
-	}}); err != nil {
+	}})
+	if err != nil {
 		t.Fatalf("first load: %v", err)
 	}
+	if attempts != 2 || !runtimeHasMethod(first, "driftmarker") {
+		t.Fatalf("first load: attempts=%d, edited method=%v", attempts, runtimeHasMethod(first, "driftmarker"))
+	}
+	if sha, ok := publishedManifestSHA(t, root, source); !ok || sha != fileSHA(t, source) {
+		t.Fatal("published digest does not match edited source")
+	}
+	assertServedWarm(t, root)
 	if !edited {
 		t.Fatal("index hook did not run")
 	}
