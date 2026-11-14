@@ -1145,7 +1145,11 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		confidence = 88
 	}
 	if !sameOrder {
-		confidence -= 3
+		if n == 6 && k == 5 {
+			confidence -= 2
+		} else {
+			confidence -= 3
+		}
 	}
 	return true, confidence
 }

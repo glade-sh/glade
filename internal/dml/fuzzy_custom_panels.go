@@ -113,7 +113,7 @@ func customCompanyWords(a, b string, wa, wb []string) (bool, float64) {
 			case y == x+"s" && strings.HasSuffix(x, "o") && n >= 8 && n <= 9:
 				return true, 98
 			}
-			if n := len([]rune(y)); !matched && x == y+"s" && n >= 6 && n <= 9 && strings.ContainsAny(y[len(y)-1:], "aoy") {
+			if n := len([]rune(y)); !matched && x == y+"s" && n >= 6 && n <= 9 && strings.ContainsAny(y[len(y)-1:], "aoy") && !(strings.HasSuffix(y, "a") && n == 8) && !(strings.HasSuffix(y, "y") && (n == 7 || n == 8)) {
 				return true, companyPluralReverse(y)
 			}
 		}

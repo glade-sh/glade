@@ -708,7 +708,7 @@ scorers. Each is limited to the value shapes the panels cover.
   plurals: a word of eight to ten letters ending in `re` does not find its
   plural (`Fennimore`, `Callowmere`; held out, `Wexmoore`), one of eight or
   nine letters ending in `o` finds it at 98, and the plural of a word of six
-  to nine letters ending in `a`, `o` or `y` finds the word: 97 from nine
+  to nine letters ending in `a`, `o` or `y` finds the word, except eight-letter `a` and seven- or eight-letter `y` cases whose native confidence conflicts with the model: 97 from nine
   letters, 95 for `a`, 94 at six letters, otherwise 96 (also the
   `Company.Syllable` rows of the second fixture: `Airways` finds `Airway` at
   94, `Andromedas` finds `Andromeda` at 97).
@@ -718,7 +718,7 @@ scorers. Each is limited to the value shapes the panels cover.
   84, `Drive`/`Drv` 81, `Hwy`/`Pkwy` 82); 85.71 and below stay apart
   (`St`/`Sreet`, `Rd`/`Drv`). The confidence is the existing formula.
 - Title: six content words score 89, 93, 95 and 98 for two to five shared
-  words; one shared word in six matches neither way. A candidate whose words
+  words; five shared words out of order score 96. One shared word in six matches neither way. A candidate whose words
   all occur in a longer existing title finds it from the short side only: one
   word in five at 88, two words out of order in five at 90 and in six at 89.
   These also lift the older `Probe.*.Title` rows to full recall.
@@ -739,12 +739,12 @@ equals the native one.
 | Last Name keyboard | holdout, seen once | 80/180 | 80/180 | 0 | See residuals |
 | First Name | fit | 75/109 | 109/109 (100.0%) | 0 | 109/109 |
 | First Name | holdout | 24/84 | 54/84 (64.3%) | 0 | 54/54 |
-| Company Name | fit | 74/202 | 144/202 (71.3%) | 0 | 135/144 |
-| Company Name | holdout, seen once | 68/150 | 117/150 (78.0%) | 0 | 113/117 |
+| Company Name | fit | 74/202 | 143/202 (70.8%) | 0 | 135/143 |
+| Company Name | holdout, seen once | 68/150 | 113/150 (75.3%) | 0 | 111/113 |
 | Street | fit | 277/315 | 315/315 (100.0%) | 0 | 315/315 |
 | Street | holdout | 114/150 | 144/150 (96.0%) | 0 | 144/144 |
-| Title | fit | 252/286 | 276/286 (96.5%) | 0 | 251/276 |
-| Title | holdout | 104/120 | 120/120 (100.0%) | 0 | 106/120 |
+| Title | fit | 252/286 | 276/286 (96.5%) | 0 | 257/276 |
+| Title | holdout | 104/120 | 120/120 (100.0%) | 0 | 110/120 |
 | Three fuzzy items | fit | 28/28 | 28/28 (100.0%) | 0 | 28/28 |
 
 origin/main had four false pairs on the fit panels (`J.R.`/`J. R.` both ways,
