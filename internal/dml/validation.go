@@ -510,27 +510,32 @@ func validateEmailField(objectName, fieldName string, field storage.Field, value
 // capturedInvalidEmailShape handles the independently observed insert shapes.
 // Leave other email syntax to the existing validation path.
 func capturedInvalidEmailShape(value storage.Value) bool {
-	if value.Kind != storage.ValueString {
+	if value.Kind != storage.ValueString || strings.TrimSpace(value.String) != value.String || strings.Count(value.String, "@") != 1 {
 		return false
 	}
-	text := strings.TrimSpace(value.String)
-	if strings.Count(text, "@") != 1 {
-		return false
-	}
-	parts := strings.SplitN(text, "@", 2)
+	parts := strings.SplitN(value.String, "@", 2)
 	local, domain := parts[0], parts[1]
-	if local == "" || domain == "" {
-		return false
-	}
-	for _, c := range domain {
-		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '.' || c == '-') {
+	asciiWord := func(s string) bool {
+		if s == "" {
 			return false
 		}
-	}
-	if strings.Contains(domain, ".") && (strings.HasSuffix(domain, ".") || strings.Contains(domain, "..")) {
+		for _, c := range s {
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+				return false
+			}
+		}
 		return true
 	}
-	return strings.HasPrefix(local, "\"") && strings.HasSuffix(local, "\"") && strings.Contains(local, " ") && strings.Contains(domain, ".")
+	if strings.HasPrefix(local, "\"") && strings.HasSuffix(local, "\"") {
+		words := strings.Split(strings.Trim(local, "\""), " ")
+		labels := strings.Split(domain, ".")
+		return len(words) == 2 && asciiWord(words[0]) && asciiWord(words[1]) && len(labels) == 2 && asciiWord(labels[0]) && asciiWord(labels[1])
+	}
+	if !asciiWord(local) {
+		return false
+	}
+	labels := strings.Split(domain, ".")
+	return len(labels) == 3 && asciiWord(labels[0]) && ((asciiWord(labels[1]) && labels[2] == "") || (labels[1] == "" && asciiWord(labels[2])))
 }
 
 // InvalidEmailValue is the shared DML syntax predicate for a supplied email.
