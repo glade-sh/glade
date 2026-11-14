@@ -100,3 +100,15 @@ func TestEmailInsertValidationLeavesTextFieldUnchanged(t *testing.T) {
 		t.Fatalf("uncaptured text field: baseline accepted, got %v", err)
 	}
 }
+
+func TestEmailInsertValidationLeavesNormalizedNeighborsUnchanged(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Contact")
+	engine := NewEngine(&org)
+	for _, address := range []string{" a@example.com. ", "A@example.com.", "a@EXAMPLE..com"} {
+		got := engine.Insert([]storage.Record{{Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Probe"), "Email": storage.StringValue(address)}}})
+		if len(got) != 1 || !got[0].Success {
+			t.Errorf("normalized neighbor %q: baseline accepted, got %+v", address, got)
+		}
+	}
+}
