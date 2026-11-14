@@ -1496,6 +1496,11 @@ func EffectiveVisualforceAPIVersion(path, fallback string) (string, error) {
 	return effectiveVisualforceAPIVersion(project.Project{}, path, fallback)
 }
 
+// EffectiveVisualforceAPIVersionForProject reads the sidecar through p.
+func EffectiveVisualforceAPIVersionForProject(p project.Project, path, fallback string) (string, error) {
+	return effectiveVisualforceAPIVersion(p, path, fallback)
+}
+
 func effectiveVisualforceAPIVersion(in inputs, path, fallback string) (string, error) {
 	projectVersion, err := apexversion.PreserveSource(fallback)
 	if err != nil {

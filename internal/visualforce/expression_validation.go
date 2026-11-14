@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/schema"
@@ -22,6 +23,7 @@ type expressionValidationContext struct {
 	objects             map[string]schema.Object
 	namespace           string
 	tabFiles            []string
+	inputs              *inputview.View
 	controller          string
 	standardController  string
 	bindings            map[string]string
@@ -45,19 +47,21 @@ type expressionValidationSources struct {
 	objects       map[string]schema.Object
 	namespace     string
 	tabFiles      []string
+	inputs        *inputview.View
 }
 
 func loadExpressionValidationSources(p project.Project) (*expressionValidationSources, error) {
-	src := &expressionValidationSources{classes: map[string]apexast.Declaration{}, declaredTypes: map[string]bool{}, objects: map[string]schema.Object{}, namespace: strings.TrimSpace(p.Namespace), tabFiles: p.TabFiles}
+	src := &expressionValidationSources{classes: map[string]apexast.Declaration{}, declaredTypes: map[string]bool{}, objects: map[string]schema.Object{}, namespace: strings.TrimSpace(p.Namespace), tabFiles: p.TabFiles, inputs: p.Inputs()}
 	if len(p.ApexFiles) != 0 {
 		parser := apexast.NewParser()
 		defer parser.Close()
 		for _, path := range p.ApexFiles {
 			apexSourceParses.Add(1)
-			file, err := parser.ParseFile(path)
+			source, err := p.ReadFile(path)
 			if err != nil {
 				return nil, err
 			}
+			file := parser.ParseSource(path, string(source))
 			for _, declaration := range file.Declarations {
 				if declaration.Kind == apexast.DeclarationClass {
 					src.classes[strings.ToLower(declaration.Name)] = declaration
@@ -73,7 +77,7 @@ func loadExpressionValidationSources(p project.Project) (*expressionValidationSo
 		// object through $Action. Load only object definitions on this path;
 		// unrelated field and resource metadata are not prerequisites.
 		if len(p.ObjectFiles) != 0 {
-			objects, err := schema.LoadProject(project.Project{Root: p.Root, Namespace: p.Namespace, ObjectFiles: p.ObjectFiles})
+			objects, err := schema.LoadProject((project.Project{Root: p.Root, Namespace: p.Namespace, ObjectFiles: p.ObjectFiles}).WithInputs(p.Inputs()))
 			if err != nil {
 				return nil, err
 			}
@@ -85,12 +89,12 @@ func loadExpressionValidationSources(p project.Project) (*expressionValidationSo
 	}
 	// Load only metadata used by expressions. Unrelated resource types must not
 	// become new prerequisites for indexing Visualforce pages.
-	registry, err := resource.LoadProject(project.Project{
+	registry, err := resource.LoadProject((project.Project{
 		Root: p.Root, Namespace: p.Namespace,
 		LabelFiles: p.LabelFiles, TranslationFiles: p.TranslationFiles,
 		StaticResourceFiles: p.StaticResourceFiles, StaticResourceMetas: p.StaticResourceMetas, MessageChannelFiles: p.MessageChannelFiles,
 		ManagedPackageDependencies: p.ManagedPackageDependencies,
-	})
+	}).WithInputs(p.Inputs()))
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +207,7 @@ func newExpressionValidationContextWith(p project.Project, index *Index, cache *
 	if err != nil {
 		return nil, err
 	}
-	return &expressionValidationContext{index: index, registry: src.registry, classes: src.classes, declaredTypes: src.declaredTypes, objects: src.objects, namespace: src.namespace, tabFiles: src.tabFiles}, nil
+	return &expressionValidationContext{index: index, registry: src.registry, classes: src.classes, declaredTypes: src.declaredTypes, objects: src.objects, namespace: src.namespace, tabFiles: src.tabFiles, inputs: src.inputs}, nil
 }
 
 // Expression validation is separate from markup/metadata checks. Bindings

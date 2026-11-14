@@ -565,7 +565,11 @@ func LoadWithInputs(root string, v *inputview.View) (Project, error) {
 	return load(root, v, nil, false)
 }
 
-func (p Project) Inputs() *inputview.View                      { return p.inputs }
+func (p Project) Inputs() *inputview.View { return p.inputs }
+
+// WithInputs binds a derived project to the same input view as its source.
+func (p Project) WithInputs(v *inputview.View) Project { p.inputs = v; return p }
+
 func (p Project) ReadFile(path string) ([]byte, error)         { return p.inputs.ReadFile(path) }
 func (p Project) ReadDir(path string) ([]os.DirEntry, error)   { return p.inputs.ReadDir(path) }
 func (p Project) Stat(path string) (os.FileInfo, error)        { return p.inputs.Stat(path) }

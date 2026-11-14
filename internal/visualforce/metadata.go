@@ -11,12 +11,12 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 )
 
-func validateVisualforceMetadata(path, resource string) error {
+func validateVisualforceMetadata(path, resource string, projects ...project.Project) error {
 	metaPath := path
 	if !strings.HasSuffix(strings.ToLower(path), "-meta.xml") {
 		metaPath += "-meta.xml"
 	}
-	data, err := os.ReadFile(metaPath)
+	data, err := inputProject(projects).ReadFile(metaPath)
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -157,7 +157,7 @@ func ValidateVisualforceAccessMetadata(p project.Project) error {
 	// dependency_access_nonnamespaced_consumer).
 	accessFiles := append(append([]string{}, p.PermissionSetFiles...), p.ProfileFiles...)
 	for _, path := range accessFiles {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}

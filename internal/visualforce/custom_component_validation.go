@@ -3,7 +3,6 @@ package visualforce
 import (
 	"errors"
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -61,7 +60,7 @@ func validateCustomComponentProjectWith(p project.Project, cache *loadCache) err
 	v.knownTypes["apexpages.action"] = true
 	for _, path := range p.VisualforceComponentFiles {
 		name := nameFromPath(path, ".component")
-		source, err := os.ReadFile(path)
+		source, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -86,7 +85,7 @@ func validateCustomComponentProjectWith(p project.Project, cache *loadCache) err
 		add(path, "ApexComponent", v.definitionError(def, def.name, map[string]bool{}))
 	}
 	for _, path := range p.VisualforcePageFiles {
-		source, err := os.ReadFile(path)
+		source, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}

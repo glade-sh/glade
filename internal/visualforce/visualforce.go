@@ -3,7 +3,6 @@ package visualforce
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -140,14 +139,14 @@ func pageNames(p project.Project, load pageLoader) ([]string, []PageRejection) {
 	// (all of its files) or component, not the project.
 	badPages := map[string]bool{}
 	for _, path := range p.VisualforcePageFiles {
-		if _, err := parsePageFile(path, fallbackAPIVersion); err != nil {
+		if _, err := parsePageFile(path, fallbackAPIVersion, p); err != nil {
 			badPages[strings.ToLower(nameFromPath(path, ".page"))] = true
 			rejected = append(rejected, PageRejection{File: path, Message: err.Error()})
 		}
 	}
 	badComponents := map[string]bool{}
 	for _, path := range p.VisualforceComponentFiles {
-		if _, err := parseComponentFile(path, fallbackAPIVersion); err != nil {
+		if _, err := parseComponentFile(path, fallbackAPIVersion, p); err != nil {
 			badComponents[strings.ToLower(nameFromPath(path, ".component"))] = true
 			rejected = append(rejected, PageRejection{File: path, Message: err.Error()})
 		}
@@ -305,14 +304,14 @@ func loadProjectWithControllerCompilation(p project.Project, bestEffort, validat
 	}
 	if bestEffort {
 		for _, path := range p.VisualforcePageFiles {
-			page, err := parsePageFileLenient(path, fallbackAPIVersion)
+			page, err := parsePageFileLenient(path, fallbackAPIVersion, p)
 			if err != nil {
 				continue
 			}
 			idx.Pages = append(idx.Pages, page)
 		}
 		for _, path := range p.VisualforceComponentFiles {
-			component, err := parseComponentFileLenient(path, fallbackAPIVersion)
+			component, err := parseComponentFileLenient(path, fallbackAPIVersion, p)
 			if err != nil {
 				continue
 			}
@@ -337,7 +336,7 @@ func loadProjectWithControllerCompilation(p project.Project, bestEffort, validat
 			if only != nil && !only[path] {
 				continue
 			}
-			source, err := os.ReadFile(path)
+			source, err := p.ReadFile(path)
 			if err != nil {
 				return Index{}, err
 			}
@@ -399,32 +398,32 @@ func ParsePageFile(path string) (Page, error) {
 	return parsePageFile(path, "")
 }
 
-func parsePageFile(path, fallbackAPIVersion string) (Page, error) {
-	return parsePageFileWithStructureValidation(path, fallbackAPIVersion, true)
+func parsePageFile(path, fallbackAPIVersion string, projects ...project.Project) (Page, error) {
+	return parsePageFileWithStructureValidation(path, fallbackAPIVersion, true, projects...)
 }
 
-func parsePageFileLenient(path, fallbackAPIVersion string) (Page, error) {
-	return parsePageFileWithStructureValidation(path, fallbackAPIVersion, false)
+func parsePageFileLenient(path, fallbackAPIVersion string, projects ...project.Project) (Page, error) {
+	return parsePageFileWithStructureValidation(path, fallbackAPIVersion, false, projects...)
 }
 
-func parsePageFileWithStructureValidation(path, fallbackAPIVersion string, validateStructure bool) (Page, error) {
+func parsePageFileWithStructureValidation(path, fallbackAPIVersion string, validateStructure bool, projects ...project.Project) (Page, error) {
 	metadataOnly := strings.HasSuffix(strings.ToLower(path), ".page-meta.xml")
 	if validateStructure && !metadataOnly {
-		if err := validateVisualforceFileStructure(path, "page"); err != nil {
+		if err := validateVisualforceFileStructure(path, "page", projects...); err != nil {
 			return Page{}, err
 		}
 	}
 	if validateStructure {
-		if err := validateVisualforceMetadata(path, "ApexPage"); err != nil {
+		if err := validateVisualforceMetadata(path, "ApexPage", projects...); err != nil {
 			return Page{}, err
 		}
 	}
-	doc, err := parseMarkup(path)
+	doc, err := parseMarkup(path, projects...)
 	if err != nil {
 		return Page{}, err
 	}
 	page := Page{Name: nameFromPath(path, ".page"), File: path}
-	page.APIVersion, err = resource.EffectiveVisualforceAPIVersion(path, fallbackAPIVersion)
+	page.APIVersion, err = resource.EffectiveVisualforceAPIVersionForProject(inputProject(projects), path, fallbackAPIVersion)
 	if err != nil {
 		return Page{}, err
 	}
@@ -455,29 +454,29 @@ func ParseComponentFile(path string) (Component, error) {
 	return parseComponentFile(path, "")
 }
 
-func parseComponentFile(path, fallbackAPIVersion string) (Component, error) {
-	return parseComponentFileWithStructureValidation(path, fallbackAPIVersion, true)
+func parseComponentFile(path, fallbackAPIVersion string, projects ...project.Project) (Component, error) {
+	return parseComponentFileWithStructureValidation(path, fallbackAPIVersion, true, projects...)
 }
 
-func parseComponentFileLenient(path, fallbackAPIVersion string) (Component, error) {
-	return parseComponentFileWithStructureValidation(path, fallbackAPIVersion, false)
+func parseComponentFileLenient(path, fallbackAPIVersion string, projects ...project.Project) (Component, error) {
+	return parseComponentFileWithStructureValidation(path, fallbackAPIVersion, false, projects...)
 }
 
-func parseComponentFileWithStructureValidation(path, fallbackAPIVersion string, validateStructure bool) (Component, error) {
+func parseComponentFileWithStructureValidation(path, fallbackAPIVersion string, validateStructure bool, projects ...project.Project) (Component, error) {
 	if validateStructure {
-		if err := validateVisualforceFileStructure(path, "component"); err != nil {
+		if err := validateVisualforceFileStructure(path, "component", projects...); err != nil {
 			return Component{}, err
 		}
-		if err := validateVisualforceMetadata(path, "ApexComponent"); err != nil {
+		if err := validateVisualforceMetadata(path, "ApexComponent", projects...); err != nil {
 			return Component{}, err
 		}
 	}
-	doc, err := parseMarkup(path)
+	doc, err := parseMarkup(path, projects...)
 	if err != nil {
 		return Component{}, err
 	}
 	component := Component{Name: nameFromPath(path, ".component"), File: path}
-	component.APIVersion, err = resource.EffectiveVisualforceAPIVersion(path, fallbackAPIVersion)
+	component.APIVersion, err = resource.EffectiveVisualforceAPIVersionForProject(inputProject(projects), path, fallbackAPIVersion)
 	if err != nil {
 		return Component{}, err
 	}
@@ -577,8 +576,15 @@ type markupToken struct {
 	Text  string
 }
 
-func parseMarkup(path string) (markupDoc, error) {
-	content, err := os.ReadFile(path)
+func inputProject(projects []project.Project) project.Project {
+	if len(projects) != 0 {
+		return projects[0]
+	}
+	return project.Project{}
+}
+
+func parseMarkup(path string, projects ...project.Project) (markupDoc, error) {
+	content, err := inputProject(projects).ReadFile(path)
 	if err != nil {
 		return markupDoc{}, err
 	}

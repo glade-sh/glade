@@ -3,7 +3,6 @@ package visualforce
 import (
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -113,10 +112,11 @@ func rejectedControllersFromCompilation(p project.Project, index typesys.Index, 
 		if !syntaxFiles[fileName] && (!files[fileName] || indexedFiles[fileName]) {
 			continue
 		}
-		file, err := parser.ParseFile(path)
+		source, err := p.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
+		file := parser.ParseSource(path, string(source))
 		for _, declaration := range file.Declarations {
 			if declaration.Kind == apexast.DeclarationClass {
 				rejected[strings.ToLower(declaration.Name)] = true
@@ -187,7 +187,7 @@ func visualforceControllerDiagnostics(p project.Project, diagnostics []diagnosti
 	}
 	for i, diag := range diagnostics {
 		if ownedSources[filepath.Clean(diag.File)] && (diag.Code == "GLADESEMA006" || diag.Code == "GLADESEMA_QUERY_FIELD" || diag.Code == "GLADESEMA_QUERY_OBJECT" || diag.Code == "GLADESEMA_QUERY_RELATIONSHIP") {
-			source, err := os.ReadFile(diag.File)
+			source, err := p.ReadFile(diag.File)
 			if err != nil {
 				return nil, err
 			}
@@ -225,7 +225,7 @@ func hasVisualforceControllerCompilationContext(p project.Project, path string) 
 	if len(p.ApexFiles) != 0 {
 		return true
 	}
-	metadata, err := os.Stat(path + "-meta.xml")
+	metadata, err := p.Stat(path + "-meta.xml")
 	return err == nil && !metadata.IsDir()
 }
 
