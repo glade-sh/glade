@@ -538,7 +538,7 @@ func capturedInvalidEmailShape(value storage.Value) bool {
 		}
 		return true
 	}
-	if strings.HasPrefix(local, "\"") && strings.HasSuffix(local, "\"") {
+	if strings.HasPrefix(local, "\"") && strings.HasSuffix(local, "\"") && strings.Count(local, "\"") == 2 {
 		words := strings.Split(strings.Trim(local, "\""), " ")
 		labels := strings.Split(domain, ".")
 		return len(words) == 2 && asciiWord(words[0]) && asciiWord(words[1]) && len(labels) == 2 && asciiWord(labels[0]) && asciiWord(labels[1])
