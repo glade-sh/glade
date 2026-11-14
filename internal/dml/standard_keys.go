@@ -39,9 +39,10 @@ type companyKeyInfo struct {
 }
 
 var (
-	companyKeyCache  standardKeyCache[companyKeyInfo]
-	cityKeyCache     standardKeyCache[string]
-	lastNameKeyCache standardKeyCache[string]
+	companyKeyCache      standardKeyCache[companyKeyInfo]
+	cityKeyCache         standardKeyCache[string]
+	lastNameKeyCache     standardKeyCache[string]
+	lastNameWordKeyCache standardKeyCache[string]
 )
 
 func companyKeyOf(s string) companyKeyInfo {

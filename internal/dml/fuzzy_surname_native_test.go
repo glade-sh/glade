@@ -189,7 +189,7 @@ func surnameNativeRows(t *testing.T, dir string, tables []string, observations, 
 // keyboard gate. The native five-column boundary must not admit wider swaps.
 func TestFuzzySurnameUnmeasuredSwapKeepsKeyboardGate(t *testing.T) {
 	const a, b = "Gklnjdpq", "Gklnjdqp"
-	if lastNameCode(foldText(a)) != lastNameCode(foldText(b)) || lastNameMetaphone3Equal(foldText(a), foldText(b)) {
+	if lastNameCode(foldText(a)) != lastNameCode(foldText(b)) || lastNameMetaphone3(foldText(a)) == lastNameMetaphone3(foldText(b)) {
 		t.Fatal("control must reach the ordinary same-key keyboard branch")
 	}
 	score, eligible := keyboardSimilarity(foldText(a), foldText(b))
@@ -211,7 +211,7 @@ func TestFuzzySurnameUnmeasuredSubstitutionKeepsKeyboardGate(t *testing.T) {
 	} {
 		t.Run(pair[0]+"/"+pair[1], func(t *testing.T) {
 			a, b := strings.ToLower(pair[0]), strings.ToLower(pair[1])
-			if lastNameMetaphone3Equal(a, b) || lastNameCode(a) == lastNameCode(b) {
+			if lastNameMetaphone3(a) == lastNameMetaphone3(b) || lastNameCode(a) == lastNameCode(b) {
 				t.Fatal("control must reach the supplementary surname path")
 			}
 			if match, confidence := standardCorroboratedSurname(a, b); match {
