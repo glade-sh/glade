@@ -89,8 +89,8 @@ func TestControllerPropertyGetterCapabilityCacheRoundTrip(t *testing.T) {
 	if err != nil || entry == nil {
 		t.Fatalf("read cache: entry=%v err=%v", entry, err)
 	}
-	if entry.RuntimeABI != "apextest-runtime-v35" {
-		t.Fatalf("cache ABI = %q, want apextest-runtime-v35", entry.RuntimeABI)
+	if entry.RuntimeABI != "apextest-runtime-v36" {
+		t.Fatalf("cache ABI = %q, want apextest-runtime-v36", entry.RuntimeABI)
 	}
 	entry.RuntimeABI = "apextest-runtime-v6"
 	if err := startupcache.Write(entry, startupcache.SubdirTest); err != nil {
