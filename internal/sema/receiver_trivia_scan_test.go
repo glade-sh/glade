@@ -12,8 +12,8 @@ func TestReceiverTriviaScan(t *testing.T) {
 	}{
 		{"bound", "thing.\nmember", []receiverTriviaKind{receiverBoundBreak}},
 		{"bound comment", "thing./* comment */member", []receiverTriviaKind{receiverBoundBreak}},
-		{"bound vertical tab", "thing.\vmember", []receiverTriviaKind{receiverInvalidControl}},
-		{"free vertical tab", "thing\v.member", []receiverTriviaKind{receiverInvalidControl}},
+		{"bound vertical tab", "thing.\vmember", []receiverTriviaKind{3}},
+		{"free vertical tab", "thing\v.member", []receiverTriviaKind{3}},
 		{"bound CR line comment", "thing.// note\rmember", []receiverTriviaKind{receiverBoundBreak}},
 		{"free CR line comment", "thing// note\r.member", []receiverTriviaKind{receiverFreeName}},
 		{"this keyword", "this.\nmember", []receiverTriviaKind{receiverBoundBreak}},
