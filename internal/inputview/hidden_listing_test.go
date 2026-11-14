@@ -121,3 +121,28 @@ func TestEditorLikeDeployableInputsStillInvalidate(t *testing.T) {
 		})
 	}
 }
+
+func TestIgnoredChurnRemainsVisibleToDirectoryConsumers(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{".DS_Store", ".#Source.cls", "Source.cls.swp", "Source.cls~", ".real.xml"} {
+		if err := os.WriteFile(filepath.Join(dir, name), nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := New().ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("listing length: got %d, want %d", len(got), len(want))
+	}
+	for i := range want {
+		if got[i].Name() != want[i].Name() || got[i].Type() != want[i].Type() {
+			t.Fatalf("listing entry %d: got %v, want %v", i, got[i], want[i])
+		}
+	}
+}
