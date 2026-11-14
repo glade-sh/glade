@@ -63,11 +63,8 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 		case 1:
 			return report(member, "Missing ':' at '"+member.text+"'")
 		case 2:
-			// A false arm directly in a statement takes the statement message;
-			// inside other constructs the message is uncaptured.
-			if len(stack) == 0 || stack[len(stack)-1].kind == "block" {
-				return report(member, "Missing ';' at '"+member.text+"'")
-			}
+			// The captured false arm is not yet distinguished from accepted
+			// neighbors, so retain the previous diagnostic behavior.
 			return nil
 		}
 	}
