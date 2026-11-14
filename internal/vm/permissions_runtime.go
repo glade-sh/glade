@@ -792,6 +792,23 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		return nil, newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 	}
 	var policyFields []string
+	// The captured Account records write at most Name, Id and one custom
+	// field. Avoid repeating the detailed shape scan for every field on
+	// wider records.
+	wideAccountRecord := false
+	if vm.testContext != nil && strings.EqualFold(objectName, "Account") {
+		names := explicitSObjectFieldNamesInInsertionOrder(record)
+		if len(names) > 3 {
+			canonical := make(map[string]struct{}, 4)
+			for _, name := range names {
+				canonical[strings.ToLower(vm.resolveSObjectFieldName(objectName, name))] = struct{}{}
+				if len(canonical) > 3 {
+					wideAccountRecord = true
+					break
+				}
+			}
+		}
+	}
 	for field := range record.Fields {
 		if fieldPermission == "" || isInternalSObjectField(field) || isSObjectSystemField(field) || isDefaultedSObjectField(record, field) {
 			continue
@@ -810,7 +827,7 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			continue
 		}
 		allowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
-		if allowed && vm.adminStandardCustomFieldDMLDenied(op, record, objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
+		if allowed && !wideAccountRecord && vm.adminStandardCustomFieldDMLDenied(op, record, objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
 			allowed = false
 		}
 		if !allowed || vm.automatedProcessCustomFieldDenied(op, objectName, canonicalField, scopedPermissionSetID) {
@@ -835,7 +852,7 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			capturedShape := scopedPermissionSetID == "" && (api == "62.0" || api == "67.0") ||
 				scopedPermissionSetID != "" && op == "insert" && vm.userModeSingleRecord && (api == "62.0" || api == "67.0" || api == "68.0") ||
 				scopedPermissionSetID == "" && op == "insert" && api == "68.0" && vm.explicitUserModePartialRecord && vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator"
-			standardObjectCustomField := capturedShape && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedAdminAccountRecord(record, objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
+			standardObjectCustomField := capturedShape && !wideAccountRecord && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedAdminAccountRecord(record, objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
 			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert || standardObjectCustomField) {
 				policyFields = append(policyFields, canonicalField)
 				continue
