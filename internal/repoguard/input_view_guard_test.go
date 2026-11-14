@@ -32,7 +32,8 @@ var inputViewForbidden = map[string][]string{
 	"io/fs":         {"ReadFile", "ReadDir", "Stat", "WalkDir", "Glob"},
 	"io/ioutil":     {"ReadFile", "ReadDir"},
 	"path/filepath": {"WalkDir", "Walk", "Glob", "EvalSymlinks"},
-	"github.com/glade-sh/glade/internal/config": {"LoadNearest", "LoadFile"},
+	"github.com/glade-sh/glade/internal/config":  {"LoadNearest", "LoadFile"},
+	"github.com/glade-sh/glade/internal/project": {"Load", "OrgDomainURL", "OrgRuntimeSettings"},
 }
 
 // inputViewAllowed names file:func entries that may read disk directly. Each
@@ -90,6 +91,27 @@ func TestInputViewPackagesReadThroughTheView(t *testing.T) {
 	sort.Strings(findings)
 	if len(findings) > 0 {
 		t.Fatalf("direct filesystem reads in input view packages:\n%s", strings.Join(findings, "\n"))
+	}
+}
+
+// The runtime compiler lives outside the guarded loader packages. Its
+// project and configuration reads must use the captured view wrappers.
+func TestDAPCompilePathAvoidsUnviewedProjectLoads(t *testing.T) {
+	fset := token.NewFileSet()
+	path := filepath.Join(canonicalRepoRoot, "internal", "apextest", "runner.go")
+	file, err := parser.ParseFile(fset, path, nil, parser.SkipObjectResolution)
+	if err != nil {
+		t.Fatal(err)
+	}
+	targets := map[string]bool{
+		"runtimeKeyWithDigestLookup":      true,
+		"prepareRuntimeGeneration":        true,
+		"visualforcePageNamesWithSources": true,
+	}
+	for _, finding := range inputViewBypasses(fset, file) {
+		if targets[finding.function] && (strings.HasPrefix(finding.selector, "project.") || strings.HasPrefix(finding.selector, "config.")) {
+			t.Errorf("%s:%d: %s bypasses the captured input view", finding.function, finding.line, finding.selector)
+		}
 	}
 }
 
