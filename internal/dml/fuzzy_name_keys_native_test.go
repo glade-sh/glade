@@ -27,48 +27,8 @@ type fuzzyNameKeysCase struct {
 	Pairs  [][]string `json:"pairs"`
 }
 
-// fuzzyNameKeysResiduals are the native pairs the scorers do not reproduce
-// yet, keyed "case/candidate=>existing" with the native and Glade confidence
-// (0 for no match). Every one reaches the Keyboard Distance step with two
-// substitutions or unequal lengths ("Test 1" and "Last 1", "Harlow Jr" and
-// "Harlowe"), whose costs these rows do not settle. None is a Glade match
-// that native does not report.
-var fuzzyNameKeysResiduals = map[string][2]float64{
-	"ln1/Test 1=>Last 1":          {96, 97},
-	"ln1/Last 1=>Test 1":          {96, 97},
-	"suf1/Harlow Jr=>Harlow III":  {97, 0},
-	"suf1/Harlow Jr=>Harlow.":     {97, 0},
-	"suf1/Harlow Jr=>Harlowe":     {96, 0},
-	"suf1/Harlow Jr.=>Harlow Sr":  {96, 0},
-	"suf1/Harlow Jr.=>Harlow II":  {96, 0},
-	"suf1/Harlow Jr.=>Harlow III": {97, 0},
-	"suf1/Harlow Jr.=>Harlow IV":  {97, 0},
-	"suf1/Harlow Jr.=>Harlow.":    {95, 0},
-	"suf1/Harlow, Jr.=>Harlow Sr": {95, 0},
-	"suf1/Harlow, Jr.=>Harlow II": {96, 0},
-	"suf1/Harlow Sr=>Harlow Jr.":  {96, 0},
-	"suf1/Harlow Sr=>Harlow, Jr.": {95, 0},
-	"suf1/Harlow Sr=>Harlow.":     {97, 0},
-	"suf1/Harlow Sr=>Harlowe":     {96, 0},
-	"suf1/Harlow II=>Harlow Jr.":  {96, 0},
-	"suf1/Harlow II=>Harlow, Jr.": {96, 0},
-	"suf1/Harlow II=>Harlow IV":   {97, 98},
-	"suf1/Harlow III=>Harlow Jr":  {97, 0},
-	"suf1/Harlow III=>Harlow Jr.": {97, 0},
-	"suf1/Harlow III=>Harlow IV":  {97, 0},
-	"suf1/Harlow IV=>Harlow Jr.":  {97, 0},
-	"suf1/Harlow IV=>Harlow II":   {97, 98},
-	"suf1/Harlow IV=>Harlow III":  {97, 0},
-	"suf1/Harlow IV=>Harlow.":     {97, 0},
-	"suf1/Harlow IV=>Harlowe":     {96, 0},
-	"suf1/Harlow.=>Harlow Jr":     {97, 0},
-	"suf1/Harlow.=>Harlow Jr.":    {95, 0},
-	"suf1/Harlow.=>Harlow Sr":     {97, 0},
-	"suf1/Harlow.=>Harlow IV":     {97, 0},
-	"suf1/Harlowe=>Harlow Jr":     {96, 0},
-	"suf1/Harlowe=>Harlow Sr":     {96, 0},
-	"suf1/Harlowe=>Harlow IV":     {96, 0},
-}
+// No keyboard residuals are waived; every captured confidence is checked.
+var fuzzyNameKeysResiduals = map[string][2]float64{}
 
 func fuzzyNameKeysData(t *testing.T) (map[string]fuzzyNameKeysCase, map[string]string) {
 	t.Helper()
