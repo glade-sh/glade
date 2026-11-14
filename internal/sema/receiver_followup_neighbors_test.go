@@ -90,6 +90,9 @@ func TestReceiverControlCallNeighbors(t *testing.T) {
 		{"when_return_type", "switch on 'a' { when Date.\ntoday() { } }", `[{"severity":"error","code":"GLADESEMA030","message":"method \"execute\" has invalid statement: switch branch must be a literal or enum constant","range":{"start":{"line":1,"column":17,"offset":16},"end":{"line":1,"column":18,"offset":17}}}]`},
 		{"else_if_return_type", "if (true) {} else if (Date.\ntoday() == 'ok') {}", `null`},
 		{"foreach_return_type", "for (String s : Date.\ntoday().format(' ')) {}", `[{"severity":"error","code":"GLADESEMA024","message":"method \"execute\" enhanced-for iterates non-collection type String","range":{"start":{"line":1,"column":1},"end":{"line":1,"column":7,"offset":6}}}]`},
+		{"for_init_variable_type", "for (Object o = UserInfo.\ngetName(); false; ) {}", `null`},
+		{"foreach_variable_type", "for (Object o : UserInfo.\ngetName().split(' ')) {}", `null`},
+		{"when_switch_type", "switch on 1 { when UserInfo.\ngetName() { } }", `[{"severity":"error","code":"GLADESEMA030","message":"method \"execute\" has invalid statement: switch branch must be a literal or enum constant","range":{"start":{"line":1,"column":15,"offset":14},"end":{"line":1,"column":16,"offset":15}}}]`},
 	} {
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(tc.name+"/"+api, func(t *testing.T) {
