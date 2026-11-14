@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"slices"
 	"testing"
 
@@ -138,5 +139,23 @@ func TestPlainDeveloperLazySpreadsPreserveExplicitInstall(t *testing.T) {
 				t.Fatal("lazy spread removed explicit install")
 			}
 		})
+	}
+}
+
+func TestExplicitSpreadInstallSurvivesSourceSerialization(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObject(&org, "AIFeatureExtractor")
+	org.EnableStandardSpreadSource()
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	ApplyProjectOrgShape(&restored, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := restored.Objects["AIFeatureExtractor"]; !ok {
+		t.Fatal("serialized source org lost explicit install")
 	}
 }
