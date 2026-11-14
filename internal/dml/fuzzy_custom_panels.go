@@ -57,6 +57,10 @@ var customNameVariants = map[string]bool{
 // value matches no other name, not by Jaro-Winkler either ("J. R." does not
 // find "J.R."). Values written without a space ("JR", "J.R.") are names.
 func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
+	// No captured initials value has more than two words.
+	if strings.Count(strings.TrimSpace(a), " ") > 1 || strings.Count(strings.TrimSpace(b), " ") > 1 {
+		return fuzzyFirstName(a, b, matchBlanks)
+	}
 	if customNameVariants[foldText(a)+"\x00"+foldText(b)] {
 		return true, 100
 	}
