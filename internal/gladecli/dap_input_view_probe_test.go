@@ -236,3 +236,21 @@ func TestDAPFieldMetadataRestoredBeforeRecheck(t *testing.T) {
 		})
 	}
 }
+
+func TestDAPIgnoresFinderChurnDuringBuild(t *testing.T) {
+	root := t.TempDir()
+	writeTestProject(t, root)
+	attempts := 0
+	_, _, _, err := loadDAPStartupStateWithSeams(root, dapLoadSeams{
+		beforeLoad: func(attempt int) { attempts = attempt },
+		afterIndex: func(attempt int) {
+			if err := os.WriteFile(filepath.Join(root, ".DS_Store"), []byte{byte(attempt)}, 0600); err != nil {
+				t.Fatal(err)
+			}
+		},
+	})
+	if err != nil || attempts != 1 {
+		t.Fatalf("load with Finder churn: attempts=%d, err=%v", attempts, err)
+	}
+	assertServedWarm(t, root)
+}
