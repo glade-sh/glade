@@ -733,7 +733,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 		if !dependency {
 			fileNamespace = p.SourceNamespaceForFile(p.ApexFiles[0], namespace)
 		}
-		return []projectSymbolFile{projectSymbolFileFromPath(p.ReadFile, parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources)}
+		return []projectSymbolFile{projectSymbolFileFromPath(p.ReadFile, p.Inputs() != nil, parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -770,7 +770,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 				}
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(p.ReadFile, localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources),
+					File:  projectSymbolFileFromPath(p.ReadFile, p.Inputs() != nil, localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, fileNamespace, version, sourceRemaps, sources),
 				}
 			}
 		}()
@@ -791,7 +791,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 	return out
 }
 
-func projectSymbolFileFromPath(read func(string) ([]byte, error), parser *apexast.Parser, path, root, fallbackAPIVersion string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
+func projectSymbolFileFromPath(read func(string) ([]byte, error), pinned bool, parser *apexast.Parser, path, root, fallbackAPIVersion string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
 	var out projectSymbolFile
 	source, err := sources.load(SourceMetadata{
 		RequestedPath:   path,
@@ -813,7 +813,7 @@ func projectSymbolFileFromPath(read func(string) ([]byte, error), parser *apexas
 	out.Source = &source
 	var effectiveAPIVersion string
 	out.Metadata, effectiveAPIVersion = captureApexMetadataInput(read, path, fallbackAPIVersion)
-	if !sourceStillMatches(path, source.Digest()) || !metadataStillMatches(read, path, out.Metadata) {
+	if !sourceStillMatches(path, source.Digest()) || (!pinned && !metadataStillMatches(read, path, out.Metadata)) {
 		out.Diagnostics = append(out.Diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADETYPE001", Message: "Apex source changed while capturing companion metadata", File: path})
 		return out
 	}
