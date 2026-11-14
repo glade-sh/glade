@@ -97,3 +97,21 @@ func TestPlainDeveloperAdditiveShapeRestoresUncapturedFeatureInventory(t *testin
 		t.Fatalf("object digest %s, want origin/main %s", got, baseline)
 	}
 }
+
+func TestPlainDeveloperUnmarkedShapeTransitionMatchesBaseline(t *testing.T) {
+	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	object, ok := org.Objects["AIFeatureExtractor"]
+	if !ok {
+		t.Fatal("unmarked shape did not restore baseline object")
+	}
+	data, err := json.Marshal(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Serialized object from origin/main after the same transition.
+	const baseline = "2fb31d1636fcf45af25141d6f23c2e1bbbf1550846de52cda02135998d36d80c"
+	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
+		t.Fatalf("object digest %s, want origin/main %s", got, baseline)
+	}
+}
