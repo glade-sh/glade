@@ -146,13 +146,13 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 			}
 			return report(member, "Expecting ')' but was: '"+member.text+"'")
 		case "if", "while":
+			if frame.kind == "if" && frame.start >= 2 && strings.EqualFold(ts[frame.start-2].text, "else") && !receiverDirectCallEquality(ts, frame.start, dot) {
+				return nil
+			}
 			return report(member, "Missing ')' at '"+member.text+"'")
 		case "dowhile":
-			// The capture covers an equality comparison following the call.
-			for j := dot + 2; j < len(ts) && ts[j].text != ";"; j++ {
-				if ts[j].text == "=" && j+1 < len(ts) && ts[j+1].text == "=" && ts[j].end == ts[j+1].start {
-					return report(member, "Expecting ')' but was: '"+member.text+"'")
-				}
+			if receiverDirectCallEquality(ts, frame.start, dot) {
+				return report(member, "Expecting ')' but was: '"+member.text+"'")
 			}
 			return nil
 		case "for":
@@ -162,6 +162,11 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 						return report(member, "Extra ')', at '"+member.text+"'.")
 					}
 					return report(member, "Missing ')' at '"+member.text+"'")
+				}
+				root := receiverNameRoot(ts, dot)
+				end := receiverDirectCallEnd(ts, dot)
+				if root <= frame.start+1 || ts[root-1].text != "=" || end < 0 || end >= len(ts) || ts[end].text != ";" {
+					return nil
 				}
 				return report(member, "Missing ';' at '"+member.text+"'")
 			}
@@ -187,6 +192,36 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 		return report(member, "Extra ';', at '"+member.text+"'.")
 	}
 	return report(member, "Missing ';' at '"+member.text+"'")
+}
+
+// receiverDirectCallEnd returns the token after the broken member call.
+// Nested arguments do not end the call early.
+func receiverDirectCallEnd(ts []receiverTriviaToken, dot int) int {
+	if dot+2 >= len(ts) || ts[dot+2].text != "(" {
+		return -1
+	}
+	depth := 0
+	for i := dot + 2; i < len(ts); i++ {
+		switch ts[i].text {
+		case "(":
+			depth++
+		case ")":
+			depth--
+			if depth == 0 {
+				return i + 1
+			}
+		}
+	}
+	return -1
+}
+
+// The captured condition compares the direct call itself for equality.
+func receiverDirectCallEquality(ts []receiverTriviaToken, open, dot int) bool {
+	if receiverNameRoot(ts, dot) != open+1 {
+		return false
+	}
+	end := receiverDirectCallEnd(ts, dot)
+	return end >= 0 && end+1 < len(ts) && ts[end].text == "=" && ts[end+1].text == "=" && ts[end].end == ts[end+1].start
 }
 
 // receiverTernaryArm reports whether the break sits directly in a conditional
