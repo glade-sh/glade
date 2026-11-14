@@ -135,3 +135,9 @@ platform_string_parenthesized	62.0	anonymous	false	Unexpected token 'debug'.
 platform_string_parenthesized	67.0	anonymous	false	Unexpected token 'debug'.
 platform_string_control	62.0	anonymous	true	ok
 platform_string_control	67.0	anonymous	true	ok
+statement_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+statement_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+after_statement_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+after_statement_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+statement_control	62.0	anonymous	true	ok
+statement_control	67.0	anonymous	true	ok

@@ -1,7 +1,6 @@
 package sema
 
 import (
-	"encoding/json"
 	"path/filepath"
 	"testing"
 
@@ -10,26 +9,20 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// These uncaptured neighbors retain the serialized diagnostics from origin/main.
+// The nested argument position is captured by org.tsv:52-53.
 func TestReceiverSplitUncapturedNeighbors(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "ReceiverProbe.cls")
 	writeSemaFile(t, path, "public class ReceiverProbe { public static String value() { return 'ok'; } }")
 	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "67.0", ApexFiles: []string{path}}, schema.Schema{})
-	// Three former baseline assertions now have native support: declaration
-	// before-dot (org.tsv:66-67), comment after-dot (38-41, 94-95), and
-	// binary argument after-dot (102-103).
+	// An additional nested call still reports at the outer statement's opener.
 	cases := []string{
 		"System.assertEquals('ok', String.valueOf(String.valueOf(ReceiverProbe.\nvalue())));",
 	}
 	for _, source := range cases {
 		result := AnalyzeAnonymous(index, source, "67.0")
-		data, err := json.Marshal(result.Diagnostics)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(data) != "null" {
-			t.Errorf("source %q: diagnostics %s, want origin/main null", source, data)
+		if len(result.Diagnostics) != 1 || result.Diagnostics[0].NativeMessage != "Unexpected token '('." {
+			t.Errorf("source %q: diagnostics %v, want captured argument message", source, result.Diagnostics)
 		}
 	}
 }

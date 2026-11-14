@@ -149,50 +149,17 @@ import (
 // NATIVE platform_string_parenthesized testdata/receiver_split/org.tsv:135 anonymous 67.0
 // NATIVE platform_string_control testdata/receiver_split/org.tsv:136 anonymous 62.0
 // NATIVE platform_string_control testdata/receiver_split/org.tsv:137 anonymous 67.0
+// NATIVE statement_before_dot testdata/receiver_split/org.tsv:138 anonymous 62.0
+// NATIVE statement_before_dot testdata/receiver_split/org.tsv:139 anonymous 67.0
+// NATIVE after_statement_before_dot testdata/receiver_split/org.tsv:140 anonymous 62.0
+// NATIVE after_statement_before_dot testdata/receiver_split/org.tsv:141 anonymous 67.0
+// NATIVE statement_control testdata/receiver_split/org.tsv:142 anonymous 62.0
+// NATIVE statement_control testdata/receiver_split/org.tsv:143 anonymous 67.0
 func TestReceiverSplitNative(t *testing.T) {
-	const fixture = "testdata/receiver_split"
-	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	r := csv.NewReader(f)
-	r.Comma = '\t'
-	rows, err := r.ReadAll()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, row := range rows[1:] {
+	t.Run("grammar", testReceiverGrammarNative)
+	for _, row := range readReceiverSplitRows(t) {
 		t.Run(row[0]+"/"+row[1], func(t *testing.T) {
-			ext := ".apex"
-			if row[2] == "class" {
-				ext = ".cls"
-			}
-			body, err := os.ReadFile(filepath.Join(fixture, "apex", row[0]+ext))
-			if err != nil {
-				t.Fatal(err)
-			}
-			root := t.TempDir()
-			data, err := os.ReadFile(filepath.Join(fixture, "ReceiverProbe.cls"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			path := filepath.Join(root, "ReceiverProbe.cls")
-			writeSemaFile(t, path, string(data))
-			paths := []string{path}
-			if row[2] == "class" {
-				classPath := filepath.Join(root, "ReceiverRouteProbe.cls")
-				writeSemaFile(t, classPath, string(body))
-				paths = append(paths, classPath)
-			}
-			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: row[1], ApexFiles: paths}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
-			if index.HasErrors() {
-				t.Fatal(index.Diagnostics)
-			}
-			result := Analyze(index)
-			if row[2] == "anonymous" {
-				result = AnalyzeAnonymous(index, string(body), row[1])
-			}
+			result := analyzeReceiverSplitCase(t, row[0], row[1], row[2])
 			if row[3] == "true" && row[4] != "ok" {
 				t.Fatalf("successful native row has unexpected outcome %q", row[4])
 			}
@@ -218,9 +185,7 @@ func TestReceiverSplitNative(t *testing.T) {
 			}
 			// Explicitly pin the known differences; compare the complete native
 			// outcome above on every row, including both missing cascades.
-			// The member row is outside the call-only implementation.
 			knownMismatch := map[string]struct{ got, native []string }{
-				"sobject_member_before_dot": {nil, []string{"Variable does not exist: Account"}},                                                                                                                                                 // org.tsv:82-83
 				"class_statement_after_dot": {[]string{"Missing ';' at 'value'"}, []string{"Missing ';' at 'value'", "Variable does not exist:", "Method does not exist or incorrect signature: void value() from the type ReceiverRouteProbe"}}, // org.tsv:114-115
 			}
 			if baseline, known := knownMismatch[row[0]]; known && reflect.DeepEqual(got, baseline.got) && reflect.DeepEqual(want, baseline.native) {
@@ -233,9 +198,60 @@ func TestReceiverSplitNative(t *testing.T) {
 	}
 }
 
-// The supplied anonymous native rows reject a class name followed by a
-// newline and a static call at both API 62.0 and 67.0. This uses a synthetic
-// equivalent because the original capture does not include its source file.
+// analyzeReceiverSplitCase analyzes one fixture case as its native route did.
+func analyzeReceiverSplitCase(t *testing.T, id, api, route string) Result {
+	t.Helper()
+	const fixture = "testdata/receiver_split"
+	ext := ".apex"
+	if route == "class" {
+		ext = ".cls"
+	}
+	body, err := os.ReadFile(filepath.Join(fixture, "apex", id+ext))
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	data, err := os.ReadFile(filepath.Join(fixture, "ReceiverProbe.cls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(root, "ReceiverProbe.cls")
+	writeSemaFile(t, path, string(data))
+	paths := []string{path}
+	if route == "class" {
+		classPath := filepath.Join(root, "ReceiverRouteProbe.cls")
+		writeSemaFile(t, classPath, string(body))
+		paths = append(paths, classPath)
+	}
+	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: paths}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	if index.HasErrors() {
+		t.Fatal(index.Diagnostics)
+	}
+	if route == "anonymous" {
+		return AnalyzeAnonymous(index, string(body), api)
+	}
+	return Analyze(index)
+}
+
+func readReceiverSplitRows(t *testing.T) [][]string {
+	t.Helper()
+	f, err := os.Open(filepath.Join("testdata/receiver_split", "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	r := csv.NewReader(f)
+	r.Comma = '\t'
+	rows, err := r.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rows[1:]
+}
+
+// A class name followed by a newline and a static call is rejected at both
+// API 62.0 and 67.0 (statement_before_dot, org.tsv:138-139), including when
+// the method is void.
 func TestReceiverSplitSuppliedShape(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -254,8 +270,8 @@ func TestReceiverSplitSuppliedShape(t *testing.T) {
 	}
 }
 
-// The explicit local contract keeps uncaptured API and enclosing contexts at
-// origin/main behavior. Native captures cover APIs 62 and 67, not 64 or return.
+// M6 (grammar/org.tsv:20-21) covers a free dot after a block; API 64 lies
+// between the identical 62 and 67 captures.
 func TestReceiverSplitIntermediateAPIAndAfterBlock(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "ReceiverProbe.cls")
@@ -266,12 +282,13 @@ func TestReceiverSplitIntermediateAPIAndAfterBlock(t *testing.T) {
 	} {
 		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: tc.api, ApexFiles: []string{path}}, schema.Schema{})
 		result := AnalyzeAnonymous(index, tc.source, tc.api)
-		if result.HasErrors() {
-			t.Errorf("api %s source %q: got %v", tc.api, tc.source, result.Diagnostics)
+		if len(result.Diagnostics) != 1 || result.Diagnostics[0].NativeMessage != "Variable does not exist: ReceiverProbe" {
+			t.Errorf("api %s source %q: got %v, want captured receiver error", tc.api, tc.source, result.Diagnostics)
 		}
 	}
 }
 
+// CB includes the return context at both APIs (grammar/org.tsv:50-51).
 func TestReceiverSplitBeforeDotInReturn(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		root := t.TempDir()
@@ -281,8 +298,8 @@ func TestReceiverSplitBeforeDotInReturn(t *testing.T) {
 		writeSemaFile(t, caller, "public class Caller { public static String run() { return ReceiverProbe\n.value(); } }")
 		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{probe, caller}}, schema.Schema{})
 		result := Analyze(index)
-		if result.HasErrors() {
-			t.Errorf("api %s: got %v", api, result.Diagnostics)
+		if len(result.Diagnostics) != 1 || result.Diagnostics[0].NativeMessage != "Variable does not exist: ReceiverProbe" {
+			t.Errorf("api %s: got %v, want captured receiver error", api, result.Diagnostics)
 		}
 	}
 }

@@ -67,3 +67,6 @@ platform_string_binary	anonymous	apex/platform_string_binary.apex
 platform_string_call	anonymous	apex/platform_string_call.apex
 platform_string_parenthesized	anonymous	apex/platform_string_parenthesized.apex
 platform_string_control	anonymous	apex/platform_string_control.apex
+statement_before_dot	anonymous	apex/statement_before_dot.apex
+after_statement_before_dot	anonymous	apex/after_statement_before_dot.apex
+statement_control	anonymous	apex/statement_control.apex

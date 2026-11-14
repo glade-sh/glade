@@ -21,6 +21,10 @@ import (
 // independent variable errors. Those additional outcomes are retained in the
 // fixture and are not substituted for the primary diagnostic.
 func TestReceiverGrammarNative(t *testing.T) {
+	testReceiverGrammarNative(t)
+}
+
+func testReceiverGrammarNative(t *testing.T) {
 	const fixture = "testdata/receiver_split/grammar"
 	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
