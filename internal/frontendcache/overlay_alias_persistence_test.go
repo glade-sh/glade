@@ -15,7 +15,13 @@ import (
 
 func TestAliasedOverlayCannotEnterPersistentCaches(t *testing.T) {
 	root := t.TempDir()
-	path := filepath.Join(root, "First.cls")
+	if err := os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"classes","default":true}],"sourceApiVersion":"67.0"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "classes"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(root, "classes", "First.cls")
 	text := "public class First {}"
 	if err := os.WriteFile(path, []byte(text), 0600); err != nil {
 		t.Fatal(err)
@@ -24,7 +30,10 @@ func TestAliasedOverlayCannotEnterPersistentCaches(t *testing.T) {
 	if err := os.Symlink(path, alias); err != nil {
 		t.Fatal(err)
 	}
-	p := project.Project{Root: root, ApexFiles: []string{path}}
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
 	disk, artifacts := typesys.BuildWithArtifacts(p, schema.Schema{})
 	index, ok := typesys.TryUpdateApexFileWithOverlay(disk, path, p, typesys.NewSourceOverlay(map[string]string{alias: text}))
 	if !ok {
