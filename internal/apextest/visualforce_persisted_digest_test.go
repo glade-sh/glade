@@ -283,3 +283,40 @@ func TestPersistedVisualforceDigestRejectsUnsafeDirectory(t *testing.T) {
 		t.Fatalf("wrote digest cache under an unsafe root: %v", err)
 	}
 }
+
+func TestPersistedVisualforceDigestDoesNotReadUnsafeRoot(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "asset.js")
+	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+	reads := 0
+	fileDigestReadHook = func(string) { reads++ }
+	t.Cleanup(func() {
+		fileDigestNow, fileDigestReadHook = oldNow, oldHook
+		resetFileDigestTrust()
+		_ = os.Chmod(root, 0700)
+	})
+	resetFileDigestTrust()
+	if _, err := currentFileDigest(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveVisualforceDigestCache(root, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(root, 0777); err != nil {
+		t.Fatal(err)
+	}
+	resetFileDigestTrust()
+	if err := loadVisualforceDigestCache(root, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := currentFileDigest(path); err != nil {
+		t.Fatal(err)
+	}
+	if reads != 2 {
+		t.Fatalf("read cached digest under unsafe root: reads=%d", reads)
+	}
+}
