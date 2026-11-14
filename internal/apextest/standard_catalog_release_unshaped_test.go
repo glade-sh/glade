@@ -84,6 +84,9 @@ func TestOrgFromIndexCustomObjectReleasesCatalogs(t *testing.T) {
 // repeatedly. Only the first build releases; later builds keep what they
 // decode, so each one does not pay the whole catalog decode again.
 func TestOrgFromIndexCustomObjectReleasesCatalogsOnce(t *testing.T) {
+	// Observe the eager unshaped seed; materializing a lazy org releases its own catalog.
+	previousEager := eagerStandardSpread.Swap(true)
+	t.Cleanup(func() { eagerStandardSpread.Store(previousEager) })
 	index := releaseProbeIndex(t)
 	previous := storage.SetStandardCatalogReleaseEnabled(true)
 	t.Cleanup(func() { storage.SetStandardCatalogReleaseEnabled(previous) })
