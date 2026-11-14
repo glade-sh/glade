@@ -234,6 +234,24 @@ func spreadObjectOwed(org *OrgState, name string) (string, bool) {
 	return canonical, true
 }
 
+// SpreadOwedObjectNames lists, in name order, the canonical name of every
+// catalog object a lazy org still owes: what MaterializeStandardObjectSpread
+// would add. With the installed names it is the object set of the completed
+// spread, so a names-only enumeration can answer without installing. It
+// returns nil for an org that is not lazy. It only reads the org.
+func SpreadOwedObjectNames(org *OrgState) []string {
+	if !org.LazyStandardSpreadEnabled() {
+		return nil
+	}
+	var owed []string
+	for _, name := range KnownStandardObjectNames() {
+		if canonical, ok := LazyStandardObjectName(org, name); ok {
+			owed = append(owed, canonical)
+		}
+	}
+	return owed
+}
+
 // installSpreadObject installs one owed object from the shared source. It
 // reports false when the object is not owed or has no safe template; callers
 // then complete the spread so the answer still matches an eager org.
