@@ -101,6 +101,12 @@ func TestReceiverControlCallNeighbors(t *testing.T) {
 		{"block_argument_arity", "{ System.debug(String.\nvalueOf(1)); }", `null`},
 		{"block_argument_return_type", "{ System.debug(Date.\ntoday()); }", `null`},
 		{"block_argument_position", "{ System.assertEquals(null, String.\nvalueOf(1)); }", `null`},
+		{"group_argument_type", "{ String s = (String.\nvalueOf('1')); }", `null`},
+		{"constructor_argument_type", "{ Object s = new String(String.\nvalueOf('1')); }", `[{"severity":"error","code":"GLADESEMA011","message":"method \"execute\" has invalid new String(...) call: no matching String constructor with 1 argument(s)","range":{"start":{"line":1,"column":3,"offset":2},"end":{"line":1,"column":9,"offset":8}}}]`},
+		{"index_argument_type", "{ List<String> xs = new List<String>{'a'}; String s = xs[String.\nvalueOf('0').length()]; }", `null`},
+		{"list_argument_type", "{ List<String> xs = new List<String>{String.\nvalueOf('1')}; }", `null`},
+		{"map_argument_type", "{ Map<String,String> xs = new Map<String,String>{'a' => String.\nvalueOf('1')}; }", `null`},
+		{"set_argument_type", "{ Set<String> xs = new Set<String>{String.\nvalueOf('1')}; }", `null`},
 	} {
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(tc.name+"/"+api, func(t *testing.T) {
