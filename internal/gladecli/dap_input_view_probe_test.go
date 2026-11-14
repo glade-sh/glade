@@ -82,3 +82,26 @@ func TestDAPVisualforcePageSwap(t *testing.T) {
 		t.Fatalf("attempts=%d served=%v published=%v warm=%v err=%v warmErr=%v", attempts, runtime.PageNames, published, index == nil, err, werr)
 	}
 }
+
+func TestDAPRetriesTransientRuntimeConfigError(t *testing.T) {
+	withoutDAPRetryBackoff(t)
+	root, _ := writeDriftProject(t)
+	path := filepath.Join(root, "glade.yml")
+	original := snapshotFile(t, path)
+	got := loadDAPWithDrift(t, root, dapLoadSeams{
+		afterIndex: func(attempt int) {
+			if attempt == 1 {
+				writeDriftFile(t, path, "project: [\n")
+			}
+		},
+		beforeRecheck: func(attempt int) {
+			if attempt == 1 {
+				original.restore(t)
+			}
+		},
+	})
+	if got.err != nil || got.attempts != 2 {
+		t.Fatalf("attempts=%d err=%v", got.attempts, got.err)
+	}
+	assertServedWarm(t, root)
+}
