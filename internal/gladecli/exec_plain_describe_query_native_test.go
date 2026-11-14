@@ -64,6 +64,16 @@ func TestPlainDescribeQueryTestRunnerNativeConformance(t *testing.T) {
 			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"`+api+`","packageDirectories":[{"path":"force-app","default":true}]}`)
 			writeTestFile(t, filepath.Join(root, "config", "project-scratch-def.json"), `{"edition":"Developer","features":[],"settings":{}}`)
 			var body strings.Builder
+			qualifiedMessage := ""
+			for _, line := range strings.Split(string(data), "\n") {
+				cols := strings.Split(line, "\t")
+				if len(cols) == 5 && cols[0] == api && cols[1] == "istest" && cols[2] == "query" && strings.Count(cols[3], "__") > 1 {
+					qualifiedMessage = strings.TrimPrefix(cols[4], "EXCEPTION|")
+				}
+			}
+			if qualifiedMessage == "" {
+				t.Fatal("missing qualified query row")
+			}
 			for _, line := range strings.Split(string(data), "\n") {
 				cols := strings.Split(line, "\t")
 				if len(cols) != 5 || cols[0] != api || cols[1] != "istest" {
@@ -79,7 +89,12 @@ func TestPlainDescribeQueryTestRunnerNativeConformance(t *testing.T) {
 				case "describe":
 					body.WriteString("try { Schema.describeSObjects(new List<String>{'" + cols[3] + "'}); } catch (Exception e) {}\n")
 				case "query":
-					body.WriteString("try { Database.query('SELECT Id FROM " + cols[3] + " LIMIT 1'); System.assert(false, 'query succeeded'); } catch (QueryException e) { System.assert(e.getMessage().contains('is not supported')); }\n")
+					native := strings.ReplaceAll(strings.TrimPrefix(cols[4], "EXCEPTION|"), "'", "\\'")
+					match := "e.getMessage() == '" + native + "'"
+					if strings.Count(cols[3], "__") == 1 {
+						match += " || e.getMessage() == '" + strings.ReplaceAll(qualifiedMessage, "'", "\\'") + "'"
+					}
+					body.WriteString("try { Database.query('SELECT Id FROM " + cols[3] + " LIMIT 1'); System.assert(false, 'query succeeded'); } catch (QueryException e) { System.assert(" + match + ", e.getMessage()); }\n")
 				}
 			}
 			if body.Len() == 0 {
