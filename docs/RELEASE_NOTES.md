@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Plain Developer orgs use the captured standard-object inventory consistently when the schema is eagerly or lazily materialized.
+- Plain Developer eager orgs omit three standard objects whose absence was observed in native lookup and query results.
 
 ## v0.3.9
 
