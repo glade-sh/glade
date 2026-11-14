@@ -43,6 +43,21 @@ func TestDiskParseFailureRespectsBufferAndDisk(t *testing.T) {
 	if output.Len() != 0 {
 		t.Fatal("published diagnostics for superseded disk contents")
 	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.diagnosticsForDocument(uri); len(got) != 0 {
+		t.Fatalf("deleted file diagnostics = %#v", got)
+	}
+	if err := os.WriteFile(path, broken, 0600); err != nil {
+		t.Fatal(err)
+	}
+	oldGeneration := h.gen.Load()
+	h.gen.Store(newGeneration(typesys.Index{}, 2, nil))
+	s.publishDiskParseFailure(failure, oldGeneration)
+	if output.Len() != 0 {
+		t.Fatal("published diagnostics from a superseded generation")
+	}
 }
 
 func TestReplacingDiagnosticsKeepsGenerationImmutable(t *testing.T) {
