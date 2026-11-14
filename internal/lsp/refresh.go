@@ -2,9 +2,21 @@ package lsp
 
 import (
 	"context"
+	"crypto/sha256"
+
+	"github.com/glade-sh/glade/internal/diagnostic"
 
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+// ParseDiagnosticsError reports the exact disk contents that prevented a refresh.
+type ParseDiagnosticsError struct {
+	Path        string
+	Digest      [sha256.Size]byte
+	Diagnostics []diagnostic.Diagnostic
+}
+
+func (e *ParseDiagnosticsError) Error() string { return "saved source has parse diagnostics" }
 
 // SetRefresher installs the disk-backed loader before the first index is ready.
 func (h *Handler) SetRefresher(fn func(context.Context, RefreshRequest) (Base, error)) {

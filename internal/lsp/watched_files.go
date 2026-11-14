@@ -73,7 +73,10 @@ func (h *Handler) watchedFileEvents(params DidChangeWatchedFilesParams) RefreshR
 	kinds := map[string]int{}
 	for _, event := range params.Changes {
 		path := pathFromURI(event.URI)
-		if path == "" || ignoredWatchedPath(path) || h.matchesBase(path) {
+		h.docMu.RLock()
+		_, failedParse := h.diskParse[path]
+		h.docMu.RUnlock()
+		if path == "" || ignoredWatchedPath(path) || (!failedParse && h.matchesBase(path)) {
 			continue
 		}
 		if event.Type == fileCreated || event.Type == fileDeleted {

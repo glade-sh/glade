@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -143,5 +144,56 @@ func BenchmarkReferenceCandidatesWorkspace(b *testing.B) {
 		if len(h.referenceCandidates("Needle")) != 2 {
 			b.Fatal("unexpected candidates")
 		}
+	}
+}
+
+func TestReferenceCandidateInvalidation(t *testing.T) {
+	for _, scenario := range []string{"size", "mtime", "missing", "initially missing", "new generation"} {
+		t.Run(scenario, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "Example.cls")
+			if scenario != "initially missing" {
+				if err := os.WriteFile(path, []byte("class Otherx {}"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			index := typesys.Index{Types: []typesys.TypeSymbol{{File: path}}}
+			handler := NewHandler(index)
+			h := handler.snapshot()
+			h.referenceCandidates("Needle")
+			switch scenario {
+			case "size":
+				if err := os.WriteFile(path, []byte("class Needle { Integer x; }"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			case "mtime":
+				info, err := os.Stat(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Chtimes(path, info.ModTime().Add(time.Second), info.ModTime().Add(time.Second)); err != nil {
+					t.Fatal(err)
+				}
+			case "missing":
+				if err := os.Remove(path); err != nil {
+					t.Fatal(err)
+				}
+			case "initially missing":
+				if err := os.WriteFile(path, []byte("class Needle {}"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			case "new generation":
+				if err := os.WriteFile(path, []byte("class Needle {}"), 0600); err != nil {
+					t.Fatal(err)
+				}
+				handler.refreshMu.Lock()
+				handler.installBaseLocked(Base{Index: index}, func(g *generation) { handler.gen.Store(g) })
+				handler.refreshMu.Unlock()
+				h = handler.snapshot()
+			}
+			got := h.referenceCandidates("Needle")
+			if len(got) != 1 || got[0] != path {
+				t.Fatalf("candidates = %#v", got)
+			}
+		})
 	}
 }

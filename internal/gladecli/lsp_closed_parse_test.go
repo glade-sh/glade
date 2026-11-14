@@ -90,6 +90,20 @@ func TestClosedExternalParseDiagnosticsAndRecovery(t *testing.T) {
 	writeTestFile(t, broken, initial)
 	c.send(map[string]any{"method": "workspace/didChangeWatchedFiles", "params": map[string]any{"changes": []any{map[string]any{"uri": uri, "type": 2}}}})
 	c.waitAfter("cleared parse diagnostics", 10*time.Second, start, matches(false))
+
+	// didSave uses the same refresh path, including recovery to the prior bytes.
+	c.mu.Lock()
+	start = len(c.seen)
+	c.mu.Unlock()
+	writeTestFile(t, broken, "public class First {")
+	c.send(map[string]any{"method": "textDocument/didSave", "params": map[string]any{"textDocument": map[string]any{"uri": uri}}})
+	c.waitAfter("saved parse diagnostics", 10*time.Second, start, matches(true))
+	c.mu.Lock()
+	start = len(c.seen)
+	c.mu.Unlock()
+	writeTestFile(t, broken, initial)
+	c.send(map[string]any{"method": "textDocument/didSave", "params": map[string]any{"textDocument": map[string]any{"uri": uri}}})
+	c.waitAfter("cleared saved parse diagnostics", 10*time.Second, start, matches(false))
 	c.send(map[string]any{"id": 4, "method": "shutdown"})
 	c.wait("shutdown", 30*time.Second, response(4))
 	if err := <-done; err != nil {

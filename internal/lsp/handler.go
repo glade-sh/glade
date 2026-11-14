@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -49,6 +50,7 @@ type Handler struct {
 	docMu         sync.RWMutex
 	documents     map[DocumentURI]openDocument
 	documentPaths map[string]DocumentURI
+	diskParse     map[string]ParseDiagnosticsError // guarded by docMu
 
 	shutdown atomic.Bool
 
@@ -319,6 +321,15 @@ func (h *Handler) semanticDiagnostics(doc openDocument, sync bool) ([]diagnostic
 
 func (h *Handler) diagnosticsForDocument(uri DocumentURI) []diagnostic.Diagnostic {
 	path := pathFromURI(uri)
+	h.docMu.RLock()
+	failure, hasFailure := h.diskParse[path]
+	h.docMu.RUnlock()
+	if hasFailure {
+		data, err := os.ReadFile(path)
+		if err == nil && sha256.Sum256(data) == failure.Digest {
+			return failure.Diagnostics
+		}
+	}
 	var diagnostics []diagnostic.Diagnostic
 	for _, diag := range h.analysisResult().Diagnostics {
 		if diag.File != "" && (sameDocument(path, diag.File) || sameDocument(string(uri), diag.File)) {

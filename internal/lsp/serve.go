@@ -2,8 +2,11 @@ package lsp
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"io"
+	"os"
 	"reflect"
 
 	"sync"
@@ -458,7 +461,14 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 			}
 		})
 		after = s.h.gen.Load()
-		if err != nil || after == before {
+		if err != nil {
+			var failure *ParseDiagnosticsError
+			if errors.As(err, &failure) {
+				s.publishDiskParseFailure(failure, before)
+			}
+			break
+		}
+		if after == before {
 			break
 		}
 		result := make(chan []diagnostic.Diagnostic, 1)
@@ -474,9 +484,52 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 		}
 	}
 	if valid {
+		// Reconcile only failures that this generation actually reflects.
+		s.h.docMu.Lock()
+		for path, failure := range s.h.diskParse {
+			data, err := os.ReadFile(path)
+			digest, indexed := after.index.SourceDigest(path)
+			if (err == nil && indexed && sha256.Sum256(data) == digest) || (os.IsNotExist(err) && !indexed) {
+				filtered := old[:0]
+				for _, d := range old {
+					if d.File != path {
+						filtered = append(filtered, d)
+					}
+				}
+				old = append(filtered, failure.Diagnostics...)
+				delete(s.h.diskParse, path)
+			}
+		}
+		s.h.docMu.Unlock()
 		s.publishChanged(old, next, after)
 	}
 	return true
+}
+
+// publishDiskParseFailure retains the semantic generation and publishes only a
+// closed file whose on-disk contents still match the failed parse.
+func (s *server) publishDiskParseFailure(failure *ParseDiagnosticsError, before *generation) {
+	s.pubMu.Lock()
+	defer s.pubMu.Unlock()
+	if s.ctx.Err() != nil || s.h.gen.Load() != before {
+		return
+	}
+	data, err := os.ReadFile(failure.Path)
+	if err != nil || sha256.Sum256(data) != failure.Digest {
+		return
+	}
+	uri := uriFromPath(failure.Path)
+	s.h.docMu.Lock()
+	defer s.h.docMu.Unlock()
+	_, open := s.h.documentPaths[canonicalDocumentPath(failure.Path)]
+	if s.h.diskParse == nil {
+		s.h.diskParse = make(map[string]ParseDiagnosticsError)
+	}
+	s.h.diskParse[failure.Path] = *failure
+	if open {
+		return
+	}
+	s.write(Notification{JSONRPC: "2.0", Method: "textDocument/publishDiagnostics", Params: BuildPublishDiagnostics(uri, failure.Diagnostics)})
 }
 
 // overlayPass syncs the overlay, waits for its analysis, and republishes.
@@ -573,9 +626,13 @@ func (s *server) publishChanged(old, next []diagnostic.Diagnostic, after *genera
 		uri := uriFromPath(file)
 		s.h.docMu.RLock()
 		_, open := s.h.documents[uri]
+		_, failedParse := s.h.diskParse[file]
 		s.h.docMu.RUnlock()
 		if open {
 			s.schedule(uri, 0)
+			continue
+		}
+		if failedParse {
 			continue
 		}
 		s.pubMu.Lock()

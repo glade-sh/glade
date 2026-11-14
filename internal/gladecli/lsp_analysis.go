@@ -2,6 +2,7 @@ package gladecli
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -111,14 +112,15 @@ func (l *lspProjectLoader) refreshIndex(ctx context.Context, paths []string) (ty
 			}
 			return l.index, l.analyzer(l.artifacts), nil
 		}
-		parser := apexast.NewParser()
-		parsed, parseErr := parser.ParseFile(paths[0])
-		parser.Close()
+		data, parseErr := os.ReadFile(paths[0])
 		if parseErr != nil {
 			return typesys.Index{}, nil, parseErr
 		}
+		parser := apexast.NewParser()
+		parsed := parser.ParseSource(paths[0], string(data))
+		parser.Close()
 		if len(parsed.Diagnostics) > 0 {
-			return typesys.Index{}, nil, fmt.Errorf("saved source has parse diagnostics")
+			return typesys.Index{}, nil, &lsp.ParseDiagnosticsError{Path: paths[0], Digest: sha256.Sum256(data), Diagnostics: parsed.Diagnostics}
 		}
 	}
 	if err := l.load(); err != nil {
