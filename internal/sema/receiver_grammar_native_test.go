@@ -278,11 +278,11 @@ func testReceiverGrammarNative(t *testing.T) {
 			knownFollowUpMismatch := map[string]string{
 				"ternary_false_bound":        "",                                                       // origin/main neighbor preserved; native rejects (org.tsv:331,411)
 				"method_ternary_false_bound": "",                                                       // same in a method (org.tsv:380,460)
-				"soql_bind_bound":            "",                                                       // glade skips SOQL text; native reports a statement parse error (org.tsv:310-469)
-				"soql_bind_bound_top":        "",                                                       // same, top-level shape
-				"local_sig_ok":               "",                                                       // native: System.String is not a valid type name; not a trivia break
-				"inner_sig_ok":               "",                                                       // same, inner class method
-				"inner_static_block":         "2:22 Inner types are not allowed to have static blocks", // native reports the parse error first
+				"soql_bind_bound":            "",                                                       // glade skips SOQL text; native reports a parse error (org.tsv:339,419)
+				"soql_bind_bound_top":        "",                                                       // top-level SOQL (org.tsv:340,420)
+				"local_sig_ok":               "",                                                       // invalid type name, not a trivia break (org.tsv:345,425)
+				"inner_sig_ok":               "",                                                       // invalid type name in an inner class (org.tsv:352,432)
+				"inner_static_block":         "2:22 Inner types are not allowed to have static blocks", // native reports the parse error first (org.tsv:366,446)
 			}
 			if pinned, known := knownFollowUpMismatch[row[0]]; known {
 				first := ""
