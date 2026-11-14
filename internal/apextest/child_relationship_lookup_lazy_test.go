@@ -88,8 +88,10 @@ func TestChildRelationshipParentNameKeyMatchesResolveObjectName(t *testing.T) {
 						if !ok {
 							want = parent
 						}
-						if got != strings.ToLower(want) {
-							t.Fatalf("%q: lookup key %q, ResolveObjectName key %q", parent, got, strings.ToLower(want))
+						// The lookup keys on the lower-cased name, so compare keys.
+						wantKey := strings.ToLower(want)
+						if got != wantKey {
+							t.Fatalf("%q: lookup key %q, ResolveObjectName key %q", parent, got, wantKey)
 						}
 					}
 				}
