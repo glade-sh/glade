@@ -78,3 +78,17 @@ func TestReceiverDetachedFieldContinuation(t *testing.T) {
 		}
 	}
 }
+
+// A control character inside a string is outside the captured dot-adjacent
+// code shapes and keeps origin/main's diagnostic result.
+func TestReceiverVerticalTabInStringUnchanged(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		got, err := json.Marshal(AnalyzeAnonymous(typesys.Index{}, "String s = 'x.\vtext';", api).Diagnostics)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != "null" {
+			t.Errorf("api %s: diagnostics %s, want origin/main null", api, got)
+		}
+	}
+}
