@@ -18,6 +18,8 @@ func TestReceiverTriviaCLIRoutes(t *testing.T) {
 			for _, tc := range []struct{ name, source, want string }{
 				{"free", "String\n.valueOf('x');", "Variable does not exist: String"},
 				{"bound", "System.\ndebug('x');", "Unexpected token 'debug'."},
+				{"bound control", "System.\vdebug('x');", "Found control character hex 0x000B (decimal 11) that isn't valid in Apex."},
+				{"free control", "String\v.valueOf('x');", "Found control character hex 0x000B (decimal 11) that isn't valid in Apex."},
 			} {
 				var out, errOut bytes.Buffer
 				code := Run(context.Background(), []string{"exec", "--project", root, tc.source}, &out, &errOut)

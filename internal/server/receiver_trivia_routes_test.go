@@ -114,3 +114,34 @@ func TestReceiverTriviaCarriageReturnServerPosition(t *testing.T) {
 		t.Errorf("SOAP: status=%d result=%v", rec.Code, soap)
 	}
 }
+
+// REST compiler rows for dot-adjacent vertical tabs are org.tsv:306-309.
+// SOAP rejects those bytes before compilation, so this exercises Tooling only.
+func TestReceiverVerticalTabToolingRoute(t *testing.T) {
+	const want = "Found control character hex 0x000B (decimal 11) that isn't valid in Apex."
+	for _, tc := range []struct {
+		name   string
+		column int
+	}{{"bound_vertical_tab", 8}, {"free_vertical_tab", 7}} {
+		t.Run(tc.name, func(t *testing.T) {
+			source, err := os.ReadFile(filepath.Join("..", "sema", "testdata", "receiver_split", "grammar", tc.name+".apex"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			org := testOrg()
+			handler := New(&org)
+			query := url.Values{"anonymousBody": []string{string(source)}}
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v67.0/tooling/executeAnonymous?"+query.Encode(), nil))
+			var got struct {
+				Compiled       bool   `json:"compiled"`
+				CompileProblem string `json:"compileProblem"`
+				Line           int    `json:"line"`
+				Column         int    `json:"column"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil || rec.Code != http.StatusOK || got.Compiled || got.CompileProblem != want || got.Line != 1 || got.Column != tc.column {
+				t.Errorf("status=%d body=%s err=%v", rec.Code, rec.Body.String(), err)
+			}
+		})
+	}
+}
