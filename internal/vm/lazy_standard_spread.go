@@ -48,7 +48,12 @@ func (vm *VM) installPresenceReadSpreadObjects() {
 	}
 	for _, name := range namespacedCatalogObjectNames() {
 		if _, held := vm.Org.Objects[name]; !held {
-			vm.lazyStandardObject(name)
+			_, installed := vm.lazyStandardObject(name)
+			if !installed && !vm.Org.StandardSpreadSourceBacked() && (vm.Org.Namespace != "" || vm.currentCallerNamespace() != "") {
+				// The legacy completed spread also installs disallowed catalog
+				// entries. Namespaced callers can resolve their bare aliases.
+				storage.EnsureStandardObject(vm.Org, name)
+			}
 		}
 	}
 }
