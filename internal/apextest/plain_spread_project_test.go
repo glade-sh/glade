@@ -8,7 +8,7 @@ import (
 func TestPlainDeveloperSpreadKeepsExplicitProjectObject(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"edition":"Developer"}`)
+	writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"edition":"Developer","features":[],"settings":{}}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/CareProgram/CareProgram.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"></CustomObject>`)
 	index := loadTestIndex(t, root)
 	if len(index.Objects) == 0 {

@@ -57,7 +57,7 @@ func definitionJSON(t *testing.T, definition ObjectDefinition) string {
 }
 
 var lazySpreadShapes = map[string][]string{
-	"plainDeveloper": {project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape},
+	"plainDeveloper": {project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape},
 	"unspecified":    {project.UnspecifiedStandardFieldShape},
 	"communities":    {"Communities"},
 	"networks":       {"Communities", "NetworksEnabled", "Quotes", "MultiCurrency"},

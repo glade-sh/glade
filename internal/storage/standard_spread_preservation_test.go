@@ -16,7 +16,7 @@ func TestPlainDeveloperSpreadPreservesInPlaceFieldEdit(t *testing.T) {
 	defer func() { obj.Definition.Fields["Id"] = original }()
 	field.Label = "changed"
 	obj.Definition.Fields["Id"] = field
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if got, ok := org.Objects["AIFeatureExtractor"]; !ok || got.Definition.Fields["Id"].Label != "changed" {
 		t.Fatal("in-place field edit lost")
 	}
@@ -26,7 +26,7 @@ func TestPlainDeveloperSpreadPreservesExplicitInstall(t *testing.T) {
 	org := NewOrgState()
 	EnsureStandardObject(&org, "AIFeatureExtractor")
 	EnsureStandardObjectSpread(&org)
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
 		t.Fatal("explicit install lost")
 	}
@@ -38,7 +38,7 @@ func TestPlainDeveloperSpreadPreservesUncapturedNeighbor(t *testing.T) {
 	if _, ok := org.Objects["CareProgram"]; !ok {
 		t.Fatal("neighbor missing before shape")
 	}
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if _, ok := org.Objects["CareProgram"]; !ok {
 		t.Fatal("uncaptured neighbor lost")
 	}
@@ -84,7 +84,7 @@ func TestPlainDeveloperSpreadPreservesInPlaceEditWithoutSnapshot(t *testing.T) {
 	edited := original
 	edited.Label = "edited"
 	obj.Definition.Fields["Id"] = edited
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if got, ok := org.Objects["AIFeatureExtractor"]; !ok || got.Definition.Fields["Id"].Label != "edited" {
 		t.Fatal("edited definition removed without snapshot")
 	}
@@ -102,7 +102,7 @@ func TestPlainDeveloperSpreadPreservesNestedEditWithoutSnapshot(t *testing.T) {
 	original := field.ReferenceTo[0]
 	defer func() { field.ReferenceTo[0] = original }()
 	field.ReferenceTo[0] = "EditedTarget"
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if got, ok := org.Objects["AIFeatureExtractor"]; !ok || !slices.Contains(got.Definition.Fields["CreatedById"].ReferenceTo, "EditedTarget") {
 		t.Fatal("nested definition edit removed without snapshot")
 	}

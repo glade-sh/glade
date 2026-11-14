@@ -23,7 +23,7 @@ func TestStandardSpreadUncapturedShapeSnapshot(t *testing.T) {
 }
 
 func TestPlainDeveloperUncapturedNeighborMatchesBaseline(t *testing.T) {
-	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	object, ok := org.Objects["CareProgram"]
 	if !ok {
 		t.Fatal("neighbor missing")
@@ -33,7 +33,7 @@ func TestPlainDeveloperUncapturedNeighborMatchesBaseline(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Object serialized from origin/main with the same eager plain Developer shape.
-	const baseline = "28a04f49a272c0977b1a3ef7d023a086a3cb4c5d8a1bdf4441de151ea8c1574f"
+	const baseline = "87c49a5c0609dc4add0f7d87a7a5484623b80fc99a0ba63e05ff5831877e7fe6"
 	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
 		t.Fatalf("neighbor digest %s, want origin/main %s", got, baseline)
 	}
@@ -71,7 +71,7 @@ func TestPlainDeveloperShapeTransitionRestoresUncapturedFeatureInventory(t *test
 	if err != nil {
 		t.Fatal(err)
 	}
-	const baseline = "aaa91bc763df14a858f38c8f52457661ece5bea9d1f3acf0e9ddf37797d578d3"
+	const baseline = "c0483914b506fbf4fcd04767e8253fb1a5f1884ced2a4f1c566d79070dc1e407"
 	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
 		t.Fatalf("object digest %s, want origin/main %s", got, baseline)
 	}

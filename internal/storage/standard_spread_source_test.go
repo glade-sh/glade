@@ -25,7 +25,7 @@ func TestPlainDeveloperSpreadNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape}
+	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape}
 	orgs := map[string]OrgState{"eager": sourceSpreadEagerOrg(features), "source": sourceSpreadLazyOrg(features), "legacy": lazySpreadOrg(features)}
 	for route, org := range orgs {
 		if route != "eager" {
@@ -41,7 +41,7 @@ func TestPlainDeveloperSpreadNativeConformance(t *testing.T) {
 }
 
 func BenchmarkPlainDeveloperEagerSpread(b *testing.B) {
-	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape}
+	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape}
 	for i := 0; i < b.N; i++ {
 		org := sourceSpreadEagerOrg(features)
 		if len(org.Objects) == 0 {
@@ -57,7 +57,7 @@ func TestPlainDeveloperSpreadPreservesProjectObject(t *testing.T) {
 	object.Definition.Fields["ProjectField__c"] = Field{APIName: "ProjectField__c", Type: FieldString}
 	object.Records[ID("a00000000000001")] = Record{Fields: map[string]Value{"ProjectField__c": StringValue("kept")}}
 	org.Objects["AIFeatureExtractor"] = object
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	object, ok := org.Objects["AIFeatureExtractor"]
 	if !ok || len(object.Records) != 1 || object.Definition.Fields["ProjectField__c"].APIName == "" {
 		t.Fatal("shape removed project metadata or records")
@@ -70,7 +70,7 @@ func TestPlainDeveloperSpreadPreservesProjectSchemaWithoutRecords(t *testing.T) 
 	object := org.Objects["AIFeatureExtractor"]
 	object.Definition.Fields["ProjectField__c"] = Field{APIName: "ProjectField__c", Type: FieldString}
 	org.Objects["AIFeatureExtractor"] = object
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	object, ok := org.Objects["AIFeatureExtractor"]
 	if !ok || object.Definition.Fields["ProjectField__c"].APIName == "" {
 		t.Fatal("shape removed project schema")
@@ -80,7 +80,7 @@ func TestPlainDeveloperSpreadPreservesProjectSchemaWithoutRecords(t *testing.T) 
 func TestPlainDeveloperShapePreservesExplicitObjectWithoutSpread(t *testing.T) {
 	org := NewOrgState()
 	EnsureStandardObject(&org, "AIFeatureExtractor")
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
 		t.Fatal("shape removed an explicitly installed object")
 	}
@@ -95,7 +95,7 @@ func TestPlainDeveloperSpreadRetainsModifiedCatalogObjects(t *testing.T) {
 	object = org.Objects["AIResearchPromptResult"]
 	object.Records[ID("a00000000000001")] = Record{Fields: map[string]Value{"Value__c": StringValue("kept")}}
 	org.Objects["AIResearchPromptResult"] = object
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if org.Objects["AIFeatureExtractor"].Definition.Fields["ProjectField__c"].APIName == "" {
 		t.Error("shape removed project schema from the spread")
 	}
@@ -105,7 +105,7 @@ func TestPlainDeveloperSpreadRetainsModifiedCatalogObjects(t *testing.T) {
 }
 
 func TestPlainDeveloperSpreadShapeTransition(t *testing.T) {
-	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	data, err := json.Marshal(org)
 	if err != nil {
 		t.Fatal(err)
@@ -403,7 +403,7 @@ func TestPlainDeveloperSpreadRetainsCopiedCatalogDefinition(t *testing.T) {
 	object = org.Objects["AIResearchPromptResult"]
 	object.Definition = object.Definition.Clone()
 	org.Objects["AIResearchPromptResult"] = object
-	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if org.Objects["AIFeatureExtractor"].Definition.Fields["Id"].Label != "Project ID" {
 		t.Error("shape removed a copied and changed catalog definition")
 	}
@@ -414,7 +414,7 @@ func TestPlainDeveloperSpreadRetainsCopiedCatalogDefinition(t *testing.T) {
 
 // The recorded definitions only skip the rebuild; the shaped org is the same.
 func TestPlainDeveloperSpreadRecordedDefinitionsKeepOutcome(t *testing.T) {
-	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape}
+	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape}
 	fast := sourceSpreadEagerOrg(features)
 	full := NewOrgState()
 	full.OrgID = DefaultOrgID
