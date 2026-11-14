@@ -25,6 +25,7 @@ concurrency:
 
 jobs:
   workflow-lint:
+    needs: leak-scan
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

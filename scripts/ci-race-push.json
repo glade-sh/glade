@@ -649,6 +649,7 @@
       "TestRunTestDaemonStopWaitsForProjectRequestDrain",
       "TestRunTestMemoryLimitsProjectRoutes",
       "TestRuntimeRESTAPICLIContext",
+      "TestSaveRefreshPublishesDependentsAndSymbols",
       "TestScopedPluginCoordinateIsNotArchiveInstallArg",
       "TestShardPartitionMatchesUnshardedTestSet",
       "TestStopTestDaemonPreservesUnresponsiveEndpoint",
