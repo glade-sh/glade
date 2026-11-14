@@ -29,7 +29,8 @@ func TestEditorUnchangedNeighbor(t *testing.T) {
 		References []Location
 		Definition []Location
 		Symbols    []SymbolInformation
-	}{refs, h.Definition(DefinitionParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: pos}), h.WorkspaceSymbols("Sample")}
+		Completion CompletionList
+	}{refs, h.Definition(DefinitionParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: pos}), h.WorkspaceSymbols("Sample"), h.Completion(CompletionParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Line: 0, Character: 14}})}
 	data, err := json.Marshal(got)
 	if err != nil {
 		t.Fatal(err)
