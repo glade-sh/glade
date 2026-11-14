@@ -204,8 +204,8 @@ func TestNamesOnlyGlobalDescribeMatchesCompletedSpread(t *testing.T) {
 								if strings.HasPrefix(want, "error: ") {
 									t.Fatalf("api %s named=%v test=%v: eager run failed: %s", api, named, testContext, want)
 								}
-								if got != want {
-									t.Fatalf("api %s named=%v test=%v: names-only differs from the completed spread\n%s", api, named, testContext, firstProbeDifference(want, got))
+								if diff := probeDifference(want, got, route, &lazyOrg); diff != "" {
+									t.Fatalf("api %s named=%v test=%v: names-only differs from the completed spread\n%s", api, named, testContext, diff)
 								}
 								if eagerOrg.LazyStandardSpreadEnabled() {
 									t.Fatal("the eager route left the spread incomplete")
@@ -222,21 +222,29 @@ func TestNamesOnlyGlobalDescribeMatchesCompletedSpread(t *testing.T) {
 	}
 }
 
-func firstProbeDifference(want, got string) string {
+// probeDifference reports the first field where the two runs differ. One
+// difference is expected, on the legacy route only: completing that spread
+// installs catalog objects the shape does not allow (storage
+// SpreadOwedObjectNames), and a bare key can then resolve to one of them. The
+// names-only map, like the source-backed route, does not reach an object the
+// shape does not allow.
+func probeDifference(want, got, route string, org *storage.OrgState) string {
 	w, g := strings.Split(want, "|"), strings.Split(got, "|")
-	for i := 0; i < len(w) || i < len(g); i++ {
-		var a, b string
-		if i < len(w) {
-			a = w[i]
-		}
-		if i < len(g) {
-			b = g[i]
-		}
-		if a != b {
-			return fmt.Sprintf("field %d: completed %q, names-only %q", i, a, b)
-		}
+	if len(w) != len(g) {
+		return fmt.Sprintf("field counts differ: completed %d, names-only %d", len(w), len(g))
 	}
-	return "equal"
+	for i := range w {
+		if w[i] == g[i] {
+			continue
+		}
+		key, rest, found := strings.Cut(w[i], "=true:")
+		object, _, _ := strings.Cut(rest, ":")
+		if route == "legacy" && found && g[i] == key+"=false" && object != "" && !org.AllowsStandardObject(object) {
+			continue
+		}
+		return fmt.Sprintf("field %d: completed %q, names-only %q", i, w[i], g[i])
+	}
+	return ""
 }
 
 // Cost guard: one global describe and one entry describe leave the lazy org
