@@ -274,7 +274,7 @@ func dirObservation(path, kind string) ([]os.DirEntry, observation, error) {
 	o.mode = fs.ModeDir
 	h := sha256.New()
 	for _, e := range entries {
-		if excludeDirEntry(kind, e.Name()) {
+		if excludeDirEntry(kind, e.Name()) || (e.Name() == ".DS_Store" && e.Type().IsRegular()) {
 			continue
 		}
 		fmt.Fprintf(h, "%s\x00%d\x00", e.Name(), e.Type())
