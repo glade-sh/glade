@@ -107,6 +107,7 @@ func TestDAPCompilePathAvoidsUnviewedProjectLoads(t *testing.T) {
 		"runtimeKeyWithDigestLookup":      true,
 		"prepareRuntimeGeneration":        true,
 		"visualforcePageNamesWithSources": true,
+		"orgFromIndexWithError":           true,
 	}
 	for _, finding := range inputViewBypasses(fset, file) {
 		if targets[finding.function] && (strings.HasPrefix(finding.selector, "project.") || strings.HasPrefix(finding.selector, "config.")) {
