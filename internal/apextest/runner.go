@@ -6219,10 +6219,9 @@ func (l *childRelationshipLookup) has(org storage.OrgState, parentName, name str
 // spreadHas reports whether a catalog child in the org's complete spread
 // declares the relationship. The caller holds l.mu.
 func (l *childRelationshipLookup) spreadHas(org storage.OrgState, parentName, name, key string) bool {
-	parentKey := strings.ToLower(parentName)
 	for _, child := range childRelationshipTableCandidates(name, parentName) {
 		definition, ok := l.spreadDefinition(org, child)
-		if ok && l.definitionHas(org, definition, parentKey, name) {
+		if ok && l.definitionHas(org, definition, parentName, name) {
 			return true
 		}
 	}
@@ -6261,13 +6260,13 @@ var childRelationshipSpreadCompletionNeeded = func(org storage.OrgState, parentN
 	return covered && !rulesOut
 }
 
-func (l *childRelationshipLookup) definitionHas(org storage.OrgState, definition storage.ObjectDefinition, parentKey, name string) bool {
+func (l *childRelationshipLookup) definitionHas(org storage.OrgState, definition storage.ObjectDefinition, parentName, name string) bool {
 	for _, relation := range definition.Relations {
 		if !strings.EqualFold(relation.ChildRelationship, name) {
 			continue
 		}
 		for _, parent := range relation.ParentObjects {
-			if strings.ToLower(resolvedChildRelationshipParentName(org, l.parentNames, parent)) == parentKey {
+			if strings.EqualFold(resolvedChildRelationshipParentName(org, l.parentNames, parent), parentName) {
 				return true
 			}
 		}
