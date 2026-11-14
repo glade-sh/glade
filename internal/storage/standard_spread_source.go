@@ -244,11 +244,20 @@ func SpreadOwedObjectNames(org *OrgState) []string {
 		return nil
 	}
 	var owed []string
+	seen := make(map[string]struct{})
 	for _, name := range KnownStandardObjectNames() {
-		if canonical, ok := LazyStandardObjectName(org, name); ok {
-			owed = append(owed, canonical)
+		canonical, ok := LazyStandardObjectName(org, name)
+		if !ok {
+			continue
 		}
+		// Two catalog spellings can fold to one canonical object.
+		if _, dup := seen[canonical]; dup {
+			continue
+		}
+		seen[canonical] = struct{}{}
+		owed = append(owed, canonical)
 	}
+	sort.Strings(owed)
 	return owed
 }
 
