@@ -114,7 +114,8 @@ func runStandardCustomFieldPolicyRows(t *testing.T, name, prefix string, count i
 }
 
 // Shapes next to the captured administrator rows keep their earlier behavior:
-// default-mode DML and dynamic SOQL at API 67.0 (parked, see above), a custom
+// default-mode DML and dynamic SOQL at API 67.0 (parked, see above), the
+// administrator's all-or-none and list USER_MODE inserts, a custom
 // field of another standard object, Account in a Person Account org,
 // a field that a deployed (unassigned) permission set grants, static SOQL, an
 // explicit SYSTEM_MODE query and an API 62.0 explicit USER_MODE update all
@@ -139,6 +140,7 @@ func TestStandardCustomFieldAdminUncapturedNeighbors(t *testing.T) {
 	}{
 		{"case_field", "67.0", "", `Case c = new Case(Subject='x'); c.put('Probe_C__c','v'); insert c; c.put('Probe_C__c','w'); update c; System.assertEquals('w', (String) Database.query('SELECT Probe_C__c FROM Case WHERE Id = \'' + c.Id + '\'')[0].get('Probe_C__c'));`},
 		{"default_mode_admin", "67.0", "", `Account a = new Account(Name='x', Probe_B__c='v'); insert a; a.Probe_B__c='w'; update a; System.assertEquals(true, Database.insert(new Account(Name='y', Probe_B__c='v'), false).isSuccess()); System.assertEquals('w', (String) Database.query('SELECT Probe_B__c FROM Account WHERE Id = \'' + a.Id + '\'')[0].get('Probe_B__c'));`},
+		{"admin_user_mode_all_or_none_and_list", "67.0", "", `Account a = new Account(Name='x', Probe_B__c='v'); System.assertEquals(true, Database.insert(a, true, AccessLevel.USER_MODE).isSuccess()); List<Database.SaveResult> rs = Database.insert(new List<Account>{new Account(Name='y', Probe_B__c='v')}, false, AccessLevel.USER_MODE); System.assertEquals(true, rs[0].isSuccess());`},
 		{"person_account_org", "67.0", `,"features":["PersonAccounts"]`, `Account a = new Account(Name='x', Probe_B__c='v'); insert a; a.Probe_B__c='w'; update a; System.assertEquals('w', (String) Database.query('SELECT Probe_B__c FROM Account')[0].get('Probe_B__c'));`},
 		{"deployed_grant", "67.0", "", `Account a = new Account(Name='x', Probe_A__c='v'); insert a; System.assertEquals('v', (String) Database.query('SELECT Probe_A__c FROM Account')[0].get('Probe_A__c'));`},
 		{"static_and_system_query", "67.0", "", `Account a = new Account(Name='x'); insert a; System.assertEquals(1, [SELECT Probe_B__c FROM Account].size()); System.assertEquals(1, Database.query('SELECT Probe_B__c FROM Account', AccessLevel.SYSTEM_MODE).size());`},
