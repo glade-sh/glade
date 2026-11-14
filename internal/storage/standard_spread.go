@@ -269,7 +269,7 @@ func catalogKeyPrefixOwners() map[string]string {
 
 // MarkExplicitSpreadObject protects project-installed definitions from spread cleanup.
 func (o *OrgState) MarkExplicitSpreadObject(name string) {
-	if o == nil {
+	if o == nil || !plainDeveloperPrunable(name) {
 		return
 	}
 	if canonical, ok := ResolveKnownStandardObjectName(name); ok {
