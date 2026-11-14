@@ -33,6 +33,9 @@ func TestDAPUnchangedProjectNeighbor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(runtime.Methods) == 0 || len(runtime.Classes) == 0 {
+		t.Fatal("neighbor project did not compile its class")
+	}
 	payload, err := json.Marshal(struct {
 		Org     any
 		Runtime any
