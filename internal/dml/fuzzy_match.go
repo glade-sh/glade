@@ -302,6 +302,9 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
 		return matched, confidence
 	}
+	if matched, confidence := lastNameKeyboard(x, y); matched {
+		return true, confidence
+	}
 	score, ok := keyboardDistance(x, y)
 	return ok && score >= 90, averageWith100(score)
 }

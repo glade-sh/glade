@@ -1,7 +1,11 @@
 package dml
 
 import (
+	"encoding/json"
 	"math"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -121,12 +125,37 @@ func TestLastNameSingleSubstitutionMatchesLegacy(t *testing.T) {
 // Every pair accepted by the original keyboard scorer retains its exact score.
 func TestLastNamePreviouslyMatchedScores(t *testing.T) {
 	cases, _ := fuzzyNameKeysData(t)
+	all := map[string][]string{}
 	for name, c := range cases {
-		if c.Kind != "panel" || c.Item != "LastName" {
+		if c.Kind == "panel" && c.Item == "LastName" {
+			all[name] = c.Values
+		}
+	}
+	raw, err := os.ReadFile(filepath.Join(fuzzyFixture, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n")[1:] {
+		cells := strings.SplitN(line, "\t", 4)
+		if len(cells) != 4 {
+			t.Fatal("invalid row")
+		}
+		var row fuzzyNativeRow
+		if err := json.Unmarshal([]byte(cells[3]), &row); err != nil {
+			t.Fatal(err)
+		}
+		if row.Field != "LastName" || row.Method != "LastName" {
 			continue
 		}
-		for _, a := range c.Values {
-			for _, b := range c.Values {
+		for _, v := range row.Values {
+			if v != nil {
+				all[cells[0]+"/"+cells[2]] = append(all[cells[0]+"/"+cells[2]], *v)
+			}
+		}
+	}
+	for name, values := range all {
+		for _, a := range values {
+			for _, b := range values {
 				x, y := foldText(a), foldText(b)
 				if x == y || lastNameWordKey(x) != lastNameWordKey(y) {
 					continue
