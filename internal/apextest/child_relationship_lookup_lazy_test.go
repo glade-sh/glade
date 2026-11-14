@@ -264,3 +264,50 @@ func TestChildRelationshipLookupConcurrentAnswersMatchSerial(t *testing.T) {
 		t.Fatalf("concurrent answers installed objects: %d before, %d after", before, after)
 	}
 }
+
+// The entry point resolves a parent the lazy spread still owes without
+// installing it, and answers as the completed spread does.
+func TestChildRelationshipLookupEntryPointLeavesOwedParentUninstalled(t *testing.T) {
+	org := childRelationshipLookupOrg(childRelationshipLookupShapes["unspecified"], "")
+	const parent = "DigitalWallet"
+	if _, owed := storage.LazyStandardObjectName(&org, parent); !owed {
+		t.Fatalf("%s is not owed by the lazy seed", parent)
+	}
+	eager := org.CloneRuntimeFrozenDefinition()
+	storage.MaterializeStandardObjectSpread(&eager)
+	want := projectReferencedChildRelationshipLookup(eager).keys
+	names := []string{"NoSuchRelationship"}
+	for key := range want {
+		if owner, relation, _ := strings.Cut(key, "\x00"); owner == strings.ToLower(parent) {
+			names = append(names, relation)
+		}
+	}
+	lookup := projectReferencedChildRelationshipLookup(org)
+	before := len(org.Objects)
+	for _, name := range names {
+		_, wantHas := want[strings.ToLower(parent)+"\x00"+strings.ToLower(name)]
+		if got := projectReferencedNameIsChildRelationship(org, parent, name, lookup); got != wantHas {
+			t.Errorf("%s.%s: got %t, completed spread %t", parent, name, got, wantHas)
+		}
+		if after := len(org.Objects); after != before {
+			t.Fatalf("%s.%s: the entry point installed objects: %d before, %d after", parent, name, before, after)
+		}
+	}
+}
+
+// An installed child whose definition differs from the catalog template
+// answers with its installed definition, as the completed spread does.
+func TestChildRelationshipLookupUsesInstalledDefinition(t *testing.T) {
+	org := childRelationshipLookupOrg(childRelationshipLookupShapes["unspecified"], "")
+	storage.EnsureLazyStandardObject(&org, "Contact")
+	contact := org.Objects["Contact"]
+	contact.Definition = contact.Definition.Clone()
+	contact.Definition.Relations = nil
+	org.Objects["Contact"] = contact
+	eager := org.CloneRuntimeFrozenDefinition()
+	storage.MaterializeStandardObjectSpread(&eager)
+	_, want := projectReferencedChildRelationshipLookup(eager).keys["account\x00contacts"]
+	if got := projectReferencedChildRelationshipLookup(org).has(org, "Account", "Contacts"); got != want {
+		t.Fatalf("Account.Contacts: lazy %t, completed spread %t", got, want)
+	}
+}
