@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Plain Developer eager orgs omit three standard objects whose absence was observed in native lookup and query results.
+- Default Developer eager orgs omit three standard objects whose absence was observed in native lookup and query results.
 
 ## v0.3.9
 
