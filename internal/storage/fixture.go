@@ -317,10 +317,6 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 	if org == nil {
 		return
 	}
-	if org.StandardSpreadPruned && !slices.Contains(features, project.PlainDeveloperObjectShape) {
-		org.StandardSpreadPruned = false
-		EnsureStandardObjectSpread(org)
-	}
 	org.ensureFeatureProfile()
 	previous := make([]string, 0, len(org.Features))
 	for _, feature := range org.Features {
@@ -332,8 +328,34 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 			previous = append(previous, feature)
 		}
 	}
+	combined := append(append([]string(nil), previous...), features...)
+	captured := slices.Contains(features, project.PlainDeveloperDescribeShape) && capturedPlainSpreadFeatures(combined)
+	if org.StandardSpreadPruned && !captured {
+		org.StandardSpreadPruned = false
+		EnsureStandardObjectSpread(org)
+	}
+	org.StandardSpreadCapturedPlain = captured
 	org.Features = previous
 	ApplyOrgShape(org, features)
+}
+
+// capturedPlainSpreadFeatures accepts only the exact default Developer shape
+// captured for lookup and query, not the broader global-describe profile.
+func capturedPlainSpreadFeatures(features []string) bool {
+	var edition, objects, describe bool
+	for _, feature := range features {
+		switch feature {
+		case project.StandardFieldEditionDeveloper:
+			edition = true
+		case project.PlainDeveloperObjectShape:
+			objects = true
+		case project.PlainDeveloperDescribeShape:
+			describe = true
+		default:
+			return false
+		}
+	}
+	return edition && objects && describe
 }
 
 // ApplyOrgShape adds capabilities. Adding one feature does not establish the
@@ -341,6 +363,17 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 func ApplyOrgShape(org *OrgState, features []string) {
 	if org == nil {
 		return
+	}
+	combined := append(append([]string(nil), org.Features...), features...)
+	captured := capturedPlainSpreadFeatures(combined)
+	if org.StandardSpreadPruned && !captured {
+		org.StandardSpreadPruned = false
+		EnsureStandardObjectSpread(org)
+	}
+	if !captured {
+		org.StandardSpreadCapturedPlain = false
+	} else if slices.Contains(features, project.PlainDeveloperDescribeShape) {
+		org.StandardSpreadCapturedPlain = true
 	}
 	applyOrgShape(org, features)
 	ensureOrganizationGroups(org)

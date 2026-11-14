@@ -92,6 +92,9 @@ type OrgState struct {
 	// StandardSpreadPruned remembers that a completed spread was narrowed by
 	// the plain Developer profile, so a later profile can restore the spread.
 	StandardSpreadPruned bool `json:"standardSpreadPruned,omitempty"`
+	// StandardSpreadCapturedPlain records the exact default Developer shape
+	// used by the native inventory probes, including across serialization.
+	StandardSpreadCapturedPlain bool `json:"standardSpreadCapturedPlain,omitempty"`
 	// StandardDuplicateRules turns on the seeded standard duplicate rules (the
 	// duplicateRules.standard setting); project metadata rules are always on.
 	StandardDuplicateRules bool                `json:"standardDuplicateRules,omitempty"`

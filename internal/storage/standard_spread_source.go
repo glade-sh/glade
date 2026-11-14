@@ -202,7 +202,7 @@ func materializeSpreadSource(org *OrgState) bool {
 		}
 	}
 	org.StandardSpread = ""
-	if org.HasFeature(project.PlainDeveloperObjectShape) {
+	if org.StandardSpreadCapturedPlain && org.HasFeature(project.PlainDeveloperObjectShape) {
 		org.StandardSpreadPruned = true
 	}
 	return true
