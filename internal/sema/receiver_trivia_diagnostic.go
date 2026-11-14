@@ -154,6 +154,15 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 					return nil
 				}
 			}
+			if frame.kind == "group" || frame.kind == "new" {
+				end := receiverIntegerCallEnd(ts, dot)
+				if frame.kind == "group" && end < 0 {
+					end = receiverDirectCallEnd(ts, dot)
+				}
+				if receiverNameRoot(ts, dot) != frame.start+1 || end < 0 || end >= len(ts) || ts[end].text != ")" || !resolvedCall() {
+					return nil
+				}
+			}
 			return report(member, "Expecting ')' but was: '"+member.text+"'")
 		case "if", "while":
 			matches := receiverDirectCallEquality(ts, frame.start, dot)
@@ -202,8 +211,25 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 			}
 			return nil
 		case "index":
+			end := receiverIntegerCallEnd(ts, dot)
+			arrayEnd := receiverDirectCallEnd(ts, dot)
+			arraySize := frame.start >= 2 && strings.EqualFold(ts[frame.start-2].text, "new") && strings.EqualFold(ts[frame.start-1].text, "String") && arrayEnd >= 0 && arrayEnd < len(ts) && ts[arrayEnd].text == "]"
+			indexedCall := end >= 0 && end+4 < len(ts) && ts[end].text == "." && ts[end+1].word && ts[end+2].text == "(" && ts[end+3].text == ")" && ts[end+4].text == "]" && resolvedCall()
+			if receiverNameRoot(ts, dot) != frame.start+1 || (!arraySize && !indexedCall) {
+				return nil
+			}
 			return report(member, "Expecting ']' but was: '"+member.text+"'")
 		case "initializer":
+			end := receiverIntegerCallEnd(ts, dot)
+			root := receiverNameRoot(ts, dot)
+			firstValue := root == frame.start+1
+			mapValue := root == frame.start+4 && strings.HasPrefix(ts[frame.start+1].text, "'") && ts[frame.start+2].text == "=" && ts[frame.start+3].text == ">"
+			if mapValue && end < 0 {
+				end = receiverDirectCallEnd(ts, dot)
+			}
+			if (!firstValue && !mapValue) || end < 0 || end >= len(ts) || ts[end].text != "}" || !resolvedCall() {
+				return nil
+			}
 			return report(member, "Expecting '}' but was: '"+member.text+"'")
 		case "switch":
 			return nil
