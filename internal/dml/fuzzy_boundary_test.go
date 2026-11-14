@@ -60,3 +60,33 @@ func TestFoldTextPreservesBaseline(t *testing.T) {
 		}
 	}
 }
+
+func TestEditDistanceKeepsBaseline(t *testing.T) {
+	baseline := func(a, b []rune) int {
+		prev, cur := make([]int, len(b)+1), make([]int, len(b)+1)
+		for j := range prev {
+			prev[j] = j
+		}
+		for i := 1; i <= len(a); i++ {
+			cur[0] = i
+			for j := 1; j <= len(b); j++ {
+				cost := 0
+				if a[i-1] != b[j-1] {
+					cost = 1
+				}
+				cur[j] = min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost)
+			}
+			prev, cur = cur, prev
+		}
+		return prev[len(b)]
+	}
+	values := []string{"", "a", "b", "abc", "axc", "éclair", "éclat", strings.Repeat("a", 63) + "x", strings.Repeat("a", 64) + "y", strings.Repeat("b", 70)}
+	for _, a := range values {
+		for _, b := range values {
+			got, want := levenshtein([]rune(a), []rune(b)), baseline([]rune(a), []rune(b))
+			if got != want {
+				t.Errorf("distance %q/%q = %d, want %d", a, b, got, want)
+			}
+		}
+	}
+}
