@@ -44,3 +44,15 @@ func TestDiskParseFailureRespectsBufferAndDisk(t *testing.T) {
 		t.Fatal("published diagnostics for superseded disk contents")
 	}
 }
+
+func TestReplacingDiagnosticsKeepsGenerationImmutable(t *testing.T) {
+	original := []diagnostic.Diagnostic{{File: "first.cls", Message: "old"}, {File: "second.cls", Message: "keep"}}
+	updated := replaceFileDiagnostics(original, "first.cls", []diagnostic.Diagnostic{{File: "first.cls", Message: "parse"}})
+	if original[0].Message != "old" || original[1].Message != "keep" {
+		t.Fatalf("mutated generation: %#v", original)
+	}
+	updated[0].Message = "changed"
+	if original[1].Message != "keep" {
+		t.Fatalf("replacement shares generation slice: %#v", original)
+	}
+}

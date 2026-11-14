@@ -494,13 +494,7 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 			data, err := os.ReadFile(path)
 			digest, indexed := disk.index.SourceDigest(path)
 			if (err == nil && indexed && sha256.Sum256(data) == digest) || (os.IsNotExist(err) && !indexed) {
-				filtered := old[:0]
-				for _, d := range old {
-					if d.File != path {
-						filtered = append(filtered, d)
-					}
-				}
-				old = append(filtered, failure.Diagnostics...)
+				old = replaceFileDiagnostics(old, path, failure.Diagnostics)
 				delete(s.h.diskParse, path)
 			}
 		}
@@ -508,6 +502,17 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 		s.publishChanged(old, next, after)
 	}
 	return true
+}
+
+// replaceFileDiagnostics never writes into a generation's shared result.
+func replaceFileDiagnostics(old []diagnostic.Diagnostic, path string, replacement []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	result := make([]diagnostic.Diagnostic, 0, len(old)+len(replacement))
+	for _, d := range old {
+		if d.File != path {
+			result = append(result, d)
+		}
+	}
+	return append(result, replacement...)
 }
 
 // publishDiskParseFailure retains the semantic generation and publishes only a
