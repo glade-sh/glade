@@ -169,6 +169,13 @@ func buildSpreadTemplateOnce(cell *spreadTemplateCell, key spreadTemplateKey, or
 	})
 	cell.done.Store(true)
 	if built {
+		// Count the fields after done. A scan then either sees the cell and
+		// counts it, or skips it and leaves this addition in place; it never
+		// loses it. The worst case is one cell counted twice until the next
+		// pass corrects the hint.
+		if cell.ok {
+			spreadTemplateLiveFields.Add(int64(len(cell.state.Definition.Fields)))
+		}
 		noteSpreadTemplateBuilt(key)
 	}
 }
@@ -318,7 +325,6 @@ func buildSpreadTemplateCell(cell *spreadTemplateCell, key spreadTemplateKey, or
 	cell.state = scratch.Objects[key.object]
 	cell.ok = true
 	cell.group = spreadGroupFor(key.group())
-	spreadTemplateLiveFields.Add(int64(len(cell.state.Definition.Fields)))
 }
 
 // dropPlainSpreadTemplates removes each plain-phase template at most once,
