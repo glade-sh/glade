@@ -180,6 +180,9 @@ func refreshOrgFeatureObjects(org *OrgState) {
 				DeleteObject(org, name)
 				if org.eagerStandardSpread {
 					org.StandardSpreadPruned = true
+				} else {
+					removed := append([]string(nil), org.StandardSpreadRemoved...)
+					org.StandardSpreadRemoved = append(removed, name)
 				}
 			}
 		}

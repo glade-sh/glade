@@ -92,6 +92,9 @@ type OrgState struct {
 	// StandardSpreadPruned remembers that a completed spread was narrowed by
 	// the plain Developer profile, so a later profile can restore the spread.
 	StandardSpreadPruned bool `json:"standardSpreadPruned,omitempty"`
+	// StandardSpreadRemoved holds source-backed objects actually removed by
+	// the captured default shape so an uncaptured transition can restore them.
+	StandardSpreadRemoved []string `json:"standardSpreadRemoved,omitempty"`
 	// StandardSpreadCapturedPlain records the exact default Developer shape
 	// used by the native inventory probes, including across serialization.
 	StandardSpreadCapturedPlain bool `json:"standardSpreadCapturedPlain,omitempty"`

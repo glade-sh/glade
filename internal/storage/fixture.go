@@ -330,13 +330,28 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 	}
 	combined := append(append([]string(nil), previous...), features...)
 	captured := slices.Contains(features, project.PlainDeveloperDescribeShape) && capturedPlainSpreadFeatures(combined)
-	if org.StandardSpreadPruned && !captured {
-		org.StandardSpreadPruned = false
-		EnsureStandardObjectSpread(org)
+	if !captured {
+		restorePrunedStandardSpread(org)
 	}
 	org.StandardSpreadCapturedPlain = captured
 	org.Features = previous
 	ApplyOrgShape(org, features)
+}
+
+// restorePrunedStandardSpread reverses only this branch's removals. A
+// source-backed spread must not acquire the unrelated eager inventory.
+func restorePrunedStandardSpread(org *OrgState) {
+	if org.StandardSpreadPruned {
+		org.StandardSpreadPruned = false
+		EnsureStandardObjectSpread(org)
+	}
+	removed := org.StandardSpreadRemoved
+	org.StandardSpreadRemoved = nil
+	for _, name := range removed {
+		if _, exists := org.Objects[name]; !exists {
+			ensureStandardObjectWithProfile(org, name, nil)
+		}
+	}
 }
 
 // capturedPlainSpreadFeatures accepts only the exact default Developer shape
@@ -366,9 +381,8 @@ func ApplyOrgShape(org *OrgState, features []string) {
 	}
 	combined := append(append([]string(nil), org.Features...), features...)
 	captured := capturedPlainSpreadFeatures(combined)
-	if org.StandardSpreadPruned && !captured {
-		org.StandardSpreadPruned = false
-		EnsureStandardObjectSpread(org)
+	if !captured {
+		restorePrunedStandardSpread(org)
 	}
 	if !captured {
 		org.StandardSpreadCapturedPlain = false
