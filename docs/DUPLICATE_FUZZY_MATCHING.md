@@ -206,12 +206,13 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    `Farnsdraeovk` at 96 with six substitutions; `Abernathy` finds `Abernaty`
    at 99; `Frank` does not find `Franklin`). The sum is divided by the longer
    length. The costs are fitted to the 2,528 distinct native pairs that reach
-   this step (`keyboardDistance` in `internal/dml/fuzzy_keyboard.go`):
+   this step (`keyboardDistance` in `internal/dml/fuzzy_keyboard.go`) for
+   unequal lengths or two or more substitutions. Equal-length pairs with one
+   substitution retain the earlier `keyboardSimilarity` scorer:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
      beyond; the final character of two names of equal length is one step
-     cheaper (`P4.LN.KB1`: 25 replacement letters on two bases; `Harlow II`
-     finds `Harlow IV` at 97). About 120 key pairs need a cost other than the
+     cheaper. About 120 key pairs need a cost other than the
      formula and are listed in the code;
    - an accent costs 0.16; a letter against a space or punctuation mark and a
      space against a punctuation mark have their own costs; digits never
@@ -220,8 +221,9 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
      otherwise equal name (about 0.25) and one after a substitution (top row
      about 0.2, bottom row about 0.35).
 
-   The fit keeps every native non-match at least 0.3 below 90 and reproduces
-   every native match of those rows. The standard rules keep the earlier
+   The one-substitution legacy score does not reproduce every native
+   confidence: `Harlow II` / `Harlow IV` rounds to 98, versus native 97.
+   The standard rules keep the earlier
    costs (`keyboardSimilarity`: one substitution, two with a score of 92 or
    more, or up to two trailing letters), which their rows were fitted with.
 
