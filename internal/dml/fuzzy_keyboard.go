@@ -20,8 +20,8 @@ import (
 //     between the top and the bottom row. Neighbouring keys cost 0.06 and
 //     further keys 0.079 a step. A substitution of the final character of two
 //     names of equal length is one step cheaper (0.05, then 0.079 for every
-//     further step: "Harlow II" finds "Harlow IV" at 97, "Richardson" finds
-//     "Richardsop" at 98).
+//     further step). The custom scorer keeps the base score for a single
+//     substitution, including "Harlow II" / "Harlow IV" (98; native 97).
 //   - The rows do not follow the key distance exactly. keyboardFittedInner
 //     and keyboardFittedFinal list the key pairs whose rows need another
 //     cost; every other pair keeps the formula.
