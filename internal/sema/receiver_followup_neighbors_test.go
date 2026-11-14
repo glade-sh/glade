@@ -107,6 +107,8 @@ func TestReceiverControlCallNeighbors(t *testing.T) {
 		{"list_argument_type", "{ List<String> xs = new List<String>{String.\nvalueOf('1')}; }", `null`},
 		{"map_argument_type", "{ Map<String,String> xs = new Map<String,String>{'a' => String.\nvalueOf('1')}; }", `null`},
 		{"set_argument_type", "{ Set<String> xs = new Set<String>{String.\nvalueOf('1')}; }", `null`},
+		{"bound_control_argument_type", "System.\vdebug(1);", `null`},
+		{"free_control_argument_type", "String\v.valueOf(1);", `null`},
 	} {
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(tc.name+"/"+api, func(t *testing.T) {
