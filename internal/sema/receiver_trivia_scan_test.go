@@ -11,7 +11,12 @@ func TestReceiverTriviaScan(t *testing.T) {
 		want         []receiverTriviaKind
 	}{
 		{"bound", "thing.\nmember", []receiverTriviaKind{receiverBoundBreak}},
+		{"bound comment", "thing./* comment */member", []receiverTriviaKind{receiverBoundBreak}},
+		{"this keyword", "this.\nmember", []receiverTriviaKind{receiverBoundBreak}},
+		{"super keyword", "super.\nmember", []receiverTriviaKind{receiverBoundBreak}},
+		{"trigger context", "Trigger.\nnew", []receiverTriviaKind{receiverBoundBreak}},
 		{"free", "thing \n. member", []receiverTriviaKind{receiverFreeName}},
+		{"free comment", "thing/* comment */.member", []receiverTriviaKind{receiverFreeName}},
 		{"safe navigation", "thing?.\nmember", nil},
 		{"call result", "thing().\nmember", nil},
 		{"index result", "things[0].\nmember", nil},
