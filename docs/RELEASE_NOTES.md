@@ -24,6 +24,8 @@
 
 - **Faster global describe.** Object names are listed without loading every standard object definition.
 
+- Email fields reject captured malformed addresses on inserts, including trailing or consecutive domain dots and quoted local parts containing spaces.
+
 ### Performance
 
 - **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
