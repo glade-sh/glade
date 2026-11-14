@@ -120,3 +120,23 @@ func TestExplicitSpreadMarksAreIsolatedAcrossRuntimeClones(t *testing.T) {
 		t.Fatal("clone lost explicit marks")
 	}
 }
+
+func TestPlainDeveloperLazySpreadsPreserveExplicitInstall(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		enable func(*OrgState)
+	}{
+		{"source", func(org *OrgState) { org.EnableStandardSpreadSource() }},
+		{"legacy", func(org *OrgState) { org.EnableLazyStandardSpread() }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := NewOrgState()
+			EnsureStandardObject(&org, "AIFeatureExtractor")
+			tc.enable(&org)
+			ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+			if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
+				t.Fatal("lazy spread removed explicit install")
+			}
+		})
+	}
+}
