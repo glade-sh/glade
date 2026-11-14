@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"os"
 	"reflect"
 	"sort"
@@ -87,8 +88,17 @@ func TestPlainDeveloperShapePreservesExplicitObjectWithoutSpread(t *testing.T) {
 
 func TestPlainDeveloperSpreadShapeTransition(t *testing.T) {
 	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
-	ApplyProjectOrgShape(&org, []string{project.UnspecifiedStandardFieldShape})
-	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	clone := restored.CloneRuntime()
+	ApplyProjectOrgShape(&clone, []string{project.UnspecifiedStandardFieldShape})
+	if _, ok := clone.Objects["AIFeatureExtractor"]; !ok {
 		t.Fatal("leaving the plain shape did not restore the eager spread")
 	}
 }
