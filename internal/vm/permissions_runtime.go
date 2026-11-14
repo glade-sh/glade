@@ -1046,10 +1046,12 @@ func (vm *VM) capturedAdminAssignmentSet(setID string) bool {
 			return false
 		}
 	}
-	if objectPermissions, ok := vm.Org.Objects["ObjectPermissions"]; ok {
-		for _, row := range objectPermissions.Records {
-			if parent, exists := row.GetField("ParentId"); exists && storage.IDsEqual(storage.ID(storageValueIDText(parent)), storage.ID(setID)) {
-				return false
+	for _, objectName := range []string{"ObjectPermissions", "SetupEntityAccess", "PermissionSetTabSetting"} {
+		if state, ok := vm.Org.Objects[objectName]; ok {
+			for _, row := range state.Records {
+				if parent, exists := row.GetField("ParentId"); exists && storage.IDsEqual(storage.ID(storageValueIDText(parent)), storage.ID(setID)) {
+					return false
+				}
 			}
 		}
 	}
