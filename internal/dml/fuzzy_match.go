@@ -381,8 +381,8 @@ func fuzzyPhone(a, b string, _ bool) (bool, float64) {
 	// The captured vanity shape has country 1, a numeric area, and seven
 	// letters. Only admit its fully equivalent digit form; other letter
 	// placements and partial matches retain the previous scoring.
-	if phoneKeypadEquivalent(ca, aa, ea, la, cb, ab, eb, lb) ||
-		phoneKeypadEquivalent(cb, ab, eb, lb, ca, aa, ea, la) {
+	if (ea[0] >= 'a' && phoneKeypadEquivalent(ca, aa, ea, la, cb, ab, eb, lb)) ||
+		(eb[0] >= 'a' && phoneKeypadEquivalent(cb, ab, eb, lb, ca, aa, ea, la)) {
 		if ca == cb {
 			return true, 100
 		}
