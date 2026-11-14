@@ -50,8 +50,7 @@ func captureRecentVisualforceInput(path string, remaining int64) (recentVisualfo
 		return recentVisualforceInput{}, true, err
 	}
 	after, afterOK := filestamp.Fstat(f)
-	current, currentOK := filestamp.Stat(path)
-	if !afterOK || !currentOK || before != after || after != current || int64(len(data)) != stamp.Size {
+	if !afterOK || before != after || !sameVisualforcePathStamp(path, after) || int64(len(data)) != stamp.Size {
 		return recentVisualforceInput{}, true, sourceSnapshotMismatch(path, [sha256.Size]byte{}, nil, errors.New("input changed while reading"))
 	}
 	return recentVisualforceInput{content: data, digest: sha256.Sum256(data)}, true, nil
@@ -79,6 +78,11 @@ func (input recentVisualforceInput) matches(path string) bool {
 		offset += n
 	}
 	after, afterOK := filestamp.Fstat(f)
-	current, currentOK := filestamp.Stat(path)
-	return afterOK && currentOK && before == after && after == current
+	return afterOK && before == after && sameVisualforcePathStamp(path, after)
+}
+
+// The final path must still identify the file descriptor after reading.
+func sameVisualforcePathStamp(path string, before filestamp.Stamp) bool {
+	current, ok := filestamp.Stat(path)
+	return ok && current == before
 }

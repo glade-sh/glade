@@ -558,6 +558,7 @@
       "TestUtilityNativeConformance",
       "TestValueEdgesNativeConformance",
       "TestVerifierOverrideConversionOrgConformance",
+      "TestVisualforceOpenFilePathStampIdentity",
       "TestVisualforcePersistentDigestScope",
       "TestWideInterfaceOverloadNativeConformance",
       "TestWidenedListAliasNativeConformance",
