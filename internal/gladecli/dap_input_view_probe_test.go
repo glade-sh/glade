@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/startupcache"
 )
 
@@ -102,6 +103,13 @@ func TestDAPRetriesTransientRuntimeConfigError(t *testing.T) {
 	})
 	if got.err != nil || got.attempts != 2 {
 		t.Fatalf("attempts=%d err=%v", got.attempts, got.err)
+	}
+	entry, readErr := startupcache.Read(root, startupcache.SubdirDAP)
+	if readErr != nil || entry == nil {
+		t.Fatalf("entry: %v", readErr)
+	}
+	if !startupcache.Fresh(entry, root, dapCacheVersion) || !dapObservationsHold(root, entry) {
+		t.Fatalf("fresh=%v observations=%v raw=%v", startupcache.Fresh(entry, root, dapCacheVersion), dapObservationsHold(root, entry), inputview.Verify(entry.Inputs, nil))
 	}
 	assertServedWarm(t, root)
 }

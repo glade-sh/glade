@@ -25,6 +25,7 @@ import (
 	"github.com/glade-sh/glade/internal/automation"
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/profile"
@@ -1270,7 +1271,11 @@ func runtimeKeyWithSourceDigests(index typesys.Index, digests *typesys.SourceDig
 	return runtimeKeyWithDigestLookup(index, lookup, readFile)
 }
 
-func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha256.Size]byte, bool), readFile func(string) ([]byte, error)) runtimeCacheKey {
+func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha256.Size]byte, bool), readFile func(string) ([]byte, error), views ...*inputview.View) runtimeCacheKey {
+	var view *inputview.View
+	if len(views) > 0 {
+		view = views[0]
+	}
 	if readFile == nil {
 		readFile = os.ReadFile
 	}
@@ -1327,7 +1332,7 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 	// Invalidate seeds created before hierarchy settings entered this identity,
 	// including a cached enabled seed produced under the old empty key.
 	write("org-hierarchy-access-v1")
-	if domainURL, objects, err := project.OrgRuntimeSettings(index.Project.Root); err != nil {
+	if domainURL, objects, err := project.OrgRuntimeSettingsWithInputs(view, index.Project.Root); err != nil {
 		write("org-domain-url-error:" + err.Error())
 	} else {
 		if domainURL != "" {
@@ -1428,7 +1433,7 @@ type runtimeGeneration struct {
 	oneShot bool
 }
 
-func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration) runtimeCacheKey {
+func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration, view *inputview.View) runtimeCacheKey {
 	lookup := func(file string) ([sha256.Size]byte, bool) {
 		input, ok := generation.inputs[file]
 		return input.digest, ok
@@ -1440,7 +1445,7 @@ func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourc
 		}
 		return []byte(input.raw), nil
 	}
-	return runtimeKeyWithDigestLookup(index, lookup, readCaptured)
+	return runtimeKeyWithDigestLookup(index, lookup, readCaptured, view)
 }
 
 func runtimeKeyWithMetadataGeneration(base runtimeCacheKey, generation runtimeMetadataGeneration) runtimeCacheKey {
@@ -1767,11 +1772,17 @@ func validateRuntimeGeneration(sources *sourceCache) error {
 }
 
 func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache) (runtimeGeneration, error) {
-	if _, err := project.OrgDomainURL(index.Project.Root); err != nil {
-		return runtimeGeneration{}, err
-	}
 	if sources == nil {
 		return runtimeGeneration{}, fmt.Errorf("source cache is nil")
+	}
+	sources.mu.RLock()
+	var view *inputview.View
+	if sources.capturedProject != nil {
+		view = sources.capturedProject.Inputs()
+	}
+	sources.mu.RUnlock()
+	if _, err := project.OrgDomainURLWithInputs(view, index.Project.Root); err != nil {
+		return runtimeGeneration{}, err
 	}
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	sources.bindSourceDigests(digests)
@@ -1790,7 +1801,7 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		return runtimeGeneration{}, err
 	}
-	base := runtimeKeyWithSourceGeneration(index, source)
+	base := runtimeKeyWithSourceGeneration(index, source, view)
 	return runtimeGeneration{
 		source:   source,
 		metadata: metadata,

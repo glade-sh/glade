@@ -67,7 +67,7 @@ func changedWhat(a, b observation) string {
 	if a.exists && !b.exists {
 		return "file removed"
 	}
-	if a.kind == "dir" || a.kind == "dir-visible" {
+	if a.kind == "dir" || a.kind == "dir-visible" || a.kind == "dir-root" {
 		return "directory listing"
 	}
 	return "file content"
@@ -260,12 +260,8 @@ type dirEntry struct {
 }
 
 func (d dirEntry) Info() (os.FileInfo, error) { return d.v.Lstat(d.path) }
-func dirObservation(path string, visibleOnly bool) ([]os.DirEntry, observation, error) {
+func dirObservation(path, kind string) ([]os.DirEntry, observation, error) {
 	entries, err := os.ReadDir(path)
-	kind := "dir"
-	if visibleOnly {
-		kind = "dir-visible"
-	}
 	o := observation{kind: kind, errClass: errorClass(err)}
 	if err != nil {
 		if info, statErr := os.Stat(path); statErr == nil {
@@ -278,7 +274,7 @@ func dirObservation(path string, visibleOnly bool) ([]os.DirEntry, observation, 
 	o.mode = fs.ModeDir
 	h := sha256.New()
 	for _, e := range entries {
-		if visibleOnly && strings.HasPrefix(e.Name(), ".") {
+		if excludeDirEntry(kind, e.Name()) {
 			continue
 		}
 		fmt.Fprintf(h, "%s\x00%d\x00", e.Name(), e.Type())
@@ -287,26 +283,22 @@ func dirObservation(path string, visibleOnly bool) ([]os.DirEntry, observation, 
 	return entries, o, nil
 }
 func (v *View) ReadDir(path string) ([]os.DirEntry, error) {
-	return v.readDir(path, false)
+	return v.readDir(path, "dir")
 }
 
 // ReadDirNonHidden lists only non-hidden entries and pins that listing.
 func (v *View) ReadDirNonHidden(path string) ([]os.DirEntry, error) {
-	return v.readDir(path, true)
+	return v.readDir(path, "dir-visible")
 }
 
-func (v *View) readDir(path string, visibleOnly bool) ([]os.DirEntry, error) {
+func (v *View) readDir(path, kind string) ([]os.DirEntry, error) {
 	if v == nil || v.isClosed() {
 		entries, err := os.ReadDir(path)
-		if visibleOnly {
-			entries = nonHidden(entries)
-		}
+		entries = filterDirEntries(entries, kind)
 		return entries, err
 	}
-	entries, o, e := dirObservation(path, visibleOnly)
-	if visibleOnly {
-		entries = nonHidden(entries)
-	}
+	entries, o, e := dirObservation(path, kind)
+	entries = filterDirEntries(entries, kind)
 	if err := v.record(path, o); err != nil {
 		return nil, err
 	}
@@ -315,10 +307,16 @@ func (v *View) readDir(path string, visibleOnly bool) ([]os.DirEntry, error) {
 	}
 	return entries, e
 }
-func nonHidden(entries []os.DirEntry) []os.DirEntry {
+func excludeDirEntry(kind, name string) bool {
+	return kind == "dir-visible" && strings.HasPrefix(name, ".") || kind == "dir-root" && name == ".glade"
+}
+func filterDirEntries(entries []os.DirEntry, kind string) []os.DirEntry {
+	if kind == "dir" {
+		return entries
+	}
 	out := make([]os.DirEntry, 0, len(entries))
 	for _, entry := range entries {
-		if !strings.HasPrefix(entry.Name(), ".") {
+		if !excludeDirEntry(kind, entry.Name()) {
 			out = append(out, entry)
 		}
 	}
@@ -372,8 +370,8 @@ func (v *View) Recheck() error {
 			switch k {
 			case "file":
 				_, o, _ = fileObservation(p)
-			case "dir", "dir-visible":
-				_, o, _ = dirObservation(p, k == "dir-visible")
+			case "dir", "dir-visible", "dir-root":
+				_, o, _ = dirObservation(p, k)
 			case "stat":
 				_, o, _ = statObservation(p, false)
 			case "lstat":

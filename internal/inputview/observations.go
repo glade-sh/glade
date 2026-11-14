@@ -30,7 +30,7 @@ func exportObservation(path string, o observation) Observation {
 			out.ModTime = o.fingerprint.ModTime.UnixNano()
 			out.SHA256 = hex.EncodeToString(o.fingerprint.SHA256[:])
 		}
-	case "dir", "dir-visible":
+	case "dir", "dir-visible", "dir-root":
 		if o.exists {
 			out.Listing = hex.EncodeToString(o.listing[:])
 		}
@@ -74,8 +74,8 @@ func Verify(observations []Observation, skip func(Observation) bool) error {
 		switch want.Kind {
 		case "file":
 			_, o, _ = fileObservation(want.Path)
-		case "dir", "dir-visible":
-			_, o, _ = dirObservation(want.Path, want.Kind == "dir-visible")
+		case "dir", "dir-visible", "dir-root":
+			_, o, _ = dirObservation(want.Path, want.Kind)
 		case "stat":
 			_, o, _ = statObservation(want.Path, false)
 		case "lstat":

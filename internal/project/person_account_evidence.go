@@ -72,7 +72,7 @@ func orgShapeEvidenceScan(v *inputview.View, root string) (settings, personAccou
 		return nil, nil
 	}
 	settingsSubtree := ""
-	_ = v.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+	_ = v.WalkDirProjectRoot(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || !entry.IsDir() {
 			return nil
 		}
