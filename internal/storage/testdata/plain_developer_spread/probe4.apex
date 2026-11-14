@@ -1,0 +1,1 @@
+String n = 'AIScoringStatusEvent'; Boolean d = Schema.getGlobalDescribe().containsKey(n); Boolean t = Type.forName(n) != null; String q; try { Database.query('SELECT Id FROM ' + n + ' LIMIT 1'); q = 'ok'; } catch (Exception e) { q = e.getTypeName(); } System.assert(false, 'OBS|' + n + '|' + d + '|' + t + '|' + q);
