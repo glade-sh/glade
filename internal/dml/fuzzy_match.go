@@ -190,7 +190,10 @@ const firstNameJaroWinkler = 0.89
 // alias and not from its own spelling ("Kate" is keyed as "Katherine", so it
 // matches neither "Katie" nor "Katte") never matches by Jaro-Winkler.
 func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
+	return fuzzyFirstNameFolded(foldText(a), foldText(b))
+}
+
+func fuzzyFirstNameFolded(x, y string) (bool, float64) {
 	if x == y || nameVariantOf(x, y) {
 		return true, 100
 	}

@@ -60,16 +60,16 @@ func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
 	if strings.Count(strings.TrimSpace(a), " ") > 1 || strings.Count(strings.TrimSpace(b), " ") > 1 {
 		return fuzzyFirstName(a, b, matchBlanks)
 	}
-	if customNameVariants[foldText(a)+"\x00"+foldText(b)] {
+	x, y := foldText(a), foldText(b)
+	if customNameVariants[x+"\x00"+y] {
 		return true, 100
 	}
 	if !maybeInitials(a) && !maybeInitials(b) {
-		return fuzzyFirstName(a, b, matchBlanks)
+		return fuzzyFirstNameFolded(x, y)
 	}
-	x, y := foldText(a), foldText(b)
 	ix, iy := firstNameInitials(x), firstNameInitials(y)
 	if !ix && !iy {
-		return fuzzyFirstName(a, b, matchBlanks)
+		return fuzzyFirstNameFolded(x, y)
 	}
 	if x == y {
 		return true, 100
@@ -78,7 +78,7 @@ func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
 	if ix && iy && []rune(x)[0] == []rune(y)[0] && (single(x) || single(y)) {
 		return true, 100
 	}
-	_, confidence := fuzzyFirstName(a, b, matchBlanks)
+	_, confidence := fuzzyFirstNameFolded(x, y)
 	return false, confidence
 }
 
