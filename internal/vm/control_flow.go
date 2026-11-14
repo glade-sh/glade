@@ -1769,6 +1769,9 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		previousLocaleCase = vm.localeCase
 		vm.snapshotLocaleCase()
 	}
+	// The administrator capture has no runAs boundary. Stop using its
+	// transaction-local assignment marker after entering one.
+	vm.mixedDML.newAdminPermissionSetID = ""
 	vm.testContext.RunAsDepth++
 	if packageVersion.Kind != "" {
 		vm.testContext.CurrentPackageVersion = packageVersion

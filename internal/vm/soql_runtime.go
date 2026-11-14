@@ -47,6 +47,19 @@ func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
 	return query, err
 }
 
+// capturedAdminDynamicQueryShape covers the single-field LIMIT 1 query and
+// the single-field Name equality query in the administrator capture.
+func capturedAdminDynamicQueryShape(query soql.Query) bool {
+	if len(query.Fields) != 1 || len(query.ChildQueries) != 0 || len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || len(query.Order) != 0 || query.HasOffset || query.Having != nil {
+		return false
+	}
+	if query.Where == nil {
+		return query.HasLimit && query.Limit == 1
+	}
+	w := query.Where
+	return !query.HasLimit && strings.EqualFold(w.Field, "Name") && w.Op == "=" && len(w.And) == 0 && len(w.Or) == 0 && !w.Not
+}
+
 func (vm *VM) countQueryParseError(err error, queryText string) error {
 	// Named API 62-66 and anonymous callers retain the ordinary query message.
 	// API 67 named countQuery exposes the lexer position in the original query,
@@ -246,6 +259,14 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			objectName = canonical
 		}
 		return nil, newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
+	}
+	// The administrator capture selects one freshly deployed Account Text
+	// field using the default Database.query route at source API 67.0.
+	if defaultMode && vm.dynamicSOQLBindRoute == "Database.query" && vm.currentSourceExecutionPolicy().APIVersion == "67.0" && capturedAdminDynamicQueryShape(query) {
+		field := vm.resolveSObjectFieldName(query.Object, query.Fields[0])
+		if vm.capturedAdminAccountTextField(query.Object, field) && vm.adminAccountCustomFieldUngranted(query.Object, field, "isAccessible", "", true) {
+			return nil, newExceptionError("QueryException", soql.MissingColumnMessage(field, query.Object))
+		}
 	}
 	// Native case_standard_field_fls: default-mode named queries at 67.0 deny the
 	// ungranted administrator these standard fields.

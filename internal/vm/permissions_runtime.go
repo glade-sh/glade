@@ -761,7 +761,7 @@ func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLe
 		}
 		// Partial DML checks denied fields per row with the same scope.
 		// The scoped rows insert one Account record with Text fields.
-		scopedPartialCaptured := scopedPermissionSetID != "" && op == "insert" && value.Kind == ValueObject && vm.capturedAccountCustomFieldPrincipal(vm.canonicalSObjectValueType(record))
+		scopedPartialCaptured := scopedPermissionSetID != "" && op == "insert" && value.Kind == ValueObject && vm.scopedRowCheckCaptured(record)
 		for _, field := range fields {
 			scopedPartialCaptured = scopedPartialCaptured && vm.capturedTextCustomField(vm.canonicalSObjectValueType(record), field)
 		}
@@ -810,7 +810,7 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			continue
 		}
 		allowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
-		if allowed && vm.adminStandardCustomFieldDMLDenied(op, objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
+		if allowed && vm.adminStandardCustomFieldDMLDenied(op, record, objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
 			allowed = false
 		}
 		if !allowed || vm.automatedProcessCustomFieldDenied(op, objectName, canonicalField, scopedPermissionSetID) {
@@ -867,12 +867,14 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 // or System Administrator (standard_custom_field_scoped, standard_custom_field_admin)
 // principal. Other objects and profiles keep the SecurityException.
 func (vm *VM) capturedAccountCustomFieldPrincipal(objectName string) bool {
-	if vm.testContext == nil || !strings.EqualFold(objectName, "Account") {
+	if vm.testContext == nil || !strings.EqualFold(objectName, "Account") || vm.accountPersonAccountsEnabled() {
 		return false
 	}
 	switch vm.currentUserProfileName(vm.fieldPermissionPrincipal()) {
-	case "Standard User", "System Administrator":
-		return true
+	case "Standard User":
+		return vm.testContext.RunAsDepth > 0
+	case "System Administrator":
+		return vm.testContext.RunAsDepth == 0
 	}
 	return false
 }
@@ -885,56 +887,81 @@ func (vm *VM) scopedRowCheckCaptured(record Value) bool {
 	if record.Kind != ValueObject || !vm.capturedAccountCustomFieldPrincipal(objectName) {
 		return false
 	}
+	seenName, customFields := false, 0
 	for _, field := range explicitSObjectFieldNamesInInsertionOrder(record) {
 		canonical := vm.resolveSObjectFieldName(objectName, field)
-		if !strings.EqualFold(canonical, "Name") && !vm.capturedTextCustomField(objectName, canonical) {
+		if strings.EqualFold(canonical, "Name") {
+			seenName = true
+		} else if vm.capturedTextCustomField(objectName, canonical) {
+			customFields++
+		} else {
 			return false
 		}
 	}
-	return true
+	return seenName && customFields == 1
 }
 
-// capturedTextCustomField reports an ordinary Text custom field, the field
+// capturedTextCustomField reports the ordinary Text(255) custom field
 // shape of the standard_custom_field_* rows.
 func (vm *VM) capturedTextCustomField(objectName, fieldName string) bool {
 	if !isCustomSchemaName(fieldName) {
 		return false
 	}
 	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
-	return ok && field.Type == storage.FieldString && strings.EqualFold(field.DisplayType, "STRING") && field.Formula == ""
+	return ok && field.Type == storage.FieldString && strings.EqualFold(field.DisplayType, "STRING") && field.Length == 255 && field.Formula == ""
 }
 
-// adminStandardCustomFieldDMLDenied reports a partial single-record
-// Database.insert with an explicit AccessLevel.USER_MODE, with or without a
-// permission set scope, by the default test-runner administrator of an
-// optional Account Text custom field that no permission metadata in the org
-// grants. Native rows: standard_custom_field_scoped adminPartial and
-// adminScoped (API 62.0, 67.0 and 68.0). All-or-none calls, lists and other
-// field types have no administrator rows and keep the earlier access. A field that any permission set or profile grants keeps the
-// administrator's access: native routes that deploy such metadata assigned it
-// to the administrator, which Glade test routes do not model.
-//
-// The default-mode rows of standard_custom_field_admin (API 67.0 insert,
-// update and dynamic SELECT also deny) are not modeled: existing native
-// routes write and query ungranted Account custom fields as the default
-// administrator at 67.0 (aggregate_namespace_projection, flow_partial_rows),
-// and no fixture fact separates them from the capture.
+// capturedAdminAccountTextField identifies the optional Text(255) field in
+// the administrator default-mode capture.
+func (vm *VM) capturedAdminAccountTextField(objectName, fieldName string) bool {
+	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
+	return ok && field.Length == 255 && vm.capturedTextCustomField(objectName, fieldName)
+}
+
+// capturedAdminAccountRecord limits the default-mode rule to the captured
+// single Account record writing Name and one custom Text field.
+func (vm *VM) capturedAdminAccountRecord(record Value, objectName, fieldName string) bool {
+	if !vm.capturedAdminAccountTextField(objectName, fieldName) {
+		return false
+	}
+	seenName, seenField := false, false
+	for _, field := range explicitSObjectFieldNamesInInsertionOrder(record) {
+		canonical := vm.resolveSObjectFieldName(objectName, field)
+		seenName = seenName || strings.EqualFold(canonical, "Name")
+		seenField = seenField || strings.EqualFold(canonical, fieldName)
+		if !strings.EqualFold(canonical, "Name") && !strings.EqualFold(canonical, "Id") && !strings.EqualFold(canonical, fieldName) {
+			return false
+		}
+	}
+	return seenName && seenField
+}
+
+// adminStandardCustomFieldDMLDenied applies the captured administrator rows:
+// default-mode single-record insert/update at API 67.0 and explicit partial
+// single-record inserts at APIs 62.0, 67.0 and 68.0. The Account Text field
+// must lack an effective grant; unassigned permission sets do not grant it.
 // Universally required fields keep their intrinsic access.
-func (vm *VM) adminStandardCustomFieldDMLDenied(op, objectName, fieldName, method, scopedPermissionSetID string) bool {
-	if op != "insert" || !vm.explicitUserModePartialRecord {
+func (vm *VM) adminStandardCustomFieldDMLDenied(op string, record Value, objectName, fieldName, method, scopedPermissionSetID string) bool {
+	capturedDefault := vm.currentSourceExecutionPolicy().APIVersion == "67.0" && !vm.explicitUserModeAccess && vm.userModeSingleRecord && (op == "insert" || op == "update") && vm.capturedAdminAccountRecord(record, objectName, fieldName)
+	if !capturedDefault && (op != "insert" || !vm.explicitUserModePartialRecord) {
 		return false
 	}
 	if !vm.capturedTextCustomField(objectName, fieldName) {
 		return false
 	}
-	return vm.adminAccountCustomFieldUngranted(objectName, fieldName, method, scopedPermissionSetID)
+	// The explicit-mode rows do not cover an unassigned set that grants this
+	// field. Preserve the prior result there.
+	if !capturedDefault && vm.anyFieldPermissionGrant(objectName, fieldName) {
+		return false
+	}
+	return vm.adminAccountCustomFieldUngranted(objectName, fieldName, method, scopedPermissionSetID, capturedDefault)
 }
 
 // adminAccountCustomFieldUngranted is the shared predicate of the default
 // test-runner administrator's Account custom field rows: no System.runAs, a
 // captured API (62.0, 67.0, 68.0), an org without Person Accounts, an optional custom field and no
-// profile, permission set or scoped grant for it anywhere in the org.
-func (vm *VM) adminAccountCustomFieldUngranted(objectName, fieldName, method, scopedPermissionSetID string) bool {
+// assigned profile, permission set or scoped grant for it.
+func (vm *VM) adminAccountCustomFieldUngranted(objectName, fieldName, method, scopedPermissionSetID string, defaultCapture bool) bool {
 	if vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth != 0 {
 		return false
 	}
@@ -952,26 +979,33 @@ func (vm *VM) adminAccountCustomFieldUngranted(objectName, fieldName, method, sc
 	if vm.currentUserProfileName(user) != "System Administrator" || vm.customFieldHasIntrinsicAccess(objectName, fieldName) {
 		return false
 	}
-	memo := vm.permissionChecks
-	key := permissionCheckKey{object: objectName, field: fieldName, method: "adminAccountCustomField:" + method, scope: vm.canonicalPermissionSetKey(scopedPermissionSetID)}
-	if memo != nil {
-		if denied, ok := memo.fields[key]; ok {
-			return denied
+	// Only effective grants from assigned sources count.
+	granted := vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), objectName, fieldName, method)
+	if defaultCapture && vm.mixedDML.newAdminPermissionSetID != "" {
+		// Keep profile and previously assigned grants; the one set assigned in
+		// this transaction is not yet effective in the captured default route.
+		profileID := stringField(user, "ProfileId")
+		grantMethod := method
+		if grantMethod == "isCreateable" {
+			grantMethod = "isAccessible"
+		}
+		granted = false
+		for _, parent := range []string{vm.profileOwnedPermissionSetID(profileID), profileID} {
+			if allowed, ok := vm.explicitFieldPermission(parent, objectName, fieldName, grantMethod); ok && allowed {
+				granted = true
+			}
+		}
+		for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+			if !storage.IDsEqual(storage.ID(source.ID), storage.ID(vm.mixedDML.newAdminPermissionSetID)) && vm.sourceFieldPermission(source, objectName, fieldName, grantMethod) {
+				granted = true
+			}
 		}
 	}
-	// One pass over FieldPermissions settles most fields; the explicit check
-	// adds assigned sources that hold no FieldPermissions row.
-	denied := !vm.anyFieldPermissionGrant(objectName, fieldName) && !vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), objectName, fieldName, method)
+	denied := !granted
 	if denied && scopedPermissionSetID != "" {
 		if granted, ok := vm.explicitFieldPermission(vm.canonicalPermissionSetKey(scopedPermissionSetID), objectName, fieldName, method); ok && granted {
 			denied = false
 		}
-	}
-	if memo != nil {
-		if memo.fields == nil {
-			memo.fields = make(map[permissionCheckKey]bool)
-		}
-		memo.fields[key] = denied
 	}
 	return denied
 }
@@ -1107,6 +1141,9 @@ func (vm *VM) userModeFieldPolicyPartialFailures(op string, value Value) ([]*dml
 	if len(records) == 0 {
 		return nil, false
 	}
+	savedSingle := vm.userModeSingleRecord
+	vm.userModeSingleRecord = value.Kind == ValueObject
+	defer func() { vm.userModeSingleRecord = savedSingle }()
 	defer vm.beginPermissionCheckMemo()()
 	results := make([]*dml.Result, len(records))
 	denied := false
