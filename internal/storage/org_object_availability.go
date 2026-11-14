@@ -164,7 +164,7 @@ func (o *OrgState) AllowsStandardObject(objectName string) bool {
 func refreshOrgFeatureObjects(org *OrgState) {
 	// The plain Developer inventory is a union of the captured API and route
 	// lists. Preserve non-catalog project objects when applying this profile.
-	if org.HasFeature(project.PlainDeveloperObjectShape) {
+	if org.HasFeature(project.PlainDeveloperObjectShape) && (org.eagerStandardSpread || org.lazyStandardSpread || org.StandardSpread != "") {
 		for name, object := range org.Objects {
 			if _, known := ResolveKnownStandardObjectName(name); known && !PlainDeveloperObjectPresent(name, PlainDeveloperAnyRoute) {
 				// Only remove untouched catalog entries, retaining project schema
