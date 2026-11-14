@@ -1,4 +1,8 @@
-Additional capture: fresh Developer scratch orgs, 30 days, on campaign Dev Hubs.
-APIs: 62.0 and 67.0. Both orgs were deleted and verified gone.
-Anonymous compile errors are transcribed from CLI top-level messages, including line and column.
-The custom namespace is normalized to sample in both source and outcome; its control compiled.
+Additional capture on fresh Developer scratch orgs, 30 days, on campaign Dev Hubs.
+Started: 2026-11-14T04:13:21Z. Finished: 2026-11-14T04:20:18Z.
+Namespaced run started: 2026-11-14T04:21:27Z. Finished: 2026-11-14T04:22:14Z.
+APIs: 62.0 and 67.0. Salesforce CLI: 2.157.8. Both orgs were deleted and verified gone.
+Anonymous errors are transcribed from CLI top-level messages, with line and column.
+The class case was deployed separately at each API; all component failures were recorded.
+The custom namespace is normalized to sample in source and outcome; its control compiled.
+The namespace support class was deployed at API 67.0 before executing anonymous scripts.
