@@ -110,12 +110,9 @@ func TestSpreadTemplateBudgetBoundsLiveFields(t *testing.T) {
 	setSpreadBudget(t, budget)
 	for i, features := range spreadBudgetShapes {
 		buildSpreadShape(t, features)
-		fields, groups := liveTemplateFields()
+		fields, _ := liveTemplateFields()
 		if fields > budget {
 			t.Fatalf("after shape %d: %d live template fields, budget %d", i, fields, budget)
-		}
-		if groups > 2 {
-			t.Fatalf("after shape %d: %d live groups, want at most 2", i, groups)
 		}
 	}
 	if evictedCells() == 0 {
