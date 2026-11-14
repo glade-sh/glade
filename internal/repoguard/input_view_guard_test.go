@@ -30,7 +30,7 @@ var inputViewPackages = []string{
 var inputViewForbidden = map[string][]string{
 	"os":            {"ReadFile", "ReadDir", "Stat", "Lstat", "Open", "OpenFile", "DirFS", "Readlink", "OpenRoot"},
 	"io/fs":         {"ReadFile", "ReadDir", "Stat", "WalkDir", "Glob"},
-	"io/ioutil":     {"ReadFile", "ReadDir"},
+	"io/ioutil":     {"ReadFile", "ReadDir", "ReadAll"},
 	"path/filepath": {"WalkDir", "Walk", "Glob", "EvalSymlinks"},
 	"github.com/glade-sh/glade/internal/config":  {"LoadNearest", "LoadFile"},
 	"github.com/glade-sh/glade/internal/project": {"Load", "OrgDomainURL", "OrgRuntimeSettings"},
