@@ -68,3 +68,39 @@ func TestKeyboardDistanceUnmeasuredShapes(t *testing.T) {
 		t.Error("standard Last Name matched six substitutions")
 	}
 }
+
+// The legacy scorer is the contract for every equal-length single substitution.
+func TestLastNameSingleSubstitutionMatchesLegacy(t *testing.T) {
+	for _, name := range []string{"scott", "richardsoe", "bradlet", "farnsdelwick", "harlow ii", "garcía"} {
+		original := []rune(name)
+		for i, old := range original {
+			for _, replacement := range []rune("abcdefghijklmnopqrstuvwxyz -é") {
+				if old == replacement {
+					continue
+				}
+				changed := append([]rune(nil), original...)
+				changed[i] = replacement
+				a, b := name, string(changed)
+				x, y := foldText(a), foldText(b)
+				var want bool
+				var confidence float64
+				switch {
+				case x == y:
+					want, confidence = true, 100
+				case lastNameWordKey(x) != lastNameWordKey(y):
+				default:
+					x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+					if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+						want, confidence = true, 100
+					} else {
+						want, confidence = lastNameKeyboard(x, y)
+					}
+				}
+				got, score := fuzzyLastName(a, b, false)
+				if got != want || score != confidence {
+					t.Errorf("%q/%q: got %v %v; legacy %v %v", a, b, got, score, want, confidence)
+				}
+			}
+		}
+	}
+}
