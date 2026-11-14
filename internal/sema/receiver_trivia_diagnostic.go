@@ -148,6 +148,12 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 			if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "old") {
 				return report(member, "Extra ')', at '"+member.text+"'.")
 			}
+			if frame.kind == "call" {
+				end := receiverDirectCallEnd(ts, dot)
+				if receiverNameRoot(ts, dot) != frame.start+1 || end < 0 || end >= len(ts) || ts[end].text != ")" || !resolvedCall() {
+					return nil
+				}
+			}
 			return report(member, "Expecting ')' but was: '"+member.text+"'")
 		case "if", "while":
 			matches := receiverDirectCallEquality(ts, frame.start, dot)
