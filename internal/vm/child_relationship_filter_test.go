@@ -702,3 +702,39 @@ func TestChildRelationshipFilterEncoding(t *testing.T) {
 		}
 	}
 }
+
+// The exported check answers as the VM's own check and says when the filter
+// does not cover an org.
+func TestChildRelationshipFilterRulesOutReportsCoverage(t *testing.T) {
+	org := shapedLazyOrg([]string{"MultiCurrency"})
+	machine := New(nil)
+	machine.SetOrg(&org)
+	for _, name := range []string{"Nonsense__r", "Contacts", "contacts", " Opportunities ", "NoSuchField"} {
+		rulesOut, covered := ChildRelationshipFilterRulesOut(&org, "Account", name)
+		if !covered {
+			t.Fatalf("%s: covered shaped org reported uncovered", name)
+		}
+		if want := machine.childRelFilterMissIsFinal("Account", strings.ToLower(strings.TrimSpace(name))); rulesOut != want {
+			t.Fatalf("%s: rulesOut %t, VM check %t", name, rulesOut, want)
+		}
+	}
+	if rulesOut, _ := ChildRelationshipFilterRulesOut(&org, "Account", "Contacts"); rulesOut {
+		t.Fatal("filter rules out Account.Contacts")
+	}
+	for name, prepare := range map[string]func(*storage.OrgState){
+		"plain phase": func(org *storage.OrgState) { org.StandardSpread = "plain" },
+		"namespace":   func(org *storage.OrgState) { org.Namespace = "pkg" },
+		"unknown feature": func(org *storage.OrgState) {
+			org.Features = append(slices.Clone(org.Features), "SomethingNew")
+		},
+	} {
+		uncovered := shapedLazyOrg([]string{"MultiCurrency"})
+		prepare(&uncovered)
+		if rulesOut, covered := ChildRelationshipFilterRulesOut(&uncovered, "Account", "Nonsense__r"); covered || rulesOut {
+			t.Fatalf("%s: rulesOut %t covered %t, want neither", name, rulesOut, covered)
+		}
+	}
+	if rulesOut, covered := ChildRelationshipFilterRulesOut(nil, "Account", "Contacts"); covered || rulesOut {
+		t.Fatalf("nil org: rulesOut %t covered %t", rulesOut, covered)
+	}
+}

@@ -16,7 +16,11 @@
 
 - **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
 - **Test startup.** Building the child relationship lookup avoids installing
-  standard objects solely to resolve parent names, reducing startup work.
+  standard objects solely to resolve parent names, reducing startup work. A
+  source reference to a child relationship of a standard object the test org
+  has not loaded yet is no longer inferred as a field, matching a fully loaded
+  org.
+
 ### Performance
 
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.

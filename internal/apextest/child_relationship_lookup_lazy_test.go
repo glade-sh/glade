@@ -3,7 +3,9 @@ package apextest
 import (
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -41,7 +43,7 @@ func TestChildRelationshipLookupIsDeterministicAndInstallsNothing(t *testing.T) 
 			for i := 0; i < 20; i++ {
 				org := seed.CloneRuntimeFrozenDefinition()
 				before := len(org.Objects)
-				lookup := projectReferencedChildRelationshipLookup(org)
+				lookup := projectReferencedChildRelationshipLookup(org).keys
 				if after := len(org.Objects); after != before {
 					t.Fatalf("clone %d: the lookup installed objects: %d before, %d after", i, before, after)
 				}
@@ -145,23 +147,51 @@ private class ChildRelationshipNameTest {
 	}
 }
 
+// The lookup on a lazy org answers every query as the lookup on its
+// completed spread does: each relationship the completed spread holds, and the
+// misses for every relationship name the catalog uses on the parents the lazy
+// org has installed. It installs nothing while answering.
 func TestChildRelationshipLookupMatchesMaterializedSpread(t *testing.T) {
 	for name, features := range childRelationshipLookupShapes {
 		t.Run(name, func(t *testing.T) {
 			lazy := childRelationshipLookupOrg(features, "")
 			eager := lazy.CloneRuntimeFrozenDefinition()
 			storage.MaterializeStandardObjectSpread(&eager)
+			want := projectReferencedChildRelationshipLookup(eager).keys
 			got := projectReferencedChildRelationshipLookup(lazy)
-			want := projectReferencedChildRelationshipLookup(eager)
+			before := len(lazy.Objects)
+			relationNames := map[string]struct{}{}
 			for key := range want {
-				if _, ok := got[key]; !ok {
+				parent, relation, _ := strings.Cut(key, "\x00")
+				relationNames[relation] = struct{}{}
+				if !got.has(lazy, parent, relation) {
 					t.Errorf("lazy lookup missing %q", key)
 				}
 			}
-			for key := range got {
+			for key := range got.keys {
 				if _, ok := want[key]; !ok {
 					t.Errorf("lazy lookup has extra %q", key)
 				}
+			}
+			misses := 0
+			for parent := range lazy.Objects {
+				for relation := range relationNames {
+					key := strings.ToLower(parent) + "\x00" + relation
+					if _, ok := want[key]; ok {
+						continue
+					}
+					misses++
+					if got.has(lazy, parent, relation) {
+						t.Errorf("lazy lookup has %q, which the completed spread lacks", key)
+					}
+				}
+			}
+			if misses == 0 {
+				t.Fatal("no miss queried")
+			}
+			t.Logf("%d relationships, %d misses queried, completion built: %t", len(want), misses, got.complete != nil)
+			if after := len(lazy.Objects); after != before {
+				t.Fatalf("answering installed objects: %d before, %d after", before, after)
 			}
 		})
 	}
@@ -180,5 +210,57 @@ func TestChildRelationshipLookupInstalledNeighbor(t *testing.T) {
 		if got := projectReferencedNameIsChildRelationship(org, "Account", tc.name, lookup); got != tc.want {
 			t.Errorf("Account.%s: got %t, want %t", tc.name, got, tc.want)
 		}
+	}
+}
+
+// Scan workers share one lookup. Concurrent answers, including the ones that
+// read spread templates and complete the catalog once, equal serial answers.
+func TestChildRelationshipLookupConcurrentAnswersMatchSerial(t *testing.T) {
+	lazy := childRelationshipLookupOrg(childRelationshipLookupShapes["unspecified"], "")
+	eager := lazy.CloneRuntimeFrozenDefinition()
+	storage.MaterializeStandardObjectSpread(&eager)
+	var queries [][2]string
+	relationNames := map[string]struct{}{}
+	for key := range projectReferencedChildRelationshipLookup(eager).keys {
+		parent, relation, _ := strings.Cut(key, "\x00")
+		relationNames[relation] = struct{}{}
+		queries = append(queries, [2]string{parent, relation})
+	}
+	parents := make([]string, 0, len(lazy.Objects))
+	for parent := range lazy.Objects {
+		parents = append(parents, parent)
+	}
+	slices.Sort(parents)
+	for i := 0; i < len(parents); i += 16 {
+		for relation := range relationNames {
+			queries = append(queries, [2]string{parents[i], relation})
+		}
+	}
+	serial := projectReferencedChildRelationshipLookup(lazy)
+	want := make([]bool, len(queries))
+	for i, query := range queries {
+		want[i] = serial.has(lazy, query[0], query[1])
+	}
+	shared := projectReferencedChildRelationshipLookup(lazy)
+	before := len(lazy.Objects)
+	var workers sync.WaitGroup
+	for worker := 0; worker < 8; worker++ {
+		workers.Add(1)
+		go func(offset int) {
+			defer workers.Done()
+			for i := range queries {
+				j := (i + offset*len(queries)/8) % len(queries)
+				if got := shared.has(lazy, queries[j][0], queries[j][1]); got != want[j] {
+					t.Errorf("%s.%s: concurrent %t, serial %t", queries[j][0], queries[j][1], got, want[j])
+				}
+			}
+		}(worker)
+	}
+	workers.Wait()
+	if shared.complete == nil {
+		t.Fatal("no query completed the catalog")
+	}
+	if after := len(lazy.Objects); after != before {
+		t.Fatalf("concurrent answers installed objects: %d before, %d after", before, after)
 	}
 }
