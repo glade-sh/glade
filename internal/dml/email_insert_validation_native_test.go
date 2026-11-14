@@ -93,3 +93,10 @@ func TestEmailInsertValidationLeavesUpsertsUnchanged(t *testing.T) {
 		}
 	}
 }
+
+func TestEmailInsertValidationLeavesTextFieldUnchanged(t *testing.T) {
+	field := storage.Field{APIName: "Email", Type: storage.FieldString, DisplayType: "TEXT"}
+	if err := validateInsertEmailField("Custom__c", "Email", field, storage.StringValue("a@example.com.")); err != nil {
+		t.Fatalf("uncaptured text field: baseline accepted, got %v", err)
+	}
+}
