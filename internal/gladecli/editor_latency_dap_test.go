@@ -17,7 +17,7 @@ import (
 func TestEditorLatencyDAPHarness(t *testing.T) {
 	raw := os.Getenv("GLADE_EDITOR_LATENCY")
 	if raw == "" {
-		t.Skip("set GLADE_EDITOR_LATENCY to measure")
+		raw = "1"
 	}
 	classes, err := strconv.Atoi(raw)
 	if err != nil || classes < 1 {
