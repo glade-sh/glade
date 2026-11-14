@@ -344,7 +344,9 @@ default they never do; one blank value never matches.
 Recall is the share of native matching pairs Glade also matches; false matches
 are pairs Glade matches that native does not; confidence MAE is the mean
 absolute difference between Glade's rounded confidence and the native one over
-the pairs both match. API 67.0 rows, every ordered pair of every row. "fit"
+the pairs both match. The table records the earlier Metaphone 3 fit before
+the keyboard changes above; current per-row bounds and residuals are in the
+conformance tests. API 67.0 rows, every ordered pair of every row. "fit"
 is every row the model or its tables were built from (runs one to three, `P4.*`
 and `N4.*`). The held-out rows were written without sight of the model and
 scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
@@ -393,8 +395,8 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   hyphenated surname against its first part (`Fitzgerald`/`Fitzgerald-Lee`).
 - Keyboard Distance: the costs are additive, and native rows that share key
   pairs disagree by up to a tenth of a point of cost, so about one confidence
-  in twenty is one point off (136 of the 2,528 distinct pairs; listed for the
-  `fuzzy_name_keys` panels in `fuzzyNameKeysResiduals`). No row measures a
+  may differ by one point; previously matched pairs retain their earlier
+  confidence as listed in `fuzzyNameKeysResiduals`. No row measures a
   trailing `c`, `q`, `u`, `w`, `x` or digit on a native match. The standard
   rules do not use the refit yet.
 - First Name: the Name Variant dictionary and its alias keys are unpublished.
