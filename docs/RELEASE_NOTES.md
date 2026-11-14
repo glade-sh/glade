@@ -3,6 +3,8 @@
 ## Unreleased
 
 - **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+- **Test startup.** Building the child relationship lookup avoids installing
+  standard objects solely to resolve parent names, reducing startup work.
 
 ## v0.3.9
 
