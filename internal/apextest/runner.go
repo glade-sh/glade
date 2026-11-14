@@ -376,6 +376,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	}
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
 	sources := newSourceCache()
+	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
 	// A matching snapshot selects the already-loaded project graph for runtime
 	// metadata generation and org setup; nil retains disk discovery. This keeps
 	// dependency roots from changing between indexing and generation. Native
@@ -1400,13 +1401,14 @@ const (
 )
 
 type runtimeMetadataGeneration struct {
-	standardDuplicateRules bool
-	authority              runtimeMetadataAuthority
-	inputs                 map[string]typesys.ApexMetadataInput
-	apiVersions            map[string]string
-	visualforceInputs      map[string]bool
-	recentVisualforce      map[string]recentVisualforceInput
-	recentVisualforceBytes int64
+	standardDuplicateRules      bool
+	authority                   runtimeMetadataAuthority
+	inputs                      map[string]typesys.ApexMetadataInput
+	apiVersions                 map[string]string
+	visualforceInputs           map[string]bool
+	recentVisualforce           map[string]recentVisualforceInput
+	recentVisualforceBytes      int64
+	allowVisualforceDiskDigests bool
 }
 
 func (generation runtimeMetadataGeneration) trustedVisualforceDigest(path string) ([sha256.Size]byte, bool) {
@@ -1825,6 +1827,9 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err != nil {
 		return runtimeGeneration{}, err
 	}
+	sources.mu.RLock()
+	metadata.allowVisualforceDiskDigests = sources.allowVisualforceDiskDigests
+	sources.mu.RUnlock()
 	if err := sources.captureProjectRuntimeMetadata(index, &metadata); err != nil {
 		return runtimeGeneration{}, err
 	}
@@ -1873,8 +1878,18 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if sources == nil {
 		sources = newSourceCache()
 	}
+	diskCacheAllowed := diskCacheEnabled()
+	if len(useDiskCache) > 0 {
+		diskCacheAllowed = useDiskCache[0]
+	}
+	if sources.privateRuntime {
+		diskCacheAllowed = false
+	}
 	var generation runtimeGeneration
 	if prepared == nil {
+		sources.mu.Lock()
+		sources.allowVisualforceDiskDigests = diskCacheAllowed
+		sources.mu.Unlock()
 		generation, err = prepareRuntimeGeneration(index, digests, sources)
 		if err != nil {
 			if sources.privateRuntime {
@@ -1897,14 +1912,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		return key, zero, err
 	}
 	invokeSnapshotValidationHook("runtime_after_initial_validation")
-	diskCacheAllowed := diskCacheEnabled()
-	if len(useDiskCache) > 0 {
-		diskCacheAllowed = useDiskCache[0]
-	}
 	key := generation.key
-	if sources.privateRuntime {
-		diskCacheAllowed = false
-	}
 	if !sources.privateRuntime {
 		rememberRuntimeCacheRoot(index, key)
 	}
@@ -2044,6 +2052,9 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	}
 	var generation runtimeGeneration
 	if prepared == nil {
+		sources.mu.Lock()
+		sources.allowVisualforceDiskDigests = diskCacheAllowed
+		sources.mu.Unlock()
 		generation, err = prepareRuntimeGeneration(index, digests, sources)
 		if err != nil {
 			key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
@@ -3847,24 +3858,25 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
-	mu                      sync.RWMutex
-	expectedDigests         *typesys.SourceDigestSet
-	expectedDigestLookup    func(string) ([sha256.Size]byte, bool)
-	snapshotErr             error
-	files                   map[string]string
-	rawFiles                map[string]string
-	apiVersions             map[string]string
-	fileRemaps              map[string][]namespaceremap.Rule
-	capturedFiles           map[string][sha256.Size]byte
-	capturedMetadata        map[string]typesys.ApexMetadataInput
-	metadataAuthority       runtimeMetadataAuthority
-	projectMetadataBodies   map[string]string
-	runtimeSourceUnits      map[string]string
-	projectMetadataPrepared bool
-	capturedProject         *project.Project
-	privateRuntime          bool
-	recentVisualforce       map[string]recentVisualforceInput
-	generationValidator     func() error
+	mu                          sync.RWMutex
+	expectedDigests             *typesys.SourceDigestSet
+	expectedDigestLookup        func(string) ([sha256.Size]byte, bool)
+	snapshotErr                 error
+	files                       map[string]string
+	rawFiles                    map[string]string
+	apiVersions                 map[string]string
+	fileRemaps                  map[string][]namespaceremap.Rule
+	capturedFiles               map[string][sha256.Size]byte
+	capturedMetadata            map[string]typesys.ApexMetadataInput
+	metadataAuthority           runtimeMetadataAuthority
+	projectMetadataBodies       map[string]string
+	runtimeSourceUnits          map[string]string
+	projectMetadataPrepared     bool
+	capturedProject             *project.Project
+	privateRuntime              bool
+	allowVisualforceDiskDigests bool
+	recentVisualforce           map[string]recentVisualforceInput
+	generationValidator         func() error
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no

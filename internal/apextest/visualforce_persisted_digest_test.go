@@ -134,7 +134,7 @@ func TestVisualforcePersistentDigestScope(t *testing.T) {
 	}
 	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
 	capture := func(p project.Project) typesys.ApexMetadataInput {
-		generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
+		generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}, allowVisualforceDiskDigests: true}
 		if err := captureVisualforceRuntimeInputs(p, &generation); err != nil {
 			t.Fatal(err)
 		}
@@ -365,7 +365,7 @@ func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
 				}
 			}
 			capture := func() typesys.ApexMetadataInput {
-				generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
+				generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}, allowVisualforceDiskDigests: true}
 				if err := captureVisualforceRuntimeInputs(p, &generation); err != nil {
 					t.Fatal(err)
 				}
