@@ -76,3 +76,14 @@ func TestPlainDeveloperShapeTransitionRestoresUncapturedFeatureInventory(t *test
 		t.Fatalf("object digest %s, want origin/main %s", got, baseline)
 	}
 }
+
+func TestPlainDeveloperAdditiveShapeRestoresUncapturedFeatureInventory(t *testing.T) {
+	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := org.Objects["AIFeatureExtractor"]; ok {
+		t.Fatal("captured default object unexpectedly present")
+	}
+	ApplyOrgShape(&org, []string{"EnableSetPasswordInApi"})
+	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
+		t.Fatal("additive feature did not restore baseline object")
+	}
+}
