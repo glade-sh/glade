@@ -22,6 +22,7 @@ func TestReceiverTriviaScan(t *testing.T) {
 		{"index result", "things[0].\nmember", nil},
 		{"literal", "'thing'.\nlength()", nil},
 		{"strings comments and queries", "String s = 'thing. member'; /* x. y */ // x. y\nList<Account> a = [SELECT Owner.Name FROM Account];", nil},
+		{"multiline string", "String s = '''\ndon't parse x. \nmember\n''';", nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			breaks := scanReceiverTrivia(tc.source)

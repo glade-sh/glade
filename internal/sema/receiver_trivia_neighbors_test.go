@@ -94,3 +94,37 @@ func TestReceiverFieldTypeComment(t *testing.T) {
 		t.Fatalf("got %v, want detached type diagnostic", result.Diagnostics)
 	}
 }
+
+// Multiline literals are supported at API 65-67 and their contents must not
+// be scanned as Apex source.
+func TestReceiverMultilineStringRoutes(t *testing.T) {
+	source := "String s = '''\ndon't parse x. \nmember\n''';"
+	for _, api := range []string{"65.0", "66.0", "67.0"} {
+		for _, route := range []string{"anonymous", "class", "trigger"} {
+			t.Run(api+"/"+route, func(t *testing.T) {
+				root := t.TempDir()
+				var files []string
+				if route != "anonymous" {
+					name, body := "LiteralProbe.cls", "public class LiteralProbe { public void run() { "+source+" } }"
+					if route == "trigger" {
+						name, body = "LiteralProbe.trigger", "trigger LiteralProbe on Account (before insert) { "+source+" }"
+					}
+					path := filepath.Join(root, name)
+					writeSemaFile(t, path, body)
+					files = append(files, path)
+				}
+				index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: files}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+				if index.HasErrors() {
+					t.Fatal(index.Diagnostics)
+				}
+				result := Analyze(index)
+				if route == "anonymous" {
+					result = AnalyzeAnonymous(index, source, api)
+				}
+				if result.HasErrors() {
+					t.Errorf("literal produced diagnostics: %v", result.Diagnostics)
+				}
+			})
+		}
+	}
+}
