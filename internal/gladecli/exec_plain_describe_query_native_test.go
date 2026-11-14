@@ -35,7 +35,10 @@ func TestRunExecPlainDescribeQueryNativeConformance(t *testing.T) {
 				case "type":
 					checks.WriteString("System.assertEquals(null, Type.forName('" + cols[3] + "'));\n")
 				case "describe":
-					checks.WriteString("try { Schema.describeSObjects(new List<String>{'" + cols[3] + "'}); } catch (Exception e) {}\n")
+					// The unqualified name must throw the native message. The
+					// qualified name follows a query that completed the spread
+					// and still describes on this route, as on origin/main.
+					checks.WriteString(plainDescribeProbe(cols[3], cols[4], strings.Count(cols[3], "__") > 1))
 				case "query":
 					msg := strings.TrimPrefix(cols[4], "EXCEPTION|")
 					checks.WriteString("try { Database.query('SELECT Id FROM " + cols[3] + " LIMIT 1'); System.assert(false, 'query succeeded'); } catch (QueryException e) { System.assertEquals('" + strings.ReplaceAll(msg, "'", "\\'") + "', e.getMessage()); }\n")
@@ -87,7 +90,8 @@ func TestPlainDescribeQueryTestRunnerNativeConformance(t *testing.T) {
 				case "type":
 					body.WriteString("System.assertEquals(null, Type.forName('" + cols[3] + "'));\n")
 				case "describe":
-					body.WriteString("try { Schema.describeSObjects(new List<String>{'" + cols[3] + "'}); } catch (Exception e) {}\n")
+					// The test route still describes both names, as on origin/main.
+					body.WriteString(plainDescribeProbe(cols[3], cols[4], true))
 				case "query":
 					native := strings.ReplaceAll(strings.TrimPrefix(cols[4], "EXCEPTION|"), "'", "\\'")
 					match := "e.getMessage() == '" + native + "'"
@@ -119,4 +123,17 @@ func TestPlainDescribeQueryTestRunnerNativeConformance(t *testing.T) {
 			}
 		})
 	}
+}
+
+// plainDescribeProbe asserts the captured describe row. The call must throw
+// the native message; with baseline set it may instead return the single
+// result origin/main returns, a recorded gap. Any other outcome fails.
+func plainDescribeProbe(name, outcome string, baseline bool) string {
+	msg := strings.ReplaceAll(strings.TrimPrefix(outcome, "EXCEPTION|"), "'", "\\'")
+	call := "Schema.describeSObjects(new List<String>{'" + name + "'})"
+	success := call + "; System.assert(false, 'describe succeeded');"
+	if baseline {
+		success = "System.assertEquals(1, " + call + ".size());"
+	}
+	return "try { " + success + " } catch (InvalidParameterValueException e) { System.assertEquals('" + msg + "', e.getMessage()); }\n"
 }
