@@ -117,3 +117,33 @@ func TestLastNameSingleSubstitutionMatchesLegacy(t *testing.T) {
 		}
 	}
 }
+
+// Every pair accepted by the original keyboard scorer retains its exact score.
+func TestLastNamePreviouslyMatchedScores(t *testing.T) {
+	cases, _ := fuzzyNameKeysData(t)
+	for name, c := range cases {
+		if c.Kind != "panel" || c.Item != "LastName" {
+			continue
+		}
+		for _, a := range c.Values {
+			for _, b := range c.Values {
+				x, y := foldText(a), foldText(b)
+				if x == y || lastNameWordKey(x) != lastNameWordKey(y) {
+					continue
+				}
+				x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+				if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+					continue
+				}
+				want, score := lastNameKeyboard(x, y)
+				if !want {
+					continue
+				}
+				got, actual := fuzzyLastName(a, b, false)
+				if got != want || actual != score {
+					t.Errorf("%s %q/%q: got %v %v; base %v %v", name, a, b, got, actual, want, score)
+				}
+			}
+		}
+	}
+}
