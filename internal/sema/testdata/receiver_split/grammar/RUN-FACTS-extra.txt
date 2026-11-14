@@ -1,0 +1,4 @@
+Additional capture: fresh Developer scratch orgs, 30 days, on campaign Dev Hubs.
+APIs: 62.0 and 67.0. Both orgs were deleted and verified gone.
+Anonymous compile errors are transcribed from CLI top-level messages, including line and column.
+The custom namespace is normalized to sample in both source and outcome; its control compiled.

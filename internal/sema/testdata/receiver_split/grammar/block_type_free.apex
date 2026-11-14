@@ -1,0 +1,2 @@
+{ System
+.String s = 'a'; }

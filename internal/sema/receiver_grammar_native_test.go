@@ -61,6 +61,9 @@ func TestReceiverGrammarNative(t *testing.T) {
 				if row[0] == "CB" {
 					name = "CrRouteBefore.cls"
 				}
+				if row[0] == "super_break" {
+					name = "SuperProbe.cls"
+				}
 				if row[2] == "trigger" {
 					name = "CrTrig" + row[0] + ext
 				}
@@ -68,7 +71,11 @@ func TestReceiverGrammarNative(t *testing.T) {
 				writeSemaFile(t, path, string(src))
 				files = append(files, path)
 			}
-			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: row[1], ApexFiles: files}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+			namespace := ""
+			if strings.HasPrefix(row[0], "custom_namespace_") || row[0] == "custom_control" {
+				namespace = "sample"
+			}
+			index := typesys.Build(project.Project{Root: root, Namespace: namespace, SourceAPIVersion: row[1], ApexFiles: files}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
 			var ds []diagnostic.Diagnostic
 			if index.HasErrors() {
 				ds = index.Diagnostics
@@ -105,7 +112,7 @@ func TestReceiverGrammarNative(t *testing.T) {
 			}
 			// Native class parsing emits these documented cascades in addition
 			// to the primary error. Track them explicitly until implemented.
-			knownCascades := map[string]bool{"CA": true, "D1": true, "D2": true, "D3": true, "D4": true, "D5": true, "D6": true, "E1": true, "E2": true}
+			knownCascades := map[string]bool{"CA": true, "D1": true, "D2": true, "D3": true, "D4": true, "D5": true, "D6": true, "E1": true, "E2": true, "super_break": true}
 			if knownCascades[row[0]] {
 				for _, extra := range got[1:] {
 					if !containsReceiverGrammarDiagnostic(want[1:], extra) {

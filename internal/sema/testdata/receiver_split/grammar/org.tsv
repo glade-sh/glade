@@ -77,3 +77,35 @@ G4	62.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
 G4	67.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
 G5	62.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
 G5	67.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+while_header	62.0	anonymous	false	2:1 Missing ')' at 'valueOf'
+while_header	67.0	anonymous	false	2:1 Missing ')' at 'valueOf'
+for_header	62.0	anonymous	false	2:1 Missing ';' at 'valueOf'
+for_header	67.0	anonymous	false	2:1 Missing ';' at 'valueOf'
+switch_header	62.0	anonymous	false	2:1 Expecting '{' but was: 'valueOf'
+switch_header	67.0	anonymous	false	2:1 Expecting '{' but was: 'valueOf'
+parentheses	62.0	anonymous	false	2:1 Expecting ')' but was: 'valueOf'
+parentheses	67.0	anonymous	false	2:1 Expecting ')' but was: 'valueOf'
+index	62.0	anonymous	false	2:1 Expecting ']' but was: 'valueOf'
+index	67.0	anonymous	false	2:1 Expecting ']' but was: 'valueOf'
+list_init	62.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+list_init	67.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+map_init	62.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+map_init	67.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+generic_lead	62.0	anonymous	false	1:5 Unexpected token '<'.
+generic_lead	67.0	anonymous	false	1:5 Unexpected token '<'.
+array_lead	62.0	anonymous	false	1:7 Unexpected token '['.
+array_lead	67.0	anonymous	false	1:7 Unexpected token '['.
+block_type_bound	62.0	anonymous	false	2:1 Missing ';' at 'String'
+block_type_bound	67.0	anonymous	false	2:1 Missing ';' at 'String'
+block_type_free	62.0	anonymous	false	2:9 Missing ';' at 's'
+block_type_free	67.0	anonymous	false	2:9 Missing ';' at 's'
+control	62.0	anonymous	true	ok
+control	67.0	anonymous	true	ok
+super_break	62.0	class	false	deploy fails: 5:13 Missing ';' at 'value' | 4:55 Variable does not exist: | 5:13 Unreachable statement
+super_break	67.0	class	false	deploy fails: 5:13 Missing ';' at 'value' | 4:55 Variable does not exist: | 5:13 Unreachable statement
+custom_namespace_type	62.0	anonymous	false	1:1 Variable does not exist: sample
+custom_namespace_type	67.0	anonymous	false	1:1 Variable does not exist: sample
+custom_namespace_root	62.0	anonymous	false	1:1 Variable does not exist: sample
+custom_namespace_root	67.0	anonymous	false	1:1 Variable does not exist: sample
+custom_control	62.0	anonymous	true	ok
+custom_control	67.0	anonymous	true	ok
