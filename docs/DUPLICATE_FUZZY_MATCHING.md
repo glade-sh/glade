@@ -208,7 +208,9 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    length. The costs are fitted to the 2,528 distinct native pairs that reach
    this step (`keyboardDistance` in `internal/dml/fuzzy_keyboard.go`) for
    unequal lengths or two or more substitutions. Equal-length pairs with one
-   substitution retain the earlier `keyboardSimilarity` scorer:
+   substitution retain the earlier `keyboardSimilarity` scorer. Pairs that
+   the earlier scorer already matched also retain its confidence; the new
+   scorer applies only when that scorer did not match. The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
      beyond; the final character of two names of equal length is one step
