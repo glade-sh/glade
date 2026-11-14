@@ -1,0 +1,16 @@
+id	route	file	api	method
+adminPartial_62	istest	Probe62	62.0	adminPartial
+adminScoped_62	istest	Probe62	62.0	adminScoped
+scopedAll_62	istest	Probe62	62.0	scopedAll
+scopedGrant_62	istest	Probe62	62.0	scopedGrant
+scopedPartial_62	istest	Probe62	62.0	scopedPartial
+adminPartial_67	istest	Probe67	67.0	adminPartial
+adminScoped_67	istest	Probe67	67.0	adminScoped
+scopedAll_67	istest	Probe67	67.0	scopedAll
+scopedGrant_67	istest	Probe67	67.0	scopedGrant
+scopedPartial_67	istest	Probe67	67.0	scopedPartial
+adminPartial_68	istest	Probe68	68.0	adminPartial
+adminScoped_68	istest	Probe68	68.0	adminScoped
+scopedAll_68	istest	Probe68	68.0	scopedAll
+scopedGrant_68	istest	Probe68	68.0	scopedGrant
+scopedPartial_68	istest	Probe68	68.0	scopedPartial
