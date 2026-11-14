@@ -1033,6 +1033,13 @@ func (vm *VM) capturedAdminAssignmentSet(setID string) bool {
 	if vm.Org == nil {
 		return false
 	}
+	if objectPermissions, ok := vm.Org.Objects["ObjectPermissions"]; ok {
+		for _, row := range objectPermissions.Records {
+			if parent, exists := row.GetField("ParentId"); exists && storage.IDsEqual(storage.ID(storageValueIDText(parent)), storage.ID(setID)) {
+				return false
+			}
+		}
+	}
 	state, ok := vm.Org.Objects["FieldPermissions"]
 	if !ok {
 		return false
