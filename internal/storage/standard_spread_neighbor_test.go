@@ -62,8 +62,11 @@ func TestSpreadTemplateOrgIdentityForSafeCells(t *testing.T) {
 	}
 }
 
-// A never-dropped in-flight cell keeps the original nonblocking answer.
+// A never-dropped in-flight cell keeps the original nonblocking answer. The
+// reset matters: an earlier test's release may have dropped this plain key,
+// and a dropped key waits for its rebuild instead.
 func TestSpreadObjectUntouchedPendingNeighbor(t *testing.T) {
+	resetSpreadMemos(t)
 	plain := NewOrgState()
 	plain.OrgID = DefaultOrgID
 	plain.EnableStandardSpreadSource()
