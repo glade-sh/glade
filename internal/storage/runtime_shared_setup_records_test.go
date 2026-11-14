@@ -280,3 +280,20 @@ func TestCloneRuntimeFrozenSharedSetupReseedIsolation(t *testing.T) {
 		}
 	}
 }
+
+func TestCloneRuntimeFrozenSharedLegacyLicenseMigrationIsolation(t *testing.T) {
+	template := NewOrgState()
+	const id ID = "100000000000002AAA"
+	template.Objects["UserLicense"] = ObjectState{Definition: ObjectDefinition{APIName: "UserLicense"}, Records: map[ID]Record{id: {ID: id, Object: "UserLicense", Fields: map[string]Value{"Name": StringValue("Chatter External"), "LicenseDefinitionKey": StringValue("PID_Customer_Community_Login")}}}}
+	clone := template.CloneRuntimeFrozenShared()
+	sibling := template.CloneRuntimeFrozenShared()
+	migrateLegacyLicenseSeeds(&clone, "", id, "", "")
+	if got := clone.Objects["UserLicense"].Records[id].Fields["Name"].String; got != "Customer Community Login" {
+		t.Fatalf("clone license = %q", got)
+	}
+	for name, org := range map[string]OrgState{"template": template, "sibling": sibling} {
+		if got := org.Objects["UserLicense"].Records[id].Fields["Name"].String; got != "Chatter External" {
+			t.Fatalf("%s license = %q", name, got)
+		}
+	}
+}
