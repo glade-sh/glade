@@ -81,3 +81,15 @@ func TestEmailInsertValidationLeavesUpdatesUnchanged(t *testing.T) {
 		}
 	}
 }
+
+func TestEmailInsertValidationLeavesUpsertsUnchanged(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Contact")
+	engine := NewEngine(&org)
+	for _, address := range []string{"a@example.com.", "a@example..com", "\"quoted local\"@example.com"} {
+		got := engine.Upsert([]storage.Record{{Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Probe"), "Email": storage.StringValue(address)}}})
+		if len(got) != 1 || !got[0].Success {
+			t.Errorf("upsert %q: baseline accepted, got %+v", address, got)
+		}
+	}
+}
