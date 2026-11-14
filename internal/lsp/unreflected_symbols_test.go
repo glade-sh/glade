@@ -1,6 +1,8 @@
 package lsp
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -50,5 +52,25 @@ func TestUnreflectedSymbolsAndHover(t *testing.T) {
 	overlayChange(t, h, uri, original)
 	if got := h.DocumentSymbols(uri); len(got) != 1 || len(got[0].Children) != 1 || got[0].Children[0].Name != "removed" {
 		t.Errorf("reverted symbols: %#v", got)
+	}
+}
+
+func TestUnreflectedAliasDoesNotExposeDeclarations(t *testing.T) {
+	original := "public class First { void removed() {} }"
+	seed, uris := overlayTestHandler(t, map[string]string{"First": original})
+	h := NewPendingHandler()
+	h.SetBase(Base{Index: seed.gen.Load().index, Project: project.Project{Root: t.TempDir()}})
+	alias := filepath.Join(t.TempDir(), "First.cls")
+	if err := os.Symlink(pathFromURI(uris["First"]), alias); err != nil {
+		t.Fatal(err)
+	}
+	uri := uriFromPath(alias)
+	overlayOpen(h, uri, original)
+	overlayChange(t, h, uri, "public class First { void added() {} }")
+	if got := h.WorkspaceSymbols("First"); len(got) != 0 {
+		t.Errorf("stale alias symbol: %#v", got)
+	}
+	if got := h.HoverForName("First", nil); got != nil {
+		t.Errorf("stale alias hover: %#v", got)
 	}
 }
