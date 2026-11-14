@@ -494,10 +494,43 @@ func validateEmailField(objectName, fieldName string, field storage.Field, value
 	if !strings.EqualFold(fieldName, "Email") && !strings.EqualFold(field.DisplayType, "EMAIL") {
 		return nil
 	}
+	if capturedInvalidEmailShape(value) {
+		label := strings.TrimSpace(field.Label)
+		if label == "" {
+			label = fieldName
+		}
+		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "%s: invalid email address: %s", label, strings.TrimSpace(value.String))
+	}
 	if InvalidEmailValue(value) {
 		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "dml: invalid email address for field %s.%s", objectName, fieldName)
 	}
 	return nil
+}
+
+// capturedInvalidEmailShape handles the independently observed insert shapes.
+// Leave other email syntax to the existing validation path.
+func capturedInvalidEmailShape(value storage.Value) bool {
+	if value.Kind != storage.ValueString {
+		return false
+	}
+	text := strings.TrimSpace(value.String)
+	if strings.Count(text, "@") != 1 {
+		return false
+	}
+	parts := strings.SplitN(text, "@", 2)
+	local, domain := parts[0], parts[1]
+	if local == "" || domain == "" {
+		return false
+	}
+	for _, c := range domain {
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '.' || c == '-') {
+			return false
+		}
+	}
+	if strings.Contains(domain, ".") && (strings.HasSuffix(domain, ".") || strings.Contains(domain, "..")) {
+		return true
+	}
+	return strings.HasPrefix(local, "\"") && strings.HasSuffix(local, "\"") && strings.Contains(local, " ") && strings.Contains(domain, ".")
 }
 
 // InvalidEmailValue is the shared DML syntax predicate for a supplied email.

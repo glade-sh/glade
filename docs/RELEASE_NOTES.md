@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Email fields reject captured malformed addresses with Salesforce-style validation errors, including trailing or consecutive domain dots and quoted local parts containing spaces.
 
 ## v0.3.9
 
