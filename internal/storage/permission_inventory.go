@@ -528,6 +528,11 @@ func migrateLegacyLicenseSeeds(org *OrgState, salesforceLicenseID, communityLogi
 	licenses := org.Objects["UserLicense"]
 	if license, ok := licenses.Records[communityLoginLicenseID]; ok &&
 		license.Fields["Name"].String == "Chatter External" && license.Fields["LicenseDefinitionKey"].String == "PID_Customer_Community_Login" {
+		if licenses.RecordsShared || licenses.IndexesShared {
+			mutable, _ := EnsureMutableObjectRecords(org, "UserLicense")
+			licenses = *mutable
+			license = licenses.Records[communityLoginLicenseID]
+		}
 		license.Fields["Name"] = StringValue("Customer Community Login")
 		licenses.PutRecord(communityLoginLicenseID, license)
 	}
