@@ -419,7 +419,8 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	// Only the create branch of an upsert runs insert validation.
 	dmlOptions.ApexRejectNullPersonRecordType = ordinaryDatabaseCall && (op == "insert" || (op == "upsert" && (externalIDField == "" || strings.EqualFold(externalIDField, "Id"))))
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
-	dmlOptions.ExplicitUserModePartialRecord = isUserModeAccessLevel(accessLevel) && !allOrNone && args[0].Kind == ValueObject
+	dmlOptions.ExplicitUserMode = isUserModeAccessLevel(accessLevel)
+	dmlOptions.ExplicitUserModePartialRecord = dmlOptions.ExplicitUserMode && !allOrNone && args[0].Kind == ValueObject
 	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode, accessLevelPermissionSetID(accessLevel))
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
@@ -2605,10 +2606,10 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	// Partial user-mode DML fails only the rows whose fields are denied; the
 	// all-or-none routes raised the statement exception before this point.
 	if resolvedMode == "USER_MODE" && !allOrNone && len(targets) == len(records) && (op == "insert" || op == "update" || op == "upsert") {
-		savedExplicit := vm.explicitUserModePartialRecord
-		vm.explicitUserModePartialRecord = options.ExplicitUserModePartialRecord
+		savedExplicit, savedPartial := vm.explicitUserModeAccess, vm.explicitUserModePartialRecord
+		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord = options.ExplicitUserMode, options.ExplicitUserModePartialRecord
 		failures := vm.userModeDMLFieldFailures(op, targets, options.UserModePermissionSetID, externalIDField)
-		vm.explicitUserModePartialRecord = savedExplicit
+		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord = savedExplicit, savedPartial
 		if hasDMLFailures(failures) {
 			records, _, targets = filterDMLInputs(records, nil, targets, failures)
 			if len(records) == 0 {
@@ -6968,7 +6969,11 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 				permissionOp = ""
 			}
 		}
-		if err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}, externalIDField); err != nil {
+		savedStatement := vm.explicitUserModeStatement
+		vm.explicitUserModeStatement = mode == ir.DMLModeUser
+		err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}, externalIDField)
+		vm.explicitUserModeStatement = savedStatement
+		if err != nil {
 			return err
 		}
 	}

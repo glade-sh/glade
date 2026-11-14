@@ -747,18 +747,20 @@ func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLe
 	scopedPermissionSetID := accessLevelPermissionSetID(accessLevel)
 	records := dmlAccessRecords(value)
 	defer vm.beginPermissionCheckMemo()()
-	savedExplicit := vm.explicitUserModePartialRecord
+	savedExplicit, savedPartial := vm.explicitUserModeAccess, vm.explicitUserModePartialRecord
+	vm.explicitUserModeAccess = isUserModeAccessLevel(accessLevel) || vm.explicitUserModeStatement
 	vm.explicitUserModePartialRecord = isUserModeAccessLevel(accessLevel) && deferFieldRows && value.Kind == ValueObject
-	defer func() { vm.explicitUserModePartialRecord = savedExplicit }()
+	defer func() { vm.explicitUserModeAccess, vm.explicitUserModePartialRecord = savedExplicit, savedPartial }()
 	for index, record := range records {
 		fields, err := vm.userModeDMLRecordAccess(op, record, objectPermission, fieldPermission, scopedPermissionSetID, externalKey...)
 		if err != nil {
 			return err
 		}
 		// Partial DML checks denied fields per row with the same scope.
-		scopedPartialCaptured := scopedPermissionSetID != "" && op == "insert" && vm.capturedAccountCustomFieldPrincipal(vm.canonicalSObjectValueType(record))
+		// The scoped rows insert one Account record with Text fields.
+		scopedPartialCaptured := scopedPermissionSetID != "" && op == "insert" && value.Kind == ValueObject && vm.capturedAccountCustomFieldPrincipal(vm.canonicalSObjectValueType(record))
 		for _, field := range fields {
-			scopedPartialCaptured = scopedPartialCaptured && isCustomSchemaName(field)
+			scopedPartialCaptured = scopedPartialCaptured && vm.capturedTextCustomField(vm.canonicalSObjectValueType(record), field)
 		}
 		if len(fields) > 0 && (!deferFieldRows || scopedPermissionSetID != "" && !scopedPartialCaptured) {
 			return userModeFieldDMLException(op, vm.canonicalSObjectValueType(record), record, fields, index)
@@ -822,7 +824,8 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			// raises the same statement DmlException or failed row, not a
 			// SecurityException, on explicit USER_MODE at both APIs and on the
 			// default mode from source API 67.0.
-			standardObjectCustomField := (scopedPermissionSetID == "" || op == "insert") && isCustomSchemaName(canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
+			// The rows write Text fields; an explicit USER_MODE upsert has no row.
+			standardObjectCustomField := (scopedPermissionSetID == "" || op == "insert") && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedTextCustomField(objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
 			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert || standardObjectCustomField) {
 				policyFields = append(policyFields, canonicalField)
 				continue
@@ -864,6 +867,16 @@ func (vm *VM) capturedAccountCustomFieldPrincipal(objectName string) bool {
 	return false
 }
 
+// capturedTextCustomField reports an ordinary Text custom field, the field
+// shape of the standard_custom_field_* rows.
+func (vm *VM) capturedTextCustomField(objectName, fieldName string) bool {
+	if !isCustomSchemaName(fieldName) {
+		return false
+	}
+	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
+	return ok && field.Type == storage.FieldString && strings.EqualFold(field.DisplayType, "STRING") && field.Formula == ""
+}
+
 // adminStandardCustomFieldDMLDenied reports a partial single-record
 // Database.insert with an explicit AccessLevel.USER_MODE, with or without a
 // permission set scope, by the default test-runner administrator of an
@@ -884,7 +897,7 @@ func (vm *VM) adminStandardCustomFieldDMLDenied(op, objectName, fieldName, metho
 	if op != "insert" || !vm.explicitUserModePartialRecord {
 		return false
 	}
-	if _, field, ok := vm.sObjectFieldDefinition(objectName, fieldName); !ok || field.Type != storage.FieldString || !strings.EqualFold(field.DisplayType, "STRING") || field.Formula != "" {
+	if !vm.capturedTextCustomField(objectName, fieldName) {
 		return false
 	}
 	return vm.adminAccountCustomFieldUngranted(objectName, fieldName, method, scopedPermissionSetID)

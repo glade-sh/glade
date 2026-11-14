@@ -59,9 +59,13 @@ type VM struct {
 	// single-record Database DML call with an explicit AccessLevel.USER_MODE
 	// (adminStandardCustomFieldDMLDenied).
 	explicitUserModePartialRecord bool
-	knowledgeIssuedParents        map[storage.ID]bool
-	case174WarmOrderAccess        map[string]bool
-	case174PermissionStamp        map[string]string
+	// explicitUserModeAccess marks the field check of DML with an explicit
+	// USER_MODE (an AccessLevel argument, or a statement "as user" while
+	// explicitUserModeStatement is set).
+	explicitUserModeAccess, explicitUserModeStatement bool
+	knowledgeIssuedParents                            map[storage.ID]bool
+	case174WarmOrderAccess                            map[string]bool
+	case174PermissionStamp                            map[string]string
 	// case174WarmDirectAccess holds actor:record keys whose direct
 	// UserRecordAccess row was warmed by a system-mode relationship query
 	// (ura_direct_carry). It lives for one System.runAs block.
