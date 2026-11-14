@@ -45,10 +45,22 @@ func installedPlusOwed(t *testing.T, org *OrgState) []string {
 	return out
 }
 
-// The installed names plus the owed names are exactly the object set the org
-// holds once the spread is complete, for every shape, both lazy modes, both
-// source phases, with and without an org namespace, before and after a few
-// objects are touched. A names-only global describe depends on this.
+func allowedObjectNames(org *OrgState, names []string) []string {
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		if org.AllowsStandardObject(name) {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
+// The installed names plus the owed names are the object set the org holds
+// once the spread is complete, among the objects the shape allows, for every
+// shape, both lazy modes, both source phases, with and without an org
+// namespace, before and after a few objects are touched. On the source-backed
+// routes the raw name sets are equal too. A names-only global describe
+// depends on this.
 func TestSpreadOwedObjectNamesMatchCompletedSpread(t *testing.T) {
 	type build struct {
 		name string
@@ -100,7 +112,18 @@ func TestSpreadOwedObjectNamesMatchCompletedSpread(t *testing.T) {
 							t.Fatal("materialize reported no change")
 						}
 						want := sortedObjectNames(org)
-						if !reflect.DeepEqual(got, want) {
+						// Every route: equal once both sides keep only the
+						// objects the shape allows, which is the filter the
+						// global describe applies.
+						gotAllowed, wantAllowed := allowedObjectNames(&org, got), allowedObjectNames(&org, want)
+						if !reflect.DeepEqual(gotAllowed, wantAllowed) {
+							t.Fatalf("allowed installed+owed has %d names, allowed completed spread %d; differing: %v", len(gotAllowed), len(wantAllowed), symmetricDifference(gotAllowed, wantAllowed))
+						}
+						// The source-backed routes also match name for name.
+						// The legacy route completes with objects the shape
+						// does not allow (plain Developer), which the filter
+						// above removes.
+						if b.name != "legacy" && !reflect.DeepEqual(got, want) {
 							t.Fatalf("installed+owed has %d names, completed spread %d; differing: %v", len(got), len(want), symmetricDifference(got, want))
 						}
 						if owed := SpreadOwedObjectNames(&org); len(owed) != 0 {
