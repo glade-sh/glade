@@ -41,6 +41,16 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 		}
 		seen[key] = true
 		items := scanReceiverTrivia(source)
+		// Generic class declarations are rejected by the ordinary analyzer.
+		// Their receiver diagnostics have not been captured.
+		if trigger == nil && len(items) > 0 {
+			ts := items[0].tokens
+			for i := 0; i+2 < len(ts); i++ {
+				if strings.EqualFold(ts[i].text, "class") && ts[i+1].word && ts[i+2].text == "<" {
+					return
+				}
+			}
+		}
 		first := len(out)
 		var (
 			scoped    bool

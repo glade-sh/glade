@@ -39,6 +39,18 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 	}
 	topLevel := route == "anonymous" && blockDepth == 0 || route == "trigger" && blockDepth == 1
 	leading := strings.ToLower(ts[statement].text)
+	// Uncaptured neighboring constructs retain the ordinary parser result.
+	if len(stack) > 0 && stack[len(stack)-1].kind == "call" {
+		if receiverTernaryArm(ts, stack, statement, dot) == 2 {
+			return nil
+		}
+		if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
+			return nil
+		}
+	}
+	if leading == "when" && (dot+2 >= len(ts) || ts[dot+2].text != "(") {
+		return nil
+	}
 	switch leading {
 	case "if", "for", "while", "switch", "return", "throw", "else":
 		topLevel = false
@@ -47,6 +59,9 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 	// member; a break inside it is reported where that member's name starts.
 	if !topLevel && route == "anonymous" && len(stack) > 0 && stack[0].kind == "block" {
 		if tok, ok := receiverLocalMethodToken(ts, stack[0]); ok {
+			if leading == "return" {
+				return nil
+			}
 			return report(tok, "Unexpected token '"+tok.text+"'.")
 		}
 	}
@@ -120,7 +135,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 			i = -1
 		case "call", "group", "new":
 			if frame.kind == "group" && dot+2 < len(ts) && ts[dot+2].text == ")" {
-				if dot+3 < len(ts) && (ts[dot+3].word || strings.HasPrefix(ts[dot+3].text, "'") || ts[dot+3].text == ";") {
+				if dot+3 < len(ts) && (ts[dot+3].word || strings.HasPrefix(ts[dot+3].text, "'") || ts[dot+3].text == ";" && statement+1 < frame.start && ts[frame.start-1].text == "=") {
 					return report(member, "Extra ')', at '"+member.text+"'.")
 				}
 				return nil
@@ -132,7 +147,13 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 		case "if", "while":
 			return report(member, "Missing ')' at '"+member.text+"'")
 		case "dowhile":
-			return report(member, "Expecting ')' but was: '"+member.text+"'")
+			// The capture covers an equality comparison following the call.
+			for j := dot + 2; j < len(ts) && ts[j].text != ";"; j++ {
+				if ts[j].text == "==" {
+					return report(member, "Expecting ')' but was: '"+member.text+"'")
+				}
+			}
+			return nil
 		case "for":
 			if frame.semicolons == 0 {
 				if receiverForEach(ts, frame.start, dot) {
