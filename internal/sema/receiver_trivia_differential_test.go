@@ -79,6 +79,21 @@ func TestReceiverDetachedFieldContinuation(t *testing.T) {
 	}
 }
 
+// A different member in the same call position is an uncaptured neighbor.
+// Its complete origin/main diagnostic result is null.
+func TestReceiverParenthesizedMemberNeighborUnchanged(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		index := typesys.Build(project.Project{SourceAPIVersion: api}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+		got, err := json.Marshal(AnalyzeAnonymous(index, "System.debug(Account\n.Name);", api).Diagnostics)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != "null" {
+			t.Errorf("api %s: diagnostics %s, want origin/main null", api, got)
+		}
+	}
+}
+
 // A control character inside a string is outside the captured dot-adjacent
 // code shapes and keeps origin/main's diagnostic result.
 func TestReceiverVerticalTabInStringUnchanged(t *testing.T) {
