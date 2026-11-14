@@ -510,7 +510,7 @@ func validateEmailField(objectName, fieldName string, field storage.Field, value
 }
 
 func validateInsertEmailField(objectName, fieldName string, field storage.Field, value storage.Value) error {
-	if !strings.EqualFold(fieldName, "Email") && !strings.EqualFold(field.DisplayType, "EMAIL") {
+	if !strings.EqualFold(field.DisplayType, "EMAIL") {
 		return nil
 	}
 	if capturedInvalidEmailShape(value) {
