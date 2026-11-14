@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 // Source-backed lazy spread
@@ -200,6 +202,9 @@ func materializeSpreadSource(org *OrgState) bool {
 		}
 	}
 	org.StandardSpread = ""
+	if org.HasFeature(project.PlainDeveloperObjectShape) {
+		org.StandardSpreadPruned = true
+	}
 	return true
 }
 

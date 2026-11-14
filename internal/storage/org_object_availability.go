@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -164,9 +165,17 @@ func refreshOrgFeatureObjects(org *OrgState) {
 	// The plain Developer inventory is a union of the captured API and route
 	// lists. Preserve non-catalog project objects when applying this profile.
 	if org.HasFeature(project.PlainDeveloperObjectShape) {
-		for name := range org.Objects {
+		for name, object := range org.Objects {
 			if _, known := ResolveKnownStandardObjectName(name); known && !PlainDeveloperObjectPresent(name, PlainDeveloperAnyRoute) {
+				// Only remove untouched catalog entries, retaining project schema
+				// and data that were installed before the shape was applied.
+				if len(object.Records) != 0 || !isUnmodifiedSpreadObject(name, object) {
+					continue
+				}
 				DeleteObject(org, name)
+				if org.eagerStandardSpread {
+					org.StandardSpreadPruned = true
+				}
 			}
 		}
 	}
@@ -205,6 +214,12 @@ func refreshOrgFeatureObjects(org *OrgState) {
 			EnsureStandardObject(org, gate.object)
 		}
 	}
+}
+
+func isUnmodifiedSpreadObject(name string, object ObjectState) bool {
+	baseline := NewOrgState()
+	ensureStandardObjectWithProfile(&baseline, name, nil)
+	return reflect.DeepEqual(object.Definition, baseline.Objects[name].Definition)
 }
 
 // Plain Developer route masks over plainDeveloperObjectLookup bits.

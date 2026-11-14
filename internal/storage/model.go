@@ -89,6 +89,9 @@ type OrgState struct {
 	// standard_spread_source.go). "plain" is before the org shape applied,
 	// "shaped" after. Empty means the org holds every object it will hold.
 	StandardSpread string `json:"standardSpread,omitempty"`
+	// StandardSpreadPruned remembers that a completed spread was narrowed by
+	// the plain Developer profile, so a later profile can restore the spread.
+	StandardSpreadPruned bool `json:"standardSpreadPruned,omitempty"`
 	// StandardDuplicateRules turns on the seeded standard duplicate rules (the
 	// duplicateRules.standard setting); project metadata rules are always on.
 	StandardDuplicateRules bool                `json:"standardDuplicateRules,omitempty"`
@@ -106,6 +109,7 @@ type OrgState struct {
 	objectNameCache                 *sync.Map
 	keyPrefixesValidated            bool
 	lazyStandardSpread              bool
+	eagerStandardSpread             bool
 	spreadPrefixSeed                map[string]string
 	keyPrefixesValidatedObjectCount int
 	keyPrefixesValidatedPrefixes    []keyPrefixSnapshotEntry

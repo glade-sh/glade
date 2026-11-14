@@ -317,6 +317,10 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 	if org == nil {
 		return
 	}
+	if org.StandardSpreadPruned && !slices.Contains(features, project.PlainDeveloperObjectShape) {
+		org.StandardSpreadPruned = false
+		EnsureStandardObjectSpread(org)
+	}
 	org.ensureFeatureProfile()
 	previous := make([]string, 0, len(org.Features))
 	for _, feature := range org.Features {

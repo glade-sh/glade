@@ -36,6 +36,7 @@ func EnsureStandardObjectSpread(org *OrgState) {
 	if org == nil {
 		return
 	}
+	org.eagerStandardSpread = true
 	for _, objectName := range KnownStandardObjectNames() {
 		if !standardSpreadIncludes(objectName) {
 			continue
@@ -161,6 +162,7 @@ func MaterializeStandardObjectSpread(org *OrgState) bool {
 	if org == nil || !org.lazyStandardSpread {
 		return false
 	}
+	org.eagerStandardSpread = true
 	org.lazyStandardSpread = false
 	// Plain catalog definitions first, then the shape steps in the order an
 	// eager org applied them to every object: whole-org feature appliers,
