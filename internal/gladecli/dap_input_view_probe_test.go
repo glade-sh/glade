@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/inputview"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/startupcache"
 )
 
@@ -110,6 +111,50 @@ func TestDAPRetriesTransientRuntimeConfigError(t *testing.T) {
 	}
 	if !startupcache.Fresh(entry, root, dapCacheVersion) || !dapObservationsHold(root, entry) {
 		t.Fatalf("fresh=%v observations=%v raw=%v", startupcache.Fresh(entry, root, dapCacheVersion), dapObservationsHold(root, entry), inputview.Verify(entry.Inputs, nil))
+	}
+	assertServedWarm(t, root)
+}
+
+func TestDAPEventSubscriberMetadataUsesInputView(t *testing.T) {
+	root, _ := writeDriftProject(t)
+	base := filepath.Join(root, "force-app", "main")
+	writeDriftFile(t, filepath.Join(base, "objects", "Alert__e", "Alert__e.object-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Alert</label><pluralLabel>Alerts</pluralLabel><deploymentStatus>Deployed</deploymentStatus><eventType>HighVolume</eventType></CustomObject>`)
+	trigger := filepath.Join(base, "triggers", "AlertHandler.trigger")
+	writeDriftFile(t, trigger, `trigger AlertHandler on Alert__e (after insert) {}`)
+	meta := trigger + "-meta.xml"
+	writeDriftFile(t, meta, `<ApexTrigger xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>62.0</apiVersion><status>Active</status></ApexTrigger>`)
+	v := inputview.New()
+	p, err := project.LoadWithInputs(root, v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, _ := buildProjectIndexWithArtifacts(p)
+	writeDriftFile(t, meta, `<ApexTrigger xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>62.0</apiVersion><status>Inactive</status></ApexTrigger>`)
+	_, _ = orgStateFromIndex(root, p, index)
+	if v.Err() == nil {
+		t.Fatal("event trigger metadata read bypassed the input view")
+	}
+}
+
+func TestDAPDiscardsCompiledRuntimeAfterPageRemoval(t *testing.T) {
+	withoutDAPRetryBackoff(t)
+	root, _ := writeDriftProject(t)
+	page := filepath.Join(root, "force-app", "main", "pages", "Ghost.page")
+	writeDriftFile(t, page, "<apex:page>hi</apex:page>\n")
+	writeDriftFile(t, page+"-meta.xml", `<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>62.0</apiVersion><label>Ghost</label></ApexPage>`)
+	attempts := 0
+	_, runtime, _, err := loadDAPStartupStateWithSeams(root, dapLoadSeams{
+		beforeLoad: func(a int) { attempts = a },
+		beforeRecheck: func(a int) {
+			if a == 1 {
+				if err := os.RemoveAll(filepath.Dir(page)); err != nil {
+					t.Fatal(err)
+				}
+			}
+		},
+	})
+	if err != nil || attempts != 2 || len(runtime.PageNames) != 0 {
+		t.Fatalf("attempts=%d pages=%v err=%v", attempts, runtime.PageNames, err)
 	}
 	assertServedWarm(t, root)
 }
