@@ -1,0 +1,8 @@
+Fresh 30-day Developer scratch org, no optional features.
+APIs 62.0 and 67.0; anonymous and deployed @IsTest; two repeats.
+Contact and Lead standard Email fields and a custom Contact Email field.
+Each operation inserts one record; successful records are deleted before the next operation.
+All generated sources passed Glade parse, project check and execution at both APIs before allocation.
+Test class API versions verified through ApexClass readback.
+All observations agree across routes, APIs and repeats.
+Owned scratch deleted; active hub record 1 -> 0; local target no longer resolves.
