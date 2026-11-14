@@ -9,7 +9,8 @@ import (
 
 func TestUnreflectedSymbolsAndHover(t *testing.T) {
 	original := "public class First { void removed() {} }"
-	seed, uris := overlayTestHandler(t, map[string]string{"First": original, "Second": "public class Second {}"})
+	second := "public class Second { void run() { First x; } }"
+	seed, uris := overlayTestHandler(t, map[string]string{"First": original, "Second": second})
 	h := NewPendingHandler()
 	h.SetBase(Base{Index: seed.gen.Load().index, Project: project.Project{Root: t.TempDir()}})
 	uri := uris["First"]
@@ -37,5 +38,13 @@ func TestUnreflectedSymbolsAndHover(t *testing.T) {
 	}
 	if got := h.DocumentSymbols(uris["Second"]); len(got) != 1 || got[0].Name != "Second" {
 		t.Errorf("unchanged neighbor: %#v", got)
+	}
+	overlayOpen(h, uris["Second"], second)
+	if got := h.Definition(DefinitionParams{TextDocument: TextDocumentIdentifier{URI: uris["Second"]}, Position: Position{Character: 36}}); len(got) != 0 {
+		t.Errorf("definition into stale buffer: %#v", got)
+	}
+	overlayChange(t, h, uri, original)
+	if got := h.DocumentSymbols(uri); len(got) != 1 || len(got[0].Children) != 1 || got[0].Children[0].Name != "removed" {
+		t.Errorf("reverted symbols: %#v", got)
 	}
 }
