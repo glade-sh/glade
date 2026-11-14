@@ -183,9 +183,15 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 				return report(member, "Missing ';' at '"+member.text+"'")
 			}
 			if frame.semicolons == 1 {
+				if frame.start+1 >= len(ts) || ts[frame.start+1].text != ";" || !receiverIntegerCallEqualityEnd(ts, frame.start+1, dot, ";") || !resolvedCall() {
+					return nil
+				}
 				return report(member, "Missing ';' at '"+member.text+"'")
 			}
 			if frame.semicolons == 2 {
+				if !receiverForUpdateShape(ts, frame.start, dot) || !resolvedCall() {
+					return nil
+				}
 				return report(member, "Missing ')' at '"+member.text+"'")
 			}
 			return nil
@@ -220,11 +226,15 @@ func receiverStringSwitch(ts []receiverTriviaToken, stack []receiverEnclosure) b
 func receiverResolvedDirectCall(source string, item receiverTrivia, model *semaTypeMemberView) bool {
 	ts, dot := item.tokens, item.dot
 	var args []string
+	returnType := "String"
 	if receiverDirectCallEnd(ts, dot) < 0 {
-		if receiverIntegerCallEnd(ts, dot) < 0 {
+		if receiverIntegerCallEnd(ts, dot) >= 0 {
+			args = []string{"Integer"}
+		} else if receiverStringCallEnd(ts, dot) >= 0 {
+			args, returnType = []string{"String"}, "Integer"
+		} else {
 			return false
 		}
-		args = []string{"Integer"}
 	}
 	root := receiverNameRoot(ts, dot)
 	if root < 0 || dot <= root {
@@ -233,7 +243,7 @@ func receiverResolvedDirectCall(source string, item receiverTrivia, model *semaT
 	owner := source[ts[root].start:ts[dot-1].end]
 	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, owner, ts[dot+1].text), "class")
 	member, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, args, model)
-	return ok && !ambiguous && hasModifier(member.member.Modifiers, "static") && (hasModifier(member.member.Modifiers, "public") || hasModifier(member.member.Modifiers, "global")) && strings.EqualFold(semaCanonicalPlatformAlias(member.member.Type), "String")
+	return ok && !ambiguous && hasModifier(member.member.Modifiers, "static") && (hasModifier(member.member.Modifiers, "public") || hasModifier(member.member.Modifiers, "global")) && strings.EqualFold(semaCanonicalPlatformAlias(member.member.Type), returnType)
 }
 
 // receiverDirectCallEnd recognizes the captured zero-argument call.
@@ -254,6 +264,10 @@ func receiverIntegerCallEnd(ts []receiverTriviaToken, dot int) int {
 }
 
 func receiverIntegerCallEquality(ts []receiverTriviaToken, open, dot int) bool {
+	return receiverIntegerCallEqualityEnd(ts, open, dot, ")")
+}
+
+func receiverIntegerCallEqualityEnd(ts []receiverTriviaToken, open, dot int, tail string) bool {
 	if receiverNameRoot(ts, dot) != open+1 {
 		return false
 	}
@@ -262,7 +276,25 @@ func receiverIntegerCallEquality(ts []receiverTriviaToken, open, dot int) bool {
 		return false
 	}
 	literal := ts[end+2].text
-	return ts[end].text == "=" && ts[end+1].text == "=" && ts[end].end == ts[end+1].start && len(literal) >= 2 && strings.HasPrefix(literal, "'") && strings.HasSuffix(literal, "'") && ts[end+3].text == ")"
+	return ts[end].text == "=" && ts[end+1].text == "=" && ts[end].end == ts[end+1].start && len(literal) >= 2 && strings.HasPrefix(literal, "'") && strings.HasSuffix(literal, "'") && ts[end+3].text == tail
+}
+
+func receiverStringCallEnd(ts []receiverTriviaToken, dot int) int {
+	if dot+4 < len(ts) && ts[dot+2].text == "(" && strings.HasPrefix(ts[dot+3].text, "'") && strings.HasSuffix(ts[dot+3].text, "'") && ts[dot+4].text == ")" {
+		return dot + 5
+	}
+	return -1
+}
+
+func receiverForUpdateShape(ts []receiverTriviaToken, open, dot int) bool {
+	root := receiverNameRoot(ts, dot)
+	end := receiverStringCallEnd(ts, dot)
+	if root != open+12 || end < 0 || end >= len(ts) || ts[end].text != ")" {
+		return false
+	}
+	_, firstErr := strconv.ParseInt(ts[open+4].text, 10, 32)
+	_, secondErr := strconv.ParseInt(ts[open+8].text, 10, 32)
+	return strings.EqualFold(ts[open+1].text, "Integer") && ts[open+2].word && ts[open+3].text == "=" && firstErr == nil && ts[open+5].text == ";" && strings.EqualFold(ts[open+6].text, ts[open+2].text) && ts[open+7].text == "<" && secondErr == nil && ts[open+9].text == ";" && strings.EqualFold(ts[open+10].text, ts[open+2].text) && ts[open+11].text == "="
 }
 
 // The captured condition compares the direct call to a string literal.
