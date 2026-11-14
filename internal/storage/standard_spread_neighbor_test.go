@@ -61,3 +61,25 @@ func TestSpreadTemplateOrgIdentityForSafeCells(t *testing.T) {
 		}
 	}
 }
+
+// A never-dropped in-flight cell keeps the original nonblocking answer.
+func TestSpreadObjectUntouchedPendingNeighbor(t *testing.T) {
+	plain := NewOrgState()
+	plain.OrgID = DefaultOrgID
+	plain.EnableStandardSpreadSource()
+	name := owedNames(&plain, 1)[0]
+	if _, ok := installSpreadObject(&plain, name); !ok {
+		t.Fatal("plain install failed")
+	}
+	_, hasRecordType := plain.Objects["RecordType"]
+	key := spreadTemplateKey{phase: plain.StandardSpread, signature: canonicalFeatureSignature(plain.Features), multiCurr: plain.HasFeature("MultiCurrency"), recordType: hasRecordType, object: name}
+	old, loaded := spreadTemplates.Load(key)
+	if !loaded {
+		t.Fatal("installed template missing")
+	}
+	spreadTemplates.Store(key, &spreadTemplateCell{})
+	defer spreadTemplates.Store(key, old)
+	if plain.SpreadObjectUntouched(name) {
+		t.Fatal("pending template reported untouched")
+	}
+}
