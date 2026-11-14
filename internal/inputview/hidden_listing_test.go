@@ -35,3 +35,31 @@ func TestDirectoryListingDetectsHiddenMembership(t *testing.T) {
 		})
 	}
 }
+
+func TestProjectRootWalkSkipsCacheAndPinsHiddenFolders(t *testing.T) {
+	root := t.TempDir()
+	hidden := filepath.Join(root, ".settings")
+	if err := os.Mkdir(hidden, 0700); err != nil {
+		t.Fatal(err)
+	}
+	v := New()
+	if err := v.WalkDirProjectRoot(root, func(string, os.DirEntry, error) error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(root, ".glade"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := v.Recheck(); err != nil {
+		t.Fatalf("cache directory changed root observation: %v", err)
+	}
+	v2 := New()
+	if err := v2.WalkDirProjectRoot(root, func(string, os.DirEntry, error) error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(hidden, ".item"), nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := v2.Recheck(); err == nil {
+		t.Fatal("hidden folder membership was not observed")
+	}
+}
