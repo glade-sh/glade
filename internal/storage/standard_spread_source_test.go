@@ -76,6 +76,15 @@ func TestPlainDeveloperSpreadPreservesProjectSchemaWithoutRecords(t *testing.T) 
 	}
 }
 
+func TestPlainDeveloperShapePreservesExplicitObjectWithoutSpread(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObject(&org, "AIFeatureExtractor")
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
+		t.Fatal("shape removed an explicitly installed object")
+	}
+}
+
 func TestPlainDeveloperSpreadShapeTransition(t *testing.T) {
 	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
 	ApplyProjectOrgShape(&org, []string{project.UnspecifiedStandardFieldShape})
