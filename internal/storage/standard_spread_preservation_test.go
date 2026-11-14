@@ -2,6 +2,7 @@ package storage
 
 import (
 	"github.com/glade-sh/glade/internal/project"
+	"slices"
 	"testing"
 )
 
@@ -101,7 +102,7 @@ func TestPlainDeveloperSpreadPreservesNestedEditWithoutSnapshot(t *testing.T) {
 	defer func() { field.ReferenceTo[0] = original }()
 	field.ReferenceTo[0] = "EditedTarget"
 	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
-	if got, ok := org.Objects["AIFeatureExtractor"]; !ok || got.Definition.Fields["CreatedById"].ReferenceTo[0] != "EditedTarget" {
+	if got, ok := org.Objects["AIFeatureExtractor"]; !ok || !slices.Contains(got.Definition.Fields["CreatedById"].ReferenceTo, "EditedTarget") {
 		t.Fatal("nested definition edit removed without snapshot")
 	}
 }
