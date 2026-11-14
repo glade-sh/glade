@@ -35,7 +35,9 @@ func TestConcurrentViewRecheckAndClose(t *testing.T) {
 		t.Fatal(err)
 	}
 	v := New()
-	var wg sync.WaitGroup
+	var wg, started sync.WaitGroup
+	started.Add(8)
+	release := make(chan struct{})
 	for i := 0; i < 8; i++ {
 		wg.Add(1)
 		go func() {
@@ -49,11 +51,20 @@ func TestConcurrentViewRecheckAndClose(t *testing.T) {
 				_ = v.CheckDirectories()
 				_ = v.Observations()
 				_ = v.Recheck()
+				if j == 0 {
+					started.Done()
+					<-release
+				}
 			}
 		}()
 	}
 	wg.Add(1)
-	go func() { defer wg.Done(); v.Close() }()
+	go func() {
+		defer wg.Done()
+		started.Wait()
+		close(release)
+		v.Close()
+	}()
 	wg.Wait()
 	if got := v.Observations(); len(got) != 0 {
 		t.Fatalf("closed view retained %d observations", len(got))
