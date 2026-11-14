@@ -131,7 +131,7 @@ func TestDirectoryListingIgnoresHiddenEntries(t *testing.T) {
 		t.Fatal(err)
 	}
 	v := New()
-	if _, err := v.ReadDir(dir); err != nil {
+	if _, err := v.ReadDirNonHidden(dir); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Mkdir(filepath.Join(dir, ".glade"), 0o700); err != nil {

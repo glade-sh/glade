@@ -67,7 +67,7 @@ func changedWhat(a, b observation) string {
 	if a.exists && !b.exists {
 		return "file removed"
 	}
-	if a.kind == "dir" {
+	if a.kind == "dir" || a.kind == "dir-visible" {
 		return "directory listing"
 	}
 	return "file content"
@@ -134,12 +134,17 @@ func (v *View) Close() {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	v.closed = true
+	v.pins = nil
 }
 func fileObservation(path string) ([]byte, observation, error) {
 	o := observation{kind: "file"}
 	f, err := os.Open(path)
 	if err != nil {
 		o.errClass = errorClass(err)
+		if info, statErr := os.Stat(path); statErr == nil {
+			o.exists = true
+			o.mode = info.Mode().Type()
+		}
 		return nil, o, err
 	}
 	defer f.Close()
@@ -189,6 +194,14 @@ func (v *View) Fingerprint(path string) (Fingerprint, error) {
 		_, o, e := fileObservation(path)
 		return o.fingerprint, e
 	}
+	v.mu.Lock()
+	if !v.closed {
+		if pinned, ok := v.pins[key(path)]["file"]; ok && pinned.errClass == "" {
+			v.mu.Unlock()
+			return pinned.fingerprint, nil
+		}
+	}
+	v.mu.Unlock()
 	_, o, e := fileObservation(path)
 	var c *ChangedError
 	if errors.As(e, &c) {
@@ -247,21 +260,25 @@ type dirEntry struct {
 }
 
 func (d dirEntry) Info() (os.FileInfo, error) { return d.v.Lstat(d.path) }
-func dirObservation(path string) ([]os.DirEntry, observation, error) {
+func dirObservation(path string, visibleOnly bool) ([]os.DirEntry, observation, error) {
 	entries, err := os.ReadDir(path)
-	o := observation{kind: "dir", errClass: errorClass(err)}
+	kind := "dir"
+	if visibleOnly {
+		kind = "dir-visible"
+	}
+	o := observation{kind: kind, errClass: errorClass(err)}
 	if err != nil {
+		if info, statErr := os.Stat(path); statErr == nil {
+			o.exists = true
+			o.mode = info.Mode().Type()
+		}
 		return entries, o, err
 	}
 	o.exists = true
 	o.mode = fs.ModeDir
 	h := sha256.New()
 	for _, e := range entries {
-		// Hidden entries (.glade, .git, editor swap files) are not project
-		// metadata membership. Leaving them out keeps the cache directory and
-		// editor noise from forcing a rebuild; a hidden file a loader reads
-		// by path is still pinned by that read.
-		if strings.HasPrefix(e.Name(), ".") {
+		if visibleOnly && strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
 		fmt.Fprintf(h, "%s\x00%d\x00", e.Name(), e.Type())
@@ -270,10 +287,26 @@ func dirObservation(path string) ([]os.DirEntry, observation, error) {
 	return entries, o, nil
 }
 func (v *View) ReadDir(path string) ([]os.DirEntry, error) {
+	return v.readDir(path, false)
+}
+
+// ReadDirNonHidden lists only non-hidden entries and pins that listing.
+func (v *View) ReadDirNonHidden(path string) ([]os.DirEntry, error) {
+	return v.readDir(path, true)
+}
+
+func (v *View) readDir(path string, visibleOnly bool) ([]os.DirEntry, error) {
 	if v == nil || v.isClosed() {
-		return os.ReadDir(path)
+		entries, err := os.ReadDir(path)
+		if visibleOnly {
+			entries = nonHidden(entries)
+		}
+		return entries, err
 	}
-	entries, o, e := dirObservation(path)
+	entries, o, e := dirObservation(path, visibleOnly)
+	if visibleOnly {
+		entries = nonHidden(entries)
+	}
 	if err := v.record(path, o); err != nil {
 		return nil, err
 	}
@@ -281,6 +314,15 @@ func (v *View) ReadDir(path string) ([]os.DirEntry, error) {
 		entries[i] = dirEntry{d, v, filepath.Join(path, d.Name())}
 	}
 	return entries, e
+}
+func nonHidden(entries []os.DirEntry) []os.DirEntry {
+	out := make([]os.DirEntry, 0, len(entries))
+	for _, entry := range entries {
+		if !strings.HasPrefix(entry.Name(), ".") {
+			out = append(out, entry)
+		}
+	}
+	return out
 }
 func symlinkObservation(path string) (string, observation, error) {
 	p, e := filepath.EvalSymlinks(path)
@@ -330,8 +372,8 @@ func (v *View) Recheck() error {
 			switch k {
 			case "file":
 				_, o, _ = fileObservation(p)
-			case "dir":
-				_, o, _ = dirObservation(p)
+			case "dir", "dir-visible":
+				_, o, _ = dirObservation(p, k == "dir-visible")
 			case "stat":
 				_, o, _ = statObservation(p, false)
 			case "lstat":

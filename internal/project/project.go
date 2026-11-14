@@ -1683,7 +1683,7 @@ func localSFDXPackageDependencyCandidates(v *inputview.View, root, packageName s
 }
 
 func localSFDXDirectoryChildren(v *inputview.View, parent string) []string {
-	entries, err := v.ReadDir(parent)
+	entries, err := v.ReadDirNonHidden(parent)
 	if err != nil {
 		return nil
 	}
@@ -1712,7 +1712,7 @@ func sfdxProjectHasPackageAlias(cfg sfdxProject, packageName string) bool {
 }
 
 func localSFDXSiblingProjectCandidates(v *inputview.View, parent string) []string {
-	entries, err := v.ReadDir(parent)
+	entries, err := v.ReadDirNonHidden(parent)
 	if err != nil {
 		return nil
 	}
@@ -1797,7 +1797,7 @@ func referencesNamespaceTokensInRoot(v *inputview.View, root string, tokens map[
 	if remaining == 0 {
 		return
 	}
-	_ = v.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	_ = v.WalkDirNonHidden(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -2246,7 +2246,7 @@ func recordSourceNamespace(dir string, p *Project) {
 // deploy-time .forceignore rules; package directories pass it, while
 // glade-only extra metadata dirs and setup stages do not.
 func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
-	return p.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	return p.inputs.WalkDirNonHidden(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

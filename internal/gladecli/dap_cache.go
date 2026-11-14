@@ -19,7 +19,7 @@ import (
 
 // Version 19 entries were proved at the endpoints only; version 20 entries are
 // built from one pinned input view and carry its observations.
-const dapCacheVersion = 20
+const dapCacheVersion = 21
 
 // dapLoadAttempts bounds the cold builds one startup makes while project
 // inputs keep changing.
@@ -200,6 +200,9 @@ func buildDAPStateOnce(ctx context.Context, root string, seams dapLoadSeams, att
 		return dapBuiltState{}, nil, err
 	}
 	built.entry.Inputs = v.Observations()
+	if changed := v.Err(); changed != nil {
+		return dapBuiltState{}, changed, nil
+	}
 	return built, nil, nil
 }
 
@@ -236,7 +239,7 @@ func buildDAPStateFromView(ctx context.Context, root string, v *inputview.View, 
 	return dapBuiltState{org: org, runtime: runtime, apiVersion: p.SourceAPIVersion, index: index, entry: entry}, nil
 }
 
-// dapObservationsHold re-observes the inputs a version 20 entry was built
+// dapObservationsHold re-observes the inputs a version 21 entry was built
 // from. Fresh has already hashed the manifest files, so their file
 // observations are skipped; everything else, including directory listings and
 // optional files found absent, is checked again.
@@ -251,7 +254,7 @@ func dapObservationsHold(root string, entry *startupcache.Entry) bool {
 		}
 	}
 	return inputview.Verify(entry.Inputs, func(o inputview.Observation) bool {
-		return o.Kind == "file" && o.Exists && o.Err == "" && verified[o.Path]
+		return (o.Kind == "file" || o.Kind == "stat") && o.Exists && o.Err == "" && verified[o.Path]
 	}) == nil
 }
 
