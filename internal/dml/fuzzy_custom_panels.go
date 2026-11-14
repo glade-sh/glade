@@ -18,15 +18,19 @@ var customFuzzyScorers = map[string]fuzzyScorer{
 // to z, each with an optional dot, separated by single spaces: "j", "j.",
 // "j r", "j. r.".
 func firstNameInitials(s string) bool {
-	if s == "" || (len(s) > 2 && s[1] != ' ' && s[1] != '.') {
+	if s == "" {
 		return false
 	}
-	for _, word := range strings.Split(s, " ") {
+	for {
+		word, rest, more := strings.Cut(s, " ")
 		if word == "" || len(word) > 2 || word[0] < 'a' || word[0] > 'z' || (len(word) == 2 && word[1] != '.') {
 			return false
 		}
+		if !more {
+			return true
+		}
+		s = rest
 	}
-	return true
 }
 
 // maybeInitials is a cheap necessary condition for firstNameInitials on a raw
@@ -38,15 +42,15 @@ func maybeInitials(s string) bool {
 
 // These directional pairs were captured on custom rules only. Keep them out
 // of the shared dictionary used by standard matching rules.
-var customNameVariants = map[string]bool{
-	"bart\x00bartholomew": true, "bartholomew\x00bart": true,
-	"ezekiel\x00zeke": true, "zeke\x00ezekiel": true,
-	"millicent\x00millie": true, "millie\x00millicent": true,
-	"montgomery\x00monty": true, "monty\x00montgomery": true,
-	"mort\x00mortimer": true, "mortimer\x00mort": true,
-	"prudence\x00prue": true, "prue\x00prudence": true,
-	"reg\x00reggie": true, "reggie\x00reg": true,
-	"thad\x00thaddeus": true, "thaddeus\x00thad": true,
+var customNameVariants = map[[2]string]bool{
+	{"bart", "bartholomew"}: true, {"bartholomew", "bart"}: true,
+	{"ezekiel", "zeke"}: true, {"zeke", "ezekiel"}: true,
+	{"millicent", "millie"}: true, {"millie", "millicent"}: true,
+	{"montgomery", "monty"}: true, {"monty", "montgomery"}: true,
+	{"mort", "mortimer"}: true, {"mortimer", "mort"}: true,
+	{"prudence", "prue"}: true, {"prue", "prudence"}: true,
+	{"reg", "reggie"}: true, {"reggie", "reg"}: true,
+	{"thad", "thaddeus"}: true, {"thaddeus", "thad"}: true,
 }
 
 // customFirstName adds the Initials algorithm. NATIVE: a single initial finds
@@ -61,7 +65,7 @@ func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
 		return fuzzyFirstName(a, b, matchBlanks)
 	}
 	x, y := foldText(a), foldText(b)
-	if customNameVariants[x+"\x00"+y] {
+	if customNameVariants[[2]string{x, y}] {
 		return true, 100
 	}
 	if !maybeInitials(a) && !maybeInitials(b) {
@@ -74,8 +78,8 @@ func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
 	if x == y {
 		return true, 100
 	}
-	single := func(s string) bool { return len([]rune(strings.TrimSuffix(s, "."))) == 1 }
-	if ix && iy && []rune(x)[0] == []rune(y)[0] && (single(x) || single(y)) {
+	single := func(s string) bool { return len(strings.TrimSuffix(s, ".")) == 1 }
+	if ix && iy && x[0] == y[0] && (single(x) || single(y)) {
 		return true, 100
 	}
 	_, confidence := fuzzyFirstNameFolded(x, y)

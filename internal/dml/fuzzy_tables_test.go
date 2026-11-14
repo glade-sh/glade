@@ -53,7 +53,8 @@ func TestFuzzyNameTablesMatchNativeRows(t *testing.T) {
 		proven[pair] = true
 	}
 	for pair := range proven {
-		if !nameVariants[pair] && !customNameVariants[pair] {
+		left, right, _ := strings.Cut(pair, "\x00")
+		if !nameVariants[pair] && !customNameVariants[[2]string{left, right}] {
 			t.Errorf("native Name Variant pair %q is missing from nameVariantTable", strings.ReplaceAll(pair, "\x00", " -> "))
 		}
 	}
@@ -63,8 +64,8 @@ func TestFuzzyNameTablesMatchNativeRows(t *testing.T) {
 		}
 	}
 	for pair := range customNameVariants {
-		if !proven[pair] {
-			t.Errorf("custom Name Variant entry %q has no native row", strings.ReplaceAll(pair, "\x00", " -> "))
+		if !proven[pair[0]+"\x00"+pair[1]] {
+			t.Errorf("custom Name Variant entry %q has no native row", pair)
 		}
 	}
 }
