@@ -4421,7 +4421,7 @@ func (vm *VM) checkMixedDML(operation string, records []storage.Record) error {
 		set, setOK := records[0].GetField("PermissionSetId")
 		if assigneeOK && setOK && storage.IDsEqual(storage.ID(storageValueIDText(assignee)), storage.ID(vm.currentUserID())) {
 			setID := vm.canonicalPermissionSetKey(storageValueIDText(set))
-			if setID != "" {
+			if setID != "" && vm.capturedAdminAssignmentSet(setID) {
 				alreadyAssigned := false
 				for _, source := range vm.assignedPermissionSources(vm.currentUserID(), false) {
 					alreadyAssigned = alreadyAssigned || storage.IDsEqual(storage.ID(source.ID), storage.ID(setID))

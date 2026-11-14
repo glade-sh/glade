@@ -1027,6 +1027,38 @@ func (vm *VM) adminAccountCustomFieldUngranted(objectName, fieldName, method, sc
 	return denied
 }
 
+// capturedAdminAssignmentSet limits the delayed grant to the captured
+// permission-set inventory: one readable and editable Account Text field.
+func (vm *VM) capturedAdminAssignmentSet(setID string) bool {
+	if vm.Org == nil {
+		return false
+	}
+	state, ok := vm.Org.Objects["FieldPermissions"]
+	if !ok {
+		return false
+	}
+	count := 0
+	for _, row := range state.Records {
+		parent, exists := row.GetField("ParentId")
+		if !exists || !storage.IDsEqual(storage.ID(storageValueIDText(parent)), storage.ID(setID)) {
+			continue
+		}
+		count++
+		object, objectOK := row.GetField("SObjectType")
+		field, fieldOK := row.GetField("Field")
+		read, readOK := row.GetField("PermissionsRead")
+		edit, editOK := row.GetField("PermissionsEdit")
+		if count > 1 || !objectOK || object.Kind != storage.ValueString || !strings.EqualFold(object.String, "Account") || !fieldOK || field.Kind != storage.ValueString || !readOK || read.Kind != storage.ValueBoolean || !read.Boolean || !editOK || edit.Kind != storage.ValueBoolean || !edit.Boolean {
+			return false
+		}
+		prefix, name, hasObject := strings.Cut(field.String, ".")
+		if !hasObject || !strings.EqualFold(prefix, "Account") || !vm.capturedTextCustomField("Account", name) {
+			return false
+		}
+	}
+	return count == 1
+}
+
 // anyFieldPermissionGrant reports a FieldPermissions row of any permission set
 // or profile that grants read access to objectName.fieldName.
 func (vm *VM) anyFieldPermissionGrant(objectName, fieldName string) bool {
