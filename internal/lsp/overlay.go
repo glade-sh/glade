@@ -3,6 +3,7 @@ package lsp
 import (
 	"context"
 	"crypto/sha256"
+	"os"
 	"sort"
 	"strings"
 
@@ -80,6 +81,38 @@ func (h *Handler) installBaseLocked(b Base, publish func(*generation)) *generati
 func reflects(g *generation, doc openDocument) bool {
 	digest, ok := g.index.SourceDigest(doc.Path)
 	return ok && digest == doc.Digest
+}
+
+// currentDocument rejects declarations belonging to an unreflected open
+// buffer, including physical aliases. If identity is unavailable while a
+// buffer is unreflected, it withholds the declaration conservatively.
+func (h *requestHandler) currentDocument(path string) bool {
+	h.docMu.RLock()
+	var unreflected []string
+	for _, doc := range h.documents {
+		if !reflects(h.generation, doc) {
+			if canonicalDocumentPath(path) == canonicalDocumentPath(doc.Path) {
+				h.docMu.RUnlock()
+				return false
+			}
+			unreflected = append(unreflected, doc.Path)
+		}
+	}
+	h.docMu.RUnlock()
+	if len(unreflected) == 0 {
+		return true
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	for _, openPath := range unreflected {
+		openInfo, err := os.Stat(openPath)
+		if err != nil || os.SameFile(info, openInfo) {
+			return false
+		}
+	}
+	return true
 }
 
 func isApexSourcePath(path string) bool {

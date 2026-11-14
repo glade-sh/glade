@@ -447,6 +447,9 @@ func BuildPublishDiagnostics(uri DocumentURI, diagnostics []diagnostic.Diagnosti
 
 func (h *requestHandler) DocumentSymbols(uri DocumentURI) []DocumentSymbol {
 	path := pathFromURI(uri)
+	if !h.currentDocument(path) {
+		return nil
+	}
 	var out []DocumentSymbol
 
 	for _, typ := range h.index.Types {
@@ -503,7 +506,7 @@ func (h *requestHandler) WorkspaceSymbols(query string) []SymbolInformation {
 
 	var out []SymbolInformation
 	for _, typ := range h.index.Types {
-		if !matches(typ.Name) {
+		if !matches(typ.Name) || !h.currentDocument(typ.File) {
 			continue
 		}
 		out = append(out, SymbolInformation{
@@ -516,7 +519,7 @@ func (h *requestHandler) WorkspaceSymbols(query string) []SymbolInformation {
 		})
 	}
 	for _, trigger := range h.index.Triggers {
-		if !matches(trigger.Name) {
+		if !matches(trigger.Name) || !h.currentDocument(trigger.File) {
 			continue
 		}
 		out = append(out, SymbolInformation{
@@ -562,6 +565,9 @@ func (h *requestHandler) WorkspaceSymbols(query string) []SymbolInformation {
 
 func (h *requestHandler) Hover(params HoverParams) *Hover {
 	path := pathFromURI(params.TextDocument.URI)
+	if !h.currentDocument(path) {
+		return nil
+	}
 	for _, typ := range h.index.Types {
 		if !sameDocument(path, typ.File) && !sameDocument(string(params.TextDocument.URI), typ.File) {
 			continue
@@ -602,6 +608,9 @@ func (h *requestHandler) HoverForName(name string, hoverRange *Range) *Hover {
 
 	for _, typ := range h.index.Types {
 		if strings.EqualFold(typ.Name, name) {
+			if !h.currentDocument(typ.File) {
+				return nil
+			}
 			return &Hover{
 				Contents: MarkupContent{
 					Kind:  "markdown",
@@ -892,6 +901,9 @@ func schemaTokenCompletionItems() []CompletionItem {
 }
 
 func (h *requestHandler) Definition(params DefinitionParams) []Location {
+	if !h.currentDocument(pathFromURI(params.TextDocument.URI)) {
+		return nil
+	}
 	name := h.wordAt(params.TextDocument.URI, params.Position)
 	if name == "" {
 		return nil
@@ -960,6 +972,9 @@ func (h *requestHandler) Rename(params RenameParams) *WorkspaceEdit {
 func (h *requestHandler) SemanticTokensFull(params SemanticTokensParams) SemanticTokens {
 	var raw []semanticToken
 	path := pathFromURI(params.TextDocument.URI)
+	if !h.currentDocument(path) {
+		return SemanticTokens{}
+	}
 	for _, typ := range h.index.Types {
 		if !sameDocument(path, typ.File) && !sameDocument(string(params.TextDocument.URI), typ.File) {
 			continue
