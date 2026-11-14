@@ -111,4 +111,9 @@ func TestAliasedOverlayVolatilitySurvivesSubsequentDiskUpdate(t *testing.T) {
 	if base.Volatile() || previous.Volatile() {
 		t.Fatal("base generation was mutated")
 	}
+	// Saving the same bytes does not make an existing overlay generation safe.
+	writeFile(t, first, "public class First { void added() {} }")
+	if err := WriteFrontendSnapshot(&bytes.Buffer{}, next, &artifacts); !errors.Is(err, ErrVolatileGeneration) {
+		t.Fatalf("snapshot after disk catches up: %v", err)
+	}
 }
