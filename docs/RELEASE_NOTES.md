@@ -14,6 +14,8 @@
 
 - **Unresolved assignments.** Parallel semantic analysis avoids repeating method-body checks when an unknown assignment target cannot be affected by another type. Diagnostics stay unchanged.
 
+- **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+
 ## v0.3.9
 
 v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteria-based Case sharing and more native-matched Apex, SOQL and SOSL behavior. It lowers memory and startup cost for tests, and `glade doctor` no longer hangs on a busy toolchain.

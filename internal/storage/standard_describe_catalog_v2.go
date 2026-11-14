@@ -367,6 +367,7 @@ func standardDescribeNameAtLeast(name, key string) bool {
 }
 
 func decodeStandardDescribeCatalogV2Member(pack []byte, entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
+	standardCatalogMemberDecodes.Add(1)
 	var describe standardDescribeObject
 	err := withStandardDescribeCatalogV2MemberBytes(pack, entry, standardDescribeCatalogV2Magic, len(standardDescribeCatalogV2Index), func(data []byte) error {
 		var decodeErr error
@@ -570,16 +571,34 @@ func StandardCatalogReleaseEnabled() bool { return standardCatalogReleaseEnabled
 // result. Callers that already hold an entry keep it. It does nothing unless
 // EnableStandardCatalogRelease ran.
 func ReleaseStandardCatalogCaches() {
-	if !standardCatalogReleaseEnabled.Load() {
+	if !releaseDecodedCatalog() {
 		return
+	}
+	dropPlainSpreadTemplates()
+}
+
+// releaseDecodedCatalog frees the decoded entries without touching templates.
+// The periodic release in spreadTemplate uses it: dropping plain templates there
+// would make every rebuilt cell decode again.
+func releaseDecodedCatalog() bool {
+	if !standardCatalogReleaseEnabled.Load() {
+		return false
 	}
 	standardDescribeCatalogV2ProductionCache.release()
 	standardDescribeCatalogV2RawProductionCache.release()
 	releaseStandardSObjectStubMembers()
 	standardCatalogReleases.Add(1)
+	return true
 }
 
 var standardCatalogReleases atomic.Uint64
+
+var standardCatalogMemberDecodes atomic.Uint64
+
+// StandardCatalogMemberDecodeCount reports how many catalog members were
+// decoded in this process. Tests use it to see that a release makes a later
+// lookup decode again.
+func StandardCatalogMemberDecodeCount() uint64 { return standardCatalogMemberDecodes.Load() }
 
 // StandardCatalogReleaseCount reports how many releases ran. Tests use it to
 // bound the releases a sequence of org builds performs.
