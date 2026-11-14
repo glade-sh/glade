@@ -120,8 +120,9 @@ func runStandardCustomFieldPolicyRows(t *testing.T, name, prefix string, count i
 // a field that a deployed (unassigned) permission set grants, static SOQL, an
 // explicit SYSTEM_MODE query and an API 62.0 explicit USER_MODE update all
 // save or read as before, and a Standard User's ungranted Case custom field
-// keeps its SecurityException, and its scoped partial insert keeps the
-// statement exception. Only the captured shapes change.
+// keeps its SecurityException, as do its scoped partial insert, a Standard
+// User's ungranted Account Number field, explicit "upsert as user" and a
+// scoped partial list insert. Only the captured shapes change.
 func TestStandardCustomFieldAdminUncapturedNeighbors(t *testing.T) {
 	project := filepath.Join("testdata/conformance/standard_custom_field_admin/project/force-app/main/default")
 	field := func(name string) string {
@@ -141,6 +142,9 @@ func TestStandardCustomFieldAdminUncapturedNeighbors(t *testing.T) {
 		{"case_field", "67.0", "", `Case c = new Case(Subject='x'); c.put('Probe_C__c','v'); insert c; c.put('Probe_C__c','w'); update c; System.assertEquals('w', (String) Database.query('SELECT Probe_C__c FROM Case WHERE Id = \'' + c.Id + '\'')[0].get('Probe_C__c'));`},
 		{"default_mode_admin", "67.0", "", `Account a = new Account(Name='x', Probe_B__c='v'); insert a; a.Probe_B__c='w'; update a; System.assertEquals(true, Database.insert(new Account(Name='y', Probe_B__c='v'), false).isSuccess()); System.assertEquals('w', (String) Database.query('SELECT Probe_B__c FROM Account WHERE Id = \'' + a.Id + '\'')[0].get('Probe_B__c'));`},
 		{"admin_user_mode_all_or_none_and_list", "67.0", "", `Account a = new Account(Name='x', Probe_B__c='v'); System.assertEquals(true, Database.insert(a, true, AccessLevel.USER_MODE).isSuccess()); List<Database.SaveResult> rs = Database.insert(new List<Account>{new Account(Name='y', Probe_B__c='v')}, false, AccessLevel.USER_MODE); System.assertEquals(true, rs[0].isSuccess());`},
+		{"standard_user_number_field", "67.0", ``, `Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User']; User u = new User(Alias='su3', Email='su@example.invalid', EmailEncodingKey='UTF-8', LastName='T', LanguageLocaleKey='en_US', LocaleSidKey='en_US', ProfileId=p.Id, TimeZoneSidKey='America/Los_Angeles', UserName='su3@example.invalid.glade'); insert u; String got = 'none'; System.runAs(u) { Account a = new Account(Name='x'); a.put('Probe_N__c', 5); try { insert a; } catch (Exception e) { got = e.getTypeName(); } } System.assertEquals('System.SecurityException', got);`},
+		{"standard_user_explicit_upsert", "67.0", ``, `Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User']; User u = new User(Alias='su3', Email='su@example.invalid', EmailEncodingKey='UTF-8', LastName='T', LanguageLocaleKey='en_US', LocaleSidKey='en_US', ProfileId=p.Id, TimeZoneSidKey='America/Los_Angeles', UserName='su3@example.invalid.glade'); insert u; String got = 'none'; System.runAs(u) { Account a = new Account(Name='x', Probe_B__c='v'); try { upsert as user a; } catch (Exception e) { got = e.getTypeName(); } } System.assertEquals('System.SecurityException', got);`},
+		{"scoped_standard_user_list", "67.0", `,"features":["ApexUserModeWithPermset"]`, `Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User']; User u = new User(Alias='su3', Email='su@example.invalid', EmailEncodingKey='UTF-8', LastName='T', LanguageLocaleKey='en_US', LocaleSidKey='en_US', ProfileId=p.Id, TimeZoneSidKey='America/Los_Angeles', UserName='su3@example.invalid.glade'); insert u; String got = 'none'; Id ps = [SELECT Id FROM PermissionSet WHERE Name = 'Probe_Access'].Id; System.runAs(u) { try { Database.insert(new List<Account>{new Account(Name='x', Probe_B__c='v')}, false, AccessLevel.USER_MODE.withPermissionSetId(ps)); got = 'returned'; } catch (Exception e) { got = e.getTypeName(); } } System.assertEquals('System.SecurityException', got);`},
 		{"person_account_org", "67.0", `,"features":["PersonAccounts"]`, `Account a = new Account(Name='x', Probe_B__c='v'); insert a; a.Probe_B__c='w'; update a; System.assertEquals('w', (String) Database.query('SELECT Probe_B__c FROM Account')[0].get('Probe_B__c'));`},
 		{"deployed_grant", "67.0", "", `Account a = new Account(Name='x', Probe_A__c='v'); insert a; System.assertEquals('v', (String) Database.query('SELECT Probe_A__c FROM Account')[0].get('Probe_A__c'));`},
 		{"static_and_system_query", "67.0", "", `Account a = new Account(Name='x'); insert a; System.assertEquals(1, [SELECT Probe_B__c FROM Account].size()); System.assertEquals(1, Database.query('SELECT Probe_B__c FROM Account', AccessLevel.SYSTEM_MODE).size());`},
@@ -156,6 +160,8 @@ func TestStandardCustomFieldAdminUncapturedNeighbors(t *testing.T) {
 			writeFile(t, filepath.Join(base, "objects/Account/fields/Probe_A__c.field-meta.xml"), field("Probe_A__c"))
 			writeFile(t, filepath.Join(base, "objects/Account/fields/Probe_B__c.field-meta.xml"), field("Probe_B__c"))
 			writeFile(t, filepath.Join(base, "objects/Case/fields/Probe_C__c.field-meta.xml"), strings.ReplaceAll(field("Probe_B__c"), "Probe_B", "Probe_C"))
+			writeFile(t, filepath.Join(base, "objects/Account/fields/Probe_N__c.field-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Probe_N__c</fullName><label>Probe_N</label><precision>18</precision><scale>0</scale><type>Number</type><required>false</required></CustomField>`)
 			writeFile(t, filepath.Join(base, "permissionsets/Probe_Access.permissionset-meta.xml"), string(permissionSet))
 			writeFile(t, filepath.Join(base, "classes/NeighborProbe.cls"), "@IsTest private class NeighborProbe { @IsTest static void run() { "+tc.body+" } }")
 			writeFile(t, filepath.Join(base, "classes/NeighborProbe.cls-meta.xml"), fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, tc.api))
