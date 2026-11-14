@@ -90,3 +90,21 @@ func TestFingerprintScopedDigestLookupReadsOnce(t *testing.T) {
 		})
 	}
 }
+
+func TestFingerprintScopedDigestIgnoresIneligibleInput(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "input.js")
+	if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	calls := 0
+	lookup := func(string) ([sha256.Size]byte, bool) { calls++; return [sha256.Size]byte{}, true }
+	fp, err := fingerprintInputWithScopedDigest(nil, root, path, true, [sha256.Size]byte{}, false, nil, func(string) bool { return false }, lookup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := sha256.Sum256([]byte("first"))
+	if calls != 0 || fp.SHA256 != hex.EncodeToString(want[:]) {
+		t.Fatalf("calls=%d digest=%s, want ordinary hash", calls, fp.SHA256)
+	}
+}
