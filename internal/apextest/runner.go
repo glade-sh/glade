@@ -1422,11 +1422,19 @@ func (generation runtimeMetadataGeneration) trustedVisualforceDigest(path string
 	return trustedCurrentFileDigest(path)
 }
 
-func (generation runtimeMetadataGeneration) visualforceDigestLookup() func(string) ([sha256.Size]byte, bool) {
+type runtimeDigestLookup struct {
+	eligible func(string) bool
+	current  func(string) ([sha256.Size]byte, bool)
+}
+
+func (generation runtimeMetadataGeneration) visualforceDigestLookup() *runtimeDigestLookup {
 	if len(generation.visualforceInputs) == 0 {
 		return nil
 	}
-	return generation.trustedVisualforceDigest
+	return &runtimeDigestLookup{
+		eligible: func(path string) bool { return generation.visualforceInputs[path] },
+		current:  generation.trustedVisualforceDigest,
+	}
 }
 
 type runtimeSourceInput struct {

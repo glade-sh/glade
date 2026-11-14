@@ -46,6 +46,31 @@ func ValidateLoadedInput(projectRoot string, p project.Project, digests *typesys
 
 // fingerprintInput fingerprints path through inputs when the manifest is built
 // from a viewed project; otherwise it keeps the existing disk path.
+func fingerprintInputForScope(inputs *inputview.View, projectRoot, path string, includeHash bool, digest [sha256.Size]byte, useDigest bool, readFile func(string) ([]byte, error), eligible func(string) bool, lookups ...func(string) ([sha256.Size]byte, bool)) (File, error) {
+	if eligible != nil && len(lookups) != 0 && lookups[0] != nil {
+		return fingerprintInputWithScopedDigest(inputs, projectRoot, path, includeHash, digest, useDigest, readFile, eligible, lookups[0])
+	}
+	return fingerprintInput(inputs, projectRoot, path, includeHash, digest, useDigest, readFile, lookups...)
+}
+
+func fingerprintInputWithScopedDigest(inputs *inputview.View, projectRoot, path string, includeHash bool, digest [sha256.Size]byte, useDigest bool, readFile func(string) ([]byte, error), eligible func(string) bool, lookup func(string) ([sha256.Size]byte, bool)) (File, error) {
+	if inputs == nil && includeHash && !useDigest && readFile == nil && eligible != nil && lookup != nil && eligible(path) {
+		before, beforeOK := filestamp.Stat(path)
+		info, infoErr := os.Stat(path)
+		cached, hit := lookup(path)
+		after, afterOK := filestamp.Stat(path)
+		if beforeOK && afterOK && before == after && infoErr == nil && info.Size() == before.Size && info.ModTime().UnixNano() == before.Mtime && hit {
+			fp, err := fileFingerprintFromInfo(projectRoot, path, info)
+			if err != nil {
+				return File{}, err
+			}
+			fp.SHA256 = hex.EncodeToString(cached[:])
+			return fp, nil
+		}
+	}
+	return fingerprintInput(inputs, projectRoot, path, includeHash, digest, useDigest, readFile)
+}
+
 func fingerprintInput(inputs *inputview.View, projectRoot, path string, includeHash bool, digest [sha256.Size]byte, useDigest bool, readFile func(string) ([]byte, error), lookups ...func(string) ([sha256.Size]byte, bool)) (File, error) {
 	if inputs == nil {
 		if includeHash && !useDigest && readFile == nil && len(lookups) != 0 && lookups[0] != nil {
@@ -94,6 +119,20 @@ func fingerprintInput(inputs *inputview.View, projectRoot, path string, includeH
 		fp.SHA256 = hex.EncodeToString(pinned.SHA256[:])
 	}
 	return fp, nil
+}
+
+func fingerprintOptionalInputForScope(inputs *inputview.View, projectRoot, path string, includeHash bool, readFile func(string) ([]byte, error), eligible func(string) bool, lookups ...func(string) ([sha256.Size]byte, bool)) (File, bool, error) {
+	if eligible == nil || len(lookups) == 0 || lookups[0] == nil {
+		return fingerprintOptionalInput(inputs, projectRoot, path, includeHash, readFile, lookups...)
+	}
+	fp, err := fingerprintInputWithScopedDigest(inputs, projectRoot, path, includeHash, [sha256.Size]byte{}, false, readFile, eligible, lookups[0])
+	if errors.Is(err, os.ErrNotExist) {
+		return File{}, false, nil
+	}
+	if err != nil {
+		return File{}, false, err
+	}
+	return fp, true, nil
 }
 
 func fingerprintOptionalInput(inputs *inputview.View, projectRoot, path string, includeHash bool, readFile func(string) ([]byte, error), lookups ...func(string) ([sha256.Size]byte, bool)) (File, bool, error) {

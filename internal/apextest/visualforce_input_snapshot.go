@@ -16,7 +16,7 @@ import (
 // repeatedly hashing the same content. Large inputs retain the normal path.
 const recentVisualforceBudget = 32 << 20
 const recentVisualforceFileLimit = 1 << 20
-const recentVisualforceCompareChunk = 32 << 10
+const recentVisualforceCompareChunk = 64 << 10
 
 type recentVisualforceInput struct {
 	content []byte

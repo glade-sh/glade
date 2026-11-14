@@ -180,7 +180,7 @@ func validatedDiskRuntimeInput(index typesys.Index, digests *typesys.SourceDiges
 	return validatedDiskRuntimeInputWithLookup(index, digests, nil)
 }
 
-func validatedDiskRuntimeInputWithLookup(index typesys.Index, digests *typesys.SourceDigestSet, lookup func(string) ([32]byte, bool)) (*startupcache.ValidatedInput, error) {
+func validatedDiskRuntimeInputWithLookup(index typesys.Index, digests *typesys.SourceDigestSet, lookup *runtimeDigestLookup) (*startupcache.ValidatedInput, error) {
 	root := strings.TrimSpace(index.Project.Root)
 	if root == "" {
 		return nil, nil
@@ -188,14 +188,14 @@ func validatedDiskRuntimeInputWithLookup(index typesys.Index, digests *typesys.S
 	if lookup == nil {
 		return startupcache.ValidateInputWithSourceDigests(filepath.Clean(root), digests)
 	}
-	return startupcache.ValidateInputWithSourceDigestsAndDigestLookup(filepath.Clean(root), digests, lookup)
+	return startupcache.ValidateInputWithSourceDigestsAndScopedLookup(filepath.Clean(root), digests, lookup.eligible, lookup.current)
 }
 
-func validatedDiskRuntimeInputForPublication(index typesys.Index, digests *typesys.SourceDigestSet, lookup *startupcache.ValidatedInput, digestLookups ...func(string) ([32]byte, bool)) (*startupcache.ValidatedInput, bool) {
+func validatedDiskRuntimeInputForPublication(index typesys.Index, digests *typesys.SourceDigestSet, lookup *startupcache.ValidatedInput, digestLookups ...*runtimeDigestLookup) (*startupcache.ValidatedInput, bool) {
 	if lookup == nil {
 		return nil, false
 	}
-	var digestLookup func(string) ([32]byte, bool)
+	var digestLookup *runtimeDigestLookup
 	if len(digestLookups) != 0 {
 		digestLookup = digestLookups[0]
 	}
