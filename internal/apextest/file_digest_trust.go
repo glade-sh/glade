@@ -26,8 +26,9 @@ type trustedFileDigest struct {
 }
 
 var (
-	fileDigestTrustMu sync.Mutex
-	fileDigestTrust   = make(map[string]trustedFileDigest)
+	fileDigestTrustMu      sync.Mutex
+	fileDigestTrust        = make(map[string]trustedFileDigest)
+	visualforceDigestRoots = make(map[string]bool)
 
 	// Test seams.
 	fileDigestNow      = time.Now
@@ -37,6 +38,7 @@ var (
 func resetFileDigestTrust() {
 	fileDigestTrustMu.Lock()
 	clear(fileDigestTrust)
+	clear(visualforceDigestRoots)
 	fileDigestTrustMu.Unlock()
 }
 

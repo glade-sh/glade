@@ -104,11 +104,26 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 	if !hasPages {
 		return nil
 	}
+	var diskInputs []string
+	useDiskDigests := p.Inputs() == nil && p.Root != "" && diskCacheEnabled() && firstVisualforceDigestGeneration(p.Root)
+	if useDiskDigests {
+		for _, q := range projects {
+			if q.Inputs() != nil {
+				continue
+			}
+			for group, paths := range visualforceRuntimeInputGroups(q) {
+				for _, path := range paths {
+					diskInputs = append(diskInputs, path)
+					if group < 2 && !strings.HasSuffix(strings.ToLower(path), "-meta.xml") {
+						diskInputs = append(diskInputs, path+"-meta.xml")
+					}
+				}
+			}
+		}
+		_ = loadVisualforceDigestCache(p.Root, diskInputs)
+	}
 	for _, q := range projects {
-		groups := [][]string{q.VisualforcePageFiles, q.VisualforceComponentFiles,
-			q.EmailTemplateFiles, q.FlowFiles, q.LabelFiles, q.TranslationFiles,
-			q.StaticResourceFiles, q.StaticResourceMetas, q.MessageChannelFiles,
-			q.TabFiles, q.ProfileFiles, q.PermissionSetFiles, q.PermissionSetGroupFiles}
+		groups := visualforceRuntimeInputGroups(q)
 		for group, paths := range groups {
 			for _, path := range paths {
 				inputs := []string{path}
@@ -161,7 +176,17 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 			}
 		}
 	}
+	if useDiskDigests {
+		_ = saveVisualforceDigestCache(p.Root, diskInputs)
+	}
 	return nil
+}
+
+func visualforceRuntimeInputGroups(q project.Project) [][]string {
+	return [][]string{q.VisualforcePageFiles, q.VisualforceComponentFiles,
+		q.EmailTemplateFiles, q.FlowFiles, q.LabelFiles, q.TranslationFiles,
+		q.StaticResourceFiles, q.StaticResourceMetas, q.MessageChannelFiles,
+		q.TabFiles, q.ProfileFiles, q.PermissionSetFiles, q.PermissionSetGroupFiles}
 }
 
 // dependencyAdminProfileFiles lists the System Administrator profile files of
