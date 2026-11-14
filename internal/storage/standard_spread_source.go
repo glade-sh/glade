@@ -101,12 +101,21 @@ func spreadTemplate(org *OrgState, canonical string) (ObjectState, bool) {
 		buildSpreadTemplateCell(cell, key, org.OrgID, org.Features, hasRecordType)
 	})
 	cell.done.Store(true)
-	if built && StandardCatalogReleaseEnabled() && spreadTemplatesBuilt.Add(1)%spreadTemplateReleaseEvery == 0 {
-		// A lazily growing org decodes catalog members one by one. Bound what
-		// they leave behind: a later template decodes again, same bytes.
-		ReleaseStandardCatalogCaches()
+	if built {
+		noteSpreadTemplateBuilt()
 	}
 	return cell.state, cell.ok
+}
+
+// noteSpreadTemplateBuilt counts a built template and releases the decoded
+// catalog every spreadTemplateReleaseEvery builds. A lazily growing org decodes
+// catalog members one by one; this bounds what they leave behind. A later
+// template decodes again, same bytes. Plain templates stay: dropping them here
+// would make each rebuilt cell decode again.
+func noteSpreadTemplateBuilt() {
+	if StandardCatalogReleaseEnabled() && spreadTemplatesBuilt.Add(1)%spreadTemplateReleaseEvery == 0 {
+		releaseDecodedCatalog()
+	}
 }
 
 // spreadTemplateReleaseEvery is how many built templates pass between catalog
@@ -190,10 +199,15 @@ func rebuiltPlainTemplate(key spreadTemplateKey, org OrgState, hasRecordType boo
 	}
 	cellAny, _ := spreadTemplates.LoadOrStore(key, &spreadTemplateCell{})
 	cell := cellAny.(*spreadTemplateCell)
+	built := false
 	cell.once.Do(func() {
+		built = true
 		buildSpreadTemplateCell(cell, key, org.OrgID, org.Features, hasRecordType)
 	})
 	cell.done.Store(true)
+	if built {
+		noteSpreadTemplateBuilt()
+	}
 	return cell, true
 }
 

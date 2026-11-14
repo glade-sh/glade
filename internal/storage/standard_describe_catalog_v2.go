@@ -493,14 +493,24 @@ func StandardCatalogReleaseEnabled() bool { return standardCatalogReleaseEnabled
 // result. Callers that already hold an entry keep it. It does nothing unless
 // EnableStandardCatalogRelease ran.
 func ReleaseStandardCatalogCaches() {
-	if !standardCatalogReleaseEnabled.Load() {
+	if !releaseDecodedCatalog() {
 		return
+	}
+	dropPlainSpreadTemplates()
+}
+
+// releaseDecodedCatalog frees the decoded entries without touching templates.
+// The periodic release in spreadTemplate uses it: dropping plain templates there
+// would make every rebuilt cell decode again.
+func releaseDecodedCatalog() bool {
+	if !standardCatalogReleaseEnabled.Load() {
+		return false
 	}
 	standardDescribeCatalogV2ProductionCache.release()
 	standardDescribeCatalogV2RawProductionCache.release()
 	releaseStandardSObjectStubMembers()
 	standardCatalogReleases.Add(1)
-	dropPlainSpreadTemplates()
+	return true
 }
 
 var standardCatalogReleases atomic.Uint64

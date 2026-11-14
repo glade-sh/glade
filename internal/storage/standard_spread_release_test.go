@@ -222,3 +222,43 @@ func owedNames(org *OrgState, n int) []string {
 	}
 	return out
 }
+
+// Untouched checks on a populated plain org after a plain drop rebuild cells.
+// The rebuilds count toward the release cadence, so the decoded catalog stays
+// bounded, and a second pass over the same names decodes nothing.
+func TestSpreadObjectUntouchedAfterPlainDropDoesNotDecodeStorm(t *testing.T) {
+	resetSpreadMemos(t)
+	plain := NewOrgState()
+	plain.OrgID = DefaultOrgID
+	plain.EnableStandardSpreadSource()
+	names := owedNames(&plain, 1300)
+	if len(names) < 1300 {
+		t.Fatalf("only %d owed objects", len(names))
+	}
+	for _, name := range names {
+		installSpreadObject(&plain, name)
+	}
+	shaped := sourceSpreadLazyOrg([]string{"Communities"})
+	installSpreadObject(&shaped, owedNames(&shaped, 1)[0])
+	ReleaseStandardCatalogCaches()
+	if p, s := spreadTemplatePhases(); p != 0 || s == 0 {
+		t.Fatalf("after release: %d plain and %d shaped cells", p, s)
+	}
+	for _, name := range names {
+		if !plain.SpreadObjectUntouched(name) {
+			t.Fatalf("%s not untouched after drop", name)
+		}
+		if n := StandardCatalogDecodedObjectCount(); n > spreadTemplateReleaseEvery {
+			t.Fatalf("decoded %d objects, want at most %d", n, spreadTemplateReleaseEvery)
+		}
+	}
+	before := StandardCatalogMemberDecodeCount()
+	for _, name := range names {
+		if !plain.SpreadObjectUntouched(name) {
+			t.Fatalf("%s not untouched on second pass", name)
+		}
+	}
+	if got := StandardCatalogMemberDecodeCount() - before; got != 0 {
+		t.Fatalf("second pass decoded %d members, want 0", got)
+	}
+}
