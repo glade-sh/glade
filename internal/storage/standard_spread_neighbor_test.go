@@ -115,3 +115,42 @@ func TestPlainDeveloperUnmarkedShapeTransitionMatchesBaseline(t *testing.T) {
 		t.Fatalf("object digest %s, want origin/main %s", got, baseline)
 	}
 }
+
+func TestUncapturedPlainDeveloperShapesMatchBaseline(t *testing.T) {
+	initial := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape}
+	tests := []struct {
+		name, digest string
+		build        func() OrgState
+	}{
+		{"direct", "84f28c5d923267cf47e63683d4098f1666152c540764c10cb31ba3a764f78a72", func() OrgState {
+			return sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+		}},
+		{"project-transition", "1f46db4d3c4e4280d3e84d2562c16f0fc88c9672145e70fa251f7bb310309b97", func() OrgState {
+			org := sourceSpreadEagerOrg(initial)
+			ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+			return org
+		}},
+		{"additive-transition", "1f46db4d3c4e4280d3e84d2562c16f0fc88c9672145e70fa251f7bb310309b97", func() OrgState {
+			org := sourceSpreadEagerOrg(initial)
+			ApplyOrgShape(&org, []string{"EnableSetPasswordInApi"})
+			return org
+		}},
+		{"unmarked-transition", "f9c31d42954390cfd23d95927c346b705c25f7a2cd2c7c9f9e36e7deaa0712f1", func() OrgState {
+			org := sourceSpreadEagerOrg(initial)
+			ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+			return org
+		}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			org := tc.build()
+			data, err := json.Marshal(org)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != tc.digest {
+				t.Fatalf("org digest %s, want origin/main %s", got, tc.digest)
+			}
+		})
+	}
+}
