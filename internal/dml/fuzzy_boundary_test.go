@@ -90,3 +90,27 @@ func TestEditDistanceKeepsBaseline(t *testing.T) {
 		}
 	}
 }
+
+// The panel records 96 for the reordered six-word titles in both directions.
+func TestReorderedSixWordTitleNativeConfidence(t *testing.T) {
+	for _, p := range [][2]string{
+		{"Deputy Global Principal Retail Brand Strategist", "Strategist Global Principal Retail Brand"},
+		{"Strategist Global Principal Retail Brand", "Deputy Global Principal Retail Brand Strategist"},
+	} {
+		m, score := FuzzyScore("Title", p[0], p[1], false)
+		if !m || score != 96 {
+			t.Errorf("title: got %v %.0f; native 96", m, score)
+		}
+	}
+}
+
+// Contradictory plural confidence rows remain on the shared base scorer.
+func TestCustomCompanyKeepsUncertainPluralBaseline(t *testing.T) {
+	for _, p := range [][2]string{{"Quandrys", "Quandry"}, {"Brisennas", "Brisenna"}, {"Ravensbys", "Ravensby"}} {
+		got, score := FuzzyScore("CompanyName", p[0], p[1], false)
+		want, baseline := fuzzyCompany(p[0], p[1], false)
+		if got != want || score != baseline {
+			t.Errorf("%q/%q: got %v %.0f, baseline %v %.0f", p[0], p[1], got, score, want, baseline)
+		}
+	}
+}
