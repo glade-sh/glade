@@ -166,3 +166,19 @@ func TestChildRelationshipLookupMatchesMaterializedSpread(t *testing.T) {
 		})
 	}
 }
+
+// These answers are also produced by origin/main for an installed child and
+// an unrelated field name. They guard a neighboring, uncaptured shape.
+func TestChildRelationshipLookupInstalledNeighbor(t *testing.T) {
+	org := lazyStandardApexTestOrg()
+	storage.EnsureLazyStandardObject(&org, "Contact")
+	lookup := projectReferencedChildRelationshipLookup(org)
+	for _, tc := range []struct {
+		name string
+		want bool
+	}{{"Contacts", true}, {"UnrelatedNeighbor", false}} {
+		if got := projectReferencedNameIsChildRelationship(org, "Account", tc.name, lookup); got != tc.want {
+			t.Errorf("Account.%s: got %t, want %t", tc.name, got, tc.want)
+		}
+	}
+}
