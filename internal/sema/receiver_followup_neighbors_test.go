@@ -96,6 +96,8 @@ func TestReceiverControlCallNeighbors(t *testing.T) {
 		{"if_argument", "if (String.\nvalueOf(1) == '1') {}", `null`},
 		{"while_argument_type", "while (String.\nvalueOf('1') == '1') { break; }", `null`},
 		{"while_return_type", "while (Date.\ntoday() == null) { break; }", `null`},
+		{"for_condition_argument_type", "for (; String.\nvalueOf('1') == '1'; ) { break; }", `null`},
+		{"for_update_argument_type", "for (Integer i = 0; i < 1; i = Integer.\nvalueOf(1)) {}", `null`},
 	} {
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(tc.name+"/"+api, func(t *testing.T) {
