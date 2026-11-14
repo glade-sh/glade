@@ -138,6 +138,9 @@ func (vm *VM) lazySpreadCompletesMissingObject(err error) bool {
 	if !strings.Contains(queryErr.Message, "is not supported") && !strings.Contains(err.Error(), "unknown object") {
 		return false
 	}
+	if name, ok := missingObjectName(queryErr.Message); ok && vm.lazyMissingObjectIsFinal(name) {
+		return false
+	}
 	return vm.materializeLazyStandardSpread()
 }
 
