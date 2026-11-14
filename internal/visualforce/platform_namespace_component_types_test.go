@@ -84,7 +84,7 @@ func gatedComponentTypesDigest(t *testing.T) string {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
 	for i, typ := range types {
 		writeFile(t, filepath.Join(root, "force-app/main/default/components", fmt.Sprintf("Card%04d.component", i)),
-			`<apex:component><apex:attribute name="value" type="`+typ+`"/><apex:outputText value="x"/></apex:component>`)
+			`<apex:component><apex:attribute name="value" description="d" type="`+typ+`"/><apex:outputText value="x"/></apex:component>`)
 	}
 	p, err := project.Load(root)
 	if err != nil {
