@@ -1,6 +1,7 @@
 package lsp
 
 import (
+	"crypto/sha256"
 	"os"
 	"sort"
 	"strings"
@@ -10,6 +11,7 @@ import (
 type occurrenceFile struct {
 	size     int64
 	modified time.Time
+	digest   [sha256.Size]byte
 	valid    bool
 }
 type occurrenceIndex struct {
@@ -41,7 +43,7 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 				idx.files[path] = occurrenceFile{}
 				return
 			}
-			idx.files[path] = occurrenceFile{size: info.Size(), modified: info.ModTime(), valid: true}
+			idx.files[path] = occurrenceFile{size: info.Size(), modified: info.ModTime(), digest: sha256.Sum256(data), valid: true}
 			words := map[string]bool{}
 			for i := 0; i < len(data); {
 				if !isIdentifierByte(data[i]) {
@@ -75,6 +77,13 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 		info, err := os.Stat(p)
 		if err != nil || !old.valid || info.Size() != old.size || !info.ModTime().Equal(old.modified) {
 			candidates[p] = true
+		} else if !candidates[p] {
+			// Metadata can be preserved across an edit; only exclude a file
+			// when its contents still match the indexed contents.
+			data, err := os.ReadFile(p)
+			if err != nil || sha256.Sum256(data) != old.digest {
+				candidates[p] = true
+			}
 		}
 	}
 	h.docMu.RLock()

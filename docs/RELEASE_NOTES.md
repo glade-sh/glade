@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Language server refresh.** Diagnostics retry after project refreshes, deleted source files leave the index, and hover starts type analysis when needed. Client responses no longer receive a second response.
+- **Language server refresh.** Diagnostics retry after project refreshes, deleted source files leave the index, and hover starts type analysis when needed. Reference searches detect external edits even when file metadata is unchanged. Client responses no longer receive a second response.
 
 - **Standard object startup memory.** Test runs retain a smaller projection of standard-object describe data while preparing stub fields.
 
