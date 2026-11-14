@@ -18,6 +18,11 @@ type receiverReplacement struct {
 	field      bool
 }
 
+type receiverScopeKey struct {
+	typ, name  string
+	start, end int
+}
+
 // receiverNamedDiagnostics scans each source unit once, after the ordinary
 // semantic model is available. The resulting slices are local to this analysis.
 func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaTypeMemberView) []receiverReplacement {
@@ -37,6 +42,13 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 		seen[key] = true
 		items := scanReceiverTrivia(source)
 		first := len(out)
+		var (
+			scoped    bool
+			scopeKey  receiverScopeKey
+			scopes    semaScopeModel
+			bodyModel *semaTypeMemberView
+			offset    int
+		)
 		for _, item := range items {
 			if item.kind == receiverInvalidControl {
 				continue
@@ -118,25 +130,31 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 				candidate.kind = receiverBoundBreak
 				d = receiverBoundDiagnostic(source, file, route, candidate)
 			} else {
-				bodyModel := model
-				if trigger != nil {
-					bodyModel = semaModelWithTriggerScope(model, *trigger)
-				} else {
-					if duplicateTypes == nil {
-						duplicateTypes = semaDuplicateTypeKeys(index)
+				// Scopes depend only on the enclosing member; a body with many
+				// detached dots collects them once.
+				key := receiverScopeKey{typ: semaTypeSymbolKey(typ), name: member.Name, start: member.Range.Start.Offset, end: member.Range.End.Offset}
+				if !scoped || key != scopeKey {
+					bodyModel = model
+					if trigger != nil {
+						bodyModel = semaModelWithTriggerScope(model, *trigger)
+					} else {
+						if duplicateTypes == nil {
+							duplicateTypes = semaDuplicateTypeKeys(index)
+						}
+						if duplicateTypes[semaTypeSymbolKey(typ)] > 1 || semaSourceUnitHasDuplicate(model, typ) {
+							bodyModel = semaModelWithCurrentType(model, typ)
+						}
 					}
-					if duplicateTypes[semaTypeSymbolKey(typ)] > 1 || semaSourceUnitHasDuplicate(model, typ) {
-						bodyModel = semaModelWithCurrentType(model, typ)
+					base := semaBodyBaseScope(typ, member, bodyModel)
+					scopes = semaScopeModel{base: base, canonical: a.canonicalNames}
+					offset = 0
+					if member.BodyRange != nil {
+						if body, bodyOffset, ok := semaBodyFromRange(source, member.BodyRange); ok {
+							offset = bodyOffset
+							scopes, _ = a.collectBodyScopes(typ, member, body, bodyOffset, source, base, bodyModel)
+						}
 					}
-				}
-				base := semaBodyBaseScope(typ, member, bodyModel)
-				scopes := semaScopeModel{base: base, canonical: a.canonicalNames}
-				offset := 0
-				if member.BodyRange != nil {
-					if body, bodyOffset, ok := semaBodyFromRange(source, member.BodyRange); ok {
-						offset = bodyOffset
-						scopes, _ = a.collectBodyScopes(typ, member, body, bodyOffset, source, base, bodyModel)
-					}
+					scoped, scopeKey = true, key
 				}
 				d = receiverFreeDiagnosticAt(source, namespace, item, scopes, bodyModel, offset)
 				if d != nil {

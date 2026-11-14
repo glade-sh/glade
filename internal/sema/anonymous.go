@@ -63,6 +63,9 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 		}
 		scopes, _ := analyzer.collectBodyScopes(typ, member, source, 0, source, map[string]string{}, model)
 		for _, candidate := range receiverTrivia {
+			if receiverLocalMethodParameter(program, candidate) {
+				continue
+			}
 			if d := receiverFreeDiagnostic(source, index.Project.Namespace, candidate, scopes, model); d != nil {
 				return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{*d}, ReceiverTriviaDiagnostic: true}
 			}

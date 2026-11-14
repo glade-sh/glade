@@ -45,9 +45,13 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 			if strings.EqualFold(ts[i].text, "instanceof") && i+1 == receiverNameRoot(ts, dot) && dot+2 < len(ts) && ts[dot+2].text == ";" {
 				return report(member, "Extra ';', at '"+member.text+"'.")
 			}
-			if ts[i].text == "?" && (i+1 >= len(ts) || ts[i+1].text != "." || ts[i].end != ts[i+1].start) {
-				return report(member, "Missing ':' at '"+member.text+"'")
-			}
+		}
+		switch receiverTernaryArm(ts, stack, statement, dot) {
+		case 1:
+			return report(member, "Missing ':' at '"+member.text+"'")
+		case 2:
+			// Rejected natively; the false-arm message is uncaptured.
+			return nil
 		}
 	}
 	if !topLevel {
@@ -133,6 +137,70 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 		return report(member, "Expecting '{' but was: '"+member.text+"'")
 	}
 	return report(member, "Missing ';' at '"+member.text+"'")
+}
+
+// receiverTernaryArm reports whether the break sits directly in a conditional
+// expression of its innermost enclosing construct: 1 in the true arm, before
+// the colon; 2 in the false arm; 0 otherwise. A conditional that closed inside
+// nested brackets or before a separator does not enclose the break.
+func receiverTernaryArm(ts []receiverTriviaToken, stack []receiverEnclosure, statement, dot int) int {
+	from := statement
+	if n := len(stack); n > 0 && stack[n-1].kind != "block" && stack[n-1].start+1 > from {
+		from = stack[n-1].start + 1
+	}
+	open, closed, nested := 0, false, 0
+	for i := from; i < dot; i++ {
+		switch ts[i].text {
+		case "(", "[", "{":
+			nested++
+		case ")", "]", "}":
+			nested--
+		}
+		if nested != 0 {
+			continue
+		}
+		switch ts[i].text {
+		case "?":
+			if i+1 >= len(ts) || ts[i+1].text != "." || ts[i].end != ts[i+1].start {
+				open++
+			}
+		case ":":
+			if open > 0 {
+				open--
+				closed = true
+			}
+		case ",", ";":
+			open, closed = 0, false
+		}
+	}
+	if open > 0 {
+		return 1
+	}
+	if closed {
+		return 2
+	}
+	return 0
+}
+
+// receiverLocalMethodParameter reports whether the name left of a free dot is
+// a parameter of the anonymous local method that contains it. A parameter is
+// a value there, including one that shares a type's name.
+func receiverLocalMethodParameter(program ir.Program, item receiverTrivia) bool {
+	if item.kind != receiverFreeName {
+		return false
+	}
+	head := item.tokens[receiverNameRoot(item.tokens, item.dot)]
+	for _, local := range program.LocalMethods {
+		if head.start <= local.BodyStart || head.start >= local.BodyEnd {
+			continue
+		}
+		for _, param := range local.Params {
+			if strings.EqualFold(param.Name, head.text) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // receiverNameRoot finds the first segment of the actual name operand.

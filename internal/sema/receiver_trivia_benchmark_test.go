@@ -44,3 +44,23 @@ func BenchmarkReceiverTriviaAnalysis(b *testing.B) {
 		})
 	}
 }
+
+// BenchmarkReceiverTriviaNamedFree measures a class method dominated by
+// detached builder calls. Body scopes are collected once per member.
+func BenchmarkReceiverTriviaNamedFree(b *testing.B) {
+	root := b.TempDir()
+	path := filepath.Join(root, "FluentProbe.cls")
+	source := "public class FluentProbe { public FluentProbe step() { return this; } public void run() { FluentProbe p = new FluentProbe();\n" + strings.Repeat("p\n.step().step().step().step().step();\n", 200) + "} }"
+	if err := os.WriteFile(path, []byte(source), 0600); err != nil {
+		b.Fatal(err)
+	}
+	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "67.0", ApexFiles: []string{path}}, schema.Schema{})
+	if result := Analyze(index); result.HasErrors() {
+		b.Fatal(result.Diagnostics)
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Analyze(index)
+	}
+}
