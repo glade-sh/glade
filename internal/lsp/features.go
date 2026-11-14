@@ -79,17 +79,17 @@ func (h *requestHandler) definitionForName(name string) (Location, bool) {
 		return Location{}, false
 	}
 	for _, typ := range h.index.Types {
-		if strings.EqualFold(typ.Name, name) && h.currentDocument(typ.File) {
+		if strings.EqualFold(typ.Name, name) {
 			return Location{URI: uriFromPath(typ.File), Range: toLSPRange(typ.Range)}, true
 		}
 		for _, member := range typ.Members {
-			if (strings.EqualFold(member.Name, name) || strings.EqualFold(typ.Name+"."+member.Name, name)) && h.currentDocument(typ.File) {
+			if strings.EqualFold(member.Name, name) || strings.EqualFold(typ.Name+"."+member.Name, name) {
 				return Location{URI: uriFromPath(typ.File), Range: toLSPRange(member.Range)}, true
 			}
 		}
 	}
 	for _, trigger := range h.index.Triggers {
-		if strings.EqualFold(trigger.Name, name) && h.currentDocument(trigger.File) {
+		if strings.EqualFold(trigger.Name, name) {
 			return Location{URI: uriFromPath(trigger.File), Range: toLSPRange(trigger.Range)}, true
 		}
 	}

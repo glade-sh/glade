@@ -307,11 +307,12 @@ func TestServeIgnoresClientResponses(t *testing.T) {
 }
 
 func TestDiagnosticsRetriesAfterGenerationChange(t *testing.T) {
-	idx := sampleIndex(t)
-	h := NewHandler(idx)
+	// Semantic analysis runs only for a document the index reflects.
+	h, uris := overlayTestHandler(t, map[string]string{"Draft": "public class Draft {}"})
+	idx := h.gen.Load().index
 	started, release := make(chan struct{}), make(chan struct{})
 	h.gen.Load().analyzer = func(typesys.Index) sema.Result { close(started); <-release; return sema.Result{} }
-	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
+	uri := uris["Draft"]
 	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {}"}})
 	var out bytes.Buffer
 	ctx, cancel := context.WithCancel(context.Background())

@@ -96,7 +96,7 @@
     "./internal/dap": 9,
     "./internal/frontendcache": 1,
     "./internal/filestamp": 1,
-    "./internal/gladecli": 105,
+    "./internal/gladecli": 106,
     "./internal/gladehome": 8,
     "./internal/lwcbrowser": 2,
     "./internal/playground": 4,

@@ -5,7 +5,7 @@
 ### Changes
 
 - **Language server refresh.** Diagnostics retry after project refreshes, deleted source files leave the index, and hover starts type analysis when needed. Closed files with syntax errors publish parse diagnostics while other files keep the last good semantic view. Client responses no longer receive a second response.
-- **Unsaved edits.** Language server diagnostics follow unsaved edits. External file changes are picked up when the client supports watched-file registration; otherwise the server refreshes on save. Reference searches detect replacements even when file size and modification time are preserved. When an edit cannot be analyzed, stale semantic diagnostics, symbols, hover, definitions and semantic tokens are withheld.
+- **Unsaved edits.** Language server diagnostics follow unsaved edits. External file changes are picked up when the client supports watched-file registration; otherwise the server refreshes on save. Reference searches detect replacements even when file size and modification time are preserved. When an edit cannot be analyzed, stale semantic diagnostics are not republished.
 
 - **Standard duplicate rules.** Standard duplicate rules are opt-in.
 - **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
