@@ -154,3 +154,33 @@ func TestUncapturedPlainDeveloperShapesMatchBaseline(t *testing.T) {
 		})
 	}
 }
+
+func TestUncapturedSourceSpreadTransitionsMatchBaseline(t *testing.T) {
+	initial := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape}
+	tests := []struct {
+		name, digest string
+		apply        func(*OrgState)
+	}{
+		{"project", "8fc5c9514b5c8997688ff2ab910327f11d8907db45fae8dca9d1bc22d6d53168", func(org *OrgState) {
+			ApplyProjectOrgShape(org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+		}},
+		{"additive", "8fc5c9514b5c8997688ff2ab910327f11d8907db45fae8dca9d1bc22d6d53168", func(org *OrgState) { ApplyOrgShape(org, []string{"EnableSetPasswordInApi"}) }},
+		{"unmarked", "3093f2ad5613b7823a1d626791bc8770804cc834c07f207444b33117f4d04943", func(org *OrgState) {
+			ApplyProjectOrgShape(org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+		}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			org := sourceSpreadLazyOrg(initial)
+			MaterializeStandardObjectSpread(&org)
+			tc.apply(&org)
+			data, err := json.Marshal(org)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != tc.digest {
+				t.Fatalf("org digest %s, want origin/main %s", got, tc.digest)
+			}
+		})
+	}
+}
