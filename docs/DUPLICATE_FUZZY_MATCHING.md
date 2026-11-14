@@ -191,7 +191,10 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    are compared whatever separates the words (`Harlow` finds `Harlow III`,
    `Al-Rashid` finds `Alrashid`, `van der Berg` finds `van den Berg` at 99).
    `Smith Jones`, `De La Cruz` and `Mc Donald` do not find `Smith-Jones`,
-   `Delacruz` and `McDonald` because their last words key apart. This replaced a hand-written stand-in that rejected anything it
+   `Delacruz` and `McDonald` because their last words key apart. The standard
+   rules keep the whole-name key and require equal spaces and hyphens
+   (`standardLastName`; their rows, such as `42` finding `43`, are fitted to
+   that form). This replaced a hand-written stand-in that rejected anything it
    could not prove and missed dropped vowels, silent letters and name codes.
 3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
    are compared position by position; the cost of two different keys is 0.05

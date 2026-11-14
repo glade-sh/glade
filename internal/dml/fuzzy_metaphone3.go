@@ -8,7 +8,8 @@ import "github.com/dlclark/metaphone3"
 // "Carder" at 100, "Reid" does not find "Right"), leaves non-initial vowels
 // out of the code and keeps the library default length of eight characters;
 // every option combination was measured against the native surname rows and
-// this one matches the most of them with no false match. An Encoder holds
+// this one matches the most of them with no false match. The standard rules
+// also require equal separators (standardLastName). An Encoder holds
 // state and is not safe for concurrent use, so each call takes its own.
 func lastNameMetaphone3(s string) string {
 	return metaphone3CodeCache.get(s, func(s string) string {

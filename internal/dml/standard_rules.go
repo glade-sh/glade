@@ -60,11 +60,35 @@ func standardMethod(method string) func(a, b string) (bool, float64) {
 	}
 }
 
+// standardLastName is the Last Name method as the standard rules apply it:
+// the key is the whole name (standardLastNameGate), and two Metaphone 3 codes
+// that agree score 100 only when the names' spaces and hyphens agree, so
+// "Smith Jones" does not find "Smith-Jones". The custom Last Name method keys
+// the last word instead (fuzzyLastName); the standard rows ("43" finds "42",
+// the Shapes.*.Last rows) are fitted to this whole-name form.
 func standardLastName(a, b string) (bool, float64) {
 	if !standardLastNameGate(a, b) {
 		return false, 0
 	}
-	return fuzzyLastName(a, b, false)
+	x, y := foldText(a), foldText(b)
+	if x == y {
+		return true, 100
+	}
+	x, y = strings.ReplaceAll(x, "'", ""), strings.ReplaceAll(y, "'", "")
+	if x == y || standardSurnameSeparators(x) == standardSurnameSeparators(y) && lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+		return true, 100
+	}
+	return lastNameKeyboard(x, y)
+}
+
+func standardSurnameSeparators(s string) string {
+	var out strings.Builder
+	for _, r := range s {
+		if r == ' ' || r == '-' {
+			out.WriteRune(r)
+		}
+	}
+	return out.String()
 }
 
 // standardExact compares two values without letter case or edge spaces.
