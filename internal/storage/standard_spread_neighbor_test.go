@@ -67,7 +67,16 @@ func TestSpreadObjectUntouchedPendingNeighbor(t *testing.T) {
 	plain := NewOrgState()
 	plain.OrgID = DefaultOrgID
 	plain.EnableStandardSpreadSource()
-	name := owedNames(&plain, 1)[0]
+	name := ""
+	for _, candidate := range KnownStandardObjectNames() {
+		if _, owed := spreadObjectOwed(&plain, candidate); owed {
+			name = candidate
+			break
+		}
+	}
+	if name == "" {
+		t.Fatal("no owed object")
+	}
 	if _, ok := installSpreadObject(&plain, name); !ok {
 		t.Fatal("plain install failed")
 	}
