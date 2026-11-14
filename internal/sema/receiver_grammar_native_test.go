@@ -25,7 +25,7 @@ func TestReceiverGrammarNative(t *testing.T) {
 }
 
 func testReceiverGrammarNative(t *testing.T) {
-	const fixture = "testdata/receiver_split/grammar"
+	const fixture = "testdata/receiver_split"
 	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -37,7 +37,11 @@ func testReceiverGrammarNative(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cases := readReceiverGrammarCases(t)
 	for _, row := range rows[1:] {
+		if _, ok := cases[row[0]]; !ok {
+			continue
+		}
 		t.Run(row[0]+"/"+row[1], func(t *testing.T) {
 			ext := ".apex"
 			if row[2] == "class" {
@@ -46,7 +50,7 @@ func testReceiverGrammarNative(t *testing.T) {
 			if row[2] == "trigger" {
 				ext = ".trigger"
 			}
-			src, err := os.ReadFile(filepath.Join(fixture, row[0]+ext))
+			src, err := os.ReadFile(filepath.Join(fixture, cases[row[0]]))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -135,9 +139,9 @@ func testReceiverGrammarNative(t *testing.T) {
 }
 
 // API 64 lies between both captures. L2, F2 and M1 cover a free dot,
-// top-level bound dot and block argument respectively (grammar/org.tsv).
+// top-level bound dot and block argument respectively (org.tsv).
 func TestReceiverGrammarIntermediateAPI(t *testing.T) {
-	const fixture = "testdata/receiver_split/grammar"
+	const fixture = "testdata/receiver_split"
 	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -157,6 +161,7 @@ func TestReceiverGrammarIntermediateAPI(t *testing.T) {
 	path := filepath.Join(root, "CrProbe.cls")
 	writeSemaFile(t, path, string(support))
 	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "64.0", ApexFiles: []string{path}}, schema.Schema{})
+	cases := readReceiverGrammarCases(t)
 	for _, id := range []string{"L2", "F2", "M1"} {
 		var want string
 		for _, row := range rows[1:] {
@@ -168,7 +173,7 @@ func TestReceiverGrammarIntermediateAPI(t *testing.T) {
 		if want == "" {
 			t.Fatalf("missing native case %s", id)
 		}
-		src, err := os.ReadFile(filepath.Join(fixture, id+".apex"))
+		src, err := os.ReadFile(filepath.Join(fixture, cases[id]))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -187,4 +192,26 @@ func TestReceiverGrammarIntermediateAPI(t *testing.T) {
 			t.Errorf("%s: got %s, want %s", id, got, want)
 		}
 	}
+}
+
+func readReceiverGrammarCases(t *testing.T) map[string]string {
+	t.Helper()
+	f, err := os.Open(filepath.Join("testdata/receiver_split", "cases.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	r := csv.NewReader(f)
+	r.Comma = '\t'
+	rows, err := r.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := map[string]string{}
+	for _, row := range rows[1:] {
+		if strings.HasPrefix(row[2], "grammar/") {
+			cases[row[0]] = row[2]
+		}
+	}
+	return cases
 }

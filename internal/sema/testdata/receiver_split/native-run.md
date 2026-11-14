@@ -9,3 +9,5 @@ Additional token-boundary and class-body capture: fresh 30-day campaign scratch 
 Additional binary-operand capture: fresh 30-day campaign scratch org, deleted and deletion verified. APIs 62.0 and 67.0; started 2026-11-13T22:44:41Z, finished 2026-11-13T22:46:30Z. The CLI compile diagnostic was extracted from its top-level compilation message.
 
 Additional standalone string-expression capture: fresh 30-day campaign scratch org, deleted and deletion verified. APIs 62.0 and 67.0; started 2026-11-13T22:51:43Z, finished 2026-11-13T22:53:21Z. The CLI compile diagnostic was extracted from its top-level compilation message.
+
+Grammar and follow-up captures: see RUN-FACTS-grammar.txt, RUN-FACTS-contexts.txt and RUN-FACTS-additional.txt. All follow-up scratch orgs were deleted and deletion was verified.

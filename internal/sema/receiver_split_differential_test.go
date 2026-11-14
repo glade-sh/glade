@@ -11,7 +11,7 @@ import (
 )
 
 // Captured bound-dot and free-dot contexts replace the earlier baseline:
-// org.tsv:18-27, 38-41, 52-61, 88-109 and grammar/org.tsv:2-47.
+// org.tsv:18-27, 38-41, 52-61, 88-109 and org.tsv:144-189.
 func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		root := t.TempDir()
@@ -71,7 +71,7 @@ func TestReceiverSplitUncapturedDifferential(t *testing.T) {
 	}
 }
 
-// CB covers free-dot expressions in class bodies (grammar/org.tsv:50-51).
+// CB covers free-dot expressions in class bodies (org.tsv:192-193).
 func TestReceiverSplitUncapturedTestRoute(t *testing.T) {
 	for _, declaration := range []string{
 		"@IsTest private class TestProbe { @IsTest static void run() { ReceiverProbe\n.value(); } }",
@@ -90,7 +90,7 @@ func TestReceiverSplitUncapturedTestRoute(t *testing.T) {
 }
 
 // N1 and D2 capture a bound dot at chain depth and in a class body
-// (grammar/org.tsv:24-25, 54-55).
+// (org.tsv:166-167, 54-55).
 func TestReceiverSplitUncapturedNamedFluent(t *testing.T) {
 	root := t.TempDir()
 	probe := filepath.Join(root, "ReceiverProbe.cls")
@@ -120,7 +120,7 @@ func TestReceiverSplitUncapturedAPI68(t *testing.T) {
 	}
 }
 
-// M6 and CB capture completed-block and return contexts (grammar/org.tsv:20-21,
+// M6 and CB capture completed-block and return contexts (org.tsv:162-163,
 // 50-51); API 64 lies between the identical native endpoints.
 func TestReceiverSplitUncapturedContexts(t *testing.T) {
 	for _, tc := range []struct{ api, source string }{

@@ -246,7 +246,14 @@ func readReceiverSplitRows(t *testing.T) [][]string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rows[1:]
+	cases := readReceiverGrammarCases(t)
+	var original [][]string
+	for _, row := range rows[1:] {
+		if _, ok := cases[row[0]]; !ok {
+			original = append(original, row)
+		}
+	}
+	return original
 }
 
 // A class name followed by a newline and a static call is rejected at both
@@ -270,7 +277,7 @@ func TestReceiverSplitSuppliedShape(t *testing.T) {
 	}
 }
 
-// M6 (grammar/org.tsv:20-21) covers a free dot after a block; API 64 lies
+// M6 (org.tsv:162-163) covers a free dot after a block; API 64 lies
 // between the identical 62 and 67 captures.
 func TestReceiverSplitIntermediateAPIAndAfterBlock(t *testing.T) {
 	root := t.TempDir()
@@ -288,7 +295,7 @@ func TestReceiverSplitIntermediateAPIAndAfterBlock(t *testing.T) {
 	}
 }
 
-// CB includes the return context at both APIs (grammar/org.tsv:50-51).
+// CB includes the return context at both APIs (org.tsv:192-193).
 func TestReceiverSplitBeforeDotInReturn(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		root := t.TempDir()

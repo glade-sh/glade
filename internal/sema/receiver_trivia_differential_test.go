@@ -31,7 +31,7 @@ func TestReceiverUncapturedTypeNeighbors(t *testing.T) {
 }
 
 // A static field that shares a name with a nested type is still a value on
-// the left of a free dot. S1 covers static-field values (grammar/org.tsv:32-33).
+// the left of a free dot. S1 covers static-field values (org.tsv:174-175).
 func TestReceiverStaticFieldShadowsType(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "ShadowProbe.cls")
