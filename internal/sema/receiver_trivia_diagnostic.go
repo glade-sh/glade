@@ -253,8 +253,8 @@ func receiverStringSwitch(ts []receiverTriviaToken, stack []receiverEnclosure) b
 	return frame.kind == "block" && h+3 == frame.start && strings.EqualFold(ts[h].text, "switch") && strings.EqualFold(ts[h+1].text, "on") && strings.HasPrefix(ts[h+2].text, "'") && strings.HasSuffix(ts[h+2].text, "'")
 }
 
-// Only a resolved zero-argument static call has been captured in these
-// control expressions. Unknown and invalid calls keep ordinary diagnostics.
+// Resolve the zero-argument String, Integer-to-String and String-to-Integer
+// static call signatures observed in the covered expressions.
 func receiverResolvedDirectCall(source string, item receiverTrivia, model *semaTypeMemberView) bool {
 	ts, dot := item.tokens, item.dot
 	var args []string
