@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Lower retained memory after a completed schema spread.** A process that completes the standard object spread now frees the decoded describe catalog (about 130 MB) and periodically frees decoded entries while a lazy org grows. Outcomes do not change.
+- **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
 
 ## v0.3.9
 
