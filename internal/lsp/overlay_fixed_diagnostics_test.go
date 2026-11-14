@@ -33,8 +33,8 @@ func TestFixedIndexPublishesOnlyCurrentParseDiagnostics(t *testing.T) {
 	if got := diagnosticsCount(t, overlayOpen(h, uri, original)); got == 0 {
 		t.Fatal("missing reflected semantic diagnostic")
 	}
-	if got := diagnosticsCount(t, overlayChange(t, h, uri, "public class First { void run() { Integer x = 1; } }")); got != 0 {
-		t.Fatalf("stale semantic diagnostics: %d", got)
+	if got := overlayChange(t, h, uri, "public class First { void run() { Integer x = 1; } }"); got != nil {
+		t.Fatalf("published from an unreflected generation: %#v", got)
 	}
 	if got := diagnosticsCount(t, overlayChange(t, h, uri, "public class First {")); got == 0 {
 		t.Fatal("missing parse diagnostic")
