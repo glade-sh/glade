@@ -27,17 +27,17 @@ func TestRefreshCoalesces(t *testing.T) {
 	started := make(chan int, 3)
 	release := make(chan struct{})
 	var calls atomic.Int32
-	h.SetRefresher(func(ctx context.Context, paths []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
+	h.SetRefresher(func(ctx context.Context, request RefreshRequest) (Base, error) {
 		n := int(calls.Add(1))
 		started <- n
 		if n == 1 {
 			select {
 			case <-release:
 			case <-ctx.Done():
-				return typesys.Index{}, nil, ctx.Err()
+				return Base{}, ctx.Err()
 			}
 		}
-		return idx, func(typesys.Index) sema.Result { return sema.Result{} }, nil
+		return Base{Index: idx, Analyze: func(typesys.Index) sema.Result { return sema.Result{} }}, nil
 	})
 	// Make initial analysis cheap and deterministic before the worker begins.
 	h.gen.Load().analyzer = func(typesys.Index) sema.Result { return sema.Result{} }
@@ -77,12 +77,12 @@ func TestRefreshStaleGenerationRetriesOnce(t *testing.T) {
 	h := NewHandler(idx)
 	h.gen.Load().analyzer = func(typesys.Index) sema.Result { return sema.Result{} }
 	calls := make(chan struct{}, 10)
-	h.SetRefresher(func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
+	h.SetRefresher(func(context.Context, RefreshRequest) (Base, error) {
 		select {
 		case calls <- struct{}{}:
 		default:
 		}
-		return idx, func(typesys.Index) sema.Result { return sema.Result{} }, nil
+		return Base{Index: idx, Analyze: func(typesys.Index) sema.Result { return sema.Result{} }}, nil
 	})
 	h.SetGenerationValidator(func(typesys.Index) bool { return false })
 	c := startServe(t, h)
@@ -134,8 +134,8 @@ func TestRefreshDoesNotPublishInvalidGeneration(t *testing.T) {
 func TestConcurrentRequestsDuringRefresh(t *testing.T) {
 	idx := sampleIndex(t)
 	h := NewHandler(idx)
-	h.SetRefresher(func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
-		return idx, func(typesys.Index) sema.Result { return sema.Result{} }, nil
+	h.SetRefresher(func(context.Context, RefreshRequest) (Base, error) {
+		return Base{Index: idx, Analyze: func(typesys.Index) sema.Result { return sema.Result{} }}, nil
 	})
 	var wg sync.WaitGroup
 	for i := 0; i < 3; i++ {

@@ -75,15 +75,18 @@ func (h *requestHandler) referenceCandidates(name string) []string {
 	}
 	for p, old := range idx.files {
 		info, err := os.Stat(p)
+		if candidates[p] {
+			continue
+		}
 		if err != nil || !old.valid || info.Size() != old.size || !info.ModTime().Equal(old.modified) {
 			candidates[p] = true
-		} else if !candidates[p] {
-			// Metadata can be preserved across an edit; only exclude a file
-			// when its contents still match the indexed contents.
-			data, err := os.ReadFile(p)
-			if err != nil || sha256.Sum256(data) != old.digest {
-				candidates[p] = true
-			}
+			continue
+		}
+		// Metadata can be preserved by a replacement. Only omit a file when
+		// its contents still match the data from which the index was built.
+		data, err := os.ReadFile(p)
+		if err != nil || sha256.Sum256(data) != old.digest {
+			candidates[p] = true
 		}
 	}
 	h.docMu.RLock()

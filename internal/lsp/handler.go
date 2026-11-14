@@ -2,7 +2,9 @@ package lsp
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -12,6 +14,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlang"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testreport"
@@ -28,14 +31,26 @@ type Handler struct {
 	parser       *apexast.Parser
 	parserClosed bool
 
-	analyzer           func(typesys.Index) sema.Result
-	refresher          func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error)
-	refreshMu          sync.Mutex
-	validateGeneration func(typesys.Index) bool
+	analyzer   func(typesys.Index) sema.Result
+	refresher  func(context.Context, RefreshRequest) (Base, error)
+	refreshMu  sync.Mutex
+	base       *generation // last disk generation, guarded by refreshMu
+	baseConfig Base
+	nextSeq    uint64
+	// The loaded project for overlay updates, guarded by refreshMu.
+	overlayProject       project.Project
+	overlayProjectOK     bool
+	overlayProjectLoaded bool
+	fallback             atomic.Pointer[overlayFallback]
+	baseGen              atomic.Pointer[generation] // h.base for readers outside refreshMu
+	watchFiles           atomic.Bool                // client supports watched-file registration
+	overlayAnalysis      sync.Mutex                 // one overlay analysis at a time; never taken under refreshMu
+	validateGeneration   func(typesys.Index) bool
 
 	docMu         sync.RWMutex
 	documents     map[DocumentURI]openDocument
 	documentPaths map[string]DocumentURI
+	diskParse     map[string]ParseDiagnosticsError // guarded by docMu
 
 	shutdown atomic.Bool
 
@@ -51,6 +66,7 @@ type openDocument struct {
 	Path    string
 	Version int
 	Text    string
+	Digest  [sha256.Size]byte
 }
 
 func NewHandler(index typesys.Index) *Handler {
@@ -74,10 +90,7 @@ func NewPendingHandler() *Handler {
 
 // SetIndex publishes the project index and releases waiting requests.
 func (h *Handler) SetIndex(index typesys.Index) {
-	h.readyOnce.Do(func() {
-		h.gen.Store(newGeneration(index, 1, h.analyzer))
-		close(h.ready)
-	})
+	h.SetBase(Base{Index: index, Analyze: h.analyzer})
 }
 
 // Fail records an index load error and releases waiting requests with it.
@@ -142,7 +155,8 @@ func (h *Handler) Shutdown() bool {
 	return h.shutdown.Load()
 }
 
-func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
+func (h *Handler) Initialize(params InitializeParams) InitializeResult {
+	h.watchFiles.Store(params.Capabilities.Workspace.DidChangeWatchedFiles.DynamicRegistration)
 	return InitializeResult{
 		Capabilities: ServerCapabilities{
 			TextDocumentSync:        TextDocumentSyncOptions{OpenClose: true, Change: textDocumentSyncIncremental, Save: SaveOptions{IncludeText: false}},
@@ -164,7 +178,7 @@ func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
 
 func (h *Handler) DidOpen(params DidOpenTextDocumentParams) []Notification {
 	doc := h.applyOpen(params)
-	return h.documentDiagnostics(doc)
+	return h.documentDiagnosticsSync(doc, true)
 }
 
 func (h *Handler) applyOpen(params DidOpenTextDocumentParams) openDocument {
@@ -174,6 +188,7 @@ func (h *Handler) applyOpen(params DidOpenTextDocumentParams) openDocument {
 		Path:    pathFromURI(uri),
 		Version: params.TextDocument.Version,
 		Text:    params.TextDocument.Text,
+		Digest:  sha256.Sum256([]byte(params.TextDocument.Text)),
 	}
 	h.docMu.Lock()
 	h.documents[uri] = doc
@@ -187,7 +202,7 @@ func (h *Handler) DidChange(params DidChangeTextDocumentParams) ([]Notification,
 	if err != nil {
 		return nil, err
 	}
-	return h.documentDiagnostics(doc), nil
+	return h.documentDiagnosticsSync(doc, true), nil
 }
 
 func (h *Handler) applyChange(params DidChangeTextDocumentParams) (openDocument, error) {
@@ -205,6 +220,7 @@ func (h *Handler) applyChange(params DidChangeTextDocumentParams) (openDocument,
 		}
 		doc.Text = next
 	}
+	doc.Digest = sha256.Sum256([]byte(doc.Text))
 	h.documents[doc.URI] = doc
 	h.documentPaths[canonicalDocumentPath(doc.Path)] = doc.URI
 	return doc, nil
@@ -212,6 +228,7 @@ func (h *Handler) applyChange(params DidChangeTextDocumentParams) (openDocument,
 
 func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
 	h.applyClose(params.TextDocument.URI)
+	_ = h.syncOverlay(context.Background(), func(g *generation) { h.gen.Store(g) })
 	return h.closeNotifications(params.TextDocument.URI)
 }
 
@@ -245,6 +262,13 @@ func (h *Handler) currentDiagnostics(uri DocumentURI) []Notification {
 }
 
 func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
+	return h.documentDiagnosticsSync(doc, false)
+}
+
+// documentDiagnosticsSync publishes parser diagnostics, or semantic ones from
+// a generation that reflects the buffer. With sync, a clean buffer first
+// brings the overlay up to date, as the synchronous document API does.
+func (h *Handler) documentDiagnosticsSync(doc openDocument, sync bool) []Notification {
 	var diagnostics []diagnostic.Diagnostic
 	h.parserMu.Lock()
 	if !h.parserClosed {
@@ -252,7 +276,11 @@ func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
 	}
 	h.parserMu.Unlock()
 	if len(diagnostics) == 0 {
-		diagnostics = h.diagnosticsForDocument(doc.URI)
+		var publish bool
+		diagnostics, publish = h.semanticDiagnostics(doc, sync)
+		if !publish {
+			return nil
+		}
 	}
 	return []Notification{{
 		JSONRPC: "2.0",
@@ -261,8 +289,46 @@ func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
 	}}
 }
 
+// semanticDiagnostics returns doc's semantic diagnostics and whether to
+// publish them. A generation that indexes doc's file but not its text has
+// nothing current to say about it, so nothing is published.
+func (h *Handler) semanticDiagnostics(doc openDocument, sync bool) ([]diagnostic.Diagnostic, bool) {
+	<-h.ready
+	if h.loadErr != nil {
+		return nil, true
+	}
+	if sync {
+		_ = h.syncOverlay(context.Background(), func(g *generation) { h.gen.Store(g) })
+	}
+	g := h.gen.Load()
+	if _, known := g.index.SourceDigest(doc.Path); !known {
+		return nil, true
+	} else if !reflects(g, doc) {
+		if h.fallback.Load().parserOnlyDocument(doc) {
+			return nil, true
+		}
+		return nil, false
+	}
+	var diagnostics []diagnostic.Diagnostic
+	for _, diag := range g.analysisResult().Diagnostics {
+		if diag.File != "" && (sameDocument(doc.Path, diag.File) || sameDocument(string(doc.URI), diag.File)) {
+			diagnostics = append(diagnostics, diag)
+		}
+	}
+	return diagnostics, true
+}
+
 func (h *Handler) diagnosticsForDocument(uri DocumentURI) []diagnostic.Diagnostic {
 	path := pathFromURI(uri)
+	h.docMu.RLock()
+	failure, hasFailure := h.diskParse[path]
+	h.docMu.RUnlock()
+	if hasFailure {
+		data, err := os.ReadFile(path)
+		if err == nil && sha256.Sum256(data) == failure.Digest {
+			return copyDiagnostics(failure.Diagnostics)
+		}
+	}
 	var diagnostics []diagnostic.Diagnostic
 	for _, diag := range h.analysisResult().Diagnostics {
 		if diag.File != "" && (sameDocument(path, diag.File) || sameDocument(string(uri), diag.File)) {

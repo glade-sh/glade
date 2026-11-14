@@ -2,13 +2,24 @@ package lsp
 
 import (
 	"context"
+	"crypto/sha256"
 
-	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/diagnostic"
+
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// ParseDiagnosticsError reports the exact disk contents that prevented a refresh.
+type ParseDiagnosticsError struct {
+	Path        string
+	Digest      [sha256.Size]byte
+	Diagnostics []diagnostic.Diagnostic
+}
+
+func (e *ParseDiagnosticsError) Error() string { return "saved source has parse diagnostics" }
+
 // SetRefresher installs the disk-backed loader before the first index is ready.
-func (h *Handler) SetRefresher(fn func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error)) {
+func (h *Handler) SetRefresher(fn func(context.Context, RefreshRequest) (Base, error)) {
 	h.refresher = fn
 }
 
@@ -17,10 +28,10 @@ func (h *Handler) SetGenerationValidator(fn func(typesys.Index) bool) { h.valida
 
 // Refresh replaces the generation after the refresher returns a complete index.
 func (h *Handler) Refresh(ctx context.Context, paths []string) error {
-	return h.refresh(ctx, paths, func(g *generation) { h.gen.Store(g) })
+	return h.refreshRequest(ctx, RefreshRequest{Changed: paths}, func(g *generation) { h.gen.Store(g) })
 }
 
-func (h *Handler) refresh(ctx context.Context, paths []string, publish func(*generation)) error {
+func (h *Handler) refreshRequest(ctx context.Context, request RefreshRequest, publish func(*generation)) error {
 	if err := h.waitReady(ctx); err != nil {
 		return err
 	}
@@ -29,14 +40,18 @@ func (h *Handler) refresh(ctx context.Context, paths []string, publish func(*gen
 	if h.refresher == nil {
 		return nil
 	}
-	previous := h.gen.Load()
-	index, analyze, err := h.refresher(ctx, paths)
+	b, err := h.refresher(ctx, request)
 	if err != nil {
 		return err
 	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	publish(newGeneration(index, previous.seq+1, analyze))
+	h.installBaseLocked(b, publish)
+	// The base is current even when the overlay cannot follow it; documents
+	// it does not reflect publish nothing until a later sync succeeds.
+	if err := h.syncOverlayLocked(ctx, publish); err != nil && ctx.Err() != nil {
+		return err
+	}
 	return nil
 }

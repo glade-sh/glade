@@ -61,6 +61,10 @@ func IdentityForBuild(index typesys.Index, artifacts *typesys.BuildArtifacts, op
 	if artifacts == nil || artifacts.Sources == nil || artifacts.SourceDigests == nil || artifacts.ApexMetadataInputs == nil {
 		return Identity{}, errors.New("semantic identity requires complete build artifacts")
 	}
+	// Unsaved editor content is never a cacheable generation.
+	if index.Volatile() || artifacts.Volatile() {
+		return Identity{}, typesys.ErrVolatileGeneration
+	}
 	sources, err := capturedSourceIdentities(index, artifacts)
 	if err != nil {
 		return Identity{}, err

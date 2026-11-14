@@ -3264,8 +3264,7 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 			}
 			handler.SetRefresher(loader.refresh)
 			handler.SetGenerationValidator(loader.valid)
-			handler.SetAnalyzer(loader.analyzer(loader.artifacts))
-			handler.SetIndex(loader.index)
+			handler.SetBase(loader.base())
 			handler.StartAnalysis()
 		}()
 		serveErr := lsp.Serve(os.Stdin, w, handler)

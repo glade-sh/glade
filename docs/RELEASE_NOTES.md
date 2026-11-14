@@ -6,7 +6,7 @@
 
 - **Async test ordering.** Eligible Future, Queueable, Batch Apex and scheduled work follows the captured stopTest ordering.
 
-- **Language server refresh.** Diagnostics retry after project refreshes, deleted source files leave the index, and hover starts type analysis when needed. Reference searches detect external edits even when file metadata is unchanged. Client responses no longer receive a second response.
+- **Language server refresh.** Diagnostics follow unsaved edits and retry after project refreshes. Deleted files leave the index, hover starts analysis when needed, and closed files with syntax errors publish parse diagnostics while other files retain the last good semantic view. External changes refresh through watched files or on save. Reference searches detect edits with unchanged metadata, and stale semantic diagnostics are not republished. Client responses no longer receive a second response.
 
 - **Standard object startup memory.** Test runs retain a smaller projection of standard-object describe data while preparing stub fields.
 

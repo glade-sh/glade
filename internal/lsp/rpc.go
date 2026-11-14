@@ -141,6 +141,15 @@ func (h *Handler) handleContext(ctx context.Context, method string, params json.
 			return nil, indexError(err)
 		}
 		return nil, nil
+	case "workspace/didChangeWatchedFiles":
+		var p DidChangeWatchedFilesParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		if err := h.DidChangeWatchedFiles(ctx, p); err != nil {
+			return nil, indexError(err)
+		}
+		return nil, nil
 	case "textDocument/didClose":
 		var p DidCloseTextDocumentParams
 		if err := decodeParams(params, &p); err != nil {

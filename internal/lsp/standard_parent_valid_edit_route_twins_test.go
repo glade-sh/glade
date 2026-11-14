@@ -46,17 +46,22 @@ func TestStandardParentSOQLValidEditNamedAndIsTestLSPRoutes(t *testing.T) {
 						if diagnosticsCount(t, opened) == 0 {
 							t.Fatal("malformed open produced no diagnostic")
 						}
-						for _, edit := range []struct {
-							version int
-							text    string
-						}{{2, source}, {3, source + "\n"}} {
-							notifications, err := handler.DidChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: edit.version}, ContentChanges: []TextDocumentContentChangeEvent{{Text: edit.text}}})
+						change := func(version int, text string) []Notification {
+							notifications, err := handler.DidChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: version}, ContentChanges: []TextDocumentContentChangeEvent{{Text: text}}})
 							if err != nil {
 								t.Fatal(err)
 							}
-							if got := diagnosticsCount(t, notifications); got != 0 {
-								t.Fatalf("valid SOQL edit version %d has %d diagnostics: %+v", edit.version, got, notifications)
-							}
+							return notifications
+						}
+						if got := diagnosticsCount(t, change(2, source)); got != 0 {
+							t.Fatalf("valid SOQL edit has %d diagnostics", got)
+						}
+						// A fixed index cannot supply semantics for a newline edit.
+						if notifications := change(3, source+"\n"); notifications != nil {
+							t.Fatalf("unreflected edit published diagnostics: %v", notifications)
+						}
+						if got := diagnosticsCount(t, change(4, source)); got != 0 {
+							t.Fatalf("restored SOQL edit has %d diagnostics", got)
 						}
 					})
 				}

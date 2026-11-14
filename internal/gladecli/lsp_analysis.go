@@ -2,6 +2,7 @@ package gladecli
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/frontendcache"
+	"github.com/glade-sh/glade/internal/lsp"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
@@ -27,6 +29,9 @@ var lspSemanticResults = semanticcache.NewManager(semanticcache.Limits{MaxEntrie
 // A nil analyzer means the plain sema.Analyze pass.
 type lspProjectLoader struct {
 	root         string
+	project      project.Project
+	schema       gladeschema.Schema
+	schemaErr    error
 	index        typesys.Index
 	artifacts    typesys.BuildArtifacts
 	cacheAllowed bool
@@ -56,6 +61,7 @@ func (l *lspProjectLoader) load() error {
 		return err
 	}
 	schema, err := gladeschema.LoadProject(p)
+	l.project, l.schema, l.schemaErr = p, schema, err
 	if err != nil {
 		l.index = typesys.Build(p, gladeschema.Schema{})
 		l.index.Diagnostics = append(l.index.Diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESCHEMA001", Message: fmt.Sprintf("metadata schema load failed: %v", err)})
@@ -81,7 +87,7 @@ func (l *lspProjectLoader) analyzer(artifacts typesys.BuildArtifacts) func(types
 	}
 }
 
-func (l *lspProjectLoader) refresh(ctx context.Context, paths []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
+func (l *lspProjectLoader) refreshIndex(ctx context.Context, paths []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if err := ctx.Err(); err != nil {
@@ -95,6 +101,7 @@ func (l *lspProjectLoader) refresh(ctx context.Context, paths []string) (typesys
 				artifacts, artifactErr := typesys.RefreshBuildArtifacts(next, &l.artifacts)
 				if artifactErr == nil {
 					l.index, l.artifacts = next, artifacts
+					l.project = p
 					return next, l.analyzer(artifacts), nil
 				}
 			}
@@ -105,20 +112,58 @@ func (l *lspProjectLoader) refresh(ctx context.Context, paths []string) (typesys
 			}
 			return l.index, l.analyzer(l.artifacts), nil
 		}
-		parser := apexast.NewParser()
-		parsed, parseErr := parser.ParseFile(paths[0])
-		parser.Close()
+		data, parseErr := os.ReadFile(paths[0])
 		if parseErr != nil {
 			return typesys.Index{}, nil, parseErr
 		}
+		parser := apexast.NewParser()
+		parsed := parser.ParseSource(paths[0], string(data))
+		parser.Close()
 		if len(parsed.Diagnostics) > 0 {
-			return typesys.Index{}, nil, fmt.Errorf("saved source has parse diagnostics")
+			return typesys.Index{}, nil, &lsp.ParseDiagnosticsError{Path: paths[0], Digest: sha256.Sum256(data), Diagnostics: parsed.Diagnostics}
 		}
 	}
 	if err := l.load(); err != nil {
 		return typesys.Index{}, nil, err
 	}
 	return l.index, l.analyzer(l.artifacts), nil
+}
+
+func (l *lspProjectLoader) base() lsp.Base {
+	artifacts := l.artifacts
+	return lsp.Base{Index: l.index, Project: l.project, Artifacts: &artifacts, Analyze: l.analyzer(artifacts), AnalyzeOverlay: l.analyzeOverlay, RebuildOverlay: l.rebuildOverlay}
+}
+
+func (l *lspProjectLoader) refresh(ctx context.Context, request lsp.RefreshRequest) (lsp.Base, error) {
+	paths := request.Changed
+	if len(request.Created) != 0 || len(request.Deleted) != 0 {
+		paths = nil
+	}
+	_, _, err := l.refreshIndex(ctx, paths)
+	if err != nil {
+		return lsp.Base{}, err
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.base(), nil
+}
+
+func (l *lspProjectLoader) analyzeOverlay(index typesys.Index, artifacts *typesys.BuildArtifacts) sema.Result {
+	result, _ := l.state.Analyze(apextest.SemanticAnalysisIndex(index), sema.AnalyzeOptions{Diagnostics: true, ExportTypes: true, BuildArtifacts: artifacts})
+	return result
+}
+
+func (l *lspProjectLoader) rebuildOverlay(ctx context.Context, overlay *typesys.SourceOverlay) (typesys.Index, typesys.BuildArtifacts, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return typesys.Index{}, typesys.BuildArtifacts{}, err
+	}
+	if l.schemaErr != nil {
+		return typesys.Index{}, typesys.BuildArtifacts{}, l.schemaErr
+	}
+	idx, artifacts := typesys.BuildWithArtifactsOverlay(l.project, l.schema, overlay)
+	return idx, artifacts, nil
 }
 
 // cachedLSPAnalysis returns the diagnostics-and-types semantic result for

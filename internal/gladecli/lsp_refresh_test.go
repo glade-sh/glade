@@ -28,20 +28,20 @@ func TestDiagnosticsRefreshAfterSave(t *testing.T) {
 	}
 	l.analyzer(l.artifacts)(l.index)
 	writeTestFile(t, file, "public class Refresh { public void run() { Integer x = missing; } }")
-	index, analyze, err := l.refresh(context.Background(), []string{file})
+	base, err := l.refresh(context.Background(), lsp.RefreshRequest{Changed: []string{file}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	broken := analyze(index)
+	broken := base.Analyze(base.Index)
 	if len(broken.Diagnostics) == 0 {
 		t.Fatal("save did not produce diagnostics")
 	}
 	writeTestFile(t, file, "public class Refresh { public void run() {} }")
-	index, analyze, err = l.refresh(context.Background(), []string{file})
+	base, err = l.refresh(context.Background(), lsp.RefreshRequest{Changed: []string{file}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	fixed := analyze(index)
+	fixed := base.Analyze(base.Index)
 	if len(fixed.Diagnostics) >= len(broken.Diagnostics) {
 		t.Fatalf("diagnostics not cleared: %#v", fixed.Diagnostics)
 	}
@@ -63,11 +63,11 @@ func TestSaveRefreshIsIncremental(t *testing.T) {
 	l.analyzer(l.artifacts)(l.index)
 	for _, n := range []string{"2", "3"} {
 		writeTestFile(t, file, "public class One { public void run() { Integer x = "+n+"; } }")
-		index, analyze, err := l.refresh(context.Background(), []string{file})
+		base, err := l.refresh(context.Background(), lsp.RefreshRequest{Changed: []string{file}})
 		if err != nil {
 			t.Fatal(err)
 		}
-		analyze(index)
+		base.Analyze(base.Index)
 	}
 	stats := l.state.LastStats()
 	if !stats.Incremental || stats.Rechecked >= stats.Types {
@@ -130,6 +130,9 @@ func TestSaveRefreshPublishesDependentsAndSymbols(t *testing.T) {
 		return m["method"] == "textDocument/publishDiagnostics" && p["uri"] == uriA
 	})
 	for i, body := range []string{"public class A { public static void replacement() {} }", initial} {
+		// An editor saves its buffer: the open text becomes the disk text.
+		// The open buffer is authoritative, so it must match what is saved.
+		c.send(map[string]any{"method": "textDocument/didChange", "params": map[string]any{"textDocument": map[string]any{"uri": uriA, "version": 2 + i}, "contentChanges": []any{map[string]any{"text": body}}}})
 		writeTestFile(t, a, body)
 		c.mu.Lock()
 		start := len(c.seen)
@@ -195,13 +198,38 @@ func TestRefreshRemovesDeletedSource(t *testing.T) {
 	if err := os.Remove(file); err != nil {
 		t.Fatal(err)
 	}
-	index, _, err := l.refresh(context.Background(), []string{file})
+	base, err := l.refresh(context.Background(), lsp.RefreshRequest{Changed: []string{file}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, typ := range index.Types {
+	for _, typ := range base.Index.Types {
 		if typ.Name == "Deleted" {
 			t.Fatal("deleted type remains in index")
 		}
+	}
+}
+
+func TestRefreshCreatedSourceReloadsProject(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	project := filepath.Join(root, "project")
+	writeTestProject(t, project)
+	l, err := newLSPProjectLoader(project)
+	if err != nil {
+		t.Fatal(err)
+	}
+	file := filepath.Join(project, "force-app/main/classes/Created.cls")
+	writeTestFile(t, file, "public class Created {}")
+	base, err := l.refresh(context.Background(), lsp.RefreshRequest{Created: []string{file}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, typ := range base.Index.Types {
+		found = found || typ.Name == "Created"
+	}
+	if !found {
+		t.Fatal("created source missing after refresh")
 	}
 }
