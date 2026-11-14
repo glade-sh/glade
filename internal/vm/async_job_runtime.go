@@ -87,7 +87,7 @@ func (vm *VM) prepareTestStopAsyncJobs() {
 			ready = append(ready, stopAsyncReady{job: job, preStart: i < boundary})
 		}
 	}
-	vm.testContext.StopOrderCaptured = vm.orderStopAsyncJobs(ready)
+	vm.orderStopAsyncJobs(ready)
 	for _, item := range ready {
 		prior = append(prior, item.job)
 	}
@@ -101,12 +101,11 @@ func (vm *VM) stopSortEligibleBatch(job AsyncJob) bool {
 	return job.Kind == "BatchApex" && job.DirectBatchSubmission && !job.SuppressWorkerRecords && !vm.capturedBatchFaultJob(job)
 }
 
-// splitBatchAtStop applies only when the stopTest queue matched a captured
-// shape. Scope size and source are not gates: async_stop_shape emptyBQ,
-// multiBQ and locBQ and async_stop_boundary pre, stateful and locator.
+// splitBatchAtStop covers the scope and source shapes in async_stop_shape
+// emptyBQ, multiBQ and locBQ and async_stop_boundary pre, stateful and locator.
 func (vm *VM) splitBatchAtStop(job AsyncJob, projectNative bool) bool {
 	return vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining && vm.testContext.StopDraining &&
-		vm.testContext.StopOrderCaptured && vm.stopSortEligibleBatch(job) && !projectNative
+		vm.stopSortEligibleBatch(job) && !projectNative
 }
 
 type stopAsyncReady struct {
@@ -114,85 +113,31 @@ type stopAsyncReady struct {
 	preStart bool
 }
 
-// stopAsyncRank returns a job's stopTest shape token and sort rank. ok is
-// false for work no captured row covers: delayed Queueables, ineligible or
-// scheduled batches, pre-start Schedulables and other kinds.
-func (vm *VM) stopAsyncRank(job AsyncJob, preStart bool) (byte, int, bool) {
+// stopAsyncRank ranks runs of eligible jobs; unobserved shapes are barriers.
+// async_stop_shape preBF, preQF and sb cover pre-start and scheduled ordering.
+func (vm *VM) stopAsyncRank(job AsyncJob, preStart bool) (int, bool) {
 	switch job.Kind {
 	case "Future":
-		return stopShapeToken('F', preStart), 0, true
+		return 0, true
 	case "Queueable":
-		if job.QueueableDelaySet {
-			return 0, 0, false
-		}
-		return stopShapeToken('Q', preStart), 1, true
+		return 1, !job.QueueableDelaySet
 	case "BatchApex":
-		if !vm.stopSortEligibleBatch(job) {
-			return 0, 0, false
-		}
-		return stopShapeToken('B', preStart), 1, true
+		return 1, vm.stopSortEligibleBatch(job)
 	case "ScheduledApex":
-		if preStart {
-			return 0, 0, false
-		}
-		return 'S', 2, true
+		return 2, !preStart
 	}
-	return 0, 0, false
-}
-
-// stopShapeToken lower-cases the token of a job submitted before startTest.
-func stopShapeToken(token byte, preStart bool) byte {
-	if preStart {
-		return token + ('a' - 'A')
-	}
-	return token
-}
-
-// stopCapturedShapes lists the stopTest queues the native rows observe, one
-// token per job in submission order: F Future, Q Queueable, B direct
-// sort-eligible batch, S top-level Schedulable; lower case was submitted
-// before startTest. Only these queues are sorted and split. Every other
-// queue keeps submission order and single-pass batches.
-var stopCapturedShapes = map[string]bool{
-	"B":    true, // async_stop_mix bonly bsq
-	"BB":   true, // async_stop_mix bb; async_stop_shape emptyBB
-	"BF":   true, // async_stop_mix bf; async_stop_shape emptyBF
-	"BQ":   true, // async_stop_mix bfq bsqk bxq; async_stop_boundary stateful; async_stop_shape emptyBQ multiBQ
-	"BQB":  true, // async_stop_mix bqb
-	"BQF":  true, // async_stop_order bqf
-	"BQQ":  true, // async_stop_mix bboom
-	"BSQ":  true, // async_stop_mix bsch
-	"F":    true, // async_stop_mix ff2
-	"FB":   true, // async_stop_mix fb
-	"FF":   true, // async_stop_order ff
-	"FQ":   true, // async_stop_order gen2q; async_stop_mix fc2 fc2cap fc3 fc3cap ff2q
-	"FQQ":  true, // async_stop_order fqq
-	"QB":   true, // async_stop_mix qb
-	"QBF":  true, // async_stop_mix qbf
-	"QF":   true, // async_stop_order trig
-	"QFB":  true, // async_stop_mix qfb
-	"QFQF": true, // async_stop_order qfqf
-	"QFS":  true, // async_stop_order qfs
-	"QQ":   true, // async_stop_order gen2f; async_stop_mix qc2 qc2cap qc3 qc3cap
-	"QQF":  true, // async_stop_order qqf qqfRepeat
-	"S":    true, // async_stop_order sched
-	"SB":   true, // async_stop_shape sb
-	"SQF":  true, // async_stop_order sqf
-	"bFQ":  true, // async_stop_shape preBF
-	"bQ":   true, // async_stop_boundary pre
-	"qBQ":  true, // async_stop_boundary locator; async_stop_shape locBQ
-	"qFQ":  true, // async_stop_order pre
-	"qfQ":  true, // async_stop_shape preQF
+	return 0, false
 }
 
 // queueStopBatchContinuation queues the next phase of a split stopTest batch
 // at the tail, ahead of pending Schedulables (async_stop_mix bsch: the
-// Schedulable runs after the batch finish).
+// Schedulable runs after the batch finish) and ahead of the first pending
+// barrier, so a batch phase never passes work no row covers.
 func (vm *VM) queueStopBatchContinuation(job AsyncJob) {
 	jobs := vm.testContext.AsyncJobs
 	at := len(jobs)
 	for i := max(0, vm.testContext.AsyncStartIndex); i < len(jobs); i++ {
-		if jobs[i].Kind == "ScheduledApex" {
+		if _, ranked := vm.stopAsyncRank(jobs[i], false); jobs[i].Kind == "ScheduledApex" || !ranked {
 			at = i
 			break
 		}
@@ -200,29 +145,27 @@ func (vm *VM) queueStopBatchContinuation(job AsyncJob) {
 	vm.testContext.AsyncJobs = slices.Insert(jobs, at, job)
 }
 
-// orderStopAsyncJobs sorts a captured stopTest queue by rank, stable within
-// a rank, and reports whether it matched. An uncaptured queue is unchanged.
-func (vm *VM) orderStopAsyncJobs(jobs []stopAsyncReady) bool {
-	if len(jobs) == 0 || len(jobs) > 4 {
-		return false
-	}
-	var shape [4]byte
-	for i, item := range jobs {
-		token, _, ok := vm.stopAsyncRank(item.job, item.preStart)
-		if !ok {
-			return false
+// orderStopAsyncJobs sorts each run without moving work across barriers.
+func (vm *VM) orderStopAsyncJobs(jobs []stopAsyncReady) {
+	for start := 0; start < len(jobs); {
+		if _, ok := vm.stopAsyncRank(jobs[start].job, jobs[start].preStart); !ok {
+			start++
+			continue
 		}
-		shape[i] = token
+		end := start + 1
+		for end < len(jobs) {
+			if _, ok := vm.stopAsyncRank(jobs[end].job, jobs[end].preStart); !ok {
+				break
+			}
+			end++
+		}
+		slices.SortStableFunc(jobs[start:end], func(a, b stopAsyncReady) int {
+			ra, _ := vm.stopAsyncRank(a.job, a.preStart)
+			rb, _ := vm.stopAsyncRank(b.job, b.preStart)
+			return ra - rb
+		})
+		start = end
 	}
-	if !stopCapturedShapes[string(shape[:len(jobs)])] {
-		return false
-	}
-	slices.SortStableFunc(jobs, func(a, b stopAsyncReady) int {
-		_, ra, _ := vm.stopAsyncRank(a.job, a.preStart)
-		_, rb, _ := vm.stopAsyncRank(b.job, b.preStart)
-		return ra - rb
-	})
-	return true
 }
 
 func (vm *VM) drainTestWork(result *Result) error {

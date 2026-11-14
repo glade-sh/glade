@@ -6,36 +6,37 @@ import (
 	"testing"
 )
 
-// Queues that no async_stop_order, async_stop_mix, async_stop_boundary or
-// async_stop_shape row observes keep the origin/main order: submission order
-// and single-pass batches. Every expected string except the two captured
-// controls was produced by origin/main.
+// Order relative to a barrier equals origin/main. Jobs between barriers
+// follow the rank rule the async_stop_order, async_stop_mix,
+// async_stop_boundary and async_stop_shape rows establish. Only the two
+// captured controls are native rows; the other expected strings are local
+// consequences of that rule, not captures.
 func TestStopOrderBarriersPreserveSubmissionOrder(t *testing.T) {
 	const s, e = "Test.startTest(); ", " Test.stopTest();"
 	const q, f, b, fault = "System.enqueueJob(new BarrierQ());", "BarrierFuture.go();", "Database.executeBatch(new BarrierBatch());", "Database.executeBatch(new BarrierBatch(), 1);"
 	const sched = "System.schedule('job', '0 0 0 1 1 ? 2099', new BarrierSched());"
 	for _, tc := range []struct{ name, source, want string }{
-		// Barriers: work no row covers.
+		// Barriers: work no row covers. A Future or a batch phase does not pass one.
 		{"fault batch", s + q + fault + f + e, "q,bs,bx,bf,f"},
 		{"delayed queueable", s + "System.enqueueJob(new BarrierQ(), 1);" + f + e, "q,f"},
 		{"scheduled batch between", s + q + "System.scheduleBatch(new BarrierBatch(), 'batch', 1);" + f + e, "q,f"},
 		{"pre schedulable between", q + sched + s + f + e, "q,s,f"},
-		{"pre schedulable same side", sched + s + q + f + e, "s,q,f"},
-		{"scheduled batch same side", s + "System.scheduleBatch(new BarrierBatch(), 'batch', 1);" + q + f + e, "q,f"},
-		// Uncaptured neighbors of captured queues (qqf, qfqf, bqf, bboom, qfs).
-		{"three queueables then future", s + q + q + q + f + e, "q,q,q,f"},
-		{"queueable future queueable queueable", s + q + f + q + q + e, "q,f,q,q"},
-		{"two queueables two futures", s + q + q + f + f + e, "q,q,f,f"},
-		{"five jobs", s + q + f + q + f + q + e, "q,f,q,f,q"},
-		{"batch then three queueables", s + b + q + q + q + e, "bs,bx,bf,q,q,q"},
-		{"two queueables batch future", s + q + q + b + f + e, "q,q,bs,bx,bf,f"},
-		{"schedulable then queueable", s + sched + q + e, "s,q"},
-		{"schedulable then future", s + sched + f + e, "s,f"},
-		{"schedulable batch queueable", s + sched + b + q + e, "s,bs,bx,bf,q"},
-		{"pre batch pre queueable", b + q + s + e, "bs,bx,bf,q"},
+		{"pre schedulable same side", sched + s + q + f + e, "s,f,q"},
+		{"scheduled batch same side", s + "System.scheduleBatch(new BarrierBatch(), 'batch', 1);" + q + f + e, "f,q"},
+		{"batch then delayed queueable", s + b + "System.enqueueJob(new BarrierQ(), 1);" + e, "bs,bx,bf,q"},
+		// Rule applied beyond the captured job counts (qqf, qfqf, bqf, bboom, qfs, sb, bsch, pre).
+		{"three queueables then future", s + q + q + q + f + e, "f,q,q,q"},
+		{"queueable future queueable queueable", s + q + f + q + q + e, "f,q,q,q"},
+		{"two queueables two futures", s + q + q + f + f + e, "f,f,q,q"},
+		{"five jobs", s + q + f + q + f + q + e, "f,f,q,q,q"},
+		{"batch then three queueables", s + b + q + q + q + e, "bs,q,q,q,bx,bf"},
+		{"two queueables batch future", s + q + q + b + f + e, "f,q,q,bs,bx,bf"},
+		{"schedulable then queueable", s + sched + q + e, "q,s"},
+		{"schedulable then future", s + sched + f + e, "f,s"},
+		{"schedulable batch queueable", s + sched + b + q + e, "bs,q,bx,bf,s"},
+		{"pre batch pre queueable", b + q + s + e, "bs,q,bx,bf"},
 		{"pre future in-test queueable", f + s + q + e, "f,q"},
-		// Captured queues sort and split (async_stop_order qqf, async_stop_mix
-		// bxq); origin/main returns q,q,f and bs,bx,bf,q for these two.
+		// Captured controls (async_stop_order qqf, async_stop_mix bxq).
 		{"captured qqf", s + q + q + f + e, "f,q,q"},
 		{"captured bq", s + b + q + e, "bs,q,bx,bf"},
 	} {
