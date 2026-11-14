@@ -320,6 +320,7 @@
       "TestPersistedVisualforceDigestCoversEveryInputGroup",
       "TestPersistedVisualforceDigestDoesNotReadUnsafeRoot",
       "TestPersistedVisualforceDigestInvalidation",
+      "TestPersistedVisualforceDigestRejectsChecksumMismatch",
       "TestPersistedVisualforceDigestRejectsOversizedCache",
       "TestPersistedVisualforceDigestRejectsRecentAndCorruptData",
       "TestPersistedVisualforceDigestRejectsUnsafeDirectory",

@@ -1,7 +1,9 @@
 package apextest
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sync"
@@ -400,5 +402,43 @@ func TestPersistedVisualforceDigestRejectsOversizedCache(t *testing.T) {
 	}
 	if err := loadVisualforceDigestCache(root, []string{path}); err == nil {
 		t.Fatal("oversized digest cache was accepted")
+	}
+}
+
+func TestPersistedVisualforceDigestRejectsChecksumMismatch(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "asset.js")
+	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	oldNow := fileDigestNow
+	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+	t.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+	resetFileDigestTrust()
+	if _, err := currentFileDigest(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveVisualforceDigestCache(root, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+	cache := visualforceDigestCachePath(root)
+	data, err := os.ReadFile(cache)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var envelope visualforceDigestEnvelope
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		t.Fatal(err)
+	}
+	envelope.Payload = bytes.Replace(envelope.Payload, []byte("asset.js"), []byte("other.js"), 1)
+	data, err = json.Marshal(envelope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cache, data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := loadVisualforceDigestCache(root, []string{path}); err == nil {
+		t.Fatal("modified cache was accepted")
 	}
 }
