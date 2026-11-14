@@ -319,6 +319,7 @@
       "TestPersistedVisualforceDigestConcurrentAccess",
       "TestPersistedVisualforceDigestCoversEveryInputGroup",
       "TestPersistedVisualforceDigestDoesNotReadUnsafeRoot",
+      "TestPersistedVisualforceDigestGenerationAdmission",
       "TestPersistedVisualforceDigestInvalidation",
       "TestPersistedVisualforceDigestRejectsChecksumMismatch",
       "TestPersistedVisualforceDigestRejectsOversizedCache",

@@ -442,3 +442,29 @@ func TestPersistedVisualforceDigestRejectsChecksumMismatch(t *testing.T) {
 		t.Fatal("modified cache was accepted")
 	}
 }
+
+func TestPersistedVisualforceDigestGenerationAdmission(t *testing.T) {
+	resetFileDigestTrust()
+	t.Cleanup(resetFileDigestTrust)
+	var wg sync.WaitGroup
+	admitted := make(chan bool, 16)
+	for i := 0; i < cap(admitted); i++ {
+		wg.Add(1)
+		go func() { defer wg.Done(); admitted <- firstVisualforceDigestGeneration("project") }()
+	}
+	wg.Wait()
+	close(admitted)
+	count := 0
+	for ok := range admitted {
+		if ok {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("admitted %d first generations, want one", count)
+	}
+	resetFileDigestTrust()
+	if !firstVisualforceDigestGeneration("project") {
+		t.Fatal("reset did not permit a fresh generation")
+	}
+}
