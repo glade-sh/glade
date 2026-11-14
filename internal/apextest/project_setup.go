@@ -685,10 +685,10 @@ func applyProjectDataRelationshipReferences(org *storage.OrgState, p project.Pro
 	if org == nil {
 		return
 	}
-	for _, ref := range projectDataFieldReferences(p.ReadFile, p.Root) {
+	for _, ref := range projectDataFieldReferences(p) {
 		ensureProjectDataReferencedObjectField(org, ref.ObjectName, ref.FieldName)
 	}
-	for _, ref := range projectDataRelationshipReferences(p.ReadFile, p.Root) {
+	for _, ref := range projectDataRelationshipReferences(p) {
 		fieldName := dataRelationshipLookupFieldName(ref.ParentRelationship)
 		if fieldName == "" {
 			continue
