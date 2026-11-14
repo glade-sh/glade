@@ -1,9 +1,10 @@
 package storage
 
 import (
-	"github.com/glade-sh/glade/internal/project"
 	"slices"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 func TestPlainDeveloperSpreadPreservesInPlaceFieldEdit(t *testing.T) {
