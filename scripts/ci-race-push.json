@@ -8,6 +8,7 @@
       "TestAbstractHierarchyOrgConformance",
       "TestAbstractRedeclarationOrgConformance",
       "TestActivityFieldProjectionNativeConformance",
+      "TestAgedVisualforceDigestPersistedAfterRun",
       "TestAdminFieldGrantSourcesNativeConformance",
       "TestAdminOptionalFieldAPIMatrixNativeConformance",
       "TestAdminOptionalFieldExplicitModeNativeConformance",
