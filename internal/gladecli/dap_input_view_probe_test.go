@@ -158,3 +158,81 @@ func TestDAPDiscardsCompiledRuntimeAfterPageRemoval(t *testing.T) {
 	}
 	assertServedWarm(t, root)
 }
+
+func TestDAPRetriesIndexedApexRestoredBeforeCompile(t *testing.T) {
+	withoutDAPRetryBackoff(t)
+	root := t.TempDir()
+	writeTestProject(t, root)
+	source := filepath.Join(root, "force-app", "main", "classes", "MathUtil.cls")
+	var original fileSnapshot
+	attempts := 0
+	_, runtime, _, err := loadDAPStartupStateWithSeams(root, dapLoadSeams{
+		beforeLoad: func(a int) {
+			attempts = a
+			if a == 1 {
+				original = snapshotFile(t, source)
+				writeDriftFile(t, source, "public class MathUtil { public static Integer add(Integer a, Integer b) { return a + b; } public static Integer other() { return 9; } }\n")
+			}
+		},
+		afterIndex: func(a int) {
+			if a == 1 {
+				original.restore(t)
+			}
+		},
+	})
+	if err != nil || attempts != 2 || runtimeHasMethod(runtime, "other") {
+		t.Fatalf("attempts=%d wrong method=%v err=%v", attempts, runtimeHasMethod(runtime, "other"), err)
+	}
+	if sha, ok := publishedManifestSHA(t, root, source); !ok || sha != fileSHA(t, source) {
+		t.Fatal("published digest differs from restored source")
+	}
+	assertServedWarm(t, root)
+}
+
+func TestDAPFieldMetadataRestoredBeforeRecheck(t *testing.T) {
+	withoutDAPRetryBackoff(t)
+	const field = `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Hidden__c</fullName><label>Hidden</label><type>Text</type><length>20</length></CustomField>`
+	hasField := func(got dapDriftResult) bool {
+		for name := range got.org.Objects["Widget__c"].Definition.Fields {
+			if strings.EqualFold(name, "Hidden__c") {
+				return true
+			}
+		}
+		return false
+	}
+	for _, name := range []string{".Hidden__c.field-meta.xml", "Hidden__c.field-meta.xml"} {
+		t.Run(name, func(t *testing.T) {
+			root, _ := writeDriftProject(t)
+			path := filepath.Join(root, "force-app", "main", "objects", "Widget__c", "fields", name)
+			writeDriftFile(t, path, field)
+			steady := loadDAPWithDrift(t, root, dapLoadSeams{})
+			if steady.err != nil {
+				t.Fatal(steady.err)
+			}
+			other, _ := writeDriftProject(t)
+			otherPath := filepath.Join(other, "force-app", "main", "objects", "Widget__c", "fields", name)
+			writeDriftFile(t, otherPath, field)
+			var original fileSnapshot
+			restored := loadDAPWithDrift(t, other, dapLoadSeams{
+				beforeLoad: func(a int) {
+					if a == 1 {
+						original = snapshotFile(t, otherPath)
+						removeDriftFile(t, otherPath)
+					}
+				},
+				beforeRecheck: func(a int) {
+					if a == 1 {
+						original.restore(t)
+					}
+				},
+			})
+			if restored.err != nil || hasField(restored) != hasField(steady) {
+				t.Fatalf("attempts=%d restored=%v steady=%v err=%v", restored.attempts, hasField(restored), hasField(steady), restored.err)
+			}
+			if hasField(steady) && restored.attempts != 2 {
+				t.Fatalf("consumed field restored without retry: attempts=%d", restored.attempts)
+			}
+			assertServedWarm(t, other)
+		})
+	}
+}
