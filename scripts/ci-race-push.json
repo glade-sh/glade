@@ -564,6 +564,7 @@
       "TestUtilityNativeConformance",
       "TestValueEdgesNativeConformance",
       "TestVerifierOverrideConversionOrgConformance",
+      "TestVisualforceDigestCacheDisabledRunDoesNotReadExistingTable",
       "TestVisualforceDigestCacheRespectsRunPolicy",
       "TestVisualforceDigestEntryRejectsShortDigest",
       "TestVisualforceDigestEntryUsesCompactEncoding",
