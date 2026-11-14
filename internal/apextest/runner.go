@@ -6139,8 +6139,14 @@ func syntheticFieldSetCanEditField(fieldName string, field storage.Field) bool {
 }
 
 func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string, relationshipLookup *childRelationshipLookup) bool {
-	parentName, ok := storage.ResolveObjectName(org, objectName)
-	if !ok {
+	var parentName string
+	if _, owed := storage.LazyStandardObjectName(&org, objectName); owed {
+		// ResolveObjectName would install the pending parent into the
+		// caller's Objects map; resolve it the way the lookup keys do.
+		parentName = resolvedChildRelationshipParentName(org, map[string]string{}, objectName)
+	} else if resolved, ok := storage.ResolveObjectName(org, objectName); ok {
+		parentName = resolved
+	} else {
 		parentName = objectName
 	}
 	if relationshipLookup == nil {
@@ -6155,8 +6161,8 @@ func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, 
 // keys holds the relationships of the objects present when the lookup was
 // built; for an eager org that is the whole answer. A lazy org has not
 // installed most catalog children, so a miss there is checked against the
-// definitions its complete spread would hold, read from the shared spread
-// templates without installing anything:
+// definitions its complete spread would hold: an installed child's own
+// definition, otherwise the shared spread template, installing nothing:
 //   - first the children the catalog's relationship table lists for the name,
 //     either with this parent or with several parents (the polymorphic ones);
 //   - then, only when the generated child relationship filter cannot rule the
@@ -6277,14 +6283,19 @@ func (l *childRelationshipLookup) definitionHas(org storage.OrgState, definition
 // spreadDefinition returns the definition the org's complete spread holds for
 // a catalog child. The caller holds l.mu.
 func (l *childRelationshipLookup) spreadDefinition(org storage.OrgState, name string) (storage.ObjectDefinition, bool) {
+	// An installed child keeps its installed definition, which may differ
+	// from the catalog template; the completed spread holds that one.
+	if canonical, known := storage.ResolveKnownStandardObjectName(name); known {
+		if object, installed := org.Objects[canonical]; installed {
+			return object.Definition, true
+		}
+	}
 	if definition, ok := storage.StandardSpreadObjectDefinition(&org, name); ok {
 		return definition, true
 	}
 	canonical, owed := storage.LazyStandardObjectName(&org, name)
 	if !owed {
-		// Removed by the shape, not a catalog object, or installed without a
-		// shared template; an installed object answered when the lookup was
-		// built.
+		// Removed by the shape or not a catalog object.
 		return storage.ObjectDefinition{}, false
 	}
 	if l.clone == nil {
