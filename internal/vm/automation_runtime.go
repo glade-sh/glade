@@ -217,17 +217,14 @@ func writeAutomationDTOValueText(w *textWriter, value Value, seen map[uint64]boo
 	}
 	if value.Kind == ValueMap {
 		w.WriteString("{")
-		for i, key := range sortedMapKeys(value.Map) {
-			if w.full {
-				return
-			}
+		forEachTextKey(w, value.Map, nil, nil, func(i int, key string) {
 			if i > 0 {
 				w.WriteString(", ")
 			}
 			writeAutomationDTOValueText(w, mapStoredKey(value, key), seen)
 			w.WriteString("=")
 			writeAutomationDTOValueText(w, value.Map[key], seen)
-		}
+		})
 		w.WriteString("}")
 		return
 	}

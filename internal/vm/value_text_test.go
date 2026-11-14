@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"runtime"
 	"strings"
 	"testing"
@@ -108,7 +109,41 @@ func valueTextCases() []valueTextCase {
 	keyed.Map["k"] = String("v")
 	keyed.MapKeys["k"] = plain
 
+	queried := Object("Account")
+	queried.Fields["Id"] = platformScalar("Id", "001000000000001AAA")
+	queried.Fields["Name"] = String("Acme")
+	queried.Fields["Industry"] = String("Tech")
+	selection := Map()
+	for _, name := range []string{"name", "industry", "id"} {
+		key := mapKey(String(name))
+		selection.Map[key] = Bool(true)
+		selection.MapKeys[key] = String(name)
+		selection.MapOrder = append(selection.MapOrder, key)
+	}
+	queried.Fields[sobjectQueriedFieldsField] = selection
+
+	wideObject, wideObjectText := Object("Wide"), "Wide:{"
+	wideMap, wideMapText := Map(), "{"
+	for i := 0; i < 300; i++ {
+		name := fmt.Sprintf("f%03d", i)
+		wideObject.Fields[name] = Int(int64(i))
+		wideMap.Map[mapKey(String(name))] = Int(int64(i))
+		wideMap.MapKeys[mapKey(String(name))] = String(name)
+		if i > 0 {
+			wideObjectText += ", "
+			wideMapText += ", "
+		}
+		wideObjectText += fmt.Sprintf("%s=%d", name, i)
+		wideMapText += fmt.Sprintf("%s=%d", name, i)
+	}
+	wideObjectText += "}"
+	wideMapText += "}"
+
 	return []valueTextCase{
+		{"sobject queried order", queried, "Account:{Name=Acme, Industry=Tech, Id=001000000000001AAA}"},
+		{"wide object", wideObject, wideObjectText},
+		{"wide map", wideMap, wideMapText},
+		{"wide map in list", List(wideMap), "List" + "[" + wideMapText + "]"},
 		{"null", Null, "null"},
 		{"integer", Int(-42), "-42"},
 		{"decimal", Value{Kind: ValueDecimal, Text: "1.25"}, "1.25"},
@@ -159,8 +194,8 @@ func TestBoundedStringMatchesString(t *testing.T) {
 			if want != c.want {
 				t.Fatalf("String = %q, want %q", want, c.want)
 			}
-			for _, limit := range []int{1, 2, 7, 64, 256, len(want) - 1, len(want), len(want) + 1} {
-				if limit < 1 {
+			for _, limit := range []int{0, 1, 2, 7, 64, 255, 256, 257, 1000, len(want) - 1, len(want), len(want) + 1} {
+				if limit < 0 {
 					continue
 				}
 				got, truncated := c.value.BoundedString(limit)
@@ -198,6 +233,13 @@ func TestBoundedStringBoundsWork(t *testing.T) {
 	keyed := Map()
 	keyed.Map["k"] = Int(1)
 	keyed.MapKeys["k"] = List(ints...)
+	hugeMap := Map()
+	hugeObject := Object("Huge")
+	for i := 0; i < 200000; i++ {
+		name := fmt.Sprintf("k%06d", i)
+		hugeMap.Map[name] = Int(int64(i))
+		hugeObject.Fields[name] = Int(int64(i))
+	}
 	deep := Int(1)
 	for i := 0; i < 10000; i++ {
 		deep = List(deep)
@@ -206,6 +248,9 @@ func TestBoundedStringBoundsWork(t *testing.T) {
 		"shared large strings": List(shared...),
 		"many integers":        List(ints...),
 		"large map key":        keyed,
+		"huge map":             hugeMap,
+		"huge object":          hugeObject,
+		"huge map in list":     List(hugeMap),
 		"deep nesting":         deep,
 	} {
 		t.Run(name, func(t *testing.T) {

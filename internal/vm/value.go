@@ -524,33 +524,34 @@ func writeObjectFieldsText(w *textWriter, v Value, seen map[uint64]bool) bool {
 		seen[v.Ref] = true
 		defer delete(seen, v.Ref)
 	}
-	keys := make([]string, 0, len(v.Fields))
 	isSObject := sObjectValueType(v.Type)
-	for key := range v.Fields {
+	keep := func(key string) bool {
 		if isInheritedInstanceFieldStorage(key) || isPicklistJSONValidForField(v, key) {
-			continue
+			return false
 		}
 		// R243: Object text includes populated fields, without implicit
 		// SObject defaults or the VM's field-tracking metadata.
-		if isLexicalInstanceFieldStorage(key) || isSObject && (isInternalSObjectField(key) || isDefaultedSObjectField(v, key) || !sObjectEqualityFieldVisible(v, key)) {
-			continue
-		}
-		keys = append(keys, key)
+		return !(isLexicalInstanceFieldStorage(key) || isSObject && (isInternalSObjectField(key) || isDefaultedSObjectField(v, key) || !sObjectEqualityFieldVisible(v, key)))
 	}
-	sort.Strings(keys)
+	var less func(a, b string) bool
 	if selected, queried := v.Fields[sobjectQueriedFieldsField]; isSObject && queried && len(selected.MapOrder) > 0 {
 		order := make(map[string]int, len(selected.MapOrder))
 		for i, encoded := range selected.MapOrder {
 			order[mapStoredKey(selected, encoded).String()] = i
 		}
-		sort.SliceStable(keys, func(i, j int) bool {
-			left, leftSelected := order[strings.ToLower(keys[i])]
-			right, rightSelected := order[strings.ToLower(keys[j])]
+		// Queried fields come first in query order, then the rest in byte
+		// order; equal positions keep byte order.
+		less = func(a, b string) bool {
+			left, leftSelected := order[strings.ToLower(a)]
+			right, rightSelected := order[strings.ToLower(b)]
 			if leftSelected != rightSelected {
 				return leftSelected
 			}
-			return leftSelected && left < right
-		})
+			if leftSelected && left != right {
+				return left < right
+			}
+			return a < b
+		}
 	}
 	w.WriteString(v.Type)
 	if v.projectClass {
@@ -558,10 +559,7 @@ func writeObjectFieldsText(w *textWriter, v Value, seen map[uint64]bool) bool {
 	} else {
 		w.WriteString(":{")
 	}
-	for i, key := range keys {
-		if w.full {
-			return true
-		}
+	forEachTextKey(w, v.Fields, keep, less, func(i int, key string) {
 		if i > 0 {
 			w.WriteString(", ")
 		}
@@ -573,6 +571,9 @@ func writeObjectFieldsText(w *textWriter, v Value, seen map[uint64]bool) bool {
 		} else {
 			writeValueTextWithSeen(w, field, seen)
 		}
+	})
+	if w.full {
+		return true
 	}
 	if v.projectClass {
 		w.WriteString("]")
@@ -777,17 +778,14 @@ func writeValueTextWithSeen(w *textWriter, v Value, seen map[uint64]bool) {
 			return
 		}
 		w.WriteString("Map{")
-		for i, key := range sortedMapKeys(v.Map) {
-			if w.full {
-				return
-			}
+		forEachTextKey(w, v.Map, nil, nil, func(i int, key string) {
 			if i > 0 {
 				w.WriteString(", ")
 			}
 			writeValueTextWithSeen(w, mapStoredKey(v, key), seen)
 			w.WriteString("=")
 			writeValueTextWithSeen(w, v.Map[key], seen)
-		}
+		})
 		w.WriteString("}")
 		return
 	case ValueObject:
@@ -1796,17 +1794,14 @@ func writeMapText(w *textWriter, value Value) {
 	// Map text has bare braces, with the
 	// ordinary Apex representation for nested collection values.
 	w.WriteString("{")
-	for i, key := range sortedMapKeys(values) {
-		if w.full {
-			return
-		}
+	forEachTextKey(w, values, nil, nil, func(i int, key string) {
 		if i > 0 {
 			w.WriteString(", ")
 		}
 		mapStoredKey(value, key).writeText(w)
 		w.WriteString("=")
 		writeApexCollectionText(w, values[key], 0)
-	}
+	})
 	w.WriteString("}")
 }
 

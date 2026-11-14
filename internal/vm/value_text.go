@@ -1,27 +1,30 @@
 package vm
 
 import (
+	"container/heap"
+	"sort"
 	"strconv"
 	"strings"
 )
 
-// textWriter collects Value text. With a positive limit it keeps at most limit
+// textWriter collects Value text. When bounded it keeps at most limit
 // bytes and reports full once more text was offered, so renderers can stop
 // early. A single write is returned without copying.
 type textWriter struct {
-	limit int
-	n     int
-	first string
-	b     strings.Builder
-	multi bool
-	full  bool
+	bounded bool
+	limit   int
+	n       int
+	first   string
+	b       strings.Builder
+	multi   bool
+	full    bool
 }
 
 func (w *textWriter) WriteString(s string) {
 	if w.full || s == "" {
 		return
 	}
-	if w.limit > 0 && len(s) > w.limit-w.n {
+	if w.bounded && len(s) > w.limit-w.n {
 		s = s[:w.limit-w.n]
 		w.full = true
 		if s == "" {
@@ -53,10 +56,10 @@ func (w *textWriter) String() string {
 // String's exact text and false when that fits the limit, otherwise the first
 // limit bytes and true. Work stays proportional to the text written.
 func (v Value) BoundedString(limit int) (string, bool) {
-	if limit <= 0 {
-		return "", true
+	if limit < 0 {
+		limit = 0
 	}
-	w := textWriter{limit: limit}
+	w := textWriter{bounded: true, limit: limit}
 	v.writeText(&w)
 	return w.String(), w.full
 }
@@ -80,4 +83,89 @@ func (v Value) String() string {
 	var w textWriter
 	v.writeText(&w)
 	return w.String()
+}
+
+// forEachTextKey calls fn for each key of fields that keep accepts, in less
+// order (byte order when less is nil), and stops once w is full. An unbounded
+// writer sorts every key. A bounded writer first keeps only the smallest keys
+// it can still show, in a heap of that size: each entry after the first writes
+// at least ", " and "=", so the remaining bytes bound the count. If those keys
+// do not fill the writer, it continues with the full order.
+func forEachTextKey(w *textWriter, fields map[string]Value, keep func(string) bool, less func(a, b string) bool, fn func(i int, key string)) {
+	byteOrder := less == nil
+	if byteOrder {
+		less = func(a, b string) bool { return a < b }
+	}
+	if w.bounded {
+		if k := (w.limit-w.n)/3 + 2; k < len(fields) {
+			selected := &textKeyHeap{less: less}
+			for key := range fields {
+				if keep != nil && !keep(key) {
+					continue
+				}
+				if len(selected.keys) < k {
+					heap.Push(selected, key)
+				} else if less(key, selected.keys[0]) {
+					selected.keys[0] = key
+					heap.Fix(selected, 0)
+				}
+			}
+			keys := selected.keys
+			sort.Slice(keys, func(i, j int) bool { return less(keys[i], keys[j]) })
+			for i, key := range keys {
+				if w.full {
+					return
+				}
+				fn(i, key)
+			}
+			if w.full || len(keys) < k {
+				return
+			}
+			rest := sortedTextKeys(fields, keep, less, byteOrder)
+			for i := len(keys); i < len(rest); i++ {
+				if w.full {
+					return
+				}
+				fn(i, rest[i])
+			}
+			return
+		}
+	}
+	for i, key := range sortedTextKeys(fields, keep, less, byteOrder) {
+		if w.full {
+			return
+		}
+		fn(i, key)
+	}
+}
+
+func sortedTextKeys(fields map[string]Value, keep func(string) bool, less func(a, b string) bool, byteOrder bool) []string {
+	keys := make([]string, 0, len(fields))
+	for key := range fields {
+		if keep == nil || keep(key) {
+			keys = append(keys, key)
+		}
+	}
+	if byteOrder {
+		sort.Strings(keys)
+	} else {
+		sort.Slice(keys, func(i, j int) bool { return less(keys[i], keys[j]) })
+	}
+	return keys
+}
+
+// textKeyHeap is a max-heap under less, so its root is the largest kept key.
+type textKeyHeap struct {
+	keys []string
+	less func(a, b string) bool
+}
+
+func (h *textKeyHeap) Len() int           { return len(h.keys) }
+func (h *textKeyHeap) Less(i, j int) bool { return h.less(h.keys[j], h.keys[i]) }
+func (h *textKeyHeap) Swap(i, j int)      { h.keys[i], h.keys[j] = h.keys[j], h.keys[i] }
+func (h *textKeyHeap) Push(x any)         { h.keys = append(h.keys, x.(string)) }
+func (h *textKeyHeap) Pop() any {
+	last := h.keys[len(h.keys)-1]
+	h.keys = h.keys[:len(h.keys)-1]
+	return last
 }
