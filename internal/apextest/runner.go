@@ -6151,21 +6151,15 @@ func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, 
 }
 
 func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]struct{} {
+	// The catalog's raw relationship table does not include all edges added
+	// while preparing object definitions. Enumerate the completed spread on a
+	// clone so inference sees exactly the same definitions as an eager org.
+	if org.StandardSpreadSourceBacked() {
+		org = org.CloneRuntimeFrozenDefinition()
+		storage.MaterializeStandardObjectSpread(&org)
+	}
 	lookup := make(map[string]struct{}, len(org.Objects))
 	parentNames := make(map[string]string)
-	// Include relationships from standard children the lazy spread still owes.
-	// Installed children below retain their effective, possibly overlaid shape.
-	if org.StandardSpreadSourceBacked() {
-		for _, relation := range storage.StandardChildRelationships() {
-			if _, owed := storage.LazyStandardObjectName(&org, relation.Child); !owed {
-				continue
-			}
-			for _, parent := range relation.Parents {
-				parentName := resolvedChildRelationshipParentName(org, parentNames, parent)
-				lookup[strings.ToLower(parentName)+"\x00"+strings.ToLower(relation.Name)] = struct{}{}
-			}
-		}
-	}
 	for _, child := range org.Objects {
 		for _, relation := range child.Definition.Relations {
 			if relation.ChildRelationship == "" {
