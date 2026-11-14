@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -14,7 +15,7 @@ func TestResultSnapshotCoversCompleteResultShape(t *testing.T) {
 	for _, field := range fields {
 		gotNames = append(gotNames, field.Name)
 	}
-	wantNames := []string{"Project", "Summary", "Diagnostics", "Types"}
+	wantNames := []string{"Project", "Summary", "Diagnostics", "Types", "ReceiverTriviaDiagnostic"}
 	if !reflect.DeepEqual(gotNames, wantNames) {
 		t.Fatalf("Result fields changed; update ResultSnapshot to preserve every field\nwant: %v\n got: %v", wantNames, gotNames)
 	}
@@ -73,5 +74,25 @@ func TestEstimateResultRetainedBytesCountsContainersAndRanges(t *testing.T) {
 	})
 	if small <= 0 || large <= small {
 		t.Fatalf("retained estimates small=%d large=%d", small, large)
+	}
+}
+
+func TestResultSnapshotPreservesReceiverTriviaDiagnostic(t *testing.T) {
+	for _, flag := range []bool{false, true} {
+		snapshot := SnapshotResult(Result{ReceiverTriviaDiagnostic: flag})
+		if got := snapshot.Result().ReceiverTriviaDiagnostic; got != flag {
+			t.Fatalf("snapshot flag = %t, want %t", got, flag)
+		}
+		data, err := json.Marshal(snapshot)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var restored ResultSnapshot
+		if err := json.Unmarshal(data, &restored); err != nil {
+			t.Fatal(err)
+		}
+		if got := restored.Result().ReceiverTriviaDiagnostic; got != flag {
+			t.Fatalf("round-trip flag = %t, want %t", got, flag)
+		}
 	}
 }
