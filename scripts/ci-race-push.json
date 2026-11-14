@@ -564,6 +564,8 @@
       "TestUtilityNativeConformance",
       "TestValueEdgesNativeConformance",
       "TestVerifierOverrideConversionOrgConformance",
+      "TestVisualforceDigestEntryRejectsShortDigest",
+      "TestVisualforceDigestEntryUsesCompactEncoding",
       "TestVisualforceOpenFilePathStampIdentity",
       "TestVisualforcePersistentDigestScope",
       "TestWideInterfaceOverloadNativeConformance",
