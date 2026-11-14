@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -103,6 +104,18 @@ func foldText(s string) string {
 	return strings.Join(strings.Fields(strings.ToLower(s)), " ")
 }
 
+// foldLowered is foldText of a lower-cased, trimmed text; it returns the
+// text itself when its white space is already single ASCII spaces.
+func foldLowered(s string) string {
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c >= 0x80 || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' || c == ' ' && (i+1 == len(s) || s[i+1] == ' ') {
+			return strings.Join(strings.Fields(s), " ")
+		}
+	}
+	return s
+}
+
 // stripAccents removes combining marks: "García" becomes "Garcia".
 func stripAccents(s string) string {
 	var out []rune
@@ -178,7 +191,7 @@ const firstNameJaroWinkler = 0.89
 // (100 + score) / 2.
 func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
 	x, y := strings.ToLower(strings.TrimSpace(a)), strings.ToLower(strings.TrimSpace(b))
-	fx, fy := foldText(a), foldText(b)
+	fx, fy := foldLowered(x), foldLowered(y)
 	if x == y || nameVariantOf(fx, fy) {
 		return true, 100
 	}
@@ -235,13 +248,14 @@ func firstNameWord(folded string) string {
 // finds "PW", "P.W.", "P-W" and "P" at 100; "P W" finds "P W G" only by
 // Jaro-Winkler, and "Yancey" finds "Yancey R" only by Jaro-Winkler.
 func firstNameInitials(initials, name string) bool {
-	word := []rune(firstNameWord(initials))
-	if len(word) != 1 || !unicode.IsLetter(word[0]) || strings.IndexByte(name, ' ') >= 0 {
+	word := firstNameWord(initials)
+	letter, size := utf8.DecodeRuneInString(word)
+	if size == 0 || size != len(word) || !unicode.IsLetter(letter) || strings.IndexByte(name, ' ') >= 0 {
 		return false
 	}
 	for _, r := range name {
 		if unicode.IsLetter(r) {
-			return r == word[0]
+			return r == letter
 		}
 		if !unicode.IsPunct(r) {
 			return false

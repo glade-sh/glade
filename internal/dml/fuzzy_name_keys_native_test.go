@@ -412,3 +412,19 @@ func fuzzyNameKeysOutcome(r Result) string {
 	}
 	return "E/" + r.StatusCode
 }
+
+// An insert loop through a custom FirstName OR LastName rule: 50 candidates
+// scanned against 2,000 existing contacts.
+func BenchmarkCustomNameRuleInsertLoop(b *testing.B) {
+	org := benchOrg("Contact", 2000)
+	rule := storage.DuplicateRule{Name: "Custom", Object: "Contact", Active: true, MatchRules: []storage.MatchingRule{{Name: "Names", Object: "Contact", Status: "Active", BooleanFilter: "1 OR 2", Items: []storage.MatchingRuleItem{
+		{Field: "FirstName", Method: "FirstName", BlankBehavior: "NullNotAllowed"}, {Field: "LastName", Method: "LastName", BlankBehavior: "NullNotAllowed"}}}}}
+	b.ReportAllocs()
+	for n := 0; n < b.N; n++ {
+		for i := 0; i < 50; i++ {
+			c := storage.Record{Object: "Contact", Fields: map[string]storage.Value{
+				"FirstName": storage.StringValue(fmt.Sprint(benchFirst[i%10], " ", i%3)), "LastName": storage.StringValue(benchSurname(i*7 + 3))}}
+			FindDuplicateMatches(org, rule, c, nil)
+		}
+	}
+}
