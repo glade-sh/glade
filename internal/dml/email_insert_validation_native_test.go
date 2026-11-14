@@ -66,3 +66,15 @@ func TestEmailInsertValidationUncapturedNeighborsMatchBase(t *testing.T) {
 		}
 	}
 }
+
+func TestEmailInsertValidationLeavesUpdatesUnchanged(t *testing.T) {
+	field := storage.Field{APIName: "Email", Label: "Email", Type: storage.FieldString, DisplayType: "EMAIL"}
+	definition := storage.ObjectDefinition{APIName: "Contact", Fields: map[string]storage.Field{"Email": field}}
+	existing := storage.Record{Object: "Contact", Fields: map[string]storage.Value{"Email": storage.StringValue("old@example.com")}}
+	for _, address := range []string{"a@example.com.", "a@example..com", "\"quoted local\"@example.com"} {
+		record := storage.Record{Object: "Contact", Fields: map[string]storage.Value{"Email": storage.StringValue(address)}}
+		if err := validateFields(definition, "", record, existing); err != nil {
+			t.Errorf("update %q: baseline accepted, got %v", address, err)
+		}
+	}
+}
