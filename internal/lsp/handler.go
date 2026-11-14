@@ -327,7 +327,7 @@ func (h *Handler) diagnosticsForDocument(uri DocumentURI) []diagnostic.Diagnosti
 	if hasFailure {
 		data, err := os.ReadFile(path)
 		if err == nil && sha256.Sum256(data) == failure.Digest {
-			return failure.Diagnostics
+			return copyDiagnostics(failure.Diagnostics)
 		}
 	}
 	var diagnostics []diagnostic.Diagnostic

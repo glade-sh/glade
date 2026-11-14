@@ -504,6 +504,22 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 	return true
 }
 
+// copyDiagnostics keeps callers from mutating the stored diagnostic pointers.
+func copyDiagnostics(input []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	out := append([]diagnostic.Diagnostic(nil), input...)
+	for i := range out {
+		if out[i].Range != nil {
+			r := *out[i].Range
+			out[i].Range = &r
+		}
+		if out[i].NativeLine != nil {
+			line := *out[i].NativeLine
+			out[i].NativeLine = &line
+		}
+	}
+	return out
+}
+
 // replaceFileDiagnostics never writes into a generation's shared result.
 func replaceFileDiagnostics(old []diagnostic.Diagnostic, path string, replacement []diagnostic.Diagnostic) []diagnostic.Diagnostic {
 	result := make([]diagnostic.Diagnostic, 0, len(old)+len(replacement))
@@ -534,7 +550,9 @@ func (s *server) publishDiskParseFailure(failure *ParseDiagnosticsError, before 
 	if s.h.diskParse == nil {
 		s.h.diskParse = make(map[string]ParseDiagnosticsError)
 	}
-	s.h.diskParse[failure.Path] = *failure
+	stored := *failure
+	stored.Diagnostics = copyDiagnostics(failure.Diagnostics)
+	s.h.diskParse[failure.Path] = stored
 	if open {
 		return
 	}
