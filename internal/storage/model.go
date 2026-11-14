@@ -126,6 +126,7 @@ type OrgState struct {
 	// plain catalog profile. It is never mutated after it is set, so clones
 	// may share it.
 	spreadInstalled map[string]installedSpreadDefinition
+	spreadExplicit  map[string]bool
 }
 
 type orgRuntimeGeneration struct {

@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"reflect"
 	"strings"
 
@@ -166,7 +168,7 @@ func refreshOrgFeatureObjects(org *OrgState) {
 	// lists. Preserve non-catalog project objects when applying this profile.
 	if org.HasFeature(project.PlainDeveloperObjectShape) && (org.eagerStandardSpread || org.lazyStandardSpread || org.StandardSpread != "") {
 		for name, object := range org.Objects {
-			if _, known := ResolveKnownStandardObjectName(name); known && !PlainDeveloperObjectPresent(name, PlainDeveloperAnyRoute) {
+			if plainDeveloperPrunable(name) {
 				// Only remove untouched catalog entries, retaining project schema
 				// and data that were installed before the shape was applied.
 				if len(object.Records) != 0 || !isUnmodifiedSpreadObject(org, name, object) {
@@ -216,11 +218,22 @@ func refreshOrgFeatureObjects(org *OrgState) {
 	}
 }
 
+func plainDeveloperPrunable(name string) bool {
+	switch strings.ToLower(name) {
+	case "aifeatureextractor", "airesearchpromptresult", "aiscoringstatusevent":
+		return true
+	}
+	return false
+}
+
 func isUnmodifiedSpreadObject(org *OrgState, name string, object ObjectState) bool {
+	if org.spreadExplicit[name] {
+		return false
+	}
 	// Definitions change copy-on-write, so a definition that still holds every
 	// value and collection the spread installed is the catalog build itself.
-	if installed, ok := org.spreadInstalled[name]; ok && sameDefinitionInstance(object.Definition, installed) {
-		return true
+	if installed, ok := org.spreadInstalled[name]; ok {
+		return spreadDefinitionFingerprint(object.Definition) == installed.fingerprint
 	}
 	baseline := NewOrgState()
 	ensureStandardObjectWithProfile(&baseline, name, nil)
@@ -264,10 +277,11 @@ func PlainDeveloperObjectPresent(objectName string, mask uint8) bool {
 type installedSpreadDefinition struct {
 	definition       ObjectDefinition
 	fields, metadata int
+	fingerprint      [32]byte
 }
 
 func recordInstalledSpreadDefinition(definition ObjectDefinition) installedSpreadDefinition {
-	return installedSpreadDefinition{definition: definition, fields: len(definition.Fields), metadata: len(definition.Metadata)}
+	return installedSpreadDefinition{definition: definition, fields: len(definition.Fields), metadata: len(definition.Metadata), fingerprint: spreadDefinitionFingerprint(definition)}
 }
 
 // sameDefinitionInstance reports whether a definition still holds the
@@ -275,7 +289,7 @@ func recordInstalledSpreadDefinition(definition ObjectDefinition) installedSprea
 // recorded lengths.
 func sameDefinitionInstance(a ObjectDefinition, recorded installedSpreadDefinition) bool {
 	b := recorded.definition
-	return a.APIName == b.APIName && a.Label == b.Label && a.PluralLabel == b.PluralLabel &&
+	return spreadDefinitionFingerprint(a) == recorded.fingerprint && a.APIName == b.APIName && a.Label == b.Label && a.PluralLabel == b.PluralLabel &&
 		a.KeyPrefix == b.KeyPrefix && a.SharingModel == b.SharingModel && a.EnableSearch == b.EnableSearch &&
 		a.ExternalSharingModel == b.ExternalSharingModel &&
 		len(a.Fields) == recorded.fields && sameMapInstance(a.Fields, b.Fields) &&
@@ -297,4 +311,13 @@ func sameSliceInstance[T any](a, b []T) bool {
 		return false
 	}
 	return len(a) == 0 || &a[0] == &b[0]
+}
+
+// spreadDefinitionFingerprint snapshots values, including nested collection entries.
+func spreadDefinitionFingerprint(d ObjectDefinition) [32]byte {
+	data, err := json.Marshal(d)
+	if err != nil {
+		panic(err)
+	}
+	return sha256.Sum256(data)
 }

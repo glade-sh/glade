@@ -31,6 +31,7 @@ func (o OrgState) persistedView() OrgState {
 	o.lazyStandardSpread = false
 	o.eagerStandardSpread = false
 	o.spreadInstalled = nil
+	o.spreadExplicit = nil
 	o.spreadPrefixSeed = nil
 	o.keyPrefixesValidatedObjectCount = 0
 	o.keyPrefixesValidatedPrefixes = nil

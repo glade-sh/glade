@@ -37,6 +37,11 @@ func EnsureStandardObjectSpread(org *OrgState) {
 	if org == nil {
 		return
 	}
+	for name := range org.Objects {
+		if plainDeveloperPrunable(name) {
+			org.MarkExplicitSpreadObject(name)
+		}
+	}
 	org.eagerStandardSpread = true
 	org.ensureFeatureProfile()
 	// Only a plain-profile build of a fresh eager org produces the definitions
@@ -47,7 +52,7 @@ func EnsureStandardObjectSpread(org *OrgState) {
 		if !standardSpreadIncludes(objectName) {
 			continue
 		}
-		if _, exists := org.Objects[objectName]; record && !exists {
+		if _, exists := org.Objects[objectName]; record && !exists && plainDeveloperPrunable(objectName) {
 			installed = append(installed, objectName)
 		}
 		EnsureStandardObject(org, objectName)
@@ -260,4 +265,18 @@ func catalogKeyPrefixOwners() map[string]string {
 		catalogKeyPrefixOwnerCache.owners = owners
 	})
 	return catalogKeyPrefixOwnerCache.owners
+}
+
+// MarkExplicitSpreadObject protects project-installed definitions from spread cleanup.
+func (o *OrgState) MarkExplicitSpreadObject(name string) {
+	if o == nil {
+		return
+	}
+	if canonical, ok := ResolveKnownStandardObjectName(name); ok {
+		name = canonical
+	}
+	next := make(map[string]bool, len(o.spreadExplicit)+1)
+	maps.Copy(next, o.spreadExplicit)
+	next[name] = true
+	o.spreadExplicit = next
 }
