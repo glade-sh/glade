@@ -54,7 +54,7 @@ func TestEmailInsertValidationNativeConformance(t *testing.T) {
 // These uncaptured shapes retain the origin/main result, including its message.
 func TestEmailInsertValidationUncapturedNeighborsMatchBase(t *testing.T) {
 	field := storage.Field{APIName: "Email", Label: "Email", DisplayType: "EMAIL"}
-	for _, text := range []string{"user@例え.テスト.", "a@@example.com.", "not-an-address", "x@y.example"} {
+	for _, text := range []string{"user@例え.テスト.", "a@@example.com.", "a@sub.example.com.", "a@example1.com.", "not-an-address", "x@y.example"} {
 		value := storage.StringValue(text)
 		var base error
 		if InvalidEmailValue(value) {
