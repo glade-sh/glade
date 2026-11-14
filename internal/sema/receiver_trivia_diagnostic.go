@@ -51,7 +51,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 	}
 	if leading == "when" {
 		end := receiverDirectCallEnd(ts, dot)
-		if receiverNameRoot(ts, dot) != statement+1 || end < 0 || end >= len(ts) || ts[end].text != "{" || !resolvedCall() {
+		if !receiverStringSwitch(ts, stack) || receiverNameRoot(ts, dot) != statement+1 || end < 0 || end >= len(ts) || ts[end].text != "{" || !resolvedCall() {
 			return nil
 		}
 	}
@@ -165,14 +165,14 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 						return report(member, "Extra ')', at '"+member.text+"'.")
 					}
 					end := receiverDirectCallEnd(ts, dot)
-					if receiverNameRoot(ts, dot) != frame.start+4 || !ts[frame.start+1].word || !ts[frame.start+2].word || ts[frame.start+3].text != ":" || end < 0 || end+5 >= len(ts) || ts[end].text != "." || !ts[end+1].word || ts[end+2].text != "(" || !strings.HasPrefix(ts[end+3].text, "'") || ts[end+4].text != ")" || ts[end+5].text != ")" || !resolvedCall() {
+					if receiverNameRoot(ts, dot) != frame.start+4 || !strings.EqualFold(ts[frame.start+1].text, "String") || !ts[frame.start+2].word || ts[frame.start+3].text != ":" || end < 0 || end+5 >= len(ts) || ts[end].text != "." || !ts[end+1].word || ts[end+2].text != "(" || !strings.HasPrefix(ts[end+3].text, "'") || ts[end+4].text != ")" || ts[end+5].text != ")" || !resolvedCall() {
 						return nil
 					}
 					return report(member, "Missing ')' at '"+member.text+"'")
 				}
 				root := receiverNameRoot(ts, dot)
 				end := receiverDirectCallEnd(ts, dot)
-				if root != frame.start+4 || !ts[frame.start+1].word || !ts[frame.start+2].word || ts[frame.start+3].text != "=" || end < 0 || end >= len(ts) || ts[end].text != ";" || !resolvedCall() {
+				if root != frame.start+4 || !strings.EqualFold(ts[frame.start+1].text, "String") || !ts[frame.start+2].word || ts[frame.start+3].text != "=" || end < 0 || end >= len(ts) || ts[end].text != ";" || !resolvedCall() {
 					return nil
 				}
 				return report(member, "Missing ';' at '"+member.text+"'")
@@ -199,6 +199,15 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 		return report(member, "Extra ';', at '"+member.text+"'.")
 	}
 	return report(member, "Missing ';' at '"+member.text+"'")
+}
+
+func receiverStringSwitch(ts []receiverTriviaToken, stack []receiverEnclosure) bool {
+	if len(stack) == 0 {
+		return false
+	}
+	frame := stack[len(stack)-1]
+	h := frame.header
+	return frame.kind == "block" && h+3 == frame.start && strings.EqualFold(ts[h].text, "switch") && strings.EqualFold(ts[h+1].text, "on") && strings.HasPrefix(ts[h+2].text, "'") && strings.HasSuffix(ts[h+2].text, "'")
 }
 
 // Only a resolved zero-argument static call has been captured in these
