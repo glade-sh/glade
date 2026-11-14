@@ -80,6 +80,10 @@ type spreadTemplateCell struct {
 	// evicted marks a tombstone: the group this cell belonged to was dropped
 	// for the field budget. A tombstone holds no state.
 	evicted bool
+	// replacement marks a cell that took a tombstone's place. An untouched
+	// check waits for it, as it does for a rebuilt plain cell, so an eviction
+	// never changes an answer.
+	replacement bool
 	// group is the group that counts this cell's fields. It is set when the
 	// cell is built, before done, and is nil for a cell built outside
 	// buildSpreadTemplateCell.
@@ -95,17 +99,20 @@ type spreadTemplateGroupKey struct {
 	recordType bool
 }
 
-// spreadTemplateGroup counts the live fields of a group's cells and when one of
-// them was last used. Both are hints: the eviction pass recomputes the counts
-// from the map before it drops anything.
+// spreadTemplateGroup records when a group's cells were last used. The live
+// field total is a hint: the eviction pass recomputes it from the map before it
+// drops anything.
 type spreadTemplateGroup struct {
-	fields  atomic.Int64
 	lastUse atomic.Uint64
 }
 
 func (k spreadTemplateKey) group() spreadTemplateGroupKey {
 	return spreadTemplateGroupKey{phase: k.phase, signature: k.signature, multiCurr: k.multiCurr, recordType: k.recordType}
 }
+
+// spreadTemplateTombstone stands in for every evicted cell. It carries no
+// state, so an evicted key costs one map entry.
+var spreadTemplateTombstone = &spreadTemplateCell{evicted: true}
 
 var (
 	spreadTemplateGroups     sync.Map // spreadTemplateGroupKey -> *spreadTemplateGroup
@@ -146,7 +153,7 @@ func liveSpreadTemplateCell(key spreadTemplateKey) *spreadTemplateCell {
 		if !cell.evicted {
 			return cell
 		}
-		fresh := &spreadTemplateCell{}
+		fresh := &spreadTemplateCell{replacement: true}
 		if spreadTemplates.CompareAndSwap(key, cell, fresh) {
 			return fresh
 		}
@@ -177,8 +184,9 @@ func enforceSpreadTemplateBudget(caller spreadTemplateGroupKey) {
 	}
 	spreadTemplateEvictMu.Lock()
 	defer spreadTemplateEvictMu.Unlock()
+	observed := spreadTemplateLiveFields.Load()
 	sums := map[spreadTemplateGroupKey]int64{}
-	var total int64
+	var total, evicted int64
 	spreadTemplates.Range(func(k, v any) bool {
 		cell := v.(*spreadTemplateCell)
 		if cell.evicted || !cell.done.Load() || !cell.ok {
@@ -189,9 +197,6 @@ func enforceSpreadTemplateBudget(caller spreadTemplateGroupKey) {
 		total += n
 		return true
 	})
-	for key, n := range sums {
-		spreadGroupFor(key).fields.Store(n)
-	}
 	for total > budget {
 		var victim spreadTemplateGroupKey
 		var oldest uint64
@@ -210,16 +215,22 @@ func enforceSpreadTemplateBudget(caller spreadTemplateGroupKey) {
 		spreadTemplates.Range(func(k, v any) bool {
 			if k.(spreadTemplateKey).group() == victim {
 				if cell := v.(*spreadTemplateCell); !cell.evicted {
-					spreadTemplates.CompareAndSwap(k, cell, &spreadTemplateCell{evicted: true})
+					spreadTemplates.CompareAndSwap(k, cell, spreadTemplateTombstone)
 				}
 			}
 			return true
 		})
 		total -= sums[victim]
+		evicted += sums[victim]
 		sums[victim] = 0
-		spreadGroupFor(victim).fields.Store(0)
+		spreadTemplateGroups.Delete(victim)
 	}
-	spreadTemplateLiveFields.Store(total)
+	// Replace the hint with the exact total only if no build counted fields
+	// during the scan. Otherwise subtract what was evicted and keep their
+	// increments; the next pass corrects any drift.
+	if !spreadTemplateLiveFields.CompareAndSwap(observed, total) {
+		spreadTemplateLiveFields.Add(-evicted)
+	}
 }
 
 // defaultSpreadTemplateFieldBudget is the live template field count that
@@ -307,9 +318,7 @@ func buildSpreadTemplateCell(cell *spreadTemplateCell, key spreadTemplateKey, or
 	cell.state = scratch.Objects[key.object]
 	cell.ok = true
 	cell.group = spreadGroupFor(key.group())
-	n := int64(len(cell.state.Definition.Fields))
-	cell.group.fields.Add(n)
-	spreadTemplateLiveFields.Add(n)
+	spreadTemplateLiveFields.Add(int64(len(cell.state.Definition.Fields)))
 }
 
 // dropPlainSpreadTemplates removes each plain-phase template at most once,
@@ -603,6 +612,12 @@ func (o OrgState) SpreadObjectUntouched(name string) bool {
 		return false
 	}
 	template, built := cell.peek()
+	if !built && cell.replacement {
+		// Another goroutine is building the cell that replaced a tombstone.
+		// Wait for it so an eviction does not change the answer.
+		buildSpreadTemplateOnce(cell, key, o.OrgID, o.Features, hasRecordType)
+		template, built = cell.peek()
+	}
 	if !built {
 		// A replacement for a dropped plain cell may already be building.
 		// Wait for it, but preserve the nonblocking answer for other cells.

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 )
 
 var spreadBudgetShapes = [][]string{
@@ -297,5 +298,79 @@ func TestSpreadBudgetRaceMatchesEager(t *testing.T) {
 	releaser.Wait()
 	for i := range orgs {
 		compareCompleteOrgs(t, eager[i%len(spreadBudgetShapes)], orgs[i])
+	}
+}
+
+// An evicted key costs one map entry, and the group record goes with it.
+func TestSpreadTemplateEvictionKeepsNoPerGroupState(t *testing.T) {
+	resetSpreadMemos(t)
+	one := oneShapeFields(t)
+	setSpreadBudget(t, one+one/2)
+	for _, features := range spreadBudgetShapes {
+		buildSpreadShape(t, features)
+	}
+	if evictedCells() == 0 {
+		t.Fatal("nothing evicted")
+	}
+	spreadTemplates.Range(func(_, v any) bool {
+		if cell := v.(*spreadTemplateCell); cell.evicted && cell != spreadTemplateTombstone {
+			t.Error("an evicted cell is not the shared tombstone")
+		}
+		return true
+	})
+	_, live := liveTemplateFields()
+	groups := 0
+	spreadTemplateGroups.Range(func(_, _ any) bool { groups++; return true })
+	if groups > live+1 {
+		t.Fatalf("%d group records for %d live groups", groups, live)
+	}
+}
+
+// A replacement cell another goroutine is still building must not change an
+// installed untouched object's answer.
+func TestSpreadObjectUntouchedDuringEvictionRebuild(t *testing.T) {
+	resetSpreadMemos(t)
+	one := oneShapeFields(t)
+	setSpreadBudget(t, one+one/2)
+	org := sourceSpreadLazyOrg(spreadBudgetShapes[1])
+	name := owedNames(&org, 1)[0]
+	if _, ok := installSpreadObject(&org, name); !ok || !org.SpreadObjectUntouched(name) {
+		t.Fatal("install not untouched")
+	}
+	buildSpreadShape(t, spreadBudgetShapes[2])
+	buildSpreadShape(t, spreadBudgetShapes[3])
+	_, hasRecordType := org.Objects["RecordType"]
+	key := spreadTemplateKey{phase: org.StandardSpread, signature: canonicalFeatureSignature(org.Features), multiCurr: org.HasFeature("MultiCurrency"), recordType: hasRecordType, object: name}
+	if cellAny, ok := spreadTemplates.Load(key); !ok || !cellAny.(*spreadTemplateCell).evicted {
+		t.Fatal("the group was not evicted")
+	}
+	cell := &spreadTemplateCell{replacement: true}
+	spreadTemplates.Store(key, cell)
+	started, release, finished := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(finished)
+		cell.once.Do(func() {
+			close(started)
+			<-release
+			buildSpreadTemplateCell(cell, key, org.OrgID, org.Features, hasRecordType)
+		})
+		cell.done.Store(true)
+	}()
+	<-started
+	answer := make(chan bool, 1)
+	go func() { answer <- org.SpreadObjectUntouched(name) }()
+	select {
+	case got := <-answer:
+		close(release)
+		<-finished
+		if !got {
+			t.Fatal("installed untouched object reported changed while its evicted template rebuilds")
+		}
+	case <-time.After(100 * time.Millisecond):
+		close(release)
+		<-finished
+		if !<-answer {
+			t.Fatal("installed untouched object reported changed after the rebuild")
+		}
 	}
 }
