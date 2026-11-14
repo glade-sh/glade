@@ -252,6 +252,10 @@ func TestSpreadObjectUntouchedAfterPlainDropDoesNotDecodeStorm(t *testing.T) {
 			t.Fatalf("decoded %d objects, want at most %d", n, spreadTemplateReleaseEvery)
 		}
 	}
+	// Completing another shaped spread releases the catalog again. It must
+	// retain the plain cells rebuilt by the first pass.
+	again := sourceSpreadLazyOrg([]string{"Communities"})
+	MaterializeStandardObjectSpread(&again)
 	before := StandardCatalogMemberDecodeCount()
 	for _, name := range names {
 		if !plain.SpreadObjectUntouched(name) {
