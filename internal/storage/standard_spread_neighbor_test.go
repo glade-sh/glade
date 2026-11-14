@@ -83,7 +83,17 @@ func TestPlainDeveloperAdditiveShapeRestoresUncapturedFeatureInventory(t *testin
 		t.Fatal("captured default object unexpectedly present")
 	}
 	ApplyOrgShape(&org, []string{"EnableSetPasswordInApi"})
-	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
+	object, ok := org.Objects["AIFeatureExtractor"]
+	if !ok {
 		t.Fatal("additive feature did not restore baseline object")
+	}
+	data, err := json.Marshal(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Serialized object from origin/main after the same additive transition.
+	const baseline = "c0483914b506fbf4fcd04767e8253fb1a5f1884ced2a4f1c566d79070dc1e407"
+	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
+		t.Fatalf("object digest %s, want origin/main %s", got, baseline)
 	}
 }
