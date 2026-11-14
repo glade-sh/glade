@@ -87,3 +87,21 @@ func TestPlainDeveloperSpreadPreservesInPlaceEditWithoutSnapshot(t *testing.T) {
 		t.Fatal("edited definition removed without snapshot")
 	}
 }
+
+func TestPlainDeveloperSpreadPreservesNestedEditWithoutSnapshot(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObjectSpread(&org)
+	org.spreadInstalled = nil
+	obj := org.Objects["AIFeatureExtractor"]
+	field := obj.Definition.Fields["CreatedById"]
+	if len(field.ReferenceTo) == 0 {
+		t.Fatal("expected reference target")
+	}
+	original := field.ReferenceTo[0]
+	defer func() { field.ReferenceTo[0] = original }()
+	field.ReferenceTo[0] = "EditedTarget"
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	if got, ok := org.Objects["AIFeatureExtractor"]; !ok || got.Definition.Fields["CreatedById"].ReferenceTo[0] != "EditedTarget" {
+		t.Fatal("nested definition edit removed without snapshot")
+	}
+}
