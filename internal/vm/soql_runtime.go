@@ -57,7 +57,7 @@ func capturedAdminDynamicQueryShape(query soql.Query) bool {
 		return query.HasLimit && query.Limit == 1
 	}
 	w := query.Where
-	return !query.HasLimit && strings.EqualFold(w.Field, "Name") && w.Op == "=" && len(w.And) == 0 && len(w.Or) == 0 && !w.Not
+	return !query.HasLimit && strings.EqualFold(w.Field, "Name") && w.Op == "=" && w.Value.Kind == storage.ValueString && len(w.And) == 0 && len(w.Or) == 0 && !w.Not
 }
 
 func (vm *VM) countQueryParseError(err error, queryText string) error {
