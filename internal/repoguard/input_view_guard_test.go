@@ -28,7 +28,9 @@ var inputViewPackages = []string{
 // that bypass the view. A reference counts, not only a call: a reader default
 // such as `read = os.ReadFile` bypasses it too.
 var inputViewForbidden = map[string][]string{
-	"os":            {"ReadFile", "ReadDir", "Stat", "Lstat", "Open"},
+	"os":            {"ReadFile", "ReadDir", "Stat", "Lstat", "Open", "OpenFile", "DirFS", "Readlink", "OpenRoot"},
+	"io/fs":         {"ReadFile", "ReadDir", "Stat", "WalkDir", "Glob"},
+	"io/ioutil":     {"ReadFile", "ReadDir"},
 	"path/filepath": {"WalkDir", "Walk", "Glob", "EvalSymlinks"},
 	"github.com/glade-sh/glade/internal/config": {"LoadNearest", "LoadFile"},
 }
