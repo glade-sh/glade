@@ -46,6 +46,9 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			if err := captureProviderAdapterGeneration(loaded, paths, bodies, generation, func(path string) ([]byte, error) { return readProjectMetadataFile(loaded, path) }); err != nil {
 				return err
 			}
+			if err := captureVisualforceRuntimeInputs(loaded, generation); err != nil {
+				return err
+			}
 		}
 	}
 	var loadedRoots []string
@@ -69,6 +72,64 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 	}
 	for path := range generation.inputs {
 		cache.capturedMetadata[path] = generation.inputs[path]
+	}
+	return nil
+}
+
+// captureVisualforceRuntimeInputs includes every project file used by page
+// validation in the runtime identity. Projects without pages keep their
+// existing key. The same view observes every file for debugger builds.
+func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetadataGeneration) error {
+	var projects []project.Project
+	seen := map[string]bool{}
+	var visit func(project.Project)
+	visit = func(q project.Project) {
+		if seen[q.Root] {
+			return
+		}
+		seen[q.Root] = true
+		projects = append(projects, q)
+		for _, dep := range q.ManagedPackageDependencies {
+			if dep.Status == "loaded" && dep.Project != nil {
+				visit(*dep.Project)
+			}
+		}
+	}
+	visit(p)
+	hasPages := false
+	for _, q := range projects {
+		hasPages = hasPages || len(q.VisualforcePageFiles) != 0
+	}
+	if !hasPages {
+		return nil
+	}
+	for _, q := range projects {
+		groups := [][]string{q.VisualforcePageFiles, q.VisualforceComponentFiles,
+			q.EmailTemplateFiles, q.FlowFiles, q.LabelFiles, q.TranslationFiles,
+			q.StaticResourceFiles, q.StaticResourceMetas, q.MessageChannelFiles,
+			q.TabFiles, q.ProfileFiles, q.PermissionSetFiles, q.PermissionSetGroupFiles}
+		for group, paths := range groups {
+			for _, path := range paths {
+				inputs := []string{path}
+				if group < 2 && !strings.HasSuffix(strings.ToLower(path), "-meta.xml") {
+					inputs = append(inputs, path+"-meta.xml")
+				}
+				for _, input := range inputs {
+					if _, ok := generation.inputs[input]; ok {
+						continue
+					}
+					data, err := q.ReadFile(input)
+					if os.IsNotExist(err) {
+						generation.inputs[input] = typesys.ApexMetadataInput{}
+						continue
+					}
+					if err != nil {
+						return err
+					}
+					generation.inputs[input] = typesys.ApexMetadataInput{Present: true, Digest: sha256.Sum256(data)}
+				}
+			}
+		}
 	}
 	return nil
 }

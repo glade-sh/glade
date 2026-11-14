@@ -3646,6 +3646,9 @@ func CompileProjectRuntimeForProject(index typesys.Index, p project.Project, art
 	if err != nil {
 		return CompiledProjectRuntime{}, err
 	}
+	if sources.privateRuntime {
+		return compiledProjectRuntimeFromEntry(runtime, index), nil
+	}
 	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
 }
 
