@@ -77,6 +77,24 @@ type spreadTemplateCell struct {
 	once  sync.Once
 	state ObjectState
 	ok    bool
+	// evicted marks a tombstone: the group this cell belonged to was dropped
+	// for the field budget. A tombstone holds no state.
+	evicted bool
+}
+
+// defaultSpreadTemplateFieldBudget is the live template field count that
+// triggers eviction of the least recently used group, about 280 MB.
+const defaultSpreadTemplateFieldBudget = 200_000
+
+var spreadTemplateFieldBudget atomic.Int64
+
+func init() { spreadTemplateFieldBudget.Store(defaultSpreadTemplateFieldBudget) }
+
+// SetSpreadTemplateFieldBudget sets how many template fields may stay live
+// across all template groups and returns the previous budget. A value of zero
+// or less turns eviction off.
+func SetSpreadTemplateFieldBudget(fields int) int {
+	return int(spreadTemplateFieldBudget.Swap(int64(fields)))
 }
 
 var spreadTemplates sync.Map // spreadTemplateKey -> *spreadTemplateCell
