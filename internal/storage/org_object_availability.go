@@ -2,8 +2,11 @@ package storage
 
 import (
 	"crypto/sha256"
-	"encoding/json"
+	"encoding/binary"
+	"hash"
+	"math"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -315,9 +318,75 @@ func sameSliceInstance[T any](a, b []T) bool {
 
 // spreadDefinitionFingerprint snapshots values, including nested collection entries.
 func spreadDefinitionFingerprint(d ObjectDefinition) [32]byte {
-	data, err := json.Marshal(d)
-	if err != nil {
-		panic(err)
+	h := sha256.New()
+	hashSpreadValue(h, reflect.ValueOf(d))
+	var result [32]byte
+	copy(result[:], h.Sum(nil))
+	return result
+}
+
+// hashSpreadValue includes nil markers and all fields rather than JSON's
+// omitempty projection. Maps are ordered so the fingerprint is stable.
+func hashSpreadValue(h hash.Hash, v reflect.Value) {
+	h.Write([]byte{byte(v.Kind())})
+	writeNumber := func(n uint64) { var b [8]byte; binary.LittleEndian.PutUint64(b[:], n); h.Write(b[:]) }
+	switch v.Kind() {
+	case reflect.Pointer, reflect.Interface:
+		if v.IsNil() {
+			h.Write([]byte{0})
+			return
+		}
+		h.Write([]byte{1})
+		hashSpreadValue(h, v.Elem())
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			hashSpreadValue(h, v.Field(i))
+		}
+	case reflect.Map:
+		if v.IsNil() {
+			h.Write([]byte{0})
+			return
+		}
+		h.Write([]byte{1})
+		writeNumber(uint64(v.Len()))
+		keys := v.MapKeys()
+		sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+		for _, k := range keys {
+			hashSpreadValue(h, k)
+			hashSpreadValue(h, v.MapIndex(k))
+		}
+	case reflect.Slice:
+		if v.IsNil() {
+			h.Write([]byte{0})
+			return
+		}
+		h.Write([]byte{1})
+		writeNumber(uint64(v.Len()))
+		for i := 0; i < v.Len(); i++ {
+			hashSpreadValue(h, v.Index(i))
+		}
+	case reflect.Array:
+		writeNumber(uint64(v.Len()))
+		for i := 0; i < v.Len(); i++ {
+			hashSpreadValue(h, v.Index(i))
+		}
+	case reflect.String:
+		value := v.String()
+		writeNumber(uint64(len(value)))
+		h.Write([]byte(value))
+	case reflect.Bool:
+		if v.Bool() {
+			h.Write([]byte{1})
+		} else {
+			h.Write([]byte{0})
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		writeNumber(uint64(v.Int()))
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		writeNumber(v.Uint())
+	case reflect.Float32, reflect.Float64:
+		writeNumber(math.Float64bits(v.Float()))
+	default:
+		panic("unsupported spread definition field: " + v.Kind().String())
 	}
-	return sha256.Sum256(data)
 }
