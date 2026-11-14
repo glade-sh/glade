@@ -84,3 +84,33 @@ func TestReceiverTriviaAnonymousServerPosition(t *testing.T) {
 		t.Errorf("SOAP: status=%d result=%v", rec.Code, soap)
 	}
 }
+
+// The carriage-return line-comment row reports line 2 at both APIs
+// (receiver_split/org.tsv:300-301).
+func TestReceiverTriviaCarriageReturnServerPosition(t *testing.T) {
+	source, err := os.ReadFile(filepath.Join("..", "sema", "testdata", "receiver_split", "grammar", "bound_cr_comment.apex"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	handler := New(&org)
+	query := url.Values{"anonymousBody": []string{string(source)}}
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v67.0/tooling/executeAnonymous?"+query.Encode(), nil))
+	var got struct {
+		Compiled       bool   `json:"compiled"`
+		CompileProblem string `json:"compileProblem"`
+		Line           int    `json:"line"`
+		Column         int    `json:"column"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil || rec.Code != http.StatusOK || got.Compiled || got.CompileProblem != "Unexpected token 'debug'." || got.Line != 2 || got.Column != 1 {
+		t.Errorf("tooling: status=%d body=%s err=%v", rec.Code, rec.Body.String(), err)
+	}
+	body := soapEnvelope(`<apex:executeAnonymous><apex:String>` + html.EscapeString(string(source)) + `</apex:String></apex:executeAnonymous>`)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, strings.Replace(soapApexTestPath, "65.0", "67.0", 1), strings.NewReader(body)))
+	soap := decodeSOAPResult(t, rec.Body.String())
+	if rec.Code != http.StatusOK || soap["compiled"] != "false" || soap["compileProblem"] != "Unexpected token 'debug'." || soap["line"] != "2" || soap["column"] != "1" {
+		t.Errorf("SOAP: status=%d result=%v", rec.Code, soap)
+	}
+}
