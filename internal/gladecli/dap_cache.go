@@ -17,8 +17,8 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// Version 19 entries were proved at the endpoints only; version 20 entries are
-// built from one pinned input view and carry its observations.
+// Version 21 records full directory listings where loaders consume hidden
+// metadata. Earlier entries do not prove those inputs.
 const dapCacheVersion = 21
 
 // dapLoadAttempts bounds the cold builds one startup makes while project
