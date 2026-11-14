@@ -113,58 +113,91 @@ func runMissingObjectParity(t *testing.T, className, source string, eager bool) 
 }
 
 // Names a catalog object answers to must resolve and return rows after a miss
-// has run, exactly as under the eager spread. The eager answer is asserted on
-// its own, so a name that the lazy path wrongly treats as final cannot pass by
-// failing the same way in both modes.
-const lazySpreadAnswerableClass = `@IsTest
+// has run, exactly as under the eager spread. Each method runs a miss first and
+// then each listed query on its own. Every result is asserted separately against
+// the expected eager outcome, then compared with the lazy result, so a name that
+// the lazy path wrongly treats as final cannot pass by failing the same way in
+// both modes.
+type answerableQuery struct {
+	soql string
+	want string // "rows" or the object name of an expected missing-object error
+}
+
+var answerableCases = []struct {
+	method  string
+	queries []answerableQuery
+}{
+	{"kav", []answerableQuery{{"SELECT Id FROM Knowledge__kav", "rows"}}},
+	{"kavLower", []answerableQuery{{"select id from knowledge__kav", "rows"}}},
+	{"ka", []answerableQuery{{"SELECT Id FROM Knowledge__ka", "rows"}}},
+	{"kaLower", []answerableQuery{{"select id from KNOWLEDGE__KA", "rows"}}},
+	{"feed", []answerableQuery{{"SELECT Id FROM AccountFeed", "rows"}, {"SELECT Id FROM Knowledge__Feed", "rows"}}},
+	{"history", []answerableQuery{{"SELECT Id FROM AccountHistory", "rows"}, {"select id from contacthistory", "rows"}}},
+	{"share", []answerableQuery{{"SELECT Id FROM AccountShare", "rows"}, {"select id from contactshare", "rows"}}},
+	{"changeEvent", []answerableQuery{{"SELECT Id FROM AccountChangeEvent", "AccountChangeEvent"}, {"SELECT Id FROM ContactChangeEvent", "ContactChangeEvent"}}},
+	{"namespaced", []answerableQuery{{"SELECT Id FROM FSL__Time_Dependency__c", "rows"}, {"SELECT Id FROM Time_Dependency__c", "rows"}, {"SELECT Id FROM fsl__time_dependency__c", "rows"}}},
+	{"alias", []answerableQuery{{"SELECT a.Id FROM Account a", "rows"}, {"SELECT c.Id FROM contact c WHERE c.Id != null", "rows"}}},
+	{"dataCategory", []answerableQuery{{"SELECT Id FROM Knowledge__DataCategorySelection", "rows"}, {"SELECT Id FROM ArticleType__DataCategorySelection", "rows"}}},
+}
+
+func answerableClass() string {
+	var b strings.Builder
+	b.WriteString(`@IsTest
 private class AnswerableParity {
 	static void report(String s) { System.assert(false, s); }
 	static String probe(String soql) {
 		try { List<SObject> rows = Database.query(soql); return 'rows ' + rows.size(); }
 		catch (Exception e) { return e.getTypeName() + ' ' + e.getMessage(); }
 	}
-	static String afterMiss(String soql) { String a = probe('SELECT Id FROM Zzz__c'); return a.substring(0, 30) + ' ' + probe(soql); }
-	@IsTest static void kav() { report(afterMiss('SELECT Id FROM Knowledge__kav')); }
-	@IsTest static void kavLower() { report(afterMiss('select id from knowledge__kav')); }
-	@IsTest static void ka() { report(afterMiss('SELECT Id FROM Knowledge__ka')); }
-	@IsTest static void kaLower() { report(afterMiss('select id from KNOWLEDGE__KA')); }
-	@IsTest static void feed() { report(afterMiss('SELECT Id FROM AccountFeed') + ' ' + probe('SELECT Id FROM Knowledge__Feed')); }
-	@IsTest static void history() { report(afterMiss('SELECT Id FROM AccountHistory') + ' ' + probe('select id from contacthistory')); }
-	@IsTest static void share() { report(afterMiss('SELECT Id FROM AccountShare') + ' ' + probe('select id from contactshare')); }
-	@IsTest static void changeEvent() { report(afterMiss('SELECT Id FROM AccountChangeEvent') + ' ' + probe('SELECT Id FROM ContactChangeEvent')); }
-	@IsTest static void namespaced() { report(afterMiss('SELECT Id FROM FSL__Time_Dependency__c') + ' ' + probe('SELECT Id FROM Time_Dependency__c') + ' ' + probe('SELECT Id FROM fsl__time_dependency__c')); }
-	@IsTest static void alias() { report(afterMiss('SELECT a.Id FROM Account a') + ' ' + probe('SELECT Id FROM Account AS a') + ' ' + probe('SELECT c.Id FROM contact c WHERE c.Id != null')); }
-	@IsTest static void dataCategory() { report(afterMiss('SELECT Id FROM Knowledge__DataCategorySelection') + ' ' + probe('SELECT Id FROM ArticleType__DataCategorySelection')); }
-}`
+`)
+	for _, c := range answerableCases {
+		b.WriteString("	@IsTest static void " + c.method + "() { List<String> r = new List<String>{probe('SELECT Id FROM Zzz__c')};")
+		for _, q := range c.queries {
+			b.WriteString(" r.add(probe('" + q.soql + "'));")
+		}
+		b.WriteString(" report(String.join(r, '#SEP#')); }\n")
+	}
+	b.WriteString("}")
+	return b.String()
+}
 
 func TestLazyStandardSpreadAnswerableNamesAfterMissMatchEagerSpread(t *testing.T) {
 	if testing.Short() {
 		t.Skip("infrastructure test; full suite runs in acceptance lanes")
 	}
-	eager := runMissingObjectParity(t, "AnswerableParity", lazySpreadAnswerableClass, true)
-	lazy := runMissingObjectParity(t, "AnswerableParity", lazySpreadAnswerableClass, false)
-	for k, v := range eager {
-		t.Logf("DBG %s => %s", k, v)
+	source := answerableClass()
+	eager := runMissingObjectParity(t, "AnswerableParity", source, true)
+	lazy := runMissingObjectParity(t, "AnswerableParity", source, false)
+	if len(eager) != len(answerableCases) || len(lazy) != len(answerableCases) {
+		t.Fatalf("answered %d eager and %d lazy methods, want %d", len(eager), len(lazy), len(answerableCases))
 	}
-	if len(eager) != 11 {
-		t.Fatalf("eager run answered %d methods, want 11: %v", len(eager), eager)
+	split := func(answer string) []string {
+		return strings.Split(strings.TrimPrefix(answer, "fail: Assertion Failed: "), "#SEP#")
 	}
-	// Independent assertion on the eager answers: names the catalog holds
-	// answer with rows, not with a missing-object error. The names that the
-	// eager org does not hold are listed so a change in the catalog is noticed.
-	notHeld := map[string]bool{"changeEvent": true}
-	for name, got := range eager {
-		if notHeld[name] {
-			continue
-		}
-		if !strings.Contains(got, " rows ") || strings.Contains(got, "is not supported") {
-			t.Errorf("%s: eager answer is not all row results: %s", name, got)
-		}
-	}
-	for name, want := range eager {
-		if got := lazy[name]; got != want {
-			t.Errorf("%s:\n eager %s\n lazy  %s", name, want, got)
-		}
+	for _, c := range answerableCases {
+		t.Run(c.method, func(t *testing.T) {
+			e, l := split(eager[c.method]), split(lazy[c.method])
+			if len(e) != len(c.queries)+1 || len(l) != len(e) {
+				t.Fatalf("result counts: eager %d lazy %d want %d\n eager %s\n lazy  %s", len(e), len(l), len(c.queries)+1, eager[c.method], lazy[c.method])
+			}
+			if !strings.HasPrefix(e[0], "System.QueryException sObject type 'Zzz__c' is not supported.") {
+				t.Errorf("eager miss: %s", e[0])
+			}
+			for i, q := range c.queries {
+				got := e[i+1]
+				switch {
+				case q.want == "rows" && !strings.HasPrefix(got, "rows "):
+					t.Errorf("eager %q is not a row result: %s", q.soql, got)
+				case q.want != "rows" && !strings.HasPrefix(got, "System.QueryException sObject type '"+q.want+"' is not supported."):
+					t.Errorf("eager %q is not the expected miss for %s: %s", q.soql, q.want, got)
+				}
+			}
+			for i := range e {
+				if e[i] != l[i] {
+					t.Errorf("result %d differs:\n eager %s\n lazy  %s", i, e[i], l[i])
+				}
+			}
+		})
 	}
 }
 
