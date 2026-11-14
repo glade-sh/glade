@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 // The fit panels include all positive and negative ordered pairs, including
@@ -74,5 +76,57 @@ func BenchmarkPhoneKeypadPanel(b *testing.B) {
 				fuzzyPhone(a, c, false)
 			}
 		}
+	}
+}
+
+// Native pair 6: the stored vanity number blocks insert and update of the
+// digit form. A single bulk insert into an empty org does not self-match.
+func TestPhoneKeypadDMLNativeConformance(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			newOrg := func() *storage.OrgState {
+				org := &storage.OrgState{APIVersion: api, Objects: map[string]storage.ObjectState{}}
+				storage.EnsureStandardObject(org, "Account")
+				st := org.Objects["Account"]
+				rule := fuzzyRule(fuzzyNativeRow{Object: "Account", Field: "Phone", Method: "Phone", Blank: "NullNotAllowed"})
+				rule.ActionOnInsert, rule.ActionOnUpdate = "Block", "Block"
+				st.Definition.DuplicateRules = append(st.Definition.DuplicateRules, rule)
+				org.Objects["Account"] = st
+				return org
+			}
+			record := func(name, phone string) storage.Record {
+				return storage.Record{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue(name), "Phone": storage.StringValue(phone)}}
+			}
+			org := newOrg()
+			eng := NewEngine(org)
+			eng.Options.EnforceDuplicateRules = true
+			if r := eng.Insert([]storage.Record{record("Seed", "1-800-FLOWERS")})[0]; !r.Success {
+				t.Fatalf("seed: %+v", r)
+			}
+			if r := eng.Insert([]storage.Record{record("Match", "800-356-9377")})[0]; r.Success || r.StatusCode != "DUPLICATES_DETECTED" {
+				t.Fatalf("insert: %+v", r)
+			}
+			if r := eng.Insert([]storage.Record{record("Other", "999-123-4567")})[0]; !r.Success {
+				t.Fatalf("other: %+v", r)
+			}
+			var other storage.Record
+			for _, r := range org.Objects["Account"].Records {
+				if v, ok := r.GetField("Name"); ok && v.String == "Other" {
+					other = r.Clone()
+				}
+			}
+			other.Fields["Phone"] = storage.StringValue("800-356-9377")
+			if r := eng.Update([]storage.Record{other})[0]; r.Success || r.StatusCode != "DUPLICATES_DETECTED" {
+				t.Fatalf("update: %+v", r)
+			}
+			bulkOrg := newOrg()
+			bulk := NewEngine(bulkOrg)
+			bulk.Options.EnforceDuplicateRules = true
+			for _, r := range bulk.Insert([]storage.Record{record("One", "1-800-FLOWERS"), record("Two", "800-356-9377")}) {
+				if !r.Success {
+					t.Fatalf("bulk: %+v", r)
+				}
+			}
+		})
 	}
 }
