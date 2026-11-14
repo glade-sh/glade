@@ -87,6 +87,7 @@ func (o *OrgState) EnableLazyStandardSpread() {
 	if o == nil {
 		return
 	}
+	markExistingExplicitBeforeLazySpread(o)
 	o.ensureFeatureProfile()
 	o.lazyStandardSpread = true
 }
@@ -279,4 +280,18 @@ func (o *OrgState) MarkExplicitSpreadObject(name string) {
 	maps.Copy(next, o.spreadExplicit)
 	next[name] = true
 	o.spreadExplicit = next
+}
+
+// markExistingExplicitBeforeLazySpread protects definitions installed before
+// either lazy spread begins. Existing spread-owned definitions retain their
+// original provenance when switching modes.
+func markExistingExplicitBeforeLazySpread(org *OrgState) {
+	if org == nil || org.eagerStandardSpread || org.lazyStandardSpread || org.StandardSpread != "" {
+		return
+	}
+	for name := range org.Objects {
+		if plainDeveloperPrunable(name) {
+			org.MarkExplicitSpreadObject(name)
+		}
+	}
 }

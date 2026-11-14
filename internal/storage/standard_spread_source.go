@@ -40,6 +40,7 @@ func (o *OrgState) EnableStandardSpreadSource() {
 	if o == nil {
 		return
 	}
+	markExistingExplicitBeforeLazySpread(o)
 	o.ensureFeatureProfile()
 	if o.Objects == nil {
 		o.Objects = make(map[string]ObjectState)
