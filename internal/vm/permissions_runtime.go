@@ -877,6 +877,23 @@ func (vm *VM) capturedAccountCustomFieldPrincipal(objectName string) bool {
 	return false
 }
 
+// scopedRowCheckCaptured reports the scoped capture's record shape: one
+// Account whose written fields are Name and ordinary Text custom fields, under
+// a captured principal (standard_custom_field_scoped).
+func (vm *VM) scopedRowCheckCaptured(record Value) bool {
+	objectName := vm.canonicalSObjectValueType(record)
+	if record.Kind != ValueObject || !vm.capturedAccountCustomFieldPrincipal(objectName) {
+		return false
+	}
+	for _, field := range explicitSObjectFieldNamesInInsertionOrder(record) {
+		canonical := vm.resolveSObjectFieldName(objectName, field)
+		if !strings.EqualFold(canonical, "Name") && !vm.capturedTextCustomField(objectName, canonical) {
+			return false
+		}
+	}
+	return true
+}
+
 // capturedTextCustomField reports an ordinary Text custom field, the field
 // shape of the standard_custom_field_* rows.
 func (vm *VM) capturedTextCustomField(objectName, fieldName string) bool {
