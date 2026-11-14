@@ -1351,6 +1351,7 @@ func (vm *VM) storeClassAliases(class Class) {
 	vm.resetClassAccessCaches()
 	vm.enumLookup = nil
 	vm.enumSuffixLookup = nil
+	vm.enumSuffixBuilt = false
 	vm.storeRegisteredClassLookupAlias(overlay, class.Name, class)
 	if class.Namespace != "" {
 		qualified := runtimeClassName(class)

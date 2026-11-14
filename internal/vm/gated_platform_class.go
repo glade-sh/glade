@@ -71,7 +71,15 @@ func (vm *VM) bindGatedPlatformClass(runtimeName string) bool {
 	vm.bindingGatedPlatformClass = true
 	defer func() { vm.bindingGatedPlatformClass = false }()
 	typesys.IncludeGatedPlatformNamespaceFor(runtimeName)
+	// Registration drops the enum suffix memo so the next suffix search
+	// rebuilds it. A VM whose memo is still the empty one it was created with
+	// never rebuilt it before the gate either (bulk registration keeps it), so
+	// its suffix searches found no stub enum; keep that memo as it was.
+	suffixMemo, suffixBuilt := vm.enumSuffixLookup, vm.enumSuffixBuilt
 	err := vm.RegisterClass(class)
+	if suffixMemo != nil && !suffixBuilt {
+		vm.enumSuffixLookup = suffixMemo
+	}
 	// A bind can run inside a lookup whose caller has already prepared these
 	// memos and writes to them next; registration drops them, so give them
 	// back empty, as a new VM has them.
@@ -124,43 +132,4 @@ func (vm *VM) bindGatedPlatformClassInNamespace(namespace, className string) {
 		return
 	}
 	vm.lookupClassRaw(namespace + "." + shortTypeName(strings.TrimSpace(className)))
-}
-
-type gatedEnumScanMemo struct {
-	valid      bool
-	generation uint64
-	classCount int
-	holds      bool
-}
-
-// bindGatedPlatformEnumsNamed binds the gated stub enums of a simple name
-// before an enum suffix search, but only in a VM whose suffix searches see
-// passive platform enums. Before the gate a stub enum was registered exactly
-// as the other passive platform enums of the VM were, so the search saw the
-// stubs only where it sees the other passive enums: a VM that holds them in
-// its own class entries, not one that reaches them only by qualified lookup.
-func (vm *VM) bindGatedPlatformEnumsNamed(name string) {
-	if !vm.gatedPlatformLateBind || vm.bindingGatedPlatformClass || !vm.suffixScanSeesPlatformEnums() {
-		return
-	}
-	vm.bindGatedPlatformClassesNamed(name)
-}
-
-// suffixScanSeesPlatformEnums reports whether the class entries the enum
-// suffix searches range over hold an ungated passive platform enum with a
-// qualified name.
-func (vm *VM) suffixScanSeesPlatformEnums() bool {
-	memo := &vm.gatedEnumScan
-	if memo.valid && memo.generation == vm.classLookupGeneration && memo.classCount == len(vm.Classes) {
-		return memo.holds
-	}
-	holds := false
-	for _, class := range vm.classEntriesNoLazy() {
-		if class.PlatformType && len(class.EnumValues) != 0 && strings.IndexByte(class.Name, '.') > 0 && !typesys.IsGatedPlatformTypeName(class.Name) {
-			holds = true
-			break
-		}
-	}
-	*memo = gatedEnumScanMemo{valid: true, generation: vm.classLookupGeneration, classCount: len(vm.Classes), holds: holds}
-	return holds
 }

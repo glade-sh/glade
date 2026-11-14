@@ -441,10 +441,9 @@ type VM struct {
 	gatedPlatformLateBind     bool
 	bindingGatedPlatformClass bool
 	gatedPlatformBoundNames   map[string]struct{}
-	// gatedEnumScan memoizes, per class lookup generation and class count,
-	// whether the enum suffix searches see passive platform enums here
-	// (gated_platform_class.go).
-	gatedEnumScan gatedEnumScanMemo
+	// enumSuffixBuilt reports that enumSuffixLookup was built from the class
+	// entries, not the empty map a new VM starts with (gated_platform_class.go).
+	enumSuffixBuilt bool
 	// String == support: the Turkish-dotting decision for the running user and
 	// the full case transformers, created once per machine.
 	localeCase localeCaseCache

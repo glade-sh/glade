@@ -4709,8 +4709,9 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 	}
 	if !strings.Contains(typeName, ".") {
 		// Gated stub enums of this simple name were entries before the gate.
-		// A bind drops the suffix memo, which the check below rebuilds.
-		vm.bindGatedPlatformEnumsNamed(typeName)
+		// A bind keeps the suffix memo as it would have been (see
+		// bindGatedPlatformClass).
+		vm.bindGatedPlatformClassesNamed(typeName)
 		if vm.enumSuffixLookup == nil {
 			vm.rebuildEnumSuffixLookup()
 		}
@@ -4725,6 +4726,7 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 
 func (vm *VM) rebuildEnumSuffixLookup() {
 	vm.enumSuffixLookup = make(map[string]enumClassLookup)
+	vm.enumSuffixBuilt = true
 	for _, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue
