@@ -266,3 +266,35 @@ func TestSpreadObjectUntouchedAfterPlainDropDoesNotDecodeStorm(t *testing.T) {
 		t.Fatalf("second pass decoded %d members, want 0", got)
 	}
 }
+
+// A dropped key protects only its own rebuilt cell; each template-key input
+// distinguishes another cell that can still be released at its first drop.
+func TestPlainDropTracksEveryTemplateKeyInput(t *testing.T) {
+	resetSpreadMemos(t)
+	base := spreadTemplateKey{phase: standardSpreadPlain, signature: "base", object: "Account"}
+	spreadTemplates.Store(spreadTemplateKey{phase: standardSpreadShaped}, &spreadTemplateCell{})
+	spreadTemplates.Store(base, &spreadTemplateCell{})
+	ReleaseStandardCatalogCaches()
+	rebuilt := &spreadTemplateCell{}
+	spreadTemplates.Store(base, rebuilt)
+	variants := map[string]spreadTemplateKey{
+		"phase":      {phase: standardSpreadShaped, signature: base.signature, object: base.object},
+		"signature":  {phase: base.phase, signature: "other", object: base.object},
+		"currency":   {phase: base.phase, signature: base.signature, multiCurr: true, object: base.object},
+		"recordType": {phase: base.phase, signature: base.signature, recordType: true, object: base.object},
+		"object":     {phase: base.phase, signature: base.signature, object: "Contact"},
+	}
+	for _, key := range variants {
+		spreadTemplates.Store(key, &spreadTemplateCell{})
+	}
+	ReleaseStandardCatalogCaches()
+	if cell, ok := spreadTemplates.Load(base); !ok || cell != rebuilt {
+		t.Fatal("rebuilt cell was dropped")
+	}
+	for name, key := range variants {
+		_, present := spreadTemplates.Load(key)
+		if present != (name == "phase") {
+			t.Errorf("%s: present = %t", name, present)
+		}
+	}
+}

@@ -157,9 +157,8 @@ func buildSpreadTemplateCell(cell *spreadTemplateCell, key spreadTemplateKey, or
 	cell.ok = true
 }
 
-// dropPlainSpreadTemplates removes the plain-phase templates once a shaped
-// group exists: the shaped seed holds its own definitions, so the plain cells
-// are reachable only from the map. A later plain org builds them again.
+// dropPlainSpreadTemplates removes each plain-phase template at most once,
+// after a shaped group exists. Later plain orgs can rebuild and retain it.
 func dropPlainSpreadTemplates() {
 	shaped := false
 	spreadTemplates.Range(func(k, _ any) bool {
@@ -177,6 +176,11 @@ func dropPlainSpreadTemplates() {
 	spreadTemplates.Range(func(k, _ any) bool {
 		key := k.(spreadTemplateKey)
 		if key.phase != standardSpreadPlain {
+			return true
+		}
+		if _, alreadyDropped := droppedPlainTemplates.keys[key]; alreadyDropped {
+			// A live plain org may have rebuilt this cell. Keep it so later
+			// completed spreads do not repeatedly decode the same catalog.
 			return true
 		}
 		if droppedPlainTemplates.keys == nil {
