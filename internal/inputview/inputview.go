@@ -336,6 +336,55 @@ func (v *View) EvalSymlinks(path string) (string, error) {
 	}
 	return p, e
 }
+
+// CheckDirectories detects membership drift without sealing the view. Later
+// reads may still add pins, and Recheck remains the publication barrier.
+func (v *View) CheckDirectories() error {
+	if v == nil {
+		return nil
+	}
+	v.mu.Lock()
+	if v.closed {
+		v.mu.Unlock()
+		return nil
+	}
+	pins := make(map[string]map[string]observation)
+	for path, kinds := range v.pins {
+		for kind, old := range kinds {
+			if kind == "dir" || kind == "dir-visible" || kind == "dir-root" {
+				if pins[path] == nil {
+					pins[path] = make(map[string]observation)
+				}
+				pins[path][kind] = old
+			}
+		}
+	}
+	v.mu.Unlock()
+	paths := make([]string, 0, len(pins))
+	for path := range pins {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	for _, path := range paths {
+		kinds := make([]string, 0, len(pins[path]))
+		for kind := range pins[path] {
+			kinds = append(kinds, kind)
+		}
+		sort.Strings(kinds)
+		for _, kind := range kinds {
+			_, current, _ := dirObservation(path, kind)
+			old := pins[path][kind]
+			if current != old {
+				v.mu.Lock()
+				err := v.change(path, changedWhat(old, current))
+				v.mu.Unlock()
+				return err
+			}
+		}
+	}
+	return v.Err()
+}
+
 func (v *View) Recheck() error {
 	if v == nil {
 		return nil

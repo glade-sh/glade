@@ -1863,14 +1863,21 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		diskCacheAllowed = useDiskCache[0]
 	}
 	key := generation.key
-	rememberRuntimeCacheRoot(index, key)
-	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
-		invokeSnapshotValidationHook("runtime_before_memory_cache_return")
-		if err := sources.validateCapturedSourceGeneration(); err != nil {
-			evictSnapshotCaches(key)
-			return key, zero, err
+	if sources.privateRuntime {
+		diskCacheAllowed = false
+	}
+	if !sources.privateRuntime {
+		rememberRuntimeCacheRoot(index, key)
+	}
+	if !sources.privateRuntime {
+		if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+			invokeSnapshotValidationHook("runtime_before_memory_cache_return")
+			if err := sources.validateCapturedSourceGeneration(); err != nil {
+				evictSnapshotCaches(key)
+				return key, zero, err
+			}
+			return key, cached, nil
 		}
-		return key, cached, nil
 	}
 
 	var lookupInput *startupcache.ValidatedInput
@@ -1910,7 +1917,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	pageNames := visualforcePageNamesWithCompilation(index, generation.controllerCompilation)
+	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		// Preserve cold startup's allocation order: VM construction warms the
@@ -1944,10 +1951,12 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		evictSnapshotCaches(key)
 		return key, zero, err
 	}
-	runtimeCacheMu.Lock()
-	evicted := storeRuntimeCacheEntryLocked(key, entry)
-	runtimeCacheMu.Unlock()
-	dropEvictedRuntimeCacheCompanions(evicted)
+	if !sources.privateRuntime {
+		runtimeCacheMu.Lock()
+		evicted := storeRuntimeCacheEntryLocked(key, entry)
+		runtimeCacheMu.Unlock()
+		dropEvictedRuntimeCacheCompanions(evicted)
+	}
 	if diskCacheAllowed {
 		invokeSnapshotValidationHook("runtime_before_disk_cache_publication")
 		if err := sources.validateCapturedSourceGeneration(); err != nil {
@@ -2075,7 +2084,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 
 	compileStarted = time.Now()
-	pageNames := visualforcePageNamesWithCompilation(index, generation.controllerCompilation)
+	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		baseMachine = vm.New(nil)
@@ -3629,6 +3638,7 @@ func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, diges
 func CompileProjectRuntimeForProject(index typesys.Index, p project.Project, artifacts typesys.BuildArtifacts) (CompiledProjectRuntime, error) {
 	sources := newSourceCache()
 	sources.seedProjectSnapshot(&p)
+	sources.privateRuntime = p.Inputs() != nil
 	if err := sources.seedBuildArtifacts(index, &artifacts); err != nil {
 		return CompiledProjectRuntime{}, err
 	}
@@ -3721,10 +3731,14 @@ func visualforceControllerCompilationHint(index typesys.Index, diagnostics []dia
 }
 
 func visualforcePageNamesWithCompilation(index typesys.Index, compilation *visualforce.ControllerCompilation) []string {
+	return visualforcePageNamesWithSources(index, compilation, newSourceCache())
+}
+
+func visualforcePageNamesWithSources(index typesys.Index, compilation *visualforce.ControllerCompilation, sources *sourceCache) []string {
 	if index.Project.Root == "" {
 		return nil
 	}
-	p, err := project.Load(index.Project.Root)
+	p, err := sources.capturedProjectSnapshot(index.Project.Root)
 	if err != nil {
 		return nil
 	}
@@ -3802,6 +3816,7 @@ type sourceCache struct {
 	runtimeSourceUnits      map[string]string
 	projectMetadataPrepared bool
 	capturedProject         *project.Project
+	privateRuntime          bool
 	generationValidator     func() error
 }
 
@@ -6368,7 +6383,7 @@ func mergeProjectRecordTypeReferences(chunks ...[]projectRecordTypeReference) []
 func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []projectRecordTypeReference {
 	cache := sourceCacheFor(caches)
 	var staticRefs []projectRecordTypeReference
-	for _, file := range projectDataJSONFiles(p.Root) {
+	for _, file := range projectDataJSONFiles(p) {
 		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
@@ -6475,7 +6490,7 @@ func projectRecordTypeNameFromCallArg(match []string, constants map[string]strin
 	return strings.TrimSpace(name)
 }
 
-func projectDataFieldReferences(read func(string) ([]byte, error), root string) []projectDataFieldReference {
+func projectDataFieldReferences(p project.Project) []projectDataFieldReference {
 	seen := make(map[string]bool)
 	var refs []projectDataFieldReference
 	add := func(objectName, fieldName string, value any) {
@@ -6491,8 +6506,8 @@ func projectDataFieldReferences(read func(string) ([]byte, error), root string) 
 		seen[key] = true
 		refs = append(refs, projectDataFieldReference{ObjectName: objectName, FieldName: fieldName})
 	}
-	for _, file := range projectDataJSONFiles(root) {
-		data, err := read(file)
+	for _, file := range projectDataJSONFiles(p) {
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6537,7 +6552,7 @@ func collectDataFieldReferences(value any, currentObject string, add func(object
 	}
 }
 
-func projectDataRelationshipReferences(read func(string) ([]byte, error), root string) []projectDataRelationshipReference {
+func projectDataRelationshipReferences(p project.Project) []projectDataRelationshipReference {
 	seen := make(map[string]bool)
 	var refs []projectDataRelationshipReference
 	add := func(childObject, parentRelationship string) {
@@ -6553,8 +6568,8 @@ func projectDataRelationshipReferences(read func(string) ([]byte, error), root s
 		seen[key] = true
 		refs = append(refs, projectDataRelationshipReference{ChildObject: childObject, ParentRelationship: parentRelationship})
 	}
-	for _, file := range projectDataJSONFiles(root) {
-		data, err := read(file)
+	for _, file := range projectDataJSONFiles(p) {
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6639,12 +6654,13 @@ func isFieldDescribeDescriptor(value any) bool {
 	return false
 }
 
-func projectDataJSONFiles(root string) []string {
+func projectDataJSONFiles(p project.Project) []string {
+	root := p.Root
 	if root == "" {
 		return nil
 	}
 	var files []string
-	_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	_ = p.Inputs().WalkDirProjectRoot(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}

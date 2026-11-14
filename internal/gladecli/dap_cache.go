@@ -222,6 +222,9 @@ func buildDAPStateFromView(ctx context.Context, root string, v *inputview.View, 
 	if seams.afterIndex != nil {
 		seams.afterIndex(attempt)
 	}
+	if err := v.CheckDirectories(); err != nil {
+		return dapBuiltState{}, err
+	}
 	runtime, err := apextest.CompileProjectRuntimeForProject(index, p, artifacts)
 	if err != nil {
 		return dapBuiltState{}, err

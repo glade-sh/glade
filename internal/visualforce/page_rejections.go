@@ -38,7 +38,7 @@ func pageInputsSignature(p project.Project) string {
 }
 
 func recordPageRejections(p project.Project, rejected []PageRejection) {
-	if p.Root == "" {
+	if p.Root == "" || p.Inputs() != nil {
 		return
 	}
 	lastPageRejections.Store(p.Root, rejectionRecord{signature: pageInputsSignature(p), rejected: append([]PageRejection(nil), rejected...)})
