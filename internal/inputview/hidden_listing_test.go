@@ -95,3 +95,29 @@ func TestEditorChurnListingFingerprint(t *testing.T) {
 		})
 	}
 }
+
+func TestEditorLikeDeployableInputsStillInvalidate(t *testing.T) {
+	for _, tc := range []struct{ subdir, name string }{
+		{"staticresources/Bundle", "asset.swp"},
+		{"staticresources/Bundle", "asset~"},
+		{"data", ".#records.json"},
+		{"objects/Widget__c/sharingReasons", ".#Second__c.sharingReason-meta.xml"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), tc.subdir)
+			if err := os.MkdirAll(dir, 0700); err != nil {
+				t.Fatal(err)
+			}
+			v := New()
+			if _, err := v.ReadDir(dir); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, tc.name), nil, 0600); err != nil {
+				t.Fatal(err)
+			}
+			if err := v.Recheck(); err == nil {
+				t.Fatal("deployable input did not invalidate listing")
+			}
+		})
+	}
+}
