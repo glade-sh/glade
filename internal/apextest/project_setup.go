@@ -354,15 +354,22 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 }
 
 func runtimeTypeAPIVersion(typ typesys.TypeSymbol, sources *sourceCache) string {
-	// The legacy debugger runtime uses an empty class version when its Apex
-	// metadata companion is absent. Retain that behavior for captured DAP
-	// inputs; other artifact-backed callers keep their captured effective API.
+	// The debugger historically uses the version in the companion itself,
+	// without the index's project-version fallback. Read through the view so
+	// the legacy rule stays tied to the captured metadata generation.
 	if sources != nil && sources.privateRuntime && !hasModifier(typ.Modifiers, vm.AnonymousClassModifier) {
 		sources.mu.RLock()
 		metadata, captured := sources.capturedMetadata[typ.File+"-meta.xml"]
+		p := sources.capturedProject
 		sources.mu.RUnlock()
-		if captured && !metadata.Present {
-			return ""
+		if captured {
+			if !metadata.Present {
+				return ""
+			}
+			if p != nil {
+				data, _ := p.ReadFile(typ.File + "-meta.xml")
+				return apiVersionFromApexMetadata(data)
+			}
 		}
 	}
 	if sources.hasArtifactCapturedSource(typ.File) {
