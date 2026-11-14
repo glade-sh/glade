@@ -29,6 +29,8 @@ func (o OrgState) persistedView() OrgState {
 	o.objectNameCache = nil
 	o.keyPrefixesValidated = false
 	o.lazyStandardSpread = false
+	o.eagerStandardSpread = false
+	o.spreadInstalled = nil
 	o.spreadPrefixSeed = nil
 	o.keyPrefixesValidatedObjectCount = 0
 	o.keyPrefixesValidatedPrefixes = nil

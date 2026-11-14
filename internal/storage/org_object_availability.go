@@ -169,7 +169,7 @@ func refreshOrgFeatureObjects(org *OrgState) {
 			if _, known := ResolveKnownStandardObjectName(name); known && !PlainDeveloperObjectPresent(name, PlainDeveloperAnyRoute) {
 				// Only remove untouched catalog entries, retaining project schema
 				// and data that were installed before the shape was applied.
-				if len(object.Records) != 0 || !isUnmodifiedSpreadObject(name, object) {
+				if len(object.Records) != 0 || !isUnmodifiedSpreadObject(org, name, object) {
 					continue
 				}
 				DeleteObject(org, name)
@@ -216,7 +216,12 @@ func refreshOrgFeatureObjects(org *OrgState) {
 	}
 }
 
-func isUnmodifiedSpreadObject(name string, object ObjectState) bool {
+func isUnmodifiedSpreadObject(org *OrgState, name string, object ObjectState) bool {
+	// Definitions change copy-on-write, so a definition that still holds every
+	// value and collection the spread installed is the catalog build itself.
+	if installed, ok := org.spreadInstalled[name]; ok && sameDefinitionInstance(object.Definition, installed) {
+		return true
+	}
 	baseline := NewOrgState()
 	ensureStandardObjectWithProfile(&baseline, name, nil)
 	return reflect.DeepEqual(object.Definition, baseline.Objects[name].Definition)
@@ -252,4 +257,44 @@ func PlainDeveloperObjectPresent(objectName string, mask uint8) bool {
 		}
 	}
 	return true
+}
+
+// installedSpreadDefinition is a shallow copy of a definition. A map shares
+// its entries with the copy, so the entry counts are kept separately.
+type installedSpreadDefinition struct {
+	definition       ObjectDefinition
+	fields, metadata int
+}
+
+func recordInstalledSpreadDefinition(definition ObjectDefinition) installedSpreadDefinition {
+	return installedSpreadDefinition{definition: definition, fields: len(definition.Fields), metadata: len(definition.Metadata)}
+}
+
+// sameDefinitionInstance reports whether a definition still holds the
+// recorded scalar values, and the recorded map and slice instances at their
+// recorded lengths.
+func sameDefinitionInstance(a ObjectDefinition, recorded installedSpreadDefinition) bool {
+	b := recorded.definition
+	return a.APIName == b.APIName && a.Label == b.Label && a.PluralLabel == b.PluralLabel &&
+		a.KeyPrefix == b.KeyPrefix && a.SharingModel == b.SharingModel && a.EnableSearch == b.EnableSearch &&
+		a.ExternalSharingModel == b.ExternalSharingModel &&
+		len(a.Fields) == recorded.fields && sameMapInstance(a.Fields, b.Fields) &&
+		len(a.Metadata) == recorded.metadata && sameMapInstance(a.Metadata, b.Metadata) &&
+		sameSliceInstance(a.OwnerSharingRules, b.OwnerSharingRules) && sameSliceInstance(a.Relations, b.Relations) &&
+		sameSliceInstance(a.RecordTypes, b.RecordTypes) && sameSliceInstance(a.ValidationRules, b.ValidationRules) &&
+		sameSliceInstance(a.AutoResponseRules, b.AutoResponseRules) && sameSliceInstance(a.AssignmentRules, b.AssignmentRules) &&
+		sameSliceInstance(a.DuplicateRules, b.DuplicateRules) && sameSliceInstance(a.WorkflowRules, b.WorkflowRules) &&
+		sameSliceInstance(a.FlowRules, b.FlowRules) && sameSliceInstance(a.Indexes, b.Indexes) &&
+		sameSliceInstance(a.CriteriaSharingRules, b.CriteriaSharingRules)
+}
+
+func sameMapInstance[M ~map[K]V, K comparable, V any](a, b M) bool {
+	return reflect.ValueOf(a).UnsafePointer() == reflect.ValueOf(b).UnsafePointer()
+}
+
+func sameSliceInstance[T any](a, b []T) bool {
+	if len(a) != len(b) || cap(a) != cap(b) || (a == nil) != (b == nil) {
+		return false
+	}
+	return len(a) == 0 || &a[0] == &b[0]
 }

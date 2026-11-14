@@ -3,6 +3,7 @@ package storage
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"maps"
 	"sort"
 	"sync"
 )
@@ -37,12 +38,31 @@ func EnsureStandardObjectSpread(org *OrgState) {
 		return
 	}
 	org.eagerStandardSpread = true
+	org.ensureFeatureProfile()
+	// Only a plain-profile build of a fresh eager org produces the definitions
+	// an isolated catalog build would; any other start keeps the full check.
+	record := canonicalFeatureSignature(org.Features) == "" && !org.lazyStandardSpread && org.StandardSpread == ""
+	var installed []string
 	for _, objectName := range KnownStandardObjectNames() {
 		if !standardSpreadIncludes(objectName) {
 			continue
 		}
+		if _, exists := org.Objects[objectName]; record && !exists {
+			installed = append(installed, objectName)
+		}
 		EnsureStandardObject(org, objectName)
 	}
+	if !record || len(installed) == 0 {
+		return
+	}
+	snapshot := make(map[string]installedSpreadDefinition, len(org.spreadInstalled)+len(installed))
+	maps.Copy(snapshot, org.spreadInstalled)
+	for _, objectName := range installed {
+		if object, ok := org.Objects[objectName]; ok {
+			snapshot[objectName] = recordInstalledSpreadDefinition(object.Definition)
+		}
+	}
+	org.spreadInstalled = snapshot
 }
 
 // standardSpreadIncludes reports whether the spread seeds a catalog object.

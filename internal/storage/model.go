@@ -121,6 +121,11 @@ type OrgState struct {
 	// prefixes validated. Clearing the schema stamp does not clear it: the cold
 	// objects still take their prefixes from the unique assignment.
 	spreadPrefixesPlanned bool
+
+	// spreadInstalled records each definition the eager spread built from the
+	// plain catalog profile. It is never mutated after it is set, so clones
+	// may share it.
+	spreadInstalled map[string]installedSpreadDefinition
 }
 
 type orgRuntimeGeneration struct {
