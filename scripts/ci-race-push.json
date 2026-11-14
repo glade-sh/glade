@@ -1304,7 +1304,7 @@
       "TestLoopScopeDynamicBindsNativeConformance": 30
     },
     "./internal/gladecli": {
-      "TestConcurrentDAPLoadsDoNotInterfere": 10,
+      "TestConcurrentDAPLoadsDoNotInterfere": 150,
       "TestGCFloorGoroutineEndsAtHandOver": 10,
       "TestGCFloorGoroutineEndsAtMaxAgeAndRestoresPolicy": 10,
       "TestCancelDuringPublishLockWaitSkipsWrite": 3,
