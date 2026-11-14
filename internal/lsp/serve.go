@@ -338,23 +338,25 @@ func (s *server) refreshWorker() {
 		valid := false
 		for attempt := 0; attempt < 2; attempt++ {
 			err := s.h.refresh(s.ctx, paths, func(g *generation) {
+				after = g
+				result := make(chan []diagnostic.Diagnostic, 1)
+				go func() { result <- g.analysisResult().Diagnostics }()
+				select {
+				case next = <-result:
+				case <-s.ctx.Done():
+					return
+				}
+				if s.h.validateGeneration != nil && !s.h.validateGeneration(g.index) {
+					return
+				}
 				s.pubMu.Lock()
-				s.h.gen.Store(g)
+				if s.ctx.Err() == nil {
+					s.h.gen.Store(g)
+					valid = true
+				}
 				s.pubMu.Unlock()
 			})
-			after = s.h.gen.Load()
-			if err != nil || after == before {
-				break
-			}
-			result := make(chan []diagnostic.Diagnostic, 1)
-			go func(g *generation) { result <- g.analysisResult().Diagnostics }(after)
-			select {
-			case next = <-result:
-			case <-s.ctx.Done():
-				return
-			}
-			if s.h.validateGeneration == nil || s.h.validateGeneration(after.index) {
-				valid = true
+			if err != nil || after == nil || s.ctx.Err() != nil || valid {
 				break
 			}
 		}
