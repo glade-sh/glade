@@ -104,3 +104,52 @@ func TestVisualforceManifestDigestLookupScope(t *testing.T) {
 		t.Fatal("generation reused a digest outside its Visualforce inputs")
 	}
 }
+
+func TestRecentVisualforceInputsAvoidRepeatedHashing(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
+	page := filepath.Join(root, "src", "pages", "Home.page")
+	resource := filepath.Join(root, "src", "staticresources", "Bundle", "asset.js")
+	writeFile(t, page, `<apex:page/>`)
+	writeFile(t, resource, "first")
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := loadTestIndex(t, root)
+	resetFileDigestTrust()
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	fileDigestNow = time.Now
+	reads := 0
+	fileDigestReadHook = func(path string) {
+		if path == resource {
+			reads++
+		}
+	}
+	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	sources := newSourceCache()
+	sources.seedProjectSnapshot(&p)
+	generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
+	if err := sources.captureProjectRuntimeMetadata(index, &generation); err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		if err := sources.validateCapturedSourceGenerationRaw(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if reads != 1 {
+		t.Fatalf("resource hash reads=%d, want one for unchanged recent input", reads)
+	}
+	info, err := os.Stat(resource)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, resource, "other")
+	if err := os.Chtimes(resource, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	if err := sources.validateCapturedSourceGenerationRaw(); err == nil {
+		t.Fatal("same-size rewrite with restored timestamp was not detected")
+	}
+}
