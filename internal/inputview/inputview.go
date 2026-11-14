@@ -289,21 +289,22 @@ func ignoredChurnFile(dir string, entry os.DirEntry) bool {
 	if !entry.Type().IsRegular() {
 		return false
 	}
+	name := entry.Name()
+	churn := name == ".DS_Store" || strings.HasSuffix(name, ".swp") || strings.HasSuffix(name, "~")
+	if strings.HasPrefix(name, ".#") {
+		target := strings.TrimPrefix(name, ".#")
+		churn = churn || !strings.Contains(target, ".") || strings.HasSuffix(target, ".cls") || strings.HasSuffix(target, ".trigger")
+	}
+	if !churn {
+		return false
+	}
 	for _, part := range strings.Split(filepath.ToSlash(filepath.Clean(dir)), "/") {
 		switch strings.ToLower(part) {
 		case "aiagentdefinitionversions", "aiauthoringbundles", "aura", "digitalexperiences", "documents", "experiences", "experiencepropertytypebundles", "genaifunctions", "genaiplannerbundles", "integartifactdefs", "lwc", "staticresources", "wavetemplates", "uibundles", "apptemplates", "lightningtypes", "contenttypes", "uiwidgets":
 			return false
 		}
 	}
-	name := entry.Name()
-	if name == ".DS_Store" || strings.HasSuffix(name, ".swp") || strings.HasSuffix(name, "~") {
-		return true
-	}
-	if strings.HasPrefix(name, ".#") {
-		target := strings.TrimPrefix(name, ".#")
-		return !strings.Contains(target, ".") || strings.HasSuffix(target, ".cls") || strings.HasSuffix(target, ".trigger")
-	}
-	return false
+	return true
 }
 
 func (v *View) ReadDir(path string) ([]os.DirEntry, error) {
