@@ -283,23 +283,20 @@ func dirObservation(path, kind string) ([]os.DirEntry, observation, error) {
 	return entries, o, nil
 }
 
-// ignoredChurnFile omits editor artifacts only where they cannot be static
-// resource contents. A hidden lock with a metadata suffix can itself be an
-// input, so only lock names for Apex files or without an extension are omitted.
+// ignoredChurnFile keeps source bundle contents observable even when their
+// names look like local editor artifacts. Bundle content can have any name.
 func ignoredChurnFile(dir string, entry os.DirEntry) bool {
 	if !entry.Type().IsRegular() {
 		return false
 	}
-	name := entry.Name()
-	if name == ".DS_Store" {
-		return true
-	}
 	for _, part := range strings.Split(filepath.ToSlash(filepath.Clean(dir)), "/") {
-		if strings.EqualFold(part, "staticresources") {
+		switch strings.ToLower(part) {
+		case "aiagentdefinitionversions", "aiauthoringbundles", "aura", "digitalexperiences", "documents", "experiences", "experiencepropertytypebundles", "genaifunctions", "genaiplannerbundles", "integartifactdefs", "lwc", "staticresources", "wavetemplates", "uibundles", "apptemplates", "lightningtypes", "contenttypes", "uiwidgets":
 			return false
 		}
 	}
-	if strings.HasSuffix(name, ".swp") || strings.HasSuffix(name, "~") {
+	name := entry.Name()
+	if name == ".DS_Store" || strings.HasSuffix(name, ".swp") || strings.HasSuffix(name, "~") {
 		return true
 	}
 	if strings.HasPrefix(name, ".#") {
