@@ -363,6 +363,8 @@
       "TestRecentVisualforceInputValidationDetectsChanges",
       "TestRecentVisualforceInputsAvoidRepeatedHashing",
       "TestRecentVisualforceSharedSnapshotBound",
+      "TestRecentVisualforceSharedSnapshotEntryBound",
+      "TestRecentVisualforceSharedSnapshotIdentityChanges",
       "TestRecordDefaultAndListTypeNativeConformance",
       "TestRecordListInstanceOfOrgConformance",
       "TestRecordListViewsOrgConformance",

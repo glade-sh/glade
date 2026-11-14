@@ -108,3 +108,65 @@ func TestRecentVisualforceSharedSnapshotBound(t *testing.T) {
 		t.Fatalf("cached %d entries", len(recentVisualforceShared))
 	}
 }
+
+func TestRecentVisualforceSharedSnapshotIdentityChanges(t *testing.T) {
+	for _, mutation := range []string{"replace", "delete", "symlink retarget"} {
+		t.Run(mutation, func(t *testing.T) {
+			root := t.TempDir()
+			page, input := filepath.Join(root, "Home.page"), filepath.Join(root, "asset.js")
+			writeFile(t, page, "<apex:page/>")
+			if mutation == "symlink retarget" {
+				writeFile(t, filepath.Join(root, "first"), "first")
+				if err := os.Symlink(filepath.Join(root, "first"), input); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				writeFile(t, input, "first")
+			}
+			p := project.Project{Root: root, VisualforcePageFiles: []string{page}, StaticResourceFiles: []string{input}}
+			resetFileDigestTrust()
+			t.Cleanup(resetFileDigestTrust)
+			capture := func() typesys.ApexMetadataInput {
+				generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
+				if err := captureVisualforceRuntimeInputs(p, &generation); err != nil {
+					t.Fatal(err)
+				}
+				return generation.inputs[input]
+			}
+			first := capture()
+			if err := os.Remove(input); err != nil {
+				t.Fatal(err)
+			}
+			switch mutation {
+			case "replace":
+				writeFile(t, input, "other")
+			case "symlink retarget":
+				writeFile(t, filepath.Join(root, "second"), "other")
+				if err := os.Symlink(filepath.Join(root, "second"), input); err != nil {
+					t.Fatal(err)
+				}
+			}
+			changed := capture()
+			if mutation == "delete" {
+				if changed.Present {
+					t.Fatal("deleted input remained present")
+				}
+			} else if !changed.Present || changed == first {
+				t.Fatal("changed input reused stale digest")
+			}
+		})
+	}
+}
+
+func TestRecentVisualforceSharedSnapshotEntryBound(t *testing.T) {
+	resetFileDigestTrust()
+	t.Cleanup(resetFileDigestTrust)
+	for i := 0; i < 4100; i++ {
+		rememberRecentVisualforceInput(fmt.Sprintf("empty-%d", i), recentVisualforceInput{})
+	}
+	fileDigestTrustMu.Lock()
+	defer fileDigestTrustMu.Unlock()
+	if len(recentVisualforceShared) > 4096 {
+		t.Fatalf("cached %d empty entries", len(recentVisualforceShared))
+	}
+}
