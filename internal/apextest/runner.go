@@ -1405,10 +1405,18 @@ type runtimeMetadataGeneration struct {
 	inputs                 map[string]typesys.ApexMetadataInput
 	apiVersions            map[string]string
 	visualforceInputs      map[string]bool
+	recentVisualforce      map[string]recentVisualforceInput
+	recentVisualforceBytes int64
 }
 
 func (generation runtimeMetadataGeneration) trustedVisualforceDigest(path string) ([sha256.Size]byte, bool) {
 	if !generation.visualforceInputs[path] {
+		return [sha256.Size]byte{}, false
+	}
+	if recent, ok := generation.recentVisualforce[path]; ok {
+		if recent.matches(path) {
+			return recent.digest, true
+		}
 		return [sha256.Size]byte{}, false
 	}
 	return trustedCurrentFileDigest(path)
@@ -3847,6 +3855,7 @@ type sourceCache struct {
 	projectMetadataPrepared bool
 	capturedProject         *project.Project
 	privateRuntime          bool
+	recentVisualforce       map[string]recentVisualforceInput
 	generationValidator     func() error
 }
 
@@ -3902,6 +3911,7 @@ func (cache *sourceCache) bindSourceDigests(digests *typesys.SourceDigestSet) {
 		cache.apiVersions = make(map[string]string)
 		cache.capturedFiles = nil
 		cache.capturedMetadata = nil
+		cache.recentVisualforce = nil
 		cache.metadataAuthority = ""
 		cache.snapshotErr = nil
 	}
@@ -3985,6 +3995,7 @@ func (cache *sourceCache) seedBuildArtifacts(index typesys.Index, artifacts *typ
 	}
 	cache.capturedFiles = capturedFiles
 	cache.capturedMetadata = capturedMetadata
+	cache.recentVisualforce = nil
 	cache.metadataAuthority = runtimeMetadataAuthorityArtifact
 	cache.snapshotErr = nil
 	cache.mu.Unlock()
@@ -4114,6 +4125,7 @@ func (cache *sourceCache) prepareMetadataGeneration(index typesys.Index) (runtim
 
 	cache.mu.Lock()
 	cache.capturedMetadata = inputs
+	cache.recentVisualforce = nil
 	cache.apiVersions = apiVersions
 	cache.metadataAuthority = runtimeMetadataAuthorityLegacy
 	cache.snapshotErr = nil
@@ -4165,6 +4177,7 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	for path, input := range cache.capturedMetadata {
 		metadata[path] = input
 	}
+	recent := cache.recentVisualforce
 	cache.mu.RUnlock()
 	for file, expected := range files {
 		actual, err := currentFileDigest(file)
@@ -4176,6 +4189,9 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 		}
 	}
 	for path, expected := range metadata {
+		if input, ok := recent[path]; ok && expected.Present && input.matches(path) {
+			continue
+		}
 		if err := validateApexMetadataInput(path, expected); err != nil {
 			return err
 		}
@@ -4193,6 +4209,7 @@ func (cache *sourceCache) bindSourceDigestLookup(lookup func(string) ([sha256.Si
 	cache.apiVersions = make(map[string]string)
 	cache.capturedFiles = nil
 	cache.capturedMetadata = nil
+	cache.recentVisualforce = nil
 	cache.metadataAuthority = ""
 	cache.snapshotErr = nil
 	cache.expectedDigests = nil

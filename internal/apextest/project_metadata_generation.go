@@ -67,6 +67,7 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 	cache.projectMetadataPrepared = true
 	cache.capturedProject = capturedProject
 	cache.runtimeSourceUnits = units
+	cache.recentVisualforce = generation.recentVisualforce
 	if cache.capturedMetadata == nil {
 		cache.capturedMetadata = make(map[string]typesys.ApexMetadataInput)
 	}
@@ -127,7 +128,20 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 					var digest [sha256.Size]byte
 					var err error
 					if q.Inputs() == nil {
-						digest, err = currentFileDigest(input)
+						recent, captured, captureErr := captureRecentVisualforceInput(input, recentVisualforceBudget-generation.recentVisualforceBytes)
+						if captured {
+							err = captureErr
+							if err == nil {
+								digest = recent.digest
+								if generation.recentVisualforce == nil {
+									generation.recentVisualforce = make(map[string]recentVisualforceInput)
+								}
+								generation.recentVisualforce[input] = recent
+								generation.recentVisualforceBytes += int64(len(recent.content))
+							}
+						} else {
+							digest, err = currentFileDigest(input)
+						}
 					} else {
 						var data []byte
 						data, err = q.ReadFile(input)
