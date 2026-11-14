@@ -144,6 +144,7 @@ func TestStandardCustomFieldAdminUncapturedNeighbors(t *testing.T) {
 	}{
 		{"case_field", "67.0", "", `Case c = new Case(Subject='x'); c.put('Probe_C__c','v'); insert c; c.put('Probe_C__c','w'); update c; System.assertEquals('w', (String) Database.query('SELECT Probe_C__c FROM Case WHERE Id = \'' + c.Id + '\'')[0].get('Probe_C__c'));`},
 		{"text_length_neighbor", "67.0", "", `Account a = new Account(Name='x'); a.put('Probe_Short__c','v'); insert a; System.assertEquals('v', (String) Database.query('SELECT Probe_Short__c FROM Account LIMIT 1')[0].get('Probe_Short__c'));`},
+		{"query_null_neighbor", "67.0", "", `System.assertEquals(0, Database.query('SELECT Probe_B__c FROM Account WHERE Name = null').size());`},
 		{"query_numeric_neighbor", "67.0", "", `String result = 'none'; try { result = String.valueOf(Database.query('SELECT Probe_B__c FROM Account WHERE Name = 5').size()); } catch (Exception e) { result = e.getMessage(); } System.assertEquals('value of filter criterion for field \'Name\' must be of type string and should be enclosed in quotes', result);`},
 		{"query_name_neighbor", "67.0", "", `try { Database.query('SELECT Probe_B__c FROM Account WHERE Name = \'y\''); System.assert(false); } catch (QueryException e) { System.assert(e.getMessage().contains('No such column')); }`},
 		{"query_shape_neighbor", "67.0", "", `Account a = new Account(Name='x', Probe_B__c='b'); insert as system a; System.assertEquals('b', (String) Database.query('SELECT Probe_B__c FROM Account')[0].get('Probe_B__c'));`},
