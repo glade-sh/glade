@@ -3604,7 +3604,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
 			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[history-input, test-binaries-apextest, test-binaries]"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "leak-scan"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}

@@ -1393,6 +1393,7 @@
       "TestRunTestDaemonStopWaitsForProjectRequestDrain": 20,
       "TestRunTestMemoryLimitsProjectRoutes": 20,
       "TestRuntimeRESTAPICLIContext": 20,
+      "TestSaveRefreshPublishesDependentsAndSymbols": 20,
       "TestScopedPluginCoordinateIsNotArchiveInstallArg": 20,
       "TestStopTestDaemonPreservesUnresponsiveEndpoint": 20,
       "TestStopTestDaemonReportsActiveRunCleanupTimeout": 20,
