@@ -15,10 +15,12 @@ func TestCustomFuzzyBoundaries(t *testing.T) {
 		{"LastName", "Kellingsworth", "Kellingswokwr", true, 97},
 		{"LastName", "Fallojbrihse", "Falloprcidbe", true, 95},
 	} {
-		m, s := FuzzyScore(c.method, c.a, c.b, false)
-		if m != c.match || math.Floor(s+0.5) != c.score {
-			t.Errorf("%s %q/%q: got %v %.4f; want %v %.0f", c.method, c.a, c.b, m, s, c.match, c.score)
-		}
+		t.Run(c.method+"/"+c.a, func(t *testing.T) {
+			m, s := FuzzyScore(c.method, c.a, c.b, false)
+			if m != c.match || math.Floor(s+0.5) != c.score {
+				t.Errorf("%s %q/%q: got %v %.4f; want %v %.0f", c.method, c.a, c.b, m, s, c.match, c.score)
+			}
+		})
 	}
 }
 
