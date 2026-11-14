@@ -55,12 +55,13 @@ type VM struct {
 	// adminStandardFLSRoute marks the routes where the default administrator's
 	// standard-field grant rule applies (anonymous_field_policy.go).
 	adminStandardFLSRoute bool
-	// explicitUserModeDML marks the field check of a Database DML call with an
-	// explicit AccessLevel.USER_MODE (adminStandardCustomFieldDMLDenied).
-	explicitUserModeDML    bool
-	knowledgeIssuedParents map[storage.ID]bool
-	case174WarmOrderAccess map[string]bool
-	case174PermissionStamp map[string]string
+	// explicitUserModePartialRecord marks the field check of a partial
+	// single-record Database DML call with an explicit AccessLevel.USER_MODE
+	// (adminStandardCustomFieldDMLDenied).
+	explicitUserModePartialRecord bool
+	knowledgeIssuedParents        map[storage.ID]bool
+	case174WarmOrderAccess        map[string]bool
+	case174PermissionStamp        map[string]string
 	// case174WarmDirectAccess holds actor:record keys whose direct
 	// UserRecordAccess row was warmed by a system-mode relationship query
 	// (ura_direct_carry). It lives for one System.runAs block.

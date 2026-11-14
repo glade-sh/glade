@@ -419,7 +419,7 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	// Only the create branch of an upsert runs insert validation.
 	dmlOptions.ApexRejectNullPersonRecordType = ordinaryDatabaseCall && (op == "insert" || (op == "upsert" && (externalIDField == "" || strings.EqualFold(externalIDField, "Id"))))
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
-	dmlOptions.ExplicitUserMode = isUserModeAccessLevel(accessLevel)
+	dmlOptions.ExplicitUserModePartialRecord = isUserModeAccessLevel(accessLevel) && !allOrNone && args[0].Kind == ValueObject
 	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode, accessLevelPermissionSetID(accessLevel))
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
@@ -2605,10 +2605,10 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	// Partial user-mode DML fails only the rows whose fields are denied; the
 	// all-or-none routes raised the statement exception before this point.
 	if resolvedMode == "USER_MODE" && !allOrNone && len(targets) == len(records) && (op == "insert" || op == "update" || op == "upsert") {
-		savedExplicit := vm.explicitUserModeDML
-		vm.explicitUserModeDML = options.ExplicitUserMode
+		savedExplicit := vm.explicitUserModePartialRecord
+		vm.explicitUserModePartialRecord = options.ExplicitUserModePartialRecord
 		failures := vm.userModeDMLFieldFailures(op, targets, options.UserModePermissionSetID, externalIDField)
-		vm.explicitUserModeDML = savedExplicit
+		vm.explicitUserModePartialRecord = savedExplicit
 		if hasDMLFailures(failures) {
 			records, _, targets = filterDMLInputs(records, nil, targets, failures)
 			if len(records) == 0 {

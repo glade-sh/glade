@@ -747,9 +747,9 @@ func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLe
 	scopedPermissionSetID := accessLevelPermissionSetID(accessLevel)
 	records := dmlAccessRecords(value)
 	defer vm.beginPermissionCheckMemo()()
-	savedExplicit := vm.explicitUserModeDML
-	vm.explicitUserModeDML = isUserModeAccessLevel(accessLevel)
-	defer func() { vm.explicitUserModeDML = savedExplicit }()
+	savedExplicit := vm.explicitUserModePartialRecord
+	vm.explicitUserModePartialRecord = isUserModeAccessLevel(accessLevel) && deferFieldRows && value.Kind == ValueObject
+	defer func() { vm.explicitUserModePartialRecord = savedExplicit }()
 	for index, record := range records {
 		fields, err := vm.userModeDMLRecordAccess(op, record, objectPermission, fieldPermission, scopedPermissionSetID, externalKey...)
 		if err != nil {
@@ -864,11 +864,13 @@ func (vm *VM) capturedAccountCustomFieldPrincipal(objectName string) bool {
 	return false
 }
 
-// adminStandardCustomFieldDMLDenied reports an explicit AccessLevel.USER_MODE
-// insert by the default test-runner administrator of an optional Account
-// custom field that no permission metadata in the org grants. Native rows:
-// standard_custom_field_scoped adminPartial and adminScoped (API 62.0, 67.0
-// and 68.0). A field that any permission set or profile grants keeps the
+// adminStandardCustomFieldDMLDenied reports a partial single-record
+// Database.insert with an explicit AccessLevel.USER_MODE, with or without a
+// permission set scope, by the default test-runner administrator of an
+// optional Account Text custom field that no permission metadata in the org
+// grants. Native rows: standard_custom_field_scoped adminPartial and
+// adminScoped (API 62.0, 67.0 and 68.0). All-or-none calls, lists and other
+// field types have no administrator rows and keep the earlier access. A field that any permission set or profile grants keeps the
 // administrator's access: native routes that deploy such metadata assigned it
 // to the administrator, which Glade test routes do not model.
 //
@@ -879,7 +881,10 @@ func (vm *VM) capturedAccountCustomFieldPrincipal(objectName string) bool {
 // and no fixture fact separates them from the capture.
 // Universally required fields keep their intrinsic access.
 func (vm *VM) adminStandardCustomFieldDMLDenied(op, objectName, fieldName, method, scopedPermissionSetID string) bool {
-	if op != "insert" || !vm.explicitUserModeDML {
+	if op != "insert" || !vm.explicitUserModePartialRecord {
+		return false
+	}
+	if _, field, ok := vm.sObjectFieldDefinition(objectName, fieldName); !ok || field.Type != storage.FieldString || !strings.EqualFold(field.DisplayType, "STRING") || field.Formula != "" {
 		return false
 	}
 	return vm.adminAccountCustomFieldUngranted(objectName, fieldName, method, scopedPermissionSetID)
