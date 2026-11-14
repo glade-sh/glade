@@ -3,6 +3,7 @@ package dml
 import (
 	"encoding/csv"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -46,6 +47,22 @@ func TestEmailInsertValidationNativeConformance(t *testing.T) {
 		e, ok := got.(dmlError)
 		if !ok || e.code != want[0] || e.message != want[1] || len(e.fields) != 1 || e.fields[0] != field {
 			t.Errorf("%q %s: got %#v, native %q", row[3], row[4], got, row[6])
+		}
+	}
+}
+
+// These uncaptured shapes retain the origin/main result, including its message.
+func TestEmailInsertValidationUncapturedNeighborsMatchBase(t *testing.T) {
+	field := storage.Field{APIName: "Email", Label: "Email", DisplayType: "EMAIL"}
+	for _, text := range []string{"user@例え.テスト.", "a@@example.com.", "not-an-address", "x@y.example"} {
+		value := storage.StringValue(text)
+		var base error
+		if InvalidEmailValue(value) {
+			base = dmlErrorf("INVALID_EMAIL_ADDRESS", []string{"Email"}, "dml: invalid email address for field %s.%s", "Contact", "Email")
+		}
+		got := validateEmailField("Contact", "Email", field, value)
+		if !reflect.DeepEqual(got, base) {
+			t.Errorf("%q: got %#v, base %#v", text, got, base)
 		}
 	}
 }
