@@ -39,3 +39,24 @@ func TestPlainDeveloperSpreadPreservesUncapturedNeighbor(t *testing.T) {
 		t.Fatal("uncaptured neighbor lost")
 	}
 }
+
+func TestSpreadDefinitionSnapshotDetectsInPlaceEdits(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*ObjectDefinition)
+	}{
+		{"field", func(d *ObjectDefinition) { d.Fields["Id"] = Field{APIName: "Id", Label: "changed"} }},
+		{"metadata", func(d *ObjectDefinition) { d.Metadata["key"] = "changed" }},
+		{"slice", func(d *ObjectDefinition) { d.RecordTypes[0].Name = "changed" }},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			d := ObjectDefinition{Fields: map[string]Field{"Id": {APIName: "Id"}}, Metadata: map[string]string{"key": "value"}, RecordTypes: []RecordTypeInfo{{Name: "original"}}}
+			snapshot := recordInstalledSpreadDefinition(d)
+			tc.mutate(&d)
+			if sameDefinitionInstance(d, snapshot) {
+				t.Fatal("in-place edit was not detected")
+			}
+		})
+	}
+}
