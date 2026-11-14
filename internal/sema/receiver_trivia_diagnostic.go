@@ -41,6 +41,10 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 	leading := strings.ToLower(ts[statement].text)
 	// Uncaptured neighboring constructs retain the ordinary parser result.
 	if len(stack) > 0 && stack[len(stack)-1].kind == "call" {
+		// Only the first-argument trigger form has a captured diagnostic.
+		if route == "trigger" && dot >= 2 && ts[dot-2].text == "," && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
+			return nil
+		}
 		if receiverTernaryArm(ts, stack, statement, dot) == 2 {
 			return nil
 		}
