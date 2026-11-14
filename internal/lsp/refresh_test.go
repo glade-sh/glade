@@ -108,8 +108,8 @@ func TestRefreshDoesNotPublishInvalidGeneration(t *testing.T) {
 	h := NewHandler(idx)
 	before := h.gen.Load()
 	before.analyzer = func(typesys.Index) sema.Result { return sema.Result{} }
-	h.SetRefresher(func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
-		return idx, func(typesys.Index) sema.Result { return sema.Result{} }, nil
+	h.SetRefresher(func(context.Context, RefreshRequest) (Base, error) {
+		return Base{Index: idx, Analyze: func(typesys.Index) sema.Result { return sema.Result{} }}, nil
 	})
 	validated := make(chan struct{}, 2)
 	h.SetGenerationValidator(func(typesys.Index) bool { validated <- struct{}{}; return false })
