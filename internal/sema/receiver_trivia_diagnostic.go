@@ -160,7 +160,7 @@ func receiverGenericOpen(ts []receiverTriviaToken, i int) bool {
 			if depth == 0 {
 				return true
 			}
-		case ";", "{", "}", "=", "&", "|":
+		case ";", "{", "}", "=", "&", "|", "?", ":", "(", ")", "+", "-", "*":
 			return false
 		}
 	}
