@@ -122,7 +122,12 @@ func spreadGroupFor(key spreadTemplateGroupKey) *spreadTemplateGroup {
 	return g.(*spreadTemplateGroup)
 }
 
+// touch records a use of the cell's group. It reads group only after done, so
+// a cell another goroutine is still building is skipped.
 func (c *spreadTemplateCell) touch() {
+	if !c.done.Load() {
+		return
+	}
 	if g := c.group; g != nil {
 		g.lastUse.Store(spreadTemplateClock.Add(1))
 	}
