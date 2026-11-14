@@ -37,11 +37,7 @@ func EnsureStandardObjectSpread(org *OrgState) {
 	if org == nil {
 		return
 	}
-	for name := range org.Objects {
-		if plainDeveloperPrunable(name) {
-			org.MarkExplicitSpreadObject(name)
-		}
-	}
+	markExistingExplicitBeforeSpread(org)
 	org.eagerStandardSpread = true
 	org.ensureFeatureProfile()
 	// Only a plain-profile build of a fresh eager org produces the definitions
@@ -87,7 +83,7 @@ func (o *OrgState) EnableLazyStandardSpread() {
 	if o == nil {
 		return
 	}
-	markExistingExplicitBeforeLazySpread(o)
+	markExistingExplicitBeforeSpread(o)
 	o.ensureFeatureProfile()
 	o.lazyStandardSpread = true
 }
@@ -282,10 +278,10 @@ func (o *OrgState) MarkExplicitSpreadObject(name string) {
 	o.spreadExplicit = next
 }
 
-// markExistingExplicitBeforeLazySpread protects definitions installed before
-// either lazy spread begins. Existing spread-owned definitions retain their
+// markExistingExplicitBeforeSpread protects definitions installed before
+// a spread begins. Existing spread-owned definitions retain their
 // original provenance when switching modes.
-func markExistingExplicitBeforeLazySpread(org *OrgState) {
+func markExistingExplicitBeforeSpread(org *OrgState) {
 	if org == nil || org.eagerStandardSpread || org.lazyStandardSpread || org.StandardSpread != "" {
 		return
 	}
