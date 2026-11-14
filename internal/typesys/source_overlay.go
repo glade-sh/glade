@@ -37,6 +37,12 @@ func NewSourceOverlay(texts map[string]string) *SourceOverlay {
 	return o
 }
 func (o *SourceOverlay) ReadFile(path string) ([]byte, error) {
+	data, _, err := o.readFile(path)
+	return data, err
+}
+
+// readFile reports whether the bytes came from the overlay, including aliases.
+func (o *SourceOverlay) readFile(path string) ([]byte, bool, error) {
 	if o != nil && len(o.texts) > 0 {
 		key := cleanedAbsolutePath(path)
 		physical, registered := o.requestedPhysical[key]
@@ -46,16 +52,17 @@ func (o *SourceOverlay) ReadFile(path string) ([]byte, error) {
 			physical = cleanedAbsolutePath(canonicalPhysicalPath(path))
 		}
 		if o.ambiguous[physical] {
-			return nil, errors.New("conflicting overlay aliases")
+			return nil, false, errors.New("conflicting overlay aliases")
 		}
 		if value, ok := o.texts[key]; ok {
-			return []byte(value), nil
+			return []byte(value), true, nil
 		}
 		if value, ok := o.physical[physical]; ok {
-			return []byte(value), nil
+			return []byte(value), true, nil
 		}
 	}
-	return os.ReadFile(path)
+	data, err := os.ReadFile(path)
+	return data, false, err
 }
 func (o *SourceOverlay) Has(path string) bool {
 	if o == nil {
@@ -81,9 +88,15 @@ func (idx Index) Volatile() bool        { return idx.sourceDigests != nil && idx
 func (a BuildArtifacts) Volatile() bool { return a.SourceDigests != nil && a.SourceDigests.volatile }
 
 func TryUpdateApexFileWithOverlay(previous Index, changedPath string, p project.Project, overlay *SourceOverlay) (Index, bool) {
-	ops := incrementalIdentityOpsWithDefaults(incrementalFileIdentityOps{readSource: overlay.ReadFile})
+	servedOverlay := false
+	readSource := func(path string) ([]byte, error) {
+		data, served, err := overlay.readFile(path)
+		servedOverlay = servedOverlay || served
+		return data, err
+	}
+	ops := incrementalIdentityOpsWithDefaults(incrementalFileIdentityOps{readSource: readSource})
 	idx, ok := updateApexFilesIncrementalWithLoadedProject(previous, []string{changedPath}, nil, ops, p)
-	if ok && overlay.Has(changedPath) {
+	if ok && servedOverlay {
 		idx.sourceDigests.volatile = true
 	}
 	return idx, ok

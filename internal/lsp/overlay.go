@@ -35,18 +35,11 @@ type Base struct {
 // RefreshRequest lists the disk paths a refresh must account for.
 type RefreshRequest struct{ Changed, Created, Deleted []string }
 
-// overlayFallback records open documents the last overlay sync could not
-// represent. Values are buffer digests, so a later edit leaves the set.
+// overlayFallback records size-capped documents. Values are buffer digests,
+// so a later edit leaves the set.
 type overlayFallback struct {
-	// fixed: no rebuild hook and the updater declined. The handler keeps its
-	// fixed-index diagnostics for these, as before overlays existed.
-	fixed map[string][sha256.Size]byte
 	// parserOnly: past a size cap. Only parser diagnostics are published.
 	parserOnly map[string][sha256.Size]byte
-}
-
-func (f *overlayFallback) fixedIndex(doc openDocument) bool {
-	return f != nil && digestMatches(f.fixed, doc)
 }
 
 func (f *overlayFallback) parserOnlyDocument(doc openDocument) bool {
@@ -208,22 +201,22 @@ func (h *Handler) syncOverlayLocked(ctx context.Context, publish func(*generatio
 			changed = append(changed, path)
 		}
 	}
-	setFallback := func(fixed map[string][sha256.Size]byte) {
-		if len(fixed) == 0 && len(capped) == 0 {
+	setFallback := func() {
+		if len(capped) == 0 {
 			h.fallback.Store(nil)
 			return
 		}
-		h.fallback.Store(&overlayFallback{fixed: fixed, parserOnly: capped})
+		h.fallback.Store(&overlayFallback{parserOnly: capped})
 	}
 	if len(changed) == 0 && start == current {
-		setFallback(nil)
+		setFallback()
 		return nil
 	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
 	if target.Len() == 0 {
-		setFallback(nil)
+		setFallback()
 		publish(h.base)
 		return nil
 	}
@@ -257,13 +250,7 @@ func (h *Handler) syncOverlayLocked(ctx context.Context, publish func(*generatio
 	}
 	if !exact {
 		if h.baseConfig.RebuildOverlay == nil {
-			fixed := map[string][sha256.Size]byte{}
-			for _, path := range changed {
-				if digest, ok := target.Digest(path); ok {
-					fixed[canonicalDocumentPath(path)] = h.bufferDigest(path, digest)
-				}
-			}
-			setFallback(fixed)
+			setFallback()
 			return nil
 		}
 		if err := ctx.Err(); err != nil {
@@ -301,20 +288,9 @@ func (h *Handler) syncOverlayLocked(ctx context.Context, publish func(*generatio
 	g.artifacts = captured
 	g.overlay = target
 	g.baseSeq = h.base.seq
-	setFallback(nil)
+	setFallback()
 	publish(g)
 	return nil
-}
-
-// bufferDigest returns the open buffer's digest for path. It differs from
-// the overlay digest when a broken buffer keeps its last clean text.
-func (h *Handler) bufferDigest(path string, fallback [sha256.Size]byte) [sha256.Size]byte {
-	h.docMu.RLock()
-	defer h.docMu.RUnlock()
-	if uri, ok := h.documentPaths[canonicalDocumentPath(path)]; ok {
-		return h.documents[uri].Digest
-	}
-	return fallback
 }
 
 func (h *Handler) openDocumentPaths() []string {

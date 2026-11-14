@@ -301,14 +301,13 @@ func (h *Handler) semanticDiagnostics(doc openDocument, sync bool) ([]diagnostic
 		_ = h.syncOverlay(context.Background(), func(g *generation) { h.gen.Store(g) })
 	}
 	g := h.gen.Load()
-	if _, known := g.index.SourceDigest(doc.Path); known && !reflects(g, doc) {
-		fallback := h.fallback.Load()
-		if fallback.parserOnlyDocument(doc) {
+	if _, known := g.index.SourceDigest(doc.Path); !known {
+		return nil, true
+	} else if !reflects(g, doc) {
+		if h.fallback.Load().parserOnlyDocument(doc) {
 			return nil, true
 		}
-		if !fallback.fixedIndex(doc) {
-			return nil, false
-		}
+		return nil, false
 	}
 	var diagnostics []diagnostic.Diagnostic
 	for _, diag := range g.analysisResult().Diagnostics {
