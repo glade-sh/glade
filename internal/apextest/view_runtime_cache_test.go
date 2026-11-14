@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -14,8 +15,8 @@ import (
 
 func TestViewBackedRuntimeDoesNotPublishSharedCache(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
-	writeFile(t, filepath.Join(root, "src", "classes", "ViewClass.cls"), `public class ViewClass { public static Integer value() { return 1; } }`)
+	writeViewCacheFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
+	writeViewCacheFile(t, filepath.Join(root, "src", "classes", "ViewClass.cls"), `public class ViewClass { public static Integer value() { return 1; } }`)
 	v := inputview.New()
 	p, err := project.LoadWithInputs(root, v)
 	if err != nil {
@@ -35,8 +36,17 @@ func TestViewBackedRuntimeDoesNotPublishSharedCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	shapedStandardApexTestOrgCache.mu.Lock()
+	priorShape := shapedStandardApexTestOrgCache.key
+	shapedStandardApexTestOrgCache.mu.Unlock()
 	if _, err := CompileProjectRuntimeForProject(index, p, artifacts); err != nil {
 		t.Fatal(err)
+	}
+	shapedStandardApexTestOrgCache.mu.Lock()
+	afterShape := shapedStandardApexTestOrgCache.key
+	shapedStandardApexTestOrgCache.mu.Unlock()
+	if afterShape != priorShape {
+		t.Fatal("view-backed org was published to the shared shape cache")
 	}
 	runtimeCacheMu.RLock()
 	_, found := runtimeCache[generation.key]
@@ -57,5 +67,15 @@ func TestViewBackedRuntimeDoesNotPublishSharedCache(t *testing.T) {
 	entry, err := startupcache.Read(root, startupcache.SubdirTest)
 	if err != nil || entry != nil {
 		t.Fatalf("test runtime cache = %v, err=%v", entry != nil, err)
+	}
+}
+
+func writeViewCacheFile(t *testing.T, path, body string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(body), 0644); err != nil {
+		t.Fatal(err)
 	}
 }
