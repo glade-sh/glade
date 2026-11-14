@@ -1,7 +1,6 @@
 package lsp
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -36,5 +35,9 @@ func TestEditorUnchangedNeighbor(t *testing.T) {
 		t.Fatal(err)
 	}
 	data = []byte(strings.ReplaceAll(string(data), dir, "PROJECT"))
-	t.Logf("normalized editor responses SHA256 %x", sha256.Sum256(data))
+	// Captured by running this same test against origin/main at 0574a2848.
+	const want = `{"References":[{"uri":"file://PROJECT/Sample.cls","range":{"start":{"line":0,"character":6},"end":{"line":0,"character":12}}},{"uri":"file://PROJECT/Sample.cls","range":{"start":{"line":0,"character":15},"end":{"line":0,"character":21}}}],"Definition":[{"uri":"file://PROJECT/Sample.cls","range":{"start":{"line":0,"character":0},"end":{"line":0,"character":0}}}],"Symbols":[{"name":"Sample","kind":19,"location":{"uri":"file://PROJECT/Sample.cls","range":{"start":{"line":0,"character":0},"end":{"line":0,"character":0}}}}],"Completion":{"isIncomplete":false,"items":[{"label":"Sample","kind":7},{"label":"class","kind":14,"detail":"Apex keyword"},{"label":"else","kind":14,"detail":"Apex keyword"},{"label":"enum","kind":14,"detail":"Apex keyword"},{"label":"for","kind":14,"detail":"Apex keyword"},{"label":"global","kind":14,"detail":"Apex keyword"},{"label":"if","kind":14,"detail":"Apex keyword"},{"label":"interface","kind":14,"detail":"Apex keyword"},{"label":"new","kind":14,"detail":"Apex keyword"},{"label":"private","kind":14,"detail":"Apex keyword"},{"label":"protected","kind":14,"detail":"Apex keyword"},{"label":"public","kind":14,"detail":"Apex keyword"},{"label":"return","kind":14,"detail":"Apex keyword"},{"label":"static","kind":14,"detail":"Apex keyword"},{"label":"trigger","kind":14,"detail":"Apex keyword"},{"label":"void","kind":14,"detail":"Apex keyword"}]}}`
+	if string(data) != want {
+		t.Fatalf("normalized editor responses differ from base\ngot:  %s\nwant: %s", data, want)
+	}
 }
