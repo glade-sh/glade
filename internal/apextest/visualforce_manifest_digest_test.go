@@ -153,3 +153,90 @@ func TestRecentVisualforceInputsAvoidRepeatedHashing(t *testing.T) {
 		t.Fatal("same-size rewrite with restored timestamp was not detected")
 	}
 }
+
+func TestRecentVisualforceInputValidationDetectsChanges(t *testing.T) {
+	for _, change := range []string{"rewrite", "replace", "delete", "symlink"} {
+		t.Run(change, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
+			page := filepath.Join(root, "src", "pages", "Home.page")
+			resource := filepath.Join(root, "src", "staticresources", "Bundle", "asset.js")
+			writeFile(t, page, `<apex:page/>`)
+			if change == "symlink" {
+				first := filepath.Join(root, "first.js")
+				writeFile(t, first, "first")
+				if err := os.MkdirAll(filepath.Dir(resource), 0755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink(first, resource); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				writeFile(t, resource, "first")
+			}
+			p, err := project.Load(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			index := loadTestIndex(t, root)
+			resetFileDigestTrust()
+			reads := 0
+			oldNow, oldHook := fileDigestNow, fileDigestReadHook
+			fileDigestNow = time.Now
+			fileDigestReadHook = func(path string) {
+				if path == resource {
+					reads++
+				}
+			}
+			t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+			sources := newSourceCache()
+			sources.seedProjectSnapshot(&p)
+			generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
+			if err := sources.captureProjectRuntimeMetadata(index, &generation); err != nil {
+				t.Fatal(err)
+			}
+			if err := sources.validateCapturedSourceGenerationRaw(); err != nil {
+				t.Fatal(err)
+			}
+			if reads != 1 {
+				t.Fatalf("resource hash reads=%d, want one", reads)
+			}
+			info, err := os.Stat(resource)
+			if err != nil {
+				t.Fatal(err)
+			}
+			switch change {
+			case "rewrite":
+				writeFile(t, resource, "other")
+				if err := os.Chtimes(resource, info.ModTime(), info.ModTime()); err != nil {
+					t.Fatal(err)
+				}
+			case "replace":
+				replacement := filepath.Join(root, "replacement.js")
+				writeFile(t, replacement, "other")
+				if err := os.Chtimes(replacement, info.ModTime(), info.ModTime()); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Rename(replacement, resource); err != nil {
+					t.Fatal(err)
+				}
+			case "delete":
+				if err := os.Remove(resource); err != nil {
+					t.Fatal(err)
+				}
+			case "symlink":
+				second := filepath.Join(root, "second.js")
+				writeFile(t, second, "other")
+				if err := os.Remove(resource); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink(second, resource); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := sources.validateCapturedSourceGenerationRaw(); err == nil {
+				t.Fatal("changed input was not detected")
+			}
+		})
+	}
+}
