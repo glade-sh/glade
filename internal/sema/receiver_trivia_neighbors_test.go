@@ -75,3 +75,22 @@ func TestReceiverTriviaAcceptanceRoutes(t *testing.T) {
 		}
 	}
 }
+
+// E1 captures a detached dot in a class field type (org.tsv:206-207).
+// Comment contents do not turn the declaration into an initializer.
+func TestReceiverFieldTypeComment(t *testing.T) {
+	root := t.TempDir()
+	support, err := os.ReadFile(filepath.Join("testdata/receiver_split", "CrProbe.cls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	probe := filepath.Join(root, "CrProbe.cls")
+	writeSemaFile(t, probe, string(support))
+	path := filepath.Join(root, "RouteProbe.cls")
+	writeSemaFile(t, path, "public class RouteProbe { public CrProbe /* = */ .Kid k; }")
+	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "67.0", ApexFiles: []string{probe, path}}, schema.Schema{})
+	result := Analyze(index)
+	if len(result.Diagnostics) != 1 || result.Diagnostics[0].NativeMessage != "Unexpected token '.'." {
+		t.Fatalf("got %v, want detached type diagnostic", result.Diagnostics)
+	}
+}
