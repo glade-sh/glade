@@ -1,0 +1,1 @@
+Developer edition scratch org, no features, settings, or namespace. API 62.0 and 67.0; anonymous and @IsTest routes. One run per route and API. Anonymous logs had complete delimiters and no truncation marker; test assertion messages contained all results. Scratch org creation and deletion succeeded and deletion was verified. Package inventory was not independently queried.
