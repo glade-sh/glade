@@ -20,6 +20,7 @@ func TestReceiverTriviaExpressionContexts(t *testing.T) {
 		{"instanceof type receiver", "Object other = 'x'; Boolean b = other instanceof String && CrProbe\n.value() == 'x';", "Variable does not exist: CrProbe"},
 		{"comparison local free dot", "Integer x = 1; CrProbe obj = new CrProbe(); Boolean b = x < obj\n.countValue;", ""},
 		{"comparison type free dot", "Integer x = 1; Boolean b = x < Integer\n.valueOf('2');", "Variable does not exist: Integer"},
+		{"comparison conditional type", "Integer x = 1; Boolean b = x < Integer\n.valueOf('2') ? x > 0 : false;", "Variable does not exist: Integer"},
 		{"comparison bound dot", "Integer x = 1; Integer y = 2; Boolean b = x < y && String.\nvalueOf(1) == '1';", "Missing ';' at 'valueOf'"},
 	}
 	for _, api := range []string{"62.0", "64.0", "67.0"} {
@@ -58,12 +59,9 @@ func TestReceiverTriviaExpressionContexts(t *testing.T) {
 						}
 						return
 					}
-					for _, d := range result.Diagnostics {
-						if d.NativeMessage == tc.want {
-							return
-						}
+					if len(result.Diagnostics) != 1 || result.Diagnostics[0].NativeMessage != tc.want {
+						t.Errorf("diagnostics %v, want exactly %q", result.Diagnostics, tc.want)
 					}
-					t.Errorf("diagnostics %v, want %q", result.Diagnostics, tc.want)
 				})
 			}
 		}
