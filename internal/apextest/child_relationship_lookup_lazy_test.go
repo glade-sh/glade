@@ -278,7 +278,7 @@ func TestChildRelationshipLookupEntryPointLeavesOwedParentUninstalled(t *testing
 	want := projectReferencedChildRelationshipLookup(eager).keys
 	names := []string{"NoSuchRelationship"}
 	for key := range want {
-		if owner, relation, _ := strings.Cut(key, "\x00"); owner == strings.ToLower(parent) {
+		if owner, relation, _ := strings.Cut(key, "\x00"); strings.EqualFold(owner, parent) {
 			names = append(names, relation)
 		}
 	}
