@@ -93,3 +93,27 @@ func TestReferencesSeeUnsavedAndExternalEdits(t *testing.T) {
 		t.Fatalf("got %#v", got)
 	}
 }
+
+func TestReferencesSeeSameSizeExternalEditWithRestoredTime(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "A.cls")
+	if err := os.WriteFile(p, []byte("class Otherx {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := NewHandler(typesys.Index{Types: []typesys.TypeSymbol{{File: p}}}).snapshot()
+	if got := h.referenceLocations("Needle"); len(got) != 0 {
+		t.Fatalf("initial references: %v", got)
+	}
+	if err := os.WriteFile(p, []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(p, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.referenceLocations("Needle"); len(got) != 1 {
+		t.Fatalf("references after external edit: %v", got)
+	}
+}
