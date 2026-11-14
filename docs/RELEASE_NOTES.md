@@ -26,6 +26,8 @@
 
 - Email fields reject captured malformed addresses on inserts, including trailing or consecutive domain dots and quoted local parts containing spaces.
 
+- **Duplicate matching.** Custom phone rules recognize captured seven-letter vanity numbers via [ITU-T E.161](https://www.itu.int/rec/T-REC-E.161/en) keypad digits. Custom name rules use captured first and last name keys.
+
 ### Performance
 
 - **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
