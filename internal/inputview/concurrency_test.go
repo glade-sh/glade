@@ -46,6 +46,7 @@ func TestConcurrentViewRecheckAndClose(t *testing.T) {
 				_, _ = v.ReadDir(dir)
 				_ = v.WalkDir(dir, func(string, fs.DirEntry, error) error { return nil })
 				_ = v.Err()
+				_ = v.CheckDirectories()
 				_ = v.Observations()
 				_ = v.Recheck()
 			}
