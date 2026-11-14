@@ -161,6 +161,15 @@ func (o *OrgState) AllowsStandardObject(objectName string) bool {
 }
 
 func refreshOrgFeatureObjects(org *OrgState) {
+	// The plain Developer inventory is a union of the captured API and route
+	// lists. Preserve non-catalog project objects when applying this profile.
+	if org.HasFeature(project.PlainDeveloperObjectShape) {
+		for name := range org.Objects {
+			if _, known := ResolveKnownStandardObjectName(name); known && !PlainDeveloperObjectPresent(name, PlainDeveloperAnyRoute) {
+				DeleteObject(org, name)
+			}
+		}
+	}
 	if org.HasCapturedB2BCommerceShape() && !org.HasFeature(project.UnspecifiedStandardFieldShape) {
 		for _, names := range [][]string{b2bAvailableObjectNames, b2bUnavailableObjectNames} {
 			for _, name := range names {

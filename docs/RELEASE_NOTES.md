@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Plain Developer orgs use the captured standard-object inventory consistently when the schema is eagerly or lazily materialized.
 
 ## v0.3.9
 
