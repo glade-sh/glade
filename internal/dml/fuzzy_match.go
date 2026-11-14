@@ -378,6 +378,16 @@ func fuzzyPhone(a, b string, _ bool) (bool, float64) {
 	if !okA || !okB {
 		return false, 0
 	}
+	// The captured vanity shape has country 1, a numeric area, and seven
+	// letters. Only admit its fully equivalent digit form; other letter
+	// placements and partial matches retain the previous scoring.
+	if phoneKeypadEquivalent(ca, aa, ea, la, cb, ab, eb, lb) ||
+		phoneKeypadEquivalent(cb, ab, eb, lb, ca, aa, ea, la) {
+		if ca == cb {
+			return true, 100
+		}
+		return true, 90
+	}
 	if ca != cb && ((ca != "" && ca != "1") || (cb != "" && cb != "1")) {
 		// The rows match a number with the NANP country digit 1 to the same
 		// number without it (90), but never one with a different country digit,
@@ -394,6 +404,29 @@ func fuzzyPhone(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	return score >= 80, score
+}
+
+// phoneKeypadEquivalent covers the captured seven-letter vanity shape.
+func phoneKeypadEquivalent(country, area, exchange, line, otherCountry, otherArea, otherExchange, otherLine string) bool {
+	if country != "1" || (otherCountry != "" && otherCountry != "1") || area != otherArea {
+		return false
+	}
+	const letters = "abcdefghijklmnopqrstuvwxyz"
+	const digits = "22233344455566677778889999"
+	for i := 0; i < len(area); i++ {
+		if area[i] < '0' || area[i] > '9' {
+			return false
+		}
+	}
+	for _, section := range [][2]string{{exchange, otherExchange}, {line, otherLine}} {
+		for i := 0; i < len(section[0]); i++ {
+			j := strings.IndexByte(letters, section[0][i])
+			if j < 0 || digits[j] != section[1][i] {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // ---- ZIP: the segment before the first hyphen or space decides ----

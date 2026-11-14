@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Duplicate matching.** Custom phone rules recognize captured seven-letter vanity numbers when matched to their keypad digits.
 
 ## v0.3.9
 
