@@ -3,7 +3,9 @@ package storage
 import "testing"
 
 // A completed source-backed spread releases its decoded catalog when the
-// opt-in is enabled, while keeping the completed org usable.
+// opt-in is enabled, while keeping the completed org usable. This test also
+// compiles on the release implementation parent f06f2a723b^, where it fails
+// because the release count remains zero.
 func TestCompletedSpreadReleasesCatalogContract(t *testing.T) {
 	old := SetStandardCatalogReleaseEnabled(true)
 	defer SetStandardCatalogReleaseEnabled(old)
