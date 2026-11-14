@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testutil/testshard"
 )
 
@@ -23,6 +24,7 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "vm: %v\n", err)
 		os.Exit(2)
 	}
+	storage.SetStandardCatalogReleaseEnabled(true)
 	os.Exit(m.Run())
 }
 
