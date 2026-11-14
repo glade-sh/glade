@@ -77,3 +77,21 @@ func TestFinderFileDoesNotChangeListingFingerprint(t *testing.T) {
 		t.Fatalf("Finder file changed listing: %v", err)
 	}
 }
+
+func TestEditorChurnListingFingerprint(t *testing.T) {
+	for _, name := range []string{"Source.cls.swp", "Source.cls~", ".#Source.cls"} {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			v := New()
+			if _, err := v.ReadDir(dir); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, name), nil, 0600); err != nil {
+				t.Fatal(err)
+			}
+			if err := v.Recheck(); err != nil {
+				t.Fatalf("editor churn changed listing: %v", err)
+			}
+		})
+	}
+}
