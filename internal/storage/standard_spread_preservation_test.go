@@ -160,6 +160,28 @@ func TestExplicitSpreadInstallSurvivesSourceSerialization(t *testing.T) {
 	}
 }
 
+func TestExplicitSpreadInstallSurvivesSerializationForOtherCapturedObjects(t *testing.T) {
+	for _, name := range []string{"AIResearchPromptResult", "AIScoringStatusEvent"} {
+		t.Run(name, func(t *testing.T) {
+			org := NewOrgState()
+			EnsureStandardObject(&org, name)
+			org.EnableStandardSpreadSource()
+			data, err := json.Marshal(org)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var restored OrgState
+			if err := json.Unmarshal(data, &restored); err != nil {
+				t.Fatal(err)
+			}
+			ApplyProjectOrgShape(&restored, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+			if _, ok := restored.Objects[name]; !ok {
+				t.Fatal("serialized source org lost explicit install")
+			}
+		})
+	}
+}
+
 func TestRepeatedEagerSpreadDoesNotMarkCatalogObjectsExplicit(t *testing.T) {
 	org := NewOrgState()
 	EnsureStandardObjectSpread(&org)
