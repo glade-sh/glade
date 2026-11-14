@@ -747,10 +747,13 @@ func (vm *VM) enforceUserModeDMLAccessDeferring(op string, value Value, accessLe
 	scopedPermissionSetID := accessLevelPermissionSetID(accessLevel)
 	records := dmlAccessRecords(value)
 	defer vm.beginPermissionCheckMemo()()
-	savedExplicit, savedPartial := vm.explicitUserModeAccess, vm.explicitUserModePartialRecord
+	savedExplicit, savedPartial, savedSingle := vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord
 	vm.explicitUserModeAccess = isUserModeAccessLevel(accessLevel) || vm.explicitUserModeStatement
 	vm.explicitUserModePartialRecord = isUserModeAccessLevel(accessLevel) && deferFieldRows && value.Kind == ValueObject
-	defer func() { vm.explicitUserModeAccess, vm.explicitUserModePartialRecord = savedExplicit, savedPartial }()
+	vm.userModeSingleRecord = value.Kind == ValueObject
+	defer func() {
+		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord = savedExplicit, savedPartial, savedSingle
+	}()
 	for index, record := range records {
 		fields, err := vm.userModeDMLRecordAccess(op, record, objectPermission, fieldPermission, scopedPermissionSetID, externalKey...)
 		if err != nil {
@@ -825,7 +828,14 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			// SecurityException, on explicit USER_MODE at both APIs and on the
 			// default mode from source API 67.0.
 			// The rows write Text fields; an explicit USER_MODE upsert has no row.
-			standardObjectCustomField := (scopedPermissionSetID == "" || op == "insert") && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedTextCustomField(objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
+			// Scoped rows insert one record at 62.0, 67.0 and 68.0, as does the
+			// administrator's unscoped partial insert; other unscoped rows cover
+			// 62.0 and 67.0.
+			api := vm.currentSourceExecutionPolicy().APIVersion
+			capturedShape := scopedPermissionSetID == "" && (api == "62.0" || api == "67.0") ||
+				scopedPermissionSetID != "" && op == "insert" && vm.userModeSingleRecord && (api == "62.0" || api == "67.0" || api == "68.0") ||
+				scopedPermissionSetID == "" && op == "insert" && api == "68.0" && vm.explicitUserModePartialRecord && vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator"
+			standardObjectCustomField := capturedShape && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedTextCustomField(objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
 			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert || standardObjectCustomField) {
 				policyFields = append(policyFields, canonicalField)
 				continue
@@ -905,7 +915,7 @@ func (vm *VM) adminStandardCustomFieldDMLDenied(op, objectName, fieldName, metho
 
 // adminAccountCustomFieldUngranted is the shared predicate of the default
 // test-runner administrator's Account custom field rows: no System.runAs, a
-// policy API, an org without Person Accounts, an optional custom field and no
+// captured API (62.0, 67.0, 68.0), an org without Person Accounts, an optional custom field and no
 // profile, permission set or scoped grant for it anywhere in the org.
 func (vm *VM) adminAccountCustomFieldUngranted(objectName, fieldName, method, scopedPermissionSetID string) bool {
 	if vm.Org == nil || vm.testContext == nil || vm.testContext.RunAsDepth != 0 {
@@ -914,7 +924,8 @@ func (vm *VM) adminAccountCustomFieldUngranted(objectName, fieldName, method, sc
 	// The rows cover Account in an org without Person Accounts. Other standard
 	// objects and Person Account orgs keep the administrator's grant, as the
 	// existing native routes on them assert (case349, person_account_formulas).
-	if !adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) || !strings.EqualFold(objectName, "Account") || vm.accountPersonAccountsEnabled() || !isCustomSchemaName(fieldName) {
+	api := vm.currentSourceExecutionPolicy().APIVersion
+	if (api != "62.0" && api != "67.0" && api != "68.0") || !strings.EqualFold(objectName, "Account") || vm.accountPersonAccountsEnabled() || !isCustomSchemaName(fieldName) {
 		return false
 	}
 	if _, _, ok := vm.sObjectFieldDefinition(objectName, fieldName); !ok {

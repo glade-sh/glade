@@ -2606,10 +2606,16 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	// Partial user-mode DML fails only the rows whose fields are denied; the
 	// all-or-none routes raised the statement exception before this point.
 	if resolvedMode == "USER_MODE" && !allOrNone && len(targets) == len(records) && (op == "insert" || op == "update" || op == "upsert") {
-		savedExplicit, savedPartial := vm.explicitUserModeAccess, vm.explicitUserModePartialRecord
-		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord = options.ExplicitUserMode, options.ExplicitUserModePartialRecord
-		failures := vm.userModeDMLFieldFailures(op, targets, options.UserModePermissionSetID, externalIDField)
-		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord = savedExplicit, savedPartial
+		// Only the captured scoped shape (one Account insert) checks its rows
+		// with the scope; other partial calls keep the unscoped row check.
+		rowScope := ""
+		if op == "insert" && options.ExplicitUserModePartialRecord && len(targets) == 1 && targets[0] != nil && vm.capturedAccountCustomFieldPrincipal(vm.canonicalSObjectValueType(*targets[0])) {
+			rowScope = options.UserModePermissionSetID
+		}
+		savedExplicit, savedPartial, savedSingle := vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord
+		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord = options.ExplicitUserMode, options.ExplicitUserModePartialRecord, options.ExplicitUserModePartialRecord
+		failures := vm.userModeDMLFieldFailures(op, targets, rowScope, externalIDField)
+		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord = savedExplicit, savedPartial, savedSingle
 		if hasDMLFailures(failures) {
 			records, _, targets = filterDMLInputs(records, nil, targets, failures)
 			if len(records) == 0 {
