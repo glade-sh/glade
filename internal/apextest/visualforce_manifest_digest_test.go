@@ -264,3 +264,25 @@ func TestRecentVisualforceInputConcurrentValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestRecentVisualforceInputSnapshotBounds(t *testing.T) {
+	root := t.TempDir()
+	small := filepath.Join(root, "small.js")
+	large := filepath.Join(root, "large.js")
+	writeFile(t, small, "small")
+	if err := os.WriteFile(large, make([]byte, recentVisualforceFileLimit+1), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, captured, err := captureRecentVisualforceInput(small, 4); err != nil || captured {
+		t.Fatalf("budget capture=%v err=%v", captured, err)
+	}
+	if _, captured, err := captureRecentVisualforceInput(large, recentVisualforceBudget); err != nil || captured {
+		t.Fatalf("large capture=%v err=%v", captured, err)
+	}
+	oldNow := fileDigestNow
+	fileDigestNow = func() time.Time { return time.Now().Add(time.Hour) }
+	t.Cleanup(func() { fileDigestNow = oldNow })
+	if _, captured, err := captureRecentVisualforceInput(small, recentVisualforceBudget); err != nil || captured {
+		t.Fatalf("old capture=%v err=%v", captured, err)
+	}
+}
