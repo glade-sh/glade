@@ -3,6 +3,7 @@ package apextest
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -238,5 +239,28 @@ func TestRecentVisualforceInputValidationDetectsChanges(t *testing.T) {
 				t.Fatal("changed input was not detected")
 			}
 		})
+	}
+}
+
+func TestRecentVisualforceInputConcurrentValidation(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "input.js")
+	writeFile(t, path, "unchanged")
+	input, captured, err := captureRecentVisualforceInput(path, recentVisualforceBudget)
+	if err != nil || !captured {
+		t.Fatalf("capture=%v err=%v", captured, err)
+	}
+	var wg sync.WaitGroup
+	results := make(chan bool, 8)
+	for range 8 {
+		wg.Add(1)
+		go func() { defer wg.Done(); results <- input.matches(path) }()
+	}
+	wg.Wait()
+	close(results)
+	for ok := range results {
+		if !ok {
+			t.Fatal("unchanged input did not match")
+		}
 	}
 }
