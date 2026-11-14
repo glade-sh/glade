@@ -451,7 +451,14 @@ func (o OrgState) SpreadObjectUntouched(name string) bool {
 	}
 	template, built := cell.peek()
 	if !built {
-		return false
+		// A replacement for a dropped plain cell may already be building.
+		// Wait for it, but preserve the nonblocking answer for other cells.
+		if rebuilt, dropped := rebuiltPlainTemplate(key, o, hasRecordType); dropped {
+			template, built = rebuilt.peek()
+		}
+		if !built {
+			return false
+		}
 	}
 	if reflect.ValueOf(template.Definition.Fields).Pointer() == reflect.ValueOf(state.Definition.Fields).Pointer() {
 		return true
