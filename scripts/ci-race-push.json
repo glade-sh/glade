@@ -673,6 +673,7 @@
       "TestToolchainInstallTwoProcessesColdShare"
     ],
     "./internal/inputview": [
+      "TestConcurrentViewRecheckAndClose",
       "TestViewsAreIsolated"
     ],
     "./internal/lsp": null,
