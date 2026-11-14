@@ -1831,6 +1831,9 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	var err error
 	digests, err = authoritativeRuntimeSourceDigests(index, digests)
 	if err != nil {
+		if sources != nil && sources.privateRuntime {
+			return "", zero, err
+		}
 		key := runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
 		rememberRuntimeCacheRoot(index, key)
 		evictSnapshotCaches(key)
@@ -1843,6 +1846,9 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if prepared == nil {
 		generation, err = prepareRuntimeGeneration(index, digests, sources)
 		if err != nil {
+			if sources.privateRuntime {
+				return "", zero, err
+			}
 			key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
 			rememberRuntimeCacheRoot(index, key)
 			evictSnapshotCaches(key)
@@ -1853,8 +1859,10 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		key := generation.key
-		rememberRuntimeCacheRoot(index, key)
-		evictSnapshotCaches(key)
+		if !sources.privateRuntime {
+			rememberRuntimeCacheRoot(index, key)
+			evictSnapshotCaches(key)
+		}
 		return key, zero, err
 	}
 	invokeSnapshotValidationHook("runtime_after_initial_validation")
@@ -1948,7 +1956,9 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	invokeSnapshotValidationHook("runtime_before_memory_cache_publication")
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
-		evictSnapshotCaches(key)
+		if !sources.privateRuntime {
+			evictSnapshotCaches(key)
+		}
 		return key, zero, err
 	}
 	if !sources.privateRuntime {
@@ -5151,7 +5161,13 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	// Runtime construction validates config before building or returning caches.
 	// The legacy OrgFromIndex API has no error return; only a validated seed is
 	// installed here, and empty remains unset until the VM resolves its fallback.
-	domainURL, err := project.OrgDomainURL(index.Project.Root)
+	sources.mu.RLock()
+	var view *inputview.View
+	if sources.capturedProject != nil {
+		view = sources.capturedProject.Inputs()
+	}
+	sources.mu.RUnlock()
+	domainURL, err := project.OrgDomainURLWithInputs(view, index.Project.Root)
 	if err != nil {
 		domainURL = ""
 	}
@@ -5166,7 +5182,15 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	shapedSeed := index.Project.Root != "" && index.Project.Namespace == "" && len(index.Objects) == 0
 	var org storage.OrgState
-	if shapedSeed {
+	if shapedSeed && sources.privateRuntime {
+		// The attempt is not committed yet. Keep its project-specific shape
+		// private so a discarded build cannot publish a shared seed.
+		seed := standardApexTestOrgForRun()
+		seed.APIVersion = storage.DefaultRESTAPIVersion
+		seed.DomainURL = domainURL
+		storage.ApplyProjectOrgShape(&seed, features)
+		org = seed.CloneRuntimeFrozenDefinition()
+	} else if shapedSeed {
 		org = shapedStandardApexTestOrg(features, domainURL)
 	} else {
 		org = standardApexTestOrgForRun()
