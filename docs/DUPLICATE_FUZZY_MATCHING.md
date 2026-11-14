@@ -1,12 +1,15 @@
 # Duplicate fuzzy matching: public spec, native rows and the model
 
-Three fixtures hold the native rows. The Apex save and search routes are
+Four fixtures hold the native rows. The Apex save and search routes are
 covered by `duplicate_save_behavior/`, including default and custom rule
 actions, error members, Person Accounts, upsert, and controlled surname panels. `duplicate_standard_rules/` (second fixture,
 described under "Standard rules" below) covers the standard Account, Contact
 and Lead rules, the cross-object rules, custom rules with OR groups and three
 items, a custom Person Account rule and the Syllable Alignment pairs; its test
 is `TestStandardRulesNativeRows` (`internal/dml/standard_rules_conformance_test.go`).
+`duplicate_fuzzy_panels/` (described under "Custom rule panels" below) replays
+custom-rule value panels through both Apex routes; its test is
+`TestDuplicateFuzzyPanelsNativeRoutes` (`internal/apextest`).
 
 Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_matching/`
 holds `org.tsv` (native verdicts with match confidences), `cases.json` (the
@@ -150,9 +153,9 @@ with the tables.
    `Jean-Paul`/`Jean Paul` 98, `Mary Ann`/`Mary` 95, `Jane.`/`Jane` 98);
    salutations are not removed (`Dr. Jane` finds nothing).
 
-Not modeled: the Initials algorithm (`J`, `J.` and `J R` find each other at
-100; `J` finds no longer name in a first-name-only rule), and the punctuation
-folding of the dictionary lookup (`Jane.` is keyed like `Jane`).
+Initials are modeled for custom rules (see "Custom rule panels"). Not
+modeled: the punctuation folding of the dictionary lookup (`Jane.` is keyed
+like `Jane`).
 
 ### Last Name
 
@@ -189,7 +192,8 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    letter or more than two trailing letters (`Martinez` finds
    `Martinezkmptr` at 95 but `Frank` does not find `Franklin`), so Glade
    matches by keyboard only one substitution, two with a score of 92 or
-   more, or up to two trailing letters.
+   more, or up to two trailing letters. Custom rules also match three to five
+   substitutions in long names (see "Custom rule panels").
 
 The apostrophe-removed form matches (`O'Connor`/`OConnor`), a space or
 hyphen does not (`O'Brien`/`O Brien`, `Mc Donald`/`McDonald`).
@@ -356,24 +360,29 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   hyphenated surname against its first part (`Fitzgerald`/`Fitzgerald-Lee`).
 - Keyboard Distance: the cost of trailing letters depends on the letters
   (`Williams`/`Williamson` 98, `Stevenson`/`Stevensonnn` 97), which the flat
-  0.25 misses by one point; three or more substitutions, insertions and more
-  than two trailing letters are not matched.
+  0.25 misses by one point; insertions, more than two trailing letters, and
+  three or more substitutions outside the custom-rule shapes below are not
+  matched.
 - First Name: the Name Variant dictionary and its alias keys are unpublished.
   Glade carries the pairs and alias-keyed names proven for about 2,700 common
   first names and 590 nickname families. A nickname pair outside those rows
   is a miss. A dictionary name outside those rows whose alias key differs
   from its own key can match a near spelling by Jaro-Winkler in Glade and not
-  natively. Initials (`J`, `J.`, `J R`) are not matched.
+  natively. Initials written without a space (`TW`, `T.W.`) are names to
+  Glade; natively some find a single initial and some do not.
 - Syllable Alignment is modeled only where the second fixture proves a rule
   (see "Syllable Alignment"). Native confidences of one-word plurals vary with
   the word beyond what the length and last letter explain; vowel variants, an
   `&` inside a word against the joined spelling (`AT&T` finds `ATT` one way)
   and acronyms outside the proven entries are misses.
-- Street: pairs with an unknown suffix abbreviation score asymmetrically
-  natively (`123 Main St`/`123 Main Str` 60 one way, 78 the other) and Glade
-  does not match them; single letters after the number other than `E`.
-- Title: the (k, n) table covers up to five words; the one-direction match of
-  a single word against a five-word title is not modeled.
+- Street: unknown suffix abbreviations are matched only against a known
+  suffix with an edit similarity of 87.5 or more (see "Custom rule panels");
+  `Strret`, `Avnue` and `Blvdd` match natively and not in Glade; single letters
+  after the number other than `E`.
+- Title: the (k, n) table covers up to six words; shared words out of order
+  lose 1 to 3 points natively where Glade takes 3, and confidences of short
+  titles depend on direction (`Survey Field Cartographer`/`Cartographer Field`
+  91 one way, 94 the other).
 - Not captured: MatchBlanks on Contact fields, blank values on the last name
   and company name. The standard rules, the cross-object rules, OR groups and
   three-item rules are in the second fixture; its gaps are listed under
@@ -660,6 +669,90 @@ on both sides), so no row covers blank Account names or Contact last names.
 - Raw (below threshold) item scores for Company Name and Title count 50 in an
   OR rule's confidence, and the Keyboard Distance score of two unlike last names
   is approximate (OR rules report 0.2 to 0.4 points of confidence error).
-- Syllable Alignment: only the two-word second-word rule and the one-word plural
-  are modeled; first-word variants, three-word names, vowel substitutions and
-  the varying plural confidences are misses.
+- Syllable Alignment: the two-word second-word rule, the same rule on the first
+  word of custom rules, and the one-word plural are modeled; three-word names,
+  vowel substitutions, first words that differ in two letters and the varying
+  plural confidences are misses.
+
+## Custom rule panels
+
+Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_panels/`
+(`FuzzyPanel.cls`, the matching and duplicate rule metadata, `cases.json`,
+`org.tsv`, `RUN-FACTS.txt` and `residuals.tsv`); test
+`TestDuplicateFuzzyPanelsNativeRoutes`. Each case inserts one record per value
+and runs `Datacloud.FindDuplicates` on an unsaved copy of every value, so a
+panel of n values holds n x n ordered pairs. Two fresh 30-day scratch orgs, API
+62.0 and 67.0, anonymous Apex and `@IsTest`, two repeats: all 160
+observations agree across API, route and repeat. The test replays the same
+Apex on both Glade routes and compares every pair and confidence exactly;
+`residuals.tsv` pins each pair where Glade differs, with both the native and
+the Glade value. Glade's predictions were frozen before each native run.
+
+The rules below apply to custom matching rule items only
+(`internal/dml/fuzzy_custom_panels.go`); the standard rules keep the shared
+scorers. Each is limited to the value shapes the panels cover.
+
+- Last Name: names of ten to thirteen letters with the same first five
+  letters and match key match with three substitutions from a
+  position-by-position keyboard score of 91.5, and with four or five from 93.
+  The confidence is `(100 + s) / 2` with `s = 100 - a(100 - score) + b`,
+  `a, b` = 0.98, -1.2 for three, 1.15, -0.9 for four and 1.25, -0.1 for five
+  substitutions. Two substitutions keep the gate of 92: the fit panels match
+  pairs from 90.67, but the held-out panel keeps `Thistlecombe`/`Thistlepowbe`
+  (90.67, two far keys) apart.
+- First Name, Initials: a value of single letters with optional dots,
+  separated by spaces (`J`, `J.`, `J R`, `J. R.`), matches only another such
+  value with the same first letter when one of them is a single initial, at
+  100; `J R` does not find `J. R.` and `J. R.` does not find `J.R.`. The
+  Name Variant table gains the pairs the panels prove (`Bart`/`Bartholomew`,
+  `Reg`/`Reggie`, `Zeke`/`Ezekiel`, `Prue`/`Prudence`, `Monty`/`Montgomery`,
+  `Millie`/`Millicent`, `Mort`/`Mortimer`, `Thad`/`Thaddeus`).
+- Company Name: for two-word names with the same second word, the first words
+  match under the second-word rule (`Brightwater`/`Brightwaters`,
+  `Thornbrack`/`Thornbrick`), and a third word scores 91 as before. One-word
+  plurals: a word of eight to ten letters ending in `re` does not find its
+  plural (`Fennimore`, `Callowmere`; held out, `Wexmoore`), one of eight or
+  nine letters ending in `o` finds it at 98, and the plural of a word of six
+  to nine letters ending in `a`, `o` or `y` finds the word: 97 from nine
+  letters, 95 for `a`, 94 at six letters, otherwise 96 (also the
+  `Company.Syllable` rows of the second fixture: `Airways` finds `Airway` at
+  94, `Andromedas` finds `Andromeda` at 97).
+- Street: an address ending in a known suffix word matches the same address
+  ending in an unknown word when the weighted section score is 74 to 80 and
+  the edit similarity of the cleaned addresses is at least 87.5 (`St`/`Strt`
+  84, `Drive`/`Drv` 81, `Hwy`/`Pkwy` 82); 85.71 and below stay apart
+  (`St`/`Sreet`, `Rd`/`Drv`). The confidence is the existing formula.
+- Title: six content words score 89, 93, 95 and 98 for two to five shared
+  words; one shared word in six matches neither way. A candidate whose words
+  all occur in a longer existing title finds it from the short side only: one
+  word in five at 88, two words out of order in five at 90 and in six at 89.
+  These also lift the older `Probe.*.Title` rows to full recall.
+- Three fuzzy items: a Company Name, City and Street rule reproduces every
+  pair and confidence (the mean of three) with no change.
+
+Fit is the first org's 13 cases; holdout is the second org's 7 cases, written
+without sight of the fitted model and scored once. Scoring the holdout showed
+three false pairs (`Wexmoore`/`Wexmoores`, an origin/main plural rule, and
+`Thistlecombe`/`Thistlepowbe` both ways); the two rules above were changed and
+the holdout is counted after that change. API 67.0 `@IsTest`; recall is the
+share of native pairs Glade matches, exact the matched pairs whose confidence
+equals the native one.
+
+| Method | Set | origin/main recall | Recall | False matches | Exact confidence |
+|---|---|---|---|---|---|
+| Last Name keyboard | fit | 152/556 | 412/556 (74.1%) | 0 | 388/412 |
+| Last Name keyboard | holdout, seen once | 80/180 | 156/180 (86.7%) | 0 | 144/156 |
+| First Name | fit | 75/109 | 109/109 (100.0%) | 0 | 109/109 |
+| First Name | holdout | 24/84 | 54/84 (64.3%) | 0 | 54/54 |
+| Company Name | fit | 74/202 | 144/202 (71.3%) | 0 | 135/144 |
+| Company Name | holdout, seen once | 68/150 | 117/150 (78.0%) | 0 | 113/117 |
+| Street | fit | 277/315 | 315/315 (100.0%) | 0 | 315/315 |
+| Street | holdout | 114/150 | 144/150 (96.0%) | 0 | 144/144 |
+| Title | fit | 252/286 | 276/286 (96.5%) | 0 | 251/276 |
+| Title | holdout | 104/120 | 120/120 (100.0%) | 0 | 106/120 |
+| Three fuzzy items | fit | 28/28 | 28/28 (100.0%) | 0 | 28/28 |
+
+origin/main had four false pairs on the fit panels (`J.R.`/`J. R.` both ways,
+`Fennimore` and `Callowmere` plurals) and three on the holdout; the model has
+none on any panel, and none on the rows of the first two fixtures.
+
