@@ -6173,12 +6173,51 @@ func resolvedChildRelationshipParentName(org storage.OrgState, names map[string]
 	if cached, ok := names[key]; ok {
 		return cached
 	}
+	// A catalog object the lazy spread still owes resolves to its canonical
+	// name, which differs from parent only in case, so the lookup key is the
+	// same as after an install. Resolving it here installs nothing, so the
+	// caller's range over org.Objects sees a map nobody writes.
+	if childRelationshipParentNameResolvesByCase(org.Namespace, parent) {
+		if canonical, owed := storage.LazyStandardObjectName(&org, parent); owed {
+			names[key] = canonical
+			return canonical
+		}
+	}
+	// Preserve the resolver's namespace and whitespace behavior for other
+	// pending names without letting it add an object to the caller's map.
+	if _, owed := storage.LazyStandardObjectName(&org, parent); owed {
+		org = org.CloneRuntimeFrozenDefinition()
+	}
 	parentName, ok := storage.ResolveObjectName(org, parent)
 	if !ok {
 		parentName = parent
 	}
 	names[key] = parentName
 	return parentName
+}
+
+// childRelationshipParentNameResolvesByCase reports whether ResolveObjectName
+// can only answer parent by an exact or case-folded object name: no
+// surrounding space, no namespace token or custom suffix, and no prefix the
+// org namespace strips. Other names keep the resolving path.
+func childRelationshipParentNameResolvesByCase(namespace, parent string) bool {
+	if parent == "" || parent != strings.TrimSpace(parent) {
+		return false
+	}
+	first := strings.Index(parent, "__")
+	if first < 0 {
+		return true
+	}
+	if first != strings.LastIndex(parent, "__") || storage.StripNamespaceToken(namespace, parent) != parent {
+		return false
+	}
+	lower := strings.ToLower(parent)
+	for _, suffix := range []string{"__c", "__r", "__e", "__mdt", "__share"} {
+		if strings.HasSuffix(lower, suffix) {
+			return false
+		}
+	}
+	return true
 }
 
 func inferredReferencedField(fieldName string) storage.Field {
