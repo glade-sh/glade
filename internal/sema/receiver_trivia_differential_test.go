@@ -79,17 +79,14 @@ func TestReceiverDetachedFieldContinuation(t *testing.T) {
 	}
 }
 
-// A different member in the same call position is an uncaptured neighbor.
-// Its complete origin/main diagnostic result is null.
-func TestReceiverParenthesizedMemberNeighborUnchanged(t *testing.T) {
+// A free dot in an argument resolves its left operand as a value, including
+// member reads (org.tsv:82-83, 162-163).
+func TestReceiverParenthesizedMemberValueResolution(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		index := typesys.Build(project.Project{SourceAPIVersion: api}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
-		got, err := json.Marshal(AnalyzeAnonymous(index, "System.debug(Account\n.Name);", api).Diagnostics)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(got) != "null" {
-			t.Errorf("api %s: diagnostics %s, want origin/main null", api, got)
+		got := AnalyzeAnonymous(index, "System.debug(Account\n.Name);", api).Diagnostics
+		if len(got) != 1 || got[0].NativeMessage != "Variable does not exist: Account" {
+			t.Errorf("api %s: diagnostics %v, want value resolution error", api, got)
 		}
 	}
 }
