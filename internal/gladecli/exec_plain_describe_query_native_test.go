@@ -91,6 +91,17 @@ func TestPlainDescribeQueryTestRunnerNativeConformance(t *testing.T) {
 			if code := Run(context.Background(), []string{"test", "--project", root, "--no-cache", "--no-serve", "--no-progress", "--json"}, &out, &errs); code != 0 {
 				t.Fatalf("test exit %d: %s %s", code, out.String(), errs.String())
 			}
+			run, err := decodeTestRunJSON(out.Bytes())
+			if err != nil {
+				t.Fatal(err)
+			}
+			count := 0
+			for _, suite := range run.Suites {
+				count += len(suite.Cases)
+			}
+			if count != 1 {
+				t.Fatalf("selected %d tests, want 1: %s", count, out.String())
+			}
 		})
 	}
 }
