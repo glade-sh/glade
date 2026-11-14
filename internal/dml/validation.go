@@ -208,6 +208,11 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if err := validateScaleZeroNumberField(canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
+		if len(existing) == 0 {
+			if err := validateInsertEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
+				return err
+			}
+		}
 		if err := validateEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
@@ -494,15 +499,22 @@ func validateEmailField(objectName, fieldName string, field storage.Field, value
 	if !strings.EqualFold(fieldName, "Email") && !strings.EqualFold(field.DisplayType, "EMAIL") {
 		return nil
 	}
+	if InvalidEmailValue(value) {
+		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "dml: invalid email address for field %s.%s", objectName, fieldName)
+	}
+	return nil
+}
+
+func validateInsertEmailField(objectName, fieldName string, field storage.Field, value storage.Value) error {
+	if !strings.EqualFold(fieldName, "Email") && !strings.EqualFold(field.DisplayType, "EMAIL") {
+		return nil
+	}
 	if capturedInvalidEmailShape(value) {
 		label := strings.TrimSpace(field.Label)
 		if label == "" {
 			label = fieldName
 		}
 		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "%s: invalid email address: %s", label, strings.TrimSpace(value.String))
-	}
-	if InvalidEmailValue(value) {
-		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "dml: invalid email address for field %s.%s", objectName, fieldName)
 	}
 	return nil
 }

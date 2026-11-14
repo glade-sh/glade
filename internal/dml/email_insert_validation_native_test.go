@@ -33,7 +33,7 @@ func TestEmailInsertValidationNativeConformance(t *testing.T) {
 		if field == "ProbeEmail__c" {
 			label = "Probe Email"
 		}
-		got := validateEmailField(strings.Split(row[4], ".")[0], field, storage.Field{APIName: field, Label: label, DisplayType: "EMAIL"}, storage.StringValue(row[3]))
+		got := validateInsertEmailField(strings.Split(row[4], ".")[0], field, storage.Field{APIName: field, Label: label, DisplayType: "EMAIL"}, storage.StringValue(row[3]))
 		if row[6] == "OK" {
 			if got != nil {
 				t.Errorf("%q %s: got %v, native accepted", row[3], row[4], got)
@@ -60,7 +60,10 @@ func TestEmailInsertValidationUncapturedNeighborsMatchBase(t *testing.T) {
 		if InvalidEmailValue(value) {
 			base = dmlErrorf("INVALID_EMAIL_ADDRESS", []string{"Email"}, "dml: invalid email address for field %s.%s", "Contact", "Email")
 		}
-		got := validateEmailField("Contact", "Email", field, value)
+		got := validateInsertEmailField("Contact", "Email", field, value)
+		if got == nil && base != nil {
+			got = validateEmailField("Contact", "Email", field, value)
+		}
 		if !reflect.DeepEqual(got, base) {
 			t.Errorf("%q: got %#v, base %#v", text, got, base)
 		}
