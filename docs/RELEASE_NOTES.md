@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Custom Last Name duplicate matching recognizes more names with multiple keyboard substitutions or trailing characters, based on native captures.
 
 ## v0.3.9
 
