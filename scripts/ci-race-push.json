@@ -320,6 +320,7 @@
       "TestPersistedVisualforceDigestCoversEveryInputGroup",
       "TestPersistedVisualforceDigestDoesNotReadUnsafeRoot",
       "TestPersistedVisualforceDigestInvalidation",
+      "TestPersistedVisualforceDigestRejectsOversizedCache",
       "TestPersistedVisualforceDigestRejectsRecentAndCorruptData",
       "TestPersistedVisualforceDigestRejectsUnsafeDirectory",
       "TestPersistedVisualforceDigestTracksIdentityChanges",

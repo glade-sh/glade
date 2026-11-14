@@ -384,3 +384,21 @@ func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
 		})
 	}
 }
+
+func TestPersistedVisualforceDigestRejectsOversizedCache(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "asset.js")
+	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveVisualforceDigestCache(root, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+	cache := visualforceDigestCachePath(root)
+	if err := os.Truncate(cache, visualforceDigestCacheLimit+1); err != nil {
+		t.Fatal(err)
+	}
+	if err := loadVisualforceDigestCache(root, []string{path}); err == nil {
+		t.Fatal("oversized digest cache was accepted")
+	}
+}
