@@ -125,6 +125,27 @@ func TestEditorLikeDeployableInputsStillInvalidate(t *testing.T) {
 	}
 }
 
+func TestBundleChurnNamesRemainInputs(t *testing.T) {
+	for _, kind := range []string{"aiAgentDefinitionVersions", "aiAuthoringBundles", "aura", "digitalExperiences", "documents", "experiences", "experiencePropertyTypeBundles", "genAiFunctions", "genAiPlannerBundles", "integArtifactDefs", "lwc", "staticresources", "waveTemplates", "uiBundles", "appTemplates", "lightningTypes", "contentTypes", "uiWidgets"} {
+		t.Run(kind, func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), kind, "Sample")
+			if err := os.MkdirAll(dir, 0700); err != nil {
+				t.Fatal(err)
+			}
+			v := New()
+			if _, err := v.ReadDir(dir); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "asset.swp"), nil, 0600); err != nil {
+				t.Fatal(err)
+			}
+			if err := v.Recheck(); err == nil {
+				t.Fatal("bundle content did not invalidate listing")
+			}
+		})
+	}
+}
+
 func TestIgnoredChurnRemainsVisibleToDirectoryConsumers(t *testing.T) {
 	dir := t.TempDir()
 	for _, name := range []string{".DS_Store", ".#Source.cls", "Source.cls.swp", "Source.cls~", ".real.xml"} {
