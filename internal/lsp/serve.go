@@ -446,12 +446,13 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 		return false
 	}
 	var after *generation
+	var disk *generation
 	var next []diagnostic.Diagnostic
 	valid := false
 	for attempt := 0; attempt < 2; attempt++ {
 		// The first generation a refresh publishes is the disk base; an
 		// overlay may follow. Only the base is checked against disk.
-		var disk *generation
+		disk = nil
 		err := s.h.refreshRequest(s.ctx, request, func(g *generation) {
 			s.pubMu.Lock()
 			s.h.gen.Store(g)
@@ -485,10 +486,13 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 	}
 	if valid {
 		// Reconcile only failures that this generation actually reflects.
+		if disk == nil {
+			disk = after
+		}
 		s.h.docMu.Lock()
 		for path, failure := range s.h.diskParse {
 			data, err := os.ReadFile(path)
-			digest, indexed := after.index.SourceDigest(path)
+			digest, indexed := disk.index.SourceDigest(path)
 			if (err == nil && indexed && sha256.Sum256(data) == digest) || (os.IsNotExist(err) && !indexed) {
 				filtered := old[:0]
 				for _, d := range old {
