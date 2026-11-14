@@ -42,7 +42,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 	}
 	if !topLevel {
 		for i := statement; i < dot; i++ {
-			if strings.EqualFold(ts[i].text, "instanceof") && dot+2 < len(ts) && ts[dot+2].text == ";" {
+			if strings.EqualFold(ts[i].text, "instanceof") && i+1 == receiverNameRoot(ts, dot) && dot+2 < len(ts) && ts[dot+2].text == ";" {
 				return report(member, "Extra ';', at '"+member.text+"'.")
 			}
 			if ts[i].text == "?" && (i+1 >= len(ts) || ts[i+1].text != "." || ts[i].end != ts[i+1].start) {
@@ -53,7 +53,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 	if !topLevel {
 		genericDepth := 0
 		for i := statement; i < dot; i++ {
-			if ts[i].text == "<" && i > statement && ts[i-1].word && i+1 < dot && ts[i+1].word {
+			if receiverGenericOpen(ts, i) && i+1 < dot {
 				genericDepth++
 			} else if ts[i].text == ">" && genericDepth > 0 {
 				genericDepth--
@@ -135,6 +135,38 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 	return report(member, "Missing ';' at '"+member.text+"'")
 }
 
+// receiverNameRoot finds the first segment of the actual name operand.
+func receiverNameRoot(ts []receiverTriviaToken, dot int) int {
+	root := dot - 1
+	for root >= 2 && ts[root-1].text == "." && ts[root-2].word && ts[root-2].end == ts[root-1].start && ts[root-1].end == ts[root].start {
+		root -= 2
+	}
+	return root
+}
+
+// A generic argument list must close before an expression operator or a
+// statement boundary. In particular, a comparison does not open a type.
+func receiverGenericOpen(ts []receiverTriviaToken, i int) bool {
+	if i <= 0 || i+1 >= len(ts) || ts[i].text != "<" || !ts[i-1].word || !ts[i+1].word {
+		return false
+	}
+	depth := 1
+	for j := i + 1; j < len(ts); j++ {
+		switch ts[j].text {
+		case "<":
+			depth++
+		case ">":
+			depth--
+			if depth == 0 {
+				return true
+			}
+		case ";", "{", "}", "=", "&", "|":
+			return false
+		}
+	}
+	return false
+}
+
 // receiverFreeDiagnostic resolves the complete name path to the left of a
 // detached dot as a value, using the ordinary scope and type model.
 func receiverFreeDiagnostic(source, namespace string, item receiverTrivia, scopes semaScopeModel, model *semaTypeMemberView) *diagnostic.Diagnostic {
@@ -149,10 +181,7 @@ func receiverFreeDiagnosticAt(source, namespace string, item receiverTrivia, sco
 	if dot+1 >= len(ts) || strings.EqualFold(ts[dot+1].text, "class") {
 		return nil
 	}
-	root := dot - 1
-	for root >= 2 && ts[root-1].text == "." && ts[root-2].word && ts[root-2].end == ts[root-1].start && ts[root-1].end == ts[root].start {
-		root -= 2
-	}
+	root := receiverNameRoot(ts, dot)
 	if root > 0 && ts[root-1].text == "." {
 		return nil
 	}
@@ -160,7 +189,7 @@ func receiverFreeDiagnosticAt(source, namespace string, item receiverTrivia, sco
 		return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, Range: receiverTriviaRange(source, token.start, token.end)}
 	}
 	// These type positions have their own native parser messages.
-	if root > 0 && ts[root-1].text == "<" {
+	if root > 0 && receiverGenericOpen(ts, root-1) {
 		if item.statement+1 < len(ts) && ts[item.statement+1].text == "<" {
 			lead := ts[item.statement]
 			return report(lead, "Unexpected token '"+lead.text+"'.")
@@ -182,7 +211,7 @@ func receiverFreeDiagnosticAt(source, namespace string, item receiverTrivia, sco
 		if ts[i].text == ";" || ts[i].text == "{" || ts[i].text == "}" {
 			break
 		}
-		if strings.EqualFold(ts[i].text, "instanceof") {
+		if strings.EqualFold(ts[i].text, "instanceof") && i+1 == root {
 			if dot+2 < len(ts) && ts[dot+2].text == ";" {
 				return report(ts[dot], "Expecting ';' but was: '.'")
 			}

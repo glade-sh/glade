@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"testing"
 
@@ -17,6 +18,8 @@ func TestReceiverTriviaExpressionContexts(t *testing.T) {
 		{"instanceof local newline", "Object other = new CrProbe(); CrProbe obj = new CrProbe(); Boolean b = other instanceof CrProbe && obj\n.flag;", ""},
 		{"instanceof local space", "Object other = new CrProbe(); CrProbe obj = new CrProbe(); Boolean b = other instanceof CrProbe && obj .flag;", ""},
 		{"instanceof type receiver", "Object other = 'x'; Boolean b = other instanceof String && CrProbe\n.value() == 'x';", "Variable does not exist: CrProbe"},
+		{"comparison local free dot", "Integer x = 1; CrProbe obj = new CrProbe(); Boolean b = x < obj\n.countValue;", ""},
+		{"comparison type free dot", "Integer x = 1; Boolean b = x < Integer\n.valueOf('2');", "Variable does not exist: Integer"},
 		{"comparison bound dot", "Integer x = 1; Integer y = 2; Boolean b = x < y && String.\nvalueOf(1) == '1';", "Missing ';' at 'valueOf'"},
 	}
 	for _, api := range []string{"62.0", "64.0", "67.0"} {
@@ -25,9 +28,12 @@ func TestReceiverTriviaExpressionContexts(t *testing.T) {
 				t.Run(api+"/"+route+"/"+tc.name, func(t *testing.T) {
 					root := t.TempDir()
 					probe := filepath.Join(root, "CrProbe.cls")
-					writeSemaFile(t, probe, "public class CrProbe { public Boolean flag = true; public static String value() { return 'x'; } }")
+					writeSemaFile(t, probe, "public class CrProbe { public Boolean flag = true; public Integer countValue = 2; public static String value() { return 'x'; } }")
 					files := []string{probe}
 					body := tc.body
+					if tc.name == "comparison bound dot" {
+						body = "{ " + body + " }"
+					}
 					if route != "anonymous" {
 						name, source := "RouteProbe.cls", "public class RouteProbe { public void run() { "+body+" } }"
 						if route == "trigger" {
@@ -36,8 +42,6 @@ func TestReceiverTriviaExpressionContexts(t *testing.T) {
 						path := filepath.Join(root, name)
 						writeSemaFile(t, path, source)
 						files = append(files, path)
-					} else if tc.name == "comparison bound dot" {
-						body = "{ " + body + " }"
 					}
 					index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: files}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
 					result := Analyze(index)
@@ -45,8 +49,12 @@ func TestReceiverTriviaExpressionContexts(t *testing.T) {
 						result = AnalyzeAnonymous(index, body, api)
 					}
 					if tc.want == "" {
-						if result.HasErrors() {
-							t.Errorf("unexpected diagnostics: %v", result.Diagnostics)
+						got, err := json.Marshal(result.Diagnostics)
+						if err != nil {
+							t.Fatal(err)
+						}
+						if string(got) != "null" {
+							t.Errorf("diagnostics %s, want origin/main null", got)
 						}
 						return
 					}
