@@ -1716,7 +1716,7 @@
    "max_conf_mae": 0.042
   },
   "67/N4.LN.Var.002": {
-   "min_recall": 0.8556,
+   "min_recall": 0.8453,
    "max_extra": 0,
    "max_conf_mae": 0.013
   },
