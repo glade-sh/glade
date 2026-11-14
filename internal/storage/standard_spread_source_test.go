@@ -39,6 +39,16 @@ func TestPlainDeveloperSpreadNativeConformance(t *testing.T) {
 	}
 }
 
+func BenchmarkPlainDeveloperEagerSpread(b *testing.B) {
+	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape}
+	for i := 0; i < b.N; i++ {
+		org := sourceSpreadEagerOrg(features)
+		if len(org.Objects) == 0 {
+			b.Fatal("empty spread")
+		}
+	}
+}
+
 func sourceSpreadEagerOrg(features []string) OrgState {
 	org := NewOrgState()
 	org.OrgID = DefaultOrgID
