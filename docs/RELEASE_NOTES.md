@@ -15,6 +15,7 @@
 - **Unresolved assignments.** Parallel semantic analysis avoids repeating method-body checks when an unknown assignment target cannot be affected by another type. Diagnostics stay unchanged.
 
 - **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+- **Bounded schema template memory.** Long-lived processes evict least recently used standard object template groups above a field budget; evicted templates rebuild on demand.
 - **Test startup.** Building the child relationship lookup avoids installing
   standard objects solely to resolve parent names, reducing startup work. A
   source reference to a child relationship of a standard object the test org

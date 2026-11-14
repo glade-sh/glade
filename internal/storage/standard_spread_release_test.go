@@ -15,6 +15,8 @@ func resetSpreadMemos(t *testing.T) {
 	t.Cleanup(func() { SetStandardCatalogReleaseEnabled(was) })
 	clear := func() {
 		spreadTemplates.Clear()
+		spreadTemplateGroups.Clear()
+		spreadTemplateLiveFields.Store(0)
 		droppedPlainTemplates.mu.Lock()
 		droppedPlainTemplates.keys = nil
 		droppedPlainTemplates.mu.Unlock()
