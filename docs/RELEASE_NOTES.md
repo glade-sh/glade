@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+- **Bounded schema template memory.** Long-lived processes (the test daemon, the server and the Go test binaries) now evict the least recently used group of standard object templates once the live templates pass 200,000 fields. An evicted group rebuilds to the same values on its next use.
 - **Test startup.** Building the child relationship lookup avoids installing
   standard objects solely to resolve parent names, reducing startup work.
 
