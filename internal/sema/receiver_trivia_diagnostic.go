@@ -580,6 +580,13 @@ func receiverControlDiagnostic(source string, item receiverTrivia) *diagnostic.D
 	if !bound && !free {
 		return nil
 	}
+	arg := i + 3
+	if free {
+		arg++
+	}
+	if arg+2 >= len(ts) || !strings.HasPrefix(ts[arg].text, "'") || !strings.HasSuffix(ts[arg].text, "'") || ts[arg+1].text != ")" || ts[arg+2].text != ";" {
+		return nil
+	}
 	token := ts[i]
 	const message = "Found control character hex 0x000B (decimal 11) that isn't valid in Apex."
 	return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, Range: receiverTriviaRange(source, token.start, token.end)}
