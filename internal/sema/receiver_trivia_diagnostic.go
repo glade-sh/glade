@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -149,7 +150,11 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 			}
 			return report(member, "Expecting ')' but was: '"+member.text+"'")
 		case "if", "while":
-			if frame.kind == "if" && frame.start >= 2 && strings.EqualFold(ts[frame.start-2].text, "else") && (!receiverDirectCallEquality(ts, frame.start, dot) || !resolvedCall()) {
+			matches := receiverDirectCallEquality(ts, frame.start, dot)
+			if frame.kind == "while" {
+				matches = receiverIntegerCallEquality(ts, frame.start, dot)
+			}
+			if !matches || !resolvedCall() {
 				return nil
 			}
 			return report(member, "Missing ')' at '"+member.text+"'")
@@ -214,8 +219,12 @@ func receiverStringSwitch(ts []receiverTriviaToken, stack []receiverEnclosure) b
 // control expressions. Unknown and invalid calls keep ordinary diagnostics.
 func receiverResolvedDirectCall(source string, item receiverTrivia, model *semaTypeMemberView) bool {
 	ts, dot := item.tokens, item.dot
+	var args []string
 	if receiverDirectCallEnd(ts, dot) < 0 {
-		return false
+		if receiverIntegerCallEnd(ts, dot) < 0 {
+			return false
+		}
+		args = []string{"Integer"}
 	}
 	root := receiverNameRoot(ts, dot)
 	if root < 0 || dot <= root {
@@ -223,7 +232,7 @@ func receiverResolvedDirectCall(source string, item receiverTrivia, model *semaT
 	}
 	owner := source[ts[root].start:ts[dot-1].end]
 	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, owner, ts[dot+1].text), "class")
-	member, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, nil, model)
+	member, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, args, model)
 	return ok && !ambiguous && hasModifier(member.member.Modifiers, "static") && (hasModifier(member.member.Modifiers, "public") || hasModifier(member.member.Modifiers, "global")) && strings.EqualFold(semaCanonicalPlatformAlias(member.member.Type), "String")
 }
 
@@ -233,6 +242,27 @@ func receiverDirectCallEnd(ts []receiverTriviaToken, dot int) int {
 		return dot + 4
 	}
 	return -1
+}
+
+func receiverIntegerCallEnd(ts []receiverTriviaToken, dot int) int {
+	if dot+4 < len(ts) && ts[dot+2].text == "(" && ts[dot+4].text == ")" {
+		if _, err := strconv.ParseInt(ts[dot+3].text, 10, 32); err == nil {
+			return dot + 5
+		}
+	}
+	return -1
+}
+
+func receiverIntegerCallEquality(ts []receiverTriviaToken, open, dot int) bool {
+	if receiverNameRoot(ts, dot) != open+1 {
+		return false
+	}
+	end := receiverIntegerCallEnd(ts, dot)
+	if end < 0 || end+3 >= len(ts) {
+		return false
+	}
+	literal := ts[end+2].text
+	return ts[end].text == "=" && ts[end+1].text == "=" && ts[end].end == ts[end+1].start && len(literal) >= 2 && strings.HasPrefix(literal, "'") && strings.HasSuffix(literal, "'") && ts[end+3].text == ")"
 }
 
 // The captured condition compares the direct call to a string literal.
