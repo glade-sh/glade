@@ -1,0 +1,4 @@
+Fresh Developer scratch org, 30-day duration, no features or settings.
+Captured 2026-11-14 at API 62.0 and 67.0 using anonymous Apex.
+Probe: global describe membership, Type.forName, and dynamic SELECT Id LIMIT 1.
+The scratch org was deleted and deletion verified.

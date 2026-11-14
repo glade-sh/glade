@@ -1,11 +1,43 @@
 package storage
 
 import (
+	"encoding/csv"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/project"
 )
+
+// The native rows sample both present and absent objects on all three routes.
+func TestPlainDeveloperSpreadNativeConformance(t *testing.T) {
+	f, err := os.Open("testdata/plain_developer_spread/org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	r := csv.NewReader(f)
+	r.Comma = '\t'
+	rows, err := r.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape}
+	orgs := map[string]OrgState{"eager": sourceSpreadEagerOrg(features), "source": sourceSpreadLazyOrg(features), "legacy": lazySpreadOrg(features)}
+	for route, org := range orgs {
+		if route != "eager" {
+			MaterializeStandardObjectSpread(&org)
+		}
+		for _, row := range rows[1:] {
+			_, got := org.Objects[row[2]]
+			if want := row[3] == "true"; got != want {
+				t.Errorf("%s API %s %s: present=%t want %t", route, row[0], row[2], got, want)
+			}
+		}
+	}
+}
 
 func sourceSpreadEagerOrg(features []string) OrgState {
 	org := NewOrgState()
