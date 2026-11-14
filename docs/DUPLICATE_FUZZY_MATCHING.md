@@ -678,7 +678,7 @@ on both sides), so no row covers blank Account names or Contact last names.
 
 Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_panels/`
 (`FuzzyPanel.cls`, the matching and duplicate rule metadata, `cases.json`,
-`org.tsv`, `RUN-FACTS.txt` and `residuals.tsv`); test
+`org.tsv`, `native-run.md` and `residuals.tsv`); test
 `TestDuplicateFuzzyPanelsNativeRoutes`. Each case inserts one record per value
 and runs `Datacloud.FindDuplicates` on an unsaved copy of every value, so a
 panel of n values holds n x n ordered pairs. Two fresh 30-day scratch orgs, API
