@@ -17,6 +17,9 @@ func TestInputViewGuardRejectsFilesystemBypasses(t *testing.T) {
 		`package p; import "io/fs"; var _ = fs.WalkDir`,
 		`package p; import "io/fs"; var _ = fs.Glob`,
 		`package p; import "io/ioutil"; var _ = ioutil.ReadFile`,
+		`package p; import "github.com/glade-sh/glade/internal/project"; var _ = project.Load`,
+		`package p; import "github.com/glade-sh/glade/internal/project"; var _ = project.OrgDomainURL`,
+		`package p; import "github.com/glade-sh/glade/internal/project"; var _ = project.OrgRuntimeSettings`,
 	}
 	for _, source := range sources {
 		fset := token.NewFileSet()
