@@ -215,7 +215,7 @@ func receiverResolvedDirectCall(source string, item receiverTrivia, model *semaT
 	owner := source[ts[root].start:ts[dot-1].end]
 	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, owner, ts[dot+1].text), "class")
 	member, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, nil, model)
-	return ok && !ambiguous && hasModifier(member.member.Modifiers, "static")
+	return ok && !ambiguous && hasModifier(member.member.Modifiers, "static") && (hasModifier(member.member.Modifiers, "public") || hasModifier(member.member.Modifiers, "global")) && strings.EqualFold(semaCanonicalPlatformAlias(member.member.Type), "String")
 }
 
 // receiverDirectCallEnd recognizes the captured zero-argument call.
