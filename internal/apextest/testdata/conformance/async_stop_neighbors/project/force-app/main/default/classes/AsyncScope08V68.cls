@@ -1,0 +1,1 @@
+@IsTest private class AsyncScope08V68 { @IsTest static void observe() { Test.startTest(); System.schedule('scopeJob','0 0 0 1 1 ? 2099',new StopOrderSched()); StopOrderMk.fut('b'); Test.stopTest(); System.assert(false, StopOrderMk.observe(false)); } }
