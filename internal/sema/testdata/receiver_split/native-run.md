@@ -13,3 +13,5 @@ Additional standalone string-expression capture: fresh 30-day campaign scratch o
 Grammar and follow-up captures: see RUN-FACTS-grammar.txt, RUN-FACTS-contexts.txt and RUN-FACTS-additional.txt. All follow-up scratch orgs were deleted and deletion was verified.
 
 Free-dot type-context capture: see RUN-FACTS-free-types.txt; the scratch org was deleted and deletion was verified.
+
+Trivia-boundary capture: see RUN-FACTS-trivia.txt; the scratch org was deleted and deletion was verified.

@@ -148,3 +148,6 @@ free_control	anonymous	grammar/free_control.apex
 free_signature	class	grammar/free_signature.cls
 free_extends	class	grammar/free_extends.cls
 free_implements	class	grammar/free_implements.cls
+bound_cr_comment	anonymous	grammar/bound_cr_comment.apex
+free_cr_comment	anonymous	grammar/free_cr_comment.apex
+trivia_control	anonymous	grammar/trivia_control.apex

@@ -297,3 +297,9 @@ free_extends	62.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:4
 free_extends	67.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:41 Invalid type: System | ?:? @Override specified for non-overriding method: String RouteFreeException.getTypeName()
 free_implements	62.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:39 Invalid type: System
 free_implements	67.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:39 Invalid type: System
+bound_cr_comment	62.0	anonymous	false	2:1 Unexpected token 'debug'.
+bound_cr_comment	67.0	anonymous	false	2:1 Unexpected token 'debug'.
+free_cr_comment	62.0	anonymous	false	1:1 Variable does not exist: String
+free_cr_comment	67.0	anonymous	false	1:1 Variable does not exist: String
+trivia_control	62.0	anonymous	true	ok
+trivia_control	67.0	anonymous	true	ok
