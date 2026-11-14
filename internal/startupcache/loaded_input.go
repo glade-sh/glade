@@ -55,11 +55,10 @@ func fingerprintInputForScope(inputs *inputview.View, projectRoot, path string, 
 
 func fingerprintInputWithScopedDigest(inputs *inputview.View, projectRoot, path string, includeHash bool, digest [sha256.Size]byte, useDigest bool, readFile func(string) ([]byte, error), eligible func(string) bool, lookup func(string) ([sha256.Size]byte, bool)) (File, error) {
 	if inputs == nil && includeHash && !useDigest && readFile == nil && eligible != nil && lookup != nil && eligible(path) {
-		before, beforeOK := filestamp.Stat(path)
-		info, infoErr := os.Stat(path)
+		info, before, beforeOK := filestamp.StatWithInfo(path)
 		cached, hit := lookup(path)
 		after, afterOK := filestamp.Stat(path)
-		if beforeOK && afterOK && before == after && infoErr == nil && info.Size() == before.Size && info.ModTime().UnixNano() == before.Mtime && hit {
+		if beforeOK && afterOK && before == after && hit {
 			fp, err := fileFingerprintFromInfo(projectRoot, path, info)
 			if err != nil {
 				return File{}, err
