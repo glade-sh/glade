@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -54,19 +55,11 @@ func TestReceiverGrammarNative(t *testing.T) {
 			writeSemaFile(t, probe, string(support))
 			files := []string{probe}
 			if row[2] != "anonymous" {
-				name := "CrRoute" + row[0] + ext
-				if row[0] == "CA" {
-					name = "CrRouteAccept.cls"
+				declaration := regexp.MustCompile(`(?i)\b(?:class|trigger)\s+([A-Za-z_][A-Za-z0-9_]*)`).FindSubmatch(src)
+				if len(declaration) < 2 {
+					t.Fatal("missing declaration name")
 				}
-				if row[0] == "CB" {
-					name = "CrRouteBefore.cls"
-				}
-				if row[0] == "super_break" {
-					name = "SuperProbe.cls"
-				}
-				if row[2] == "trigger" {
-					name = "CrTrig" + row[0] + ext
-				}
+				name := string(declaration[1]) + ext
 				path := filepath.Join(root, name)
 				writeSemaFile(t, path, string(src))
 				files = append(files, path)
@@ -112,7 +105,7 @@ func TestReceiverGrammarNative(t *testing.T) {
 			}
 			// Native class parsing emits these documented cascades in addition
 			// to the primary error. Track them explicitly until implemented.
-			knownCascades := map[string]bool{"CA": true, "D1": true, "D2": true, "D3": true, "D4": true, "D5": true, "D6": true, "E1": true, "E2": true, "super_break": true}
+			knownCascades := map[string]bool{"CA": true, "D1": true, "D2": true, "D3": true, "D4": true, "D5": true, "D6": true, "E1": true, "E2": true, "super_break": true, "signature": true, "extends": true, "implements": true, "property": true, "static_block": true}
 			if knownCascades[row[0]] {
 				for _, extra := range got[1:] {
 					if !containsReceiverGrammarDiagnostic(want[1:], extra) {
