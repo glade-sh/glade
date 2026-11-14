@@ -77,3 +77,26 @@ func TestReceiverFollowupUncapturedNeighbors(t *testing.T) {
 		}
 	}
 }
+
+// Complete diagnostics are pinned to origin/main at both captured API versions.
+func TestReceiverControlCallNeighbors(t *testing.T) {
+	for _, tc := range []struct{ name, source, want string }{
+		{"foreach_argument", "for (String s : String.\nvalueOf(1).split(' ')) {}", `null`},
+		{"when_argument", "switch on 'a' { when String.\nvalueOf(1) { } }", `[{"severity":"error","code":"GLADESEMA030","message":"method \"execute\" has invalid statement: switch branch must be a literal or enum constant","range":{"start":{"line":1,"column":17,"offset":16},"end":{"line":1,"column":18,"offset":17}}}]`},
+		{"dowhile_unresolved", "do {} while (String.\nvalueOf() == 'ok');", `[{"severity":"error","code":"GLADESEMA023","message":"Method does not exist or incorrect signature: void valueOf() from the type String","range":{"start":{"line":1,"column":1},"end":{"line":1,"column":8,"offset":7}},"nativeMessage":"Method does not exist or incorrect signature: void valueOf() from the type String"}]`},
+		{"else_if_unresolved", "if (true) {} else if (String.\nvalueOf() == 'ok') {}", `[{"severity":"error","code":"GLADESEMA023","message":"Method does not exist or incorrect signature: void valueOf() from the type String","range":{"start":{"line":1,"column":19,"offset":18},"end":{"line":1,"column":26,"offset":25}},"nativeMessage":"Method does not exist or incorrect signature: void valueOf() from the type String"}]`},
+		{"for_init_unresolved", "for (String s = String.\nvalueOf(); false; ) {}", `[{"severity":"error","code":"GLADESEMA023","message":"Method does not exist or incorrect signature: void valueOf() from the type String","range":{"start":{"line":1,"column":6,"offset":5},"end":{"line":1,"column":13,"offset":12}},"nativeMessage":"Method does not exist or incorrect signature: void valueOf() from the type String"}]`},
+	} {
+		for _, api := range []string{"62.0", "67.0"} {
+			t.Run(tc.name+"/"+api, func(t *testing.T) {
+				got, err := json.Marshal(AnalyzeAnonymous(typesys.Index{}, tc.source, api).Diagnostics)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if string(got) != tc.want {
+					t.Errorf("got %s, origin/main %s", got, tc.want)
+				}
+			})
+		}
+	}
+}
