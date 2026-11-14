@@ -48,3 +48,22 @@ func TestReceiverStaticFieldShadowsType(t *testing.T) {
 		}
 	}
 }
+
+// A free dot can follow a field of a local value even when the field's name
+// also names a type. This uncaptured neighbor is clean on origin/main.
+func TestReceiverDetachedFieldContinuation(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CollisionProbe.cls")
+	writeSemaFile(t, path, "public class CollisionProbe { public String String = 'x'; }")
+	for _, api := range []string{"62.0", "67.0"} {
+		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
+		source := "CollisionProbe x = new CollisionProbe(); x .String\n.length();"
+		got, err := json.Marshal(AnalyzeAnonymous(index, source, api).Diagnostics)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != "null" {
+			t.Errorf("api %s: diagnostics %s, want origin/main null", api, got)
+		}
+	}
+}
