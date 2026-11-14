@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 )
 
 // resetSpreadMemos clears the template map and the decoded catalog, and turns
@@ -164,6 +165,39 @@ func TestSpreadObjectUntouchedSurvivesPlainDrop(t *testing.T) {
 	if plain.SpreadObjectUntouched(names[2]) {
 		t.Fatal("object never installed reported untouched")
 	}
+}
+
+// An in-flight replacement must not change an installed object's answer.
+func TestSpreadObjectUntouchedDuringPlainRebuild(t *testing.T) {
+ resetSpreadMemos(t)
+ plain := NewOrgState()
+ plain.OrgID = DefaultOrgID
+ plain.EnableStandardSpreadSource()
+ name := owedNames(&plain, 1)[0]
+ if _, ok := installSpreadObject(&plain, name); !ok || !plain.SpreadObjectUntouched(name) { t.Fatal("plain install not untouched") }
+ _, hasRecordType := plain.Objects["RecordType"]
+ key := spreadTemplateKey{phase: plain.StandardSpread, signature: canonicalFeatureSignature(plain.Features), multiCurr: plain.HasFeature("MultiCurrency"), recordType: hasRecordType, object: name}
+ spreadTemplates.Store(spreadTemplateKey{phase: standardSpreadShaped}, &spreadTemplateCell{})
+ dropPlainSpreadTemplates()
+ cell := &spreadTemplateCell{}
+ spreadTemplates.Store(key, cell)
+ started, release, finished := make(chan struct{}), make(chan struct{}), make(chan struct{})
+ go func() {
+  defer close(finished)
+  cell.once.Do(func() { close(started); <-release; buildSpreadTemplateCell(cell, key, plain.OrgID, plain.Features, hasRecordType) })
+  cell.done.Store(true)
+ }()
+ <-started
+ answer := make(chan bool, 1)
+ go func() { answer <- plain.SpreadObjectUntouched(name) }()
+ select {
+ case got := <-answer:
+  close(release); <-finished
+  if !got { t.Fatal("installed untouched object reported changed while its dropped template rebuilds") }
+ case <-time.After(100 * time.Millisecond):
+  close(release); <-finished
+  if !<-answer { t.Fatal("installed untouched object reported changed after rebuild") }
+ }
 }
 
 func TestSpreadReleaseRaceMatchesEager(t *testing.T) {
