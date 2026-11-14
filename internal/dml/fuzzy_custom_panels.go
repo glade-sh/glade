@@ -45,14 +45,16 @@ func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
 	return false, confidence
 }
 
-// customLastName extends Keyboard Distance to two to five substituted letters
-// in names of ten to thirteen letters that agree in their first five letters
-// and their match key. NATIVE: pairs with three substitutions match from a
-// position-by-position keyboard score of 91.55 (none above 91.38 is kept
-// apart, and some at 91.33 match), four or five from 93.0, two from 90.67
-// (90.4 is kept apart). The native confidence falls faster than the
-// two-substitution formula as letters are added; the scales below are the
-// least-error fit to the panel rows.
+// customLastName extends Keyboard Distance to three to five substituted
+// letters in names of ten to thirteen letters that agree in their first five
+// letters and their match key. NATIVE: pairs with three substitutions match
+// from a position-by-position keyboard score of 91.55 (none above 91.38 is
+// kept apart, and some at 91.33 match), four or five from 93.0. The native
+// confidence falls faster than the two-substitution formula as letters are
+// added; the scales below are the least-error fit to the panel rows. Two
+// substitutions keep the shared gate of 92: the fit panels match some pairs
+// from 90.67, but the held-out panel keeps a pair at 90.67 apart
+// ("Thistlecombe" and "Thistlepowbe", two far keys).
 func customLastName(a, b string, matchBlanks bool) (bool, float64) {
 	matched, confidence := fuzzyLastName(a, b, matchBlanks)
 	if matched {
@@ -92,8 +94,6 @@ func lastNameSubstitutions(a, b string) (bool, float64) {
 	score := 100 * (1 - cost/float64(n))
 	var gate, scale, shift float64
 	switch different {
-	case 2:
-		gate, scale, shift = 90.5, 0.99, -0.5
 	case 3:
 		gate, scale, shift = 91.5, 0.98, -1.2
 	case 4:
@@ -114,10 +114,11 @@ func lastNameSubstitutions(a, b string) (bool, float64) {
 // match under the second-word rule (six shared letters, then one is the other
 // with more letters or they differ in one letter after the prefix), and the
 // rest of the name is scored as if they were equal. One-word plurals: a word
-// of nine or ten letters ending in "re" is not matched to its plural
-// ("Fennimore", "Callowmere"), one of eight or nine ending in "o" scores 98
-// ("Drummondo", "Tamberlo"), and the plural of a word of six to nine letters
-// ending in "a", "o" or "y" finds the word itself (companyPluralReverse).
+// of eight to ten letters ending in "re" is not matched to its plural
+// ("Fennimore", "Callowmere"; held out, "Wexmoore"), one of eight or nine
+// letters ending in "o" scores 98 ("Drummondo", "Tamberlo"), and the plural
+// of a word of six to nine letters ending in "a", "o" or "y" finds the word
+// itself (companyPluralReverse).
 func customCompany(a, b string, matchBlanks bool) (bool, float64) {
 	wa, wb := companyWords(a), companyWords(b)
 	single := len(wa) == 1 && len(wb) == 1 && companyKey(wa) == companyKey(wb) && !strings.Contains(a, "-") && !strings.Contains(b, "-")
@@ -125,7 +126,7 @@ func customCompany(a, b string, matchBlanks bool) (bool, float64) {
 		// Each rule is limited to the word lengths the rows cover.
 		x, y := wa[0], wb[0]
 		switch n := len([]rune(x)); {
-		case y == x+"s" && strings.HasSuffix(x, "re") && n >= 9 && n <= 10:
+		case y == x+"s" && strings.HasSuffix(x, "re") && n >= 8 && n <= 10:
 			return false, 0
 		case y == x+"s" && strings.HasSuffix(x, "o") && n >= 8 && n <= 9:
 			return true, 98

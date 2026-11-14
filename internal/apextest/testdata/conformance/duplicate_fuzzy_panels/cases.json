@@ -23,5 +23,22 @@
  },
  "multi": {
   "m1": "FuzzyPanel.run('Account', 'G4Three', 'Name+BillingCity+BillingStreet', new List<String>{'Harrowgate Supply|Fairbourne|212 Wexley St', 'Harrowgate Supply|Fairbourne|212 Wexley Street', 'Harrowgate Supplies|Fairbourne|212 Wexley St', 'Harrowgate Supply|Fairborne|212 Wexley St', 'Harrowgate Supply Co|Fairbourne|212 Wexly St', 'Harrowgate Supply|Fairbourne|', 'Harrowgate Supply||212 Wexley St', 'Harrowgate Supply|Fairbournes|212 Wexley Street', 'Harrowgate Supply|Lindmoor|212 Wexley St', 'Harrowgate Supply|Fairbourne|213 Wexley St', 'Harrowgate Depot|Fairbourne|212 Wexley St', 'Harrowgate Supply Group|Fairbourne|212 Wexley St'})"
+ },
+ "hkeyboard": {
+  "hk1": "FuzzyPanel.run('Contact', 'G4Last', 'LastName', new List<String>{'Fallowbridge', 'Fallojbrihse', 'Fallowprijpe', 'Falloppridze', 'Falloprcidbe', 'Falloprpidte', 'Fallopprigze', 'Falloppridge', 'Quenderholt', 'Quenderronh', 'Quenderjofl', 'Quenderqosv', 'Quenderqowz', 'Quenderhoqz', 'Merrivaxton', 'Merrifaxros', 'Merrivakvom', 'Merrivakzod', 'Merrivakpoq', 'Merrifacqoc', 'Skelverdine', 'Skelvedhide', 'Skelvebriwe', 'Skelveppije', 'Skelvelpiqe', 'Skelverpiqe'})",
+  "hk2": "FuzzyPanel.run('Contact', 'G4Last', 'LastName', new List<String>{'Thistlecombe', 'Thistlerofme', 'Thistleqovle', 'Thistledowpe', 'Thistlepotpe', 'Thisttelonqe', 'Thistdelofqe', 'Thistlepowbe', 'Garrowmede', 'Garromhete', 'Garromdeke', 'Pemberlyn', 'Pemvwrlyn', 'Pemberlynn', 'Thistlecombes', 'Garrowmeade'})"
+ },
+ "htitle": {
+  "ht1": "FuzzyPanel.run('Contact', 'G4Title', 'Title', new List<String>{'Hydrographer', 'Senior Hydrographer', 'Senior Coastal Hydrographer', 'Senior Coastal Survey Hydrographer', 'Senior Regional Coastal Survey Hydrographer', 'Deputy Senior Regional Coastal Survey Hydrographer', 'Hydrographer Senior Regional Coastal Survey', 'Coastal', 'Survey', 'Coastal Hydrographer', 'Hydrographer Coastal', 'Botanist', 'Coastal Survey Hydrographer Senior Regional', 'Regional Survey'})"
+ },
+ "hstreet": {
+  "hs1": "FuzzyPanel.run('Account', 'G4Street', 'BillingStreet', new List<String>{'61 Peverell St', '61 Peverell Str', '61 Peverell Stt', '61 Peverell Street', '61 Peverell Strret', '61 Peverell Ave', '61 Peverell Avnue', '61 Peverell Aveneu', '61 Peverell', '840 Wrenfield Rd', '840 Wrenfield Rdd', '840 Wrenfield Raod', '840 Wrenfield Road', '840 Wrenfield Dr', '840 Wrenfield Drve', '840 Wrenfield Driv', '840 Wrenfield Drive', '840 Wrenfield', '17 Calderbank Ln', '17 Calderbank Lnn', '17 Calderbank Blvd', '17 Calderbank Blvdd', '17 Calderbank Hwy', '17 Calderbank Hwwy', '17 Calderbank Cir', '17 Calderbank Cirr', '17 Calderbank Lane', '17 Calderbank'})"
+ },
+ "hcompany": {
+  "hc1": "FuzzyPanel.run('Account', 'G4Company', 'Name', new List<String>{'Silverbirch Freight', 'Silverbirchs Freight', 'Silverbirches Freight', 'Silverbich Freight', 'Silverbirck Freight', 'Silverbirch Freight Co', 'Silverbirchs Freight Group', 'Marlowgate Ventures', 'Marlowgates Ventures', 'Marlowgata Ventures', 'Marlowgateway Ventures', 'Marlowg Ventures', 'Penhallow Textiles', 'Penhallows Textiles', 'Penhalow Textiles', 'Penhallaw Textiles', 'Penhal Textiles'})",
+  "hc2": "FuzzyPanel.run('Account', 'G4Company', 'Name', new List<String>{'Ardenmere', 'Ardenmeres', 'Corvallo', 'Corvallos', 'Brisenna', 'Brisennas', 'Talbury', 'Talburys', 'Wexmoore', 'Wexmoores', 'Quillatra', 'Quillatras', 'Hollowdene', 'Hollowdenes', 'Ravensby', 'Ravensbys', 'Mirandolo', 'Mirandolos', 'Kestavon', 'Kestavons', 'Lunetta', 'Lunettas', 'Fernhallow', 'Fernhallows', 'Glenarrow', 'Glenarrows', 'Tobermare', 'Tobermares', 'Selvanto', 'Selvantos', 'Amberly', 'Amberlys'})"
+ },
+ "hfirst": {
+  "hf1": "FuzzyPanel.run('Contact', 'G4First', 'FirstName', new List<String>{'T', 'T.', 'T W', 'T. W.', 'T.W.', 'TW', 'Tw', 'B', 'B.', 'B T', 'Tobiah', 'L', 'L.', 'L M', 'L. M.', 'Lm', 'Ty', 'T L', 'W', 'W.'})"
  }
 }
