@@ -35,6 +35,9 @@ type Result struct {
 	Summary     Summary                  `json:"summary"`
 	Diagnostics []diagnostic.Diagnostic  `json:"diagnostics,omitempty"`
 	Types       map[string]TypeReference `json:"types,omitempty"`
+	// ReceiverTriviaDiagnostic identifies the captured anonymous parser error
+	// whose source position is available to the Tooling and SOAP routes.
+	ReceiverTriviaDiagnostic bool `json:"-"`
 }
 
 type Summary struct {
@@ -263,6 +266,7 @@ func (a *Analyzer) analyzeWithOptionsIncremental(index typesys.Index, opts Analy
 		if recorder != nil {
 			recorder.endPhase(&recorder.counters.QuerySemantics, queryStarted)
 		}
+		result.Diagnostics = mergeReceiverNamedDiagnostics(result.Diagnostics, a.receiverNamedDiagnostics(index, typeMemberView))
 		result.Diagnostics = nativeLifecycleDiagnostics(index, result.Diagnostics, typeMemberState, a.sources)
 		if indexHasSourceBackedDependency(index) {
 			result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(index, result.Diagnostics, a, typeMemberView)
