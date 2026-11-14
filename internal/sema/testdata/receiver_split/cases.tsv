@@ -151,3 +151,5 @@ free_implements	class	grammar/free_implements.cls
 bound_cr_comment	anonymous	grammar/bound_cr_comment.apex
 free_cr_comment	anonymous	grammar/free_cr_comment.apex
 trivia_control	anonymous	grammar/trivia_control.apex
+bound_vertical_tab	anonymous	grammar/bound_vertical_tab.apex
+free_vertical_tab	anonymous	grammar/free_vertical_tab.apex

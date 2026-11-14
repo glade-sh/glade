@@ -303,3 +303,7 @@ free_cr_comment	62.0	anonymous	false	1:1 Variable does not exist: String
 free_cr_comment	67.0	anonymous	false	1:1 Variable does not exist: String
 trivia_control	62.0	anonymous	true	ok
 trivia_control	67.0	anonymous	true	ok
+bound_vertical_tab	62.0	anonymous	false	1:8 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
+bound_vertical_tab	67.0	anonymous	false	1:8 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
+free_vertical_tab	62.0	anonymous	false	1:7 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
+free_vertical_tab	67.0	anonymous	false	1:7 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.

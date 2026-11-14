@@ -15,3 +15,5 @@ Grammar and follow-up captures: see RUN-FACTS-grammar.txt, RUN-FACTS-contexts.tx
 Free-dot type-context capture: see RUN-FACTS-free-types.txt; the scratch org was deleted and deletion was verified.
 
 Trivia-boundary capture: see RUN-FACTS-trivia.txt; the scratch org was deleted and deletion was verified.
+
+Vertical-tab REST capture: see RUN-FACTS-vertical.txt; the scratch org was deleted and deletion was verified.
