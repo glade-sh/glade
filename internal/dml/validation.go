@@ -179,6 +179,10 @@ func isSingleLineTextField(field storage.Field) bool {
 }
 
 func validateFields(definition storage.ObjectDefinition, namespace string, record storage.Record, existing ...storage.Record) error {
+	return validateFieldsForOperation(definition, namespace, record, existing, false)
+}
+
+func validateFieldsForOperation(definition storage.ObjectDefinition, namespace string, record storage.Record, existing []storage.Record, capturedInsert bool) error {
 	if err := validateCustomAddressComponents(definition, namespace, record, existing); err != nil {
 		return err
 	}
@@ -208,7 +212,7 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if err := validateScaleZeroNumberField(canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
-		if len(existing) == 0 {
+		if capturedInsert {
 			if err := validateInsertEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 				return err
 			}

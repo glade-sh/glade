@@ -519,7 +519,7 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 			}
 			record = before[0]
 		}
-		id, err := e.insertOne(record, &statementStamp)
+		id, err := e.insertOne(record, &statementStamp, true)
 		if err != nil {
 			results[i] = resultFromError(record.ID, err)
 			continue
@@ -982,7 +982,7 @@ func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
 	return updates
 }
 
-func (e *Engine) insertOne(record storage.Record, statementStamp *string) (storage.ID, error) {
+func (e *Engine) insertOne(record storage.Record, statementStamp *string, capturedInsert ...bool) (storage.ID, error) {
 	// Only the person account's own contact insert is the system insert;
 	// anything it causes is an ordinary insert.
 	personContact := e.personContactInsert
@@ -1058,7 +1058,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
 		return "", err
 	}
-	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
+	if err := validateFieldsForOperation(object.Definition, e.Org.Namespace, record, nil, len(capturedInsert) > 0 && capturedInsert[0]); err != nil {
 		return "", err
 	}
 	e.applyQuoteLineItemDerivedFields(&record)
