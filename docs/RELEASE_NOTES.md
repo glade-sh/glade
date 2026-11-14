@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-No changes yet.
+- **Test startup.** Building the child relationship lookup avoids installing
+  standard objects solely to resolve parent names, reducing startup work.
 
 ## v0.3.9
 
