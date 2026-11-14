@@ -115,6 +115,12 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 					inputs = append(inputs, path+"-meta.xml")
 				}
 				for _, input := range inputs {
+					if q.Inputs() == nil {
+						if generation.visualforceInputs == nil {
+							generation.visualforceInputs = make(map[string]bool)
+						}
+						generation.visualforceInputs[input] = true
+					}
 					if _, ok := generation.inputs[input]; ok {
 						continue
 					}

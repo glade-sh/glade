@@ -40,19 +40,28 @@ func resetFileDigestTrust() {
 	fileDigestTrustMu.Unlock()
 }
 
-// currentFileDigest returns the SHA-256 of the file's current content. It is
-// the same value as hashing os.ReadFile(path). When the file's stamp matches
-// one recorded after an earlier hash of an old enough file, the stored digest
-// is returned without reading the file. Any stamp difference, any recent
-// modification and any stat failure fall back to reading and hashing.
-func currentFileDigest(path string) ([sha256.Size]byte, error) {
+// trustedCurrentFileDigest returns a previously hashed digest only while the
+// filesystem still reports the exact trusted file identity.
+func trustedCurrentFileDigest(path string) ([sha256.Size]byte, bool) {
+	fileDigestTrustMu.Lock()
+	entry, hit := fileDigestTrust[path]
+	fileDigestTrustMu.Unlock()
+	if !hit {
+		return [sha256.Size]byte{}, false
+	}
 	if stamp, ok := filestamp.Stat(path); ok {
-		fileDigestTrustMu.Lock()
-		entry, hit := fileDigestTrust[path]
-		fileDigestTrustMu.Unlock()
-		if hit && entry.stamp == stamp {
-			return entry.digest, nil
+		if entry.stamp == stamp {
+			return entry.digest, true
 		}
+	}
+	return [sha256.Size]byte{}, false
+}
+
+// currentFileDigest returns the SHA-256 of the file's current content. A
+// matching trusted stamp avoids rereading; all other cases hash the file.
+func currentFileDigest(path string) ([sha256.Size]byte, error) {
+	if digest, ok := trustedCurrentFileDigest(path); ok {
+		return digest, nil
 	}
 	file, err := os.Open(path) // #nosec G304 -- indexed source or its fixed metadata companion.
 	if err != nil {

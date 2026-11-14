@@ -1404,6 +1404,21 @@ type runtimeMetadataGeneration struct {
 	authority              runtimeMetadataAuthority
 	inputs                 map[string]typesys.ApexMetadataInput
 	apiVersions            map[string]string
+	visualforceInputs      map[string]bool
+}
+
+func (generation runtimeMetadataGeneration) trustedVisualforceDigest(path string) ([sha256.Size]byte, bool) {
+	if !generation.visualforceInputs[path] {
+		return [sha256.Size]byte{}, false
+	}
+	return trustedCurrentFileDigest(path)
+}
+
+func (generation runtimeMetadataGeneration) visualforceDigestLookup() func(string) ([sha256.Size]byte, bool) {
+	if len(generation.visualforceInputs) == 0 {
+		return nil
+	}
+	return generation.trustedVisualforceDigest
 }
 
 type runtimeSourceInput struct {
@@ -1888,9 +1903,10 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 		}
 	}
 
+	digestLookup := generation.metadata.visualforceDigestLookup()
 	var lookupInput *startupcache.ValidatedInput
 	if diskCacheAllowed {
-		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
+		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
 				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
@@ -1973,7 +1989,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 			evictSnapshotCaches(key)
 			return key, zero, err
 		}
-		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput); ok {
+		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
 			persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
 		}
 	}
@@ -2043,10 +2059,11 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		return key, cached, nil
 	}
 
+	digestLookup := generation.metadata.visualforceDigestLookup()
 	var lookupInput *startupcache.ValidatedInput
 	if diskCacheAllowed {
 		lookupStarted := time.Now()
-		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
+		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(lookupStarted))
 		if diskEntry, ok := tryLoadDiskRuntimeWithPerfValidatedInput(index, key, lookupInput, counters); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
@@ -2143,7 +2160,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 			return key, zero, err
 		}
 		publicationStarted := time.Now()
-		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput)
+		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup)
 		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(publicationStarted))
 		if ok {
 			persistDiskRuntimeWithPerfValidatedInput(index, key, org, entry, publicationInput, counters)

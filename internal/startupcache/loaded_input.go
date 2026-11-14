@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -45,8 +46,25 @@ func ValidateLoadedInput(projectRoot string, p project.Project, digests *typesys
 
 // fingerprintInput fingerprints path through inputs when the manifest is built
 // from a viewed project; otherwise it keeps the existing disk path.
-func fingerprintInput(inputs *inputview.View, projectRoot, path string, includeHash bool, digest [sha256.Size]byte, useDigest bool, readFile func(string) ([]byte, error)) (File, error) {
+func fingerprintInput(inputs *inputview.View, projectRoot, path string, includeHash bool, digest [sha256.Size]byte, useDigest bool, readFile func(string) ([]byte, error), lookups ...func(string) ([sha256.Size]byte, bool)) (File, error) {
 	if inputs == nil {
+		if includeHash && !useDigest && readFile == nil && len(lookups) != 0 && lookups[0] != nil {
+			lookup := lookups[0]
+			if _, hit := lookup(path); hit {
+				before, beforeOK := filestamp.Stat(path)
+				info, infoErr := os.Stat(path)
+				cached, stillHit := lookup(path)
+				after, afterOK := filestamp.Stat(path)
+				if beforeOK && afterOK && before == after && infoErr == nil && info.Size() == before.Size && info.ModTime().UnixNano() == before.Mtime && stillHit {
+					fp, err := fileFingerprintFromInfo(projectRoot, path, info)
+					if err != nil {
+						return File{}, err
+					}
+					fp.SHA256 = hex.EncodeToString(cached[:])
+					return fp, nil
+				}
+			}
+		}
 		return fingerprintFileWithSourceDigest(projectRoot, path, includeHash, digest, useDigest, readFile)
 	}
 	if useDigest {
@@ -78,11 +96,11 @@ func fingerprintInput(inputs *inputview.View, projectRoot, path string, includeH
 	return fp, nil
 }
 
-func fingerprintOptionalInput(inputs *inputview.View, projectRoot, path string, includeHash bool, readFile func(string) ([]byte, error)) (File, bool, error) {
-	if inputs == nil {
+func fingerprintOptionalInput(inputs *inputview.View, projectRoot, path string, includeHash bool, readFile func(string) ([]byte, error), lookups ...func(string) ([sha256.Size]byte, bool)) (File, bool, error) {
+	if inputs == nil && len(lookups) == 0 {
 		return fingerprintOptionalFileWithReader(projectRoot, path, includeHash, readFile)
 	}
-	fp, err := fingerprintInput(inputs, projectRoot, path, includeHash, [sha256.Size]byte{}, false, readFile)
+	fp, err := fingerprintInput(inputs, projectRoot, path, includeHash, [sha256.Size]byte{}, false, readFile, lookups...)
 	if errors.Is(err, os.ErrNotExist) {
 		return File{}, false, nil
 	}
