@@ -130,3 +130,58 @@ func containsReceiverGrammarDiagnostic(items []string, target string) bool {
 	}
 	return false
 }
+
+// API 64 lies between both captures. L2, F2 and M1 cover a free dot,
+// top-level bound dot and block argument respectively (grammar/org.tsv).
+func TestReceiverGrammarIntermediateAPI(t *testing.T) {
+	const fixture = "testdata/receiver_split/grammar"
+	f, err := os.Open(filepath.Join(fixture, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	rd := csv.NewReader(f)
+	rd.Comma = '\t'
+	rows, err := rd.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	support, err := os.ReadFile(filepath.Join(fixture, "CrProbe.cls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(root, "CrProbe.cls")
+	writeSemaFile(t, path, string(support))
+	index := typesys.Build(project.Project{Root: root, SourceAPIVersion: "64.0", ApexFiles: []string{path}}, schema.Schema{})
+	for _, id := range []string{"L2", "F2", "M1"} {
+		var want string
+		for _, row := range rows[1:] {
+			if row[0] == id && row[1] == "62.0" {
+				want = row[4]
+				break
+			}
+		}
+		if want == "" {
+			t.Fatalf("missing native case %s", id)
+		}
+		src, err := os.ReadFile(filepath.Join(fixture, id+".apex"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		ds := AnalyzeAnonymous(index, string(src), "64.0").Diagnostics
+		if len(ds) == 0 || ds[0].Range == nil {
+			t.Errorf("%s: no positioned diagnostic, want %s", id, want)
+			continue
+		}
+		d := ds[0]
+		msg := d.NativeMessage
+		if msg == "" {
+			msg = d.Message
+		}
+		got := fmt.Sprintf("%d:%d %s", d.Range.Start.Line, d.Range.Start.Column, msg)
+		if got != want {
+			t.Errorf("%s: got %s, want %s", id, got, want)
+		}
+	}
+}
