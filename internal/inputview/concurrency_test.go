@@ -55,3 +55,20 @@ func TestConcurrentViewRecheckAndClose(t *testing.T) {
 	go func() { defer wg.Done(); v.Close() }()
 	wg.Wait()
 }
+
+func TestReadDirErrorOnFileAgreesWithStat(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(path, nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	v := New()
+	if _, err := v.ReadDir(path); err == nil {
+		t.Fatal("expected a directory error")
+	}
+	if _, err := v.Stat(path); err != nil {
+		t.Fatalf("stat: %v", err)
+	}
+	if err := v.Recheck(); err != nil {
+		t.Fatalf("unchanged error: %v", err)
+	}
+}
