@@ -347,8 +347,11 @@ type VM struct {
 	standardAPI68Memo           *standardAPI68ProfileMemo
 	globalDescribeCache         *Value
 	globalDescribeVersionCaches map[string]*Value
-	namedGlobalDescribe         *namedGlobalDescribeExtension
-	changeEventGlobal           *changeEventGlobalExtension
+	// eagerGlobalDescribe completes a lazy spread before the global describe
+	// build, as before the names-only build. Tests set it to compare routes.
+	eagerGlobalDescribe bool
+	namedGlobalDescribe *namedGlobalDescribeExtension
+	changeEventGlobal   *changeEventGlobalExtension
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata

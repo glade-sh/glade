@@ -3375,7 +3375,14 @@ func typedJSONMapKey(typeName, key string, input jsonTypedInput) (Value, error) 
 }
 
 func (vm *VM) schemaGlobalDescribe() Value {
-	vm.materializeLazyStandardSpread()
+	if vm.eagerGlobalDescribe {
+		vm.materializeLazyStandardSpread()
+	} else {
+		// The map reads names only: installed objects plus the ones a lazy
+		// spread still owes (buildSchemaGlobalDescribe). A token installs its
+		// object when something reads it.
+		vm.installPresenceReadSpreadObjects()
+	}
 	vm.ensureMetadataCacheGeneration()
 	key := vm.globalDescribeAvailabilityKey()
 	if vm.globalDescribeVersionCaches != nil {
@@ -3403,18 +3410,28 @@ func (vm *VM) buildSchemaGlobalDescribe() Value {
 	if vm.Org == nil {
 		return out
 	}
-	names := make([]string, 0, len(vm.Org.Objects))
+	// Installed plus owed names are the object set of the completed spread
+	// among the objects the shape allows (storage.SpreadOwedObjectNames), so
+	// the map is the one a completed org builds.
+	owed := storage.SpreadOwedObjectNames(vm.Org)
+	names := make([]string, 0, len(vm.Org.Objects)+len(owed))
 	seen := make(map[string]bool, cap(names))
-	for name := range vm.Org.Objects {
+	add := func(name string) {
 		if !vm.allowsStandardObject(name) {
-			continue
+			return
 		}
 		key := strings.ToLower(strings.TrimSpace(name))
 		if key == "" || seen[key] {
-			continue
+			return
 		}
 		names = append(names, name)
 		seen[key] = true
+	}
+	for name := range vm.Org.Objects {
+		add(name)
+	}
+	for _, name := range owed {
+		add(name)
 	}
 	sort.Strings(names)
 	for _, name := range names {

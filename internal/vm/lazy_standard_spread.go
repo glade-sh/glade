@@ -3,6 +3,7 @@ package vm
 import (
 	"errors"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
@@ -33,6 +34,46 @@ func (vm *VM) materializeLazyStandardSpread() bool {
 	}
 	vm.ensureMetadataCacheGeneration()
 	return true
+}
+
+// installPresenceReadSpreadObjects installs the owed catalog objects whose
+// global describe answer depends on whether the org holds them: the names
+// with a namespace prefix (ns__Name__c). The alias rule for an installed
+// package object (subscriberNamespacedCustomMetadataDescribe) and the owner
+// side rules (ownedNamespacedCustomGlobalDescribeForCaller) read the org for
+// such a name. Every other catalog name is answered from names alone.
+func (vm *VM) installPresenceReadSpreadObjects() {
+	if vm == nil || vm.Org == nil || !vm.Org.LazyStandardSpreadEnabled() {
+		return
+	}
+	for _, name := range namespacedCatalogObjectNames() {
+		if _, held := vm.Org.Objects[name]; !held {
+			_, installed := vm.lazyStandardObject(name)
+			if !installed && !vm.Org.StandardSpreadSourceBacked() && (vm.Org.Namespace != "" || vm.currentCallerNamespace() != "") {
+				// The legacy completed spread also installs disallowed catalog
+				// entries. Namespaced callers can resolve their bare aliases.
+				storage.EnsureStandardObject(vm.Org, name)
+			}
+		}
+	}
+}
+
+var namespacedCatalogObjects struct {
+	once  sync.Once
+	names []string
+}
+
+// namespacedCatalogObjectNames lists the catalog objects whose name carries a
+// namespace prefix.
+func namespacedCatalogObjectNames() []string {
+	namespacedCatalogObjects.once.Do(func() {
+		for _, name := range storage.KnownStandardObjectNames() {
+			if _, qualified := namespaceTokenPrefix(name); qualified {
+				namespacedCatalogObjects.names = append(namespacedCatalogObjects.names, name)
+			}
+		}
+	})
+	return namespacedCatalogObjects.names
 }
 
 // lazyResolveQueryObjects installs every catalog object a parsed query names
