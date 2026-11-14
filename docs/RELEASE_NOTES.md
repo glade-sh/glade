@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
 
 ## v0.3.9
 

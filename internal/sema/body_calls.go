@@ -1441,12 +1441,14 @@ func semaGeneratedPlatformStaticOwner(ownerName string) bool {
 		return false
 	}
 	normalized := normalizeName(ownerName)
-	for _, symbol := range typesys.StandardPlatformSymbolView() {
+	view, excluded := typesys.StandardPlatformSymbolViewWithExcluded()
+	for _, symbol := range view {
 		if normalizeName(symbol.Name) == normalized {
 			return true
 		}
 	}
-	return false
+	// Gated stub types the view leaves out keep their simple names.
+	return len(excluded.WithName(normalized)) != 0
 }
 
 func semaStaticAccessLooksTypeQualifiedAt(source string, start int) bool {
@@ -3023,7 +3025,7 @@ func semaLookupTypeMembers(model *semaTypeMemberView, typeName string) (typeMemb
 		// bypass the SObject-first lazy lookup and retain the platform class.
 		if strings.EqualFold(canonical, "Location") && model != nil && model.state != nil && model.state.platform != nil {
 			if model.state.platform.platform != nil {
-				if symbol, ok := model.state.platform.platform.symbolsByKey[normalizeName(canonical)]; ok {
+				if symbol, ok := model.state.platform.platform.symbolForKey(normalizeName(canonical)); ok {
 					return semaTypeMembersFromPlatformSymbol(*symbol), normalizeName(canonical), true
 				}
 			}

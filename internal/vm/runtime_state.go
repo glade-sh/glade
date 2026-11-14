@@ -435,6 +435,12 @@ type VM struct {
 	// lazySet is the set whose shells this VM's Classes hold, shared by every
 	// clone; see LazyClassSet.
 	lazySet *LazyClassSet
+	// gatedPlatformLateBind marks a VM that registered passive platform
+	// classes; it binds left-out gated stub classes on demand
+	// (gated_platform_class.go). bindingGatedPlatformClass guards the bind.
+	gatedPlatformLateBind     bool
+	bindingGatedPlatformClass bool
+	gatedPlatformBoundNames   map[string]struct{}
 	// String == support: the Turkish-dotting decision for the running user and
 	// the full case transformers, created once per machine.
 	localeCase localeCaseCache
@@ -992,6 +998,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// template) is never corrupted. The shared maps stay read-only across
 	// parallel workers, which is safe for concurrent map reads.
 	clone.lazySet = vm.lazySet
+	clone.gatedPlatformLateBind = vm.gatedPlatformLateBind
 	clone.Methods = vm.Methods
 	clone.MethodOverloads = vm.MethodOverloads
 	clone.MethodFolded = vm.MethodFolded

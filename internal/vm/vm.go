@@ -4504,6 +4504,10 @@ func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
 		vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{}
 		return "", false
 	}
+	// A gated stub class is never nested in the current top-level class (its
+	// top is a gated namespace the source would have named), so only the
+	// search across every class below can select one. Bind its candidates.
+	vm.bindGatedPlatformClassesNamed(typeName)
 	var unique string
 	for _, entry := range vm.classNameSearchEntries() {
 		if !strings.HasSuffix(entry.Lower, suffix) {
@@ -4628,6 +4632,7 @@ func (vm *VM) resolveOnlyNestedTypeName(typeName string) (string, bool) {
 	if typeName == "" || strings.Contains(typeName, ".") {
 		return "", false
 	}
+	vm.bindGatedPlatformClassesNamed(typeName)
 	typeKey := strings.ToLower(typeName)
 	if vm.onlyNestedTypeCache != nil {
 		if cached, ok := vm.onlyNestedTypeCache[typeKey]; ok {

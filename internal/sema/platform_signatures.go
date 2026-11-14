@@ -151,10 +151,19 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 
 func semaPlatformConstructorSignatures(typeName string) ([][]string, bool) {
 	lookup := normalizeName(semaCanonicalPlatformAlias(typeName))
-	for _, typ := range typesys.StandardPlatformSymbolView() {
-		if !semaPlatformSymbolMatchesConstructorType(typ, lookup) {
-			continue
+	// The first matching symbol answers, in ungated view order: a gated stub
+	// type the view leaves out is built only when its name matches.
+	var match *typesys.TypeSymbol
+	typesys.VisitStandardPlatformSymbols(func(namespace, name string, _ apexast.DeclarationKind) bool {
+		return semaPlatformSymbolMatchesConstructorType(typesys.TypeSymbol{Namespace: namespace, Name: name}, lookup)
+	}, func(symbol *typesys.TypeSymbol) bool {
+		if semaPlatformSymbolMatchesConstructorType(*symbol, lookup) {
+			match = symbol
+			return false
 		}
+		return true
+	})
+	if typ := match; typ != nil {
 		var params [][]string
 		seen := make(map[string]bool)
 		for _, member := range typ.Members {

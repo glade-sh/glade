@@ -173,6 +173,7 @@ func (vm *VM) RegisterClass(class Class) error {
 	if class.Name == "" {
 		return fmt.Errorf("class name is required")
 	}
+	vm.notePlatformClassRegistration(class)
 	if class.lazy != nil {
 		if vm.canRegisterLazy(class) {
 			vm.registerLazyShell(class)

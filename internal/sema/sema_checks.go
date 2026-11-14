@@ -423,7 +423,7 @@ var semaPlatformKnownTypesCache typesys.PlatformViewCache[map[string]bool]
 // it needs no project/API/org invalidation. Project names belong exclusively
 // to querySemanticsChecker.knownTypes. Readers never mutate the shared map.
 func semaPlatformKnownTypes() map[string]bool {
-	return semaPlatformKnownTypesCache.Get(func(view []typesys.TypeSymbol) map[string]bool {
+	return semaPlatformKnownTypesCache.GetWithExcluded(func(view []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) map[string]bool {
 		known := make(map[string]bool)
 		for _, typ := range view {
 			known[strings.ToLower(typ.Name)] = true
@@ -431,6 +431,13 @@ func semaPlatformKnownTypes() map[string]bool {
 				known[strings.ToLower(typ.Namespace+"."+typ.Name)] = true
 			}
 		}
+		// Gated stub types the view leaves out keep the names they had.
+		excluded.Each(func(_ int, namespace, name string, _ apexast.DeclarationKind) {
+			known[strings.ToLower(name)] = true
+			if namespace != "" {
+				known[strings.ToLower(namespace+"."+name)] = true
+			}
+		})
 		return known
 	})
 }

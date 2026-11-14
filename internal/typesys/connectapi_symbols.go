@@ -48,50 +48,54 @@ func ConnectAPIShapeRequested() bool {
 	return connectAPIShapeRequested.Load()
 }
 
-// NoteApexSource requests the ConnectApi shape when source names the
-// namespace in any letter case. Every Apex source the process parses or
-// indexes passes through here, so the request precedes the analysis that
-// needs the shape.
+// NoteApexSource requests every gated platform namespace (ConnectApi, Slack)
+// that source names in any letter case. Every Apex source the process parses
+// or indexes passes through here, so the request precedes the analysis that
+// needs the namespace.
 func NoteApexSource(source string) {
-	if connectAPIShapeRequested.Load() {
-		return
-	}
-	if mentionsConnectAPI(source) {
-		connectAPIShapeRequested.Store(true)
-	}
-}
-
-// NoteIndexSignatures requests the ConnectApi shape when a type signature in
-// the index (a superclass, interface, member type or parameter type) names
-// the namespace. Dependency artifacts carry signatures without source.
-func NoteIndexSignatures(index Index) {
-	if connectAPIShapeRequested.Load() {
-		return
-	}
-	for i := range index.Types {
-		if typeSymbolNamesConnectAPI(&index.Types[i]) {
-			connectAPIShapeRequested.Store(true)
-			return
+	for i := range gatedPlatformNamespaces {
+		namespace := &gatedPlatformNamespaces[i]
+		if !namespace.named.Load() && mentionsWord(source, namespace.word) {
+			namespace.named.Store(true)
 		}
 	}
 }
 
-func typeSymbolNamesConnectAPI(typ *TypeSymbol) bool {
-	if mentionsConnectAPI(typ.Name) || mentionsConnectAPI(typ.Namespace) || mentionsConnectAPI(typ.SuperClass) {
+// NoteIndexSignatures requests every gated platform namespace that a type
+// signature in the index (its name, namespace, superclass, interfaces, member
+// types or parameter types) names. Dependency artifacts carry signatures
+// without source.
+func NoteIndexSignatures(index Index) {
+	for i := range index.Types {
+		noteTypeSymbolSignature(&index.Types[i])
+	}
+}
+
+func noteTypeSymbolSignature(typ *TypeSymbol) {
+	for i := range gatedPlatformNamespaces {
+		namespace := &gatedPlatformNamespaces[i]
+		if !namespace.named.Load() && typeSymbolNamesWord(typ, namespace.word) {
+			namespace.named.Store(true)
+		}
+	}
+}
+
+func typeSymbolNamesWord(typ *TypeSymbol, word string) bool {
+	if mentionsWord(typ.Name, word) || mentionsWord(typ.Namespace, word) || mentionsWord(typ.SuperClass, word) {
 		return true
 	}
 	for _, name := range typ.Interfaces {
-		if mentionsConnectAPI(name) {
+		if mentionsWord(name, word) {
 			return true
 		}
 	}
 	for i := range typ.Members {
 		member := &typ.Members[i]
-		if mentionsConnectAPI(member.Type) {
+		if mentionsWord(member.Type, word) {
 			return true
 		}
 		for _, param := range member.Parameters {
-			if mentionsConnectAPI(param.Type) {
+			if mentionsWord(param.Type, word) {
 				return true
 			}
 		}
@@ -102,13 +106,20 @@ func typeSymbolNamesConnectAPI(typ *TypeSymbol) bool {
 const connectAPINamespaceWord = "connectapi"
 
 // mentionsConnectAPI reports a case-insensitive "connectapi" anywhere in s.
-// The scan folds ASCII letters only; the word has no other characters.
 func mentionsConnectAPI(s string) bool {
-	for i := 0; i+len(connectAPINamespaceWord) <= len(s); i++ {
-		if s[i]|0x20 != 'c' {
+	return mentionsWord(s, connectAPINamespaceWord)
+}
+
+// mentionsWord reports the lower-case ASCII word anywhere in s, ignoring the
+// case of s. The scan folds ASCII letters only; the words have no other
+// characters.
+func mentionsWord(s, word string) bool {
+	first := word[0]
+	for i := 0; i+len(word) <= len(s); i++ {
+		if s[i]|0x20 != first {
 			continue
 		}
-		if asciiFoldHasPrefix(s[i:], connectAPINamespaceWord) {
+		if asciiFoldHasPrefix(s[i:], word) {
 			return true
 		}
 	}
