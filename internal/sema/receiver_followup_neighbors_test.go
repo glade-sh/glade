@@ -93,6 +93,9 @@ func TestReceiverControlCallNeighbors(t *testing.T) {
 		{"for_init_variable_type", "for (Object o = UserInfo.\ngetName(); false; ) {}", `null`},
 		{"foreach_variable_type", "for (Object o : UserInfo.\ngetName().split(' ')) {}", `null`},
 		{"when_switch_type", "switch on 1 { when UserInfo.\ngetName() { } }", `[{"severity":"error","code":"GLADESEMA030","message":"method \"execute\" has invalid statement: switch branch must be a literal or enum constant","range":{"start":{"line":1,"column":15,"offset":14},"end":{"line":1,"column":16,"offset":15}}}]`},
+		{"if_argument", "if (String.\nvalueOf(1) == '1') {}", `null`},
+		{"while_argument_type", "while (String.\nvalueOf('1') == '1') { break; }", `null`},
+		{"while_return_type", "while (Date.\ntoday() == null) { break; }", `null`},
 	} {
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(tc.name+"/"+api, func(t *testing.T) {
