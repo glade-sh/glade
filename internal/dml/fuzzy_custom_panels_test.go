@@ -122,7 +122,7 @@ func TestCustomFuzzyExtensionsCapturedPairs(t *testing.T) {
 // The new custom dictionary rows do not establish standard-rule behavior.
 func TestStandardFirstNameKeepsBaselineForCustomVariants(t *testing.T) {
 	matched, score := standardMethod("firstname")("Bart", "Bartholomew")
-	if matched || score != 0 {
-		t.Fatalf("standard first-name neighbor: got %v %.4f, want origin/main false 0", matched, score)
+	if matched || math.Abs(score-93.2507) > 1e-4 {
+		t.Fatalf("standard first-name neighbor: got %v %.4f, want origin/main false 93.2507", matched, score)
 	}
 }

@@ -37,6 +37,19 @@ func maybeInitials(s string) bool {
 	return len(s) <= 2 || s[1] == ' ' || s[1] == '.'
 }
 
+// These directional pairs were captured on custom rules only. Keep them out
+// of the shared dictionary used by standard matching rules.
+var customNameVariants = map[string]bool{
+	"bart\x00bartholomew": true, "bartholomew\x00bart": true,
+	"ezekiel\x00zeke": true, "zeke\x00ezekiel": true,
+	"millicent\x00millie": true, "millie\x00millicent": true,
+	"montgomery\x00monty": true, "monty\x00montgomery": true,
+	"mort\x00mortimer": true, "mortimer\x00mort": true,
+	"prudence\x00prue": true, "prue\x00prudence": true,
+	"reg\x00reggie": true, "reggie\x00reg": true,
+	"thad\x00thaddeus": true, "thaddeus\x00thad": true,
+}
+
 // customFirstName adds the Initials algorithm. NATIVE: a single initial finds
 // every initials value with the same first letter and is found by it ("J" and
 // "J." find each other and "J R", "J. R." and "J K"), two longer initials
@@ -44,6 +57,9 @@ func maybeInitials(s string) bool {
 // value matches no other name, not by Jaro-Winkler either ("J. R." does not
 // find "J.R."). Values written without a space ("JR", "J.R.") are names.
 func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
+	if customNameVariants[foldText(a)+"\x00"+foldText(b)] {
+		return true, 100
+	}
 	if !maybeInitials(a) && !maybeInitials(b) {
 		return fuzzyFirstName(a, b, matchBlanks)
 	}

@@ -70,7 +70,7 @@ func fuzzyPanelResiduals(t *testing.T) map[string]fuzzyPanelResidual {
 	out := map[string]fuzzyPanelResidual{}
 	for _, line := range lines[1:] {
 		f := strings.Split(line, "\t")
-		if len(f) != 4 || f[2] == f[3] {
+		if len(f) != 4 || f[2] == f[3] || f[2] == "-" {
 			t.Fatalf("invalid residual %q", line)
 		}
 		out[f[0]+"/"+f[1]] = fuzzyPanelResidual{f[2], f[3]}
@@ -79,7 +79,7 @@ func fuzzyPanelResiduals(t *testing.T) map[string]fuzzyPanelResidual {
 }
 
 // NATIVE fuzzy matching panels testdata/conformance/duplicate_fuzzy_panels/org.tsv:2 anonymous 62.0
-// NATIVE fuzzy matching panels testdata/conformance/duplicate_fuzzy_panels/org.tsv:2 istest 67.0
+// NATIVE fuzzy matching panels testdata/conformance/duplicate_fuzzy_panels/org.tsv:8 istest 67.0
 // Every pair of each panel's values, under custom matching rules with one
 // Last Name, First Name, Title, Company Name or Street item, and one rule with
 // three fuzzy items, through Datacloud.FindDuplicates on both Apex routes. The

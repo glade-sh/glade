@@ -755,4 +755,3 @@ equals the native one.
 origin/main had four false pairs on the fit panels (`J.R.`/`J. R.` both ways,
 `Fennimore` and `Callowmere` plurals) and three on the holdout; the model has
 none on any panel, and none on the rows of the first two fixtures.
-
