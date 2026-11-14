@@ -99,6 +99,9 @@ func TestEditorChurnListingFingerprint(t *testing.T) {
 func TestEditorLikeDeployableInputsStillInvalidate(t *testing.T) {
 	for _, tc := range []struct{ subdir, name string }{
 		{"staticresources/Bundle", "asset.swp"},
+		{"staticresources/Bundle", ".DS_Store"},
+		{"lwc/widget", "asset.swp"},
+		{"aura/widget", "asset~"},
 		{"staticresources/Bundle", "asset~"},
 		{"data", ".#records.json"},
 		{"objects/Widget__c/sharingReasons", ".#Second__c.sharingReason-meta.xml"},
