@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apextest"
-	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testutil/testshard"
 )
 
@@ -24,7 +23,6 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "gladecli: %v\n", err)
 		os.Exit(2)
 	}
-	storage.SetStandardCatalogReleaseEnabled(true)
 	cleanupPrivateTemp := preparePrivateTestTemp()
 	restoreDiskCache := apextest.DisableDiskCacheForTesting()
 	code := m.Run()

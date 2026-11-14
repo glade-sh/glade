@@ -6,17 +6,12 @@ import (
 	"strings"
 	"sync"
 	"testing"
-
-	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestMain(m *testing.M) {
 	// Tests use unique t.TempDir() roots, so disk cache only adds gob I/O with
 	// no hit rate. In-memory runtimeCache still applies.
 	disableDiskCache.Store(true)
-	// A test binary builds many org shapes. Let it free decoded catalogs and
-	// evict template groups instead of keeping them for the process lifetime.
-	storage.SetStandardCatalogReleaseEnabled(true)
 	if err := applyShardSelection(); err != nil {
 		fmt.Fprintf(os.Stderr, "apextest: %v\n", err)
 		os.Exit(2)

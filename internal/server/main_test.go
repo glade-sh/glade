@@ -5,11 +5,9 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apextest"
-	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestMain(m *testing.M) {
-	storage.SetStandardCatalogReleaseEnabled(true)
 	cleanupPrivateTemp := preparePrivateTestTemp()
 	// Server tests exercise the checked-out runtime assets. Authorize that
 	// checkout explicitly when the caller has not selected a toolchain.
