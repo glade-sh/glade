@@ -5,8 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -580,6 +582,12 @@ func TestConcurrentDAPLoadsDoNotInterfere(t *testing.T) {
 	withoutDAPRetryBackoff(t)
 	first, _ := writeDriftProject(t)
 	second, _ := writeDriftProject(t)
+	for _, root := range []string{first, second} {
+		for i := 0; i < runtime.GOMAXPROCS(0)+1; i++ {
+			name := fmt.Sprintf("ViewWorker%d", i)
+			writeDriftFile(t, filepath.Join(root, "force-app", "main", "classes", name+".cls"), "public class "+name+" {}\n")
+		}
+	}
 	stop := make(chan struct{})
 	var readers sync.WaitGroup
 	readers.Add(1)
@@ -601,9 +609,9 @@ func TestConcurrentDAPLoadsDoNotInterfere(t *testing.T) {
 			}
 		}
 	}()
-	results := make([]dapDriftResult, 2)
+	results := make([]dapDriftResult, 3)
 	var loads sync.WaitGroup
-	for i, root := range []string{first, second} {
+	for i, root := range []string{first, first, second} {
 		loads.Add(1)
 		go func(i int, root string) {
 			defer loads.Done()
