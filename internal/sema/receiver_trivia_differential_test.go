@@ -14,6 +14,7 @@ import (
 // complete JSON diagnostics are the output observed on origin/main at 67.0.
 func TestReceiverUncapturedTypeNeighbors(t *testing.T) {
 	for _, tc := range []struct{ name, source, want string }{
+		{"earlier parse error", "Integer x = ;\nReceiverProbe.\nvalue();", `[{"severity":"error","code":"GLADESEMA_ANONYMOUS_PARSE","message":"unexpected token \";\" at byte 12","range":{"start":{"line":1,"column":1},"end":{"line":1,"column":38,"offset":37}}}]`},
 		{"generic", "{ List<System\n.String> s; }", `[{"severity":"error","code":"GLADESEMA006","message":"Invalid type: System.String","range":{"start":{"line":1,"column":3,"offset":2},"end":{"line":2,"column":8,"offset":21}},"nativeMessage":"Invalid type: System.String"}]`},
 		{"cast", "{ Object s = (System\n.String) 'x'; }", "null"},
 		{"instanceof", "{ Boolean b = 'x' instanceof System\n.String; }", "null"},
