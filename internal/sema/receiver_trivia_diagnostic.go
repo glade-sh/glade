@@ -11,6 +11,9 @@ type receiverEnclosure struct {
 	kind       string
 	start      int
 	semicolons int
+	header     int
+	doBlock    bool
+	classBody  bool
 }
 
 // receiverBoundDiagnostic classifies the parser's enclosing construct for a
@@ -37,8 +40,18 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 	topLevel := route == "anonymous" && blockDepth == 0 || route == "trigger" && blockDepth == 1
 	leading := strings.ToLower(ts[statement].text)
 	switch leading {
-	case "if", "for", "while", "switch", "return", "throw":
+	case "if", "for", "while", "switch", "return", "throw", "else":
 		topLevel = false
+	}
+	// The anonymous parser reads a local method declaration as one top-level
+	// member; a break inside it is reported where that member's name starts.
+	if !topLevel && route == "anonymous" && len(stack) > 0 && stack[0].kind == "block" {
+		if tok, ok := receiverLocalMethodToken(ts, stack[0]); ok {
+			return report(tok, "Unexpected token '"+tok.text+"'.")
+		}
+	}
+	if !topLevel && leading == "when" && dot+2 < len(ts) && ts[dot+2].text == "(" && (len(stack) == 0 || stack[len(stack)-1].kind == "block") {
+		return report(ts[dot+2], "Missing '{' at '('")
 	}
 	if !topLevel {
 		for i := statement; i < dot; i++ {
@@ -50,7 +63,11 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 		case 1:
 			return report(member, "Missing ':' at '"+member.text+"'")
 		case 2:
-			// Rejected natively; the false-arm message is uncaptured.
+			// A false arm directly in a statement takes the statement message;
+			// inside other constructs the message is uncaptured.
+			if len(stack) == 0 || stack[len(stack)-1].kind == "block" {
+				return report(member, "Missing ';' at '"+member.text+"'")
+			}
 			return nil
 		}
 	}
@@ -106,7 +123,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 			i = -1
 		case "call", "group", "new":
 			if frame.kind == "group" && dot+2 < len(ts) && ts[dot+2].text == ")" {
-				if dot+3 < len(ts) && (ts[dot+3].word || strings.HasPrefix(ts[dot+3].text, "'")) {
+				if dot+3 < len(ts) && (ts[dot+3].word || strings.HasPrefix(ts[dot+3].text, "'") || ts[dot+3].text == ";") {
 					return report(member, "Extra ')', at '"+member.text+"'.")
 				}
 				return nil
@@ -117,7 +134,18 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 			return report(member, "Expecting ')' but was: '"+member.text+"'")
 		case "if", "while":
 			return report(member, "Missing ')' at '"+member.text+"'")
+		case "dowhile":
+			return report(member, "Expecting ')' but was: '"+member.text+"'")
 		case "for":
+			if frame.semicolons == 0 {
+				if receiverForEach(ts, frame.start, dot) {
+					if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
+						return report(member, "Extra ')', at '"+member.text+"'.")
+					}
+					return report(member, "Missing ')' at '"+member.text+"'")
+				}
+				return report(member, "Missing ';' at '"+member.text+"'")
+			}
 			if frame.semicolons == 1 {
 				return report(member, "Missing ';' at '"+member.text+"'")
 			}
@@ -135,6 +163,9 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 	}
 	if leading == "switch" {
 		return report(member, "Expecting '{' but was: '"+member.text+"'")
+	}
+	if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
+		return report(member, "Extra ';', at '"+member.text+"'.")
 	}
 	return report(member, "Missing ';' at '"+member.text+"'")
 }
@@ -305,6 +336,9 @@ func receiverFreeDiagnosticAt(source, namespace string, item receiverTrivia, sco
 	// A detached dot in a type declaration cannot join the type name.
 	if dot+2 < len(ts) && ts[dot+1].word && ts[dot+2].word {
 		if item.depth == 0 {
+			if tok, ok := receiverMethodHeaderToken(ts, item.statement, dot); ok && item.statement != root {
+				return report(tok, "Unexpected token '"+tok.text+"'.")
+			}
 			return report(ts[dot], "Unexpected token '.'.")
 		}
 		return report(ts[dot+2], "Missing ';' at '"+ts[dot+2].text+"'")
@@ -377,4 +411,84 @@ func receiverControlDiagnostic(source string, item receiverTrivia) *diagnostic.D
 	token := ts[i]
 	const message = "Found control character hex 0x000B (decimal 11) that isn't valid in Apex."
 	return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, Range: receiverTriviaRange(source, token.start, token.end)}
+}
+
+// receiverForEach reports whether the for header opened at index open holds a
+// colon outside any conditional expression before the dot: a for-each header.
+func receiverForEach(ts []receiverTriviaToken, open, dot int) bool {
+	ternary, nested := 0, 0
+	for i := open + 1; i < dot; i++ {
+		switch ts[i].text {
+		case "(", "[", "{":
+			nested++
+		case ")", "]", "}":
+			nested--
+		}
+		if nested != 0 {
+			continue
+		}
+		switch ts[i].text {
+		case "?":
+			if i+1 >= len(ts) || ts[i+1].text != "." || ts[i].end != ts[i+1].start {
+				ternary++
+			}
+		case ":":
+			if ternary == 0 {
+				return true
+			}
+			ternary--
+		}
+	}
+	return false
+}
+
+// receiverLocalMethodToken finds the token after the leading type name of the
+// local method whose body is the given outermost block, if that block is one.
+func receiverLocalMethodToken(ts []receiverTriviaToken, block receiverEnclosure) (receiverTriviaToken, bool) {
+	b, lead := block.start, block.header
+	if b < 1 || lead >= b || ts[b-1].text != ")" || !ts[lead].word {
+		return receiverTriviaToken{}, false
+	}
+	depth, open := 0, -1
+	for i := b - 1; i > lead; i-- {
+		if ts[i].text == ")" {
+			depth++
+		} else if ts[i].text == "(" {
+			depth--
+			if depth == 0 {
+				open = i
+				break
+			}
+		}
+	}
+	if open < lead+2 || !ts[open-1].word {
+		return receiverTriviaToken{}, false
+	}
+	end := lead
+	for end+2 < len(ts) && ts[end+1].text == "." && ts[end].end == ts[end+1].start && ts[end+1].end == ts[end+2].start && ts[end+2].word {
+		end += 2
+	}
+	if end+1 < len(ts) && ts[end+1].text == "." && ts[end].end == ts[end+1].start {
+		end++
+	}
+	if end+1 >= open {
+		return receiverTriviaToken{}, false
+	}
+	return ts[end+1], true
+}
+
+// receiverMethodHeaderToken is the token after the leading name lexeme of a
+// statement whose next tokens open a parameter list: `Type name (`.
+func receiverMethodHeaderToken(ts []receiverTriviaToken, statement, dot int) (receiverTriviaToken, bool) {
+	if statement >= len(ts) || !ts[statement].word {
+		return receiverTriviaToken{}, false
+	}
+	end := statement
+	for end+2 < len(ts) && ts[end+1].text == "." && ts[end].end == ts[end+1].start && ts[end+1].end == ts[end+2].start && ts[end+2].word {
+		end += 2
+	}
+	if end+3 < len(ts) && end+1 < dot && ts[end+1].word && ts[end+2].text == "(" {
+		return ts[end+1], true
+	}
+	return receiverTriviaToken{}, false
 }
