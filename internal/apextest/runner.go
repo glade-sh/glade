@@ -6151,13 +6151,6 @@ func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, 
 }
 
 func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]struct{} {
-	// The catalog's raw relationship table does not include all edges added
-	// while preparing object definitions. Enumerate the completed spread on a
-	// clone so inference sees exactly the same definitions as an eager org.
-	if org.StandardSpreadSourceBacked() {
-		org = org.CloneRuntimeFrozenDefinition()
-		storage.MaterializeStandardObjectSpread(&org)
-	}
 	lookup := make(map[string]struct{}, len(org.Objects))
 	parentNames := make(map[string]string)
 	for _, child := range org.Objects {
