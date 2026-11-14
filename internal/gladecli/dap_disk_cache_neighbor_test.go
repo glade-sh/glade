@@ -13,6 +13,15 @@ import (
 // A test runtime populated before DAP must retain the baseline cache behavior
 // for an Apex class whose metadata sidecar is absent.
 func TestDAPDiskCacheWithoutClassSidecar(t *testing.T) {
+	testDAPDiskCacheClassVersion(t, "")
+}
+
+func TestDAPDiskCacheWithUnversionedSidecar(t *testing.T) {
+	testDAPDiskCacheClassVersion(t, `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><status>Active</status></ApexClass>`)
+}
+
+func testDAPDiskCacheClassVersion(t *testing.T, sidecar string) {
+	t.Helper()
 	restore := apextest.EnableDiskCacheForTesting()
 	defer restore()
 	root := t.TempDir()
@@ -28,6 +37,9 @@ func TestDAPDiskCacheWithoutClassSidecar(t *testing.T) {
 	}
 	write("sfdx-project.json", `{"packageDirectories":[{"path":"src","default":true}],"sourceApiVersion":"62.0"}`)
 	write("src/classes/NeighborTest.cls", `@IsTest private class NeighborTest { @IsTest static void passes() { System.assertEquals(2,1+1); } }`)
+	if sidecar != "" {
+		write("src/classes/NeighborTest.cls-meta.xml", sidecar)
+	}
 	write("src/pages/Home.page", `<apex:page>Home</apex:page>`)
 	write("src/pages/Home.page-meta.xml", `<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>62.0</apiVersion><label>Home</label></ApexPage>`)
 	var out, errout bytes.Buffer
