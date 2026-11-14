@@ -8,9 +8,10 @@ import (
 // The custom-rule extensions apply only to the shapes the duplicate_fuzzy_panels
 // rows cover. These neighbouring shapes, none of them captured, keep the
 // verdict and score origin/main gives them: keyboard edits in names under ten
-// letters, over thirteen, or in the first five letters; initials against names
-// and two longer initials; first words that differ inside the match key or
-// with a different second word; plurals outside the captured lengths; streets
+// letters, over thirteen, or in the first five letters; initials against
+// names, two longer initials and initials outside a to z; first words that
+// differ inside the match key or with a different second word; plurals outside
+// the captured lengths or already matched by a proven word pair; streets
 // without a number, with a different number, a trailing directional or an
 // unknown word that is not near the suffix; titles of seven words.
 func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
@@ -56,6 +57,10 @@ func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
 		{"Title", "Brand Strategist", "Strategist Deputy Senior Global Principal Retail Brand", false, 0.0000},
 		{"Title", "Brand Strategist Lead", "Strategist Global Principal Retail Brand", false, 0.0000},
 		{"Title", "Senior Strategist", "Senior Retail Strategist", true, 95.0000},
+		{"CompanyName", "Americas", "America", true, 100.0000},
+		{"CompanyName", "America", "Americas", true, 98.0000},
+		{"FirstName", "É", "É.", false, 92.5000},
+		{"FirstName", "Ł", "Ł M", false, 90.0000},
 	} {
 		match, score := FuzzyScore(c.method, c.a, c.b, false)
 		if match != c.match || math.Abs(score-c.score) > 1e-3 {

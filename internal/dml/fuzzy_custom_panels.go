@@ -1,9 +1,6 @@
 package dml
 
-import (
-	"regexp"
-	"strings"
-)
+import "strings"
 
 // Custom matching rule items score through the shared fuzzy scorers plus the
 // extensions below. Each extension is read from the duplicate_fuzzy_panels
@@ -18,9 +15,27 @@ var customFuzzyScorers = map[string]fuzzyScorer{
 	"street":      customStreet,
 }
 
-// firstNameInitials is a value made only of single letters, each with an
-// optional dot, separated by spaces: "J", "J.", "J R", "J. R.".
-var firstNameInitials = regexp.MustCompile(`^\pL\.?( \pL\.?)*$`)
+// firstNameInitials reports a lower-cased value made only of single letters a
+// to z, each with an optional dot, separated by single spaces: "j", "j.",
+// "j r", "j. r.".
+func firstNameInitials(s string) bool {
+	if s == "" || (len(s) > 2 && s[1] != ' ' && s[1] != '.') {
+		return false
+	}
+	for _, word := range strings.Split(s, " ") {
+		if word == "" || len(word) > 2 || word[0] < 'a' || word[0] > 'z' || (len(word) == 2 && word[1] != '.') {
+			return false
+		}
+	}
+	return true
+}
+
+// maybeInitials is a cheap necessary condition for firstNameInitials on a raw
+// value: an initials value has a space or a dot as its second byte.
+func maybeInitials(s string) bool {
+	s = strings.TrimSpace(s)
+	return len(s) <= 2 || s[1] == ' ' || s[1] == '.'
+}
 
 // customFirstName adds the Initials algorithm. NATIVE: a single initial finds
 // every initials value with the same first letter and is found by it ("J" and
@@ -29,8 +44,11 @@ var firstNameInitials = regexp.MustCompile(`^\pL\.?( \pL\.?)*$`)
 // value matches no other name, not by Jaro-Winkler either ("J. R." does not
 // find "J.R."). Values written without a space ("JR", "J.R.") are names.
 func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
+	if !maybeInitials(a) && !maybeInitials(b) {
+		return fuzzyFirstName(a, b, matchBlanks)
+	}
 	x, y := foldText(a), foldText(b)
-	ix, iy := firstNameInitials.MatchString(x), firstNameInitials.MatchString(y)
+	ix, iy := firstNameInitials(x), firstNameInitials(y)
 	if !ix && !iy {
 		return fuzzyFirstName(a, b, matchBlanks)
 	}
@@ -67,6 +85,10 @@ func customLastName(a, b string, matchBlanks bool) (bool, float64) {
 }
 
 func lastNameSubstitutions(a, b string) (bool, float64) {
+	if len(a) != len(b) || len(a) < 10 || len(a) > 13 {
+		// Only ASCII letters qualify, so the byte length is the letter count.
+		return false, 0
+	}
 	fa, fb := foldText(a), foldText(b)
 	x, y := []rune(strings.ReplaceAll(fa, "'", "")), []rune(strings.ReplaceAll(fb, "'", ""))
 	n := len(x)
@@ -120,26 +142,30 @@ func lastNameSubstitutions(a, b string) (bool, float64) {
 // of a word of six to nine letters ending in "a", "o" or "y" finds the word
 // itself (companyPluralReverse).
 func customCompany(a, b string, matchBlanks bool) (bool, float64) {
-	wa, wb := companyWords(a), companyWords(b)
-	single := len(wa) == 1 && len(wb) == 1 && companyKey(wa) == companyKey(wb) && !strings.Contains(a, "-") && !strings.Contains(b, "-")
-	if single && !companyAlignedWords[wa[0]] && !companyAlignedWords[wb[0]] {
-		// Each rule is limited to the word lengths the rows cover.
-		x, y := wa[0], wb[0]
-		switch n := len([]rune(x)); {
-		case y == x+"s" && strings.HasSuffix(x, "re") && n >= 8 && n <= 10:
-			return false, 0
-		case y == x+"s" && strings.HasSuffix(x, "o") && n >= 8 && n <= 9:
-			return true, 98
-		}
-		if n := len([]rune(y)); x == y+"s" && n >= 6 && n <= 9 && strings.ContainsAny(y[len(y)-1:], "aoy") {
-			return true, companyPluralReverse(y)
-		}
-	}
 	matched, confidence := fuzzyCompany(a, b, matchBlanks)
-	if matched || len(wa) < 2 || len(wb) < 2 || wa[0] == wb[0] || wa[1] != wb[1] || strings.Contains(a, "-") || strings.Contains(b, "-") {
+	ta, tb := strings.TrimSpace(a), strings.TrimSpace(b)
+	if !strings.ContainsAny(ta, " -") && !strings.ContainsAny(tb, " -") && (len(ta) == len(tb)+1 || len(tb) == len(ta)+1) {
+		wa, wb := companyWords(a), companyWords(b)
+		if len(wa) == 1 && len(wb) == 1 && companyKey(wa) == companyKey(wb) && !companyAlignedWords[wa[0]] && !companyAlignedWords[wb[0]] {
+			// Each rule is limited to the word lengths the rows cover.
+			x, y := wa[0], wb[0]
+			switch n := len([]rune(x)); {
+			case y == x+"s" && strings.HasSuffix(x, "re") && n >= 8 && n <= 10:
+				return false, 0
+			case y == x+"s" && strings.HasSuffix(x, "o") && n >= 8 && n <= 9:
+				return true, 98
+			}
+			if n := len([]rune(y)); !matched && x == y+"s" && n >= 6 && n <= 9 && strings.ContainsAny(y[len(y)-1:], "aoy") {
+				return true, companyPluralReverse(y)
+			}
+		}
 		return matched, confidence
 	}
-	if companyKey(wa) != companyKey(wb) || !companySecondWordMatch(wa[0], wb[0]) {
+	if matched || strings.Contains(ta, "-") || strings.Contains(tb, "-") || len(ta) < 6 || len(tb) < 6 || !strings.EqualFold(ta[:6], tb[:6]) {
+		return matched, confidence
+	}
+	wa, wb := companyWords(a), companyWords(b)
+	if len(wa) < 2 || len(wb) < 2 || wa[0] == wb[0] || wa[1] != wb[1] || companyKey(wa) != companyKey(wb) || !companySecondWordMatch(wa[0], wb[0]) {
 		return matched, confidence
 	}
 	aligned := strings.Join(append([]string{wa[0]}, wb[1:]...), " ")
@@ -158,6 +184,13 @@ func customCompany(a, b string, matchBlanks bool) (bool, float64) {
 func customStreet(a, b string, matchBlanks bool) (bool, float64) {
 	matched, confidence := fuzzyStreet(a, b, matchBlanks)
 	if matched {
+		return matched, confidence
+	}
+	// Cheap necessary condition: the same leading number and the same text
+	// before the last word.
+	ia, ib := strings.IndexByte(a, ' '), strings.IndexByte(b, ' ')
+	la, lb := strings.LastIndexByte(a, ' '), strings.LastIndexByte(b, ' ')
+	if ia <= 0 || ia != ib || a[:ia] != b[:ib] || la <= ia || !strings.EqualFold(a[:la], b[:lb]) {
 		return matched, confidence
 	}
 	x, y := streetClean(a), streetClean(b)

@@ -106,7 +106,7 @@ func fuzzyPanelNameVariants(t *testing.T) map[string]bool {
 				}
 			}
 			x, y := foldText(values[i]), foldText(values[j])
-			if i == j || x == y || firstNameInitials.MatchString(x) || firstNameInitials.MatchString(y) {
+			if i == j || x == y || firstNameInitials(x) || firstNameInitials(y) {
 				continue
 			}
 			score := jaroWinkler(x, y)
