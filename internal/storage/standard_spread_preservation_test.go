@@ -62,3 +62,12 @@ func TestSpreadDefinitionSnapshotDetectsInPlaceEdits(t *testing.T) {
 		})
 	}
 }
+
+func TestSpreadFingerprintDistinguishesEmptyCollections(t *testing.T) {
+	d := ObjectDefinition{APIName: "Example"}
+	snapshot := recordInstalledSpreadDefinition(d)
+	d.Metadata = map[string]string{}
+	if spreadDefinitionFingerprint(d) == snapshot.fingerprint {
+		t.Fatal("empty map edit was not detected")
+	}
+}
