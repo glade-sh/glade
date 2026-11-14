@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -112,5 +113,24 @@ func TestAgedVisualforceDigestPersistedAfterRun(t *testing.T) {
 	}
 	if reads != 1 {
 		t.Fatalf("aged input was not persisted after run: reads=%d", reads)
+	}
+}
+
+func TestRecentVisualforcePromotionRejectsYoungStamp(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "input")
+	writeFile(t, path, "content")
+	resetFileDigestTrust()
+	t.Cleanup(resetFileDigestTrust)
+	input, captured, err := captureRecentVisualforceInput(path, recentVisualforceBudget)
+	if err != nil || !captured {
+		t.Fatalf("recent input: captured=%t err=%v", captured, err)
+	}
+	stamp, ok := filestamp.Stat(path)
+	if !ok {
+		t.Fatal("test filesystem did not provide a trusted stamp")
+	}
+	if _, ok := promoteRecentVisualforceInput(path, stamp, input); ok {
+		t.Fatal("young input was promoted using a timestamp")
 	}
 }

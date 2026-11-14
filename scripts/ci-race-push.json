@@ -366,6 +366,7 @@
       "TestRecentVisualforceInputValidationDetectsChanges",
       "TestRecentVisualforceInputsAvoidRepeatedHashing",
       "TestRecentVisualforcePromotionRejectsChangedBytes",
+      "TestRecentVisualforcePromotionRejectsYoungStamp",
       "TestRecentVisualforceSharedSnapshotBound",
       "TestRecentVisualforceSharedSnapshotEntryBound",
       "TestRecentVisualforceSharedSnapshotIdentityChanges",
