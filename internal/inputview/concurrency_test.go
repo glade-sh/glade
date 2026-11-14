@@ -55,6 +55,9 @@ func TestConcurrentViewRecheckAndClose(t *testing.T) {
 	wg.Add(1)
 	go func() { defer wg.Done(); v.Close() }()
 	wg.Wait()
+	if got := v.Observations(); len(got) != 0 {
+		t.Fatalf("closed view retained %d observations", len(got))
+	}
 }
 
 func TestReadDirErrorOnFileAgreesWithStat(t *testing.T) {
