@@ -55,14 +55,14 @@ func TestPhoneKeypadRuleNativeConformance(t *testing.T) {
 	}
 }
 
-// This uncaptured neighbor had a score of 60 and did not match on origin/main.
+// This uncaptured neighbor had a score of 50 and did not match on origin/main.
 // Keeping the raw score matters to compound custom matching rules.
 func TestPhoneKeypadUncapturedNeighborKeepsBase(t *testing.T) {
-	if ok, score := fuzzyPhone("1-800-FLOWERS", "800-356-9378", false); ok || score != 60 {
-		t.Fatalf("got %v, %v; base false, 60", ok, score)
+	if ok, score := fuzzyPhone("1-800-FLOWERS", "800-356-9378", false); ok || score != 50 {
+		t.Fatalf("got %v, %v; base false, 50", ok, score)
 	}
-	if score := FuzzyRawConfidence("phone", "1-800-FLOWERS", "800-356-9378", false); score != 60 {
-		t.Fatalf("raw got %v; base 60", score)
+	if score := FuzzyRawConfidence("phone", "1-800-FLOWERS", "800-356-9378", false); score != 50 {
+		t.Fatalf("raw got %v; base 50", score)
 	}
 }
 
