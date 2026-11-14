@@ -100,7 +100,7 @@ func forEachTextKey(w *textWriter, fields map[string]Value, keep func(string) bo
 		less = func(a, b string) bool { return a < b }
 	}
 	if w.bounded {
-		if k := (w.limit-w.n)/3 + 2; k < len(fields) {
+		if k := textKeyBudget(w); k < len(fields) {
 			selected := &textKeyHeap{less: less}
 			for key := range fields {
 				if keep != nil && !keep(key) {
@@ -140,6 +140,12 @@ func forEachTextKey(w *textWriter, fields map[string]Value, keep func(string) bo
 		}
 		fn(i, key)
 	}
+}
+
+// textKeyBudget is the most keys a bounded writer can still show: each entry
+// after the first writes at least ", " and "=".
+func textKeyBudget(w *textWriter) int {
+	return (w.limit-w.n)/3 + 2
 }
 
 func sortedTextKeys(fields map[string]Value, keep func(string) bool, less func(a, b string) bool, byteOrder bool) []string {

@@ -303,3 +303,84 @@ func TestBoundedStringDecimalAndAccessLevelWork(t *testing.T) {
 		t.Fatalf("access level: %d bytes, truncated=%v", len(got), truncated)
 	}
 }
+
+// queriedRecordForText builds an Account whose query order is names; fields
+// holds the stored field names.
+func queriedRecordForText(fields, names []string) Value {
+	record := Object("Account")
+	for i, name := range fields {
+		record.Fields[name] = Int(int64(i))
+	}
+	selection := Map()
+	for _, name := range names {
+		key := mapKey(String(name))
+		selection.Map[key] = Bool(true)
+		selection.MapKeys[key] = String(name)
+		selection.MapOrder = append(selection.MapOrder, key)
+	}
+	record.Fields[sobjectQueriedFieldsField] = selection
+	return record
+}
+
+func TestBoundedStringQueriedRecordOrder(t *testing.T) {
+	var fields, reversed, sparse []string
+	for i := 0; i < 400; i++ {
+		fields = append(fields, fmt.Sprintf("Field%03d__c", i))
+		reversed = append(reversed, fmt.Sprintf("field%03d__c", 399-i))
+		// Most leading query names have no stored field.
+		sparse = append(sparse, fmt.Sprintf("absent%03d__c", i))
+		if i%50 == 49 {
+			sparse = append(sparse, fmt.Sprintf("field%03d__c", i))
+		}
+	}
+	// The first name is selected again later, and one name has two stored
+	// spellings.
+	repeated := append(append([]string{}, reversed...), reversed[0])
+	variants := append(append([]string{}, fields...), "FIELD398__c", "field007__c")
+	for name, record := range map[string]Value{
+		"reversed":      queriedRecordForText(fields, reversed),
+		"partly listed": queriedRecordForText(fields, reversed[:150]),
+		"sparse":        queriedRecordForText(fields, sparse),
+		"repeated":      queriedRecordForText(fields, repeated),
+		"variants":      queriedRecordForText(variants, reversed),
+	} {
+		t.Run(name, func(t *testing.T) {
+			want := record.String()
+			for _, limit := range []int{0, 1, 8, 9, 23, 64, 256, 257, 1000, 4000, len(want) - 1, len(want), len(want) + 1} {
+				got, truncated := record.BoundedString(limit)
+				if len(want) <= limit {
+					if got != want || truncated {
+						t.Fatalf("limit %d: got %q truncated=%v, want the exact text", limit, got, truncated)
+					}
+				} else if got != want[:limit] || !truncated {
+					t.Fatalf("limit %d: got %q truncated=%v, want prefix %q", limit, got, truncated, want[:limit])
+				}
+			}
+		})
+	}
+}
+
+func TestBoundedStringQueriedRecordBoundsWork(t *testing.T) {
+	const width = 200000
+	fields := make([]string, width)
+	names := make([]string, width)
+	for i := range fields {
+		fields[i] = fmt.Sprintf("f%06d__c", i)
+		names[width-1-i] = fields[i]
+	}
+	record := queriedRecordForText(fields, names)
+	want := "Account:{f199999__c=199999, f199998__c=199998, "
+	for _, limit := range []int{0, len("Account:{"), 256} {
+		runtime.GC()
+		var before, after runtime.MemStats
+		runtime.ReadMemStats(&before)
+		got, truncated := record.BoundedString(limit)
+		runtime.ReadMemStats(&after)
+		if !truncated || len(got) != limit || (limit == 256 && !strings.HasPrefix(got, want)) {
+			t.Fatalf("limit %d: got %q truncated=%v", limit, got, truncated)
+		}
+		if n := after.TotalAlloc - before.TotalAlloc; n > 1<<16 {
+			t.Fatalf("limit %d: allocated %d bytes", limit, n)
+		}
+	}
+}

@@ -542,36 +542,21 @@ func writeObjectFieldsText(w *textWriter, v Value, seen map[uint64]bool) bool {
 		// SObject defaults or the VM's field-tracking metadata.
 		return !(isLexicalInstanceFieldStorage(key) || isSObject && (isInternalSObjectField(key) || isDefaultedSObjectField(v, key) || !sObjectEqualityFieldVisible(v, key)))
 	}
-	var less func(a, b string) bool
-	if selected, queried := v.Fields[sobjectQueriedFieldsField]; isSObject && queried && len(selected.MapOrder) > 0 {
-		order := make(map[string]int, len(selected.MapOrder))
-		for i, encoded := range selected.MapOrder {
-			order[mapStoredKey(selected, encoded).String()] = i
-		}
-		// Queried fields come first in query order, then the rest in byte
-		// order; equal positions keep byte order.
-		less = func(a, b string) bool {
-			left, leftSelected := order[strings.ToLower(a)]
-			right, rightSelected := order[strings.ToLower(b)]
-			if leftSelected != rightSelected {
-				return leftSelected
-			}
-			if leftSelected && left != right {
-				return left < right
-			}
-			return a < b
-		}
-	}
 	w.WriteString(v.Type)
 	if v.projectClass {
 		w.WriteString(":[")
 	} else {
 		w.WriteString(":{")
 	}
-	forEachTextKey(w, v.Fields, keep, less, func(i int, key string) {
-		if i > 0 {
+	if w.full {
+		return true
+	}
+	written := 0
+	write := func(i int, key string) {
+		if written > 0 {
 			w.WriteString(", ")
 		}
+		written++
 		w.WriteString(key)
 		w.WriteString("=")
 		field := v.Fields[key]
@@ -580,7 +565,54 @@ func writeObjectFieldsText(w *textWriter, v Value, seen map[uint64]bool) bool {
 		} else {
 			writeValueTextWithSeen(w, field, seen)
 		}
-	})
+	}
+	var less func(a, b string) bool
+	if selected, queried := v.Fields[sobjectQueriedFieldsField]; isSObject && queried && len(selected.MapOrder) > 0 {
+		// Queried fields come first in query order, then the rest in byte
+		// order; equal positions keep byte order.
+		queryOrder := func(names []string) (map[string]int, func(a, b string) bool) {
+			order := make(map[string]int, len(names))
+			for i, encoded := range names {
+				order[mapStoredKey(selected, encoded).String()] = i
+			}
+			return order, func(a, b string) bool {
+				left, leftSelected := order[strings.ToLower(a)]
+				right, rightSelected := order[strings.ToLower(b)]
+				if leftSelected != rightSelected {
+					return leftSelected
+				}
+				if leftSelected && left != right {
+					return left < right
+				}
+				return a < b
+			}
+		}
+		// A bounded writer shows at most textKeyBudget keys, so it first
+		// indexes only that many leading query names. Their fields are the
+		// first of the full order. A name repeated later takes its last
+		// position, as in the full index.
+		if k := textKeyBudget(w); w.bounded && k < len(selected.MapOrder) {
+			leading, leadingLess := queryOrder(selected.MapOrder[:k])
+			for _, encoded := range selected.MapOrder[k:] {
+				if len(leading) == 0 {
+					break
+				}
+				delete(leading, mapStoredKey(selected, encoded).String())
+			}
+			isLeading := func(key string) bool {
+				_, ok := leading[strings.ToLower(key)]
+				return ok
+			}
+			forEachTextKey(w, v.Fields, func(key string) bool { return isLeading(key) && keep(key) }, leadingLess, write)
+			if w.full {
+				return true
+			}
+			visible := keep
+			keep = func(key string) bool { return !isLeading(key) && visible(key) }
+		}
+		_, less = queryOrder(selected.MapOrder)
+	}
+	forEachTextKey(w, v.Fields, keep, less, write)
 	if w.full {
 		return true
 	}
