@@ -316,6 +316,10 @@
       "TestPermissionAssignmentIdentityConformance",
       "TestPermissionGroupBackingNativeConformance",
       "TestPermissionScopeMuteNativeConformance",
+      "TestPersistedVisualforceDigestConcurrentAccess",
+      "TestPersistedVisualforceDigestInvalidation",
+      "TestPersistedVisualforceDigestRejectsRecentAndCorruptData",
+      "TestPersistedVisualforceDigestTracksIdentityChanges",
       "TestPicklistDefaultsNativeConformance",
       "TestPlatformCacheCopyConformance",
       "TestPlatformCacheOrgConformance",
@@ -548,6 +552,7 @@
       "TestUtilityNativeConformance",
       "TestValueEdgesNativeConformance",
       "TestVerifierOverrideConversionOrgConformance",
+      "TestVisualforcePersistentDigestScope",
       "TestWideInterfaceOverloadNativeConformance",
       "TestWidenedListAliasNativeConformance",
       "TestXMLOrgConformance"

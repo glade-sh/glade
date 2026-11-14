@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -157,5 +158,110 @@ func TestVisualforcePersistentDigestScope(t *testing.T) {
 		if _, err := os.Stat(visualforceDigestCachePath(other)); !os.IsNotExist(err) {
 			t.Fatalf("withView=%t: unexpected cache file: %v", withView, err)
 		}
+	}
+}
+
+func TestPersistedVisualforceDigestTracksIdentityChanges(t *testing.T) {
+	for _, mutation := range []string{"replacement", "deletion", "symlink"} {
+		t.Run(mutation, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "asset.js")
+			if err := os.WriteFile(path, []byte("first"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			oldNow := fileDigestNow
+			fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+			t.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+			resetFileDigestTrust()
+			if _, err := currentFileDigest(path); err != nil {
+				t.Fatal(err)
+			}
+			if err := saveVisualforceDigestCache(root, []string{path}); err != nil {
+				t.Fatal(err)
+			}
+			switch mutation {
+			case "replacement":
+				replacement := filepath.Join(root, "replacement")
+				if err := os.WriteFile(replacement, []byte("other"), 0600); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Rename(replacement, path); err != nil {
+					t.Fatal(err)
+				}
+			case "deletion":
+				if err := os.Remove(path); err != nil {
+					t.Fatal(err)
+				}
+			case "symlink":
+				target := filepath.Join(root, "target")
+				if err := os.WriteFile(target, []byte("other"), 0600); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Remove(path); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink(target, path); err != nil {
+					t.Fatal(err)
+				}
+			}
+			resetFileDigestTrust()
+			if err := loadVisualforceDigestCache(root, []string{path}); err != nil {
+				t.Fatal(err)
+			}
+			got, err := currentFileDigest(path)
+			if mutation == "deletion" {
+				if !os.IsNotExist(err) {
+					t.Fatalf("deleted input: %v", err)
+				}
+				return
+			}
+			want := sha256.Sum256([]byte("other"))
+			if err != nil || got != want {
+				t.Fatalf("changed identity: digest=%x err=%v", got, err)
+			}
+		})
+	}
+}
+
+func TestPersistedVisualforceDigestConcurrentAccess(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "asset.js")
+	if err := os.WriteFile(path, []byte("stable"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	oldNow := fileDigestNow
+	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+	t.Cleanup(func() { fileDigestNow = oldNow; resetFileDigestTrust() })
+	resetFileDigestTrust()
+	if _, err := currentFileDigest(path); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveVisualforceDigestCache(root, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	errs := make(chan error, 16)
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := saveVisualforceDigestCache(root, []string{path}); err != nil {
+				errs <- err
+				return
+			}
+			if err := loadVisualforceDigestCache(root, []string{path}); err != nil {
+				errs <- err
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Error(err)
+	}
+	got, err := currentFileDigest(path)
+	want := sha256.Sum256([]byte("stable"))
+	if err != nil || got != want {
+		t.Fatalf("digest=%x err=%v", got, err)
 	}
 }
