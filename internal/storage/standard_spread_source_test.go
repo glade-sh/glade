@@ -86,6 +86,24 @@ func TestPlainDeveloperShapePreservesExplicitObjectWithoutSpread(t *testing.T) {
 	}
 }
 
+func TestPlainDeveloperSpreadRetainsModifiedCatalogObjects(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObjectSpread(&org)
+	object := org.Objects["AIFeatureExtractor"]
+	object.Definition.Fields["ProjectField__c"] = Field{APIName: "ProjectField__c", Type: FieldString}
+	org.Objects["AIFeatureExtractor"] = object
+	object = org.Objects["AIResearchPromptResult"]
+	object.Records[ID("a00000000000001")] = Record{Fields: map[string]Value{"Value__c": StringValue("kept")}}
+	org.Objects["AIResearchPromptResult"] = object
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	if org.Objects["AIFeatureExtractor"].Definition.Fields["ProjectField__c"].APIName == "" {
+		t.Error("shape removed project schema from the spread")
+	}
+	if len(org.Objects["AIResearchPromptResult"].Records) != 1 {
+		t.Error("shape removed project records from the spread")
+	}
+}
+
 func TestPlainDeveloperSpreadShapeTransition(t *testing.T) {
 	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
 	data, err := json.Marshal(org)
