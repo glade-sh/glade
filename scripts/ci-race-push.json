@@ -319,6 +319,7 @@
       "TestPersistedVisualforceDigestConcurrentAccess",
       "TestPersistedVisualforceDigestInvalidation",
       "TestPersistedVisualforceDigestRejectsRecentAndCorruptData",
+      "TestPersistedVisualforceDigestRejectsUnsafeDirectory",
       "TestPersistedVisualforceDigestTracksIdentityChanges",
       "TestPicklistDefaultsNativeConformance",
       "TestPlatformCacheCopyConformance",

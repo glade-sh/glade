@@ -265,3 +265,21 @@ func TestPersistedVisualforceDigestConcurrentAccess(t *testing.T) {
 		t.Fatalf("digest=%x err=%v", got, err)
 	}
 }
+
+func TestPersistedVisualforceDigestRejectsUnsafeDirectory(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "asset.js")
+	if err := os.WriteFile(path, []byte("content"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(root, 0777); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(root, 0700) })
+	if err := saveVisualforceDigestCache(root, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(visualforceDigestCachePath(root)); !os.IsNotExist(err) {
+		t.Fatalf("wrote digest cache under an unsafe root: %v", err)
+	}
+}
