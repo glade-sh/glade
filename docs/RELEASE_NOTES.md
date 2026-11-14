@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Duplicate matching.** Custom phone rules recognize captured seven-letter vanity numbers when matched to their keypad digits.
+- **Duplicate matching.** Custom phone rules recognize seven-letter vanity numbers in the captured phone shape when matched to their [ITU-T E.161](https://www.itu.int/rec/T-REC-E.161/en) keypad digits.
 
 ## v0.3.9
 

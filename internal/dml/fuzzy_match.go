@@ -411,6 +411,8 @@ func phoneKeypadEquivalent(country, area, exchange, line, otherCountry, otherAre
 	if country != "1" || (otherCountry != "" && otherCountry != "1") || area != otherArea {
 		return false
 	}
+	// ITU-T E.161 (02/2001), section 2.2: letter-to-digit keypad layout.
+	// https://www.itu.int/rec/T-REC-E.161/en
 	const letters = "abcdefghijklmnopqrstuvwxyz"
 	const digits = "22233344455566677778889999"
 	for i := 0; i < len(area); i++ {
