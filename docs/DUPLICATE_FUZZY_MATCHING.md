@@ -162,6 +162,9 @@ with the tables.
    by Jaro-Winkler (95) and `Yancey` finds `Yancey R` only by Jaro-Winkler.
    `Y` does not find `Yancey` and `Y.R.`: the match key comes first.
 
+The standard rules keep the whole-name key and Jaro-Winkler on the folded
+text (`standardFirstName`); the rows for rules 2 and 5 are custom-rule rows.
+
 ### Last Name
 
 NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.

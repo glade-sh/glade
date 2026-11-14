@@ -3,6 +3,7 @@ package dml
 import (
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -53,11 +54,32 @@ func standardCompare(candidate, existing string, score func(a, b string) (bool, 
 	return standardItem{relation: standardNoMatch}
 }
 
-func standardMethod(method string) func(a, b string) (bool, float64) {
-	return func(a, b string) (bool, float64) {
-		matched, confidence := fuzzyScorers[method](a, b, false)
-		return matched, confidence
+// standardFirstName is the First Name method as the standard rules apply it.
+// It keeps the whole-name match key and Jaro-Winkler on the folded text: the
+// standard rules' first-name key differs from a custom FirstName rule's
+// (their own rows key on the first letter where an email agrees), and the
+// first-word key and Initials rule of fuzzyFirstName are captured only for
+// custom rules. A name and the same name followed by a second word or by
+// punctuation share the key ("Billy Bob" finds "Billy", "Jane." finds "Jane").
+func standardFirstName(a, b string) (bool, float64) {
+	x, y := foldText(a), foldText(b)
+	if x == y || nameVariantOf(x, y) {
+		return true, 100
 	}
+	if kx, ky := firstNameKey(x), firstNameKey(y); (kx == "" || kx != ky || nameKeptApart[orderedPair(x, y)]) && standardFirstNameHead(x) != y && standardFirstNameHead(y) != x {
+		return false, 0
+	}
+	score := jaroWinkler(x, y)
+	return score >= firstNameJaroWinkler-1e-9, averageWith100(100 * score)
+}
+
+// standardFirstNameHead is the first word of a folded name with leading and
+// trailing punctuation trimmed.
+func standardFirstNameHead(s string) string {
+	if i := strings.IndexByte(s, ' '); i > 0 {
+		s = s[:i]
+	}
+	return strings.TrimFunc(s, unicode.IsPunct)
 }
 
 // standardLastName is the Last Name method as the standard rules apply it:
@@ -452,7 +474,7 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 	if !last.ok() {
 		return false, 0
 	}
-	first := standardCompare(candidate.first, existing.first, standardMethod("firstname"))
+	first := standardCompare(candidate.first, existing.first, standardFirstName)
 	// The standard rule accepts one initial with an exact surname and email
 	// or phone. A custom FirstName item does not match the same pairs.
 	if !first.ok() && candidate.kind == existing.kind && strings.EqualFold(candidate.last, existing.last) && standardFirstInitial(candidate.first, existing.first) {

@@ -428,3 +428,44 @@ func BenchmarkCustomNameRuleInsertLoop(b *testing.B) {
 		}
 	}
 }
+
+// Local contract: the standard rules keep the whole-name first and last name
+// keys (standardFirstName, standardLastName). The first-word key, Initials
+// and the last-word key are captured for custom rules only.
+func TestFuzzyNameKeysStandardPathUnchanged(t *testing.T) {
+	for _, c := range []struct {
+		a, b           string
+		custom, before bool
+	}{
+		{"P", "P W G", true, false},
+		{"PW", "P W G", true, false},
+		{"Y R S", "Y", true, false},
+		{"Billy Bob", "Billy", true, true},
+		{"Jane.", "Jane", true, true},
+		{"Jon", "John", true, true},
+	} {
+		if got, _ := fuzzyFirstName(c.a, c.b, false); got != c.custom {
+			t.Errorf("custom first name %q/%q: %v", c.a, c.b, got)
+		}
+		if got, _ := standardFirstName(c.a, c.b); got != c.before {
+			t.Errorf("standard first name %q/%q: %v", c.a, c.b, got)
+		}
+	}
+	for _, c := range []struct {
+		a, b           string
+		custom, before bool
+	}{
+		{"Harlow", "Harlow III", true, false},
+		{"Al-Rashid", "Alrashid", true, false},
+		{"Test 1", "Last 1", true, false},
+		{"42", "43", false, true},
+		{"Smith", "Smyth", true, true},
+	} {
+		if got, _ := fuzzyLastName(c.a, c.b, false); got != c.custom {
+			t.Errorf("custom last name %q/%q: %v", c.a, c.b, got)
+		}
+		if got, _ := standardLastName(c.a, c.b); got != c.before {
+			t.Errorf("standard last name %q/%q: %v", c.a, c.b, got)
+		}
+	}
+}
