@@ -54,7 +54,7 @@ func (w *textWriter) String() string {
 
 // BoundedString renders String's text but stops after limit bytes. It returns
 // String's exact text and false when that fits the limit, otherwise the first
-// limit bytes and true. Work stays proportional to the text written.
+// limit bytes and true. Unordered keys and decimal digits may require a scan.
 func (v Value) BoundedString(limit int) (string, bool) {
 	if limit < 0 {
 		limit = 0
@@ -92,6 +92,9 @@ func (v Value) String() string {
 // at least ", " and "=", so the remaining bytes bound the count. If those keys
 // do not fill the writer, it continues with the full order.
 func forEachTextKey(w *textWriter, fields map[string]Value, keep func(string) bool, less func(a, b string) bool, fn func(i int, key string)) {
+	if w.full {
+		return
+	}
 	byteOrder := less == nil
 	if byteOrder {
 		less = func(a, b string) bool { return a < b }
@@ -168,4 +171,59 @@ func (h *textKeyHeap) Pop() any {
 	last := h.keys[len(h.keys)-1]
 	h.keys = h.keys[:len(h.keys)-1]
 	return last
+}
+
+// writeBoundedDecimalText avoids constructing the complete decimal display.
+func writeBoundedDecimalText(w *textWriter, v Value) {
+	if isFloatBackedDecimal(v) {
+		w.WriteString(numericDisplayText(v))
+		return
+	}
+	text := decimalPlainText(v)
+	if strings.ContainsAny(text, "eE") {
+		w.WriteString(text)
+		return
+	}
+	unsigned := strings.TrimPrefix(text, "-")
+	first := -1
+	digits := 0
+	for i := 0; i < len(unsigned); i++ {
+		if unsigned[i] == '.' {
+			continue
+		}
+		if first < 0 && unsigned[i] != '0' {
+			first = i
+		}
+		if first >= 0 {
+			digits++
+		}
+	}
+	if first < 0 {
+		w.WriteString(text)
+		return
+	}
+	exponent := digits - decimalScale(v) - 1
+	if exponent >= -6 {
+		w.WriteString(text)
+		return
+	}
+	if strings.HasPrefix(text, "-") {
+		w.WriteString("-")
+	}
+	w.WriteString(unsigned[first : first+1])
+	if digits > 1 {
+		w.WriteString(".")
+		start := first + 1
+		for i := start; i < len(unsigned) && !w.full; i++ {
+			if unsigned[i] == '.' {
+				w.WriteString(unsigned[start:i])
+				start = i + 1
+			}
+		}
+		if !w.full {
+			w.WriteString(unsigned[start:])
+		}
+	}
+	w.WriteString("E")
+	w.WriteString(strconv.Itoa(exponent))
 }

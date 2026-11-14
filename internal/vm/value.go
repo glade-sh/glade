@@ -296,7 +296,13 @@ func (v Value) writeText(w *textWriter) {
 		return
 	}
 	switch v.Kind {
-	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
+	case ValueDecimal:
+		if w.bounded {
+			writeBoundedDecimalText(w, v)
+		} else {
+			w.WriteString(v.String())
+		}
+	case ValueNull, ValueInt, ValueBool, ValueString:
 		w.WriteString(v.String())
 	case ValueList:
 		w.WriteString("List")
@@ -462,6 +468,9 @@ func accessLevelString(value Value) string {
 }
 
 func writeAccessLevelText(w *textWriter, value Value, seen map[uint64]bool) {
+	if w.full {
+		return
+	}
 	if value.Ref != 0 {
 		if seen[value.Ref] {
 			w.WriteString("(already output)")
