@@ -20,7 +20,7 @@ const visualforceDigestCacheLimit = 8 << 20
 type visualforceDigestEntry struct {
 	Path   string
 	Stamp  filestamp.Stamp
-	Digest [sha256.Size]byte
+	Digest []byte
 }
 
 type visualforceDigestEnvelope struct {
@@ -74,6 +74,11 @@ func loadVisualforceDigestCache(root string, paths []string) error {
 	if err := json.Unmarshal(envelope.Payload, &entries); err != nil {
 		return err
 	}
+	for _, entry := range entries {
+		if len(entry.Digest) != sha256.Size {
+			return errors.New("visualforce digest cache contains an invalid digest")
+		}
+	}
 	wanted := make(map[string]bool, len(paths))
 	for _, path := range paths {
 		wanted[path] = true
@@ -83,7 +88,9 @@ func loadVisualforceDigestCache(root string, paths []string) error {
 	defer fileDigestTrustMu.Unlock()
 	for _, entry := range entries {
 		if wanted[entry.Path] && entry.Stamp.OlderThan(now, fileDigestTrustAge) && len(fileDigestTrust) < fileDigestTrustMaxEntries {
-			fileDigestTrust[entry.Path] = trustedFileDigest{stamp: entry.Stamp, digest: entry.Digest}
+			var digest [sha256.Size]byte
+			copy(digest[:], entry.Digest)
+			fileDigestTrust[entry.Path] = trustedFileDigest{stamp: entry.Stamp, digest: digest}
 		}
 	}
 	return nil
@@ -113,7 +120,9 @@ func saveVisualforceDigestCache(root string, paths []string) error {
 				fileDigestTrustMu.Unlock()
 				return errors.New("visualforce digest cache is too large")
 			}
-			entries = append(entries, visualforceDigestEntry{Path: path, Stamp: entry.stamp, Digest: entry.digest})
+			digest := make([]byte, sha256.Size)
+			copy(digest, entry.digest[:])
+			entries = append(entries, visualforceDigestEntry{Path: path, Stamp: entry.stamp, Digest: digest})
 		}
 	}
 	fileDigestTrustMu.Unlock()
