@@ -10,6 +10,8 @@ func TestPlainDeveloperSpreadPreservesInPlaceFieldEdit(t *testing.T) {
 	EnsureStandardObjectSpread(&org)
 	obj := org.Objects["AIFeatureExtractor"]
 	field := obj.Definition.Fields["Id"]
+	original := field
+	defer func() { obj.Definition.Fields["Id"] = original }()
 	field.Label = "changed"
 	obj.Definition.Fields["Id"] = field
 	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
