@@ -104,16 +104,7 @@ var fuzzyScorers = map[string]fuzzyScorer{
 // ---- shared text helpers ----
 
 func foldText(s string) string {
-	lower := strings.ToLower(s)
-	// Most inputs are ASCII text with already-normalized spacing. Preserve the
-	// general Unicode whitespace handling for all other inputs.
-	for i := 0; i < len(lower); i++ {
-		c := lower[i]
-		if c >= 0x80 || c < 0x20 || c == 0x7f || (c == ' ' && (i == 0 || i == len(lower)-1 || lower[i-1] == ' ')) {
-			return strings.Join(strings.Fields(lower), " ")
-		}
-	}
-	return lower
+	return strings.Join(strings.Fields(strings.ToLower(s)), " ")
 }
 
 // stripAccents removes combining marks: "García" becomes "Garcia".
@@ -130,26 +121,14 @@ func stripAccents(s string) string {
 func isASCIILetter(r rune) bool { return r >= 'a' && r <= 'z' }
 
 func levenshtein(a, b []rune) int {
-	// Equal prefixes and suffixes do not contribute to edit distance.
-	for len(a) > 0 && len(b) > 0 && a[0] == b[0] {
-		a, b = a[1:], b[1:]
-	}
-	for len(a) > 0 && len(b) > 0 && a[len(a)-1] == b[len(b)-1] {
-		a, b = a[:len(a)-1], b[:len(b)-1]
-	}
 	if len(a) == 0 {
 		return len(b)
 	}
 	if len(b) == 0 {
 		return len(a)
 	}
-	var smallPrev, smallCur [64]int
-	var prev, cur []int
-	if len(b) < len(smallPrev) {
-		prev, cur = smallPrev[:len(b)+1], smallCur[:len(b)+1]
-	} else {
-		prev, cur = make([]int, len(b)+1), make([]int, len(b)+1)
-	}
+	prev := make([]int, len(b)+1)
+	cur := make([]int, len(b)+1)
 	for j := range prev {
 		prev[j] = j
 	}
@@ -901,7 +880,6 @@ func companySingleWordMatch(candidate, existing string) (bool, float64) {
 }
 
 func fuzzyCompany(a, b string, _ bool) (bool, float64) {
-
 	x, y := foldText(a), foldText(b)
 	if companyAlignedWords[strings.TrimSpace(x)] || companyAlignedWords[strings.TrimSpace(y)] {
 		// NATIVE: a name that is only "Partner" matches nothing, itself included.

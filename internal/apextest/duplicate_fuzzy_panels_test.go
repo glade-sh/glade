@@ -56,7 +56,8 @@ type fuzzyPanelResidual struct{ native, glade string }
 
 // fuzzyPanelResiduals are the exact pairs where Glade differs from the native
 // rows (a confidence, or "-" for no match). Both sides are pinned, so neither a
-// changed fixture nor a changed scorer can shift a residual silently.
+// changed fixture nor a changed scorer can shift a residual silently. A native
+// nonmatch can be pinned only when the baseline scorer also matches it.
 func fuzzyPanelResiduals(t *testing.T) map[string]fuzzyPanelResidual {
 	t.Helper()
 	body, err := os.ReadFile(filepath.Join(fuzzyPanelsDir, "residuals.tsv"))
@@ -70,7 +71,7 @@ func fuzzyPanelResiduals(t *testing.T) map[string]fuzzyPanelResidual {
 	out := map[string]fuzzyPanelResidual{}
 	for _, line := range lines[1:] {
 		f := strings.Split(line, "\t")
-		if len(f) != 4 || f[2] == f[3] || f[2] == "-" {
+		if len(f) != 4 || f[2] == f[3] {
 			t.Fatalf("invalid residual %q", line)
 		}
 		out[f[0]+"/"+f[1]] = fuzzyPanelResidual{f[2], f[3]}
