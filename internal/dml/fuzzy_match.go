@@ -296,11 +296,31 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 		return true, 100
 	}
+	if singleKeyboardSubstitution(x, y) {
+		return lastNameKeyboard(x, y)
+	}
 	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
 		return matched, confidence
 	}
 	score, ok := keyboardDistance(x, y)
 	return ok && score >= 90, averageWith100(score)
+}
+
+// singleKeyboardSubstitution counts positions in runes, as keyboardSimilarity does.
+func singleKeyboardSubstitution(a, b string) bool {
+	different := 0
+	for len(a) > 0 && len(b) > 0 {
+		ra, na := utf8.DecodeRuneInString(a)
+		rb, nb := utf8.DecodeRuneInString(b)
+		if ra != rb {
+			different++
+			if different > 1 {
+				return false
+			}
+		}
+		a, b = a[na:], b[nb:]
+	}
+	return len(a) == 0 && len(b) == 0 && different == 1
 }
 
 var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")

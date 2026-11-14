@@ -82,6 +82,19 @@ func TestLastNameSingleSubstitutionMatchesLegacy(t *testing.T) {
 				changed[i] = replacement
 				a, b := name, string(changed)
 				x, y := foldText(a), foldText(b)
+				rx, ry := []rune(x), []rune(y)
+				if len(rx) != len(ry) {
+					continue
+				}
+				differences := 0
+				for i := range rx {
+					if rx[i] != ry[i] {
+						differences++
+					}
+				}
+				if differences != 1 {
+					continue
+				}
 				var want bool
 				var confidence float64
 				switch {

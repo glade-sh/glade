@@ -383,7 +383,7 @@
   "67/Probe3.Contact.LastName.LastName.NullNotAllowed.1": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.026
+   "max_conf_mae": 0.001
   },
   "67/Probe3.Contact.Phone.Phone.NullNotAllowed.1": {
    "min_recall": 0.9999,
@@ -423,7 +423,7 @@
   "62/Probe3.Contact.LastName.LastName.NullNotAllowed.1": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.026
+   "max_conf_mae": 0.001
   },
   "62/Probe3.Contact.Phone.Phone.NullNotAllowed.1": {
    "min_recall": 0.9999,
@@ -458,12 +458,12 @@
   "62/P4.LN.KB1": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.004
+   "max_conf_mae": 0.001
   },
   "62/P4.LN.KB2": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.139
+   "max_conf_mae": 0.126
   },
   "67/Holdout4.Account.BillingCity.City.NullNotAllowed.1": {
    "min_recall": 0.9999,
@@ -1788,7 +1788,7 @@
   "67/N4.LN.Var.016": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.011
+   "max_conf_mae": 0.001
   },
   "67/N4.LN.Var.017": {
    "min_recall": 0.9999,
@@ -1833,7 +1833,7 @@
   "67/N4.LN.Var.025": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.03
+   "max_conf_mae": 0.016
   },
   "67/N4.LN.Var.026": {
    "min_recall": 0.9999,
@@ -1863,7 +1863,7 @@
   "67/N4.LN.Var.031": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.046
+   "max_conf_mae": 0.03
   },
   "67/N4.LN.Var.032": {
    "min_recall": 0.9999,
@@ -1908,7 +1908,7 @@
   "67/N4.LN.Var.040": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.026
+   "max_conf_mae": 0.001
   },
   "67/N4.LN.Var.041": {
    "min_recall": 0.9999,
@@ -1943,7 +1943,7 @@
   "67/N4.LN.Var.047": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.015
+   "max_conf_mae": 0.001
   },
   "67/N4.LN.Var.048": {
    "min_recall": 0.9999,
@@ -2008,7 +2008,7 @@
   "67/N4.LN.Var.060": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.041
+   "max_conf_mae": 0.034
   },
   "67/N4.LN.Var.061": {
    "min_recall": 0.9999,
@@ -2038,7 +2038,7 @@
   "67/N4.LN.Var.066": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.026
+   "max_conf_mae": 0.015
   },
   "67/N4.LN.Var.067": {
    "min_recall": 0.9999,
@@ -2088,7 +2088,7 @@
   "67/N4.LN.Var.076": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.025
+   "max_conf_mae": 0.013
   },
   "67/N4.LN.Var.077": {
    "min_recall": 0.9999,
@@ -2173,12 +2173,12 @@
   "67/P4.LN.KB1": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.004
+   "max_conf_mae": 0.001
   },
   "67/P4.LN.KB2": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.139
+   "max_conf_mae": 0.126
   },
   "67/P4.MULTI.NameCity": {
    "min_recall": 0.9999,
