@@ -3,8 +3,10 @@ package lsp
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/sema"
 
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -32,6 +34,12 @@ func (h *Handler) Refresh(ctx context.Context, paths []string) error {
 }
 
 func (h *Handler) refreshRequest(ctx context.Context, request RefreshRequest, publish func(*generation)) error {
+	return h.refreshRequestValidated(ctx, request, publish, nil)
+}
+
+var errStaleGeneration = errors.New("stale disk generation")
+
+func (h *Handler) refreshRequestValidated(ctx context.Context, request RefreshRequest, publish func(*generation), validate func(typesys.Index) bool) error {
 	if err := h.waitReady(ctx); err != nil {
 		return err
 	}
@@ -43,6 +51,24 @@ func (h *Handler) refreshRequest(ctx context.Context, request RefreshRequest, pu
 	b, err := h.refresher(ctx, request)
 	if err != nil {
 		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if validate != nil {
+		candidate := newGeneration(b.Index, 0, b.Analyze)
+		result := make(chan sema.Result, 1)
+		go func() { result <- candidate.analysisResult() }()
+		var analyzed sema.Result
+		select {
+		case analyzed = <-result:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		if !validate(b.Index) {
+			return errStaleGeneration
+		}
+		b.Analyze = func(typesys.Index) sema.Result { return analyzed }
 	}
 	if err := ctx.Err(); err != nil {
 		return err

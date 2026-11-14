@@ -453,16 +453,21 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 		// The first generation a refresh publishes is the disk base; an
 		// overlay may follow. Only the base is checked against disk.
 		disk = nil
-		err := s.h.refreshRequest(s.ctx, request, func(g *generation) {
+		err := s.h.refreshRequestValidated(s.ctx, request, func(g *generation) {
 			s.pubMu.Lock()
-			s.h.gen.Store(g)
+			if s.ctx.Err() == nil {
+				s.h.gen.Store(g)
+			}
 			s.pubMu.Unlock()
 			if disk == nil {
 				disk = g
 			}
-		})
+		}, s.h.validateGeneration)
 		after = s.h.gen.Load()
 		if err != nil {
+			if errors.Is(err, errStaleGeneration) {
+				continue
+			}
 			var failure *ParseDiagnosticsError
 			if errors.As(err, &failure) {
 				s.publishDiskParseFailure(failure, before)
@@ -479,10 +484,8 @@ func (s *server) refreshDisk(request RefreshRequest) bool {
 		case <-s.ctx.Done():
 			return false
 		}
-		if s.h.validateGeneration == nil || disk == nil || s.h.validateGeneration(disk.index) {
-			valid = true
-			break
-		}
+		valid = true
+		break
 	}
 	if valid {
 		// Reconcile only failures that this generation actually reflects.
