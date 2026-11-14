@@ -15,7 +15,7 @@ func TestKeyboardDistanceNativeShapes(t *testing.T) {
 		match      bool
 		confidence float64
 	}{
-		{"Harlow II", "Harlow IV", true, 97},         // suf1: one substitution, final position
+		{"Harlow II", "Harlow IV", true, 98},         // suf1: native 97; preserve the base score
 		{"Harlow Jr", "Harlowe", true, 97},           // suf1: a space against a letter, two trailing; native 96 (fuzzyNameKeysResiduals)
 		{"Farnsdelwick", "Farnsdraeovk", true, 96},   // ks1: six substitutions
 		{"Abernathy", "Abernaty", true, 98},          // rsp1: h/y and a trailing y; native 99 (fuzzyNameKeysResiduals)
@@ -36,6 +36,19 @@ func TestKeyboardDistanceNativeShapes(t *testing.T) {
 		}
 		if back, _ := fuzzyLastName(c.b, c.a, false); back != got {
 			t.Errorf("%q/%q: not symmetric", c.a, c.b)
+		}
+	}
+}
+
+func TestLastNamePreviouslyAcceptedKeyboardScore(t *testing.T) {
+	for _, pair := range [][2]string{{"martinez", "martinezk"}, {"richardson", "richardsop"}} {
+		wantMatch, wantScore := lastNameKeyboard(pair[0], pair[1])
+		if !wantMatch {
+			t.Fatalf("legacy scorer did not accept %q/%q", pair[0], pair[1])
+		}
+		gotMatch, gotScore := fuzzyLastName(pair[0], pair[1], false)
+		if gotMatch != wantMatch || gotScore != wantScore {
+			t.Errorf("%q/%q: got %v %v, legacy %v %v", pair[0], pair[1], gotMatch, gotScore, wantMatch, wantScore)
 		}
 	}
 }

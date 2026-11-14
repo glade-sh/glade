@@ -33,15 +33,16 @@ type fuzzyNameKeysCase struct {
 // is one point off: the fitted costs are additive, and rows that share key
 // pairs disagree by up to a tenth of a point of cost ("Test 1" and "Last 1",
 // and the multi-substitution panels ks1 to ks3). No pair is a native match
-// Glade misses, and none is a Glade match native does not report. "Harlow II"
-// and "Harlow IV", a single substitution in the final position, now agree at
-// 97.
+// Glade misses, and none is a Glade match native does not report. The Harlow
+// II/IV single substitution keeps the base score 98; native reports 97.
 var fuzzyNameKeysResiduals = map[string][2]float64{
 	"ln1/Test 1=>Last 1":               {96, 97},
 	"ln1/Last 1=>Test 1":               {96, 97},
 	"suf1/Harlow Jr=>Harlowe":          {96, 97},
 	"suf1/Harlow, Jr.=>Harlow II":      {96, 95},
 	"suf1/Harlow II=>Harlow, Jr.":      {96, 95},
+	"suf1/Harlow II=>Harlow IV":        {97, 98},
+	"suf1/Harlow IV=>Harlow II":        {97, 98},
 	"suf1/Harlow IV=>Harlow.":          {97, 96},
 	"suf1/Harlow.=>Harlow IV":          {97, 96},
 	"suf1/Harlowe=>Harlow Jr":          {96, 97},
