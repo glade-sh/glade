@@ -63,3 +63,17 @@ func TestProjectRootWalkSkipsCacheAndPinsHiddenFolders(t *testing.T) {
 		t.Fatal("hidden folder membership was not observed")
 	}
 }
+
+func TestFinderFileDoesNotChangeListingFingerprint(t *testing.T) {
+	dir := t.TempDir()
+	v := New()
+	if _, err := v.ReadDir(dir); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".DS_Store"), []byte("churn"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := v.Recheck(); err != nil {
+		t.Fatalf("Finder file changed listing: %v", err)
+	}
+}
