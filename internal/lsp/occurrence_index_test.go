@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/typesys"
@@ -91,5 +92,56 @@ func TestReferencesSeeUnsavedAndExternalEdits(t *testing.T) {
 	}
 	if got := h.snapshot().referenceLocations("Needle"); len(got) != 2 {
 		t.Fatalf("got %#v", got)
+	}
+}
+
+func TestReferencesDetectSameSizeReplacementWithRestoredMtime(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "Example.cls")
+	if err := os.WriteFile(path, []byte("class Otherx {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := NewHandler(typesys.Index{Types: []typesys.TypeSymbol{{File: path}}}).snapshot()
+	if got := h.referenceLocations("Needle"); len(got) != 0 {
+		t.Fatalf("initial references: %#v", got)
+	}
+	if err := os.WriteFile(path, []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(path, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.referenceLocations("Needle"); len(got) != 1 {
+		t.Fatalf("same-size replacement: got %#v, want one reference", got)
+	}
+}
+
+func BenchmarkReferenceCandidatesWorkspace(b *testing.B) {
+	dir := b.TempDir()
+	idx := typesys.Index{}
+	for i := 0; i < 200; i++ {
+		path := filepath.Join(dir, fmt.Sprintf("%03d.cls", i))
+		text := "class Other {\n" + strings.Repeat("  Integer value;\n", 120) + "}\n"
+		if i < 2 {
+			text += "// Needle\n"
+		}
+		if err := os.WriteFile(path, []byte(text), 0600); err != nil {
+			b.Fatal(err)
+		}
+		idx.Types = append(idx.Types, typesys.TypeSymbol{File: path})
+	}
+	h := NewHandler(idx).snapshot()
+	if len(h.referenceCandidates("Needle")) != 2 {
+		b.Fatal("unexpected candidates")
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if len(h.referenceCandidates("Needle")) != 2 {
+			b.Fatal("unexpected candidates")
+		}
 	}
 }
