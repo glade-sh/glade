@@ -21,7 +21,8 @@ func TestDiskParseFailureRespectsBufferAndDisk(t *testing.T) {
 	h := NewHandler(typesys.Index{})
 	var output bytes.Buffer
 	s := &server{h: h, w: &output, ctx: context.Background()}
-	failure := &ParseDiagnosticsError{Path: path, Digest: sha256.Sum256(broken), Diagnostics: []diagnostic.Diagnostic{{File: path, Severity: diagnostic.Error, Message: "parse error"}}}
+	line := 7
+	failure := &ParseDiagnosticsError{Path: path, Digest: sha256.Sum256(broken), Diagnostics: []diagnostic.Diagnostic{{File: path, Severity: diagnostic.Error, Message: "parse error", Range: &diagnostic.Range{}, NativeLine: &line}}}
 	uri := uriFromPath(path)
 	h.applyOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class First {}"}})
 	s.publishDiskParseFailure(failure, h.gen.Load())
@@ -31,6 +32,14 @@ func TestDiskParseFailureRespectsBufferAndDisk(t *testing.T) {
 	h.applyClose(uri)
 	if got := h.diagnosticsForDocument(uri); len(got) != 1 || got[0].Message != "parse error" {
 		t.Fatalf("closed diagnostics = %#v", got)
+	}
+	returned := h.diagnosticsForDocument(uri)
+	returned[0].Message = "modified"
+	returned[0].Range.Start.Line = 99
+	*returned[0].NativeLine = 99
+	again := h.diagnosticsForDocument(uri)
+	if again[0].Message != "parse error" || again[0].Range.Start.Line != 0 || *again[0].NativeLine != 7 {
+		t.Fatalf("returned diagnostic changed stored data: %#v", again)
 	}
 	if err := os.WriteFile(path, []byte("public class First {}"), 0600); err != nil {
 		t.Fatal(err)
