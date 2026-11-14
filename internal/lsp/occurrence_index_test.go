@@ -197,3 +197,38 @@ func TestReferenceCandidateInvalidation(t *testing.T) {
 		})
 	}
 }
+
+func TestReferenceAndRenameAfterMetadataPreservingReplacement(t *testing.T) {
+	dir := t.TempDir()
+	declaration := filepath.Join(dir, "Needle.cls")
+	changed := filepath.Join(dir, "Other.cls")
+	if err := os.WriteFile(declaration, []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(changed, []byte("class Otherx {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(changed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := NewHandler(typesys.Index{Types: []typesys.TypeSymbol{{Name: "Needle", File: declaration}, {Name: "Otherx", File: changed}}})
+	uri := uriFromPath(declaration)
+	params := ReferenceParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 8}, Context: ReferenceContext{IncludeDeclaration: true}}
+	if got := h.References(params); len(got) != 1 {
+		t.Fatalf("initial references = %#v", got)
+	}
+	if err := os.WriteFile(changed, []byte("class Needle {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(changed, info.ModTime(), info.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.References(params); len(got) != 2 {
+		t.Fatalf("references = %#v", got)
+	}
+	edit := h.Rename(RenameParams{TextDocument: params.TextDocument, Position: params.Position, NewName: "Replacement"})
+	if edit == nil || len(edit.Changes[uriFromPath(changed)]) != 1 {
+		t.Fatalf("rename = %#v", edit)
+	}
+}
