@@ -210,9 +210,8 @@ func TestNamesOnlyGlobalDescribeMatchesCompletedSpread(t *testing.T) {
 								if eagerOrg.LazyStandardSpreadEnabled() {
 									t.Fatal("the eager route left the spread incomplete")
 								}
-								fallback := route == "legacy" && (caller.namespace != "" || caller.caller != "")
-								if lazyOrg.LazyStandardSpreadEnabled() == fallback {
-									t.Fatalf("legacy namespace fallback = %v, spread pending = %v", fallback, lazyOrg.LazyStandardSpreadEnabled())
+								if !lazyOrg.LazyStandardSpreadEnabled() {
+									t.Fatal("the names-only route completed the spread")
 								}
 							}
 						}
@@ -242,9 +241,6 @@ func probeDifference(want, got string) string {
 func TestNamesOnlyGlobalDescribeKeepsSpreadLazy(t *testing.T) {
 	for _, route := range []string{"source", "legacy"} {
 		for _, caller := range namesOnlyCallers {
-			if route == "legacy" && (caller.namespace != "" || caller.caller != "") {
-				continue
-			}
 			t.Run(route+"/"+caller.name, func(t *testing.T) {
 				org := namesOnlyDescribeOrg(route, []string{"Communities"}, caller.namespace)
 				source := `
