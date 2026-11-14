@@ -144,3 +144,25 @@ private class ChildRelationshipNameTest {
 		t.Fatalf("eager and lazy spreads answer differently\neager: %s\nlazy:  %s", eager, lazy)
 	}
 }
+
+func TestChildRelationshipLookupMatchesMaterializedSpread(t *testing.T) {
+	for name, features := range childRelationshipLookupShapes {
+		t.Run(name, func(t *testing.T) {
+			lazy := childRelationshipLookupOrg(features, "")
+			eager := lazy.CloneRuntimeFrozenDefinition()
+			storage.MaterializeStandardObjectSpread(&eager)
+			got := projectReferencedChildRelationshipLookup(lazy)
+			want := projectReferencedChildRelationshipLookup(eager)
+			for key := range want {
+				if _, ok := got[key]; !ok {
+					t.Errorf("lazy lookup missing %q", key)
+				}
+			}
+			for key := range got {
+				if _, ok := want[key]; !ok {
+					t.Errorf("lazy lookup has extra %q", key)
+				}
+			}
+		})
+	}
+}
