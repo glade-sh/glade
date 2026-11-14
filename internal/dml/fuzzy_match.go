@@ -104,7 +104,16 @@ var fuzzyScorers = map[string]fuzzyScorer{
 // ---- shared text helpers ----
 
 func foldText(s string) string {
-	return strings.Join(strings.Fields(strings.ToLower(s)), " ")
+	lower := strings.ToLower(s)
+	// Most inputs are ASCII text with already-normalized spacing. Preserve the
+	// general Unicode whitespace handling for all other inputs.
+	for i := 0; i < len(lower); i++ {
+		c := lower[i]
+		if c >= 0x80 || c < 0x20 || c == 0x7f || (c == ' ' && (i == 0 || i == len(lower)-1 || lower[i-1] == ' ')) {
+			return strings.Join(strings.Fields(lower), " ")
+		}
+	}
+	return lower
 }
 
 // stripAccents removes combining marks: "García" becomes "Garcia".
@@ -127,8 +136,13 @@ func levenshtein(a, b []rune) int {
 	if len(b) == 0 {
 		return len(a)
 	}
-	prev := make([]int, len(b)+1)
-	cur := make([]int, len(b)+1)
+	var smallPrev, smallCur [64]int
+	var prev, cur []int
+	if len(b) < len(smallPrev) {
+		prev, cur = smallPrev[:len(b)+1], smallCur[:len(b)+1]
+	} else {
+		prev, cur = make([]int, len(b)+1), make([]int, len(b)+1)
+	}
 	for j := range prev {
 		prev[j] = j
 	}
@@ -622,6 +636,10 @@ func streetSections(pa, pb streetParts, matchBlanks bool) float64 {
 // confidence averages that score with the edit similarity of the cleaned
 // strings.
 func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
+	return fuzzyStreetWithCustom(a, b, matchBlanks, false)
+}
+
+func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64) {
 	x, y := streetClean(a), streetClean(b)
 	if x == y {
 		return true, 100
@@ -631,7 +649,8 @@ func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
 	}
 	pa, pb := parseStreet(a), parseStreet(b)
 	sections := streetSections(pa, pb, matchBlanks)
-	confidence := (sections + editSimilarity(x, y)) / 2
+	similarity := editSimilarity(x, y)
+	confidence := (sections + similarity) / 2
 	if streetKey(pa) != streetKey(pb) {
 		return false, confidence
 	}
@@ -644,6 +663,29 @@ func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
 		// "Calle 8 No 5" to "Calle 8 Numero 5" (name similarity 71) although the
 		// weighted score reaches 80 under MatchBlanks.
 		return false, confidence
+	}
+
+	if custom && sections >= 74 && sections < 80 && similarity >= 87.5-1e-9 {
+		ia, ib := strings.IndexByte(a, ' '), strings.IndexByte(b, ' ')
+		la, lb := strings.LastIndexByte(a, ' '), strings.LastIndexByte(b, ' ')
+		if ia > 0 && ia == ib && a[:ia] == b[:ib] && la > ia && lb > ib && strings.EqualFold(a[:la], b[:lb]) {
+			wx, wy := strings.Fields(x), strings.Fields(y)
+			if len(wx) >= 3 && len(wx) == len(wy) && wx[0] == wy[0] && digitsOnly.MatchString(wx[0]) {
+				last := len(wx) - 1
+				if strings.Join(wx[1:last], " ") == strings.Join(wy[1:last], " ") && len(wx[1]) >= 2 {
+					sx, sy := wx[last], wy[last]
+					_, kx := knownStreetSuffixes[sx]
+					_, ky := knownStreetSuffixes[sy]
+					unknown := sx
+					if kx {
+						unknown = sy
+					}
+					if kx != ky && isAlphaWord(unknown) && !streetDirections[unknown] && !streetSuiteDesignators[unknown] && !streetPrefixSuffixes[unknown] {
+						return true, confidence
+					}
+				}
+			}
+		}
 	}
 	return sections >= 80, confidence
 }
@@ -852,6 +894,10 @@ func companySingleWordMatch(candidate, existing string) (bool, float64) {
 }
 
 func fuzzyCompany(a, b string, _ bool) (bool, float64) {
+	return fuzzyCompanyWithCustom(a, b, false)
+}
+
+func fuzzyCompanyWithCustom(a, b string, custom bool) (bool, float64) {
 	x, y := foldText(a), foldText(b)
 	if companyAlignedWords[strings.TrimSpace(x)] || companyAlignedWords[strings.TrimSpace(y)] {
 		// NATIVE: a name that is only "Partner" matches nothing, itself included.
@@ -861,6 +907,13 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 		return true, 100
 	}
 	wa, wb := companyWords(a), companyWords(b)
+	if custom {
+		return customCompanyWords(a, b, wa, wb)
+	}
+	return fuzzyCompanyWords(a, b, wa, wb)
+}
+
+func fuzzyCompanyWords(a, b string, wa, wb []string) (bool, float64) {
 	if len(wa) == 0 || len(wb) == 0 {
 		return false, 0
 	}

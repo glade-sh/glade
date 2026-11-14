@@ -692,14 +692,9 @@ The rules below apply to custom matching rule items only
 (`internal/dml/fuzzy_custom_panels.go`); the standard rules keep the shared
 scorers. Each is limited to the value shapes the panels cover.
 
-- Last Name: names of ten to thirteen letters with the same first five
-  letters and match key match with three substitutions from a
-  position-by-position keyboard score of 91.5, and with four or five from 93.
-  The confidence is `(100 + s) / 2` with `s = 100 - a(100 - score) + b`,
-  `a, b` = 0.98, -1.2 for three, 1.15, -0.9 for four and 1.25, -0.1 for five
-  substitutions. Two substitutions keep the gate of 92: the fit panels match
-  pairs from 90.67, but the held-out panel keeps `Thistlecombe`/`Thistlepowbe`
-  (90.67, two far keys) apart.
+- Last Name: the shared base scorer remains in use. The panels show additional
+  matches whose confidence is not explained reliably by the fitted model, so
+  those matches remain a known gap rather than returning unsupported scores.
 - First Name, Initials: a value of single letters with optional dots,
   separated by spaces (`J`, `J.`, `J R`, `J. R.`), matches only another such
   value with the same first letter when one of them is a single initial, at
@@ -733,15 +728,15 @@ scorers. Each is limited to the value shapes the panels cover.
 Fit is the first org's 13 cases; holdout is the second org's 7 cases, written
 without sight of the fitted model and scored once. Scoring the holdout showed
 three false pairs (`Wexmoore`/`Wexmoores`, an origin/main plural rule, and
-`Thistlecombe`/`Thistlepowbe` both ways); the two rules above were changed and
+`Thistlecombe`/`Thistlepowbe` both ways); the company rule was changed and the surname extension was subsequently reverted and
 the holdout is counted after that change. API 67.0 `@IsTest`; recall is the
 share of native pairs Glade matches, exact the matched pairs whose confidence
 equals the native one.
 
 | Method | Set | origin/main recall | Recall | False matches | Exact confidence |
 |---|---|---|---|---|---|
-| Last Name keyboard | fit | 152/556 | 412/556 (74.1%) | 0 | 388/412 |
-| Last Name keyboard | holdout, seen once | 80/180 | 156/180 (86.7%) | 0 | 144/156 |
+| Last Name keyboard | fit | 152/556 | 152/556 | 0 | See residuals |
+| Last Name keyboard | holdout, seen once | 80/180 | 80/180 | 0 | See residuals |
 | First Name | fit | 75/109 | 109/109 (100.0%) | 0 | 109/109 |
 | First Name | holdout | 24/84 | 54/84 (64.3%) | 0 | 54/54 |
 | Company Name | fit | 74/202 | 144/202 (71.3%) | 0 | 135/144 |

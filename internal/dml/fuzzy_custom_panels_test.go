@@ -77,8 +77,6 @@ func TestCustomFuzzyExtensionsCapturedPairs(t *testing.T) {
 		method, a, b string
 		score        float64
 	}{
-		{"LastName", "Brandenstock", "Brandepswohk", 96},
-		{"LastName", "Brandenstock", "Brandejsdozc", 97},
 		{"FirstName", "J", "J. R.", 100},
 		{"FirstName", "R.", "R J", 100},
 		{"CompanyName", "Brightwater Logistics", "Brightwaters Logistics", 100},

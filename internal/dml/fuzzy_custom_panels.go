@@ -10,7 +10,6 @@ import "strings"
 // so none of this changes them.
 var customFuzzyScorers = map[string]fuzzyScorer{
 	"firstname":   customFirstName,
-	"lastname":    customLastName,
 	"companyname": customCompany,
 	"street":      customStreet,
 }
@@ -83,74 +82,6 @@ func customFirstName(a, b string, matchBlanks bool) (bool, float64) {
 	return false, confidence
 }
 
-// customLastName extends Keyboard Distance to three to five substituted
-// letters in names of ten to thirteen letters that agree in their first five
-// letters and their match key. NATIVE: pairs with three substitutions match
-// from a position-by-position keyboard score of 91.55 (none above 91.38 is
-// kept apart, and some at 91.33 match), four or five from 93.0. The native
-// confidence falls faster than the two-substitution formula as letters are
-// added; the scales below are the least-error fit to the panel rows. Two
-// substitutions keep the shared gate of 92: the fit panels match some pairs
-// from 90.67, but the held-out panel keeps a pair at 90.67 apart
-// ("Thistlecombe" and "Thistlepowbe", two far keys).
-func customLastName(a, b string, matchBlanks bool) (bool, float64) {
-	matched, confidence := fuzzyLastName(a, b, matchBlanks)
-	if matched {
-		return matched, confidence
-	}
-	if ok, c := lastNameSubstitutions(a, b); ok {
-		return true, c
-	}
-	return matched, confidence
-}
-
-func lastNameSubstitutions(a, b string) (bool, float64) {
-	if len(a) != len(b) || len(a) < 10 || len(a) > 13 {
-		// Only ASCII letters qualify, so the byte length is the letter count.
-		return false, 0
-	}
-	fa, fb := foldText(a), foldText(b)
-	x, y := []rune(strings.ReplaceAll(fa, "'", "")), []rune(strings.ReplaceAll(fb, "'", ""))
-	n := len(x)
-	if n != len(y) || n < 10 || n > 13 || lastNameCode(fa) != lastNameCode(fb) {
-		return false, 0
-	}
-	cost, different := 0.0, 0
-	for i := range x {
-		if _, ok := qwertyPosition[x[i]]; !ok {
-			return false, 0
-		}
-		if x[i] == y[i] {
-			continue
-		}
-		if i < 5 {
-			return false, 0
-		}
-		step := keyboardCost(x[i], y[i])
-		if step >= 1 {
-			return false, 0
-		}
-		different++
-		cost += step
-	}
-	score := 100 * (1 - cost/float64(n))
-	var gate, scale, shift float64
-	switch different {
-	case 3:
-		gate, scale, shift = 91.5, 0.98, -1.2
-	case 4:
-		gate, scale, shift = 93, 1.15, -0.9
-	case 5:
-		gate, scale, shift = 93, 1.25, -0.1
-	default:
-		return false, 0
-	}
-	if score < gate {
-		return false, 0
-	}
-	return true, averageWith100(100 - scale*(100-score) + shift)
-}
-
 // customCompany adds what the Company Name panels show beyond the shared
 // scorer. NATIVE, two-word names with the same second word: the first words
 // match under the second-word rule (six shared letters, then one is the other
@@ -162,10 +93,13 @@ func lastNameSubstitutions(a, b string) (bool, float64) {
 // of a word of six to nine letters ending in "a", "o" or "y" finds the word
 // itself (companyPluralReverse).
 func customCompany(a, b string, matchBlanks bool) (bool, float64) {
-	matched, confidence := fuzzyCompany(a, b, matchBlanks)
+	return fuzzyCompanyWithCustom(a, b, true)
+}
+
+func customCompanyWords(a, b string, wa, wb []string) (bool, float64) {
+	matched, confidence := fuzzyCompanyWords(a, b, wa, wb)
 	ta, tb := strings.TrimSpace(a), strings.TrimSpace(b)
 	if !strings.ContainsAny(ta, " -") && !strings.ContainsAny(tb, " -") && (len(ta) == len(tb)+1 || len(tb) == len(ta)+1) {
-		wa, wb := companyWords(a), companyWords(b)
 		if len(wa) == 1 && len(wb) == 1 && companyKey(wa) == companyKey(wb) && !companyAlignedWords[wa[0]] && !companyAlignedWords[wb[0]] {
 			// Each rule is limited to the word lengths the rows cover.
 			x, y := wa[0], wb[0]
@@ -184,7 +118,6 @@ func customCompany(a, b string, matchBlanks bool) (bool, float64) {
 	if matched || strings.Contains(ta, "-") || strings.Contains(tb, "-") || len(ta) < 6 || len(tb) < 6 || !strings.EqualFold(ta[:6], tb[:6]) {
 		return matched, confidence
 	}
-	wa, wb := companyWords(a), companyWords(b)
 	if len(wa) < 2 || len(wb) < 2 || wa[0] == wb[0] || wa[1] != wb[1] || companyKey(wa) != companyKey(wb) || !companySecondWordMatch(wa[0], wb[0]) {
 		return matched, confidence
 	}
@@ -192,7 +125,7 @@ func customCompany(a, b string, matchBlanks bool) (bool, float64) {
 	if strings.Join(companyWords(aligned), " ") != aligned {
 		return matched, confidence
 	}
-	return fuzzyCompany(strings.Join(wa, " "), aligned, matchBlanks)
+	return fuzzyCompanyWords(strings.Join(wa, " "), aligned, wa, append([]string{wa[0]}, wb[1:]...))
 }
 
 // customStreet matches a street whose last word is a known suffix against the
@@ -202,41 +135,7 @@ func customCompany(a, b string, matchBlanks bool) (bool, float64) {
 // ("St" and "Sreet", "Rd" and "Drv"), although the weighted section score is
 // under 80 (74 to 78). The confidence is the shared scorer's.
 func customStreet(a, b string, matchBlanks bool) (bool, float64) {
-	matched, confidence := fuzzyStreet(a, b, matchBlanks)
-	if matched {
-		return matched, confidence
-	}
-	// Cheap necessary condition: the same leading number and the same text
-	// before the last word.
-	ia, ib := strings.IndexByte(a, ' '), strings.IndexByte(b, ' ')
-	la, lb := strings.LastIndexByte(a, ' '), strings.LastIndexByte(b, ' ')
-	if ia <= 0 || ia != ib || a[:ia] != b[:ib] || la <= ia || !strings.EqualFold(a[:la], b[:lb]) {
-		return matched, confidence
-	}
-	x, y := streetClean(a), streetClean(b)
-	wx, wy := strings.Fields(x), strings.Fields(y)
-	if len(wx) < 3 || len(wx) != len(wy) || wx[0] != wy[0] || !digitsOnly.MatchString(wx[0]) {
-		return matched, confidence
-	}
-	last := len(wx) - 1
-	if strings.Join(wx[1:last], " ") != strings.Join(wy[1:last], " ") || len(wx[1]) < 2 {
-		return matched, confidence
-	}
-	sx, sy := wx[last], wy[last]
-	_, kx := knownStreetSuffixes[sx]
-	_, ky := knownStreetSuffixes[sy]
-	unknown := sx
-	if kx {
-		unknown = sy
-	}
-	if kx == ky || !isAlphaWord(unknown) || streetDirections[unknown] || streetSuiteDesignators[unknown] || streetPrefixSuffixes[unknown] {
-		return matched, confidence
-	}
-	sections := streetSections(parseStreet(a), parseStreet(b), matchBlanks)
-	if sections < 74 || sections >= 80 || editSimilarity(x, y) < 87.5-1e-9 {
-		return matched, confidence
-	}
-	return true, confidence
+	return fuzzyStreetWithCustom(a, b, matchBlanks, true)
 }
 
 // companyPluralReverse is the confidence of a plural candidate finding the
