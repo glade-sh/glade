@@ -44,9 +44,6 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 		if receiverTernaryArm(ts, stack, statement, dot) == 2 {
 			return nil
 		}
-		if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
-			return nil
-		}
 	}
 	if leading == "when" && (dot+2 >= len(ts) || ts[dot+2].text != "(") {
 		return nil

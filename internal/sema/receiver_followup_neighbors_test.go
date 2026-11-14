@@ -32,7 +32,7 @@ func TestReceiverFollowupUncapturedNeighbors(t *testing.T) {
 	}
 	for _, tc := range []struct{ name, source, want string }{
 		{"Probe.cls", "public class Probe<T> { public void run() { System.debug(String.\nvalueOf(1)); } }", `[{"severity":"error","code":"GLADESEMA032","message":"class \"Probe\" cannot declare type parameters","file":"<root>/Probe.cls","range":{"start":{"line":1,"column":1},"end":{"line":2,"column":17,"offset":81}}}]`},
-		{"Probe.trigger", "trigger Probe on Account (before insert) { System.debug(Trigger.\nnew); }", `null`},
+		{"Probe.trigger", "trigger Probe on Account (before insert) { System.assertEquals(null, Trigger.\nnew); }", `null`},
 	} {
 		root := t.TempDir()
 		path := filepath.Join(root, tc.name)
