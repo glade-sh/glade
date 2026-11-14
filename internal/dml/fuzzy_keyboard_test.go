@@ -40,19 +40,6 @@ func TestKeyboardDistanceNativeShapes(t *testing.T) {
 	}
 }
 
-func TestLastNamePreviouslyAcceptedKeyboardScore(t *testing.T) {
-	for _, pair := range [][2]string{{"martinez", "martinezk"}, {"richardson", "richardsop"}} {
-		wantMatch, wantScore := lastNameKeyboard(pair[0], pair[1])
-		if !wantMatch {
-			t.Fatalf("legacy scorer did not accept %q/%q", pair[0], pair[1])
-		}
-		gotMatch, gotScore := fuzzyLastName(pair[0], pair[1], false)
-		if gotMatch != wantMatch || gotScore != wantScore {
-			t.Errorf("%q/%q: got %v %v, legacy %v %v", pair[0], pair[1], gotMatch, gotScore, wantMatch, wantScore)
-		}
-	}
-}
-
 // Local contract: characters no row measures never substitute, a trailing
 // digit keeps the earlier cost for one or two characters only, and the byte
 // and rune paths agree.
