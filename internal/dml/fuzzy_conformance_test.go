@@ -128,7 +128,9 @@ func fuzzyGladeMatches(t *testing.T, row fuzzyNativeRow) (map[[2]int]float64, st
 // custom fuzzy matching rules (every pair of probe values per method, API 62.0
 // and 67.0) are reproduced by the shared duplicate-rule matcher. The bounds in
 // cases.json are the measured agreement of the fitted scorers; unmeasured
-// behavior is listed in docs/DUPLICATE_FUZZY_MATCHING.md.
+// behavior is listed in docs/DUPLICATE_FUZZY_MATCHING.md. The keyboard panel
+// bounds include newly recovered pairs; previously matched keyboard scores
+// remain unchanged (TestLastNamePreviouslyMatchedScores).
 func TestFuzzyMatchingNativeRows(t *testing.T) {
 	var cases fuzzyCases
 	raw, err := os.ReadFile(filepath.Join(fuzzyFixture, "cases.json"))

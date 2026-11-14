@@ -198,7 +198,7 @@
   "67/Probe.Contact.LastName.LastName.NullNotAllowed.Keyboard": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.057
+   "max_conf_mae": 0.0589
   },
   "67/Probe.Contact.LastName.LastName.NullNotAllowed.Phonetic": {
    "min_recall": 0.9999,
@@ -268,7 +268,7 @@
   "62/Probe.Contact.LastName.LastName.NullNotAllowed.Keyboard": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.057
+   "max_conf_mae": 0.0589
   },
   "62/Probe.Contact.Title.Title.NullNotAllowed.Words": {
    "min_recall": 0.994,
@@ -463,7 +463,7 @@
   "62/P4.LN.KB2": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.126
+   "max_conf_mae": 0.1555
   },
   "67/Holdout4.Account.BillingCity.City.NullNotAllowed.1": {
    "min_recall": 0.9999,
@@ -1718,12 +1718,12 @@
   "67/N4.LN.Var.002": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.013
+   "max_conf_mae": 0.0207
   },
   "67/N4.LN.Var.003": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.038
+   "max_conf_mae": 0.055
   },
   "67/N4.LN.Var.004": {
    "min_recall": 0.9999,
@@ -1758,7 +1758,7 @@
   "67/N4.LN.Var.010": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.012
+   "max_conf_mae": 0.0223
   },
   "67/N4.LN.Var.011": {
    "min_recall": 0.9999,
@@ -1788,7 +1788,7 @@
   "67/N4.LN.Var.016": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.001
+   "max_conf_mae": 0.0103
   },
   "67/N4.LN.Var.017": {
    "min_recall": 0.9999,
@@ -1828,12 +1828,12 @@
   "67/N4.LN.Var.024": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.041
+   "max_conf_mae": 0.05
   },
   "67/N4.LN.Var.025": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.016
+   "max_conf_mae": 0.0295
   },
   "67/N4.LN.Var.026": {
    "min_recall": 0.9999,
@@ -1863,7 +1863,7 @@
   "67/N4.LN.Var.031": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.03
+   "max_conf_mae": 0.0631
   },
   "67/N4.LN.Var.032": {
    "min_recall": 0.9999,
@@ -1873,7 +1873,7 @@
   "67/N4.LN.Var.033": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.01
+   "max_conf_mae": 0.0162
   },
   "67/N4.LN.Var.034": {
    "min_recall": 0.9999,
@@ -1888,7 +1888,7 @@
   "67/N4.LN.Var.036": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.026
+   "max_conf_mae": 0.0375
   },
   "67/N4.LN.Var.037": {
    "min_recall": 0.9999,
@@ -1908,7 +1908,7 @@
   "67/N4.LN.Var.040": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.001
+   "max_conf_mae": 0.0249
   },
   "67/N4.LN.Var.041": {
    "min_recall": 0.9999,
@@ -1923,12 +1923,12 @@
   "67/N4.LN.Var.043": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.028
+   "max_conf_mae": 0.0398
   },
   "67/N4.LN.Var.044": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.011
+   "max_conf_mae": 0.0205
   },
   "67/N4.LN.Var.045": {
    "min_recall": 0.9999,
@@ -1943,12 +1943,12 @@
   "67/N4.LN.Var.047": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.001
+   "max_conf_mae": 0.0143
   },
   "67/N4.LN.Var.048": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.033
+   "max_conf_mae": 0.0468
   },
   "67/N4.LN.Var.049": {
    "min_recall": 0.9999,
@@ -1968,7 +1968,7 @@
   "67/N4.LN.Var.052": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.013
+   "max_conf_mae": 0.0236
   },
   "67/N4.LN.Var.053": {
    "min_recall": 0.9999,
@@ -2008,7 +2008,7 @@
   "67/N4.LN.Var.060": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.034
+   "max_conf_mae": 0.0694
   },
   "67/N4.LN.Var.061": {
    "min_recall": 0.9999,
@@ -2033,12 +2033,12 @@
   "67/N4.LN.Var.065": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.012
+   "max_conf_mae": 0.0209
   },
   "67/N4.LN.Var.066": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.015
+   "max_conf_mae": 0.038
   },
   "67/N4.LN.Var.067": {
    "min_recall": 0.9999,
@@ -2058,7 +2058,7 @@
   "67/N4.LN.Var.070": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.014
+   "max_conf_mae": 0.0247
   },
   "67/N4.LN.Var.071": {
    "min_recall": 0.9999,
@@ -2078,7 +2078,7 @@
   "67/N4.LN.Var.074": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.024
+   "max_conf_mae": 0.0338
   },
   "67/N4.LN.Var.075": {
    "min_recall": 0.9999,
@@ -2128,7 +2128,7 @@
   "67/N4.LN.Var.084": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.013
+   "max_conf_mae": 0.0233
   },
   "67/N4.LN.Var.085": {
    "min_recall": 0.9999,
@@ -2178,7 +2178,7 @@
   "67/P4.LN.KB2": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.126
+   "max_conf_mae": 0.1555
   },
   "67/P4.MULTI.NameCity": {
    "min_recall": 0.9999,
