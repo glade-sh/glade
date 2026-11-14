@@ -63,6 +63,19 @@ func TestPlainDeveloperSpreadPreservesProjectObject(t *testing.T) {
 	}
 }
 
+func TestPlainDeveloperSpreadPreservesProjectSchemaWithoutRecords(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObject(&org, "AIFeatureExtractor")
+	object := org.Objects["AIFeatureExtractor"]
+	object.Definition.Fields["ProjectField__c"] = Field{APIName: "ProjectField__c", Type: FieldString}
+	org.Objects["AIFeatureExtractor"] = object
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	object, ok := org.Objects["AIFeatureExtractor"]
+	if !ok || object.Definition.Fields["ProjectField__c"].APIName == "" {
+		t.Fatal("shape removed project schema")
+	}
+}
+
 func TestPlainDeveloperSpreadShapeTransition(t *testing.T) {
 	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
 	ApplyProjectOrgShape(&org, []string{project.UnspecifiedStandardFieldShape})
