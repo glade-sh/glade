@@ -73,4 +73,10 @@ func TestUnreflectedAliasDoesNotExposeDeclarations(t *testing.T) {
 	if got := h.HoverForName("First", nil); got != nil {
 		t.Errorf("stale alias hover: %#v", got)
 	}
+	if err := os.Remove(alias); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.WorkspaceSymbols("First"); len(got) != 0 {
+		t.Errorf("unverifiable alias symbol: %#v", got)
+	}
 }
