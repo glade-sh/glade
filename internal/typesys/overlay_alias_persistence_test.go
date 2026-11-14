@@ -78,3 +78,37 @@ func TestAliasedOverlayGenerationRejectsPersistence(t *testing.T) {
 		t.Fatal("unrelated overlay changed disk snapshot")
 	}
 }
+
+func TestAliasedOverlayVolatilitySurvivesSubsequentDiskUpdate(t *testing.T) {
+	root := t.TempDir()
+	writeIncrementalSFDXProject(t, root, "")
+	first := filepath.Join(root, "force-app/main/default/classes/First.cls")
+	second := filepath.Join(root, "force-app/main/default/classes/Second.cls")
+	writeFile(t, first, "public class First {}")
+	writeFile(t, second, "public class Second {}")
+	alias := filepath.Join(root, "Alias.cls")
+	if err := os.Symlink(first, alias); err != nil {
+		t.Fatal(err)
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base, previous := BuildWithArtifacts(p, schema.Schema{})
+	overlay := NewSourceOverlay(map[string]string{alias: "public class First { void added() {} }"})
+	updated, ok := TryUpdateApexFileWithOverlay(base, first, p, overlay)
+	if !ok || !updated.Volatile() {
+		t.Fatalf("first update ok=%v volatile=%v", ok, updated.Volatile())
+	}
+	artifacts, err := RefreshBuildArtifactsWithOverlay(updated, &previous, overlay)
+	if err != nil || !artifacts.Volatile() {
+		t.Fatalf("overlay artifacts volatile=%v err=%v", artifacts.Volatile(), err)
+	}
+	next, ok := TryUpdateApexFileWithOverlay(updated, second, p, overlay)
+	if !ok || !next.Volatile() {
+		t.Fatalf("subsequent update ok=%v volatile=%v", ok, next.Volatile())
+	}
+	if base.Volatile() || previous.Volatile() {
+		t.Fatal("base generation was mutated")
+	}
+}
