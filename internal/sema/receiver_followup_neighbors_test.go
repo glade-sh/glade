@@ -19,6 +19,9 @@ func TestReceiverFollowupExpressionNeighbors(t *testing.T) {
 		"for (Integer i = Integer.\nvalueOf('1') + 1; i < 2; i++) {}",
 		"do {} while (Integer.\nvalueOf('1') > 0 == true);",
 		"if (true) {} else if (Integer.\nvalueOf('1') > 0) {}",
+		"for (Integer i = Integer.\nvalueOf('1'); i < 2; i++) {}",
+		"do {} while (Integer.\nvalueOf('1') == 1);",
+		"if (true) {} else if (Integer.\nvalueOf('1') == 1) {}",
 	} {
 		for _, api := range []string{"62.0", "67.0"} {
 			got, err := json.Marshal(AnalyzeAnonymous(typesys.Index{}, source, api).Diagnostics)
