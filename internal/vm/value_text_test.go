@@ -273,3 +273,29 @@ func TestBoundedStringBoundsWork(t *testing.T) {
 		})
 	}
 }
+
+func TestBoundedStringDecimalAndAccessLevelWork(t *testing.T) {
+	decimal := Value{Kind: ValueDecimal, Text: "0." + strings.Repeat("0", 7) + strings.Repeat("1", 1<<20)}
+	want := decimal.String()
+	runtime.GC()
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	got, truncated := decimal.BoundedString(256)
+	runtime.ReadMemStats(&after)
+	if !truncated || got != want[:256] {
+		t.Fatalf("decimal prefix mismatch")
+	}
+	if n := after.TotalAlloc - before.TotalAlloc; n > 1<<16 {
+		t.Fatalf("decimal allocated %d bytes", n)
+	}
+	deep := Object("AccessLevel")
+	for i := 0; i < 10000; i++ {
+		next := Object("AccessLevel")
+		next.Fields["SYSTEM_MODE"] = deep
+		deep = next
+	}
+	got, truncated = deep.BoundedString(256)
+	if !truncated || len(got) != 256 {
+		t.Fatalf("access level: %d bytes, truncated=%v", len(got), truncated)
+	}
+}
