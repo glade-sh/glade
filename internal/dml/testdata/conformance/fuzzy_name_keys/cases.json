@@ -1,0 +1,661 @@
+{
+ "ln1": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N1Last",
+  "fields": [
+   "LastName"
+  ],
+  "item": "LastName",
+  "values": [
+   "Test",
+   "Test1",
+   "Test2",
+   "Test 1",
+   "Test 2",
+   "Test10",
+   "Test199",
+   "Tester",
+   "Testing",
+   "Test-1",
+   "Test_1",
+   "Test_2",
+   "TestLast",
+   "TestLast1",
+   "TestLast2",
+   "LastName",
+   "LastName1",
+   "LastName2",
+   "Last",
+   "Last1",
+   "Last 1",
+   "Contact",
+   "Contact1",
+   "Contact 2",
+   "TestContact",
+   "TestContact0",
+   "TestContact199",
+   "User",
+   "User1",
+   "User2"
+  ]
+ },
+ "ln2": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N1Last",
+  "fields": [
+   "LastName"
+  ],
+  "item": "LastName",
+  "values": [
+   "Smith",
+   "Smith1",
+   "Smith2",
+   "Smith 1",
+   "Smith 2",
+   "Doe",
+   "Doe1",
+   "Doe2",
+   "Jones",
+   "Jones1",
+   "Jones01",
+   "Jones02",
+   "L1",
+   "L2",
+   "LN1",
+   "LN2",
+   "A",
+   "B",
+   "A1",
+   "A2",
+   "1",
+   "2",
+   "10",
+   "11",
+   "Lead1",
+   "Lead2",
+   "Person1",
+   "Person2",
+   "test",
+   "TEST"
+  ]
+ },
+ "fn1": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N1First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "values": [
+   "Test|Zq0",
+   "Test1|Zq1",
+   "Test2|Zq2",
+   "Test 1|Zq3",
+   "Test 2|Zq4",
+   "Test0|Zq5",
+   "Test10|Zq6",
+   "Test199|Zq7",
+   "Tester|Zq8",
+   "First|Zq9",
+   "First1|Zq10",
+   "First2|Zq11",
+   "FirstName|Zq12",
+   "FirstName1|Zq13",
+   "FirstName2|Zq14",
+   "John|Zq15",
+   "John1|Zq16",
+   "John2|Zq17",
+   "Jane|Zq18",
+   "Jane1|Zq19",
+   "User|Zq20",
+   "User1|Zq21",
+   "User2|Zq22",
+   "F1|Zq23",
+   "F2|Zq24",
+   "T|Zq25",
+   "T1|Zq26",
+   "1|Zq27",
+   "2|Zq28",
+   "test|Zq29"
+  ]
+ },
+ "dln_1": {
+  "kind": "pair",
+  "object": "Contact",
+  "rule": "N1Last",
+  "fields": [
+   "LastName"
+  ],
+  "item": "LastName",
+  "ops": [
+   "ins",
+   "stmt",
+   "allow",
+   "bulk",
+   "upd",
+   "ups"
+  ],
+  "pairs": [
+   [
+    "Test1",
+    "Test2"
+   ],
+   [
+    "Test",
+    "Test1"
+   ],
+   [
+    "Test 1",
+    "Test 2"
+   ],
+   [
+    "LastName1",
+    "LastName2"
+   ]
+  ]
+ },
+ "dln_2": {
+  "kind": "pair",
+  "object": "Contact",
+  "rule": "N1Last",
+  "fields": [
+   "LastName"
+  ],
+  "item": "LastName",
+  "ops": [
+   "ins",
+   "stmt",
+   "allow",
+   "bulk",
+   "upd",
+   "ups"
+  ],
+  "pairs": [
+   [
+    "Smith1",
+    "Smith2"
+   ],
+   [
+    "Smith",
+    "Smith1"
+   ],
+   [
+    "TestContact0",
+    "TestContact199"
+   ],
+   [
+    "Doe",
+    "Doe1"
+   ]
+  ]
+ },
+ "dln_3": {
+  "kind": "pair",
+  "object": "Contact",
+  "rule": "N1Last",
+  "fields": [
+   "LastName"
+  ],
+  "item": "LastName",
+  "ops": [
+   "ins",
+   "stmt",
+   "allow",
+   "bulk",
+   "upd",
+   "ups"
+  ],
+  "pairs": [
+   [
+    "User1",
+    "User2"
+   ],
+   [
+    "A",
+    "B"
+   ],
+   [
+    "L1",
+    "L2"
+   ],
+   [
+    "Test",
+    "Tester"
+   ]
+  ]
+ },
+ "dfn_1": {
+  "kind": "pair",
+  "object": "Contact",
+  "rule": "N1First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "ops": [
+   "ins",
+   "stmt",
+   "allow",
+   "bulk",
+   "upd",
+   "ups"
+  ],
+  "pairs": [
+   [
+    "Test1|Zqa",
+    "Test2|Zqb"
+   ],
+   [
+    "Test|Zqa",
+    "Test1|Zqb"
+   ],
+   [
+    "First1|Zqa",
+    "First2|Zqb"
+   ],
+   [
+    "FirstName1|Zqa",
+    "FirstName2|Zqb"
+   ]
+  ]
+ },
+ "dfn_2": {
+  "kind": "pair",
+  "object": "Contact",
+  "rule": "N1First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "ops": [
+   "ins",
+   "stmt",
+   "allow",
+   "bulk",
+   "upd",
+   "ups"
+  ],
+  "pairs": [
+   [
+    "John1|Zqa",
+    "John2|Zqb"
+   ],
+   [
+    "John|Zqa",
+    "John1|Zqb"
+   ],
+   [
+    "User1|Zqa",
+    "User2|Zqb"
+   ],
+   [
+    "F1|Zqa",
+    "F2|Zqb"
+   ]
+  ]
+ },
+ "dfn_3": {
+  "kind": "pair",
+  "object": "Contact",
+  "rule": "N1First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "ops": [
+   "ins",
+   "stmt",
+   "allow",
+   "bulk",
+   "upd",
+   "ups"
+  ],
+  "pairs": [
+   [
+    "T|Zqa",
+    "T1|Zqb"
+   ],
+   [
+    "Test|Zqa",
+    "Tester|Zqb"
+   ]
+  ]
+ },
+ "in1": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N2First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "values": [
+   "Y|Zq0",
+   "Y.|Zq1",
+   "Y R|Zq2",
+   "Y. R.|Zq3",
+   "Y R S|Zq4",
+   "Y. R. S.|Zq5",
+   "Y R S T|Zq6",
+   "YR|Zq7",
+   "Y.R.|Zq8",
+   "YRS|Zq9",
+   "Y.R.S.|Zq10",
+   "Yr|Zq11",
+   "Yancey|Zq12",
+   "Yancey R|Zq13",
+   "Yancey R.|Zq14",
+   "Yancey Robert|Zq15",
+   "Y Robert|Zq16",
+   "Y. Robert|Zq17",
+   "R|Zq18",
+   "R Y|Zq19",
+   "U|Zq20",
+   "U R|Zq21",
+   "U R S|Zq22",
+   "y|Zq23",
+   "y r s|Zq24"
+  ]
+ },
+ "in2": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N2First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "values": [
+   "P|Zq0",
+   "P W|Zq1",
+   "P W G|Zq2",
+   "P. W. G.|Zq3",
+   "P W G Q|Zq4",
+   "PW|Zq5",
+   "P.W.|Zq6",
+   "PWG|Zq7",
+   "P-W|Zq8",
+   "P W-G|Zq9",
+   "Percival|Zq10",
+   "Percival W|Zq11",
+   "Percival William|Zq12",
+   "W|Zq13",
+   "W P|Zq14",
+   "W P G|Zq15",
+   "G|Zq16",
+   "G W P|Zq17",
+   "P  W|Zq18",
+   "P.W|Zq19"
+  ]
+ },
+ "nk1": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N2First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "values": [
+   "Alexander|Zq0",
+   "Alex|Zq1",
+   "Xander|Zq2",
+   "Lex|Zq3",
+   "Sasha|Zq4",
+   "Margaret|Zq5",
+   "Maggie|Zq6",
+   "Meg|Zq7",
+   "Peggy|Zq8",
+   "Greta|Zq9",
+   "Marge|Zq10",
+   "Theodore|Zq11",
+   "Ted|Zq12",
+   "Teddy|Zq13",
+   "Theo|Zq14",
+   "Penelope|Zq15",
+   "Penny|Zq16",
+   "Nathaniel|Zq17",
+   "Nate|Zq18",
+   "Nathan|Zq19",
+   "Gwendolyn|Zq20",
+   "Gwen|Zq21",
+   "Wendy|Zq22",
+   "Augustus|Zq23",
+   "Gus|Zq24",
+   "Augie|Zq25",
+   "Cornelius|Zq26",
+   "Neil|Zq27",
+   "Connie|Zq28"
+  ]
+ },
+ "cmp1": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N2First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "values": [
+   "Mary|Zq0",
+   "Mary Ann|Zq1",
+   "MaryAnn|Zq2",
+   "Mary-Ann|Zq3",
+   "Maryann|Zq4",
+   "Mary Anne|Zq5",
+   "Mary  Ann|Zq6",
+   "MARY ANN|Zq7",
+   "mary ann|Zq8",
+   "Mary J|Zq9",
+   "Mary J.|Zq10",
+   "M Ann|Zq11",
+   "Ann|Zq12",
+   "Ann Mary|Zq13",
+   "Jean-Luc|Zq14",
+   "Jean Luc|Zq15",
+   "Jeanluc|Zq16",
+   "JeanLuc|Zq17",
+   "Jean|Zq18",
+   "Luc|Zq19",
+   "Dr Mary|Zq20",
+   "Dr. Mary|Zq21",
+   "Mrs Mary|Zq22",
+   "Mary Jr|Zq23",
+   "Mary (Molly)|Zq24",
+   "Molly|Zq25"
+  ]
+ },
+ "suf1": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N2Last",
+  "fields": [
+   "LastName"
+  ],
+  "item": "LastName",
+  "values": [
+   "Harlow",
+   "Harlow Jr",
+   "Harlow Jr.",
+   "Harlow, Jr.",
+   "Harlow Sr",
+   "Harlow II",
+   "Harlow III",
+   "Harlow IV",
+   "Harlow PhD",
+   "Harlow MD",
+   "Harlow-Venn",
+   "Harlow Venn",
+   "HarlowVenn",
+   "Venn-Harlow",
+   "Venn",
+   "Harlow - Venn",
+   "HARLOW",
+   "harlow",
+   "Harlow.",
+   "Harlows",
+   "Harlowe",
+   "Harlow (Test)",
+   "Harlow Test"
+  ]
+ },
+ "pre1": {
+  "kind": "panel",
+  "object": "Contact",
+  "rule": "N2Last",
+  "fields": [
+   "LastName"
+  ],
+  "item": "LastName",
+  "values": [
+   "McAllen",
+   "Mc Allen",
+   "MacAllen",
+   "Mcallen",
+   "Mac Allen",
+   "M'Allen",
+   "O'Leary",
+   "OLeary",
+   "O Leary",
+   "Oleary",
+   "O’Leary",
+   "van der Berg",
+   "Van Der Berg",
+   "Vanderberg",
+   "van den Berg",
+   "Van Berg",
+   "Berg",
+   "de la Vega",
+   "De La Vega",
+   "Delavega",
+   "dela Vega",
+   "Vega",
+   "St. James",
+   "St James",
+   "Saint James",
+   "D'Angelo",
+   "DAngelo",
+   "Dangelo",
+   "Di Angelo",
+   "Al-Rashid",
+   "Al Rashid",
+   "Alrashid",
+   "El-Rashid"
+  ]
+ },
+ "din": {
+  "kind": "pair",
+  "object": "Contact",
+  "rule": "N2First",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "FirstName",
+  "ops": [
+   "ins",
+   "upd"
+  ],
+  "pairs": [
+   [
+    "Y|Zqkvelt",
+    "Y R S|Wenlockirn"
+   ],
+   [
+    "Y R S|Zqkvelt",
+    "Y|Wenlockirn"
+   ],
+   [
+    "Y R|Zqkvelt",
+    "Y R S|Wenlockirn"
+   ],
+   [
+    "YR|Zqkvelt",
+    "Y R|Wenlockirn"
+   ],
+   [
+    "Y.R.|Zqkvelt",
+    "Y|Wenlockirn"
+   ],
+   [
+    "Yancey|Zqkvelt",
+    "Y R S|Wenlockirn"
+   ],
+   [
+    "P W G|Zqkvelt",
+    "P|Wenlockirn"
+   ],
+   [
+    "PW|Zqkvelt",
+    "P|Wenlockirn"
+   ]
+  ]
+ },
+ "dsuf": {
+  "kind": "pair",
+  "object": "Contact",
+  "rule": "N2Last",
+  "fields": [
+   "FirstName",
+   "LastName"
+  ],
+  "item": "LastName",
+  "ops": [
+   "ins",
+   "upd"
+  ],
+  "pairs": [
+   [
+    "Pelham|Harlow",
+    "Ottoline|Harlow Jr"
+   ],
+   [
+    "Pelham|Harlow Jr",
+    "Ottoline|Harlow"
+   ],
+   [
+    "Pelham|Harlow",
+    "Ottoline|Harlow III"
+   ],
+   [
+    "Pelham|Harlow",
+    "Ottoline|Harlow-Venn"
+   ],
+   [
+    "Pelham|Harlow-Venn",
+    "Ottoline|Venn"
+   ],
+   [
+    "Pelham|McAllen",
+    "Ottoline|Mc Allen"
+   ],
+   [
+    "Pelham|McAllen",
+    "Ottoline|MacAllen"
+   ],
+   [
+    "Pelham|van der Berg",
+    "Ottoline|Vanderberg"
+   ],
+   [
+    "Pelham|de la Vega",
+    "Ottoline|Delavega"
+   ],
+   [
+    "Pelham|St. James",
+    "Ottoline|Saint James"
+   ]
+  ]
+ }
+}

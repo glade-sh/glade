@@ -1,0 +1,12 @@
+Native first-name and last-name match key capture
+Date: 2026-11-14 UTC. Salesforce CLI 2.156.8.
+Orgs: two captures, each in its own fresh 30-day Developer Edition scratch org (no features) on an authorized campaign Dev Hub. Each org was deleted after its run; ids, usernames, aliases and hosts are not stored.
+APIs: 62.0 and 67.0. Classes redeployed for each API and ApexClass.ApiVersion read back. Routes: anonymous Apex and deployed @IsTest; two repeats. Eight observations per case; every case here has eight identical observations.
+Rules: all items NullNotAllowed, duplicate rule action Alert, standard duplicate rules deactivated, rule state read back by SOQL after each deploy. First capture: N1First (one FirstName item, FirstName method) and N1Last (one LastName item, LastName method), active together with N1Title and N1Phone. Second capture: N2First and N2Last (the same shapes), active together with N2FirstLast (FirstName AND LastName).
+Panels (kind panel): every value is inserted, then Datacloud.FindDuplicates runs on each value as an unsaved candidate under the named rule. Observation: <value count>:<pairs>; a pair is <candidate index><existing index><confidence>, indexes in 0-9a-z, a missing confidence is 100.
+Pairs (kind pair): A=>B stores A and reads find= on B under the named rule, then runs each op on B in its own savepoint (ins Database.insert, stmt insert statement, allow allowSave true, bulk A and B in one statement, upd update of a stored record to B, ups upsert). dml=S saved, D/<rule>/<allowSave>/<count>@<confidence> duplicate result, T/<status> thrown, E/<status> error. The trailing ctl entry is the run's own positive and negative control.
+Companion fields: first-name values carry a distinct last name ("first|last") so that no last-name rule matches; last-name pairs in the second capture carry distinct first names.
+Values: synthetic test-data shapes. Before the second capture, initial families that repeated an existing duplicate fixture literal were renamed as a family so their relations stay the same (J, K and James to Y, U and Yancey in in1; T, B and Thomas to P, G and Percival in in2).
+Held-out cases of both captures are not in this fixture.
+org.tsv sha256: ec8dbb2157293808f2d7ab151888713230f0bae603062a6c0ea2c2006dbec6e8
+cases.json sha256: d869ac8cfff059cc166f79d42639a5a4cd95008400022e707967866a056937e3
