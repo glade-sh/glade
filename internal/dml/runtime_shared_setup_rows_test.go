@@ -139,3 +139,28 @@ func TestDMLOnClonedSetupRowsParallelClasses(t *testing.T) {
 		t.Fatal("parallel clone DML reached the template")
 	}
 }
+
+// A writable local setup definition exercises successful DML through the shared-row funnel.
+func TestDMLSuccessfulUpdateOfClonedSetupRows(t *testing.T) {
+	template := storage.NewOrgState()
+	const id storage.ID = "100000000000001AAA"
+	template.Objects["UserLicense"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "UserLicense", KeyPrefix: "100", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{id: {ID: id, Object: "UserLicense", Fields: map[string]storage.Value{"Name": storage.StringValue("original")}}},
+	}
+	clone := template.CloneRuntimeFrozenShared()
+	sibling := template.CloneRuntimeFrozenShared()
+	engine := NewEngine(&clone)
+	result := engine.Update([]storage.Record{{ID: id, Object: "UserLicense", Fields: map[string]storage.Value{"Name": storage.StringValue("changed")}}})
+	if len(result) != 1 || !result[0].Success {
+		t.Fatalf("update = %+v", result)
+	}
+	if got := clone.Objects["UserLicense"].Records[id].Fields["Name"].String; got != "changed" {
+		t.Fatalf("clone name = %q", got)
+	}
+	for name, org := range map[string]storage.OrgState{"template": template, "sibling": sibling} {
+		if got := org.Objects["UserLicense"].Records[id].Fields["Name"].String; got != "original" {
+			t.Fatalf("%s name = %q", name, got)
+		}
+	}
+}
