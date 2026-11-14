@@ -283,3 +283,17 @@ trigger_bound	62.0	trigger	false	deploy fails: 2:1 Extra ')', at 'old'.
 trigger_bound	67.0	trigger	false	deploy fails: 2:1 Extra ')', at 'old'.
 trigger_free	62.0	trigger	false	deploy fails: 1:73 Expecting ')' but was: 'Trigger'
 trigger_free	67.0	trigger	false	deploy fails: 1:73 Expecting ')' but was: 'Trigger'
+free_generic_type	62.0	anonymous	false	1:3 Unexpected token 'List'.
+free_generic_type	67.0	anonymous	false	1:3 Unexpected token 'List'.
+free_cast_type	62.0	anonymous	false	2:10 Extra ';', at 'x'.
+free_cast_type	67.0	anonymous	false	2:10 Extra ';', at 'x'.
+free_instanceof_type	62.0	anonymous	false	2:1 Expecting ';' but was: '.'
+free_instanceof_type	67.0	anonymous	false	2:1 Expecting ';' but was: '.'
+free_control	62.0	anonymous	true	ok
+free_control	67.0	anonymous	true	ok
+free_signature	62.0	class	false	deploy fails: 2:1 Unexpected token '.'. | 2:1 Invalid character in identifier: . | 2:1 Invalid type: System | 1:41 Method must have a body
+free_signature	67.0	class	false	deploy fails: 2:1 Unexpected token '.'. | 2:1 Invalid character in identifier: . | 2:1 Invalid type: System | 1:41 Method must have a body
+free_extends	62.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:41 Invalid type: System | ?:? @Override specified for non-overriding method: String RouteFreeException.getTypeName()
+free_extends	67.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:41 Invalid type: System | ?:? @Override specified for non-overriding method: String RouteFreeException.getTypeName()
+free_implements	62.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:39 Invalid type: System
+free_implements	67.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:39 Invalid type: System

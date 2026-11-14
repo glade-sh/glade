@@ -113,7 +113,7 @@ func testReceiverGrammarNative(t *testing.T) {
 			}
 			// Native class parsing emits these documented cascades in addition
 			// to the primary error. Track them explicitly until implemented.
-			knownCascades := map[string]bool{"CA": true, "D1": true, "D2": true, "D3": true, "D4": true, "D5": true, "D6": true, "E1": true, "E2": true, "super_break": true, "signature": true, "extends": true, "implements": true, "property": true, "static_block": true}
+			knownCascades := map[string]bool{"CA": true, "D1": true, "D2": true, "D3": true, "D4": true, "D5": true, "D6": true, "E1": true, "E2": true, "super_break": true, "signature": true, "extends": true, "implements": true, "property": true, "static_block": true, "free_signature": true, "free_extends": true, "free_implements": true}
 			if knownCascades[row[0]] {
 				remaining := make(map[string]int, len(want)-1)
 				for _, extra := range want[1:] {

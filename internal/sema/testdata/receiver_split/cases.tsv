@@ -141,3 +141,10 @@ property	class	grammar/property.cls
 static_block	class	grammar/static_block.cls
 trigger_bound	trigger	grammar/trigger_bound.trigger
 trigger_free	trigger	grammar/trigger_free.trigger
+free_generic_type	anonymous	grammar/free_generic_type.apex
+free_cast_type	anonymous	grammar/free_cast_type.apex
+free_instanceof_type	anonymous	grammar/free_instanceof_type.apex
+free_control	anonymous	grammar/free_control.apex
+free_signature	class	grammar/free_signature.cls
+free_extends	class	grammar/free_extends.cls
+free_implements	class	grammar/free_implements.cls
