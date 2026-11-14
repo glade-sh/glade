@@ -63,7 +63,7 @@ func (vm *VM) prepareTestStopAsyncJobs() {
 	jobs := vm.testContext.AsyncJobs
 	boundary := min(max(vm.testContext.AsyncStartIndex, 0), len(jobs))
 	prior := make([]AsyncJob, 0, boundary)
-	ready := make([]AsyncJob, 0, len(jobs))
+	ready := make([]stopAsyncReady, 0, len(jobs))
 	for i, job := range jobs {
 		reused := vm.activeTestScheduledReuse(job)
 		if job.ScheduledAborted && !reused {
@@ -84,11 +84,88 @@ func (vm *VM) prepareTestStopAsyncJobs() {
 		if i < boundary && job.Kind != "Queueable" && job.Kind != "Future" && job.Kind != "ScheduledApex" && job.Kind != "BatchApex" && !reused {
 			prior = append(prior, job)
 		} else {
-			ready = append(ready, job)
+			ready = append(ready, stopAsyncReady{job: job, preStart: i < boundary})
 		}
 	}
-	vm.testContext.AsyncJobs = append(prior, ready...)
-	vm.testContext.AsyncStartIndex = len(prior)
+	vm.orderStopAsyncJobs(ready)
+	for _, item := range ready {
+		prior = append(prior, item.job)
+	}
+	vm.testContext.AsyncJobs = prior
+	vm.testContext.AsyncStartIndex = len(prior) - len(ready)
+}
+
+// stopSortEligibleBatch identifies direct batches covered by the stopTest
+// observations in async_stop_mix and async_stop_boundary/org.tsv.
+func (vm *VM) stopSortEligibleBatch(job AsyncJob) bool {
+	return job.Kind == "BatchApex" && job.DirectBatchSubmission && !job.SuppressWorkerRecords && !vm.capturedBatchFaultJob(job)
+}
+
+// splitBatchAtStop covers the scope and source shapes in async_stop_shape
+// emptyBQ, multiBQ and locBQ and async_stop_boundary pre, stateful and locator.
+func (vm *VM) splitBatchAtStop(job AsyncJob, projectNative bool) bool {
+	return vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining && vm.testContext.StopDraining &&
+		vm.stopSortEligibleBatch(job) && !projectNative
+}
+
+type stopAsyncReady struct {
+	job      AsyncJob
+	preStart bool
+}
+
+// stopAsyncRank ranks runs of eligible jobs; unobserved shapes are barriers.
+// async_stop_shape preBF, preQF and sb cover pre-start and scheduled ordering.
+func (vm *VM) stopAsyncRank(job AsyncJob, preStart bool) (int, bool) {
+	switch job.Kind {
+	case "Future":
+		return 0, true
+	case "Queueable":
+		return 1, !job.QueueableDelaySet
+	case "BatchApex":
+		return 1, vm.stopSortEligibleBatch(job)
+	case "ScheduledApex":
+		return 2, !preStart
+	}
+	return 0, false
+}
+
+// queueStopBatchContinuation queues the next phase of a split stopTest batch
+// at the tail, ahead of pending Schedulables (async_stop_mix bsch: the
+// Schedulable runs after the batch finish) and ahead of the first pending
+// barrier, so a batch phase never passes work no row covers.
+func (vm *VM) queueStopBatchContinuation(job AsyncJob) {
+	jobs := vm.testContext.AsyncJobs
+	at := len(jobs)
+	for i := max(0, vm.testContext.AsyncStartIndex); i < len(jobs); i++ {
+		if _, ranked := vm.stopAsyncRank(jobs[i], false); jobs[i].Kind == "ScheduledApex" || !ranked {
+			at = i
+			break
+		}
+	}
+	vm.testContext.AsyncJobs = slices.Insert(jobs, at, job)
+}
+
+// orderStopAsyncJobs sorts each run without moving work across barriers.
+func (vm *VM) orderStopAsyncJobs(jobs []stopAsyncReady) {
+	for start := 0; start < len(jobs); {
+		if _, ok := vm.stopAsyncRank(jobs[start].job, jobs[start].preStart); !ok {
+			start++
+			continue
+		}
+		end := start + 1
+		for end < len(jobs) {
+			if _, ok := vm.stopAsyncRank(jobs[end].job, jobs[end].preStart); !ok {
+				break
+			}
+			end++
+		}
+		slices.SortStableFunc(jobs[start:end], func(a, b stopAsyncReady) int {
+			ra, _ := vm.stopAsyncRank(a.job, a.preStart)
+			rb, _ := vm.stopAsyncRank(b.job, b.preStart)
+			return ra - rb
+		})
+		start = end
+	}
 }
 
 func (vm *VM) drainTestWork(result *Result) error {
@@ -1311,9 +1388,13 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 		return true
 	}
 	// Owned API 62/67 F04/F12: a future's explicit-depth Queueable starts
-	// during stopTest. Uncapped future descendants retain their boundary.
+	// during stopTest; the gen2q rows add the uncapped child at stopTest only.
+	// Explicit test-context drains keep the uncapped child deferred.
 	if vm.currentAsyncKind == "Future" {
-		return job.QueueableDepth == 1 && job.QueueableMaxDepth >= job.QueueableDepth
+		if job.QueueableDepth != 1 {
+			return false
+		}
+		return job.QueueableMaxDepth >= job.QueueableDepth || (vm.testContext != nil && vm.testContext.StopDraining && job.QueueableMaxDepth >= 0)
 	}
 	if vm.currentAsyncKind != "Queueable" {
 		return false
@@ -1645,7 +1726,13 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		}
 	}
 	locatorStart := false
-	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok {
+	resume := job.batchResume
+	if resume != nil {
+		scope = resume.scope
+		locatorStart = resume.locatorStart
+		statefulObject = resume.statefulObject
+	}
+	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok && resume == nil {
 		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 		value, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			restoreMixedDML := vm.beginMixedDMLTransaction()
@@ -1697,6 +1784,16 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		vm.recordAsyncJob(job, "Failed", err.Error())
 		return err
 	}
+	if resume == nil && vm.splitBatchAtStop(job, projectNative) {
+		// Native stopTest runs batch start in its submission slot, then
+		// execute and finish as separate continuations at the queue tail
+		// (async_stop_order bqf, async_stop_mix bb, bqb, bxq).
+		job.batchResume = &batchResumeState{scope: scope, locatorStart: locatorStart, statefulObject: statefulObject, finishOnly: len(chunks) == 0}
+		vm.queueStopBatchContinuation(job)
+		markProjection()
+		return nil
+	}
+	runExecute := resume == nil || !resume.finishOnly
 	executeArgs := []Value{asyncContext("Database.BatchableContext", job.ID), List()}
 	execute, ok, ambiguous := vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", executeArgs)
 	if ambiguous {
@@ -1715,7 +1812,7 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 			return vm.ambiguousOverloadError(job.Object.Type+".execute", nil)
 		}
 	}
-	if ok {
+	if ok && runExecute {
 		vm.recordAsyncJobTotals(job, len(chunks), 0, 0)
 		processed := 0
 		processedItems := 0
@@ -1772,6 +1869,13 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 				vm.recordBatchWorkerJob(job, processed, processedItems, chunk, "Completed", "")
 			}
 		}
+	}
+	if resume != nil && runExecute {
+		// Work the execute phase enqueued runs before finish (async_stop_mix bxq).
+		job.batchResume = &batchResumeState{scope: scope, locatorStart: locatorStart, statefulObject: statefulObject, finishOnly: true}
+		vm.queueStopBatchContinuation(job)
+		markProjection()
+		return nil
 	}
 	if finish, ok := vm.resolveInstanceMethod(job.Object.Type, "finish"); ok {
 		vm.recordAsyncJob(job, "Completed", "")
