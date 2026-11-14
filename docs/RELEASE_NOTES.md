@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
+
 - **Async test ordering.** Eligible Future, Queueable, Batch Apex and scheduled work follows the captured stopTest ordering.
 
 - **Language server refresh.** Diagnostics retry after project refreshes, deleted source files leave the index, and hover starts type analysis when needed. Reference searches detect external edits even when file metadata is unchanged. Client responses no longer receive a second response.

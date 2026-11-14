@@ -1,0 +1,309 @@
+id	api	route	compiled	outcome
+static_same	62.0	anonymous	true	ok
+static_same	67.0	anonymous	true	ok
+static_comment	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_comment	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_inline_comment	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_inline_comment	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_blank	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_blank	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+instance_split	62.0	anonymous	true	ok
+instance_split	67.0	anonymous	true	ok
+chain_split	62.0	anonymous	true	ok
+chain_split	67.0	anonymous	true	ok
+qualified_split	62.0	anonymous	false	Variable does not exist: System
+qualified_split	67.0	anonymous	false	Variable does not exist: System
+qualified_same	62.0	anonymous	true	ok
+qualified_same	67.0	anonymous	true	ok
+static_dot_before	62.0	anonymous	false	Unexpected token '('.
+static_dot_before	67.0	anonymous	false	Unexpected token '('.
+dot_statement	62.0	anonymous	false	Invalid type: ReceiverProbe.
+dot_statement	67.0	anonymous	false	Invalid type: ReceiverProbe.
+dot_assign	62.0	anonymous	false	Unexpected token 'x'.
+dot_assign	67.0	anonymous	false	Unexpected token 'x'.
+dot_instance	62.0	anonymous	false	Invalid type: x.
+dot_instance	67.0	anonymous	false	Invalid type: x.
+static_space	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+static_space	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+split_statement	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+split_statement	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+repeat_first	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+repeat_first	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+repeat_second	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+repeat_second	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+repeat_both	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+repeat_both	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+repeat_same	62.0	anonymous	true	ok
+repeat_same	67.0	anonymous	true	ok
+comment_after	62.0	anonymous	false	Unexpected token '('.
+comment_after	67.0	anonymous	false	Unexpected token '('.
+comment_before_newline	62.0	anonymous	false	Unexpected token '('.
+comment_before_newline	67.0	anonymous	false	Unexpected token '('.
+chain_after	62.0	anonymous	true	ok
+chain_after	67.0	anonymous	true	ok
+chain_comment	62.0	anonymous	true	ok
+chain_comment	67.0	anonymous	true	ok
+after_first	62.0	anonymous	false	Unexpected token '('.
+after_first	67.0	anonymous	false	Unexpected token '('.
+after_second	62.0	anonymous	false	Unexpected token '('.
+after_second	67.0	anonymous	false	Unexpected token '('.
+after_both	62.0	anonymous	false	Unexpected token '('.
+after_both	67.0	anonymous	false	Unexpected token '('.
+nested	62.0	anonymous	false	Unexpected token '('.
+nested	67.0	anonymous	false	Unexpected token '('.
+instance_arg	62.0	anonymous	false	Unexpected token '('.
+instance_arg	67.0	anonymous	false	Unexpected token '('.
+instance_assign	62.0	anonymous	false	Unexpected token 'y'.
+instance_assign	67.0	anonymous	false	Unexpected token 'y'.
+comment_statement	62.0	anonymous	false	Invalid type: ReceiverProbe.
+comment_statement	67.0	anonymous	false	Invalid type: ReceiverProbe.
+comment_assignment	62.0	anonymous	false	Unexpected token 'x'.
+comment_assignment	67.0	anonymous	false	Unexpected token 'x'.
+argument_newline	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+argument_newline	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+argument_message	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+argument_message	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+declaration_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+declaration_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+debug_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+debug_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+builtin_before_dot	62.0	anonymous	false	Variable does not exist: String
+builtin_before_dot	67.0	anonymous	false	Variable does not exist: String
+statement_argument_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+statement_argument_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+fluent_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+fluent_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+line_comment_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+line_comment_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+qualified_inner_before_dot	62.0	anonymous	false	Variable does not exist: System
+qualified_inner_before_dot	67.0	anonymous	false	Variable does not exist: System
+class_literal_before_dot	62.0	anonymous	true	ok
+class_literal_before_dot	67.0	anonymous	true	ok
+sobject_member_before_dot	62.0	anonymous	false	Variable does not exist: Account
+sobject_member_before_dot	67.0	anonymous	false	Variable does not exist: Account
+block_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+block_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+fluent_space_control	62.0	anonymous	true	ok
+fluent_space_control	67.0	anonymous	true	ok
+statement_space_after_dot	62.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_space_after_dot	67.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_comment_after_dot	62.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_comment_after_dot	67.0	anonymous	false	Invalid type: ReceiverProbe.
+argument_space_after_dot	62.0	anonymous	false	Unexpected token '('.
+argument_space_after_dot	67.0	anonymous	false	Unexpected token '('.
+statement_line_comment_after_dot	62.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_line_comment_after_dot	67.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_blank_after_dot	62.0	anonymous	false	Invalid type: ReceiverProbe.
+statement_blank_after_dot	67.0	anonymous	false	Invalid type: ReceiverProbe.
+fluent_after_dot	62.0	anonymous	false	Unexpected token 'value'.
+fluent_after_dot	67.0	anonymous	false	Unexpected token 'value'.
+assignment_after_dot	62.0	anonymous	false	Unexpected token '='.
+assignment_after_dot	67.0	anonymous	false	Unexpected token '='.
+binary_argument_after_dot	62.0	anonymous	false	Unexpected token '('.
+binary_argument_after_dot	67.0	anonymous	false	Unexpected token '('.
+block_after_dot	62.0	anonymous	false	Missing ';' at 'value'
+block_after_dot	67.0	anonymous	false	Missing ';' at 'value'
+mixed_before_after_dot	62.0	anonymous	false	Unexpected token '('.
+mixed_before_after_dot	67.0	anonymous	false	Unexpected token '('.
+builtin_after_dot	62.0	anonymous	false	Unexpected token 'debug'.
+builtin_after_dot	67.0	anonymous	false	Unexpected token 'debug'.
+class_argument_before_dot	62.0	class	false	Variable does not exist: ReceiverProbe
+class_argument_before_dot	67.0	class	false	Variable does not exist: ReceiverProbe
+class_statement_before_dot	62.0	class	false	Variable does not exist: ReceiverProbe
+class_statement_before_dot	67.0	class	false	Variable does not exist: ReceiverProbe
+class_statement_after_dot	62.0	class	false	Missing ';' at 'value' | Variable does not exist: | Method does not exist or incorrect signature: void value() from the type ReceiverRouteProbe
+class_statement_after_dot	67.0	class	false	Missing ';' at 'value' | Variable does not exist: | Method does not exist or incorrect signature: void value() from the type ReceiverRouteProbe
+rhs_call	62.0	anonymous	false	Unexpected token '('.
+rhs_call	67.0	anonymous	false	Unexpected token '('.
+rhs_number	62.0	anonymous	false	Unexpected token '('.
+rhs_number	67.0	anonymous	false	Unexpected token '('.
+rhs_variable	62.0	anonymous	false	Unexpected token '('.
+rhs_variable	67.0	anonymous	false	Unexpected token '('.
+rhs_parenthesized	62.0	anonymous	false	Unexpected token '('.
+rhs_parenthesized	67.0	anonymous	false	Unexpected token '('.
+rhs_compound	62.0	anonymous	false	Unexpected token '('.
+rhs_compound	67.0	anonymous	false	Unexpected token '('.
+control_rhs_call	62.0	anonymous	true	ok
+control_rhs_call	67.0	anonymous	true	ok
+platform_string_variable	62.0	anonymous	false	Unexpected token 'debug'.
+platform_string_variable	67.0	anonymous	false	Unexpected token 'debug'.
+platform_string_binary	62.0	anonymous	false	Unexpected token 'debug'.
+platform_string_binary	67.0	anonymous	false	Unexpected token 'debug'.
+platform_string_call	62.0	anonymous	false	Unexpected token 'debug'.
+platform_string_call	67.0	anonymous	false	Unexpected token 'debug'.
+platform_string_parenthesized	62.0	anonymous	false	Unexpected token 'debug'.
+platform_string_parenthesized	67.0	anonymous	false	Unexpected token 'debug'.
+platform_string_control	62.0	anonymous	true	ok
+platform_string_control	67.0	anonymous	true	ok
+statement_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+statement_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+after_statement_before_dot	62.0	anonymous	false	Variable does not exist: ReceiverProbe
+after_statement_before_dot	67.0	anonymous	false	Variable does not exist: ReceiverProbe
+statement_control	62.0	anonymous	true	ok
+statement_control	67.0	anonymous	true	ok
+F1	62.0	anonymous	false	2:8 Unexpected token 's'.
+F1	67.0	anonymous	false	2:8 Unexpected token 's'.
+F2	62.0	anonymous	false	2:1 Invalid type: x.
+F2	67.0	anonymous	false	2:1 Invalid type: x.
+L1	62.0	anonymous	true	ok
+L1	67.0	anonymous	true	ok
+L2	62.0	anonymous	false	1:14 Variable does not exist: CrProbe
+L2	67.0	anonymous	false	1:14 Variable does not exist: CrProbe
+M1	62.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+M1	67.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+M2	62.0	anonymous	false	2:1 Missing ';' at 'value'
+M2	67.0	anonymous	false	2:1 Missing ';' at 'value'
+M3	62.0	anonymous	false	3:1 Missing ';' at 'value'
+M3	67.0	anonymous	false	3:1 Missing ';' at 'value'
+M4	62.0	anonymous	false	1:26 Missing ';' at 'value'
+M4	67.0	anonymous	false	1:26 Missing ';' at 'value'
+M5	62.0	anonymous	false	3:1 Invalid type: CrProbe.
+M5	67.0	anonymous	false	3:1 Invalid type: CrProbe.
+M6	62.0	anonymous	false	2:1 Variable does not exist: CrProbe
+M6	67.0	anonymous	false	2:1 Variable does not exist: CrProbe
+M7	62.0	anonymous	false	2:1 Missing ')' at 'value'
+M7	67.0	anonymous	false	2:1 Missing ')' at 'value'
+N1	62.0	anonymous	false	1:1 Unexpected token 'new'.
+N1	67.0	anonymous	false	1:1 Unexpected token 'new'.
+P1	62.0	anonymous	true	ok
+P1	67.0	anonymous	true	ok
+Q1	62.0	anonymous	true	ok
+Q1	67.0	anonymous	true	ok
+Q2	62.0	anonymous	true	ok
+Q2	67.0	anonymous	true	ok
+S1	62.0	anonymous	true	ok
+S1	67.0	anonymous	true	ok
+S2	62.0	anonymous	true	ok
+S2	67.0	anonymous	true	ok
+S5	62.0	anonymous	true	ok
+S5	67.0	anonymous	true	ok
+T1	62.0	anonymous	false	1:9 Unexpected token '.'.
+T1	67.0	anonymous	false	1:9 Unexpected token '.'.
+T2	62.0	anonymous	false	1:10 Unexpected token 'Kid'.
+T2	67.0	anonymous	false	1:10 Unexpected token 'Kid'.
+T3	62.0	anonymous	false	1:8 Unexpected token 'o'.
+T3	67.0	anonymous	false	1:8 Unexpected token 'o'.
+T4	62.0	anonymous	false	1:8 Unexpected token 'o'.
+T4	67.0	anonymous	false	1:8 Unexpected token 'o'.
+T5	62.0	anonymous	false	1:13 Unexpected token '('.
+T5	67.0	anonymous	false	1:13 Unexpected token '('.
+CA	62.0	class	false	deploy fails: 15:13 Missing ';' at 'helper' | 14:14 Variable does not exist:
+CA	67.0	class	false	deploy fails: 15:13 Missing ';' at 'helper' | 14:14 Variable does not exist:
+CB	62.0	class	false	deploy fails: 6:9 Variable does not exist: CrProbe | 7:20 Variable does not exist: CrProbe | 9:9 Variable does not exist: CrRouteBefore | 11:16 Variable does not exist: CrProbe | 2:30 Variable does not exist: CrProbe
+CB	67.0	class	false	deploy fails: 6:9 Variable does not exist: CrProbe | 7:20 Variable does not exist: CrProbe | 9:9 Variable does not exist: CrRouteBefore | 11:16 Variable does not exist: CrProbe | 2:30 Variable does not exist: CrProbe
+D1	62.0	class	false	deploy fails: 4:1 Expecting ')' but was: 'value' | 4:8 Extra ';', at ')'. | 3:30 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD1
+D1	67.0	class	false	deploy fails: 4:1 Expecting ')' but was: 'value' | 4:8 Extra ';', at ')'. | 3:30 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD1
+D2	62.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:28 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD2
+D2	67.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:28 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD2
+D3	62.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:31 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD3
+D3	67.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:31 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD3
+D4	62.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:24 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD4 | 4:1 Unreachable statement
+D4	67.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:24 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD4 | 4:1 Unreachable statement
+D5	62.0	class	false	deploy fails: 4:1 Missing ')' at 'value' | 4:16 Expecting ';' but was: ')' | 3:21 Variable does not exist:
+D5	67.0	class	false	deploy fails: 4:1 Missing ')' at 'value' | 4:16 Expecting ';' but was: ')' | 3:21 Variable does not exist:
+D6	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 3:1 Invalid constructor name: value | 2:38 Variable does not exist:
+D6	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 3:1 Invalid constructor name: value | 2:38 Variable does not exist:
+E1	62.0	class	false	deploy fails: 2:20 Unexpected token '.'. | 2:20 Unexpected token '.'. | 2:21 Invalid type: Kid
+E1	67.0	class	false	deploy fails: 2:20 Unexpected token '.'. | 2:20 Unexpected token '.'. | 2:21 Invalid type: Kid
+E2	62.0	class	false	deploy fails: 2:21 Unexpected token 'Kid'. | 2:21 Unexpected token 'Kid'. | 2:21 Invalid type: Kid
+E2	67.0	class	false	deploy fails: 2:21 Unexpected token 'Kid'. | 2:21 Unexpected token 'Kid'. | 2:21 Invalid type: Kid
+G0	62.0	trigger	true	deploy ok (no component failure; G0 also deployed alone, 1 component)
+G0	67.0	trigger	true	deploy ok (no component failure; G0 also deployed alone, 1 component)
+G1	62.0	trigger	false	deploy fails: 2:1 Variable does not exist: CrProbe
+G1	67.0	trigger	false	deploy fails: 2:1 Variable does not exist: CrProbe
+G2	62.0	trigger	false	deploy fails: 3:1 Invalid type: CrProbe.
+G2	67.0	trigger	false	deploy fails: 3:1 Invalid type: CrProbe.
+G3	62.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G3	67.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G4	62.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G4	67.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G5	62.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G5	67.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+while_header	62.0	anonymous	false	2:1 Missing ')' at 'valueOf'
+while_header	67.0	anonymous	false	2:1 Missing ')' at 'valueOf'
+for_header	62.0	anonymous	false	2:1 Missing ';' at 'valueOf'
+for_header	67.0	anonymous	false	2:1 Missing ';' at 'valueOf'
+switch_header	62.0	anonymous	false	2:1 Expecting '{' but was: 'valueOf'
+switch_header	67.0	anonymous	false	2:1 Expecting '{' but was: 'valueOf'
+parentheses	62.0	anonymous	false	2:1 Expecting ')' but was: 'valueOf'
+parentheses	67.0	anonymous	false	2:1 Expecting ')' but was: 'valueOf'
+index	62.0	anonymous	false	2:1 Expecting ']' but was: 'valueOf'
+index	67.0	anonymous	false	2:1 Expecting ']' but was: 'valueOf'
+list_init	62.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+list_init	67.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+map_init	62.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+map_init	67.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+generic_lead	62.0	anonymous	false	1:5 Unexpected token '<'.
+generic_lead	67.0	anonymous	false	1:5 Unexpected token '<'.
+array_lead	62.0	anonymous	false	1:7 Unexpected token '['.
+array_lead	67.0	anonymous	false	1:7 Unexpected token '['.
+block_type_bound	62.0	anonymous	false	2:1 Missing ';' at 'String'
+block_type_bound	67.0	anonymous	false	2:1 Missing ';' at 'String'
+block_type_free	62.0	anonymous	false	2:9 Missing ';' at 's'
+block_type_free	67.0	anonymous	false	2:9 Missing ';' at 's'
+control	62.0	anonymous	true	ok
+control	67.0	anonymous	true	ok
+super_break	62.0	class	false	deploy fails: 5:13 Missing ';' at 'value' | 4:55 Variable does not exist: | 5:13 Unreachable statement
+super_break	67.0	class	false	deploy fails: 5:13 Missing ';' at 'value' | 4:55 Variable does not exist: | 5:13 Unreachable statement
+custom_namespace_type	62.0	anonymous	false	1:1 Variable does not exist: sample
+custom_namespace_type	67.0	anonymous	false	1:1 Variable does not exist: sample
+custom_namespace_root	62.0	anonymous	false	1:1 Variable does not exist: sample
+custom_namespace_root	67.0	anonymous	false	1:1 Variable does not exist: sample
+custom_control	62.0	anonymous	true	ok
+custom_control	67.0	anonymous	true	ok
+ternary	62.0	anonymous	false	2:1 Missing ':' at 'valueOf'
+ternary	67.0	anonymous	false	2:1 Missing ':' at 'valueOf'
+constructor_argument	62.0	anonymous	false	2:1 Expecting ')' but was: 'valueOf'
+constructor_argument	67.0	anonymous	false	2:1 Expecting ')' but was: 'valueOf'
+set_initializer	62.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+set_initializer	67.0	anonymous	false	2:1 Expecting '}' but was: 'valueOf'
+multisegment_statement	62.0	anonymous	false	2:1 Unexpected token 'valueOf'.
+multisegment_statement	67.0	anonymous	false	2:1 Unexpected token 'valueOf'.
+cast_type	62.0	anonymous	false	2:1 Extra ')', at 'String'.
+cast_type	67.0	anonymous	false	2:1 Extra ')', at 'String'.
+generic_type	62.0	anonymous	false	1:3 Unexpected token 'List'.
+generic_type	67.0	anonymous	false	1:3 Unexpected token 'List'.
+instanceof_type	62.0	anonymous	false	2:1 Extra ';', at 'String'.
+instanceof_type	67.0	anonymous	false	2:1 Extra ';', at 'String'.
+for_update	62.0	anonymous	false	2:1 Missing ')' at 'valueOf'
+for_update	67.0	anonymous	false	2:1 Missing ')' at 'valueOf'
+extra_control	62.0	anonymous	true	ok
+extra_control	67.0	anonymous	true	ok
+signature	62.0	class	false	deploy fails: 2:8 Extra ')', at 's'. | 2:1 Identifier name is reserved: String | 2:1 Invalid type: System.
+signature	67.0	class	false	deploy fails: 2:8 Extra ')', at 's'. | 2:1 Identifier name is reserved: String | 2:1 Invalid type: System.
+extends	62.0	class	false	deploy fails: 2:1 Extra '{', at 'Exception'. | 1:37 Invalid type: System. | ?:? @Override specified for non-overriding method: String RouteException.getTypeName()
+extends	67.0	class	false	deploy fails: 2:1 Extra '{', at 'Exception'. | 1:37 Invalid type: System. | ?:? @Override specified for non-overriding method: String RouteException.getTypeName()
+implements	62.0	class	false	deploy fails: 2:1 Extra '{', at 'Queueable'. | 1:35 Invalid type: System.
+implements	67.0	class	false	deploy fails: 2:1 Extra '{', at 'Queueable'. | 1:35 Invalid type: System.
+property	62.0	class	false	deploy fails: 2:1 Missing ';' at 'valueOf' | 1:64 Variable does not exist: | 2:1 Method does not exist or incorrect signature: void valueOf(Integer) from the type RouteProp | 2:1 Unreachable statement
+property	67.0	class	false	deploy fails: 2:1 Missing ';' at 'valueOf' | 1:64 Variable does not exist: | 2:1 Method does not exist or incorrect signature: void valueOf(Integer) from the type RouteProp | 2:1 Unreachable statement
+static_block	62.0	class	false	deploy fails: 2:1 Missing ';' at 'valueOf' | 1:44 Variable does not exist: | 2:1 Method does not exist or incorrect signature: void valueOf(Integer) from the type RouteStatic
+static_block	67.0	class	false	deploy fails: 2:1 Missing ';' at 'valueOf' | 1:44 Variable does not exist: | 2:1 Method does not exist or incorrect signature: void valueOf(Integer) from the type RouteStatic
+trigger_bound	62.0	trigger	false	deploy fails: 2:1 Extra ')', at 'old'.
+trigger_bound	67.0	trigger	false	deploy fails: 2:1 Extra ')', at 'old'.
+trigger_free	62.0	trigger	false	deploy fails: 1:73 Expecting ')' but was: 'Trigger'
+trigger_free	67.0	trigger	false	deploy fails: 1:73 Expecting ')' but was: 'Trigger'
+free_generic_type	62.0	anonymous	false	1:3 Unexpected token 'List'.
+free_generic_type	67.0	anonymous	false	1:3 Unexpected token 'List'.
+free_cast_type	62.0	anonymous	false	2:10 Extra ';', at 'x'.
+free_cast_type	67.0	anonymous	false	2:10 Extra ';', at 'x'.
+free_instanceof_type	62.0	anonymous	false	2:1 Expecting ';' but was: '.'
+free_instanceof_type	67.0	anonymous	false	2:1 Expecting ';' but was: '.'
+free_control	62.0	anonymous	true	ok
+free_control	67.0	anonymous	true	ok
+free_signature	62.0	class	false	deploy fails: 2:1 Unexpected token '.'. | 2:1 Invalid character in identifier: . | 2:1 Invalid type: System | 1:41 Method must have a body
+free_signature	67.0	class	false	deploy fails: 2:1 Unexpected token '.'. | 2:1 Invalid character in identifier: . | 2:1 Invalid type: System | 1:41 Method must have a body
+free_extends	62.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:41 Invalid type: System | ?:? @Override specified for non-overriding method: String RouteFreeException.getTypeName()
+free_extends	67.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:41 Invalid type: System | ?:? @Override specified for non-overriding method: String RouteFreeException.getTypeName()
+free_implements	62.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:39 Invalid type: System
+free_implements	67.0	class	false	deploy fails: 2:1 Expecting '{' but was: '.' | 1:39 Invalid type: System
+bound_cr_comment	62.0	anonymous	false	2:1 Unexpected token 'debug'.
+bound_cr_comment	67.0	anonymous	false	2:1 Unexpected token 'debug'.
+free_cr_comment	62.0	anonymous	false	1:1 Variable does not exist: String
+free_cr_comment	67.0	anonymous	false	1:1 Variable does not exist: String
+trivia_control	62.0	anonymous	true	ok
+trivia_control	67.0	anonymous	true	ok
+bound_vertical_tab	62.0	anonymous	false	1:8 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
+bound_vertical_tab	67.0	anonymous	false	1:8 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
+free_vertical_tab	62.0	anonymous	false	1:7 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
+free_vertical_tab	67.0	anonymous	false	1:7 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.

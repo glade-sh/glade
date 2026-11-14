@@ -1,0 +1,2 @@
+new CrProbe().child.
+call();

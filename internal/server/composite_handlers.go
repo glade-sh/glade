@@ -271,7 +271,12 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request, 
 	}
 	analysis := sema.AnalyzeAnonymous(index, source, apiVersion)
 	if len(analysis.Diagnostics) > 0 {
-		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, analysis.Diagnostics[0].Message, nil))
+		failure := executeAnonymousFailure(false, analysis.Diagnostics[0].Message, nil)
+		if analysis.ReceiverTriviaDiagnostic && analysis.Diagnostics[0].Range != nil {
+			failure["line"] = analysis.Diagnostics[0].Range.Start.Line
+			failure["column"] = analysis.Diagnostics[0].Range.Start.Column
+		}
+		writeJSON(w, http.StatusOK, failure)
 		return
 	}
 	approved := sema.ApprovedAnonymousPrefixStatements(index, source, apiVersion)
