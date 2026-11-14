@@ -149,7 +149,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *d
 		case "dowhile":
 			// The capture covers an equality comparison following the call.
 			for j := dot + 2; j < len(ts) && ts[j].text != ";"; j++ {
-				if ts[j].text == "==" {
+				if ts[j].text == "=" && j+1 < len(ts) && ts[j+1].text == "=" && ts[j].end == ts[j+1].start {
 					return report(member, "Expecting ')' but was: '"+member.text+"'")
 				}
 			}
