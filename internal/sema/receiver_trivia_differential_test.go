@@ -2,8 +2,11 @@ package sema
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -24,5 +27,23 @@ func TestReceiverUncapturedTypeNeighbors(t *testing.T) {
 				t.Errorf("diagnostics %s, want origin/main %s", got, tc.want)
 			}
 		})
+	}
+}
+
+// A static field that shares a name with a nested type is still a value on
+// the left of a free dot. S1 covers static-field values (grammar/org.tsv:32-33).
+func TestReceiverStaticFieldShadowsType(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ShadowProbe.cls")
+	writeSemaFile(t, path, "public class ShadowProbe { public enum Level { LOW } public static Level level = null; }")
+	for _, api := range []string{"62.0", "67.0"} {
+		index := typesys.Build(project.Project{Root: root, SourceAPIVersion: api, ApexFiles: []string{path}}, schema.Schema{})
+		got, err := json.Marshal(AnalyzeAnonymous(index, "String s = ShadowProbe.level\n.name();", api).Diagnostics)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != "null" {
+			t.Errorf("api %s: diagnostics %s, want origin/main null", api, got)
+		}
 	}
 }
