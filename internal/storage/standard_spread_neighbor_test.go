@@ -41,7 +41,17 @@ func TestPlainDeveloperUncapturedNeighborMatchesBaseline(t *testing.T) {
 
 func TestPlainDeveloperUncapturedFeatureRetainsInventory(t *testing.T) {
 	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
-	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
+	object, ok := org.Objects["AIFeatureExtractor"]
+	if !ok {
 		t.Fatal("uncaptured feature shape removed baseline object")
+	}
+	data, err := json.Marshal(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Serialized object from origin/main under the same uncaptured feature shape.
+	const baseline = "aaa91bc763df14a858f38c8f52457661ece5bea9d1f3acf0e9ddf37797d578d3"
+	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
+		t.Fatalf("object digest %s, want origin/main %s", got, baseline)
 	}
 }
