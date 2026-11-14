@@ -49,6 +49,28 @@ func BenchmarkPlainDeveloperEagerSpread(b *testing.B) {
 	}
 }
 
+func TestPlainDeveloperSpreadPreservesProjectObject(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObject(&org, "AIFeatureExtractor")
+	object := org.Objects["AIFeatureExtractor"]
+	object.Definition.Fields["ProjectField__c"] = Field{APIName: "ProjectField__c", Type: FieldString}
+	object.Records[ID("a00000000000001")] = Record{Fields: map[string]Value{"ProjectField__c": StringValue("kept")}}
+	org.Objects["AIFeatureExtractor"] = object
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	object, ok := org.Objects["AIFeatureExtractor"]
+	if !ok || len(object.Records) != 1 || object.Definition.Fields["ProjectField__c"].APIName == "" {
+		t.Fatal("shape removed project metadata or records")
+	}
+}
+
+func TestPlainDeveloperSpreadShapeTransition(t *testing.T) {
+	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	ApplyProjectOrgShape(&org, []string{project.UnspecifiedStandardFieldShape})
+	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
+		t.Fatal("leaving the plain shape did not restore the eager spread")
+	}
+}
+
 func sourceSpreadEagerOrg(features []string) OrgState {
 	org := NewOrgState()
 	org.OrgID = DefaultOrgID
