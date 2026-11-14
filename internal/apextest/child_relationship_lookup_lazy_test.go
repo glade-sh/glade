@@ -106,7 +106,6 @@ func TestChildRelationshipParentNameKeyMatchesResolveObjectName(t *testing.T) {
 // A source that names a child relationship whose child object is not in the
 // lazy seed must not gain an inferred parent field the eager spread lacks.
 func TestLazyStandardSpreadUninstalledChildRelationshipNameMatchesEagerSpread(t *testing.T) {
-	t.Skip("existing lazy/eager parity gap: uninstalled child relationships can be inferred as fields")
 	const class = `@IsTest
 private class ChildRelationshipNameTest {
 	@IsTest static void namesUninstalledChildRelationships() {
