@@ -25,6 +25,10 @@ func TestUnreflectedSymbolsAndHover(t *testing.T) {
 	if got := h.Hover(HoverParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 27}}); got != nil {
 		t.Errorf("stale hover: %#v", got)
 	}
+	h.analysisResult()
+	if got := h.HoverForName("First", nil); got != nil {
+		t.Errorf("stale named hover: %#v", got)
+	}
 	if got := h.Definition(DefinitionParams{TextDocument: TextDocumentIdentifier{URI: uri}, Position: Position{Character: 37}}); len(got) != 0 {
 		t.Errorf("stale definition: %#v", got)
 	}
