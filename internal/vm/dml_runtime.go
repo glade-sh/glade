@@ -2579,6 +2579,16 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		}
 		return failures, nil
 	}
+	// The captured assignment remains effective for this access check when a
+	// later setup DML attempt fails without changing the org.
+	previousAdminSet := vm.mixedDML.newAdminPermissionSetID
+	if previousAdminSet != "" && op == "insert" && value.Kind == ValueObject && len(records) == 1 && strings.EqualFold(records[0].Object, "PermissionSet") && len(explicitSObjectFieldNamesInInsertionOrder(value)) == 0 {
+		defer func() {
+			if outErr != nil || !hasDMLSuccess(out) {
+				vm.mixedDML.newAdminPermissionSetID = previousAdminSet
+			}
+		}()
+	}
 	if err := vm.checkMixedDML(op, records); err != nil {
 		if allOrNone {
 			return nil, err
