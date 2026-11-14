@@ -33,15 +33,11 @@ func TestStandardCustomFieldScopedNativeConformance(t *testing.T) {
 // API 67.0 fails every insert and update with the statement DmlException or a
 // failed SaveResult, and a dynamic SELECT reports no such column.
 //
-// Only the API 62.0 rows are asserted. The API 67.0 rows stay parked: existing
-// native routes (aggregate_namespace_projection, flow_partial_rows) write and
-// query ungranted Account custom fields as the default administrator at 67.0
-// and pass, and no fixture fact separates them from this capture. Rows for
-// Probe_A__c (granted by an unassigned deployed set) and the rows whose
-// in-test PermissionSetAssignment raises MIXED_DML_OPERATION are parked too.
+// The unassigned-administrator rows cover both fields at API 67.0. Rows
+// involving an in-test PermissionSetAssignment remain outside this test.
 func TestStandardCustomFieldAdminNativeConformance(t *testing.T) {
 	runStandardCustomFieldPolicyRows(t, "standard_custom_field_admin", "FlsTest", 48, func(api, method, want string) bool {
-		return api == "62.0" && (strings.HasPrefix(method, "aB_") || strings.HasPrefix(method, "pB_") && !strings.Contains(want, "MIXED_DML_OPERATION"))
+		return api == "67.0" && strings.HasPrefix(method, "a") || api == "62.0" && (strings.HasPrefix(method, "aB_") || strings.HasPrefix(method, "pB_") && !strings.Contains(want, "MIXED_DML_OPERATION"))
 	})
 }
 
