@@ -143,6 +143,10 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 					var digest [sha256.Size]byte
 					var err error
 					if q.Inputs() == nil {
+						if trusted, ok := oldTrustedVisualforceDigest(input); ok {
+							generation.inputs[input] = typesys.ApexMetadataInput{Present: true, Digest: trusted}
+							continue
+						}
 						recent, captured, captureErr := captureRecentVisualforceInput(input, recentVisualforceBudget-generation.recentVisualforceBytes)
 						if captured {
 							err = captureErr

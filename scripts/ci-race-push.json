@@ -304,6 +304,7 @@
       "TestNullParentGroupNativeConformance",
       "TestNullStringObservationsConformance",
       "TestNumberTokenProvenanceOrgConformance",
+      "TestOldTrustedVisualforceDigestRequiresOldMatchingStamp",
       "TestOverloadApplicabilityOrgConformance",
       "TestOverloadApplicabilityPreservesNativeAmbiguity",
       "TestOverloadApplicabilityPreservesNativeControls",

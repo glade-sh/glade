@@ -22,7 +22,7 @@ func TestOldTrustedVisualforceDigestRequiresOldMatchingStamp(t *testing.T) {
 	if got, ok := oldTrustedVisualforceDigest(path); !ok || got != want {
 		t.Fatalf("old input: digest=%x hit=%t", got, ok)
 	}
-	fileDigestNow = time.Now
+	fileDigestNow = func() time.Time { return time.Unix(0, 0) }
 	if _, ok := oldTrustedVisualforceDigest(path); ok {
 		t.Fatal("recent input used a timestamp-only digest")
 	}

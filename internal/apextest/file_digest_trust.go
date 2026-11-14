@@ -63,6 +63,22 @@ func trustedCurrentFileDigest(path string) ([sha256.Size]byte, bool) {
 	return [sha256.Size]byte{}, false
 }
 
+// oldTrustedVisualforceDigest combines the old-file check with the existing
+// trusted-digest lookup. Recent files still require byte comparison or hash.
+func oldTrustedVisualforceDigest(path string) ([sha256.Size]byte, bool) {
+	fileDigestTrustMu.Lock()
+	entry, hit := fileDigestTrust[path]
+	fileDigestTrustMu.Unlock()
+	if !hit {
+		return [sha256.Size]byte{}, false
+	}
+	stamp, ok := filestamp.Stat(path)
+	if !ok || stamp != entry.stamp || !stamp.OlderThan(fileDigestNow(), fileDigestTrustAge) {
+		return [sha256.Size]byte{}, false
+	}
+	return entry.digest, true
+}
+
 // currentFileDigest returns the SHA-256 of the file's current content. A
 // matching trusted stamp avoids rereading; all other cases hash the file.
 func currentFileDigest(path string) ([sha256.Size]byte, error) {
