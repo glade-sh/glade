@@ -32,6 +32,12 @@ func captureRecentVisualforceInput(path string, remaining int64) (recentVisualfo
 	if !ok || stamp.OlderThan(fileDigestNow(), fileDigestTrustAge) || stamp.Size < 0 || stamp.Size > recentVisualforceFileLimit || stamp.Size > remaining {
 		return recentVisualforceInput{}, false, nil
 	}
+	fileDigestTrustMu.Lock()
+	previous, cached := recentVisualforceShared[path]
+	fileDigestTrustMu.Unlock()
+	if cached && previous.matches(path) {
+		return previous, true, nil
+	}
 	f, err := os.Open(path) // #nosec G304 -- a discovered Visualforce validation input.
 	if err != nil {
 		return recentVisualforceInput{}, true, err
@@ -53,7 +59,28 @@ func captureRecentVisualforceInput(path string, remaining int64) (recentVisualfo
 	if !afterOK || before != after || !sameVisualforcePathStamp(path, after) || int64(len(data)) != stamp.Size {
 		return recentVisualforceInput{}, true, sourceSnapshotMismatch(path, [sha256.Size]byte{}, nil, errors.New("input changed while reading"))
 	}
-	return recentVisualforceInput{content: data, digest: sha256.Sum256(data)}, true, nil
+	input := recentVisualforceInput{content: data, digest: sha256.Sum256(data)}
+	rememberRecentVisualforceInput(path, input)
+	return input, true, nil
+}
+
+// Shared snapshots are immutable. A later generation compares the current
+// bytes before reuse; timestamps alone never validate a recent input.
+func rememberRecentVisualforceInput(path string, input recentVisualforceInput) {
+	fileDigestTrustMu.Lock()
+	defer fileDigestTrustMu.Unlock()
+	if old, ok := recentVisualforceShared[path]; ok {
+		recentVisualforceSharedBytes -= int64(len(old.content))
+		delete(recentVisualforceShared, path)
+	}
+	if len(recentVisualforceShared) >= 4096 || recentVisualforceSharedBytes+int64(len(input.content)) > recentVisualforceBudget {
+		clear(recentVisualforceShared)
+		recentVisualforceSharedBytes = 0
+	}
+	if int64(len(input.content)) <= recentVisualforceBudget {
+		recentVisualforceShared[path] = input
+		recentVisualforceSharedBytes += int64(len(input.content))
+	}
 }
 
 // matches reads all current bytes and verifies the open file and its path still
