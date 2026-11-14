@@ -54,3 +54,25 @@ func TestPhoneKeypadRuleNativeConformance(t *testing.T) {
 		}
 	}
 }
+
+// This uncaptured neighbor had a score of 60 and did not match on origin/main.
+// Keeping the raw score matters to compound custom matching rules.
+func TestPhoneKeypadUncapturedNeighborKeepsBase(t *testing.T) {
+	if ok, score := fuzzyPhone("1-800-FLOWERS", "800-356-9378", false); ok || score != 60 {
+		t.Fatalf("got %v, %v; base false, 60", ok, score)
+	}
+	if score := FuzzyRawConfidence("phone", "1-800-FLOWERS", "800-356-9378", false); score != 60 {
+		t.Fatalf("raw got %v; base 60", score)
+	}
+}
+
+func BenchmarkPhoneKeypadPanel(b *testing.B) {
+	values := []string{"1-800-FLOWERS", "800-356-9377", "1 (800) 356-9377", "+44 20 7946 0958", "(628) 555-0142 x12", "628-555-0142", "62855501420"}
+	for i := 0; i < b.N; i++ {
+		for _, a := range values {
+			for _, c := range values {
+				fuzzyPhone(a, c, false)
+			}
+		}
+	}
+}
