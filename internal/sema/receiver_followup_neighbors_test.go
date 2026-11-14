@@ -86,6 +86,10 @@ func TestReceiverControlCallNeighbors(t *testing.T) {
 		{"dowhile_unresolved", "do {} while (String.\nvalueOf() == 'ok');", `[{"severity":"error","code":"GLADESEMA023","message":"Method does not exist or incorrect signature: void valueOf() from the type String","range":{"start":{"line":1,"column":1},"end":{"line":1,"column":8,"offset":7}},"nativeMessage":"Method does not exist or incorrect signature: void valueOf() from the type String"}]`},
 		{"else_if_unresolved", "if (true) {} else if (String.\nvalueOf() == 'ok') {}", `[{"severity":"error","code":"GLADESEMA023","message":"Method does not exist or incorrect signature: void valueOf() from the type String","range":{"start":{"line":1,"column":19,"offset":18},"end":{"line":1,"column":26,"offset":25}},"nativeMessage":"Method does not exist or incorrect signature: void valueOf() from the type String"}]`},
 		{"for_init_unresolved", "for (String s = String.\nvalueOf(); false; ) {}", `[{"severity":"error","code":"GLADESEMA023","message":"Method does not exist or incorrect signature: void valueOf() from the type String","range":{"start":{"line":1,"column":6,"offset":5},"end":{"line":1,"column":13,"offset":12}},"nativeMessage":"Method does not exist or incorrect signature: void valueOf() from the type String"}]`},
+		{"for_init_return_type", "for (Date d = Date.\ntoday(); false; ) {}", `null`},
+		{"when_return_type", "switch on 'a' { when Date.\ntoday() { } }", `[{"severity":"error","code":"GLADESEMA030","message":"method \"execute\" has invalid statement: switch branch must be a literal or enum constant","range":{"start":{"line":1,"column":17,"offset":16},"end":{"line":1,"column":18,"offset":17}}}]`},
+		{"else_if_return_type", "if (true) {} else if (Date.\ntoday() == 'ok') {}", `null`},
+		{"foreach_return_type", "for (String s : Date.\ntoday().format(' ')) {}", `[{"severity":"error","code":"GLADESEMA024","message":"method \"execute\" enhanced-for iterates non-collection type String","range":{"start":{"line":1,"column":1},"end":{"line":1,"column":7,"offset":6}}}]`},
 	} {
 		for _, api := range []string{"62.0", "67.0"} {
 			t.Run(tc.name+"/"+api, func(t *testing.T) {
