@@ -610,13 +610,20 @@ func TestConcurrentDAPLoadsDoNotInterfere(t *testing.T) {
 		}
 	}()
 	results := make([]dapDriftResult, 3)
-	var loads sync.WaitGroup
+	var loads, sameRoot sync.WaitGroup
+	sameRoot.Add(2)
 	for i, root := range []string{first, first, second} {
 		loads.Add(1)
 		go func(i int, root string) {
 			defer loads.Done()
 			attempts := 0
-			_, _, _, _, err := loadDAPStartupStateWithIndexAndSeams(context.Background(), root, dapLoadSeams{beforeLoad: func(attempt int) { attempts = attempt }})
+			_, _, _, _, err := loadDAPStartupStateWithIndexAndSeams(context.Background(), root, dapLoadSeams{beforeLoad: func(attempt int) {
+				attempts = attempt
+				if root == first && attempt == 1 {
+					sameRoot.Done()
+					sameRoot.Wait()
+				}
+			}})
 			results[i] = dapDriftResult{attempts: attempts, err: err}
 		}(i, root)
 	}
