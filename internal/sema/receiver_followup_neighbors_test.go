@@ -12,6 +12,26 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+// The serialized results are the complete origin/main diagnostics for these
+// uncaptured expression shapes.
+func TestReceiverFollowupExpressionNeighbors(t *testing.T) {
+	for _, source := range []string{
+		"for (Integer i = Integer.\nvalueOf('1') + 1; i < 2; i++) {}",
+		"do {} while (Integer.\nvalueOf('1') > 0 == true);",
+		"if (true) {} else if (Integer.\nvalueOf('1') > 0) {}",
+	} {
+		for _, api := range []string{"62.0", "67.0"} {
+			got, err := json.Marshal(AnalyzeAnonymous(typesys.Index{}, source, api).Diagnostics)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(got) != "null" {
+				t.Errorf("api %s source %q: got %s, origin/main null", api, source, got)
+			}
+		}
+	}
+}
+
 // These uncaptured neighbors pin complete diagnostics from origin/main.
 func TestReceiverFollowupUncapturedNeighbors(t *testing.T) {
 	for _, tc := range []struct{ source, want string }{
