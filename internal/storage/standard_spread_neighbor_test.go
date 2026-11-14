@@ -38,3 +38,10 @@ func TestPlainDeveloperUncapturedNeighborMatchesBaseline(t *testing.T) {
 		t.Fatalf("neighbor digest %s, want origin/main %s", got, baseline)
 	}
 }
+
+func TestPlainDeveloperUncapturedFeatureRetainsInventory(t *testing.T) {
+	org := sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+	if _, ok := org.Objects["AIFeatureExtractor"]; !ok {
+		t.Fatal("uncaptured feature shape removed baseline object")
+	}
+}
