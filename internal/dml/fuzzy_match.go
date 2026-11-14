@@ -296,24 +296,41 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 		return true, 100
 	}
-	return lastNameKeyboard(x, y)
+	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
+		return matched, confidence
+	}
+	score, ok := keyboardDistance(x, y)
+	return ok && score >= 90, averageWith100(score)
 }
 
 var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")
 
-// lastNameKeyboard is the Keyboard Distance step of the Last Name method on
-// two folded names whose apostrophes are removed.
+// lastNameKeyboard is the Keyboard Distance step of the standard rules' Last
+// Name on two folded names whose apostrophes are removed. It keeps the costs
+// the standard rows were fitted with (keyboardSimilarity); the custom Last
+// Name method uses keyboardDistance.
 func lastNameKeyboard(x, y string) (bool, float64) {
-	if len(x) == 8 && standardIsTerminalSwap(x, y) {
-		a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
-		// Only the captured five-column geometry overrides ordinary membership.
-		if abs(a[0]-b[0]) <= 1 && abs(a[1]-b[1]) == 5 {
-			ordinary, ok := keyboardSimilarity(x, y)
-			return standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
-		}
+	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
+		return matched, confidence
 	}
 	score, ok := keyboardSimilarity(x, y)
 	return ok && score >= 90, averageWith100(score)
+}
+
+// lastNameTerminalSwap decides two eight-letter names whose last two letters
+// are swapped, for the captured five-column geometry only.
+func lastNameTerminalSwap(x, y string) (matched bool, confidence float64, swap bool) {
+	if len(x) != 8 || !standardIsTerminalSwap(x, y) {
+		return false, 0, false
+	}
+	a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
+	// Only the captured five-column geometry overrides ordinary membership.
+	if abs(a[0]-b[0]) > 1 || abs(a[1]-b[1]) != 5 {
+		return false, 0, false
+	}
+	ordinary, ok := keyboardSimilarity(x, y)
+	matched, confidence = standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
+	return matched, confidence, true
 }
 
 // lastNameCode is the whole-name match key of a folded last name, cached by
