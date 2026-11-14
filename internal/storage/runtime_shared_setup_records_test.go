@@ -263,3 +263,20 @@ func TestIsRuntimeSharedSetupObjectMatchesLowerCase(t *testing.T) {
 		t.Fatalf("isRuntimeSharedSetupObject allocated %.1f times per run", allocs)
 	}
 }
+
+// Re-seeding a clone must not change its template or sibling.
+func TestCloneRuntimeFrozenSharedSetupReseedIsolation(t *testing.T) {
+	template := sharedSetupOrg(t, 1)
+	clone := template.CloneRuntimeFrozenShared()
+	sibling := template.CloneRuntimeFrozenShared()
+	id := ID("Use000000000000AAA")
+	putSeedRecord(&clone, "UserLicense", Record{ID: id, Object: "UserLicense", Fields: map[string]Value{"Missing": StringValue("seeded")}})
+	if got := clone.Objects["UserLicense"].Records[id].Fields["Missing"].String; got != "seeded" {
+		t.Fatalf("clone field = %q", got)
+	}
+	for name, org := range map[string]OrgState{"template": template, "sibling": sibling} {
+		if _, ok := org.Objects["UserLicense"].Records[id].Fields["Missing"]; ok {
+			t.Fatalf("seed write reached %s", name)
+		}
+	}
+}
