@@ -3,6 +3,7 @@ package lsp
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -67,5 +68,42 @@ func TestUnknownDocumentGetsParserDiagnosticsOnly(t *testing.T) {
 	}
 	if got := diagnosticsCount(t, overlayChange(t, h, uri, "public class Draft {")); got == 0 {
 		t.Fatal("missing parser diagnostic")
+	}
+}
+
+func TestCappedDocumentFallbackTracksEditsAndClose(t *testing.T) {
+	original := "public class First {}"
+	h, uris := overlayTestHandler(t, map[string]string{"First": original})
+	t.Cleanup(func() { h.parser.Close() })
+	uri := uris["First"]
+	overlayOpen(h, uri, original)
+	big := original + "\n//" + strings.Repeat("x", maxOverlayDocumentBytes)
+	if got := diagnosticsCount(t, overlayChange(t, h, uri, big)); got != 0 {
+		t.Fatalf("capped diagnostics = %d", got)
+	}
+	h.docMu.RLock()
+	doc := h.documents[uri]
+	h.docMu.RUnlock()
+	if !h.fallback.Load().parserOnlyDocument(doc) {
+		t.Fatal("missing capped fallback")
+	}
+	other := doc
+	other.Digest[0] ^= 1
+	if h.fallback.Load().parserOnlyDocument(other) {
+		t.Fatal("fallback reused after text change")
+	}
+	other = doc
+	other.Path += ".other"
+	if h.fallback.Load().parserOnlyDocument(other) {
+		t.Fatal("fallback reused for another path")
+	}
+	overlayChange(t, h, uri, "public class First { void added() {} }")
+	if h.fallback.Load() != nil {
+		t.Fatal("fallback survived an eligible edit")
+	}
+	overlayChange(t, h, uri, big)
+	h.DidClose(DidCloseTextDocumentParams{TextDocument: TextDocumentIdentifier{URI: uri}})
+	if h.fallback.Load() != nil {
+		t.Fatal("fallback survived close")
 	}
 }
