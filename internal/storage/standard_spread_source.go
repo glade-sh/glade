@@ -395,6 +395,30 @@ func spreadObjectOwed(org *OrgState, name string) (string, bool) {
 	return canonical, true
 }
 
+// StandardSpreadObjectDefinition returns the definition the org's complete
+// spread holds for a catalog object, whether or not the object is installed,
+// and installs nothing. It reports false when the org is not source backed,
+// its shape removes the object, or the object has no shared template (the
+// spread builds those in place). The definition is shared: callers read it
+// and never write to it.
+func StandardSpreadObjectDefinition(org *OrgState, name string) (ObjectDefinition, bool) {
+	if org == nil || org.StandardSpread == "" {
+		return ObjectDefinition{}, false
+	}
+	canonical, ok := ResolveKnownStandardObjectName(name)
+	if !ok || !standardSpreadIncludes(canonical) {
+		return ObjectDefinition{}, false
+	}
+	if org.StandardSpread == standardSpreadShaped && !org.AllowsStandardObject(canonical) {
+		return ObjectDefinition{}, false
+	}
+	template, ok := spreadTemplate(org, canonical)
+	if !ok {
+		return ObjectDefinition{}, false
+	}
+	return template.Definition, true
+}
+
 // SpreadOwedObjectNames lists, in name order, the canonical name of every
 // catalog object a lazy org still owes: what MaterializeStandardObjectSpread
 // would add. With the installed names it is the object set of the completed
