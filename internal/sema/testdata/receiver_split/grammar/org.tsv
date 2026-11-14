@@ -1,0 +1,79 @@
+id	api	route	compiled	outcome
+F1	62.0	anonymous	false	2:8 Unexpected token 's'.
+F1	67.0	anonymous	false	2:8 Unexpected token 's'.
+F2	62.0	anonymous	false	2:1 Invalid type: x.
+F2	67.0	anonymous	false	2:1 Invalid type: x.
+L1	62.0	anonymous	true	ok
+L1	67.0	anonymous	true	ok
+L2	62.0	anonymous	false	1:14 Variable does not exist: CrProbe
+L2	67.0	anonymous	false	1:14 Variable does not exist: CrProbe
+M1	62.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+M1	67.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+M2	62.0	anonymous	false	2:1 Missing ';' at 'value'
+M2	67.0	anonymous	false	2:1 Missing ';' at 'value'
+M3	62.0	anonymous	false	3:1 Missing ';' at 'value'
+M3	67.0	anonymous	false	3:1 Missing ';' at 'value'
+M4	62.0	anonymous	false	1:26 Missing ';' at 'value'
+M4	67.0	anonymous	false	1:26 Missing ';' at 'value'
+M5	62.0	anonymous	false	3:1 Invalid type: CrProbe.
+M5	67.0	anonymous	false	3:1 Invalid type: CrProbe.
+M6	62.0	anonymous	false	2:1 Variable does not exist: CrProbe
+M6	67.0	anonymous	false	2:1 Variable does not exist: CrProbe
+M7	62.0	anonymous	false	2:1 Missing ')' at 'value'
+M7	67.0	anonymous	false	2:1 Missing ')' at 'value'
+N1	62.0	anonymous	false	1:1 Unexpected token 'new'.
+N1	67.0	anonymous	false	1:1 Unexpected token 'new'.
+P1	62.0	anonymous	true	ok
+P1	67.0	anonymous	true	ok
+Q1	62.0	anonymous	true	ok
+Q1	67.0	anonymous	true	ok
+Q2	62.0	anonymous	true	ok
+Q2	67.0	anonymous	true	ok
+S1	62.0	anonymous	true	ok
+S1	67.0	anonymous	true	ok
+S2	62.0	anonymous	true	ok
+S2	67.0	anonymous	true	ok
+S5	62.0	anonymous	true	ok
+S5	67.0	anonymous	true	ok
+T1	62.0	anonymous	false	1:9 Unexpected token '.'.
+T1	67.0	anonymous	false	1:9 Unexpected token '.'.
+T2	62.0	anonymous	false	1:10 Unexpected token 'Kid'.
+T2	67.0	anonymous	false	1:10 Unexpected token 'Kid'.
+T3	62.0	anonymous	false	1:8 Unexpected token 'o'.
+T3	67.0	anonymous	false	1:8 Unexpected token 'o'.
+T4	62.0	anonymous	false	1:8 Unexpected token 'o'.
+T4	67.0	anonymous	false	1:8 Unexpected token 'o'.
+T5	62.0	anonymous	false	1:13 Unexpected token '('.
+T5	67.0	anonymous	false	1:13 Unexpected token '('.
+CA	62.0	class	false	deploy fails: 15:13 Missing ';' at 'helper' | 14:14 Variable does not exist:
+CA	67.0	class	false	deploy fails: 15:13 Missing ';' at 'helper' | 14:14 Variable does not exist:
+CB	62.0	class	false	deploy fails: 6:9 Variable does not exist: CrProbe | 7:20 Variable does not exist: CrProbe | 9:9 Variable does not exist: CrRouteBefore | 11:16 Variable does not exist: CrProbe | 2:30 Variable does not exist: CrProbe
+CB	67.0	class	false	deploy fails: 6:9 Variable does not exist: CrProbe | 7:20 Variable does not exist: CrProbe | 9:9 Variable does not exist: CrRouteBefore | 11:16 Variable does not exist: CrProbe | 2:30 Variable does not exist: CrProbe
+D1	62.0	class	false	deploy fails: 4:1 Expecting ')' but was: 'value' | 4:8 Extra ';', at ')'. | 3:30 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD1
+D1	67.0	class	false	deploy fails: 4:1 Expecting ')' but was: 'value' | 4:8 Extra ';', at ')'. | 3:30 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD1
+D2	62.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:28 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD2
+D2	67.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:28 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD2
+D3	62.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:31 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD3
+D3	67.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:31 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD3
+D4	62.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:24 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD4 | 4:1 Unreachable statement
+D4	67.0	class	false	deploy fails: 4:1 Missing ';' at 'value' | 3:24 Variable does not exist: | 4:1 Method does not exist or incorrect signature: void value() from the type CrRouteD4 | 4:1 Unreachable statement
+D5	62.0	class	false	deploy fails: 4:1 Missing ')' at 'value' | 4:16 Expecting ';' but was: ')' | 3:21 Variable does not exist:
+D5	67.0	class	false	deploy fails: 4:1 Missing ')' at 'value' | 4:16 Expecting ';' but was: ')' | 3:21 Variable does not exist:
+D6	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 3:1 Invalid constructor name: value | 2:38 Variable does not exist:
+D6	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 3:1 Invalid constructor name: value | 2:38 Variable does not exist:
+E1	62.0	class	false	deploy fails: 2:20 Unexpected token '.'. | 2:20 Unexpected token '.'. | 2:21 Invalid type: Kid
+E1	67.0	class	false	deploy fails: 2:20 Unexpected token '.'. | 2:20 Unexpected token '.'. | 2:21 Invalid type: Kid
+E2	62.0	class	false	deploy fails: 2:21 Unexpected token 'Kid'. | 2:21 Unexpected token 'Kid'. | 2:21 Invalid type: Kid
+E2	67.0	class	false	deploy fails: 2:21 Unexpected token 'Kid'. | 2:21 Unexpected token 'Kid'. | 2:21 Invalid type: Kid
+G0	62.0	trigger	true	deploy ok (no component failure; G0 also deployed alone, 1 component)
+G0	67.0	trigger	true	deploy ok (no component failure; G0 also deployed alone, 1 component)
+G1	62.0	trigger	false	deploy fails: 2:1 Variable does not exist: CrProbe
+G1	67.0	trigger	false	deploy fails: 2:1 Variable does not exist: CrProbe
+G2	62.0	trigger	false	deploy fails: 3:1 Invalid type: CrProbe.
+G2	67.0	trigger	false	deploy fails: 3:1 Invalid type: CrProbe.
+G3	62.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G3	67.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G4	62.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G4	67.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G5	62.0	trigger	false	deploy fails: 2:13 Unexpected token '('.
+G5	67.0	trigger	false	deploy fails: 2:13 Unexpected token '('.

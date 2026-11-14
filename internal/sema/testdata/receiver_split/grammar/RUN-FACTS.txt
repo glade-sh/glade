@@ -1,0 +1,13 @@
+RUN-FACTS
+capture: ROAD-459 chain-recv grammar, plan CHAINRECV-CAPTURE-PLAN-20261113
+started: 2026-11-14T03:40:12Z
+finished: 2026-11-14T03:51:52Z
+apis: 62.0 67.0 (no 62 vs 67 difference in any case)
+sf: @salesforce/cli/2.156.8
+org: fresh Developer-edition scratch org (30 days) on a campaign Dev Hub; deleted and verified gone after the run
+cases: 23 anonymous + 10 class + 6 trigger = 39 core, x2 APIs = 78 rows; optional namespaced X1/X2 not run (no namespaced scratch org easy to get)
+method: CrProbe support class deployed at each API; anonymous cases via sf apex run --api-version; class and trigger cases as one joint deploy per API with apiVersion in the meta XML. Outcome is every componentFailure in returned order as line:col message. A component absent from the failures is recorded ok; G0 was also deployed alone and succeeded.
+anonymous outcomes: sf reports a single compile error (compiled=false) or ok. Unrecorded in the compile-error rows: runtime result, since compile failed.
+P1 pack and CA pack: P1 passed whole. CA failed only at 14:14 and 15:13 (the 'this.' newline 'helper();' statement); the other CA statements raised no error in the joint deploy, so no per-statement split was needed.
+E1 and E2 reports repeat the same Unexpected-token error twice, as the org returned it.
+no scripts changed from the plan. Ids masked: none present in output.
