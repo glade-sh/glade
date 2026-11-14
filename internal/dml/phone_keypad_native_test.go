@@ -117,6 +117,18 @@ func TestPhoneKeypadUncapturedNeighborKeepsBase(t *testing.T) {
 	}
 }
 
+func TestPhoneKeypadE161Alphabet(t *testing.T) {
+	const letters = "abcdefghijklmnopqrstuvwxyz"
+	const digits = "22233344455566677778889999"
+	for i := range letters {
+		vanity := "1-800-" + strings.Repeat(letters[i:i+1], 7)
+		number := "800-" + strings.Repeat(digits[i:i+1], 7)
+		if ok, score := FuzzyScore("phone", vanity, number, false); !ok || score != 90 {
+			t.Errorf("letter %c: got %v, %v; want true, 90", letters[i], ok, score)
+		}
+	}
+}
+
 func BenchmarkPhoneKeypadPanel(b *testing.B) {
 	values := []string{"1-800-FLOWERS", "800-356-9377", "1 (800) 356-9377", "+44 20 7946 0958", "(628) 555-0142 x12", "628-555-0142", "62855501420"}
 	for i := 0; i < b.N; i++ {
