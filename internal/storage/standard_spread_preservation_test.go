@@ -107,3 +107,16 @@ func TestPlainDeveloperSpreadPreservesNestedEditWithoutSnapshot(t *testing.T) {
 		t.Fatal("nested definition edit removed without snapshot")
 	}
 }
+
+func TestExplicitSpreadMarksAreIsolatedAcrossRuntimeClones(t *testing.T) {
+	org := NewOrgState()
+	org.MarkExplicitSpreadObject("AIFeatureExtractor")
+	clone := org.CloneRuntime()
+	clone.MarkExplicitSpreadObject("AIResearchPromptResult")
+	if org.spreadExplicit["AIResearchPromptResult"] {
+		t.Fatal("clone changed original explicit marks")
+	}
+	if !clone.spreadExplicit["AIFeatureExtractor"] || !clone.spreadExplicit["AIResearchPromptResult"] {
+		t.Fatal("clone lost explicit marks")
+	}
+}

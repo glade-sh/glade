@@ -436,3 +436,24 @@ func TestPlainDeveloperSpreadRecordedDefinitionsKeepOutcome(t *testing.T) {
 		t.Fatal("recorded definitions changed the shaped org")
 	}
 }
+
+func TestCapturedPlainShapeSurvivesSourceSerialization(t *testing.T) {
+	org := sourceSpreadLazyOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	if !restored.StandardSpreadCapturedPlain {
+		t.Fatal("captured shape state was lost")
+	}
+	MaterializeStandardObjectSpread(&restored)
+	for _, name := range []string{"AIFeatureExtractor", "AIResearchPromptResult", "AIScoringStatusEvent"} {
+		if _, ok := restored.Objects[name]; ok {
+			t.Fatalf("captured absent object %s was materialized", name)
+		}
+	}
+}
