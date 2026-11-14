@@ -204,3 +204,30 @@ func TestSourceSpreadRestoresPreviouslyMaterializedObjectOnShapeTransition(t *te
 		t.Fatalf("org digest %s, want origin/main %s", got, baseline)
 	}
 }
+
+func TestSourceSpreadRestoresRemovedObjectAfterSerialization(t *testing.T) {
+	org := NewOrgState()
+	org.EnableStandardSpreadSource()
+	if _, ok := EnsureLazyStandardObject(&org, "AIFeatureExtractor"); !ok {
+		t.Fatal("source object not installed before shape")
+	}
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	MaterializeStandardObjectSpread(&org)
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	ApplyProjectOrgShape(&restored, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+	data, err = json.Marshal(restored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const baseline = "79841bab02c7103c6028d175cf04d2f6acb6ea098ece42bb03a8a2c961bab26b"
+	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
+		t.Fatalf("org digest %s, want origin/main %s", got, baseline)
+	}
+}
