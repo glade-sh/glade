@@ -28,7 +28,9 @@ func BenchmarkLazySpreadMissingQueries(b *testing.B) {
     List<Account> rows = new List<Account>();
     for (Integer i = 0; i < 10; i++) rows.add(new Account(Name='Sprout'));
     insert rows;
-    for (Account row : [SELECT Description FROM Account]) System.assertEquals('System.QueryException', row.Description);
+    List<Account> saved = [SELECT Description FROM Account];
+    System.assertEquals(10, saved.size());
+    for (Account row : saved) System.assertEquals('System.QueryException', row.Description);
 }
 `, i)
 	}
