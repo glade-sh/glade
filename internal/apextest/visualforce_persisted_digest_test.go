@@ -23,7 +23,10 @@ func TestPersistedVisualforceDigestInvalidation(t *testing.T) {
 	}
 	savedNow, savedHook := fileDigestNow, fileDigestReadHook
 	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = savedNow, savedHook; resetFileDigestTrust() })
-	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+	// Exercise a genuinely old stamp. Advancing only the test clock would make
+	// a newly written file appear old on a coarse-timestamp filesystem.
+	fileDigestNow = time.Now
+	time.Sleep(fileDigestTrustAge + time.Second)
 	reads := 0
 	fileDigestReadHook = func(string) { reads++ }
 	resetFileDigestTrust()
