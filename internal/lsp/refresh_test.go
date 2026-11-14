@@ -103,6 +103,34 @@ func TestRefreshStaleGenerationRetriesOnce(t *testing.T) {
 	<-c.served
 }
 
+func TestRefreshDoesNotPublishInvalidGeneration(t *testing.T) {
+	idx := sampleIndex(t)
+	h := NewHandler(idx)
+	before := h.gen.Load()
+	before.analyzer = func(typesys.Index) sema.Result { return sema.Result{} }
+	h.SetRefresher(func(context.Context, []string) (typesys.Index, func(typesys.Index) sema.Result, error) {
+		return idx, func(typesys.Index) sema.Result { return sema.Result{} }, nil
+	})
+	validated := make(chan struct{}, 2)
+	h.SetGenerationValidator(func(typesys.Index) bool { validated <- struct{}{}; return false })
+	c := startServe(t, h)
+	c.send(map[string]any{"method": "textDocument/didSave", "params": map[string]any{"textDocument": map[string]any{"uri": "file:///save.cls"}}})
+	for i := 0; i < 2; i++ {
+		select {
+		case <-validated:
+		case <-time.After(3 * time.Second):
+			t.Fatal("missing validation attempt")
+		}
+	}
+	c.send(map[string]any{"id": 1, "method": "shutdown"})
+	if err := <-c.served; err != nil {
+		t.Fatal(err)
+	}
+	if h.gen.Load() != before {
+		t.Fatal("invalid generation became visible")
+	}
+}
+
 func TestConcurrentRequestsDuringRefresh(t *testing.T) {
 	idx := sampleIndex(t)
 	h := NewHandler(idx)
