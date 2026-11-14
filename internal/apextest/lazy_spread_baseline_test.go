@@ -1,12 +1,14 @@
 package apextest
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
-// TestLazySpreadBaselineObservations emits stable observable results so the
-// same test can be run on the baseline and compared byte for byte.
+// The fixture records the observations from origin/main 0574a2848cf94189d59287febdf648f99c6d0cf4.
 func TestLazySpreadBaselineObservations(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "Neighbor.trigger"), `trigger Neighbor on Account (before insert) {
@@ -37,10 +39,18 @@ func TestLazySpreadBaselineObservations(t *testing.T) {
 			observed[c.MethodName] = string(c.Status) + ": " + c.Problem.Message
 		}
 	}
+	var output strings.Builder
 	for _, name := range []string{"spread", "triggerRoute"} {
 		if observed[name] == "" {
 			t.Fatalf("missing %s observation: %v", name, observed)
 		}
-		t.Logf("OBSERVATION %s %s", name, observed[name])
+		fmt.Fprintf(&output, "%s %s\n", name, observed[name])
+	}
+	want, err := os.ReadFile("testdata/lazy_spread_baseline.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if output.String() != string(want) {
+		t.Fatalf("baseline mismatch\ngot: %q\nwant: %q", output.String(), want)
 	}
 }

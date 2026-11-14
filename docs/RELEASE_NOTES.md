@@ -4,7 +4,7 @@
 
 ### Performance
 
-- **Unknown object names keep the lazy schema lazy.** A SOQL query that names an object no standard object can answer to, in any case or namespace form, now fails with the same error without building every standard object. Before, the failure built the whole schema and ran the query again. Names a standard object can answer to take the old path. SOSL validation is unchanged. On a test project with such queries, instructions fell about 50 percent. Results are identical.
+- **Unknown object names keep the lazy schema lazy.** A SOQL query that names an object no standard object can answer to, in any case or namespace form, now fails with the same error without building every standard object. Before, the failure built the whole schema and ran the query again. Names a standard object can answer to take the old path. SOSL validation is unchanged. Results are identical.
 
 ## v0.3.9
 
