@@ -53,3 +53,46 @@ func TestGatedPlatformNamespacesColdAndRequested(t *testing.T) {
 		t.Fatal("ConnectApi request did not invalidate the symbol view")
 	}
 }
+
+// Each input to the platform snapshot must invalidate derived views, including
+// a stub-only inclusion followed by the captured ConnectApi shape.
+func TestGatedPlatformViewCacheInvalidation(t *testing.T) {
+	if os.Getenv("GLADE_GATED_CACHE_TEST") == "" {
+		cmd := exec.Command(os.Args[0], "-test.run=^TestGatedPlatformViewCacheInvalidation$")
+		cmd.Env = append(os.Environ(), "GLADE_GATED_CACHE_TEST=1")
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("cold subprocess: %v\n%s", err, output)
+		}
+		return
+	}
+	var cache PlatformViewCache[uint64]
+	builds := uint64(0)
+	get := func() uint64 {
+		return cache.GetWithExcluded(func(_ []TypeSymbol, _ ExcludedPlatformTypes) uint64 {
+			builds++
+			return builds
+		})
+	}
+	previous := get()
+	if get() != previous {
+		t.Fatal("unchanged view rebuilt cache")
+	}
+	steps := []struct {
+		name  string
+		apply func()
+	}{
+		{"gate disabled", func() { SetPlatformGateDisabled(true) }},
+		{"gate enabled", func() { SetPlatformGateDisabled(false) }},
+		{"stub inclusion", func() { IncludeGatedPlatformNamespaceFor("ConnectApi.FeedItem") }},
+		{"captured shape", func() { RequestGatedPlatformNamespaceFor("ConnectApi.FeedItem") }},
+		{"other namespace", func() { NoteApexSource("Slack.App") }},
+	}
+	for _, step := range steps {
+		step.apply()
+		got := get()
+		if got == previous {
+			t.Fatalf("%s did not invalidate cache", step.name)
+		}
+		previous = got
+	}
+}
