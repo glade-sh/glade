@@ -71,3 +71,19 @@ func TestSpreadFingerprintDistinguishesEmptyCollections(t *testing.T) {
 		t.Fatal("empty map edit was not detected")
 	}
 }
+
+func TestPlainDeveloperSpreadPreservesInPlaceEditWithoutSnapshot(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObjectSpread(&org)
+	org.spreadInstalled = nil
+	obj := org.Objects["AIFeatureExtractor"]
+	original := obj.Definition.Fields["Id"]
+	defer func() { obj.Definition.Fields["Id"] = original }()
+	edited := original
+	edited.Label = "edited"
+	obj.Definition.Fields["Id"] = edited
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
+	if got, ok := org.Objects["AIFeatureExtractor"]; !ok || got.Definition.Fields["Id"].Label != "edited" {
+		t.Fatal("edited definition removed without snapshot")
+	}
+}
