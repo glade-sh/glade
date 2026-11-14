@@ -118,7 +118,17 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 					if _, ok := generation.inputs[input]; ok {
 						continue
 					}
-					data, err := q.ReadFile(input)
+					var digest [sha256.Size]byte
+					var err error
+					if q.Inputs() == nil {
+						digest, err = currentFileDigest(input)
+					} else {
+						var data []byte
+						data, err = q.ReadFile(input)
+						if err == nil {
+							digest = sha256.Sum256(data)
+						}
+					}
 					if os.IsNotExist(err) {
 						generation.inputs[input] = typesys.ApexMetadataInput{}
 						continue
@@ -126,7 +136,7 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 					if err != nil {
 						return err
 					}
-					generation.inputs[input] = typesys.ApexMetadataInput{Present: true, Digest: sha256.Sum256(data)}
+					generation.inputs[input] = typesys.ApexMetadataInput{Present: true, Digest: digest}
 				}
 			}
 		}
