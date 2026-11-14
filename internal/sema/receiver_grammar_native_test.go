@@ -111,28 +111,27 @@ func testReceiverGrammarNative(t *testing.T) {
 			// to the primary error. Track them explicitly until implemented.
 			knownCascades := map[string]bool{"CA": true, "D1": true, "D2": true, "D3": true, "D4": true, "D5": true, "D6": true, "E1": true, "E2": true, "super_break": true, "signature": true, "extends": true, "implements": true, "property": true, "static_block": true}
 			if knownCascades[row[0]] {
+				remaining := make(map[string]int, len(want)-1)
+				for _, extra := range want[1:] {
+					remaining[extra]++
+				}
 				for _, extra := range got[1:] {
-					if !containsReceiverGrammarDiagnostic(want[1:], extra) {
+					if remaining[extra] == 0 {
 						t.Errorf("unexpected diagnostic %q; native %v", extra, want)
+					} else {
+						remaining[extra]--
 					}
 				}
-				if len(got) < len(want) {
-					t.Logf("known native cascades not yet reproduced: native %v; got %v", want, got)
+				for extra, count := range remaining {
+					if count > 0 {
+						t.Logf("known native cascade not reproduced (%d): %s", count, extra)
+					}
 				}
 			} else if strings.Join(got, " | ") != strings.Join(want, " | ") {
 				t.Errorf("diagnostics = %v; want %v", got, want)
 			}
 		})
 	}
-}
-
-func containsReceiverGrammarDiagnostic(items []string, target string) bool {
-	for _, item := range items {
-		if item == target {
-			return true
-		}
-	}
-	return false
 }
 
 // API 64 lies between both captures. L2, F2 and M1 cover a free dot,
