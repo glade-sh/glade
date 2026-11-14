@@ -3,6 +3,9 @@ package dml
 import (
 	"encoding/json"
 	"os"
+	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -26,11 +29,57 @@ func TestPhoneKeypadNativeConformance(t *testing.T) {
 	if len(panels) != 3 {
 		t.Fatalf("got %d panels", len(panels))
 	}
+	raw, err := os.ReadFile("testdata/phone_keypad/org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, panel := range panels {
 		t.Run(panel.ID, func(t *testing.T) {
 			want := map[[2]int]float64{}
 			for _, m := range panel.Matches {
 				want[[2]int{int(m[0]), int(m[1])}] = m[2]
+			}
+			seen := 0
+			caseID := strings.Split(panel.ID, ".")[1]
+			for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n")[1:] {
+				cells := strings.SplitN(line, "\t", 6)
+				if len(cells) != 6 || cells[4] != caseID {
+					continue
+				}
+				parts := strings.SplitN(cells[5], ":", 2)
+				if len(parts) != 2 {
+					t.Fatalf("invalid panel: %q", cells[5])
+				}
+				n, err := strconv.Atoi(parts[0])
+				if err != nil || n != len(panel.Values) {
+					t.Fatalf("invalid panel size %q", parts[0])
+				}
+				native := map[[2]int]float64{}
+				for _, token := range strings.Split(parts[1], ",") {
+					if len(token) < 2 {
+						t.Fatalf("invalid pair %q", token)
+					}
+					a, errA := strconv.ParseInt(token[:1], 36, 8)
+					b, errB := strconv.ParseInt(token[1:2], 36, 8)
+					if errA != nil || errB != nil {
+						t.Fatalf("invalid pair %q", token)
+					}
+					score := 100.0
+					if len(token) > 2 {
+						score, err = strconv.ParseFloat(token[2:], 64)
+						if err != nil {
+							t.Fatal(err)
+						}
+					}
+					native[[2]int{int(a), int(b)}] = score
+				}
+				if !reflect.DeepEqual(native, want) {
+					t.Fatalf("panel differs from captured row %s/%s/%s", cells[0], cells[1], cells[2])
+				}
+				seen++
+			}
+			if seen != 8 {
+				t.Fatalf("got %d captured rows, want 8", seen)
 			}
 			for i, a := range panel.Values {
 				for j, b := range panel.Values {
