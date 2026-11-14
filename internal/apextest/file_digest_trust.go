@@ -68,15 +68,39 @@ func trustedCurrentFileDigest(path string) ([sha256.Size]byte, bool) {
 func oldTrustedVisualforceDigest(path string) ([sha256.Size]byte, bool) {
 	fileDigestTrustMu.Lock()
 	entry, hit := fileDigestTrust[path]
+	recent, hasRecent := recentVisualforceShared[path]
 	fileDigestTrustMu.Unlock()
-	if !hit {
+	if !hit && !hasRecent {
 		return [sha256.Size]byte{}, false
 	}
 	stamp, ok := filestamp.Stat(path)
-	if !ok || stamp != entry.stamp || !stamp.OlderThan(fileDigestNow(), fileDigestTrustAge) {
+	if !ok || !stamp.OlderThan(fileDigestNow(), fileDigestTrustAge) {
 		return [sha256.Size]byte{}, false
 	}
-	return entry.digest, true
+	if hit && stamp == entry.stamp {
+		return entry.digest, true
+	}
+	// A snapshot taken while the file was recent becomes trustworthy only
+	// after comparing every byte and rechecking the same now-old identity.
+	if !hasRecent {
+		return [sha256.Size]byte{}, false
+	}
+	return promoteRecentVisualforceInput(path, stamp, recent)
+}
+
+// promoteRecentVisualforceInput receives a stamp already shown to be old.
+// Both the bytes and the same identity must still match before promotion.
+func promoteRecentVisualforceInput(path string, stamp filestamp.Stamp, recent recentVisualforceInput) ([sha256.Size]byte, bool) {
+	if !stamp.OlderThan(fileDigestNow(), fileDigestTrustAge) || !recent.matches(path) || !sameVisualforcePathStamp(path, stamp) {
+		return [sha256.Size]byte{}, false
+	}
+	fileDigestTrustMu.Lock()
+	if len(fileDigestTrust) >= fileDigestTrustMaxEntries {
+		clear(fileDigestTrust)
+	}
+	fileDigestTrust[path] = trustedFileDigest{stamp: stamp, digest: recent.digest}
+	fileDigestTrustMu.Unlock()
+	return recent.digest, true
 }
 
 // currentFileDigest returns the SHA-256 of the file's current content. A

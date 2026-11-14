@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/semanticcache"
@@ -167,4 +168,32 @@ func firstVisualforceDigestGeneration(root string) bool {
 	}
 	visualforceDigestRoots[root] = true
 	return true
+}
+
+// persistAgedVisualforceDigests publishes recent snapshots only if they have
+// since aged and still match both their bytes and filesystem identity.
+func persistAgedVisualforceDigests(root string, generation runtimeMetadataGeneration) {
+	if !generation.persistVisualforceAtEnd || root == "" || len(generation.recentVisualforce) == 0 {
+		return
+	}
+	now := fileDigestNow()
+	promoted := false
+	for path, recent := range generation.recentVisualforce {
+		stamp, ok := filestamp.Stat(path)
+		if !ok || !stamp.OlderThan(now, fileDigestTrustAge) {
+			continue
+		}
+		if _, ok := promoteRecentVisualforceInput(path, stamp, recent); ok {
+			promoted = true
+		}
+	}
+	if !promoted {
+		return
+	}
+	paths := make([]string, 0, len(generation.visualforceInputs))
+	for path := range generation.visualforceInputs {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	_ = saveVisualforceDigestCache(root, paths)
 }

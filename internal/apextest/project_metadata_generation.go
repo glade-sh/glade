@@ -106,6 +106,7 @@ func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetad
 	}
 	var diskInputs []string
 	useDiskDigests := generation.allowVisualforceDiskDigests && p.Inputs() == nil && p.Root != "" && diskCacheEnabled() && firstVisualforceDigestGeneration(p.Root)
+	generation.persistVisualforceAtEnd = useDiskDigests
 	if useDiskDigests {
 		for _, q := range projects {
 			if q.Inputs() != nil {

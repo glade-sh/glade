@@ -598,6 +598,9 @@ assemble:
 			suites[className] = append(suites[className], results[index])
 		}
 	}
+	if ctx.Err() == nil {
+		persistAgedVisualforceDigests(index.Project.Root, generation.metadata)
+	}
 	var reportStarted time.Time
 	if runState.counters.enabled {
 		reportStarted = time.Now()
@@ -1409,6 +1412,7 @@ type runtimeMetadataGeneration struct {
 	recentVisualforce           map[string]recentVisualforceInput
 	recentVisualforceBytes      int64
 	allowVisualforceDiskDigests bool
+	persistVisualforceAtEnd     bool
 }
 
 func (generation runtimeMetadataGeneration) trustedVisualforceDigest(path string) ([sha256.Size]byte, bool) {
