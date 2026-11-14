@@ -62,6 +62,9 @@ func TestExecGatedPlatformRoutesMatchUngated(t *testing.T) {
 
 var gatedExecDurationPattern = regexp.MustCompile(`[0-9]+(\.[0-9]+)?\s?(ms|s)\b`)
 
+// Exec log names carry the run time.
+var gatedExecTimestampPattern = regexp.MustCompile(`[0-9]{8}T[0-9]{6}Z`)
+
 func gatedExecRoutesDigest(t *testing.T, bareFirst bool) string {
 	enumName, enumValue, className := gatedExecRouteNames(t)
 	root := t.TempDir()
@@ -91,6 +94,7 @@ func gatedExecRoutesDigest(t *testing.T, bareFirst bool) string {
 		var stdout, stderr bytes.Buffer
 		code := Run(context.Background(), []string{"exec", "--project", root, body[1]}, &stdout, &stderr)
 		text := strings.ReplaceAll(stdout.String()+"|"+stderr.String(), root, "<root>")
+		text = gatedExecTimestampPattern.ReplaceAllString(text, "<ts>")
 		text = gatedExecDurationPattern.ReplaceAllString(text, "<t>")
 		out = append(out, body[0]+":code="+strconv.Itoa(code)+":"+strings.Join(strings.Fields(text), " "))
 	}
