@@ -138,7 +138,7 @@ const lwcCompileFixturePackage = "github.com/glade-sh/glade/internal/lwc/compile
 
 func lwcCompileFixtureDiscovery() string {
 	names := append([]string{}, nodeIntegrationTests[lwcCompileFixturePackage]...)
-	for index := range 8 {
+	for index := range 12 {
 		names = append(names, fmt.Sprintf("TestFamily%d", index))
 	}
 	sort.Strings(names)
@@ -148,7 +148,7 @@ func lwcCompileFixtureDiscovery() string {
 func lwcCompileFixturePlan(t *testing.T) string {
 	t.Helper()
 	var shards []map[string]any
-	for index := range 8 {
+	for index := range 12 {
 		name := fmt.Sprintf("TestFamily%d", index)
 		shards = append(shards, map[string]any{"index": index, "tests": []string{name}, "estimatedDurationMillis": 0, "regex": "^(?:" + name + ")$"})
 	}
@@ -196,7 +196,7 @@ cat "$FIXTURE_ROOT/plan"
 
 func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
 	var union []string
-	for index := range 8 {
+	for index := range 12 {
 		name := fmt.Sprintf("TestFamily%d", index)
 		out, err, artifacts := runLWCCompileShardFixture(t, strconv.Itoa(index), lwcCompileFixtureDiscovery(), lwcCompileFixturePlan(t), lwcCompilePassEvent(name), 0)
 		if err != nil {
@@ -215,12 +215,12 @@ func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
 		if calls != wantCall {
 			t.Errorf("shard %d native call = %q, want %q", index, calls, wantCall)
 		}
-		if args := read("../planner-args"); !strings.Contains(args, "--package "+lwcCompileFixturePackage+" --shards 8 --tests "+filepath.Join(artifacts, "discovery.txt")) {
+		if args := read("../planner-args"); !strings.Contains(args, "--package "+lwcCompileFixturePackage+" --shards 12 --tests "+filepath.Join(artifacts, "discovery.txt")) {
 			t.Errorf("planner args = %q", args)
 		}
 		full, filtered := strings.Fields(read("discovery-full.txt")), strings.Fields(read("discovery.txt"))
-		if len(full) != 20 || len(filtered) != 8 {
-			t.Fatalf("full/filtered counts = %d/%d, want 20/8", len(full), len(filtered))
+		if len(full) != 24 || len(filtered) != 12 {
+			t.Fatalf("full/filtered counts = %d/%d, want 24/12", len(full), len(filtered))
 		}
 		for _, authority := range nodeIntegrationTests[lwcCompileFixturePackage] {
 			if !strings.Contains(read("node-integration-expected.tsv"), lwcCompileFixturePackage+"\t"+authority+"\n") {
@@ -252,7 +252,7 @@ func TestLWCCompileShardsPartitionDiscoveryAndNodeAuthority(t *testing.T) {
 		}
 	}
 	var want []string
-	for index := range 8 {
+	for index := range 12 {
 		want = append(want, fmt.Sprintf("TestFamily%d", index))
 	}
 	if !reflect.DeepEqual(union, want) {
@@ -268,8 +268,8 @@ func TestLWCCompileShardRejectsIncompleteCoverageAndPreservesNativeFailure(t *te
 		wantNative                    bool
 	}{
 		{"missing Node authority", strings.Replace(discovery, nodeIntegrationTests[lwcCompileFixturePackage][0]+"\n", "", 1), plan, events, 0, 1, false},
-		{"missing family", discovery, strings.ReplaceAll(plan, "TestFamily7", "TestOther"), events, 0, 1, false},
-		{"Node authority in shard", discovery, strings.ReplaceAll(plan, "TestFamily7", nodeIntegrationTests[lwcCompileFixturePackage][0]), events, 0, 1, false},
+		{"missing family", discovery, strings.ReplaceAll(plan, "TestFamily11", "TestOther"), events, 0, 1, false},
+		{"Node authority in shard", discovery, strings.ReplaceAll(plan, "TestFamily11", nodeIntegrationTests[lwcCompileFixturePackage][0]), events, 0, 1, false},
 		{"broad selector", discovery, strings.Replace(plan, "^(?:TestFamily0)$", "^Test", 1), events, 0, 1, false},
 		{"missing test result", discovery, plan, strings.ReplaceAll(events, "TestFamily0", "TestFamily1"), 0, 1, true},
 		{"nested skip", discovery, plan, `{"Action":"skip","Package":"` + lwcCompileFixturePackage + `","Test":"TestFamily0/BrowserRuntime"}` + "\n" + events, 0, 1, true},
@@ -295,7 +295,7 @@ func TestLWCCompileShardRejectsIncompleteCoverageAndPreservesNativeFailure(t *te
 			}
 		})
 	}
-	for _, index := range []string{"", "8", "-1", "01"} {
+	for _, index := range []string{"", "12", "-1", "01"} {
 		out, err, artifacts := runLWCCompileShardFixture(t, index, discovery, plan, events, 0)
 		exitErr, ok := err.(*exec.ExitError)
 		if !ok || exitErr.ExitCode() != 2 {
@@ -3426,8 +3426,8 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 	if !strings.Contains(job, "      NO_COLOR: \"1\"") {
 		t.Error("conformance diagnostics must stay plain text when CI enables terminal colors")
 	}
-	if strings.Count(job, "          - lane:") != 12 || strings.Contains(job, "remaining-go") {
-		t.Error("lwc-vf matrix must contain eight compile shards and four Visualforce shards only")
+	if strings.Count(job, "          - lane:") != 20 || strings.Contains(job, "remaining-go") {
+		t.Error("lwc-vf matrix must contain twelve compile shards and eight Visualforce shards only")
 	}
 	if strings.Count(remaining, "          - lane:") != 1 || !strings.Contains(remaining, "          - lane: remaining-go\n            name: test\n") {
 		t.Error("test job must hold the single remaining-go row")
@@ -3435,7 +3435,7 @@ func TestCILWCCompileMatrixRoutesAllShardsAndPreservesFailureEvidence(t *testing
 	if strings.Contains(remaining, "needs:") {
 		t.Error("remaining-go uses no shared binary or history input and must not wait on one")
 	}
-	for index := range 8 {
+	for index := range 12 {
 		row := fmt.Sprintf("          - lane: lwc-compile-%d\n            name: LWC compile (%d)\n            shard: %d\n", index, index, index)
 		if strings.Count(job, row) != 1 {
 			t.Errorf("matrix must contain shard %d exactly once", index)
@@ -3604,7 +3604,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if name != "codeql" && !strings.Contains(job, "runs-on: ubuntu-24.04") {
 			t.Errorf("%s is not an ubuntu-24.04 job", name)
 		}
-		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[history-input, test-binaries-apextest, test-binaries]"}[name]; serialized {
+		if input, serialized := map[string]string{"apextest": "[history-input, test-binaries-apextest]", "sema": "test-binaries", "lwc-vf": "[history-input, test-binaries]", "gladecli": "history-input", "vm": "history-input", "pr-tests": "[history-input, test-binaries-apextest, test-binaries]", "workflow-lint": "leak-scan"}[name]; serialized {
 			if !strings.Contains(job, "needs: "+input) {
 				t.Errorf("%s must depend on %s", name, input)
 			}

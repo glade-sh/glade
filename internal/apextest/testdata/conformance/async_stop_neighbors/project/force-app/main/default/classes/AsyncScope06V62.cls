@@ -1,0 +1,1 @@
+@IsTest private class AsyncScope06V62 { @IsTest static void observe() { Test.startTest(); System.enqueueJob(new StopOrderQ('k', false)); System.enqueueJob(new StopOrderQ('t', false)); Database.executeBatch(new StopOrderBatch()); StopOrderMk.fut('b'); Test.stopTest(); System.assert(false, StopOrderMk.observe(false)); } }

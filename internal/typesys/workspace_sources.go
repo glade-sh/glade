@@ -87,6 +87,7 @@ type ApexMetadataInput struct {
 // SourceDigestSet is an immutable, compact snapshot of the exact raw source
 // digests used by one type-index build.
 type SourceDigestSet struct {
+	volatile  bool
 	physical  map[string][sha256.Size]byte
 	requested map[string]string
 	absolute  map[string]string
@@ -126,6 +127,13 @@ func (e *SourceSnapshotMismatchError) Unwrap() error {
 // retained in artifacts still matches the physical project before a consumer
 // uses the index for semantic analysis or cache publication.
 func ValidateBuildGeneration(index Index, artifacts *BuildArtifacts) error {
+	if index.Volatile() || (artifacts != nil && artifacts.Volatile()) {
+		return ErrVolatileGeneration
+	}
+	return validateBuildGeneration(index, artifacts, true)
+}
+
+func validateBuildGeneration(index Index, artifacts *BuildArtifacts, live bool) error {
 	if artifacts == nil {
 		return incompleteSourceSnapshotError("build artifacts are missing")
 	}
@@ -160,7 +168,10 @@ func ValidateBuildGeneration(index Index, artifacts *BuildArtifacts) error {
 		if !ok {
 			return incompleteSourceSnapshotError("missing Apex metadata input " + typ.File + "-meta.xml")
 		}
-		return validateLiveSourceAndMetadata(typ.File, source.Digest(), input)
+		if live {
+			return validateLiveSourceAndMetadata(typ.File, source.Digest(), input)
+		}
+		return nil
 	}
 	for _, typ := range index.Types {
 		if err := validateType(typ); err != nil {
@@ -184,10 +195,22 @@ func ValidateBuildGeneration(index Index, artifacts *BuildArtifacts) error {
 // alias, and raw digest still match index. Every other occurrence is read
 // again, so callers never pair an incremental index with a stale source view.
 func RefreshBuildArtifacts(index Index, previous *BuildArtifacts) (BuildArtifacts, error) {
+	return refreshBuildArtifacts(index, previous, nil)
+}
+
+func RefreshBuildArtifactsWithOverlay(index Index, previous *BuildArtifacts, overlay *SourceOverlay) (BuildArtifacts, error) {
+	return refreshBuildArtifacts(index, previous, overlay)
+}
+
+func refreshBuildArtifacts(index Index, previous *BuildArtifacts, overlay *SourceOverlay) (BuildArtifacts, error) {
 	if index.sourceDigests == nil || index.apexMetadataInputs == nil {
 		return BuildArtifacts{}, incompleteSourceSnapshotError("index generation is incomplete")
 	}
 	artifacts := BuildArtifacts{Sources: NewWorkspaceSources()}
+	if overlay != nil {
+		artifacts.Sources = newWorkspaceSources(overlay.ReadFile)
+		artifacts.Sources.volatile = overlay.Len() > 0
+	}
 	seen := make(map[sourceOccurrenceKey]bool)
 	refresh := func(metadata SourceMetadata) error {
 		key := sourceOccurrenceKeyForMetadata(metadata)
@@ -240,7 +263,13 @@ func RefreshBuildArtifacts(index Index, previous *BuildArtifacts) (BuildArtifact
 	}
 	artifacts.SourceDigests = artifacts.Sources.sourceDigestSet()
 	artifacts.ApexMetadataInputs = capturedApexMetadataInputs(index, artifacts.Sources)
-	if err := ValidateBuildGeneration(index, &artifacts); err != nil {
+	var err error
+	if overlay == nil {
+		err = ValidateBuildGeneration(index, &artifacts)
+	} else {
+		err = validateBuildGeneration(index, &artifacts, false)
+	}
+	if err != nil {
 		return BuildArtifacts{}, err
 	}
 	return artifacts, nil
@@ -250,6 +279,9 @@ func RefreshBuildArtifacts(index Index, previous *BuildArtifacts) (BuildArtifact
 // A nil digest set is the documented legacy live-read mode. Any nonnil set
 // must contain every source-backed occurrence in index.
 func ValidateSourceGeneration(index Index, digests *SourceDigestSet) error {
+	if index.Volatile() || (digests != nil && digests.volatile) {
+		return ErrVolatileGeneration
+	}
 	if digests == nil {
 		return nil
 	}
@@ -378,6 +410,7 @@ func (s *SourceDigestSet) withSourceDigest(path string, raw []byte) *SourceDiges
 		absolute:  make(map[string]string),
 	}
 	if s != nil {
+		copySet.volatile = s.volatile
 		for key, value := range s.physical {
 			copySet.physical[key] = value
 		}
@@ -407,6 +440,7 @@ func (s *SourceDigestSet) withoutSource(path string) *SourceDigestSet {
 		return nil
 	}
 	copySet := &SourceDigestSet{
+		volatile:  s.volatile,
 		physical:  make(map[string][sha256.Size]byte, len(s.physical)),
 		requested: make(map[string]string, len(s.requested)),
 		absolute:  make(map[string]string, len(s.absolute)),
@@ -518,6 +552,7 @@ type WorkspaceSourceStats struct {
 // WorkspaceSources owns physical reads and normalized logical source views for
 // one type-index build.
 type WorkspaceSources struct {
+	volatile             bool
 	mu                   sync.Mutex
 	readFile             func(string) ([]byte, error)
 	physicalDirectories  map[string]string
@@ -645,6 +680,7 @@ func (s *WorkspaceSources) sourceDigestSet() *SourceDigestSet {
 	if s == nil {
 		return digests
 	}
+	digests.volatile = s.volatile
 
 	s.mu.Lock()
 	defer s.mu.Unlock()

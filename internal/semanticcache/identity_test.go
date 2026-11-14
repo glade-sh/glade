@@ -1,6 +1,7 @@
 package semanticcache
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -92,5 +93,23 @@ func TestIdentityForBuildDistinguishesPartialIndex(t *testing.T) {
 	}
 	if complete.ProjectContentSHA256 == partial.ProjectContentSHA256 {
 		t.Fatal("partial index retained complete index identity")
+	}
+}
+
+func TestIdentityForBuildRejectsVolatileGeneration(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Draft.cls")
+	if err := os.WriteFile(path, []byte("public class Draft {}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	p := project.Project{Root: root, ApexFiles: []string{path}}
+	overlay := typesys.NewSourceOverlay(map[string]string{path: "public class Draft { void added() {} }"})
+	index, artifacts := typesys.BuildWithArtifactsOverlay(p, schema.Schema{}, overlay)
+	if _, err := IdentityForBuild(index, &artifacts, sema.AnalyzeOptions{Diagnostics: true}); !errors.Is(err, typesys.ErrVolatileGeneration) {
+		t.Fatalf("volatile generation identity error = %v", err)
+	}
+	disk, diskArtifacts := typesys.BuildWithArtifacts(p, schema.Schema{})
+	if _, err := IdentityForBuild(disk, &diskArtifacts, sema.AnalyzeOptions{Diagnostics: true}); err != nil {
+		t.Fatalf("disk generation identity error = %v", err)
 	}
 }

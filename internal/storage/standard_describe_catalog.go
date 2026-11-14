@@ -156,7 +156,7 @@ func standardDescribeFieldForName(objectName, fieldName string) (standardDescrib
 	if !ok {
 		return standardDescribeField{}, false
 	}
-	describe, found, err := lookupStandardDescribeCatalogV2(canonical)
+	describe, found, err := lookupStandardDescribeFieldsV2(canonical)
 	if err != nil || !found {
 		return standardDescribeField{}, false
 	}

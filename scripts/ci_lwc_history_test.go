@@ -188,9 +188,9 @@ func TestCILWCHistoryWorkflowSharesInputAndRequiresUnion(t *testing.T) {
 			t.Errorf("validated predecessor bootstrap missing %q", marker)
 		}
 	}
-	for _, marker := range []string{"needs: [gladecli, vm, sema, apextest, lwc-vf]", "needs.lwc-vf.result == 'success'", "pattern: go-test-lwc-compile-shard-*", "lwc-compile-history-refresh", "go-test-lwc-compile-shard-{0..7}", "actions/cache/save@"} {
+	for _, marker := range []string{"needs: [gladecli, vm, sema, apextest, lwc-vf]", "needs.lwc-vf.result == 'success'", "pattern: go-test-lwc-compile-shard-*", "lwc-compile-history-refresh", "go-test-lwc-compile-shard-{0..11}", "actions/cache/save@"} {
 		if !strings.Contains(refresh, marker) {
-			t.Errorf("validated eight-shard publisher missing %q", marker)
+			t.Errorf("validated twelve-shard publisher missing %q", marker)
 		}
 	}
 	if !strings.Contains(jobs["required-ci"], "      - history\n") {

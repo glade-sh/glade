@@ -341,6 +341,7 @@ func TestWorkspaceSymbolsIncludeApexSchemaAndFields(t *testing.T) {
 func TestHoverForKnownTypes(t *testing.T) {
 	idx := sampleIndex(t)
 	handler := NewHandler(idx)
+	handler.analysisResult()
 
 	apexHover := handler.HoverForName("InvoiceService", nil)
 	if apexHover == nil || !strings.Contains(apexHover.Contents.Value, "class InvoiceService") {
@@ -472,8 +473,8 @@ func TestCompletionRanksSObjectFieldsInSOQLClauses(t *testing.T) {
 		character int
 	}{
 		{name: "where", character: 59},
-		{name: "order by", character: 67},
-		{name: "group by", character: 77},
+		{name: "order by", character: 69},
+		{name: "group by", character: 79},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

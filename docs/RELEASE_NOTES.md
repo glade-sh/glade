@@ -2,7 +2,24 @@
 
 ## Unreleased
 
-No changes yet.
+- Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
+
+- **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
+
+- **Async test ordering.** Eligible Future, Queueable, Batch Apex and scheduled work follows the captured stopTest ordering.
+
+- **Language server refresh.** Diagnostics follow unsaved edits and retry after project refreshes. Deleted files leave the index, hover starts analysis when needed, and closed files with syntax errors publish parse diagnostics while other files retain the last good semantic view. External changes refresh through watched files or on save. Reference searches detect edits with unchanged metadata, and stale semantic diagnostics are not republished. Client responses no longer receive a second response.
+
+- **Standard object startup memory.** Test runs retain a smaller projection of standard-object describe data while preparing stub fields.
+
+- **Unresolved assignments.** Parallel semantic analysis avoids repeating method-body checks when an unknown assignment target cannot be affected by another type. Diagnostics stay unchanged.
+
+- **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+- **Test startup.** Building the child relationship lookup avoids installing
+  standard objects solely to resolve parent names, reducing startup work.
+### Performance
+
+- **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
 
 ## v0.3.9
 

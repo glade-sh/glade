@@ -1,0 +1,6 @@
+Additional capture: fresh Developer scratch org, 30 days, on a campaign Dev Hub.
+Started: 2026-11-14T05:25:26Z. Finished: 2026-11-14T05:26:16Z.
+APIs: 62.0 and 67.0. Salesforce CLI: 2.157.8. Org deleted and deletion verified.
+Anonymous compile failures were transcribed from CLI top-level messages with positions.
+Each class was deployed separately at each API; all component failures are retained.
+A question mark denotes a position that Salesforce did not supply.

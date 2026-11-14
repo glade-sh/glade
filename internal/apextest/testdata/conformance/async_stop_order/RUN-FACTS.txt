@@ -1,0 +1,9 @@
+capture=Test.stopTest async ordering
+route=istest (StopOrderTest)
+apis=62.0 67.0
+original_capture=timestamp, edition and driver not recorded in available facts
+repeat_control=2026-11-13T16:39Z; 13 methods at each API reproduced these rows; see ../async_stop_mix/RUN-FACTS.txt
+repeat_orgs=one fresh 30-day scratch org per API; each deleted and verified gone
+repeat_sf=@salesforce/cli/2.157.8
+identifiers=record and org identifiers omitted; markers are synthetic labels
+source=project/force-app; repeat source hashes in ../async_stop_mix/RUN-FACTS.txt

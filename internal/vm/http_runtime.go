@@ -8,20 +8,28 @@ import (
 
 // R008/R072/R083 and H045-H052 share the same DTO display through explicit
 // toString, String.valueOf, and String concatenation.
-func httpDTOString(receiver Value) (string, bool) {
+func writeHTTPDTOText(w *textWriter, receiver Value) bool {
 	// The resolved platform construction path stamps this ownership. A source
 	// class with the same name uses the ordinary project-class field display.
 	if !receiver.platformHTTPDTO {
-		return "", false
+		return false
 	}
 	switch receiver.Type {
 	case "HttpRequest":
-		return "System.HttpRequest[Endpoint=" + receiver.Fields["endpoint"].String() + ", Method=" + receiver.Fields["method"].String() + "]", true
+		w.WriteString("System.HttpRequest[Endpoint=")
+		receiver.Fields["endpoint"].writeText(w)
+		w.WriteString(", Method=")
+		receiver.Fields["method"].writeText(w)
 	case "HttpResponse":
-		return "System.HttpResponse[Status=" + receiver.Fields["status"].String() + ", StatusCode=" + receiver.Fields["statusCode"].String() + "]", true
+		w.WriteString("System.HttpResponse[Status=")
+		receiver.Fields["status"].writeText(w)
+		w.WriteString(", StatusCode=")
+		receiver.Fields["statusCode"].writeText(w)
 	default:
-		return "", false
+		return false
 	}
+	w.WriteString("]")
+	return true
 }
 
 // HTTP DTOs distinguish an unset body from an explicitly empty body (R003/R004,

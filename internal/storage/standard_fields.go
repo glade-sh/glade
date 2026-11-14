@@ -210,7 +210,7 @@ func standardNativeIDLabel(object string) string {
 		!strings.EqualFold(object, "Lead") && !strings.EqualFold(object, "Order") {
 		return ""
 	}
-	if describe, found, err := lookupStandardDescribeCatalogV2(object); err == nil && found {
+	if describe, found, err := lookupStandardDescribeFieldsV2(object); err == nil && found {
 		for _, field := range describe.Fields {
 			if strings.EqualFold(field.Name, "Id") {
 				return field.Label
@@ -1308,11 +1308,11 @@ func enrichStandardDescribeMetadataFromV2(definition *ObjectDefinition) {
 	if !ok {
 		return
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(canonical)
+	describe, ok, err := lookupStandardDescribeNarrowV2(canonical)
 	if err != nil || !ok {
 		return
 	}
-	enrichStandardDescribeMetadata(definition, describe)
+	enrichStandardDescribeMetadata(definition, standardDescribeObject{Mergeable: describe.mergeable})
 }
 
 // The AccountBrand describe candidate supplies the two non-nillable input
@@ -1322,7 +1322,7 @@ func enrichRequiredStandardStubFieldsFromV2Describe(definition *ObjectDefinition
 	if definition == nil || !stringsEqualFold(definition.APIName, "AccountBrand") {
 		return
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeFieldsV2(definition.APIName)
 	if err != nil || !ok {
 		return
 	}
@@ -1344,7 +1344,7 @@ func enrichRequiredStandardStubFieldsFromV2Describe(definition *ObjectDefinition
 }
 
 func enrichStandardFieldsFromV2Describe(definition *ObjectDefinition) {
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeFieldsV2(definition.APIName)
 	if err != nil || !ok {
 		return
 	}
@@ -1407,12 +1407,12 @@ func standardStubScaleFromDescribe(objectName string) bool {
 }
 
 func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeNarrowV2(definition.APIName)
 	if err != nil || !ok {
 		return
 	}
 	stubFields, _ := standardSObjectStubFieldsFor(definition.APIName)
-	for _, captured := range describe.Fields {
+	for _, captured := range describe.fields {
 		name, exists := ResolveFieldName(*definition, "", captured.Name)
 		if !exists {
 			continue
@@ -1426,7 +1426,7 @@ func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
 			field.DisplayType = describeDisplayType(captured.Type)
 		}
 		if strings.EqualFold(captured.Type, "time") && standardStubTimeReference(field) {
-			field.Type = describeFieldType(captured)
+			field.Type = describeFieldType(standardDescribeField{Type: captured.Type, Calculated: captured.Calculated})
 			field.DisplayType = describeDisplayType(captured.Type)
 			field.ReferenceTo = append([]string(nil), captured.ReferenceTo...)
 			field.RelationshipName = captured.RelationshipName
@@ -1510,25 +1510,11 @@ func standardStubReferenceFieldsFromV2Describe(objectName string) []Field {
 	if _, hasStub := standardSObjectStubFieldsFor(objectName); !hasStub {
 		return nil
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(objectName)
+	narrow, ok, err := lookupStandardDescribeNarrowV2(objectName)
 	if err != nil || !ok {
 		return nil
 	}
-	var fields []Field
-	for _, captured := range describe.Fields {
-		if !strings.EqualFold(captured.Type, "reference") || (captured.DeprecatedAndHidden != nil && *captured.DeprecatedAndHidden) {
-			continue
-		}
-		if !standardStubReferenceTargetsAvailable(captured.ReferenceTo) {
-			continue
-		}
-		field := describeField(captured)
-		// Non-nillability alone does not establish an omitted-field DML error.
-		// Existing explicit requirements remain intact when this field merges.
-		field.Required = false
-		fields = append(fields, field)
-	}
-	return fields
+	return narrow.references
 }
 
 // Incremental projection must not require optional objects absent from the

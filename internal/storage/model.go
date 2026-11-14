@@ -2799,7 +2799,8 @@ func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
-			if IsImmutableMetadataObject(object.Definition.APIName) || IsImmutableMetadataObject(name) {
+			if IsImmutableMetadataObject(object.Definition.APIName) || IsImmutableMetadataObject(name) ||
+				sharesSetupRecordsAtRuntimeClone(name, object) {
 				out.Objects[name] = object.CloneRuntimeSnapshot()
 			} else {
 				out.Objects[name] = object.CloneRuntimeFrozenDefinition()

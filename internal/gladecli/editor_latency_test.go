@@ -47,6 +47,12 @@ func TestEditorLatencyHarness(t *testing.T) {
 		}
 	}
 	t.Run("lsp", func(t *testing.T) { measureLSPLatency(t, project, record) })
+	if report {
+		// A second session starts from the semantic cache the first wrote.
+		t.Run("lsp_warm", func(t *testing.T) {
+			measureLSPLatency(t, project, func(name string, d time.Duration) { record("warm_"+name, d) })
+		})
+	}
 	t.Run("dap_cancel_during_launch", func(t *testing.T) { measureDAPCancelLatency(t, project, record) })
 }
 
@@ -56,6 +62,7 @@ func writeGeneratedLatencyProject(t *testing.T, root string, classes int) {
 	for i := 0; i < classes; i++ {
 		var b strings.Builder
 		fmt.Fprintf(&b, "public with sharing class LatencyService%04d {\n", i)
+		b.WriteString("  public String label;\n")
 		for m := 0; m < 25; m++ {
 			fmt.Fprintf(&b, "  public static Integer step%02d(Integer value) {\n    Integer total = value + %d;\n    List<Integer> items = new List<Integer>{ total, value };\n    for (Integer item : items) { total += item; }\n    return total;\n  }\n", m, m)
 		}
@@ -87,6 +94,10 @@ func (c *lspClient) send(message map[string]any) {
 // wait blocks until a message matching match arrives and returns the time since
 // the client started.
 func (c *lspClient) wait(what string, limit time.Duration, match func(map[string]any) bool) time.Duration {
+	return c.waitAfter(what, limit, 0, match)
+}
+
+func (c *lspClient) waitAfter(what string, limit time.Duration, next int, match func(map[string]any) bool) time.Duration {
 	c.t.Helper()
 	deadline := time.Now().Add(limit)
 	timer := time.AfterFunc(limit, func() {
@@ -97,7 +108,6 @@ func (c *lspClient) wait(what string, limit time.Duration, match func(map[string
 	defer timer.Stop()
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	next := 0
 	for {
 		for ; next < len(c.seen); next++ {
 			if match(c.seen[next]) {
@@ -172,6 +182,10 @@ func measureLSPLatency(t *testing.T, project string, record func(string, time.Du
 	uri := "file://" + file
 	openStart := time.Now()
 	client.send(map[string]any{"method": "textDocument/didOpen", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "languageId": "apex", "version": 1, "text": string(text)}}})
+	hoverStart := time.Now()
+	client.send(map[string]any{"id": 4, "method": "textDocument/hover", "params": map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]any{"line": 1, "character": 16}}})
+	client.wait("hover", limit, isResponse(4))
+	record("lsp_first_hover", time.Since(hoverStart))
 	client.wait("diagnostics", limit, func(m map[string]any) bool {
 		if m["method"] != "textDocument/publishDiagnostics" {
 			return false
@@ -180,6 +194,71 @@ func measureLSPLatency(t *testing.T, project string, record func(string, time.Du
 		return params["uri"] == uri
 	})
 	record("lsp_first_didopen_diagnostics", time.Since(openStart))
+
+	// Measure end-to-end protocol response cost, including JSON serialization.
+	for _, op := range []struct {
+		id             int
+		method, metric string
+		position       int
+	}{
+		{5, "textDocument/completion", "lsp_completion", 29},
+		{6, "textDocument/references", "lsp_references", 32},
+		{7, "textDocument/rename", "lsp_rename", 32},
+	} {
+		params := map[string]any{"textDocument": map[string]any{"uri": uri}, "position": map[string]any{"line": 0, "character": op.position}}
+		if op.method == "textDocument/references" {
+			params["context"] = map[string]any{"includeDeclaration": true}
+		}
+		if op.method == "textDocument/rename" {
+			params["newName"] = "RenamedService"
+		}
+		start := time.Now()
+		client.send(map[string]any{"id": op.id, "method": op.method, "params": params})
+		client.wait(op.metric, limit, isResponse(op.id))
+		record(op.metric, time.Since(start))
+		if op.method == "textDocument/completion" && os.Getenv("GLADE_EDITOR_LATENCY") != "" {
+			client.mu.Lock()
+			for _, msg := range client.seen {
+				if isResponse(op.id)(msg) {
+					data, _ := json.Marshal(msg)
+					t.Logf("latency lsp_completion_bytes %d", len(data))
+					break
+				}
+			}
+			client.mu.Unlock()
+		}
+	}
+
+	measureLSPOverlayLatency(t, client, project, uri, string(text), limit, record)
+
+	if os.Getenv("GLADE_LATENCY_NO_SAVE") == "" {
+		broken := strings.Replace(string(text), "Integer total = value + 0;", "Integer total = missing + 0;", 1)
+		for i, body := range []string{broken, string(text)} {
+			if err := os.WriteFile(file, []byte(body), 0600); err != nil {
+				t.Fatal(err)
+			}
+			client.send(map[string]any{"method": "textDocument/didChange", "params": map[string]any{"textDocument": map[string]any{"uri": uri, "version": i + 2}, "contentChanges": []any{map[string]any{"text": body}}}})
+			client.mu.Lock()
+			startIndex := len(client.seen)
+			client.mu.Unlock()
+			start := time.Now()
+			client.send(map[string]any{"method": "textDocument/didSave", "params": map[string]any{"textDocument": map[string]any{"uri": uri}}})
+			client.waitAfter("save diagnostics", limit, startIndex, func(m map[string]any) bool {
+				if m["method"] != "textDocument/publishDiagnostics" {
+					return false
+				}
+				params, _ := m["params"].(map[string]any)
+				if params["uri"] != uri {
+					return false
+				}
+				diags, _ := params["diagnostics"].([]any)
+				return (i == 0 && len(diags) > 0) || (i == 1 && len(diags) == 0)
+			})
+			if i == 1 {
+				record("lsp_save_refresh_diagnostics", time.Since(start))
+			}
+		}
+	}
 
 	client.send(map[string]any{"id": 3, "method": "shutdown"})
 	client.wait("shutdown", limit, isResponse(3))
@@ -190,6 +269,68 @@ func measureLSPLatency(t *testing.T, project string, record func(string, time.Du
 	case <-time.After(30 * time.Second):
 		t.Fatal("language server did not stop after exit")
 	}
+}
+
+// measureLSPOverlayLatency times diagnostics that follow unsaved edits and an
+// external file change reported through workspace/didChangeWatchedFiles.
+func measureLSPOverlayLatency(t *testing.T, client *lspClient, project, uri, text string, limit time.Duration, record func(string, time.Duration)) {
+	t.Helper()
+	version := 100
+	publishedAfter := func(what string, start int, target string, wantErrors bool) {
+		client.waitAfter(what, limit, start, func(m map[string]any) bool {
+			if m["method"] != "textDocument/publishDiagnostics" {
+				return false
+			}
+			params, _ := m["params"].(map[string]any)
+			diags, _ := params["diagnostics"].([]any)
+			return params["uri"] == target && (len(diags) > 0) == wantErrors
+		})
+	}
+	edit := func(target, body string) int {
+		client.mu.Lock()
+		start := len(client.seen)
+		client.mu.Unlock()
+		version++
+		client.send(map[string]any{"method": "textDocument/didChange", "params": map[string]any{"textDocument": map[string]any{"uri": target, "version": version}, "contentChanges": []any{map[string]any{"text": body}}}})
+		return start
+	}
+
+	// Body-only edit: the edited type and its dependents are rechecked.
+	body := strings.Replace(text, "Integer total = value + 0;", "Integer total = missing + 0;", 1)
+	start, began := edit(uri, body), time.Now()
+	publishedAfter("overlay body diagnostics", start, uri, true)
+	record("lsp_overlay_body_edit", time.Since(began))
+	publishedAfter("overlay body revert", edit(uri, text), uri, false)
+
+	// Signature edit: a closed dependent loses the method it calls.
+	dependent := "file://" + filepath.Join(project, "force-app/main/classes/LatencyService0001.cls")
+	signature := strings.Replace(text, "public static Integer step00(", "public static Integer step00renamed(", 1)
+	start, began = edit(uri, signature), time.Now()
+	publishedAfter("overlay signature diagnostics", start, dependent, true)
+	record("lsp_overlay_signature_edit", time.Since(began))
+	publishedAfter("overlay signature revert", edit(uri, text), dependent, false)
+
+	// External change to a closed file.
+	external := filepath.Join(project, "force-app/main/classes/LatencyService0002.cls")
+	original, err := os.ReadFile(external)
+	if err != nil {
+		t.Fatal(err)
+	}
+	watched := func(body string) int {
+		if err := os.WriteFile(external, []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+		client.mu.Lock()
+		start := len(client.seen)
+		client.mu.Unlock()
+		client.send(map[string]any{"method": "workspace/didChangeWatchedFiles", "params": map[string]any{"changes": []any{map[string]any{"uri": "file://" + external, "type": 2}}}})
+		return start
+	}
+	broken := strings.Replace(string(original), "Integer total = value + 0;", "Integer total = missing + 0;", 1)
+	start, began = watched(broken), time.Now()
+	publishedAfter("watched diagnostics", start, "file://"+external, true)
+	record("lsp_watched_single_change", time.Since(began))
+	publishedAfter("watched revert", watched(string(original)), "file://"+external, false)
 }
 
 func measureDAPCancelLatency(t *testing.T, project string, record func(string, time.Duration)) {

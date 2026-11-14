@@ -23,18 +23,21 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v87"
+const SemanticABI = "sema-v88"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v68"
+const PlatformABI = "salesforce-platform-v69"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
 	Summary     Summary                  `json:"summary"`
 	Diagnostics []diagnostic.Diagnostic  `json:"diagnostics,omitempty"`
 	Types       map[string]TypeReference `json:"types,omitempty"`
+	// ReceiverTriviaDiagnostic identifies the captured anonymous parser error
+	// whose source position is available to the Tooling and SOAP routes.
+	ReceiverTriviaDiagnostic bool `json:"-"`
 }
 
 type Summary struct {
@@ -263,6 +266,7 @@ func (a *Analyzer) analyzeWithOptionsIncremental(index typesys.Index, opts Analy
 		if recorder != nil {
 			recorder.endPhase(&recorder.counters.QuerySemantics, queryStarted)
 		}
+		result.Diagnostics = mergeReceiverNamedDiagnostics(result.Diagnostics, a.receiverNamedDiagnostics(index, typeMemberView))
 		result.Diagnostics = nativeLifecycleDiagnostics(index, result.Diagnostics, typeMemberState, a.sources)
 		if indexHasSourceBackedDependency(index) {
 			result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(index, result.Diagnostics, a, typeMemberView)
@@ -1506,6 +1510,9 @@ func (s semaScopeModel) localInBlock(name string, start, end int) (semaLocal, bo
 
 func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
 	known := semaAnyKnownFieldInView(model, name, false)
+	if model != nil && model.state != nil && model.state.unknownHistory != nil && !known {
+		model.state.unknownHistory.missing(name)
+	}
 	if model != nil && model.state != nil && model.state.historyProbe != nil {
 		if !known {
 			model.state.historyProbe.Store(true)

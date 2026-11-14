@@ -1,0 +1,5 @@
+Additional capture: fresh Developer scratch org, 30 days, on a campaign Dev Hub.
+Started: 2026-11-14T05:32:43Z. Finished: 2026-11-14T05:33:59Z.
+APIs: 62.0 and 67.0. Salesforce CLI: 2.157.8. Org deleted and deletion verified.
+Anonymous compiler failures were transcribed from top-level CLI messages with positions.
+The two vertical-tab scripts were rejected by SOAP transport before compilation at both APIs; they are not native compiler rows.
