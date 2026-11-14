@@ -104,12 +104,19 @@ func TestStandardParentSOSLPreservationNamedAndIsTestLSPRoutes(t *testing.T) {
 						}
 					}
 					check(handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Version: 1, Text: source}}))
-					// Edits are parsed against the handler's fixed semantic index snapshot.
+					// A fixed index cannot supply semantics for a newline edit.
 					notifications, err := handler.DidChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 2}, ContentChanges: []TextDocumentContentChangeEvent{{Text: source + "\n"}}})
 					if err != nil {
 						t.Fatal(err)
 					}
-					check(notifications)
+					if notifications != nil {
+						t.Fatalf("unreflected edit published diagnostics: %v", notifications)
+					}
+					restored, err := handler.DidChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 3}, ContentChanges: []TextDocumentContentChangeEvent{{Text: source}}})
+					if err != nil {
+						t.Fatal(err)
+					}
+					check(restored)
 				})
 			}
 		}
