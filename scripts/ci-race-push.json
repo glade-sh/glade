@@ -317,6 +317,7 @@
       "TestPermissionGroupBackingNativeConformance",
       "TestPermissionScopeMuteNativeConformance",
       "TestPersistedVisualforceDigestConcurrentAccess",
+      "TestPersistedVisualforceDigestCoversEveryInputGroup",
       "TestPersistedVisualforceDigestDoesNotReadUnsafeRoot",
       "TestPersistedVisualforceDigestInvalidation",
       "TestPersistedVisualforceDigestRejectsRecentAndCorruptData",

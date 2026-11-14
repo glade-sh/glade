@@ -320,3 +320,67 @@ func TestPersistedVisualforceDigestDoesNotReadUnsafeRoot(t *testing.T) {
 		t.Fatalf("read cached digest under unsafe root: reads=%d", reads)
 	}
 }
+
+func TestPersistedVisualforceDigestCoversEveryInputGroup(t *testing.T) {
+	cases := []struct {
+		name string
+		set  func(*project.Project, string)
+	}{
+		{"page", func(p *project.Project, f string) { p.VisualforcePageFiles = append(p.VisualforcePageFiles, f) }},
+		{"component", func(p *project.Project, f string) { p.VisualforceComponentFiles = []string{f} }},
+		{"email", func(p *project.Project, f string) { p.EmailTemplateFiles = []string{f} }},
+		{"flow", func(p *project.Project, f string) { p.FlowFiles = []string{f} }},
+		{"labels", func(p *project.Project, f string) { p.LabelFiles = []string{f} }},
+		{"translations", func(p *project.Project, f string) { p.TranslationFiles = []string{f} }},
+		{"static resource", func(p *project.Project, f string) { p.StaticResourceFiles = []string{f} }},
+		{"static resource metadata", func(p *project.Project, f string) { p.StaticResourceMetas = []string{f} }},
+		{"message channel", func(p *project.Project, f string) { p.MessageChannelFiles = []string{f} }},
+		{"tab", func(p *project.Project, f string) { p.TabFiles = []string{f} }},
+		{"profile", func(p *project.Project, f string) { p.ProfileFiles = []string{f} }},
+		{"permission set", func(p *project.Project, f string) { p.PermissionSetFiles = []string{f} }},
+		{"permission set group", func(p *project.Project, f string) { p.PermissionSetGroupFiles = []string{f} }},
+	}
+	restore := EnableDiskCacheForTesting()
+	defer restore()
+	oldNow, oldHook := fileDigestNow, fileDigestReadHook
+	fileDigestNow = func() time.Time { return time.Now().Add(time.Minute) }
+	t.Cleanup(func() { fileDigestNow, fileDigestReadHook = oldNow, oldHook; resetFileDigestTrust() })
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			page, input := filepath.Join(root, "Home.page"), filepath.Join(root, "input")
+			writeFile(t, page, "<apex:page/>")
+			writeFile(t, input, "before")
+			p := project.Project{Root: root, VisualforcePageFiles: []string{page}}
+			tc.set(&p, input)
+			reads := 0
+			fileDigestReadHook = func(path string) {
+				if path == input {
+					reads++
+				}
+			}
+			capture := func() typesys.ApexMetadataInput {
+				generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
+				if err := captureVisualforceRuntimeInputs(p, &generation); err != nil {
+					t.Fatal(err)
+				}
+				return generation.inputs[input]
+			}
+			resetFileDigestTrust()
+			before := capture()
+			resetFileDigestTrust()
+			if got := capture(); got != before || reads != 1 {
+				t.Fatalf("stable cache: reads=%d", reads)
+			}
+			replacement := filepath.Join(root, "replacement")
+			writeFile(t, replacement, "after!")
+			if err := os.Rename(replacement, input); err != nil {
+				t.Fatal(err)
+			}
+			resetFileDigestTrust()
+			if got := capture(); got == before || reads != 2 {
+				t.Fatalf("changed input: reads=%d", reads)
+			}
+		})
+	}
+}
