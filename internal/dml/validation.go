@@ -179,10 +179,10 @@ func isSingleLineTextField(field storage.Field) bool {
 }
 
 func validateFields(definition storage.ObjectDefinition, namespace string, record storage.Record, existing ...storage.Record) error {
-	return validateFieldsForOperation(definition, namespace, record, existing, false)
+	return validateFieldsForOperation(definition, namespace, record, existing, nil)
 }
 
-func validateFieldsForOperation(definition storage.ObjectDefinition, namespace string, record storage.Record, existing []storage.Record, capturedInsert bool) error {
+func validateFieldsForOperation(definition storage.ObjectDefinition, namespace string, record storage.Record, existing []storage.Record, originalFields map[string]storage.Value) error {
 	if err := validateCustomAddressComponents(definition, namespace, record, existing); err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func validateFieldsForOperation(definition storage.ObjectDefinition, namespace s
 		if err := validateScaleZeroNumberField(canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
-		if capturedInsert {
+		if strings.EqualFold(definition.Fields[canonical].DisplayType, "EMAIL") && capturedInvalidEmailShape(record.Fields[field]) && originalEmailValueUnchanged(definition, namespace, canonical, record.Fields[field], originalFields) {
 			if err := validateInsertEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 				return err
 			}
@@ -507,6 +507,19 @@ func validateEmailField(objectName, fieldName string, field storage.Field, value
 		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "dml: invalid email address for field %s.%s", objectName, fieldName)
 	}
 	return nil
+}
+
+func originalEmailValueUnchanged(definition storage.ObjectDefinition, namespace, fieldName string, value storage.Value, original map[string]storage.Value) bool {
+	if original == nil || value.Kind != storage.ValueString || !strings.EqualFold(definition.Fields[fieldName].DisplayType, "EMAIL") {
+		return false
+	}
+	for name, input := range original {
+		canonical, ok := storage.ResolveFieldName(definition, namespace, name)
+		if ok && canonical == fieldName && input.Kind == storage.ValueString && input.String == value.String {
+			return true
+		}
+	}
+	return false
 }
 
 func validateInsertEmailField(objectName, fieldName string, field storage.Field, value storage.Value) error {
