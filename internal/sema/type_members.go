@@ -139,6 +139,9 @@ type semaTypeMemberState struct {
 	// semaAnyKnownField raises it when an earlier type's hydration could have
 	// changed its answer, which a worker that has not seen that type cannot know.
 	historyProbe *atomic.Bool
+	// unknownHistory records speculative misses and every subsequently visible
+	// hydrated field, including entries that are later replaced.
+	unknownHistory *semaUnknownHistory
 	// historyUsed, when set beside historyProbe, is raised when an answer of
 	// "yes" needed a hydrated entry rather than the base or platform model.
 	// An incremental run reuses cached body results only while no answer
@@ -266,6 +269,9 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 		members, ok := v.state.platform.lookup(key)
 		if ok {
 			v.hydrated[key] = members
+			if v.state.unknownHistory != nil {
+				v.state.unknownHistory.hydrated(members)
+			}
 			v.changedHydration()
 			return members, true
 		}
@@ -304,6 +310,9 @@ func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
 		}
 	}
 	v.hydrated[key] = members
+	if v.state.unknownHistory != nil {
+		v.state.unknownHistory.hydrated(members)
+	}
 	v.changedHydration()
 }
 
@@ -565,23 +574,74 @@ func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTyp
 	return a.checkMethodBodiesSpeculative(index, model, recorder, workers)
 }
 
+// semaUnknownHistory records the union of fields that appeared during a
+// speculative run. A field can disappear from a view when an entry is replaced,
+// so examining only the final views would miss a possible serial dependency.
+type semaUnknownHistory struct {
+	mu           sync.Mutex
+	missingNames map[string]struct{}
+	fields       map[string]struct{}
+}
+
+func newSemaUnknownHistory() *semaUnknownHistory {
+	return &semaUnknownHistory{missingNames: make(map[string]struct{}), fields: make(map[string]struct{})}
+}
+
+// seed includes the view history that every worker starts with. A worker can
+// replace one of those entries before it observes a missing field.
+func (h *semaUnknownHistory) seed(view *semaTypeMemberView) {
+	for _, members := range view.hydrated {
+		h.hydrated(members)
+	}
+}
+
+func (h *semaUnknownHistory) missing(name string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.missingNames[normalizeName(name)] = struct{}{}
+}
+
+func (h *semaUnknownHistory) hydrated(members typeMembers) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for name := range members.fields {
+		h.fields[name] = struct{}{}
+	}
+}
+
+func (h *semaUnknownHistory) conflict() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for name := range h.missingNames {
+		if _, ok := h.fields[name]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *semaUnknownHistory) hasMissing() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return len(h.missingNames) != 0
+}
+
 // checkMethodBodiesSpeculative checks bodies on several workers and still
 // reports exactly what one worker reports. A single worker carries one view
 // through every type, so a type's check can see what earlier types hydrated.
 // Parallel workers see less. The only reader of that history is
-// semaAnyKnownField, and it raises the state's probe whenever it answers "no
-// such field": the one answer a smaller history can get wrong. A raised probe
-// discards the parallel run and repeats it serially on the untouched view.
-// Otherwise the workers' history is merged into the caller's view, so later
-// passes see what a serial run would have left there.
+// semaAnyKnownField. Record each negative answer and each hydrated field; a
+// collision may depend on serial history and requires a serial retry. Otherwise
+// merge the worker histories for subsequent passes.
 func (a *Analyzer) checkMethodBodiesSpeculative(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workers int) []diagnostic.Diagnostic {
 	started := recorder.beginPhase()
-	var probe atomic.Bool
-	probed := &semaTypeMemberState{base: model.state.base, platform: model.state.platform, historyProbe: &probe}
+	watch := newSemaUnknownHistory()
+	watch.seed(model)
+	probed := &semaTypeMemberState{base: model.state.base, platform: model.state.platform, unknownHistory: watch}
 	scratch := model.cloneOnto(probed)
-	run := &semaBodyRun{seedWorkers: true, abort: &probe}
+	run := &semaBodyRun{seedWorkers: true}
 	diagnostics, recovered := a.checkMethodBodiesRecovering(index, scratch, workers, run)
-	if probe.Load() {
+	if watch.conflict() || (recovered != nil && watch.hasMissing()) {
 		// The discarded attempt still cost time, so it stays in the phase. The
 		// serial pass reads the same sources the attempt already counted, so
 		// it does not count them again.

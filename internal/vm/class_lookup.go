@@ -1572,6 +1572,7 @@ func (vm *VM) resetClassAccessCaches() {
 	vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	vm.namespaceClassRawLookup = nil
 	vm.classNamespaceCache = make(map[string]string)
+	vm.execNamespaceMemo = execNamespaceMemo{}
 	vm.classForAccessCache = make(map[classForAccessKey]classForAccessLookup)
 	vm.accessScopeCache = nil
 	vm.frameSymbolFirstKey = frameSymbolKey{}

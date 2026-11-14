@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/trace"
 	"github.com/glade-sh/glade/internal/vm"
@@ -241,10 +242,32 @@ func namedValuesFromMap(vars map[string]vm.Value) []namedValue {
 	return out
 }
 
+// previewLimit bounds the text of a debugger variable or evaluate result.
+const previewLimit = 256
+
+// previewValue returns Value.String's exact text when it fits previewLimit.
+// Longer text is cut at previewLimit bytes, on a UTF-8 boundary, and marked
+// with "...". The bounded renderer stops once the limit is passed.
+func previewValue(value vm.Value) string {
+	text, truncated := value.BoundedString(previewLimit)
+	if !truncated {
+		return text
+	}
+	// Drop a rune that the cut split; other bytes are kept as rendered.
+	start := len(text) - 1
+	for start > 0 && len(text)-start < utf8.UTFMax && !utf8.RuneStart(text[start]) {
+		start--
+	}
+	if start >= 0 && !utf8.FullRuneInString(text[start:]) {
+		text = text[:start]
+	}
+	return text + "..."
+}
+
 func variableFromValue(name string, value vm.Value, ref int) Variable {
 	out := Variable{
 		Name:               name,
-		Value:              value.String(),
+		Value:              previewValue(value),
 		Type:               string(value.Kind),
 		VariablesReference: ref,
 	}

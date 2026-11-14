@@ -710,8 +710,12 @@ func captureApexMetadataInput(path, fallback string) (ApexMetadataInput, string)
 	return input, effective
 }
 
-func sourceStillMatches(path string, expected [sha256.Size]byte) bool {
-	data, err := os.ReadFile(path) // #nosec G304 -- source just captured for this index occurrence.
+func sourceStillMatches(path string, expected [sha256.Size]byte, readers ...func(string) ([]byte, error)) bool {
+	read := os.ReadFile
+	if len(readers) > 0 {
+		read = readers[0]
+	}
+	data, err := read(path) // #nosec G304 -- source just captured for this index occurrence.
 	return err == nil && sha256.Sum256(data) == expected
 }
 
@@ -1045,7 +1049,7 @@ func MatchesProjectIdentity(idx Index, p project.Project) bool {
 // accepts the objects idx carries. Subset indexes and indexes without a
 // digest snapshot never match.
 func MatchesProjectSources(idx Index, p project.Project) bool {
-	if idx.Subset || idx.sourceDigests == nil || !MatchesProjectIdentity(idx, p) {
+	if idx.Volatile() || idx.Subset || idx.sourceDigests == nil || !MatchesProjectIdentity(idx, p) {
 		return false
 	}
 	for _, path := range p.ApexFiles {
@@ -1127,6 +1131,7 @@ func incrementalFallbackFailure(previous Index, err error) Index {
 }
 
 type incrementalFileIdentityOps struct {
+	readSource  func(string) ([]byte, error)
 	stat        func(string) (os.FileInfo, error)
 	lstat       func(string) (os.FileInfo, error)
 	sameFile    func(os.FileInfo, os.FileInfo) bool
@@ -1134,6 +1139,9 @@ type incrementalFileIdentityOps struct {
 }
 
 func incrementalIdentityOpsWithDefaults(identityOps incrementalFileIdentityOps) incrementalFileIdentityOps {
+	if identityOps.readSource == nil {
+		identityOps.readSource = os.ReadFile
+	}
 	if identityOps.stat == nil {
 		identityOps.stat = os.Stat
 	}
@@ -1704,14 +1712,14 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 	newTriggers := 0
 	if len(changed) == 1 {
 		path := changedSource.path
-		data, err := os.ReadFile(path) // #nosec G304 -- path is the single changed source already admitted to the loaded project index.
+		data, err := identityOps.readSource(path)
 		if err != nil {
 			return Index{}, false
 		}
 		idx.sourceDigests = idx.sourceDigests.withSourceDigest(path, data)
 		metadata := changedSource.owner.metadata
 		capturedMetadata, effectiveAPIVersion := captureApexMetadataInput(path, metadata.apiVersion)
-		if !sourceStillMatches(path, sha256.Sum256(data)) {
+		if !sourceStillMatches(path, sha256.Sum256(data), identityOps.readSource) {
 			return Index{}, false
 		}
 		if !metadataStillMatches(path, capturedMetadata) {

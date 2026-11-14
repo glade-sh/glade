@@ -233,3 +233,45 @@ func TestQueueableStopStatusOutsideCapturedScopeRemainsFailed(t *testing.T) {
 		})
 	}
 }
+
+// The gen2q stopTest rows admit a future's uncapped first-generation
+// Queueable only while stopTest drains. An explicit test-context drain keeps
+// the child deferred.
+func TestExplicitTestDrainDefersUncappedFutureQueueable(t *testing.T) {
+	child, err := CompileAnonymousWithOptions(`System.debug('child');`, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent, err := CompileAnonymousWithOptions(`System.debug('future'); System.enqueueJob(new DrainChildProbe());`, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	for _, class := range []Class{
+		{Name: "DrainChildProbe", Interfaces: []string{"Queueable"}, Methods: map[string]Method{"execute": {Name: "DrainChildProbe.execute", ClassName: "DrainChildProbe", ReturnType: "void", Params: []Param{{Name: "context", Type: "QueueableContext"}}, Program: child}}},
+		{Name: "DrainFutureProbe", Methods: map[string]Method{"run": {Name: "DrainFutureProbe.run", ClassName: "DrainFutureProbe", ReturnType: "void", IsStatic: true, Modifiers: []string{"future"}, Program: parent}}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, err := CompileAnonymousWithOptions(`DrainFutureProbe.run();`, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(p); err != nil {
+		t.Fatal(err)
+	}
+	var result Result
+	for range 2 {
+		if err := machine.DrainAsync(&result); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := strings.Join(result.Debug, ","); got != "future" {
+		t.Fatalf("explicit drain debug = %q, want future only", got)
+	}
+}

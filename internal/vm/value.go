@@ -291,88 +291,101 @@ func Object(typeName string) Value {
 	return Value{Kind: ValueObject, Type: typeName, Fields: make(map[string]Value), Ref: newValueRef()}
 }
 
-func (v Value) String() string {
+func (v Value) writeText(w *textWriter) {
+	if w.full {
+		return
+	}
 	switch v.Kind {
-	case ValueNull:
-		return "null"
-	case ValueInt:
-		return strconv.FormatInt(v.Int, 10)
 	case ValueDecimal:
-		return numericDisplayText(v)
-	case ValueBool:
-		if v.Bool {
-			return "true"
+		if w.bounded {
+			writeBoundedDecimalText(w, v)
+		} else {
+			w.WriteString(v.String())
 		}
-		return "false"
-	case ValueString:
-		return v.Text
+	case ValueNull, ValueInt, ValueBool, ValueString:
+		w.WriteString(v.String())
 	case ValueList:
-		return "List" + valuesString(v.List)
+		w.WriteString("List")
+		writeValuesText(w, v.List)
 	case ValueSet:
-		return "Set" + valuesString(v.Set)
+		w.WriteString("Set")
+		writeValuesText(w, v.Set)
 	case ValueMap:
 		if v.mapKeySetSource != nil {
 			v = v.currentFieldMapHolder()
 		}
-		return mapString(v)
+		writeMapText(w, v)
 	case ValueObject:
-		if text, ok := httpDTOString(v); ok {
-			return text
+		if writeHTTPDTOText(w, v) {
+			return
 		}
 		if strings.EqualFold(v.Runtime, "System.Location") {
-			return locationString(v)
+			writeLocationText(w, v)
+			return
 		}
 		if strings.EqualFold(v.Type, "AccessLevel") {
-			return accessLevelString(v)
+			writeAccessLevelText(w, v, make(map[uint64]bool))
+			return
 		}
-		if text, ok := databaseDTOString(v, make(map[uint64]bool)); ok {
-			return text
+		if writeDatabaseDTOText(w, v) {
+			return
 		}
-		if text, ok := automationDTOString(v, make(map[uint64]bool)); ok {
-			return text
+		if writeAutomationDTOText(w, v, make(map[uint64]bool)) {
+			return
 		}
 		if stubbedType, ok := stubProxyTypeName(v); ok {
-			return fmt.Sprintf("%s__sfdc_ApexStub:%d", stubbedType, v.Ref)
+			w.WriteString(stubbedType)
+			w.WriteString("__sfdc_ApexStub:")
+			w.WriteString(strconv.FormatUint(v.Ref, 10))
+			return
 		}
 		// Source exceptions retain the message fallback used by surfaced errors
 		// (r_error_custom_imperative and r_repeat_exception).
 		if v.projectClass && !isExceptionType(v.Type) {
-			text, _ := objectFieldsString(v, make(map[uint64]bool))
-			return text
+			writeObjectFieldsText(w, v, make(map[uint64]bool))
+			return
 		}
 		if strings.EqualFold(v.Type, "PageReference") {
 			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString {
-				return rawURL.Text
+				w.WriteString(rawURL.Text)
 			}
-			return ""
+			return
 		}
 		if strings.EqualFold(v.Type, "Schema.SObjectType") {
 			if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
-				return objectName.Text
+				w.WriteString(objectName.Text)
+				return
 			}
 		}
 		if strings.EqualFold(v.Type, "Schema.SObjectField") {
 			objectName, hasObject := v.Fields["object"]
 			fieldName, hasField := v.Fields["field"]
 			if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
-				return fieldName.Text
+				w.WriteString(fieldName.Text)
+				return
 			}
 		}
 		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
 			if strings.EqualFold(v.Type, "Id") {
-				return displayIDText(raw.Text)
+				w.WriteString(displayIDText(raw.Text))
+				return
 			}
-			return raw.Text
+			w.WriteString(raw.Text)
+			return
 		}
 		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {
-			return message.Text
+			w.WriteString(message.Text)
+			return
 		}
-		if text, ok := objectFieldsString(v, make(map[uint64]bool)); ok {
-			return text
+		if writeObjectFieldsText(w, v, make(map[uint64]bool)) {
+			return
 		}
-		return fmt.Sprintf("%s:{}", v.Type)
+		w.WriteString(v.Type)
+		w.WriteString(":{}")
 	default:
-		return fmt.Sprintf("<%s>", v.Kind)
+		w.WriteString("<")
+		w.WriteString(string(v.Kind))
+		w.WriteString(">")
 	}
 }
 
@@ -449,163 +462,300 @@ func accessLevelClone(value Value) Value {
 }
 
 func accessLevelString(value Value) string {
-	return accessLevelObjectString(value, make(map[uint64]bool))
+	var w textWriter
+	writeAccessLevelText(&w, value, make(map[uint64]bool))
+	return w.String()
 }
 
-func accessLevelObjectString(value Value, seen map[uint64]bool) string {
+func writeAccessLevelText(w *textWriter, value Value, seen map[uint64]bool) {
+	if w.full {
+		return
+	}
 	if value.Ref != 0 {
 		if seen[value.Ref] {
-			return "(already output)"
+			w.WriteString("(already output)")
+			return
 		}
 		// Native marks an object "already output" once it has been written
 		// anywhere in the rendering, not only while it is being written (org
 		// capture access_level_rendering).
 		seen[value.Ref] = true
 	}
-	return "AccessLevel:[SYSTEM_MODE=" + accessLevelFieldString(value.Fields["SYSTEM_MODE"], seen) +
-		", USER_MODE=" + accessLevelFieldString(value.Fields["USER_MODE"], seen) +
-		", currentAccessPermissions=" + accessLevelFieldString(value.Fields["currentAccessPermissions"], seen) +
-		", permSetId=" + accessLevelPermissionSetDisplay(value) + "]"
-}
-
-func accessLevelFieldString(value Value, seen map[uint64]bool) string {
-	if value.Kind == ValueObject && strings.EqualFold(value.Type, "AccessLevel") {
-		return accessLevelObjectString(value, seen)
-	}
-	return value.String()
-}
-
-func accessLevelPermissionSetDisplay(value Value) string {
+	w.WriteString("AccessLevel:[SYSTEM_MODE=")
+	writeAccessLevelFieldText(w, value.Fields["SYSTEM_MODE"], seen)
+	w.WriteString(", USER_MODE=")
+	writeAccessLevelFieldText(w, value.Fields["USER_MODE"], seen)
+	w.WriteString(", currentAccessPermissions=")
+	writeAccessLevelFieldText(w, value.Fields["currentAccessPermissions"], seen)
+	w.WriteString(", permSetId=")
 	if permissionSetID, ok := value.Fields["permissionSetId"]; ok {
-		return permissionSetID.String()
+		permissionSetID.writeText(w)
+	} else {
+		w.WriteString("null")
 	}
-	return "null"
+	w.WriteString("]")
 }
 
-func objectFieldsString(v Value, seen map[uint64]bool) (string, bool) {
+func writeAccessLevelFieldText(w *textWriter, value Value, seen map[uint64]bool) {
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "AccessLevel") {
+		writeAccessLevelText(w, value, seen)
+		return
+	}
+	value.writeText(w)
+}
+
+// writeObjectFieldsText writes the field display of an object and reports
+// whether that display applies; it writes nothing when it does not.
+func writeObjectFieldsText(w *textWriter, v Value, seen map[uint64]bool) bool {
 	if v.Kind != ValueObject || (len(v.Fields) == 0 && !v.projectClass) {
-		return "", false
+		return false
 	}
 	// A stub proxy never shows the VM's provider bookkeeping fields (NS312B).
 	if _, ok := stubProxyTypeName(v); ok {
-		return v.String(), true
+		v.writeText(w)
+		return true
 	}
-	if text, ok := automationDTOString(v, seen); ok {
-		return text, true
+	if writeAutomationDTOText(w, v, seen) {
+		return true
 	}
-	if text, ok := databaseDTOString(v, seen); ok {
-		return text, true
+	if writeDatabaseDTOText(w, v) {
+		return true
 	}
-	if text, ok := messagingTemplateResultString(v); ok {
-		return text, true
+	if writeMessagingTemplateResultText(w, v) {
+		return true
 	}
 	if v.Ref != 0 {
 		if seen[v.Ref] {
-			return fmt.Sprintf("%s:{...}", v.Type), true
+			w.WriteString(v.Type)
+			w.WriteString(":{...}")
+			return true
 		}
 		seen[v.Ref] = true
 		defer delete(seen, v.Ref)
 	}
-	keys := make([]string, 0, len(v.Fields))
 	isSObject := sObjectValueType(v.Type)
-	for key := range v.Fields {
+	keep := func(key string) bool {
 		if isInheritedInstanceFieldStorage(key) || isPicklistJSONValidForField(v, key) {
-			continue
+			return false
 		}
 		// R243: Object text includes populated fields, without implicit
 		// SObject defaults or the VM's field-tracking metadata.
-		if isLexicalInstanceFieldStorage(key) || isSObject && (isInternalSObjectField(key) || isDefaultedSObjectField(v, key) || !sObjectEqualityFieldVisible(v, key)) {
-			continue
-		}
-		keys = append(keys, key)
+		return !(isLexicalInstanceFieldStorage(key) || isSObject && (isInternalSObjectField(key) || isDefaultedSObjectField(v, key) || !sObjectEqualityFieldVisible(v, key)))
 	}
-	sort.Strings(keys)
-	if selected, queried := v.Fields[sobjectQueriedFieldsField]; isSObject && queried && len(selected.MapOrder) > 0 {
-		order := make(map[string]int, len(selected.MapOrder))
-		for i, encoded := range selected.MapOrder {
-			order[mapStoredKey(selected, encoded).String()] = i
-		}
-		sort.SliceStable(keys, func(i, j int) bool {
-			left, leftSelected := order[strings.ToLower(keys[i])]
-			right, rightSelected := order[strings.ToLower(keys[j])]
-			if leftSelected != rightSelected {
-				return leftSelected
-			}
-			return leftSelected && left < right
-		})
+	w.WriteString(v.Type)
+	if v.projectClass {
+		w.WriteString(":[")
+	} else {
+		w.WriteString(":{")
 	}
-	parts := make([]string, 0, len(keys))
-	for _, key := range keys {
+	if w.full {
+		return true
+	}
+	written := 0
+	write := func(i int, key string) {
+		if written > 0 {
+			w.WriteString(", ")
+		}
+		written++
+		w.WriteString(key)
+		w.WriteString("=")
 		field := v.Fields[key]
-		var text string
 		if isSObject && field.Kind == ValueObject && strings.EqualFold(field.Type, "Id") {
-			text = field.String()
+			field.writeText(w)
 		} else {
-			text = valueStringWithSeen(field, seen)
+			writeValueTextWithSeen(w, field, seen)
 		}
-		parts = append(parts, key+"="+text)
+	}
+	var less func(a, b string) bool
+	if selected, queried := v.Fields[sobjectQueriedFieldsField]; isSObject && queried && len(selected.MapOrder) > 0 {
+		// Queried fields come first in query order, then the rest in byte
+		// order; equal positions keep byte order.
+		queryOrder := func(names []string) (map[string]int, func(a, b string) bool) {
+			order := make(map[string]int, len(names))
+			for i, encoded := range names {
+				order[mapStoredKey(selected, encoded).String()] = i
+			}
+			return order, func(a, b string) bool {
+				left, leftSelected := order[strings.ToLower(a)]
+				right, rightSelected := order[strings.ToLower(b)]
+				if leftSelected != rightSelected {
+					return leftSelected
+				}
+				if leftSelected && left != right {
+					return left < right
+				}
+				return a < b
+			}
+		}
+		// A bounded writer shows at most textKeyBudget keys, so it first
+		// indexes only that many leading query names. Their fields are the
+		// first of the full order. A name repeated later takes its last
+		// position, as in the full index.
+		if k := textKeyBudget(w); w.bounded && k < len(selected.MapOrder) {
+			leading, leadingLess := queryOrder(selected.MapOrder[:k])
+			for _, encoded := range selected.MapOrder[k:] {
+				if len(leading) == 0 {
+					break
+				}
+				delete(leading, mapStoredKey(selected, encoded).String())
+			}
+			isLeading := func(key string) bool {
+				_, ok := leading[strings.ToLower(key)]
+				return ok
+			}
+			forEachTextKey(w, v.Fields, func(key string) bool { return isLeading(key) && keep(key) }, leadingLess, write)
+			if w.full {
+				return true
+			}
+			visible := keep
+			keep = func(key string) bool { return !isLeading(key) && visible(key) }
+		}
+		_, less = queryOrder(selected.MapOrder)
+	}
+	forEachTextKey(w, v.Fields, keep, less, write)
+	if w.full {
+		return true
 	}
 	if v.projectClass {
-		return fmt.Sprintf("%s:[%s]", v.Type, strings.Join(parts, ", ")), true
+		w.WriteString("]")
+	} else {
+		w.WriteString("}")
 	}
-	return fmt.Sprintf("%s:{%s}", v.Type, strings.Join(parts, ", ")), true
+	return true
 }
 
-func databaseDTOString(v Value, seen map[uint64]bool) (string, bool) {
-	switch strings.ToLower(v.Type) {
-	case "database.assignmentruleheader", "assignmentruleheader":
-		return "AssignmentRuleHeader:[AssignmentRuleId=" + databaseDTOFieldString(v, "AssignmentRuleId") +
-			", UseDefaultRule=" + databaseDTOFieldString(v, "UseDefaultRule") + "]", true
-	case "database.duplicateruleheader", "duplicateruleheader":
-		return "DuplicateRuleHeader:[AllowSave=" + databaseDTOFieldString(v, "AllowSave") +
-			", RunAsCurrentUser=" + databaseDTOFieldString(v, "RunAsCurrentUser") + "]", true
-	case "database.emailheader", "emailheader":
-		return "EmailHeader:[TriggerAutoResponseEmail=" + databaseDTOFieldString(v, "TriggerAutoResponseEmail") +
-			", TriggerOtherEmail=" + databaseDTOFieldString(v, "TriggerOtherEmail") +
-			", TriggerUserEmail=" + databaseDTOFieldString(v, "TriggerUserEmail") + "]", true
-	case "database.dmloptions", "dmloptions":
-		return "DMLOptions:[AllowFieldTruncation=" + databaseDTOOuterFieldString(v, "AllowFieldTruncation") +
-			", AssignmentRuleHeader=" + databaseDTOOuterFieldString(v, "AssignmentRuleHeader") +
-			", DuplicateRuleHeader=" + databaseDTOOuterFieldString(v, "DuplicateRuleHeader") +
-			", EmailHeader=" + databaseDTOOuterFieldString(v, "EmailHeader") +
-			", LocaleOptions=" + databaseDTOOuterFieldString(v, "LocaleOptions") +
-			", LocalizeErrors=" + databaseDTOOuterFieldString(v, "LocalizeErrors") +
-			", OptAllOrNone=" + databaseDTOOuterFieldString(v, "OptAllOrNone") + "]", true
-	case "database.leadconvert", "leadconvert":
-		return "Database.LeadConvert[getAccountId=" + databaseDTOFieldString(v, "accountId") +
-			";getAccountRecord=" + databaseDTOFieldString(v, "accountRecord") +
-			";getBypassAccountDedupeCheck=" + databaseDTOFieldString(v, "bypassAccountDedupeCheck") +
-			";getBypassContactDedupeCheck=" + databaseDTOFieldString(v, "bypassContactDedupeCheck") +
-			";getContactId=" + databaseDTOFieldString(v, "contactId") +
-			";getContactRecord=" + databaseDTOFieldString(v, "contactRecord") +
-			";getConvertedStatus=" + databaseDTOFieldString(v, "convertedStatus") +
-			";getLeadId=" + databaseDTOFieldString(v, "leadId") +
-			";getOpportunityId=" + databaseDTOFieldString(v, "opportunityId") +
-			";getOpportunityName=" + databaseDTOFieldString(v, "opportunityName") +
-			";getOpportunityRecord=" + databaseDTOFieldString(v, "opportunityRecord") +
-			";getOwnerId=" + databaseDTOFieldString(v, "ownerId") +
-			";getRelatedPersonAccountId=" + databaseDTOFieldString(v, "relatedPersonAccountId") +
-			";getRelatedPersonAccountRecord=" + databaseDTOFieldString(v, "relatedPersonAccountRecord") +
-			";isDoNotCreateOpportunity=" + databaseDTOBooleanString(v, "doNotCreateOpportunity") +
-			";isOverwriteLeadSource=" + databaseDTOBooleanString(v, "overwriteLeadSource") +
-			";isSendNotificationEmail=" + databaseDTOBooleanString(v, "sendNotificationEmail") + ";]", true
-	case "database.querylocator", "querylocator":
-		return "Database.QueryLocator[Query=" + databaseDTOFieldString(v, "Query") + "]", true
+// databaseDTOPart is one "label=value" segment of a Database DTO display.
+// The label carries its leading separator.
+type databaseDTOPart struct {
+	label string
+	field string
+	mode  byte // 'f' field, 'b' boolean, 'o' outer DTO field
+}
+
+type databaseDTOFormat struct {
+	parts  []databaseDTOPart
+	suffix string
+}
+
+var databaseDTOFormats = map[string]databaseDTOFormat{
+	"assignmentruleheader": {[]databaseDTOPart{
+		{"AssignmentRuleHeader:[AssignmentRuleId=", "AssignmentRuleId", 'f'},
+		{", UseDefaultRule=", "UseDefaultRule", 'f'},
+	}, "]"},
+	"duplicateruleheader": {[]databaseDTOPart{
+		{"DuplicateRuleHeader:[AllowSave=", "AllowSave", 'f'},
+		{", RunAsCurrentUser=", "RunAsCurrentUser", 'f'},
+	}, "]"},
+	"emailheader": {[]databaseDTOPart{
+		{"EmailHeader:[TriggerAutoResponseEmail=", "TriggerAutoResponseEmail", 'f'},
+		{", TriggerOtherEmail=", "TriggerOtherEmail", 'f'},
+		{", TriggerUserEmail=", "TriggerUserEmail", 'f'},
+	}, "]"},
+	"dmloptions": {[]databaseDTOPart{
+		{"DMLOptions:[AllowFieldTruncation=", "AllowFieldTruncation", 'o'},
+		{", AssignmentRuleHeader=", "AssignmentRuleHeader", 'o'},
+		{", DuplicateRuleHeader=", "DuplicateRuleHeader", 'o'},
+		{", EmailHeader=", "EmailHeader", 'o'},
+		{", LocaleOptions=", "LocaleOptions", 'o'},
+		{", LocalizeErrors=", "LocalizeErrors", 'o'},
+		{", OptAllOrNone=", "OptAllOrNone", 'o'},
+	}, "]"},
+	"leadconvert": {[]databaseDTOPart{
+		{"Database.LeadConvert[getAccountId=", "accountId", 'f'},
+		{";getAccountRecord=", "accountRecord", 'f'},
+		{";getBypassAccountDedupeCheck=", "bypassAccountDedupeCheck", 'f'},
+		{";getBypassContactDedupeCheck=", "bypassContactDedupeCheck", 'f'},
+		{";getContactId=", "contactId", 'f'},
+		{";getContactRecord=", "contactRecord", 'f'},
+		{";getConvertedStatus=", "convertedStatus", 'f'},
+		{";getLeadId=", "leadId", 'f'},
+		{";getOpportunityId=", "opportunityId", 'f'},
+		{";getOpportunityName=", "opportunityName", 'f'},
+		{";getOpportunityRecord=", "opportunityRecord", 'f'},
+		{";getOwnerId=", "ownerId", 'f'},
+		{";getRelatedPersonAccountId=", "relatedPersonAccountId", 'f'},
+		{";getRelatedPersonAccountRecord=", "relatedPersonAccountRecord", 'f'},
+		{";isDoNotCreateOpportunity=", "doNotCreateOpportunity", 'b'},
+		{";isOverwriteLeadSource=", "overwriteLeadSource", 'b'},
+		{";isSendNotificationEmail=", "sendNotificationEmail", 'b'},
+	}, ";]"},
+	"querylocator": {[]databaseDTOPart{
+		{"Database.QueryLocator[Query=", "Query", 'f'},
+	}, "]"},
+	// pagination_cursor_versions: a cursor from any factory, before any
+	// member call, prints this at class API 61.0 to 67.0.
+	"paginationcursor": {nil, "PaginationCursor:[numRecords=null, queryId=<empty>]"},
+	"recordtypeinfo": {[]databaseDTOPart{
+		{"Schema.RecordTypeInfo[getDeveloperName=", "developerName", 'f'},
+		{";getName=", "name", 'f'},
+		{";getRecordTypeId=", "recordTypeId", 'f'},
+		{";isActive=", "active", 'b'},
+		{";isAvailable=", "available", 'b'},
+		{";isDefaultRecordTypeMapping=", "defaultRecordTypeMapping", 'b'},
+		{";isMaster=", "master", 'b'},
+	}, ";]"},
+}
+
+func databaseDTOFormatFor(typeName string) (databaseDTOFormat, bool) {
+	switch key := strings.ToLower(typeName); key {
+	case "database.assignmentruleheader", "database.duplicateruleheader", "database.emailheader",
+		"database.dmloptions", "database.leadconvert", "database.querylocator":
+		format, ok := databaseDTOFormats[strings.TrimPrefix(key, "database.")]
+		return format, ok
 	case "database.paginationcursor":
-		// pagination_cursor_versions: a cursor from any factory, before any
-		// member call, prints this at class API 61.0 to 67.0.
-		return "PaginationCursor:[numRecords=null, queryId=<empty>]", true
-	case "schema.recordtypeinfo", "recordtypeinfo":
-		return "Schema.RecordTypeInfo[getDeveloperName=" + databaseDTOFieldString(v, "developerName") +
-			";getName=" + databaseDTOFieldString(v, "name") +
-			";getRecordTypeId=" + databaseDTOFieldString(v, "recordTypeId") +
-			";isActive=" + databaseDTOBooleanString(v, "active") +
-			";isAvailable=" + databaseDTOBooleanString(v, "available") +
-			";isDefaultRecordTypeMapping=" + databaseDTOBooleanString(v, "defaultRecordTypeMapping") +
-			";isMaster=" + databaseDTOBooleanString(v, "master") + ";]", true
+		return databaseDTOFormats["paginationcursor"], true
+	case "schema.recordtypeinfo":
+		return databaseDTOFormats["recordtypeinfo"], true
+	case "assignmentruleheader", "duplicateruleheader", "emailheader", "dmloptions", "leadconvert",
+		"querylocator", "recordtypeinfo":
+		format, ok := databaseDTOFormats[key]
+		return format, ok
 	default:
-		return "", false
+		return databaseDTOFormat{}, false
 	}
+}
+
+func writeDatabaseDTOText(w *textWriter, v Value) bool {
+	format, ok := databaseDTOFormatFor(v.Type)
+	if !ok {
+		return false
+	}
+	for _, part := range format.parts {
+		if w.full {
+			return true
+		}
+		w.WriteString(part.label)
+		value, found := databaseDTOField(v, part.field)
+		switch part.mode {
+		case 'b':
+			if !found || value.Kind == ValueNull {
+				w.WriteString("false")
+				continue
+			}
+		case 'o':
+			if !found || value.Kind == ValueNull {
+				w.WriteString("null")
+				continue
+			}
+			if value.Kind == ValueObject {
+				if databaseDTOObjectIsDefault(value) {
+					w.WriteString("null")
+					continue
+				}
+				if writeDatabaseDTOText(w, value) {
+					continue
+				}
+			}
+		default:
+			if !found {
+				w.WriteString("null")
+				continue
+			}
+		}
+		value.writeText(w)
+	}
+	w.WriteString(format.suffix)
+	return true
 }
 
 func databaseDTOField(v Value, field string) (Value, bool) {
@@ -618,38 +768,6 @@ func databaseDTOField(v Value, field string) (Value, bool) {
 		}
 	}
 	return Null, false
-}
-
-func databaseDTOFieldString(v Value, field string) string {
-	value, ok := databaseDTOField(v, field)
-	if !ok {
-		return "null"
-	}
-	return value.String()
-}
-
-func databaseDTOBooleanString(v Value, field string) string {
-	value, ok := databaseDTOField(v, field)
-	if !ok || value.Kind == ValueNull {
-		return "false"
-	}
-	return value.String()
-}
-
-func databaseDTOOuterFieldString(v Value, field string) string {
-	value, ok := databaseDTOField(v, field)
-	if !ok || value.Kind == ValueNull {
-		return "null"
-	}
-	if value.Kind == ValueObject {
-		if databaseDTOObjectIsDefault(value) {
-			return "null"
-		}
-		if text, ok := databaseDTOString(value, make(map[uint64]bool)); ok {
-			return text
-		}
-	}
-	return value.String()
 }
 
 func databaseDTOObjectIsDefault(v Value) bool {
@@ -665,36 +783,58 @@ func databaseDTOObjectIsDefault(v Value) bool {
 }
 
 func valueStringWithSeen(v Value, seen map[uint64]bool) string {
+	var w textWriter
+	writeValueTextWithSeen(&w, v, seen)
+	return w.String()
+}
+
+func writeValueTextWithSeen(w *textWriter, v Value, seen map[uint64]bool) {
+	if w.full {
+		return
+	}
 	v = v.currentMapKeySet()
 	switch v.Kind {
-	case ValueList:
-		parts := make([]string, 0, len(v.List))
-		for _, value := range v.List {
-			parts = append(parts, valueStringWithSeen(value, seen))
+	case ValueList, ValueSet:
+		items := v.List
+		if v.Kind == ValueSet {
+			items = v.Set
+			w.WriteString("Set[")
+		} else {
+			w.WriteString("List[")
 		}
-		return "List[" + strings.Join(parts, ", ") + "]"
-	case ValueSet:
-		parts := make([]string, 0, len(v.Set))
-		for _, value := range v.Set {
-			parts = append(parts, valueStringWithSeen(value, seen))
+		for i, value := range items {
+			if w.full {
+				return
+			}
+			if i > 0 {
+				w.WriteString(", ")
+			}
+			writeValueTextWithSeen(w, value, seen)
 		}
-		return "Set[" + strings.Join(parts, ", ") + "]"
+		w.WriteString("]")
+		return
 	case ValueMap:
 		if len(v.Map) == 0 {
-			return "{}"
+			w.WriteString("{}")
+			return
 		}
-		keys := sortedMapKeys(v.Map)
-		parts := make([]string, 0, len(keys))
-		for _, key := range keys {
-			parts = append(parts, valueStringWithSeen(mapStoredKey(v, key), seen)+"="+valueStringWithSeen(v.Map[key], seen))
-		}
-		return "Map{" + strings.Join(parts, ", ") + "}"
+		w.WriteString("Map{")
+		forEachTextKey(w, v.Map, nil, nil, func(i int, key string) {
+			if i > 0 {
+				w.WriteString(", ")
+			}
+			writeValueTextWithSeen(w, mapStoredKey(v, key), seen)
+			w.WriteString("=")
+			writeValueTextWithSeen(w, v.Map[key], seen)
+		})
+		w.WriteString("}")
+		return
 	case ValueObject:
-		if text, ok := objectFieldsString(v, seen); ok {
-			return text
+		if writeObjectFieldsText(w, v, seen) {
+			return
 		}
 	}
-	return v.String()
+	v.writeText(w)
 }
 
 func decimalDisplayText(value Value) string {
@@ -1589,15 +1729,18 @@ func containsValue(values []Value, needle Value) bool {
 	return false
 }
 
-func valuesString(values []Value) string {
-	out := "["
+func writeValuesText(w *textWriter, values []Value) {
+	w.WriteString("[")
 	for i, value := range values {
-		if i > 0 {
-			out += ", "
+		if w.full {
+			return
 		}
-		out += value.String()
+		if i > 0 {
+			w.WriteString(", ")
+		}
+		value.writeText(w)
 	}
-	return out + "]"
+	w.WriteString("]")
 }
 
 func apexCollectionString(value Value) string {
@@ -1614,77 +1757,96 @@ func apexMapValueCollectionString(value Value) string {
 // apexCollectionStringLimit renders a collection; a positive limit keeps the
 // first limit List or Set elements and appends "...".
 func apexCollectionStringLimit(value Value, limit int) string {
+	var w textWriter
+	writeApexCollectionText(&w, value, limit)
+	return w.String()
+}
+
+func writeApexCollectionText(w *textWriter, value Value, limit int) {
+	if w.full {
+		return
+	}
 	value = value.currentMapKeySet()
-	parts := make([]string, 0)
 	switch value.Kind {
-	case ValueList:
+	case ValueList, ValueSet:
 		items := value.List
+		opening, closing := "(", ")"
+		var idSet bool
+		if value.Kind == ValueSet {
+			items = value.Set
+			opening, closing = "{", "}"
+			elementType, typed := collectionElementType(value.Type)
+			idSet = typed && strings.EqualFold(canonicalApexScalarType(elementType), "Id")
+		}
 		truncated := limit > 0 && len(items) > limit
 		if truncated {
 			items = items[:limit]
 		}
-		parts = make([]string, 0, len(items)+1)
-		for _, item := range items {
-			parts = append(parts, collectionElementDisplayText(item))
-		}
-		if truncated {
-			parts = append(parts, "...")
-		}
-		return "(" + strings.Join(parts, ", ") + ")"
-	case ValueSet:
-		items := value.Set
-		truncated := limit > 0 && len(items) > limit
-		if truncated {
-			items = items[:limit]
-		}
-		parts = make([]string, 0, len(items)+1)
-		elementType, typed := collectionElementType(value.Type)
-		for _, item := range items {
+		w.WriteString(opening)
+		for i, item := range items {
+			if w.full {
+				return
+			}
+			if i > 0 {
+				w.WriteString(", ")
+			}
 			// Preserve stored Id payloads; the captured scalar String view is
 			// expanded only in this typed Set projection. Nested text rows are
 			// still pending, so ordinary String/Object sets retain their path.
-			if typed && strings.EqualFold(canonicalApexScalarType(elementType), "Id") && item.Kind == ValueString && strings.EqualFold(item.Type, "Id") {
-				parts = append(parts, displayIDText(item.Text))
+			if idSet && item.Kind == ValueString && strings.EqualFold(item.Type, "Id") {
+				w.WriteString(displayIDText(item.Text))
 				continue
 			}
-			parts = append(parts, collectionElementDisplayText(item))
+			writeCollectionElementText(w, item)
 		}
 		if truncated {
-			parts = append(parts, "...")
+			if len(items) > 0 {
+				w.WriteString(", ")
+			}
+			w.WriteString("...")
 		}
-		return "{" + strings.Join(parts, ", ") + "}"
+		w.WriteString(closing)
 	case ValueMap:
-		return mapString(value)
+		writeMapText(w, value)
 	default:
-		return value.String()
+		value.writeText(w)
 	}
 }
 
 // Match the scalar Id rendering used by VM List/Set display when a collection
 // is nested in Map text, without treating ordinary Id-shaped Strings as Ids.
-func collectionElementDisplayText(value Value) string {
+func writeCollectionElementText(w *textWriter, value Value) {
 	if text, ok := typedIDValueText(value); ok {
-		return displayIDText(text)
+		w.WriteString(displayIDText(text))
+		return
 	}
-	return value.String()
+	value.writeText(w)
 }
 
 func mapString(value Value) string {
+	var w textWriter
+	writeMapText(&w, value)
+	return w.String()
+}
+
+func writeMapText(w *textWriter, value Value) {
 	values := value.Map
 	if len(values) == 0 {
-		return "{}"
+		w.WriteString("{}")
+		return
 	}
-	keys := sortedMapKeys(values)
 	// Map text has bare braces, with the
 	// ordinary Apex representation for nested collection values.
-	out := "{"
-	for i, key := range keys {
+	w.WriteString("{")
+	forEachTextKey(w, values, nil, nil, func(i int, key string) {
 		if i > 0 {
-			out += ", "
+			w.WriteString(", ")
 		}
-		out += mapStoredKey(value, key).String() + "=" + apexCollectionString(values[key])
-	}
-	return out + "}"
+		mapStoredKey(value, key).writeText(w)
+		w.WriteString("=")
+		writeApexCollectionText(w, values[key], 0)
+	})
+	w.WriteString("}")
 }
 
 func sortedMapKeys(values map[string]Value) []string {

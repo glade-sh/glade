@@ -69,6 +69,7 @@ func (vm *VM) registerAnonymousLocalMethods(program ir.Program) (func(), error) 
 		}
 		if !hadClass {
 			delete(vm.Classes, anonymousLocalClass)
+			vm.execNamespaceMemo = execNamespaceMemo{}
 		}
 		vm.anonymousLocal = previousScope
 	}, nil
