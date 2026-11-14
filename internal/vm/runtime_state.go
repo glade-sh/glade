@@ -441,6 +441,10 @@ type VM struct {
 	gatedPlatformLateBind     bool
 	bindingGatedPlatformClass bool
 	gatedPlatformBoundNames   map[string]struct{}
+	// gatedEnumScan memoizes, per class lookup generation and class count,
+	// whether the enum suffix searches see passive platform enums here
+	// (gated_platform_class.go).
+	gatedEnumScan gatedEnumScanMemo
 	// String == support: the Turkish-dotting decision for the running user and
 	// the full case transformers, created once per machine.
 	localeCase localeCaseCache
