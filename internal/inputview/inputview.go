@@ -274,7 +274,7 @@ func dirObservation(path, kind string) ([]os.DirEntry, observation, error) {
 	o.mode = fs.ModeDir
 	h := sha256.New()
 	for _, e := range entries {
-		if excludeDirEntry(kind, e.Name()) || (e.Name() == ".DS_Store" && e.Type().IsRegular()) {
+		if excludeDirEntry(kind, e.Name()) || ignoredChurnFile(path, e) {
 			continue
 		}
 		fmt.Fprintf(h, "%s\x00%d\x00", e.Name(), e.Type())
@@ -282,6 +282,33 @@ func dirObservation(path, kind string) ([]os.DirEntry, observation, error) {
 	copy(o.listing[:], h.Sum(nil))
 	return entries, o, nil
 }
+
+// ignoredChurnFile omits editor artifacts only where they cannot be static
+// resource contents. A hidden lock with a metadata suffix can itself be an
+// input, so only lock names for Apex files or without an extension are omitted.
+func ignoredChurnFile(dir string, entry os.DirEntry) bool {
+	if !entry.Type().IsRegular() {
+		return false
+	}
+	name := entry.Name()
+	if name == ".DS_Store" {
+		return true
+	}
+	for _, part := range strings.Split(filepath.ToSlash(filepath.Clean(dir)), "/") {
+		if strings.EqualFold(part, "staticresources") {
+			return false
+		}
+	}
+	if strings.HasSuffix(name, ".swp") || strings.HasSuffix(name, "~") {
+		return true
+	}
+	if strings.HasPrefix(name, ".#") {
+		target := strings.TrimPrefix(name, ".#")
+		return !strings.Contains(target, ".") || strings.HasSuffix(target, ".cls") || strings.HasSuffix(target, ".trigger")
+	}
+	return false
+}
+
 func (v *View) ReadDir(path string) ([]os.DirEntry, error) {
 	return v.readDir(path, "dir")
 }
