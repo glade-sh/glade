@@ -80,6 +80,141 @@ type spreadTemplateCell struct {
 	// evicted marks a tombstone: the group this cell belonged to was dropped
 	// for the field budget. A tombstone holds no state.
 	evicted bool
+	// group is the group that counts this cell's fields. It is set when the
+	// cell is built, before done, and is nil for a cell built outside
+	// buildSpreadTemplateCell.
+	group *spreadTemplateGroup
+}
+
+// spreadTemplateGroupKey names a group: the templates of one phase and feature
+// shape.
+type spreadTemplateGroupKey struct {
+	phase      string
+	signature  string
+	multiCurr  bool
+	recordType bool
+}
+
+// spreadTemplateGroup counts the live fields of a group's cells and when one of
+// them was last used. Both are hints: the eviction pass recomputes the counts
+// from the map before it drops anything.
+type spreadTemplateGroup struct {
+	fields  atomic.Int64
+	lastUse atomic.Uint64
+}
+
+func (k spreadTemplateKey) group() spreadTemplateGroupKey {
+	return spreadTemplateGroupKey{phase: k.phase, signature: k.signature, multiCurr: k.multiCurr, recordType: k.recordType}
+}
+
+var (
+	spreadTemplateGroups     sync.Map // spreadTemplateGroupKey -> *spreadTemplateGroup
+	spreadTemplateClock      atomic.Uint64
+	spreadTemplateLiveFields atomic.Int64
+	spreadTemplateEvictMu    sync.Mutex
+)
+
+func spreadGroupFor(key spreadTemplateGroupKey) *spreadTemplateGroup {
+	if g, ok := spreadTemplateGroups.Load(key); ok {
+		return g.(*spreadTemplateGroup)
+	}
+	g, _ := spreadTemplateGroups.LoadOrStore(key, &spreadTemplateGroup{})
+	return g.(*spreadTemplateGroup)
+}
+
+func (c *spreadTemplateCell) touch() {
+	if g := c.group; g != nil {
+		g.lastUse.Store(spreadTemplateClock.Add(1))
+	}
+}
+
+// liveSpreadTemplateCell returns the cell for key, creating it when absent.
+// A tombstone left by an eviction is replaced with a fresh cell, so callers
+// never see one. Goroutines that meet the same tombstone share the winner.
+func liveSpreadTemplateCell(key spreadTemplateKey) *spreadTemplateCell {
+	for {
+		cellAny, ok := spreadTemplates.Load(key)
+		if !ok {
+			cellAny, _ = spreadTemplates.LoadOrStore(key, &spreadTemplateCell{})
+		}
+		cell := cellAny.(*spreadTemplateCell)
+		if !cell.evicted {
+			return cell
+		}
+		fresh := &spreadTemplateCell{}
+		if spreadTemplates.CompareAndSwap(key, cell, fresh) {
+			return fresh
+		}
+	}
+}
+
+// buildSpreadTemplateOnce builds the cell if no goroutine has, then counts it.
+func buildSpreadTemplateOnce(cell *spreadTemplateCell, key spreadTemplateKey, orgID string, features []string, hasRecordType bool) {
+	built := false
+	cell.once.Do(func() {
+		built = true
+		buildSpreadTemplateCell(cell, key, orgID, features, hasRecordType)
+	})
+	cell.done.Store(true)
+	if built {
+		noteSpreadTemplateBuilt(key)
+	}
+}
+
+// enforceSpreadTemplateBudget evicts least recently used groups, other than the
+// caller's, while the live template fields exceed the budget. An evicted
+// group's cells become tombstones; a later use builds the template again from
+// the same key and gets an equal value. Holders of an evicted template keep it.
+func enforceSpreadTemplateBudget(caller spreadTemplateGroupKey) {
+	budget := spreadTemplateFieldBudget.Load()
+	if budget <= 0 || spreadTemplateLiveFields.Load() <= budget {
+		return
+	}
+	spreadTemplateEvictMu.Lock()
+	defer spreadTemplateEvictMu.Unlock()
+	sums := map[spreadTemplateGroupKey]int64{}
+	var total int64
+	spreadTemplates.Range(func(k, v any) bool {
+		cell := v.(*spreadTemplateCell)
+		if cell.evicted || !cell.done.Load() || !cell.ok {
+			return true
+		}
+		n := int64(len(cell.state.Definition.Fields))
+		sums[k.(spreadTemplateKey).group()] += n
+		total += n
+		return true
+	})
+	for key, n := range sums {
+		spreadGroupFor(key).fields.Store(n)
+	}
+	for total > budget {
+		var victim spreadTemplateGroupKey
+		var oldest uint64
+		found := false
+		for key, n := range sums {
+			if n == 0 || key == caller {
+				continue
+			}
+			if use := spreadGroupFor(key).lastUse.Load(); !found || use < oldest {
+				victim, oldest, found = key, use, true
+			}
+		}
+		if !found {
+			break
+		}
+		spreadTemplates.Range(func(k, v any) bool {
+			if k.(spreadTemplateKey).group() == victim {
+				if cell := v.(*spreadTemplateCell); !cell.evicted {
+					spreadTemplates.CompareAndSwap(k, cell, &spreadTemplateCell{evicted: true})
+				}
+			}
+			return true
+		})
+		total -= sums[victim]
+		sums[victim] = 0
+		spreadGroupFor(victim).fields.Store(0)
+	}
+	spreadTemplateLiveFields.Store(total)
 }
 
 // defaultSpreadTemplateFieldBudget is the live template field count that
@@ -111,17 +246,9 @@ func spreadTemplate(org *OrgState, canonical string) (ObjectState, bool) {
 		recordType: hasRecordType,
 		object:     canonical,
 	}
-	cellAny, _ := spreadTemplates.LoadOrStore(key, &spreadTemplateCell{})
-	cell := cellAny.(*spreadTemplateCell)
-	built := false
-	cell.once.Do(func() {
-		built = true
-		buildSpreadTemplateCell(cell, key, org.OrgID, org.Features, hasRecordType)
-	})
-	cell.done.Store(true)
-	if built {
-		noteSpreadTemplateBuilt()
-	}
+	cell := liveSpreadTemplateCell(key)
+	buildSpreadTemplateOnce(cell, key, org.OrgID, org.Features, hasRecordType)
+	cell.touch()
 	return cell.state, cell.ok
 }
 
@@ -130,10 +257,11 @@ func spreadTemplate(org *OrgState, canonical string) (ObjectState, bool) {
 // catalog members one by one; this bounds what they leave behind. A later
 // template decodes again, same bytes. Plain templates stay: dropping them here
 // would make each rebuilt cell decode again.
-func noteSpreadTemplateBuilt() {
+func noteSpreadTemplateBuilt(key spreadTemplateKey) {
 	if StandardCatalogReleaseEnabled() && spreadTemplatesBuilt.Add(1)%spreadTemplateReleaseEvery == 0 {
 		releaseDecodedCatalog()
 	}
+	enforceSpreadTemplateBudget(key.group())
 }
 
 // spreadTemplateReleaseEvery is how many built templates pass between catalog
@@ -173,6 +301,10 @@ func buildSpreadTemplateCell(cell *spreadTemplateCell, key spreadTemplateKey, or
 	}
 	cell.state = scratch.Objects[key.object]
 	cell.ok = true
+	cell.group = spreadGroupFor(key.group())
+	n := int64(len(cell.state.Definition.Fields))
+	cell.group.fields.Add(n)
+	spreadTemplateLiveFields.Add(n)
 }
 
 // dropPlainSpreadTemplates removes each plain-phase template at most once,
@@ -219,17 +351,8 @@ func rebuiltPlainTemplate(key spreadTemplateKey, org OrgState, hasRecordType boo
 	if !dropped {
 		return nil, false
 	}
-	cellAny, _ := spreadTemplates.LoadOrStore(key, &spreadTemplateCell{})
-	cell := cellAny.(*spreadTemplateCell)
-	built := false
-	cell.once.Do(func() {
-		built = true
-		buildSpreadTemplateCell(cell, key, org.OrgID, org.Features, hasRecordType)
-	})
-	cell.done.Store(true)
-	if built {
-		noteSpreadTemplateBuilt()
-	}
+	cell := liveSpreadTemplateCell(key)
+	buildSpreadTemplateOnce(cell, key, org.OrgID, org.Features, hasRecordType)
 	return cell, true
 }
 
@@ -462,6 +585,13 @@ func (o OrgState) SpreadObjectUntouched(name string) bool {
 	var cell *spreadTemplateCell
 	if cellAny, ok := spreadTemplates.Load(key); ok {
 		cell = cellAny.(*spreadTemplateCell)
+		if cell.evicted {
+			// The group was evicted for the budget. The template is a pure
+			// function of the key, so build it again and compare as usual.
+			cell = liveSpreadTemplateCell(key)
+			buildSpreadTemplateOnce(cell, key, o.OrgID, o.Features, hasRecordType)
+		}
+		cell.touch()
 	} else if rebuilt, ok := rebuiltPlainTemplate(key, o, hasRecordType); ok {
 		cell = rebuilt
 	} else {
