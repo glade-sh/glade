@@ -2730,7 +2730,7 @@ func childRelationshipCached(org storage.OrgState, parentDefinition storage.Obje
 		return childRelationship(org, parentDefinition, relationship)
 	}
 	cache := childCache.execution
-	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion
+	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00" + org.SuppressedSpreadVisibilityStamp()
 	cache.mu.RLock()
 	cached, found := cache.childRelationships[key]
 	cache.mu.RUnlock()
@@ -2773,6 +2773,9 @@ func loadedChildRelationship(org storage.OrgState, parentDefinition storage.Obje
 	var bestObject string
 	var bestRelation storage.Relationship
 	for childObjectName, childObject := range org.Objects {
+		if org.SuppressesSpreadObject(childObjectName) {
+			continue
+		}
 		childDefinition := childObject.Definition
 		consider := func(relation storage.Relationship) {
 			if !storage.PlatformChildRelationshipAvailableAtVersion(parentName, childObjectName, relation.Field, org.APIVersion) {
