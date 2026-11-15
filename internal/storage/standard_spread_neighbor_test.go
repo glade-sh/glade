@@ -231,3 +231,50 @@ func TestSourceSpreadRestoresRemovedObjectAfterSerialization(t *testing.T) {
 		t.Fatalf("org digest %s, want origin/main %s", got, baseline)
 	}
 }
+
+func TestSourceSpreadTransitionDropsUntouchedAddedInventory(t *testing.T) {
+	org := sourceSpreadLazyOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+	if _, exists := org.Objects["CareProgram"]; exists {
+		t.Fatal("uncaptured shape retained a source-only inventory addition")
+	}
+}
+
+func TestSourceSpreadTransitionDropsUntouchedAddedInventoryAfterSerialization(t *testing.T) {
+	org := sourceSpreadLazyOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	ApplyProjectOrgShape(&restored, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+	if _, exists := restored.Objects["CareProgram"]; exists {
+		t.Fatal("serialized uncaptured shape retained a source-only inventory addition")
+	}
+}
+
+func TestSourceSpreadTransitionRetainsEditedInventory(t *testing.T) {
+	org := sourceSpreadLazyOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	object := org.Objects["CareProgram"]
+	original := object.Definition.Fields["Id"]
+	defer func() { object.Definition.Fields["Id"] = original }()
+	edited := original
+	edited.Label = "edited"
+	object.Definition.Fields["Id"] = edited
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+	if retained, exists := org.Objects["CareProgram"]; !exists || retained.Definition.Fields["Id"].Label != "edited" {
+		t.Fatal("edited inventory definition was removed")
+	}
+}
