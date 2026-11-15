@@ -4531,6 +4531,10 @@ func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
 		vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{}
 		return "", false
 	}
+	// A gated stub class is never nested in the current top-level class (its
+	// top is a gated namespace the source would have named), so only the
+	// search across every class below can select one. Bind its candidates.
+	vm.bindGatedPlatformClassesNamed(typeName)
 	var unique string
 	for _, entry := range vm.classNameSearchEntries() {
 		if !strings.HasSuffix(entry.Lower, suffix) {
@@ -4655,6 +4659,7 @@ func (vm *VM) resolveOnlyNestedTypeName(typeName string) (string, bool) {
 	if typeName == "" || strings.Contains(typeName, ".") {
 		return "", false
 	}
+	vm.bindGatedPlatformClassesNamed(typeName)
 	typeKey := strings.ToLower(typeName)
 	if vm.onlyNestedTypeCache != nil {
 		if cached, ok := vm.onlyNestedTypeCache[typeKey]; ok {
@@ -4730,6 +4735,10 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 		}
 	}
 	if !strings.Contains(typeName, ".") {
+		// Gated stub enums of this simple name were entries before the gate.
+		// A bind keeps the suffix memo as it would have been (see
+		// bindGatedPlatformClass).
+		vm.bindGatedPlatformClassesNamed(typeName)
 		if vm.enumSuffixLookup == nil {
 			vm.rebuildEnumSuffixLookup()
 		}
@@ -4744,6 +4753,7 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 
 func (vm *VM) rebuildEnumSuffixLookup() {
 	vm.enumSuffixLookup = make(map[string]enumClassLookup)
+	vm.enumSuffixBuilt = true
 	for _, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue
