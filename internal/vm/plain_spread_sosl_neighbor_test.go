@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -20,6 +21,29 @@ func TestPlainDeveloperSpreadPreservesUnprobedSOSL(t *testing.T) {
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatalf("origin/main SOSL outcome changed: %v", err)
+	}
+}
+
+func TestPlainDeveloperSpreadPreservesUnprobedSOSLAfterSerialization(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObjectSpread(&org)
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored storage.OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`Search.query('FIND {candidate} RETURNING AIFeatureExtractor(Id)');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&restored)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatalf("serialized origin/main SOSL outcome changed: %v", err)
 	}
 }
 
