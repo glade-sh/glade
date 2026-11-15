@@ -1,0 +1,49 @@
+case	api	route	submission_order	observation	run
+qb	62.0	istest	Q(k),Batch(a)	sub=ok|stop=ok|seq=0:k,1:as,2:ax,3:af|createdid=k,as,ax,af	single run; 62.0 and 67.0 agree
+qb	67.0	istest	Q(k),Batch(a)	sub=ok|stop=ok|seq=0:k,1:as,2:ax,3:af|createdid=k,as,ax,af	single run; 62.0 and 67.0 agree
+qbf	62.0	istest	Q(k),Batch(a),F(f)	sub=ok|stop=ok|seq=0:f,1:k,2:as,3:ax,4:af|createdid=f,k,as,ax,af	single run; 62.0 and 67.0 agree
+qbf	67.0	istest	Q(k),Batch(a),F(f)	sub=ok|stop=ok|seq=0:f,1:k,2:as,3:ax,4:af|createdid=f,k,as,ax,af	single run; 62.0 and 67.0 agree
+qfb	62.0	istest	Q(k),F(f),Batch(a)	sub=ok|stop=ok|seq=0:f,1:k,2:as,3:ax,4:af|createdid=f,k,as,ax,af	single run; 62.0 and 67.0 agree
+qfb	67.0	istest	Q(k),F(f),Batch(a)	sub=ok|stop=ok|seq=0:f,1:k,2:as,3:ax,4:af|createdid=f,k,as,ax,af	single run; 62.0 and 67.0 agree
+fb	62.0	istest	F(f),Batch(a)	sub=ok|stop=ok|seq=0:f,1:as,2:ax,3:af|createdid=f,as,ax,af	single run; 62.0 and 67.0 agree
+fb	67.0	istest	F(f),Batch(a)	sub=ok|stop=ok|seq=0:f,1:as,2:ax,3:af|createdid=f,as,ax,af	single run; 62.0 and 67.0 agree
+bf	62.0	istest	Batch(a),F(f)	sub=ok|stop=ok|seq=0:f,1:as,2:ax,3:af|createdid=f,as,ax,af	single run; 62.0 and 67.0 agree
+bf	67.0	istest	Batch(a),F(f)	sub=ok|stop=ok|seq=0:f,1:as,2:ax,3:af|createdid=f,as,ax,af	single run; 62.0 and 67.0 agree
+bonly	62.0	istest	Batch(a)	sub=ok|stop=ok|seq=0:as,1:ax,2:af|createdid=as,ax,af	single run; 62.0 and 67.0 agree
+bonly	67.0	istest	Batch(a)	sub=ok|stop=ok|seq=0:as,1:ax,2:af|createdid=as,ax,af	single run; 62.0 and 67.0 agree
+bb	62.0	istest	Batch(a),Batch(c)	sub=ok|stop=ok|seq=0:as,1:cs,2:ax,3:cx,4:af,5:cf|createdid=as,cs,ax,cx,af,cf	single run; 62.0 and 67.0 agree
+bb	67.0	istest	Batch(a),Batch(c)	sub=ok|stop=ok|seq=0:as,1:cs,2:ax,3:cx,4:af,5:cf|createdid=as,cs,ax,cx,af,cf	single run; 62.0 and 67.0 agree
+bqb	62.0	istest	Batch(a),Q(k),Batch(c)	sub=ok|stop=ok|seq=0:as,1:k,2:cs,3:ax,4:cx,5:af,6:cf|createdid=as,k,cs,ax,cx,af,cf	single run; 62.0 and 67.0 agree
+bqb	67.0	istest	Batch(a),Q(k),Batch(c)	sub=ok|stop=ok|seq=0:as,1:k,2:cs,3:ax,4:cx,5:af,6:cf|createdid=as,k,cs,ax,cx,af,cf	single run; 62.0 and 67.0 agree
+bsq	62.0	istest	Batch(a; start enqueues Q asq)	sub=ok|stop=ok|seq=0:as,1:asq,2:ax,3:af|createdid=as,asq,ax,af	single run; 62.0 and 67.0 agree
+bsq	67.0	istest	Batch(a; start enqueues Q asq)	sub=ok|stop=ok|seq=0:as,1:asq,2:ax,3:af|createdid=as,asq,ax,af	single run; 62.0 and 67.0 agree
+bsqk	62.0	istest	Batch(a; start enqueues Q asq),Q(k)	sub=ok|stop=ok|seq=0:as,1:k,2:asq,3:ax,4:af|createdid=as,k,asq,ax,af	single run; 62.0 and 67.0 agree
+bsqk	67.0	istest	Batch(a; start enqueues Q asq),Q(k)	sub=ok|stop=ok|seq=0:as,1:k,2:asq,3:ax,4:af|createdid=as,k,asq,ax,af	single run; 62.0 and 67.0 agree
+bxq	62.0	istest	Batch(a; execute enqueues Q axq),Q(k)	sub=ok|stop=ok|seq=0:as,1:k,2:ax,3:axq,4:af|createdid=as,k,ax,axq,af	single run; 62.0 and 67.0 agree
+bxq	67.0	istest	Batch(a; execute enqueues Q axq),Q(k)	sub=ok|stop=ok|seq=0:as,1:k,2:ax,3:axq,4:af|createdid=as,k,ax,axq,af	single run; 62.0 and 67.0 agree
+bfq	62.0	istest	Batch(a; finish enqueues Q afq),Q(k)	sub=ok|stop=ok|seq=0:as,1:k,2:ax,3:af,4:afq|createdid=as,k,ax,af,afq	single run; 62.0 and 67.0 agree
+bfq	67.0	istest	Batch(a; finish enqueues Q afq),Q(k)	sub=ok|stop=ok|seq=0:as,1:k,2:ax,3:af,4:afq|createdid=as,k,ax,af,afq	single run; 62.0 and 67.0 agree
+bboom	62.0	istest	Batch(a),Q(z; throws),Q(k)	sub=ok|stop=StopOrderMx.BoomException:boom|seq=0:as,1:z|createdid=as,z	single run; 62.0 and 67.0 agree
+bboom	67.0	istest	Batch(a),Q(z; throws),Q(k)	sub=ok|stop=StopOrderMx.BoomException:boom|seq=0:as,1:z|createdid=as,z	single run; 62.0 and 67.0 agree
+bsch	62.0	istest	Batch(a),Schedule(sc),Q(k)	sub=ok|stop=ok|seq=0:as,1:k,2:ax,3:af,4:sc|createdid=as,k,ax,af,sc	single run; 62.0 and 67.0 agree
+bsch	67.0	istest	Batch(a),Schedule(sc),Q(k)	sub=ok|stop=ok|seq=0:as,1:k,2:ax,3:af,4:sc|createdid=as,k,ax,af,sc	single run; 62.0 and 67.0 agree
+ff2	62.0	istest	F(f; body calls future g)	sub=ok|stop=ok|seq=0:f,1:f!System.AsyncException|createdid=f,f!System.AsyncException	single run; 62.0 and 67.0 agree
+ff2	67.0	istest	F(f; body calls future g)	sub=ok|stop=ok|seq=0:f,1:f!System.AsyncException|createdid=f,f!System.AsyncException	single run; 62.0 and 67.0 agree
+ff2q	62.0	istest	F(f; body calls future g),Q(k)	sub=ok|stop=ok|seq=0:f,1:f!System.AsyncException,2:k|createdid=f,f!System.AsyncException,k	single run; 62.0 and 67.0 agree
+ff2q	67.0	istest	F(f; body calls future g),Q(k)	sub=ok|stop=ok|seq=0:f,1:f!System.AsyncException,2:k|createdid=f,f!System.AsyncException,k	single run; 62.0 and 67.0 agree
+qc2	62.0	istest	Q chain m1>m2 (default depth),Q(t)	sub=ok|stop=ok|seq=0:m1,1:m1!System.AsyncException,2:t|createdid=m1,m1!System.AsyncException,t	single run; 62.0 and 67.0 agree
+qc2	67.0	istest	Q chain m1>m2 (default depth),Q(t)	sub=ok|stop=ok|seq=0:m1,1:m1!System.AsyncException,2:t|createdid=m1,m1!System.AsyncException,t	single run; 62.0 and 67.0 agree
+qc3	62.0	istest	Q chain m1>m2>m3 (default depth),Q(t)	sub=ok|stop=ok|seq=0:m1,1:m1!System.AsyncException,2:t|createdid=m1,m1!System.AsyncException,t	single run; 62.0 and 67.0 agree
+qc3	67.0	istest	Q chain m1>m2>m3 (default depth),Q(t)	sub=ok|stop=ok|seq=0:m1,1:m1!System.AsyncException,2:t|createdid=m1,m1!System.AsyncException,t	single run; 62.0 and 67.0 agree
+qc2cap	62.0	istest	Q chain m1>m2 (max depth 5),Q(t)	sub=ok|stop=ok|seq=0:m1,1:t,2:m2|createdid=m1,t,m2	single run; 62.0 and 67.0 agree
+qc2cap	67.0	istest	Q chain m1>m2 (max depth 5),Q(t)	sub=ok|stop=ok|seq=0:m1,1:t,2:m2|createdid=m1,t,m2	single run; 62.0 and 67.0 agree
+qc3cap	62.0	istest	Q chain m1>m2>m3 (max depth 5),Q(t)	sub=ok|stop=ok|seq=0:m1,1:t,2:m2,3:m3|createdid=m1,t,m2,m3	single run; 62.0 and 67.0 agree
+qc3cap	67.0	istest	Q chain m1>m2>m3 (max depth 5),Q(t)	sub=ok|stop=ok|seq=0:m1,1:t,2:m2,3:m3|createdid=m1,t,m2,m3	single run; 62.0 and 67.0 agree
+fc2	62.0	istest	F(f; enqueues chain m1>m2 default depth),Q(t)	sub=ok|stop=ok|seq=0:f,1:t,2:m1,3:m1!System.AsyncException|createdid=f,t,m1,m1!System.AsyncException	single run; 62.0 and 67.0 agree
+fc2	67.0	istest	F(f; enqueues chain m1>m2 default depth),Q(t)	sub=ok|stop=ok|seq=0:f,1:t,2:m1,3:m1!System.AsyncException|createdid=f,t,m1,m1!System.AsyncException	single run; 62.0 and 67.0 agree
+fc3	62.0	istest	F(f; enqueues chain m1>m2>m3 default depth),Q(t)	sub=ok|stop=ok|seq=0:f,1:t,2:m1,3:m1!System.AsyncException|createdid=f,t,m1,m1!System.AsyncException	single run; 62.0 and 67.0 agree
+fc3	67.0	istest	F(f; enqueues chain m1>m2>m3 default depth),Q(t)	sub=ok|stop=ok|seq=0:f,1:t,2:m1,3:m1!System.AsyncException|createdid=f,t,m1,m1!System.AsyncException	single run; 62.0 and 67.0 agree
+fc2cap	62.0	istest	F(f; enqueues chain m1>m2 max depth 5),Q(t)	sub=ok|stop=ok|seq=0:f,1:t,2:m1,3:m2|createdid=f,t,m1,m2	single run; 62.0 and 67.0 agree
+fc2cap	67.0	istest	F(f; enqueues chain m1>m2 max depth 5),Q(t)	sub=ok|stop=ok|seq=0:f,1:t,2:m1,3:m2|createdid=f,t,m1,m2	single run; 62.0 and 67.0 agree
+fc3cap	62.0	istest	F(f; enqueues chain m1>m2>m3 max depth 5),Q(t)	sub=ok|stop=ok|seq=0:f,1:t,2:m1,3:m2,4:m3|createdid=f,t,m1,m2,m3	single run; 62.0 and 67.0 agree
+fc3cap	67.0	istest	F(f; enqueues chain m1>m2>m3 max depth 5),Q(t)	sub=ok|stop=ok|seq=0:f,1:t,2:m1,3:m2,4:m3|createdid=f,t,m1,m2,m3	single run; 62.0 and 67.0 agree

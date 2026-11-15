@@ -1,0 +1,1 @@
+Captured 2026-11-14 on fresh 30-day scratch orgs. APIs 62.0 and 67.0, anonymous and deployed @IsTest, two repeats. Custom phone matching rules. Scratch orgs were deleted. Panel indices and DML pair indices correspond to cases.json and panels.json.

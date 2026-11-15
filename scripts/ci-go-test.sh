@@ -1264,13 +1264,13 @@ run_test_matrix_shard() {
 	fi
 	if [[ "${mode}" == "lwc-compile" ]]; then
 		test_args=(-count=1 -timeout=90m)
-		index_pattern='^[0-7]$'
-		index_description='between 0 and 7'
+		index_pattern='^([0-9]|1[01])$'
+		index_description='between 0 and 11'
 	fi
 	if [[ "${mode}" == "visualforce" ]]; then
 		test_args=(-count=1 -timeout=70m)
-		index_pattern='^[0-3]$'
-		index_description='between 0 and 3'
+		index_pattern='^[0-7]$'
+		index_description='between 0 and 7'
 	fi
 	if [[ "${mode}" == "vm-ci" || "${mode}" == "gladecli-ci" ]]; then
 		test_args=(-count=1 -timeout=30m)
@@ -1444,15 +1444,15 @@ run_sema_matrix_shard() {
 run_lwc_compile_matrix_shard() {
 	local index="${1:-}"
 	local artifact_suffix="invalid"
-	[[ "${index}" =~ ^[0-7]$ ]] && artifact_suffix="${index}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "${CI_LWC_COMPILE_HISTORY_PATH:-}" "1" "lwc-compile" "8"
+	[[ "${index}" =~ ^([0-9]|1[01])$ ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/lwc/compile" "./internal/lwc/compile" "remaining-go" "LWC compile" "${CI_LWC_COMPILE_ARTIFACT_DIR:-ci-artifacts/lwc-compile-${artifact_suffix}}" "${CI_LWC_COMPILE_HISTORY_PATH:-}" "1" "lwc-compile" "12"
 }
 
 run_visualforce_matrix_shard() {
 	local index="${1:-}"
 	local artifact_suffix="invalid"
-	[[ "${index}" =~ ^[0-3]$ ]] && artifact_suffix="${index}"
-	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/visualforce" "./internal/visualforce" "remaining-go" "Visualforce" "${CI_VISUALFORCE_ARTIFACT_DIR:-ci-artifacts/visualforce-${artifact_suffix}}" "${CI_VISUALFORCE_HISTORY_PATH:-}" "1" "visualforce" "4"
+	[[ "${index}" =~ ^[0-7]$ ]] && artifact_suffix="${index}"
+	run_test_matrix_shard "${index}" "github.com/glade-sh/glade/internal/visualforce" "./internal/visualforce" "remaining-go" "Visualforce" "${CI_VISUALFORCE_ARTIFACT_DIR:-ci-artifacts/visualforce-${artifact_suffix}}" "${CI_VISUALFORCE_HISTORY_PATH:-}" "1" "visualforce" "8"
 }
 
 run_vm_matrix_shard() {
@@ -1879,7 +1879,7 @@ refresh_gladecli_history() {
 
 bootstrap_visualforce_history() {
 	# A successful unfiltered predecessor supplies timing evidence only. The
-	# current four workers still discover and validate their complete test union.
+	# current workers still discover and validate their complete test union.
 	# Adapt its raw stream to the shared collector instead of adding a second
 	# package, nested-result or duration validation policy.
 	python3 - "${script_dir}/ci-go-test.sh" "$1" "$2" <<'PY'
@@ -2104,22 +2104,22 @@ main() {
 			run_sema_matrix_shard "${2:-}"
 			;;
 		lwc-compile-shard)
-			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-shard INDEX (0-7)" >&2; return 2; fi
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-shard INDEX (0-11)" >&2; return 2; fi
 			run_lwc_compile_matrix_shard "${2:-}"
 			;;
 		lwc-compile-history-refresh)
-			if [[ "$#" -ne 10 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR" >&2; return 2; fi
+			if [[ "$#" -ne 10 && "$#" -ne 14 ]]; then echo "usage: scripts/ci-go-test.sh lwc-compile-history-refresh OUTPUT SHARD_DIR... (8 or 12)" >&2; return 2; fi
 			shift
-			refresh_test_history "github.com/glade-sh/glade/internal/lwc/compile" "LWC compile" "lwc-compile" "0" "8" "$@"
+			refresh_test_history "github.com/glade-sh/glade/internal/lwc/compile" "LWC compile" "lwc-compile" "0" "$(( $# - 1 ))" "$@"
 			;;
 		visualforce-shard)
-			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-shard INDEX (0-3)" >&2; return 2; fi
+			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-shard INDEX (0-7)" >&2; return 2; fi
 			run_visualforce_matrix_shard "${2:-}"
 			;;
 		visualforce-history-refresh)
-			if [[ "$#" -ne 6 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR" >&2; return 2; fi
+			if [[ "$#" -ne 6 && "$#" -ne 10 ]]; then echo "usage: scripts/ci-go-test.sh visualforce-history-refresh OUTPUT SHARD_DIR... (4 or 8)" >&2; return 2; fi
 			shift
-			refresh_test_history "github.com/glade-sh/glade/internal/visualforce" "Visualforce" "visualforce" "0" "4" "$@"
+			refresh_test_history "github.com/glade-sh/glade/internal/visualforce" "Visualforce" "visualforce" "0" "$(( $# - 1 ))" "$@"
 			;;
 		vm-shard)
 			if [[ "$#" -ne 2 ]]; then echo "usage: scripts/ci-go-test.sh vm-shard INDEX (0-3; CI_VM_SHARDS 3 limits to 0-2)" >&2; return 2; fi
@@ -2161,7 +2161,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-15|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-7|lwc-compile-history-refresh OUTPUT SHARD_0_DIR ... SHARD_7_DIR|visualforce-shard 0-3|visualforce-history-refresh OUTPUT SHARD_0_DIR ... SHARD_3_DIR|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|local-release-lane NAME|lane NAME|node-integration|apex-shard 0-15|apex-history-refresh OUTPUT SHARD_0_DIR ... SHARD_N_DIR (or SHARD_0_DIR SHARD_1_DIR OUTPUT)|sema-shard 0|1|lwc-compile-shard 0-11|lwc-compile-history-refresh OUTPUT SHARD_DIR...|visualforce-shard 0-7|visualforce-history-refresh OUTPUT SHARD_DIR...|vm-shard 0-3|vm-history-refresh OUTPUT SHARD_0_DIR ... SHARD_2_DIR (or SHARD_3_DIR)|gladecli-shard 0-3|gladecli-history-refresh OUTPUT SHARD_0_DIR SHARD_1_DIR (or ... SHARD_3_DIR)|visualforce-history-bootstrap OUTPUT EVENTS|package-summary LANE LABEL EVENTS SUMMARY METADATA PACKAGE...|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

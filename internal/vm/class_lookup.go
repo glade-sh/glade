@@ -248,6 +248,7 @@ func (vm *VM) lookupClassInNamespace(namespace, className string) (Class, bool) 
 }
 
 func (vm *VM) lookupClassInNamespaceRaw(namespace, className string) (Class, bool) {
+	vm.bindGatedPlatformClassInNamespace(namespace, className)
 	rawKey := namespaceClassRawKey{Namespace: namespace, ClassName: className}
 	if cached, ok := vm.namespaceClassRawLookup[rawKey]; ok {
 		return cached.Class, cached.OK
@@ -518,6 +519,13 @@ func (vm *VM) typeForNameDollarNested(name string) string {
 }
 
 func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value {
+	// A dynamic name of a gated platform namespace requests it, as a static
+	// mention in source does; the lookup below late-binds its stub class.
+	if namespace != "" {
+		typesys.RequestGatedPlatformNamespaceFor(namespace + "." + name)
+	} else {
+		typesys.RequestGatedPlatformNamespaceFor(name)
+	}
 	if strings.EqualFold(namespace, "ConnectApi") || namespace == "" && hasPrefixFold(name, "ConnectApi.") {
 		typesys.RequestConnectAPIShape()
 		qualified := name
@@ -1057,7 +1065,7 @@ func (vm *VM) lookupClassRaw(typeName string) (Class, bool) {
 		if cached.Generation == vm.classLookupGeneration {
 			vm.recordClassLookupHit()
 			if !cached.OK {
-				return Class{}, false
+				return vm.gatedPlatformClassMiss(typeName)
 			}
 			// The Classes reads below are classEntry written out: on this
 			// hot path the inlined call costs extra copies of the Class.
@@ -1088,7 +1096,7 @@ func (vm *VM) lookupClassRaw(typeName string) (Class, bool) {
 			}
 		}
 		vm.storeClassLookupNameCache(typeName, "", false)
-		return Class{}, false
+		return vm.gatedPlatformClassMiss(typeName)
 	}
 	if written := vm.classValueOverlay; written != nil {
 		if class, ok := written[typeName]; ok {
@@ -1108,7 +1116,7 @@ func (vm *VM) lookupClassRaw(typeName string) (Class, bool) {
 			return class, true
 		}
 		vm.storeClassLookupNameCache(typeName, "", false)
-		return Class{}, false
+		return vm.gatedPlatformClassMiss(typeName)
 	}
 	if vm.classLookup == nil {
 		vm.rebuildClassLookup()
@@ -1120,7 +1128,7 @@ func (vm *VM) lookupClassRaw(typeName string) (Class, bool) {
 		return class, true
 	}
 	vm.storeClassLookupNameCache(typeName, "", false)
-	return Class{}, false
+	return vm.gatedPlatformClassMiss(typeName)
 }
 
 func (vm *VM) liveClassAlias(class Class) string {
@@ -1343,6 +1351,7 @@ func (vm *VM) storeClassAliases(class Class) {
 	vm.resetClassAccessCaches()
 	vm.enumLookup = nil
 	vm.enumSuffixLookup = nil
+	vm.enumSuffixBuilt = false
 	vm.storeRegisteredClassLookupAlias(overlay, class.Name, class)
 	if class.Namespace != "" {
 		qualified := runtimeClassName(class)
@@ -1572,6 +1581,7 @@ func (vm *VM) resetClassAccessCaches() {
 	vm.namespaceClassLookup = make(map[string]map[string]namespaceClassLookup)
 	vm.namespaceClassRawLookup = nil
 	vm.classNamespaceCache = make(map[string]string)
+	vm.execNamespaceMemo = execNamespaceMemo{}
 	vm.classForAccessCache = make(map[classForAccessKey]classForAccessLookup)
 	vm.accessScopeCache = nil
 	vm.frameSymbolFirstKey = frameSymbolKey{}

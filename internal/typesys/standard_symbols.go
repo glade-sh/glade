@@ -70,14 +70,18 @@ func standardEnumHashBase(value int64) *int64 {
 }
 
 // platformSymbolSnapshot is one immutable build of the standard platform
-// symbols. A process holds at most two over its life: the stub-only view, and
-// the view with the org-captured ConnectApi shape once a source names that
-// namespace (RequestConnectAPIShape). generation increases with each build so
-// PlatformViewCache holders can tell a stale derivation from a current one.
+// symbols. connectAPI records whether the org-captured ConnectApi shape is in
+// the view; included records which gated namespaces (platform_gate.go) the
+// view carries in full. A process holds few builds over its life, because both
+// inputs only grow: a request is sticky. generation increases with each build
+// so PlatformViewCache holders can tell a stale derivation from a current one.
 type platformSymbolSnapshot struct {
 	view       []TypeSymbol
 	connectAPI bool
+	included   uint8
 	generation uint64
+	// excluded lists the gated stub types the view leaves out.
+	excluded ExcludedPlatformTypes
 }
 
 var platformSymbols struct {
@@ -87,30 +91,50 @@ var platformSymbols struct {
 }
 
 // currentPlatformSymbolSnapshot returns the snapshot matching the ConnectApi
-// request state, building it on first use or when the request arrived after
-// the stub-only view was built.
+// request and gate state, building it on first use or when a request arrived
+// after the current view was built.
 func currentPlatformSymbolSnapshot() *platformSymbolSnapshot {
-	want := connectAPIShapeRequested.Load()
-	if snapshot := platformSymbols.current.Load(); snapshot != nil && (snapshot.connectAPI || !want) {
+	connectAPI := connectAPIShapeRequested.Load()
+	included := includedGatedPlatformNamespaces()
+	if snapshot := platformSymbols.current.Load(); snapshot != nil && snapshot.connectAPI == connectAPI && snapshot.included == included {
 		return snapshot
 	}
 	platformSymbols.mu.Lock()
 	defer platformSymbols.mu.Unlock()
-	if snapshot := platformSymbols.current.Load(); snapshot != nil && (snapshot.connectAPI || !want) {
+	connectAPI = connectAPIShapeRequested.Load()
+	included = includedGatedPlatformNamespaces()
+	if snapshot := platformSymbols.current.Load(); snapshot != nil && snapshot.connectAPI == connectAPI && snapshot.included == included {
 		return snapshot
 	}
 	platformSymbols.builds++
+	view, excluded := buildGatedStandardPlatformSymbols(connectAPI, included)
 	snapshot := &platformSymbolSnapshot{
-		view:       buildStandardPlatformSymbols(want),
-		connectAPI: want,
+		view:       view,
+		connectAPI: connectAPI,
+		included:   included,
 		generation: platformSymbols.builds,
+		excluded:   excluded,
 	}
 	platformSymbols.current.Store(snapshot)
 	return snapshot
 }
 
+// StandardPlatformSymbols returns a private copy of the whole platform table:
+// the view plus every gated stub type it leaves out, in view order, as the
+// table was before the namespace gate.
 func StandardPlatformSymbols() []TypeSymbol {
-	return cloneTypeSymbols(currentPlatformSymbolSnapshot().view)
+	snapshot := currentPlatformSymbolSnapshot()
+	if snapshot.excluded.Len() == 0 {
+		return cloneTypeSymbols(snapshot.view)
+	}
+	all := make([]TypeSymbol, 0, len(snapshot.view)+snapshot.excluded.Len())
+	EachPlatformTypeName(snapshot.view, snapshot.excluded, func(_, _ string, _ apexast.DeclarationKind, symbol *TypeSymbol, excludedIndex int) {
+		if symbol == nil {
+			symbol = snapshot.excluded.Symbol(excludedIndex)
+		}
+		all = append(all, *symbol)
+	})
+	return cloneTypeSymbols(all)
 }
 
 // StandardPlatformSymbolView returns cached platform symbols for read-only walkers.
@@ -152,6 +176,24 @@ func (c *PlatformViewCache[T]) Get(build func(view []TypeSymbol) T) T {
 		return entry.value
 	}
 	entry := &platformViewCacheEntry[T]{generation: snapshot.generation, value: build(snapshot.view)}
+	c.current.Store(entry)
+	return entry.value
+}
+
+// GetWithExcluded is Get for a derivation that must also see the gated stub
+// types the view leaves out (see ExcludedPlatformTypes). Both arguments come
+// from the same snapshot.
+func (c *PlatformViewCache[T]) GetWithExcluded(build func(view []TypeSymbol, excluded ExcludedPlatformTypes) T) T {
+	snapshot := currentPlatformSymbolSnapshot()
+	if entry := c.current.Load(); entry != nil && entry.generation == snapshot.generation {
+		return entry.value
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if entry := c.current.Load(); entry != nil && entry.generation == snapshot.generation {
+		return entry.value
+	}
+	entry := &platformViewCacheEntry[T]{generation: snapshot.generation, value: build(snapshot.view, snapshot.excluded)}
 	c.current.Store(entry)
 	return entry.value
 }
@@ -251,11 +293,19 @@ func sortedNamespaceNames(names map[string]string) []string {
 	return out
 }
 
-// buildStandardPlatformSymbols assembles the platform symbol table. With
-// connectAPI, the org-captured ConnectApi shape joins as the last overlay and
-// its captured superclasses apply; without it the table is the stub-only
-// table, byte for byte what a project that never names ConnectApi used before.
+// buildStandardPlatformSymbols assembles the ungated platform symbol table.
+// With connectAPI, the org-captured ConnectApi shape joins as the last overlay
+// and its captured superclasses apply; without it the table is the stub-only
+// table, byte for byte what a project that never names ConnectApi used before
+// the namespace gate.
 func buildStandardPlatformSymbols(connectAPI bool) []TypeSymbol {
+	return standardSymbolsFromSpecs(standardPlatformSymbolSpecList(connectAPI), newStandardSymbolLists())
+}
+
+// standardPlatformSymbolSpecList is every spec of the platform table, in
+// overlay order, with the shared exception hierarchy and, with connectAPI,
+// the captured ConnectApi superclasses applied.
+func standardPlatformSymbolSpecList(connectAPI bool) []StandardSymbolSpec {
 	specs := append([]StandardSymbolSpec(nil), standardPlatformSymbolSpecs...)
 	specs = append(specs, productNamespaceSymbolSpecs...)
 	specs = append(specs, systemStubSymbolSpecs...)
@@ -296,7 +346,7 @@ func buildStandardPlatformSymbols(connectAPI bool) []TypeSymbol {
 			}
 		}
 	}
-	return standardSymbolsFromSpecs(specs, newStandardSymbolLists())
+	return specs
 }
 
 func cloneTypeSymbols(symbols []TypeSymbol) []TypeSymbol {
@@ -596,6 +646,12 @@ func standardConstructorSpecs(spec StandardSymbolSpec) []StandardConstructorSpec
 func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 	out := make([]StandardSymbolSpec, 0, len(specs))
 	byName := make(map[string]int, len(specs))
+	// owned marks an entry whose slices are private copies. A spec's slices
+	// alias the package-level spec tables; the merge below replaces elements
+	// in place, which must never write through to those tables, or a later
+	// build (the stub-only view after the captured ConnectApi shape) would
+	// read another build's result.
+	owned := make(map[int]bool)
 	for _, spec := range specs {
 		if spec.Name == "" {
 			continue
@@ -608,6 +664,16 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 			continue
 		}
 		existing := &out[existingIndex]
+		if !owned[existingIndex] {
+			owned[existingIndex] = true
+			existing.Modifiers = append([]string(nil), existing.Modifiers...)
+			existing.Interfaces = append([]string(nil), existing.Interfaces...)
+			existing.Constructors = append([][]string(nil), existing.Constructors...)
+			existing.ConstructorSpecs = append([]StandardConstructorSpec(nil), existing.ConstructorSpecs...)
+			existing.Methods = append([]StandardMethodSpec(nil), existing.Methods...)
+			existing.Properties = append([]StandardPropertySpec(nil), existing.Properties...)
+			existing.Fields = append([]StandardFieldSpec(nil), existing.Fields...)
+		}
 		if spec.Kind != "" {
 			existing.Kind = spec.Kind
 		}

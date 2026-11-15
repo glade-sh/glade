@@ -146,8 +146,8 @@ func TestCIPRWorkflowShardRoutes(t *testing.T) {
 	if err := yaml.Unmarshal(data, &workflow); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(workflow.Jobs["pr-tests"].Strategy.Matrix.Shard); got != 37 {
-		t.Fatalf("pr-tests matrix has %d workers, want 37 (12 Apex, 4 VM, 4 CLI, 2 sema, 8 LWC compile, 4 Visualforce, server, remaining packages)", got)
+	if got := len(workflow.Jobs["pr-tests"].Strategy.Matrix.Shard); got != 45 {
+		t.Fatalf("pr-tests matrix has %d workers, want 45 (12 Apex, 4 VM, 4 CLI, 2 sema, 12 LWC compile, 8 Visualforce, remaining packages)", got)
 	}
 	if !strings.Contains(string(data), "export CI_APEXTEST_SHARDS=12") {
 		t.Fatal("PR lane must select the 12-way Apex shard route")

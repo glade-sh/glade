@@ -1905,6 +1905,9 @@ func existingAutomatedProcessUserID(org OrgState) ID {
 }
 
 func putSeedRecord(org *OrgState, objectName string, record Record) {
+	if org.Objects[objectName].RecordsShared || org.Objects[objectName].IndexesShared {
+		EnsureMutableObjectRecords(org, objectName)
+	}
 	object := org.Objects[objectName]
 	if object.Records == nil {
 		object.SetRecords(make(map[ID]Record))

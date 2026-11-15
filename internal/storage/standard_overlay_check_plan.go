@@ -182,12 +182,12 @@ func standardFieldsByName(fields []Field) map[string]Field {
 // standardStubTimeCatalogFields lists the describe catalog's time fields for
 // an object that carries a generated stub overlay.
 func standardStubTimeCatalogFields(objectName string) []string {
-	describe, ok, err := lookupStandardDescribeCatalogV2(objectName)
+	describe, ok, err := lookupStandardDescribeNarrowV2(objectName)
 	if err != nil || !ok {
 		return nil
 	}
 	var out []string
-	for _, captured := range describe.Fields {
+	for _, captured := range describe.fields {
 		if strings.EqualFold(captured.Type, "time") {
 			out = append(out, captured.Name)
 		}
@@ -196,15 +196,15 @@ func standardStubTimeCatalogFields(objectName string) []string {
 }
 
 func standardStubCurrencyCatalogFields(objectName string) []Field {
-	describe, ok, err := lookupStandardDescribeCatalogV2(objectName)
-	if err != nil || !ok {
+	narrow, ok, err := lookupStandardDescribeNarrowV2(objectName)
+	if err != nil || !ok || len(narrow.currency) == 0 {
 		return nil
 	}
 	stubs, _ := standardSObjectStubFieldsFor(objectName)
 	var fields []Field
-	for _, captured := range describe.Fields {
-		stub, exists := stubs[captured.Name]
-		if exists && stub.Type == FieldDecimal && strings.EqualFold(stub.DisplayType, "DOUBLE") && strings.EqualFold(captured.Type, "currency") {
+	for _, name := range narrow.currency {
+		stub, exists := stubs[name]
+		if exists && stub.Type == FieldDecimal && strings.EqualFold(stub.DisplayType, "DOUBLE") {
 			fields = append(fields, stub)
 		}
 	}

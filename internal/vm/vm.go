@@ -3375,7 +3375,14 @@ func typedJSONMapKey(typeName, key string, input jsonTypedInput) (Value, error) 
 }
 
 func (vm *VM) schemaGlobalDescribe() Value {
-	vm.materializeLazyStandardSpread()
+	if vm.eagerGlobalDescribe {
+		vm.materializeLazyStandardSpread()
+	} else {
+		// The map reads names only: installed objects plus the ones a lazy
+		// spread still owes (buildSchemaGlobalDescribe). A token installs its
+		// object when something reads it.
+		vm.installPresenceReadSpreadObjects()
+	}
 	vm.ensureMetadataCacheGeneration()
 	key := vm.globalDescribeAvailabilityKey()
 	if vm.globalDescribeVersionCaches != nil {
@@ -3403,18 +3410,28 @@ func (vm *VM) buildSchemaGlobalDescribe() Value {
 	if vm.Org == nil {
 		return out
 	}
-	names := make([]string, 0, len(vm.Org.Objects))
+	// Installed plus owed names are the object set of the completed spread
+	// among the objects the shape allows (storage.SpreadOwedObjectNames), so
+	// the map is the one a completed org builds.
+	owed := storage.SpreadOwedObjectNames(vm.Org)
+	names := make([]string, 0, len(vm.Org.Objects)+len(owed))
 	seen := make(map[string]bool, cap(names))
-	for name := range vm.Org.Objects {
+	add := func(name string) {
 		if !vm.allowsStandardObject(name) {
-			continue
+			return
 		}
 		key := strings.ToLower(strings.TrimSpace(name))
 		if key == "" || seen[key] {
-			continue
+			return
 		}
 		names = append(names, name)
 		seen[key] = true
+	}
+	for name := range vm.Org.Objects {
+		add(name)
+	}
+	for _, name := range owed {
+		add(name)
 	}
 	sort.Strings(names)
 	for _, name := range names {
@@ -3562,6 +3579,12 @@ func locationNewInstance(args []Value) (Value, error) {
 }
 
 func locationString(location Value) string {
+	var w textWriter
+	writeLocationText(&w, location)
+	return w.String()
+}
+
+func writeLocationText(w *textWriter, location Value) {
 	_, latitude, hasLatitude := objectFieldValue(location, "latitude")
 	_, longitude, hasLongitude := objectFieldValue(location, "longitude")
 	if !hasLatitude {
@@ -3570,7 +3593,11 @@ func locationString(location Value) string {
 	if !hasLongitude {
 		longitude = Null
 	}
-	return "System.Location[getLatitude=" + latitude.String() + ";getLongitude=" + longitude.String() + ";]"
+	w.WriteString("System.Location[getLatitude=")
+	latitude.writeText(w)
+	w.WriteString(";getLongitude=")
+	longitude.writeText(w)
+	w.WriteString(";]")
 }
 
 func newDomainFromHostname(hostname string) Value {
@@ -4504,6 +4531,10 @@ func (vm *VM) resolveUniqueNestedTypeName(typeName string) (string, bool) {
 		vm.uniqueNestedTypeCache[cacheKey] = uniqueNestedTypeLookup{}
 		return "", false
 	}
+	// A gated stub class is never nested in the current top-level class (its
+	// top is a gated namespace the source would have named), so only the
+	// search across every class below can select one. Bind its candidates.
+	vm.bindGatedPlatformClassesNamed(typeName)
 	var unique string
 	for _, entry := range vm.classNameSearchEntries() {
 		if !strings.HasSuffix(entry.Lower, suffix) {
@@ -4628,6 +4659,7 @@ func (vm *VM) resolveOnlyNestedTypeName(typeName string) (string, bool) {
 	if typeName == "" || strings.Contains(typeName, ".") {
 		return "", false
 	}
+	vm.bindGatedPlatformClassesNamed(typeName)
 	typeKey := strings.ToLower(typeName)
 	if vm.onlyNestedTypeCache != nil {
 		if cached, ok := vm.onlyNestedTypeCache[typeKey]; ok {
@@ -4703,6 +4735,10 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 		}
 	}
 	if !strings.Contains(typeName, ".") {
+		// Gated stub enums of this simple name were entries before the gate.
+		// A bind keeps the suffix memo as it would have been (see
+		// bindGatedPlatformClass).
+		vm.bindGatedPlatformClassesNamed(typeName)
 		if vm.enumSuffixLookup == nil {
 			vm.rebuildEnumSuffixLookup()
 		}
@@ -4717,6 +4753,7 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 
 func (vm *VM) rebuildEnumSuffixLookup() {
 	vm.enumSuffixLookup = make(map[string]enumClassLookup)
+	vm.enumSuffixBuilt = true
 	for _, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue

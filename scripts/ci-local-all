@@ -15,7 +15,7 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-SHARDS = {'apextest': 16, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3}
+SHARDS = {'apextest': 16, 'sema': 2, 'lwc-compile': 12, 'visualforce': 8, 'gladecli': 2, 'vm': 3}
 # CodeQL runs from Security, not Required CI; the local codeql step below stays as an extra check.
 MAPPING = {
     # PR selection is covered by the full suite and scripts tests locally.

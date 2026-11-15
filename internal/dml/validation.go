@@ -179,6 +179,10 @@ func isSingleLineTextField(field storage.Field) bool {
 }
 
 func validateFields(definition storage.ObjectDefinition, namespace string, record storage.Record, existing ...storage.Record) error {
+	return validateFieldsForOperation(definition, namespace, record, existing, nil)
+}
+
+func validateFieldsForOperation(definition storage.ObjectDefinition, namespace string, record storage.Record, existing []storage.Record, originalFields map[string]storage.Value) error {
 	if err := validateCustomAddressComponents(definition, namespace, record, existing); err != nil {
 		return err
 	}
@@ -207,6 +211,11 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		}
 		if err := validateScaleZeroNumberField(canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
+		}
+		if strings.EqualFold(definition.Fields[canonical].DisplayType, "EMAIL") && capturedInvalidEmailShape(record.Fields[field]) && originalEmailValueUnchanged(definition, namespace, canonical, record.Fields[field], originalFields) {
+			if err := validateInsertEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
+				return err
+			}
 		}
 		if err := validateEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
@@ -498,6 +507,64 @@ func validateEmailField(objectName, fieldName string, field storage.Field, value
 		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "dml: invalid email address for field %s.%s", objectName, fieldName)
 	}
 	return nil
+}
+
+func originalEmailValueUnchanged(definition storage.ObjectDefinition, namespace, fieldName string, value storage.Value, original map[string]storage.Value) bool {
+	if original == nil || value.Kind != storage.ValueString || !strings.EqualFold(definition.Fields[fieldName].DisplayType, "EMAIL") {
+		return false
+	}
+	for name, input := range original {
+		canonical, ok := storage.ResolveFieldName(definition, namespace, name)
+		if ok && canonical == fieldName && input.Kind == storage.ValueString && input.String == value.String {
+			return true
+		}
+	}
+	return false
+}
+
+func validateInsertEmailField(objectName, fieldName string, field storage.Field, value storage.Value) error {
+	if !strings.EqualFold(field.DisplayType, "EMAIL") {
+		return nil
+	}
+	if capturedInvalidEmailShape(value) {
+		label := strings.TrimSpace(field.Label)
+		if label == "" {
+			label = fieldName
+		}
+		return dmlErrorf("INVALID_EMAIL_ADDRESS", []string{fieldName}, "%s: invalid email address: %s", label, strings.TrimSpace(value.String))
+	}
+	return nil
+}
+
+// capturedInvalidEmailShape handles the independently observed insert shapes.
+// Leave other email syntax to the existing validation path.
+func capturedInvalidEmailShape(value storage.Value) bool {
+	if value.Kind != storage.ValueString || strings.TrimSpace(value.String) != value.String || strings.Count(value.String, "@") != 1 {
+		return false
+	}
+	parts := strings.SplitN(value.String, "@", 2)
+	local, domain := parts[0], parts[1]
+	asciiWord := func(s string) bool {
+		if s == "" {
+			return false
+		}
+		for _, c := range s {
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+				return false
+			}
+		}
+		return true
+	}
+	if strings.HasPrefix(local, "\"") && strings.HasSuffix(local, "\"") && strings.Count(local, "\"") == 2 {
+		words := strings.Split(strings.Trim(local, "\""), " ")
+		labels := strings.Split(domain, ".")
+		return len(words) == 2 && asciiWord(words[0]) && asciiWord(words[1]) && len(labels) == 2 && asciiWord(labels[0]) && asciiWord(labels[1])
+	}
+	if !asciiWord(local) {
+		return false
+	}
+	labels := strings.Split(domain, ".")
+	return len(labels) == 3 && asciiWord(labels[0]) && ((asciiWord(labels[1]) && labels[2] == "") || (labels[1] == "" && asciiWord(labels[2])))
 }
 
 // InvalidEmailValue is the shared DML syntax predicate for a supplied email.
