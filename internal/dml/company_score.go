@@ -492,10 +492,67 @@ func companyQualifierScore(a, b string) (float64, bool) {
 	return score, true
 }
 
-// companyFitThreshold is the documented Company Name threshold of 70 as a
-// confidence, (100 + 70) / 2. NATIVE B3_cw1: hyphen-joined pairs at 85 and
-// above match and those at 83 and below do not.
+// companyFitThreshold is the documented Company Name threshold of 70 read as
+// a confidence, (100 + 70) / 2; that reading is fitted, not documented.
+// NATIVE B3_cw1: on the join route the one pair at 85 matches and the three
+// at 83 do not. The score does not separate pairs outside the fitted routes
+// (company_name_fit has rejected pairs at 85 and matched pairs at 77 there).
 const companyFitThreshold = 85
+
+// companyFitCovered keeps a fitted match to the pair shapes the panels
+// cover; any other pair keeps the word scorer's decision.
+//
+// Shape route: the captured numbered and designator pairs differ in their
+// numbers, joins and designators, not in their words. NATIVE B3_cw1 and
+// B1_co3: names that share the six-character key but differ past it
+// ("Qelthorin Freights" and "Qelthorin Freighter", "Testing Account" and
+// "Tester Account") do not match, and neither do "Qelthorin Freight Systems"
+// and "Qelthorin Freight Services Group". So a number does not make a match
+// of two names the word scorer keeps apart without it, and the first two key
+// words of a designator pair must agree in full.
+//
+// Qualifier route: the captured cross-form pairs share one suffix. NATIVE
+// B3_cw1: a " - " suffix rejects a different plain last word in both
+// directions but one, so a " - " side with a different suffix is not scored.
+func companyFitCovered(route int, a, b string) bool {
+	switch route {
+	case companyRouteShape:
+		if (companyMarks(a)|companyMarks(b))&companyMarkDigit != 0 {
+			x, y := companyUnnumbered(a), companyUnnumbered(b)
+			if x == "" || y == "" || foldedEqual(x, y) {
+				return true
+			}
+			ok, _ := legacyFuzzyCompany(x, y, false)
+			return ok
+		}
+		wa, wb := companyScoreWords(a, true), companyScoreWords(b, true)
+		return len(wa) > 0 && len(wb) > 0 && wa[0] == wb[0] && (len(wa) < 2 || len(wb) < 2 || wa[1] == wb[1])
+	case companyRouteQualifier:
+		x, y := splitCompanyQualifier(a), splitCompanyQualifier(b)
+		if x.form == "dash" || y.form == "dash" {
+			return strings.Join(companyScoreWords(x.suffix, false), " ") == strings.Join(companyScoreWords(y.suffix, false), " ")
+		}
+	}
+	return true
+}
+
+// companyUnnumbered drops the numbers from a name: a "#", a number word, a
+// trailing digit run with its hyphen or underscore ("Account-1", "Account1")
+// and a leading one with its hyphen or underscore ("7-Zorval").
+func companyUnnumbered(s string) string {
+	var out []string
+	for _, w := range strings.Fields(s) {
+		w = strings.TrimLeft(w, "#")
+		w = strings.TrimRight(strings.TrimRight(w, "0123456789"), "-_")
+		if t := strings.TrimLeft(w, "0123456789"); t != w && (t == "" || t[0] == '-' || t[0] == '_') {
+			w = strings.TrimLeft(t, "-_")
+		}
+		if w != "" {
+			out = append(out, w)
+		}
+	}
+	return strings.Join(out, " ")
+}
 
 // Fitted routes: the pair shapes the captured panels cover. A shape route has
 // a digit or a trailing Partner, SARL or BV designator; a join route has a
@@ -566,7 +623,8 @@ func companyDesignatorShape(s string) bool {
 	if i < 0 || strings.TrimSpace(strings.ReplaceAll(s[:i], ".", "")) == "" {
 		return false
 	}
-	last := strings.ReplaceAll(s[i+1:], ".", "")
+	_, width := utf8.DecodeRuneInString(s[i:])
+	last := strings.ReplaceAll(s[i+width:], ".", "")
 	return strings.EqualFold(last, "partner") || strings.EqualFold(last, "sarl") || strings.EqualFold(last, "bv")
 }
 

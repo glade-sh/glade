@@ -131,7 +131,12 @@ func TestCompanyNameNativeConformance(t *testing.T) {
 	if len(panels) != 9 {
 		t.Fatalf("selected %d panels, want 9", len(panels))
 	}
+	// Exact confidences must not fall below the counts this fit reaches.
+	exact := map[string]int{"B1_co1_a": 157, "B1_co1_b": 102, "B1_co2": 55, "B1_co3": 69, "B3_calhelp": 2, "B3_cd1": 496, "B3_cd2": 625, "B3_cw1": 207, "B3_ca1": 38}
 	for name, c := range panels {
+		if c.exact < exact[name] {
+			t.Errorf("%s: exact confidence %d, want at least %d", name, c.exact, exact[name])
+		}
 		t.Logf("%s: matches %d/%d, exact confidence %d/%d, conflicting residuals %d, new false matches %d", name, c.hits, c.native, c.exact, c.native, c.residual, c.extra)
 		if c.hits+c.residual != c.native {
 			t.Errorf("%s: missed %d captured matches outside the conflicting residuals", name, c.native-c.hits-c.residual)

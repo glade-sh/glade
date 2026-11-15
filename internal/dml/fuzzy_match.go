@@ -1162,7 +1162,7 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 		}
 	}
 	if route != companyRouteNone && same {
-		if raw := companyFitScore(a, b); raw >= companyFitThreshold {
+		if raw := companyFitScore(a, b); raw >= companyFitThreshold && companyFitCovered(route, a, b) {
 			if route == companyRouteJoin {
 				if matched, _ := legacyFuzzyCompany(a, b, matchBlanks); !matched {
 					return true, companyJoinConfidence(a, b, raw)

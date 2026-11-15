@@ -45,7 +45,7 @@ func TestCompanyFitShapePreservesClassification(t *testing.T) {
 		}
 		return false
 	}
-	values := []string{"", ". Partner", "Acme Partner", "Acme p.a.r.t.n.e.r.", "Acme\tB.V. ", "partner", "Acme SARL", "Acme ١", "Test Account", "Test Account-1"}
+	values := []string{"", ". Partner", "Acme Partner", "Acme p.a.r.t.n.e.r.", "Acme\tB.V. ", "partner", "Acme SARL", "Acme ١", "Test Account", "Test Account-1", "Acme\u00a0SARL", "Acme\u2003Partner"}
 	for _, a := range values {
 		for _, b := range values {
 			if got, want := companyFitShape(a, b), prior(a, b); got != want {
@@ -80,6 +80,61 @@ func TestCompanyFitKeysMatchWordKey(t *testing.T) {
 			if want := companyFitKey(a) == companyFitKey(b); same != want || na != len(companyScoreWords(a, true)) || nb != len(companyScoreWords(b, true)) {
 				t.Errorf("%q / %q: got %v %d %d, want %v", a, b, same, na, nb, want)
 			}
+		}
+	}
+}
+
+// The captured numbered, designator and qualifier pairs share their leading
+// words and their qualifier. NATIVE company_name_fit/org.tsv B3_cw1 and
+// B1_co3 reject the nearest pairs without a digit ("Qelthorin Freights" and
+// "Qelthorin Freighter", "Testing Account" and "Tester Account", "Qelthorin
+// Freight Systems" and "Qelthorin Freight Services Group", a " - " suffix and
+// a different last word), so these uncaptured pairs keep the word scorer's
+// decision.
+func TestCompanyFitKeepsWordScorerOutsideCapturedShapes(t *testing.T) {
+	for _, pair := range [][2]string{
+		{"Qelthorin Freights 1", "Qelthorin Freighter 1"},
+		{"Qelthorin Freights", "Qelthorin Freighter 2"},
+		{"Internal Systems 1", "Internet Systems 1"},
+		{"Northwest Airlines 2", "Northwestern Airliners 2"},
+		{"Acme Partners 1", "Acme Partner 1"},
+		{"Qelthorin Freight Systems 1", "Qelthorin Freight Services Group"},
+		{"Zorvex Logistics 12", "Zorvex Logistics 12 Northern Division"},
+		{"Zorvex Marine SARL", "Zorvex Mariner BV"},
+		{"Zorvex Freight - North", "Zorvex Freight/West"},
+		{"Zorvex Freight (East)", "Zorvex Freight - North"},
+	} {
+		for _, p := range [][2]string{pair, {pair[1], pair[0]}} {
+			got, score := fuzzyCompany(p[0], p[1], false)
+			base, baseScore := legacyFuzzyCompany(p[0], p[1], false)
+			if got != base || got && score != baseScore {
+				t.Errorf("%q -> %q: got %v %v, word scorer %v %v", p[0], p[1], got, score, base, baseScore)
+			}
+		}
+	}
+	// The same routes still match pairs with the captured shape.
+	for _, pair := range [][2]string{
+		{"Qelthorin Freights", "Qelthorin Freights 1"},
+		{"Zorvex Region 1 Sales", "Zorvex Region 2 Sales"},
+		{"Test Account1", "Test Account 1"},
+		{"Zorvex Freight 1 West", "Zorvex Freight 2 East"},
+		{"7-Zorval", "7 Zorval"},
+		{"Zorvex Freight - West", "Zorvex Freight/West"},
+	} {
+		if got, _ := fuzzyCompany(pair[0], pair[1], false); !got {
+			t.Errorf("%q -> %q does not match", pair[0], pair[1])
+		}
+	}
+}
+
+func TestCompanyUnnumbered(t *testing.T) {
+	for in, want := range map[string]string{
+		"Test Account 1": "Test Account", "Test Account-1": "Test Account", "Test Account_2": "Test Account", "TestAccount1": "TestAccount",
+		"Test Account #1": "Test Account", "1 Test Account": "Test Account", "Test 1 Account": "Test Account", "7-Zorval": "Zorval",
+		"3M Company": "3M Company", "Web2Go Systems": "Web2Go Systems", "001": "", "Acme": "Acme",
+	} {
+		if got := companyUnnumbered(in); got != want {
+			t.Errorf("%q: got %q, want %q", in, got, want)
 		}
 	}
 }
