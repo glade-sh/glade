@@ -185,6 +185,8 @@ func refreshOrgFeatureObjects(org *OrgState) {
 	// The plain Developer inventory is a union of the captured API and route
 	// lists. Preserve non-catalog project objects when applying this profile.
 	if org.StandardSpreadCapturedPlain && org.HasFeature(project.PlainDeveloperObjectShape) && (org.eagerStandardSpread || org.lazyStandardSpread || org.StandardSpread != "") {
+		var hidden [3]hiddenSpreadDefinition
+		count := 0
 		for _, name := range []string{"AIFeatureExtractor", "AIResearchPromptResult", "AIScoringStatusEvent"} {
 			if object, exists := org.Objects[name]; exists {
 				// Only remove untouched catalog entries, retaining project schema
@@ -192,7 +194,8 @@ func refreshOrgFeatureObjects(org *OrgState) {
 				if len(object.Records) != 0 || !isUnmodifiedSpreadObject(org, name, object) {
 					continue
 				}
-				recordSpreadHiddenAccess(org, name, object.Definition)
+				hidden[count] = hiddenSpreadDefinition{name, object.Definition}
+				count++
 				DeleteObject(org, name)
 				if org.eagerStandardSpread {
 					org.StandardSpreadPruned = true
@@ -201,6 +204,9 @@ func refreshOrgFeatureObjects(org *OrgState) {
 					org.StandardSpreadRemoved = append(removed, name)
 				}
 			}
+		}
+		if count != 0 {
+			recordSpreadHiddenAccessBatch(org, hidden[:count])
 		}
 	}
 	if org.HasCapturedB2BCommerceShape() && !org.HasFeature(project.UnspecifiedStandardFieldShape) {
@@ -335,26 +341,37 @@ func (o *OrgState) SuppressedSpreadVisibilityStamp() string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
+type hiddenSpreadDefinition struct {
+	name       string
+	definition ObjectDefinition
+}
+
 func recordSpreadHiddenAccess(org *OrgState, name string, definition ObjectDefinition) {
-	fields := make([]string, 0, len(definition.Fields))
-	for fieldName, field := range definition.Fields {
-		if field.APIName != "" {
-			fieldName = field.APIName
-		}
-		fields = append(fields, fieldName)
-	}
-	sort.Strings(fields)
+	recordSpreadHiddenAccessBatch(org, []hiddenSpreadDefinition{{name, definition}})
+}
+
+func recordSpreadHiddenAccessBatch(org *OrgState, hidden []hiddenSpreadDefinition) {
 	next := cloneSpreadHiddenAccess(org.StandardSpreadHiddenAccess)
 	if next == nil {
 		next = make(map[string][]string)
 	}
-	next[name] = fields
-	org.StandardSpreadHiddenAccess = next
 	definitions := cloneSpreadHiddenDefinitions(org.StandardSpreadHiddenDefinitions)
 	if definitions == nil {
 		definitions = make(map[string]ObjectDefinition)
 	}
-	definitions[name] = cloneSpreadHiddenDefinition(definition)
+	for _, entry := range hidden {
+		fields := make([]string, 0, len(entry.definition.Fields))
+		for fieldName, field := range entry.definition.Fields {
+			if field.APIName != "" {
+				fieldName = field.APIName
+			}
+			fields = append(fields, fieldName)
+		}
+		sort.Strings(fields)
+		next[entry.name] = fields
+		definitions[entry.name] = cloneSpreadHiddenDefinition(entry.definition)
+	}
+	org.StandardSpreadHiddenAccess = next
 	org.StandardSpreadHiddenDefinitions = definitions
 }
 
