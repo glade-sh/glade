@@ -14,7 +14,7 @@ import (
 
 // Exact named/@IsTest native sources cover disk/open/warm diagnostics. The
 // handler retains a fixed semantic index: recover a malformed overlay to that
-// indexed native source, then repeat with a newline-only edit.
+// indexed native source, then verify a newline edit does not reuse it.
 func TestStandardConstructorCompleteNativeLSPEditRoutes(t *testing.T) {
 	raw, err := os.ReadFile("../apextest/testdata/conformance/standard_constructor_complete/observations.json")
 	if err != nil {
@@ -76,12 +76,17 @@ func TestStandardConstructorCompleteNativeLSPEditRoutes(t *testing.T) {
 			if diagnosticsCount(t, malformed) == 0 {
 				t.Fatal("malformed edit has no syntax diagnostic")
 			}
-			for i, source := range []string{row.Source, row.Source + "\n"} {
-				notifications, err := handler.DidChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: i + 3}, ContentChanges: []TextDocumentContentChangeEvent{{Text: source}}})
-				if err != nil {
-					t.Fatal(err)
-				}
-				check("restored-indexed-source", notifications, !row.Compiled)
+			restored, err := handler.DidChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 3}, ContentChanges: []TextDocumentContentChangeEvent{{Text: row.Source}}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			check("restored-indexed-source", restored, !row.Compiled)
+			edited, err := handler.DidChange(DidChangeTextDocumentParams{TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 4}, ContentChanges: []TextDocumentContentChangeEvent{{Text: row.Source + "\n"}}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if edited != nil {
+				t.Fatalf("unreflected edit published diagnostics: %v", edited)
 			}
 			check("disk", handler.DidClose(DidCloseTextDocumentParams{TextDocument: TextDocumentIdentifier{URI: uri}}), !row.Compiled)
 		})

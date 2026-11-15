@@ -5529,7 +5529,7 @@ func apexReferenceScanSource(source string) string {
 	return string(out)
 }
 
-func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, scanSource string, pattern *regexp.Regexp) {
+func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, scanSource string, pattern *regexp.Regexp) {
 	for _, match := range pattern.FindAllStringSubmatchIndex(scanSource, -1) {
 		if len(match) != 6 {
 			continue
@@ -5552,7 +5552,7 @@ func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred
 	}
 }
 
-func recordProjectReferencedSObjectLiteralLookupFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, scanSource string, pattern *regexp.Regexp, varTypes map[string]string) {
+func recordProjectReferencedSObjectLiteralLookupFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, scanSource string, pattern *regexp.Regexp, varTypes map[string]string) {
 	for _, match := range pattern.FindAllStringSubmatchIndex(scanSource, -1) {
 		if len(match) != 6 {
 			continue
@@ -5596,7 +5596,7 @@ func projectChildRelationshipSourceReferences(source string) []projectChildRelat
 	return refs
 }
 
-func applyProjectReferencedSourceChildRelationships(org *storage.OrgState, inferred map[string]map[string]storage.Field, refs map[string]projectChildRelationshipSourceReference, childRelationshipLookup map[string]struct{}) {
+func applyProjectReferencedSourceChildRelationships(org *storage.OrgState, inferred map[string]map[string]storage.Field, refs map[string]projectChildRelationshipSourceReference, childRelationshipLookup *childRelationshipLookup) {
 	for _, ref := range refs {
 		canonicalChild, ok := storage.ResolveObjectName(*org, ref.ChildObject)
 		if !ok {
@@ -5678,7 +5678,7 @@ func apexMemberReferenceIsCall(source string, end int) bool {
 	return false
 }
 
-func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
@@ -5707,11 +5707,11 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	inferred[objectName][fieldName] = inferredReferencedField(fieldName)
 }
 
-func recordProjectReferencedBooleanField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+func recordProjectReferencedBooleanField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName string) {
 	recordProjectReferencedStandardField(org, inferred, childRelationshipLookup, objectName, fieldName)
 }
 
-func recordProjectReferencedNumericField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+func recordProjectReferencedNumericField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName string) {
 	recordProjectReferencedStandardField(org, inferred, childRelationshipLookup, objectName, fieldName)
 }
 
@@ -5747,11 +5747,11 @@ func recordProjectReferencedListCustomSetting(org *storage.OrgState, objectName 
 	org.Objects[canonicalObject] = state
 }
 
-func recordProjectReferencedLookupField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName, parentObjectName string) {
+func recordProjectReferencedLookupField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName, parentObjectName string) {
 	recordProjectReferencedLookupFieldWithChildRelationship(org, inferred, childRelationshipLookup, objectName, fieldName, parentObjectName, "")
 }
 
-func recordProjectReferencedLookupFieldWithChildRelationship(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName, parentObjectName, childRelationshipName string) {
+func recordProjectReferencedLookupFieldWithChildRelationship(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName, parentObjectName, childRelationshipName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
@@ -5821,7 +5821,7 @@ func parentRelationshipKnown(definition storage.ObjectDefinition, name string) b
 	return false
 }
 
-func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}) {
+func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup) {
 	for objectName, objectFields := range fields {
 		state, ok := org.Objects[objectName]
 		if !ok {
@@ -6139,19 +6139,51 @@ func syntheticFieldSetCanEditField(fieldName string, field storage.Field) bool {
 	return true
 }
 
-func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string, relationshipLookup map[string]struct{}) bool {
-	parentName, ok := storage.ResolveObjectName(org, objectName)
-	if !ok {
+func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string, relationshipLookup *childRelationshipLookup) bool {
+	var parentName string
+	if _, owed := storage.LazyStandardObjectName(&org, objectName); owed {
+		// ResolveObjectName would install the pending parent into the
+		// caller's Objects map; resolve it the way the lookup keys do.
+		parentName = resolvedChildRelationshipParentName(org, map[string]string{}, objectName)
+	} else if resolved, ok := storage.ResolveObjectName(org, objectName); ok {
+		parentName = resolved
+	} else {
 		parentName = objectName
 	}
 	if relationshipLookup == nil {
 		relationshipLookup = projectReferencedChildRelationshipLookup(org)
 	}
-	_, ok = relationshipLookup[strings.ToLower(parentName)+"\x00"+strings.ToLower(name)]
-	return ok
+	return relationshipLookup.has(org, parentName, name)
 }
 
-func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]struct{} {
+// childRelationshipLookup answers whether a name is a child relationship of a
+// parent object, as an org holding the whole standard spread would.
+//
+// keys holds the relationships of the objects present when the lookup was
+// built; for an eager org that is the whole answer. A lazy org has not
+// installed most catalog children, so a miss there is checked against the
+// definitions its complete spread would hold: an installed child's own
+// definition, otherwise the shared spread template, installing nothing:
+//   - first the children the catalog's relationship table lists for the name,
+//     either with this parent or with several parents (the polymorphic ones);
+//   - then, only when the generated child relationship filter cannot rule the
+//     pair out, every catalog child, once per lookup.
+//
+// Building the lookup costs what it did before; the fallback runs only for
+// names that are neither fields nor installed relationships.
+type childRelationshipLookup struct {
+	keys map[string]struct{}
+
+	mu          sync.Mutex
+	answers     map[string]bool
+	parentNames map[string]string
+	complete    map[string]struct{}
+	// clone holds catalog objects without a shared template, installed on a
+	// copy of the org so the real org is never written.
+	clone *storage.OrgState
+}
+
+func projectReferencedChildRelationshipLookup(org storage.OrgState) *childRelationshipLookup {
 	lookup := make(map[string]struct{}, len(org.Objects))
 	parentNames := make(map[string]string)
 	for _, child := range org.Objects {
@@ -6166,7 +6198,164 @@ func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]s
 			}
 		}
 	}
-	return lookup
+	return &childRelationshipLookup{keys: lookup}
+}
+
+func (l *childRelationshipLookup) has(org storage.OrgState, parentName, name string) bool {
+	key := strings.ToLower(parentName) + "\x00" + strings.ToLower(name)
+	if _, ok := l.keys[key]; ok {
+		return true
+	}
+	if !org.StandardSpreadSourceBacked() {
+		return false
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if answer, ok := l.answers[key]; ok {
+		return answer
+	}
+	if l.answers == nil {
+		l.answers = make(map[string]bool)
+		l.parentNames = make(map[string]string)
+	}
+	answer := l.spreadHas(org, parentName, name, key)
+	l.answers[key] = answer
+	return answer
+}
+
+// spreadHas reports whether a catalog child in the org's complete spread
+// declares the relationship. The caller holds l.mu.
+func (l *childRelationshipLookup) spreadHas(org storage.OrgState, parentName, name, key string) bool {
+	for _, child := range childRelationshipTableCandidates(name, parentName) {
+		definition, ok := l.spreadDefinition(org, child)
+		if ok && l.definitionHas(org, definition, parentName, name) {
+			return true
+		}
+	}
+	if !childRelationshipSpreadCompletionNeeded(org, parentName, name) {
+		return false
+	}
+	if l.complete == nil {
+		l.complete = make(map[string]struct{})
+		for _, child := range storage.KnownStandardObjectNames() {
+			definition, ok := l.spreadDefinition(org, child)
+			if !ok {
+				continue
+			}
+			for _, relation := range definition.Relations {
+				if relation.ChildRelationship == "" {
+					continue
+				}
+				relationName := strings.ToLower(relation.ChildRelationship)
+				for _, parent := range relation.ParentObjects {
+					resolved := resolvedChildRelationshipParentName(org, l.parentNames, parent)
+					l.complete[strings.ToLower(resolved)+"\x00"+relationName] = struct{}{}
+				}
+			}
+		}
+	}
+	_, ok := l.complete[key]
+	return ok
+}
+
+// childRelationshipSpreadCompletionNeeded reports whether a miss must be
+// checked against every catalog child. Where the generated filter covers the
+// org it rules out almost every name. Where it does not (the plain phase, an
+// org namespace, an uncovered feature) the table candidates are the answer.
+var childRelationshipSpreadCompletionNeeded = func(org storage.OrgState, parentName, name string) bool {
+	rulesOut, covered := vm.ChildRelationshipFilterRulesOut(&org, parentName, name)
+	return covered && !rulesOut
+}
+
+func (l *childRelationshipLookup) definitionHas(org storage.OrgState, definition storage.ObjectDefinition, parentName, name string) bool {
+	for _, relation := range definition.Relations {
+		if !strings.EqualFold(relation.ChildRelationship, name) {
+			continue
+		}
+		for _, parent := range relation.ParentObjects {
+			if strings.EqualFold(resolvedChildRelationshipParentName(org, l.parentNames, parent), parentName) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// spreadDefinition returns the definition the org's complete spread holds for
+// a catalog child. The caller holds l.mu.
+func (l *childRelationshipLookup) spreadDefinition(org storage.OrgState, name string) (storage.ObjectDefinition, bool) {
+	// An installed child keeps its installed definition, which may differ
+	// from the catalog template; the completed spread holds that one.
+	if canonical, known := storage.ResolveKnownStandardObjectName(name); known {
+		if object, installed := org.Objects[canonical]; installed {
+			return object.Definition, true
+		}
+	}
+	if definition, ok := storage.StandardSpreadObjectDefinition(&org, name); ok {
+		return definition, true
+	}
+	canonical, owed := storage.LazyStandardObjectName(&org, name)
+	if !owed {
+		// Removed by the shape or not a catalog object.
+		return storage.ObjectDefinition{}, false
+	}
+	if l.clone == nil {
+		clone := org.CloneRuntimeFrozenDefinition()
+		l.clone = &clone
+	}
+	installed, ok := storage.EnsureLazyStandardObject(l.clone, canonical)
+	if !ok {
+		object, exists := l.clone.Objects[canonical]
+		return object.Definition, exists
+	}
+	return l.clone.Objects[installed].Definition, true
+}
+
+var childRelationshipTableIndex struct {
+	once  sync.Once
+	names map[string][]storage.StandardChildRelationship
+}
+
+// childRelationshipTableCandidates lists the catalog children the generated
+// relationship table names for a child relationship: those it lists with
+// parent, and those it lists with several parents, whose shaped definitions
+// can add more.
+func childRelationshipTableCandidates(name, parent string) []string {
+	childRelationshipTableIndex.once.Do(func() {
+		names := make(map[string][]storage.StandardChildRelationship)
+		for _, relation := range storage.StandardChildRelationships() {
+			key := strings.ToLower(relation.Name)
+			names[key] = append(names[key], relation)
+		}
+		childRelationshipTableIndex.names = names
+	})
+	relations := childRelationshipTableIndex.names[strings.ToLower(name)]
+	if len(relations) == 0 {
+		return nil
+	}
+	rows := make(map[string]int, len(relations))
+	for _, relation := range relations {
+		rows[relation.Child] += len(relation.Parents)
+	}
+	var out []string
+	for _, relation := range relations {
+		count, pending := rows[relation.Child]
+		if !pending {
+			continue
+		}
+		matches := count > 1
+		for _, candidate := range relation.Parents {
+			if strings.EqualFold(candidate, parent) {
+				matches = true
+				break
+			}
+		}
+		if matches {
+			out = append(out, relation.Child)
+			delete(rows, relation.Child)
+		}
+	}
+	return out
 }
 
 func resolvedChildRelationshipParentName(org storage.OrgState, names map[string]string, parent string) string {
@@ -6174,12 +6363,51 @@ func resolvedChildRelationshipParentName(org storage.OrgState, names map[string]
 	if cached, ok := names[key]; ok {
 		return cached
 	}
+	// A catalog object the lazy spread still owes resolves to its canonical
+	// name, which differs from parent only in case, so the lookup key is the
+	// same as after an install. Resolving it here installs nothing, so the
+	// caller's range over org.Objects sees a map nobody writes.
+	if childRelationshipParentNameResolvesByCase(org.Namespace, parent) {
+		if canonical, owed := storage.LazyStandardObjectName(&org, parent); owed {
+			names[key] = canonical
+			return canonical
+		}
+	}
+	// Preserve the resolver's namespace and whitespace behavior for other
+	// pending names without letting it add an object to the caller's map.
+	if _, owed := storage.LazyStandardObjectName(&org, parent); owed {
+		org = org.CloneRuntimeFrozenDefinition()
+	}
 	parentName, ok := storage.ResolveObjectName(org, parent)
 	if !ok {
 		parentName = parent
 	}
 	names[key] = parentName
 	return parentName
+}
+
+// childRelationshipParentNameResolvesByCase reports whether ResolveObjectName
+// can only answer parent by an exact or case-folded object name: no
+// surrounding space, no namespace token or custom suffix, and no prefix the
+// org namespace strips. Other names keep the resolving path.
+func childRelationshipParentNameResolvesByCase(namespace, parent string) bool {
+	if parent == "" || parent != strings.TrimSpace(parent) {
+		return false
+	}
+	first := strings.Index(parent, "__")
+	if first < 0 {
+		return true
+	}
+	if first != strings.LastIndex(parent, "__") || storage.StripNamespaceToken(namespace, parent) != parent {
+		return false
+	}
+	lower := strings.ToLower(parent)
+	for _, suffix := range []string{"__c", "__r", "__e", "__mdt", "__share"} {
+		if strings.HasSuffix(lower, suffix) {
+			return false
+		}
+	}
+	return true
 }
 
 func inferredReferencedField(fieldName string) storage.Field {

@@ -45,7 +45,17 @@ type VersionedTextDocumentIdentifier struct {
 }
 
 type InitializeParams struct {
-	RootURI string `json:"rootUri,omitempty"`
+	RootURI      string             `json:"rootUri,omitempty"`
+	Capabilities ClientCapabilities `json:"capabilities,omitempty"`
+}
+
+// ClientCapabilities holds the client capabilities the server reads.
+type ClientCapabilities struct {
+	Workspace struct {
+		DidChangeWatchedFiles struct {
+			DynamicRegistration bool `json:"dynamicRegistration,omitempty"`
+		} `json:"didChangeWatchedFiles,omitempty"`
+	} `json:"workspace,omitempty"`
 }
 
 type InitializeResult struct {
@@ -59,15 +69,27 @@ type ServerInfo struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync        int                   `json:"textDocumentSync,omitempty"`
-	DocumentSymbolProvider  bool                  `json:"documentSymbolProvider"`
-	WorkspaceSymbolProvider bool                  `json:"workspaceSymbolProvider"`
-	HoverProvider           bool                  `json:"hoverProvider"`
-	CompletionProvider      CompletionOptions     `json:"completionProvider"`
-	DefinitionProvider      bool                  `json:"definitionProvider"`
-	ReferencesProvider      bool                  `json:"referencesProvider"`
-	RenameProvider          RenameOptions         `json:"renameProvider"`
-	SemanticTokensProvider  SemanticTokensOptions `json:"semanticTokensProvider"`
+	TextDocumentSync        TextDocumentSyncOptions `json:"textDocumentSync"`
+	DocumentSymbolProvider  bool                    `json:"documentSymbolProvider"`
+	WorkspaceSymbolProvider bool                    `json:"workspaceSymbolProvider"`
+	HoverProvider           bool                    `json:"hoverProvider"`
+	CompletionProvider      CompletionOptions       `json:"completionProvider"`
+	DefinitionProvider      bool                    `json:"definitionProvider"`
+	ReferencesProvider      bool                    `json:"referencesProvider"`
+	RenameProvider          RenameOptions           `json:"renameProvider"`
+	SemanticTokensProvider  SemanticTokensOptions   `json:"semanticTokensProvider"`
+}
+
+type TextDocumentSyncOptions struct {
+	OpenClose bool        `json:"openClose"`
+	Change    int         `json:"change"`
+	Save      SaveOptions `json:"save"`
+}
+type SaveOptions struct {
+	IncludeText bool `json:"includeText"`
+}
+type DidSaveTextDocumentParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
 }
 
 type CompletionOptions struct {

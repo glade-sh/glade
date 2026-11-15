@@ -1,0 +1,2 @@
+if (CrProbe.
+value() == 'ok') { }
