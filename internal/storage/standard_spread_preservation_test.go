@@ -305,3 +305,12 @@ func TestRecordingHiddenDefinitionDoesNotMutateSharedOrg(t *testing.T) {
 		t.Fatal("hidden definition retained the source field map")
 	}
 }
+
+func TestSpreadObjectNamesAreCanonical(t *testing.T) {
+	for _, name := range KnownStandardObjectNames() {
+		canonical, ok := ResolveKnownStandardObjectName(name)
+		if !ok || canonical != name {
+			t.Fatalf("spread object %q resolves to %q, known=%t", name, canonical, ok)
+		}
+	}
+}
