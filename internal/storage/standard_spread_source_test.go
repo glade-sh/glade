@@ -64,6 +64,25 @@ func BenchmarkPlainDeveloperEagerSpread(b *testing.B) {
 	b.Logf("normalized objects=%d sha256=%x", len(objects), sha256.Sum256(data))
 }
 
+func BenchmarkPlainDeveloperPrunedDefinitionWork(b *testing.B) {
+	org := NewOrgState()
+	for _, name := range []string{"AIFeatureExtractor", "AIResearchPromptResult", "AIScoringStatusEvent"} {
+		EnsureStandardObject(&org, name)
+	}
+	definitions := []ObjectDefinition{
+		org.Objects["AIFeatureExtractor"].Definition,
+		org.Objects["AIResearchPromptResult"].Definition,
+		org.Objects["AIScoringStatusEvent"].Definition,
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, definition := range definitions {
+			_ = spreadDefinitionFingerprint(definition)
+			_ = cloneSpreadHiddenDefinition(definition)
+		}
+	}
+}
+
 func TestPlainDeveloperSpreadPreservesProjectObject(t *testing.T) {
 	org := NewOrgState()
 	EnsureStandardObject(&org, "AIFeatureExtractor")
