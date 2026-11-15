@@ -72,3 +72,41 @@ func TestOrgStateInvalidJSONRetainsDecodeError(t *testing.T) {
 		t.Fatalf("decode error %v, want %q", err, want)
 	}
 }
+
+func TestSuppressedSpreadVisibilityStampInputs(t *testing.T) {
+	org := NewOrgState()
+	org.StandardSpreadCapturedPlain = true
+	org.StandardSpreadSuppressed = newSpreadSuppression()
+	org.StandardSpreadSuppressed.put("CareProgram", "original")
+	object := ObjectState{Definition: ObjectDefinition{APIName: "CareProgram"}}
+	org.Objects["CareProgram"] = object
+	baseline := org.SuppressedSpreadVisibilityStamp()
+	if baseline == "" {
+		t.Fatal("missing captured shape stamp")
+	}
+	check := func(label string) {
+		t.Helper()
+		if org.SuppressedSpreadVisibilityStamp() == baseline {
+			t.Fatalf("%s did not invalidate the visibility stamp", label)
+		}
+	}
+	org.StandardSpreadCapturedPlain = false
+	check("shape")
+	org.StandardSpreadCapturedPlain = true
+	org.StandardSpreadSuppressed.put("CareProgram", "changed")
+	check("recorded fingerprint")
+	org.StandardSpreadSuppressed.put("CareProgram", "original")
+	org.StandardSpreadSuppressed.put("Other", "fingerprint")
+	check("registry membership")
+	org.StandardSpreadSuppressed.replace(map[string]string{"CareProgram": "original"})
+	delete(org.Objects, "CareProgram")
+	check("object existence")
+	org.Objects["CareProgram"] = object
+	object.Definition.Label = "edited"
+	org.Objects["CareProgram"] = object
+	check("definition content")
+	object.Definition.Label = ""
+	object.SetRecords(map[ID]Record{"a00000000000001": {ID: "a00000000000001"}})
+	org.Objects["CareProgram"] = object
+	check("record presence")
+}

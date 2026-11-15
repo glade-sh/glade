@@ -124,6 +124,10 @@ func TestSourceSpreadChildRelationshipCacheTracksVisibility(t *testing.T) {
 	delete(object.Records, id)
 	org.Objects["CareProgram"] = object
 	check(false)
+	org.StandardSpreadCapturedPlain = false
+	check(true)
+	org.StandardSpreadCapturedPlain = true
+	check(false)
 }
 
 func TestSourceSpreadDirectQueryPreservesEditedNeighbor(t *testing.T) {
