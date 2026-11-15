@@ -47,6 +47,9 @@ func TestFuzzyNameTablesMatchNativeRows(t *testing.T) {
 			proven[x+"\x00"+y] = true
 		}
 	}
+	for pair := range titleVariantFirstNamePairs(t) {
+		proven[pair] = true
+	}
 	for pair := range proven {
 		if !nameVariants[pair] {
 			t.Errorf("native Name Variant pair %q is missing from nameVariantTable", strings.ReplaceAll(pair, "\x00", " -> "))

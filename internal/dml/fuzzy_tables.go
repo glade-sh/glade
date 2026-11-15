@@ -303,11 +303,12 @@ darrell darryl daryl
 darren darryl daryl
 darryl darrell darren daryl
 daryl darrell darren darryl
-dave davey david davide davis
+dave davey david davide davis davy
 davey dave david davide davis
-david dave davey davide davis
+david dave davey davide davis davy
 davide dave davey david davis
 davis dave davey david davide
+davy dave david
 deanna diana diane dianne
 deb debbie debby deborah debra
 debbie deb debby deborah debra
@@ -1177,7 +1178,7 @@ samson sam sammy
 samuel sam sami sammy
 sander sandy
 sandrine sandy
-sandy sander sandrine
+sandy sander sandrine xander
 sara sarah
 sarah sara
 scott scotty
@@ -1370,7 +1371,7 @@ winifred winnie
 winnie winifred
 woodrow woody
 woody woodrow
-xander zander
+xander sandy zander
 yan yannis
 yannis yan
 yehmi yemi
