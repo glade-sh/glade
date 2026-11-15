@@ -35,13 +35,21 @@ func TestCompanyNameNativeConformance(t *testing.T) {
 		t.Fatal(err)
 	}
 	quoted := regexp.MustCompile(`'([^']*)'`)
-	type counts struct{ native, hits, exact, residual int }
+	type counts struct{ native, hits, exact, residual, extra int }
 	panels := map[string]counts{}
 	// The fit row and the earlier short-ampersand row disagree on the
 	// generalized shape. Preserve the earlier decisions for these eight
 	// directed pairs: company_name_fit/org.tsv:68 and
 	// duplicate_fuzzy_matching/org.tsv:90,431.
-	ampResidual := map[string]bool{"lm": true, "lo": true, "ml": true, "mo": true, "no": true, "ol": true, "om": true, "on": true}
+	//
+	// B3_cw1 "jg" is a plain name with a different last word against a stored
+	// " - " suffix. The panel matches it (94) and rejects four other plain
+	// names that score the same against that suffix, so no captured variable
+	// separates them yet. It keeps the prior decision.
+	residuals := map[string]map[string]bool{
+		"B3_ca1": {"lm": true, "lo": true, "ml": true, "mo": true, "no": true, "ol": true, "om": true, "on": true},
+		"B3_cw1": {"jg": true},
+	}
 	for _, row := range rows[1:] {
 		if row[0] != "62.0" || row[1] != "istest" || row[2] != "1" {
 			continue
@@ -68,6 +76,7 @@ func TestCompanyNameNativeConformance(t *testing.T) {
 			t.Fatalf("%s: malformed observation", row[4])
 		}
 		c := panels[row[4]]
+		observed, candidates := map[[2]int]bool{}, map[int]bool{}
 		for _, entry := range strings.Split(parts[1], ",") {
 			if len(entry) < 2 {
 				t.Fatalf("%s: malformed entry %q", row[4], entry)
@@ -85,8 +94,9 @@ func TestCompanyNameNativeConformance(t *testing.T) {
 				}
 			}
 			c.native++
+			observed[[2]int{int(i), int(j)}], candidates[int(i)] = true, true
 			ok, got := fuzzyCompany(values[i], values[j], false)
-			if row[4] == "B3_ca1" && ampResidual[entry[:2]] {
+			if residuals[row[4]][entry[:2]] {
 				base, baseScore := legacyFuzzyCompany(values[i], values[j], false)
 				if ok != base || got != baseScore || ok {
 					t.Errorf("%s %s: got %v %.0f, want prior no-match %v %.0f", row[4], entry, ok, got, base, baseScore)
@@ -101,18 +111,33 @@ func TestCompanyNameNativeConformance(t *testing.T) {
 				}
 			}
 		}
+		// A pair the panel does not report must not match unless the prior
+		// scorer already matched it. Only candidates the panel covers count.
+		for i := range candidates {
+			for j := range values {
+				if observed[[2]int{i, j}] {
+					continue
+				}
+				ok, _ := fuzzyCompany(values[i], values[j], false)
+				base, _ := legacyFuzzyCompany(values[i], values[j], false)
+				if ok && !base {
+					c.extra++
+					t.Errorf("%s: %q -> %q matches; native and prior do not", row[4], values[i], values[j])
+				}
+			}
+		}
 		panels[row[4]] = c
 	}
 	if len(panels) != 9 {
 		t.Fatalf("selected %d panels, want 9", len(panels))
 	}
 	for name, c := range panels {
-		t.Logf("%s: matches %d/%d, exact confidence %d/%d, conflicting residuals %d", name, c.hits, c.native, c.exact, c.native, c.residual)
+		t.Logf("%s: matches %d/%d, exact confidence %d/%d, conflicting residuals %d, new false matches %d", name, c.hits, c.native, c.exact, c.native, c.residual, c.extra)
 		if c.hits+c.residual != c.native {
 			t.Errorf("%s: missed %d captured matches outside the conflicting residuals", name, c.native-c.hits-c.residual)
 		}
-		if name == "B3_ca1" && c.residual != 8 {
-			t.Errorf("%s: found %d conflicting residuals, want 8", name, c.residual)
+		if want := len(residuals[name]); c.residual != want {
+			t.Errorf("%s: found %d conflicting residuals, want %d", name, c.residual, want)
 		}
 	}
 }
