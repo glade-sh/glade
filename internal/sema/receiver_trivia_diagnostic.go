@@ -1,7 +1,6 @@
 package sema
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -12,14 +11,11 @@ type receiverEnclosure struct {
 	kind       string
 	start      int
 	semicolons int
-	header     int
-	doBlock    bool
-	classBody  bool
 }
 
 // receiverBoundDiagnostic classifies the parser's enclosing construct for a
 // bound name dot. Unmeasured constructs are left to the existing parser.
-func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, resolvedCall func() bool) *diagnostic.Diagnostic {
+func receiverBoundDiagnostic(source, file, route string, item receiverTrivia) *diagnostic.Diagnostic {
 	if item.kind != receiverBoundBreak {
 		return nil
 	}
@@ -40,38 +36,9 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 	}
 	topLevel := route == "anonymous" && blockDepth == 0 || route == "trigger" && blockDepth == 1
 	leading := strings.ToLower(ts[statement].text)
-	// Uncaptured neighboring constructs retain the ordinary parser result.
-	if len(stack) > 0 && stack[len(stack)-1].kind == "call" {
-		// Only the first-argument trigger form has a captured diagnostic.
-		if route == "trigger" && dot >= 2 && ts[dot-2].text == "," && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
-			return nil
-		}
-		if receiverTernaryArm(ts, stack, statement, dot) == 2 {
-			return nil
-		}
-	}
-	if leading == "when" {
-		end := receiverDirectCallEnd(ts, dot)
-		if !receiverStringSwitch(ts, stack) || receiverNameRoot(ts, dot) != statement+1 || end < 0 || end >= len(ts) || ts[end].text != "{" || !resolvedCall() {
-			return nil
-		}
-	}
 	switch leading {
-	case "if", "for", "while", "switch", "return", "throw", "else":
+	case "if", "for", "while", "switch", "return", "throw":
 		topLevel = false
-	}
-	// The anonymous parser reads a local method declaration as one top-level
-	// member; a break inside it is reported where that member's name starts.
-	if !topLevel && route == "anonymous" && len(stack) > 0 && stack[0].kind == "block" {
-		if tok, ok := receiverLocalMethodToken(ts, stack[0]); ok {
-			if leading == "return" {
-				return nil
-			}
-			return report(tok, "Unexpected token '"+tok.text+"'.")
-		}
-	}
-	if !topLevel && leading == "when" && dot+2 < len(ts) && ts[dot+2].text == "(" && (len(stack) == 0 || stack[len(stack)-1].kind == "block") {
-		return report(ts[dot+2], "Missing '{' at '('")
 	}
 	if !topLevel {
 		for i := statement; i < dot; i++ {
@@ -83,8 +50,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 		case 1:
 			return report(member, "Missing ':' at '"+member.text+"'")
 		case 2:
-			// The captured false arm is not yet distinguished from accepted
-			// neighbors, so retain the previous diagnostic behavior.
+			// Rejected natively; the false-arm message is uncaptured.
 			return nil
 		}
 	}
@@ -140,7 +106,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 			i = -1
 		case "call", "group", "new":
 			if frame.kind == "group" && dot+2 < len(ts) && ts[dot+2].text == ")" {
-				if dot+3 < len(ts) && (ts[dot+3].word || strings.HasPrefix(ts[dot+3].text, "'") || ts[dot+3].text == ";" && statement+1 < frame.start && ts[frame.start-1].text == "=") {
+				if dot+3 < len(ts) && (ts[dot+3].word || strings.HasPrefix(ts[dot+3].text, "'")) {
 					return report(member, "Extra ')', at '"+member.text+"'.")
 				}
 				return nil
@@ -148,88 +114,20 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 			if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "old") {
 				return report(member, "Extra ')', at '"+member.text+"'.")
 			}
-			if frame.kind == "call" {
-				end := receiverDirectCallEnd(ts, dot)
-				if receiverNameRoot(ts, dot) != frame.start+1 || end < 0 || end >= len(ts) || ts[end].text != ")" || !resolvedCall() {
-					return nil
-				}
-			}
-			if frame.kind == "group" || frame.kind == "new" {
-				end := receiverIntegerCallEnd(ts, dot)
-				if frame.kind == "group" && end < 0 {
-					end = receiverDirectCallEnd(ts, dot)
-				}
-				if receiverNameRoot(ts, dot) != frame.start+1 || end < 0 || end >= len(ts) || ts[end].text != ")" || !resolvedCall() {
-					return nil
-				}
-			}
 			return report(member, "Expecting ')' but was: '"+member.text+"'")
 		case "if", "while":
-			matches := receiverDirectCallEquality(ts, frame.start, dot)
-			if frame.kind == "while" {
-				matches = receiverIntegerCallEquality(ts, frame.start, dot)
-			}
-			if !matches || !resolvedCall() {
-				return nil
-			}
 			return report(member, "Missing ')' at '"+member.text+"'")
-		case "dowhile":
-			if receiverDirectCallEquality(ts, frame.start, dot) && resolvedCall() {
-				return report(member, "Expecting ')' but was: '"+member.text+"'")
-			}
-			return nil
 		case "for":
-			if frame.semicolons == 0 {
-				if receiverForEach(ts, frame.start, dot) {
-					if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
-						return report(member, "Extra ')', at '"+member.text+"'.")
-					}
-					end := receiverDirectCallEnd(ts, dot)
-					if receiverNameRoot(ts, dot) != frame.start+4 || !strings.EqualFold(ts[frame.start+1].text, "String") || !ts[frame.start+2].word || ts[frame.start+3].text != ":" || end < 0 || end+5 >= len(ts) || ts[end].text != "." || !ts[end+1].word || ts[end+2].text != "(" || !strings.HasPrefix(ts[end+3].text, "'") || ts[end+4].text != ")" || ts[end+5].text != ")" || !resolvedCall() {
-						return nil
-					}
-					return report(member, "Missing ')' at '"+member.text+"'")
-				}
-				root := receiverNameRoot(ts, dot)
-				end := receiverDirectCallEnd(ts, dot)
-				if root != frame.start+4 || !strings.EqualFold(ts[frame.start+1].text, "String") || !ts[frame.start+2].word || ts[frame.start+3].text != "=" || end < 0 || end >= len(ts) || ts[end].text != ";" || !resolvedCall() {
-					return nil
-				}
-				return report(member, "Missing ';' at '"+member.text+"'")
-			}
 			if frame.semicolons == 1 {
-				if frame.start+1 >= len(ts) || ts[frame.start+1].text != ";" || !receiverIntegerCallEqualityEnd(ts, frame.start+1, dot, ";") || !resolvedCall() {
-					return nil
-				}
 				return report(member, "Missing ';' at '"+member.text+"'")
 			}
 			if frame.semicolons == 2 {
-				if !receiverForUpdateShape(ts, frame.start, dot) || !resolvedCall() {
-					return nil
-				}
 				return report(member, "Missing ')' at '"+member.text+"'")
 			}
 			return nil
 		case "index":
-			end := receiverIntegerCallEnd(ts, dot)
-			arrayEnd := receiverDirectCallEnd(ts, dot)
-			arraySize := frame.start >= 2 && strings.EqualFold(ts[frame.start-2].text, "new") && strings.EqualFold(ts[frame.start-1].text, "String") && arrayEnd >= 0 && arrayEnd < len(ts) && ts[arrayEnd].text == "]"
-			indexedCall := end >= 0 && end+4 < len(ts) && ts[end].text == "." && ts[end+1].word && ts[end+2].text == "(" && ts[end+3].text == ")" && ts[end+4].text == "]" && resolvedCall()
-			if receiverNameRoot(ts, dot) != frame.start+1 || (!arraySize && !indexedCall) {
-				return nil
-			}
 			return report(member, "Expecting ']' but was: '"+member.text+"'")
 		case "initializer":
-			end := receiverIntegerCallEnd(ts, dot)
-			root := receiverNameRoot(ts, dot)
-			firstValue := root == frame.start+1
-			mapValue := root == frame.start+4 && strings.HasPrefix(ts[frame.start+1].text, "'") && ts[frame.start+2].text == "=" && ts[frame.start+3].text == ">"
-			if mapValue && end < 0 {
-				end = receiverDirectCallEnd(ts, dot)
-			}
-			if (!firstValue && !mapValue) || end < 0 || end >= len(ts) || ts[end].text != "}" || !resolvedCall() {
-				return nil
-			}
 			return report(member, "Expecting '}' but was: '"+member.text+"'")
 		case "switch":
 			return nil
@@ -238,108 +136,7 @@ func receiverBoundDiagnostic(source, file, route string, item receiverTrivia, re
 	if leading == "switch" {
 		return report(member, "Expecting '{' but was: '"+member.text+"'")
 	}
-	if route == "trigger" && dot > 0 && strings.EqualFold(ts[dot-1].text, "Trigger") && strings.EqualFold(member.text, "new") {
-		return report(member, "Extra ';', at '"+member.text+"'.")
-	}
 	return report(member, "Missing ';' at '"+member.text+"'")
-}
-
-func receiverStringSwitch(ts []receiverTriviaToken, stack []receiverEnclosure) bool {
-	if len(stack) == 0 {
-		return false
-	}
-	frame := stack[len(stack)-1]
-	h := frame.header
-	return frame.kind == "block" && h+3 == frame.start && strings.EqualFold(ts[h].text, "switch") && strings.EqualFold(ts[h+1].text, "on") && strings.HasPrefix(ts[h+2].text, "'") && strings.HasSuffix(ts[h+2].text, "'")
-}
-
-// Resolve the zero-argument String, Integer-to-String and String-to-Integer
-// static call signatures observed in the covered expressions.
-func receiverResolvedDirectCall(source string, item receiverTrivia, model *semaTypeMemberView) bool {
-	ts, dot := item.tokens, item.dot
-	var args []string
-	returnType := "String"
-	if receiverDirectCallEnd(ts, dot) < 0 {
-		if receiverIntegerCallEnd(ts, dot) >= 0 {
-			args = []string{"Integer"}
-		} else if receiverStringCallEnd(ts, dot) >= 0 {
-			args, returnType = []string{"String"}, "Integer"
-		} else {
-			return false
-		}
-	}
-	root := receiverNameRoot(ts, dot)
-	if root < 0 || dot <= root {
-		return false
-	}
-	owner := source[ts[root].start:ts[dot-1].end]
-	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, owner, ts[dot+1].text), "class")
-	member, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, args, model)
-	return ok && !ambiguous && hasModifier(member.member.Modifiers, "static") && (hasModifier(member.member.Modifiers, "public") || hasModifier(member.member.Modifiers, "global")) && strings.EqualFold(semaCanonicalPlatformAlias(member.member.Type), returnType)
-}
-
-// receiverDirectCallEnd recognizes the captured zero-argument call.
-func receiverDirectCallEnd(ts []receiverTriviaToken, dot int) int {
-	if dot+3 < len(ts) && ts[dot+2].text == "(" && ts[dot+3].text == ")" {
-		return dot + 4
-	}
-	return -1
-}
-
-func receiverIntegerCallEnd(ts []receiverTriviaToken, dot int) int {
-	if dot+4 < len(ts) && ts[dot+2].text == "(" && ts[dot+4].text == ")" {
-		if _, err := strconv.ParseInt(ts[dot+3].text, 10, 32); err == nil {
-			return dot + 5
-		}
-	}
-	return -1
-}
-
-func receiverIntegerCallEquality(ts []receiverTriviaToken, open, dot int) bool {
-	return receiverIntegerCallEqualityEnd(ts, open, dot, ")")
-}
-
-func receiverIntegerCallEqualityEnd(ts []receiverTriviaToken, open, dot int, tail string) bool {
-	if receiverNameRoot(ts, dot) != open+1 {
-		return false
-	}
-	end := receiverIntegerCallEnd(ts, dot)
-	if end < 0 || end+3 >= len(ts) {
-		return false
-	}
-	literal := ts[end+2].text
-	return ts[end].text == "=" && ts[end+1].text == "=" && ts[end].end == ts[end+1].start && len(literal) >= 2 && strings.HasPrefix(literal, "'") && strings.HasSuffix(literal, "'") && ts[end+3].text == tail
-}
-
-func receiverStringCallEnd(ts []receiverTriviaToken, dot int) int {
-	if dot+4 < len(ts) && ts[dot+2].text == "(" && strings.HasPrefix(ts[dot+3].text, "'") && strings.HasSuffix(ts[dot+3].text, "'") && ts[dot+4].text == ")" {
-		return dot + 5
-	}
-	return -1
-}
-
-func receiverForUpdateShape(ts []receiverTriviaToken, open, dot int) bool {
-	root := receiverNameRoot(ts, dot)
-	end := receiverStringCallEnd(ts, dot)
-	if root != open+12 || end < 0 || end >= len(ts) || ts[end].text != ")" {
-		return false
-	}
-	_, firstErr := strconv.ParseInt(ts[open+4].text, 10, 32)
-	_, secondErr := strconv.ParseInt(ts[open+8].text, 10, 32)
-	return strings.EqualFold(ts[open+1].text, "Integer") && ts[open+2].word && ts[open+3].text == "=" && firstErr == nil && ts[open+5].text == ";" && strings.EqualFold(ts[open+6].text, ts[open+2].text) && ts[open+7].text == "<" && secondErr == nil && ts[open+9].text == ";" && strings.EqualFold(ts[open+10].text, ts[open+2].text) && ts[open+11].text == "="
-}
-
-// The captured condition compares the direct call to a string literal.
-func receiverDirectCallEquality(ts []receiverTriviaToken, open, dot int) bool {
-	if receiverNameRoot(ts, dot) != open+1 {
-		return false
-	}
-	end := receiverDirectCallEnd(ts, dot)
-	if end < 0 || end+3 >= len(ts) {
-		return false
-	}
-	literal := ts[end+2].text
-	return ts[end].text == "=" && ts[end+1].text == "=" && ts[end].end == ts[end+1].start && len(literal) >= 2 && strings.HasPrefix(literal, "'") && strings.HasSuffix(literal, "'") && ts[end+3].text == ")"
 }
 
 // receiverTernaryArm reports whether the break sits directly in a conditional
@@ -508,9 +305,6 @@ func receiverFreeDiagnosticAt(source, namespace string, item receiverTrivia, sco
 	// A detached dot in a type declaration cannot join the type name.
 	if dot+2 < len(ts) && ts[dot+1].word && ts[dot+2].word {
 		if item.depth == 0 {
-			if tok, ok := receiverMethodHeaderToken(ts, item.statement, dot); ok && item.statement != root {
-				return report(tok, "Unexpected token '"+tok.text+"'.")
-			}
 			return report(ts[dot], "Unexpected token '.'.")
 		}
 		return report(ts[dot+2], "Missing ';' at '"+ts[dot+2].text+"'")
@@ -580,94 +374,7 @@ func receiverControlDiagnostic(source string, item receiverTrivia) *diagnostic.D
 	if !bound && !free {
 		return nil
 	}
-	arg := i + 3
-	if free {
-		arg++
-	}
-	if arg+2 >= len(ts) || !strings.HasPrefix(ts[arg].text, "'") || !strings.HasSuffix(ts[arg].text, "'") || ts[arg+1].text != ")" || ts[arg+2].text != ";" {
-		return nil
-	}
 	token := ts[i]
 	const message = "Found control character hex 0x000B (decimal 11) that isn't valid in Apex."
 	return &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: message, NativeMessage: message, Range: receiverTriviaRange(source, token.start, token.end)}
-}
-
-// receiverForEach reports whether the for header opened at index open holds a
-// colon outside any conditional expression before the dot: a for-each header.
-func receiverForEach(ts []receiverTriviaToken, open, dot int) bool {
-	ternary, nested := 0, 0
-	for i := open + 1; i < dot; i++ {
-		switch ts[i].text {
-		case "(", "[", "{":
-			nested++
-		case ")", "]", "}":
-			nested--
-		}
-		if nested != 0 {
-			continue
-		}
-		switch ts[i].text {
-		case "?":
-			if i+1 >= len(ts) || ts[i+1].text != "." || ts[i].end != ts[i+1].start {
-				ternary++
-			}
-		case ":":
-			if ternary == 0 {
-				return true
-			}
-			ternary--
-		}
-	}
-	return false
-}
-
-// receiverLocalMethodToken finds the token after the leading type name of the
-// local method whose body is the given outermost block, if that block is one.
-func receiverLocalMethodToken(ts []receiverTriviaToken, block receiverEnclosure) (receiverTriviaToken, bool) {
-	b, lead := block.start, block.header
-	if b < 1 || lead >= b || ts[b-1].text != ")" || !ts[lead].word {
-		return receiverTriviaToken{}, false
-	}
-	depth, open := 0, -1
-	for i := b - 1; i > lead; i-- {
-		if ts[i].text == ")" {
-			depth++
-		} else if ts[i].text == "(" {
-			depth--
-			if depth == 0 {
-				open = i
-				break
-			}
-		}
-	}
-	if open < lead+2 || !ts[open-1].word {
-		return receiverTriviaToken{}, false
-	}
-	end := lead
-	for end+2 < len(ts) && ts[end+1].text == "." && ts[end].end == ts[end+1].start && ts[end+1].end == ts[end+2].start && ts[end+2].word {
-		end += 2
-	}
-	if end+1 < len(ts) && ts[end+1].text == "." && ts[end].end == ts[end+1].start {
-		end++
-	}
-	if end+1 >= open {
-		return receiverTriviaToken{}, false
-	}
-	return ts[end+1], true
-}
-
-// receiverMethodHeaderToken is the token after the leading name lexeme of a
-// statement whose next tokens open a parameter list: `Type name (`.
-func receiverMethodHeaderToken(ts []receiverTriviaToken, statement, dot int) (receiverTriviaToken, bool) {
-	if statement >= len(ts) || !ts[statement].word {
-		return receiverTriviaToken{}, false
-	}
-	end := statement
-	for end+2 < len(ts) && ts[end+1].text == "." && ts[end].end == ts[end+1].start && ts[end+1].end == ts[end+2].start && ts[end+2].word {
-		end += 2
-	}
-	if end+3 < len(ts) && end+1 < dot && ts[end+1].word && ts[end+2].text == "(" {
-		return ts[end+1], true
-	}
-	return receiverTriviaToken{}, false
 }

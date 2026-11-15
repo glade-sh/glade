@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- Apex reports the captured line-break errors beside a receiver dot in more places: loop, do-while, else-if and switch headers, member headers of nested classes, local methods in anonymous code, and trigger loops. Only the captured forms change; other code keeps its earlier diagnostics.
 
 ## v0.3.10
 

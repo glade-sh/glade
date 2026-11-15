@@ -25,7 +25,6 @@ type receiverTrivia struct {
 	depth                int
 	parens               int
 	declarationHasEquals bool
-	classBody            bool
 	stack                []receiverEnclosure
 }
 
@@ -131,10 +130,9 @@ func scanReceiverTrivia(source string) []receiverTrivia {
 	var stack []receiverEnclosure
 	statement, blockDepth, depth, parens := 0, 0, 0, 0
 	declarationHasEquals := false
-	closedDo := false
 	for i, tok := range tokens {
 		if tok.text == "\v" && i > 0 && i+1 < len(tokens) && (tokens[i-1].text == "." && tokens[i-1].end == tok.start || tokens[i+1].text == "." && tok.end == tokens[i+1].start) {
-			out = append(out, receiverTrivia{kind: receiverInvalidControl, tokens: tokens, dot: i, statement: statement, blockDepth: blockDepth, depth: depth, parens: parens, declarationHasEquals: declarationHasEquals, classBody: receiverInClassBody(stack), stack: append([]receiverEnclosure(nil), stack...)})
+			out = append(out, receiverTrivia{kind: receiverInvalidControl, tokens: tokens, dot: i, statement: statement, blockDepth: blockDepth, depth: depth, parens: parens, declarationHasEquals: declarationHasEquals, stack: append([]receiverEnclosure(nil), stack...)})
 		}
 		if i > 0 && i+1 < len(tokens) && tok.text == "." && tokens[i-1].word && !(i >= 2 && tokens[i-2].text == "?" && tokens[i-2].end == tok.start) {
 			var kind receiverTriviaKind
@@ -144,7 +142,7 @@ func scanReceiverTrivia(source string) []receiverTrivia {
 				kind = receiverFreeName
 			}
 			if kind != 0 {
-				out = append(out, receiverTrivia{kind: kind, tokens: tokens, dot: i, statement: statement, blockDepth: blockDepth, depth: depth, parens: parens, declarationHasEquals: declarationHasEquals, classBody: receiverInClassBody(stack), stack: append([]receiverEnclosure(nil), stack...)})
+				out = append(out, receiverTrivia{kind: kind, tokens: tokens, dot: i, statement: statement, blockDepth: blockDepth, depth: depth, parens: parens, declarationHasEquals: declarationHasEquals, stack: append([]receiverEnclosure(nil), stack...)})
 			}
 		}
 		switch tok.text {
@@ -164,9 +162,6 @@ func scanReceiverTrivia(source string) []receiverTrivia {
 				if i >= 2 && strings.EqualFold(tokens[i-2].text, "new") {
 					kind = "new"
 				}
-				if kind == "while" && i >= 2 && tokens[i-2].text == "}" && closedDo {
-					kind = "dowhile"
-				}
 			}
 			stack = append(stack, receiverEnclosure{kind: kind, start: i})
 		case "[":
@@ -178,19 +173,11 @@ func scanReceiverTrivia(source string) []receiverTrivia {
 			if i > 0 && (tokens[i-1].text == ">" || tokens[i-1].text == "]") {
 				kind = "initializer"
 			}
-			frame := receiverEnclosure{kind: kind, start: i, header: statement}
 			if kind == "block" {
-				frame.doBlock = i > 0 && strings.EqualFold(tokens[i-1].text, "do")
-				for j := statement; j < i; j++ {
-					if t := strings.ToLower(tokens[j].text); t == "class" || t == "interface" || t == "enum" {
-						frame.classBody = true
-						break
-					}
-				}
 				blockDepth++
 				statement = i + 1
 			}
-			stack = append(stack, frame)
+			stack = append(stack, receiverEnclosure{kind: kind, start: i})
 		case ")", "]", "}":
 			if tok.text == ")" {
 				parens--
@@ -202,9 +189,6 @@ func scanReceiverTrivia(source string) []receiverTrivia {
 			if len(stack) > 0 {
 				top := stack[len(stack)-1]
 				stack = stack[:len(stack)-1]
-				if tok.text == "}" {
-					closedDo = top.kind == "block" && top.doBlock
-				}
 				if tok.text == "}" && top.kind == "block" {
 					blockDepth--
 					statement = i + 1
@@ -258,17 +242,6 @@ func receiverQueryStart(source string) bool {
 	for _, keyword := range []string{"select", "find"} {
 		if len(source) > len(keyword) && strings.EqualFold(source[:len(keyword)], keyword) && !isApexIdentifierChar(source[len(keyword)]) {
 			return true
-		}
-	}
-	return false
-}
-
-// receiverInClassBody reports whether the innermost block around a dot is a
-// class, interface or enum body, so the dot lies in a member declaration.
-func receiverInClassBody(stack []receiverEnclosure) bool {
-	for i := len(stack) - 1; i >= 0; i-- {
-		if stack[i].kind == "block" {
-			return stack[i].classBody
 		}
 	}
 	return false

@@ -41,16 +41,6 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 		}
 		seen[key] = true
 		items := scanReceiverTrivia(source)
-		// Generic class declarations are rejected by the ordinary analyzer.
-		// Their receiver diagnostics have not been captured.
-		if trigger == nil && len(items) > 0 {
-			ts := items[0].tokens
-			for i := 0; i+2 < len(ts); i++ {
-				if strings.EqualFold(ts[i].text, "class") && ts[i+1].word && ts[i+2].text == "<" {
-					return
-				}
-			}
-		}
 		first := len(out)
 		var (
 			scoped    bool
@@ -88,25 +78,23 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 					}
 				}
 			}
+			if d, lead := receiverFollowupDiagnostic(source, file, route, item, func() *semaTypeMemberView { return model }); d != nil {
+				start, end := receiverStatementSpan(item.tokens, item.dot, len(source))
+				if lead {
+					start = item.tokens[item.statement].start
+				}
+				out = append(out, receiverReplacement{diagnostic: *d, file: file, start: start, end: end, field: member.Kind == apexast.DeclarationField})
+				continue
+			}
 			fieldType := member.Kind == apexast.DeclarationField && !item.declarationHasEquals
 			depth, parens := item.depth, item.parens
 			if trigger == nil && member.Name == "" {
 				fieldType = depth == 1 && parens == 0 && !item.declarationHasEquals
 			}
-			// A member header before its body or initializer: field, return,
-			// property and constructor types at any class nesting depth.
-			classHeader := trigger == nil && item.classBody && !item.declarationHasEquals
-			if classHeader && parens == 0 {
-				fieldType = true
-			}
 			var d *diagnostic.Diagnostic
 			inheritance := false
-			if trigger == nil && (depth == 0 || item.classBody) {
-				first := 0
-				if depth > 0 {
-					first = item.statement
-				}
-				for i := first; i < item.dot; i++ {
+			if trigger == nil && depth == 0 {
+				for i := 0; i < item.dot; i++ {
 					if strings.EqualFold(item.tokens[i].text, "extends") || strings.EqualFold(item.tokens[i].text, "implements") {
 						inheritance = true
 						break
@@ -124,7 +112,7 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 					msg = "Expecting '{' but was: '.'"
 				}
 				d = &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: msg, NativeMessage: msg, File: file, Range: receiverTriviaRange(source, token.start, token.end)}
-			} else if classHeader && parens > 0 && item.dot+2 < len(item.tokens) && item.tokens[item.dot+2].word {
+			} else if trigger == nil && depth == 1 && parens > 0 && !item.declarationHasEquals && item.dot+2 < len(item.tokens) && item.tokens[item.dot+2].word {
 				token := item.tokens[item.dot+2]
 				msg := "Extra ')', at '" + token.text + "'."
 				if item.kind == receiverFreeName {
@@ -140,19 +128,15 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 				msg := "Unexpected token '" + token.text + "'."
 				d = &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: msg, NativeMessage: msg, File: file, Range: receiverTriviaRange(source, token.start, token.end)}
 			} else if item.kind == receiverBoundBreak {
-				d = receiverBoundDiagnostic(source, file, route, item, func() bool { return receiverResolvedDirectCall(source, item, model) })
+				d = receiverBoundDiagnostic(source, file, route, item)
 			} else if route == "trigger" && item.dot > 0 && strings.EqualFold(item.tokens[item.dot-1].text, "Trigger") && item.dot+1 < len(item.tokens) && strings.EqualFold(item.tokens[item.dot+1].text, "old") && depth > 1 {
 				token := item.tokens[item.dot-1]
 				msg := "Expecting ')' but was: '" + token.text + "'"
 				d = &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: msg, NativeMessage: msg, File: file, Range: receiverTriviaRange(source, token.start, token.end)}
-			} else if route == "trigger" && item.kind == receiverFreeName && item.dot > 0 && strings.EqualFold(item.tokens[item.dot-1].text, "Trigger") && item.dot+1 < len(item.tokens) && strings.EqualFold(item.tokens[item.dot+1].text, "new") && receiverTriggerForEach(item) {
-				token := item.tokens[item.dot-1]
-				msg := "Unexpected token '" + token.text + "'."
-				d = &diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA013", Message: msg, NativeMessage: msg, File: file, Range: receiverTriviaRange(source, token.start, token.end)}
 			} else if route == "trigger" && item.dot > 0 && strings.EqualFold(item.tokens[item.dot-1].text, "Trigger") && item.dot+1 < len(item.tokens) && strings.EqualFold(item.tokens[item.dot+1].text, "new") {
 				candidate := item
 				candidate.kind = receiverBoundBreak
-				d = receiverBoundDiagnostic(source, file, route, candidate, func() bool { return receiverResolvedDirectCall(source, candidate, model) })
+				d = receiverBoundDiagnostic(source, file, route, candidate)
 			} else {
 				// Scopes depend only on the enclosing member; a body with many
 				// detached dots collects them once.
@@ -189,14 +173,6 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 				continue
 			}
 			start, end := receiverStatementSpan(item.tokens, item.dot, len(source))
-			// The parse error replaces the semantic error of the whole throw
-			// statement or `when` clause that holds the break.
-			if item.statement < len(item.tokens) && item.kind == receiverBoundBreak {
-				lead := item.tokens[item.statement]
-				if (strings.EqualFold(lead.text, "throw") || strings.EqualFold(lead.text, "when")) && lead.start < start {
-					start = lead.start
-				}
-			}
 			out = append(out, receiverReplacement{diagnostic: *d, file: file, start: start, end: end, field: member.Kind == apexast.DeclarationField})
 		}
 		// Native class field diagnostics follow method body diagnostics.
@@ -258,11 +234,4 @@ func mergeReceiverNamedDiagnostics(existing []diagnostic.Diagnostic, replacement
 		out = append(out, r.diagnostic)
 	}
 	return out
-}
-
-// receiverTriggerForEach reports whether the dot sits directly in a for-each
-// header.
-func receiverTriggerForEach(item receiverTrivia) bool {
-	n := len(item.stack)
-	return n > 0 && item.stack[n-1].kind == "for" && item.stack[n-1].semicolons == 0 && receiverForEach(item.tokens, item.stack[n-1].start, item.dot)
 }
