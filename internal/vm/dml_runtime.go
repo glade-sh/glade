@@ -2628,7 +2628,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		// Only the captured scoped shape (one Account insert) checks its rows
 		// with the scope; other partial calls keep the unscoped row check.
 		rowScope := ""
-		if op == "insert" && options.ExplicitUserModePartialRecord && len(targets) == 1 && targets[0] != nil && vm.scopedRowCheckCaptured(*targets[0]) {
+		if op == "insert" && options.UserModePermissionSetID != "" && options.ExplicitUserModePartialRecord && len(targets) == 1 && targets[0] != nil && vm.scopedRowCheckCaptured(*targets[0]) {
 			rowScope = options.UserModePermissionSetID
 		}
 		savedExplicit, savedPartial, savedSingle := vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord

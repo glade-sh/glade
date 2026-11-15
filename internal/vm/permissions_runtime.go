@@ -800,7 +800,23 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		names := explicitSObjectFieldNamesInInsertionOrder(record)
 		if len(names) > 3 {
 			canonical := make(map[string]struct{}, 4)
+			// The record's own field keys carry the stored spelling and
+			// resolve without the definition scan the lowercased explicit
+			// names need. They can only confirm a wide record.
+			for field := range record.Fields {
+				if isInternalSObjectField(field) || !isExplicitSObjectField(record, field) {
+					continue
+				}
+				canonical[strings.ToLower(vm.resolveSObjectFieldName(objectName, field))] = struct{}{}
+				if len(canonical) > 3 {
+					wideAccountRecord = true
+					break
+				}
+			}
 			for _, name := range names {
+				if wideAccountRecord {
+					break
+				}
 				canonical[strings.ToLower(vm.resolveSObjectFieldName(objectName, name))] = struct{}{}
 				if len(canonical) > 3 {
 					wideAccountRecord = true
@@ -944,7 +960,12 @@ func (vm *VM) capturedAdminAccountRecord(record Value, objectName, fieldName str
 	}
 	seenName, seenField := false, false
 	for _, field := range explicitSObjectFieldNamesInInsertionOrder(record) {
-		canonical := vm.resolveSObjectFieldName(objectName, field)
+		// The explicit names are lowercased; the three allowed names match
+		// without resolving them against the definition.
+		canonical := field
+		if !strings.EqualFold(field, "Name") && !strings.EqualFold(field, "Id") && !strings.EqualFold(field, fieldName) {
+			canonical = vm.resolveSObjectFieldName(objectName, field)
+		}
 		seenName = seenName || strings.EqualFold(canonical, "Name")
 		seenField = seenField || strings.EqualFold(canonical, fieldName)
 		if !strings.EqualFold(canonical, "Name") && !strings.EqualFold(canonical, "Id") && !strings.EqualFold(canonical, fieldName) {
