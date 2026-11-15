@@ -31,3 +31,25 @@ func TestSourceSpreadDirectQueryPreservesNeighbor(t *testing.T) {
 		})
 	}
 }
+
+func TestSourceSpreadDirectQueryPreservesEditedNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	object := org.Objects["CareProgram"]
+	original := object.Definition.Fields["Id"]
+	defer func() { object.Definition.Fields["Id"] = original }()
+	edited := original
+	edited.Label = "edited"
+	object.Definition.Fields["Id"] = edited
+	query, err := Parse("SELECT Id FROM CareProgram LIMIT 2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(org, query); err != nil {
+		t.Fatalf("edited definition was hidden: %v", err)
+	}
+}
