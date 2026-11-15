@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Company duplicate matching.** Numbered names and selected legal suffixes use captured directional confidence rules.
+- **Company duplicate matching.** Custom Company Name rules score numbered names, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
 
 - Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
 

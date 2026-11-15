@@ -4,6 +4,7 @@ import (
 	"math"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 var companyExpansions = map[string]string{"intl": "international", "natl": "national", "univ": "university", "st": "saint", "mt": "mount", "assoc": "association", "dept": "department", "mfg": "manufacturing", "svcs": "services", "us": "unitedstates"}
@@ -435,26 +436,122 @@ func companyQualifierScore(a, b string) (float64, bool) {
 	return score, true
 }
 
-// The fitted numeric panels exercise a final digit run, while the designator
-// panels exercise suffix removal. Keep other shapes on the previous scorer.
+// companyFitThreshold is the documented Company Name threshold of 70 as a
+// confidence, (100 + 70) / 2. NATIVE B3_cw1: hyphen-joined pairs at 85 and
+// above match and those at 83 and below do not.
+const companyFitThreshold = 85
+
+// Fitted routes: the pair shapes the captured panels cover. A shape route has
+// a digit or a trailing Partner, SARL or BV designator; a join route has a
+// hyphen or underscore join on one side only; a qualifier route has two
+// different trailing qualifiers.
+const (
+	companyRouteNone = iota
+	companyRouteShape
+	companyRouteJoin
+	companyRouteQualifier
+)
+
+func companyFitRoute(a, b string) int {
+	ma, mb := companyMarks(a), companyMarks(b)
+	switch {
+	case companyFitShapeMarked(a, b, ma, mb):
+		return companyRouteShape
+	case (ma|mb)&(companyMarkJoin|companyMarkQualifier) == 0:
+		return companyRouteNone
+	case companyJoinShape(a, b, ma, mb):
+		return companyRouteJoin
+	case companyQualifierPair(a, b):
+		return companyRouteQualifier
+	}
+	return companyRouteNone
+}
+
+// companyFitShape is the numeric and designator part of the route.
 func companyFitShape(a, b string) bool {
-	for _, s := range []string{a, b} {
-		for _, r := range s {
+	return companyFitShapeMarked(a, b, companyMarks(a), companyMarks(b))
+}
+
+func companyFitShapeMarked(a, b string, ma, mb int) bool {
+	return (ma|mb)&companyMarkDigit != 0 || companyDesignatorShape(a) || companyDesignatorShape(b)
+}
+
+const (
+	companyMarkDigit = 1 << iota
+	companyMarkJoin
+	companyMarkQualifier
+)
+
+func companyMarks(s string) int {
+	m := 0
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; {
+		case c >= '0' && c <= '9':
+			m |= companyMarkDigit
+		case c == '-' || c == '_':
+			m |= companyMarkJoin
+		case c == '/' || c == ')':
+			m |= companyMarkQualifier
+		case c >= 0x80:
+			r, _ := utf8.DecodeRuneInString(s[i:])
 			if unicode.IsDigit(r) {
-				return true
-			}
-		}
-		s = strings.TrimSpace(s)
-		if i := strings.LastIndexFunc(s, unicode.IsSpace); i >= 0 {
-			prefix := strings.TrimSpace(strings.ReplaceAll(s[:i], ".", ""))
-			if prefix == "" {
-				continue
-			}
-			last := strings.ReplaceAll(s[i+1:], ".", "")
-			if strings.EqualFold(last, "partner") || strings.EqualFold(last, "sarl") || strings.EqualFold(last, "bv") {
-				return true
+				m |= companyMarkDigit
 			}
 		}
 	}
-	return false
+	return m
+}
+
+// companyDesignatorShape reports a trailing Partner, SARL or BV after at
+// least one other word.
+func companyDesignatorShape(s string) bool {
+	s = strings.TrimSpace(s)
+	i := strings.LastIndexFunc(s, unicode.IsSpace)
+	if i < 0 || strings.TrimSpace(strings.ReplaceAll(s[:i], ".", "")) == "" {
+		return false
+	}
+	last := strings.ReplaceAll(s[i+1:], ".", "")
+	return strings.EqualFold(last, "partner") || strings.EqualFold(last, "sarl") || strings.EqualFold(last, "bv")
+}
+
+// companyJoinShape is a hyphen or underscore join on one side only, with no
+// " - " suffix on either side. NATIVE duplicate_fuzzy_matching/org.tsv:108:
+// a joined side with more words than the other ("Dunder-Mifflin Paper" and
+// "Dunder Mifflin") does not match, so that shape keeps the word scorer.
+func companyJoinShape(a, b string, ma, mb int) bool {
+	ja, jb := ma&companyMarkJoin != 0, mb&companyMarkJoin != 0
+	if ja == jb || strings.Contains(a, " - ") || strings.Contains(b, " - ") {
+		return false
+	}
+	joined, other := a, b
+	if jb {
+		joined, other = b, a
+	}
+	return len(companyScoreWords(joined, true)) <= len(companyScoreWords(other, true))
+}
+
+// companyQualifierPair is two different trailing qualifier forms (slash,
+// parenthesis, " - ") on the same base.
+func companyQualifierPair(a, b string) bool {
+	x, y := splitCompanyQualifier(a), splitCompanyQualifier(b)
+	return x.form != "plain" && y.form != "plain" && x.form != y.form
+}
+
+// companyJoinConfidence reports a join-route match. NATIVE B3_cw1 and
+// duplicate_fuzzy_matching/org.tsv:75: when the two names with the join
+// spelled as a space match at 100 the pair reports 95; when they match lower,
+// that confidence; otherwise the fitted score.
+func companyJoinConfidence(a, b string, fitted float64) float64 {
+	space := func(s string) string {
+		return strings.Map(func(r rune) rune {
+			if r == '-' || r == '_' {
+				return ' '
+			}
+			return r
+		}, s)
+	}
+	if ok, confidence := legacyFuzzyCompany(space(a), space(b), false); ok {
+		return math.Min(95, confidence)
+	}
+	return math.Max(91, fitted)
 }

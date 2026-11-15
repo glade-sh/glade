@@ -125,7 +125,9 @@ func standardCompany(a, b string) (bool, float64) {
 	if !standardCompanyGate(a, b) {
 		return false, 0
 	}
-	return fuzzyCompany(a, b, false)
+	// The fitted scorer comes from custom rules; the standard Account rule is
+	// a different profile and keeps the word scorer.
+	return legacyFuzzyCompany(a, b, false)
 }
 
 // standardCity is the City method with a cheap necessary condition: two

@@ -216,6 +216,17 @@ scores some single-word pairs in one direction only (`Nordstrom` finds
 `Acme Logistic`/`Acme Logistics` 100) while keeping others apart
 (`Partners`/`Partner`, `Marine`/`Marin`).
 
+Custom Company Name rules score some shapes with a fitted directional model
+(NATIVE `internal/dml/testdata/company_name_fit`): names with digits
+(`Test Account`/`Test Account 1` 97, the reverse 94), a trailing Partner, SARL
+or BV, a hyphen or underscore join on one side only, and two different
+trailing qualifiers (`/West`, `(West)`, ` - West`). Those pairs use a key of
+the first six characters of the first two words and match at confidence 85,
+the documented threshold of 70. A joined side with more words than the other
+(`Dunder-Mifflin Paper`/`Dunder Mifflin`), short ampersand forms (`Q&V`/`QV`)
+and a plain name against a different ` - ` suffix keep the word scorer.
+The standard Account rule keeps the word scorer for every pair.
+
 ### Phone
 
 Letters and digits are the characters of the number; separators are dropped.

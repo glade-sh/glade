@@ -912,12 +912,19 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 }
 
 // fuzzyCompany combines the captured directional scorer with its match key.
+// A pair outside the fitted routes, or one the fitted scorer rejects, keeps
+// the word scorer's decision.
 func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 	if a == b && companySimpleExact(a) {
 		return true, 100
 	}
-	if companyFitShape(a, b) && companyFitKey(a) == companyFitKey(b) {
-		if raw := companyFitScore(a, b); raw >= 70 {
+	if route := companyFitRoute(a, b); route != companyRouteNone && companyFitKey(a) == companyFitKey(b) {
+		if raw := companyFitScore(a, b); raw >= companyFitThreshold {
+			if route == companyRouteJoin {
+				if matched, _ := legacyFuzzyCompany(a, b, matchBlanks); !matched {
+					return true, companyJoinConfidence(a, b, raw)
+				}
+			}
 			return true, math.Max(91, raw)
 		}
 	}
