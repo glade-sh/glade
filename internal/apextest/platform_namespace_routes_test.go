@@ -249,6 +249,19 @@ func TestPlatformNamespaceRequestKeepsRuntimeKey(t *testing.T) {
 // A late-bound gated class is the class the passive templates of the stub-only
 // view build for it.
 func TestGatedPlatformStubClassMatchesPassiveTemplate(t *testing.T) {
+	const child = "GLADE_GATED_STUB_TEMPLATE_TEST"
+	if os.Getenv(child) == "" {
+		cmd := exec.Command(os.Args[0], "-test.run=^TestGatedPlatformStubClassMatchesPassiveTemplate$", "-test.v")
+		cmd.Env = append(childEnvWithoutShardSelector(), child+"=1")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("stub-only subprocess: %v\n%s", err, output)
+		}
+		if !strings.Contains(string(output), "=== RUN   TestGatedPlatformStubClassMatchesPassiveTemplate\n") {
+			t.Fatalf("stub-only subprocess did not run the test:\n%s", output)
+		}
+		return
+	}
 	templates := buildPassiveStandardRuntimeClassTemplates(typesys.StandardPlatformSymbols())
 	checked := 0
 	for _, template := range templates {
