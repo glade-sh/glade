@@ -9,7 +9,7 @@ func permissionSetCheckboxSchemaNeedsRepair(definition ObjectDefinition) bool {
 	if !strings.EqualFold(definition.APIName, "PermissionSet") {
 		return false
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeFieldsV2(definition.APIName)
 	if err != nil || !ok {
 		return false
 	}
@@ -33,7 +33,7 @@ func applyPermissionSetCheckboxSchema(definition *ObjectDefinition) {
 	if definition == nil || !strings.EqualFold(definition.APIName, "PermissionSet") {
 		return
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeFieldsV2(definition.APIName)
 	if err != nil || !ok {
 		return
 	}
@@ -66,7 +66,7 @@ func applyObjectPermissionCheckboxFacets(definition *ObjectDefinition) {
 	if definition == nil || !strings.EqualFold(definition.APIName, "ObjectPermissions") {
 		return
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeFieldsV2(definition.APIName)
 	if err != nil || !ok {
 		return
 	}
@@ -90,7 +90,7 @@ func objectPermissionCheckboxSchemaNeedsRepair(definition ObjectDefinition) bool
 	if !strings.EqualFold(definition.APIName, "ObjectPermissions") {
 		return false
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeFieldsV2(definition.APIName)
 	if err != nil || !ok {
 		return false
 	}
