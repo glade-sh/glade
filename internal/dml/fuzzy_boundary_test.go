@@ -103,3 +103,16 @@ func TestTitleUncapturedNeighborsKeepBaseline(t *testing.T) {
 		}
 	}
 }
+
+// Panel t1 pair 5a and a5, at both APIs and routes.
+func TestSixWordTitlePartialOverlapNativeConfidence(t *testing.T) {
+	for _, p := range [][2]string{
+		{"Deputy Global Principal Retail Brand Strategist", "Brand Strategist Lead"},
+		{"Brand Strategist Lead", "Deputy Global Principal Retail Brand Strategist"},
+	} {
+		match, score := FuzzyScore("Title", p[0], p[1], false)
+		if !match || score != 89 {
+			t.Errorf("%q / %q: got %v %v; native true 89", p[0], p[1], match, score)
+		}
+	}
+}
