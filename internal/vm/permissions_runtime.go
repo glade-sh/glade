@@ -849,7 +849,9 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			// administrator's unscoped partial insert; other unscoped rows cover
 			// 62.0 and 67.0.
 			api := vm.currentSourceExecutionPolicy().APIVersion
-			capturedShape := scopedPermissionSetID == "" && (api == "62.0" || api == "67.0") ||
+			// An explicit USER_MODE list has no row: the captured lists use
+			// the default mode.
+			capturedShape := scopedPermissionSetID == "" && (api == "62.0" || api == "67.0") && !(vm.explicitUserModeAccess && !vm.userModeSingleRecord) ||
 				scopedPermissionSetID != "" && op == "insert" && vm.userModeSingleRecord && (api == "62.0" || api == "67.0" || api == "68.0") ||
 				scopedPermissionSetID == "" && op == "insert" && api == "68.0" && vm.explicitUserModePartialRecord && vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator"
 			standardObjectCustomField := capturedShape && !wideAccountRecord && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedAdminAccountRecord(record, objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
@@ -931,8 +933,7 @@ func (vm *VM) capturedTextCustomField(objectName, fieldName string) bool {
 // capturedAdminAccountTextField identifies the optional Text(255) field in
 // the administrator default-mode capture.
 func (vm *VM) capturedAdminAccountTextField(objectName, fieldName string) bool {
-	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
-	return ok && field.Length == 255 && vm.capturedTextCustomField(objectName, fieldName)
+	return vm.capturedTextCustomField(objectName, fieldName)
 }
 
 // capturedAdminAccountRecord limits the default-mode rule to the captured
@@ -959,11 +960,15 @@ func (vm *VM) capturedAdminAccountRecord(record Value, objectName, fieldName str
 // must lack an effective grant; unassigned permission sets do not grant it.
 // Universally required fields keep their intrinsic access.
 func (vm *VM) adminStandardCustomFieldDMLDenied(op string, record Value, objectName, fieldName, method, scopedPermissionSetID string) bool {
-	capturedDefault := vm.currentSourceExecutionPolicy().APIVersion == "67.0" && !vm.explicitUserModeAccess && vm.userModeSingleRecord && (op == "insert" || op == "update") && vm.capturedAdminAccountRecord(record, objectName, fieldName)
-	if !capturedDefault && (op != "insert" || !vm.explicitUserModePartialRecord || !vm.capturedAdminAccountRecord(record, objectName, fieldName)) {
+	// Every captured row is the test runner's own administrator writing an
+	// Account custom field; reject other calls before the shape checks.
+	if vm.testContext == nil || vm.testContext.RunAsDepth != 0 || !isCustomSchemaName(fieldName) || !strings.EqualFold(objectName, "Account") {
 		return false
 	}
-	if !vm.capturedTextCustomField(objectName, fieldName) {
+	explicitPartial := op == "insert" && vm.explicitUserModePartialRecord
+	capturedDefault := !vm.explicitUserModeAccess && vm.userModeSingleRecord && (op == "insert" || op == "update") && vm.currentSourceExecutionPolicy().APIVersion == "67.0"
+	// The record check includes the Text(255) field definition.
+	if !capturedDefault && !explicitPartial || !vm.capturedAdminAccountRecord(record, objectName, fieldName) {
 		return false
 	}
 	// The explicit-mode rows do not cover an unassigned set that grants this
@@ -1088,14 +1093,37 @@ func (vm *VM) anyFieldPermissionGrant(objectName, fieldName string) bool {
 	if !ok {
 		return false
 	}
+	// A field outside a compound field matches a permission row by name only.
+	// Without an org namespace that is a case-insensitive comparison, so the
+	// scan skips the namespace and compound-component work per row.
+	_, definition, defined := vm.sObjectFieldDefinition(objectName, fieldName)
+	direct := defined && definition.CompoundFieldName == "" && vm.Org.Namespace == ""
 	for _, record := range state.Records {
+		field, ok := record.GetField("Field")
+		if !ok {
+			continue
+		}
+		if direct {
+			if field.Kind != storage.ValueString {
+				continue
+			}
+			name := field.String
+			if dot := strings.LastIndexByte(name, '.'); dot >= 0 {
+				if !strings.EqualFold(name[:dot], objectName) {
+					continue
+				}
+				name = name[dot+1:]
+			}
+			if !strings.EqualFold(name, fieldName) {
+				continue
+			}
+		} else if !vm.fieldPermissionFieldMatches(field, objectName, fieldName) {
+			continue
+		}
 		if value, ok := record.GetField("PermissionsRead"); !ok || value.Kind != storage.ValueBoolean || !value.Boolean {
 			continue
 		}
-		if value, ok := record.GetField("SObjectType"); !ok || value.Kind != storage.ValueString || !vm.permissionMetadataNameMatches(objectName, value.String) {
-			continue
-		}
-		if value, ok := record.GetField("Field"); ok && vm.fieldPermissionFieldMatches(value, objectName, fieldName) {
+		if value, ok := record.GetField("SObjectType"); ok && value.Kind == storage.ValueString && vm.permissionMetadataNameMatches(objectName, value.String) {
 			return true
 		}
 	}

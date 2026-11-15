@@ -184,6 +184,12 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	explicitSystemMode := strings.EqualFold(query.SecurityMode, "SYSTEM_MODE") ||
 		(strings.TrimSpace(query.SecurityMode) == "" && explicitBindAccessLevel && strings.EqualFold(accessLevelMode, "SYSTEM_MODE"))
 	defaultMode := strings.TrimSpace(query.SecurityMode) == "" && strings.TrimSpace(accessLevelMode) == ""
+	// The administrator assignment capture runs only the captured dynamic
+	// Account queries after the assignment. Any other query leaves that
+	// sequence, so later checks use the assigned grant again.
+	if vm.mixedDML.newAdminPermissionSetID != "" && !(defaultMode && vm.dynamicSOQLBindRoute == "Database.query" && strings.EqualFold(query.Object, "Account") && capturedAdminDynamicQueryShape(query)) {
+		vm.mixedDML.newAdminPermissionSetID = ""
+	}
 	if explicitSystemMode && accounting == soqlOrdinaryAccounting && vm.anonymousOrderSystemModeDenied(query) && vm.validOrderSystemModeReferences(query) {
 		return nil, newExceptionError("SecurityException", "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.")
 	}
