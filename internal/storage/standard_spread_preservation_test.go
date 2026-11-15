@@ -191,3 +191,23 @@ func TestRepeatedEagerSpreadDoesNotMarkCatalogObjectsExplicit(t *testing.T) {
 		t.Fatal("repeated spread preserved a spread-owned object")
 	}
 }
+
+func TestHiddenSpreadAccessIsIsolatedAcrossRuntimeClones(t *testing.T) {
+	org := NewOrgState()
+	org.StandardSpreadHiddenAccess = map[string][]string{"Example": {"First"}}
+	for name, clone := range map[string]OrgState{
+		"clone":   org.Clone(),
+		"runtime": org.CloneRuntime(),
+		"frozen":  org.CloneRuntimeFrozenDefinition(),
+		"shared":  org.CloneRuntimeFrozenShared(),
+		"shallow": org.CloneObjectsShallow(0),
+	} {
+		t.Run(name, func(t *testing.T) {
+			clone.StandardSpreadHiddenAccess["Example"][0] = "Changed"
+			clone.StandardSpreadHiddenAccess["Other"] = []string{"Field"}
+			if org.StandardSpreadHiddenAccess["Example"][0] != "First" || org.StandardSpreadHiddenAccess["Other"] != nil {
+				t.Fatal("clone changed original hidden access")
+			}
+		})
+	}
+}
