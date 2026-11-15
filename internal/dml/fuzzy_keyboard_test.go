@@ -192,3 +192,25 @@ func TestLastNameWordKeyCacheSeparatesInputs(t *testing.T) {
 		}
 	}
 }
+
+// Outside the observed panel envelope, the custom fallback keeps the base
+// keyboard result, including its confidence for nonmatches.
+func TestLastNameKeyboardOutsidePanelBounds(t *testing.T) {
+	for _, pair := range [][2]string{
+		{"Farnsdelwickaa", "Farnsdraeovkaa"},       // longer than any eligible panel pair
+		{"Farnsdelwick", "Farnsdraeovkzzzzzzzzzz"}, // trailing difference above panel range
+		{"erkecpmeitrn", "erkqudnukxik"},           // substitutions above panel range
+		{"ipyqh", "wuabq"},                         // shorter than the eligible panel range
+	} {
+		x, y := foldText(pair[0]), foldText(pair[1])
+		if lastNameWordKey(x) != lastNameWordKey(y) || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+			t.Errorf("%q/%q does not reach keyboard scoring", pair[0], pair[1])
+			continue
+		}
+		want, score := lastNameKeyboard(x, y)
+		got, actual := fuzzyLastName(pair[0], pair[1], false)
+		if got != want || actual != score {
+			t.Errorf("%q/%q: got %v %v, base %v %v", pair[0], pair[1], got, actual, want, score)
+		}
+	}
+}
