@@ -293,8 +293,10 @@ func TestKeyboardPanelShapeBoundaries(t *testing.T) {
 		want bool
 	}{
 		{"abc", "abd", true},
+		{"ééé", "ééa", true},
 		{"abcdefghijklmno", "abcdefghijklmnp", true},
 		{"ab", "ac", false},
+		{"éé", "éa", false},
 		{"abcdefghijklmnop", "abcdefghijklmnoq", false},
 		{"abcdefghi", "zzzzzzzzZ", false},
 		{"abc", "abcdefghijklM", false},
