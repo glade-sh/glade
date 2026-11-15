@@ -913,12 +913,33 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 
 // fuzzyCompany combines the captured directional scorer with its match key.
 func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
+	if a == b && companySimpleExact(a) {
+		return true, 100
+	}
 	if companyFitShape(a, b) && companyFitKey(a) == companyFitKey(b) {
 		if raw := companyFitScore(a, b); raw >= 70 {
 			return true, math.Max(91, raw)
 		}
 	}
 	return legacyFuzzyCompany(a, b, matchBlanks)
+}
+
+// A multiword ASCII name is an exact match in both scorers. Single-word
+// names keep the existing Partner exception.
+func companySimpleExact(s string) bool {
+	if len(s) < 3 || s[0] == ' ' || s[len(s)-1] == ' ' {
+		return false
+	}
+	space := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == ' ' {
+			space = true
+		} else if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9') {
+			return false
+		}
+	}
+	return space
 }
 
 // ---- Title: Acronym, Exact, Kullback-Leibler distance; threshold 50 ----

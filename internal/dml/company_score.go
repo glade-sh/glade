@@ -444,9 +444,16 @@ func companyFitShape(a, b string) bool {
 				return true
 			}
 		}
-		w := strings.Fields(strings.ReplaceAll(strings.ToLower(s), ".", ""))
-		if len(w) > 1 && (w[len(w)-1] == "partner" || w[len(w)-1] == "sarl" || w[len(w)-1] == "bv") {
-			return true
+		s = strings.TrimSpace(s)
+		if i := strings.LastIndexFunc(s, unicode.IsSpace); i >= 0 {
+			prefix := strings.TrimSpace(strings.ReplaceAll(s[:i], ".", ""))
+			if prefix == "" {
+				continue
+			}
+			last := strings.ReplaceAll(s[i+1:], ".", "")
+			if strings.EqualFold(last, "partner") || strings.EqualFold(last, "sarl") || strings.EqualFold(last, "bv") {
+				return true
+			}
 		}
 	}
 	return false
