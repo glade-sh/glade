@@ -60,3 +60,25 @@ func BenchmarkGlobalDescribeFullWalk(b *testing.B) {
 		globalDescribeWalk(b, false)
 	}
 }
+
+func TestLazyInstallCounterResetsWithOrg(t *testing.T) {
+	machine := New(nil)
+	first := namesOnlyDescribeOrg("source", nil, "")
+	machine.SetOrg(&first)
+	machine.lazySingleInstalls = lazySingleInstallLimit - 1
+	second := namesOnlyDescribeOrg("source", nil, "")
+	machine.SetOrg(&second)
+	if machine.lazySingleInstalls != 0 {
+		t.Fatal("SetOrg retained the previous org's install count")
+	}
+	machine.lazySingleInstalls = lazySingleInstallLimit - 1
+	third := namesOnlyDescribeOrg("source", nil, "")
+	machine.SetRuntimeTemplateOrg(&third)
+	if machine.lazySingleInstalls != 0 {
+		t.Fatal("SetRuntimeTemplateOrg retained the previous org's install count")
+	}
+	clone := machine.CloneRuntime(nil)
+	if clone.lazySingleInstalls != 0 {
+		t.Fatal("runtime clone inherited an install count")
+	}
+}
