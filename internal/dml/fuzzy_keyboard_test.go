@@ -196,21 +196,24 @@ func TestLastNameWordKeyCacheSeparatesInputs(t *testing.T) {
 // Outside the observed panel envelope, the custom fallback keeps the base
 // keyboard result, including its confidence for nonmatches.
 func TestLastNameKeyboardOutsidePanelBounds(t *testing.T) {
-	for _, pair := range [][2]string{
-		{"Farnsdelwickaaaa", "Farnsdraeovkaaaa"},   // longer than any eligible panel pair
-		{"Farnsdelwick", "Farnsdraeovkzzzzzzzzzz"}, // trailing difference above panel range
-		{"erkecpmeitrn", "erkqudnukxik"},           // substitutions above panel range
-		{"ab", "ap"},                               // shorter than the eligible panel range
+	for _, pair := range []struct {
+		a, b  string
+		score float64
+	}{
+		{"Farnsdelwickaaaa", "Farnsdraeovkaaaa", 97.625},               // length 16
+		{"Farnsdelwick", "Farnsdraeovkzzzzzzzzzz", 92.590909090909093}, // trailing difference 10
+		{"erkecpmeitrn", "erkqudnukxik", 91.916666666666671},           // nine substitutions
+		{"ab", "ap", 88}, // length 2
 	} {
-		x, y := foldText(pair[0]), foldText(pair[1])
+		x, y := foldText(pair.a), foldText(pair.b)
 		if lastNameWordKey(x) != lastNameWordKey(y) || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
-			t.Errorf("%q/%q does not reach keyboard scoring", pair[0], pair[1])
+			t.Errorf("%q/%q does not reach keyboard scoring", pair.a, pair.b)
 			continue
 		}
 		want, score := lastNameKeyboard(x, y)
-		got, actual := fuzzyLastName(pair[0], pair[1], false)
-		if got != want || actual != score {
-			t.Errorf("%q/%q: got %v %v, base %v %v", pair[0], pair[1], got, actual, want, score)
+		got, actual := fuzzyLastName(pair.a, pair.b, false)
+		if want || score != pair.score || got != want || actual != score {
+			t.Errorf("%q/%q: got %v %v, base %v %v", pair.a, pair.b, got, actual, want, score)
 		}
 	}
 }
