@@ -43,12 +43,12 @@ func TestPlainDeveloperSOSLNativeConformance(t *testing.T) {
 	}
 }
 
-// SOSL at API 62 was not captured. Its local outcome stays at main.
+// SOSL at API 61 was not captured. Its local outcome stays at main.
 func TestPlainDeveloperSpreadPreservesUnprobedSOSL(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObjectSpread(&org)
 	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
-	program, err := CompileAnonymousWithOptions(`Search.query('FIND {candidate} RETURNING AIFeatureExtractor(Id)');`, CompileOptions{APIVersion: "62.0"})
+	program, err := CompileAnonymousWithOptions(`Search.query('FIND {candidate} RETURNING AIFeatureExtractor(Id)');`, CompileOptions{APIVersion: "61.0"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestPlainDeveloperSpreadPreservesUnprobedSOSLAfterSerialization(t *testing.
 	if err := json.Unmarshal(data, &restored); err != nil {
 		t.Fatal(err)
 	}
-	program, err := CompileAnonymousWithOptions(`Search.query('FIND {candidate} RETURNING AIFeatureExtractor(Id)');`, CompileOptions{APIVersion: "62.0"})
+	program, err := CompileAnonymousWithOptions(`Search.query('FIND {candidate} RETURNING AIFeatureExtractor(Id)');`, CompileOptions{APIVersion: "61.0"})
 	if err != nil {
 		t.Fatal(err)
 	}
