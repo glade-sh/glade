@@ -75,6 +75,9 @@ func generationFor(key string) *projectGeneration {
 // with compile on first use. Concurrent callers of one generation wait for a
 // single computation.
 func sharedControllerGate(p project.Project, compile func() (controllerGate, error)) (controllerGate, error) {
+	if p.Inputs() != nil {
+		return compile()
+	}
 	key, ok := projectGenerationKey(p)
 	if !ok {
 		return compile()
@@ -103,6 +106,9 @@ func sharedControllerGate(p project.Project, compile func() (controllerGate, err
 // sharedExpressionSources is sharedControllerGate for the expression
 // validation sources. The returned value is read-only for every caller.
 func sharedExpressionSources(p project.Project) (*expressionValidationSources, error) {
+	if p.Inputs() != nil {
+		return loadExpressionValidationSources(p)
+	}
 	key, ok := projectGenerationKey(p)
 	if !ok {
 		return loadExpressionValidationSources(p)

@@ -6,6 +6,8 @@
 
 - Default Developer eager orgs omit three standard objects whose absence was observed in native lookup and query results.
 
+- **Debugger startup checks a consistent set of project inputs.** A cold `glade dap` start now builds its org, runtime and startup cache entry from one set of observed project files, including optional files found absent and directory listings. If a file changes while the debugger starts, Glade rebuilds, up to three times. When the project is still changing after the third build, the debugger stops with a message naming the file instead of starting from a mix of old and new files. Finder files and common editor temporary files do not trigger rebuilds where they are not project inputs. Startup cache entries from earlier releases are rebuilt once.
+
 ## v0.3.10
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
@@ -49,6 +51,8 @@ v0.3.10 improves Apex compatibility, language server diagnostics, debugger respo
 - **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
 
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
+
+
 - **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
 
 ### Known issues

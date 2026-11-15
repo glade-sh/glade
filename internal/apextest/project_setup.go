@@ -354,6 +354,24 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 }
 
 func runtimeTypeAPIVersion(typ typesys.TypeSymbol, sources *sourceCache) string {
+	// The debugger historically uses the version in the companion itself,
+	// without the index's project-version fallback. Read through the view so
+	// the legacy rule stays tied to the captured metadata generation.
+	if sources != nil && sources.privateRuntime && !hasModifier(typ.Modifiers, vm.AnonymousClassModifier) {
+		sources.mu.RLock()
+		metadata, captured := sources.capturedMetadata[typ.File+"-meta.xml"]
+		p := sources.capturedProject
+		sources.mu.RUnlock()
+		if captured {
+			if !metadata.Present {
+				return ""
+			}
+			if p != nil {
+				data, _ := p.ReadFile(typ.File + "-meta.xml")
+				return apiVersionFromApexMetadata(data)
+			}
+		}
+	}
 	if sources.hasArtifactCapturedSource(typ.File) {
 		return typ.EffectiveAPIVersion
 	}
@@ -685,10 +703,10 @@ func applyProjectDataRelationshipReferences(org *storage.OrgState, p project.Pro
 	if org == nil {
 		return
 	}
-	for _, ref := range projectDataFieldReferences(p.Root) {
+	for _, ref := range projectDataFieldReferences(p) {
 		ensureProjectDataReferencedObjectField(org, ref.ObjectName, ref.FieldName)
 	}
-	for _, ref := range projectDataRelationshipReferences(p.Root) {
+	for _, ref := range projectDataRelationshipReferences(p) {
 		fieldName := dataRelationshipLookupFieldName(ref.ParentRelationship)
 		if fieldName == "" {
 			continue
@@ -700,7 +718,7 @@ func applyProjectDataRelationshipReferences(org *storage.OrgState, p project.Pro
 // ApplyProjectProfileMetadata installs the profile records and record type
 // defaults used by project-backed CLI, server and debugger orgs.
 func ApplyProjectProfileMetadata(org *storage.OrgState, p project.Project) error {
-	return applyProjectProfileMetadata(org, p, make(map[string]permissionSetMetadataCacheEntry), os.ReadFile)
+	return applyProjectProfileMetadata(org, p, make(map[string]permissionSetMetadataCacheEntry), p.ReadFile)
 }
 
 func applyProjectProfileMetadata(org *storage.OrgState, p project.Project, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry, readFile func(string) ([]byte, error)) error {
@@ -904,7 +922,7 @@ func applyScratchObjectSettingsRecordTypes(org *storage.OrgState, p project.Proj
 		return false
 	}
 	changed := false
-	for object, developerName := range project.ScratchObjectDefaultRecordTypes(p.Root) {
+	for object, developerName := range project.ScratchObjectDefaultRecordTypesWithInputs(p.Inputs(), p.Root) {
 		canonical, ok := storage.ResolveObjectName(*org, object)
 		if !ok {
 			continue
@@ -1046,13 +1064,13 @@ func applyProjectProfileRecords(org *storage.OrgState, p project.Project, permis
 			continue
 		}
 		parentID := ensureProjectProfilePermissionSet(org, profileID, &generator)
-		if metadata, ok := readPermissionSetMetadata(file, permissionSetMetadataCache); ok {
+		if metadata, ok := readPermissionSetMetadata(p.ReadFile, file, permissionSetMetadataCache); ok {
 			applyProjectSecurityEntityGrants(org, p, parentID, metadata, &generator)
 			applyProjectProfileLicense(org, profileID, metadata.UserLicense, &generator)
 			applyProjectProfileUserPermissions(org, profileID, metadata.UserPermissions)
 		}
-		applyProjectPermissionSetMetadataPermissions(org, file, string(parentID), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
-		if metadata, ok := readPermissionSetMetadata(file, permissionSetMetadataCache); ok {
+		applyProjectPermissionSetMetadataPermissions(p.ReadFile, org, file, string(parentID), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
+		if metadata, ok := readPermissionSetMetadata(p.ReadFile, file, permissionSetMetadataCache); ok {
 			applyProjectProfileLicenseObjectPermissions(org, string(parentID), metadata.UserLicense, &generator, objectPermissionKeys)
 		}
 	}
@@ -1292,7 +1310,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 				continue
 			}
 			id = nextID
-			metadata, hasMetadata := readPermissionSetMetadata(file, permissionSetMetadataCache)
+			metadata, hasMetadata := readPermissionSetMetadata(p.ReadFile, file, permissionSetMetadataCache)
 			label := strings.ReplaceAll(name, "_", " ")
 			if hasMetadata && strings.TrimSpace(metadata.Label) != "" {
 				label = strings.TrimSpace(metadata.Label)
@@ -1322,7 +1340,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 			}
 		}
 		state.PutRecord(id, record)
-		metadata, metadataOK := readPermissionSetMetadata(file, permissionSetMetadataCache)
+		metadata, metadataOK := readPermissionSetMetadata(p.ReadFile, file, permissionSetMetadataCache)
 		if metadataOK {
 			if p.Namespace == "" {
 				applyProjectSecurityEntityGrants(org, p, id, metadata, &generator)
@@ -1346,7 +1364,7 @@ func seedProjectPermissionSetRecords(org *storage.OrgState, p project.Project, p
 			setUserPermissionFields(state.Definition, record.Fields, metadata.UserPermissions)
 			state.PutRecord(id, record)
 		}
-		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
+		applyProjectPermissionSetMetadataPermissions(p.ReadFile, org, file, string(id), &generator, objectPermissionKeys, fieldPermissionKeys, permissionSetMetadataCache)
 		if assignGuestFixtures {
 			applyProjectGuestPermissionSetAssignment(org, name, id, &generator)
 		}
@@ -1430,7 +1448,7 @@ func seedDependencyPermissionSets(org *storage.OrgState, dep project.Project, na
 			continue
 		}
 		label := strings.ReplaceAll(name, "_", " ")
-		if metadata, ok := readPermissionSetMetadata(file, cache); ok && strings.TrimSpace(metadata.Label) != "" {
+		if metadata, ok := readPermissionSetMetadata(dep.ReadFile, file, cache); ok && strings.TrimSpace(metadata.Label) != "" {
 			label = strings.TrimSpace(metadata.Label)
 		}
 		fields := map[string]storage.Value{
@@ -1440,7 +1458,7 @@ func seedDependencyPermissionSets(org *storage.OrgState, dep project.Project, na
 			"Type":             storage.StringValue("Regular"),
 			"IsOwnedByProfile": storage.BooleanValue(false),
 		}
-		if metadata, ok := readPermissionSetMetadata(file, cache); ok {
+		if metadata, ok := readPermissionSetMetadata(dep.ReadFile, file, cache); ok {
 			if grants := permissionSetCustomPermissionValues(metadata); len(grants) > 0 {
 				fields["CustomPermissions"] = storage.ListValue(grants...)
 				pendingGrants = append(pendingGrants, pendingGrant{id, grants})
@@ -1550,11 +1568,11 @@ func ensureProjectGuestUser(org *storage.OrgState) (storage.ID, bool) {
 	return id, true
 }
 
-func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, parentID string, generator *storage.IDGenerator, objectPermissionKeys map[string]bool, fieldPermissionKeys map[string]bool, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry) {
+func applyProjectPermissionSetMetadataPermissions(read func(string) ([]byte, error), org *storage.OrgState, file, parentID string, generator *storage.IDGenerator, objectPermissionKeys map[string]bool, fieldPermissionKeys map[string]bool, permissionSetMetadataCache map[string]permissionSetMetadataCacheEntry) {
 	if org == nil || strings.TrimSpace(parentID) == "" || generator == nil {
 		return
 	}
-	metadata, ok := readPermissionSetMetadata(file, permissionSetMetadataCache)
+	metadata, ok := readPermissionSetMetadata(read, file, permissionSetMetadataCache)
 	if !ok {
 		return
 	}

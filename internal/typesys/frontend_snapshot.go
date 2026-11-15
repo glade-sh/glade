@@ -554,7 +554,7 @@ func restoreFrontendSnapshot(p project.Project, s schema.Schema, data []byte, fo
 		}
 		if dep.Project == nil {
 			if dep.ArtifactPath != "" {
-				appendArtifactDependency(&expectedSchema, dep)
+				appendArtifactDependency(&expectedSchema, p.ReadFile, dep)
 			}
 			continue
 		}

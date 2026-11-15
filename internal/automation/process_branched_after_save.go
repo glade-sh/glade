@@ -3,7 +3,6 @@ package automation
 import (
 	"encoding/json"
 	"encoding/xml"
-	"os"
 	"sort"
 	"strings"
 
@@ -13,7 +12,7 @@ import (
 // processBuilderCapturedBranchedAfterSave restores only the source bindings
 // retained by the two captured four-flow graphs. Nothing is installed until
 // both the original metadata and the complete compiled plan have been checked.
-func processBuilderCapturedBranchedAfterSave(idx *Index, object string, rules []storage.FlowRule, def storage.ObjectDefinition, definitions map[string]storage.ObjectDefinition, features ...[]string) bool {
+func processBuilderCapturedBranchedAfterSave(readFile func(string) ([]byte, error), idx *Index, object string, rules []storage.FlowRule, def storage.ObjectDefinition, definitions map[string]storage.ObjectDefinition, features ...[]string) bool {
 	if len(rules) != 4 {
 		return false
 	}
@@ -46,7 +45,7 @@ func processBuilderCapturedBranchedAfterSave(idx *Index, object string, rules []
 	}
 	read := func(path string) (flowXML, bool) {
 		var raw flowXML
-		source, err := os.ReadFile(path)
+		source, err := readFile(path)
 		if err != nil || xml.Unmarshal(source, &raw) != nil {
 			return raw, false
 		}
@@ -210,7 +209,7 @@ func processBuilderCapturedBranchedAfterSave(idx *Index, object string, rules []
 		if !strings.EqualFold(workflow.ObjectName, object) {
 			continue
 		}
-		source, err := os.ReadFile(workflow.File)
+		source, err := readFile(workflow.File)
 		if err != nil {
 			return false
 		}

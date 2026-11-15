@@ -25,6 +25,7 @@ import (
 	"github.com/glade-sh/glade/internal/automation"
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/profile"
@@ -375,6 +376,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	}
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
 	sources := newSourceCache()
+	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
 	// A matching snapshot selects the already-loaded project graph for runtime
 	// metadata generation and org setup; nil retains disk discovery. This keeps
 	// dependency roots from changing between indexing and generation. Native
@@ -595,6 +597,9 @@ assemble:
 			}
 			suites[className] = append(suites[className], results[index])
 		}
+	}
+	if ctx.Err() == nil {
+		persistAgedVisualforceDigests(index.Project.Root, generation.metadata)
 	}
 	var reportStarted time.Time
 	if runState.counters.enabled {
@@ -1270,7 +1275,11 @@ func runtimeKeyWithSourceDigests(index typesys.Index, digests *typesys.SourceDig
 	return runtimeKeyWithDigestLookup(index, lookup, readFile)
 }
 
-func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha256.Size]byte, bool), readFile func(string) ([]byte, error)) runtimeCacheKey {
+func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha256.Size]byte, bool), readFile func(string) ([]byte, error), views ...*inputview.View) runtimeCacheKey {
+	var view *inputview.View
+	if len(views) > 0 {
+		view = views[0]
+	}
 	if readFile == nil {
 		readFile = os.ReadFile
 	}
@@ -1327,7 +1336,7 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 	// Invalidate seeds created before hierarchy settings entered this identity,
 	// including a cached enabled seed produced under the old empty key.
 	write("org-hierarchy-access-v1")
-	if domainURL, objects, err := project.OrgRuntimeSettings(index.Project.Root); err != nil {
+	if domainURL, objects, err := project.OrgRuntimeSettingsWithInputs(view, index.Project.Root); err != nil {
 		write("org-domain-url-error:" + err.Error())
 	} else {
 		if domainURL != "" {
@@ -1395,10 +1404,43 @@ const (
 )
 
 type runtimeMetadataGeneration struct {
-	standardDuplicateRules bool
-	authority              runtimeMetadataAuthority
-	inputs                 map[string]typesys.ApexMetadataInput
-	apiVersions            map[string]string
+	standardDuplicateRules      bool
+	authority                   runtimeMetadataAuthority
+	inputs                      map[string]typesys.ApexMetadataInput
+	apiVersions                 map[string]string
+	visualforceInputs           map[string]bool
+	recentVisualforce           map[string]recentVisualforceInput
+	recentVisualforceBytes      int64
+	allowVisualforceDiskDigests bool
+	persistVisualforceAtEnd     bool
+}
+
+func (generation runtimeMetadataGeneration) trustedVisualforceDigest(path string) ([sha256.Size]byte, bool) {
+	if !generation.visualforceInputs[path] {
+		return [sha256.Size]byte{}, false
+	}
+	if recent, ok := generation.recentVisualforce[path]; ok {
+		if recent.matches(path) {
+			return recent.digest, true
+		}
+		return [sha256.Size]byte{}, false
+	}
+	return trustedCurrentFileDigest(path)
+}
+
+type runtimeDigestLookup struct {
+	eligible func(string) bool
+	current  func(string) ([sha256.Size]byte, bool)
+}
+
+func (generation runtimeMetadataGeneration) visualforceDigestLookup() *runtimeDigestLookup {
+	if len(generation.visualforceInputs) == 0 {
+		return nil
+	}
+	return &runtimeDigestLookup{
+		eligible: func(path string) bool { return generation.visualforceInputs[path] },
+		current:  generation.trustedVisualforceDigest,
+	}
 }
 
 type runtimeSourceInput struct {
@@ -1428,7 +1470,7 @@ type runtimeGeneration struct {
 	oneShot bool
 }
 
-func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration) runtimeCacheKey {
+func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration, view *inputview.View) runtimeCacheKey {
 	lookup := func(file string) ([sha256.Size]byte, bool) {
 		input, ok := generation.inputs[file]
 		return input.digest, ok
@@ -1440,7 +1482,7 @@ func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourc
 		}
 		return []byte(input.raw), nil
 	}
-	return runtimeKeyWithDigestLookup(index, lookup, readCaptured)
+	return runtimeKeyWithDigestLookup(index, lookup, readCaptured, view)
 }
 
 func runtimeKeyWithMetadataGeneration(base runtimeCacheKey, generation runtimeMetadataGeneration) runtimeCacheKey {
@@ -1767,11 +1809,17 @@ func validateRuntimeGeneration(sources *sourceCache) error {
 }
 
 func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache) (runtimeGeneration, error) {
-	if _, err := project.OrgDomainURL(index.Project.Root); err != nil {
-		return runtimeGeneration{}, err
-	}
 	if sources == nil {
 		return runtimeGeneration{}, fmt.Errorf("source cache is nil")
+	}
+	sources.mu.RLock()
+	var view *inputview.View
+	if sources.capturedProject != nil {
+		view = sources.capturedProject.Inputs()
+	}
+	sources.mu.RUnlock()
+	if _, err := project.OrgDomainURLWithInputs(view, index.Project.Root); err != nil {
+		return runtimeGeneration{}, err
 	}
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	sources.bindSourceDigests(digests)
@@ -1783,6 +1831,9 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err != nil {
 		return runtimeGeneration{}, err
 	}
+	sources.mu.RLock()
+	metadata.allowVisualforceDiskDigests = sources.allowVisualforceDiskDigests
+	sources.mu.RUnlock()
 	if err := sources.captureProjectRuntimeMetadata(index, &metadata); err != nil {
 		return runtimeGeneration{}, err
 	}
@@ -1790,7 +1841,7 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		return runtimeGeneration{}, err
 	}
-	base := runtimeKeyWithSourceGeneration(index, source)
+	base := runtimeKeyWithSourceGeneration(index, source, view)
 	return runtimeGeneration{
 		source:   source,
 		metadata: metadata,
@@ -1820,6 +1871,9 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	var err error
 	digests, err = authoritativeRuntimeSourceDigests(index, digests)
 	if err != nil {
+		if sources != nil && sources.privateRuntime {
+			return "", zero, err
+		}
 		key := runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
 		rememberRuntimeCacheRoot(index, key)
 		evictSnapshotCaches(key)
@@ -1828,10 +1882,23 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if sources == nil {
 		sources = newSourceCache()
 	}
+	diskCacheAllowed := diskCacheEnabled()
+	if len(useDiskCache) > 0 {
+		diskCacheAllowed = useDiskCache[0]
+	}
+	if sources.privateRuntime {
+		diskCacheAllowed = false
+	}
 	var generation runtimeGeneration
 	if prepared == nil {
+		sources.mu.Lock()
+		sources.allowVisualforceDiskDigests = diskCacheAllowed
+		sources.mu.Unlock()
 		generation, err = prepareRuntimeGeneration(index, digests, sources)
 		if err != nil {
+			if sources.privateRuntime {
+				return "", zero, err
+			}
 			key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
 			rememberRuntimeCacheRoot(index, key)
 			evictSnapshotCaches(key)
@@ -1842,29 +1909,32 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		key := generation.key
-		rememberRuntimeCacheRoot(index, key)
-		evictSnapshotCaches(key)
+		if !sources.privateRuntime {
+			rememberRuntimeCacheRoot(index, key)
+			evictSnapshotCaches(key)
+		}
 		return key, zero, err
 	}
 	invokeSnapshotValidationHook("runtime_after_initial_validation")
-	diskCacheAllowed := diskCacheEnabled()
-	if len(useDiskCache) > 0 {
-		diskCacheAllowed = useDiskCache[0]
-	}
 	key := generation.key
-	rememberRuntimeCacheRoot(index, key)
-	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
-		invokeSnapshotValidationHook("runtime_before_memory_cache_return")
-		if err := sources.validateCapturedSourceGeneration(); err != nil {
-			evictSnapshotCaches(key)
-			return key, zero, err
+	if !sources.privateRuntime {
+		rememberRuntimeCacheRoot(index, key)
+	}
+	if !sources.privateRuntime {
+		if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+			invokeSnapshotValidationHook("runtime_before_memory_cache_return")
+			if err := sources.validateCapturedSourceGeneration(); err != nil {
+				evictSnapshotCaches(key)
+				return key, zero, err
+			}
+			return key, cached, nil
 		}
-		return key, cached, nil
 	}
 
+	digestLookup := generation.metadata.visualforceDigestLookup()
 	var lookupInput *startupcache.ValidatedInput
 	if diskCacheAllowed {
-		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
+		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
 				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
@@ -1899,7 +1969,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	pageNames := visualforcePageNamesWithCompilation(index, generation.controllerCompilation)
+	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		// Preserve cold startup's allocation order: VM construction warms the
@@ -1930,20 +2000,24 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	invokeSnapshotValidationHook("runtime_before_memory_cache_publication")
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
-		evictSnapshotCaches(key)
+		if !sources.privateRuntime {
+			evictSnapshotCaches(key)
+		}
 		return key, zero, err
 	}
-	runtimeCacheMu.Lock()
-	evicted := storeRuntimeCacheEntryLocked(key, entry)
-	runtimeCacheMu.Unlock()
-	dropEvictedRuntimeCacheCompanions(evicted)
+	if !sources.privateRuntime {
+		runtimeCacheMu.Lock()
+		evicted := storeRuntimeCacheEntryLocked(key, entry)
+		runtimeCacheMu.Unlock()
+		dropEvictedRuntimeCacheCompanions(evicted)
+	}
 	if diskCacheAllowed {
 		invokeSnapshotValidationHook("runtime_before_disk_cache_publication")
 		if err := sources.validateCapturedSourceGeneration(); err != nil {
 			evictSnapshotCaches(key)
 			return key, zero, err
 		}
-		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput); ok {
+		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
 			persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
 		}
 	}
@@ -1982,6 +2056,9 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	}
 	var generation runtimeGeneration
 	if prepared == nil {
+		sources.mu.Lock()
+		sources.allowVisualforceDiskDigests = diskCacheAllowed
+		sources.mu.Unlock()
 		generation, err = prepareRuntimeGeneration(index, digests, sources)
 		if err != nil {
 			key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
@@ -2013,10 +2090,11 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		return key, cached, nil
 	}
 
+	digestLookup := generation.metadata.visualforceDigestLookup()
 	var lookupInput *startupcache.ValidatedInput
 	if diskCacheAllowed {
 		lookupStarted := time.Now()
-		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
+		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(lookupStarted))
 		if diskEntry, ok := tryLoadDiskRuntimeWithPerfValidatedInput(index, key, lookupInput, counters); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
@@ -2064,7 +2142,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 
 	compileStarted = time.Now()
-	pageNames := visualforcePageNamesWithCompilation(index, generation.controllerCompilation)
+	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		baseMachine = vm.New(nil)
@@ -2113,7 +2191,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 			return key, zero, err
 		}
 		publicationStarted := time.Now()
-		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput)
+		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup)
 		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(publicationStarted))
 		if ok {
 			persistDiskRuntimeWithPerfValidatedInput(index, key, org, entry, publicationInput, counters)
@@ -3611,6 +3689,27 @@ func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, diges
 	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
 }
 
+// CompileProjectRuntimeForProject compiles from the build artifacts of one
+// index build and binds runtime metadata generation to p, the project that
+// build loaded. Reads p makes go through its input view, so a caller that
+// rechecks the view after compiling covers the metadata the runtime used.
+func CompileProjectRuntimeForProject(index typesys.Index, p project.Project, artifacts typesys.BuildArtifacts) (CompiledProjectRuntime, error) {
+	sources := newSourceCache()
+	sources.seedProjectSnapshot(&p)
+	sources.privateRuntime = p.Inputs() != nil
+	if err := sources.seedBuildArtifacts(index, &artifacts); err != nil {
+		return CompiledProjectRuntime{}, err
+	}
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, artifacts.SourceDigests, sources)
+	if err != nil {
+		return CompiledProjectRuntime{}, err
+	}
+	if sources.privateRuntime {
+		return compiledProjectRuntimeFromEntry(runtime, index), nil
+	}
+	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
+}
+
 func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
 	registerVisualforcePages(machine, runtime.PageNames)
 	machine.AddExpressionTypeResolver(runtime.expressionTypes)
@@ -3693,10 +3792,14 @@ func visualforceControllerCompilationHint(index typesys.Index, diagnostics []dia
 }
 
 func visualforcePageNamesWithCompilation(index typesys.Index, compilation *visualforce.ControllerCompilation) []string {
+	return visualforcePageNamesWithSources(index, compilation, newSourceCache())
+}
+
+func visualforcePageNamesWithSources(index typesys.Index, compilation *visualforce.ControllerCompilation, sources *sourceCache) []string {
 	if index.Project.Root == "" {
 		return nil
 	}
-	p, err := project.Load(index.Project.Root)
+	p, err := sources.capturedProjectSnapshot(index.Project.Root)
 	if err != nil {
 		return nil
 	}
@@ -3759,22 +3862,25 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
-	mu                      sync.RWMutex
-	expectedDigests         *typesys.SourceDigestSet
-	expectedDigestLookup    func(string) ([sha256.Size]byte, bool)
-	snapshotErr             error
-	files                   map[string]string
-	rawFiles                map[string]string
-	apiVersions             map[string]string
-	fileRemaps              map[string][]namespaceremap.Rule
-	capturedFiles           map[string][sha256.Size]byte
-	capturedMetadata        map[string]typesys.ApexMetadataInput
-	metadataAuthority       runtimeMetadataAuthority
-	projectMetadataBodies   map[string]string
-	runtimeSourceUnits      map[string]string
-	projectMetadataPrepared bool
-	capturedProject         *project.Project
-	generationValidator     func() error
+	mu                          sync.RWMutex
+	expectedDigests             *typesys.SourceDigestSet
+	expectedDigestLookup        func(string) ([sha256.Size]byte, bool)
+	snapshotErr                 error
+	files                       map[string]string
+	rawFiles                    map[string]string
+	apiVersions                 map[string]string
+	fileRemaps                  map[string][]namespaceremap.Rule
+	capturedFiles               map[string][sha256.Size]byte
+	capturedMetadata            map[string]typesys.ApexMetadataInput
+	metadataAuthority           runtimeMetadataAuthority
+	projectMetadataBodies       map[string]string
+	runtimeSourceUnits          map[string]string
+	projectMetadataPrepared     bool
+	capturedProject             *project.Project
+	privateRuntime              bool
+	allowVisualforceDiskDigests bool
+	recentVisualforce           map[string]recentVisualforceInput
+	generationValidator         func() error
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no
@@ -3829,6 +3935,7 @@ func (cache *sourceCache) bindSourceDigests(digests *typesys.SourceDigestSet) {
 		cache.apiVersions = make(map[string]string)
 		cache.capturedFiles = nil
 		cache.capturedMetadata = nil
+		cache.recentVisualforce = nil
 		cache.metadataAuthority = ""
 		cache.snapshotErr = nil
 	}
@@ -3912,6 +4019,7 @@ func (cache *sourceCache) seedBuildArtifacts(index typesys.Index, artifacts *typ
 	}
 	cache.capturedFiles = capturedFiles
 	cache.capturedMetadata = capturedMetadata
+	cache.recentVisualforce = nil
 	cache.metadataAuthority = runtimeMetadataAuthorityArtifact
 	cache.snapshotErr = nil
 	cache.mu.Unlock()
@@ -4041,6 +4149,7 @@ func (cache *sourceCache) prepareMetadataGeneration(index typesys.Index) (runtim
 
 	cache.mu.Lock()
 	cache.capturedMetadata = inputs
+	cache.recentVisualforce = nil
 	cache.apiVersions = apiVersions
 	cache.metadataAuthority = runtimeMetadataAuthorityLegacy
 	cache.snapshotErr = nil
@@ -4092,6 +4201,7 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	for path, input := range cache.capturedMetadata {
 		metadata[path] = input
 	}
+	recent := cache.recentVisualforce
 	cache.mu.RUnlock()
 	for file, expected := range files {
 		actual, err := currentFileDigest(file)
@@ -4103,6 +4213,9 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 		}
 	}
 	for path, expected := range metadata {
+		if input, ok := recent[path]; ok && expected.Present && input.matches(path) {
+			continue
+		}
 		if err := validateApexMetadataInput(path, expected); err != nil {
 			return err
 		}
@@ -4120,6 +4233,7 @@ func (cache *sourceCache) bindSourceDigestLookup(lookup func(string) ([sha256.Si
 	cache.apiVersions = make(map[string]string)
 	cache.capturedFiles = nil
 	cache.capturedMetadata = nil
+	cache.recentVisualforce = nil
 	cache.metadataAuthority = ""
 	cache.snapshotErr = nil
 	cache.expectedDigests = nil
@@ -5105,7 +5219,13 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	// Runtime construction validates config before building or returning caches.
 	// The legacy OrgFromIndex API has no error return; only a validated seed is
 	// installed here, and empty remains unset until the VM resolves its fallback.
-	domainURL, err := project.OrgDomainURL(index.Project.Root)
+	sources.mu.RLock()
+	var view *inputview.View
+	if sources.capturedProject != nil {
+		view = sources.capturedProject.Inputs()
+	}
+	sources.mu.RUnlock()
+	domainURL, err := project.OrgDomainURLWithInputs(view, index.Project.Root)
 	if err != nil {
 		domainURL = ""
 	}
@@ -5120,7 +5240,15 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	shapedSeed := index.Project.Root != "" && index.Project.Namespace == "" && len(index.Objects) == 0
 	var org storage.OrgState
-	if shapedSeed {
+	if shapedSeed && sources.privateRuntime {
+		// The attempt is not committed yet. Keep its project-specific shape
+		// private so a discarded build cannot publish a shared seed.
+		seed := standardApexTestOrgForRun()
+		seed.APIVersion = storage.DefaultRESTAPIVersion
+		seed.DomainURL = domainURL
+		storage.ApplyProjectOrgShape(&seed, features)
+		org = seed.CloneRuntimeFrozenDefinition()
+	} else if shapedSeed {
 		org = shapedStandardApexTestOrg(features, domainURL)
 	} else {
 		org = standardApexTestOrgForRun()
@@ -5197,8 +5325,8 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 			if err != nil {
 				return org, err
 			}
-			applyCustomApplicationRecords(&org, p.ApplicationFiles)
-			applyCustomNotificationTypeRecords(&org, p.Root)
+			applyCustomApplicationRecords(&org, p.ApplicationFiles, p.ReadFile)
+			applyCustomNotificationTypeRecords(&org, p.Root, p.ReadFile)
 			rejections, err := resource.ApplyProjectTolerant(&org, p, sources.readCapturedProjectMetadata)
 			if err != nil {
 				if len(project.EmailServiceMetadataFiles(p)) > 0 {
@@ -6569,8 +6697,8 @@ func mergeProjectRecordTypeReferences(chunks ...[]projectRecordTypeReference) []
 func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []projectRecordTypeReference {
 	cache := sourceCacheFor(caches)
 	var staticRefs []projectRecordTypeReference
-	for _, file := range projectDataJSONFiles(p.Root) {
-		data, err := os.ReadFile(file)
+	for _, file := range projectDataJSONFiles(p) {
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6584,7 +6712,7 @@ func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []p
 		}
 	}
 	for _, file := range []string{filepath.Join(p.Root, "cumulusci.yml")} {
-		data, err := os.ReadFile(file)
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6676,7 +6804,7 @@ func projectRecordTypeNameFromCallArg(match []string, constants map[string]strin
 	return strings.TrimSpace(name)
 }
 
-func projectDataFieldReferences(root string) []projectDataFieldReference {
+func projectDataFieldReferences(p project.Project) []projectDataFieldReference {
 	seen := make(map[string]bool)
 	var refs []projectDataFieldReference
 	add := func(objectName, fieldName string, value any) {
@@ -6692,8 +6820,8 @@ func projectDataFieldReferences(root string) []projectDataFieldReference {
 		seen[key] = true
 		refs = append(refs, projectDataFieldReference{ObjectName: objectName, FieldName: fieldName})
 	}
-	for _, file := range projectDataJSONFiles(root) {
-		data, err := os.ReadFile(file)
+	for _, file := range projectDataJSONFiles(p) {
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6738,7 +6866,7 @@ func collectDataFieldReferences(value any, currentObject string, add func(object
 	}
 }
 
-func projectDataRelationshipReferences(root string) []projectDataRelationshipReference {
+func projectDataRelationshipReferences(p project.Project) []projectDataRelationshipReference {
 	seen := make(map[string]bool)
 	var refs []projectDataRelationshipReference
 	add := func(childObject, parentRelationship string) {
@@ -6754,8 +6882,8 @@ func projectDataRelationshipReferences(root string) []projectDataRelationshipRef
 		seen[key] = true
 		refs = append(refs, projectDataRelationshipReference{ChildObject: childObject, ParentRelationship: parentRelationship})
 	}
-	for _, file := range projectDataJSONFiles(root) {
-		data, err := os.ReadFile(file)
+	for _, file := range projectDataJSONFiles(p) {
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6840,12 +6968,13 @@ func isFieldDescribeDescriptor(value any) bool {
 	return false
 }
 
-func projectDataJSONFiles(root string) []string {
+func projectDataJSONFiles(p project.Project) []string {
+	root := p.Root
 	if root == "" {
 		return nil
 	}
 	var files []string
-	_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	_ = p.Inputs().WalkDirProjectRoot(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -7152,14 +7281,14 @@ type permissionSetMetadataCacheEntry struct {
 	ok       bool
 }
 
-func readPermissionSetMetadata(file string, cache map[string]permissionSetMetadataCacheEntry) (permissionSetMetadata, bool) {
+func readPermissionSetMetadata(read func(string) ([]byte, error), file string, cache map[string]permissionSetMetadataCacheEntry) (permissionSetMetadata, bool) {
 	if cache == nil {
-		return readPermissionSetMetadataNoCache(file)
+		return readPermissionSetMetadataNoCache(read, file)
 	}
 	if cached, ok := cache[file]; ok {
 		return cached.metadata, cached.ok
 	}
-	metadata, ok := readPermissionSetMetadataNoCache(file)
+	metadata, ok := readPermissionSetMetadataNoCache(read, file)
 	cache[file] = permissionSetMetadataCacheEntry{
 		metadata: metadata,
 		ok:       ok,
@@ -7167,8 +7296,8 @@ func readPermissionSetMetadata(file string, cache map[string]permissionSetMetada
 	return metadata, ok
 }
 
-func readPermissionSetMetadataNoCache(file string) (permissionSetMetadata, bool) {
-	data, err := os.ReadFile(file)
+func readPermissionSetMetadataNoCache(read func(string) ([]byte, error), file string) (permissionSetMetadata, bool) {
+	data, err := read(file)
 	if err != nil {
 		return permissionSetMetadata{}, false
 	}
@@ -7438,7 +7567,7 @@ type customApplicationMetadata struct {
 	Label string `xml:"label"`
 }
 
-func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []string) {
+func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []string, read func(string) ([]byte, error)) {
 	if org == nil || len(applicationFiles) == 0 {
 		return
 	}
@@ -7462,7 +7591,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 			continue
 		}
 		label := developerName
-		if data, err := os.ReadFile(path); err == nil {
+		if data, err := read(path); err == nil {
 			var meta customApplicationMetadata
 			if xml.Unmarshal(data, &meta) == nil && strings.TrimSpace(meta.Label) != "" {
 				label = strings.TrimSpace(meta.Label)
@@ -7524,7 +7653,9 @@ type customNotificationTypeMetadata struct {
 	MasterLabel string `xml:"masterLabel"`
 }
 
-func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
+// The walk that finds notification types stays on the live tree, as the
+// startup manifest walk does; each file found is read through read.
+func applyCustomNotificationTypeRecords(org *storage.OrgState, root string, read func(string) ([]byte, error)) {
 	if org == nil || strings.TrimSpace(root) == "" {
 		return
 	}
@@ -7561,7 +7692,7 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 	for _, path := range files {
 		developerName := notificationTypeDeveloperName(path)
 		label := developerName
-		if data, err := os.ReadFile(path); err == nil {
+		if data, err := read(path); err == nil {
 			var meta customNotificationTypeMetadata
 			if xml.Unmarshal(data, &meta) == nil {
 				if strings.TrimSpace(meta.MasterLabel) != "" {
