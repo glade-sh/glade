@@ -151,11 +151,16 @@ func standardDuplicateMatcher(org *storage.OrgState, ruleObject, candidateObject
 		return func(existing storage.Record) (bool, float64) { return standardAccountMatch(prepared, existing) }
 	case "contact", "lead":
 		person := standardPersonOf(org, candidateObject, candidate)
-		if person.last == "" {
+		object := strings.ToLower(ruleObject)
+		// Only the email path, keyed on the address alone, reaches a record
+		// whose surname key differs or a candidate without a last name.
+		emailPath := person.kind == object && person.email != ""
+		if person.last == "" && (!emailPath || person.first == "") {
 			return nil
 		}
-		person.lastKey = rawKeysOf(person.last).last
-		object := strings.ToLower(ruleObject)
+		if person.last != "" {
+			person.lastKey = rawKeysOf(person.last).last
+		}
 		return func(existing storage.Record) (bool, float64) {
 			// The last name gates the pair; the other fields are read only after it.
 			last := ""
@@ -164,24 +169,17 @@ func standardDuplicateMatcher(org *storage.OrgState, ruleObject, candidateObject
 			} else if v, ok := existing.GetField("LastName"); ok {
 				last = strings.TrimSpace(workflowValueString(v))
 			}
-			if last == "" {
+			if last == "" && person.last != "" {
 				return false, 0
 			}
-			if rawKeysOf(last).last != person.lastKey {
-				// Exact first name and email can also expose a surname variant
-				// outside the ordinary phonetic key. Read these two fields only.
-				if person.kind != object || person.email == "" || !standardSurnameLengthsMayMatch(person.last, last) {
+			if person.last == "" || rawKeysOf(last).last != person.lastKey {
+				if !emailPath {
 					return false, 0
 				}
 				email, _ := duplicateFieldText(existing, "Email")
 				if !strings.EqualFold(person.email, email) {
 					return false, 0
 				}
-				first, _ := duplicateFieldText(existing, "FirstName")
-				if person.first != "" && strings.EqualFold(person.first, first) {
-					return standardCorroboratedSurname(person.last, last)
-				}
-				return false, 0
 			}
 			return standardPersonMatch(object, person, standardPersonOf(org, ruleObject, existing))
 		}
@@ -198,7 +196,7 @@ func standardDuplicateMatcher(org *storage.OrgState, ruleObject, candidateObject
 // logic's mean of means (duplicate_filter_confidence.go). An exact or blank
 // match scores 100, a fuzzy item its method score; an item that did not match
 // still counts with its raw score.
-func customDuplicateMatch(rule storage.MatchingRule, candidate, existing storage.Record) (matched, supported bool, confidence float64) {
+func customDuplicateMatch(rule storage.MatchingRule, keys []fuzzyKeyMode, candidate, existing storage.Record) (matched, supported bool, confidence float64) {
 	matches := make([]bool, len(rule.Items))
 	scores := make([]float64, len(rule.Items))
 	for i, item := range rule.Items {
@@ -217,11 +215,10 @@ func customDuplicateMatch(rule storage.MatchingRule, candidate, existing storage
 		case !strings.EqualFold(item.Method, "Exact"):
 			var score float64
 			l, r := workflowValueString(left), workflowValueString(right)
-			matches[i], score = FuzzyScore(item.Method, l, r, matchBlanks)
-			// The active custom Person Account name panel also accepts an
-			// initial with exact surname and email corroboration.
-			if strings.EqualFold(rule.Object, "PersonAccount") && strings.EqualFold(item.Method, "FirstName") && standardFirstInitial(l, r) && duplicateFieldsEqual(candidate, existing, "LastName") && duplicateFieldsEqual(candidate, existing, "PersonEmail") {
-				matches[i], score = true, 100
+			if i < len(keys) && keys[i] == fuzzyKeyFirstInitial {
+				matches[i], score = firstNameInitialKeyed(l, r)
+			} else {
+				matches[i], score = FuzzyScore(item.Method, l, r, matchBlanks)
 			}
 			if matches[i] {
 				scores[i] = fuzzyItemScore(item.Method, score)
@@ -245,6 +242,81 @@ func customDuplicateMatch(rule storage.MatchingRule, candidate, existing storage
 		return true, true, confidence
 	}
 	return true, true, 100
+}
+
+// fuzzyKeyMode is the match key a custom rule gives one of its items. The
+// key is a property of the rule, not of the field (Salesforce Help, "How
+// Match Keys Are Generated and Used in Matching Rules"): the rule's filter is
+// rewritten into AND groups, and a group with a fuzzy First Name and a fuzzy
+// Last Name uses the predefined key First_Name (1,1) Last_Name.
+type fuzzyKeyMode uint8
+
+const (
+	// fuzzyKeyMethod is the method's own key (fuzzyScorers).
+	fuzzyKeyMethod fuzzyKeyMode = iota
+	// fuzzyKeyFirstInitial keys a first name on its initial
+	// (firstNameInitialKeyed).
+	fuzzyKeyFirstInitial
+)
+
+// customRuleKeyModes returns the key of each item of a custom matching rule.
+// A First Name item takes the initial key when every AND group of the
+// rule's filter that contains it also contains a Last Name item (native C1
+// rows K3, K4, K7, K8, K9: "Vorkel" finds "Volkel", "Y" finds "Yancey" and
+// "Kristen" no longer finds "Cristen"; alone or beside Email the item keeps
+// its own key, K1 and K6). Any other item, and every item of a filter outside
+// AND, OR and parentheses, keeps the method's key.
+func customRuleKeyModes(rule storage.MatchingRule) []fuzzyKeyMode {
+	modes := make([]fuzzyKeyMode, len(rule.Items))
+	first, last := -1, false
+	for i, item := range rule.Items {
+		switch strings.ToLower(strings.TrimSpace(item.Method)) {
+		case "firstname":
+			first = i
+		case "lastname":
+			last = true
+		}
+	}
+	if first < 0 || !last {
+		return modes
+	}
+	var groups [][]int
+	if strings.TrimSpace(rule.BooleanFilter) == "" {
+		group := make([]int, len(rule.Items))
+		for i := range group {
+			group[i] = i
+		}
+		groups = [][]int{group}
+	} else {
+		node, ok := parseFilterConfidence(rule.BooleanFilter, len(rule.Items))
+		if !ok {
+			return modes
+		}
+		if groups, ok = node.andGroups(); !ok {
+			return modes
+		}
+	}
+	for i, item := range rule.Items {
+		if !strings.EqualFold(strings.TrimSpace(item.Method), "FirstName") {
+			continue
+		}
+		seen, keyed := false, true
+		for _, group := range groups {
+			hasFirst, hasLast := false, false
+			for _, leaf := range group {
+				hasFirst = hasFirst || leaf == i
+				hasLast = hasLast || strings.EqualFold(strings.TrimSpace(rule.Items[leaf].Method), "LastName")
+			}
+			if hasFirst {
+				seen = true
+				keyed = keyed && hasLast
+			}
+		}
+		if seen && keyed {
+			modes[i] = fuzzyKeyFirstInitial
+		}
+	}
+	return modes
 }
 
 // FindDuplicateMatches evaluates one duplicate rule for the record. supported
@@ -298,6 +370,10 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 			match.Engine = storage.StandardMatchEngine
 		}
 		var standardMatch func(existing storage.Record) (bool, float64)
+		var keys []fuzzyKeyMode
+		if !standard {
+			keys = customRuleKeyModes(matching)
+		}
 		scan := true
 		if standard {
 			match.Engine = storage.StandardMatchEngine
@@ -323,7 +399,7 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 				matched, confidence = standardMatch(existing)
 			} else {
 				var supported bool
-				if matched, supported, confidence = customDuplicateMatch(matching, record, existing); !supported {
+				if matched, supported, confidence = customDuplicateMatch(matching, keys, record, existing); !supported {
 					return result, false
 				}
 			}

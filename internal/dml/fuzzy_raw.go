@@ -25,7 +25,10 @@ func FuzzyRawConfidence(method, left, right string, matchBlanks bool) float64 {
 		return averageWith100(100 * jaroWinkler(x, y))
 	case "lastname":
 		x, y := strings.ReplaceAll(foldText(left), "'", ""), strings.ReplaceAll(foldText(right), "'", "")
-		if x == y {
+		// The raw score is the method's own, without the match key: equal
+		// Metaphone 3 codes count 100 in a group the key left unmatched
+		// (C1 K8: "McAllen" and "Mc Allen", "Test 1" and "Test 2").
+		if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 			return 100
 		}
 		score, _ := keyboardSimilarity(x, y)

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **Duplicate rule match keys.** Match keys follow the matching rule. A custom rule that pairs a fuzzy First Name with a fuzzy Last Name keys the first name on its initial, and the standard Contact and Lead rules score both names without a key when the email addresses agree, so initials, phonetic first names and spaced surnames such as `Mc Allen` now match as they do in Salesforce.
 
 ## v0.3.10
 

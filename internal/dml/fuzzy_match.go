@@ -200,6 +200,14 @@ func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
 			return false, 0
 		}
 	}
+	return firstNameAlgorithms(x, y, fx, fy)
+}
+
+// firstNameAlgorithms scores a pair of lower-cased first names (x, y) and
+// their folds (fx, fy) once a match key has let the pair through: the
+// Initials rule scores 100, otherwise Jaro-Winkler decides at the threshold.
+// The key is the matching rule's concern (customFirstNameKeyMode).
+func firstNameAlgorithms(x, y, fx, fy string) (bool, float64) {
 	if firstNameInitials(fx, fy) || firstNameInitials(fy, fx) {
 		return true, 100
 	}
@@ -292,6 +300,13 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if lastNameWordKey(x) != lastNameWordKey(y) {
 		return false, 0
 	}
+	return lastNameAlgorithms(x, y)
+}
+
+// lastNameAlgorithms scores two folded last names without a match key:
+// equal text apart from apostrophes and equal Metaphone 3 codes score 100,
+// otherwise Keyboard Distance decides.
+func lastNameAlgorithms(x, y string) (bool, float64) {
 	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
 	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 		return true, 100

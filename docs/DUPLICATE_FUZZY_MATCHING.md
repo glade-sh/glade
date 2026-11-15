@@ -464,14 +464,43 @@ the last name matches, and either
 - the candidate has no first name, or both have none, and the email address
   matches.
 
-An existing record without a first name never matches a candidate that has
-one. The company branch needs the same company (a Lead's company text, a
+Each OR group is found through its own predefined match key (Salesforce Help,
+"Standard Contact Matching Rule and Standard Lead Matching Rule"), and the
+key decides which name comparisons run (NATIVE `duplicate_rule_match_keys`,
+B2 `s_*`, and the `Standard.Field.*`, `Standard.*.NameConfidence` rows):
+
+- The email path is keyed on Email alone, so neither name is keyed. The last
+  name is scored by the Last Name algorithms (equal Metaphone 3 codes score
+  100 whatever separates the words: `McAllen` finds `Mc Allen`, `Harlow`
+  finds `Harlow III`, never `Harlow Jr`; Keyboard Distance otherwise). The
+  first name is scored by Exact, Initials, Jaro-Winkler at 0.85, Metaphone 3
+  and Name Variant (`Y` finds `Y R S`, `Jane` finds `John`, `Mary Ann` finds
+  `MaryAnn`). Two blank last names are ignored beside two first names. The
+  exact-first-name surname panels (`duplicate_save_behavior`) keep their
+  measured keyboard geometry.
+- The phone path is keyed on `First_Name (1,1) Last_Name Phone`: the surname
+  key applies (`McAllen` does not find `Mc Allen`), and an initial or a name
+  that differs only in spaces passes when the initials agree.
+- The company path keeps the standard First Name item; no row measures its
+  key.
+
+A first-name score s counts (200 + s) / 3 in the rule confidence on the email
+and phone paths (`Y R` and `Y R S` score 97 on the standard rule, 95 on a
+custom rule). An existing record without a first name never matches a
+candidate that has one. The company branch needs the same company (a Lead's company text, a
 Contact's account) or two email addresses at one domain, and then the same
 title, or the same street with the same city or ZIP code. Two addresses at one
 domain count whatever the domain (gmail.com included, `Standard.*.EmailDomain`).
 Contacts compare accounts by id; a Lead candidate's company text never
 equals a Contact's account. The confidence is the product of the last name,
 first name and path items.
+
+Custom rules key their items by the rule too: a First Name item whose every
+AND group also holds a Last Name item keys on its initial,
+`First_Name (1,1) Last_Name` (C1 K3, K4, K7, K8, K9: `Vorkel` finds `Volkel`,
+`Y` finds `Yancey`, `Kristen` does not find `Cristen`). Alone or beside Email
+it keeps its own key (K1, K6). An item that did not match counts its raw
+score in an OR group; equal Metaphone 3 codes give a Last Name raw score of 100.
 
 ### Cross-object rules
 
