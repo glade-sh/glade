@@ -87,6 +87,22 @@ func TestSourceSpreadRecordCountPreservesNeighbor(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadRecordIDPreservesNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	prefix := org.Objects["CareProgram"].Definition.KeyPrefix
+	if len(prefix) != 3 {
+		t.Fatalf("expected a key prefix, got %q", prefix)
+	}
+	if name := New(&org).objectNameForRecordID(storage.ID(prefix + "000000000001")); name != "" {
+		t.Fatalf("origin/main did not resolve the neighbor prefix, got %s", name)
+	}
+}
+
 func TestSourceSpreadRESTDescribePreservesEditedNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
