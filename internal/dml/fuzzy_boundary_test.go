@@ -85,3 +85,21 @@ func TestReorderedSixWordTitleNativeConfidence(t *testing.T) {
 		}
 	}
 }
+
+func TestTitleUncapturedNeighborsKeepBaseline(t *testing.T) {
+	for _, tc := range []struct {
+		a, b  string
+		match bool
+		score float64
+	}{
+		{"Strat", "Global Principal Retail Brand Strategist", false, 0},
+		{"Global Principal Retail Brand Strategist", "Strat", false, 0},
+		{"Alpha Bravo Charlie Delta Echo Foxtrot", "Alpha Bravo Charlie Golf Hotel India", true, 94},
+		{"Alpha Bravo Charlie Golf Hotel India", "Alpha Bravo Charlie Delta Echo Foxtrot", true, 94},
+	} {
+		got, score := FuzzyScore("Title", tc.a, tc.b, false)
+		if got != tc.match || score != tc.score {
+			t.Errorf("%q / %q: got %v %v; baseline %v %v", tc.a, tc.b, got, score, tc.match, tc.score)
+		}
+	}
+}
