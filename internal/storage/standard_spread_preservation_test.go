@@ -241,3 +241,13 @@ func TestHiddenSpreadAccessIsIsolatedAcrossRuntimeClones(t *testing.T) {
 		})
 	}
 }
+
+func TestShapeTransitionClearsHiddenDefinitionsWithoutAccess(t *testing.T) {
+	org := NewOrgState()
+	org.StandardSpreadCapturedPlain = true
+	org.StandardSpreadHiddenDefinitions = map[string]ObjectDefinition{"Example": {APIName: "Example"}}
+	ApplyProjectOrgShape(&org, []string{project.UnspecifiedStandardFieldShape})
+	if len(org.StandardSpreadHiddenDefinitions) != 0 {
+		t.Fatal("shape transition retained hidden definitions")
+	}
+}
