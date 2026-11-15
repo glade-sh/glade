@@ -10,7 +10,7 @@ func TestHiddenSpreadAccessInvalidatesVirtualSchemaCache(t *testing.T) {
 	org := storage.NewOrgState()
 	org.RuntimeSchemaStamp = "fixed"
 	org.StandardSpreadHiddenAccess = map[string][]string{"Hidden__c": {"First__c"}}
-	query, err := Parse("SELECT DurableId FROM UserFieldAccess")
+	query, err := Parse("SELECT DurableId FROM UserFieldAccess WHERE EntityDefinitionId IN ('Hidden__c','Another__c')")
 	if err != nil {
 		t.Fatal(err)
 	}
