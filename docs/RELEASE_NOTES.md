@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Company duplicate matching.** Numbered names and selected legal suffixes use captured directional confidence rules.
+
 - Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
 
 - **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
