@@ -77,6 +77,7 @@ func TestLazyInstallCounterResetsWithOrg(t *testing.T) {
 	if machine.lazySingleInstalls != 0 {
 		t.Fatal("SetRuntimeTemplateOrg retained the previous org's install count")
 	}
+	machine.lazySingleInstalls = lazySingleInstallLimit - 1
 	clone := machine.CloneRuntime(nil)
 	if clone.lazySingleInstalls != 0 {
 		t.Fatal("runtime clone inherited an install count")
