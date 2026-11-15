@@ -64,6 +64,29 @@ func TestSourceSpreadRESTInventoryPreservesNeighbor(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadRecordCountPreservesNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	storage.EnsureLazyStandardObject(&org, "CareProgram")
+	response := httptest.NewRecorder()
+	New(&org).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/services/data/v68.0/limits/recordCount?sObjects=CareProgram", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("record count status %d", response.Code)
+	}
+	var body struct {
+		Objects []struct {
+			Name string `json:"name"`
+		} `json:"sObjects"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Objects) != 0 {
+		t.Fatalf("origin/main record count omitted the neighbor, got %v", body.Objects)
+	}
+}
+
 func TestSourceSpreadRESTDescribePreservesEditedNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
