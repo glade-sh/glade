@@ -305,3 +305,19 @@ func TestRecordingHiddenDefinitionDoesNotMutateSharedOrg(t *testing.T) {
 		t.Fatal("hidden definition retained the source field map")
 	}
 }
+
+func TestSpreadNamesMatchCatalogResolution(t *testing.T) {
+	var expected []string
+	for _, name := range KnownStandardObjectNames() {
+		if !standardSpreadIncludes(name) {
+			continue
+		}
+		if canonical, ok := ResolveKnownStandardObjectName(name); ok {
+			name = canonical
+		}
+		expected = append(expected, name)
+	}
+	if got := canonicalStandardSpreadNames(); !slices.Equal(got, expected) {
+		t.Fatal("cached spread names differ from catalog resolution")
+	}
+}

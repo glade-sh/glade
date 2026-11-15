@@ -20,6 +20,9 @@ func TestSpreadSuppressionConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func(worker int) {
 			defer wg.Done()
+			if len(canonicalStandardSpreadNames()) == 0 {
+				t.Error("missing canonical spread names")
+			}
 			for i := 0; i < 40; i++ {
 				name := fmt.Sprintf("object-%d-%d", worker, i)
 				registry.put(name, "fingerprint")
