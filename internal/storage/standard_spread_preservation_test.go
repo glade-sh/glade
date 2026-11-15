@@ -164,7 +164,9 @@ func TestExplicitEagerSpreadInstallSurvivesSerialization(t *testing.T) {
 	org := NewOrgState()
 	EnsureStandardObject(&org, "AIFeatureExtractor")
 	EnsureStandardObjectSpread(&org)
-	original := org.Objects["AIFeatureExtractor"].Definition
+	baseline := NewOrgState()
+	EnsureStandardObject(&baseline, "AIFeatureExtractor")
+	original := baseline.Objects["AIFeatureExtractor"].Definition
 	data, err := json.Marshal(org)
 	if err != nil {
 		t.Fatal(err)
