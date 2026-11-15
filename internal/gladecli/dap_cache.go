@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/frontendcache"
 	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -211,7 +213,15 @@ func buildDAPStateFromView(ctx context.Context, root string, v *inputview.View, 
 	if err != nil {
 		return dapBuiltState{}, err
 	}
-	index, artifacts := buildProjectIndexWithArtifacts(p)
+	var index typesys.Index
+	var artifacts typesys.BuildArtifacts
+	s, schemaErr := schema.LoadProject(p)
+	if schemaErr == nil && apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{}).Enabled {
+		result := frontendcache.LoadOrBuild(p, s, func() (typesys.Index, typesys.BuildArtifacts) { return typesys.BuildWithArtifacts(p, s) })
+		index, artifacts = result.Index, result.Artifacts
+	} else {
+		index, artifacts = buildProjectIndexWithArtifacts(p)
+	}
 	org, err := orgStateFromIndex(root, p, index)
 	if err != nil {
 		return dapBuiltState{}, err

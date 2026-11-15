@@ -181,7 +181,7 @@ func (h *Handler) handleEvaluate(request Request) Response {
 	}
 	h.stateMu.Unlock()
 	return h.success(request, map[string]any{
-		"result":             value.String(),
+		"result":             previewValue(value),
 		"type":               string(value.Kind),
 		"variablesReference": ref,
 	})
@@ -278,8 +278,8 @@ func (h *Handler) ApplyPause(pause vm.DebugPause) Event {
 	h.snapshot = Snapshot{
 		Threads: []Thread{{ID: 1, Name: "main"}},
 		Frames:  stackFramesFromPause(pause),
-		Vars:    pause.Vars,
-		Statics: pause.Statics,
+		Vars:    isolateSnapshotValues(pause.Vars),
+		Statics: isolateSnapshotValues(pause.Statics),
 	}
 	h.varRefs = make(map[int]vm.Value)
 	h.varRefKeys = make(map[string]int)
@@ -378,22 +378,26 @@ func (h *Handler) handleVariables(request Request) Response {
 	if err := request.DecodeArguments(&args); err != nil {
 		return h.failure(request, err.Error())
 	}
-	var variables []Variable
+	var pending []pendingVariable
 	h.stateMu.Lock()
 	if args.VariablesReference == localsReference {
-		variables = h.variablesFromNamedValuesLocked("locals", h.localsLocked(), args.Start, args.Count)
+		pending = h.variablesFromNamedValuesLocked("locals", h.localsLocked(), args.Start, args.Count)
 	} else if args.VariablesReference == staticsReference {
-		variables = h.variablesFromNamedValuesLocked("statics", namedValuesFromMap(h.snapshot.Statics), args.Start, args.Count)
+		pending = h.variablesFromNamedValuesLocked("statics", namedValuesFromMap(h.snapshot.Statics), args.Start, args.Count)
 	} else if args.VariablesReference == triggerReference {
-		variables = h.variablesFromNamedValuesLocked("trigger", h.triggerContextLocked(), args.Start, args.Count)
+		pending = h.variablesFromNamedValuesLocked("trigger", h.triggerContextLocked(), args.Start, args.Count)
 	} else if value, ok := h.varRefs[args.VariablesReference]; ok {
 		children, start, count := pagedChildValues(value, args.Start, args.Count)
-		variables = h.variablesFromNamedValuesLocked(fmt.Sprintf("ref:%d", args.VariablesReference), children, start, count)
+		pending = h.variablesFromNamedValuesLocked(fmt.Sprintf("ref:%d", args.VariablesReference), children, start, count)
 	} else {
 		h.stateMu.Unlock()
 		return h.failure(request, fmt.Sprintf("unknown variablesReference %d", args.VariablesReference))
 	}
 	h.stateMu.Unlock()
+	variables := make([]Variable, 0, len(pending))
+	for _, item := range pending {
+		variables = append(variables, variableFromValue(item.name, item.value, item.ref))
+	}
 	return h.success(request, map[string]any{"variables": variables})
 }
 
@@ -667,15 +671,21 @@ func (h *Handler) triggerContextLocked() []namedValue {
 
 // variablesFromNamedValuesLocked formats only the requested window of values,
 // so a small page of a large collection formats and references only that page.
-func (h *Handler) variablesFromNamedValuesLocked(prefix string, values []namedValue, start, count int) []Variable {
+type pendingVariable struct {
+	name  string
+	value vm.Value
+	ref   int
+}
+
+func (h *Handler) variablesFromNamedValuesLocked(prefix string, values []namedValue, start, count int) []pendingVariable {
 	from, to := variableWindow(len(values), start, count)
-	variables := make([]Variable, 0, to-from)
+	variables := make([]pendingVariable, 0, to-from)
 	for _, value := range values[from:to] {
 		ref := 0
 		if hasChildValues(value.value) {
 			ref = h.variableReferenceLocked(prefix+"."+value.name, value.value)
 		}
-		variables = append(variables, variableFromValue(value.name, value.value, ref))
+		variables = append(variables, pendingVariable{value.name, value.value, ref})
 	}
 	return variables
 }

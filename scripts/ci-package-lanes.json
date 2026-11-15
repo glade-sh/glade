@@ -92,12 +92,12 @@
     ]
   },
   "concurrentTestCounts": {
-    "./internal/lsp": 7,
-    "./internal/apextest": 546,
-    "./internal/dap": 9,
+    "./internal/lsp": 20,
+    "./internal/apextest": 547,
+    "./internal/dap": 13,
     "./internal/frontendcache": 1,
     "./internal/filestamp": 1,
-    "./internal/gladecli": 105,
+    "./internal/gladecli": 106,
     "./internal/gladehome": 8,
     "./internal/inputview": 2,
     "./internal/lwcbrowser": 2,
@@ -105,16 +105,17 @@
     "./internal/pluginhost": 5,
     "./internal/project": 1,
     "./internal/repoguard": 2,
-    "./internal/sema": 658,
+    "./internal/sema": 659,
     "./internal/semanticcache": 6,
     "./internal/server": 13,
     "./internal/soql": 5,
-    "./internal/storage": 11,
+    "./internal/storage": 19,
     "./internal/testdaemon": 35,
     "./internal/testutil/toolchaininstall": 5,
     "./internal/typesys": 2,
     "./internal/visualforce": 7,
-    "./internal/vm": 68,
-    "./internal/watch": 1
+    "./internal/vm": 69,
+    "./internal/watch": 1,
+    "./internal/dml": 2
   }
 }

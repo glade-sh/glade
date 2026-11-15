@@ -3037,6 +3037,12 @@ func (vm *VM) ownedGlobalDescribeLocalKeyForCaller(key, resolved, caller string)
 	} else if hasSuffixFold(resolved, "__ChangeEvent") {
 		resolved = resolved[:len(resolved)-len("__ChangeEvent")] + "__c"
 	}
+	// Only a __c object qualifies, and resolution keeps the suffix. Skipping
+	// the lookup for other names keeps it from installing every owed object
+	// of a lazy spread.
+	if !hasSuffixFold(resolved, "__c") {
+		return false
+	}
 	if canonical, ok := vm.resolveObjectNameForCaller(resolved, caller); ok {
 		resolved = canonical
 	}
