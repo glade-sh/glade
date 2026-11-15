@@ -8,6 +8,24 @@ import (
 	"sync"
 )
 
+// Catalog names and their resolution are generated and immutable. Keep the
+// resolved sequence so repeated eager spreads avoid refilling the bounded
+// general-purpose name memo.
+var canonicalStandardSpreadNames = sync.OnceValue(func() []string {
+	names := KnownStandardObjectNames()
+	resolved := make([]string, 0, len(names))
+	for _, name := range names {
+		if !standardSpreadIncludes(name) {
+			continue
+		}
+		if canonical, ok := ResolveKnownStandardObjectName(name); ok {
+			name = canonical
+		}
+		resolved = append(resolved, name)
+	}
+	return resolved
+})
+
 var standardCatalogStampCache struct {
 	once  sync.Once
 	stamp string
@@ -44,10 +62,7 @@ func EnsureStandardObjectSpread(org *OrgState) {
 	// an isolated catalog build would; any other start keeps the full check.
 	record := canonicalFeatureSignature(org.Features) == "" && !org.lazyStandardSpread && org.StandardSpread == ""
 	var installed []string
-	for _, objectName := range KnownStandardObjectNames() {
-		if !standardSpreadIncludes(objectName) {
-			continue
-		}
+	for _, objectName := range canonicalStandardSpreadNames() {
 		if record {
 			switch objectName {
 			case "AIFeatureExtractor", "AIResearchPromptResult", "AIScoringStatusEvent":
@@ -56,7 +71,7 @@ func EnsureStandardObjectSpread(org *OrgState) {
 				}
 			}
 		}
-		EnsureStandardObject(org, objectName)
+		ensureCanonicalStandardObjectWithProfile(org, objectName, org.Features)
 	}
 	if !record || len(installed) == 0 {
 		return
