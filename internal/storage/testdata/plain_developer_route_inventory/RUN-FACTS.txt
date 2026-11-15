@@ -5,3 +5,4 @@ Every batch included positive and negative controls. The three anonymous API 62 
 The org.tsv file contains route outcomes. virtual.tsv and access.tsv contain virtual metadata and user-access query outcomes; query exceptions do not establish absence.
 All scratch orgs were deleted, and deletion was verified by org lookup and through the Dev Hub.
 See native-run.md for input and checkpoint details.
+Fresh Developer scratch org, 30-day duration, empty features and settings. Captured 2026-11-15T04:25:18.127683+00:00 through 2026-11-15T04:25:50.397501+00:00; Visualforce APIs 60.0 through 66.0, with API 68 anonymous wrappers. Positive and negative controls included. Org deleted and hub absence verified.

@@ -40,3 +40,5 @@ names, with one describe and one `SELECT Id ... LIMIT 1` query per name, at API
 60, 65, 66, 67 and 68. UI batch requests group twenty names after the two
 controls at API 59, 67 and 68. Singleton UI requests use each manifest name at
 the same three APIs, with the controls repeated between groups of twenty.
+
+A separate fresh 30-day Developer scratch org captured the missing Visualforce API 60–66 boundaries using the controllers, pages and wrappers under `source/vf-gap`. Glade preflight preceded the capture. Positive and negative controls passed. The scratch org was deleted and its absence verified through the Dev Hub. These rows append to `org.tsv`; earlier observations remain unchanged.
