@@ -1739,13 +1739,23 @@ func (vm *VM) resolveObjectNameForCaller(name, caller string) (string, bool) {
 		vm.objectNameCache[cacheKey] = objectNameLookup{Name: resolved, OK: true}
 		return resolved, true
 	}
+	held := len(vm.Org.Objects)
 	resolved, ok := storage.ResolveObjectName(*vm.Org, name)
 	if !ok {
 		resolved, ok = vm.lazyStandardObject(name)
 	}
+	if len(vm.Org.Objects) > held && vm.Org.LazyStandardSpreadEnabled() {
+		vm.lazySingleInstalls++
+		if vm.lazySingleInstalls >= lazySingleInstallLimit {
+			vm.materializeLazyStandardSpread()
+		}
+	}
 	vm.objectNameCache[cacheKey] = objectNameLookup{Name: resolved, OK: ok}
 	return resolved, ok
 }
+
+// Complete the spread before repeated single installs become quadratic.
+const lazySingleInstallLimit = 128
 
 func (vm *VM) resolveObjectNameInExecutionNamespace(name string) (string, bool) {
 	if vm == nil || vm.Org == nil {
