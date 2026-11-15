@@ -11,6 +11,10 @@ import (
 
 func TestSpreadSuppressionConcurrentAccess(t *testing.T) {
 	registry := newSpreadSuppression()
+	org := NewOrgState()
+	org.StandardSpreadSuppressed = registry
+	other := org
+	other.StandardSpreadSuppressed = newSpreadSuppression()
 	var wg sync.WaitGroup
 	for worker := 0; worker < 4; worker++ {
 		wg.Add(1)
@@ -24,6 +28,9 @@ func TestSpreadSuppressionConcurrentAccess(t *testing.T) {
 				}
 				if _, err := json.Marshal(registry); err != nil {
 					t.Error(err)
+				}
+				if org.PersistedFieldsIdentical(other) {
+					t.Error("different registries compared equal")
 				}
 			}
 		}(worker)
