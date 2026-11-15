@@ -93,7 +93,7 @@
   },
   "concurrentTestCounts": {
     "./internal/lsp": 7,
-    "./internal/apextest": 542,
+    "./internal/apextest": 546,
     "./internal/dap": 9,
     "./internal/frontendcache": 1,
     "./internal/filestamp": 1,
