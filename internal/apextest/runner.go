@@ -759,30 +759,12 @@ func setSnapshotValidationHookForTesting(hook func(string)) func() {
 	}
 }
 
-// snapshotValidationEpoch advances around every installed snapshot validation
-// hook, so tests that change inputs between stages observe every boundary.
-var snapshotValidationEpoch atomic.Uint64
-
-func sameVisualforceBinding(a, b map[string]bool) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for path := range a {
-		if !b[path] {
-			return false
-		}
-	}
-	return true
-}
-
 func invokeSnapshotValidationHook(stage string) {
 	snapshotValidationHookMu.RLock()
 	hook := snapshotValidationHook
 	snapshotValidationHookMu.RUnlock()
 	if hook != nil {
-		snapshotValidationEpoch.Add(1)
 		hook(stage)
-		snapshotValidationEpoch.Add(1)
 	}
 }
 
@@ -1823,7 +1805,7 @@ func validateRuntimeGeneration(sources *sourceCache) error {
 	// Source and companion metadata bytes both come from the immutable
 	// per-invocation generation captured in sources. Revalidate that one
 	// authority at every cache return and publication boundary.
-	return sources.validateCapturedSourceGenerationAtBoundary()
+	return sources.validateCapturedSourceGenerationRaw()
 }
 
 func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache) (runtimeGeneration, error) {
@@ -3899,13 +3881,6 @@ type sourceCache struct {
 	allowVisualforceDiskDigests bool
 	recentVisualforce           map[string]recentVisualforceInput
 	generationValidator         func() error
-	// visualforceInputs names the captured inputs that only Visualforce
-	// runtime identity consumes. They are rechecked on disk once per snapshot
-	// epoch rather than at every cache boundary of one run; vfVerified records
-	// that the current binding passed at vfEpoch.
-	visualforceInputs map[string]bool
-	vfVerified        bool
-	vfEpoch           uint64
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no
@@ -3961,7 +3936,6 @@ func (cache *sourceCache) bindSourceDigests(digests *typesys.SourceDigestSet) {
 		cache.capturedFiles = nil
 		cache.capturedMetadata = nil
 		cache.recentVisualforce = nil
-		cache.visualforceInputs, cache.vfVerified = nil, false
 		cache.metadataAuthority = ""
 		cache.snapshotErr = nil
 	}
@@ -4046,7 +4020,6 @@ func (cache *sourceCache) seedBuildArtifacts(index typesys.Index, artifacts *typ
 	cache.capturedFiles = capturedFiles
 	cache.capturedMetadata = capturedMetadata
 	cache.recentVisualforce = nil
-	cache.visualforceInputs, cache.vfVerified = nil, false
 	cache.metadataAuthority = runtimeMetadataAuthorityArtifact
 	cache.snapshotErr = nil
 	cache.mu.Unlock()
@@ -4177,7 +4150,6 @@ func (cache *sourceCache) prepareMetadataGeneration(index typesys.Index) (runtim
 	cache.mu.Lock()
 	cache.capturedMetadata = inputs
 	cache.recentVisualforce = nil
-	cache.visualforceInputs, cache.vfVerified = nil, false
 	cache.apiVersions = apiVersions
 	cache.metadataAuthority = runtimeMetadataAuthorityLegacy
 	cache.snapshotErr = nil
@@ -4217,17 +4189,6 @@ func (cache *sourceCache) validateCapturedSourceGeneration() error {
 }
 
 func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
-	return cache.validateCapturedSourceGenerationScoped(false)
-}
-
-// validateCapturedSourceGenerationAtBoundary is the check between stages of one
-// run. It skips Visualforce inputs that capture already verified in the
-// current snapshot epoch; the Raw form always rereads them.
-func (cache *sourceCache) validateCapturedSourceGenerationAtBoundary() error {
-	return cache.validateCapturedSourceGenerationScoped(true)
-}
-
-func (cache *sourceCache) validateCapturedSourceGenerationScoped(boundary bool) error {
 	if cache == nil {
 		return nil
 	}
@@ -4241,15 +4202,7 @@ func (cache *sourceCache) validateCapturedSourceGenerationScoped(boundary bool) 
 		metadata[path] = input
 	}
 	recent := cache.recentVisualforce
-	epoch := snapshotValidationEpoch.Load()
-	skipVisualforce := boundary && cache.vfVerified && cache.vfEpoch == epoch
-	visualforce := cache.visualforceInputs
 	cache.mu.RUnlock()
-	if skipVisualforce {
-		for path := range visualforce {
-			delete(metadata, path)
-		}
-	}
 	for file, expected := range files {
 		actual, err := currentFileDigest(file)
 		if err != nil {
@@ -4267,13 +4220,6 @@ func (cache *sourceCache) validateCapturedSourceGenerationScoped(boundary bool) 
 			return err
 		}
 	}
-	if !skipVisualforce && len(visualforce) > 0 {
-		cache.mu.Lock()
-		if sameVisualforceBinding(cache.visualforceInputs, visualforce) {
-			cache.vfVerified, cache.vfEpoch = true, epoch
-		}
-		cache.mu.Unlock()
-	}
 	return cache.sourceSnapshotError()
 }
 
@@ -4288,7 +4234,6 @@ func (cache *sourceCache) bindSourceDigestLookup(lookup func(string) ([sha256.Si
 	cache.capturedFiles = nil
 	cache.capturedMetadata = nil
 	cache.recentVisualforce = nil
-	cache.visualforceInputs, cache.vfVerified = nil, false
 	cache.metadataAuthority = ""
 	cache.snapshotErr = nil
 	cache.expectedDigests = nil

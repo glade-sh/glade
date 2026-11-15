@@ -68,10 +68,6 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 	cache.capturedProject = capturedProject
 	cache.runtimeSourceUnits = units
 	cache.recentVisualforce = generation.recentVisualforce
-	// Capture just observed every Visualforce input, so the first boundary
-	// check does not stat them again.
-	cache.visualforceInputs = generation.visualforceInputs
-	cache.vfVerified, cache.vfEpoch = len(generation.visualforceInputs) > 0, snapshotValidationEpoch.Load()
 	if cache.capturedMetadata == nil {
 		cache.capturedMetadata = make(map[string]typesys.ApexMetadataInput)
 	}
