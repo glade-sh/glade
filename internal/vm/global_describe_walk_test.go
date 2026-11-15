@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -81,5 +83,17 @@ func TestLazyInstallCounterResetsWithOrg(t *testing.T) {
 	clone := machine.CloneRuntime(nil)
 	if clone.lazySingleInstalls != 0 {
 		t.Fatal("runtime clone inherited an install count")
+	}
+}
+
+// This small namespaced neighbor's digest was recorded at the pre-fix base.
+func TestGlobalDescribeNeighborMatchesBase(t *testing.T) {
+	org := namesOnlyDescribeOrg("source", []string{"Sites", "Quotes"}, "nsx")
+	source := namesOnlyProbeSource([]string{"Account", "Widget__c", "NoSuchObject"})
+	out := runNamesOnlyProbe(t, &org, false, "67.0", namesOnlyCaller{"owner", "nsx", "nsx"}, false, false, source)
+	got := fmt.Sprintf("%x", sha256.Sum256([]byte(out)))
+	const want = "d5589844944036a144b004208074a94906cfab82243562a4c7ead3d062ba450d"
+	if got != want {
+		t.Fatalf("neighbor digest = %s, base = %s", got, want)
 	}
 }
