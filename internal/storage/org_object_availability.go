@@ -10,6 +10,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/project"
 )
@@ -187,7 +188,7 @@ func refreshOrgFeatureObjects(org *OrgState) {
 	if org.StandardSpreadCapturedPlain && org.HasFeature(project.PlainDeveloperObjectShape) && (org.eagerStandardSpread || org.lazyStandardSpread || org.StandardSpread != "") {
 		var hidden [3]hiddenSpreadDefinition
 		count := 0
-		for _, name := range []string{"AIFeatureExtractor", "AIResearchPromptResult", "AIScoringStatusEvent"} {
+		for _, name := range plainDeveloperPrunedObjects() {
 			if object, exists := org.Objects[name]; exists {
 				// Only remove untouched catalog entries, retaining project schema
 				// and data that were installed before the shape was applied.
@@ -446,6 +447,22 @@ func cloneSpreadHiddenValue(value reflect.Value) reflect.Value {
 		return value
 	}
 }
+
+// plainDeveloperPrunedObjects are the catalog objects the captured default
+// Developer shape removes, in catalog spelling. They resolve from folded
+// spellings so the spread core scan does not count them as objects code reads
+// by literal: a source spread must not install them up front.
+var plainDeveloperPrunedObjects = sync.OnceValue(func() [3]string {
+	var names [3]string
+	for i, folded := range [3]string{"aifeatureextractor", "airesearchpromptresult", "aiscoringstatusevent"} {
+		canonical, ok := ResolveKnownStandardObjectName(folded)
+		if !ok {
+			panic("storage: plain Developer pruned object missing from the catalog: " + folded)
+		}
+		names[i] = canonical
+	}
+	return names
+})
 
 func plainDeveloperPrunable(name string) bool {
 	switch strings.ToLower(name) {

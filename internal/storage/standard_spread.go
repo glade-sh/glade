@@ -62,13 +62,11 @@ func EnsureStandardObjectSpread(org *OrgState) {
 	// an isolated catalog build would; any other start keeps the full check.
 	record := canonicalFeatureSignature(org.Features) == "" && !org.lazyStandardSpread && org.StandardSpread == ""
 	var installed []string
+	pruned := plainDeveloperPrunedObjects()
 	for _, objectName := range canonicalStandardSpreadNames() {
-		if record {
-			switch objectName {
-			case "AIFeatureExtractor", "AIResearchPromptResult", "AIScoringStatusEvent":
-				if _, exists := org.Objects[objectName]; !exists {
-					installed = append(installed, objectName)
-				}
+		if record && (objectName == pruned[0] || objectName == pruned[1] || objectName == pruned[2]) {
+			if _, exists := org.Objects[objectName]; !exists {
+				installed = append(installed, objectName)
 			}
 		}
 		ensureCanonicalStandardObjectWithProfile(org, objectName, org.Features)
