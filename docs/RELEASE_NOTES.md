@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No changes yet.
+- **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets. API 67 default-mode administrator DML and dynamic queries honor captured access to newly deployed Account Text fields.
 
 ## v0.3.10
 
