@@ -278,3 +278,22 @@ func TestSourceSpreadTransitionRetainsEditedInventory(t *testing.T) {
 		t.Fatal("edited inventory definition was removed")
 	}
 }
+
+func TestSourceSpreadTransitionRetainsInventoryRecords(t *testing.T) {
+	org := sourceSpreadLazyOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	object := org.Objects["CareProgram"]
+	if object.Records == nil {
+		object.SetRecords(make(map[ID]Record))
+	}
+	id := ID("a00000000000001")
+	object.PutRecord(id, Record{ID: id, Object: "CareProgram"})
+	org.Objects["CareProgram"] = object
+	ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
+	retained, exists := org.Objects["CareProgram"]
+	if !exists || len(retained.Records) != 1 {
+		t.Fatal("record-bearing inventory was removed")
+	}
+}
