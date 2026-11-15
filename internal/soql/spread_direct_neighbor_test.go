@@ -149,3 +149,19 @@ func TestSourceSpreadVirtualVisibilityTracksEdits(t *testing.T) {
 	org.Objects["CareProgram"] = object
 	check(0)
 }
+
+func TestSourceSpreadByValueLookupPreservesNeighborVisibility(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.ResolveObjectName(org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not resolved")
+	}
+	query, err := Parse("SELECT Id FROM CareProgram LIMIT 2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(org, query); err == nil {
+		t.Fatal("by-value inventory lookup changed origin/main query visibility")
+	}
+}
