@@ -79,6 +79,33 @@ func TestSourceSpreadDirectQueryPreservesNeighborAfterSerialization(t *testing.T
 	}
 }
 
+func TestSourceSpreadEditedNeighborRemainsVisibleAfterSerialization(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	object := org.Objects["CareProgram"]
+	object.Definition.Label = "edited"
+	org.Objects["CareProgram"] = object
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored storage.OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	query, err := Parse("SELECT Id FROM CareProgram LIMIT 2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(restored, query); err != nil {
+		t.Fatalf("edited serialized definition was hidden: %v", err)
+	}
+}
+
 func TestSourceSpreadDirectQueryPreservesNeighborRecords(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()

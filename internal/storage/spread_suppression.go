@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"sync"
 )
@@ -78,6 +79,41 @@ func (o *OrgState) ensureSpreadSuppression() {
 	if o != nil && o.StandardSpreadCapturedPlain && o.StandardSpreadSuppressed == nil {
 		o.StandardSpreadSuppressed = newSpreadSuppression()
 	}
+}
+
+// MarshalJSON rebases untouched fingerprints to the representation JSON will
+// restore. Empty collections omitted by JSON otherwise change the fingerprint.
+// Edited definitions lose their marker and remain visible after restoration.
+func (o OrgState) MarshalJSON() ([]byte, error) {
+	type orgStateJSON OrgState
+	encoded := orgStateJSON(o)
+	if o.StandardSpreadSuppressed != nil {
+		entries := o.StandardSpreadSuppressed.snapshot()
+		for name, saved := range entries {
+			object, exists := o.Objects[name]
+			if !exists {
+				continue
+			}
+			current := spreadDefinitionFingerprint(object.Definition)
+			if hex.EncodeToString(current[:]) != saved {
+				delete(entries, name)
+				continue
+			}
+			data, err := json.Marshal(object.Definition)
+			if err != nil {
+				return nil, err
+			}
+			var restored ObjectDefinition
+			if err := json.Unmarshal(data, &restored); err != nil {
+				return nil, err
+			}
+			fingerprint := spreadDefinitionFingerprint(restored)
+			entries[name] = hex.EncodeToString(fingerprint[:])
+		}
+		encoded.StandardSpreadSuppressed = newSpreadSuppression()
+		encoded.StandardSpreadSuppressed.replace(entries)
+	}
+	return json.Marshal(encoded)
 }
 
 // UnmarshalJSON keeps decoding behavior unchanged and restores the shared
