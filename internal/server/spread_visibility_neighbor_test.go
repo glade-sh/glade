@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -196,6 +197,25 @@ func TestSourceSpreadCompositeChildPreservesNeighbor(t *testing.T) {
 	org.Objects["User"] = parent
 	if child, _, ok := New(&org).resolveCompositeTreeChildRelationship("User", "ProbeChildren"); ok && child == "CareProgram" {
 		t.Fatal("origin/main composite child lookup omitted the neighbor")
+	}
+}
+
+func TestSourceSpreadAnonymousCompilationPreservesNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	storage.EnsureLazyStandardObject(&org, "CareProgram")
+	query := url.Values{"anonymousBody": {"CareProgram candidate;"}}
+	response := httptest.NewRecorder()
+	New(&org).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/services/data/v68.0/tooling/executeAnonymous?"+query.Encode(), nil))
+	var body struct {
+		Compiled bool `json:"compiled"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.Compiled {
+		t.Fatal("origin/main did not compile the uncaptured neighbor type")
 	}
 }
 
