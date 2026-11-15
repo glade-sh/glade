@@ -1,6 +1,7 @@
 package soql
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -51,5 +52,29 @@ func TestSourceSpreadDirectQueryPreservesEditedNeighbor(t *testing.T) {
 	}
 	if _, err := Execute(org, query); err != nil {
 		t.Fatalf("edited definition was hidden: %v", err)
+	}
+}
+
+func TestSourceSpreadDirectQueryPreservesNeighborAfterSerialization(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored storage.OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	query, err := Parse("SELECT Id FROM CareProgram LIMIT 2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(restored, query); err == nil {
+		t.Fatal("serialized origin/main neighbor query became visible")
 	}
 }
