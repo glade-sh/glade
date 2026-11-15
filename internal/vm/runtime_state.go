@@ -451,6 +451,9 @@ type VM struct {
 	// enumSuffixBuilt reports that enumSuffixLookup was built from the class
 	// entries, not the empty map a new VM starts with (gated_platform_class.go).
 	enumSuffixBuilt bool
+	// inlineQueryLocatorCall marks the Database.getQueryLocator call whose query
+	// argument is an inline [SELECT ...]; databaseQueryHandle reads and clears it.
+	inlineQueryLocatorCall bool
 	// String == support: the Turkish-dotting decision for the running user and
 	// the full case transformers, created once per machine.
 	localeCase localeCaseCache
