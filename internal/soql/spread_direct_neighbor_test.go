@@ -87,6 +87,45 @@ func TestSourceSpreadChildRelationshipPreservesNeighbor(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadChildRelationshipCacheTracksVisibility(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	storage.EnsureLazyStandardObject(&org, "User")
+	object := org.Objects["CareProgram"]
+	parent := org.Objects["User"].Definition
+	relationship := derivedChildRelationshipName(object.Definition)
+	cache := &childRelationshipQueryCache{execution: NewExecutionCache()}
+	check := func(want bool) {
+		t.Helper()
+		name, _, ok := childRelationshipCached(org, parent, relationship, cache)
+		if got := ok && name == "CareProgram"; got != want {
+			t.Fatalf("child visibility %t, want %t", got, want)
+		}
+	}
+	check(false)
+	original := object.Definition.Label
+	object.Definition.Label = "edited"
+	org.Objects["CareProgram"] = object
+	check(true)
+	object.Definition.Label = original
+	org.Objects["CareProgram"] = object
+	check(false)
+	if object.Records == nil {
+		object.SetRecords(make(map[storage.ID]storage.Record))
+	}
+	id := storage.ID("a00000000000001")
+	object.PutRecord(id, storage.Record{ID: id, Object: "CareProgram"})
+	org.Objects["CareProgram"] = object
+	check(true)
+	delete(object.Records, id)
+	org.Objects["CareProgram"] = object
+	check(false)
+}
+
 func TestSourceSpreadDirectQueryPreservesEditedNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
