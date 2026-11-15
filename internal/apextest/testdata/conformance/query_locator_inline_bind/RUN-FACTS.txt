@@ -1,0 +1,3 @@
+Capture: 2026-11-15 22:12-22:14 UTC, fresh Developer scratch org on a campaign Dev Hub, deleted and verified. APIs 62.0 and 67.0; anonymous and @IsTest; Salesforce CLI 2.157.8.
+Cases I01-I12 minus I09: I09 (Database.getCursor with inline SOQL) was dropped because the call does not compile natively (no getCursor(List<SObject>) overload), so it is not a row.
+Test classes deployed with apiVersion 67.0; the 62.0 rows ran the same deployed classes (anonymous Apex ran at the requested API).

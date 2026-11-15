@@ -1,0 +1,1 @@
+try { QLabels inst = new QLabels(); String loc = 'Hot'; List<Account> l = Database.query('SELECT Id FROM Account WHERE Rating = :QLabels.HOT'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }
