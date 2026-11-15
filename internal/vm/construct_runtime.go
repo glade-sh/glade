@@ -3114,8 +3114,14 @@ func (vm *VM) currentExecutionNamespace() string {
 	if strings.TrimSpace(vm.currentClass) == "" {
 		return ""
 	}
-	if class, ok := vm.classEntry(vm.currentClass); ok {
-		return strings.TrimSpace(class.Namespace)
+	if memo := &vm.execNamespaceMemo; memo.valid && memo.generation == vm.classLookupGeneration && memo.class == vm.currentClass {
+		return memo.namespace
+	}
+	// The namespace sits on the lazy shell, so the unbuilt entry is enough.
+	if class, ok := vm.classEntryRaw(vm.currentClass); ok {
+		namespace := strings.TrimSpace(class.Namespace)
+		vm.execNamespaceMemo = execNamespaceMemo{class: vm.currentClass, generation: vm.classLookupGeneration, namespace: namespace, valid: true}
+		return namespace
 	}
 	for _, triggers := range vm.Triggers {
 		for _, trigger := range triggers {
@@ -4049,9 +4055,19 @@ func annotateExceptionContext(value Value, stack []callFrame) Value {
 	}
 	value.Fields["__lineNumber"] = Int(int64(stack[len(stack)-1].Line))
 	value.Fields["__stackTrace"] = String(stackTraceString(stack))
-	if len(stack) == 2 && stack[0].anonymousCallerLine > 0 && stack[1].statement &&
-		stack[0].Symbol == stack[1].Symbol {
-		value.exceptionAnonymousCallerLine = stack[0].anonymousCallerLine
+	// An exception raised below an anonymous caller carries that caller's
+	// line. How many AnonymousBlock frames follow depends on the type.
+	if len(stack) >= 2 && stack[0].anonymousCallerLine > 0 && stack[len(stack)-1].statement {
+		triggerBoundary := false
+		for _, frame := range stack {
+			if hasSuffixFold(frame.File, ".trigger") {
+				triggerBoundary = true
+				break
+			}
+		}
+		if !triggerBoundary {
+			value.exceptionAnonymousCallerLine = stack[0].anonymousCallerLine
+		}
 	}
 	return value
 }

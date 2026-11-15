@@ -33,3 +33,5 @@ hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
 cases.tsv sha256: 0fcac1ecfef60d0e
 mode: live
 project67/ holds the deployed test classes with apiVersion 67.0; the 62.0 capture used the same sources with apiVersion 62.0.
+
+Reassignment capture: 2026-11-13 14:30-14:32 UTC, fresh 30-day Developer scratch org, deleted and verified. APIs 62.0, 67.0 and 68.0; anonymous and @IsTest; Salesforce CLI 2.157.8. Anonymous cases ran in sequence in one org: the 67.0 and 68.0 cases inherited respectively one and two earlier Account records named before and after. Test methods ran in isolated data contexts.

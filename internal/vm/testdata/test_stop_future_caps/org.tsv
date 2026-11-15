@@ -1,0 +1,7 @@
+api	route	case	observation
+62.0	anonymous	start	UNCAUGHT|System.FinalException|Method only allowed during testing
+62.0	anonymous	stop	UNCAUGHT|System.FinalException|Method only allowed during testing
+62.0	istest	future	queue=0/1,future=0/50,dml=0/150
+67.0	anonymous	start	UNCAUGHT|System.FinalException|Method only allowed during testing
+67.0	anonymous	stop	UNCAUGHT|System.FinalException|Method only allowed during testing
+67.0	istest	future	queue=0/1,future=0/50,dml=0/150

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DuplicateRule xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <actionOnInsert>Allow</actionOnInsert><actionOnUpdate>Block</actionOnUpdate><alertText>Probe R2</alertText>
+  <duplicateRuleMatchRules><matchRuleSObjectType>Contact</matchRuleSObjectType><matchingRule>MrEmail</matchingRule><objectMapping xsi:nil="true"/></duplicateRuleMatchRules>
+  <isActive>true</isActive><masterLabel>ProbeR2</masterLabel>
+  <securityOption>BypassSharingRules</securityOption><sortOrder>4</sortOrder>
+</DuplicateRule>

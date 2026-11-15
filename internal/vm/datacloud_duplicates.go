@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -115,6 +116,11 @@ func duplicateMatchRecordValue(record storage.Record, find bool) Value {
 			}
 		}
 	}
+	selected := map[string]bool{}
+	for _, field := range fields {
+		selected[field] = true
+	}
+	out.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, selected)
 	return out
 }
 
@@ -194,14 +200,27 @@ func callDatacloudDuplicateMember(_ *VM, receiver Value, method string, args []V
 	return value, receiver, false, true, nil
 }
 
-func (vm *VM) duplicateResultsForRecord(record storage.Record, object string) []Value {
+func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, byID bool, matcher duplicateMatcher) ([]Value, error) {
+	rules, person := dml.DuplicateSearchRules(vm.Org, object, record, byID)
+	if len(rules) == 0 {
+		if person {
+			label := "Account"
+			if byID {
+				label = "PersonAccount"
+			}
+			return nil, newExceptionError("System.HandledException", "No active duplicate rules are defined for the "+label+" object type.")
+		}
+		if !byID && strings.EqualFold(object, "Opportunity") {
+			return nil, newExceptionError("System.HandledException", "The FindDuplicates API doesn't support the Opportunity object.")
+		}
+	}
 	var out []Value
-	for _, rule := range dml.ActiveDuplicateRulesForRecord(vm.Org, object, record) {
+	for _, rule := range rules {
 		applies, supported := dml.DuplicateRuleApplies(vm.Org, rule, record)
 		if !supported || !applies {
 			continue
 		}
-		found, supported := dml.FindDuplicateMatches(vm.Org, rule, record, nil)
+		found, supported := matcher(rule, record, nil)
 		if !supported {
 			continue
 		}
@@ -213,7 +232,7 @@ func (vm *VM) duplicateResultsForRecord(record storage.Record, object string) []
 		}
 		out = append(out, datacloudDuplicateResultValue(found, true))
 	}
-	return out
+	return out, nil
 }
 
 func newDatacloudFindDuplicatesResultWith(duplicates []Value) Value {
@@ -260,13 +279,21 @@ func (vm *VM) findDuplicates(args []Value) (Value, error) {
 		records = append(records, record)
 	}
 	results := make([]Value, 0, len(records))
+	matcher := vm.newDuplicateMatcher()
 	for _, record := range records {
-		results = append(results, newDatacloudFindDuplicatesResultWith(vm.duplicateResultsForRecord(record, object)))
+		duplicates, err := vm.duplicateResultsForRecord(record, object, false, matcher)
+		if err != nil {
+			return Null, err
+		}
+		results = append(results, newDatacloudFindDuplicatesResultWith(duplicates))
 	}
 	return List(results...), nil
 }
 
 func (vm *VM) findDuplicatesByIDs(args []Value) (Value, error) {
+	if len(args) == 1 && args[0].Kind == ValueList && len(args[0].List) > findDuplicatesBatchSize {
+		return Null, newExceptionError("System.HandledException", findDuplicatesBatchMessage)
+	}
 	if len(args) != 1 || args[0].Kind != ValueList {
 		return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
 	}
@@ -297,10 +324,15 @@ func (vm *VM) findDuplicatesByIDs(args []Value) (Value, error) {
 		rows = append(rows, row)
 	}
 	results := make([]Value, 0, len(rows))
+	matcher := vm.newDuplicateMatcher()
 	for _, row := range rows {
 		var duplicates []Value
 		if row.found {
-			duplicates = vm.duplicateResultsForRecord(row.record, object)
+			var err error
+			duplicates, err = vm.duplicateResultsForRecord(row.record, object, true, matcher)
+			if err != nil {
+				return Null, err
+			}
 		}
 		results = append(results, newDatacloudFindDuplicatesResultWith(duplicates))
 	}
@@ -380,4 +412,146 @@ func (vm *VM) commitDuplicateReports(reports []dml.DuplicateReport) {
 		engine.Insert(items)
 	}
 	vm.rebuildDMLObjectIndexes([]storage.Record{{Object: "DuplicateRecordSet"}, {Object: "DuplicateRecordItem"}}, nil)
+}
+
+type duplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (dml.DuplicateResult, bool)
+
+// The matcher belongs to one DML engine or Find call. Access decisions must
+// not survive that operation, since a later statement can change permissions.
+func (vm *VM) newDuplicateMatcher() duplicateMatcher {
+	type fieldKey struct{ principal, object, field string }
+	access := make(map[fieldKey]bool)
+	return func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+		return vm.findDuplicateMatches(rule, record, exclude, func(object, field string) bool {
+			key := fieldKey{vm.currentUserID(), strings.ToLower(object), strings.ToLower(field)}
+			allowed, ok := access[key]
+			if !ok {
+				allowed = vm.duplicateMatchingFieldAccessible(object, field)
+				access[key] = allowed
+			}
+			return allowed
+		})
+	}
+}
+
+// Both Find and DML use the same record access policy. Enforce rules search
+// visible members; Bypass rules can detect hidden members without disclosing
+// them. The legacy explicit without-sharing route discloses Bypass members.
+func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
+	policy := vm.currentSourceExecutionPolicy()
+	if vm.testContext == nil || policy.DataMode == "USER_MODE" {
+		for _, matching := range rule.MatchRules {
+			for _, item := range matching.Items {
+				if !fieldAccessible(record.Object, item.Field) {
+					record = record.Clone()
+					record.Fields[item.Field] = storage.NullValue()
+				}
+			}
+		}
+	}
+	bypass := strings.EqualFold(rule.SecurityOption, "BypassSharingRules")
+	legacyWithout := false
+	if policy.DataMode == "SYSTEM_MODE" && strings.EqualFold(vm.currentSharingMode(), "without sharing") {
+		if mode, ok := vm.classSharingMode(vm.currentClass); ok && mode == "without sharing" {
+			legacyWithout = true
+		}
+		for _, frame := range vm.callStack {
+			if i := strings.LastIndex(frame.Symbol, "."); i > 0 {
+				if mode, ok := vm.classSharingMode(frame.Symbol[:i]); ok && mode == "without sharing" {
+					legacyWithout = true
+				}
+			}
+		}
+	}
+	// Resolve object-wide access lazily on the first match, once per scan
+	// object. A nonmatching candidate needs no principal or sharing work.
+	userID := ""
+	principalResolved := false
+	var unrestricted map[string]bool
+	return dml.FindDuplicateMatchesWithAccess(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
+		if !principalResolved {
+			userID = vm.currentUserID()
+			principalResolved = true
+			unrestricted = map[string]bool{}
+		}
+		key := strings.ToLower(existing.Object)
+		visible, resolved := unrestricted[key]
+		if !resolved {
+			canonical, ok := vm.resolveObjectName(existing.Object)
+			// Private capture rows do not establish undeclared project defaults.
+			undeclared := ok && strings.TrimSpace(vm.Org.Objects[canonical].Definition.SharingModel) == ""
+			visible = undeclared || vm.userModeUnrestrictedObject(existing.Object, userID)
+			unrestricted[key] = visible
+		}
+		if vm.guestUserReadsOnlySelf(existing.Object) {
+			visible = storage.IDsEqual(existing.ID, storage.ID(userID))
+		} else if !visible {
+			visible = vm.userModeRestrictedRecordVisible(existing.Object, existing, userID)
+		}
+		if !bypass {
+			return visible, visible
+		}
+		return true, visible || legacyWithout
+	})
+}
+
+// The field-hidden Contact rows pin the default API 67 partial insert result
+// when an active matching rule reads a field the caller cannot access.
+func (vm *VM) duplicateMatchingFieldInsertFailures(op string, value Value) ([]dml.Result, bool) {
+	records := dmlAccessRecords(value)
+	if op != "insert" || len(records) != 1 || !strings.EqualFold(records[0].Type, "Contact") {
+		return nil, false
+	}
+	row := records[0]
+	denied := map[string]bool{}
+	for _, rule := range dml.ActiveDuplicateRules(vm.Org, row.Type) {
+		for _, matching := range rule.MatchRules {
+			for _, item := range matching.Items {
+				_, v, ok := objectFieldValue(row, item.Field)
+				if ok && v.Kind != ValueNull && !vm.duplicateMatchingFieldAccessible(row.Type, item.Field) {
+					denied[item.Field] = true
+				}
+			}
+		}
+	}
+	if len(denied) == 0 {
+		return nil, false
+	}
+	fields := make([]string, 0, len(denied))
+	for field := range denied {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
+	message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result!  fieldNames: %s", row.Type, strings.Join(fields, ", "))
+	return []dml.Result{{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}}, true
+}
+
+// Only an explicit project denial activates the captured hidden-field policy.
+// Missing real-org grants cannot be reconstructed from an omitted metadata row.
+func (vm *VM) duplicateMatchingFieldAccessible(object, field string) bool {
+	// The captured fieldHidden shape is an optional custom Contact field.
+	// Other objects and standard fields retain the prior matching behavior.
+	if !strings.EqualFold(object, "Contact") || !isCustomSchemaName(field) || vm.customFieldHasIntrinsicAccess(object, field) {
+		return true
+	}
+	user := vm.fieldPermissionPrincipal()
+	profileID := stringField(user, "ProfileId")
+	denied := false
+	for _, parent := range []string{vm.profileOwnedPermissionSetID(profileID), profileID} {
+		if allowed, explicit := vm.explicitFieldPermission(parent, object, field, "isAccessible"); explicit {
+			if allowed {
+				return true
+			}
+			denied = true
+		}
+	}
+	for _, source := range vm.assignedPermissionSources(stringField(user, "Id"), false) {
+		if vm.sourceFieldPermission(source, object, field, "isAccessible") {
+			return true
+		}
+		if allowed, explicit := vm.explicitFieldPermission(source.ID, object, field, "isAccessible"); explicit && !allowed {
+			denied = true
+		}
+	}
+	return !denied
 }

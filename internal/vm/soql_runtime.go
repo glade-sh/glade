@@ -356,6 +356,14 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		// The executor met a catalog object the lazy spread had not added
 		// (a relationship target, a TYPEOF type, a nested subquery). The
 		// spread is complete now; the query runs once more against it.
+		// Completing the spread can expose a disallowed alias for a missing
+		// FROM object. Keep the original error if the alias is unavailable.
+		var missing *soql.QueryError
+		if errors.As(err, &missing) && missing.Message == soql.MissingObjectMessage(query.Object) {
+			if vm.enforceOrgShapeObjectAvailability(query) != nil {
+				return nil, soqlQueryException(missing, queryText)
+			}
+		}
 		result, err = soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), executeContext)
 	}
 	if err != nil {
@@ -1900,7 +1908,7 @@ var userRecordAccessQueriedUserID = regexp.MustCompile(`\b005[0-9A-Za-z]{12}(?:[
 // the query qualify (external_user_case_lead_sharing: a named Standard User
 // returns its own rows, APIs 62.0 and 67.0).
 func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, objectNames []string, userMode bool, queryText string, sequence *int) {
-	if vm.testContext == nil || vm.Org == nil {
+	if vm.Org == nil {
 		return
 	}
 	current := vm.currentUserInfoField("Id", "")
@@ -1911,10 +1919,15 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) {
 			continue
 		}
+		if vm.testContext == nil && !vm.namedUserIsCapturedStandard(user) {
+			continue
+		}
 		seen[string(user.ID)] = true
-		previous := vm.testContext.CurrentUser
-		vm.testContext.CurrentUser = vm.vmValueFromRecord(user)
+		restore := vm.actAsNamedUser(vm.vmValueFromRecord(user))
 		for _, objectName := range objectNames {
+			if vm.testContext == nil && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
+				continue
+			}
 			if !portal && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
 				continue
 			}
@@ -1936,8 +1949,22 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 				accessObject.PutRecord(access.ID, access)
 			}
 		}
-		vm.testContext.CurrentUser = previous
+		restore()
 	}
+}
+
+// actAsNamedUser makes the named user the current user and returns the undo. A
+// test run switches its run-as user; an anonymous execution has no test
+// context and switches the execution user, which the same checks read.
+func (vm *VM) actAsNamedUser(user Value) func() {
+	if vm.testContext != nil {
+		previous := vm.testContext.CurrentUser
+		vm.testContext.CurrentUser = user
+		return func() { vm.testContext.CurrentUser = previous }
+	}
+	previous := vm.executionUser
+	vm.executionUser = user
+	return func() { vm.executionUser = previous }
 }
 
 func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, execResult *Result) ([]Value, bool, error) {
@@ -3947,7 +3974,7 @@ func (vm *VM) enforceSOQLSecurityScanned(query soql.Query, permissionSetID strin
 	defer vm.beginPermissionCheckMemo()()
 	scanUserMode := !scanned && mode == "USER_MODE" && permissionSetID == "" && (apexversion.Range{Since: 62, Until: 69}).Allows(vm.currentMethod.APIVersion)
 	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
-		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) {
+		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) || vm.api62DynamicSecurePermissionDenial(query, permissionSetID) {
 			return newExceptionError("QueryException", "Insufficient permissions: secure query included inaccessible field")
 		}
 		if mode == "USER_MODE" && permissionSetID == "" {

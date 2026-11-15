@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize notice evidence for the Go modules linked into one release binary."""
+"""Materialize notices for linked Go modules and bundled Unicode collation data."""
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -129,6 +129,23 @@ def main(binary_arg, source_root_arg, output_arg):
         if replacement_detail:
             component["replacement"] = replacement_detail
         components.append(component)
+
+    # These data files are embedded by the SOQL runtime, not Go modules.
+    # The source manifest makes their presence explicit, and packaging must
+    # fail if any required data license or attribution is missing.
+    collation_manifest = source_root / "internal/soql/collationdata/manifest.json"
+    if collation_manifest.is_file():
+        metadata = json.loads(collation_manifest.read_text(encoding="utf-8"))
+        relative = Path("data/unicode-collation")
+        files = copy_notices(source_root / "third_party/unicode-collation", output / relative,
+                             required=("LICENSE", "LICENSE-ICU", "NOTICE.md"))
+        components.append({
+            "module": "unicode.org/cldr",
+            "version": "root-" + metadata["cldrRoot"] + "+tailorings-" + str(metadata["cldrTailorings"][0]),
+            "kind": "generated-data",
+            "dataManifestSHA256": sha256_file(collation_manifest),
+            "noticeFiles": [str(relative / name) for name in files],
+        })
 
     manifest = {
         "schemaVersion": 1,

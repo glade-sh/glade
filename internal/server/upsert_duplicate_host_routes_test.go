@@ -493,8 +493,11 @@ func TestUpsertDuplicateUncapturedScopeLightningAndVisualforce(t *testing.T) {
 	}
 }
 
-// Missing and null prior keys are uncaptured local preservation controls.
-func TestUpsertDuplicateUncapturedBlankPriorLightningAndVisualforce(t *testing.T) {
+// Host twins of the null-to-matching edit and external-key update rows:
+// ../apextest/testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:26 anonymous 62.0
+// ../apextest/testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:30 anonymous 67.0
+// E4b and E11existing supersede the earlier uncaptured blank-prior control.
+func TestUpsertDuplicateBlankPriorLightningAndVisualforce(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, prior := range []string{"false", "true"} {
 			for _, route := range []string{"lightning", "visualforce"} {
@@ -509,12 +512,12 @@ func TestUpsertDuplicateUncapturedBlankPriorLightningAndVisualforce(t *testing.T
 						if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
 							t.Fatal(err)
 						}
-						if rec.Code != http.StatusOK || out.Error != nil || out.Data != "ok" {
+						if rec.Code != http.StatusOK || out.Error != nil || out.Data != "DUPLICATES_DETECTED" {
 							t.Fatalf("status %d response %+v", rec.Code, out)
 						}
 					} else {
 						result := postVisualforceRemotingWithViewState(t, srv, `[{"action":"AjaxController","method":"remoteBlankPrior","data":[`+prior+`],"type":"rpc","tid":1}]`)
-						if len(result) != 1 || !result[0].Status || result[0].Result != "ok" {
+						if len(result) != 1 || !result[0].Status || result[0].Result != "DUPLICATES_DETECTED" {
 							t.Fatalf("response %+v", result)
 						}
 					}

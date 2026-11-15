@@ -18,8 +18,11 @@ type Engine struct {
 	PermissionUserFields map[string]storage.Value
 	// UserHasCustomPermission consults the host's current execution-user context.
 	UserHasCustomPermission func(string) bool
-	Options                 Options
-	FlowActionInvoker       func(storage.FlowAction, storage.Record) error
+	// DuplicateMatcher lets Apex apply its current sharing and field access
+	// through the common duplicate evaluator. Non-Apex callers use the evaluator directly.
+	DuplicateMatcher  func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (DuplicateResult, bool)
+	Options           Options
+	FlowActionInvoker func(storage.FlowAction, storage.Record) error
 	// FlowMatchObserver is called once each time a flow rule matches a record.
 	// It is advisory and must not change execution.
 	FlowMatchObserver func()
@@ -477,6 +480,7 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 	results := make([]Result, len(records))
 	statementStamp := ""
 	for i, record := range records {
+		originalFields := record.Fields
 		if !e.DeferAutomation {
 			record = record.Clone()
 			object, objectName, err := e.object(record.Object)
@@ -516,7 +520,7 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 			}
 			record = before[0]
 		}
-		id, err := e.insertOne(record, &statementStamp)
+		id, err := e.insertOne(record, &statementStamp, originalFields)
 		if err != nil {
 			results[i] = resultFromError(record.ID, err)
 			continue
@@ -979,7 +983,7 @@ func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
 	return updates
 }
 
-func (e *Engine) insertOne(record storage.Record, statementStamp *string) (storage.ID, error) {
+func (e *Engine) insertOne(record storage.Record, statementStamp *string, capturedInsert ...map[string]storage.Value) (storage.ID, error) {
 	// Only the person account's own contact insert is the system insert;
 	// anything it causes is an ordinary insert.
 	personContact := e.personContactInsert
@@ -1055,7 +1059,11 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
 		return "", err
 	}
-	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
+	var originalFields map[string]storage.Value
+	if len(capturedInsert) > 0 {
+		originalFields = capturedInsert[0]
+	}
+	if err := validateFieldsForOperation(object.Definition, e.Org.Namespace, record, nil, originalFields); err != nil {
 		return "", err
 	}
 	e.applyQuoteLineItemDerivedFields(&record)

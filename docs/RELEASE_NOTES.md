@@ -2,41 +2,107 @@
 
 ## Unreleased
 
+No changes yet.
+
+## v0.3.10
+
+v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v90`, `salesforce-platform-v71`, `apextest-runtime-v40`). The first run after upgrading rebuilds them.
+
 ### Changes
 
 - Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
-- **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` now use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
-- Inserting child records for a single unfiltered COUNT roll-up now rechecks parent validation after before-update triggers. A parent validation failure reaches the contributing child rows, including when the parent fails on retry. Database writes from failed attempts roll back.
-- **Queried formula fields.** SOQL now preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas also preserve blank results through `ROUND` and return their declared scale.
 
-### Duplicate rules
+- **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
 
-- **Duplicate rule settings survive reloads.** Saved orgs and warm test runtimes honor the current standard-rule setting, including after upgrading an older saved org.
-- **Standard Account, Contact and Lead duplicate rules behind `duplicateRules.standard`.** The standard rules are available with `duplicateRules.standard: on` in `glade.yml` (or `GLADE_STANDARD_DUPLICATE_RULES=on`) and off by default; a project's `duplicateRules` metadata for a standard rule is honored whatever the setting says, and custom duplicate rules stay always on. With the setting on, an Account matches on its name and a city or ZIP code, or its website, a city or ZIP code and a street or phone number. A Contact or Lead matches on last and first name with an email address, a phone number, or the same company (or email domain) with a title or street. The cross-object Contact and Lead rules and Person Account rules are enforced when active. Match confidences follow the captured values. Pairs that Salesforce matches by looser fuzzy rules (a first name against its initial, transposed last-name letters) still do not match, so no false duplicates are reported. Large Account scans with many same-city, similar-name records cost more per insert.
-- **Confidence of OR rules.** A custom matching rule with OR groups reports the mean over its filter, counting items that did not match, as Salesforce does. Company names that share a six-letter second word and one-word plurals now match as Syllable Alignment does.
-- Apex SOSL now distinguishes invalid queries from counted searches, rejects anonymous `WITH SYSTEM_MODE`, and allows short FIND terms in Apex tests. Fixed searches omit deleted records, and a direct Datetime greater-than filter bound to a null Datetime matches its candidates.
+- **Async test ordering.** Eligible Future, Queueable, Batch Apex and scheduled work follows the captured stopTest ordering.
 
-### Apex search
+- **Language server refresh.** Diagnostics follow unsaved edits and retry after project refreshes. Deleted files leave the index, hover starts analysis when needed, and closed files with syntax errors publish parse diagnostics while other files retain the last good semantic view. External changes refresh through watched files or on save. Reference searches detect edits with unchanged metadata, and stale semantic diagnostics are not republished. Client responses no longer receive a second response.
 
-- A user-mode SOSL search with fixed test results now reports an unreadable field used to sort a RETURNING group, including when its only candidate belongs to another user.
-- SOSL divides the result limit among all `RETURNING` objects, including when an object has fewer matching rows than its share. Outside tests, each object of a multi-object search returns at most 250 rows, as does a single object with no `WHERE` or `ORDER BY`, except `EntityDefinition`, which has no captured ceiling and is not capped. Multi-object searches accept `OFFSET 0` and report a search exception for a positive offset.
-- SOSL name searches over space-separated ASCII names match word prefixes and the interior `?`, `??`, and `*` forms, with up to two letters matched by `*`. Unquoted phone searches can find an international-format North American number by its seven local digits or ten national digits.
+- **Standard object startup memory.** Test runs retain a smaller projection of standard-object describe data while preparing stub fields.
+
+- **Unresolved assignments.** Parallel semantic analysis avoids repeating method-body checks when an unknown assignment target cannot be affected by another type. Diagnostics stay unchanged.
+
+- **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+- **Bounded schema template memory.** Long-lived processes evict least recently used standard object template groups above a field budget; evicted templates rebuild on demand.
+- **Test startup.** Building the child relationship lookup avoids installing
+  standard objects solely to resolve parent names, reducing startup work. A
+  source reference to a child relationship of a standard object the test org
+  has not loaded yet is no longer inferred as a field, matching a fully loaded
+  org.
+
+- **Faster global describe.** Object names are listed without loading every standard object definition.
+
+- Email fields reject captured malformed addresses on inserts, including trailing or consecutive domain dots and quoted local parts containing spaces.
+
+- **Duplicate matching.** Custom phone rules recognize captured seven-letter vanity numbers via [ITU-T E.161](https://www.itu.int/rec/T-REC-E.161/en) keypad digits. Custom name rules use captured first and last name keys.
 
 ### Performance
 
-- **Unset field reads keep the lazy schema lazy.** Reading a field that is not set, or any name that is not a child relationship, after a record is saved no longer builds every standard object. A generated list of the child relationship names the standard objects declare rules the name out first. On a test project that saves and reads records, peak memory fell from about 560 MiB to about 340 MiB and instructions fell about 45 percent. Results are identical.
-- **Static reference index no longer copied per test.** The index that tracks which static fields hold each collection or record is shared between tests of one project. The first static write in a test used to copy all of it; it now records only what that test changes and leaves the shared index alone. Results are identical. On a 500-class project, peak memory fell about 8 percent and instructions about 3.6 percent; on a 150-class project, about 4 percent and 1 percent.
-- **Method bodies are lexed once per process.** Semantic analysis and the runtime compile used to lex the same method body twice. A bounded cache (24 MiB of tokens, least recently used first) now shares the lexed tokens, and the lexer builds each token list in one exact-size allocation. On a 500-class test project, allocation in the lexer fell from about 207 MB to about 61 MB and total allocation fell about 6 percent. Compile results and diagnostics are identical.
-- **Pooled hashing buffer for source digests.** Hashing a project file for the Visualforce generation key and for source-digest validation no longer allocates a 32 KiB copy buffer per file; the buffers come from a shared pool. A 500-class project allocates about 120 MB less in one cold `glade test`. Digests and results are unchanged.
-- **Seeding no longer copies whole object definitions.** The record type, currency field and platform object setup steps used to copy an object's entire definition before checking whether they change anything. They now copy only what they write, and leave a definition alone when it is already complete. Results are identical.
-- **Smaller platform type table.** The standard platform types (System, Database, Schema and the rest) are now built with exact-size member lists, and members that share a modifier list or a parameter list share one copy. Building the table allocates about 35 MB instead of 65 MB and keeps about 22 MB live instead of 31 MB, in every process. Symbols and their order are unchanged.
-- **Key-prefix lookups.** The prefix-to-object lookup behind those Id lookups now reads an index built once per frozen runtime generation instead of passing over every object. Results are unchanged.
-- **Fewer collections while a test process starts.** A standalone `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB; the target returns to the usual 100 percent growth once the live heap passes half the floor or after 30 seconds. The floor is at most one eighth of physical or container memory (256 MiB when memory cannot be read, off under 64 MiB) and a quarter of any `GOMEMLIMIT`. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default. Instructions fell about 18% on a small project and 1% to 2% on larger ones, and peak memory can rise up to about 10% on small runs. Results are unchanged.
-- **SOQL text ordering.** SOQL text ordering is locale-aware for `en_*` locales.
-- **SOQL text predicates.** Grouped and scalar aggregate evaluation retain the execution locale for HAVING text ranges, consistent with WHERE. REST and Bulk queries pass the selected user’s locale to the same executor. The English GROUP BY representative rule remains provisional outside the captured case pairs.
+- **Full schema describe walks.** Describing every token from global describe completes the standard object spread in bulk after repeated individual lookups.
 
-- **Restricted picklist ordering.** Source APIs 62–65 now apply the legacy picklist null-order policy to restricted picklists with configured values. Native source-version controls place the transition at API 66.0, which honors explicit NULLS clauses like 67.0.
+- **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
+
+- **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
+- **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
+
+### Known issues
+
+- Custom First Name fuzzy rules can match a single initial against a short one-word name (for example T and Ty) where Salesforce does not; fixed in v0.3.11.
+
+### Release validation
+
+- The release candidate passed real-project comparison gates with no new outcomes, and all eight paired shards passed with no additions.
+- Captured behavior is covered by the receiver-trivia, async ordering, email validation and fuzzy-name conformance tests in `internal/sema`, `internal/apextest` and `internal/dml`.
+- Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
+
+## v0.3.9
+
+v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteria-based Case sharing and more native-matched Apex, SOQL and SOSL behavior. It lowers memory and startup cost for tests, and `glade doctor` no longer hangs on a busy toolchain.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v87`, `salesforce-platform-v68`, `apextest-runtime-v36`). The first run after upgrading rebuilds them.
+- **Standard duplicate rules are opt-in.** The standard Account, Contact and Lead duplicate rules run only with `duplicateRules.standard: on` in `glade.yml` (or `GLADE_STANDARD_DUPLICATE_RULES=on`). A project's `duplicateRules` metadata for a standard rule is honored whatever the setting says. Custom duplicate rules stay always on. With the setting on, large Account scans with many same-city, similar-name records cost more per insert.
+- **Garbage collection floor for standalone test runs.** A `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB. Peak memory can rise up to about 10% on small runs. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default.
+- **Binary size.** Locale-aware SOQL ordering adds approximately 2.9 MiB to the binary.
+
+### Duplicate rules
+
+- **Standard rules.** With `duplicateRules.standard` on, an Account matches on its name and a city or ZIP code, or its website, a city or ZIP code and a street or phone number. A Contact or Lead matches on last and first name with an email address, a phone number, or the same company (or email domain) with a title or street. The cross-object Contact and Lead rules and Person Account rules are enforced when active. Match confidences, surname substitution and far-key boundaries follow native captures at APIs 62.0 and 67.0.
+- **Matching and limits.** Every matching rule caps results at the earliest 100 created members and orders them by confidence, then creation. `FindDuplicates` by Id rejects batches larger than 50. Changed matching fields on edits and upserts, Person Account rules and Account street and local-phone matches follow captures. A custom rule with OR groups reports the mean over its filter, as Salesforce does.
+- **Access.** Duplicate scans check record access only after matching, and Contact record sharing applies. At API 67, a single Contact insert returns `CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY` when a retrieved profile marks a custom Contact field used by its duplicate rule as `readable=false` and no effective grant permits it.
+- **Settings survive reloads.** Saved orgs and warm test runtimes honor the current standard-rule setting, including after upgrading an older saved org.
+
+### SOQL, SOSL and sharing
+
+- **Locale-aware SOQL ordering.** Captured locale tables support locale-aware ordering and grouping, ranges, and MIN/MAX. HAVING text ranges use the execution locale, consistent with WHERE, and REST and Bulk queries pass the selected user's locale. The English GROUP BY representative rule remains provisional outside the captured case pairs.
+- **Restricted picklist ordering.** Source APIs 62-65 apply the legacy picklist null-order policy to restricted picklists with configured values. API 66.0 and later honor explicit NULLS clauses.
+- **Queried formula fields.** SOQL preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas preserve blank results through `ROUND` and return their declared scale.
+- **SOSL.** SOSL distinguishes invalid queries from counted searches, rejects anonymous `WITH SYSTEM_MODE`, divides the result limit among `RETURNING` objects, caps multi-object searches at 250 rows per object outside tests, and rejects a positive `OFFSET` in multi-object searches. Name searches match word prefixes and the interior `?`, `??` and `*` forms. A user-mode search reports an unreadable field used to sort a `RETURNING` group.
+- **Criteria-based Case sharing.** Matching Case sharing rules grant access at commit. Reconciliation preserves unrelated Rule shares, applies to persisted anonymous debug sessions, and ignores unsupported criteria rules while retaining supported rules.
+
+### Apex
+
+- **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
 - **Double signed zero.** Equality and typed List membership distinguish positive and negative Double zero in the captured cases. Sorting Double and Object lists places negative Double zero first.
+- **User-mode DML and secure queries.** For named runAs Standard User tests at source APIs 62 and 67, denied object access in explicit partial `USER_MODE` inserts returns failed `SaveResult` rows, and explicit all-or-none inserts return the captured exception and DML counters. At API 67, the omitted-mode partial insert returns native `SaveResult` failures. These results apply to the captured Text Name object and record shapes. Captured API 62 dynamic `SECURITY_ENFORCED` projections report the native inaccessible-permission message.
+- **Test and async boundaries.** `Test.stopTest()` outside a test reports the native `System.FinalException`. Future callbacks drained by `Test.stopTest()` report the native default queueable-job limit, and failed Queueable callbacks retain their test-visible Processing status.
+- **Exception stacks.** Exception stacks keep the caller frames and lines the captures show: trigger getter call sites, property getters, setters and field initializers, and anonymous Apex helper chains including constructed causes.
+- **Roll-up validation.** Inserting child records for a single unfiltered COUNT roll-up rechecks parent validation after before-update triggers. A parent failure reaches the contributing child rows, and database writes from failed attempts roll back.
+- **Standard describes.** The captured default Developer configuration exposes the observed Account field map and standard picklist values at APIs 62 and 67.
+
+### Performance
+
+- **Memory and startup.** Reading an unset field no longer builds every standard object (peak memory on a save-and-read test project fell from about 560 MiB to about 340 MiB, instructions about 45 percent). The standard platform type table is smaller (about 35 MB allocated instead of 65 MB). Method bodies are lexed once per process (about 6 percent less allocation on a 500-class project). Source-digest hashing uses pooled buffers, and the static reference index is shared between tests (about 8 percent less peak memory on a 500-class project). Results are identical.
+- **Fewer collections at startup.** See the garbage collection floor under Upgrade notes. Instructions fell about 18% on a small project and 1% to 2% on larger ones.
+
+### Doctor
+
+- A busy toolchain installation no longer blocks `glade doctor` indefinitely. The toolchain check reports that it was skipped and advises retrying. Discovered toolchains are checked under their own install lock.
 
 ## v0.3.8
 

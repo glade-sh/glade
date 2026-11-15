@@ -27,7 +27,7 @@ func TestApplyReferencedStandardFieldSetRelationsOrderIsStable(t *testing.T) {
 				"DeltaId":   reference("Delta", "Case"),
 				"EchoId":    reference("Echo", "User"),
 			},
-		}, map[string]struct{}{})
+		}, &childRelationshipLookup{keys: map[string]struct{}{}})
 		order := make([]string, 0, 5)
 		for _, relation := range org.Objects["Widget"].Definition.Relations {
 			order = append(order, relation.Field)

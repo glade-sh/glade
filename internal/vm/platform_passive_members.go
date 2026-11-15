@@ -1062,28 +1062,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if stack, ok := receiver.Fields["__stackTrace"]; ok {
 				if stack.Kind == ValueString {
-					// Captures distinguish this unthrown DmlException construction
-					// from the thrown IllegalArgumentException helper. Do not infer
-					// the same rule for other types or deeper call chains.
-					callers := 0
-					thrown := receiver.Fields["__thrown"].Bool
-					switch exceptionTypeName(receiver.Type) {
-					case "DmlException":
-						if !thrown {
-							callers = 2
-						}
-					case "IllegalArgumentException":
-						if thrown {
-							callers = 1
-						}
-					}
 					if receiver.exceptionAnonymousCallerLine > 0 {
-						for i := 0; i < callers; i++ {
+						for i := 0; i < vm.exceptionAnonymousFrameCount(receiver); i++ {
 							stack.Text += fmt.Sprintf("\nAnonymousBlock: line %d, column 1", receiver.exceptionAnonymousCallerLine)
 						}
 					}
 					if cause, ok := receiver.Fields["__cause"]; ok && cause.Kind == ValueObject {
 						if causeStack, ok := cause.Fields["__stackTrace"]; ok && causeStack.Kind == ValueString && causeStack.Text != "" {
+							for i := 0; cause.exceptionAnonymousCallerLine > 0 && i < vm.exceptionAnonymousFrameCount(cause); i++ {
+								causeStack.Text += fmt.Sprintf("\nAnonymousBlock: line %d, column 1", cause.exceptionAnonymousCallerLine)
+							}
 							return String(stack.Text + "\nCaused by\n" + causeStack.Text), receiver, false, true, nil
 						}
 					}
@@ -6138,7 +6126,13 @@ func (vm *VM) callSObjectFieldDescribe(receiver Value, args []Value, result *Res
 	if !ok || fieldValue.Kind != ValueString {
 		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing field")
 	}
-	describe, err := vm.describeFieldValue(objectValue.Text, fieldValue.Text)
+	var describe Value
+	var err error
+	if receiver.Fields["__plainDeveloperTier"].Bool {
+		describe, err = vm.describePlainDeveloperTier(objectValue.Text)
+	} else {
+		describe, err = vm.describeFieldValue(objectValue.Text, fieldValue.Text)
+	}
 	if err != nil {
 		return Null, receiver, false, true, err
 	}
@@ -6211,3 +6205,21 @@ func (vm *VM) callSObjectFieldDescribe(receiver Value, args []Value, result *Res
 // missingCertificateMessage is the stable prefix of the native message; the
 // platform appends a help link whose release and instance vary per org.
 const missingCertificateMessage = "Data Not Available: The data you were trying to access could not be found."
+
+// exceptionAnonymousFrameCount is how many AnonymousBlock frames native
+// Salesforce appends after the class frames of an exception raised below an
+// anonymous caller. It depends only on the exception type: not on class depth,
+// the catch site or whether the exception was thrown. Types not measured keep
+// no appended frames.
+func (vm *VM) exceptionAnonymousFrameCount(exception Value) int {
+	switch exceptionTypeName(exception.Type) {
+	case "IllegalArgumentException":
+		return 1
+	case "NullPointerException", "ListException", "MathException", "TypeException", "QueryException", "DmlException":
+		return 2
+	}
+	if class, ok := vm.lookupClass(exception.Type); ok && !class.PlatformType {
+		return 1
+	}
+	return 0
+}

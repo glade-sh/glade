@@ -81,8 +81,12 @@ type semaTypeMemberModel struct {
 }
 
 type semaLazyPlatformTypeMemberModel struct {
-	symbols        []typesys.TypeSymbol
-	symbolsByKey   map[string]*typesys.TypeSymbol
+	symbols      []typesys.TypeSymbol
+	symbolsByKey map[string]*typesys.TypeSymbol
+	// excludedByKey holds the keys a gated stub type the view leaves out
+	// owns, as it owned them in the ungated view; disjoint from symbolsByKey.
+	excludedByKey  map[string]int
+	excluded       typesys.ExcludedPlatformTypes
 	candidates     map[string][]string
 	lookups        sync.Map
 	fieldNamesOnce sync.Once
@@ -139,6 +143,9 @@ type semaTypeMemberState struct {
 	// semaAnyKnownField raises it when an earlier type's hydration could have
 	// changed its answer, which a worker that has not seen that type cannot know.
 	historyProbe *atomic.Bool
+	// unknownHistory records speculative misses and every subsequently visible
+	// hydrated field, including entries that are later replaced.
+	unknownHistory *semaUnknownHistory
 	// historyUsed, when set beside historyProbe, is raised when an answer of
 	// "yes" needed a hydrated entry rather than the base or platform model.
 	// An incremental run reuses cached body results only while no answer
@@ -266,6 +273,9 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 		members, ok := v.state.platform.lookup(key)
 		if ok {
 			v.hydrated[key] = members
+			if v.state.unknownHistory != nil {
+				v.state.unknownHistory.hydrated(members)
+			}
 			v.changedHydration()
 			return members, true
 		}
@@ -304,6 +314,9 @@ func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
 		}
 	}
 	v.hydrated[key] = members
+	if v.state.unknownHistory != nil {
+		v.state.unknownHistory.hydrated(members)
+	}
 	v.changedHydration()
 }
 
@@ -341,69 +354,106 @@ func (v *semaTypeMemberView) shortCandidateKeys(short string) []string {
 var semaPlatformTypeMemberModelCache typesys.PlatformViewCache[*semaTypeMemberModel]
 
 func semaPlatformTypeMemberModel() *semaTypeMemberModel {
-	return semaPlatformTypeMemberModelCache.Get(buildSemaPlatformTypeMemberModel)
+	return semaPlatformTypeMemberModelCache.GetWithExcluded(buildSemaPlatformTypeMemberModelWithExcluded)
 }
 
 func buildSemaPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaTypeMemberModel {
+	return buildSemaPlatformTypeMemberModelWithExcluded(symbols, typesys.ExcludedPlatformTypes{})
+}
+
+func buildSemaPlatformTypeMemberModelWithExcluded(symbols []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) *semaTypeMemberModel {
 	return &semaTypeMemberModel{
 		members:  map[string]typeMembers{},
-		platform: newSemaLazyPlatformTypeMemberModel(symbols),
+		platform: newSemaLazyPlatformTypeMemberModelWithExcluded(symbols, excluded),
 	}
 }
 
 func newSemaLazyPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaLazyPlatformTypeMemberModel {
+	return newSemaLazyPlatformTypeMemberModelWithExcluded(symbols, typesys.ExcludedPlatformTypes{})
+}
+
+// semaPlatformSymbolKeyRef names the owner of a key: a view symbol, or the
+// gated stub type at excluded index when symbol is nil.
+type semaPlatformSymbolKeyRef struct {
+	symbol   *typesys.TypeSymbol
+	excluded int
+}
+
+func newSemaLazyPlatformTypeMemberModelWithExcluded(symbols []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) *semaLazyPlatformTypeMemberModel {
 	// The typesys view is process-immutable. Index names once, then materialize
-	// member maps only for symbols an analysis actually resolves.
+	// member maps only for symbols an analysis actually resolves. Gated stub
+	// types the view leaves out are indexed by name in their ungated place and
+	// built only when a lookup selects one.
 	model := &semaLazyPlatformTypeMemberModel{
 		symbols:      symbols,
 		symbolsByKey: make(map[string]*typesys.TypeSymbol, len(symbols)*2),
 		candidates:   make(map[string][]string),
+		excluded:     excluded,
 	}
-	shortAliases := make(map[string]*typesys.TypeSymbol)
+	if excluded.Len() != 0 {
+		model.excludedByKey = make(map[string]int)
+	}
+	exists := func(key string) bool {
+		if _, ok := model.symbolsByKey[key]; ok {
+			return true
+		}
+		_, ok := model.excludedByKey[key]
+		return ok
+	}
+	put := func(key string, ref semaPlatformSymbolKeyRef) {
+		if ref.symbol != nil {
+			model.symbolsByKey[key] = ref.symbol
+			delete(model.excludedByKey, key)
+			return
+		}
+		delete(model.symbolsByKey, key)
+		model.excludedByKey[key] = ref.excluded
+	}
+	shortAliases := make(map[string]semaPlatformSymbolKeyRef)
 	ambiguousShortAliases := make(map[string]bool)
-	for i := range symbols {
-		symbol := &symbols[i]
-		localKey := normalizeName(symbol.Name)
+	typesys.EachPlatformTypeName(symbols, excluded, func(namespace, name string, _ apexast.DeclarationKind, symbol *typesys.TypeSymbol, excludedIndex int) {
+		ref := semaPlatformSymbolKeyRef{symbol: symbol, excluded: excludedIndex}
+		localKey := normalizeName(name)
 		qualifiedKey := localKey
-		if symbol.Namespace != "" {
-			qualifiedKey = normalizeName(symbol.Namespace) + "." + localKey
+		if namespace != "" {
+			qualifiedKey = normalizeName(namespace) + "." + localKey
 		}
 		short := semaShortTypeKeyFromNormalizedKey(localKey)
 		// Platform symbols may carry the namespace separately from Name.
 		// Neither representation may register an unavailable bare SObject name.
 		referenceOnlyAlias := qualifiedKey != short && storage.IsReferenceOnlyStandardObject(short)
-		if _, exists := model.symbolsByKey[localKey]; !exists && (localKey != short || !referenceOnlyAlias) {
-			model.symbolsByKey[localKey] = symbol
+		if !exists(localKey) && (localKey != short || !referenceOnlyAlias) {
+			put(localKey, ref)
 		}
-		model.symbolsByKey[qualifiedKey] = symbol
+		put(qualifiedKey, ref)
 		if short == "" {
-			continue
+			return
 		}
 		// A namespaced platform type cannot make an unavailable reference-only
 		// SObject name resolve as a bare type. Keep its qualified entries above.
 		if referenceOnlyAlias {
-			continue
+			return
 		}
 		if short != localKey {
 			if existing, exists := shortAliases[short]; !exists {
-				shortAliases[short] = symbol
-			} else if existing != symbol {
+				shortAliases[short] = ref
+			} else if existing != ref {
 				ambiguousShortAliases[short] = true
 			}
 			model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], short)
 		}
 		model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], localKey)
 		model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], qualifiedKey)
-	}
-	for short, symbol := range shortAliases {
+	})
+	for short, ref := range shortAliases {
 		if !ambiguousShortAliases[short] {
-			if _, exists := model.symbolsByKey[short]; !exists {
-				model.symbolsByKey[short] = symbol
+			if !exists(short) {
+				put(short, ref)
 			}
 		}
 	}
 	for short := range ambiguousShortAliases {
-		if _, exists := model.symbolsByKey[short]; exists {
+		if exists(short) {
 			continue
 		}
 		candidates := model.candidates[short]
@@ -416,6 +466,18 @@ func newSemaLazyPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaLazyP
 		model.candidates[short] = filtered
 	}
 	return model
+}
+
+// symbolForKey returns the platform symbol that owns key, building a gated
+// stub symbol the view leaves out on first use.
+func (m *semaLazyPlatformTypeMemberModel) symbolForKey(key string) (*typesys.TypeSymbol, bool) {
+	if symbol, ok := m.symbolsByKey[key]; ok {
+		return symbol, true
+	}
+	if index, ok := m.excludedByKey[key]; ok {
+		return m.excluded.Symbol(index), true
+	}
+	return nil, false
 }
 
 func appendUniqueSemaCandidate(candidates []string, key string) []string {
@@ -439,7 +501,7 @@ func (m *semaLazyPlatformTypeMemberModel) lookup(key string) (typeMembers, bool)
 	if objectName, ok := semaStandardSObjectNameForKey(key); ok {
 		result.members = semaStandardSObjectPlaceholder(objectName)
 		result.ok = true
-	} else if symbol, ok := m.symbolsByKey[key]; ok {
+	} else if symbol, ok := m.symbolForKey(key); ok {
 		result.members = semaTypeMembersFromPlatformSymbol(*symbol)
 		result.ok = true
 	} else {
@@ -472,8 +534,10 @@ func (m *semaLazyPlatformTypeMemberModel) hasField(key string) bool {
 		}
 		m.fieldNames = fields
 	})
-	_, ok := m.fieldNames[key]
-	return ok
+	if _, ok := m.fieldNames[key]; ok {
+		return true
+	}
+	return m.excluded.HasFieldName(key)
 }
 
 func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
@@ -565,23 +629,74 @@ func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTyp
 	return a.checkMethodBodiesSpeculative(index, model, recorder, workers)
 }
 
+// semaUnknownHistory records the union of fields that appeared during a
+// speculative run. A field can disappear from a view when an entry is replaced,
+// so examining only the final views would miss a possible serial dependency.
+type semaUnknownHistory struct {
+	mu           sync.Mutex
+	missingNames map[string]struct{}
+	fields       map[string]struct{}
+}
+
+func newSemaUnknownHistory() *semaUnknownHistory {
+	return &semaUnknownHistory{missingNames: make(map[string]struct{}), fields: make(map[string]struct{})}
+}
+
+// seed includes the view history that every worker starts with. A worker can
+// replace one of those entries before it observes a missing field.
+func (h *semaUnknownHistory) seed(view *semaTypeMemberView) {
+	for _, members := range view.hydrated {
+		h.hydrated(members)
+	}
+}
+
+func (h *semaUnknownHistory) missing(name string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.missingNames[normalizeName(name)] = struct{}{}
+}
+
+func (h *semaUnknownHistory) hydrated(members typeMembers) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for name := range members.fields {
+		h.fields[name] = struct{}{}
+	}
+}
+
+func (h *semaUnknownHistory) conflict() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for name := range h.missingNames {
+		if _, ok := h.fields[name]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *semaUnknownHistory) hasMissing() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return len(h.missingNames) != 0
+}
+
 // checkMethodBodiesSpeculative checks bodies on several workers and still
 // reports exactly what one worker reports. A single worker carries one view
 // through every type, so a type's check can see what earlier types hydrated.
 // Parallel workers see less. The only reader of that history is
-// semaAnyKnownField, and it raises the state's probe whenever it answers "no
-// such field": the one answer a smaller history can get wrong. A raised probe
-// discards the parallel run and repeats it serially on the untouched view.
-// Otherwise the workers' history is merged into the caller's view, so later
-// passes see what a serial run would have left there.
+// semaAnyKnownField. Record each negative answer and each hydrated field; a
+// collision may depend on serial history and requires a serial retry. Otherwise
+// merge the worker histories for subsequent passes.
 func (a *Analyzer) checkMethodBodiesSpeculative(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workers int) []diagnostic.Diagnostic {
 	started := recorder.beginPhase()
-	var probe atomic.Bool
-	probed := &semaTypeMemberState{base: model.state.base, platform: model.state.platform, historyProbe: &probe}
+	watch := newSemaUnknownHistory()
+	watch.seed(model)
+	probed := &semaTypeMemberState{base: model.state.base, platform: model.state.platform, unknownHistory: watch}
 	scratch := model.cloneOnto(probed)
-	run := &semaBodyRun{seedWorkers: true, abort: &probe}
+	run := &semaBodyRun{seedWorkers: true}
 	diagnostics, recovered := a.checkMethodBodiesRecovering(index, scratch, workers, run)
-	if probe.Load() {
+	if watch.conflict() || (recovered != nil && watch.hasMissing()) {
 		// The discarded attempt still cost time, so it stays in the phase. The
 		// serial pass reads the same sources the attempt already counted, so
 		// it does not count them again.

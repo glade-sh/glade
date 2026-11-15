@@ -199,3 +199,9 @@ E19_map_get_locator	62.0	anonymous	true	true	R|System.QueryException: unexpected
 E19_map_get_locator	67.0	anonymous	true	true	R|System.QueryException: unexpected token: '('
 E20_dotted_no_scope_after_ended	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
 E20_dotted_no_scope_after_ended	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: acc.Name
+order62	62.0	anonymous	true	true	R|1,1,1,0,0,0,1,0
+order62test	62.0	istest	true	true	run=Pass
+order67	67.0	anonymous	true	true	R|2,2,1,0,0,0,2,0
+order67test	67.0	istest	true	true	run=Pass
+order68	68.0	anonymous	true	true	R|3,3,1,0,0,0,3,0
+order68test	68.0	istest	true	true	run=Pass

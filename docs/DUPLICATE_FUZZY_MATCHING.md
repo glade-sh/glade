@@ -1,6 +1,8 @@
 # Duplicate fuzzy matching: public spec, native rows and the model
 
-Two fixtures hold the native rows. `duplicate_standard_rules/` (second fixture,
+Three fixtures hold the native rows. The Apex save and search routes are
+covered by `duplicate_save_behavior/`, including default and custom rule
+actions, error members, Person Accounts, upsert, and controlled surname panels. `duplicate_standard_rules/` (second fixture,
 described under "Standard rules" below) covers the standard Account, Contact
 and Lead rules, the cross-object rules, custom rules with OR groups and three
 items, a custom Person Account rule and the Syllable Alignment pairs; its test
@@ -119,8 +121,12 @@ with the tables.
    large and holds spelling variants as well as nicknames (`Katee`/`Katie`,
    `Michal`/`Micheal`, `Andres`/`Andrés`); it is not published. Glade carries
    the ordered pairs the rows prove (`nameVariantTable`).
-2. Match key. Otherwise the two names are compared only when the first two
-   characters of their Double Metaphone codes agree. Invented names show the
+2. Match key. Otherwise the two names are compared only when their first
+   words, every character other than a letter or digit removed, are equal or
+   the first two characters of the Double Metaphone codes of those words
+   agree (`fuzzy_name_keys`: `Y R` and `Y R S` share the key of `Y`, `PW` and
+   `P W` are compared, `YR` and `Y R` are not; `Billy Bob` finds `Billy` and
+   `Jane.` finds `Jane` although both are alias-keyed). Invented names show the
    key without the dictionary: `Vorkel` finds `Vorpel` (FRKL, FRPL) and
    `Vorkelina` finds `Forkelina`, but not `Volkel` (FL); `Zathor` does not
    find `Zator` (S0, ST); `Zeo` does not find `Zeon` (S, SN); `Zovlan` does
@@ -146,18 +152,31 @@ with the tables.
    `Bartholoxewsonxy` is 97, against `Bartholomewsonxz` 100). Accents, spaces,
    hyphens and dots are ordinary characters (`Renee`/`Renée` 95,
    `Jean-Paul`/`Jean Paul` 98, `Mary Ann`/`Mary` 95, `Jane.`/`Jane` 98);
-   salutations are not removed (`Dr. Jane` finds nothing).
+   salutations are not removed (`Dr. Jane` finds nothing). Inner white space
+   is compared as typed: `Mary Ann` finds `Mary  Ann` at 99, not 100, and
+   `Mary` does not find `Mary  Ann`.
+5. Initials. Before Jaro-Winkler, a pair scores 100 when one name's first
+   word, punctuation removed, is a single letter and the other name is one
+   word starting with that letter (`fuzzy_name_keys` `in1`, `in2`, `din`):
+   `P W G` finds `PW`, `P.W.`, `P-W` and `P` at 100. `P W` finds `P W G` only
+   by Jaro-Winkler (95) and `Yancey` finds `Yancey R` only by Jaro-Winkler.
+   `Y` does not find `Yancey` and `Y.R.`: the match key comes first.
 
-Not modeled: the Initials algorithm (`J`, `J.` and `J R` find each other at
-100; `J` finds no longer name in a first-name-only rule), and the punctuation
-folding of the dictionary lookup (`Jane.` is keyed like `Jane`).
+The standard rules keep the whole-name key and Jaro-Winkler on the folded
+text (`standardFirstName`); the rows for rules 2 and 5 are custom-rule rows.
 
 ### Last Name
 
 NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
 
-1. Match key: the Double Metaphone code of the accent-folded name, four
-   characters at most. `Frost`/`Frosr` (FRST, FRSR), `Smith`/`Smiht`,
+1. Match key: the Double Metaphone code of the last word, accent-folded,
+   four characters at most. Characters other than letters, digits and white
+   space are removed first (`Al-Rashid` keys as `Alrashid`), and trailing
+   `Jr`, `Sr`, `II`, `III` and `IV` are dropped while another word remains
+   (`Harlow Jr` keys as `Harlow`; `Harlow PhD` keys as `PhD`). A last word with
+   no letter keys as itself (`fuzzy_name_keys` `ln1`, `ln2`: `Test 1` finds
+   `Last 1`, not `Test 2`; `1` finds neither `10` nor `Smith 1`).
+   `Frost`/`Frosr` (FRST, FRSR), `Smith`/`Smiht`,
    `Clark`/`Clsrk` and `Kowalski`/`Kovalski` are never compared;
    `Martinez`/`Martinpz` (MRTN) and `Williams`/`Williamson` are. Every native
    match in the rows has equal keys.
@@ -172,10 +191,13 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    apart from P, T and K), vowels after the first letter not encoded, and its
    default code length of eight; of the option combinations tried, this one
    has no false match on the rows and the highest recall. The primary codes
-   are compared. The code does not see a space or a hyphen, but natively
+   are compared whatever separates the words (`Harlow` finds `Harlow III`,
+   `Al-Rashid` finds `Alrashid`, `van der Berg` finds `van den Berg` at 99).
    `Smith Jones`, `De La Cruz` and `Mc Donald` do not find `Smith-Jones`,
-   `Delacruz` and `McDonald`, so two names match only when their separators
-   agree. This replaced a hand-written stand-in that rejected anything it
+   `Delacruz` and `McDonald` because their last words key apart. The standard
+   rules keep the whole-name key and require equal spaces and hyphens
+   (`standardLastName`; their rows, such as `42` finding `43`, are fitted to
+   that form). This replaced a hand-written stand-in that rejected anything it
    could not prove and missed dropped vowels, silent letters and name codes.
 3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
    are compared position by position; the cost of two different keys is 0.05
@@ -189,8 +211,8 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    matches by keyboard only one substitution, two with a score of 92 or
    more, or up to two trailing letters.
 
-The apostrophe-removed form matches (`O'Connor`/`OConnor`), a space or
-hyphen does not (`O'Brien`/`O Brien`, `Mc Donald`/`McDonald`).
+The apostrophe-removed form matches (`O'Connor`/`OConnor`, `O’Leary`/`OLeary`);
+a space splits the last word (`O'Brien`/`O Brien`, `Mc Donald`/`McDonald`).
 
 ### Company Name
 
@@ -361,7 +383,7 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   first names and 590 nickname families. A nickname pair outside those rows
   is a miss. A dictionary name outside those rows whose alias key differs
   from its own key can match a near spelling by Jaro-Winkler in Glade and not
-  natively. Initials (`J`, `J.`, `J R`) are not matched.
+  natively.
 - Syllable Alignment is modeled only where the second fixture proves a rule
   (see "Syllable Alignment"). Native confidences of one-word plurals vary with
   the word beyond what the length and last letter explain; vowel variants, an
@@ -577,17 +599,82 @@ on both sides), so no row covers blank Account names or Contact last names.
 
 ### Standard rule gaps
 
-- The standard rules match more pairs than their field methods do: a first name
-  against its initial (`Jonathan` finds `J`), first names whose double metaphone
-  codes agree (`Jon` finds `Jane`), last names with transposed letters
-  (`Smith` finds `Smiht`), seven digit phone numbers in the fit rows. Glade reaches 78 to 85 percent of the first and last name
-  matches. The confidences of those extra pairs are not modeled.
+- The standard rules still miss some phonetic first names and surname variants.
+  The `duplicate_save_behavior` fixture exercises single-letter initials,
+  approximate surnames, explicit Person Account record types, edit actions,
+  scalar upserts and two overfull Account searches through Apex at both APIs.
+  The table above records the earlier scorer fit. The new standard-name checks
+  use a matching surname plus email or phone for an initial, and an exact first
+  name and email for additional surname variants. Custom field-method rows
+  have separate match-key behavior.
+  The short-name and six-letter terminal transposition panels separate native
+  saves from rejections even when the edited letters agree. The measured
+  correction is limited to an accepted keyboard comparison corroborated by
+  first name and email. For eligible six-letter names, exchanging letters four
+  columns apart on the same or neighboring QWERTY rows matched at 97 when
+  the sum of `abs(2*column-11) + 2*row` over the name was at least 44.
+  Row and column start at zero. Phonetic hits scored 100. The 80 unseen inputs
+  in the boundary fixture agreed on match identities, saves, and recorded
+  integer confidences at both APIs on the anonymous and test routes.
+  The `surname_keyboard` fixture adds 672 directed inputs in panels A through
+  I, including Contact and Lead mirrors. Each method has two matching native
+  repeats at APIs 62.0 and 67.0 on anonymous and named test routes. Equal
+  Metaphone 3 trailing-letter pairs score 100. Four-to-five extensions always
+  qualify with the same first name and email: p scores 99; s scores 98 below
+  sum 42 and 99 from 42; z scores 97 at sum 16 and 98 from 18. Other tails
+  keep their ordinary grade. Three-to-four extensions also qualify, with the
+  captured s, p and k grade buckets pinned by the tests.
+  The `surname_substitution` fixture adds panels J and K: 624 directed inputs
+  plus exact and unrelated sentinels, with the same API, route and repeat
+  matrix. Panel J measures first, middle and final substitutions, lengths
+  four through eight, both directions and both objects. Same-row adjacent,
+  vertical and diagonal neighbors all match with exact first name and email.
+  Five through eight letters score 100. Four-letter neighbors score 99,
+  except captured cross-row pairs whose smaller keyboard position sum is
+  at least 34, which score 100. High-sum same-row four-letter grades remain
+  unmeasured and keep 99. Three-letter supplementary substitutions remain
+  limited to panel D's terminal, same-row neighbors, at 99.
+  Far-key controls are position-sensitive through the whole-name sum: bottom
+  row substitutions six columns apart score 97 at length four from smaller
+  sum 40, and at length five; length six scores 97 below smaller sum 50 and
+  98 from 50; lengths seven and eight score 98. Top row substitutions nine
+  columns apart miss at lengths four through six; length seven misses below
+  smaller sum 51 and scores 97 from 51, while length eight scores 97.
+  Other far-key geometries retain the inherited gate. These are measured
+  buckets, not a claim about the native distance formula or its unmeasured
+  boundaries. Panel K holds missing email, different email, different first
+  name and phone-only controls across positions and neighbor geometries.
+  Panels J and K compare exact confidence, membership and save decisions
+  without any new residuals; all 4992 comparisons agree with zero false matches.
+  Predictions were frozen before native capture; the fresh 30-day scratch org
+  was deleted and deletion verified. Three-letter same-row adjacent swaps score 98 through sum 29 and 99
+  from 31. Five-letter terminal rotations in the one-row/one-column group
+  score 98 through sum 35 and 99 from 39; vertical controls score 98 and
+  wide same-row controls score 97. Wide rotations below keyboard score 94
+  miss. Eight-letter nonphonetic five-column terminal swaps on the same or
+  neighboring rows miss through sum 44 and score 97 from 46 through 62.
+  Other geometries and higher sums retain the ordinary keyboard gate.
+  Case, accents, hyphens and a shared leading token are normalized for the
+  additional surname comparison. Panel H includes an ordinary same-key
+  eight-letter swap at sum 46 that scores 97 with an exact first name and
+  shared phone; it does not need the supplementary email path.
+  All captured membership decisions now agree. Nine four-to-five pairs still
+  differ by one confidence point in both directions for other trailing
+  letters. The tests list each native and current grade exactly. The older
+  short-edit holdout now compares the entire observation exactly, including
+  the previously differing Metaphone and p-extension inputs.
+  Lead probes also cover corroborated and uncorroborated initial and surname
+  pairs with distinct companies. A second custom Contact phone rule captured
+  a filter-field change into and out of scope: both edits saved with an
+  unchanged phone, while a changed-phone upsert into a match was rejected.
+  The underlying Salesforce distance function and wider input range remain open.
 - Street: native scores the street sections multiplicatively (a different
   suffix word 91, a different street number 95); Glade matches the pairs the
   custom Street method matches and approximates the confidence.
-- Phone: natively many more Account phone pairs match than Glade matches (35
-  percent of the holdout pairs); Glade matches numbers that agree up to the
-  last four digits and every other pair is a miss, not a false match.
+- Phone: on the Account phone panels, the website, ZIP and street also supply
+  matching paths. Missing records on those panels cannot all be attributed to
+  the phone comparison. Identical international and extension strings in the
+  Contact save fixture return no match with only the names as corroboration.
 - Standard Person Account matching rule: not activatable by metadata deploy,
   so not captured; unenforced in Glade.
 - Raw (below threshold) item scores for Company Name and Title count 50 in an

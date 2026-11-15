@@ -164,8 +164,18 @@ func TestTriggerAssertWrapConformance(t *testing.T) {
 						actual = strings.TrimPrefix(line, "OBS|")
 					}
 				}
-				if actual != anonymousBlockFrames.ReplaceAllString(want, "") {
-					t.Errorf("anonymous %s at %s\n got: %q\nwant: %q", name, api, actual, want)
+				// Replay uses a source-67 helper and a one-line anonymous
+				// program. Matching-source rows retain native caller multiplicity
+				// at the replay's actual line. The mixed-source API 62 replay
+				// retains its earlier comparison scope.
+				replayWant := anonymousBlockFrames.ReplaceAllString(want, "")
+				if api == "67.0" {
+					replayWant = anonymousBlockFrames.ReplaceAllStringFunc(want, func(frames string) string {
+						return strings.Repeat("\nAnonymousBlock: line 1, column 1", strings.Count(frames, "AnonymousBlock: line "))
+					})
+				}
+				if actual != replayWant {
+					t.Errorf("anonymous %s at %s\n got: %q\nwant: %q", name, api, actual, replayWant)
 				}
 			}
 			checked++

@@ -23,6 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/frontendcache"
 	"github.com/glade-sh/glade/internal/gladehome"
@@ -232,6 +233,17 @@ func applySiblingDependenciesFlag(args []string) []string {
 }
 
 // Run executes the glade CLI and returns a process exit code.
+// platformNamespaceGatedCommand reports a command whose platform view leaves
+// the ConnectApi and Slack stubs out until the project names them (typesys
+// platform_gate.go): the commands that run, check or serve Apex.
+func platformNamespaceGatedCommand(command string) bool {
+	switch command {
+	case "test", "exec", "check", "server":
+		return true
+	}
+	return false
+}
+
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	args = applySiblingDependenciesFlag(args)
 	if len(args) == 0 {
@@ -252,6 +264,11 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if topic, ok := helpRequestTopic(args); ok {
 		printHelpTopic(stdout, topic)
 		return 0
+	}
+	if !platformNamespaceGatedCommand(args[0]) {
+		// Editor, inspection and report commands read whole platform tables;
+		// they keep the gated ConnectApi and Slack stubs as before the gate.
+		typesys.RequestAllGatedNamespaces()
 	}
 
 	switch args[0] {
@@ -1009,7 +1026,7 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	}
 
 	parserStatus := parserSelfCheck()
-	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatus()
+	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatusBounded(ctx)
 	loadedProject := project.Project{}
 	projectErr := rootProblem
 	if projectErr == nil {
@@ -1075,6 +1092,13 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	info.ExitCode = exitCodeForOK(ok)
 	if !info.ToolchainOK {
 		advisory := "LWC compilation and Lightning runtime routes need the bundled toolchain. Reinstall the Glade release, or install it from a Glade source checkout."
+		if strings.Contains(toolchainDetail, "recovery busy") {
+			advisory = "If installation has stopped, run glade toolchain status in the original managed toolchain environment to recover it, then retry glade doctor."
+		} else if strings.Contains(toolchainDetail, "busy") || strings.Contains(toolchainDetail, "retry") {
+			advisory = "The toolchain check did not complete. Retry glade doctor after installation or recovery finishes."
+		} else if strings.Contains(toolchainDetail, "interrupted installer transaction") {
+			advisory = "Rerun the installer to recover the interrupted toolchain transaction, then retry glade doctor."
+		}
 		if ok {
 			advisory = "Apex check and test are available; " + advisory
 		}
@@ -3032,6 +3056,13 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	if execErr != nil {
 		return execErr
 	}
+	if !dryRun && machine.Org != nil {
+		// Criteria sharing rules take effect when the transaction commits, so the
+		// grant is visible to the next execution and never to this one.
+		if err := dml.ReconcileCriteriaSharing(machine.Org); err != nil {
+			return err
+		}
+	}
 	if store != nil && !dryRun && machine.Org != nil {
 		if err := store.Save(storage.SnapshotRuntimeOrg(machine.Org)); err != nil {
 			return err
@@ -3242,13 +3273,14 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 		// index wait for it; initialize and document sync do not.
 		handler := lsp.NewPendingHandler()
 		go func() {
-			index, analyze, err := loadLSPProject(root)
+			loader, err := newLSPProjectLoader(root)
 			if err != nil {
 				handler.Fail(err)
 				return
 			}
-			handler.SetAnalyzer(analyze)
-			handler.SetIndex(index)
+			handler.SetRefresher(loader.refresh)
+			handler.SetGenerationValidator(loader.valid)
+			handler.SetBase(loader.base())
 			handler.StartAnalysis()
 		}()
 		serveErr := lsp.Serve(os.Stdin, w, handler)

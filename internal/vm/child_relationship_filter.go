@@ -248,26 +248,36 @@ func childRelFilterApplies(org *storage.OrgState) *childRelFilter {
 // still owes can declare relationshipKey for parentObject, so a miss in the
 // installed objects is the answer a complete org gives too.
 func (vm *VM) childRelFilterMissIsFinal(parentObject, relationshipKey string) bool {
-	filter := childRelFilterApplies(vm.Org)
+	final, _ := ChildRelationshipFilterRulesOut(vm.Org, parentObject, relationshipKey)
+	return final
+}
+
+// ChildRelationshipFilterRulesOut reports whether the generated filter proves
+// that the org's complete spread has no child relationship relationshipName on
+// parentObject. covered is false when the filter does not apply to the org
+// (see childRelFilterApplies); rulesOut is then false too.
+func ChildRelationshipFilterRulesOut(org *storage.OrgState, parentObject, relationshipName string) (rulesOut, covered bool) {
+	filter := childRelFilterApplies(org)
 	if filter == nil {
-		return false
+		return false, false
 	}
+	relationshipKey := strings.ToLower(strings.TrimSpace(relationshipName))
 	parentKey := strings.ToLower(strings.TrimSpace(parentObject))
 	if parentKey == "" {
-		return false
+		return false, true
 	}
 	if canonical, ok := storage.ResolveKnownStandardObjectName(parentObject); ok && strings.EqualFold(canonical, strings.TrimSpace(parentObject)) {
-		return !childRelFilterContains(filter.pairs, childRelFilterHash(parentKey, relationshipKey))
+		return !childRelFilterContains(filter.pairs, childRelFilterHash(parentKey, relationshipKey)), true
 	}
 	// Not a catalog name: an owed object can still reach it through a
 	// namespace-stripped parent name. If no definition in the catalog names a
 	// matching parent, no owed object contributes.
 	for _, key := range jsonRelationshipParentCandidateKeys(parentObject) {
 		if childRelFilterContains(filter.keys, childRelFilterHash(key, "")) {
-			return false
+			return false, true
 		}
 	}
-	return true
+	return true, true
 }
 
 // childRelFilterDeclinedKey marks, in the generation's lookup cache, a parent

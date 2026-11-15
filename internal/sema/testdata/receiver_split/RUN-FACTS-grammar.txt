@@ -1,5 +1,5 @@
 RUN-FACTS
-capture: receiver grammar and line-break diagnostics
+capture: receiver grammar
 started: 2026-11-14T03:40:12Z
 finished: 2026-11-14T03:51:52Z
 apis: 62.0 67.0 (no 62 vs 67 difference in any case)

@@ -23,12 +23,12 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v86"
+const SemanticABI = "sema-v90"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v67"
+const PlatformABI = "salesforce-platform-v71"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -417,7 +417,16 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 			a.known[key] = ref
 		}
 	}
-	for _, typ := range typesys.StandardPlatformSymbolView() {
+	view, excluded := typesys.StandardPlatformSymbolViewWithExcluded()
+	// Gated stub types the view leaves out stay known by qualified name.
+	// Their keys are distinct from every view key, so the order is free.
+	excluded.Each(func(_ int, namespace, name string, _ apexast.DeclarationKind) {
+		if namespace != "" {
+			name = namespace + "." + name
+		}
+		a.addKnown(name, TypePlatform, "<standard-platform>")
+	})
+	for _, typ := range view {
 		name := typ.Name
 		if typ.Namespace != "" {
 			name = typ.Namespace + "." + typ.Name
@@ -1510,6 +1519,9 @@ func (s semaScopeModel) localInBlock(name string, start, end int) (semaLocal, bo
 
 func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
 	known := semaAnyKnownFieldInView(model, name, false)
+	if model != nil && model.state != nil && model.state.unknownHistory != nil && !known {
+		model.state.unknownHistory.missing(name)
+	}
 	if model != nil && model.state != nil && model.state.historyProbe != nil {
 		if !known {
 			model.state.historyProbe.Store(true)
@@ -1953,19 +1965,25 @@ func semaExplicitPlatformStaticFieldPathMember(root, fieldPath string) (resolved
 		return resolvedMember{}, false
 	}
 	canonical := semaCanonicalPlatformAlias(root)
-	for _, symbol := range typesys.StandardPlatformSymbolView() {
+	var found resolvedMember
+	ok := false
+	typesys.VisitStandardPlatformSymbols(func(_, name string, _ apexast.DeclarationKind) bool {
+		return strings.EqualFold(name, canonical)
+	}, func(symbol *typesys.TypeSymbol) bool {
 		if !strings.EqualFold(symbol.Name, canonical) {
-			continue
+			return true
 		}
 		for _, member := range symbol.Members {
 			if member.Kind == apexast.DeclarationMethod || !hasModifier(member.Modifiers, "static") || !strings.EqualFold(member.Name, fieldPath) {
 				continue
 			}
 			member.Type = semaCanonicalPlatformAlias(member.Type)
-			return resolvedMember{owner: symbol.Name, member: member}, true
+			found, ok = resolvedMember{owner: symbol.Name, member: member}, true
+			return false
 		}
-	}
-	return resolvedMember{}, false
+		return true
+	})
+	return found, ok
 }
 
 func semaModelHasType(model *semaTypeMemberView, typeName string) bool {
@@ -2055,11 +2073,16 @@ func semaStandardPlatformEnumValue(typeName, valueName string) bool {
 }
 
 func semaStandardPlatformEnums() *semaStandardPlatformEnumIndex {
-	return semaStandardPlatformEnumCache.Get(func(view []typesys.TypeSymbol) *semaStandardPlatformEnumIndex {
+	return semaStandardPlatformEnumCache.GetWithExcluded(func(view []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) *semaStandardPlatformEnumIndex {
 		index := &semaStandardPlatformEnumIndex{types: map[string]string{}, values: map[string]map[string]bool{}}
-		for _, symbol := range view {
-			if symbol.Kind != apexast.DeclarationEnum {
-				continue
+		// Gated stub enums the view leaves out take their ungated place: a
+		// later enum of the same simple name still replaces an earlier one.
+		typesys.EachPlatformTypeName(view, excluded, func(_, _ string, kind apexast.DeclarationKind, symbol *typesys.TypeSymbol, excludedIndex int) {
+			if kind != apexast.DeclarationEnum {
+				return
+			}
+			if symbol == nil {
+				symbol = excluded.Symbol(excludedIndex)
 			}
 			typeKey := normalizeName(symbol.Name)
 			index.types[typeKey] = symbol.Name
@@ -2071,7 +2094,7 @@ func semaStandardPlatformEnums() *semaStandardPlatformEnumIndex {
 				values[normalizeName(member.Name)] = true
 			}
 			index.values[typeKey] = values
-		}
+		})
 		return index
 	})
 }
@@ -2726,7 +2749,7 @@ func semaGeneratedPlatformMethodSignature(model *semaTypeMemberView, receiverTyp
 	}
 	candidates := resolveMemberMethods(model, receiverType, method)
 	if semaKnownPlatformTypeReceiver(receiverType) && model != nil && model.state != nil && model.state.platform != nil && model.state.platform.platform != nil {
-		if platformSymbol, ok := model.state.platform.platform.symbolsByKey[normalizeName(receiverType)]; ok {
+		if platformSymbol, ok := model.state.platform.platform.symbolForKey(normalizeName(receiverType)); ok {
 			methodKey := normalizeName(method)
 			owner := semaTypeMembersName(*platformSymbol)
 			var platformCandidates []resolvedMember

@@ -99,6 +99,10 @@ type Expr struct {
 	Left      *Expr      `json:"left,omitempty"`
 	Right     *Expr      `json:"right,omitempty"`
 
+	// Pos is the source offset of a method call's name token, or of the new
+	// token of a constructor call. Stack frames report that token's line.
+	Pos int `json:"pos,omitempty"`
+
 	// CastQueryOperand distinguishes a directly enclosed query expression
 	// from a stored result or an Object bridge before runtime values erase it.
 	CastQueryOperand bool `json:"castQueryOperand,omitempty"`

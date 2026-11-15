@@ -1,0 +1,10 @@
+id	api	route	shape	outcome	notes
+locator	62.0	istest	locator	stop=ok|seq=0:tq,1:as,2:k,3:ax,4:af|createdid=tq,as,k,ax,af	one observation
+pre	62.0	istest	pre	stop=ok|seq=0:as,1:k,2:ax,3:af|createdid=as,k,ax,af	one observation
+stateful	62.0	istest	stateful	stop=ok|seq=0:as,1:k,2:ax,3:af|createdid=as,k,ax,af	one observation
+locator	67.0	istest	locator	stop=ok|seq=0:tq,1:as,2:k,3:ax,4:af|createdid=tq,as,k,ax,af	one observation
+pre	67.0	istest	pre	stop=ok|seq=0:as,1:k,2:ax,3:af|createdid=as,k,ax,af	one observation
+stateful	67.0	istest	stateful	stop=ok|seq=0:as,1:k,2:ax,3:af|createdid=as,k,ax,af	one observation
+locator	68.0	istest	locator	stop=ok|seq=0:tq,1:as,2:k,3:ax,4:af|createdid=tq,as,k,ax,af	one observation
+pre	68.0	istest	pre	stop=ok|seq=0:as,1:k,2:ax,3:af|createdid=as,k,ax,af	one observation
+stateful	68.0	istest	stateful	stop=ok|seq=0:as,1:k,2:ax,3:af|createdid=as,k,ax,af	one observation
