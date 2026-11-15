@@ -823,8 +823,11 @@ func ensureStandardObjectWithProfile(org *OrgState, objectName string, profile [
 		features = profile
 	}
 	featureSignature := canonicalFeatureSignature(features)
-	fieldsNeedWrite := standardObjectFieldsNeedWrite(state.Definition, featureSignature)
-	definitionNeedsWrite := standardObjectDefinitionNeedsWrite(state.Definition, objectName, featureSignature)
+	var fieldsNeedWrite, definitionNeedsWrite bool
+	if existed {
+		fieldsNeedWrite = standardObjectFieldsNeedWrite(state.Definition, featureSignature)
+		definitionNeedsWrite = standardObjectDefinitionNeedsWrite(state.Definition, objectName, featureSignature)
+	}
 	// A prepared definition and complete record-type seed need no schema writes.
 	// Keep their shared generation and avoid replacing its proof with a private
 	// clone's field map. Unprepared or changed seeds take the repair path below.
