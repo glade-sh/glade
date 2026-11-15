@@ -78,7 +78,7 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 		if a != b[:len(a)] {
 			return false, 0
 		}
-		if lastNameMetaphone3Equal(a, b) {
+		if lastNameMetaphone3(a) == lastNameMetaphone3(b) {
 			return true, 100
 		}
 		score, _ := keyboardSimilarity(a, b)
@@ -93,7 +93,7 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 		}
 	}
 	if different == 1 && len(a) >= 3 {
-		if lastNameMetaphone3Equal(a, b) {
+		if lastNameMetaphone3(a) == lastNameMetaphone3(b) {
 			return true, 100
 		}
 		left, right := qwertyPosition[rune(a[changed])], qwertyPosition[rune(b[changed])]
@@ -155,7 +155,7 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	} else if left[1:]+left[:1] != right && left[2:]+left[:2] != right {
 		return false, 0
 	}
-	if lastNameMetaphone3Equal(a, b) {
+	if lastNameMetaphone3(a) == lastNameMetaphone3(b) {
 		return true, 100
 	}
 	cost = 0.0
