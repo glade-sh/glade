@@ -729,7 +729,7 @@ Street suffix and title changes are limited to the following shapes:
   reports of directional-only duplicates. Open: the holdout `Orchard Ln` panel
   keeps a trailing `W`, `N` or `S` in the name natively (114 extra Glade
   matches, pinned in `residuals.tsv`), the confidence of an unknown suffix
-  differs by direction (`St` finds `Str` at 60, `Str` finds `St` at 78), and
+  differs by direction and name (`77 Wren St` finds `Wren Str` at 60 but `19 Birkin Dr` finds `Birkin Drv` at 82), and
   `100 E A Main St` and `100A`/`100-A` are not modelled.
 - Title: when the shorter title is an exact-word subset of a six-word title,
   two to five shared words score 89, 93, 95 and 98; five shared words out of

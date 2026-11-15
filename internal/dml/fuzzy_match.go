@@ -634,11 +634,18 @@ func streetClean(s string) string { return streetCleanFor(s, false) }
 // it; a comma before a line break is deleted with it. NATIVE
 // duplicate_fuzzy_street/org.tsv cj1, cj2: "Rd\nSuite 200", "Rd,\nSuite 200"
 // and "RdSuite 200" are one street.
+var (
+	streetBreakReplacer = strings.NewReplacer(",\r\n", "", ",\n", "", ",\r", "", "\r\n", "", "\n", "", "\r", "")
+	streetPunctReplacer = strings.NewReplacer(",", " ", ".", "")
+)
+
 func streetCleanFor(s string, custom bool) string {
 	s = strings.ToLower(s)
 	if custom {
-		s = strings.NewReplacer(",\r\n", "", ",\n", "", ",\r", "", "\r\n", "", "\n", "", "\r", "").Replace(s)
-		words := strings.Fields(strings.NewReplacer(",", " ", ".", "").Replace(s))
+		if strings.ContainsAny(s, "\r\n") {
+			s = streetBreakReplacer.Replace(s)
+		}
+		words := strings.Fields(streetPunctReplacer.Replace(s))
 		for i, w := range words {
 			words[i] = strings.TrimLeft(w, "#")
 		}
@@ -888,7 +895,7 @@ func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64
 		// ("Rd Suite 200" against "RdSuite 200", "P O Box 410" against "PO Box 410").
 		return true, confidence
 	}
-	if custom && sections < 80 && pa.number != "" && pa.number == pb.number && similarity >= 87.5-1e-9 {
+	if custom && sections < 80 && pa.number != "" && pa.number == pb.number && similarity >= 87.5-1e-9 && !streetEndsInDirectional(x) && !streetEndsInDirectional(y) {
 		// NATIVE duplicate_fuzzy_street/org.tsv: two numbered addresses with
 		// one match key match at 87.5 and above edit similarity of the cleaned
 		// addresses although the section score is under 80 (a suffix or suite
@@ -912,6 +919,14 @@ func streetHashMismatch(x, y string) bool {
 		hash, other = y, x
 	}
 	return strings.ReplaceAll(hash, "#", " ") != other
+}
+
+// streetEndsInDirectional keeps the 87.5 similarity extension off addresses
+// whose last word is a directional: no captured row covers an unknown suffix
+// before a trailing "N" (origin/main keeps "St N" and "Strt N" apart).
+func streetEndsInDirectional(x string) bool {
+	words := strings.Fields(x)
+	return len(words) > 1 && streetDirections[words[len(words)-1]]
 }
 
 // streetSelfScored reports a cleaned street whose identical-value confidence is
