@@ -138,7 +138,10 @@ with the tables.
    spelling: `Kate` (keyed like `Katherine`) finds neither `Katie` nor the
    typos `Katte` and `Kaate`, although those find each other; `Leo` finds
    `Leona` under the key of `Leon`; `Louie` finds `Louise` under the key of
-   `Louis`. `Roberta`, `Jane`, `Tess`, `Tony`, `Becky`, `Nick`, `Rick`,
+   `Louis`. Under a custom rule `Ty` is keyed TR, `Ray` RM and `Sue` SS
+   (`fuzzy_first_alias_keys`: `Ty` finds `Tyr` and not `Tye`, `Tyl` or the
+   initial `T`; `Ray` finds `Raym` and not `Rae` or `R`; `Sue` finds `Sues`
+   and not `Su` or `S`; `nameAliasKeysCustom`). `Roberta`, `Jane`, `Tess`, `Tony`, `Becky`, `Nick`, `Rick`,
    `Bill`, `Beth` and others find nothing under their own key. Glade lists the names
    the rows show (`nameAliasKeys`, and `nameKeptApart` for pairs such as
    `Helen`/`Helena` where the rows do not say which name is alias-keyed); every other name, including every name

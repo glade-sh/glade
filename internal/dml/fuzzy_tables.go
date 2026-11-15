@@ -1503,17 +1503,21 @@ var nameAliasKeys = map[string]string{
 	"zeke":    "",
 }
 
-// nameAliasKeysCustom are alias-keyed names like those in nameAliasKeys whose
-// rows come from custom rules only: "Ty" finds neither "Tyh" nor "Tyw" by
-// Jaro-Winkler and an initial does not find it ("T" finds "TW", "Tw" and
-// "T1", never "Ty"), while "Bo" finds "Boh" and "Bow". The standard rules
-// keep the two captured pairs apart through nameKeptApart.
-var nameAliasKeysCustom = map[string]bool{
-	"ty": true,
+// nameAliasKeysCustom are the alias keys a custom FirstName rule's rows
+// show and the standard rules' rows do not: "Ty" finds "Tyr" and no other
+// neighbor ("Tye", "Tyh", "Tyl" and the initial "T" do not find it), "Ray"
+// finds "Raym" and not "Rae", "Ra" or "R", "Sue" finds "Sues" and "Suez" and
+// not "Su" or "S". The standard rules keep these names' own key
+// (firstNameKey) and their captured pairs apart through nameKeptApart.
+var nameAliasKeysCustom = map[string]string{
+	"ray": "RM",
+	"sue": "SS",
+	"ty":  "TR",
 }
 
-// nameKeptApart are pairs the rows keep apart that the tables above do not
-// explain.
+// nameKeptApart are pairs the standard rules' first-name key does not keep
+// apart and the rows do; a custom rule keeps them apart by its alias keys
+// (nameAliasKeysCustom).
 var nameKeptApart = map[[2]string]bool{
 	{"ray", "rayh"}: true,
 	{"ray", "rayw"}: true,
