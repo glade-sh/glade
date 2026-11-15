@@ -847,7 +847,7 @@ func companySingleWordMatch(candidate, existing string) (bool, float64) {
 	return true, 96
 }
 
-func fuzzyCompany(a, b string, _ bool) (bool, float64) {
+func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 	x, y := foldText(a), foldText(b)
 	if companyAlignedWords[strings.TrimSpace(x)] || companyAlignedWords[strings.TrimSpace(y)] {
 		// NATIVE: a name that is only "Partner" matches nothing, itself included.
@@ -909,6 +909,22 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	return false, 0
+}
+
+// fuzzyCompany combines the captured directional scorer with its match key.
+func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
+	oldMatch, oldScore := legacyFuzzyCompany(a, b, matchBlanks)
+	if !companyFitShape(a, b) {
+		return oldMatch, oldScore
+	}
+	if companyFitKey(a) != companyFitKey(b) {
+		return oldMatch, oldScore
+	}
+	raw := companyFitScore(a, b)
+	if raw < 70 {
+		return oldMatch, oldScore
+	}
+	return true, math.Max(91, raw)
 }
 
 // ---- Title: Acronym, Exact, Kullback-Leibler distance; threshold 50 ----
