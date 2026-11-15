@@ -71,15 +71,12 @@ func TestSourceSpreadChildRelationshipPreservesNeighbor(t *testing.T) {
 	}
 	checked := false
 	for _, relation := range org.Objects["CareProgram"].Definition.Relations {
-		if relation.ChildRelationship == "" {
-			continue
-		}
 		for _, parent := range relation.ParentObjects {
 			if parent != "User" {
 				continue
 			}
 			checked = true
-			name, _, ok := loadedChildRelationship(org, org.Objects["User"].Definition, relation.ChildRelationship)
+			name, _, ok := loadedChildRelationship(org, org.Objects["User"].Definition, derivedChildRelationshipName(org.Objects["CareProgram"].Definition))
 			if ok && name == "CareProgram" {
 				t.Fatal("origin/main child relationship omitted the neighbor")
 			}
