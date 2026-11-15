@@ -39,6 +39,31 @@ func TestSourceSpreadRESTDescribePreservesNeighbor(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadRESTInventoryPreservesNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	storage.EnsureLazyStandardObject(&org, "CareProgram")
+	response := httptest.NewRecorder()
+	New(&org).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/services/data/v68.0/sobjects", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("inventory status %d", response.Code)
+	}
+	var body struct {
+		Objects []struct {
+			Name string `json:"name"`
+		} `json:"sobjects"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	for _, object := range body.Objects {
+		if object.Name == "CareProgram" {
+			t.Fatal("origin/main inventory omitted the uncaptured neighbor")
+		}
+	}
+}
+
 func TestSourceSpreadRESTDescribePreservesEditedNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
