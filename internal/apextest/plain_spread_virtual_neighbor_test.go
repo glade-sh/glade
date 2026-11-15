@@ -12,6 +12,7 @@ import (
 
 // The captured Salesforce queries throw for these user-access tables, so the
 // current local result remains the contract until a row proves a change.
+// NATIVE: plain_developer_route_inventory/virtual.tsv:22,28,52,58,82,88.
 func TestPlainDeveloperSpreadPreservesUnprobedVirtualAccess(t *testing.T) {
 	for _, tc := range []struct{ name, scratch string }{
 		{"default", `{"edition":"Developer","features":[],"settings":{}}`},
