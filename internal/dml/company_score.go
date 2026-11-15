@@ -444,7 +444,7 @@ func companyFitShape(a, b string) bool {
 				return true
 			}
 		}
-		w := strings.Fields(strings.ToLower(s))
+		w := strings.Fields(strings.ReplaceAll(strings.ToLower(s), ".", ""))
 		if len(w) > 1 && (w[len(w)-1] == "partner" || w[len(w)-1] == "sarl" || w[len(w)-1] == "bv") {
 			return true
 		}
