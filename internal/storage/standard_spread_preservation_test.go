@@ -219,7 +219,8 @@ func TestRepeatedEagerSpreadDoesNotMarkCatalogObjectsExplicit(t *testing.T) {
 func TestHiddenSpreadAccessIsIsolatedAcrossRuntimeClones(t *testing.T) {
 	org := NewOrgState()
 	org.StandardSpreadHiddenAccess = map[string][]string{"Example": {"First"}}
-	org.StandardSpreadHiddenDefinitions = map[string]ObjectDefinition{"Example": {Fields: map[string]Field{"Id": {Label: "original"}}}}
+	nillable := true
+	org.StandardSpreadHiddenDefinitions = map[string]ObjectDefinition{"Example": {Fields: map[string]Field{"Id": {Label: "original", Nillable: &nillable}}}}
 	for name, clone := range map[string]OrgState{
 		"clone":   org.Clone(),
 		"runtime": org.CloneRuntime(),
@@ -234,9 +235,14 @@ func TestHiddenSpreadAccessIsIsolatedAcrossRuntimeClones(t *testing.T) {
 				t.Fatal("clone changed original hidden access")
 			}
 			definition := clone.StandardSpreadHiddenDefinitions["Example"]
+			field := definition.Fields["Id"]
+			*field.Nillable = false
 			definition.Fields["Id"] = Field{Label: "changed"}
 			if org.StandardSpreadHiddenDefinitions["Example"].Fields["Id"].Label != "original" {
 				t.Fatal("clone changed original hidden definition")
+			}
+			if !*org.StandardSpreadHiddenDefinitions["Example"].Fields["Id"].Nillable {
+				t.Fatal("clone changed original hidden field metadata")
 			}
 		})
 	}
