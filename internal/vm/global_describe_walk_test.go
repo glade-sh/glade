@@ -1,0 +1,62 @@
+package vm
+
+import (
+	"runtime"
+	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
+)
+
+const globalDescribeWalkSource = `
+Map<String, Schema.SObjectType> g = Schema.getGlobalDescribe();
+List<String> names = new List<String>(g.keySet());
+names.sort();
+List<String> result = new List<String>();
+for (String name : names) {
+    Schema.DescribeSObjectResult d = g.get(name).getDescribe();
+    result.add(name + ':' + d.getName() + ':' + d.getKeyPrefix());
+}
+return String.join(result, '|');`
+
+func globalDescribeWalk(tb testing.TB, eager bool) string {
+	tb.Helper()
+	org := namesOnlyDescribeOrg("source", []string{"Communities"}, "")
+	program, err := CompileAnonymousWithOptions(globalDescribeWalkSource, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		tb.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.eagerGlobalDescribe = eager
+	machine.SetCurrentUser(org.Objects["User"].Records[storage.ID(storage.DefaultUserID)])
+	got, err := machine.callMethod(Method{Name: "Anonymous.run", APIVersion: "67.0", SourceContextBound: true, Program: program}, nil, &Result{})
+	if err != nil {
+		tb.Fatal(err)
+	}
+	return got.Text
+}
+
+func TestGlobalDescribeFullWalkBudgetAndParity(t *testing.T) {
+	want := globalDescribeWalk(t, true)
+	runtime.GC()
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	got := globalDescribeWalk(t, false)
+	runtime.ReadMemStats(&after)
+	if got != want {
+		t.Fatalf("full walk differs from completed spread: %s", probeDifference(want, got))
+	}
+	if len(got) < 10000 {
+		t.Fatalf("full walk output too short: %d bytes", len(got))
+	}
+	if used := after.TotalAlloc - before.TotalAlloc; used > 3_000_000_000 {
+		t.Fatalf("full walk allocated %d bytes, budget 3000000000", used)
+	}
+}
+
+func BenchmarkGlobalDescribeFullWalk(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		globalDescribeWalk(b, false)
+	}
+}
