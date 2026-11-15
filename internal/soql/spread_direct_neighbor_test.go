@@ -78,3 +78,30 @@ func TestSourceSpreadDirectQueryPreservesNeighborAfterSerialization(t *testing.T
 		t.Fatal("serialized origin/main neighbor query became visible")
 	}
 }
+
+func TestSourceSpreadDirectQueryPreservesNeighborRecords(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	object := org.Objects["CareProgram"]
+	if object.Records == nil {
+		object.SetRecords(make(map[storage.ID]storage.Record))
+	}
+	id := storage.ID("a00000000000001")
+	object.PutRecord(id, storage.Record{ID: id, Object: "CareProgram"})
+	org.Objects["CareProgram"] = object
+	query, err := Parse("SELECT Id FROM CareProgram LIMIT 2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Execute(org, query)
+	if err != nil {
+		t.Fatalf("record-bearing definition was hidden: %v", err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows %d, want 1", result.Rows)
+	}
+}
