@@ -2,9 +2,40 @@
 
 ## Unreleased
 
-### Changes
-
 - **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets. API 67 default-mode administrator DML and dynamic queries honor captured access to newly deployed Account Text fields.
+
+- Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
+
+- **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
+
+- **Async test ordering.** Eligible Future, Queueable, Batch Apex and scheduled work follows the captured stopTest ordering.
+
+- **Language server refresh.** Diagnostics follow unsaved edits and retry after project refreshes. Deleted files leave the index, hover starts analysis when needed, and closed files with syntax errors publish parse diagnostics while other files retain the last good semantic view. External changes refresh through watched files or on save. Reference searches detect edits with unchanged metadata, and stale semantic diagnostics are not republished. Client responses no longer receive a second response.
+
+- **Standard object startup memory.** Test runs retain a smaller projection of standard-object describe data while preparing stub fields.
+
+- **Unresolved assignments.** Parallel semantic analysis avoids repeating method-body checks when an unknown assignment target cannot be affected by another type. Diagnostics stay unchanged.
+
+- **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+- **Bounded schema template memory.** Long-lived processes evict least recently used standard object template groups above a field budget; evicted templates rebuild on demand.
+- **Test startup.** Building the child relationship lookup avoids installing
+  standard objects solely to resolve parent names, reducing startup work. A
+  source reference to a child relationship of a standard object the test org
+  has not loaded yet is no longer inferred as a field, matching a fully loaded
+  org.
+
+- **Faster global describe.** Object names are listed without loading every standard object definition.
+
+- Email fields reject captured malformed addresses on inserts, including trailing or consecutive domain dots and quoted local parts containing spaces.
+
+- **Duplicate matching.** Custom phone rules recognize captured seven-letter vanity numbers via [ITU-T E.161](https://www.itu.int/rec/T-REC-E.161/en) keypad digits. Custom name rules use captured first and last name keys.
+
+### Performance
+
+- **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
+
+- **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
+- **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
 
 ## v0.3.9
 

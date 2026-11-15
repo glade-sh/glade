@@ -136,8 +136,14 @@ func invocablePrimitiveElement(typeName string) bool {
 
 // Only the automation DTOs use this native display syntax.
 func automationDTOString(value Value, seen map[uint64]bool) (string, bool) {
+	var w textWriter
+	ok := writeAutomationDTOText(&w, value, seen)
+	return w.String(), ok
+}
+
+func writeAutomationDTOText(w *textWriter, value Value, seen map[uint64]bool) bool {
 	if value.Kind != ValueObject {
-		return "", false
+		return false
 	}
 	var fields []string
 	name := ""
@@ -152,50 +158,77 @@ func automationDTOString(value Value, seen map[uint64]bool) (string, bool) {
 		name = "Error"
 		fields = []string{"code", "message"}
 	default:
-		return "", false
+		return false
 	}
 	if value.Ref != 0 {
 		if seen[value.Ref] {
-			return "(already output)", true
+			w.WriteString("(already output)")
+			return true
 		}
 		seen[value.Ref] = true
 	}
-	parts := make([]string, 0, len(fields))
-	for _, field := range fields {
+	w.WriteString(name)
+	w.WriteString(":[")
+	for i, field := range fields {
+		if w.full {
+			return true
+		}
+		if i > 0 {
+			w.WriteString(", ")
+		}
 		_, item, _ := objectFieldValue(value, field)
-		text := automationDTOValueString(item, seen)
-		parts = append(parts, field+"="+text)
+		w.WriteString(field)
+		w.WriteString("=")
+		writeAutomationDTOValueText(w, item, seen)
 	}
-	return name + ":[" + strings.Join(parts, ", ") + "]", true
+	w.WriteString("]")
+	return true
 }
 
-func automationDTOValueString(value Value, seen map[uint64]bool) string {
-	if text, ok := automationDTOString(value, seen); ok {
-		return text
+func writeAutomationDTOValueText(w *textWriter, value Value, seen map[uint64]bool) {
+	if w.full {
+		return
+	}
+	if writeAutomationDTOText(w, value, seen) {
+		return
 	}
 	if value.Kind == ValueList || value.Kind == ValueMap {
 		if value.Ref != 0 {
 			if seen[value.Ref] {
-				return "(already output)"
+				w.WriteString("(already output)")
+				return
 			}
 			seen[value.Ref] = true
 		}
 	}
 	if value.Kind == ValueList {
-		parts := make([]string, 0, len(value.List))
-		for _, item := range value.List {
-			parts = append(parts, automationDTOValueString(item, seen))
+		w.WriteString("(")
+		for i, item := range value.List {
+			if w.full {
+				return
+			}
+			if i > 0 {
+				w.WriteString(", ")
+			}
+			writeAutomationDTOValueText(w, item, seen)
 		}
-		return "(" + strings.Join(parts, ", ") + ")"
+		w.WriteString(")")
+		return
 	}
 	if value.Kind == ValueMap {
-		parts := make([]string, 0, len(value.Map))
-		for _, key := range sortedMapKeys(value.Map) {
-			parts = append(parts, automationDTOValueString(mapStoredKey(value, key), seen)+"="+automationDTOValueString(value.Map[key], seen))
-		}
-		return "{" + strings.Join(parts, ", ") + "}"
+		w.WriteString("{")
+		forEachTextKey(w, value.Map, nil, nil, func(i int, key string) {
+			if i > 0 {
+				w.WriteString(", ")
+			}
+			writeAutomationDTOValueText(w, mapStoredKey(value, key), seen)
+			w.WriteString("=")
+			writeAutomationDTOValueText(w, value.Map[key], seen)
+		})
+		w.WriteString("}")
+		return
 	}
-	return valueStringWithSeen(value, seen)
+	writeValueTextWithSeen(w, value, seen)
 }
 
 func automationID(value Value) (Value, error) {

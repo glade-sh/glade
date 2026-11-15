@@ -377,6 +377,14 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 		// The executor met a catalog object the lazy spread had not added
 		// (a relationship target, a TYPEOF type, a nested subquery). The
 		// spread is complete now; the query runs once more against it.
+		// Completing the spread can expose a disallowed alias for a missing
+		// FROM object. Keep the original error if the alias is unavailable.
+		var missing *soql.QueryError
+		if errors.As(err, &missing) && missing.Message == soql.MissingObjectMessage(query.Object) {
+			if vm.enforceOrgShapeObjectAvailability(query) != nil {
+				return nil, soqlQueryException(missing, queryText)
+			}
+		}
 		result, err = soql.ExecuteWithCacheAndContext(*executeOrg, executeQuery, vm.soqlExecutionCacheForOrg(executeOrg), executeContext)
 	}
 	if err != nil {

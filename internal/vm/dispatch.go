@@ -2286,9 +2286,8 @@ platformStaticCall:
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
 			typeName := jsonDeserializeTypeName(args[1])
-			if hasPrefixFold(typeName, "ConnectApi.") {
-				typesys.RequestConnectAPIShape()
-			}
+			// A gated platform namespace (ConnectApi, Slack) joins the view.
+			typesys.RequestGatedPlatformNamespaceFor(typeName)
 			_, recordType := vm.explicitSchemaRecordType(typeValueIdentityName(args[1]))
 			if !strict {
 				decoded = vm.jsonRootSObjectPayload(typeValueIdentityName(args[1]), decoded)
