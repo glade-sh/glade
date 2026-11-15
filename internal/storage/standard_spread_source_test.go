@@ -83,6 +83,21 @@ func BenchmarkPlainDeveloperPrunedDefinitionWork(b *testing.B) {
 	}
 }
 
+func TestEnsureStandardObjectAbsentMatchesEmptyDefinition(t *testing.T) {
+	for _, name := range []string{"Account", "User", "CareProgram", "AIFeatureExtractor", "AIResearchPromptResult", "AIScoringStatusEvent"} {
+		t.Run(name, func(t *testing.T) {
+			absent := NewOrgState()
+			empty := NewOrgState()
+			empty.Objects[name] = ObjectState{}
+			EnsureStandardObject(&absent, name)
+			EnsureStandardObject(&empty, name)
+			if !reflect.DeepEqual(absent.Objects, empty.Objects) {
+				t.Fatal("absent and empty definitions produced different inventories")
+			}
+		})
+	}
+}
+
 func TestPlainDeveloperSpreadPreservesProjectObject(t *testing.T) {
 	org := NewOrgState()
 	EnsureStandardObject(&org, "AIFeatureExtractor")
