@@ -682,7 +682,8 @@ panel of n values holds n x n ordered pairs. Two fresh 30-day scratch orgs, API
 observations agree across API, route and repeat. The test replays the same
 Apex on both Glade routes and compares every pair and confidence exactly;
 `residuals.tsv` pins each pair where Glade differs, with both the native and
-the Glade value. Glade's predictions were frozen before each native run.
+the Glade value. These panels informed the model and are not an independent
+validation of the current implementation.
 
 Street suffix and title changes are limited to the following shapes:
 
@@ -690,10 +691,11 @@ Street suffix and title changes are limited to the following shapes:
   matches an unknown alphabetic suffix when section score is 74 to below 80
   and cleaned edit similarity is at least 87.5. Confidence uses the existing
   formula. The custom rule path applies this extension.
-- Title: six content words score 89, 93, 95 and 98 for two to five shared
-  words; five shared words out of order score 96. A short candidate can match
-  a five-word title with one shared word, or a five- or six-word title with
-  two out-of-order shared words.
+- Title: when the shorter title is an exact-word subset of a six-word title,
+  two to five shared words score 89, 93, 95 and 98; five shared words out of
+  order score 96. An exact-word subset candidate can match a five-word title
+  with one shared word, or a five- or six-word title with two out-of-order
+  shared words. Other shapes retain the existing confidence table.
 
 First Name and Company Name retain the origin/main scorers. The panel fixture
 records native results for these methods, including cases that baseline matches
