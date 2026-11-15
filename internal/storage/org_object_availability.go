@@ -1,10 +1,10 @@
 package storage
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
-	"hash"
 	"math"
 	"reflect"
 	"slices"
@@ -527,25 +527,23 @@ func sameSliceInstance[T any](a, b []T) bool {
 
 // spreadDefinitionFingerprint snapshots values, including nested collection entries.
 func spreadDefinitionFingerprint(d ObjectDefinition) [32]byte {
-	h := sha256.New()
-	hashSpreadValue(h, reflect.ValueOf(d))
-	var result [32]byte
-	copy(result[:], h.Sum(nil))
-	return result
+	var data bytes.Buffer
+	hashSpreadValue(&data, reflect.ValueOf(d))
+	return sha256.Sum256(data.Bytes())
 }
 
 // hashSpreadValue includes nil markers and all fields rather than JSON's
 // omitempty projection. Maps are ordered so the fingerprint is stable.
-func hashSpreadValue(h hash.Hash, v reflect.Value) {
-	h.Write([]byte{byte(v.Kind())})
+func hashSpreadValue(h *bytes.Buffer, v reflect.Value) {
+	h.WriteByte(byte(v.Kind()))
 	writeNumber := func(n uint64) { var b [8]byte; binary.LittleEndian.PutUint64(b[:], n); h.Write(b[:]) }
 	switch v.Kind() {
 	case reflect.Pointer, reflect.Interface:
 		if v.IsNil() {
-			h.Write([]byte{0})
+			h.WriteByte(0)
 			return
 		}
-		h.Write([]byte{1})
+		h.WriteByte(1)
 		hashSpreadValue(h, v.Elem())
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
@@ -553,10 +551,10 @@ func hashSpreadValue(h hash.Hash, v reflect.Value) {
 		}
 	case reflect.Map:
 		if v.IsNil() {
-			h.Write([]byte{0})
+			h.WriteByte(0)
 			return
 		}
-		h.Write([]byte{1})
+		h.WriteByte(1)
 		writeNumber(uint64(v.Len()))
 		keys := v.MapKeys()
 		sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
@@ -566,10 +564,10 @@ func hashSpreadValue(h hash.Hash, v reflect.Value) {
 		}
 	case reflect.Slice:
 		if v.IsNil() {
-			h.Write([]byte{0})
+			h.WriteByte(0)
 			return
 		}
-		h.Write([]byte{1})
+		h.WriteByte(1)
 		writeNumber(uint64(v.Len()))
 		for i := 0; i < v.Len(); i++ {
 			hashSpreadValue(h, v.Index(i))
@@ -582,12 +580,12 @@ func hashSpreadValue(h hash.Hash, v reflect.Value) {
 	case reflect.String:
 		value := v.String()
 		writeNumber(uint64(len(value)))
-		h.Write([]byte(value))
+		h.WriteString(value)
 	case reflect.Bool:
 		if v.Bool() {
-			h.Write([]byte{1})
+			h.WriteByte(1)
 		} else {
-			h.Write([]byte{0})
+			h.WriteByte(0)
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		writeNumber(uint64(v.Int()))
