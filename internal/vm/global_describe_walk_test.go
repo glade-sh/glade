@@ -97,3 +97,37 @@ func TestGlobalDescribeNeighborMatchesBase(t *testing.T) {
 		t.Fatalf("neighbor digest = %s, base = %s", got, want)
 	}
 }
+
+// A rollback past the bulk spread returns the org to its lazy state. The next
+// single install must not complete the spread again.
+func TestLazyInstallCountRestartsAfterBulkSpread(t *testing.T) {
+	org := namesOnlyDescribeOrg("source", nil, "")
+	machine := New(nil)
+	machine.SetOrg(&org)
+	owed := storage.SpreadOwedObjectNames(machine.Org)
+	if len(owed) == 0 {
+		t.Fatal("the lazy org owes no object")
+	}
+	name := owed[0]
+	backup := snapshotRuntimeOrgState(machine.Org)
+	machine.lazySingleInstalls = lazySingleInstallLimit - 1
+	if _, ok := machine.resolveObjectName(name); !ok {
+		t.Fatalf("%s did not resolve", name)
+	}
+	if machine.Org.LazyStandardSpreadEnabled() {
+		t.Fatal("the install limit did not complete the spread")
+	}
+	if machine.lazySingleInstalls != 0 {
+		t.Fatalf("install count after the bulk spread = %d, want 0", machine.lazySingleInstalls)
+	}
+	*machine.Org = backup
+	if _, ok := machine.resolveObjectName(name); !ok {
+		t.Fatalf("%s did not resolve after the rollback", name)
+	}
+	if !machine.Org.LazyStandardSpreadEnabled() {
+		t.Fatal("one install after a rollback completed the spread again")
+	}
+	if machine.lazySingleInstalls != 1 {
+		t.Fatalf("install count after the rollback = %d, want 1", machine.lazySingleInstalls)
+	}
+}

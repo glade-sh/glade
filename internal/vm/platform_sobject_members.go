@@ -1747,6 +1747,9 @@ func (vm *VM) resolveObjectNameForCaller(name, caller string) (string, bool) {
 	if len(vm.Org.Objects) > held && vm.Org.LazyStandardSpreadEnabled() {
 		vm.lazySingleInstalls++
 		if vm.lazySingleInstalls >= lazySingleInstallLimit {
+			// Count afresh: a rollback can return the org to a lazy state, and
+			// each bulk spread must be earned by a full run of single installs.
+			vm.lazySingleInstalls = 0
 			vm.materializeLazyStandardSpread()
 		}
 	}
