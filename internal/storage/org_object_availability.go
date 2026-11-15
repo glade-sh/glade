@@ -350,6 +350,23 @@ func recordSpreadHiddenAccess(org *OrgState, name string, definition ObjectDefin
 	}
 	next[name] = fields
 	org.StandardSpreadHiddenAccess = next
+	definitions := cloneSpreadHiddenDefinitions(org.StandardSpreadHiddenDefinitions)
+	if definitions == nil {
+		definitions = make(map[string]ObjectDefinition)
+	}
+	definitions[name] = definition.Clone()
+	org.StandardSpreadHiddenDefinitions = definitions
+}
+
+func cloneSpreadHiddenDefinitions(source map[string]ObjectDefinition) map[string]ObjectDefinition {
+	if source == nil {
+		return nil
+	}
+	clone := make(map[string]ObjectDefinition, len(source))
+	for name, definition := range source {
+		clone[name] = definition.Clone()
+	}
+	return clone
 }
 
 func plainDeveloperPrunable(name string) bool {

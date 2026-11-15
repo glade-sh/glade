@@ -48,6 +48,24 @@ func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) err
 		return newExceptionError("QueryException", "maximum limit of search results is 2000")
 	}
 	for returningIndex, spec := range query.Returning {
+		specVM := metadataVM
+		if metadataVM.Org != nil {
+			for name, definition := range metadataVM.Org.StandardSpreadHiddenDefinitions {
+				if !strings.EqualFold(name, spec.Object) {
+					continue
+				}
+				if _, exists := metadataVM.Org.Objects[name]; exists {
+					break
+				}
+				// The native rows do not cover SOSL. Validate this selection
+				// against the exact definition removed from the eager org.
+				org := metadataVM.Org.CloneObjectsShallow(1)
+				org.Objects[name] = storage.ObjectState{Definition: definition.Clone()}
+				specVM = New(nil)
+				specVM.Org = &org
+				break
+			}
+		}
 		if spec.Limit.HasValue {
 			if spec.Limit.Value < 0 {
 				return newExceptionError("QueryException", "Limit must be a non-negative value")
@@ -71,7 +89,7 @@ func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) err
 			}
 			fields = append(fields, field.Field)
 		}
-		object, ok := metadataVM.resolveObjectName(spec.Object)
+		object, ok := specVM.resolveObjectName(spec.Object)
 		if !ok {
 			return newExceptionError("QueryException", soslMissingObjectMessage(spec.Object))
 		}
@@ -79,7 +97,7 @@ func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) err
 		for _, order := range spec.OrderBy {
 			selection.Order = append(selection.Order, soql.OrderSpec{Field: order.Field, Desc: order.Desc, Nulls: order.Nulls})
 		}
-		if err := soql.ValidateReferences(*metadataVM.Org, metadataVM.Org.Objects[object].Definition, selection); err != nil {
+		if err := soql.ValidateReferences(*specVM.Org, specVM.Org.Objects[object].Definition, selection); err != nil {
 			message := err.Error()
 			var queryErr *soql.QueryError
 			if errors.As(err, &queryErr) {
@@ -111,8 +129,8 @@ func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) err
 				}
 			}
 			if condition.Op == "IN" || condition.Op == "NOT IN" {
-				definition := metadataVM.Org.Objects[object].Definition
-				if name, ok := storage.ResolveFieldName(definition, metadataVM.Org.Namespace, condition.Field); ok {
+				definition := specVM.Org.Objects[object].Definition
+				if name, ok := storage.ResolveFieldName(definition, specVM.Org.Namespace, condition.Field); ok {
 					if field := definition.Fields[name]; field.Filterable != nil && !*field.Filterable {
 						return nil // No native rows for unfilterable-field IN precedence.
 					}
@@ -133,9 +151,9 @@ func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) err
 				if len(literal.Values) == 0 {
 					return nil
 				}
-				return metadataVM.validateSOQLSelectionLiteral(object, &literal)
+				return specVM.validateSOQLSelectionLiteral(object, &literal)
 			}
-			return metadataVM.validateSOQLSelectionLiteralSource(object, condition, source != nil && source.Bind == "")
+			return specVM.validateSOQLSelectionLiteralSource(object, condition, source != nil && source.Bind == "")
 		}
 		var source *sosl.Condition
 		if original != nil && returningIndex < len(original.Returning) {

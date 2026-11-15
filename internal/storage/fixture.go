@@ -363,6 +363,7 @@ func restorePrunedStandardSpread(org *OrgState) {
 	}
 	if len(org.StandardSpreadHiddenAccess) != 0 {
 		org.StandardSpreadHiddenAccess = nil
+		org.StandardSpreadHiddenDefinitions = nil
 		org.ClearRuntimeSchemaStamp()
 	}
 }
