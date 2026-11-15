@@ -458,7 +458,7 @@ func validateSemiAntiJoinReferences(org storage.OrgState, outerObjectName string
 			return fmt.Errorf("soql: semi-join main operand %s must be an ID or reference field", join.Field)
 		}
 		subquery := join.Subquery
-		subqueryObject, ok := storage.ResolveObjectName(org, subquery.Object)
+		subqueryObject, ok := storage.ResolveVisibleObjectName(org, subquery.Object)
 		if !ok {
 			continue // The ordinary object validator reports the unknown subquery object.
 		}
