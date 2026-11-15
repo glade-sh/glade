@@ -39,14 +39,15 @@ func TestSourceSpreadRESTDescribePreservesNeighbor(t *testing.T) {
 	}
 }
 
-func TestPlainDeveloperSpreadPreservesUncapturedRESTVersion(t *testing.T) {
+// NATIVE: plain_developer_route_inventory/org.tsv:29895.
+func TestPlainDeveloperSpreadCapturedRESTVersion(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObjectSpread(&org)
 	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	response := httptest.NewRecorder()
-	New(&org).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/services/data/v63.0/sobjects/AIFeatureExtractor/describe", nil))
-	if response.Code != http.StatusOK {
-		t.Fatalf("origin/main uncaptured REST version status 200, got %d", response.Code)
+	New(&org).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/sobjects/AIFeatureExtractor/describe", nil))
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("native REST version status 404, got %d", response.Code)
 	}
 }
 
