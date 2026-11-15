@@ -205,6 +205,9 @@ func (s *Server) resolveCompositeTreeChildRelationship(parentObjectName, relatio
 			continue
 		}
 		for objectName, object := range s.Org.Objects {
+			if s.Org.SuppressesSpreadObject(objectName) {
+				continue
+			}
 			field, ok := object.Definition.Fields[relation.Field]
 			if !ok || field.Type != storage.FieldReference || !containsStringFold(field.ReferenceTo, parentObjectName) {
 				continue
