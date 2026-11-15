@@ -278,6 +278,9 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 	if strings.EqualFold(query.Object, "KnowledgeArticleVersion") {
 		org = *storage.KnowledgeArticleVersionReadView(&org)
 	}
+	if !capturedVersionedRootIDQuery(query) && org.SuppressesSpreadObject(query.Object) {
+		return Result{}, queryError(MissingObjectMessage(query.Object), "unknown object "+query.Object)
+	}
 	objectName, ok := storage.ResolveObjectName(org, query.Object)
 	if !ok && capturedVersionedRootIDQuery(query) {
 		org, objectName, ok = orgWithLazyChildObject(org, query.Object)
@@ -893,6 +896,9 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 		if isVirtualSchemaObjectName(objectName) {
 			continue
 		}
+		if org.SuppressesSpreadObject(objectName) {
+			continue
+		}
 		if object.Definition.APIName == "" {
 			continue
 		}
@@ -985,6 +991,9 @@ func virtualSchemaHydrationStamp(org storage.OrgState) string {
 		data, _ := json.Marshal(org.StandardSpreadHiddenAccess)
 		sum := sha256.Sum256(data)
 		stamp += ":" + fmt.Sprintf("%x", sum)
+	}
+	if suppressed := org.SuppressedSpreadVisibilityStamp(); suppressed != "" {
+		stamp += ":" + suppressed
 	}
 	return stamp
 }

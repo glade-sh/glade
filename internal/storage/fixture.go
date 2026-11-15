@@ -341,6 +341,15 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 // restorePrunedStandardSpread reverses only this branch's removals. A
 // source-backed spread must not acquire the unrelated eager inventory.
 func restorePrunedStandardSpread(org *OrgState) {
+	if org.StandardSpreadSuppressed != nil {
+		for name := range org.StandardSpreadSuppressed.snapshot() {
+			if org.SuppressesSpreadObject(name) {
+				DeleteObject(org, name)
+			}
+		}
+		org.StandardSpreadSuppressed = nil
+		org.ClearRuntimeSchemaStamp()
+	}
 	if org.StandardSpreadPruned {
 		org.StandardSpreadPruned = false
 		EnsureStandardObjectSpread(org)
@@ -392,6 +401,9 @@ func ApplyOrgShape(org *OrgState, features []string) {
 		org.StandardSpreadCapturedPlain = false
 	} else if slices.Contains(features, project.PlainDeveloperDescribeShape) {
 		org.StandardSpreadCapturedPlain = true
+	}
+	if org.StandardSpreadCapturedPlain && (org.StandardSpread != "" || org.lazyStandardSpread) {
+		org.ensureSpreadSuppression()
 	}
 	applyOrgShape(org, features)
 	ensureOrganizationGroups(org)

@@ -86,6 +86,7 @@ func (o *OrgState) EnableLazyStandardSpread() {
 	markExistingExplicitBeforeSpread(o)
 	o.ensureFeatureProfile()
 	o.lazyStandardSpread = true
+	o.ensureSpreadSuppression()
 }
 
 // LazyStandardSpreadEnabled reports whether catalog objects are still pending
@@ -137,10 +138,12 @@ func EnsureLazyStandardObject(org *OrgState, name string) (string, bool) {
 		if org.StandardSpread == standardSpreadShaped {
 			applyShapeToLazyObject(org, canonical)
 		}
+		recordSuppressedSpreadObject(org, canonical, nil)
 		return canonical, true
 	}
 	ensureStandardObjectWithProfile(org, canonical, nil)
 	applyShapeToLazyObject(org, canonical)
+	recordSuppressedSpreadObject(org, canonical, nil)
 	return canonical, true
 }
 
@@ -208,6 +211,7 @@ func MaterializeStandardObjectSpread(org *OrgState) bool {
 	}
 	refreshOrgFeatureObjects(org)
 	refreshOrgFeatureFields(org)
+	org.StandardSpreadSuppressed = nil
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)
 	}

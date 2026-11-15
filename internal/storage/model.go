@@ -99,6 +99,9 @@ type OrgState struct {
 	// definitions removed by the captured plain Developer spread. Native rows
 	// do not establish a replacement for these query shapes.
 	StandardSpreadHiddenAccess map[string][]string `json:"standardSpreadHiddenAccess,omitempty"`
+	// StandardSpreadSuppressed records fingerprints of lazy inventory entries
+	// that were not visible before the captured default shape was materialized.
+	StandardSpreadSuppressed *SpreadSuppression `json:"standardSpreadSuppressed,omitempty"`
 	// StandardSpreadCapturedPlain records the exact default Developer shape
 	// used by the native inventory probes, including across serialization.
 	StandardSpreadCapturedPlain bool `json:"standardSpreadCapturedPlain,omitempty"`
@@ -1871,6 +1874,15 @@ func StripNamespaceToken(namespace, name string) string {
 	return name
 }
 
+// ResolveVisibleObjectName keeps route lookups at the source spread's
+// original visibility while allowing the physical inventory to be completed.
+func ResolveVisibleObjectName(org OrgState, name string) (string, bool) {
+	if org.SuppressesSpreadObject(name) {
+		return "", false
+	}
+	return ResolveObjectName(org, name)
+}
+
 func ResolveObjectName(org OrgState, name string) (string, bool) {
 	if org.StandardSpread != "" {
 		// Objects is shared by value copies, so this installs for the caller.
@@ -2664,6 +2676,7 @@ func (i IndexSet) Clone() IndexSet {
 func (o OrgState) Clone() OrgState {
 	out := o
 	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2701,6 +2714,7 @@ func (o OrgState) Clone() OrgState {
 func (o OrgState) CloneObjectsShallow(extra int) OrgState {
 	out := o
 	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	if o.Objects != nil || extra > 0 {
 		out.Objects = make(map[string]ObjectState, len(o.Objects)+extra)
@@ -2721,6 +2735,7 @@ func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
 	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2757,6 +2772,7 @@ func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
 	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2819,6 +2835,7 @@ func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
 	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	if o.Objects != nil {

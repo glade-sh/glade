@@ -54,7 +54,7 @@ func (s *Server) handleCompositeTree(w http.ResponseWriter, r *http.Request, par
 		writeSalesforceError(w, errRequiredFieldMissing, "object name is required for Composite tree")
 		return
 	}
-	objectName, ok := storage.ResolveObjectName(*s.Org, parts[0])
+	objectName, ok := storage.ResolveVisibleObjectName(*s.Org, parts[0])
 	if !ok {
 		writeSalesforceError(w, errUnknownObject, "unknown object "+parts[0])
 		return

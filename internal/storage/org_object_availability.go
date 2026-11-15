@@ -3,6 +3,7 @@ package storage
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"hash"
 	"math"
 	"reflect"
@@ -248,6 +249,90 @@ func cloneSpreadHiddenAccess(source map[string][]string) map[string][]string {
 		clone[name] = slices.Clone(fields)
 	}
 	return clone
+}
+
+func recordSuppressedSpreadObject(org *OrgState, name string, batch map[string]string) {
+	if org == nil || !org.StandardSpreadCapturedPlain || org.AllowsStandardObject(name) {
+		return
+	}
+	object, exists := org.Objects[name]
+	if !exists {
+		return
+	}
+	fingerprint := spreadDefinitionFingerprint(object.Definition)
+	if batch != nil {
+		batch[name] = hex.EncodeToString(fingerprint[:])
+		return
+	}
+	org.ensureSpreadSuppression()
+	org.StandardSpreadSuppressed.put(name, hex.EncodeToString(fingerprint[:]))
+}
+
+// SuppressesSpreadObject preserves the source route's previous visibility for
+// untouched inventory additions. Explicit, edited and record-bearing objects
+// remain visible.
+func (o *OrgState) SuppressesSpreadObject(name string) bool {
+	if o == nil || !o.StandardSpreadCapturedPlain {
+		return false
+	}
+	if prefix, rest, ok := strings.Cut(strings.TrimSpace(name), "."); ok && strings.EqualFold(prefix, "Schema") {
+		name = rest
+	}
+	canonical, known := ResolveKnownStandardObjectName(name)
+	if !known {
+		return false
+	}
+	object, exists := o.Objects[canonical]
+	if fingerprint, marked := o.StandardSpreadSuppressed.lookup(canonical); marked {
+		if !exists {
+			return true
+		}
+		if len(object.Records) != 0 {
+			return false
+		}
+		current := spreadDefinitionFingerprint(object.Definition)
+		return hex.EncodeToString(current[:]) == fingerprint
+	}
+	return !exists && (o.StandardSpread != "" || o.lazyStandardSpread) && !o.AllowsStandardObject(canonical)
+}
+
+// SuppressedSpreadVisibilityStamp tracks every input that can change whether
+// a recorded inventory object contributes to a virtual schema view.
+func (o *OrgState) SuppressedSpreadVisibilityStamp() string {
+	if o == nil {
+		return ""
+	}
+	entries := o.StandardSpreadSuppressed.snapshot()
+	if len(entries) == 0 {
+		return ""
+	}
+	names := make([]string, 0, len(entries))
+	for name := range entries {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	h := sha256.New()
+	write := func(s string) {
+		var size [8]byte
+		binary.LittleEndian.PutUint64(size[:], uint64(len(s)))
+		h.Write(size[:])
+		h.Write([]byte(s))
+	}
+	for _, name := range names {
+		write(name)
+		write(entries[name])
+		if object, exists := o.Objects[name]; exists {
+			h.Write([]byte{1})
+			fingerprint := spreadDefinitionFingerprint(object.Definition)
+			h.Write(fingerprint[:])
+			var count [8]byte
+			binary.LittleEndian.PutUint64(count[:], uint64(len(object.Records)))
+			h.Write(count[:])
+		} else {
+			h.Write([]byte{0})
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func recordSpreadHiddenAccess(org *OrgState, name string, definition ObjectDefinition) {

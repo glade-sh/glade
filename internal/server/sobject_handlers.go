@@ -286,7 +286,7 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 }
 
 func (s *Server) externalIDRoute(w http.ResponseWriter, objectName, externalIDField, externalIDValue string) (storage.ObjectState, string, string, storage.Field, storage.Value, bool) {
-	resolvedObjectName, ok := storage.ResolveObjectName(*s.Org, objectName)
+	resolvedObjectName, ok := storage.ResolveVisibleObjectName(*s.Org, objectName)
 	if !ok {
 		writeSalesforceError(w, errUnknownObject)
 		return storage.ObjectState{}, "", "", storage.Field{}, storage.Value{}, false

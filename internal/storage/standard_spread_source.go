@@ -44,6 +44,7 @@ func (o *OrgState) EnableStandardSpreadSource() {
 		o.Objects = make(map[string]ObjectState)
 	}
 	o.StandardSpread = standardSpreadPlain
+	o.ensureSpreadSuppression()
 	if _, ok := o.Objects["RecordType"]; !ok {
 		ensureRecordTypeObject(o)
 	}
@@ -145,13 +146,13 @@ func spreadObjectOwed(org *OrgState, name string) (string, bool) {
 // reports false when the object is not owed or has no safe template; callers
 // then complete the spread so the answer still matches an eager org.
 func installSpreadObject(org *OrgState, name string) (string, bool) {
-	return installSpreadObjectWithPlan(org, name, nil)
+	return installSpreadObjectWithPlan(org, name, nil, nil)
 }
 
 // installSpreadObjectWithPlan is installSpreadObject with the key prefix plan
 // supplied by a caller that installs many objects. A nil plan is computed on
 // demand when the org's prefixes are validated.
-func installSpreadObjectWithPlan(org *OrgState, name string, plan map[string]string) (string, bool) {
+func installSpreadObjectWithPlan(org *OrgState, name string, plan map[string]string, suppressed map[string]string) (string, bool) {
 	canonical, ok := spreadObjectOwed(org, name)
 	if !ok {
 		return "", false
@@ -172,6 +173,7 @@ func installSpreadObjectWithPlan(org *OrgState, name string, plan map[string]str
 		}
 	}
 	org.Objects[canonical] = installed
+	recordSuppressedSpreadObject(org, canonical, suppressed)
 	return canonical, true
 }
 
@@ -187,18 +189,30 @@ func materializeSpreadSource(org *OrgState) bool {
 	if org.spreadPlanApplies() {
 		plan = spreadKeyPrefixPlan(org)
 	}
+	var suppressed map[string]string
+	if org.StandardSpreadCapturedPlain {
+		org.ensureSpreadSuppression()
+		suppressed = org.StandardSpreadSuppressed.snapshot()
+		if suppressed == nil {
+			suppressed = make(map[string]string)
+		}
+	}
 	for _, name := range KnownStandardObjectNames() {
 		if _, owed := spreadObjectOwed(org, name); !owed {
 			continue
 		}
-		if _, ok := installSpreadObjectWithPlan(org, name, plan); !ok {
+		if _, ok := installSpreadObjectWithPlan(org, name, plan, suppressed); !ok {
 			// No safe template: build this object in place, as the eager
 			// spread does.
 			ensureStandardObjectWithProfile(org, name, nil)
 			if org.StandardSpread == standardSpreadShaped {
 				applyShapeToLazyObject(org, name)
 			}
+			recordSuppressedSpreadObject(org, name, suppressed)
 		}
+	}
+	if len(suppressed) != 0 {
+		org.StandardSpreadSuppressed.replace(suppressed)
 	}
 	org.StandardSpread = ""
 	return true

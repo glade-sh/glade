@@ -1000,7 +1000,7 @@ func (s *Server) lwcShellSampleRecordID(objectName string) string {
 		return lwcShellDefaultSampleRecordID
 	}
 	resolved := strings.TrimSpace(objectName)
-	if name, ok := storage.ResolveObjectName(*s.Org, resolved); ok {
+	if name, ok := storage.ResolveVisibleObjectName(*s.Org, resolved); ok {
 		resolved = name
 	}
 	object, ok := s.Org.Objects[resolved]

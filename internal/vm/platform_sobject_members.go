@@ -1727,6 +1727,9 @@ func (vm *VM) resolveObjectNameForCaller(name, caller string) (string, bool) {
 		name = rest
 		key = apexlang.LowerName(strings.TrimSpace(name))
 	}
+	if vm.Org.SuppressesSpreadObject(name) {
+		return "", false
+	}
 	namespace := apexlang.LowerName(strings.TrimSpace(caller))
 	cacheKey := objectNameLookupKey{Namespace: namespace, Name: key}
 	if vm.objectNameCache == nil {

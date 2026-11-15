@@ -194,7 +194,7 @@ func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, vers
 		return
 	}
 	if !s.isModeledToolingObject(version, query.Object) {
-		if _, ok := storage.ResolveObjectName(*s.Org, query.Object); ok || isToolingLocalSchemaQueryObject(query.Object) {
+		if _, ok := storage.ResolveVisibleObjectName(*s.Org, query.Object); ok || isToolingLocalSchemaQueryObject(query.Object) {
 			s.handleQuery(w, r, version, "tooling/query", allRows)
 			return
 		}
