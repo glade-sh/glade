@@ -4,6 +4,16 @@
 
 - **Debugger startup checks a consistent set of project inputs.** A cold `glade dap` start now builds its org, runtime and startup cache entry from one set of observed project files, including optional files found absent and directory listings. If a file changes while the debugger starts, Glade rebuilds, up to three times. When the project is still changing after the third build, the debugger stops with a message naming the file instead of starting from a mix of old and new files. Finder files and common editor temporary files do not trigger rebuilds where they are not project inputs. Startup cache entries from earlier releases are rebuilt once.
 
+## v0.3.10
+
+v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v90`, `salesforce-platform-v71`, `apextest-runtime-v40`). The first run after upgrading rebuilds them.
+
+### Changes
+
 - Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
 
 - **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
@@ -32,12 +42,24 @@
 
 ### Performance
 
+- **Full schema describe walks.** Describing every token from global describe completes the standard object spread in bulk after repeated individual lookups.
+
 - **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
 
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
 
 
 - **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
+
+### Known issues
+
+- Custom First Name fuzzy rules can match a single initial against a short one-word name (for example T and Ty) where Salesforce does not; fixed in v0.3.11.
+
+### Release validation
+
+- The release candidate passed real-project comparison gates with no new outcomes, and all eight paired shards passed with no additions.
+- Captured behavior is covered by the receiver-trivia, async ordering, email validation and fuzzy-name conformance tests in `internal/sema`, `internal/apextest` and `internal/dml`.
+- Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
 
 ## v0.3.9
 
