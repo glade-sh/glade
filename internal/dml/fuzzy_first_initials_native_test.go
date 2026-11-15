@@ -97,6 +97,9 @@ func TestFuzzyFirstNameAliasKeyedNameHasNoInitial(t *testing.T) {
 		{"B", "Bo", true, 100},
 		{"G", "Guy", true, 100},
 		{"Ty", "Ty R", false, 0},
+		// Derived from the key, no native row: any other one-letter-key name
+		// is kept from "Ty" as "Tyh" is (origin/main matched it at 96).
+		{"Ty", "Tye", false, 0},
 		{"Tye", "Tyeh", true, 97},
 	} {
 		match, confidence := fuzzyFirstName(c.a, c.b, false)
