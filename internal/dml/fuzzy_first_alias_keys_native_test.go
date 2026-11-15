@@ -131,8 +131,12 @@ func TestFuzzyFirstAliasKeysStandardRows(t *testing.T) {
 			}
 			return math.Floor(confidence + 0.5)
 		}, func(i, j int, n, g float64) {
+			a, b, _ := strings.Cut(c.Values[i], "|")
+			b, _, _ = strings.Cut(c.Values[j], "|")
 			if n == 0 {
-				t.Errorf("%s/%s=>%s: glade=%v, native has no match", name, strings.SplitN(c.Values[i], "|", 2)[0], strings.SplitN(c.Values[j], "|", 2)[0], g)
+				t.Errorf("%s/%s=>%s: glade=%v, native has no match", name, a, b, g)
+			} else {
+				t.Logf("%s/%s=>%s: native=%v glade=%v", name, a, b, n, g)
 			}
 		})
 		t.Logf("PANEL %s: %s", name, counts)
