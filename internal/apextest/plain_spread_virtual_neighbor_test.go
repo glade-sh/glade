@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"testing"
 
@@ -40,5 +41,34 @@ func TestPlainDeveloperSpreadPreservesUnprobedVirtualAccess(t *testing.T) {
 				t.Fatalf("origin/main virtual-access outcome changed: %v", err)
 			}
 		})
+	}
+}
+
+func TestPlainDeveloperSpreadPreservesVirtualAccessAfterSerialization(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"68.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	index := loadTestIndex(t, root)
+	org := storage.NewOrgState()
+	org.OrgID = storage.DefaultOrgID
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	org.EnableLazyStandardSpread()
+	storage.MaterializeStandardObjectSpread(&org)
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored storage.OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &restored})
+	const source = `List<String> ns=new List<String>{'AIFeatureExtractor','AIResearchPromptResult','AIScoringStatusEvent'}; List<String> tables=new List<String>{'UserEntityAccess','UserFieldAccess'}; for(String tableName:tables){ for(String n:ns){ String q='SELECT count() FROM '+tableName+' WHERE EntityDefinitionId = \''+n+'\''; System.assert(Database.countQuery(q)>0,tableName+':'+n); } }`
+	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: "68.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := runner.newMachine().Execute(program); err != nil {
+		t.Fatalf("origin/main serialized virtual-access outcome changed: %v", err)
 	}
 }
