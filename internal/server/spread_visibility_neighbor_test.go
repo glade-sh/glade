@@ -99,6 +99,18 @@ func TestSourceSpreadRecordCountPreservesNeighbor(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadLocalObjectSearchPreservesNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	storage.EnsureLazyStandardObject(&org, "CareProgram")
+	for _, object := range lwcLocalObjectOptions(&org, "CareProgram", 50) {
+		if object.APIName == "CareProgram" {
+			t.Fatal("origin/main local object search omitted the neighbor")
+		}
+	}
+}
+
 func TestSourceSpreadRecordIDPreservesNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
