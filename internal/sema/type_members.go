@@ -81,8 +81,12 @@ type semaTypeMemberModel struct {
 }
 
 type semaLazyPlatformTypeMemberModel struct {
-	symbols        []typesys.TypeSymbol
-	symbolsByKey   map[string]*typesys.TypeSymbol
+	symbols      []typesys.TypeSymbol
+	symbolsByKey map[string]*typesys.TypeSymbol
+	// excludedByKey holds the keys a gated stub type the view leaves out
+	// owns, as it owned them in the ungated view; disjoint from symbolsByKey.
+	excludedByKey  map[string]int
+	excluded       typesys.ExcludedPlatformTypes
 	candidates     map[string][]string
 	lookups        sync.Map
 	fieldNamesOnce sync.Once
@@ -350,69 +354,106 @@ func (v *semaTypeMemberView) shortCandidateKeys(short string) []string {
 var semaPlatformTypeMemberModelCache typesys.PlatformViewCache[*semaTypeMemberModel]
 
 func semaPlatformTypeMemberModel() *semaTypeMemberModel {
-	return semaPlatformTypeMemberModelCache.Get(buildSemaPlatformTypeMemberModel)
+	return semaPlatformTypeMemberModelCache.GetWithExcluded(buildSemaPlatformTypeMemberModelWithExcluded)
 }
 
 func buildSemaPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaTypeMemberModel {
+	return buildSemaPlatformTypeMemberModelWithExcluded(symbols, typesys.ExcludedPlatformTypes{})
+}
+
+func buildSemaPlatformTypeMemberModelWithExcluded(symbols []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) *semaTypeMemberModel {
 	return &semaTypeMemberModel{
 		members:  map[string]typeMembers{},
-		platform: newSemaLazyPlatformTypeMemberModel(symbols),
+		platform: newSemaLazyPlatformTypeMemberModelWithExcluded(symbols, excluded),
 	}
 }
 
 func newSemaLazyPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaLazyPlatformTypeMemberModel {
+	return newSemaLazyPlatformTypeMemberModelWithExcluded(symbols, typesys.ExcludedPlatformTypes{})
+}
+
+// semaPlatformSymbolKeyRef names the owner of a key: a view symbol, or the
+// gated stub type at excluded index when symbol is nil.
+type semaPlatformSymbolKeyRef struct {
+	symbol   *typesys.TypeSymbol
+	excluded int
+}
+
+func newSemaLazyPlatformTypeMemberModelWithExcluded(symbols []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) *semaLazyPlatformTypeMemberModel {
 	// The typesys view is process-immutable. Index names once, then materialize
-	// member maps only for symbols an analysis actually resolves.
+	// member maps only for symbols an analysis actually resolves. Gated stub
+	// types the view leaves out are indexed by name in their ungated place and
+	// built only when a lookup selects one.
 	model := &semaLazyPlatformTypeMemberModel{
 		symbols:      symbols,
 		symbolsByKey: make(map[string]*typesys.TypeSymbol, len(symbols)*2),
 		candidates:   make(map[string][]string),
+		excluded:     excluded,
 	}
-	shortAliases := make(map[string]*typesys.TypeSymbol)
+	if excluded.Len() != 0 {
+		model.excludedByKey = make(map[string]int)
+	}
+	exists := func(key string) bool {
+		if _, ok := model.symbolsByKey[key]; ok {
+			return true
+		}
+		_, ok := model.excludedByKey[key]
+		return ok
+	}
+	put := func(key string, ref semaPlatformSymbolKeyRef) {
+		if ref.symbol != nil {
+			model.symbolsByKey[key] = ref.symbol
+			delete(model.excludedByKey, key)
+			return
+		}
+		delete(model.symbolsByKey, key)
+		model.excludedByKey[key] = ref.excluded
+	}
+	shortAliases := make(map[string]semaPlatformSymbolKeyRef)
 	ambiguousShortAliases := make(map[string]bool)
-	for i := range symbols {
-		symbol := &symbols[i]
-		localKey := normalizeName(symbol.Name)
+	typesys.EachPlatformTypeName(symbols, excluded, func(namespace, name string, _ apexast.DeclarationKind, symbol *typesys.TypeSymbol, excludedIndex int) {
+		ref := semaPlatformSymbolKeyRef{symbol: symbol, excluded: excludedIndex}
+		localKey := normalizeName(name)
 		qualifiedKey := localKey
-		if symbol.Namespace != "" {
-			qualifiedKey = normalizeName(symbol.Namespace) + "." + localKey
+		if namespace != "" {
+			qualifiedKey = normalizeName(namespace) + "." + localKey
 		}
 		short := semaShortTypeKeyFromNormalizedKey(localKey)
 		// Platform symbols may carry the namespace separately from Name.
 		// Neither representation may register an unavailable bare SObject name.
 		referenceOnlyAlias := qualifiedKey != short && storage.IsReferenceOnlyStandardObject(short)
-		if _, exists := model.symbolsByKey[localKey]; !exists && (localKey != short || !referenceOnlyAlias) {
-			model.symbolsByKey[localKey] = symbol
+		if !exists(localKey) && (localKey != short || !referenceOnlyAlias) {
+			put(localKey, ref)
 		}
-		model.symbolsByKey[qualifiedKey] = symbol
+		put(qualifiedKey, ref)
 		if short == "" {
-			continue
+			return
 		}
 		// A namespaced platform type cannot make an unavailable reference-only
 		// SObject name resolve as a bare type. Keep its qualified entries above.
 		if referenceOnlyAlias {
-			continue
+			return
 		}
 		if short != localKey {
 			if existing, exists := shortAliases[short]; !exists {
-				shortAliases[short] = symbol
-			} else if existing != symbol {
+				shortAliases[short] = ref
+			} else if existing != ref {
 				ambiguousShortAliases[short] = true
 			}
 			model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], short)
 		}
 		model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], localKey)
 		model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], qualifiedKey)
-	}
-	for short, symbol := range shortAliases {
+	})
+	for short, ref := range shortAliases {
 		if !ambiguousShortAliases[short] {
-			if _, exists := model.symbolsByKey[short]; !exists {
-				model.symbolsByKey[short] = symbol
+			if !exists(short) {
+				put(short, ref)
 			}
 		}
 	}
 	for short := range ambiguousShortAliases {
-		if _, exists := model.symbolsByKey[short]; exists {
+		if exists(short) {
 			continue
 		}
 		candidates := model.candidates[short]
@@ -425,6 +466,18 @@ func newSemaLazyPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaLazyP
 		model.candidates[short] = filtered
 	}
 	return model
+}
+
+// symbolForKey returns the platform symbol that owns key, building a gated
+// stub symbol the view leaves out on first use.
+func (m *semaLazyPlatformTypeMemberModel) symbolForKey(key string) (*typesys.TypeSymbol, bool) {
+	if symbol, ok := m.symbolsByKey[key]; ok {
+		return symbol, true
+	}
+	if index, ok := m.excludedByKey[key]; ok {
+		return m.excluded.Symbol(index), true
+	}
+	return nil, false
 }
 
 func appendUniqueSemaCandidate(candidates []string, key string) []string {
@@ -448,7 +501,7 @@ func (m *semaLazyPlatformTypeMemberModel) lookup(key string) (typeMembers, bool)
 	if objectName, ok := semaStandardSObjectNameForKey(key); ok {
 		result.members = semaStandardSObjectPlaceholder(objectName)
 		result.ok = true
-	} else if symbol, ok := m.symbolsByKey[key]; ok {
+	} else if symbol, ok := m.symbolForKey(key); ok {
 		result.members = semaTypeMembersFromPlatformSymbol(*symbol)
 		result.ok = true
 	} else {
@@ -481,8 +534,10 @@ func (m *semaLazyPlatformTypeMemberModel) hasField(key string) bool {
 		}
 		m.fieldNames = fields
 	})
-	_, ok := m.fieldNames[key]
-	return ok
+	if _, ok := m.fieldNames[key]; ok {
+		return true
+	}
+	return m.excluded.HasFieldName(key)
 }
 
 func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
