@@ -57,6 +57,39 @@ func TestSourceSpreadSemiJoinPreservesNeighborDiagnostic(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadChildRelationshipPreservesNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	if _, ok := storage.EnsureLazyStandardObject(&org, "User"); !ok {
+		if _, exists := org.Objects["User"]; !exists {
+			t.Fatal("User was not materialized")
+		}
+	}
+	checked := false
+	for _, relation := range org.Objects["CareProgram"].Definition.Relations {
+		if relation.ChildRelationship == "" {
+			continue
+		}
+		for _, parent := range relation.ParentObjects {
+			if parent != "User" {
+				continue
+			}
+			checked = true
+			name, _, ok := loadedChildRelationship(org, org.Objects["User"].Definition, relation.ChildRelationship)
+			if ok && name == "CareProgram" {
+				t.Fatal("origin/main child relationship omitted the neighbor")
+			}
+		}
+	}
+	if !checked {
+		t.Fatal("no User child relationship was available to test")
+	}
+}
+
 func TestSourceSpreadDirectQueryPreservesEditedNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
