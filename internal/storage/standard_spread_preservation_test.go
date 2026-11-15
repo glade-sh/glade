@@ -160,6 +160,29 @@ func TestExplicitSpreadInstallSurvivesSourceSerialization(t *testing.T) {
 	}
 }
 
+func TestExplicitEagerSpreadInstallSurvivesSerialization(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObject(&org, "AIFeatureExtractor")
+	EnsureStandardObjectSpread(&org)
+	original := org.Objects["AIFeatureExtractor"].Definition
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	// Exercise a catalog-equal definition even if JSON omits empty values.
+	object := restored.Objects["AIFeatureExtractor"]
+	object.Definition = original
+	restored.Objects["AIFeatureExtractor"] = object
+	ApplyProjectOrgShape(&restored, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := restored.Objects["AIFeatureExtractor"]; !ok {
+		t.Fatal("serialized eager org pruned an explicit catalog-equal install")
+	}
+}
+
 func TestExplicitSpreadInstallSurvivesSerializationWithCatalogEqualDefinition(t *testing.T) {
 	org := NewOrgState()
 	EnsureStandardObject(&org, "AIFeatureExtractor")
