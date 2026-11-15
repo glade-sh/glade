@@ -293,6 +293,11 @@ func TestRecordingHiddenDefinitionDoesNotMutateSharedOrg(t *testing.T) {
 	if _, exists := shared.StandardSpreadHiddenDefinitions["Second"]; exists {
 		t.Fatal("recording changed a shared org's hidden definitions")
 	}
+	current := org.StandardSpreadHiddenDefinitions["First"]
+	current.Fields["Id"] = Field{Label: "changed in org"}
+	if shared.StandardSpreadHiddenDefinitions["First"].Fields["Id"].Label != "original" {
+		t.Fatal("recording retained shared hidden field maps")
+	}
 	field := first.Fields["Id"]
 	field.Label = "edited"
 	first.Fields["Id"] = field
