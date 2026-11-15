@@ -160,6 +160,30 @@ func TestExplicitSpreadInstallSurvivesSourceSerialization(t *testing.T) {
 	}
 }
 
+func TestExplicitSpreadInstallSurvivesSerializationWithCatalogEqualDefinition(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObject(&org, "AIFeatureExtractor")
+	original := org.Objects["AIFeatureExtractor"]
+	org.EnableStandardSpreadSource()
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	// JSON may omit empty collections. Preserve the exact installed definition
+	// to exercise the catalog-equal case independently of that representation.
+	object := restored.Objects["AIFeatureExtractor"]
+	object.Definition = original.Definition
+	restored.Objects["AIFeatureExtractor"] = object
+	ApplyProjectOrgShape(&restored, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := restored.Objects["AIFeatureExtractor"]; !ok {
+		t.Fatal("serialized source org pruned an explicit catalog-equal install")
+	}
+}
+
 func TestExplicitSpreadInstallSurvivesSerializationForOtherCapturedObjects(t *testing.T) {
 	for _, name := range []string{"AIResearchPromptResult", "AIScoringStatusEvent"} {
 		t.Run(name, func(t *testing.T) {
