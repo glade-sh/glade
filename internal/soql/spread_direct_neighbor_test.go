@@ -33,6 +33,30 @@ func TestSourceSpreadDirectQueryPreservesNeighbor(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadSemiJoinPreservesNeighborDiagnostic(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		features []string
+	}{
+		{"default", []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape}},
+		{"optional", []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := storage.NewOrgState()
+			org.EnableStandardSpreadSource()
+			storage.ApplyProjectOrgShape(&org, tc.features)
+			query, err := Parse("SELECT Id FROM Account WHERE Id IN (SELECT Id FROM CareProgram)")
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(org, query)
+			if err == nil || err.Error() != "soql: unknown object CareProgram" {
+				t.Fatalf("origin/main diagnostic = %v", err)
+			}
+		})
+	}
+}
+
 func TestSourceSpreadDirectQueryPreservesEditedNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
