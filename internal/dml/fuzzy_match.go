@@ -311,7 +311,7 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 
 // keyboardPanelShape bounds the fallback to the eligible LastName panel pairs
 // in fuzzy_name_keys/org.tsv:10-25,122-169 (cases.json supplies the values)
-// and duplicate_fuzzy_matching/org.tsv:3,94 (which contain the extrema).
+// and duplicate_fuzzy_matching/org.tsv:3,94,368 (length and trail extrema).
 // Positional differences are substitutions; unpaired suffixes are trailing.
 // The length is the longer folded, apostrophe-stripped name in runes.
 func keyboardPanelShape(a, b string) bool {
