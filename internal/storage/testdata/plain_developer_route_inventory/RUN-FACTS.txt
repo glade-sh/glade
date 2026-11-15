@@ -1,0 +1,7 @@
+Fresh Developer scratch orgs, 30-day duration, no features or settings.
+Captured 2026-11-14 and 2026-11-15 UTC using Salesforce CLI 2.157.8 and controlled SOAP and REST clients.
+The capture covered anonymous Apex and test context at APIs 62, 67 and 68; Visualforce and UI at APIs 59, 67 and 68; and REST at APIs 60, 65, 66, 67 and 68.
+Every batch included positive and negative controls. The three anonymous API 62 and 67 observations already present in the neighboring plain_developer_spread fixture were not repeated.
+The org.tsv file contains route outcomes. virtual.tsv and access.tsv contain virtual metadata and user-access query outcomes; query exceptions do not establish absence.
+All scratch orgs were deleted, and deletion was verified by org lookup and through the Dev Hub.
+See native-run.md for input and checkpoint details.
