@@ -176,3 +176,19 @@ func TestLastNamePreviouslyMatchedScores(t *testing.T) {
 		}
 	}
 }
+
+func TestLastNameWordKeyCacheSeparatesInputs(t *testing.T) {
+	// The whole folded name is the only variable input to the cached key.
+	for _, c := range []struct{ input, want string }{
+		{"harlow 1", "#1"},
+		{"harlow 2", "#2"},
+		{"harlow ii", lastNameCode("harlow")},
+		{"smith ii", lastNameCode("smith")},
+	} {
+		for i := 0; i < 2; i++ {
+			if got := lastNameWordKey(c.input); got != c.want {
+				t.Errorf("%q: got %q, want %q", c.input, got, c.want)
+			}
+		}
+	}
+}
