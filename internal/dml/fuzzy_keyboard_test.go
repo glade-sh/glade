@@ -2,6 +2,7 @@ package dml
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 // NATIVE fuzzy_name_keys/org.tsv (suf1, rsp1, ks1) and
 // duplicate_fuzzy_matching/org.tsv (P4.LN.KB1, P4.LN.KB2): Keyboard Distance
 // uses positional substitutions and trailing characters; the final position
-// is cheaper. Its caller limits the fallback to captured panel ranges.
+// is cheaper. Its caller limits the fallback to captured joint shapes.
 func TestKeyboardDistanceNativeShapes(t *testing.T) {
 	for _, c := range []struct {
 		a, b       string
@@ -21,7 +22,7 @@ func TestKeyboardDistanceNativeShapes(t *testing.T) {
 	}{
 		{"Harlow II", "Harlow IV", true, 98},         // suf1: native 97; preserve the base score
 		{"Harlow Jr", "Harlowe", true, 97},           // suf1: a space against a letter, two trailing; native 96 (fuzzyNameKeysResiduals)
-		{"Farnsdelwick", "Farnsdraeovk", true, 96},   // ks1: six substitutions
+		{"Farnsdelwick", "Farnsdraeovk", true, 96},   // ks1: five substitutions
 		{"Abernathy", "Abernaty", true, 98},          // rsp1: h/y and a trailing y; native 99 (fuzzyNameKeysResiduals)
 		{"Campbell", "Cambell", false, 0},            // rsp1
 		{"Richardson", "Richardsop", true, 98},       // P4.LN.KB1
@@ -69,7 +70,7 @@ func TestKeyboardDistanceUnmeasuredShapes(t *testing.T) {
 	}
 	// The standard rules keep the earlier costs.
 	if matched, _ := standardLastName("Farnsdelwick", "Farnsdraeovk"); matched {
-		t.Error("standard Last Name matched six substitutions")
+		t.Error("standard Last Name matched five substitutions")
 	}
 }
 
@@ -193,34 +194,127 @@ func TestLastNameWordKeyCacheSeparatesInputs(t *testing.T) {
 	}
 }
 
-// Outside the observed panel envelope, the custom fallback keeps the base
-// keyboard result, including its confidence for nonmatches.
-func TestLastNameKeyboardOutsidePanelBounds(t *testing.T) {
+// keyboardBase is the origin/main Last Name result after the exact, key and
+// Metaphone 3 steps: the keyboard scorer the standard rules still use.
+func keyboardBase(t *testing.T, a, b string) (bool, float64) {
+	t.Helper()
+	x, y := foldText(a), foldText(b)
+	if x == y || lastNameWordKey(x) != lastNameWordKey(y) {
+		t.Fatalf("%q/%q does not reach keyboard scoring", a, b)
+	}
+	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+		t.Fatalf("%q/%q does not reach keyboard scoring", a, b)
+	}
+	return lastNameKeyboard(x, y)
+}
+
+// Differential against origin/main ad1577dbc6: each pair has a shape no
+// native row holds, the new scorer alone would match it, and the result stays
+// the literal origin/main score. The first four are outside the captured
+// extrema; the rest are holes inside them.
+func TestLastNameKeyboardUncapturedShapesKeepBase(t *testing.T) {
 	for _, pair := range []struct {
 		a, b  string
+		shape [3]int
 		score float64
 	}{
-		{"Farnsdelwickaaaa", "Farnsdraeovkaaaa", 97.625},               // length 16
-		{"Farnsdelwick", "Farnsdraeovkzzzzzzzzzz", 92.590909090909093}, // trailing difference 10
-		{"erkecpmeitrn", "erkqudnukxik", 91.916666666666671},           // nine substitutions
-		{"ab", "ap", 88}, // length 2
+		{"Farnsdelwickaaaa", "Farnsdraeovkaaaa", [3]int{16, 5, 0}, 97.625},
+		{"Farnsdelwick", "Farnsdraeovkzzzzzzzzzz", [3]int{22, 5, 10}, 92.590909090909093},
+		{"erkecpmeitrn", "erkqudnukxik", [3]int{12, 9, 0}, 91.916666666666671},
+		{"ab", "ap", [3]int{2, 1, 0}, 88},
+		{"Farnsdelwickab", "Farnsdraeovkab", [3]int{14, 5, 0}, 97.28571428571428},
+		{"Farnsdelwickabc", "Farnsdraeovkabc", [3]int{15, 5, 0}, 97.46666666666667},
+		{"Farnsdelwickam", "Farnsdraeovka", [3]int{14, 5, 1}, 96.39285714285714},
+		{"Quenderthwaits", "Quenderiltaits", [3]int{14, 3, 0}, 98.28571428571428},
+		{"Quenderthwaite", "Quenderiltait", [3]int{14, 3, 1}, 97.39285714285714},
 	} {
-		x, y := foldText(pair.a), foldText(pair.b)
-		if lastNameWordKey(x) != lastNameWordKey(y) || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
-			t.Errorf("%q/%q does not reach keyboard scoring", pair.a, pair.b)
-			continue
+		x, y := lastNameApostrophes.Replace(foldText(pair.a)), lastNameApostrophes.Replace(foldText(pair.b))
+		if got := keyboardShape(x, y); got != pair.shape {
+			t.Errorf("%q/%q: shape %v, want %v", pair.a, pair.b, got, pair.shape)
 		}
-		want, score := lastNameKeyboard(x, y)
+		if keyboardPanelShape(x, y) {
+			t.Errorf("%q/%q: shape %v is captured", pair.a, pair.b, pair.shape)
+		}
+		want, score := keyboardBase(t, pair.a, pair.b)
 		got, actual := fuzzyLastName(pair.a, pair.b, false)
 		if want || score != pair.score || got != want || actual != score {
-			t.Errorf("%q/%q: got %v %v, base %v %v", pair.a, pair.b, got, actual, want, score)
+			t.Errorf("%q/%q: got %v %v, base %v %v, origin/main false %v", pair.a, pair.b, got, actual, want, score, pair.score)
+		}
+		// Without the gate the result would change.
+		if raw, ok := keyboardDistance(x, y); (ok && raw >= 90) == want && averageWith100(raw) == score {
+			t.Errorf("%q/%q: the new scorer agrees with base; the row proves nothing", pair.a, pair.b)
 		}
 	}
 }
 
-func TestLastNameKeyboardPanelBounds(t *testing.T) {
+// Every uncaptured shape keeps the base result: generated pairs sweep lengths
+// to 17, substitutions to 9 and trailing counts to 10. Substitutions run
+// back from the end of the shorter name so the match key survives.
+func TestLastNameKeyboardUncapturedSweepKeepsBase(t *testing.T) {
+	const tail = "ertuiopasdf"
+	neighbor := strings.NewReplacer("a", "s", "b", "n", "c", "v", "d", "f", "e", "r", "f", "g", "g", "h", "h", "j", "i", "o", "k", "l",
+		"l", "k", "m", "n", "n", "m", "o", "p", "p", "o", "r", "t", "s", "d", "t", "y", "u", "i", "v", "b", "w", "e", "y", "u", "z", "x", "j", "k", "q", "w", "x", "c")
+	captured, checked, differs := map[[3]int]bool{}, map[[3]int]bool{}, 0
+	for _, stem := range []string{"farnsdelwickmorvn", "quenderthwaitsbly", "morvenlfddowhtkgs", "bartholomewsdfghj"} {
+		for length := 2; length <= len(stem); length++ {
+			for trailing := 0; trailing <= 10 && trailing < length; trailing++ {
+				short := length - trailing
+				for substitutions := 0; substitutions <= 9 && substitutions <= short; substitutions++ {
+					x := stem[:short]
+					y := x[:short-substitutions] + neighbor.Replace(x[short-substitutions:]) + tail[:trailing]
+					shape := keyboardShape(x, y)
+					if shape != [3]int{length, substitutions, trailing} {
+						t.Fatalf("%q/%q: shape %v", x, y, shape)
+					}
+					if x == y || lastNameWordKey(x) != lastNameWordKey(y) || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+						continue
+					}
+					if keyboardPanelShape(x, y) {
+						captured[shape] = true
+						continue
+					}
+					checked[shape] = true
+					want, score := lastNameKeyboard(x, y)
+					if raw, ok := keyboardDistance(x, y); (ok && raw >= 90) != want || averageWith100(raw) != score {
+						differs++
+					}
+					for _, order := range [][2]string{{x, y}, {y, x}} {
+						if got, actual := fuzzyLastName(order[0], order[1], false); got != want || actual != score {
+							t.Errorf("%q/%q: got %v %v, base %v %v", order[0], order[1], got, actual, want, score)
+						}
+					}
+				}
+			}
+		}
+	}
+	t.Logf("%d captured and %d uncaptured shapes; the new scorer differs on %d uncaptured pairs", len(captured), len(checked), differs)
+	if len(captured) < 90 || len(checked) < 300 || differs < 900 {
+		t.Fatalf("sweep reached %d captured and %d uncaptured shapes, %d differing", len(captured), len(checked), differs)
+	}
+}
+
+// keyboardShape is (length, substitutions, trailing) of two prepared names.
+func keyboardShape(x, y string) [3]int {
+	rx, ry := []rune(x), []rune(y)
+	if len(rx) > len(ry) {
+		rx, ry = ry, rx
+	}
+	diff := 0
+	for j := range rx {
+		if rx[j] != ry[j] {
+			diff++
+		}
+	}
+	return [3]int{len(ry), diff, len(ry) - len(rx)}
+}
+
+// The gate table is exactly the shapes of the captured pairs that reach the
+// fallback: not an exact match, same key, different Metaphone 3 code, more
+// than a single substitution, no terminal swap, and no base keyboard match.
+func TestLastNameKeyboardPanelCells(t *testing.T) {
 	cases, _ := fuzzyNameKeysData(t)
-	minima, maxima := [3]int{1 << 30, 1 << 30, 1 << 30}, [3]int{}
+	var want [16][9]uint16
 	measure := func(values []string) {
 		for i, a := range values {
 			for _, b := range values[i+1:] {
@@ -229,27 +323,17 @@ func TestLastNameKeyboardPanelBounds(t *testing.T) {
 					continue
 				}
 				x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
-				if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+				if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) || singleKeyboardSubstitution(x, y) {
 					continue
 				}
-				rx, ry := []rune(x), []rune(y)
-				if len(rx) > len(ry) {
-					rx, ry = ry, rx
+				if _, _, swap := lastNameTerminalSwap(x, y); swap {
+					continue
 				}
-				diff := 0
-				for j := range rx {
-					if rx[j] != ry[j] {
-						diff++
-					}
+				if matched, _ := lastNameKeyboard(x, y); matched {
+					continue
 				}
-				for j, value := range [3]int{diff, len(ry) - len(rx), len(ry)} {
-					if value < minima[j] {
-						minima[j] = value
-					}
-					if value > maxima[j] {
-						maxima[j] = value
-					}
-				}
+				shape := keyboardShape(x, y)
+				want[shape[0]][shape[1]] |= 1 << uint(shape[2])
 			}
 		}
 	}
@@ -282,8 +366,21 @@ func TestLastNameKeyboardPanelBounds(t *testing.T) {
 		}
 		measure(values)
 	}
-	if minima != [3]int{0, 0, 3} || maxima != [3]int{8, 9, 15} {
-		t.Fatalf("eligible panel bounds changed: min %v max %v", minima, maxima)
+	if want != keyboardPanelCells {
+		var b strings.Builder
+		for length, row := range want {
+			if row != [9]uint16{} {
+				fmt.Fprintf(&b, "\t%d: {", length)
+				for i, bits := range row {
+					if i > 0 {
+						b.WriteString(", ")
+					}
+					fmt.Fprintf(&b, "%#04x", bits)
+				}
+				b.WriteString("},\n")
+			}
+		}
+		t.Fatalf("captured shapes changed; keyboardPanelCells should be:\n%s", b.String())
 	}
 }
 
@@ -292,14 +389,20 @@ func TestKeyboardPanelShapeBoundaries(t *testing.T) {
 		a, b string
 		want bool
 	}{
-		{"abc", "abd", true},
-		{"ééé", "ééa", true},
-		{"abcdefghijklmno", "abcdefghijklmnp", true},
-		{"ab", "ac", false},
-		{"éé", "éa", false},
-		{"abcdefghijklmnop", "abcdefghijklmnoq", false},
-		{"abcdefghi", "zzzzzzzzZ", false},
-		{"abc", "abcdefghijklM", false},
+		{"abcd", "abxy", true},                                   // (4, 2, 0)
+		{"éééé", "ééab", true},                                   // (4, 2, 0) in runes
+		{"abc", "abd", false},                                    // (3, 1, 0): a single substitution never reaches the gate
+		{"abc", "axy", false},                                    // (3, 2, 0)
+		{"éé", "éa", false},                                      // (2, 1, 0)
+		{"abcdefghijklmno", "abcdefghi", true},                   // (15, 0, 6)
+		{"abcdefghijklmno", "abcdefghijklmnp", false},            // (15, 1, 0)
+		{"abcdefghijklmnop", "abcdefghijklmnoq", false},          // length 16
+		{"abcdefghi", "zzzzzzzzZ", false},                        // nine substitutions
+		{"abc", "abcdefghijklM", false},                          // ten trailing
+		{"farnsdelwicka", "farnsdraeovka", true},                 // (13, 5, 0): 60 captured pairs hold this shape
+		{"abcdefghijklm", "abcdefgzzzzzz", true},                 // (13, 6, 0)
+		{"abcdefghijklmn", "abcdefgzzzzzzn", false},              // (14, 6, 0)
+		{"abcdefghijklm", "abcdefgzzzzzzzzzzzzzzzzzzzzz", false}, // trailing beyond the table's bits
 	} {
 		if got := keyboardPanelShape(c.a, c.b); got != c.want {
 			t.Errorf("%q/%q: %v, want %v", c.a, c.b, got, c.want)

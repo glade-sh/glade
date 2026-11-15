@@ -203,17 +203,20 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    are compared position by position over the shorter length, with no
    alignment. In `fuzzy_name_keys` panels ks1 to ks3, suf1 and rsp1,
    `Farnsdelwick` finds
-   `Farnsdraeovk` at 96 with six substitutions; `Abernathy` finds `Abernaty`
+   `Farnsdraeovk` at 96 with five substitutions; `Abernathy` finds `Abernaty`
    at 99; `Frank` does not find `Franklin`). The sum is divided by the longer
    length. The costs are fitted to the 2,528 distinct native pairs that reach
    this step (`keyboardDistance` in `internal/dml/fuzzy_keyboard.go`) for
    unequal lengths or two or more substitutions. Equal-length pairs with one
    substitution retain the earlier `keyboardSimilarity` scorer. Pairs that
    the earlier scorer already matched also retain its confidence; the new
-   scorer applies only when that scorer did not match and the longer name is
-   3–15 runes, with at most 8 positional substitutions and 9 trailing runes,
-   the ranges in eligible Last Name panel pairs. Outside those ranges the
-   earlier keyboard scorer decides. The fitted costs are:
+   scorer applies only when that scorer did not match and the pair's joint
+   shape is one a captured pair has: the longer name's length in runes, the
+   count of positional substitutions and the count of trailing runes, taken
+   together. The native rows hold 210 such shapes (`keyboardPanelCells` in
+   `internal/dml/fuzzy_match.go`), with lengths 4–15. For any other shape,
+   including untested combinations inside those ranges, the earlier keyboard
+   scorer decides. The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
      beyond; the final character of two names of equal length is one step

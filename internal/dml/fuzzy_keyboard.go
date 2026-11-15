@@ -10,9 +10,9 @@ import (
 // to ks3; 2,528 distinct pairs that reach this step).
 //
 // The names are compared position by position over the shorter length; there
-// is no alignment; its caller bounds substitutions, trailing length and name
-// length to the captured panel ranges ("Farnsdelwick" finds "Farnsdraeovk" at 96 with six
-// substitutions; "Abernathy" finds "Abernaty" at 99 as h/y plus a trailing
+// is no alignment; its caller applies it only to the joint (length,
+// substitutions, trailing) shapes the native rows hold (keyboardPanelShape;
+// "Farnsdelwick" finds "Farnsdraeovk" at 96 with five substitutions; "Abernathy" finds "Abernaty" at 99 as h/y plus a trailing
 // y). The cost is divided by the longer length, the score is 100 * (1 - cost)
 // and a score of 90 matches.
 //

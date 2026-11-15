@@ -309,11 +309,13 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	return ok && score >= 90, averageWith100(score)
 }
 
-// keyboardPanelShape bounds the fallback to the eligible LastName panel pairs
-// in fuzzy_name_keys/org.tsv:10-25,122-169 (cases.json supplies the values)
-// and duplicate_fuzzy_matching/org.tsv:3,94,368 (length and trail extrema).
-// Positional differences are substitutions; unpaired suffixes are trailing.
-// The length is the longer folded, apostrophe-stripped name in runes.
+// keyboardPanelShape gates the fallback to the joint shapes the native rows
+// hold: fuzzy_name_keys/org.tsv:10-25,122-169 (cases.json supplies the panel
+// values) and the LastName rows of duplicate_fuzzy_matching/org.tsv. A shape
+// is (length, substitutions, trailing): the longer folded, apostrophe-stripped
+// name in runes, the positional differences, and the unpaired suffix. Only a
+// shape that some captured pair brings to the fallback passes; every other
+// shape keeps the base keyboard result.
 func keyboardPanelShape(a, b string) bool {
 	substitutions, na, nb := 0, 0, 0
 	for len(a) > 0 && len(b) > 0 {
@@ -332,7 +334,28 @@ func keyboardPanelShape(a, b string) bool {
 	if nb > na {
 		longer, trailing = nb, nb-na
 	}
-	return substitutions <= 8 && trailing <= 9 && longer >= 3 && longer <= 15
+	if longer >= len(keyboardPanelCells) || substitutions >= len(keyboardPanelCells[longer]) {
+		return false
+	}
+	return keyboardPanelCells[longer][substitutions]>>uint(trailing)&1 == 1
+}
+
+// keyboardPanelCells[length][substitutions] has bit t set when a captured
+// pair with t trailing characters reaches the fallback.
+// TestLastNameKeyboardPanelCells rebuilds it from the native rows.
+var keyboardPanelCells = [16][9]uint16{
+	4:  {0x0000, 0x0002, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	5:  {0x0000, 0x0002, 0x0007, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	6:  {0x0000, 0x0006, 0x000f, 0x0007, 0x0007, 0x0000, 0x0000, 0x0000, 0x0000},
+	7:  {0x0000, 0x004e, 0x001f, 0x000f, 0x000f, 0x0007, 0x0000, 0x0000, 0x0000},
+	8:  {0x0008, 0x001e, 0x0016, 0x000f, 0x0017, 0x0007, 0x0003, 0x0000, 0x0000},
+	9:  {0x0018, 0x001e, 0x003f, 0x000f, 0x000f, 0x000b, 0x0007, 0x0000, 0x0000},
+	10: {0x0018, 0x001e, 0x000e, 0x007f, 0x000f, 0x0014, 0x001f, 0x0005, 0x0000},
+	11: {0x0038, 0x0036, 0x003e, 0x006e, 0x0087, 0x0065, 0x0036, 0x0008, 0x0004},
+	12: {0x0078, 0x006e, 0x003e, 0x001b, 0x010b, 0x0043, 0x0029, 0x0014, 0x0000},
+	13: {0x0038, 0x0000, 0x0010, 0x0081, 0x02d1, 0x0001, 0x0011, 0x0000, 0x0000},
+	14: {0x0070, 0x0000, 0x0020, 0x0000, 0x0020, 0x0000, 0x0020, 0x0000, 0x0000},
+	15: {0x00c0, 0x0060, 0x0050, 0x0048, 0x0040, 0x0000, 0x0000, 0x0020, 0x0000},
 }
 
 // singleKeyboardSubstitution counts positions in runes, as keyboardSimilarity does.
