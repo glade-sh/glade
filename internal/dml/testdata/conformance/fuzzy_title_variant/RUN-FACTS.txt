@@ -1,0 +1,7 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for custom matching rules (Contact N1Title: Title AND exact LastName; N1First: First Name) and the standard Contact duplicate rule
+date: 2026-11-15
+orgs: fresh 30-day Developer Edition scratch orgs on campaign Dev Hubs, each deleted after its run and verified
+rows: group c9 is the title panels (word order c9t1, subsets c9t2 and c9t3, stop words and punctuation c9t4, synthetic words) and nickname panels c9n1 to c9n5 of this run; group b3 is tt1 and tt2 from the B3 run (2026-11-14, Contact N3Title, same method)
+probe: FuzzyPanel.run inserts one record per value, then asks findDuplicates about an unsaved copy of every value; each match of the probed rule is candidate index, existing index (base 36) and the confidence when not 100; no record ids are stored
+apis: 62.0 and 67.0; routes anonymous and named @IsTest; two repeats each; all 128 c9 observations of each case agree
+Name Variant: the public nickname lists are candidate sources only; no table entry comes from them. Every pair in nameVariantTable has a native row.

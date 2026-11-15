@@ -895,7 +895,7 @@ marisa maria mariah mariam marian marie marion marisela marisol marissa marla ma
 marisela maria marion marisa marisol marissa
 marisol maria marion marisa marisela marissa
 marissa maria mariah mariam marian marie marisa marisela marisol marla marlene mary
-marjorie greta maggie margaret margarita margaux marge margie margo margot marguerite meg rita
+marjorie greta maggie margaret margarita margaux marge margie margo margot marguerite meg peggy rita
 mark marc marcelo marco marcus marek marko markus
 marko marc marcelo marco marcus marek mark markus
 markus marc marcelo marco marcus marek mark marko marlin marlon
@@ -1057,7 +1057,7 @@ paula paola paulette pauline
 paulette paola paula pauline
 pauline paola paula paulette
 pedro pete peter petr pieter piotr
-peggy greta maggie margaret marge margie margot meg rita
+peggy greta maggie margaret marge margie margot marjorie meg rita
 penelope penny
 penny penelope
 percival percy
