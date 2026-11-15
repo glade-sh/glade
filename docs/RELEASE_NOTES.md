@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+No changes yet.
+
 ## v0.3.10
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
