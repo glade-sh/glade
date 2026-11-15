@@ -361,7 +361,7 @@ func restorePrunedStandardSpread(org *OrgState) {
 			ensureStandardObjectWithProfile(org, name, nil)
 		}
 	}
-	if len(org.StandardSpreadHiddenAccess) != 0 {
+	if len(org.StandardSpreadHiddenAccess) != 0 || len(org.StandardSpreadHiddenDefinitions) != 0 {
 		org.StandardSpreadHiddenAccess = nil
 		org.StandardSpreadHiddenDefinitions = nil
 		org.ClearRuntimeSchemaStamp()

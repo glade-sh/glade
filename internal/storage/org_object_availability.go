@@ -354,7 +354,7 @@ func recordSpreadHiddenAccess(org *OrgState, name string, definition ObjectDefin
 	if definitions == nil {
 		definitions = make(map[string]ObjectDefinition)
 	}
-	definitions[name] = definition.Clone()
+	definitions[name] = cloneSpreadHiddenDefinition(definition)
 	org.StandardSpreadHiddenDefinitions = definitions
 }
 
@@ -364,9 +364,70 @@ func cloneSpreadHiddenDefinitions(source map[string]ObjectDefinition) map[string
 	}
 	clone := make(map[string]ObjectDefinition, len(source))
 	for name, definition := range source {
-		clone[name] = definition.Clone()
+		clone[name] = cloneSpreadHiddenDefinition(definition)
 	}
 	return clone
+}
+
+// Hidden definitions outlive the removed object and are copied across runtime
+// clones. Copy nested pointers as well as maps and slices to keep them isolated.
+func cloneSpreadHiddenDefinition(definition ObjectDefinition) ObjectDefinition {
+	return cloneSpreadHiddenValue(reflect.ValueOf(definition)).Interface().(ObjectDefinition)
+}
+
+func cloneSpreadHiddenValue(value reflect.Value) reflect.Value {
+	switch value.Kind() {
+	case reflect.Pointer:
+		if value.IsNil() {
+			return reflect.Zero(value.Type())
+		}
+		clone := reflect.New(value.Type().Elem())
+		clone.Elem().Set(cloneSpreadHiddenValue(value.Elem()))
+		return clone
+	case reflect.Interface:
+		if value.IsNil() {
+			return reflect.Zero(value.Type())
+		}
+		clone := reflect.New(value.Type()).Elem()
+		clone.Set(cloneSpreadHiddenValue(value.Elem()))
+		return clone
+	case reflect.Struct:
+		clone := reflect.New(value.Type()).Elem()
+		clone.Set(value)
+		for i := 0; i < value.NumField(); i++ {
+			if value.Field(i).CanInterface() && clone.Field(i).CanSet() {
+				clone.Field(i).Set(cloneSpreadHiddenValue(value.Field(i)))
+			}
+		}
+		return clone
+	case reflect.Map:
+		if value.IsNil() {
+			return reflect.Zero(value.Type())
+		}
+		clone := reflect.MakeMapWithSize(value.Type(), value.Len())
+		iter := value.MapRange()
+		for iter.Next() {
+			clone.SetMapIndex(iter.Key(), cloneSpreadHiddenValue(iter.Value()))
+		}
+		return clone
+	case reflect.Slice:
+		if value.IsNil() {
+			return reflect.Zero(value.Type())
+		}
+		clone := reflect.MakeSlice(value.Type(), value.Len(), value.Len())
+		for i := 0; i < value.Len(); i++ {
+			clone.Index(i).Set(cloneSpreadHiddenValue(value.Index(i)))
+		}
+		return clone
+	case reflect.Array:
+		clone := reflect.New(value.Type()).Elem()
+		for i := 0; i < value.Len(); i++ {
+			clone.Index(i).Set(cloneSpreadHiddenValue(value.Index(i)))
+		}
+		return clone
+	default:
+		return value
+	}
 }
 
 func plainDeveloperPrunable(name string) bool {
