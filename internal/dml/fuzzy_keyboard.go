@@ -35,9 +35,9 @@ import (
 //     bottom row dearest (keyboardTrailing).
 //
 // The fit keeps every native non-match at least 0.3 below the threshold. It
-// reproduces every match of those rows; about one confidence in twenty is one
-// point off, where rows with the same key pairs disagree (Glade reports
-// "Abernathy" and "Abernaty" at 98).
+// reproduces the membership of those rows. Some confidences differ by one
+// point, including where rows with the same key pairs disagree (Glade reports
+// "Abernathy" and "Abernaty" at 98); legacy matches retain their old scores.
 const (
 	keyboardAccent      = 0.16
 	keyboardLetterSpace = 0.169

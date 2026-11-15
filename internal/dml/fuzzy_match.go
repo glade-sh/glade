@@ -331,7 +331,7 @@ var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")
 // lastNameKeyboard is the Keyboard Distance step of the standard rules' Last
 // Name on two folded names whose apostrophes are removed. It keeps the costs
 // the standard rows were fitted with (keyboardSimilarity); the custom Last
-// Name method uses keyboardDistance.
+// Name method also retains this score for previously accepted pairs.
 func lastNameKeyboard(x, y string) (bool, float64) {
 	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
 		return matched, confidence
