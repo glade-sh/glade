@@ -179,6 +179,7 @@ func TestExplicitEagerSpreadInstallSurvivesSerialization(t *testing.T) {
 	object := restored.Objects["AIFeatureExtractor"]
 	object.Definition = original
 	restored.Objects["AIFeatureExtractor"] = object
+	EnsureStandardObjectSpread(&restored)
 	ApplyProjectOrgShape(&restored, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
 	if _, ok := restored.Objects["AIFeatureExtractor"]; !ok {
 		t.Fatal("serialized eager org pruned an explicit catalog-equal install")
