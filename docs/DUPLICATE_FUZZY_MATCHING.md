@@ -201,8 +201,8 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    could not prove and missed dropped vowels, silent letters and name codes.
 3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
    are compared position by position over the shorter length, with no
-   alignment (`fuzzy_name_keys` panel cases supply the measured ranges)
-   for substitutions and trailing characters (`fuzzy_name_keys` ks1 to ks3, suf1, rsp1: `Farnsdelwick` finds
+   alignment. In `fuzzy_name_keys` panels ks1 to ks3, suf1 and rsp1,
+   `Farnsdelwick` finds
    `Farnsdraeovk` at 96 with six substitutions; `Abernathy` finds `Abernaty`
    at 99; `Frank` does not find `Franklin`). The sum is divided by the longer
    length. The costs are fitted to the 2,528 distinct native pairs that reach
