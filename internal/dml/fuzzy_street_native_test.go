@@ -172,6 +172,7 @@ func TestFuzzyStreetC4CapturedRules(t *testing.T) {
 		{"500 Calder Rd", "500 Calder Rd", true, 100},
 		// Unknown trailing word near a known suffix (cu1).
 		{"77 Wren Str", "77 Wren St", true, 78},
+		{"77 Wren St", "77 Wren Str", true, 60},
 		{"77 Wren Ave", "77 Wren Av", true, 80},
 		{"77 Wren Xq", "77 Wren St", false, 0},
 		{"77 Wren St", "77 Wren St Xq", false, 0},

@@ -718,7 +718,7 @@ Street suffix and title changes are limited to the following shapes:
   an address only to the same address with the sign at the start of a word; a
   single letter after the number is part of the name and not of the match key
   for `A C E F I K O P U Y Z` and blocks the pair for every other letter;
-  two numbered addresses with one match key match at 87.5 and above cleaned
+  two numbered addresses with one match key and no trailing directional match at 87.5 and above cleaned
   edit similarity even when the section score is under 80 (`Str` and `St`,
   `Ave` and `Av`); a lone word after a known suffix is not a suite; `PO Box N`,
   `P.O. Box N`, `P O Box N` and `Pobox N` are one address (`POB`, `Post Office
@@ -729,7 +729,7 @@ Street suffix and title changes are limited to the following shapes:
   reports of directional-only duplicates. Open: the holdout `Orchard Ln` panel
   keeps a trailing `W`, `N` or `S` in the name natively (114 extra Glade
   matches, pinned in `residuals.tsv`), the confidence of an unknown suffix
-  differs by direction and name (`77 Wren St` finds `Wren Str` at 60 but `19 Birkin Dr` finds `Birkin Drv` at 82), and
+  depends on the name (`77 Wren St` finds `Wren Str` at 60 but `19 Birkin Dr` finds `Birkin Drv` at 82; Glade drops the number and suffix sections when the name similarity is half or less), and
   `100 E A Main St` and `100A`/`100-A` are not modelled.
 - Title: when the shorter title is an exact-word subset of a six-word title,
   two to five shared words score 89, 93, 95 and 98; five shared words out of

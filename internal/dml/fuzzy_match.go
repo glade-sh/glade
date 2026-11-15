@@ -604,6 +604,10 @@ var streetPrefixSuffixes = map[string]bool{"rue": true}
 
 var streetDirections = map[string]bool{"n": true, "s": true, "e": true, "w": true, "ne": true, "nw": true, "se": true, "sw": true, "north": true, "south": true, "east": true, "west": true}
 
+// streetLongDirections are the compound directional words the base parse keeps
+// as the suite after a suffix ("Peachtree St NE" against "Street Northeast").
+var streetLongDirections = map[string]bool{"northeast": true, "northwest": true, "southeast": true, "southwest": true}
+
 var streetOrdinals = map[string]string{"first": "1st", "second": "2nd", "third": "3rd", "fourth": "4th", "fifth": "5th", "sixth": "6th", "seventh": "7th", "eighth": "8th", "ninth": "9th", "tenth": "10th"}
 
 var digitsOnly = regexp.MustCompile(`^[0-9]+$`)
@@ -748,7 +752,7 @@ func parseStreetFor(s string, custom bool) streetParts {
 		switch {
 		case len(rest) >= 2 && streetSuiteDesignators[rest[0]]:
 			p.suite = strings.Join(rest[1:], "")
-		case custom && len(rest) == 1 && len(rest[0]) > 1 && isAlphaWord(rest[0]):
+		case custom && len(rest) == 1 && len(rest[0]) > 1 && isAlphaWord(rest[0]) && !streetLongDirections[rest[0]]:
 			// NATIVE cu3: "77 Wren St Xq" matches no other street, so a
 			// lone word after the suffix is not a suite.
 			words = append(words, rest...)
@@ -852,6 +856,17 @@ func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64
 	}
 	pa, pb := parseStreetFor(a, custom), parseStreetFor(b, custom)
 	sections := streetSections(pa, pb, matchBlanks)
+	if custom && pa.suffix != "" && pb.suffix == "" {
+		// NATIVE cu3, B4 ss1: a candidate with a known suffix against a stored
+		// value whose name is the candidate name plus one three-letter word
+		// ("Wren St" against "Wren Str") scores only the name when the name
+		// similarity is half or less: confidence 60, not 72. A longer name
+		// ("Birkin Dr" against "Birkin Drv", similarity 60) scores normally.
+		wa, wb := strings.Fields(pa.name), strings.Fields(pb.name)
+		if len(wb) == len(wa)+1 && strings.Join(wb[:len(wa)], " ") == pa.name && len(wb[len(wa)]) == 3 && isAlphaWord(wb[len(wa)]) && editSimilarity(pa.name, pb.name) <= 50+1e-9 {
+			sections = 100 * 50 * editSimilarity(pa.name, pb.name) / 100 / 85
+		}
+	}
 	similarity := editSimilarity(x, y)
 	confidence := (sections + similarity) / 2
 	if streetKey(pa) != streetKey(pb) {
