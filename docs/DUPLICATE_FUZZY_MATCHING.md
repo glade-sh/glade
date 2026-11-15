@@ -211,7 +211,7 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    substitution retain the earlier `keyboardSimilarity` scorer. Pairs that
    the earlier scorer already matched also retain its confidence; the new
    scorer applies only when that scorer did not match and the longer name is
-   6–13 runes, with at most 8 positional substitutions and 9 trailing runes,
+   3–15 runes, with at most 8 positional substitutions and 9 trailing runes,
    the ranges in eligible Last Name panel pairs. Outside those ranges the
    earlier keyboard scorer decides. The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
