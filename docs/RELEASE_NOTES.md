@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
+- **Custom street matching.** Fuzzy Street rules join line breaks, accept a single letter after the number, report the section average for identical streets, match near unknown suffixes and recognise PO Box spellings, as captured at APIs 62.0 and 67.0. Standard rules are unchanged.
 
 ## v0.3.10
 

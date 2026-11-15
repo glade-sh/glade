@@ -623,12 +623,38 @@ func streetSuiteToken(w string) bool {
 	return len(w) == 1 && isAlphaWord(w) && !streetDirections[w]
 }
 
-type streetParts struct{ number, name, suffix, suite string }
+type streetParts struct{ number, name, suffix, suite, keyName string }
 
 // streetClean lower-cases the address, removes dots and number signs, turns
 // commas into spaces, collapses whitespace and spells ordinal words as numbers.
-func streetClean(s string) string {
-	s = strings.NewReplacer(",", " ", ".", "", "#", " ").Replace(strings.ToLower(s))
+func streetClean(s string) string { return streetCleanFor(s, false) }
+
+// streetCleanFor is streetClean. For the custom Street method a line break is
+// deleted, not turned into a space, and a number sign inside a word stays in
+// it; a comma before a line break is deleted with it. NATIVE
+// duplicate_fuzzy_street/org.tsv cj1, cj2: "Rd\nSuite 200", "Rd,\nSuite 200"
+// and "RdSuite 200" are one street.
+func streetCleanFor(s string, custom bool) string {
+	s = strings.ToLower(s)
+	if custom {
+		s = strings.NewReplacer(",\r\n", "", ",\n", "", ",\r", "", "\r\n", "", "\n", "", "\r", "").Replace(s)
+		words := strings.Fields(strings.NewReplacer(",", " ", ".", "").Replace(s))
+		for i, w := range words {
+			words[i] = strings.TrimLeft(w, "#")
+		}
+		if len(words) > 1 && words[0] == "one" {
+			// NATIVE cs1, cp1 (sp1): "One Calder Plaza" is "1 Calder Plaza".
+			words[0] = "1"
+		}
+		return streetCleanWords(strings.Join(words, " "), false)
+	}
+	return streetCleanWords(s, true)
+}
+
+func streetCleanWords(s string, hash bool) string {
+	if hash {
+		s = strings.NewReplacer(",", " ", ".", "", "#", " ").Replace(s)
+	}
 	words := strings.Fields(s)
 	for i, w := range words {
 		if o, ok := streetOrdinals[w]; ok {
@@ -655,13 +681,41 @@ func isAlphaWord(w string) bool {
 // directional (dropped) or the suite, whose designator word is dropped. With
 // no known suffix a trailing number is the suite and a trailing directional
 // is dropped.
-func parseStreet(s string) streetParts {
+func parseStreet(s string) streetParts { return parseStreetFor(s, false) }
+
+// streetNameLetters are the single letters after the street number that stay
+// in the street name and out of the match key for the custom Street method;
+// "e" is dropped and every other letter blocks the pair. NATIVE
+// duplicate_fuzzy_street/org.tsv cl1 to cl3 (Main St, Birch St).
+const streetNameLetters = "acfikopuyz"
+
+var streetPOBox = regexp.MustCompile(`^p ?o ?box ([0-9]+)$`)
+
+// streetGluedNumber is a digit-led first word that is not a street number
+// ("41harlan" from "41\nHarlan Ave"); NATIVE cj2 scores it as a name word.
+var streetGluedNumber = regexp.MustCompile(`^[0-9]+[a-z]{2,}$`)
+
+func parseStreetFor(s string, custom bool) streetParts {
 	var p streetParts
-	words := strings.Fields(streetClean(s))
-	if len(words) > 0 && words[0][0] >= '0' && words[0][0] <= '9' {
+	cleaned := streetCleanFor(s, custom)
+	if custom {
+		if m := streetPOBox.FindStringSubmatch(cleaned); m != nil {
+			// NATIVE cp1: "PO Box 410", "P.O. Box 410", "P O Box 410",
+			// "PO BOX 410" and "Pobox 410" share one number and one name
+			// (95 to 100 between them; 410 and 411 or 4100 never match).
+			// "POB 410", "Post Office Box 410" and "Box 410" are plain addresses.
+			return streetParts{number: m[1], name: "pobox", keyName: "pobox"}
+		}
+	}
+	words := strings.Fields(cleaned)
+	letter := ""
+	if len(words) > 0 && words[0][0] >= '0' && words[0][0] <= '9' && !(custom && streetGluedNumber.MatchString(words[0])) {
 		p.number, words = words[0], words[1:]
 		if len(words) > 1 && len(words[0]) == 1 && isAlphaWord(words[0]) {
-			if words[0] != "e" {
+			switch {
+			case custom && strings.Contains(streetNameLetters, words[0]):
+				letter = words[0]
+			case words[0] != "e":
 				p.number += " " + words[0]
 			}
 			words = words[1:]
@@ -687,6 +741,10 @@ func parseStreet(s string) streetParts {
 		switch {
 		case len(rest) >= 2 && streetSuiteDesignators[rest[0]]:
 			p.suite = strings.Join(rest[1:], "")
+		case custom && len(rest) == 1 && len(rest[0]) > 1 && isAlphaWord(rest[0]):
+			// NATIVE cu3: "77 Wren St Xq" matches no other street, so a
+			// lone word after the suffix is not a suite.
+			words = append(words, rest...)
 		case len(rest) == 1 || (len(rest) >= 2 && !isAlphaWord(rest[0])):
 			p.suite = strings.Join(rest, "")
 		default:
@@ -703,17 +761,21 @@ func parseStreet(s string) streetParts {
 		}
 	}
 	p.name = strings.Join(words, " ")
+	p.keyName = p.name
+	if letter != "" {
+		p.name = letter + " " + p.name
+	}
 	return p
 }
 
 const streetKeyLength = 5
 
 func streetKey(p streetParts) string {
-	name := []rune(p.name)
+	name := []rune(p.keyName)
 	if len(name) > streetKeyLength {
 		name = name[:streetKeyLength]
 	}
-	return p.number + "|" + string(name)
+	return p.number + "|" + strings.TrimRight(string(name), " ")
 }
 
 // streetSections is the weighted section score: number 20 (exact), name 50
@@ -763,14 +825,25 @@ func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
 }
 
 func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64) {
-	x, y := streetClean(a), streetClean(b)
+	x, y := streetCleanFor(a, custom), streetCleanFor(b, custom)
+	if custom && x == y {
+		if _, lone := knownStreetSuffixes[x]; lone || x == "po box" || x == "pobox" {
+			// NATIVE cs1: a street that is only a suffix word finds nothing.
+			return false, 0
+		}
+	}
 	if x == y {
+		if custom && streetSelfScored(x) {
+			// NATIVE cs1: equal streets match, but the confidence still
+			// averages the section score with 100 (Test Street 88, Test 86).
+			return true, (streetSections(parseStreetFor(a, true), parseStreetFor(b, true), matchBlanks) + 100) / 2
+		}
 		return true, 100
 	}
 	if confidence, ok := streetAbbreviationPair(x, y); ok {
 		return true, confidence
 	}
-	pa, pb := parseStreet(a), parseStreet(b)
+	pa, pb := parseStreetFor(a, custom), parseStreetFor(b, custom)
 	sections := streetSections(pa, pb, matchBlanks)
 	similarity := editSimilarity(x, y)
 	confidence := (sections + similarity) / 2
@@ -810,7 +883,54 @@ func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64
 			}
 		}
 	}
-	return sections >= 80, confidence
+	if custom && sections < 80 && strings.ReplaceAll(x, " ", "") == strings.ReplaceAll(y, " ", "") {
+		// NATIVE cj1, cj2, cp1: addresses that differ only by spaces match
+		// ("Rd Suite 200" against "RdSuite 200", "P O Box 410" against "PO Box 410").
+		return true, confidence
+	}
+	if custom && sections < 80 && pa.number != "" && pa.number == pb.number && similarity >= 87.5-1e-9 {
+		// NATIVE duplicate_fuzzy_street/org.tsv: two numbered addresses with
+		// one match key match at 87.5 and above edit similarity of the cleaned
+		// addresses although the section score is under 80 (a suffix or suite
+		// joined to the street name, "Rd" against "Road", "Str" against "St").
+		// Without a street number no pair below 80 matched.
+		return true, confidence
+	}
+	return sections >= 80 && !(custom && streetHashMismatch(x, y)), confidence
+}
+
+// streetHashMismatch reports two cleaned streets where exactly one has a number
+// sign inside a word and the other is not that street with the sign read as a
+// space. NATIVE cj1, cj2: "Ave\n#3B" finds "Ave #3B" and no section-score
+// neighbour such as "Ave\nApt 3B".
+func streetHashMismatch(x, y string) bool {
+	if strings.Contains(x, "#") == strings.Contains(y, "#") {
+		return false
+	}
+	hash, other := x, y
+	if strings.Contains(y, "#") {
+		hash, other = y, x
+	}
+	return strings.ReplaceAll(hash, "#", " ") != other
+}
+
+// streetSelfScored reports a cleaned street whose identical-value confidence is
+// the section average: it starts with a street number, or has no digit before
+// its last word. NATIVE: "Test Street" 88, "Calder Rd 500" 90, "Box 410" 88,
+// but "HC 1 Box 9", "RR 2 Box 15" and "Suite 200 500 Calder Rd" report 100.
+func streetSelfScored(x string) bool {
+	words := strings.Fields(x)
+	if len(words) == 0 {
+		return false
+	}
+	if words[0][0] >= '0' && words[0][0] <= '9' {
+		return true
+	}
+	last := words[len(words)-1]
+	if strings.ContainsAny(last, "0123456789") && !digitsOnly.MatchString(last) {
+		return false
+	}
+	return !strings.ContainsAny(strings.Join(words[:len(words)-1], " "), "0123456789")
 }
 
 // streetAbbreviationPairs are two spellings of a street's last word that the

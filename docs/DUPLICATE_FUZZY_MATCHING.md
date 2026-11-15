@@ -711,6 +711,26 @@ Street suffix and title changes are limited to the following shapes:
   matches an unknown alphabetic suffix when section score is 74 to below 80
   and cleaned edit similarity is at least 87.5. Confidence uses the existing
   formula. The custom rule path applies this extension.
+- Street, custom rules only (`testdata/conformance/fuzzy_street_c4`, API 62.0
+  and 67.0, both routes, two repeats): a line break is deleted, not a space
+  (`Rd\nSuite 200` is `RdSuite 200`; a comma before the break goes with it);
+  addresses that differ only by spaces match; a number sign inside a word ties
+  an address only to the same address with the sign at the start of a word; a
+  single letter after the number is part of the name and not of the match key
+  for `A C E F I K O P U Y Z` and blocks the pair for every other letter;
+  two numbered addresses with one match key match at 87.5 and above cleaned
+  edit similarity even when the section score is under 80 (`Str` and `St`,
+  `Ave` and `Av`); a lone word after a known suffix is not a suite; `PO Box N`,
+  `P.O. Box N`, `P O Box N` and `Pobox N` are one address (`POB`, `Post Office
+  Box` and `Box` are not); `One` is `1` as the first word; an identical street
+  reports `(S + 100) / 2` when it has no street number (`Test Street` 88) and a
+  street that is only a suffix word or `PO Box` matches nothing. Directional
+  words keep the existing rule: `Dr W` finds `Dr E`, which matches the public
+  reports of directional-only duplicates. Open: the holdout `Orchard Ln` panel
+  keeps a trailing `W`, `N` or `S` in the name natively (114 extra Glade
+  matches, pinned in `residuals.tsv`), the confidence of an unknown suffix
+  differs by direction (`St` finds `Str` at 60, `Str` finds `St` at 78), and
+  `100 E A Main St` and `100A`/`100-A` are not modelled.
 - Title: when the shorter title is an exact-word subset of a six-word title,
   two to five shared words score 89, 93, 95 and 98; five shared words out of
   order score 96. An exact-word subset candidate can match a five-word title
