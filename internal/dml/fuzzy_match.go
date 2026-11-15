@@ -51,9 +51,13 @@ func FuzzyMatch(method, left, right string) bool {
 // the item's blank handling, which the Street method applies to a blank
 // street-number section.
 func FuzzyScore(method, left, right string, matchBlanks bool) (bool, float64) {
-	scorer, ok := fuzzyScorers[strings.ToLower(strings.TrimSpace(method))]
+	key := strings.ToLower(strings.TrimSpace(method))
+	scorer, ok := fuzzyScorers[key]
 	if !ok {
 		return false, 0
+	}
+	if custom, ok := customFuzzyScorers[key]; ok {
+		scorer = custom
 	}
 	left, right = strings.TrimSpace(left), strings.TrimSpace(right)
 	if left == "" || right == "" {
@@ -755,6 +759,10 @@ func streetSections(pa, pb streetParts, matchBlanks bool) float64 {
 // confidence averages that score with the edit similarity of the cleaned
 // strings.
 func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
+	return fuzzyStreetWithCustom(a, b, matchBlanks, false)
+}
+
+func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64) {
 	x, y := streetClean(a), streetClean(b)
 	if x == y {
 		return true, 100
@@ -764,7 +772,8 @@ func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
 	}
 	pa, pb := parseStreet(a), parseStreet(b)
 	sections := streetSections(pa, pb, matchBlanks)
-	confidence := (sections + editSimilarity(x, y)) / 2
+	similarity := editSimilarity(x, y)
+	confidence := (sections + similarity) / 2
 	if streetKey(pa) != streetKey(pb) {
 		return false, confidence
 	}
@@ -777,6 +786,30 @@ func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
 		// "Calle 8 No 5" to "Calle 8 Numero 5" (name similarity 71) although the
 		// weighted score reaches 80 under MatchBlanks.
 		return false, confidence
+	}
+
+	if custom && sections >= 74 && sections < 80 && similarity >= 87.5-1e-9 {
+		ia, ib := strings.IndexByte(a, ' '), strings.IndexByte(b, ' ')
+		la, lb := strings.LastIndexByte(a, ' '), strings.LastIndexByte(b, ' ')
+		if ia > 0 && ia == ib && a[:ia] == b[:ib] && la > ia && lb > ib && strings.EqualFold(a[:la], b[:lb]) {
+			wx, wy := strings.Fields(x), strings.Fields(y)
+			// The rows cover a number, a one-word name and the suffix only.
+			if len(wx) == 3 && len(wy) == 3 && wx[0] == wy[0] && digitsOnly.MatchString(wx[0]) {
+				last := len(wx) - 1
+				if wx[1] == wy[1] && len(wx[1]) >= 2 {
+					sx, sy := wx[last], wy[last]
+					_, kx := knownStreetSuffixes[sx]
+					_, ky := knownStreetSuffixes[sy]
+					unknown := sx
+					if kx {
+						unknown = sy
+					}
+					if kx != ky && isAlphaWord(unknown) && !streetDirections[unknown] && !streetSuiteDesignators[unknown] && !streetPrefixSuffixes[unknown] {
+						return true, confidence
+					}
+				}
+			}
+		}
 	}
 	return sections >= 80, confidence
 }
@@ -1106,6 +1139,15 @@ func titleInitials(words []string) string {
 // Title with an exact Last Name item).
 var titleConfidence = map[[2]int]float64{{1, 2}: 93, {1, 3}: 89, {1, 4}: 88, {2, 3}: 95, {2, 4}: 93, {2, 5}: 91, {3, 4}: 97, {3, 5}: 94, {4, 5}: 97}
 
+// titleConfidenceSix extends titleConfidence to six content words, by shared
+// word count (NATIVE duplicate_fuzzy_panels, every direction).
+var titleConfidenceSix = map[int]float64{2: 89, 3: 93, 4: 95, 5: 98}
+
+// titleShortSide is the confidence of the one-direction matches of a short
+// candidate title inside a five or six word existing title, by shared and
+// larger word count.
+var titleShortSide = map[[2]int]float64{{1, 5}: 88, {2, 5}: 90, {2, 6}: 89}
+
 func uniqueWords(words []string) []string {
 	seen := map[string]bool{}
 	var out []string
@@ -1185,15 +1227,49 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	n := max(len(ua), len(ub))
+	short, long := ua, ub
+	if len(short) > len(long) {
+		short, long = long, short
+	}
+	exactShared := 0
+	for _, word := range short {
+		for _, other := range long {
+			if word == other {
+				exactShared++
+				break
+			}
+		}
+	}
+	// The panel titles hold no stop word and repeat no word; any other title
+	// keeps the shared scoring below.
+	plain := len(wa) == len(ua) && len(wb) == len(ub)
+	exactSubset := plain && exactShared == len(short)
+	if exactSubset && k == len(ua) && len(ub) == n && (n == 5 || n == 6) && (k == 1 || (k == 2 && !sameOrder)) {
+		// NATIVE (duplicate_fuzzy_panels): a candidate whose content words
+		// all occur in a longer existing title finds it from the short side
+		// only: one word in five at 88, two words out of order in five at 90
+		// and in six at 89. One word in six matches neither way.
+		if confidence, ok := titleShortSide[[2]int{k, n}]; ok {
+			return true, confidence
+		}
+	}
 	if n >= 5 && (k == 1 || (k == 2 && !sameOrder)) {
 		return false, 0
 	}
 	confidence, ok := titleConfidence[[2]int{min(k, n-1), min(n, 5)}]
+	if n == 6 && ((exactSubset && len(short) < len(long)) || (len(short) == 3 && k == 2 && exactShared == 2 && sameOrder && plain)) {
+		// NATIVE (duplicate_fuzzy_panels): six content words.
+		confidence, ok = titleConfidenceSix[min(k, n-1)]
+	}
 	if !ok {
 		confidence = 88
 	}
 	if !sameOrder {
-		confidence -= 3
+		if n == 6 && exactSubset && len(short) < len(long) && k == 5 {
+			confidence -= 2
+		} else {
+			confidence -= 3
+		}
 	}
 	return true, confidence
 }

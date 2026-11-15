@@ -8,6 +8,8 @@
 
 - **Debugger startup checks a consistent set of project inputs.** A cold `glade dap` start now builds its org, runtime and startup cache entry from one set of observed project files, including optional files found absent and directory listings. If a file changes while the debugger starts, Glade rebuilds, up to three times. When the project is still changing after the third build, the debugger stops with a message naming the file instead of starting from a mix of old and new files. Finder files and common editor temporary files do not trigger rebuilds where they are not project inputs. Startup cache entries from earlier releases are rebuilt once.
 
+- **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
+
 ## v0.3.10
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
