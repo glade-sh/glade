@@ -201,8 +201,8 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    could not prove and missed dropped vowels, silent letters and name codes.
 3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
    are compared position by position over the shorter length, with no
-   alignment and no limit on the number of substitutions or on the length
-   difference (`fuzzy_name_keys` ks1 to ks3, suf1, rsp1: `Farnsdelwick` finds
+   alignment (`fuzzy_name_keys` panel cases supply the measured ranges)
+   for substitutions and trailing characters (`fuzzy_name_keys` ks1 to ks3, suf1, rsp1: `Farnsdelwick` finds
    `Farnsdraeovk` at 96 with six substitutions; `Abernathy` finds `Abernaty`
    at 99; `Frank` does not find `Franklin`). The sum is divided by the longer
    length. The costs are fitted to the 2,528 distinct native pairs that reach
@@ -210,7 +210,10 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    unequal lengths or two or more substitutions. Equal-length pairs with one
    substitution retain the earlier `keyboardSimilarity` scorer. Pairs that
    the earlier scorer already matched also retain its confidence; the new
-   scorer applies only when that scorer did not match. The fitted costs are:
+   scorer applies only when that scorer did not match and the longer name is
+   6–13 runes, with at most 8 positional substitutions and 9 trailing runes,
+   the ranges in eligible Last Name panel pairs. Outside those ranges the
+   earlier keyboard scorer decides. The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
      beyond; the final character of two names of equal length is one step

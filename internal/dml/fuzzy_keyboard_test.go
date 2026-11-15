@@ -11,8 +11,8 @@ import (
 
 // NATIVE fuzzy_name_keys/org.tsv (suf1, rsp1, ks1) and
 // duplicate_fuzzy_matching/org.tsv (P4.LN.KB1, P4.LN.KB2): Keyboard Distance
-// has no limit on substitutions or trailing characters, and the final
-// position is cheaper.
+// uses positional substitutions and trailing characters; the final position
+// is cheaper. Its caller limits the fallback to captured panel ranges.
 func TestKeyboardDistanceNativeShapes(t *testing.T) {
 	for _, c := range []struct {
 		a, b       string
@@ -212,5 +212,48 @@ func TestLastNameKeyboardOutsidePanelBounds(t *testing.T) {
 		if got != want || actual != score {
 			t.Errorf("%q/%q: got %v %v, base %v %v", pair[0], pair[1], got, actual, want, score)
 		}
+	}
+}
+
+func TestLastNameKeyboardPanelBounds(t *testing.T) {
+	cases, _ := fuzzyNameKeysData(t)
+	minima, maxima := [3]int{1 << 30, 1 << 30, 1 << 30}, [3]int{}
+	for _, panel := range cases {
+		if panel.Kind != "panel" || panel.Item != "LastName" {
+			continue
+		}
+		for i, a := range panel.Values {
+			for _, b := range panel.Values[i+1:] {
+				x, y := foldText(a), foldText(b)
+				if x == y || lastNameWordKey(x) != lastNameWordKey(y) {
+					continue
+				}
+				x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+				if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+					continue
+				}
+				rx, ry := []rune(x), []rune(y)
+				if len(rx) > len(ry) {
+					rx, ry = ry, rx
+				}
+				diff := 0
+				for j := range rx {
+					if rx[j] != ry[j] {
+						diff++
+					}
+				}
+				for j, value := range [3]int{diff, len(ry) - len(rx), len(ry)} {
+					if value < minima[j] {
+						minima[j] = value
+					}
+					if value > maxima[j] {
+						maxima[j] = value
+					}
+				}
+			}
+		}
+	}
+	if minima != [3]int{0, 0, 6} || maxima != [3]int{8, 9, 13} {
+		t.Fatalf("eligible panel bounds changed: min %v max %v", minima, maxima)
 	}
 }
