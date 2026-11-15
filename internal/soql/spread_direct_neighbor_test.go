@@ -21,7 +21,7 @@ func TestSourceSpreadDirectQueryPreservesNeighbor(t *testing.T) {
 			org := storage.NewOrgState()
 			org.EnableStandardSpreadSource()
 			storage.ApplyProjectOrgShape(&org, tc.features)
-			query, err := Parse("SELECT Id FROM CareProgram LIMIT 1")
+			query, err := Parse("SELECT Id FROM CareProgram LIMIT 2")
 			if err != nil {
 				t.Fatal(err)
 			}
