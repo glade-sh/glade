@@ -18,6 +18,9 @@ func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request, version 
 	objects := make([]map[string]string, 0, len(s.Org.Objects))
 	names := make([]string, 0, len(s.Org.Objects))
 	for name := range s.Org.Objects {
+		if s.Org.SuppressesSpreadObject(name) {
+			continue
+		}
 		names = append(names, name)
 	}
 	sort.Strings(names)
