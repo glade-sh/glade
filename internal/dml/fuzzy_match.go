@@ -1380,9 +1380,10 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		confidence = 94
 	}
 	if !sameOrder {
-		if exactSubset && len(short) == k && len(short) < len(long) && k >= 2 {
+		if exactSubset && len(short) == k && len(short) < len(long) && k >= 2 && titleReversed(sharedA, sharedB) {
 			// NATIVE (fuzzcap-C9 c9t2d, c9t3c, c9t3d): all words of the
-			// shorter title in the longer one, in another order. The penalty
+			// shorter title in the longer one, in the reverse order (a word
+			// moved to the other end keeps the general penalty). The penalty
 			// depends on the direction and the two lengths.
 			pen, known := titleReorderPenalty(len(ua) < len(ub), k, len(long))
 			if !known {
@@ -1405,6 +1406,18 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	return true, confidence
+}
+
+func titleReversed(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !titleWordEqual(a[i], b[len(b)-1-i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func titleAllIn(words, other []string) bool {
