@@ -129,5 +129,14 @@ func (o *OrgState) UnmarshalJSON(data []byte) error {
 	if o.StandardSpreadCapturedPlain && o.StandardSpread != "" {
 		o.ensureSpreadSuppression()
 	}
+	if o.StandardSpread != "" {
+		// Older source states do not persist install provenance. Conservatively
+		// retain existing candidates when that provenance is unavailable.
+		for name := range o.Objects {
+			if plainDeveloperPrunable(name) {
+				o.MarkExplicitSpreadObject(name)
+			}
+		}
+	}
 	return nil
 }
