@@ -163,6 +163,42 @@ func TestSourceSpreadLightningChildPreservesNeighbor(t *testing.T) {
 	t.Fatal("no User relationship was available to test")
 }
 
+func TestSourceSpreadCompositeChildPreservesNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	field := ""
+	for _, relation := range org.Objects["CareProgram"].Definition.Relations {
+		for _, parent := range relation.ParentObjects {
+			if strings.EqualFold(parent, "User") {
+				field = relation.Field
+				break
+			}
+		}
+		if field != "" {
+			break
+		}
+	}
+	if field == "" {
+		t.Fatal("no User relationship was available to test")
+	}
+	for name := range org.Objects {
+		if name != "CareProgram" && name != "User" {
+			delete(org.Objects, name)
+		}
+	}
+	parent := org.Objects["User"]
+	parent.Definition.Fields = nil
+	parent.Definition.Relations = []storage.Relationship{{Field: field, ChildRelationship: "ProbeChildren"}}
+	org.Objects["User"] = parent
+	if child, _, ok := New(&org).resolveCompositeTreeChildRelationship("User", "ProbeChildren"); ok && child == "CareProgram" {
+		t.Fatal("origin/main composite child lookup omitted the neighbor")
+	}
+}
+
 func TestSourceSpreadRecordIDPreservesNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
