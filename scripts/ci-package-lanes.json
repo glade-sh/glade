@@ -107,7 +107,7 @@
     "./internal/semanticcache": 6,
     "./internal/server": 13,
     "./internal/soql": 5,
-    "./internal/storage": 16,
+    "./internal/storage": 19,
     "./internal/testdaemon": 35,
     "./internal/testutil/toolchaininstall": 5,
     "./internal/typesys": 2,

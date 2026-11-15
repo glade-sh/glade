@@ -121,8 +121,12 @@ with the tables.
    large and holds spelling variants as well as nicknames (`Katee`/`Katie`,
    `Michal`/`Micheal`, `Andres`/`Andrés`); it is not published. Glade carries
    the ordered pairs the rows prove (`nameVariantTable`).
-2. Match key. Otherwise the two names are compared only when the first two
-   characters of their Double Metaphone codes agree. Invented names show the
+2. Match key. Otherwise the two names are compared only when their first
+   words, every character other than a letter or digit removed, are equal or
+   the first two characters of the Double Metaphone codes of those words
+   agree (`fuzzy_name_keys`: `Y R` and `Y R S` share the key of `Y`, `PW` and
+   `P W` are compared, `YR` and `Y R` are not; `Billy Bob` finds `Billy` and
+   `Jane.` finds `Jane` although both are alias-keyed). Invented names show the
    key without the dictionary: `Vorkel` finds `Vorpel` (FRKL, FRPL) and
    `Vorkelina` finds `Forkelina`, but not `Volkel` (FL); `Zathor` does not
    find `Zator` (S0, ST); `Zeo` does not find `Zeon` (S, SN); `Zovlan` does
@@ -148,18 +152,31 @@ with the tables.
    `Bartholoxewsonxy` is 97, against `Bartholomewsonxz` 100). Accents, spaces,
    hyphens and dots are ordinary characters (`Renee`/`Renée` 95,
    `Jean-Paul`/`Jean Paul` 98, `Mary Ann`/`Mary` 95, `Jane.`/`Jane` 98);
-   salutations are not removed (`Dr. Jane` finds nothing).
+   salutations are not removed (`Dr. Jane` finds nothing). Inner white space
+   is compared as typed: `Mary Ann` finds `Mary  Ann` at 99, not 100, and
+   `Mary` does not find `Mary  Ann`.
+5. Initials. Before Jaro-Winkler, a pair scores 100 when one name's first
+   word, punctuation removed, is a single letter and the other name is one
+   word starting with that letter (`fuzzy_name_keys` `in1`, `in2`, `din`):
+   `P W G` finds `PW`, `P.W.`, `P-W` and `P` at 100. `P W` finds `P W G` only
+   by Jaro-Winkler (95) and `Yancey` finds `Yancey R` only by Jaro-Winkler.
+   `Y` does not find `Yancey` and `Y.R.`: the match key comes first.
 
-Not modeled: the Initials algorithm (`J`, `J.` and `J R` find each other at
-100; `J` finds no longer name in a first-name-only rule), and the punctuation
-folding of the dictionary lookup (`Jane.` is keyed like `Jane`).
+The standard rules keep the whole-name key and Jaro-Winkler on the folded
+text (`standardFirstName`); the rows for rules 2 and 5 are custom-rule rows.
 
 ### Last Name
 
 NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
 
-1. Match key: the Double Metaphone code of the accent-folded name, four
-   characters at most. `Frost`/`Frosr` (FRST, FRSR), `Smith`/`Smiht`,
+1. Match key: the Double Metaphone code of the last word, accent-folded,
+   four characters at most. Characters other than letters, digits and white
+   space are removed first (`Al-Rashid` keys as `Alrashid`), and trailing
+   `Jr`, `Sr`, `II`, `III` and `IV` are dropped while another word remains
+   (`Harlow Jr` keys as `Harlow`; `Harlow PhD` keys as `PhD`). A last word with
+   no letter keys as itself (`fuzzy_name_keys` `ln1`, `ln2`: `Test 1` finds
+   `Last 1`, not `Test 2`; `1` finds neither `10` nor `Smith 1`).
+   `Frost`/`Frosr` (FRST, FRSR), `Smith`/`Smiht`,
    `Clark`/`Clsrk` and `Kowalski`/`Kovalski` are never compared;
    `Martinez`/`Martinpz` (MRTN) and `Williams`/`Williamson` are. Every native
    match in the rows has equal keys.
@@ -174,10 +191,13 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    apart from P, T and K), vowels after the first letter not encoded, and its
    default code length of eight; of the option combinations tried, this one
    has no false match on the rows and the highest recall. The primary codes
-   are compared. The code does not see a space or a hyphen, but natively
+   are compared whatever separates the words (`Harlow` finds `Harlow III`,
+   `Al-Rashid` finds `Alrashid`, `van der Berg` finds `van den Berg` at 99).
    `Smith Jones`, `De La Cruz` and `Mc Donald` do not find `Smith-Jones`,
-   `Delacruz` and `McDonald`, so two names match only when their separators
-   agree. This replaced a hand-written stand-in that rejected anything it
+   `Delacruz` and `McDonald` because their last words key apart. The standard
+   rules keep the whole-name key and require equal spaces and hyphens
+   (`standardLastName`; their rows, such as `42` finding `43`, are fitted to
+   that form). This replaced a hand-written stand-in that rejected anything it
    could not prove and missed dropped vowels, silent letters and name codes.
 3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
    are compared position by position; the cost of two different keys is 0.05
@@ -191,8 +211,8 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    matches by keyboard only one substitution, two with a score of 92 or
    more, or up to two trailing letters.
 
-The apostrophe-removed form matches (`O'Connor`/`OConnor`), a space or
-hyphen does not (`O'Brien`/`O Brien`, `Mc Donald`/`McDonald`).
+The apostrophe-removed form matches (`O'Connor`/`OConnor`, `O’Leary`/`OLeary`);
+a space splits the last word (`O'Brien`/`O Brien`, `Mc Donald`/`McDonald`).
 
 ### Company Name
 
@@ -374,7 +394,7 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   first names and 590 nickname families. A nickname pair outside those rows
   is a miss. A dictionary name outside those rows whose alias key differs
   from its own key can match a near spelling by Jaro-Winkler in Glade and not
-  natively. Initials (`J`, `J.`, `J R`) are not matched.
+  natively.
 - Syllable Alignment is modeled only where the second fixture proves a rule
   (see "Syllable Alignment"). Native confidences of one-word plurals vary with
   the word beyond what the length and last letter explain; vowel variants, an

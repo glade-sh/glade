@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -103,6 +104,18 @@ func foldText(s string) string {
 	return strings.Join(strings.Fields(strings.ToLower(s)), " ")
 }
 
+// foldLowered is foldText of a lower-cased, trimmed text; it returns the
+// text itself when its white space is already single ASCII spaces.
+func foldLowered(s string) string {
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c >= 0x80 || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' || c == ' ' && (i+1 == len(s) || s[i+1] == ' ') {
+			return strings.Join(strings.Fields(s), " ")
+		}
+	}
+	return s
+}
+
 // stripAccents removes combining marks: "García" becomes "Garcia".
 func stripAccents(s string) string {
 	var out []rune
@@ -162,22 +175,33 @@ func averageWith100(score float64) float64 { return (100 + score) / 2 }
 // against "Diane" (0.89) matches, "Ravi" against "Ravindraa" (0.8889) does not.
 const firstNameJaroWinkler = 0.89
 
-// fuzzyFirstName: a is the candidate, b the existing record. A Name Variant
-// entry of the candidate scores 100; the dictionary is directional ("Rosa"
-// finds "Rose", "Rose" does not find "Rosa"). Otherwise the two names are
-// compared only when their match keys agree, the first two characters of the
-// Double Metaphone code ("Vorkel" and "Volkel" are never compared, "Vorkel"
-// and "Vorpel" are), and match when Jaro-Winkler reaches the threshold, with
-// confidence (100 + score) / 2. A dictionary name whose key comes from its
+// fuzzyFirstName: a is the candidate, b the existing record. Equal text
+// (letter case and edge spaces aside) and a Name Variant entry of the
+// candidate score 100; the dictionary is directional ("Rosa" finds "Rose",
+// "Rose" does not find "Rosa"). Otherwise the two names are compared only when
+// their first words, punctuation removed, are equal or share a match key, the
+// first two characters of the Double Metaphone code ("Vorkel" and "Volkel" are
+// never compared, "Vorkel" and "Vorpel" are; "Y R" and "Y R S" share the key
+// of "Y", "YR" and "Y R" do not). A dictionary name whose key comes from its
 // alias and not from its own spelling ("Kate" is keyed as "Katherine", so it
-// matches neither "Katie" nor "Katte") never matches by Jaro-Winkler.
+// matches neither "Katie" nor "Katte") never matches by Jaro-Winkler. Then the
+// Initials rule scores 100 (firstNameInitials), and otherwise Jaro-Winkler on
+// the lower-cased text with its inner white space as typed ("Mary Ann" finds
+// "Mary  Ann" at 99) decides at the threshold, with confidence
+// (100 + score) / 2.
 func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
-	if x == y || nameVariantOf(x, y) {
+	x, y := strings.ToLower(strings.TrimSpace(a)), strings.ToLower(strings.TrimSpace(b))
+	fx, fy := foldLowered(x), foldLowered(y)
+	if x == y || nameVariantOf(fx, fy) {
 		return true, 100
 	}
-	if kx, ky := firstNameKey(x), firstNameKey(y); (kx == "" || kx != ky || nameKeptApart[orderedPair(x, y)]) && !firstNameSameEntry(x, y) {
-		return false, 0
+	if wx, wy := firstNameWord(fx), firstNameWord(fy); wx != wy {
+		if kx, ky := firstNameKey(wx), firstNameKey(wy); kx == "" || kx != ky || nameKeptApart[orderedPair(fx, fy)] {
+			return false, 0
+		}
+	}
+	if firstNameInitials(fx, fy) || firstNameInitials(fy, fx) {
+		return true, 100
 	}
 	score := jaroWinkler(x, y)
 	return score >= firstNameJaroWinkler-1e-9, averageWith100(100 * score)
@@ -192,19 +216,52 @@ func firstNameKey(name string) string {
 	return firstNameCodeCache.get(name, func(s string) string { return doubleMetaphone(s, firstNameKeyLength) })
 }
 
-// firstNameSameEntry reports a name and the same name followed by a second
-// word or by punctuation. The dictionary lookup reads the first word without
-// punctuation, so the two share a match key whatever that key is: "Billy Bob"
-// finds "Billy" and "Jane." finds "Jane" by Jaro-Winkler although "Billy" and
-// "Jane" are alias-keyed.
-func firstNameSameEntry(x, y string) bool {
-	head := func(s string) string {
-		if i := strings.IndexByte(s, ' '); i > 0 {
-			s = s[:i]
-		}
-		return strings.TrimFunc(s, unicode.IsPunct)
+// firstNameWord is the first word of a folded name with every character
+// that is not a letter or a digit removed: "p.w." keys as "pw", "jean-luc"
+// as "jeanluc", "y. r. s." as "y".
+func firstNameWord(folded string) string {
+	word := folded
+	if i := strings.IndexByte(word, ' '); i >= 0 {
+		word = word[:i]
 	}
-	return head(x) == y || head(y) == x
+	clean := true
+	for _, r := range word {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			clean = false
+			break
+		}
+	}
+	if clean {
+		return word
+	}
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return r
+		}
+		return -1
+	}, word)
+}
+
+// firstNameInitials is the Initials algorithm on two folded names: the first
+// word of initials, punctuation removed, is one letter, and name is a single
+// word that starts with that letter after any leading punctuation. "P W G"
+// finds "PW", "P.W.", "P-W" and "P" at 100; "P W" finds "P W G" only by
+// Jaro-Winkler, and "Yancey" finds "Yancey R" only by Jaro-Winkler.
+func firstNameInitials(initials, name string) bool {
+	word := firstNameWord(initials)
+	letter, size := utf8.DecodeRuneInString(word)
+	if size == 0 || size != len(word) || !unicode.IsLetter(letter) || strings.IndexByte(name, ' ') >= 0 {
+		return false
+	}
+	for _, r := range name {
+		if unicode.IsLetter(r) {
+			return r == letter
+		}
+		if !unicode.IsPunct(r) {
+			return false
+		}
+	}
+	return false
 }
 
 func orderedPair(a, b string) [2]string {
@@ -220,28 +277,33 @@ const firstNameKeyLength = 2
 
 const lastNameKeyLength = 4
 
-// fuzzyLastName: the match key is the Double Metaphone code of the
-// accent-folded name, four characters at most ("Frost" and "Frosr" are never
-// compared, "Martinez" and "Martinpz" are). Two names with equal Metaphone 3
-// codes score 100 (lastNameMetaphone3Equal). Otherwise Keyboard Distance
-// decides at 90 with confidence (100 + score) / 2.
-// lastNameCode is the match key of a folded last name, cached by its text.
-func lastNameCode(folded string) string {
-	return lastNameKeyCache.get(folded, func(s string) string { return doubleMetaphone(stripAccents(s), lastNameKeyLength) })
-}
-
+// fuzzyLastName: the match key is the Double Metaphone code of the last word,
+// four characters at most (lastNameWordKey: "Frost" and "Frosr" are never
+// compared, "Martinez" and "Martinpz" are; "Test 1" and "Last 1" are, "Test 1"
+// and "Test 2" are not). Two names with equal Metaphone 3 codes score 100,
+// whatever separates their words ("Harlow" finds "Harlow III", "Al-Rashid"
+// finds "Alrashid"). Otherwise Keyboard Distance decides at 90 with
+// confidence (100 + score) / 2.
 func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	x, y := foldText(a), foldText(b)
 	if x == y {
 		return true, 100
 	}
-	if lastNameCode(x) != lastNameCode(y) {
+	if lastNameWordKey(x) != lastNameWordKey(y) {
 		return false, 0
 	}
-	x, y = strings.ReplaceAll(x, "'", ""), strings.ReplaceAll(y, "'", "")
-	if x == y || lastNameMetaphone3Equal(x, y) {
+	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 		return true, 100
 	}
+	return lastNameKeyboard(x, y)
+}
+
+var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")
+
+// lastNameKeyboard is the Keyboard Distance step of the Last Name method on
+// two folded names whose apostrophes are removed.
+func lastNameKeyboard(x, y string) (bool, float64) {
 	if len(x) == 8 && standardIsTerminalSwap(x, y) {
 		a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
 		// Only the captured five-column geometry overrides ordinary membership.
@@ -252,6 +314,46 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	}
 	score, ok := keyboardSimilarity(x, y)
 	return ok && score >= 90, averageWith100(score)
+}
+
+// lastNameCode is the whole-name match key of a folded last name, cached by
+// its text. The standard rules gate on it (standardLastNameGate).
+func lastNameCode(folded string) string {
+	return lastNameKeyCache.get(folded, func(s string) string { return doubleMetaphone(stripAccents(s), lastNameKeyLength) })
+}
+
+// lastNameSuffixes are trailing words the Last Name key skips: "Harlow Jr"
+// keys as "Harlow". "Harlow PhD" keys as "phd".
+var lastNameSuffixes = map[string]bool{"jr": true, "sr": true, "ii": true, "iii": true, "iv": true}
+
+// lastNameWordKey is the Last Name match key of a folded name: characters
+// other than letters, digits and white space are removed ("al-rashid" is
+// "alrashid", "harlow, jr." is "harlow jr"), trailing suffix words are
+// dropped while another word remains, and the last word is keyed. A last word
+// with no letter keys as itself.
+func lastNameWordKey(folded string) string {
+	return lastNameWordKeyCache.get(folded, func(s string) string {
+		words := strings.Fields(strings.Map(func(r rune) rune {
+			switch {
+			case unicode.IsLetter(r) || unicode.IsDigit(r):
+				return r
+			case unicode.IsSpace(r):
+				return ' '
+			}
+			return -1
+		}, s))
+		for len(words) > 1 && lastNameSuffixes[words[len(words)-1]] {
+			words = words[:len(words)-1]
+		}
+		if len(words) == 0 {
+			return ""
+		}
+		last := words[len(words)-1]
+		if strings.IndexFunc(last, unicode.IsLetter) < 0 {
+			return "#" + last
+		}
+		return doubleMetaphone(stripAccents(last), lastNameKeyLength)
+	})
 }
 
 var qwertyPosition = func() map[rune][2]int {
@@ -378,6 +480,16 @@ func fuzzyPhone(a, b string, _ bool) (bool, float64) {
 	if !okA || !okB {
 		return false, 0
 	}
+	// The captured vanity shape has country 1, a numeric area, and seven
+	// letters. Only admit its fully equivalent digit form; other letter
+	// placements and partial matches retain the previous scoring.
+	if (ea[0] >= 'a' && phoneKeypadEquivalent(ca, aa, ea, la, cb, ab, eb, lb)) ||
+		(eb[0] >= 'a' && phoneKeypadEquivalent(cb, ab, eb, lb, ca, aa, ea, la)) {
+		if ca == cb {
+			return true, 100
+		}
+		return true, 90
+	}
 	if ca != cb && ((ca != "" && ca != "1") || (cb != "" && cb != "1")) {
 		// The rows match a number with the NANP country digit 1 to the same
 		// number without it (90), but never one with a different country digit,
@@ -394,6 +506,31 @@ func fuzzyPhone(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	return score >= 80, score
+}
+
+// phoneKeypadEquivalent covers the captured seven-letter vanity shape.
+func phoneKeypadEquivalent(country, area, exchange, line, otherCountry, otherArea, otherExchange, otherLine string) bool {
+	if country != "1" || (otherCountry != "" && otherCountry != "1") || area != otherArea {
+		return false
+	}
+	// ITU-T E.161 (02/2001), section 2.2: letter-to-digit keypad layout.
+	// https://www.itu.int/rec/T-REC-E.161/en
+	const letters = "abcdefghijklmnopqrstuvwxyz"
+	const digits = "22233344455566677778889999"
+	for i := 0; i < len(area); i++ {
+		if area[i] < '0' || area[i] > '9' {
+			return false
+		}
+	}
+	for _, section := range [][2]string{{exchange, otherExchange}, {line, otherLine}} {
+		for i := 0; i < len(section[0]); i++ {
+			j := strings.IndexByte(letters, section[0][i])
+			if j < 0 || digits[j] != section[1][i] {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // ---- ZIP: the segment before the first hyphen or space decides ----

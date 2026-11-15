@@ -472,10 +472,8 @@ func typeSymbolFromArtifact(namespace, version, sourceAPIVersion string, typ pac
 		Members:             memberSymbolsFromArtifact(typ.Members),
 	}
 	// Artifact types arrive without source; their signatures may still name
-	// ConnectApi types the project reaches through them.
-	if !connectAPIShapeRequested.Load() && typeSymbolNamesConnectAPI(&symbol) {
-		connectAPIShapeRequested.Store(true)
-	}
+	// gated platform types the project reaches through them.
+	noteTypeSymbolSignature(&symbol)
 	return symbol
 }
 

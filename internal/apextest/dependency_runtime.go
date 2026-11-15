@@ -259,10 +259,20 @@ func dependencyTypeKnown(index typesys.Index, name string) bool {
 			return true
 		}
 	}
-	for _, typ := range typesys.StandardPlatformSymbolView() {
+	view, excluded := typesys.StandardPlatformSymbolViewWithExcluded()
+	for _, typ := range view {
 		if strings.EqualFold(typ.Name, name) || strings.EqualFold(typ.Name, "System."+name) || strings.EqualFold(name, "System."+typ.Name) {
 			return true
 		}
+	}
+	// Gated stub types the view leaves out keep their simple names. A simple
+	// name never contains a dot, so only the bare and System.-prefixed
+	// spellings of name can match one.
+	if len(excluded.WithName(name)) != 0 {
+		return true
+	}
+	if len(name) > len("System.") && strings.EqualFold(name[:len("System.")], "System.") && len(excluded.WithName(name[len("System."):])) != 0 {
+		return true
 	}
 	objectName := name
 	if qualifier, local, qualified := strings.Cut(name, "."); qualified && strings.EqualFold(qualifier, "Schema") {

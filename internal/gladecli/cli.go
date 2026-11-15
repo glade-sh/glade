@@ -233,6 +233,17 @@ func applySiblingDependenciesFlag(args []string) []string {
 }
 
 // Run executes the glade CLI and returns a process exit code.
+// platformNamespaceGatedCommand reports a command whose platform view leaves
+// the ConnectApi and Slack stubs out until the project names them (typesys
+// platform_gate.go): the commands that run, check or serve Apex.
+func platformNamespaceGatedCommand(command string) bool {
+	switch command {
+	case "test", "exec", "check", "server":
+		return true
+	}
+	return false
+}
+
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	args = applySiblingDependenciesFlag(args)
 	if len(args) == 0 {
@@ -253,6 +264,11 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if topic, ok := helpRequestTopic(args); ok {
 		printHelpTopic(stdout, topic)
 		return 0
+	}
+	if !platformNamespaceGatedCommand(args[0]) {
+		// Editor, inspection and report commands read whole platform tables;
+		// they keep the gated ConnectApi and Slack stubs as before the gate.
+		typesys.RequestAllGatedNamespaces()
 	}
 
 	switch args[0] {

@@ -644,7 +644,7 @@ func standardPersonAccountMatcher(_ *storage.OrgState, record storage.Record) fu
 			return false, 0
 		}
 		other, _ := duplicateFieldText(existing, "FirstName")
-		if item := standardCompare(first, other, standardMethod("firstname")); item.ok() || standardFirstInitial(first, other) {
+		if item := standardCompare(first, other, standardFirstName); item.ok() || standardFirstInitial(first, other) {
 			return true, 100
 		}
 		return false, 0

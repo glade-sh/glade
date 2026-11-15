@@ -4,6 +4,16 @@
 
 - **Company duplicate matching.** Custom Company Name rules score numbered names, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
 
+## v0.3.10
+
+v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v90`, `salesforce-platform-v71`, `apextest-runtime-v40`). The first run after upgrading rebuilds them.
+
+### Changes
+
 - Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
 
 - **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
@@ -17,15 +27,37 @@
 - **Unresolved assignments.** Parallel semantic analysis avoids repeating method-body checks when an unknown assignment target cannot be affected by another type. Diagnostics stay unchanged.
 
 - **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+- **Bounded schema template memory.** Long-lived processes evict least recently used standard object template groups above a field budget; evicted templates rebuild on demand.
 - **Test startup.** Building the child relationship lookup avoids installing
   standard objects solely to resolve parent names, reducing startup work. A
   source reference to a child relationship of a standard object the test org
   has not loaded yet is no longer inferred as a field, matching a fully loaded
   org.
 
+- **Faster global describe.** Object names are listed without loading every standard object definition.
+
+- Email fields reject captured malformed addresses on inserts, including trailing or consecutive domain dots and quoted local parts containing spaces.
+
+- **Duplicate matching.** Custom phone rules recognize captured seven-letter vanity numbers via [ITU-T E.161](https://www.itu.int/rec/T-REC-E.161/en) keypad digits. Custom name rules use captured first and last name keys.
+
 ### Performance
 
+- **Full schema describe walks.** Describing every token from global describe completes the standard object spread in bulk after repeated individual lookups.
+
+- **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
+
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
+- **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
+
+### Known issues
+
+- Custom First Name fuzzy rules can match a single initial against a short one-word name (for example T and Ty) where Salesforce does not; fixed in v0.3.11.
+
+### Release validation
+
+- The release candidate passed real-project comparison gates with no new outcomes, and all eight paired shards passed with no additions.
+- Captured behavior is covered by the receiver-trivia, async ordering, email validation and fuzzy-name conformance tests in `internal/sema`, `internal/apextest` and `internal/dml`.
+- Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
 
 ## v0.3.9
 
