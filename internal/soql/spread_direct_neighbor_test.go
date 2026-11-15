@@ -105,3 +105,47 @@ func TestSourceSpreadDirectQueryPreservesNeighborRecords(t *testing.T) {
 		t.Fatalf("rows %d, want 1", result.Rows)
 	}
 }
+
+func TestSourceSpreadVirtualVisibilityTracksEdits(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	org.RuntimeSchemaStamp = "fixed"
+	query, err := Parse("SELECT QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = 'CareProgram'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := NewExecutionCache()
+	check := func(want int) {
+		t.Helper()
+		result, err := ExecuteWithCache(org, query, cache)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.Rows != want {
+			t.Fatalf("virtual rows %d, want %d", result.Rows, want)
+		}
+	}
+	check(0)
+	object := org.Objects["CareProgram"]
+	original := object.Definition.Label
+	object.Definition.Label = "edited"
+	org.Objects["CareProgram"] = object
+	check(1)
+	object.Definition.Label = original
+	org.Objects["CareProgram"] = object
+	check(0)
+	if object.Records == nil {
+		object.SetRecords(make(map[storage.ID]storage.Record))
+	}
+	id := storage.ID("a00000000000001")
+	object.PutRecord(id, storage.Record{ID: id, Object: "CareProgram"})
+	org.Objects["CareProgram"] = object
+	check(1)
+	delete(object.Records, id)
+	org.Objects["CareProgram"] = object
+	check(0)
+}
