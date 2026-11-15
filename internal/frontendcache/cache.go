@@ -101,6 +101,10 @@ func LoadOrBuild(p project.Project, s schema.Schema, build func() (typesys.Index
 		index, artifacts = build()
 	}
 	result := Result{Index: index, Artifacts: artifacts, Reused: reused}
+	// A generation holding unsaved editor content is never published.
+	if index.Volatile() || artifacts.Volatile() {
+		return result
+	}
 	// Publish the captured generation. The next load always supplies fresh
 	// membership/schema, so additions, removals and metadata edits cannot match
 	// this identity. Rewalking here cannot extend the builder's captured arena.

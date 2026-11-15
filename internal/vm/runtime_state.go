@@ -88,7 +88,10 @@ type VM struct {
 	// namespaceClassLookup keys. It is reset with the access caches.
 	namespaceClassRawLookup map[namespaceClassRawKey]namespaceClassLookup
 	classNamespaceCache     map[string]string
-	classForAccessCache     map[classForAccessKey]classForAccessLookup
+	// execNamespaceMemo remembers the namespace of the current class for one
+	// class lookup generation so hot call paths skip the class read.
+	execNamespaceMemo   execNamespaceMemo
+	classForAccessCache map[classForAccessKey]classForAccessLookup
 	// accessScopeCache memoizes sameAccessScope. Its inputs are the two names
 	// plus the current class and namespace that classForAccess reads, so the
 	// key carries all four. It is reset with the access caches.
@@ -344,8 +347,12 @@ type VM struct {
 	standardAPI68Memo           *standardAPI68ProfileMemo
 	globalDescribeCache         *Value
 	globalDescribeVersionCaches map[string]*Value
-	namedGlobalDescribe         *namedGlobalDescribeExtension
-	changeEventGlobal           *changeEventGlobalExtension
+	// eagerGlobalDescribe completes a lazy spread before the global describe
+	// build, as before the names-only build. Tests set it to compare routes.
+	eagerGlobalDescribe bool
+	lazySingleInstalls  int
+	namedGlobalDescribe *namedGlobalDescribeExtension
+	changeEventGlobal   *changeEventGlobalExtension
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
@@ -435,6 +442,15 @@ type VM struct {
 	// lazySet is the set whose shells this VM's Classes hold, shared by every
 	// clone; see LazyClassSet.
 	lazySet *LazyClassSet
+	// gatedPlatformLateBind marks a VM that registered passive platform
+	// classes; it binds left-out gated stub classes on demand
+	// (gated_platform_class.go). bindingGatedPlatformClass guards the bind.
+	gatedPlatformLateBind     bool
+	bindingGatedPlatformClass bool
+	gatedPlatformBoundNames   map[string]struct{}
+	// enumSuffixBuilt reports that enumSuffixLookup was built from the class
+	// entries, not the empty map a new VM starts with (gated_platform_class.go).
+	enumSuffixBuilt bool
 	// String == support: the Turkish-dotting decision for the running user and
 	// the full case transformers, created once per machine.
 	localeCase localeCaseCache
@@ -848,6 +864,16 @@ type AsyncJob struct {
 	QueueableDelaySet           bool
 	QueueableDuplicateSignature string
 	NotBefore                   time.Time
+	// batchResume marks a stopTest batch whose start (and, with finishOnly,
+	// execute) already ran; the remaining phase runs from the queue tail.
+	batchResume *batchResumeState
+}
+
+type batchResumeState struct {
+	scope          []Value
+	locatorStart   bool
+	statefulObject Value
+	finishOnly     bool
 }
 
 type cacheEntry struct {
@@ -992,6 +1018,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// template) is never corrupted. The shared maps stay read-only across
 	// parallel workers, which is safe for concurrent map reads.
 	clone.lazySet = vm.lazySet
+	clone.gatedPlatformLateBind = vm.gatedPlatformLateBind
 	clone.Methods = vm.Methods
 	clone.MethodOverloads = vm.MethodOverloads
 	clone.MethodFolded = vm.MethodFolded
@@ -1869,6 +1896,7 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
+	vm.lazySingleInstalls = 0
 	vm.knowledgeIssuedParents = nil
 	vm.localeCase = localeCaseCache{}
 	vm.ensureChangeEventObjects(org)
@@ -1925,6 +1953,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 // this VM was cloned from. Matching stamp text alone never proves that
 // provenance; an unrelated generation uses SetOrg and discards every cache.
 func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
+	vm.lazySingleInstalls = 0
 	vm.ensureChangeEventObjects(org)
 	vm.knowledgeIssuedParents = nil
 	vm.localeCase = localeCaseCache{}
@@ -3600,3 +3629,11 @@ func (vm *VM) DrainAsync(result *Result) (err error) {
 }
 
 type controlSignal string
+
+// execNamespaceMemo holds the last class-derived execution namespace.
+type execNamespaceMemo struct {
+	class      string
+	generation uint64
+	namespace  string
+	valid      bool
+}
