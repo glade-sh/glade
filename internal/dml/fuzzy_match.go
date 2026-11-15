@@ -913,18 +913,12 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 
 // fuzzyCompany combines the captured directional scorer with its match key.
 func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
-	oldMatch, oldScore := legacyFuzzyCompany(a, b, matchBlanks)
-	if !companyFitShape(a, b) {
-		return oldMatch, oldScore
+	if companyFitShape(a, b) && companyFitKey(a) == companyFitKey(b) {
+		if raw := companyFitScore(a, b); raw >= 70 {
+			return true, math.Max(91, raw)
+		}
 	}
-	if companyFitKey(a) != companyFitKey(b) {
-		return oldMatch, oldScore
-	}
-	raw := companyFitScore(a, b)
-	if raw < 70 {
-		return oldMatch, oldScore
-	}
-	return true, math.Max(91, raw)
+	return legacyFuzzyCompany(a, b, matchBlanks)
 }
 
 // ---- Title: Acronym, Exact, Kullback-Leibler distance; threshold 50 ----
