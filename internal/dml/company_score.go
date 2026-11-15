@@ -232,12 +232,12 @@ func companyFitScore(a, b string) float64 {
 	if strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b)) {
 		return 100
 	}
+	if score, ok := companyDigitScore(a, b); ok {
+		return score
+	}
 	wa, wb := companyScoreWords(a, false), companyScoreWords(b, false)
 	if len(wa) == 0 || len(wb) == 0 {
 		return 0
-	}
-	if score, ok := companyDigitScore(a, b); ok {
-		return score
 	}
 	if score, ok := companyQualifierScore(a, b); ok {
 		return score
