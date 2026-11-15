@@ -6,6 +6,12 @@
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
 
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v90`, `salesforce-platform-v71`, `apextest-runtime-v40`). The first run after upgrading rebuilds them.
+
+### Changes
+
 - Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
 
 - **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
@@ -44,6 +50,12 @@ v0.3.10 improves Apex compatibility, language server diagnostics, debugger respo
 ### Known issues
 
 - Custom First Name fuzzy rules can match a single initial against a short one-word name (for example T and Ty) where Salesforce does not; fixed in v0.3.11.
+
+### Release validation
+
+- The release candidate passed real-project comparison gates with no new outcomes, and all eight paired shards passed with no additions.
+- Captured behavior is covered by the receiver-trivia, async ordering, email validation and fuzzy-name conformance tests in `internal/sema`, `internal/apextest` and `internal/dml`.
+- Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
 
 ## v0.3.9
 
