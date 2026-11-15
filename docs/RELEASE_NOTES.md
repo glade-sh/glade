@@ -32,6 +32,8 @@
 
 ### Performance
 
+- **Full schema describe walks.** Describing every token from global describe completes the standard object spread in bulk after repeated individual lookups.
+
 - **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
 
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.

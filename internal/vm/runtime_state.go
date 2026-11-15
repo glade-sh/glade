@@ -360,6 +360,7 @@ type VM struct {
 	// eagerGlobalDescribe completes a lazy spread before the global describe
 	// build, as before the names-only build. Tests set it to compare routes.
 	eagerGlobalDescribe bool
+	lazySingleInstalls  int
 	namedGlobalDescribe *namedGlobalDescribeExtension
 	changeEventGlobal   *changeEventGlobalExtension
 	// Private immutable key preparation after leaving a frozen generation.
@@ -1905,6 +1906,7 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
+	vm.lazySingleInstalls = 0
 	vm.knowledgeIssuedParents = nil
 	vm.localeCase = localeCaseCache{}
 	vm.ensureChangeEventObjects(org)
@@ -1961,6 +1963,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 // this VM was cloned from. Matching stamp text alone never proves that
 // provenance; an unrelated generation uses SetOrg and discards every cache.
 func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
+	vm.lazySingleInstalls = 0
 	vm.ensureChangeEventObjects(org)
 	vm.knowledgeIssuedParents = nil
 	vm.localeCase = localeCaseCache{}
