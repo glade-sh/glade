@@ -98,9 +98,10 @@ func TestReceiverFollowupRulesMatchFixtures(t *testing.T) {
 }
 
 // Differential against origin/main ad1577dbc6, one subtest per rule. Each
-// neighbor changes one token of the rule's fixture; its complete diagnostics
-// at both captured API versions are the ones origin/main serialized
-// (testdata/receiver_split/followup-neighbors.json).
+// neighbor is one small edit of the rule's fixture: an argument, another
+// member or type, a statement or member before it, a blank line at the break.
+// Its complete diagnostics at both captured API versions are the ones
+// origin/main serialized (testdata/receiver_split/followup-neighbors.json).
 func TestReceiverFollowupNeighborsKeepMain(t *testing.T) {
 	raw, err := os.ReadFile("testdata/receiver_split/followup-neighbors.json")
 	if err != nil {
