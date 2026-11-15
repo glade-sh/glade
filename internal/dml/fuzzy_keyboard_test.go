@@ -197,10 +197,10 @@ func TestLastNameWordKeyCacheSeparatesInputs(t *testing.T) {
 // keyboard result, including its confidence for nonmatches.
 func TestLastNameKeyboardOutsidePanelBounds(t *testing.T) {
 	for _, pair := range [][2]string{
-		{"Farnsdelwickaa", "Farnsdraeovkaa"},       // longer than any eligible panel pair
+		{"Farnsdelwickaaaa", "Farnsdraeovkaaaa"},   // longer than any eligible panel pair
 		{"Farnsdelwick", "Farnsdraeovkzzzzzzzzzz"}, // trailing difference above panel range
 		{"erkecpmeitrn", "erkqudnukxik"},           // substitutions above panel range
-		{"ipyqh", "wuabq"},                         // shorter than the eligible panel range
+		{"ab", "ap"},                               // shorter than the eligible panel range
 	} {
 		x, y := foldText(pair[0]), foldText(pair[1])
 		if lastNameWordKey(x) != lastNameWordKey(y) || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
@@ -218,12 +218,9 @@ func TestLastNameKeyboardOutsidePanelBounds(t *testing.T) {
 func TestLastNameKeyboardPanelBounds(t *testing.T) {
 	cases, _ := fuzzyNameKeysData(t)
 	minima, maxima := [3]int{1 << 30, 1 << 30, 1 << 30}, [3]int{}
-	for _, panel := range cases {
-		if panel.Kind != "panel" || panel.Item != "LastName" {
-			continue
-		}
-		for i, a := range panel.Values {
-			for _, b := range panel.Values[i+1:] {
+	measure := func(values []string) {
+		for i, a := range values {
+			for _, b := range values[i+1:] {
 				x, y := foldText(a), foldText(b)
 				if x == y || lastNameWordKey(x) != lastNameWordKey(y) {
 					continue
@@ -253,7 +250,54 @@ func TestLastNameKeyboardPanelBounds(t *testing.T) {
 			}
 		}
 	}
-	if minima != [3]int{0, 0, 6} || maxima != [3]int{8, 9, 13} {
+	for _, panel := range cases {
+		if panel.Kind == "panel" && panel.Item == "LastName" {
+			measure(panel.Values)
+		}
+	}
+	raw, err := os.ReadFile(filepath.Join(fuzzyFixture, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n")[1:] {
+		cells := strings.SplitN(line, "\t", 4)
+		if len(cells) != 4 {
+			t.Fatal("invalid native row")
+		}
+		var row fuzzyNativeRow
+		if err := json.Unmarshal([]byte(cells[3]), &row); err != nil {
+			t.Fatal(err)
+		}
+		if row.Field != "LastName" || row.Method != "LastName" {
+			continue
+		}
+		var values []string
+		for _, value := range row.Values {
+			if value != nil {
+				values = append(values, *value)
+			}
+		}
+		measure(values)
+	}
+	if minima != [3]int{0, 0, 3} || maxima != [3]int{8, 9, 15} {
 		t.Fatalf("eligible panel bounds changed: min %v max %v", minima, maxima)
+	}
+}
+
+func TestKeyboardPanelShapeBoundaries(t *testing.T) {
+	for _, c := range []struct {
+		a, b string
+		want bool
+	}{
+		{"abc", "abd", true},
+		{"abcdefghijklmno", "abcdefghijklmnp", true},
+		{"ab", "ac", false},
+		{"abcdefghijklmnop", "abcdefghijklmnoq", false},
+		{"abcdefghi", "zzzzzzzzZ", false},
+		{"abc", "abcdefghijklM", false},
+	} {
+		if got := keyboardPanelShape(c.a, c.b); got != c.want {
+			t.Errorf("%q/%q: %v, want %v", c.a, c.b, got, c.want)
+		}
 	}
 }
