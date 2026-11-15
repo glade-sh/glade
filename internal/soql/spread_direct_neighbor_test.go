@@ -177,6 +177,36 @@ func TestSourceSpreadVirtualVisibilityTracksEdits(t *testing.T) {
 	check(0)
 }
 
+func TestSourceSpreadVirtualVisibilityTracksCapturedShape(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	org.RuntimeSchemaStamp = "fixed"
+	query, err := Parse("SELECT QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = 'CareProgram'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := NewExecutionCache()
+	check := func(want int) {
+		t.Helper()
+		result, err := ExecuteWithCache(org, query, cache)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.Rows != want {
+			t.Fatalf("virtual rows %d, want %d", result.Rows, want)
+		}
+	}
+	check(0)
+	org.StandardSpreadCapturedPlain = false
+	check(1)
+	org.StandardSpreadCapturedPlain = true
+	check(0)
+}
+
 func TestSourceSpreadByValueLookupPreservesNeighborVisibility(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
