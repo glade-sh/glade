@@ -211,7 +211,7 @@
    "max_conf_mae": 0.08
   },
   "67/Probe.Contact.Title.Title.NullNotAllowed.Words": {
-   "min_recall": 0.994,
+   "min_recall": 0.9999,
    "max_extra": 0,
    "max_conf_mae": 0.45
   },
@@ -271,7 +271,7 @@
    "max_conf_mae": 0.057
   },
   "62/Probe.Contact.Title.Title.NullNotAllowed.Words": {
-   "min_recall": 0.994,
+   "min_recall": 0.9999,
    "max_extra": 0,
    "max_conf_mae": 0.45
   },
@@ -391,7 +391,7 @@
    "max_conf_mae": 0.05
   },
   "67/Probe3.Contact.Title.Title.NullNotAllowed.1": {
-   "min_recall": 0.9823,
+   "min_recall": 0.9999,
    "max_extra": 0,
    "max_conf_mae": 0.55
   },
@@ -431,7 +431,7 @@
    "max_conf_mae": 0.05
   },
   "62/Probe3.Contact.Title.Title.NullNotAllowed.1": {
-   "min_recall": 0.9823,
+   "min_recall": 0.9999,
    "max_extra": 0,
    "max_conf_mae": 0.55
   },
