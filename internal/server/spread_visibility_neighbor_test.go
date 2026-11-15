@@ -33,3 +33,24 @@ func TestSourceSpreadRESTDescribePreservesNeighbor(t *testing.T) {
 		})
 	}
 }
+
+func TestSourceSpreadRESTDescribePreservesEditedNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	object := org.Objects["CareProgram"]
+	original := object.Definition.Fields["Id"]
+	defer func() { object.Definition.Fields["Id"] = original }()
+	edited := original
+	edited.Label = "edited"
+	object.Definition.Fields["Id"] = edited
+	handler := New(&org)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/services/data/v68.0/sobjects/CareProgram/describe", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("edited definition status %d, want 200", response.Code)
+	}
+}
