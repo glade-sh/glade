@@ -137,6 +137,32 @@ func TestSourceSpreadDescribeRelationshipsPreserveNeighbor(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadLightningChildPreservesNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	for name := range org.Objects {
+		if name != "CareProgram" {
+			delete(org.Objects, name)
+		}
+	}
+	for _, relation := range org.Objects["CareProgram"].Definition.Relations {
+		for _, parent := range relation.ParentObjects {
+			if !strings.EqualFold(parent, "User") {
+				continue
+			}
+			if name, _, ok := findChildObjectForRelationship(&org, "User", relation); ok && name == "CareProgram" {
+				t.Fatal("origin/main Lightning child lookup omitted the neighbor")
+			}
+			return
+		}
+	}
+	t.Fatal("no User relationship was available to test")
+}
+
 func TestSourceSpreadRecordIDPreservesNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
