@@ -39,6 +39,17 @@ func TestSourceSpreadRESTDescribePreservesNeighbor(t *testing.T) {
 	}
 }
 
+func TestPlainDeveloperSpreadPreservesUncapturedRESTVersion(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObjectSpread(&org)
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	response := httptest.NewRecorder()
+	New(&org).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/services/data/v63.0/sobjects/AIFeatureExtractor/describe", nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("origin/main uncaptured REST version status 200, got %d", response.Code)
+	}
+}
+
 func TestSourceSpreadRESTInventoryPreservesNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
