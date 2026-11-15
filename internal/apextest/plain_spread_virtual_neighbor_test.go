@@ -98,3 +98,29 @@ func TestSourceSpreadPreservesVirtualNeighbor(t *testing.T) {
 		})
 	}
 }
+
+func TestSourceSpreadPreservesDirectNeighbor(t *testing.T) {
+	for _, tc := range []struct{ name, scratch string }{
+		{"default", `{"edition":"Developer","features":[],"settings":{}}`},
+		{"optional", `{"edition":"Developer","features":["EnableSetPasswordInApi"],"settings":{}}`},
+	} {
+		for _, api := range []string{"62.0", "68.0"} {
+			t.Run(tc.name+"/"+api, func(t *testing.T) {
+				root := t.TempDir()
+				writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"68.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+				writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), tc.scratch)
+				index := loadTestIndex(t, root)
+				org := orgFromIndex(index)
+				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+				const source = `String n='CareProgram'; System.assertEquals(null,Type.forName(n)); String q='ok'; try {Database.query('SELECT Id FROM '+n+' LIMIT 1');} catch(Exception e) {q=e.getTypeName();} System.assertEquals('System.QueryException',q);`
+				program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := runner.newMachine().Execute(program); err != nil {
+					t.Fatalf("origin/main direct neighbor outcome changed: %v", err)
+				}
+			})
+		}
+	}
+}
