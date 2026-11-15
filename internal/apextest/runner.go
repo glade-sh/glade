@@ -1823,7 +1823,7 @@ func validateRuntimeGeneration(sources *sourceCache) error {
 	// Source and companion metadata bytes both come from the immutable
 	// per-invocation generation captured in sources. Revalidate that one
 	// authority at every cache return and publication boundary.
-	return sources.validateCapturedSourceGenerationRaw()
+	return sources.validateCapturedSourceGenerationAtBoundary()
 }
 
 func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache) (runtimeGeneration, error) {
@@ -4217,6 +4217,17 @@ func (cache *sourceCache) validateCapturedSourceGeneration() error {
 }
 
 func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
+	return cache.validateCapturedSourceGenerationScoped(false)
+}
+
+// validateCapturedSourceGenerationAtBoundary is the check between stages of one
+// run. It skips Visualforce inputs that capture already verified in the
+// current snapshot epoch; the Raw form always rereads them.
+func (cache *sourceCache) validateCapturedSourceGenerationAtBoundary() error {
+	return cache.validateCapturedSourceGenerationScoped(true)
+}
+
+func (cache *sourceCache) validateCapturedSourceGenerationScoped(boundary bool) error {
 	if cache == nil {
 		return nil
 	}
@@ -4231,7 +4242,7 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	}
 	recent := cache.recentVisualforce
 	epoch := snapshotValidationEpoch.Load()
-	skipVisualforce := cache.vfVerified && cache.vfEpoch == epoch
+	skipVisualforce := boundary && cache.vfVerified && cache.vfEpoch == epoch
 	visualforce := cache.visualforceInputs
 	cache.mu.RUnlock()
 	if skipVisualforce {
