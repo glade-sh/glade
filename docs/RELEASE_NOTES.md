@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.3.10
+
+v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
+
 - Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
 
 - **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
@@ -36,6 +40,10 @@
 
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
 - **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
+
+### Known issues
+
+- Custom First Name fuzzy rules can match a single initial against a short one-word name (for example T and Ty) where Salesforce does not; fixed in v0.3.11.
 
 ## v0.3.9
 
