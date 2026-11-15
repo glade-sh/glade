@@ -56,3 +56,12 @@ func TestSpreadSuppressionIsolatedAcrossRuntimeClones(t *testing.T) {
 		})
 	}
 }
+
+func TestOrgStateInvalidJSONRetainsDecodeError(t *testing.T) {
+	org := NewOrgState()
+	err := json.Unmarshal([]byte(`{"features":5}`), &org)
+	const want = "json: cannot unmarshal number into Go struct field OrgState.features of type []string"
+	if err == nil || err.Error() != want {
+		t.Fatalf("decode error %v, want %q", err, want)
+	}
+}
