@@ -54,3 +54,32 @@ func TestCompanyFitShapePreservesClassification(t *testing.T) {
 		}
 	}
 }
+
+func TestCompanyFitKeysMatchWordKey(t *testing.T) {
+	values := []string{"", " ", ".", "&", "& &", "The", "The The", "the and", "A of the", "AT&T", "Q & V", "Q&V", "Barnes&Noble",
+		"Acme L.L.C.", "Acme L L C", "Acme Pvt Ltd", "Acme Private Limited", "Acme S.A.", "Acme B.V.", "Acme Incorporated Company",
+		"Acme Inc Inc Inc", "Acme Partner", "Acme SARL", "Test Account-1", "Test Account_2", "Qelthorin Freight - West",
+		"Qelthorin Freight/West", "Qelthorin Freight (West)", "Zevrula, Inc.", "The Zevrula Company", "Department of Energy",
+		"St Zivra Hospital", "U.S. Zivra", "7-Zorval", "ZQMorvella", "Bright-Path Solutions Inc", "Hewlett-Packard Enterprise",
+		"Élan Company", "Acme ١", "one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen",
+		strings.Repeat("&", 60), strings.Repeat("a&", 40), "Company 5001 Okafor Works", "Okafor-Ashton Group"}
+	for _, s := range values {
+		var buf [companyKeyBuffer]byte
+		key, words, ok := companyFitKeyASCII(s, buf[:0])
+		if !ok {
+			continue
+		}
+		w := companyScoreWords(s, true)
+		if string(key) != companyFitKeyOf(w) || words != len(w) {
+			t.Errorf("%q: got %q %d, want %q %d", s, key, words, companyFitKeyOf(w), len(w))
+		}
+	}
+	for _, a := range values {
+		for _, b := range values {
+			same, na, nb := companyFitKeys(a, b)
+			if want := companyFitKey(a) == companyFitKey(b); same != want || na != len(companyScoreWords(a, true)) || nb != len(companyScoreWords(b, true)) {
+				t.Errorf("%q / %q: got %v %d %d, want %v", a, b, same, na, nb, want)
+			}
+		}
+	}
+}

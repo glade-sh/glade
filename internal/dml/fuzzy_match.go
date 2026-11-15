@@ -693,10 +693,15 @@ var companyStopWords = map[string]bool{"and": true, "of": true, "the": true}
 // natively "AT&T" does not match "AT and T" and "Barnes&Noble" does not match
 // "Barnes & Noble".
 func companyWords(s string) []string {
-	var words []string
-	for _, token := range strings.Fields(strings.ReplaceAll(strings.ToLower(s), "-", " ")) {
+	tokens := strings.Fields(strings.ReplaceAll(strings.ToLower(s), "-", " "))
+	words := make([]string, 0, len(tokens))
+	for _, token := range tokens {
 		if token == "&" {
 			words = append(words, "and")
+			continue
+		}
+		if companyCleanASCII(token) {
+			words = append(words, token)
 			continue
 		}
 		var clean []rune
@@ -715,21 +720,57 @@ func companyWords(s string) []string {
 	if len(words) > 1 && companyDesignators[words[len(words)-1]] {
 		words = words[:len(words)-1]
 	}
-	var out []string
+	stop := 0
+	for _, w := range words {
+		if companyStopWords[w] {
+			stop++
+		}
+	}
+	if stop == 0 || stop == len(words) {
+		return words
+	}
+	out := make([]string, 0, len(words)-stop)
 	for _, w := range words {
 		if !companyStopWords[w] {
 			out = append(out, w)
 		}
 	}
-	if len(out) == 0 {
-		return words
-	}
 	return out
+}
+
+// companyCleanASCII reports a token of lower-case ASCII letters, digits, "&"
+// and "/" only: companyWords keeps it as it is.
+func companyCleanASCII(token string) bool {
+	for i := 0; i < len(token); i++ {
+		c := token[i]
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '&' || c == '/') {
+			return false
+		}
+	}
+	return true
 }
 
 // companyKey is the match key: the first five characters of each of the first
 // two words (help notation "Company (2,5)").
 func companyKey(words []string) string {
+	prefix := func(w string) (string, bool) {
+		w = w[:min(len(w), 5)]
+		return w, isASCII(w)
+	}
+	switch len(words) {
+	case 0:
+		return ""
+	case 1:
+		if p, ok := prefix(words[0]); ok {
+			return p
+		}
+	default:
+		p, ok := prefix(words[0])
+		q, ok2 := prefix(words[1])
+		if ok && ok2 {
+			return p + q
+		}
+	}
 	var b strings.Builder
 	for i, w := range words {
 		if i == 2 {
@@ -847,13 +888,67 @@ func companySingleWordMatch(candidate, existing string) (bool, float64) {
 	return true, 96
 }
 
+// companyAlignedName reports a name that folds to one of companyAlignedWords.
+func companyAlignedName(s string) bool {
+	t := strings.TrimSpace(s)
+	if !isASCII(t) {
+		return companyAlignedWords[foldText(s)]
+	}
+	return strings.EqualFold(t, "partner") || strings.EqualFold(t, "partners")
+}
+
+// foldedEqual is foldText(a) == foldText(b) without building either string
+// for ASCII text.
+func foldedEqual(a, b string) bool {
+	if !isASCII(a) || !isASCII(b) {
+		return foldText(a) == foldText(b)
+	}
+	space := func(c byte) bool { return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' }
+	lower := func(c byte) byte {
+		if c >= 'A' && c <= 'Z' {
+			return c + 'a' - 'A'
+		}
+		return c
+	}
+	i, j := 0, 0
+	for {
+		for i < len(a) && space(a[i]) {
+			i++
+		}
+		for j < len(b) && space(b[j]) {
+			j++
+		}
+		if i == len(a) || j == len(b) {
+			return i == len(a) && j == len(b)
+		}
+		for i < len(a) && j < len(b) && !space(a[i]) && !space(b[j]) {
+			if lower(a[i]) != lower(b[j]) {
+				return false
+			}
+			i++
+			j++
+		}
+		if (i < len(a) && !space(a[i])) || (j < len(b) && !space(b[j])) {
+			return false
+		}
+	}
+}
+
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			return false
+		}
+	}
+	return true
+}
+
 func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
-	if companyAlignedWords[strings.TrimSpace(x)] || companyAlignedWords[strings.TrimSpace(y)] {
+	if companyAlignedName(a) || companyAlignedName(b) {
 		// NATIVE: a name that is only "Partner" matches nothing, itself included.
 		return false, 0
 	}
-	if x == y {
+	if foldedEqual(a, b) {
 		return true, 100
 	}
 	wa, wb := companyWords(a), companyWords(b)
@@ -918,7 +1013,18 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 	if a == b && companySimpleExact(a) {
 		return true, 100
 	}
-	if route := companyFitRoute(a, b); route != companyRouteNone && companyFitKey(a) == companyFitKey(b) {
+	route := companyFitRoute(a, b)
+	if route == companyRouteNone {
+		return legacyFuzzyCompany(a, b, matchBlanks)
+	}
+	same, wordsA, wordsB := companyFitKeys(a, b)
+	if route == companyRouteJoin && !companyJoinWords(a, wordsA, wordsB) {
+		route = companyRouteNone
+		if companyQualifierPair(a, b) {
+			route = companyRouteQualifier
+		}
+	}
+	if route != companyRouteNone && same {
 		if raw := companyFitScore(a, b); raw >= companyFitThreshold {
 			if route == companyRouteJoin {
 				if matched, _ := legacyFuzzyCompany(a, b, matchBlanks); !matched {

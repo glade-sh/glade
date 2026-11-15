@@ -13,6 +13,24 @@ var companyExpansions = map[string]string{"intl": "international", "natl": "nati
 // deliberately has different punctuation handling and does not expand words.
 func companyScoreWords(s string, key bool) []string {
 	var b strings.Builder
+	b.Grow(len(s) + 4)
+	if isASCII(s) {
+		for i := 0; i < len(s); i++ {
+			switch c := s[i]; {
+			case c >= 'a' && c <= 'z' || c >= '0' && c <= '9':
+				b.WriteByte(c)
+			case c >= 'A' && c <= 'Z':
+				b.WriteByte(c + 'a' - 'A')
+			case c == '&':
+				b.WriteString(" and ")
+			case c == '.':
+			case !key && (c == '-' || c == '_'):
+			default:
+				b.WriteByte(' ')
+			}
+		}
+		return companyScoreFields(b.String(), key)
+	}
 	for _, r := range strings.ToLower(s) {
 		switch {
 		case r == '&':
@@ -25,7 +43,12 @@ func companyScoreWords(s string, key bool) []string {
 			b.WriteByte(' ')
 		}
 	}
-	w := strings.Fields(b.String())
+	return companyScoreFields(b.String(), key)
+}
+
+// companyScoreFields is companyScoreWords after punctuation handling.
+func companyScoreFields(s string, key bool) []string {
+	w := strings.Fields(s)
 	if !key {
 		for i, v := range w {
 			if x := companyExpansions[v]; x != "" {
@@ -52,19 +75,30 @@ func companyScoreWords(s string, key bool) []string {
 	if len(w) > 1 && w[0] == "the" {
 		w = w[1:]
 	}
-	out := make([]string, 0, len(w))
+	stop := func(v string) bool { return v == "and" || v == "of" || v == "the" || v == "a" }
+	n := 0
 	for _, v := range w {
-		if v != "and" && v != "of" && v != "the" && v != "a" {
-			out = append(out, v)
+		if stop(v) {
+			n++
 		}
 	}
-	if len(out) == 0 {
+	if n == 0 || n == len(w) {
 		return w
+	}
+	out := make([]string, 0, len(w)-n)
+	for _, v := range w {
+		if !stop(v) {
+			out = append(out, v)
+		}
 	}
 	return out
 }
 func companyFitKey(s string) string {
-	w := companyScoreWords(s, true)
+	return companyFitKeyOf(companyScoreWords(s, true))
+}
+
+// companyFitKeyOf joins the first six characters of the first two words.
+func companyFitKeyOf(w []string) string {
 	var b strings.Builder
 	for i, v := range w {
 		if i == 2 {
@@ -154,7 +188,11 @@ func companyTokenScore(a, b []string) float64 {
 	return math.Round((100 + 100*prev[len(b)]/float64(len(a))) / 2)
 }
 func companyMarked(words []string) []rune {
-	var out []rune
+	n := len(words)
+	for _, w := range words {
+		n += len(w)
+	}
+	out := make([]rune, 0, n)
 	for i, w := range words {
 		if i > 0 {
 			out = append(out, ' ')
@@ -188,39 +226,58 @@ func companySAPS(a, b []string) float64 {
 		}
 		return 0
 	}
-	gap := func(r rune) int {
-		if unicode.IsUpper(r) {
+	var ubuf [96]bool
+	var dbuf [2 * 49]int
+	upper := ubuf[:0]
+	if len(x)+len(y) > len(ubuf) {
+		upper = make([]bool, 0, len(x)+len(y))
+	}
+	for _, r := range x {
+		upper = append(upper, unicode.IsUpper(r))
+	}
+	for _, r := range y {
+		upper = append(upper, unicode.IsUpper(r))
+	}
+	ux, uy := upper[:len(x)], upper[len(x):]
+	gap := func(u bool) int {
+		if u {
 			return -3
 		}
 		return -1
 	}
-	prev := make([]int, len(y)+1)
-	cur := make([]int, len(y)+1)
+	rows := dbuf[:]
+	if 2*(len(y)+1) > len(rows) {
+		rows = make([]int, 2*(len(y)+1))
+	}
+	prev, cur := rows[:len(y)+1], rows[len(y)+1:2*(len(y)+1)]
+	prev[0] = 0
 	for j := 1; j <= len(y); j++ {
-		prev[j] = prev[j-1] + gap(y[j-1])
+		prev[j] = prev[j-1] + gap(uy[j-1])
 	}
 	self := 0
 	for i := 1; i <= len(x); i++ {
-		if unicode.IsUpper(x[i-1]) {
+		u, xr := ux[i-1], x[i-1]
+		gx := gap(u)
+		if u {
 			self += 6
 		} else {
 			self++
 		}
-		cur[0] = prev[0] + gap(x[i-1])
+		cur[0] = prev[0] + gx
 		for j := 1; j <= len(y); j++ {
-			u, v := unicode.IsUpper(x[i-1]), unicode.IsUpper(y[j-1])
+			v := uy[j-1]
 			score := -1
 			switch {
 			case u != v:
 				score = -4
-			case u && v && x[i-1] == y[j-1]:
+			case u && xr == y[j-1]:
 				score = 6
-			case u && v:
+			case u:
 				score = -2
-			case x[i-1] == y[j-1]:
+			case xr == y[j-1]:
 				score = 1
 			}
-			cur[j] = max(prev[j-1]+score, prev[j]+gap(x[i-1]), cur[j-1]+gap(y[j-1]))
+			cur[j] = max(prev[j-1]+score, prev[j]+gx, cur[j-1]+gap(v))
 		}
 		prev, cur = cur, prev
 	}
@@ -250,9 +307,8 @@ func companyFitScore(a, b string) float64 {
 		if clean(a) == clean(b) {
 			return 100
 		}
-		flat := func(s string) string { return strings.Join(companyScoreWords(s, false), "") }
-		if flat(a) == flat(b) {
-			for _, r := range flat(a) {
+		if flat := strings.Join(wa, ""); flat == strings.Join(wb, "") {
+			for _, r := range flat {
 				if unicode.IsDigit(r) {
 					return 97
 				}
@@ -517,24 +573,40 @@ func companyDesignatorShape(s string) bool {
 // companyJoinShape is a hyphen or underscore join on one side only, with no
 // " - " suffix on either side. NATIVE duplicate_fuzzy_matching/org.tsv:108:
 // a joined side with more words than the other ("Dunder-Mifflin Paper" and
-// "Dunder Mifflin") does not match, so that shape keeps the word scorer.
+// "Dunder Mifflin") does not match; companyJoinWords keeps that shape on the
+// word scorer.
 func companyJoinShape(a, b string, ma, mb int) bool {
-	ja, jb := ma&companyMarkJoin != 0, mb&companyMarkJoin != 0
-	if ja == jb || strings.Contains(a, " - ") || strings.Contains(b, " - ") {
-		return false
+	return (ma&companyMarkJoin != 0) != (mb&companyMarkJoin != 0) && !strings.Contains(a, " - ") && !strings.Contains(b, " - ")
+}
+
+// companyJoinWords reports whether the joined side has no more key words
+// than the other side.
+func companyJoinWords(a string, wordsA, wordsB int) bool {
+	if strings.ContainsAny(a, "-_") {
+		return wordsA <= wordsB
 	}
-	joined, other := a, b
-	if jb {
-		joined, other = b, a
-	}
-	return len(companyScoreWords(joined, true)) <= len(companyScoreWords(other, true))
+	return wordsB <= wordsA
 }
 
 // companyQualifierPair is two different trailing qualifier forms (slash,
 // parenthesis, " - ") on the same base.
 func companyQualifierPair(a, b string) bool {
-	x, y := splitCompanyQualifier(a), splitCompanyQualifier(b)
-	return x.form != "plain" && y.form != "plain" && x.form != y.form
+	x, y := companyQualifierForm(a), companyQualifierForm(b)
+	return x != "plain" && y != "plain" && x != y
+}
+
+// companyQualifierForm is splitCompanyQualifier's form without the split.
+func companyQualifierForm(s string) string {
+	s = strings.TrimSpace(s)
+	switch {
+	case strings.Contains(s, "/"):
+		return "slash"
+	case strings.HasSuffix(s, ")") && strings.Contains(s, "("):
+		return "paren"
+	case strings.Contains(s, " - "):
+		return "dash"
+	}
+	return "plain"
 }
 
 // companyJoinConfidence reports a join-route match. NATIVE B3_cw1 and
@@ -554,4 +626,114 @@ func companyJoinConfidence(a, b string, fitted float64) float64 {
 		return math.Min(95, confidence)
 	}
 	return math.Max(91, fitted)
+}
+
+// companyKeyBuffer bounds the names companyFitKeys handles without
+// allocating; longer or non-ASCII names use companyScoreWords.
+const companyKeyBuffer = 128
+
+// companyFitKeys reports whether the two names share the fitted match key, and
+// the number of key words in each.
+func companyFitKeys(a, b string) (same bool, wordsA, wordsB int) {
+	var bufA, bufB [companyKeyBuffer]byte
+	ka, na, okA := companyFitKeyASCII(a, bufA[:0])
+	kb, nb, okB := companyFitKeyASCII(b, bufB[:0])
+	if okA && okB {
+		return string(ka) == string(kb), na, nb
+	}
+	wa, wb := companyScoreWords(a, true), companyScoreWords(b, true)
+	return companyFitKeyOf(wa) == companyFitKeyOf(wb), len(wa), len(wb)
+}
+
+// companyFitKeyASCII is companyFitKey and the key word count for an ASCII
+// name, written into dst. ok is false when the name needs the general path.
+func companyFitKeyASCII(s string, dst []byte) (key []byte, words int, ok bool) {
+	if len(s) > companyKeyBuffer/2 {
+		return nil, 0, false
+	}
+	var buf [companyKeyBuffer]byte
+	var spans [16][2]int
+	n, w, start := 0, 0, -1
+	end := func() bool {
+		if start >= 0 && n > start {
+			if w == len(spans) {
+				return false
+			}
+			spans[w] = [2]int{start, n}
+			w++
+		}
+		start = -1
+		return true
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c >= 0x80:
+			return nil, 0, false
+		case c >= 'A' && c <= 'Z':
+			c += 'a' - 'A'
+			fallthrough
+		case c >= 'a' && c <= 'z' || c >= '0' && c <= '9':
+			if start < 0 {
+				start = n
+			}
+			buf[n] = c
+			n++
+		case c == '.':
+		case c == '&':
+			if n+3 > len(buf) || !end() {
+				return nil, 0, false
+			}
+			start = n
+			n += copy(buf[n:], "and")
+			if !end() {
+				return nil, 0, false
+			}
+		default:
+			if !end() {
+				return nil, 0, false
+			}
+		}
+	}
+	if !end() {
+		return nil, 0, false
+	}
+	word := func(i int) string { return string(buf[spans[i][0]:spans[i][1]]) }
+	is := func(i int, v string) bool { return string(buf[spans[i][0]:spans[i][1]]) == v }
+	for w > 1 {
+		switch {
+		case w > 2 && (is(w-2, "pvt") && is(w-1, "ltd") || is(w-2, "private") && is(w-1, "limited") || is(w-2, "s") && is(w-1, "a") || is(w-2, "b") && is(w-1, "v") || is(w-2, "incorporated") && is(w-1, "company")):
+			w -= 2
+			continue
+		case w > 3 && is(w-3, "l") && is(w-2, "l") && is(w-1, "c"):
+			w -= 3
+			continue
+		case companyDesignators[word(w-1)] || is(w-1, "partner") || is(w-1, "sarl") || is(w-1, "bv"):
+			w--
+			continue
+		}
+		break
+	}
+	first := 0
+	if w > 1 && is(0, "the") {
+		first = 1
+	}
+	kept := 0
+	key = dst
+	for i := first; i < w; i++ {
+		if is(i, "and") || is(i, "of") || is(i, "the") || is(i, "a") {
+			continue
+		}
+		if kept < 2 {
+			key = append(key, buf[spans[i][0]:min(spans[i][1], spans[i][0]+6)]...)
+		}
+		kept++
+	}
+	if kept == 0 {
+		for i := first; i < min(w, first+2); i++ {
+			key = append(key, buf[spans[i][0]:min(spans[i][1], spans[i][0]+6)]...)
+		}
+		kept = w - first
+	}
+	return key, kept, true
 }
