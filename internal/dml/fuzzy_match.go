@@ -1087,7 +1087,12 @@ var titleStopWords = map[string]bool{"and": true, "of": true, "the": true}
 func titleWords(s string) []string {
 	var out []string
 	for _, w := range strings.Fields(strings.ReplaceAll(strings.ToLower(s), "&", " and ")) {
-		if w = strings.Trim(w, ".,"); w != "" {
+		// NATIVE (fuzzcap-B3 tt1): dots inside a word do not count ("C.E.O."
+		// is "ceo", "V.P." is "vp").
+		// A trailing comma stays on the word for prefix tests (NATIVE
+		// fuzzcap-B3 tt2: "Director, IT" finds "Director" and "Dir" but not
+		// "Director/IT"); titleTrim removes it for every other comparison.
+		if w = strings.ReplaceAll(strings.Trim(w, "."), ".", ""); titleTrim(w) != "" {
 			out = append(out, w)
 		}
 	}
@@ -1103,13 +1108,13 @@ var titleNoPrefix = map[string]bool{"it": true}
 // titleWordEqual treats a word as equal to any word it starts (two letters
 // or more): "Dir" and "Director", "Eng" and "Engineering".
 func titleWordEqual(a, b string) bool {
-	if a == b {
+	if a == b || titleTrim(a) == titleTrim(b) {
 		return true
 	}
 	if min(len(a), len(b)) < 2 {
 		return false
 	}
-	if titleNoPrefix[a] || titleNoPrefix[b] {
+	if titleNoPrefix[titleTrim(a)] || titleNoPrefix[titleTrim(b)] {
 		return false
 	}
 	return strings.HasPrefix(a, b) || strings.HasPrefix(b, a)
@@ -1122,6 +1127,51 @@ func titleHasEqual(w string, words []string) bool {
 		}
 	}
 	return false
+}
+
+func titleHasWords(words []string, want ...string) bool {
+	for _, w := range want {
+		found := false
+		for _, v := range words {
+			if titleTrim(v) == w {
+				found = true
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func titleTrim(w string) string { return strings.Trim(w, ",") }
+
+func titleTrimAll(words []string) []string {
+	out := make([]string, len(words))
+	for i, w := range words {
+		out[i] = titleTrim(w)
+	}
+	return out
+}
+
+// titleContent drops the stop words. NATIVE (fuzzcap-B3 tt2): "it" is dropped
+// too ("Director IT", "Director, IT" and "IT Director" are "Director" at 100)
+// unless nothing else is left ("IT" against "Information Technology").
+func titleContent(words []string) []string {
+	var out []string
+	for _, w := range words {
+		if !titleStopWords[titleTrim(w)] && titleTrim(w) != "it" {
+			out = append(out, w)
+		}
+	}
+	if len(out) == 0 {
+		for _, w := range words {
+			if !titleStopWords[titleTrim(w)] {
+				out = append(out, w)
+			}
+		}
+	}
+	return out
 }
 
 func titleInitials(words []string) string {
@@ -1172,24 +1222,24 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	if len(wa) == 0 || len(wb) == 0 {
 		return foldText(a) == foldText(b), 100
 	}
-	var ca, cb []string
-	for _, w := range wa {
-		if !titleStopWords[w] {
-			ca = append(ca, w)
-		}
-	}
-	for _, w := range wb {
-		if !titleStopWords[w] {
-			cb = append(cb, w)
-		}
-	}
-	if strings.Join(ca, " ") == strings.Join(cb, " ") || strings.Join(sortedCopy(wa), " ") == strings.Join(sortedCopy(wb), " ") {
+	ca, cb := titleContent(wa), titleContent(wb)
+	if strings.Join(titleTrimAll(ca), " ") == strings.Join(titleTrimAll(cb), " ") || strings.Join(sortedCopy(titleTrimAll(wa)), " ") == strings.Join(sortedCopy(titleTrimAll(wb)), " ") {
 		return true, 100
 	}
 	if len(ca) == 1 && len(cb) == 1 {
+		// Two one-word titles need an exact match. NATIVE (fuzzcap-B3 tt2):
+		// when a title has more words (only stop words, such as "of" and
+		// "IT", count as nothing), the words may differ by a prefix: "Dir"
+		// finds "Director of IT" and "Director/IT" finds "Director IT".
+		if (len(wa) > 1 || len(wb) > 1) && titleWordEqual(ca[0], cb[0]) {
+			return true, 100
+		}
+		if titleHasWords(wa, "of", "it") && titleHasWords(wb, "of", "it") {
+			return true, 88 // NATIVE (fuzzcap-B3 tt2): the two stop words alone, as below
+		}
 		return false, 0
 	}
-	if (len(cb) > 1 && strings.Join(ca, "") == titleInitials(cb)) || (len(ca) > 1 && strings.Join(cb, "") == titleInitials(ca)) {
+	if (len(cb) > 1 && strings.Join(titleTrimAll(ca), "") == titleInitials(titleTrimAll(cb))) || (len(ca) > 1 && strings.Join(titleTrimAll(cb), "") == titleInitials(titleTrimAll(ca))) {
 		return true, 100
 	}
 	var sharedA, sharedB []string
@@ -1209,6 +1259,12 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	// "Attorney at Law": "at" starts "attorney" only when read from one side).
 	k := min(len(uniqueWords(sharedA)), len(uniqueWords(sharedB)))
 	if k == 0 {
+		// NATIVE (fuzzcap-B3 tt2): "Director of IT" finds "Head of IT" at 88
+		// on the two stop words alone; "Director IT" and "Head of IT" share
+		// only "IT" and do not match.
+		if titleHasWords(wa, "of", "it") && titleHasWords(wb, "of", "it") {
+			return true, 88
+		}
 		return false, 0
 	}
 	if k == len(ua) && k == len(ub) && len(sharedB) == len(cb) {
