@@ -283,3 +283,20 @@ func TestShapeTransitionClearsHiddenDefinitionsWithoutAccess(t *testing.T) {
 		t.Fatal("shape transition retained hidden definitions")
 	}
 }
+
+func TestRecordingHiddenDefinitionDoesNotMutateSharedOrg(t *testing.T) {
+	org := NewOrgState()
+	first := ObjectDefinition{APIName: "First", Fields: map[string]Field{"Id": {Label: "original"}}}
+	recordSpreadHiddenAccess(&org, "First", first)
+	shared := org
+	recordSpreadHiddenAccess(&org, "Second", ObjectDefinition{APIName: "Second"})
+	if _, exists := shared.StandardSpreadHiddenDefinitions["Second"]; exists {
+		t.Fatal("recording changed a shared org's hidden definitions")
+	}
+	field := first.Fields["Id"]
+	field.Label = "edited"
+	first.Fields["Id"] = field
+	if shared.StandardSpreadHiddenDefinitions["First"].Fields["Id"].Label != "original" {
+		t.Fatal("hidden definition retained the source field map")
+	}
+}
