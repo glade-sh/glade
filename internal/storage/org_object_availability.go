@@ -299,7 +299,7 @@ func (o *OrgState) SuppressesSpreadObject(name string) bool {
 // SuppressedSpreadVisibilityStamp tracks every input that can change whether
 // a recorded inventory object contributes to a virtual schema view.
 func (o *OrgState) SuppressedSpreadVisibilityStamp() string {
-	if o == nil {
+	if o == nil || !o.StandardSpreadCapturedPlain {
 		return ""
 	}
 	entries := o.StandardSpreadSuppressed.snapshot()
