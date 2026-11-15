@@ -165,3 +165,36 @@ func TestSourceSpreadByValueLookupPreservesNeighborVisibility(t *testing.T) {
 		t.Fatal("by-value inventory lookup changed origin/main query visibility")
 	}
 }
+
+func TestSourceSpreadByValueLookupAfterOlderSerialization(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	data, err := json.Marshal(org)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var saved map[string]json.RawMessage
+	if err := json.Unmarshal(data, &saved); err != nil {
+		t.Fatal(err)
+	}
+	delete(saved, "standardSpreadSuppressed")
+	data, err = json.Marshal(saved)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var restored storage.OrgState
+	if err := json.Unmarshal(data, &restored); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := storage.ResolveObjectName(restored, "CareProgram"); !ok {
+		t.Fatal("inventory object was not resolved")
+	}
+	query, err := Parse("SELECT Id FROM CareProgram LIMIT 2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(restored, query); err == nil {
+		t.Fatal("older serialized origin/main neighbor became visible")
+	}
+}
