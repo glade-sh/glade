@@ -1089,7 +1089,25 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	n := max(len(ua), len(ub))
-	if k == len(ua) && len(ub) == n && (n == 5 || n == 6) && (k == 1 || (k == 2 && !sameOrder)) {
+	short, long := ua, ub
+	if len(short) > len(long) {
+		short, long = long, short
+	}
+	exactSubset := true
+	for _, word := range short {
+		found := false
+		for _, other := range long {
+			if word == other {
+				found = true
+				break
+			}
+		}
+		if !found {
+			exactSubset = false
+			break
+		}
+	}
+	if exactSubset && k == len(ua) && len(ub) == n && (n == 5 || n == 6) && (k == 1 || (k == 2 && !sameOrder)) {
 		// NATIVE (duplicate_fuzzy_panels): a candidate whose content words
 		// all occur in a longer existing title finds it from the short side
 		// only: one word in five at 88, two words out of order in five at 90
@@ -1102,7 +1120,7 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		return false, 0
 	}
 	confidence, ok := titleConfidence[[2]int{min(k, n-1), min(n, 5)}]
-	if n == 6 {
+	if n == 6 && exactSubset && len(short) < len(long) {
 		// NATIVE (duplicate_fuzzy_panels): six content words.
 		confidence, ok = titleConfidenceSix[min(k, n-1)]
 	}
@@ -1110,7 +1128,7 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		confidence = 88
 	}
 	if !sameOrder {
-		if n == 6 && k == 5 {
+		if n == 6 && exactSubset && len(short) < len(long) && k == 5 {
 			confidence -= 2
 		} else {
 			confidence -= 3
