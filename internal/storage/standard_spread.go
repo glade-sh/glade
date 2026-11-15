@@ -48,8 +48,13 @@ func EnsureStandardObjectSpread(org *OrgState) {
 		if !standardSpreadIncludes(objectName) {
 			continue
 		}
-		if _, exists := org.Objects[objectName]; record && !exists && plainDeveloperPrunable(objectName) {
-			installed = append(installed, objectName)
+		if record {
+			switch objectName {
+			case "AIFeatureExtractor", "AIResearchPromptResult", "AIScoringStatusEvent":
+				if _, exists := org.Objects[objectName]; !exists {
+					installed = append(installed, objectName)
+				}
+			}
 		}
 		EnsureStandardObject(org, objectName)
 	}
