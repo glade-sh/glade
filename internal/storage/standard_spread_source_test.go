@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
 	"os"
@@ -42,12 +43,25 @@ func TestPlainDeveloperSpreadNativeConformance(t *testing.T) {
 
 func BenchmarkPlainDeveloperEagerSpread(b *testing.B) {
 	features := []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape}
+	var org OrgState
 	for i := 0; i < b.N; i++ {
-		org := sourceSpreadEagerOrg(features)
+		org = sourceSpreadEagerOrg(features)
 		if len(org.Objects) == 0 {
 			b.Fatal("empty spread")
 		}
 	}
+	b.StopTimer()
+	objects := make(map[string]ObjectState, len(org.Objects))
+	for name, object := range org.Objects {
+		if !plainDeveloperPrunable(name) {
+			objects[name] = object
+		}
+	}
+	data, err := json.Marshal(objects)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.Logf("normalized objects=%d sha256=%x", len(objects), sha256.Sum256(data))
 }
 
 func TestPlainDeveloperSpreadPreservesProjectObject(t *testing.T) {
