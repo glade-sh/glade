@@ -91,6 +91,19 @@ func (o *OrgState) AllowsStandardObject(objectName string) bool {
 	if o != nil && o.HasFeature(project.PlainDeveloperObjectShape) && !PlainDeveloperObjectPresent(objectName, PlainDeveloperAnyRoute) {
 		return false
 	}
+	return o.allowsStandardObjectFeatures(objectName)
+}
+
+// allowsSpreadInventory preserves the eager spread's physical catalog in the
+// exact captured default shape. Route availability remains a separate check.
+func (o *OrgState) allowsSpreadInventory(objectName string) bool {
+	if o != nil && o.StandardSpreadCapturedPlain && !plainDeveloperPrunable(objectName) {
+		return o.allowsStandardObjectFeatures(objectName)
+	}
+	return o.AllowsStandardObject(objectName)
+}
+
+func (o *OrgState) allowsStandardObjectFeatures(objectName string) bool {
 	if o.HasCapturedB2BCommerceShape() && !o.HasFeature(project.UnspecifiedStandardFieldShape) {
 		name := strings.ToLower(objectName)
 		if _, ok := b2bAvailableObjectLookup[name]; ok {

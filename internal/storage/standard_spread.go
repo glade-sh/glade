@@ -111,7 +111,7 @@ func LazyStandardObjectName(org *OrgState, name string) (string, bool) {
 	if _, exists := org.Objects[canonical]; exists {
 		return "", false
 	}
-	if !org.AllowsStandardObject(canonical) {
+	if !org.allowsSpreadInventory(canonical) {
 		return "", false
 	}
 	return canonical, true

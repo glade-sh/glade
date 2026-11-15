@@ -135,7 +135,7 @@ func spreadObjectOwed(org *OrgState, name string) (string, bool) {
 	if _, exists := org.Objects[canonical]; exists {
 		return "", false
 	}
-	if org.StandardSpread == standardSpreadShaped && !org.AllowsStandardObject(canonical) {
+	if org.StandardSpread == standardSpreadShaped && !org.allowsSpreadInventory(canonical) {
 		return "", false
 	}
 	return canonical, true
