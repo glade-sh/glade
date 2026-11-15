@@ -1,9 +1,19 @@
 package storage
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
+
+// Persisted suppression snapshots must remain readable across hash updates.
+func TestSpreadFingerprintPersistedCompatibility(t *testing.T) {
+	got := spreadDefinitionFingerprint(ObjectDefinition{APIName: "Probe"})
+	const want = "601c6a21071f024f5f6bc41ad02244ac87c266cf0fb6f75110c70de1d1fc5736"
+	if fmt.Sprintf("%x", got) != want {
+		t.Fatalf("fingerprint %x, want %s", got, want)
+	}
+}
 
 // Each definition field is part of the snapshot. This exercises additions to
 // the definition as well as the existing scalar and collection fields.
