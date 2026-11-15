@@ -361,7 +361,7 @@ const standardFirstNameJaroWinkler = 0.85
 func standardFirstNameScore(a, b string) (bool, float64) {
 	x, y := strings.ToLower(strings.TrimSpace(capFuzzyInput(a))), strings.ToLower(strings.TrimSpace(capFuzzyInput(b)))
 	fx, fy := foldLowered(x), foldLowered(y)
-	if x == y || nameVariantOf(fx, fy) || firstNameInitials(fx, fy) || firstNameInitials(fy, fx) {
+	if x == y || nameVariantOf(fx, fy) || standardInitials(a, b, fx, fy) {
 		return true, 100
 	}
 	jx, jy := standardNameLetters(fx), standardNameLetters(fy)
@@ -400,7 +400,7 @@ func standardInitialKeyedFirst(a, b string) (float64, bool) {
 	a, b = capFuzzyInput(a), capFuzzyInput(b)
 	fx, fy := foldText(a), foldText(b)
 	if ix := firstNameInitialOf(fx); ix != utf8.RuneError && ix == firstNameInitialOf(fy) {
-		if firstNameInitials(fx, fy) || firstNameInitials(fy, fx) || standardNameLetters(fx) == standardNameLetters(fy) {
+		if standardInitials(a, b, fx, fy) || standardNameLetters(fx) == standardNameLetters(fy) {
 			return 100, true
 		}
 	}
@@ -421,4 +421,23 @@ func standardSurnamePanelShape(a, b string) bool {
 	}
 	x, y := standardSurnamePair(a, b)
 	return standardNameWord(x) && standardNameWord(y)
+}
+
+// standardInitials is the Initials algorithm on two first names (fx, fy their
+// folds) whose typed initials are ASCII letters: natively an initial "K"
+// never finds a name typed with the Kelvin sign, U+212A ("Karl"), which
+// folding would turn into "karl" (duplicate_save_behavior calibration
+// initials).
+func standardInitials(a, b, fx, fy string) bool {
+	return standardASCIIInitial(a) && standardASCIIInitial(b) && (firstNameInitials(fx, fy) || firstNameInitials(fy, fx))
+}
+
+// standardASCIIInitial reports a name whose first letter is ASCII.
+func standardASCIIInitial(s string) bool {
+	for _, r := range s {
+		if unicode.IsLetter(r) {
+			return r < utf8.RuneSelf
+		}
+	}
+	return false
 }

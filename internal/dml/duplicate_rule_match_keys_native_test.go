@@ -239,3 +239,18 @@ func TestDuplicateRuleMatchKeysUncapturedShapesKeepMain(t *testing.T) {
 		}
 	}
 }
+
+// NATIVE duplicate_save_behavior calibration initials: on the standard email
+// path an initial "K" finds "Karl" typed with ASCII letters only; typed with
+// the Kelvin sign (U+212A) it finds nothing, although folding equates them.
+func TestStandardInitialsNeedASCIIInitial(t *testing.T) {
+	if ok, score := standardFirstNameScore("Karl", "K"); !ok || score != 100 {
+		t.Fatalf("ASCII initial: %v %.0f", ok, score)
+	}
+	if ok, _ := standardFirstNameScore("Karl", "K"); ok {
+		t.Fatal("a Kelvin-sign name matched an ASCII initial")
+	}
+	if _, ok := standardInitialKeyedFirst("Keith", "K"); ok {
+		t.Fatal("phone path: a Kelvin-sign name matched an ASCII initial")
+	}
+}

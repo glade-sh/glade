@@ -195,7 +195,8 @@ func standardDuplicateMatcher(org *storage.OrgState, ruleObject, candidateObject
 // The returned confidence is the matching rule's match confidence: the filter
 // logic's mean of means (duplicate_filter_confidence.go). An exact or blank
 // match scores 100, a fuzzy item its method score; an item that did not match
-// still counts with its raw score.
+// still counts with its raw score. keys is the key of each item, a property
+// of the rule (customRuleKeyModes).
 func customDuplicateMatch(rule storage.MatchingRule, keys []fuzzyKeyMode, candidate, existing storage.Record) (matched, supported bool, confidence float64) {
 	matches := make([]bool, len(rule.Items))
 	scores := make([]float64, len(rule.Items))
