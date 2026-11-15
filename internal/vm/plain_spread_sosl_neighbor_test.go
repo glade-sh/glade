@@ -43,6 +43,38 @@ func TestPlainDeveloperSOSLNativeConformance(t *testing.T) {
 	}
 }
 
+func TestPlainDeveloperAnonymousNativeConformance(t *testing.T) {
+	f, err := os.Open("testdata/plain_developer_route_gaps/org.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	r := csv.NewReader(f)
+	r.Comma = '\t'
+	rows, err := r.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObjectSpread(&org)
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	machine := New(nil)
+	machine.SetOrg(&org)
+	for _, row := range rows[1:] {
+		if row[1] != "anonymous" {
+			continue
+		}
+		source := fmt.Sprintf(`System.assertEquals(%s, Type.forName('%s') != null); String result = 'ok'; try { Database.query('SELECT Id FROM %s LIMIT 1'); } catch (Exception e) { result = e.getTypeName(); } System.assertEquals('%s', result);`, row[3], row[2], row[2], row[4])
+		program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: row[0]})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := machine.Execute(program); err != nil {
+			t.Errorf("%s %s: %v", row[0], row[2], err)
+		}
+	}
+}
+
 // SOSL at API 61 was not captured. Its local outcome stays at main.
 func TestPlainDeveloperSpreadPreservesUnprobedSOSL(t *testing.T) {
 	org := storage.NewOrgState()
