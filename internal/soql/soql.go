@@ -1,6 +1,8 @@
 package soql
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"sort"
@@ -935,6 +937,28 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 			}
 		}
 	}
+	// These two virtual tables retain the local rows for definitions removed
+	// from the captured plain Developer inventory. Native queries for these
+	// table shapes raised exceptions, so they do not prove a different result.
+	if wantEntityAccess || wantFieldAccess {
+		for name, fields := range org.StandardSpreadHiddenAccess {
+			if _, exists := org.Objects[name]; exists {
+				continue
+			}
+			entityID := storage.ID(name)
+			if _, exists := userEntityAccess.Records[entityID]; wantEntityAccess && !exists {
+				userEntityAccess.PutRecord(entityID, virtualUserEntityAccessRecord(name))
+			}
+			if wantFieldAccess {
+				for _, field := range fields {
+					id := storage.ID(name + "." + field)
+					if _, exists := userFieldAccess.Records[id]; !exists {
+						userFieldAccess.PutRecord(id, virtualUserFieldAccessRecord(id, name))
+					}
+				}
+			}
+		}
+	}
 	org.Objects["EntityDefinition"] = entityDefinitions
 	org.Objects["EntityParticle"] = entityParticles
 	org.Objects["FieldDefinition"] = fieldDefinitions
@@ -956,7 +980,13 @@ func virtualSchemaHydrationStamp(org storage.OrgState) string {
 		objectCount++
 		fieldCount += len(object.Definition.Fields)
 	}
-	return strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount)
+	stamp := strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount)
+	if len(org.StandardSpreadHiddenAccess) != 0 {
+		data, _ := json.Marshal(org.StandardSpreadHiddenAccess)
+		sum := sha256.Sum256(data)
+		stamp += ":" + fmt.Sprintf("%x", sum)
+	}
+	return stamp
 }
 
 func virtualSchemaAlreadyHydrated(org storage.OrgState, stamp string) bool {

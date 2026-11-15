@@ -352,6 +352,10 @@ func restorePrunedStandardSpread(org *OrgState) {
 			ensureStandardObjectWithProfile(org, name, nil)
 		}
 	}
+	if len(org.StandardSpreadHiddenAccess) != 0 {
+		org.StandardSpreadHiddenAccess = nil
+		org.ClearRuntimeSchemaStamp()
+	}
 }
 
 // capturedPlainSpreadFeatures accepts only the exact default Developer shape

@@ -6,6 +6,7 @@ import (
 	"hash"
 	"math"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 
@@ -177,6 +178,7 @@ func refreshOrgFeatureObjects(org *OrgState) {
 				if len(object.Records) != 0 || !isUnmodifiedSpreadObject(org, name, object) {
 					continue
 				}
+				recordSpreadHiddenAccess(org, name, object.Definition)
 				DeleteObject(org, name)
 				if org.eagerStandardSpread {
 					org.StandardSpreadPruned = true
@@ -222,6 +224,34 @@ func refreshOrgFeatureObjects(org *OrgState) {
 			EnsureStandardObject(org, gate.object)
 		}
 	}
+}
+
+func cloneSpreadHiddenAccess(source map[string][]string) map[string][]string {
+	if source == nil {
+		return nil
+	}
+	clone := make(map[string][]string, len(source))
+	for name, fields := range source {
+		clone[name] = slices.Clone(fields)
+	}
+	return clone
+}
+
+func recordSpreadHiddenAccess(org *OrgState, name string, definition ObjectDefinition) {
+	fields := make([]string, 0, len(definition.Fields))
+	for fieldName, field := range definition.Fields {
+		if field.APIName != "" {
+			fieldName = field.APIName
+		}
+		fields = append(fields, fieldName)
+	}
+	sort.Strings(fields)
+	next := cloneSpreadHiddenAccess(org.StandardSpreadHiddenAccess)
+	if next == nil {
+		next = make(map[string][]string)
+	}
+	next[name] = fields
+	org.StandardSpreadHiddenAccess = next
 }
 
 func plainDeveloperPrunable(name string) bool {
