@@ -3,9 +3,28 @@ package storage
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"maps"
 	"sort"
 	"sync"
 )
+
+// Catalog names and their resolution are generated and immutable. Keep the
+// resolved sequence so repeated eager spreads avoid refilling the bounded
+// general-purpose name memo.
+var canonicalStandardSpreadNames = sync.OnceValue(func() []string {
+	names := KnownStandardObjectNames()
+	resolved := make([]string, 0, len(names))
+	for _, name := range names {
+		if !standardSpreadIncludes(name) {
+			continue
+		}
+		if canonical, ok := ResolveKnownStandardObjectName(name); ok {
+			name = canonical
+		}
+		resolved = append(resolved, name)
+	}
+	return resolved
+})
 
 var standardCatalogStampCache struct {
 	once  sync.Once
@@ -36,12 +55,33 @@ func EnsureStandardObjectSpread(org *OrgState) {
 	if org == nil {
 		return
 	}
-	for _, objectName := range KnownStandardObjectNames() {
-		if !standardSpreadIncludes(objectName) {
-			continue
+	markExistingExplicitBeforeSpread(org)
+	org.eagerStandardSpread = true
+	org.ensureFeatureProfile()
+	// Only a plain-profile build of a fresh eager org produces the definitions
+	// an isolated catalog build would; any other start keeps the full check.
+	record := canonicalFeatureSignature(org.Features) == "" && !org.lazyStandardSpread && org.StandardSpread == ""
+	var installed []string
+	pruned := plainDeveloperPrunedObjects()
+	for _, objectName := range canonicalStandardSpreadNames() {
+		if record && (objectName == pruned[0] || objectName == pruned[1] || objectName == pruned[2]) {
+			if _, exists := org.Objects[objectName]; !exists {
+				installed = append(installed, objectName)
+			}
 		}
-		EnsureStandardObject(org, objectName)
+		ensureCanonicalStandardObjectWithProfile(org, objectName, org.Features)
 	}
+	if !record || len(installed) == 0 {
+		return
+	}
+	snapshot := make(map[string]installedSpreadDefinition, len(org.spreadInstalled)+len(installed))
+	maps.Copy(snapshot, org.spreadInstalled)
+	for _, objectName := range installed {
+		if object, ok := org.Objects[objectName]; ok {
+			snapshot[objectName] = recordInstalledSpreadDefinition(object.Definition)
+		}
+	}
+	org.spreadInstalled = snapshot
 }
 
 // standardSpreadIncludes reports whether the spread seeds a catalog object.
@@ -61,8 +101,10 @@ func (o *OrgState) EnableLazyStandardSpread() {
 	if o == nil {
 		return
 	}
+	markExistingExplicitBeforeSpread(o)
 	o.ensureFeatureProfile()
 	o.lazyStandardSpread = true
+	o.ensureSpreadSuppression()
 }
 
 // LazyStandardSpreadEnabled reports whether catalog objects are still pending
@@ -88,7 +130,7 @@ func LazyStandardObjectName(org *OrgState, name string) (string, bool) {
 	if _, exists := org.Objects[canonical]; exists {
 		return "", false
 	}
-	if !org.AllowsStandardObject(canonical) {
+	if !org.allowsSpreadInventory(canonical) {
 		return "", false
 	}
 	return canonical, true
@@ -114,10 +156,12 @@ func EnsureLazyStandardObject(org *OrgState, name string) (string, bool) {
 		if org.StandardSpread == standardSpreadShaped {
 			applyShapeToLazyObject(org, canonical)
 		}
+		recordSuppressedSpreadObject(org, canonical, nil)
 		return canonical, true
 	}
 	ensureStandardObjectWithProfile(org, canonical, nil)
 	applyShapeToLazyObject(org, canonical)
+	recordSuppressedSpreadObject(org, canonical, nil)
 	return canonical, true
 }
 
@@ -161,6 +205,7 @@ func MaterializeStandardObjectSpread(org *OrgState) bool {
 	if org == nil || !org.lazyStandardSpread {
 		return false
 	}
+	org.eagerStandardSpread = true
 	org.lazyStandardSpread = false
 	// Plain catalog definitions first, then the shape steps in the order an
 	// eager org applied them to every object: whole-org feature appliers,
@@ -184,6 +229,7 @@ func MaterializeStandardObjectSpread(org *OrgState) bool {
 	}
 	refreshOrgFeatureObjects(org)
 	refreshOrgFeatureFields(org)
+	org.StandardSpreadSuppressed = nil
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)
 	}
@@ -238,4 +284,32 @@ func catalogKeyPrefixOwners() map[string]string {
 		catalogKeyPrefixOwnerCache.owners = owners
 	})
 	return catalogKeyPrefixOwnerCache.owners
+}
+
+// MarkExplicitSpreadObject protects project-installed definitions from spread cleanup.
+func (o *OrgState) MarkExplicitSpreadObject(name string) {
+	if o == nil || !plainDeveloperPrunable(name) {
+		return
+	}
+	if canonical, ok := ResolveKnownStandardObjectName(name); ok {
+		name = canonical
+	}
+	next := make(map[string]bool, len(o.spreadExplicit)+1)
+	maps.Copy(next, o.spreadExplicit)
+	next[name] = true
+	o.spreadExplicit = next
+}
+
+// markExistingExplicitBeforeSpread protects definitions installed before
+// a spread begins. Existing spread-owned definitions retain their
+// original provenance when switching modes.
+func markExistingExplicitBeforeSpread(org *OrgState) {
+	if org == nil || org.eagerStandardSpread || org.lazyStandardSpread || org.StandardSpread != "" {
+		return
+	}
+	for name := range org.Objects {
+		if plainDeveloperPrunable(name) {
+			org.MarkExplicitSpreadObject(name)
+		}
+	}
 }

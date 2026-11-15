@@ -1,6 +1,8 @@
 package soql
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"sort"
@@ -276,6 +278,9 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 	if strings.EqualFold(query.Object, "KnowledgeArticleVersion") {
 		org = *storage.KnowledgeArticleVersionReadView(&org)
 	}
+	if !capturedVersionedRootIDQuery(query) && org.SuppressesSpreadObject(query.Object) {
+		return Result{}, queryError(MissingObjectMessage(query.Object), "unknown object "+query.Object)
+	}
 	objectName, ok := storage.ResolveObjectName(org, query.Object)
 	if !ok && capturedVersionedRootIDQuery(query) {
 		org, objectName, ok = orgWithLazyChildObject(org, query.Object)
@@ -453,7 +458,7 @@ func validateSemiAntiJoinReferences(org storage.OrgState, outerObjectName string
 			return fmt.Errorf("soql: semi-join main operand %s must be an ID or reference field", join.Field)
 		}
 		subquery := join.Subquery
-		subqueryObject, ok := storage.ResolveObjectName(org, subquery.Object)
+		subqueryObject, ok := storage.ResolveVisibleObjectName(org, subquery.Object)
 		if !ok {
 			continue // The ordinary object validator reports the unknown subquery object.
 		}
@@ -891,6 +896,9 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 		if isVirtualSchemaObjectName(objectName) {
 			continue
 		}
+		if org.SuppressesSpreadObject(objectName) {
+			continue
+		}
 		if object.Definition.APIName == "" {
 			continue
 		}
@@ -935,6 +943,28 @@ func hydrateVirtualSchemaTables(org *storage.OrgState, want map[string]bool) {
 			}
 		}
 	}
+	// These two virtual tables retain the local rows for definitions removed
+	// from the captured plain Developer inventory. Native queries for these
+	// table shapes raised exceptions, so they do not prove a different result.
+	if wantEntityAccess || wantFieldAccess {
+		for name, fields := range org.StandardSpreadHiddenAccess {
+			if _, exists := org.Objects[name]; exists {
+				continue
+			}
+			entityID := storage.ID(name)
+			if _, exists := userEntityAccess.Records[entityID]; wantEntityAccess && !exists {
+				userEntityAccess.PutRecord(entityID, virtualUserEntityAccessRecord(name))
+			}
+			if wantFieldAccess {
+				for _, field := range fields {
+					id := storage.ID(name + "." + field)
+					if _, exists := userFieldAccess.Records[id]; !exists {
+						userFieldAccess.PutRecord(id, virtualUserFieldAccessRecord(id, name))
+					}
+				}
+			}
+		}
+	}
 	org.Objects["EntityDefinition"] = entityDefinitions
 	org.Objects["EntityParticle"] = entityParticles
 	org.Objects["FieldDefinition"] = fieldDefinitions
@@ -956,7 +986,16 @@ func virtualSchemaHydrationStamp(org storage.OrgState) string {
 		objectCount++
 		fieldCount += len(object.Definition.Fields)
 	}
-	return strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount)
+	stamp := strconv.Itoa(objectCount) + ":" + strconv.Itoa(fieldCount)
+	if len(org.StandardSpreadHiddenAccess) != 0 {
+		data, _ := json.Marshal(org.StandardSpreadHiddenAccess)
+		sum := sha256.Sum256(data)
+		stamp += ":" + fmt.Sprintf("%x", sum)
+	}
+	if suppressed := org.SuppressedSpreadVisibilityStamp(); suppressed != "" {
+		stamp += ":" + suppressed
+	}
+	return stamp
 }
 
 func virtualSchemaAlreadyHydrated(org storage.OrgState, stamp string) bool {
@@ -2691,7 +2730,7 @@ func childRelationshipCached(org storage.OrgState, parentDefinition storage.Obje
 		return childRelationship(org, parentDefinition, relationship)
 	}
 	cache := childCache.execution
-	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion
+	key := childRelationshipCacheKey(org.Namespace, parentDefinition.APIName, relationship) + "\x00" + org.APIVersion + "\x00" + org.SuppressedSpreadVisibilityStamp()
 	cache.mu.RLock()
 	cached, found := cache.childRelationships[key]
 	cache.mu.RUnlock()
@@ -2734,6 +2773,9 @@ func loadedChildRelationship(org storage.OrgState, parentDefinition storage.Obje
 	var bestObject string
 	var bestRelation storage.Relationship
 	for childObjectName, childObject := range org.Objects {
+		if org.SuppressesSpreadObject(childObjectName) {
+			continue
+		}
 		childDefinition := childObject.Definition
 		consider := func(relation storage.Relationship) {
 			if !storage.PlatformChildRelationshipAvailableAtVersion(parentName, childObjectName, relation.Field, org.APIVersion) {

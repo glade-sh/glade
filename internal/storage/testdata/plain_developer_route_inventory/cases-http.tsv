@@ -1,0 +1,12 @@
+id	api	route	source
+rest60	60.0	rest	objects.txt and native-run.md REST recipe
+rest65	65.0	rest	objects.txt and native-run.md REST recipe
+rest66	66.0	rest	objects.txt and native-run.md REST recipe
+rest67	67.0	rest	objects.txt and native-run.md REST recipe
+rest68	68.0	rest	objects.txt and native-run.md REST recipe
+batch59	59.0	lwc_batch	objects.txt and native-run.md UI batch recipe
+batch67	67.0	lwc_batch	objects.txt and native-run.md UI batch recipe
+batch68	68.0	lwc_batch	objects.txt and native-run.md UI batch recipe
+single59	59.0	lwc_single	objects.txt and native-run.md singleton recipe
+single67	67.0	lwc_single	objects.txt and native-run.md singleton recipe
+single68	68.0	lwc_single	objects.txt and native-run.md singleton recipe

@@ -4,6 +4,8 @@
 
 - **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets. API 67 default-mode administrator DML and dynamic queries honor captured access to newly deployed Account Text fields.
 
+- Default Developer eager orgs omit three standard objects whose absence was observed in native lookup and query results.
+
 ## v0.3.10
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.

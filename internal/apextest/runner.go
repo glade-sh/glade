@@ -5137,6 +5137,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))
 	for name, describe := range registry.Objects {
+		org.MarkExplicitSpreadObject(name)
 		org.Objects[name] = storage.ObjectState{
 			Definition: sobject.ToObjectDefinition(describe),
 			Records:    make(map[storage.ID]storage.Record),
