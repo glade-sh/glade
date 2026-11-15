@@ -111,6 +111,32 @@ func TestSourceSpreadLocalObjectSearchPreservesNeighbor(t *testing.T) {
 	}
 }
 
+func TestSourceSpreadDescribeRelationshipsPreserveNeighbor(t *testing.T) {
+	org := storage.NewOrgState()
+	org.EnableStandardSpreadSource()
+	storage.ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape})
+	if _, ok := storage.EnsureLazyStandardObject(&org, "CareProgram"); !ok {
+		t.Fatal("inventory object was not materialized")
+	}
+	checked := false
+	for _, relation := range org.Objects["CareProgram"].Definition.Relations {
+		for _, parent := range relation.ParentObjects {
+			if _, exists := org.Objects[parent]; !exists || strings.EqualFold(parent, "CareProgram") {
+				continue
+			}
+			checked = true
+			for _, child := range describeChildRelationships(parent, &org) {
+				if child["childSObject"] == "CareProgram" {
+					t.Fatalf("origin/main %s describe omitted the neighbor", parent)
+				}
+			}
+		}
+	}
+	if !checked {
+		t.Fatal("no installed parent relationship was available to test")
+	}
+}
+
 func TestSourceSpreadRecordIDPreservesNeighbor(t *testing.T) {
 	org := storage.NewOrgState()
 	org.EnableStandardSpreadSource()
