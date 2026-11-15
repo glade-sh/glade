@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/filestamp"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -54,9 +55,19 @@ func TestVisualforceDigestReusedByRuntimeManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writeFile(t, resource, "other")
-	if err := os.Chtimes(resource, info.ModTime(), info.ModTime()); err != nil {
-		t.Fatal(err)
+	before, _ := filestamp.Stat(resource)
+	// The clock above is faked, so the trust window does not cover a rewrite
+	// inside one timestamp tick. Filesystems with one-second stamps need the
+	// rewrite repeated until the stamp can show it.
+	for range 40 {
+		writeFile(t, resource, "other")
+		if err := os.Chtimes(resource, info.ModTime(), info.ModTime()); err != nil {
+			t.Fatal(err)
+		}
+		if after, _ := filestamp.Stat(resource); after != before {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
 	hits = 0
 	cached, err = startupcache.ValidateInputWithSourceDigestsAndDigestLookup(root, nil, lookup)
