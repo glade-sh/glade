@@ -793,9 +793,10 @@ func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64
 		la, lb := strings.LastIndexByte(a, ' '), strings.LastIndexByte(b, ' ')
 		if ia > 0 && ia == ib && a[:ia] == b[:ib] && la > ia && lb > ib && strings.EqualFold(a[:la], b[:lb]) {
 			wx, wy := strings.Fields(x), strings.Fields(y)
-			if len(wx) >= 3 && len(wx) == len(wy) && wx[0] == wy[0] && digitsOnly.MatchString(wx[0]) {
+			// The rows cover a number, a one-word name and the suffix only.
+			if len(wx) == 3 && len(wy) == 3 && wx[0] == wy[0] && digitsOnly.MatchString(wx[0]) {
 				last := len(wx) - 1
-				if strings.Join(wx[1:last], " ") == strings.Join(wy[1:last], " ") && len(wx[1]) >= 2 {
+				if wx[1] == wy[1] && len(wx[1]) >= 2 {
 					sx, sy := wx[last], wy[last]
 					_, kx := knownStreetSuffixes[sx]
 					_, ky := knownStreetSuffixes[sy]
@@ -1239,7 +1240,10 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 			}
 		}
 	}
-	exactSubset := exactShared == len(short)
+	// The panel titles hold no stop word and repeat no word; any other title
+	// keeps the shared scoring below.
+	plain := len(wa) == len(ua) && len(wb) == len(ub)
+	exactSubset := plain && exactShared == len(short)
 	if exactSubset && k == len(ua) && len(ub) == n && (n == 5 || n == 6) && (k == 1 || (k == 2 && !sameOrder)) {
 		// NATIVE (duplicate_fuzzy_panels): a candidate whose content words
 		// all occur in a longer existing title finds it from the short side
@@ -1253,7 +1257,7 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		return false, 0
 	}
 	confidence, ok := titleConfidence[[2]int{min(k, n-1), min(n, 5)}]
-	if n == 6 && ((exactSubset && len(short) < len(long)) || (len(short) == 3 && k == 2 && exactShared == 2 && sameOrder)) {
+	if n == 6 && ((exactSubset && len(short) < len(long)) || (len(short) == 3 && k == 2 && exactShared == 2 && sameOrder && plain)) {
 		// NATIVE (duplicate_fuzzy_panels): six content words.
 		confidence, ok = titleConfidenceSix[min(k, n-1)]
 	}

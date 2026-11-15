@@ -116,3 +116,46 @@ func TestSixWordTitlePartialOverlapNativeConfidence(t *testing.T) {
 		}
 	}
 }
+
+// The street rows hold one-word names. A longer name keeps the shared scorer.
+func TestCustomStreetMultiwordNameKeepsBaseline(t *testing.T) {
+	for _, p := range [][2]string{
+		{"418 larkwhistle oak St", "418 larkwhistle oak Sreet"},
+		{"418 larkwhistle oak St", "418 larkwhistle oak Strt"},
+		{"418 Larkwhistle Oak Strt", "418 Larkwhistle Oak St"},
+		{"72 Dunholt Glen Drive", "72 Dunholt Glen Drv"},
+	} {
+		got, score := FuzzyScore("Street", p[0], p[1], false)
+		want, baseline := fuzzyStreet(p[0], p[1], false)
+		if got != want || score != baseline {
+			t.Errorf("%q / %q: got %v %v; shared scorer %v %v", p[0], p[1], got, score, want, baseline)
+		}
+	}
+	// The one-word rows still match.
+	if got, _ := FuzzyScore("Street", "418 Larkwhistle St", "418 Larkwhistle Strt", false); !got {
+		t.Error("the captured one-word street pair no longer matches")
+	}
+}
+
+// The title rows hold no stop word and repeat no word. These values were read
+// from the scorer on origin/main.
+func TestTitleRepeatedAndStopWordsKeepBaseline(t *testing.T) {
+	for _, tc := range []struct {
+		a, b  string
+		match bool
+		score float64
+	}{
+		{"Strategist Strategist", "Global Principal Retail Brand Strategist", false, 0},
+		{"Global Principal Retail Brand Strategist", "Strategist Strategist", false, 0},
+		{"Brand Strategist Strategist", "Strategist Global Principal Retail Brand", false, 0},
+		{"Strategist Global Principal Retail Brand", "Brand Strategist Strategist", false, 0},
+		{"Manager", "Deputy Manager of Strategist Strat Senior", false, 0},
+		{"Sr of Brand", "Brand Sr VP Chief Strategist", false, 0},
+		{"Principal the", "Chief Strategist Deputy Sr the Principal", false, 0},
+	} {
+		got, score := FuzzyScore("Title", tc.a, tc.b, false)
+		if got != tc.match || score != tc.score {
+			t.Errorf("%q / %q: got %v %v; baseline %v %v", tc.a, tc.b, got, score, tc.match, tc.score)
+		}
+	}
+}

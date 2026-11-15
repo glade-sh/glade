@@ -694,7 +694,7 @@ on both sides), so no row covers blank Account names or Contact last names.
 
 Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_panels/`
 (`FuzzyPanel.cls`, the matching and duplicate rule metadata, `cases.json`,
-`org.tsv`, `native-run.md` and `residuals.tsv`); test
+`org.tsv`, `RUN-FACTS.txt` and `residuals.tsv`); test
 `TestDuplicateFuzzyPanelsNativeRoutes`. Each case inserts one record per value
 and runs `Datacloud.FindDuplicates` on an unsaved copy of every value, so a
 panel of n values holds n x n ordered pairs. Two fresh 30-day scratch orgs, API
@@ -707,7 +707,7 @@ validation of the current implementation.
 
 Street suffix and title changes are limited to the following shapes:
 
-- Street: a numbered address with identical name words and one known suffix
+- Street: a numbered address with the same one-word name and one known suffix
   matches an unknown alphabetic suffix when section score is 74 to below 80
   and cleaned edit similarity is at least 87.5. Confidence uses the existing
   formula. The custom rule path applies this extension.
@@ -716,7 +716,8 @@ Street suffix and title changes are limited to the following shapes:
   order score 96. An exact-word subset candidate can match a five-word title
   with one shared word, or a five- or six-word title with two out-of-order
   shared words. A three-word title with two exact shared words in order also
-  scores 89 against a six-word title. Other shapes retain the existing
+  scores 89 against a six-word title. These apply only when neither title
+  holds a stop word or a repeated word. Other shapes retain the existing
   confidence table.
 
 First Name and Company Name retain the origin/main scorers. The panel fixture
