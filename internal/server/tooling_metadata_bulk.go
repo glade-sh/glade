@@ -44,6 +44,9 @@ func (s *Server) recordCountPayload(r *http.Request) map[string]any {
 	names := make([]string, 0, len(s.Org.Objects))
 	recordsByName := make(map[string]map[storage.ID]storage.Record, len(s.Org.Objects))
 	for key, object := range s.Org.Objects {
+		if s.Org.SuppressesSpreadObject(key) {
+			continue
+		}
 		name := object.Definition.APIName
 		if name == "" {
 			name = key
