@@ -1093,20 +1093,16 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	if len(short) > len(long) {
 		short, long = long, short
 	}
-	exactSubset := true
+	exactShared := 0
 	for _, word := range short {
-		found := false
 		for _, other := range long {
 			if word == other {
-				found = true
+				exactShared++
 				break
 			}
 		}
-		if !found {
-			exactSubset = false
-			break
-		}
 	}
+	exactSubset := exactShared == len(short)
 	if exactSubset && k == len(ua) && len(ub) == n && (n == 5 || n == 6) && (k == 1 || (k == 2 && !sameOrder)) {
 		// NATIVE (duplicate_fuzzy_panels): a candidate whose content words
 		// all occur in a longer existing title finds it from the short side
@@ -1120,7 +1116,7 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		return false, 0
 	}
 	confidence, ok := titleConfidence[[2]int{min(k, n-1), min(n, 5)}]
-	if n == 6 && exactSubset && len(short) < len(long) {
+	if n == 6 && ((exactSubset && len(short) < len(long)) || (len(short) == 3 && k == 2 && exactShared == 2 && sameOrder)) {
 		// NATIVE (duplicate_fuzzy_panels): six content words.
 		confidence, ok = titleConfidenceSix[min(k, n-1)]
 	}

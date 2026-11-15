@@ -695,7 +695,9 @@ Street suffix and title changes are limited to the following shapes:
   two to five shared words score 89, 93, 95 and 98; five shared words out of
   order score 96. An exact-word subset candidate can match a five-word title
   with one shared word, or a five- or six-word title with two out-of-order
-  shared words. Other shapes retain the existing confidence table.
+  shared words. A three-word title with two exact shared words in order also
+  scores 89 against a six-word title. Other shapes retain the existing
+  confidence table.
 
 First Name and Company Name retain the origin/main scorers. The panel fixture
 records native results for these methods, including cases that baseline matches
