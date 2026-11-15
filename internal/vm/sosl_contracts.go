@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/sosl"
 	"github.com/glade-sh/glade/internal/storage"
@@ -49,7 +50,9 @@ func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) err
 	}
 	for returningIndex, spec := range query.Returning {
 		specVM := metadataVM
-		if metadataVM.Org != nil {
+		major, versionKnown := apexversion.Major(vm.currentSourceExecutionPolicy().APIVersion)
+		capturedSOSL := versionKnown && major >= 62 && major <= 68
+		if metadataVM.Org != nil && !capturedSOSL {
 			for name, definition := range metadataVM.Org.StandardSpreadHiddenDefinitions {
 				if !strings.EqualFold(name, spec.Object) {
 					continue
@@ -57,8 +60,8 @@ func (vm *VM) validateSOSLSelections(query sosl.Query, original *sosl.Query) err
 				if _, exists := metadataVM.Org.Objects[name]; exists {
 					break
 				}
-				// The native rows do not cover SOSL. Validate this selection
-				// against the exact definition removed from the eager org.
+				// Outside the captured SOSL versions, validate against the
+				// exact definition removed from the eager org.
 				org := metadataVM.Org.CloneObjectsShallow(1)
 				org.Objects[name] = storage.ObjectState{Definition: definition.Clone()}
 				specVM = New(nil)
