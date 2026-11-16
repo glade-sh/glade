@@ -195,6 +195,7 @@ func (vm *VM) ResetLimits() {
 	vm.limitViolations = nil
 	vm.cpuBudgetUsed = 0
 	vm.work.reset()
+	vm.invalidateHeapCheckCache()
 }
 
 func (vm *VM) incrementLimit(name string, delta int) error {

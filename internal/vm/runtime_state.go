@@ -159,6 +159,10 @@ type VM struct {
 	heapStaticContainers  []heapStaticContainerRef
 	heapStaticFlatOK      bool
 	heapSeen              map[approxVisitKey]bool
+	// heapEvalSeq counts expression evaluations; heapCheck prices strict
+	// heap checks after simple statements (see heap_strict_cache.go).
+	heapEvalSeq uint64
+	heapCheck   heapCheckCache
 	// classOverlay holds registrations made on top of a frozen generation
 	// until the next FreezeClassLookup (see class_lookup_overlay.go).
 	classOverlay *classLookupOverlay
@@ -3495,6 +3499,7 @@ func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, 
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	vm.invalidateHeapCheckCache()
 	defer vm.BeginReportTransaction()()
 	// String == reads the running user's locale once, at transaction start:
 	// a DML update of the user's own LocaleSidKey before the first comparison
