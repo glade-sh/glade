@@ -384,7 +384,8 @@ func (p *regexp2Plan) publicGroupNumber(group int) (int, bool) {
 
 // regexLinearAnchorsSafe reports whether RE2 reads the anchors of source as
 // Java does. Java's $ also matches before a final line terminator, and with
-// (?m) before \r, U+0085, U+2028 and U+2029, which RE2 does not. A linear "no
+// (?m) before \r, U+0085, U+2028 and U+2029, which RE2 does not. RE2's \b is
+// ASCII-only while the translator can keep a Unicode \b. A linear "no
 // match" for such a pattern could be wrong, so the pattern gets no precheck.
 func regexLinearAnchorsSafe(source string) bool {
 	for i := 0; i < len(source); i++ {
@@ -392,7 +393,7 @@ func regexLinearAnchorsSafe(source string) bool {
 		case '\\':
 			if i+1 < len(source) {
 				switch source[i+1] {
-				case 'A', 'Z', 'z', 'G':
+				case 'A', 'Z', 'z', 'G', 'b', 'B':
 					return false
 				}
 				i++

@@ -48,6 +48,8 @@ func TestRegexLinearAnchorsSafe(t *testing.T) {
 		`(?i)(a+)+b`:   true,
 		`(a+)+\$b`:     true,
 		`(?d)(a+)+b`:   false,
+		`(?U)(\d+)+\b`: false,
+		`(a+)+\B`:      false,
 	} {
 		if got := regexLinearAnchorsSafe(source); got != want {
 			t.Errorf("regexLinearAnchorsSafe(%q) = %v, want %v", source, got, want)
@@ -146,4 +148,11 @@ func TestRegexLinearPrecheckNeverContradictsBacktracking(t *testing.T) {
 	if checked < 500 {
 		t.Fatalf("only %d cases ran", checked)
 	}
+}
+
+func TestRegexLinearPrecheckKeepsUnicodeWordBoundary(t *testing.T) {
+	runRegexApex(t, `
+String s = 'aaaaaaaaaaaaaaaa' + '\u0660\u0661';
+System.assertEquals(true, Pattern.compile('(?U)(\\d+)+\\b').matcher(s).find());
+`)
 }

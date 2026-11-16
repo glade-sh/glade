@@ -257,12 +257,14 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 }
 
 func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anchored, full bool) (bool, error) {
-	// A precheck miss means the find failed. The observer search can still run
-	// out of time on the shapes the precheck exists for; then the answer is an
-	// estimate: a search that tries every start reads to the end, except when
-	// the pattern begins with an anchor. The linear engine is only built for
-	// patterns without $, \A, \z and (?m), so this estimate is rarely reached.
-	missed := !anchored && p.noLinearMatch(input)
+	if !anchored && p.noLinearMatch(input) {
+		// A search that tries every start and finds nothing reads to the end,
+		// except when the pattern begins with an anchor. This is an estimate:
+		// Java answers false for (a+)+b on a run of a followed by c, because it
+		// never reads past the last start. The observer would time out on these
+		// shapes, so the estimate is returned at once (noted in regex_java_divergence/RUN-FACTS.txt).
+		return !strings.HasPrefix(regexStripLeadingFlags(p.originalSource), "^"), nil
+	}
 	source, slot := regexp2EndObserverSource(p.matchSource, p.re)
 	if anchored {
 		source = `\G(?:` + source + ")"
@@ -278,9 +280,6 @@ func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anch
 	match, err := searchRegexp2(re, input, func() (*regexp2.Match, error) {
 		return re.FindStringMatchStartingAt(input, startByte)
 	})
-	if err != nil && missed {
-		return !strings.HasPrefix(regexStripLeadingFlags(p.originalSource), "^"), nil
-	}
 	if err != nil || match == nil {
 		return false, err
 	}

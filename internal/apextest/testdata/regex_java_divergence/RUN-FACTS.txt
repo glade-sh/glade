@@ -15,3 +15,9 @@ bisect d6c (2026-11-16 UTC, 62.0 and 67.0, anonymous, two or three fresh scratch
   (\w+\s?)* over n repeats of 'a ': true to 1,050, Stack Overflow from 1,500; 1,100 to 1,200 differ between runs
     (not kept as rows). (?:\r?\n)+ over n CRLF: true to 1,100, Stack Overflow from 1,200 (both repeats, both APIs).
     The (a|b)* boundary stays 1,200 true and 1,300 overflow, so the loop limit depends on the body; d6c_crlf_1200 is carried.
+loop limit: the single limit of 1,250 iterations stays. The overflow boundary depends on the loop body
+  ((a|b)* 1,200 true; (.|\n)* and (?:\r?\n)+ overflow at 1,200; (\w+\s?)* flips between 1,100 and 1,200), so no single
+  number fits every row. d6b_dotnl_1200 and d6c_crlf_1200 are carried in carried.tsv for that reason.
+hitEnd estimate: after the linear precheck finds no match, Matcher.hitEnd is estimated (true unless the pattern starts
+  with ^). Java answers false for (a+)+b on a run of a followed by c. No native row covers it; the observer would time out
+  on this shape, so the estimate is returned at once.
