@@ -11,6 +11,25 @@ import (
 	"testing"
 )
 
+// residualPanelValues reads the candidate values and the existing values of a
+// panel call. A FuzzyCross call lists the candidates and the existing records
+// apart; every other call lists one set of values for both.
+func residualPanelValues(call string) (values, existing []string) {
+	read := func(text string) []string {
+		var out []string
+		for _, q := range titleVariantQuoted.FindAllStringSubmatch(text, -1) {
+			out = append(out, strings.ReplaceAll(q[1], `\'`, "'"))
+		}
+		return out
+	}
+	if strings.HasPrefix(call, "FuzzyCross.run(") {
+		parts := strings.Split(call, "new List<String>{")
+		return read(parts[1]), read(parts[2])
+	}
+	values = read(strings.SplitN(call, "new List<String>{", 2)[1])
+	return values, values
+}
+
 const residualPanelsFixture = "testdata/conformance/fuzzy_residual_panels"
 
 // residualPanelMatches scores every ordered pair of one panel through the
@@ -18,7 +37,7 @@ const residualPanelsFixture = "testdata/conformance/fuzzy_residual_panels"
 // custom rules, and the shared duplicate-rule matcher for the standard
 // Contact and Lead rules. The key is the candidate and existing index in
 // base 36, as in the native observation.
-func residualPanelMatches(t *testing.T, call string, values []string) map[string]string {
+func residualPanelMatches(t *testing.T, call string, values, existing []string) map[string]string {
 	t.Helper()
 	const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 	glade := map[string]string{}
@@ -49,23 +68,43 @@ func residualPanelMatches(t *testing.T, call string, values []string) map[string
 		row.Object, row.Rule = "Contact", "Standard_Contact_Match_Rule_v1_1"
 	case strings.HasPrefix(call, "FuzzyPanel.run('Lead', 'Standard_Lead_Duplicate_Rule', '"):
 		row.Object, row.Rule = "Lead", "Standard_Lead_Match_Rule_v1_0"
+	case strings.HasPrefix(call, "FuzzyCross.run("):
+		// Candidate object, rule, fields, existing object. The rule of the
+		// existing object's standard matching rule scores the pair.
+		head := titleVariantQuoted.FindAllStringSubmatch(call, 4)
+		row.Object, row.ExistObject = head[0][1], head[3][1]
+		row.Rule = "Standard_" + head[3][1] + "_Match_Rule_v1_0"
+		if head[3][1] == "Contact" {
+			row.Rule = "Standard_Contact_Match_Rule_v1_1"
+		}
 	default:
 		t.Fatalf("no scorer for %s", call)
 	}
 	names := strings.Split(titleVariantQuoted.FindAllStringSubmatch(call, 3)[2][1], "+")
-	for _, value := range values {
+	fieldsOf := func(object, value string) map[string]string {
 		parts := strings.Split(value, "|")
 		if len(parts) != len(names) {
 			t.Fatalf("value %q does not hold %v", value, names)
 		}
 		fields := map[string]string{}
 		for i, name := range names {
-			if parts[i] != "" {
+			// A Contact has no Company: the native panel leaves a field the
+			// object does not have out.
+			if parts[i] != "" && !(name == "Company" && object == "Contact") {
 				fields[name] = parts[i]
 			}
 		}
-		row.Existing = append(row.Existing, fields)
-		row.Candidates = append(row.Candidates, fields)
+		return fields
+	}
+	existObject := row.ExistObject
+	if existObject == "" {
+		existObject = row.Object
+	}
+	for _, value := range existing {
+		row.Existing = append(row.Existing, fieldsOf(existObject, value))
+	}
+	for _, value := range values {
+		row.Candidates = append(row.Candidates, fieldsOf(row.Object, value))
 	}
 	got, engine := standardRowMatches(t, row)
 	if got == nil {
@@ -140,10 +179,16 @@ func TestFuzzyResidualNativePanels(t *testing.T) {
 			if !ok || seen[group+"/"+method] != 8 {
 				t.Fatalf("%s/%s: %d native rows, want 8", group, method, seen[group+"/"+method])
 			}
-			quoted := titleVariantQuoted.FindAllStringSubmatch(call, -1)[3:]
-			values := make([]string, len(quoted))
-			for i, q := range quoted {
-				values[i] = strings.ReplaceAll(q[1], `\'`, "'")
+			values, existing := residualPanelValues(call)
+			if strings.HasPrefix(observation, "ERR:") {
+				// A Lead seed without a company: the org rejects the insert, so
+				// no Lead record has a blank company (only an unsaved candidate).
+				const want = "ERR:FuzzyCross.PanelException:insert 1 REQUIRED_FIELD_MISSING"
+				if observation != want {
+					t.Errorf("%s: native %s, want %s", method, observation, want)
+				}
+				panels++
+				continue
 			}
 			count, list, _ := strings.Cut(observation, ":")
 			if n, err := strconv.Atoi(count); err != nil || n != len(values) {
@@ -161,7 +206,7 @@ func TestFuzzyResidualNativePanels(t *testing.T) {
 				}
 				native[token[:2]] = confidence
 			}
-			glade := residualPanelMatches(t, call, values)
+			glade := residualPanelMatches(t, call, values, existing)
 			keys := map[string]bool{}
 			for k := range native {
 				keys[k] = true
@@ -192,14 +237,14 @@ func TestFuzzyResidualNativePanels(t *testing.T) {
 				}
 				if g != want {
 					i, j := strings.Index(digits, pair[:1]), strings.Index(digits, pair[1:])
-					t.Errorf("%s %s (%q -> %q): native=%s Glade=%s pinned=%s", method, pair, values[i], values[j], n, g, want)
+					t.Errorf("%s %s (%q -> %q): native=%s Glade=%s pinned=%s", method, pair, values[i], existing[j], n, g, want)
 				}
 			}
 			panels++
 		}
 	}
-	if panels != 18 {
-		t.Fatalf("%d panels, want 18", panels)
+	if panels != 27 {
+		t.Fatalf("%d panels, want 27", panels)
 	}
 	if !t.Failed() {
 		for _, key := range slices.Sorted(mapsKeys(residuals)) {

@@ -258,24 +258,50 @@ const (
 
 // standardPhoneShare is the share of a Contact or Lead phone item in the rule
 // confidence: the mean of the item with the rule's exact items. The exact
-// items are the two names, a present Lead company, and one more when both
-// records carry one first name that the name dictionary lists under its own
-// spelling. NATIVE fuzzy_residual_panels r4pc_p1, r3pc_p1 and r3pl_p1: a line
-// difference scores 97 on the Contact rule for "Jonathan", "Robert",
-// "William", "Margaret", "Maximilian", "Nathan" and "Nathaniel" (98 with the
-// country digit on both numbers, and on the Lead rule), and 96 for "Quill",
-// "Quillon", "Zqwertyuo" and the alias "Jo" (97 with the country digit, and
-// on the Lead rule), whatever the last name and with or without an email
-// address on the records.
+// items are the two names, a Lead company that both records carry and that
+// matches exactly, and one more when both records carry one first name that
+// the name dictionary lists under its own spelling. NATIVE
+// fuzzy_residual_panels r4pc_p1, r3pc_p1 and r3pl_p1: a line difference scores
+// 97 on the Contact rule for "Jonathan", "Robert", "William", "Margaret",
+// "Maximilian", "Nathan" and "Nathaniel" (98 with the country digit on both
+// numbers, and on the Lead rule), and 96 for "Quill", "Quillon", "Zqwertyuo"
+// and the alias "Jo" (97 with the country digit, and on the Lead rule),
+// whatever the last name and with or without an email address on the records.
+// x5 panels (xa_p1, xb_p1, xb_p2, bl_p1, bl_p2, bl_p3, fc_p1, fc_p2): the
+// same shares hold for a Contact paired with a Lead of the same names (either
+// direction, whatever the Lead company), a Lead whose company is blank, and a
+// Lead whose company differs from the other's, which score as two exact
+// items; a Lead pair with the same company scores as three.
 func standardPhoneShare(phone float64, exactItems int) float64 {
 	return (100*float64(exactItems) + phone) / float64(exactItems+1)
 }
 
+// standardPhoneNativeNames are first names that no dictionary entry of
+// Glade's lists and that native scores like a listed name on the phone path
+// (97 on the Contact rule, 98 on the Lead rule for a line difference). Each
+// comes from a native row of fuzzy_residual_panels (fc_p1, fc_p2, bl_p1); the
+// names those panels measured at the unlisted score (Ryan, Tyler, Kyle,
+// Sharon, Shirley, Joyce, Kelly) stay out. No other name is added.
+var standardPhoneNativeNames = map[string]bool{
+	"kevin": true, "jose": true, "adam": true, "douglas": true, "ethan": true, "harold": true,
+	"keith": true, "roger": true, "sean": true, "dylan": true, "bruce": true, "linda": true,
+	"sandra": true, "wayne": true, "michelle": true, "donna": true, "cynthia": true,
+	"brenda": true, "emma": true, "heather": true, "ruth": true, "gloria": true,
+	"denise": true, "amber": true, "doris": true,
+}
+
 // standardDictionaryFirstName reports two equal first names with a name
-// dictionary entry of their own (not a name keyed by an alias, such as "Jo").
+// dictionary entry of their own (not a name keyed by an alias, such as "Jo"),
+// or one of standardPhoneNativeNames.
 func standardDictionaryFirstName(a, b string) bool {
 	x, y := foldText(strings.TrimSpace(a)), foldText(strings.TrimSpace(b))
-	if x != y || !nameVariantHeads[x] {
+	if x != y {
+		return false
+	}
+	if standardPhoneNativeNames[x] {
+		return true
+	}
+	if !nameVariantHeads[x] {
 		return false
 	}
 	_, alias := nameAliasKeys[x]
@@ -555,15 +581,23 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 	}
 	if phone := standardCompare(candidate.phone, existing.phone, standardPhone(object)); phone.ok() {
 		if candidate.kind != existing.kind {
-			// No row measures a cross-object phone path: it keeps the
-			// standard First Name item and its confidence.
+			// The cross-object phone path keeps the standard First Name item
+			// and its confidence. NATIVE fuzzy_residual_panels xa_p1, xb_p1 and
+			// xb_p2: its phone share counts the two names and the dictionary
+			// first name, as a Contact pair does, and never a company.
 			if first := standardCompare(candidate.first, existing.first, standardFirstName); first.ok() {
-				take(standardProduct(last.confidence, first.confidence, standardPhoneShare(phone.confidence, 2)))
+				exact := 2
+				if standardDictionaryFirstName(candidate.first, existing.first) {
+					exact++
+				}
+				take(standardProduct(last.confidence, first.confidence, standardPhoneShare(phone.confidence, exact)))
 			}
 		} else if first, ok := standardInitialKeyedFirst(candidate.first, existing.first); ok {
 			exact := 2
-			if candidate.kind == "lead" && strings.TrimSpace(candidate.company) != "" && strings.TrimSpace(existing.company) != "" {
-				exact++
+			if candidate.kind == "lead" {
+				if company := standardCompare(candidate.company, existing.company, standardCompany); company.ok() && company.confidence == 100 {
+					exact++
+				}
 			}
 			if standardDictionaryFirstName(candidate.first, existing.first) {
 				exact++
