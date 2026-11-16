@@ -1,7 +1,6 @@
 package apextest
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -41,20 +40,18 @@ type surfCase struct {
 
 func readSurfTSV(t *testing.T, path string) [][]string {
 	t.Helper()
-	file, err := os.Open(path)
+	body, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
-	reader := csv.NewReader(file)
-	reader.Comma = '\t'
-	reader.LazyQuotes = true
-	reader.FieldsPerRecord = -1
-	rows, err := reader.ReadAll()
-	if err != nil {
-		t.Fatal(err)
+	var rows [][]string
+	for i, line := range strings.Split(strings.TrimRight(string(body), "\n"), "\n") {
+		if i == 0 {
+			continue
+		}
+		rows = append(rows, strings.SplitN(line, "\t", 4))
 	}
-	return rows[1:]
+	return rows
 }
 
 func runSurfFamily(t *testing.T, family string) {
