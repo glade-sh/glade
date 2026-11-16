@@ -320,13 +320,6 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if lastNameWordKey(x) != lastNameWordKey(y) {
 		return false, 0
 	}
-	return lastNameAlgorithms(x, y)
-}
-
-// lastNameAlgorithms scores two folded last names without a match key:
-// equal text apart from apostrophes and equal Metaphone 3 codes score 100,
-// otherwise Keyboard Distance decides.
-func lastNameAlgorithms(x, y string) (bool, float64) {
 	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
 	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 		return true, 100
@@ -342,6 +335,17 @@ func lastNameAlgorithms(x, y string) (bool, float64) {
 	}
 	score, ok := keyboardDistance(x, y)
 	return ok && score >= 90, averageWith100(score)
+}
+
+// lastNameAlgorithms scores two folded last names without a match key:
+// equal text apart from apostrophes and equal Metaphone 3 codes score 100,
+// otherwise Keyboard Distance decides.
+func lastNameAlgorithms(x, y string) (bool, float64) {
+	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+		return true, 100
+	}
+	return lastNameKeyboard(x, y)
 }
 
 // keyboardPanelShape gates the fallback to the joint shapes the native rows

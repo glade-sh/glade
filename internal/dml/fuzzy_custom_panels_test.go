@@ -94,8 +94,10 @@ func TestCustomFuzzyExtensionsCapturedPairs(t *testing.T) {
 			t.Errorf("%s %q/%q matched; native keeps them apart", c.method, c.a, c.b)
 		}
 	}
-	// The standard rules call the shared scorers, which these rows do not change.
-	if match, _ := fuzzyLastName("Brandenstock", "Brandepswohk", false); match {
+	// The standard rules call the shared scorers, which these rows do not
+	// change. Without a match key the Last Name steps stop at the base
+	// Keyboard Distance (lastNameAlgorithms).
+	if match, _ := lastNameAlgorithms("brandenstock", "brandepswohk"); match {
 		t.Error("shared Last Name scorer changed")
 	}
 	if match, _ := fuzzyStreet("418 Larkwhistle St", "418 Larkwhistle Strt", false); match {
