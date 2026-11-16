@@ -604,6 +604,8 @@ func standardEmailPath(candidate, existing standardPerson) (matched bool, confid
 				}
 				lastConfidence, panel = confidence, true
 			}
+		} else if item, fitted := standardSurnameFit(candidate.last, existing.last); fitted {
+			lastConfidence, panel = (200+item)/3, true
 		} else if standardSurnamePanelShape(candidate.last, existing.last) {
 			return false, 0, true
 		}

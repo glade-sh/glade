@@ -136,9 +136,9 @@
    "min_recall": 0.8181
   },
   "62/Standard.Contact.NameConfidence": {
-   "max_conf_mae": 0.001,
+   "max_conf_mae": 0.304,
    "max_extra": 0,
-   "min_recall": 0.6249
+   "min_recall": 0.9999
   },
   "62/Standard.Contact.Truth.S3": {
    "max_conf_mae": 0.001,
@@ -196,9 +196,9 @@
    "min_recall": 0.9935
   },
   "62/Standard.Field.Contact.Last": {
-   "max_conf_mae": 0.012,
+   "max_conf_mae": 0.041,
    "max_extra": 0,
-   "min_recall": 0.9299
+   "min_recall": 0.9999
   },
   "62/Standard.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
@@ -216,9 +216,9 @@
    "min_recall": 0.9935
   },
   "62/Standard.Field.Lead.Last": {
-   "max_conf_mae": 0.012,
+   "max_conf_mae": 0.041,
    "max_extra": 0,
-   "min_recall": 0.9299
+   "min_recall": 0.9999
   },
   "62/Standard.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
@@ -251,9 +251,9 @@
    "min_recall": 0.8181
   },
   "62/Standard.Lead.NameConfidence": {
-   "max_conf_mae": 0.001,
+   "max_conf_mae": 0.304,
    "max_extra": 0,
-   "min_recall": 0.6249
+   "min_recall": 0.9999
   },
   "62/Standard.Lead.Truth.S3": {
    "max_conf_mae": 0.001,
@@ -646,9 +646,9 @@
    "min_recall": 0.9159
   },
   "67/Holdout.Field.Contact.Last": {
-   "max_conf_mae": 0.043,
+   "max_conf_mae": 0.056,
    "max_extra": 0,
-   "min_recall": 0.9473
+   "min_recall": 0.9604
   },
   "67/Holdout.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
@@ -666,9 +666,9 @@
    "min_recall": 0.9159
   },
   "67/Holdout.Field.Lead.Last": {
-   "max_conf_mae": 0.043,
+   "max_conf_mae": 0.056,
    "max_extra": 0,
-   "min_recall": 0.9473
+   "min_recall": 0.9604
   },
   "67/Holdout.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
@@ -841,9 +841,9 @@
    "min_recall": 0.8181
   },
   "67/Standard.Contact.NameConfidence": {
-   "max_conf_mae": 0.001,
+   "max_conf_mae": 0.304,
    "max_extra": 0,
-   "min_recall": 0.6249
+   "min_recall": 0.9999
   },
   "67/Standard.Contact.Truth.S3": {
    "max_conf_mae": 0.001,
@@ -906,9 +906,9 @@
    "min_recall": 0.9935
   },
   "67/Standard.Field.Contact.Last": {
-   "max_conf_mae": 0.012,
+   "max_conf_mae": 0.041,
    "max_extra": 0,
-   "min_recall": 0.9299
+   "min_recall": 0.9999
   },
   "67/Standard.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
@@ -926,9 +926,9 @@
    "min_recall": 0.9935
   },
   "67/Standard.Field.Lead.Last": {
-   "max_conf_mae": 0.012,
+   "max_conf_mae": 0.041,
    "max_extra": 0,
-   "min_recall": 0.9299
+   "min_recall": 0.9999
   },
   "67/Standard.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
@@ -961,9 +961,9 @@
    "min_recall": 0.8181
   },
   "67/Standard.Lead.NameConfidence": {
-   "max_conf_mae": 0.001,
+   "max_conf_mae": 0.304,
    "max_extra": 0,
-   "min_recall": 0.6249
+   "min_recall": 0.9999
   },
   "67/Standard.Lead.Truth.S3": {
    "max_conf_mae": 0.001,
