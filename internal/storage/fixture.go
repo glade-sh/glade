@@ -206,6 +206,10 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 	}
 	for objectIndex, objectFixture := range fixture.Objects {
 		objectName := ensureFixtureObjectState(org, objectFixture.Name, &generator)
+		if len(objectFixture.Records) != 0 {
+			// Runtime clones share the rows of metadata and setup objects.
+			mutableSeedObject(org, objectName)
+		}
 		object := org.Objects[objectName]
 		for i, fixtureRecord := range objectFixture.Records {
 			record := Record{
