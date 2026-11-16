@@ -1235,7 +1235,7 @@ func TestStringRegexReplacementUsesSharedMatcherSemantics(t *testing.T) {
 	}
 }
 
-func TestRegexDanglingQuantifierUsesJavaParsePosition(t *testing.T) {
+func TestRegexDanglingQuantifierUsesOriginalSourcePosition(t *testing.T) {
 	for _, tc := range []struct{ pattern, message string }{
 		{"*", "Invalid regex: Dangling meta character '*' near index 0"},
 		{"abc|+", "Invalid regex: Dangling meta character '+' near index 4"},
