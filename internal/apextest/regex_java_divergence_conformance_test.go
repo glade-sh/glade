@@ -161,7 +161,9 @@ func runRegexDivergenceAnonymous(t *testing.T, body, api string) string {
 	if _, err := machine.Execute(program); err != nil {
 		return "FAIL " + strings.TrimPrefix(err.Error(), "System.")
 	}
-	return machine.Globals["observation"].Text
+	// The native debug log drops NUL characters, so the anonymous rows hold the
+	// text without them; the @IsTest rows keep them.
+	return strings.ReplaceAll(machine.Globals["observation"].Text, "\x00", "")
 }
 
 func TestRegexJavaDivergenceNativeIsTestRows(t *testing.T) {
