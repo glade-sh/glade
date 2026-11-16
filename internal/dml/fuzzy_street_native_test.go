@@ -11,7 +11,13 @@ import (
 	"testing"
 )
 
-const streetNativeDir = "testdata/conformance/fuzzy_street_c4"
+// streetNativeDirs are the custom Street captures. The value is the most pairs
+// Glade may match that the native rows do not; every such pair is pinned in the
+// fixture's residuals.tsv, so the count cannot grow unseen.
+var streetNativeDirs = map[string]int{
+	"testdata/conformance/fuzzy_street_c4": 2,
+	"testdata/conformance/fuzzy_street_c5": 0,
+}
 
 const streetPanelDigits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
@@ -43,21 +49,30 @@ func streetNativePanel(t *testing.T, observation string) map[string]string {
 
 // NATIVE fuzzy_street_c4/org.tsv:2 anonymous 62.0
 // NATIVE fuzzy_street_c4/org.tsv:9 istest 67.0
+// NATIVE fuzzy_street_c5/org.tsv:2 anonymous 62.0
+// NATIVE fuzzy_street_c5/org.tsv:9 istest 67.0
 // Every pair of each street panel's values through a custom Street rule
 // (Datacloud.FindDuplicates, anonymous and @IsTest, APIs 62.0 and 67.0, two
 // repeats, all identical per case). Fit panels and holdout panels are scored
-// the same way; the holdout values were not used to fit. A pair where Glade
-// differs from the native rows is pinned in residuals.tsv with both sides.
-func TestFuzzyStreetC4NativeRows(t *testing.T) {
+// the same way; RUN-FACTS.txt names the panels that shaped the model. A pair
+// where Glade differs from the native rows is pinned in residuals.tsv with
+// both sides.
+func TestFuzzyStreetNativeRows(t *testing.T) {
+	for dir, maxExtra := range streetNativeDirs {
+		t.Run(filepath.Base(dir), func(t *testing.T) { streetNativeRows(t, dir, maxExtra) })
+	}
+}
+
+func streetNativeRows(t *testing.T, dir string, maxExtra int) {
 	var panels map[string][]string
-	body, err := os.ReadFile(filepath.Join(streetNativeDir, "cases.json"))
+	body, err := os.ReadFile(filepath.Join(dir, "cases.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := json.Unmarshal(body, &panels); err != nil {
 		t.Fatal(err)
 	}
-	body, err = os.ReadFile(filepath.Join(streetNativeDir, "org.tsv"))
+	body, err = os.ReadFile(filepath.Join(dir, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +102,7 @@ func TestFuzzyStreetC4NativeRows(t *testing.T) {
 		}
 	}
 	residuals := map[string][2]string{}
-	if body, err := os.ReadFile(filepath.Join(streetNativeDir, "residuals.tsv")); err == nil {
+	if body, err := os.ReadFile(filepath.Join(dir, "residuals.tsv")); err == nil {
 		for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
 			f := strings.Split(line, "\t")
 			residuals[f[0]+"/"+f[1]] = [2]string{f[2], f[3]}
@@ -99,7 +114,7 @@ func TestFuzzyStreetC4NativeRows(t *testing.T) {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	var report []string
+	extra := 0
 	for _, name := range names {
 		values := panels[name]
 		nat := streetNativePanel(t, native[name])
@@ -114,6 +129,9 @@ func TestFuzzyStreetC4NativeRows(t *testing.T) {
 				if match, score := FuzzyScore("Street", a, b, false); match {
 					got = fmt.Sprint(int(math.Floor(fuzzyItemScore("Street", score) + 0.5)))
 				}
+				if want == "-" && got != "-" {
+					extra++
+				}
 				key := name + "/" + pair
 				if r, ok := residuals[key]; ok {
 					used[key] = true
@@ -125,9 +143,6 @@ func TestFuzzyStreetC4NativeRows(t *testing.T) {
 				if got != want {
 					t.Errorf("%s %q -> %q: Glade %s, expected %s", key, a, b, got, want)
 				}
-				if os.Getenv("STREET_RESIDUALS") != "" && got != nat2(nat, pair) {
-					report = append(report, fmt.Sprintf("%s\t%s\t%s\t%s", name, pair, nat2(nat, pair), got))
-				}
 			}
 		}
 	}
@@ -136,21 +151,15 @@ func TestFuzzyStreetC4NativeRows(t *testing.T) {
 			t.Errorf("unused residual %s", key)
 		}
 	}
-	if path := os.Getenv("STREET_RESIDUALS"); path != "" {
-		os.WriteFile(path, []byte("panel\tpair\tnative\tglade\n"+strings.Join(report, "\n")+"\n"), 0o644)
+	if extra > maxExtra {
+		t.Errorf("Glade matches %d pairs the native rows do not; at most %d", extra, maxExtra)
 	}
 }
 
-func nat2(nat map[string]string, pair string) string {
-	if v, ok := nat[pair]; ok {
-		return v
-	}
-	return "-"
-}
-
-// NATIVE fuzzy_street_c4/org.tsv: one row per rule the custom Street scorer
-// applies, all through FuzzyScore. Uncaptured neighbours keep base behavior.
-func TestFuzzyStreetC4CapturedRules(t *testing.T) {
+// NATIVE fuzzy_street_c4/org.tsv, fuzzy_street_c5/org.tsv: one captured row per
+// rule the custom Street scorer applies, all through FuzzyScore. The panel is
+// named beside each group.
+func TestFuzzyStreetCapturedRules(t *testing.T) {
 	type row struct {
 		a, b  string
 		match bool
@@ -162,26 +171,89 @@ func TestFuzzyStreetC4CapturedRules(t *testing.T) {
 		{"500 Calder Rd\nSuite 200", "500 Calder RdSuite 200", true, 100},
 		{"500 Calder Rd,\nSuite 200", "500 Calder Rd\nSuite 200", true, 100},
 		{"500 Calder Rd\nSuite 200", "500 Calder Rd\nFloor 2", false, 0},
-		// A single letter after the number (cl1, cl2).
+		{"41 Harlan Ave", "41\nHarlan Ave", true, 77},
+		// Letters after the number (cl1, cl2, nl1).
 		{"100 Vane St", "100 A Vane St", true, 83},
 		{"100 Vane St", "100 B Vane St", false, 0},
 		{"100 Vane St", "100 E Vane St", true, 92},
-		// Identical streets report the section average (cs1).
+		{"71 E Vane St", "71 E E Vane St", true, 83},
+		{"71 E B Vane St", "71 B E Vane St", true, 86},
+		{"71 A Vane", "71 E Vane", true, 88},
+		// Identical streets report the section average (cs1, nm1).
 		{"Test Street", "Test Street", true, 88},
 		{"Test", "Test", true, 86},
 		{"500 Calder Rd", "500 Calder Rd", true, 100},
-		// Unknown trailing word near a known suffix (cu1).
+		{"Morven Tully Harbor Tower", "Morven Tully Harbor Tower", true, 100},
+		// Edit similarity 0 when the distance is the candidate's length
+		// (cu1, hu1, duplicate_fuzzy_matching).
 		{"77 Wren Str", "77 Wren St", true, 78},
 		{"77 Wren St", "77 Wren Str", true, 60},
+		{"19 Birkin Dr", "19 Birkin Drv", true, 82},
+		{"15 Elm", "15 Elm Drive", true, 50},
+		{"15 Elm Drive", "15 Elm", true, 75},
 		{"77 Wren Ave", "77 Wren Av", true, 80},
 		{"77 Wren Xq", "77 Wren St", false, 0},
 		{"77 Wren St", "77 Wren St Xq", false, 0},
-		// PO Box (cp1).
+		{"14 Dana Blvd Jr", "14 Dana Jr Blvd", false, 0},
+		// The similarity gate is 87 (nt1, nd4).
+		{"32 Lvlofeer Rd", "32 Lvlofeer Rdxq", true, 80},                             // 2 edits in 16: 87.50
+		{"35 Stcesoimtapar Rd Suite 5", "35 Stcesoimtapar Rdxqzj Suite 5", true, 64}, // 4 in 31: 87.10
+		{"33 Erdugunowymist Rd", "33 Erdugunowymist Rdxqz", false, 0},                // 3 in 23: 86.96
+		{"31 Hakeonl Rd", "31 Hakeonl Rdxq", false, 0},                               // 2 in 15: 86.67
+		{"84 Sorrel St N", "84 Sorrel Strt N", true, 75},
+		{"84 Sorrel St", "84 Sorrel Strt", false, 0},
+		// Match key: five characters of the number and of the name (nk1).
+		{"7 Morven Rd", "7 Morvex Rd", true, 91},
+		{"7 Morven Rd", "7 Morvxn Rd", false, 0},
+		{"12345 Morven Rd", "123456 Morven Rd", true, 85},
+		{"12345 Morven Rd", "12346 Morven Rd", false, 0},
+		// Street words left out of the key (ng1, ng7, np1, np3, nq1).
+		{"121 Tully Ln W", "121 Tully Ln N", true, 96},
+		{"101 Park Ln W", "101 Park Ln N", false, 0},
+		{"101 Park Ln W", "101 W Park Ln", true, 85},
+		{"101 Park Ln E", "101 Park Ln SE", true, 96},
+		{"103 Park Ave", "103 Park Avn", true, 60},
+		{"103 Park Ln Suite 5", "103 Park Ln Suite 6", false, 0},
+		{"Morven Tully West", "Morven Tully Wests", true, 81},
+		{"Morven Tower West", "Morven Tower Wests", false, 0},
+		// A street that does not split scores the edit similarity (nh1, nn1,
+		// ns1, nr1, nm1).
+		{"62 Garnet Ave #5", "62 Garnet Ave#5", true, 93},
+		{"62 Garnet Ave#5", "62 Garnet Ave #5", true, 47},
+		{"62 Garnet Ave#5", "62 Garnet Ave/5", true, 100},
+		{"62 Garnet Ave-5", "62 Garnet Ave 5", true, 47},
+		{"72A Vane St", "72-A Vane St", true, 92},
+		{"72-A Vane St", "72A Vane St", true, 46},
+		{"72A Vane St", "72 A Vane St", false, 0},
+		{"72-74 Vane St", "7274 Vane St", true, 84},
+		{"Suite 9 73 Morrow Rd", "Ste 9 73 Morrow Rd", true, 90},
+		{"Suite 9 73 Morrow Rd", "Suite 8 73 Morrow Rd", false, 0},
+		{"Suite 9\n73 Morrow Rd", "Suite 9 73 Morrow Rd", true, 95},
+		{"RR 4 Box 22", "RR 4 Box 23", true, 91},
+		{"RR 4 Box 22", "RR 5 Box 22", false, 0},
+		{"Morven Tully Harbor Tower", "Morven Tully Harbor Towers", true, 96},
+		{"Morven Tully Tower", "Morven Tully Towers", true, 81},
+		// PO Box (cp1, nr1).
 		{"PO Box 410", "P.O. Box 410", true, 100},
 		{"P O Box 410", "PO Box 410", true, 95},
 		{"PO Box 410", "PO Box 411", false, 0},
 		{"PO Box 410", "POB 410", false, 0},
 		{"POB 410", "POB 410", true, 88},
+		{"PO Box 410", "PO Box410", true, 90},
+		{"PO Box410", "PO Box 410", true, 90},
+		{"PO Box 52", "POBox52", false, 0},
+		{"PO Box A", "PO Box A", false, 0},
+		// Number words (nw1).
+		{"200 Ten St", "200 10 St", true, 100},
+		{"200 Twenty First St", "200 20 1st St", true, 100},
+		{"200 Twentieth St", "200 20th St", false, 0},
+		// Words before a suite value (nf1, duplicate_fuzzy_matching).
+		{"600 Montgomery St Fl 3", "600 Montgomery St", true, 89},
+		{"305 Corwin Rd Room 3", "305 Corwin Rd", true, 83},
+		{"302 Corwin Rd Level 3", "302 Corwin Rd", false, 0},
+		// A compass word before the name (sd1, nd4).
+		{"500 North Calder Rd", "500 Northwest Calder Rd", true, 91},
+		{"85 North Sorrel Dr", "85 Northern Sorrel Dr", false, 0},
 	} {
 		match, score := FuzzyScore("Street", c.a, c.b, false)
 		got := int(math.Floor(score + 0.5))
@@ -190,7 +262,7 @@ func TestFuzzyStreetC4CapturedRules(t *testing.T) {
 		}
 	}
 	// The shared scorer the standard rules call keeps its behavior.
-	for _, c := range [][2]string{{"500 Calder Rd\nSuite 200", "500 Calder Rd Suite 200"}, {"100 Vane St", "100 A Vane St"}} {
+	for _, c := range [][2]string{{"500 Calder Rd\nSuite 200", "500 Calder Rd Suite 200"}, {"100 Vane St", "100 A Vane St"}, {"101 Park Ln W", "101 Park Ln N"}} {
 		_, base := fuzzyStreet(c[0], c[1], false)
 		_, custom := FuzzyScore("Street", c[0], c[1], false)
 		if base == custom {
