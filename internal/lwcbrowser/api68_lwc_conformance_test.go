@@ -23,11 +23,7 @@ import (
 // shell does not reproduce. The native rows (testdata/api68_lwc is exported
 // from captures-lwc) show the same output at saved component API 67.0 and
 // 68.0: these base-component changes follow the org release, not the version.
-var api68LWCGaps = map[string]string{
-	"m03_m04":       "toast timing: the local toast service has no timers, so a toast stays until cleared. The capture measured onScreenMs per mode with 100 ms polling (event dismissible and pester about 20.6 s, module dismissible about 5.1 s, the other modes still shown at 30 s); those are not exact timer constants",
-	"b11_time_half": "a time typed into the datetime time input is not validated: the local datetime keeps one value and its time input has no input handler",
-	"b15_picker":    "date and datetime pickers: the native picker button text (Select a date for Date) and the Date and Time sub-labels are not rendered; only the messages and hints are matched",
-}
+var api68LWCGaps = map[string]string{}
 
 // TestAPI68LWCBaseComponentNative replays the B01, B07, B11, B15, B17, B18, B24
 // and B25 native rows against the browser-rendered local shims. CI neither imports the capture
@@ -155,6 +151,9 @@ func TestAPI68LWCBaseComponentNative(t *testing.T) {
 		case r.URL.Path == "/lightning/shims/lightning/uiObjectInfoApi.js":
 			w.Header().Set("Content-Type", "text/javascript")
 			fmt.Fprint(w, UIObjectInfoAPIModuleJS())
+		case r.URL.Path == "/lightning/shims/lightning/showToastEvent.js":
+			w.Header().Set("Content-Type", "text/javascript")
+			fmt.Fprint(w, ShowToastEventModuleJS())
 		case r.URL.Path == "/lightning/shims/lightning/uiRecordApi.js":
 			w.Header().Set("Content-Type", "text/javascript")
 			fmt.Fprint(w, UIRecordAPIModuleJS())
@@ -262,6 +261,37 @@ func api68LWCContains(got, want any) bool {
 		}
 		for index := range raw {
 			if !reflect.DeepEqual(have[index], raw[index]) {
+				return false
+			}
+		}
+	}
+	if raw, ok := w["ariaInvalid"]; ok && !reflect.DeepEqual(g["ariaInvalid"], raw) {
+		return false
+	}
+	if raw, ok := w["toasts"].(map[string]any); ok {
+		have, _ := g["toasts"].(map[string]any)
+		for kind, rawWant := range raw {
+			want, _ := rawWant.(map[string]any)
+			got, _ := have[kind].(map[string]any)
+			if got == nil {
+				return false
+			}
+			for _, key := range []string{"role", "live", "atomic", "close"} {
+				if !reflect.DeepEqual(got[key], want[key]) {
+					return false
+				}
+			}
+			// Timer bands: present before presentUntilMs, gone by goneByMs. A
+			// toast with no goneByMs is still shown at 30 s. Measurements, not
+			// documented constants.
+			gone, _ := got["goneAtMs"].(float64)
+			if want["goneByMs"] == nil {
+				if got["goneAtMs"] != nil {
+					return false
+				}
+				continue
+			}
+			if got["goneAtMs"] == nil || gone <= want["presentUntilMs"].(float64) || gone > want["goneByMs"].(float64) {
 				return false
 			}
 		}

@@ -75,7 +75,8 @@ try {
         const input = field.shadowRoot && field.shadowRoot.querySelector('input');
         if (input) for (const key of ['inputmode', 'maxlength', 'name', 'placeholder', 'type']) if (input.hasAttribute(key)) fieldInput[key] = input.getAttribute(key);
       }
-      return {lines, attrs, errorButtons, tabs, menu, fieldInput};
+      const ariaInvalid = deepAll(document, 'input').map(input => input.getAttribute('aria-invalid'));
+      return {lines, attrs, errorButtons, tabs, menu, fieldInput, ariaInvalid, ...(window.__observation || {})};
     });
   }
   out.errors = errors;

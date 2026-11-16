@@ -43,6 +43,15 @@ if (item === 'b11') {
   const input = await add('lightning-input', 'input', {type: 'datetime', label: 'Appointment', required: true, value: 'not-a-datetime'});
   input.reportValidity();
 }
+if (item === 'b11_time') {
+  // The invalidTime probe: a readable date, then 99:99 typed into the time half.
+  const input = await add('lightning-input', 'input', {type: 'datetime', label: 'Appointment', required: true, value: '2024-12-31T10:00:00.000Z'});
+  await frame();
+  const time = input.shadowRoot.querySelectorAll('input')[1];
+  time.value = '99:99';
+  time.dispatchEvent(new Event('input', {bubbles: true}));
+  input.reportValidity();
+}
 if (item === 'b15_en_US' || item === 'b15_fr_FR') {
   for (const [type, label, value] of [['date', 'Date', 'not-a-date'], ['time', 'Time', '99:99'], ['datetime', 'DateTime', 'not-a-datetime']]) {
     const input = await add('lightning-input', 'input', {type, label, value});
@@ -65,6 +74,49 @@ if (item === 'b25') {
     tab.appendChild(document.createTextNode(name));
   }
   for (let i = 0; i < 4; i++) await frame();
+}
+if (item === 'm03_m04') {
+  // Toast timers run on a fake clock: the capture polled every 100 ms for 30 s.
+  const service = await import('/lightning/runtime/shell/toast-service.js');
+  const {ShowToastEvent} = await import('/lightning/shims/lightning/showToastEvent.js');
+  const Toast = await load('toast');
+  let now = 0, nextTimer = 1;
+  const timers = new Map();
+  service.setToastClock({
+    setTimeout(fn, ms) { const id = nextTimer++; timers.set(id, {at: now + ms, fn}); return id; },
+    clearTimeout(id) { timers.delete(id); },
+  });
+  service.installToastService();
+  const advance = ms => {
+    now += ms;
+    for (const [id, timer] of [...timers]) if (timer.at <= now) { timers.delete(id); timer.fn(); }
+  };
+  const region = document.querySelector('[data-glade-toast-region]');
+  const toasts = {};
+  for (const kind of ['event-dismissible', 'event-pester', 'event-sticky', 'module-dismissible', 'module-pester', 'module-sticky']) {
+    service.clearToasts();
+    now = 0;
+    const mode = kind.slice(kind.indexOf('-') + 1);
+    if (kind.startsWith('event-')) {
+      document.body.dispatchEvent(new ShowToastEvent({title: 'Timing capture', message: 'Observe disappearance.', variant: 'info', mode}));
+    } else {
+      await Toast.show({label: 'Timing capture', message: 'Observe disappearance.', variant: 'info', mode}, document.body);
+    }
+    const toast = region.querySelector('[data-glade-toast-id]');
+    const button = toast && toast.querySelector('button');
+    const attr = (el, name) => el && el.hasAttribute(name) ? el.getAttribute(name) : null;
+    const observed = {
+      role: attr(toast, 'role'), live: attr(toast, 'aria-live'), atomic: attr(toast, 'aria-atomic'),
+      close: button ? {class: attr(button, 'class'), 'aria-label': attr(button, 'aria-label'), title: attr(button, 'title'), text: button.textContent.trim()} : null,
+      goneAtMs: null,
+    };
+    for (let ms = 100; ms <= 30000 && observed.goneAtMs === null; ms += 100) {
+      advance(100);
+      if (!region.querySelector('[data-glade-toast-id]')) observed.goneAtMs = ms;
+    }
+    toasts[kind] = observed;
+  }
+  window.__observation = {toasts};
 }
 await frame();
 window.__ready = true;

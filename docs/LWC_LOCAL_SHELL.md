@@ -453,6 +453,9 @@ common local development loops:
   `lightning/platformResourceLoader` local script and style loading,
   `lightning/platformShowToastEvent`, `lightning/showToastEvent`, and
   `lightning/toast` browser toast paths.
+  Toast auto-dismiss durations are measurements from the API 68 captures
+  (100 ms polling), not documented Salesforce constants; see
+  `TOAST_DURATIONS_MS` in `lwcruntime/src/shell/toast-service.mjs`.
 - `lightning/platformWorkspaceApi` active-route and tab label/icon
   approximation for console apps, including local tab info, open/close/focus,
   refresh, highlight, and console wire values. Full console workspace behavior
