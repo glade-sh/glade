@@ -10,6 +10,7 @@
     "remaining-go": [
       "github.com/glade-sh/glade/cmd/glade",
       "github.com/glade-sh/glade/internal/apexast",
+      "github.com/glade-sh/glade/internal/apexcov",
       "github.com/glade-sh/glade/internal/apexlang",
       "github.com/glade-sh/glade/internal/apexlog",
       "github.com/glade-sh/glade/internal/apexversion",
@@ -58,6 +59,7 @@
       "github.com/glade-sh/glade/internal/sobject",
       "github.com/glade-sh/glade/internal/soql",
       "github.com/glade-sh/glade/internal/sosl",
+      "github.com/glade-sh/glade/internal/stablemath",
       "github.com/glade-sh/glade/internal/startupcache",
       "github.com/glade-sh/glade/internal/storage",
       "github.com/glade-sh/glade/internal/testdaemon",
