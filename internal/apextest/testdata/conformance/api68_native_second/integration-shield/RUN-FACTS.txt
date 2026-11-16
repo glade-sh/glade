@@ -1,0 +1,12 @@
+capture: integration-shield
+started: 2026-11-16T03:40:40Z
+finished: 2026-11-16T03:41:15Z
+org: 00D<id>LUA4 (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+scratch org created with features [PlatformEncryption, ApexIntegrationTests]
+integration-test shared data and teardown are captured when the annotation is accepted

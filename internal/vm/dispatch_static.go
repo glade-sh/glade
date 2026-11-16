@@ -268,7 +268,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Crypto.encrypt", "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
 		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate",
 		"Crypto.generateAESKey", "Crypto.getRandomInteger", "Crypto.getRandomLong",
-		"Crypto.generateKeyPair", "Crypto.getPrivateKey", "Crypto.parseJwe",
+		"Crypto.generateKeyPair", "Crypto.getPrivateKey", "Crypto.getPublicKey", "Crypto.parseJwe",
 		"Database.QueryOptions.builder",
 		"JSON.createGenerator", "JSON.createParser", "JSON.serialize", "JSON.serializePretty",
 		"JSON.deserializeUntyped", "JSON.deserialize", "JSON.deserializeStrict",

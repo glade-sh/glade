@@ -14,13 +14,24 @@ const cryptoKeyServiceUnavailableMessage = "This crypto method is not available.
 // cryptoKeyServiceGate rejects the captured EC key and JWE calls before any
 // argument validation: an invalid algorithm alias, a truncated key blob and a
 // three-part token all fail with the same text. Orgs that declare the
-// PlatformEncryption feature keep the existing unsupported-call behavior; the
-// enabled service is not modeled.
-func (vm *VM) cryptoKeyServiceGate(callee string) error {
-	if vm.Org != nil && vm.Org.HasFeature("PlatformEncryption") {
-		return unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
+// PlatformEncryption feature run the key and JWE surface in crypto_ec_jwe.go.
+func (vm *VM) cryptoKeyServiceGate(callee string, args []Value) (Value, error) {
+	if !vm.cryptoEncryptionEnabled() {
+		return Null, newExceptionError("System.SecurityException", cryptoKeyServiceUnavailableMessage)
 	}
-	return newExceptionError("System.SecurityException", cryptoKeyServiceUnavailableMessage)
+	switch callee {
+	case "Crypto.generateKeyPair":
+		return vm.cryptoGenerateKeyPair(args)
+	case "Crypto.getPrivateKey", "Crypto.getPublicKey":
+		return vm.cryptoGetKeyPart(callee, args)
+	case "Crypto.parseJwe":
+		return vm.cryptoParseJwe(args)
+	case "Crypto.encrypt":
+		return vm.cryptoJweEncrypt(args)
+	case "Crypto.decrypt":
+		return vm.cryptoJweDecrypt(args)
+	}
+	return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
 }
 
 // System.JweToken is a value container: the 8-argument constructor stores the

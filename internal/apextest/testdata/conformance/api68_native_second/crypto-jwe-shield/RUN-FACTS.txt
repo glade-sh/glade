@@ -1,0 +1,13 @@
+capture: crypto-jwe-shield
+started: 2026-11-16T03:41:19Z
+finished: 2026-11-16T03:42:05Z
+org: 00D<id>LUA4 (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+gate: platform.encryption.apexcrypto is OPEN in a scratch org created with features [PlatformEncryption]
+matrix is 3 key-wrap algorithms x 6 content encryptions x 2 argument orders, split one transaction per enc
+CBC-HS CEK sizes 32/48/64 are the JWA candidates; native acceptance is the capture question

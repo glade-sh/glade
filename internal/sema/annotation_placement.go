@@ -100,7 +100,7 @@ func annotationPlacementDiagnostics(typ typesys.TypeSymbol, target string, name,
 			allowed = target != "parameters"
 		case "restresource":
 			allowed = target == "classes" || target == "methods"
-		case "istest":
+		case "istest", "integrationtest":
 			allowed = target == "classes" || target == "methods"
 		case "auraenabled":
 			allowed = target == "methods" || target == "fields" || target == "properties"

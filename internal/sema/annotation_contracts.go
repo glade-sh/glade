@@ -28,15 +28,29 @@ func checkAnnotationCatalog(index typesys.Index) []diagnostic.Diagnostic {
 	diagnostics := checkAnnotationCatalogDiagnostics(index)
 	for _, feature := range index.OrgShapeFeatures {
 		if strings.EqualFold(feature, "ApexIntegrationTests") {
-			for i := range diagnostics {
-				if diagnostics[i].NativeMessage == integrationTestUnavailableMessage {
-					diagnostics[i].NativeMessage = ""
+			// The enabled feature accepts @IntegrationTest, @BeforeClass and
+			// @TearDown (api68_native_second INTEGRATION-DEPLOY-67/68).
+			kept := diagnostics[:0]
+			for _, item := range diagnostics {
+				if integrationPreviewDiagnostic(item) {
+					continue
 				}
+				kept = append(kept, item)
 			}
+			diagnostics = kept
 			break
 		}
 	}
 	return diagnostics
+}
+
+func integrationPreviewDiagnostic(item diagnostic.Diagnostic) bool {
+	for _, name := range []string{"IntegrationTest", "BeforeClass", "TearDown"} {
+		if item.Message == "Apex annotation @"+name+" is preview-disabled" {
+			return true
+		}
+	}
+	return false
 }
 
 func checkAnnotationCatalogDiagnostics(index typesys.Index) []diagnostic.Diagnostic {

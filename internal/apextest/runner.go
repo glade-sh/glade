@@ -200,6 +200,9 @@ type TestCase struct {
 	// Salesforce-accepted value-returning or differently-modified test method.
 	ReturnType string
 	Modifiers  []string
+	// TearDownMethods are the @TearDown methods of an @IntegrationTest class.
+	// The invocation runs them after the test method, pass or fail.
+	TearDownMethods []string
 }
 
 type TestProgress struct {
@@ -226,11 +229,21 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 			continue
 		}
 		costHint := testCaseCostHintForType(typ)
+		integration := integrationTestsEnabled(index) && hasModifier(typ.Modifiers, "IntegrationTest")
+		var tearDowns []string
+		if integration {
+			for _, member := range typ.Members {
+				if member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "TearDown") {
+					tearDowns = append(tearDowns, member.Name)
+				}
+			}
+		}
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod {
 				continue
 			}
-			if !member.IsTest {
+			integrationMethod := integration && hasModifier(member.Modifiers, "IntegrationTest")
+			if !member.IsTest && !integrationMethod {
 				continue
 			}
 			if isTestSetup(member.Modifiers) {
@@ -257,10 +270,30 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				CostHint:           costHint,
 				ReturnType:         member.Type,
 				Modifiers:          member.Modifiers,
+				TearDownMethods:    integrationTearDowns(integrationMethod, tearDowns),
 			})
 		}
 	}
 	return out
+}
+
+// integrationTestsEnabled reports the ApexIntegrationTests scratch feature
+// (api68_native_second integration-shield). Without it, @IntegrationTest
+// methods are not tests.
+func integrationTestsEnabled(index typesys.Index) bool {
+	for _, feature := range index.OrgShapeFeatures {
+		if strings.EqualFold(feature, "ApexIntegrationTests") {
+			return true
+		}
+	}
+	return false
+}
+
+func integrationTearDowns(integrationMethod bool, tearDowns []string) []string {
+	if !integrationMethod {
+		return nil
+	}
+	return tearDowns
 }
 
 func selectedClassSet(classes []string) map[string]bool {
@@ -5041,7 +5074,11 @@ func compileTestInvokePrograms(cases []TestCase) (map[string]ir.Program, map[str
 	errs := make(map[string]error)
 	for _, testCase := range cases {
 		key := testCaseKey(testCase)
-		program, err := vm.CompileAnonymous(testCase.MethodName + "();")
+		invocation := testCase.MethodName + "();"
+		if len(testCase.TearDownMethods) > 0 {
+			invocation = "try { " + invocation + " } finally { " + strings.Join(testCase.TearDownMethods, "(); ") + "(); }"
+		}
+		program, err := vm.CompileAnonymous(invocation)
 		if err != nil {
 			errs[key] = err
 			continue
@@ -8316,7 +8353,10 @@ func skipBlockComment(source string, start int) int {
 
 func isTestSetup(modifiers []string) bool {
 	for _, modifier := range modifiers {
-		if strings.EqualFold(strings.TrimPrefix(modifier, "@"), "TestSetup") {
+		trimmed := strings.TrimPrefix(modifier, "@")
+		// @BeforeClass of an @IntegrationTest class runs once before its
+		// methods, like @TestSetup; its data is visible to every method.
+		if strings.EqualFold(trimmed, "TestSetup") || strings.EqualFold(trimmed, "BeforeClass") {
 			return true
 		}
 	}

@@ -23,7 +23,8 @@ import (
 // accumulate across families exactly as families.tsv orders them. Each row's
 // native outcome is the org.tsv outcome column; the trailing debug-log limits
 // summary is a harness addition and is not compared.
-const api68NativeRoot = "testdata/conformance/api68_native"
+// The root is a variable so the second-pass replay can reuse the harness.
+var api68NativeRoot = "testdata/conformance/api68_native"
 
 // api68NativeGaps lists the rows whose native behavior Glade does not model.
 // A listed row that starts to match fails the test so the list stays exact.
@@ -52,10 +53,7 @@ var api68NativeGaps = map[string]string{
 
 // api68NativePartialGaps compare a row after removing the one segment Glade
 // does not model; the rest of the row must match exactly.
-var api68NativePartialGaps = map[string]struct {
-	segment *regexp.Regexp
-	reason  string
-}{
+var api68NativePartialGaps = map[string]api68PartialGap{
 	"sharing-off/SHARE-OFF-68": {api68CustomRowCauseSegment, api68CustomRowCauseReason},
 	"sharing-off/SHARE-OFF-67": {api68CustomRowCauseSegment, api68CustomRowCauseReason},
 	"sharing-on/SHARE-ON-68":   {api68CustomRowCauseSegment, api68CustomRowCauseReason},
@@ -86,6 +84,19 @@ type api68NativeOrg struct {
 }
 
 func TestAPI68NativeCaptureConformance(t *testing.T) {
+	api68ReplayFamilies(t, "testdata/conformance/api68_native", api68NativeGaps, api68NativePartialGaps)
+}
+
+type api68PartialGap = struct {
+	segment *regexp.Regexp
+	reason  string
+}
+
+func api68ReplayFamilies(t *testing.T, root string, gaps map[string]string, partialGaps map[string]api68PartialGap) {
+	t.Helper()
+	previousRoot := api68NativeRoot
+	api68NativeRoot = root
+	defer func() { api68NativeRoot = previousRoot }()
 	t.Setenv("GLADE_HOME", t.TempDir())
 	scratch, err := os.ReadFile(filepath.Join(api68NativeRoot, "project-scratch-def.json"))
 	if err != nil {
@@ -124,21 +135,21 @@ func TestAPI68NativeCaptureConformance(t *testing.T) {
 			want := api68NormalizeNative(row.native)
 			got = api68NormalizeGlade(got)
 			key := name + "/" + row.id
-			if partial, ok := api68NativePartialGaps[key]; ok {
+			if partial, ok := partialGaps[key]; ok {
 				if !partial.segment.MatchString(want) || !partial.segment.MatchString(got) {
 					t.Errorf("%s partial gap segment is missing\n  native: %s\n  glade:  %s", key, want, got)
 				}
 				want = partial.segment.ReplaceAllString(want, "$1")
 				got = partial.segment.ReplaceAllString(got, "$1")
 			}
-			_, gap := api68NativeGaps[key]
+			_, gap := gaps[key]
 			if gap {
 				seenGaps[key] = true
 			}
 			if got == want {
 				matched++
 				if gap {
-					t.Errorf("%s now matches native; remove it from api68NativeGaps", key)
+					t.Errorf("%s now matches native; remove it from the gap list", key)
 				}
 				continue
 			}
@@ -148,9 +159,9 @@ func TestAPI68NativeCaptureConformance(t *testing.T) {
 			}
 		}
 	}
-	for key := range api68NativeGaps {
+	for key := range gaps {
 		if !seenGaps[key] {
-			t.Errorf("api68NativeGaps names unknown row %s", key)
+			t.Errorf("gap list names unknown row %s", key)
 		}
 	}
 	t.Logf("API 68 native capture: %d/%d rows match", matched, total)
@@ -541,11 +552,27 @@ func (o *api68NativeOrg) test(row api68NativeCase) string {
 	opts := Options{NoDiskCache: true, Parallelism: 1, debugSink: func(class, method string, lines []string) {
 		debug[method] = append([]string(nil), lines...)
 	}}
+	// @TestSetup and @BeforeClass run once per class; their data seeds every
+	// method. An @IntegrationTest class commits it, so the org keeps it.
+	className := cases[0].ClassName
+	setups, setupErrs, setupPrograms, setupProgramErrs := compileTestSetupMethodsForClasses(index, map[string]bool{className: true})
+	classOrg, setupRandom := o.data.CloneRuntime(), uint64(0)
+	if len(setups[className]) > 0 {
+		var setupErr error
+		classOrg, setupRandom, setupErr, _ = prepareTestSetupOrg(context.Background(), className, runner.base, nil, setups[className], setupErrs[className], setupPrograms[className], setupProgramErrs[className], nil, classOrg, opts, counters)
+		if setupErr != nil {
+			problems = append(problems, "setup: "+setupErr.Error())
+		} else if hasModifier(cases[0].Modifiers, "IntegrationTest") {
+			committed := classOrg
+			o.data = &committed
+			o.runnerGen = -1
+		}
+	}
 	for _, testCase := range cases {
 		key := testCaseKey(testCase)
-		seed := o.data.CloneRuntime()
+		seed := classOrg.CloneRuntime()
 		initializeTestOrg(&seed)
-		result := runCase(context.Background(), testCase, methods[key], runtimeMethods[testMethodSourceKey(testCase.ClassName, testCase.File)], methodErrors[key], programs[key], programErrors[key], runner.base, nil, nil, nil, seed, 0, opts, false, nil, counters)
+		result := runCase(context.Background(), testCase, methods[key], runtimeMethods[testMethodSourceKey(testCase.ClassName, testCase.File)], methodErrors[key], programs[key], programErrors[key], runner.base, nil, nil, nil, seed, setupRandom, opts, false, nil, counters)
 		if result.Problem != nil {
 			problems = append(problems, testCase.MethodName+": "+result.Problem.Type+": "+result.Problem.Message)
 		}

@@ -1913,10 +1913,16 @@ platformStaticCall:
 		}
 		return newQueryOptionsBuilder(), nil
 	case "Crypto.generateKeyPair", "Crypto.getPrivateKey", "Crypto.parseJwe":
-		return Null, vm.cryptoKeyServiceGate(callee)
+		return vm.cryptoKeyServiceGate(callee, args)
+	case "Crypto.getPublicKey":
+		// Only the enabled service is captured; the feature-off shape keeps the base.
+		if !vm.cryptoEncryptionEnabled() {
+			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
+		}
+		return vm.cryptoKeyServiceGate(callee, args)
 	case "Crypto.encrypt":
 		if len(args) == 9 {
-			return Null, vm.cryptoKeyServiceGate(callee)
+			return vm.cryptoKeyServiceGate(callee, args)
 		}
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Crypto.encrypt expects algorithm, privateKey Blob, initializationVector Blob, and clearText Blob")
@@ -1953,7 +1959,7 @@ platformStaticCall:
 		return platformScalar("Blob", string(cipherText)), nil
 	case "Crypto.decrypt":
 		if len(args) == 9 {
-			return Null, vm.cryptoKeyServiceGate(callee)
+			return vm.cryptoKeyServiceGate(callee, args)
 		}
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Crypto.decrypt expects algorithm, privateKey Blob, initializationVector Blob, and cipherText Blob")
@@ -2131,6 +2137,17 @@ platformStaticCall:
 			}
 			return platformScalar("Blob", string(signature)), nil
 		}
+		if _, _, ok := ecSignatureAlgorithm(args[0].Text); ok && callee == "Crypto.sign" && vm.cryptoEncryptionEnabled() {
+			key, err := blobStringArg(callee+" privateKey", args[2:3])
+			if err != nil {
+				return Null, err
+			}
+			signature, err := signES(args[0].Text, []byte(input), []byte(key))
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Blob", string(signature)), nil
+		}
 		if hash, ok := ecdsaSignatureHash(args[0].Text); ok && callee == "Crypto.sign" {
 			key, err := blobStringArg(callee+" privateKey", args[2:3])
 			if err != nil {
@@ -2179,6 +2196,17 @@ platformStaticCall:
 				return Null, err
 			}
 			valid, err := verifyRSA(hash, []byte(input), []byte(signature), []byte(key))
+			if err != nil {
+				return Null, err
+			}
+			return Bool(valid), nil
+		}
+		if _, _, ok := ecSignatureAlgorithm(args[0].Text); ok && callee == "Crypto.verify" && vm.cryptoEncryptionEnabled() && args[3].Kind == ValueObject && args[3].Type == "Blob" {
+			key, err := blobStringArg(callee+" publicKey", args[3:4])
+			if err != nil {
+				return Null, err
+			}
+			valid, err := verifyES(args[0].Text, []byte(input), []byte(signature), []byte(key))
 			if err != nil {
 				return Null, err
 			}

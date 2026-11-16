@@ -11,8 +11,9 @@ import (
 
 // api68_native crypto-ec EC-ERRORS-67/68 and crypto-jwe JWE-* rows: without
 // PlatformEncryption the EC key and JWE calls raise the captured
-// SecurityException before argument validation. The enabled service is not
-// modeled, so a PlatformEncryption org keeps the unsupported-call error.
+// SecurityException before argument validation. A PlatformEncryption org runs
+// the enabled surface (crypto_ec_jwe.go): the same calls reach argument
+// validation instead of the gate.
 func TestCryptoKeyServiceGateFollowsPlatformEncryption(t *testing.T) {
 	calls := []string{
 		"Crypto.generateKeyPair('S68_NOT_AN_ALGORITHM');",
@@ -39,7 +40,7 @@ func TestCryptoKeyServiceGateFollowsPlatformEncryption(t *testing.T) {
 				t.Fatalf("%s enabled=%t: %v", source, enabled, err)
 			}
 			if enabled {
-				if runtimeErr.Type != "UnsupportedFeature" {
+				if runtimeErr.ExceptionMessage() == cryptoKeyServiceUnavailableMessage || runtimeErr.Type == "UnsupportedFeature" && !strings.Contains(runtimeErr.Message, "Crypto.") {
 					t.Fatalf("%s with PlatformEncryption = %s: %s", source, runtimeErr.Type, runtimeErr.Message)
 				}
 				continue
@@ -77,5 +78,40 @@ func TestJweTokenNullComponentIsUnsupported(t *testing.T) {
 	var runtimeErr *RuntimeError
 	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
 		t.Fatalf("null component = %v", err)
+	}
+}
+
+// api68_native_second crypto-ec-shield and crypto-jwe-shield: the enabled
+// surface returns the captured key sizes and round-trips every JWE pair.
+func TestCryptoEnabledECAndJWERoundTrip(t *testing.T) {
+	source := `
+Blob pair = Crypto.generateKeyPair('P-384');
+System.assertEquals(204, pair.size());
+System.assertEquals(80, Crypto.getPrivateKey(pair).size());
+System.assertEquals(120, Crypto.getPublicKey(pair).size());
+Blob sig = Crypto.sign('ES384', Blob.valueOf('m'), Crypto.getPrivateKey(pair));
+System.assertEquals(96, sig.size());
+System.assert(Crypto.verify('ES384', Blob.valueOf('m'), sig, Crypto.getPublicKey(pair)));
+System.assert(!Crypto.verify('ES384', Blob.valueOf('n'), sig, Crypto.getPublicKey(pair)));
+Blob rp = Crypto.generateKeyPair('P-256');
+Blob ep = Crypto.generateKeyPair('P-256');
+Blob cek = Crypto.generateAesKey(256);
+Blob iv = EncodingUtil.convertFromHex('000102030405060708090a0b');
+Blob compact = Crypto.encrypt('ECDH-ES+A256KW', 'A256GCM', Crypto.getPublicKey(rp), Crypto.getPrivateKey(ep), Crypto.getPublicKey(ep), cek, iv, Blob.valueOf('S68'), Blob.valueOf(''));
+System.assertEquals(331, compact.size());
+System.JweToken token = Crypto.parseJwe(compact);
+Blob clear = Crypto.decrypt(token.getAlgorithm(), token.getEncryptionAlgorithm(), Crypto.getPrivateKey(rp), token.getEphemeralPublicKey(), token.getEncryptedKey(), token.getIv(), token.getCiphertext(), token.getTag(), token.getAad());
+System.assertEquals('S68', clear.toString());
+`
+	machine := New(io.Discard)
+	org := storage.NewOrgState()
+	org.Features = append(org.Features, "PlatformEncryption")
+	machine.SetOrg(&org)
+	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "68.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
