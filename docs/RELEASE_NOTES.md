@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+No changes yet.
+
+## v0.3.11
+
+v0.3.11 brings user-mode DML and field access under `System.runAs` closer to Salesforce, extends custom duplicate matching for street, title, company and name rules, and matches more captured governor-limit, SOSL and Apex release-note behavior. The debugger starts from a consistent set of project files, and test runs reuse unchanged Visualforce input digests.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v93`, `salesforce-platform-v73`, `apextest-runtime-v43`). The first run after upgrading rebuilds them.
+- **Master-detail updates at API 67.0.** Under the default user mode, `update` now fails for a record that carries a non-reparentable master-detail field, even when the value is unchanged. `update as system` is not affected. See the Apex release-note gates entry below.
+
+### Changes
+
 - **Access modes under `System.runAs`.** Captured explicit `USER_MODE` DML on a readable object without the operation's permission now raises `DML operation <OP> not allowed` (or the field-access `DmlException` for upsert) and returns failed rows for partial Database calls. User-mode DML on a record hidden by sharing reports the platform's row error instead of a `SecurityException`. Each `runAs(User)` block counts one DML statement. Captured `COUNT()` queries on unreadable objects, clause and `AccessLevel` conflicts, `stripInaccessible` root and relationship results, user-mode undelete without the delete permission, inherited sharing in Batchable, `@future` and finalizer callbacks, and `Search.suggest` in tests follow native rows. User-mode DML on an inaccessible custom field raises `DmlException` from source API 55.0.
 
 - **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets. API 67 default-mode administrator DML and dynamic queries honor captured access to newly deployed Account Text fields.
@@ -11,8 +24,6 @@
 - **Debugger startup checks a consistent set of project inputs.** A cold `glade dap` start now builds its org, runtime and startup cache entry from one set of observed project files, including optional files found absent and directory listings. If a file changes while the debugger starts, Glade rebuilds, up to three times. When the project is still changing after the third build, the debugger stops with a message naming the file instead of starting from a mix of old and new files. Finder files and common editor temporary files do not trigger rebuilds where they are not project inputs. Startup cache entries from earlier releases are rebuilt once.
 
 - **Visualforce test startup.** Test runs keep the digests of unchanged Visualforce input files in the project's test cache and reuse them on the next run. A missing, damaged or untrusted cache file is ignored and rebuilt, and the disk cache setting that turns off the runtime cache also turns this one off.
-
-- **Strict-mode list building runs in linear time.** With `--limit-mode strict`, a loop that adds records or scalars to a local list no longer re-measures the whole heap after every statement, so building 10,000 records takes about as long as in permissive mode instead of growing with the square of the list size. The heap count, the statement where a heap LimitException is thrown and its message are unchanged. A loop whose body calls methods or reads fields still takes the full heap walk.
 
 - **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 
@@ -37,6 +48,16 @@
 - **Duplicate rule behavior.** `Datacloud.MatchRecord.getFieldDiffs()` lists the compared fields as Same, Different or Null for the builtin Account, Contact and Lead rules and for custom rules of Exact items. `FindDuplicates` and `FindDuplicatesByIds` throw a `HandledException` for a custom object with no active duplicate rule, and for Opportunity by id. Exact items compare the first 99 characters. A custom rule's `objectMapping` matches another object's fields. An Exact MatchBlanks item gates updates when its value changes. Allow+Report commits one record set for records that match each other and records an update into a match for such a rule. Within a set, Glade lists the matches enforcement found first and then the records inserted earlier by the same statement; this order is a design choice, because no native row pins the order inside a set. A record inserted as an allowed duplicate is compared with its insert-time values when it is updated again in the same transaction, so moving back to them saves, as it does natively. Other records keep the stored-value comparison, which no native row covers. An empty custom-object result reports a stable 01I id as its entity type, as the platform reports the object's definition id. The fuzzy confidence scores behind some field differences are not modeled yet.
 
 - **Apex release-note gates.** Captured rows now drive several API 62 to 67 behaviors: exception JSON stops at API 63, scheduled jobs pause and resume, multiline strings strip common indentation and read escapes, `String.template` follows the platform messages, Shift-JIS and Windows-31J are separate charsets, `getRelationshipOrder` answers for standard master-detail fields, updates that carry a non-reparentable master follow the API 63 and user-mode rules, nested child subqueries count at every depth, exception classes may override `equals` and `hashCode`, and `OrgLimits` no longer lists the elastic async entries that a default org does not have. At API 67.0 this includes a user-visible change: under the default user mode, `update` fails for a record that carries a non-reparentable master-detail field, even when the value is unchanged (for example a queried record that selected the field, or a record updated right after its insert); `update as system` is not affected. Some rows stay unmatched; see `internal/apextest/apex_release_gates_native_conformance_test.go`.
+
+### Performance
+
+- **Strict-mode list building runs in linear time.** With `--limit-mode strict`, a loop that adds records or scalars to a local list no longer re-measures the whole heap after every statement, so building 10,000 records takes about as long as in permissive mode instead of growing with the square of the list size. The heap count, the statement where a heap LimitException is thrown and its message are unchanged. A loop whose body calls methods or reads fields still takes the full heap walk.
+
+### Release validation
+
+- The release candidate passed real-project comparison gates with no new outcomes against v0.3.10, and all eight paired shards passed with no additions.
+- Captured behavior is covered by the access-mode, duplicate matching, governor-limit, SOSL and Apex release-gate conformance tests in `internal/apextest`, `internal/dml`, `internal/sema` and `internal/vm`.
+- Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
 
 ## v0.3.10
 
