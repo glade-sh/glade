@@ -1856,7 +1856,7 @@ func haversineDistance(left, right geolocationPoint) float64 {
 	dlon := (right.lon - left.lon) * math.Pi / 180
 	sinDlat := math.Sin(dlat / 2)
 	sinDlon := math.Sin(dlon / 2)
-	a := sinDlat*sinDlat + math.Cos(lat1)*math.Cos(lat2)*sinDlon*sinDlon
+	a := float64(sinDlat*sinDlat) + float64(float64(float64(math.Cos(lat1)*math.Cos(lat2))*sinDlon)*sinDlon)
 	return earthRadiusKM * 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 }
 

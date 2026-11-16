@@ -3060,10 +3060,10 @@ func mathAcos(x float64) float64 {
 	if abs >= 0.5 {
 		z = (1 - abs) * 0.5
 	}
-	p := z * mathPolynomial(z,
+	p := float64(z * mathPolynomial(z,
 		1.66666666666666657415e-01, -3.25565818622400915405e-01,
 		2.01212532134862925881e-01, -4.00555345006794114027e-02,
-		7.91534994289814532176e-04, 3.47933107596021167570e-05)
+		7.91534994289814532176e-04, 3.47933107596021167570e-05))
 	q := mathPolynomial(z, 1,
 		-2.40339491173441421878e+00, 2.02094576023350569471e+00,
 		-6.88283971605453293030e-01, 7.70381505559019352791e-02)
@@ -3139,7 +3139,7 @@ func mathExp(x float64) float64 {
 			k = int(float64(invLn2*x) + math.Copysign(0.5, x))
 		}
 		hi = x - float64(float64(k)*ln2High)
-		lo = float64(k) * ln2Low
+		lo = float64(float64(k) * ln2Low)
 		x = hi - lo
 	} else if absHigh < 0x3e300000 {
 		return 1 + x
@@ -3192,7 +3192,7 @@ func mathTanReduce(x float64) (float64, float64, int) {
 	n := int(float64(abs*invPiOver2) + 0.5)
 	fn := float64(n)
 	r := abs - float64(fn*piOver2A)
-	w := fn * piOver2AT
+	w := float64(fn * piOver2AT)
 	y := r - w
 	if ix < 0x4002d97c {
 		if ix == 0x3ff921fb {
@@ -3205,14 +3205,14 @@ func mathTanReduce(x float64) (float64, float64, int) {
 		difference := exponent - int((math.Float64bits(y)>>52)&0x7ff)
 		if difference > 16 {
 			t := r
-			w = fn * piOver2B
+			w = float64(fn * piOver2B)
 			r = t - w
 			w = float64(fn*piOver2BT) - ((t - r) - w)
 			y = r - w
 			difference = exponent - int((math.Float64bits(y)>>52)&0x7ff)
 			if difference > 49 {
 				t = r
-				w = fn * piOver2C
+				w = float64(fn * piOver2C)
 				r = t - w
 				w = float64(fn*piOver2CT) - ((t - r) - w)
 				y = r - w
@@ -3247,10 +3247,10 @@ func mathTanKernel(x, y float64, mode int) float64 {
 		1.33333333333201242699e-01, 2.18694882948595424599e-02,
 		3.59207910759131235356e-03, 5.88041240820264096874e-04,
 		7.81794442939557092300e-05, -1.85586374855275456654e-05)
-	v := z * mathPolynomial(w,
+	v := float64(z * mathPolynomial(w,
 		5.39682539762260521377e-02, 8.86323982359930005737e-03,
 		1.45620945432529025516e-03, 2.46463134818469906812e-04,
-		7.14072491382608190305e-05, 2.59073051863633712884e-05)
+		7.14072491382608190305e-05, 2.59073051863633712884e-05))
 	s := z * x
 	r = y + float64(z*(float64(s*(r+v))+y))
 	r += float64(3.33333333333334091986e-01 * s)
@@ -3833,7 +3833,9 @@ func locationDistance(left, right Value, unit string) (Value, error) {
 	lat2 := rightLat * math.Pi / 180
 	dLat := (rightLat - leftLat) * math.Pi / 180
 	dLon := (rightLon - leftLon) * math.Pi / 180
-	a := math.Sin(dLat/2)*math.Sin(dLat/2) + math.Cos(lat1)*math.Cos(lat2)*math.Sin(dLon/2)*math.Sin(dLon/2)
+	sinLat := math.Sin(dLat / 2)
+	sinLon := math.Sin(dLon / 2)
+	a := float64(sinLat*sinLat) + float64(float64(float64(math.Cos(lat1)*math.Cos(lat2))*sinLon)*sinLon)
 	a = math.Max(0, math.Min(1, a))
 	angle := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 	distance := radius * angle
