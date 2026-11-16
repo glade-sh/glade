@@ -2168,6 +2168,9 @@ func (vm *VM) populateDMLResultFields(value *Value, results []dml.Result, operat
 		if !ok {
 			return
 		}
+		if operation == "insert" {
+			markSavedMasterFields(value, vm.Org.Objects[objectName].Definition)
+		}
 		record, ok := vm.Org.Objects[objectName].Records[id]
 		if !ok {
 			return

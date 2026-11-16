@@ -1,0 +1,1 @@
+public class HiLog { public static Boolean nested = false; public static String seen = ''; }

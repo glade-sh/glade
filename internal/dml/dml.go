@@ -112,6 +112,7 @@ type Engine struct {
 	summaryOrder              []string
 	summaryUpdates            map[string]SummaryUpdate
 	summaryHold               *storage.SummaryHold
+	summaryHoldRelations      []heldSummaryRelation
 	automationRoll            map[string]bool
 	uniqueBatch               *uniqueBatchContext
 	activityRefresh           *activityRefreshBatch

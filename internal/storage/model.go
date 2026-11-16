@@ -75,6 +75,9 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 // (rollup_trigger_timing native rows); the stored value is already current.
 type SummaryHold struct {
 	Values map[string]Value
+	// Live holds each parent's value when the statement began, for the delta
+	// the statement adds to an enclosing statement's hold.
+	Live map[string]Value
 }
 
 type OrgState struct {

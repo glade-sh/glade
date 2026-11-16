@@ -42,6 +42,7 @@ func (e *Engine) BeginSummaryHold(records []storage.Record) {
 		return
 	}
 	var hold *storage.SummaryHold
+	var held []heldSummaryRelation
 	for child, relations := range relationsByObject {
 		var childRecords []storage.Record
 		for _, record := range records {
@@ -70,15 +71,21 @@ func (e *Engine) BeginSummaryHold(records []storage.Record) {
 				continue
 			}
 			if hold == nil {
-				hold = &storage.SummaryHold{Values: make(map[string]storage.Value)}
+				hold = &storage.SummaryHold{Values: make(map[string]storage.Value), Live: make(map[string]storage.Value)}
 			}
+			held = append(held, heldSummaryRelation{relation: relation, parentIDs: parentIDs})
 			for id, value := range values {
-				hold.Values[summaryHoldKey(relation.parentObject, id, relation.parentField)] = value
+				key := summaryHoldKey(relation.parentObject, id, relation.parentField)
+				hold.Live[key] = value
+				// An enclosing statement's contribution has not landed yet:
+				// this statement starts from the enclosing statement's value.
+				hold.Values[key] = e.outerHeldValue(key, value)
 			}
 		}
 	}
 	if hold != nil {
 		e.summaryHold = hold
+		e.summaryHoldRelations = held
 		e.Org.SummaryHolds = append(e.Org.SummaryHolds, hold)
 	}
 }
@@ -90,6 +97,7 @@ func (e *Engine) ReleaseSummaryHold() {
 		return
 	}
 	if e.Org != nil {
+		e.carrySummaryDeltaOut()
 		for i, hold := range e.Org.SummaryHolds {
 			if hold == e.summaryHold {
 				e.Org.SummaryHolds = append(e.Org.SummaryHolds[:i:i], e.Org.SummaryHolds[i+1:]...)
@@ -98,6 +106,76 @@ func (e *Engine) ReleaseSummaryHold() {
 		}
 	}
 	e.summaryHold = nil
+	e.summaryHoldRelations = nil
+}
+
+type heldSummaryRelation struct {
+	relation  summaryRelation
+	parentIDs map[storage.ID]bool
+}
+
+// outerHeldValue is the value an enclosing statement's hold keeps for the key,
+// else the live value.
+func (e *Engine) outerHeldValue(key string, live storage.Value) storage.Value {
+	for i := len(e.Org.SummaryHolds) - 1; i >= 0; i-- {
+		if value, ok := e.Org.SummaryHolds[i].Values[key]; ok {
+			return value
+		}
+	}
+	return live
+}
+
+// carrySummaryDeltaOut adds what this statement changed in a roll-up to the
+// enclosing statements' held values (native rollup nested rows: the inner
+// statement's change lands, the enclosing statement's has not yet). A roll-up
+// that is not a COUNT or SUM drops its held value instead.
+func (e *Engine) carrySummaryDeltaOut() {
+	for _, held := range e.summaryHoldRelations {
+		now, ok := e.evaluateSummaryFieldBatch(held.relation, held.parentIDs)
+		for id := range held.parentIDs {
+			key := summaryHoldKey(held.relation.parentObject, id, held.relation.parentField)
+			before, had := e.summaryHold.Live[key]
+			for _, outer := range e.Org.SummaryHolds {
+				if outer == e.summaryHold {
+					continue
+				}
+				current, in := outer.Values[key]
+				if !in {
+					continue
+				}
+				op := strings.ToLower(strings.TrimSpace(held.relation.field.SummaryOperation))
+				if !ok || !had || (op != "count" && op != "sum") {
+					delete(outer.Values, key)
+					continue
+				}
+				if next, good := addSummaryDelta(current, before, now[id]); good {
+					outer.Values[key] = next
+				} else {
+					delete(outer.Values, key)
+				}
+			}
+		}
+	}
+}
+
+func addSummaryDelta(current, before, now storage.Value) (storage.Value, bool) {
+	c, ok1 := summaryNumericRat(current)
+	b, ok2 := summaryNumericRat(before)
+	n, ok3 := summaryNumericRat(now)
+	if !ok1 || !ok2 || !ok3 || current.Kind == storage.ValueNull {
+		return storage.Value{}, false
+	}
+	sum := new(big.Rat).Add(c, new(big.Rat).Sub(n, b))
+	if current.Kind == storage.ValueInteger && sum.IsInt() {
+		return storage.IntegerValue(sum.Num().Int64()), true
+	}
+	scale := 0
+	if current.Kind == storage.ValueDecimal {
+		if point := strings.IndexByte(current.Decimal, '.'); point >= 0 {
+			scale = len(current.Decimal) - point - 1
+		}
+	}
+	return summaryValueAtScale(storage.DecimalValue(summaryDecimalString(sum)), scale), true
 }
 
 func summaryHoldKey(object string, id storage.ID, field string) string {

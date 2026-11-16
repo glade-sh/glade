@@ -726,6 +726,8 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 	}
 	if vm.triggerDepth == 0 {
 		vm.outerTriggerLimits = vm.limits
+	} else if vm.triggerDepth == 1 {
+		vm.innerTriggerLimits = vm.limits
 	}
 	vm.triggerDepth++
 	// The text is built only for a depth failure; this runs for every trigger event.
@@ -742,10 +744,15 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 			if vm.triggerDepth == 2 && errors.As(err, &unwind) {
 				// This activation was started by the DML statement of the
 				// outermost trigger: the failure surfaces there. The aborted chain's
-				// statements and queries are not visible afterwards (d2_limits).
-				vm.limits.Queries, vm.limits.QueryRows = vm.outerTriggerLimits.Queries, vm.outerTriggerLimits.QueryRows
-				vm.limits.DMLStatements, vm.limits.DMLRows = vm.outerTriggerLimits.DMLStatements, vm.outerTriggerLimits.DMLRows
+				// statements and queries are not counted, the outermost trigger's own
+				// up to that statement are (native review1 hd_swallow rows).
+				vm.restoreDepthCounters(vm.innerTriggerLimits)
 				return nil, unwind.failure
+			}
+			if vm.triggerDepth == 1 && strings.Contains(err.Error(), ": maximum trigger depth exceeded\n") {
+				// Uncaught in the outermost trigger: its own work goes too
+				// (d2_limits: the caller sees only its own statements).
+				vm.restoreDepthCounters(vm.outerTriggerLimits)
 			}
 			return nil, err
 		}
@@ -1266,4 +1273,9 @@ func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, al
 		}
 	}
 	return results, nil
+}
+
+func (vm *VM) restoreDepthCounters(snapshot Limits) {
+	vm.limits.Queries, vm.limits.QueryRows = snapshot.Queries, snapshot.QueryRows
+	vm.limits.DMLStatements, vm.limits.DMLRows = snapshot.DMLStatements, snapshot.DMLRows
 }

@@ -7,3 +7,4 @@ repeats=two clean runs (rows with an alt list differ between the runs; the unfil
 invalid_runs=two earlier runs doubled rows between API passes and are not exported
 fit_split=fit rows: read_default, read_default2, group_agg, group_plain, group_sum, name_filter, fields_custom; holdout rows: group_num, group_filtered, limited, fields_account, global (frozen before the clean org)
 o3t_route=one insert transaction, insertion order, API 67.0 only
+raw_runs=default-order-rest/out/20261116T143253Z and 20261116T143500Z (capture cache, not committed)

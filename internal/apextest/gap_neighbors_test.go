@@ -105,6 +105,37 @@ func TestGapRollupHoldScopeNeighbors(t *testing.T) {
 	}
 }
 
+// A trigger whose nested DML inserts another child of the same parent reads the
+// roll-up with that inner change (the earlier behavior); only parents no inner
+// statement changed keep the frozen value. Not captured natively.
+func TestGapRollupHoldDroppedByInnerStatement(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			root := gapNeighborProject(t, api, map[string]string{
+				"objects/HiP__c/HiP__c.object-meta.xml":       gapObject("Hi P", ""),
+				"objects/HiP__c/fields/Cnt__c.field-meta.xml": `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Cnt__c</fullName><label>Cnt</label><summaryForeignKey>HiC__c.P__c</summaryForeignKey><summaryOperation>count</summaryOperation><type>Summary</type></CustomField>`,
+				"objects/HiC__c/HiC__c.object-meta.xml":       `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Hi C</label><pluralLabel>Hi Cs</pluralLabel><nameField><label>Name</label><type>Text</type></nameField><deploymentStatus>Deployed</deploymentStatus><sharingModel>ControlledByParent</sharingModel></CustomObject>`,
+				"objects/HiC__c/fields/P__c.field-meta.xml":   `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>P__c</fullName><label>P</label><referenceTo>HiP__c</referenceTo><relationshipLabel>Hi Cs</relationshipLabel><relationshipName>HiCs</relationshipName><type>MasterDetail</type><reparentableMasterDetail>false</reparentableMasterDetail></CustomField>`,
+				"classes/HiLog.cls":                           `public class HiLog { public static Boolean nested = false; public static String seen = ''; }`,
+				"classes/HiLog.cls-meta.xml":                  gapClassMeta(api),
+				"triggers/HiCTrg.trigger": `trigger HiCTrg on HiC__c (after insert) {
+  if (!HiLog.nested) { HiLog.nested = true; insert new HiC__c(Name = 'inner', P__c = Trigger.new[0].P__c); }
+  HiLog.seen += String.valueOf([SELECT Cnt__c FROM HiP__c WHERE Id = :Trigger.new[0].P__c].Cnt__c) + ',';
+}`,
+				"triggers/HiCTrg.trigger-meta.xml": gapTriggerMeta(api),
+				"classes/HiTest.cls": `@IsTest private class HiTest { @IsTest static void inner() {
+  HiP__c p = new HiP__c(Name = 'p'); insert p;
+  insert new HiC__c(Name = 'a', P__c = p.Id);
+  System.assertEquals('0,1,', HiLog.seen);
+} }`,
+				"classes/HiTest.cls-meta.xml":     gapClassMeta(api),
+				"profiles/Admin.profile-meta.xml": gapAdminProfile([]string{"HiP__c", "HiC__c"}, []string{"HiP__c.Cnt__c"}, nil),
+			})
+			gapRun(t, root, "HiTest")
+		})
+	}
+}
+
 // An ordinary exception from a nested trigger stays catchable at every level;
 // only the depth failure unwinds past the inner activations.
 func TestGapTriggerOrdinaryExceptionStaysCatchableNeighbors(t *testing.T) {
@@ -138,8 +169,8 @@ func TestGapTriggerOrdinaryExceptionStaysCatchableNeighbors(t *testing.T) {
 	}
 }
 
-// Standard-object field maps, custom Text grouping and standard Currency
-// grouping keep their earlier behavior next to the custom-object changes.
+// Standard-object field maps and custom Text and Checkbox grouping keep their
+// earlier behavior next to the custom-object changes.
 func TestGapDescribeAndGroupNeighbors(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -167,6 +198,60 @@ func TestGapDescribeAndGroupNeighbors(t *testing.T) {
 				"profiles/Admin.profile-meta.xml": gapAdminProfile([]string{"GdO__c"}, nil, []string{"GdO__c.Tx__c", "GdO__c.Ck__c"}),
 			})
 			gapRun(t, root, "GdTest")
+		})
+	}
+}
+
+// A trigger that reaches its DML through a handler class must see the depth
+// failure the same way: catch, finally and partial Database calls work only at
+// the outermost trigger, and the caller gets the wrapped DmlException.
+func TestGapTriggerDepthThroughHandlerClass(t *testing.T) {
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			root := gapNeighborProject(t, api, map[string]string{
+				"objects/HdA__c/HdA__c.object-meta.xml": gapObject("Hd A", ""),
+				"objects/HdB__c/HdB__c.object-meta.xml": gapObject("Hd B", ""),
+				"classes/HdCtl.cls": `public class HdCtl { public static Integer depth = 0; public static String mode = 'plain'; public static String log = '';
+  public static void bounce(SObject o) {
+    depth++; Integer d = depth;
+    SObject next = o instanceof HdA__c ? (SObject)[SELECT Id FROM HdB__c LIMIT 1] : (SObject)[SELECT Id FROM HdA__c LIMIT 1];
+    next.put('Name', 'n' + d);
+    if (mode == 'catch') { try { update next; } catch (DmlException e) { log += d + 'C,'; } finally { log += d + 'F,'; } }
+    else if (mode == 'partial') { Database.SaveResult r = Database.update(next, false); if (!r.isSuccess()) { log += d + 'P,'; } }
+    else { update next; }
+  } }`,
+				"classes/HdCtl.cls-meta.xml":       gapClassMeta(api),
+				"triggers/HdATrg.trigger":          `trigger HdATrg on HdA__c (after update) { HdCtl.bounce(Trigger.new[0]); }`,
+				"triggers/HdATrg.trigger-meta.xml": gapTriggerMeta(api),
+				"triggers/HdBTrg.trigger":          `trigger HdBTrg on HdB__c (after update) { HdCtl.bounce(Trigger.new[0]); }`,
+				"triggers/HdBTrg.trigger-meta.xml": gapTriggerMeta(api),
+				"classes/HdTest.cls": `@IsTest private class HdTest {
+  static HdA__c seed() { HdA__c a = new HdA__c(Name = 'a'); insert a; insert new HdB__c(Name = 'b'); HdCtl.depth = 0; HdCtl.log = ''; return a; }
+  @IsTest static void plain() {
+    HdA__c a = seed(); HdCtl.mode = 'plain'; a.Name = 'x';
+    try { update a; System.assert(false, 'no error'); } catch (DmlException e) { System.assert(e.getMessage().contains('maximum trigger depth exceeded'), e.getMessage()); }
+    System.assertEquals(16, HdCtl.depth);
+  }
+  @IsTest static void catchAndFinally() {
+    HdA__c a = seed(); HdCtl.mode = 'catch'; a.Name = 'x';
+    update a;
+    System.assertEquals('1C,1F,', HdCtl.log);
+  }
+  @IsTest static void innerPartial() {
+    HdA__c a = seed(); HdCtl.mode = 'partial'; a.Name = 'x';
+    update a;
+    System.assertEquals('1P,', HdCtl.log);
+  }
+  @IsTest static void topLevelPartial() {
+    HdA__c a = seed(); HdCtl.mode = 'plain'; a.Name = 'x';
+    Database.SaveResult r = Database.update(a, false);
+    System.assert(!r.isSuccess());
+    System.assertEquals('CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY', String.valueOf(r.getErrors()[0].getStatusCode()));
+  }
+}`,
+				"classes/HdTest.cls-meta.xml": gapClassMeta(api),
+			})
+			gapRun(t, root, "HdTest")
 		})
 	}
 }

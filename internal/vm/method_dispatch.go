@@ -556,6 +556,11 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 		if errors.As(err, &pageFailure) {
 			return Null, pageFailure
 		}
+		var unwind *triggerDepthUnwind
+		if errors.As(err, &unwind) {
+			// The depth failure must keep its type through a handler class.
+			return Null, unwind
+		}
 		var runtimeErr *RuntimeError
 		if errors.As(err, &runtimeErr) {
 			if len(runtimeErr.Stack) == 0 {

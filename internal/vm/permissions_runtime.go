@@ -844,6 +844,9 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		if strings.EqualFold(canonicalField, "Id") || vm.sobjectFormulaField(objectName, canonicalField) {
 			continue
 		}
+		if op == "update" && savedMasterFieldUnchanged(record, canonicalField) {
+			continue
+		}
 		// A queried null User field that no assignment or constructor argument
 		// set is not written: native user_self_update queriedRoleActive (API
 		// 67.0) saves a queried null ManagerId that an explicit null denies.

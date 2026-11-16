@@ -15,7 +15,7 @@ var capturedCustomDescribeSystemOrder = []string{
 }
 
 func (vm *VM) sortCapturedCustomDescribeFieldNames(objectName string, names []string) bool {
-	if vm == nil || vm.Org == nil || vm.Org.Namespace != "" || vm.currentMethod.Namespace != "" || !strings.HasSuffix(objectName, "__c") {
+	if vm == nil || vm.Org == nil || vm.Org.Namespace != "" || vm.currentMethod.Namespace != "" || !strings.HasSuffix(objectName, "__c") || strings.Count(objectName, "__") != 1 {
 		return false
 	}
 	ordinals := make(map[string]int, len(capturedCustomDescribeSystemOrder))

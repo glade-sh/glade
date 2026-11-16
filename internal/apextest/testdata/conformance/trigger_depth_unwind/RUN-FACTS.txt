@@ -5,3 +5,4 @@ source=fresh Developer scratch orgs, one per capture run, deleted after the run
 payloads=OBS lines from the USER_DEBUG log (anonymous) or the test assertion message (isTest); Salesforce ids masked as <id>
 repeats=two clean runs; rows identical across both runs and both APIs
 notes=d2_seed must run first (it inserts the DpA__c and DpB__c rows the other cases update)
+raw_runs=trigger-depth-unwind/out/20261116T142947Z and 20261116T142817Z (capture cache, not committed)

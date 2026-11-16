@@ -4,7 +4,7 @@ import "testing"
 
 // Rollup values read by a child trigger, per statement kind.
 func TestRollupTriggerTimingNativeConformance(t *testing.T) {
-	gapFamily{dir: "testdata/conformance/rollup_trigger_timing", adminFrom: []string{"GapAccess"}, residual: rollupResiduals}.replay(t)
+	gapFamily{dir: "testdata/conformance/rollup_trigger_timing", adminFrom: []string{"GapAccess"}}.replay(t)
 }
 
 // Depth-16 trigger recursion: where the failure surfaces and who can catch it.
@@ -50,18 +50,6 @@ var defaultOrderResiduals = func() map[string]string {
 	return residual
 }()
 
-// At 67.0 an update statement on an inserted record that carries a
-// non-reparentable master-detail value fails with the inaccessible-field
-// DmlException (existing apex_release_gates RP rows capture that for queried
-// and put records). The native rollup rows update such a record and succeed,
-// so the inserted-then-updated record is a different shape that Glade does not
-// model. The roll-up timing itself is checked at 62.0 and by the rolltest row.
-var rollupResiduals = map[string]string{
-	"r1_upd_one/67.0":  "67.0 update of an inserted record with a master-detail value (see the ledger comment)",
-	"r1_upd_bulk/67.0": "67.0 update of inserted records with a master-detail value (see the ledger comment)",
-	"r1t_route/67.0":   "updFull: 67.0 update of an inserted record with a master-detail value (see the ledger comment)",
-}
-
 // The native rows read a record that already existed in the org
 // (SeeAllData=true) and report INSUFFICIENT_ACCESS_OR_READONLY for default-mode
 // update, as a DmlException or a failed SaveResult, at 62.0, 66.0 and 67.0,
@@ -82,3 +70,15 @@ var hiddenRecordResiduals = func() map[string]string {
 	}
 	return residual
 }()
+
+// Handler-class depth shapes, the nested roll-up read, custom field order and
+// the first non-groupable GROUP BY field, from the review round captures.
+func TestReviewRound1NativeConformance(t *testing.T) {
+	gapFamily{dir: "testdata/conformance/review_round1", adminFrom: []string{"GapAccess"}}.replay(t)
+}
+
+// GROUP BY groupability by field type, the uncatchable non-groupable
+// exception, and static-list aliasing through Map.put.
+func TestReviewRound2NativeConformance(t *testing.T) {
+	gapFamily{dir: "testdata/conformance/review_round2", adminFrom: []string{"GapAccess"}, residual: map[string]string{"x_alias/*": "a List read from a static field (or returned from a static method) is copied when it is put into a Map; a local List is aliased. Native aliases both. Cause not traced in the VM; the same shape explains rollup-summary rollanon"}}.replay(t)
+}

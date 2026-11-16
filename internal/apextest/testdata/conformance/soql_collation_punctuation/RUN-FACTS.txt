@@ -5,3 +5,4 @@ source=fresh Developer scratch orgs, one per capture run, deleted after the run
 payloads=OBS lines from the USER_DEBUG log (anonymous) or the test assertion message (isTest); each value is a seed index in the frozen 600-name list
 repeats=two clean runs; ASC and DESC rows identical across runs and both APIs (DESC is the exact reverse of ASC)
 notes=a space inside a leading or trailing position is replaced by q in the names, because a Name is trimmed
+raw_runs=soql-collation-punctuation/out/20261116T144226Z and 20261116T143933Z (capture cache, not committed)
