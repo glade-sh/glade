@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 )
 
@@ -112,7 +113,9 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 	return scheme + "://" + origin.Host, nil
 }
 
-func LoadNearest(start string) (Config, string, error) {
+func LoadNearest(start string) (Config, string, error) { return LoadNearestWithInputs(start, nil) }
+
+func LoadNearestWithInputs(start string, v *inputview.View) (Config, string, error) {
 	dir, err := filepath.Abs(start)
 	if err != nil {
 		return Config{}, "", err
@@ -120,8 +123,8 @@ func LoadNearest(start string) (Config, string, error) {
 
 	for {
 		path := filepath.Join(dir, "glade.yml")
-		if _, err := os.Stat(path); err == nil {
-			cfg, err := LoadFile(path)
+		if _, err := v.Stat(path); err == nil {
+			cfg, err := LoadFileWithInputs(path, v)
 			return cfg, path, err
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return Config{}, "", err
@@ -135,8 +138,10 @@ func LoadNearest(start string) (Config, string, error) {
 	}
 }
 
-func LoadFile(path string) (Config, error) {
-	data, err := os.ReadFile(path)
+func LoadFile(path string) (Config, error) { return LoadFileWithInputs(path, nil) }
+
+func LoadFileWithInputs(path string, v *inputview.View) (Config, error) {
+	data, err := v.ReadFile(path)
 	if err != nil {
 		return Config{}, err
 	}

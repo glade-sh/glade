@@ -328,8 +328,63 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 			previous = append(previous, feature)
 		}
 	}
+	combined := append(append([]string(nil), previous...), features...)
+	captured := slices.Contains(features, project.PlainDeveloperDescribeShape) && capturedPlainSpreadFeatures(combined)
+	if !captured {
+		restorePrunedStandardSpread(org)
+	}
+	org.StandardSpreadCapturedPlain = captured
 	org.Features = previous
 	ApplyOrgShape(org, features)
+}
+
+// restorePrunedStandardSpread reverses only this branch's removals. A
+// source-backed spread must not acquire the unrelated eager inventory.
+func restorePrunedStandardSpread(org *OrgState) {
+	if org.StandardSpreadSuppressed != nil {
+		for name := range org.StandardSpreadSuppressed.snapshot() {
+			if org.SuppressesSpreadObject(name) {
+				DeleteObject(org, name)
+			}
+		}
+		org.StandardSpreadSuppressed = nil
+		org.ClearRuntimeSchemaStamp()
+	}
+	if org.StandardSpreadPruned {
+		org.StandardSpreadPruned = false
+		EnsureStandardObjectSpread(org)
+	}
+	removed := org.StandardSpreadRemoved
+	org.StandardSpreadRemoved = nil
+	for _, name := range removed {
+		if _, exists := org.Objects[name]; !exists {
+			ensureStandardObjectWithProfile(org, name, nil)
+		}
+	}
+	if len(org.StandardSpreadHiddenAccess) != 0 || len(org.StandardSpreadHiddenDefinitions) != 0 {
+		org.StandardSpreadHiddenAccess = nil
+		org.StandardSpreadHiddenDefinitions = nil
+		org.ClearRuntimeSchemaStamp()
+	}
+}
+
+// capturedPlainSpreadFeatures accepts only the exact default Developer shape
+// captured for lookup and query, not the broader global-describe profile.
+func capturedPlainSpreadFeatures(features []string) bool {
+	var edition, objects, describe bool
+	for _, feature := range features {
+		switch feature {
+		case project.StandardFieldEditionDeveloper:
+			edition = true
+		case project.PlainDeveloperObjectShape:
+			objects = true
+		case project.PlainDeveloperDescribeShape:
+			describe = true
+		default:
+			return false
+		}
+	}
+	return edition && objects && describe
 }
 
 // ApplyOrgShape adds capabilities. Adding one feature does not establish the
@@ -337,6 +392,19 @@ func ApplyProjectOrgShape(org *OrgState, features []string) {
 func ApplyOrgShape(org *OrgState, features []string) {
 	if org == nil {
 		return
+	}
+	combined := append(append([]string(nil), org.Features...), features...)
+	captured := capturedPlainSpreadFeatures(combined)
+	if !captured {
+		restorePrunedStandardSpread(org)
+	}
+	if !captured {
+		org.StandardSpreadCapturedPlain = false
+	} else if slices.Contains(features, project.PlainDeveloperDescribeShape) {
+		org.StandardSpreadCapturedPlain = true
+	}
+	if org.StandardSpreadCapturedPlain && (org.StandardSpread != "" || org.lazyStandardSpread) {
+		org.ensureSpreadSuppression()
 	}
 	applyOrgShape(org, features)
 	ensureOrganizationGroups(org)

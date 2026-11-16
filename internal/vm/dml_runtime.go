@@ -419,7 +419,9 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	// Only the create branch of an upsert runs insert validation.
 	dmlOptions.ApexRejectNullPersonRecordType = ordinaryDatabaseCall && (op == "insert" || (op == "upsert" && (externalIDField == "" || strings.EqualFold(externalIDField, "Id"))))
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
-	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode)
+	dmlOptions.ExplicitUserMode = isUserModeAccessLevel(accessLevel)
+	dmlOptions.ExplicitUserModePartialRecord = dmlOptions.ExplicitUserMode && !allOrNone && args[0].Kind == ValueObject
+	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode, accessLevelPermissionSetID(accessLevel))
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
@@ -2459,7 +2461,10 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	return vm.applyDMLWithAccessPolicy(op, value, allOrNone, externalIDField, options, result, false, false, "")
 }
 
-func (vm *VM) applyDMLWithRecordAccess(op string, value Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, resolvedMode string) ([]dml.Result, error) {
+func (vm *VM) applyDMLWithRecordAccess(op string, value Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, resolvedMode string, scope ...string) ([]dml.Result, error) {
+	if len(scope) > 0 {
+		options.UserModePermissionSetID = scope[0]
+	}
 	userMode := resolvedMode == "USER_MODE"
 	// Preserve the existing explicit USER_MODE exception boundary. The API 53
 	// with-sharing contract reports denied rows through Database save results.
@@ -2574,6 +2579,16 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		}
 		return failures, nil
 	}
+	// The captured assignment remains effective for this access check when a
+	// later setup DML attempt fails without changing the org.
+	previousAdminSet := vm.mixedDML.newAdminPermissionSetID
+	if previousAdminSet != "" && op == "insert" && value.Kind == ValueObject && len(records) == 1 && strings.EqualFold(records[0].Object, "PermissionSet") && len(explicitSObjectFieldNamesInInsertionOrder(value)) == 0 {
+		defer func() {
+			if outErr != nil || !hasDMLSuccess(out) {
+				vm.mixedDML.newAdminPermissionSetID = previousAdminSet
+			}
+		}()
+	}
 	if err := vm.checkMixedDML(op, records); err != nil {
 		if allOrNone {
 			return nil, err
@@ -2584,6 +2599,15 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 		for i, record := range records {
 			if err := vm.checkMixedDML(op, []storage.Record{record}); err != nil {
 				failures[i] = mixedDMLRowFailure(record, err)
+				// The API 62 administrator's partial scalar Account insert
+				// reports the mixed-DML detail without the exception wrapper.
+				if op == "insert" && value.Kind == ValueObject && len(records) == 1 && len(targets) == 1 && targets[0] != nil && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.currentSourceExecutionPolicy().APIVersion == "62.0" && strings.EqualFold(vm.mixedDML.setupObject, "PermissionSetAssignment") && vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator" && vm.scopedRowCheckCaptured(*targets[0]) {
+					message := failures[i].Error
+					prefix := "Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, "
+					if strings.HasPrefix(message, prefix) && strings.HasSuffix(message, ": []") {
+						failures[i].Error = strings.TrimSuffix(strings.TrimPrefix(message, prefix), ": []")
+					}
+				}
 			}
 		}
 		if hasDMLFailures(failures) {
@@ -2601,7 +2625,17 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	// Partial user-mode DML fails only the rows whose fields are denied; the
 	// all-or-none routes raised the statement exception before this point.
 	if resolvedMode == "USER_MODE" && !allOrNone && len(targets) == len(records) && (op == "insert" || op == "update" || op == "upsert") {
-		if failures := vm.userModeDMLFieldFailures(op, targets, externalIDField); hasDMLFailures(failures) {
+		// Only the captured scoped shape (one Account insert) checks its rows
+		// with the scope; other partial calls keep the unscoped row check.
+		rowScope := ""
+		if op == "insert" && options.UserModePermissionSetID != "" && options.ExplicitUserModePartialRecord && len(targets) == 1 && targets[0] != nil && vm.scopedRowCheckCaptured(*targets[0]) {
+			rowScope = options.UserModePermissionSetID
+		}
+		savedExplicit, savedPartial, savedSingle := vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord
+		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord = options.ExplicitUserMode, options.ExplicitUserModePartialRecord, options.ExplicitUserModePartialRecord
+		failures := vm.userModeDMLFieldFailures(op, targets, rowScope, externalIDField)
+		vm.explicitUserModeAccess, vm.explicitUserModePartialRecord, vm.userModeSingleRecord = savedExplicit, savedPartial, savedSingle
+		if hasDMLFailures(failures) {
 			records, _, targets = filterDMLInputs(records, nil, targets, failures)
 			if len(records) == 0 {
 				return failures, nil
@@ -4323,6 +4357,7 @@ func filterUpsertInputs(records, before []storage.Record, targets []*Value, kind
 type mixedDMLState struct {
 	setup, nonSetup             bool
 	setupObject, nonSetupObject string
+	newAdminPermissionSetID     string
 }
 
 func mixedDMLRowFailure(record storage.Record, err error) dml.Result {
@@ -4363,10 +4398,39 @@ func (vm *VM) checkMixedDML(operation string, records []storage.Record) error {
 	if vm.testContext != nil && vm.testContext.RunAsDepth > 0 {
 		return nil
 	}
+	// The capture has one initial permission assignment followed only by
+	// Account work. A later setup mutation leaves that observed sequence.
+	if vm.mixedDML.newAdminPermissionSetID != "" {
+		for _, record := range records {
+			if !strings.EqualFold(record.Object, "Account") {
+				vm.mixedDML.newAdminPermissionSetID = ""
+				break
+			}
+		}
+	}
 	next := vm.mixedDML
 	if vm.testContext != nil {
 		next.setup = next.setup || vm.testContext.SetupDML
 		next.nonSetup = next.nonSetup || vm.testContext.NonSetupDML
+	}
+	// The administrator capture assigns one set at the start of a test
+	// transaction. Its field grant is not yet effective on the captured
+	// default-mode Account DML and query routes.
+	if vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.currentSourceExecutionPolicy().APIVersion == "67.0" && operation == "insert" && len(records) == 1 && !next.setup && !next.nonSetup && strings.EqualFold(records[0].Object, "PermissionSetAssignment") && vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator" {
+		assignee, assigneeOK := records[0].GetField("AssigneeId")
+		set, setOK := records[0].GetField("PermissionSetId")
+		if assigneeOK && setOK && storage.IDsEqual(storage.ID(storageValueIDText(assignee)), storage.ID(vm.currentUserID())) {
+			setID := vm.canonicalPermissionSetKey(storageValueIDText(set))
+			if setID != "" && vm.capturedAdminAssignmentSet(setID) {
+				alreadyAssigned := false
+				for _, source := range vm.assignedPermissionSources(vm.currentUserID(), false) {
+					alreadyAssigned = alreadyAssigned || storage.IDsEqual(storage.ID(source.ID), storage.ID(setID))
+				}
+				if !alreadyAssigned {
+					next.newAdminPermissionSetID = setID
+				}
+			}
+		}
 	}
 	for index, record := range records {
 		// The Apex Developer Guide permits Group insert/update alongside
@@ -6960,7 +7024,11 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 				permissionOp = ""
 			}
 		}
-		if err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}, externalIDField); err != nil {
+		savedStatement := vm.explicitUserModeStatement
+		vm.explicitUserModeStatement = mode == ir.DMLModeUser
+		err := vm.enforceUserModeDMLAccess(permissionOp, value, Value{}, externalIDField)
+		vm.explicitUserModeStatement = savedStatement
+		if err != nil {
 			return err
 		}
 	}

@@ -18,7 +18,7 @@ func TestCase324NamespaceTokenScan(t *testing.T) {
 		}
 	}
 	for token, want := range map[string]bool{"Alpha__": true, "Beta__": true, "Prefix__": false, "PrefixLong__": true, "alpha__": false, "Hidden__": false, "Text__": false} {
-		if got := referencesNamespaceTokenInRoot(root, token); got != want {
+		if got := referencesNamespaceTokenInRoot(nil, root, token); got != want {
 			t.Errorf("%s: got %t want %t", token, got, want)
 		}
 	}
@@ -30,9 +30,9 @@ func TestCase324SharedNamespaceScanMatchesSingleScans(t *testing.T) {
 		t.Fatal(err)
 	}
 	tokens := map[string]bool{"Alpha__": false, "AlphaLong__": false, "alpha__": false, "BETA__": false, "Absent__": false}
-	referencesNamespaceTokensInRoot(root, tokens)
+	referencesNamespaceTokensInRoot(nil, root, tokens)
 	for token, got := range tokens {
-		if want := referencesNamespaceTokenInRoot(root, token); got != want {
+		if want := referencesNamespaceTokenInRoot(nil, root, token); got != want {
 			t.Errorf("%q got %v want %v", token, got, want)
 		}
 	}

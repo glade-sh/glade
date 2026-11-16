@@ -47,6 +47,19 @@ func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
 	return query, err
 }
 
+// capturedAdminDynamicQueryShape covers the single-field LIMIT 1 query and
+// the single-field Name equality query in the administrator capture.
+func capturedAdminDynamicQueryShape(query soql.Query) bool {
+	if len(query.Fields) != 1 || len(query.ChildQueries) != 0 || len(query.Aggregates) != 0 || len(query.GroupBy) != 0 || len(query.Order) != 0 || query.HasOffset || query.Having != nil {
+		return false
+	}
+	if query.Where == nil {
+		return query.HasLimit && query.Limit == 1
+	}
+	w := query.Where
+	return !query.HasLimit && strings.EqualFold(w.Field, "Name") && w.Op == "=" && w.Value.Kind == storage.ValueString && len(w.And) == 0 && len(w.Or) == 0 && !w.Not
+}
+
 func (vm *VM) countQueryParseError(err error, queryText string) error {
 	// Named API 62-66 and anonymous callers retain the ordinary query message.
 	// API 67 named countQuery exposes the lexer position in the original query,
@@ -171,6 +184,12 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	explicitSystemMode := strings.EqualFold(query.SecurityMode, "SYSTEM_MODE") ||
 		(strings.TrimSpace(query.SecurityMode) == "" && explicitBindAccessLevel && strings.EqualFold(accessLevelMode, "SYSTEM_MODE"))
 	defaultMode := strings.TrimSpace(query.SecurityMode) == "" && strings.TrimSpace(accessLevelMode) == ""
+	// The administrator assignment capture runs only the captured dynamic
+	// Account queries after the assignment. Any other query leaves that
+	// sequence, so later checks use the assigned grant again.
+	if vm.mixedDML.newAdminPermissionSetID != "" && !(defaultMode && vm.dynamicSOQLBindRoute == "Database.query" && strings.EqualFold(query.Object, "Account") && capturedAdminDynamicQueryShape(query)) {
+		vm.mixedDML.newAdminPermissionSetID = ""
+	}
 	if explicitSystemMode && accounting == soqlOrdinaryAccounting && vm.anonymousOrderSystemModeDenied(query) && vm.validOrderSystemModeReferences(query) {
 		return nil, newExceptionError("SecurityException", "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.")
 	}
@@ -246,6 +265,14 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			objectName = canonical
 		}
 		return nil, newExceptionError("QueryException", soql.MissingObjectMessage(objectName))
+	}
+	// The administrator capture selects one freshly deployed Account Text
+	// field using the default Database.query route at source API 67.0.
+	if defaultMode && vm.dynamicSOQLBindRoute == "Database.query" && vm.currentSourceExecutionPolicy().APIVersion == "67.0" && capturedAdminDynamicQueryShape(query) {
+		field := vm.resolveSObjectFieldName(query.Object, query.Fields[0])
+		if vm.capturedAdminAccountTextField(query.Object, field) && vm.adminAccountCustomFieldUngranted(query.Object, field, "isAccessible", "", true) {
+			return nil, newExceptionError("QueryException", soql.MissingColumnMessage(field, query.Object))
+		}
 	}
 	// Native case_standard_field_fls: default-mode named queries at 67.0 deny the
 	// ungranted administrator these standard fields.

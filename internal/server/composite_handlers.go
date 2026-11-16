@@ -1016,7 +1016,7 @@ func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next stora
 }
 
 func (s *Server) handleCompositeSObjectTypedRetrieve(w http.ResponseWriter, r *http.Request, version string, objectName string) {
-	resolvedObjectName, ok := storage.ResolveObjectName(*s.Org, objectName)
+	resolvedObjectName, ok := storage.ResolveVisibleObjectName(*s.Org, objectName)
 	if !ok {
 		writeSalesforceError(w, errUnknownObject, "unknown object "+objectName)
 		return
@@ -1054,7 +1054,7 @@ func (s *Server) handleCompositeSObjectTypedRetrieve(w http.ResponseWriter, r *h
 }
 
 func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *http.Request, objectName string, externalIDField string) {
-	objectName, ok := storage.ResolveObjectName(*s.Org, objectName)
+	objectName, ok := storage.ResolveVisibleObjectName(*s.Org, objectName)
 	if !ok {
 		writeSalesforceError(w, errUnknownObject, "unknown object "+objectName)
 		return

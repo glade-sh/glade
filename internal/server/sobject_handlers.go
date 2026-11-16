@@ -18,6 +18,9 @@ func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request, version 
 	objects := make([]map[string]string, 0, len(s.Org.Objects))
 	names := make([]string, 0, len(s.Org.Objects))
 	for name := range s.Org.Objects {
+		if s.Org.SuppressesSpreadObject(name) {
+			continue
+		}
 		names = append(names, name)
 	}
 	sort.Strings(names)
@@ -286,7 +289,7 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 }
 
 func (s *Server) externalIDRoute(w http.ResponseWriter, objectName, externalIDField, externalIDValue string) (storage.ObjectState, string, string, storage.Field, storage.Value, bool) {
-	resolvedObjectName, ok := storage.ResolveObjectName(*s.Org, objectName)
+	resolvedObjectName, ok := storage.ResolveVisibleObjectName(*s.Org, objectName)
 	if !ok {
 		writeSalesforceError(w, errUnknownObject)
 		return storage.ObjectState{}, "", "", storage.Field{}, storage.Value{}, false

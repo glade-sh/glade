@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -41,7 +40,7 @@ func ApplyProjectRoles(org *storage.OrgState, p project.Project) error {
 	sort.Strings(paths)
 	roles := make([]roleXML, 0, len(paths))
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("load Role metadata %s: %w", path, err)
 		}

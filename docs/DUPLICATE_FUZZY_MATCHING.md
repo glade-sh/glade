@@ -1,12 +1,15 @@
 # Duplicate fuzzy matching: public spec, native rows and the model
 
-Three fixtures hold the native rows. The Apex save and search routes are
+Four fixtures hold the native rows. The Apex save and search routes are
 covered by `duplicate_save_behavior/`, including default and custom rule
 actions, error members, Person Accounts, upsert, and controlled surname panels. `duplicate_standard_rules/` (second fixture,
 described under "Standard rules" below) covers the standard Account, Contact
 and Lead rules, the cross-object rules, custom rules with OR groups and three
 items, a custom Person Account rule and the Syllable Alignment pairs; its test
 is `TestStandardRulesNativeRows` (`internal/dml/standard_rules_conformance_test.go`).
+`duplicate_fuzzy_panels/` (described under "Custom rule panels" below) replays
+custom-rule value panels through both Apex routes; its test is
+`TestDuplicateFuzzyPanelsNativeRoutes` (`internal/apextest`).
 
 Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_matching/`
 holds `org.tsv` (native verdicts with match confidences), `cases.json` (the
@@ -389,11 +392,14 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   the word beyond what the length and last letter explain; vowel variants, an
   `&` inside a word against the joined spelling (`AT&T` finds `ATT` one way)
   and acronyms outside the proven entries are misses.
-- Street: pairs with an unknown suffix abbreviation score asymmetrically
-  natively (`123 Main St`/`123 Main Str` 60 one way, 78 the other) and Glade
-  does not match them; single letters after the number other than `E`.
-- Title: the (k, n) table covers up to five words; the one-direction match of
-  a single word against a five-word title is not modeled.
+- Street: unknown suffix abbreviations are matched only against a known
+  suffix with an edit similarity of 87.5 or more (see "Custom rule panels");
+  `Strret`, `Avnue` and `Blvdd` match natively and not in Glade; single letters
+  after the number other than `E`.
+- Title: the (k, n) table covers up to six words; shared words out of order
+  lose 1 to 3 points natively where Glade takes 3, and confidences of short
+  titles depend on direction (`Survey Field Cartographer`/`Cartographer Field`
+  91 one way, 94 the other).
 - Not captured: MatchBlanks on Contact fields, blank values on the last name
   and company name. The standard rules, the cross-object rules, OR groups and
   three-item rules are in the second fixture; its gaps are listed under
@@ -683,3 +689,37 @@ on both sides), so no row covers blank Account names or Contact last names.
 - Syllable Alignment: only the two-word second-word rule and the one-word plural
   are modeled; first-word variants, three-word names, vowel substitutions and
   the varying plural confidences are misses.
+
+## Custom rule panels
+
+Fixture: `internal/apextest/testdata/conformance/duplicate_fuzzy_panels/`
+(`FuzzyPanel.cls`, the matching and duplicate rule metadata, `cases.json`,
+`org.tsv`, `RUN-FACTS.txt` and `residuals.tsv`); test
+`TestDuplicateFuzzyPanelsNativeRoutes`. Each case inserts one record per value
+and runs `Datacloud.FindDuplicates` on an unsaved copy of every value, so a
+panel of n values holds n x n ordered pairs. Two fresh 30-day scratch orgs, API
+62.0 and 67.0, anonymous Apex and `@IsTest`, two repeats: all 160
+observations agree across API, route and repeat. The test replays the same
+Apex on both Glade routes and compares every pair and confidence exactly;
+`residuals.tsv` pins each pair where Glade differs, with both the native and
+the Glade value. These panels informed the model and are not an independent
+validation of the current implementation.
+
+Street suffix and title changes are limited to the following shapes:
+
+- Street: a numbered address with the same one-word name and one known suffix
+  matches an unknown alphabetic suffix when section score is 74 to below 80
+  and cleaned edit similarity is at least 87.5. Confidence uses the existing
+  formula. The custom rule path applies this extension.
+- Title: when the shorter title is an exact-word subset of a six-word title,
+  two to five shared words score 89, 93, 95 and 98; five shared words out of
+  order score 96. An exact-word subset candidate can match a five-word title
+  with one shared word, or a five- or six-word title with two out-of-order
+  shared words. A three-word title with two exact shared words in order also
+  scores 89 against a six-word title. These apply only when neither title
+  holds a stop word or a repeated word. Other shapes retain the existing
+  confidence table.
+
+First Name and Company Name retain the origin/main scorers. The panel fixture
+records native results for these methods, including cases that baseline matches
+falsely. Those cases remain open while rule-level matching is investigated.

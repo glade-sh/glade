@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -66,7 +65,7 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 	sort.Strings(paths)
 	declaredGroups := make(map[string]bool)
 	for _, path := range projectGroupFiles(p) {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("load owner sharing group %s: %w", path, err)
 		}
@@ -99,7 +98,7 @@ func ApplyProjectOwnerSharingRules(org *storage.OrgState, p project.Project) err
 		return fmt.Errorf("load owner sharing metadata %s: group %s is not loaded", path, groupName)
 	}
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("load owner sharing metadata %s: %w", path, err)
 		}
@@ -248,7 +247,7 @@ func RefreshProjectOwnerSharingRules(org *storage.OrgState, p project.Project) e
 		// references a group outside the supported direct-membership shape.
 		var supportedGroups []string
 		for _, path := range projectGroupFiles(p) {
-			data, err := os.ReadFile(path)
+			data, err := p.ReadFile(path)
 			if err != nil {
 				return fmt.Errorf("load owner sharing group %s: %w", path, err)
 			}

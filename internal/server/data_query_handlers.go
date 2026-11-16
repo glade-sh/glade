@@ -18,6 +18,9 @@ import (
 
 func (s *Server) objectNameForRecordID(id storage.ID) string {
 	for objectName, object := range s.Org.Objects {
+		if s.Org.SuppressesSpreadObject(objectName) {
+			continue
+		}
 		if stored, ok := object.Records[id]; ok && !stored.System.IsDeleted {
 			return objectName
 		}
@@ -28,6 +31,9 @@ func (s *Server) objectNameForRecordID(id storage.ID) string {
 	}
 	match := ""
 	for objectName, object := range s.Org.Objects {
+		if s.Org.SuppressesSpreadObject(objectName) {
+			continue
+		}
 		if object.Definition.KeyPrefix != prefix {
 			continue
 		}

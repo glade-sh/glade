@@ -3,7 +3,6 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -109,7 +108,7 @@ type workflowRecipientXML struct {
 // the remaining files still load, so one bad file never disables the rest of
 // the project's automation.
 func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, error)) (Index, error) {
-	readMetadata := os.ReadFile
+	readMetadata := p.ReadFile
 	if len(metadataReaders) > 0 && metadataReaders[0] != nil {
 		readMetadata = metadataReaders[0]
 	}
@@ -119,9 +118,9 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 	idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	idx.AssignmentRules, diagnostics = loadAssignmentRules(p, readMetadata)
 	idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
-	workflowUpdates := loadProjectWorkflowFieldUpdates(p.WorkflowFiles)
+	workflowUpdates := loadProjectWorkflowFieldUpdates(p.ReadFile, p.WorkflowFiles)
 	for _, path := range p.WorkflowFiles {
-		workflow, diagnostics, err := loadWorkflowWithUpdates(path, workflowUpdates[objectNameFromWorkflowPath(path)])
+		workflow, diagnostics, err := loadWorkflowWithUpdates(p.ReadFile, path, workflowUpdates[objectNameFromWorkflowPath(path)])
 		if err != nil {
 			idx.Diagnostics = append(idx.Diagnostics, loadFailure(path, "workflow", objectNameFromWorkflowPath(path), err))
 			continue
@@ -133,7 +132,7 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 	flowDefinitions := flowProjectRelationshipDefinitions(p, schemaLoader)
 	flowPaths := make([]string, 0, len(p.FlowFiles))
 	for _, path := range p.FlowFiles {
-		flow, diagnostics, err := loadFlow(path, flowDefinitions)
+		flow, diagnostics, err := loadFlowWith(p.ReadFile, path, flowDefinitions)
 		if err != nil {
 			idx.Diagnostics = append(idx.Diagnostics, loadFailure(path, "flow", flowFileName(path), err))
 			continue
@@ -143,7 +142,7 @@ func LoadProject(p project.Project, metadataReaders ...func(string) ([]byte, err
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
 	flowValidateProjectTransformTargets(p, &idx)
-	if err := leaveUncoveredProcessesUnrun(&idx, flowPaths, flowDefinitions, project.EffectiveOrgShapeFeatures(p)); err != nil {
+	if err := leaveUncoveredProcessesUnrun(p.ReadFile, &idx, flowPaths, flowDefinitions, project.EffectiveOrgShapeFeatures(p)); err != nil {
 		return Index{}, err
 	}
 	if err := flowRefsValidateProjectDecisions(p, &idx, schemaLoader); err != nil {
@@ -206,12 +205,8 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 	}
 }
 
-func loadWorkflow(path string) (Workflow, []diagnostic.Diagnostic, error) {
-	return loadWorkflowWithUpdates(path, nil)
-}
-
-func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.WorkflowFieldUpdate) (Workflow, []diagnostic.Diagnostic, error) {
-	data, err := os.ReadFile(path)
+func loadWorkflowWithUpdates(read func(string) ([]byte, error), path string, externalUpdates map[string]storage.WorkflowFieldUpdate) (Workflow, []diagnostic.Diagnostic, error) {
+	data, err := read(path)
 	if err != nil {
 		return Workflow{}, nil, err
 	}
@@ -344,10 +339,10 @@ func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.Wor
 
 // loadProjectWorkflowFieldUpdates skips files it cannot read or parse;
 // LoadProject reports each of them when it loads that file.
-func loadProjectWorkflowFieldUpdates(paths []string) map[string]map[string]storage.WorkflowFieldUpdate {
+func loadProjectWorkflowFieldUpdates(read func(string) ([]byte, error), paths []string) map[string]map[string]storage.WorkflowFieldUpdate {
 	out := make(map[string]map[string]storage.WorkflowFieldUpdate)
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := read(path)
 		if err != nil {
 			continue
 		}

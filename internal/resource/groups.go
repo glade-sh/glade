@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -35,7 +34,7 @@ func ApplyProjectGroups(org *storage.OrgState, p project.Project) error {
 	sort.Strings(paths)
 	groups := make([]publicGroupXML, 0, len(paths))
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("load Group metadata %s: %w", path, err)
 		}

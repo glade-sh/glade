@@ -52,6 +52,10 @@ var executableDigestCacheDir = func() string {
 	return filepath.Join(base, "glade", "executable-digest")
 }
 
+// DigestDirectoryIsPrivate reports whether the directory is owned by this
+// user and cannot be modified by other accounts.
+func DigestDirectoryIsPrivate(dir string) bool { return privateDigestDir(dir) }
+
 // executableDigest returns the lowercase hex SHA-256 of the open file's
 // content. cacheDir may be empty or unusable; the result is then the plain
 // digest. A cache entry only ever substitutes for hashing the exact stamped
