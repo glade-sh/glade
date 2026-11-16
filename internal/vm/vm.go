@@ -23,6 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -2794,7 +2795,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		}
 		return finiteMathResult(callee, math.Sqrt(n), args[0])
 	case "Math.cbrt":
-		return finiteMathResult(callee, math.Cbrt(n), args[0])
+		return finiteMathResult(callee, stablemath.CbrtStable(n), args[0])
 	case "Math.acos":
 		if n < -1 || n > 1 {
 			return Null, newExceptionError("System.MathException", "Invalid argument")
@@ -2804,27 +2805,27 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		if n < -1 || n > 1 {
 			return Null, newExceptionError("System.MathException", "Invalid argument")
 		}
-		return finiteMathResult(callee, math.Asin(n), args[0])
+		return finiteMathResult(callee, stablemath.AsinStable(n), args[0])
 	case "Math.atan":
-		return finiteMathResult(callee, math.Atan(n), args[0])
+		return finiteMathResult(callee, stablemath.AtanStable(n), args[0])
 	case "Math.cos":
-		return finiteMathResult(callee, math.Cos(n), args[0])
+		return finiteMathResult(callee, stablemath.CosStable(n), args[0])
 	case "Math.sin":
-		return finiteMathResult(callee, math.Sin(n), args[0])
+		return finiteMathResult(callee, stablemath.SinStable(n), args[0])
 	case "Math.tan":
 		return finiteMathResult(callee, mathTan(n), args[0])
 	case "Math.cosh":
 		return finiteMathResult(callee, mathCosh(n), args[0])
 	case "Math.sinh":
-		return finiteMathResult(callee, math.Sinh(n), args[0])
+		return finiteMathResult(callee, stablemath.SinhStable(n), args[0])
 	case "Math.tanh":
-		return finiteMathResult(callee, math.Tanh(n), args[0])
+		return finiteMathResult(callee, stablemath.TanhStable(n), args[0])
 	case "Math.exp":
-		return finiteMathResult(callee, math.Exp(n), args[0])
+		return finiteMathResult(callee, stablemath.ExpStable(n), args[0])
 	case "Math.log":
-		return finiteMathResult(callee, math.Log(n), args[0])
+		return finiteMathResult(callee, stablemath.LogStable(n), args[0])
 	case "Math.log10":
-		return finiteMathResult(callee, math.Log10(n), args[0])
+		return finiteMathResult(callee, stablemath.Log10Stable(n), args[0])
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -2904,9 +2905,9 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		}
 		return decimalAsDouble(Decimal(math.Mod(left, right))), nil
 	case "Math.pow":
-		return finiteDoubleResult(callee, math.Pow(left, right))
+		return finiteDoubleResult(callee, stablemath.PowStable(left, right))
 	case "Math.atan2":
-		return finiteMathResult(callee, math.Atan2(left, right), args...)
+		return finiteMathResult(callee, stablemath.Atan2Stable(left, right), args...)
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -3089,7 +3090,7 @@ func mathCosh(x float64) float64 {
 		return x
 	}
 	if x < 0.5*math.Ln2 {
-		t := math.Expm1(x)
+		t := stablemath.Expm1Stable(x)
 		w := 1 + t
 		if x < 0x1p-55 {
 			return w
@@ -3164,7 +3165,7 @@ func mathTan(x float64) float64 {
 	// Keep Go's existing large-argument reduction. The fdlibm kernel and
 	// split-pi reduction below cover the small and medium arguments.
 	if abs > 0x1p19*(math.Pi/2) || math.IsNaN(x) {
-		return math.Tan(x)
+		return stablemath.TanStable(x)
 	}
 	y, tail, n := mathTanReduce(x)
 	mode := 1
@@ -3833,11 +3834,11 @@ func locationDistance(left, right Value, unit string) (Value, error) {
 	lat2 := rightLat * math.Pi / 180
 	dLat := (rightLat - leftLat) * math.Pi / 180
 	dLon := (rightLon - leftLon) * math.Pi / 180
-	sinLat := math.Sin(dLat / 2)
-	sinLon := math.Sin(dLon / 2)
-	a := float64(sinLat*sinLat) + float64(float64(float64(math.Cos(lat1)*math.Cos(lat2))*sinLon)*sinLon)
+	sinLat := stablemath.SinStable(dLat / 2)
+	sinLon := stablemath.SinStable(dLon / 2)
+	a := float64(sinLat*sinLat) + float64(float64(float64(stablemath.CosStable(lat1)*stablemath.CosStable(lat2))*sinLon)*sinLon)
 	a = math.Max(0, math.Min(1, a))
-	angle := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	angle := 2 * stablemath.Atan2Stable(math.Sqrt(a), math.Sqrt(1-a))
 	distance := radius * angle
 	return decimalAsDouble(Decimal(distance)), nil
 }

@@ -221,7 +221,7 @@ func titleVariantFirstNamePairs(t *testing.T) map[string]bool {
 			}
 			x, y := first(0), first(1)
 			score := jaroWinkler(x, y)
-			if x == y || doubleMetaphone(x, firstNameKeyLength) == doubleMetaphone(y, firstNameKeyLength) && score >= firstNameJaroWinkler-1e-9 && math.Floor(averageWith100(float64(100*score))+0.5) == 100 {
+			if x == y || doubleMetaphone(x, firstNameKeyLength) == doubleMetaphone(y, firstNameKeyLength) && score >= firstNameJaroWinkler-1e-9 && math.Floor(float64(averageWith100(float64(100*score)))+0.5) == 100 {
 				continue
 			}
 			out[x+"\x00"+y] = true

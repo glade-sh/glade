@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -968,7 +969,7 @@ func (p *formulaParser) parsePower() (formulaValue, bool) {
 		if !aOK || !bOK {
 			return formulaValue{}, false
 		}
-		left = formulaNumberValue(math.Pow(a, b))
+		left = formulaNumberValue(stablemath.PowStable(a, b))
 	}
 	return left, true
 }

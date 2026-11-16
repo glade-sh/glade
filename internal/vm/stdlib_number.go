@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/stablemath"
 )
 
 func callIntegerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -144,7 +146,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			result.Text = normalizeComputedDecimalText(result.Text)
 			return result, receiver, false, true, nil
 		}
-		value := math.Pow(receiver.Decimal, float64(args[0].Int))
+		value := stablemath.PowStable(receiver.Decimal, float64(args[0].Int))
 		if math.IsInf(value, 0) || math.IsNaN(value) {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.pow result must be finite")
 		}

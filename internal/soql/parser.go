@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -1854,10 +1855,10 @@ func haversineDistance(left, right geolocationPoint) float64 {
 	lat2 := right.lat * math.Pi / 180
 	dlat := (right.lat - left.lat) * math.Pi / 180
 	dlon := (right.lon - left.lon) * math.Pi / 180
-	sinDlat := math.Sin(dlat / 2)
-	sinDlon := math.Sin(dlon / 2)
-	a := float64(sinDlat*sinDlat) + float64(float64(float64(math.Cos(lat1)*math.Cos(lat2))*sinDlon)*sinDlon)
-	return earthRadiusKM * 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	sinDlat := stablemath.SinStable(dlat / 2)
+	sinDlon := stablemath.SinStable(dlon / 2)
+	a := float64(sinDlat*sinDlat) + float64(float64(float64(stablemath.CosStable(lat1)*stablemath.CosStable(lat2))*sinDlon)*sinDlon)
+	return earthRadiusKM * 2 * stablemath.Atan2Stable(math.Sqrt(a), math.Sqrt(1-a))
 }
 
 func numericLiteral(arg string) bool {
