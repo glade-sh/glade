@@ -179,7 +179,12 @@ var fuzzyNameKeysResiduals = map[string][2]float64{
 
 func fuzzyNameKeysData(t *testing.T) (map[string]fuzzyNameKeysCase, map[string]string) {
 	t.Helper()
-	raw, err := os.ReadFile(fuzzyNameKeysDir + "cases.json")
+	return fuzzyNameKeysDataFrom(t, fuzzyNameKeysDir)
+}
+
+func fuzzyNameKeysDataFrom(t *testing.T, dir string) (map[string]fuzzyNameKeysCase, map[string]string) {
+	t.Helper()
+	raw, err := os.ReadFile(dir + "cases.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +192,7 @@ func fuzzyNameKeysData(t *testing.T) (map[string]fuzzyNameKeysCase, map[string]s
 	if err := json.Unmarshal(raw, &cases); err != nil {
 		t.Fatal(err)
 	}
-	f, err := os.Open(fuzzyNameKeysDir + "org.tsv")
+	f, err := os.Open(dir + "org.tsv")
 	if err != nil {
 		t.Fatal(err)
 	}

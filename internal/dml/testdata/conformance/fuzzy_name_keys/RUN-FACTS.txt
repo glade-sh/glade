@@ -7,6 +7,7 @@ Panels (kind panel): every value is inserted, then Datacloud.FindDuplicates runs
 Pairs (kind pair): A=>B stores A and reads find= on B under the named rule, then runs each op on B in its own savepoint (ins Database.insert, stmt insert statement, allow allowSave true, bulk A and B in one statement, upd update of a stored record to B, ups upsert). dml=S saved, D/<rule>/<allowSave>/<count>@<confidence> duplicate result, T/<status> thrown, E/<status> error. The trailing ctl entry is the run's own positive and negative control.
 Companion fields: first-name values carry a distinct last name ("first|last") so that no last-name rule matches; last-name pairs in the second capture carry distinct first names.
 Values: synthetic test-data shapes. Before the second capture, initial families that repeated an existing duplicate fixture literal were renamed as a family so their relations stay the same (J, K and James to Y, U and Yancey in in1; T, B and Thomas to P, G and Percival in in2).
+Keyboard panels: ks1, ks2 and ks3 (multi-substitution surname panels) and rsp1 (respelling families) are second-capture panels under N2Last, org.tsv:138-169, added to this fixture after the first import. ks1 and ks2 keep 12-letter stems and replace positions 8 to 12; the generator dropped variants whose four-character Double Metaphone key differs from the stem.
 Held-out cases of both captures are not in this fixture.
-org.tsv sha256: ec8dbb2157293808f2d7ab151888713230f0bae603062a6c0ea2c2006dbec6e8
-cases.json sha256: d869ac8cfff059cc166f79d42639a5a4cd95008400022e707967866a056937e3
+org.tsv sha256: 13090c12e1d1dbb45ee9819c4aa6da5453c8f3295c2ca76e8559b34fecb79377
+cases.json sha256: 80c20119051d1c67fbe34fd5c62756677a96438ce2704b0ec7b3f17fc58ea836

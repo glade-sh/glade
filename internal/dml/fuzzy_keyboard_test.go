@@ -409,3 +409,77 @@ func TestKeyboardPanelShapeBoundaries(t *testing.T) {
 		}
 	}
 }
+
+const fuzzyKeyboardNeighborsDir = "testdata/conformance/fuzzy_keyboard_neighbors/"
+
+// NATIVE fuzzy_keyboard_neighbors/org.tsv:2-17 (kn1, kn2): a custom LastName
+// rule at API 62.0 and 67.0, anonymous and @IsTest, two repeats. These rows
+// were captured after the fit and are not part of the gate table
+// (TestLastNameKeyboardPanelCells reads fuzzy_name_keys and
+// duplicate_fuzzy_matching only). kn1 holds neighbors of the captured
+// five-substitution pair: "Farnsdelwicka" finds "Farnsdraeovka" at 97 (Glade
+// 96), shape (13, 5, 0). kn2 holds two and three substitutions on other key
+// pairs. Glade reports no pair native does not. The twelve native pairs Glade
+// lacks are all shape (13, 5, 1), "Farnsdelwick" against "Farnsdraeovka":
+// no fitted row holds that shape, so it keeps the base result.
+func TestLastNameKeyboardNeighborsNativeRows(t *testing.T) {
+	cases, observations := fuzzyNameKeysDataFrom(t, fuzzyKeyboardNeighborsDir)
+	want := map[string]fuzzyNameKeysCount{
+		"kn1": {native: 70, hit: 58, miss: 12, confidence: 10},
+		"kn2": {native: 52, hit: 52, confidence: 2},
+	}
+	if len(cases) != len(want) {
+		t.Fatalf("cases %d", len(cases))
+	}
+	for name, total := range want {
+		c := cases[name]
+		if c.Kind != "panel" || c.Rule != "N1Last" || c.Item != "LastName" {
+			t.Fatalf("%s: case %+v", name, c)
+		}
+		native := fuzzyNameKeysPanel(t, observations[name], len(c.Values))
+		var counts fuzzyNameKeysCount
+		for i, a := range c.Values {
+			for j, b := range c.Values {
+				n := native[[2]int{i, j}]
+				matched, confidence := fuzzyLastName(a, b, false)
+				g := 0.0
+				if matched {
+					g = math.Floor(confidence + 0.5)
+				}
+				switch {
+				case n == 0 && g == 0:
+				case n > 0 && g > 0:
+					counts.native++
+					counts.hit++
+					if n != g {
+						counts.confidence++
+						if math.Abs(n-g) > 1 {
+							t.Errorf("%s/%s=>%s: native=%v glade=%v", name, a, b, n, g)
+						}
+					}
+				case n > 0:
+					counts.native++
+					counts.miss++
+					x, y := lastNameApostrophes.Replace(foldText(a)), lastNameApostrophes.Replace(foldText(b))
+					if shape := keyboardShape(x, y); shape != [3]int{13, 5, 1} || keyboardPanelShape(x, y) {
+						t.Errorf("%s/%s=>%s: native=%v, Glade has no match at shape %v", name, a, b, n, shape)
+					}
+				default:
+					counts.extra++
+					t.Errorf("%s/%s=>%s: glade=%v, native has no match", name, a, b, g)
+				}
+			}
+		}
+		t.Logf("PANEL %s: %s", name, counts)
+		if counts != total {
+			t.Errorf("%s counts %s, want %s", name, counts, total)
+		}
+	}
+	// The reviewed neighbor: origin/main ad1577dbc6 keeps it apart, native matches it.
+	if matched, _ := keyboardBase(t, "Farnsdelwicka", "Farnsdraeovka"); matched {
+		t.Error("the base scorer matches Farnsdelwicka/Farnsdraeovka")
+	}
+	if matched, confidence := fuzzyLastName("Farnsdelwicka", "Farnsdraeovka", false); !matched || math.Floor(confidence+0.5) != 96 {
+		t.Errorf("Farnsdelwicka/Farnsdraeovka: %v %v, want a match at 96 (native 97)", matched, confidence)
+	}
+}

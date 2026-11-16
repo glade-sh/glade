@@ -216,7 +216,11 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    together. The native rows hold 210 such shapes (`keyboardPanelCells` in
    `internal/dml/fuzzy_match.go`), with lengths 4–15. For any other shape,
    including untested combinations inside those ranges, the earlier keyboard
-   scorer decides. The fitted costs are:
+   scorer decides. Two panels captured after the fit and kept out of it
+   (`fuzzy_keyboard_neighbors`: other stems, added letters, other key pairs)
+   agree on every pair Glade matches: `Farnsdelwicka` finds `Farnsdraeovka`
+   (native 97, Glade 96), a pair the earlier scorer kept apart. The fitted
+   costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
      beyond; the final character of two names of equal length is one step

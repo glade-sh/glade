@@ -33,6 +33,29 @@ type fuzzyBound struct {
 	// between Glade's rounded match confidence and the native confidence over
 	// the pairs both match.
 	MaxConfidenceError float64 `json:"max_conf_mae"`
+	// LegacyMaxConfidenceError is the bound origin/main ad1577dbc6 held, kept
+	// for a Last Name row whose max_conf_mae rose with newly recovered pairs.
+	// It applies to the pairs the origin/main scorer matches
+	// (lastNameLegacyMatch), so their error cannot grow under the wider bound.
+	LegacyMaxConfidenceError *float64 `json:"legacy_max_conf_mae"`
+}
+
+// lastNameLegacyMatch is the Last Name membership of origin/main ad1577dbc6:
+// exact, match key, Metaphone 3, then the base keyboard scorer.
+func lastNameLegacyMatch(a, b string) bool {
+	x, y := foldText(a), foldText(b)
+	if x == y {
+		return true
+	}
+	if lastNameWordKey(x) != lastNameWordKey(y) {
+		return false
+	}
+	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+		return true
+	}
+	matched, _ := lastNameKeyboard(x, y)
+	return matched
 }
 
 type fuzzyCases struct {
@@ -128,9 +151,9 @@ func fuzzyGladeMatches(t *testing.T, row fuzzyNativeRow) (map[[2]int]float64, st
 // custom fuzzy matching rules (every pair of probe values per method, API 62.0
 // and 67.0) are reproduced by the shared duplicate-rule matcher. The bounds in
 // cases.json are the measured agreement of the fitted scorers; unmeasured
-// behavior is listed in docs/DUPLICATE_FUZZY_MATCHING.md. The keyboard panel
-// bounds include newly recovered pairs; previously matched keyboard scores
-// remain unchanged (TestLastNamePreviouslyMatchedScores).
+// behavior is listed in docs/DUPLICATE_FUZZY_MATCHING.md. A keyboard row
+// whose max_conf_mae rose with its newly recovered pairs keeps the
+// origin/main bound over the pairs origin/main matched (legacy_max_conf_mae).
 func TestFuzzyMatchingNativeRows(t *testing.T) {
 	var cases fuzzyCases
 	raw, err := os.ReadFile(filepath.Join(fuzzyFixture, "cases.json"))
@@ -175,10 +198,19 @@ func TestFuzzyMatchingNativeRows(t *testing.T) {
 				native[[2]int{int(m[0]), int(m[1])}] = m[2]
 			}
 			hit, extra, confidenceError := 0, 0, 0.0
+			legacyHit, legacyError := 0, 0.0
+			legacy := bound.LegacyMaxConfidenceError != nil
+			if legacy && (row.Field != "LastName" || row.Method != "LastName") {
+				t.Fatalf("legacy_max_conf_mae on a %s/%s row", row.Field, row.Method)
+			}
 			for pair, confidence := range got {
 				if nativeConfidence, ok := native[pair]; ok {
 					hit++
 					confidenceError += math.Abs(confidence - nativeConfidence)
+					if a, b := row.Values[pair[0]], row.Values[pair[1]]; legacy && a != nil && b != nil && lastNameLegacyMatch(*a, *b) {
+						legacyHit++
+						legacyError += math.Abs(confidence - nativeConfidence)
+					}
 				} else {
 					extra++
 				}
@@ -193,6 +225,16 @@ func TestFuzzyMatchingNativeRows(t *testing.T) {
 			t.Logf("recall=%.4f extra=%d conf_mae=%.3f native=%d glade=%d", recall, extra, mae, len(native), len(got))
 			if recall+1e-9 < bound.MinRecall || extra > bound.MaxExtra || mae > bound.MaxConfidenceError+1e-9 {
 				t.Errorf("recall=%.4f (min %.4f) extra=%d (max %d) conf_mae=%.3f (max %.3f); native=%d glade=%d", recall, bound.MinRecall, extra, bound.MaxExtra, mae, bound.MaxConfidenceError, len(native), len(got))
+			}
+			if legacy {
+				if legacyHit == 0 || legacyHit >= hit {
+					t.Fatalf("legacy pairs %d of %d: the row has no recovered pair", legacyHit, hit)
+				}
+				if legacyMAE := legacyError / float64(legacyHit); legacyMAE > *bound.LegacyMaxConfidenceError+1e-9 {
+					t.Errorf("legacy conf_mae=%.4f over %d pairs (max %.3f)", legacyMAE, legacyHit, *bound.LegacyMaxConfidenceError)
+				} else {
+					t.Logf("legacy conf_mae=%.4f over %d of %d pairs", legacyMAE, legacyHit, hit)
+				}
 			}
 			if engine != storage.StandardMatchEngine {
 				t.Errorf("match engine %q; native reports %q for fuzzy custom rules", engine, storage.StandardMatchEngine)
