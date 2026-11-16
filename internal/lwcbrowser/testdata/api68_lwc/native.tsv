@@ -1,0 +1,7 @@
+item	api	native
+b01	67.0	{"lines":["*","required","Choices","First long choice","Second long choice"],"attrs":{"abbr.slds-required":{"aria-hidden":"true","title":"required"}}}
+b17	67.0	{"lines":["Delivery destination","Search Address","Street","City","State","Postal code","Country"],"attrs":{"input.slds-combobox__input":{"role":"combobox","aria-label":"Search Address","aria-haspopup":"listbox","aria-expanded":"false","aria-autocomplete":"list"}}}
+b24	67.0	{"lines":["Step 0.1","0.0-100.0","50.0","Step 0.25","0.00-100.00","50.00","Step 0.05","0.00-100.00","50.00"],"attrs":{}}
+b01	68.0	{"lines":["*","required","Choices","First long choice","Second long choice"],"attrs":{"abbr.slds-required":{"aria-hidden":"true","title":"required"}}}
+b17	68.0	{"lines":["Delivery destination","Search Address","Street","City","State","Postal code","Country"],"attrs":{"input.slds-combobox__input":{"role":"combobox","aria-label":"Search Address","aria-haspopup":"listbox","aria-expanded":"false","aria-autocomplete":"list"}}}
+b24	68.0	{"lines":["Step 0.1","0.0-100.0","50.0","Step 0.25","0.00-100.00","50.00","Step 0.05","0.00-100.00","50.00"],"attrs":{}}
