@@ -90,7 +90,9 @@ type filterPlanKey struct {
 
 // filterPlans memoizes plans: evaluateLookupFilterLogic is a pure function of
 // the expression and the verdicts, so a plan is shared by every scan. The cache
-// stops growing at maxFilterPlans entries; later plans are built per scan.
+// stops growing at maxFilterPlans entries; a rule whose plan is not cached
+// then keeps the pairwise path, because building a plan (about 3^n states,
+// tens of milliseconds for ten items) costs more than a scan saves.
 var filterPlans struct {
 	sync.Mutex
 	plans map[filterPlanKey]*filterPlan
@@ -107,9 +109,13 @@ func cachedFilterPlan(expression string, order []int) *filterPlan {
 	key.order = string(ob[:len(order)])
 	filterPlans.Lock()
 	plan, ok := filterPlans.plans[key]
+	full := len(filterPlans.plans) >= maxFilterPlans
 	filterPlans.Unlock()
 	if ok {
 		return plan
+	}
+	if full {
+		return nil
 	}
 	plan = newFilterPlan(expression, order)
 	filterPlans.Lock()
@@ -204,8 +210,9 @@ func fuzzyMethodCostRank(method string) int {
 }
 
 // newPreparedCustomMatch prepares the candidate side of a custom matching
-// rule. ok is false for a rule the prepared path does not cover; callers then
-// use customDuplicateMatch for each pair.
+// rule. ok is false for a rule the prepared path does not cover (no item, more
+// than maxPreparedItems, or no plan because the plan cache is full); callers
+// then use customDuplicateMatch for each pair.
 func newPreparedCustomMatch(rule storage.MatchingRule, keys []fuzzyKeyMode, candidate storage.Record) (preparedCustomMatch, bool) {
 	n := len(rule.Items)
 	if n == 0 || n > maxPreparedItems {
@@ -255,7 +262,9 @@ func newPreparedCustomMatch(rule storage.MatchingRule, keys []fuzzyKeyMode, cand
 			}
 		}
 	}
-	p.plan = cachedFilterPlan(rule.BooleanFilter, order[:n])
+	if p.plan = cachedFilterPlan(rule.BooleanFilter, order[:n]); p.plan == nil {
+		return preparedCustomMatch{}, false
+	}
 	return p, true
 }
 

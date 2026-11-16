@@ -95,3 +95,82 @@ func TestPreparedCustomMatchEqualsPairwise(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+// TestPreparedCustomMatchItemBound pins the plan bound: a rule of ten items is
+// prepared and equals the pairwise matcher, a rule of eleven keeps the
+// pairwise path.
+func TestPreparedCustomMatchItemBound(t *testing.T) {
+	rule := func(n int, filter string) storage.MatchingRule {
+		out := storage.MatchingRule{BooleanFilter: filter}
+		for i := 0; i < n; i++ {
+			out.Items = append(out.Items, storage.MatchingRuleItem{Field: fmt.Sprintf("F%d", i), Method: "Exact", BlankBehavior: "NullNotAllowed"})
+		}
+		return out
+	}
+	record := func(bits int) storage.Record {
+		out := storage.Record{Object: "Lead", Fields: map[string]storage.Value{}}
+		for i := 0; i < 11; i++ {
+			out.Fields[fmt.Sprintf("F%d", i)] = storage.StringValue(fmt.Sprint("v", bits>>i&1))
+		}
+		return out
+	}
+	eleven := rule(11, "")
+	if _, ok := newPreparedCustomMatch(eleven, customRuleKeyModes(eleven), record(0)); ok {
+		t.Fatal("a rule of eleven items was prepared")
+	}
+	for _, filter := range []string{"", "(1 AND 2) OR (3 AND 4) OR (5 AND 6) OR (7 AND 8) OR (9 AND 10)", "1 AND (2 OR 3) AND (4 OR 5 OR 6) AND (7 OR (8 AND 9 AND 10))", "1 OR 11"} {
+		ten := rule(10, filter)
+		keys := customRuleKeyModes(ten)
+		prepared, ok := newPreparedCustomMatch(ten, keys, record(0))
+		if !ok {
+			t.Fatalf("%q: a rule of ten items was not prepared", filter)
+		}
+		for bits := 0; bits < 1<<10; bits++ {
+			existing := record(bits)
+			gm, gs, gc := prepared.match(existing)
+			wm, ws, wc := customDuplicateMatch(ten, keys, record(0), existing)
+			if gm != wm || gs != ws || gc != wc {
+				t.Fatalf("%q bits %010b: got (%v %v %v), want (%v %v %v)", filter, bits, gm, gs, gc, wm, ws, wc)
+			}
+		}
+	}
+}
+
+// TestPreparedCustomMatchPlanCacheFull pins the cache bound: with the plan
+// cache full, a rule whose plan is not cached keeps the pairwise path and a
+// cached rule stays prepared.
+func TestPreparedCustomMatchPlanCacheFull(t *testing.T) {
+	filterPlans.Lock()
+	saved := filterPlans.plans
+	filterPlans.plans = map[filterPlanKey]*filterPlan{}
+	filterPlans.Unlock()
+	defer func() {
+		filterPlans.Lock()
+		filterPlans.plans = saved
+		filterPlans.Unlock()
+	}()
+	cached := storage.MatchingRule{Items: []storage.MatchingRuleItem{{Field: "Email", Method: "Exact"}}}
+	candidate := storage.Record{Object: "Lead", Fields: map[string]storage.Value{"Email": storage.StringValue("a@example.invalid")}}
+	if _, ok := newPreparedCustomMatch(cached, nil, candidate); !ok {
+		t.Fatal("first rule not prepared")
+	}
+	filterPlans.Lock()
+	for i := len(filterPlans.plans); i < maxFilterPlans; i++ {
+		filterPlans.plans[filterPlanKey{expression: fmt.Sprint("filler ", i)}] = &filterPlan{}
+	}
+	filterPlans.Unlock()
+	if _, ok := newPreparedCustomMatch(cached, nil, candidate); !ok {
+		t.Fatal("cached rule not prepared with the cache full")
+	}
+	other := cached
+	other.BooleanFilter = "1 OR 1"
+	if _, ok := newPreparedCustomMatch(other, nil, candidate); ok {
+		t.Fatal("uncached rule prepared with the cache full")
+	}
+	filterPlans.Lock()
+	n := len(filterPlans.plans)
+	filterPlans.Unlock()
+	if n != maxFilterPlans {
+		t.Fatalf("plan cache holds %d entries, want %d", n, maxFilterPlans)
+	}
+}
