@@ -31,7 +31,7 @@ func FuzzyRawConfidence(method, left, right string, matchBlanks bool) float64 {
 		score, _ := keyboardSimilarity(x, y)
 		return averageWith100(max(0, score))
 	case "city":
-		return averageWith100(editSimilarity(foldText(left), foldText(right)))
+		return averageWith100(editSimilarity(cityTexts(left, right)))
 	case "phone":
 		ca, aa, ea, la, okA := phoneParts(left)
 		cb, ab, eb, lb, okB := phoneParts(right)

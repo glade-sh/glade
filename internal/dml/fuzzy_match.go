@@ -595,13 +595,16 @@ func plainSpaced(s string) bool {
 	return true
 }
 
-func fuzzyCity(a, b string, _ bool) (bool, float64) {
-	var x, y string
+// cityTexts is the text the City method compares for a pair (plainSpaced).
+func cityTexts(a, b string) (string, string) {
 	if plainSpaced(a) && plainSpaced(b) {
-		x, y = strings.ToLower(strings.TrimSpace(a)), strings.ToLower(strings.TrimSpace(b))
-	} else {
-		x, y = foldText(a), foldText(b)
+		return strings.ToLower(strings.TrimSpace(a)), strings.ToLower(strings.TrimSpace(b))
 	}
+	return foldText(a), foldText(b)
+}
+
+func fuzzyCity(a, b string, _ bool) (bool, float64) {
+	x, y := cityTexts(a, b)
 	if x == y {
 		return true, 100
 	}

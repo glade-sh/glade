@@ -269,7 +269,8 @@ Unchanged from the third run's model.
   not). Confidence `(100 + score) / 2`. Inner spaces count as typed
   (`phone_city_zip` N5.cm1: `Los Angeles`/`Los  Angeles` 96, `LosAngeles`/
   `Los  Angeles` no match); tabs, line breaks and non-ASCII text keep the
-  folded comparison, which no row measures. The N5 City panels (one edit at
+  folded comparison, which no row measures. The raw City score an unmatched
+  item adds inside AND and OR groups compares the same text. The N5 City panels (one edit at
   each position of `City`, a length series from one to eleven letters, multi-
   word, abbreviation and city-plus-state values) are reproduced pair for pair
   under the custom and the standard Account rule, which match the same pairs.

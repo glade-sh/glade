@@ -1,6 +1,9 @@
 package dml
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 // Uncaptured neighbors of the captured City and ZIP shapes keep the
 // origin/main verdicts and confidences: white space other than ASCII spaces,
@@ -61,7 +64,7 @@ func TestCityRawConfidenceFollowsVerdictSpacing(t *testing.T) {
 		{"LosAngeles", "Los Angeles", averageWith100(100 * (1 - 1.0/11)), true},
 		{"LosAngeles", "Los\tAngeles", averageWith100(100 * (1 - 1.0/11)), true},
 	} {
-		if got := FuzzyRawConfidence("City", tc.a, tc.b, false); got != tc.want {
+		if got := FuzzyRawConfidence("City", tc.a, tc.b, false); math.Abs(got-tc.want) > 1e-9 {
 			t.Errorf("%q/%q: %v, want %v", tc.a, tc.b, got, tc.want)
 		}
 		if matched, _ := FuzzyScore("City", tc.a, tc.b, false); matched != tc.matched {
