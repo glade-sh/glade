@@ -22,12 +22,34 @@ const (
 	keyboardFlatTrail = 0.2437
 )
 
+// keyboardFlatPos is the key position of each letter, row then column.
+var keyboardFlatPos = func() (pos [26][2]int) {
+	for c := 'a'; c <= 'z'; c++ {
+		pos[c-'a'] = qwertyPosition[c]
+	}
+	return pos
+}()
+
+// keyboardFlatSteps is the key steps between two letter indexes: the column
+// distance, plus two between the top and the bottom row.
+func keyboardFlatSteps(x, y int) int {
+	px, py := keyboardFlatPos[x], keyboardFlatPos[y]
+	steps := abs(px[1] - py[1])
+	if abs(px[0]-py[0]) == 2 {
+		steps += 2
+	}
+	return steps
+}
+
 // keyboardFlatDistance is the flat Keyboard Distance score of two folded last
 // names. Two letters cost by key steps and a trailing letter costs
 // keyboardFlatTrail; an accent alone, a space or a punctuation mark keep the
 // costs of keyboardDistance, and ok is false where a digit or a letter that is
 // not on the keyboard would differ.
 func keyboardFlatDistance(a, b string) (float64, bool) {
+	if score, ok, handled := keyboardFlatASCII(a, b); handled {
+		return score, ok
+	}
 	ra, rb := []rune(a), []rune(b)
 	if len(ra) > len(rb) {
 		ra, rb = rb, ra
@@ -44,12 +66,7 @@ func keyboardFlatDistance(a, b string) (float64, bool) {
 		different = true
 		x, y := keyboardCode(ra[i]), keyboardCode(rb[i])
 		if x < 26 && y < 26 && x != y {
-			px, py := qwertyPosition[rune('a'+x)], qwertyPosition[rune('a'+y)]
-			steps := abs(px[1] - py[1])
-			if abs(px[0]-py[0]) == 2 {
-				steps += 2
-			}
-			cost += keyboardFlatStep * float64(steps)
+			cost += keyboardFlatStep * float64(keyboardFlatSteps(int(x), int(y)))
 			continue
 		}
 		cost += keyboardPair[0][x][y]
@@ -73,4 +90,27 @@ func keyboardFlatDistance(a, b string) (float64, bool) {
 		return 0, false
 	}
 	return 100 * (1 - cost/float64(n)), true
+}
+
+// keyboardFlatASCII is keyboardFlatDistance without allocation for two
+// lower-case letter strings; handled is false for any other character.
+func keyboardFlatASCII(a, b string) (score float64, ok, handled bool) {
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	n := len(b)
+	if n == 0 {
+		return 0, false, false
+	}
+	steps := 0
+	for i := 0; i < n; i++ {
+		if b[i] < 'a' || b[i] > 'z' || i < len(a) && (a[i] < 'a' || a[i] > 'z') {
+			return 0, false, false
+		}
+		if i < len(a) && a[i] != b[i] {
+			steps += keyboardFlatSteps(int(a[i]-'a'), int(b[i]-'a'))
+		}
+	}
+	cost := keyboardFlatStep*float64(steps) + keyboardFlatTrail*float64(n-len(a))
+	return 100 * (1 - cost/float64(n)), true, true
 }
