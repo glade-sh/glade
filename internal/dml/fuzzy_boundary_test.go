@@ -117,10 +117,18 @@ func TestSixWordTitlePartialOverlapNativeConfidence(t *testing.T) {
 	}
 }
 
-// The street rows hold one-word names. A longer name keeps the shared scorer.
+// The panel street rows hold one-word names. These longer names score as the
+// shared scorer does. NATIVE fuzzy_street_c4/org.tsv nt1: the custom Street
+// method matches at edit similarity 87 whatever the section score, so the
+// two-edit suffix of a longer name (92) matches where the shared scorer does not.
 func TestCustomStreetMultiwordNameKeepsBaseline(t *testing.T) {
+	if got, _ := FuzzyScore("Street", "418 larkwhistle oak St", "418 larkwhistle oak Sreet", false); !got {
+		t.Error("a longer name at edit similarity 92 no longer matches under the custom Street method")
+	}
+	if got, _ := fuzzyStreet("418 larkwhistle oak St", "418 larkwhistle oak Sreet", false); got {
+		t.Error("shared Street scorer changed")
+	}
 	for _, p := range [][2]string{
-		{"418 larkwhistle oak St", "418 larkwhistle oak Sreet"},
 		{"418 larkwhistle oak St", "418 larkwhistle oak Strt"},
 		{"418 Larkwhistle Oak Strt", "418 Larkwhistle Oak St"},
 		{"72 Dunholt Glen Drive", "72 Dunholt Glen Drv"},

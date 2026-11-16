@@ -311,8 +311,10 @@ func TestFuzzyTitleVariantStandardNames(t *testing.T) {
 			}
 		}
 	}
-	if len(native) != 51 || hit != 37 || exact != 35 {
-		t.Errorf("native=%d hit=%d exact=%d, want 51, 37, 35", len(native), hit, exact)
+	// 41 since the standard rules score both names without a key when the
+	// email addresses agree (NATIVE duplicate_rule_match_keys/org.tsv).
+	if len(native) != 51 || hit != 41 || exact != 41 {
+		t.Errorf("native=%d hit=%d exact=%d, want 51, 41, 41", len(native), hit, exact)
 	}
 	for _, pair := range [][2]string{{"Dave", "Davy"}, {"Davy", "Dave"}, {"David", "Davy"}, {"Davy", "David"}, {"Sandy", "Xander"}, {"Xander", "Sandy"}, {"Marjorie", "Peggy"}, {"Peggy", "Marjorie"}} {
 		if native[pair] != 100 {

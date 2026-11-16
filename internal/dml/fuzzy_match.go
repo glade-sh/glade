@@ -1872,7 +1872,10 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	// The panel titles hold no stop word and repeat no word; any other title
 	// keeps the shared scoring below.
 	plain := len(wa) == len(ua) && len(wb) == len(ub)
-	exactSubset := plain && exactShared == len(short)
+	// subset is the word-order rules' reading of an exact subset; the panel
+	// extensions (exactSubset) also need plain titles.
+	subset := exactShared == len(short)
+	exactSubset := plain && subset
 	if exactSubset && k == len(ua) && len(ub) == n && (n == 5 || n == 6) && (k == 1 || (k == 2 && !sameOrder)) {
 		// NATIVE (duplicate_fuzzy_panels): a candidate whose content words
 		// all occur in a longer existing title finds it from the short side
@@ -1900,7 +1903,7 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		confidence = 94
 	}
 	if !sameOrder {
-		if exactSubset && len(short) == k && len(short) < len(long) && k >= 2 && titleReversed(sharedA, sharedB) {
+		if subset && len(short) == k && len(short) < len(long) && k >= 2 && titleReversed(sharedA, sharedB) {
 			// NATIVE (fuzzcap-C9 c9t2d, c9t3c, c9t3d): all words of the
 			// shorter title in the longer one, in the reverse order (a word
 			// moved to the other end keeps the general penalty). The penalty
@@ -1917,7 +1920,7 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		switch {
 		case n == 6 && exactSubset && len(short) < len(long) && k == 5:
 			confidence -= 2
-		case k == 2 && n == 4 && !exactSubset:
+		case k == 2 && n == 4 && !subset:
 			// NATIVE (fuzzcap-C9 c9t2d): two shared words out of order in a
 			// title of four.
 			confidence -= 5
