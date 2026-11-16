@@ -32,6 +32,8 @@
 
 - **Governor limits and SOSL match more captured behavior.** Limit exhaustion text, `Limits.getFindSimilarCalls`, the savepoint and `System.runAs` counters, test-boundary savepoints, the trigger depth failure, async aggregate and finalizer caps, SOSL wildcard, escape and `NAME FIELDS` matching, and the `WITH SPELL_CORRECTION`, `WITH SNIPPET(target_length)` and `WITH METADATA` clauses follow native rows at APIs 62.0 and 67.0. Other wildcard shapes and `WITH NETWORK` still report that they are unsupported, and a nested subquery in a SOSL `WHERE` clause is still rejected.
 
+- **Duplicate rule behavior.** `Datacloud.MatchRecord.getFieldDiffs()` lists the compared fields as Same, Different or Null for the builtin Account, Contact and Lead rules and for custom rules of Exact items. `FindDuplicates` and `FindDuplicatesByIds` throw a `HandledException` for a custom object with no active duplicate rule, and for Opportunity by id. Exact items compare the first 99 characters. A custom rule's `objectMapping` matches another object's fields. An Exact MatchBlanks item gates updates when its value changes. Allow+Report commits one record set for records that match each other and records an update into a match for such a rule. Updating a record again after it was inserted as an allowed duplicate in the same transaction, and the fuzzy confidence scores behind some field differences, are not modeled yet.
+
 ## v0.3.10
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
