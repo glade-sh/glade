@@ -3507,7 +3507,9 @@ func setupFailureCase(testCase TestCase, err error) (testreport.Case, bool) {
 	return testreport.Case{
 		ClassName: testCase.ClassName, MethodName: testCase.MethodName,
 		SelectedSourceFile: testCase.File, Status: testreport.StatusFail,
-		Reason:      terminalReason(err),
+		// The rows prove the Fail outcome only; the reason label stays what
+		// setup failures always reported.
+		Reason:      testreport.ReasonRuntimeError,
 		Problem:     problemFromError(err, testCase),
 		EntryNotRun: true,
 	}, true
