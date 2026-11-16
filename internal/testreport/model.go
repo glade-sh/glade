@@ -87,6 +87,9 @@ type Case struct {
 	Problem            *Problem        `json:"problem,omitempty"`
 	Trace              []trace.Event   `json:"trace,omitempty"`
 	Profile            *profile.Report `json:"profile,omitempty"`
+	// EntryNotRun marks a Fail row whose test body never ran because its
+	// @TestSetup method threw. It is runner bookkeeping, not report output.
+	EntryNotRun bool `json:"-"`
 }
 
 type Problem struct {

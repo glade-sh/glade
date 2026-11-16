@@ -630,7 +630,7 @@ assemble:
 			// Report the compiled entry registered for execution, not the requested
 			// source: duplicate class/method names can bind to the same body.
 			// Other statuses do not establish that the test entry ran.
-			if results[index].Status == testreport.StatusPass || results[index].Status == testreport.StatusFail {
+			if (results[index].Status == testreport.StatusPass || results[index].Status == testreport.StatusFail) && !results[index].EntryNotRun {
 				results[index].SourceFile = testMethods[testCaseKey(cases[index])].File
 			}
 			suites[className] = append(suites[className], results[index])
@@ -3356,6 +3356,9 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 		recordRunDuration(elapsed, counters)
 		out.DurationMS = elapsed.Milliseconds()
 	}()
+	if setupFailed, ok := setupFailureCase(testCase, setupErr); ok {
+		return setupFailed
+	}
 	for _, err := range []error{setupErr, baseRuntimeErr, firstTriggerError(triggerErrors), testMethodErr, invokeErr} {
 		if err != nil {
 			return preInvocationErrorCase(testCase, err)
@@ -3478,6 +3481,36 @@ func firstTriggerError(errs []error) error {
 		return errs[0]
 	}
 	return nil
+}
+
+// setupFailureCase maps an Apex exception thrown by the class's @TestSetup
+// method. Salesforce fails the class: the setup row and every test method row
+// are Fail rows carrying the setup exception and its stack (org.tsv
+// ic04-sync and sf-*-sync). A setup that cannot run for a local reason (an
+// unsupported feature, a missing dependency, a timeout or cancellation) keeps
+// the preparation diagnostic from preInvocationErrorCase.
+func setupFailureCase(testCase TestCase, err error) (testreport.Case, bool) {
+	if err == nil {
+		return testreport.Case{}, false
+	}
+	var runtimeErr *vm.RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		return testreport.Case{}, false
+	}
+	switch runtimeErr.Type {
+	case "UnsupportedFeature", "dependency_missing":
+		return testreport.Case{}, false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return testreport.Case{}, false
+	}
+	return testreport.Case{
+		ClassName: testCase.ClassName, MethodName: testCase.MethodName,
+		SelectedSourceFile: testCase.File, Status: testreport.StatusFail,
+		Reason:      terminalReason(err),
+		Problem:     problemFromError(err, testCase),
+		EntryNotRun: true,
+	}, true
 }
 
 // A setup or preparation failure has not invoked the selected test entry.
