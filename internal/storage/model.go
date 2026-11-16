@@ -305,6 +305,10 @@ type MetadataRegistry struct {
 	Layouts                     []LayoutMetadata           `json:"layouts,omitempty"`
 	ProjectReports              []ProjectReportMetadata    `json:"projectReports,omitempty"`
 	ReportFolderShares          []ProjectReportFolderShare `json:"reportFolderShares,omitempty"`
+	// KeepManualSharesOnTransfer is the project SharingSettings
+	// enableKeepManualSharesOnTransfer value (apextest api68_native
+	// sharing-off and sharing-on).
+	KeepManualSharesOnTransfer bool `json:"keepManualSharesOnTransfer,omitempty"`
 }
 
 // ProjectReportMetadata is the immutable project definition associated with a

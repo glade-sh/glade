@@ -48,6 +48,23 @@ var api68NativeGaps = map[string]string{
 	"sharing-on/SHARE-ON-PERSISTED":   "Metadata API settings retrieve is not a Glade route",
 }
 
+// api68NativePartialGaps compare a row after removing the one segment Glade
+// does not model; the rest of the row must match exactly.
+var api68NativePartialGaps = map[string]struct {
+	segment *regexp.Regexp
+	reason  string
+}{
+	"sharing-off/SHARE-OFF-68": {api68CustomRowCauseSegment, api68CustomRowCauseReason},
+	"sharing-off/SHARE-OFF-67": {api68CustomRowCauseSegment, api68CustomRowCauseReason},
+	"sharing-on/SHARE-ON-68":   {api68CustomRowCauseSegment, api68CustomRowCauseReason},
+	"sharing-on/SHARE-ON-67":   {api68CustomRowCauseSegment, api68CustomRowCauseReason},
+}
+
+// The customReason test method logs first (methods run in name order).
+var api68CustomRowCauseSegment = regexp.MustCompile(`^CUSTOM_[A-Z]+=.*?;(MANUAL_SHARES=)`)
+
+const api68CustomRowCauseReason = "AccountShare RowCause accepts Capture__c: Glade has no AccountShare RowCause value set to reject it"
+
 type api68NativeCase struct {
 	family, id, api, route, phase, variant, source string
 	native                                         string
@@ -105,6 +122,13 @@ func TestAPI68NativeCaptureConformance(t *testing.T) {
 			want := api68NormalizeNative(row.native)
 			got = api68NormalizeGlade(got)
 			key := name + "/" + row.id
+			if partial, ok := api68NativePartialGaps[key]; ok {
+				if !partial.segment.MatchString(want) || !partial.segment.MatchString(got) {
+					t.Errorf("%s partial gap segment is missing\n  native: %s\n  glade:  %s", key, want, got)
+				}
+				want = partial.segment.ReplaceAllString(want, "$1")
+				got = partial.segment.ReplaceAllString(got, "$1")
+			}
 			_, gap := api68NativeGaps[key]
 			if gap {
 				seenGaps[key] = true

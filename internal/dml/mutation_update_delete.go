@@ -195,6 +195,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
 	e.refreshActivityAccounts(objectName, object.Definition, storedID, oldRecord, existing)
 	if !storage.IDsEqual(oldRecord.System.OwnerID, existing.System.OwnerID) {
+		e.removeManualAccountSharesOnTransfer(objectName, storedID)
 		if err := e.reconcilePrivateOwnerShares(objectName, storedID); err != nil {
 			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
 				return rollbackErr

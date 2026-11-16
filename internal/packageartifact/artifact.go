@@ -544,6 +544,7 @@ func artifactSourceFiles(p project.Project) []string {
 	files = append(files, p.PermissionSetFiles...)
 	files = append(files, p.PermissionSetGroupFiles...)
 	files = append(files, p.BusinessHoursSettingsFiles...)
+	files = append(files, p.SharingSettingsFiles...)
 	files = append(files, p.PlatformEventChannelMemberFiles...)
 	files = append(files, p.DuplicateRuleFiles...)
 	files = append(files, p.MatchingRuleFiles...)
