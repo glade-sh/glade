@@ -242,6 +242,67 @@ scores some single-word pairs in one direction only (`Nordstrom` finds
 `Acme Logistic`/`Acme Logistics` 100) while keeping others apart
 (`Partners`/`Partner`, `Marine`/`Marin`).
 
+Custom Company Name rules score some shapes with a fitted directional model
+(NATIVE `internal/dml/testdata/company_name_fit`): names with digits
+(`Test Account`/`Test Account 1` 97, the reverse 94), a trailing Partner, SARL
+or BV, a hyphen or underscore join on one side only, and two different
+trailing qualifiers (`/West`, `(West)`, ` - West`). Those pairs use a key of
+the first six characters of the first two words and match at a fitted
+confidence of 85. Numbered and designator pairs whose first two words differ
+past the key (`Qelthorin Freights 1`/`Qelthorin Freighter 1`), numbered pairs
+the word scorer keeps apart without their numbers and a ` - ` qualifier
+against a different qualifier keep the word scorer. So do a joined
+side with more words than the other (`Dunder-Mifflin Paper`/`Dunder Mifflin`),
+short ampersand forms (`Q&V`/`QV`) and a plain name against a different ` - `
+suffix. The standard Account rule keeps the word scorer for every pair.
+
+The D1 capture (`company_name_fit` rows `D1_*`) settled the shapes the fit had
+extrapolated. Same words with different numbers match (`Zorvex Region 1
+Sales`/`Zorvex Region 2 Sales`); with a differing word, both names need a
+number and the numbers must be equal or one must start the other, and a digit
+glued to a word (`Zorvex Region1`) does not match `Zorvex Region 1 Sales`. An
+underscore join does not match its spaced name and a hyphen join matches only
+when the aligned words are alike (`Vexlett-Packard`/`Vexlet Packard` yes,
+`Quen-State Paving`/`Quen State Painting` no). A slash and a parenthesis form
+need equal suffix word counts and alike bases. Known gaps, each with a residual
+in the test: 15 native matches the word scorer also rejects, such as `Zorvex
+Partnership`/`Zorvex` and the `East`/`West` plain-to-dash pairs, and 10 pairs
+the word scorer matches and native does not (`Zorvex Partner`/`Zorvex Partner
+Inc`).
+
+The R1 and R2 captures (rows `R1_*` and `R2_*`, ten panels of 23 names) vary
+those shapes and bound the rules:
+
+- A slash joins the words on either side of it in the match key. `Zorvex
+  Freight/West` keeps the key of `Zorvex Freight West`; `Orbel Trade/West`
+  does not match `Orbel Trade West`, `Orbel Trade - West` or `Orbel
+  Trade/East`, and `Orbel Trade/Midwest` matches `Orbel Trade/Mideast`. No
+  captured match with a slash has unequal joined keys.
+- A doubled letter matches only past the first six letters of the first word:
+  `Vexlett Packard`/`Vexlet Packard` yes, `Vexllet Packard`, `Qell
+  Systems`/`Qel Systems` no. Native also matches other endings past the key
+  (`Vexlets Packard`, `Vexlet Packardd`); Glade does not yet.
+- Two different one-word suffixes across a dash and a spaced slash match when
+  both start with a consonant and are alike (`West`/`Best`, `Mast`/`Last`). A
+  suffix that starts with a vowel finds an alike consonant suffix and is not
+  found by it (`East` finds `West`). Two vowel suffixes match when only the
+  first letter differs. Against a parenthesis form only suffixes with the same
+  consonants match (`West`/`Wast`).
+- The number rule above covers names of up to three words. A `#`, a `No`
+  before a number, a number with a letter (`3A`) and a Roman numeral are part
+  of the number. `Zorvex Region1` finds `Zorvex Region 1 East`, and `Zorvex
+  Region 2 East` finds `Zorvex Region 1 West`; the reverse pairs do not match.
+- Digit runs glued to the same multiword name score 100 when they have one
+  length and differ in one position (`Test Account12`/`Test Account13`);
+  `Test Account11`/`Test Account22` keeps 97.
+- A hyphen or underscore digit join scores 91 against a single consonant
+  (`Test Account_2`/`Test Account D`); a vowel or `Y` keeps its earlier score.
+
+`TestCompanyShapePanelCounts` pins each panel: 2,104 of 2,351 captured matches
+reported, 1,136 exact confidences, 40 matches native does not report. The
+largest gaps are vowel suffixes against parenthesis forms and letters past the
+match key.
+
 ### Phone
 
 Letters and digits are the characters of the number; separators are dropped.

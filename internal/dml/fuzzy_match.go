@@ -894,10 +894,15 @@ var companyStopWords = map[string]bool{"and": true, "of": true, "the": true}
 // natively "AT&T" does not match "AT and T" and "Barnes&Noble" does not match
 // "Barnes & Noble".
 func companyWords(s string) []string {
-	var words []string
-	for _, token := range strings.Fields(strings.ReplaceAll(strings.ToLower(s), "-", " ")) {
+	tokens := strings.Fields(strings.ReplaceAll(strings.ToLower(s), "-", " "))
+	words := make([]string, 0, len(tokens))
+	for _, token := range tokens {
 		if token == "&" {
 			words = append(words, "and")
+			continue
+		}
+		if companyCleanASCII(token) {
+			words = append(words, token)
 			continue
 		}
 		var clean []rune
@@ -916,21 +921,57 @@ func companyWords(s string) []string {
 	if len(words) > 1 && companyDesignators[words[len(words)-1]] {
 		words = words[:len(words)-1]
 	}
-	var out []string
+	stop := 0
+	for _, w := range words {
+		if companyStopWords[w] {
+			stop++
+		}
+	}
+	if stop == 0 || stop == len(words) {
+		return words
+	}
+	out := make([]string, 0, len(words)-stop)
 	for _, w := range words {
 		if !companyStopWords[w] {
 			out = append(out, w)
 		}
 	}
-	if len(out) == 0 {
-		return words
-	}
 	return out
+}
+
+// companyCleanASCII reports a token of lower-case ASCII letters, digits, "&"
+// and "/" only: companyWords keeps it as it is.
+func companyCleanASCII(token string) bool {
+	for i := 0; i < len(token); i++ {
+		c := token[i]
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '&' || c == '/') {
+			return false
+		}
+	}
+	return true
 }
 
 // companyKey is the match key: the first five characters of each of the first
 // two words (help notation "Company (2,5)").
 func companyKey(words []string) string {
+	prefix := func(w string) (string, bool) {
+		w = w[:min(len(w), 5)]
+		return w, isASCII(w)
+	}
+	switch len(words) {
+	case 0:
+		return ""
+	case 1:
+		if p, ok := prefix(words[0]); ok {
+			return p
+		}
+	default:
+		p, ok := prefix(words[0])
+		q, ok2 := prefix(words[1])
+		if ok && ok2 {
+			return p + q
+		}
+	}
 	var b strings.Builder
 	for i, w := range words {
 		if i == 2 {
@@ -1048,13 +1089,67 @@ func companySingleWordMatch(candidate, existing string) (bool, float64) {
 	return true, 96
 }
 
-func fuzzyCompany(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
-	if companyAlignedWords[strings.TrimSpace(x)] || companyAlignedWords[strings.TrimSpace(y)] {
+// companyAlignedName reports a name that folds to one of companyAlignedWords.
+func companyAlignedName(s string) bool {
+	t := strings.TrimSpace(s)
+	if !isASCII(t) {
+		return companyAlignedWords[foldText(s)]
+	}
+	return strings.EqualFold(t, "partner") || strings.EqualFold(t, "partners")
+}
+
+// foldedEqual is foldText(a) == foldText(b) without building either string
+// for ASCII text.
+func foldedEqual(a, b string) bool {
+	if !isASCII(a) || !isASCII(b) {
+		return foldText(a) == foldText(b)
+	}
+	space := func(c byte) bool { return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' }
+	lower := func(c byte) byte {
+		if c >= 'A' && c <= 'Z' {
+			return c + 'a' - 'A'
+		}
+		return c
+	}
+	i, j := 0, 0
+	for {
+		for i < len(a) && space(a[i]) {
+			i++
+		}
+		for j < len(b) && space(b[j]) {
+			j++
+		}
+		if i == len(a) || j == len(b) {
+			return i == len(a) && j == len(b)
+		}
+		for i < len(a) && j < len(b) && !space(a[i]) && !space(b[j]) {
+			if lower(a[i]) != lower(b[j]) {
+				return false
+			}
+			i++
+			j++
+		}
+		if (i < len(a) && !space(a[i])) || (j < len(b) && !space(b[j])) {
+			return false
+		}
+	}
+}
+
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			return false
+		}
+	}
+	return true
+}
+
+func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
+	if companyAlignedName(a) || companyAlignedName(b) {
 		// NATIVE: a name that is only "Partner" matches nothing, itself included.
 		return false, 0
 	}
-	if x == y {
+	if foldedEqual(a, b) {
 		return true, 100
 	}
 	wa, wb := companyWords(a), companyWords(b)
@@ -1110,6 +1205,120 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 		}
 	}
 	return false, 0
+}
+
+// fuzzyCompany combines the captured directional scorer with its match key.
+// A pair outside the fitted routes, or one the fitted scorer rejects, keeps
+// the word scorer's decision.
+func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
+	if a == b && companySimpleExact(a) {
+		return true, 100
+	}
+	ma, mb := companyMarks(a), companyMarks(b)
+	if (ma|mb)&companyMarkQualifier != 0 && !companySlashKeys(a, b) {
+		return false, 0
+	}
+	ok, score := fuzzyCompanyRouted(a, b, matchBlanks, ma, mb)
+	if ok {
+		return ok, score
+	}
+	if companyDoubledEqual(a, b) {
+		return true, 100
+	}
+	if (ma|mb)&companyMarkQualifier != 0 {
+		if confidence, matched := companySlashScore(a, b); matched {
+			return true, confidence
+		}
+	}
+	return ok, score
+}
+
+// companyDoubledEqual reports two multiword ASCII names that differ only by
+// doubled letters in the first word. NATIVE company_name_fit/org.tsv D1_jn:
+// "Vexlett Packard" and "Vexlet Packard" match at 100 in both directions;
+// NATIVE fuzzy_matching rows reject "Pioneer Atlas" and "Pioneer Atlass".
+func companyDoubledEqual(a, b string) bool {
+	if a == b {
+		return false
+	}
+	i, j, skipped := 0, 0, false
+	var pa, pb byte
+	firstA, firstB := true, true
+	next := func(s string, k *int, prev *byte, first *bool) (byte, bool) {
+		for *k < len(s) {
+			c := s[*k]
+			*k++
+			if c >= 0x80 {
+				return 0, false
+			}
+			if c >= 'A' && c <= 'Z' {
+				c += 'a' - 'A'
+			}
+			if c == ' ' || c == '-' {
+				*first = false
+			}
+			if c == *prev && c >= 'a' && c <= 'z' && *first {
+				skipped = true
+				continue
+			}
+			*prev = c
+			return c, true
+		}
+		return 0, true
+	}
+	for {
+		x, okA := next(a, &i, &pa, &firstA)
+		y, okB := next(b, &j, &pb, &firstB)
+		if !okA || !okB || x != y {
+			return false
+		}
+		if x == 0 && i >= len(a) && j >= len(b) {
+			return skipped && strings.ContainsAny(a, " -") && strings.ContainsAny(b, " -") && companyKeyPrefix(a, b)
+		}
+	}
+}
+
+func fuzzyCompanyRouted(a, b string, matchBlanks bool, ma, mb int) (bool, float64) {
+	route := companyFitRouteMarked(a, b, ma, mb)
+	if route == companyRouteNone {
+		return legacyFuzzyCompany(a, b, matchBlanks)
+	}
+	same, wordsA, wordsB := companyFitKeys(a, b)
+	if route == companyRouteJoin && !companyJoinWords(a, wordsA, wordsB) {
+		route = companyRouteNone
+		if companyQualifierPair(a, b) {
+			route = companyRouteQualifier
+		}
+	}
+	if route != companyRouteNone && same {
+		if raw := companyFitScore(a, b); raw >= companyFitThreshold && companyFitCovered(route, a, b) {
+			if route == companyRouteJoin {
+				if matched, _ := legacyFuzzyCompany(a, b, matchBlanks); !matched {
+					return true, companyJoinConfidence(a, b, raw)
+				}
+			}
+			return true, math.Max(91, raw)
+		}
+	}
+	return legacyFuzzyCompany(a, b, matchBlanks)
+}
+
+// A multiword ASCII name is an exact match in both scorers. Single-word
+// names keep the existing Partner exception.
+func companySimpleExact(s string) bool {
+	if len(s) < 3 || s[0] == ' ' || s[len(s)-1] == ' ' {
+		return false
+	}
+	space := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == ' ' {
+			space = true
+		} else if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9') {
+			return false
+		}
+	}
+	return space
 }
 
 // ---- Title: Acronym, Exact, Kullback-Leibler distance; threshold 50 ----
@@ -1618,4 +1827,42 @@ func fuzzyItemScore(method string, confidence float64) float64 {
 		return math.Max(0, 2*confidence-100)
 	}
 	return confidence
+}
+
+// companySlashKeys reports whether two names share the fitted match key when
+// a slash joins the words on either side of it. NATIVE company_name_fit/org.tsv
+// R1_dir and R1_qf2: "Orbel Trade/West" matches neither "Orbel Trade/East",
+// "Orbel Trade West" nor "Orbel Trade - West", and "Orbel Trade/Midwest"
+// matches "Orbel Trade/Mideast"; D1_qf: "Zorvex Freight/West" matches all
+// three of its forms. No captured match with a slash has unequal joined keys.
+func companySlashKeys(a, b string) bool {
+	if strings.IndexByte(a, '/') < 0 && strings.IndexByte(b, '/') < 0 {
+		return true
+	}
+	same, _, _ := companyFitKeys(strings.ReplaceAll(a, "/", ""), strings.ReplaceAll(b, "/", ""))
+	return same
+}
+
+// companyKeyPrefix reports that the first words agree in their first six
+// characters, the part the match key keeps. NATIVE company_name_fit/org.tsv
+// R1_dbl: "Vexlett Packard" matches "Vexlet Packard" and "Vexlettt Packard";
+// "Vexllet Packard", "Vvexlet Packard", "Qell Systems" and "Qel Systems" do
+// not match their single-letter forms.
+func companyKeyPrefix(a, b string) bool {
+	for i := 0; i < 6; i++ {
+		if i >= len(a) || i >= len(b) {
+			return false
+		}
+		x, y := a[i], b[i]
+		if x >= 'A' && x <= 'Z' {
+			x += 'a' - 'A'
+		}
+		if y >= 'A' && y <= 'Z' {
+			y += 'a' - 'A'
+		}
+		if x != y || x == ' ' || x == '-' {
+			return false
+		}
+	}
+	return true
 }
