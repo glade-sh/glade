@@ -441,10 +441,17 @@ type duplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.I
 // The matcher belongs to one DML engine or Find call. Access decisions must
 // not survive that operation, since a later statement can change permissions.
 func (vm *VM) newDuplicateMatcher() duplicateMatcher {
+	matcher, _ := vm.newDuplicateMatchers()
+	return matcher
+}
+
+// newDuplicateMatchers returns the org matcher and a matcher limited to given
+// candidate records (the peers of one statement); both share one access cache.
+func (vm *VM) newDuplicateMatchers() (duplicateMatcher, func(storage.DuplicateRule, storage.Record, []storage.Record) (dml.DuplicateResult, bool)) {
 	type fieldKey struct{ principal, object, field string }
 	access := make(map[fieldKey]bool)
-	return func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
-		return vm.findDuplicateMatches(rule, record, exclude, func(object, field string) bool {
+	scan := func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among []storage.Record) (dml.DuplicateResult, bool) {
+		return vm.findDuplicateMatches(rule, record, exclude, among, func(object, field string) bool {
 			key := fieldKey{vm.currentUserID(), strings.ToLower(object), strings.ToLower(field)}
 			allowed, ok := access[key]
 			if !ok {
@@ -454,12 +461,17 @@ func (vm *VM) newDuplicateMatcher() duplicateMatcher {
 			return allowed
 		})
 	}
+	return func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+			return scan(rule, record, exclude, nil)
+		}, func(rule storage.DuplicateRule, record storage.Record, among []storage.Record) (dml.DuplicateResult, bool) {
+			return scan(rule, record, nil, among)
+		}
 }
 
 // Both Find and DML use the same record access policy. Enforce rules search
 // visible members; Bypass rules can detect hidden members without disclosing
 // them. The legacy explicit without-sharing route discloses Bypass members.
-func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
+func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among []storage.Record, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
 	policy := vm.currentSourceExecutionPolicy()
 	if vm.testContext == nil || policy.DataMode == "USER_MODE" {
 		for _, matching := range rule.MatchRules {
@@ -490,7 +502,7 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 	userID := ""
 	principalResolved := false
 	var unrestricted map[string]bool
-	return dml.FindDuplicateMatchesWithAccess(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
+	return dml.FindDuplicateMatchesAmong(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
 		if !principalResolved {
 			userID = vm.currentUserID()
 			principalResolved = true
@@ -514,7 +526,7 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 			return visible, visible
 		}
 		return true, visible || legacyWithout
-	})
+	}, among)
 }
 
 // The field-hidden Contact rows pin the default API 67 partial insert result

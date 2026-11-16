@@ -57,3 +57,24 @@ func TestBlockedDuplicateSaveReportsFieldDiffs(t *testing.T) {
 		t.Fatalf("blocked save lost its field differences: %+v", matches)
 	}
 }
+
+// NATIVE XMAP maps one input field. A mapping of several fields has no row, so
+// the matcher reports the shape as unsupported instead of enforcing it.
+func TestDuplicateObjectMappingEnforcedForOneFieldOnly(t *testing.T) {
+	org := storage.OrgState{APIVersion: "67.0", Objects: map[string]storage.ObjectState{}}
+	storage.EnsureStandardObject(&org, "Contact")
+	storage.EnsureStandardObject(&org, "Lead")
+	for _, pairs := range [][]storage.MatchingRuleMapPair{
+		{{Input: "Email", Output: "Email"}},
+		{{Input: "Email", Output: "Email"}, {Input: "LastName", Output: "LastName"}},
+	} {
+		match := storage.MatchingRule{Object: "Lead", Name: "LeadEmail", Status: "Active", Items: []storage.MatchingRuleItem{{Field: "Email", Method: "Exact", BlankBehavior: "NullNotAllowed"}},
+			Mapping: &storage.MatchingRuleMapping{InputObject: "Contact", OutputObject: "Lead", Fields: pairs}}
+		rule := storage.DuplicateRule{Name: "Mapped", Object: "Contact", Active: true, MatchRules: []storage.MatchingRule{match}}
+		record := storage.Record{Object: "Contact", Fields: map[string]storage.Value{"Email": storage.StringValue("x@example.invalid")}}
+		_, supported := dml.FindDuplicateMatches(&org, rule, record, nil)
+		if want := len(pairs) == 1; supported != want {
+			t.Fatalf("%d mapped fields: supported=%v want %v", len(pairs), supported, want)
+		}
+	}
+}

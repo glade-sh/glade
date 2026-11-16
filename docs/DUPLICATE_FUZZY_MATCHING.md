@@ -700,6 +700,11 @@ one output field, the matching rule reads the mapped values, and every unmapped
 field counts as blank. Mappings of several fields, mappings between standard
 objects and Person Account custom rules are not captured and stay unenforced.
 
+An Allow+Report rule commits one set for records that match each other.
+Glade lists the matches enforcement found first, then the peers inserted
+earlier by the same statement. That order is a design choice: the `REPR` rows
+list sorted names, so no native row pins the order inside a set.
+
 ### Custom rules: OR groups and three items
 
 NATIVE `Custom.*`: a rule's confidence is the mean over its filter. An AND

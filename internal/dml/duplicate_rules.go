@@ -81,7 +81,17 @@ type DuplicateReport struct {
 type duplicateState struct {
 	stamp   *string
 	batch   map[storage.ID]bool
+	peers   []duplicatePeer // records inserted by this statement, in insert order
 	reports []DuplicateReport
+	// insertMatched is set while an insert is checked when a rule found a
+	// match for it (the record is inserted as an allowed duplicate).
+	insertMatched bool
+}
+
+// duplicatePeer names a record inserted earlier by the current statement.
+type duplicatePeer struct {
+	object string
+	id     storage.ID
 }
 
 // exactMatchEngine names custom matching rules whose items are all Exact.
@@ -350,6 +360,13 @@ func FindDuplicateMatches(org *storage.OrgState, rule storage.DuplicateRule, rec
 // FindDuplicateMatchesWithAccess shares the matcher with hosts that enforce
 // record visibility. Access decides detection separately from disclosure.
 func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, access func(storage.Record) (detect, disclose bool)) (DuplicateResult, bool) {
+	return FindDuplicateMatchesAmong(org, rule, record, exclude, access, nil)
+}
+
+// FindDuplicateMatchesAmong is FindDuplicateMatchesWithAccess limited to the
+// given candidate records when among is not nil (records of another object than
+// the scanned one are skipped). A nil among scans the org.
+func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, access func(storage.Record) (detect, disclose bool), among []storage.Record) (DuplicateResult, bool) {
 	result := DuplicateResult{Rule: rule.Name, RuleID: rule.ID, Object: rule.Object}
 	personRule := strings.EqualFold(rule.Subtype, "PersonAccount")
 	if org == nil || (rule.Subtype != "" && !personRule) || len(rule.MatchRules) == 0 {
@@ -397,7 +414,16 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 			}
 			scan = standardMatch != nil
 		}
-		for _, existing := range org.Objects[objectName].Records {
+		records := org.Objects[objectName].Records
+		if among != nil {
+			records = make(map[storage.ID]storage.Record, len(among))
+			for _, candidateRecord := range among {
+				if strings.EqualFold(candidateRecord.Object, objectName) {
+					records[candidateRecord.ID] = candidateRecord
+				}
+			}
+		}
+		for _, existing := range records {
 			if !scan {
 				break
 			}
@@ -556,6 +582,9 @@ func activeDuplicateRules(org *storage.OrgState, object, subtype string) []stora
 // does not bypass later blocking or alerting rules. Records inserted by the
 // same statement are not candidates.
 func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *string, prior *storage.Record) (*DuplicateReport, error) {
+	if !update {
+		e.duplicates.insertMatched = false
+	}
 	if (!e.Options.EnforceDuplicateRules && !(update && e.Options.EnforceUpsertIDInsertDuplicateRules)) || (!update && stamp == nil) {
 		return nil, nil
 	}
@@ -595,8 +624,11 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 		if !found.HasRecords() {
 			// Native REP: records inserted together report as one set although
 			// they never alert or block one another.
-			if peers := e.peerDuplicateReport(rule, record, update, stamp, nil); peers != nil && report == nil {
-				report = peers
+			if report == nil {
+				if peers := e.peerDuplicateReport(rule, record, update, stamp, nil); peers != nil {
+					report = peers
+					e.duplicates.insertMatched = !update
+				}
 			}
 			continue
 		}
@@ -605,6 +637,9 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 			action, operations = rule.ActionOnUpdate, rule.OperationsOnUpdate
 		}
 		found.Message = rule.AlertText
+		if !update {
+			e.duplicates.insertMatched = true
+		}
 		switch {
 		case strings.EqualFold(action, "Block"):
 			// DR01/DR05: Block ignores DuplicateRuleHeader.allowSave.
@@ -647,8 +682,10 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 
 // peerDuplicateReport reports an Allow+Report insert that matches records
 // inserted earlier by the same statement. Enforcement never sees them, so the
-// scan is limited to those peers; base holds the matches enforcement found, and
-// the report lists them first. It returns nil when no peer matches.
+// scan is limited to those peers; base holds the matches enforcement found. The
+// report lists them first, then the peers: a design choice, since no native row
+// pins the order inside a report set (the REPR rows list sorted names). It
+// returns nil when no peer matches.
 func (e *Engine) peerDuplicateReport(rule storage.DuplicateRule, record storage.Record, update bool, stamp *string, base []storage.Record) *DuplicateReport {
 	if update || e.Options.UpsertCapturedInsertRulesOnly || !strings.EqualFold(rule.ActionOnInsert, "Allow") || !duplicateOperationsInclude(rule.OperationsOnInsert, "Report") {
 		return nil
@@ -656,8 +693,28 @@ func (e *Engine) peerDuplicateReport(rule storage.DuplicateRule, record storage.
 	if stamp == nil || e.duplicates.stamp != stamp || len(e.duplicates.batch) == 0 {
 		return nil
 	}
-	batch := e.duplicates.batch
-	peers, supported := e.findDuplicateMatches(rule, record, func(id storage.ID) bool { return !batch[id] })
+	// Only records inserted earlier by this statement can match, so the scan
+	// reads them directly instead of every record of the object.
+	earlier := make([]storage.Record, 0, len(e.duplicates.peers))
+	for _, peer := range e.duplicates.peers {
+		name, ok := storage.ResolveObjectName(*e.Org, peer.object)
+		if !ok {
+			continue
+		}
+		if _, existing, ok := storage.LookupRecordByID(e.Org.Objects[name].Records, peer.id); ok {
+			earlier = append(earlier, existing)
+		}
+	}
+	if len(earlier) == 0 {
+		return nil
+	}
+	var peers DuplicateResult
+	var supported bool
+	if e.DuplicatePeerMatcher != nil {
+		peers, supported = e.DuplicatePeerMatcher(rule, record, earlier)
+	} else {
+		peers, supported = FindDuplicateMatchesAmong(e.Org, rule, record, nil, nil, earlier)
+	}
 	if !supported || !peers.HasRecords() {
 		return nil
 	}
@@ -669,12 +726,13 @@ func (e *Engine) peerDuplicateReport(rule storage.DuplicateRule, record storage.
 }
 
 // updateGateBaseline returns the record state the update gate compares with.
-// Natively (RPT rows) a record inserted in this transaction is compared with
-// the values it had at its first update, so moving back to them does not run
-// the rule again; a record from an earlier transaction, or any other update,
-// compares with the stored values.
+// Natively (RPT rows) a record inserted as an allowed duplicate in this
+// transaction is compared with the values it had at its first update, so moving
+// back to them does not run the rule again. The rows cover only that shape; a
+// record from an earlier transaction, a record inserted without a match, or any
+// other update compares with the stored values (a documented gap).
 func (e *Engine) updateGateBaseline(record storage.Record, prior *storage.Record) *storage.Record {
-	if prior == nil || e.RecordCreations == nil || !e.RecordCreations.Contains(record.ID) {
+	if prior == nil || e.RecordCreations == nil || !e.RecordCreations.Contains(record.ID) || !e.RecordCreations.InsertedAsDuplicate(record.ID) {
 		return prior
 	}
 	if base, ok := e.RecordCreations.Baseline(record.ID); ok {
@@ -721,14 +779,15 @@ func duplicateRuleError(result DuplicateResult) error {
 
 // noteDuplicateInsert records an inserted ID for statement-local exclusion and
 // queues its pending report.
-func (e *Engine) noteDuplicateInsert(stamp *string, report *DuplicateReport, id storage.ID) {
+func (e *Engine) noteDuplicateInsert(stamp *string, report *DuplicateReport, object string, id storage.ID) {
 	if !e.Options.EnforceDuplicateRules || stamp == nil {
 		return
 	}
 	if e.duplicates.stamp != stamp {
-		e.duplicates.stamp, e.duplicates.batch = stamp, make(map[storage.ID]bool)
+		e.duplicates.stamp, e.duplicates.batch, e.duplicates.peers = stamp, make(map[storage.ID]bool), nil
 	}
 	e.duplicates.batch[id] = true
+	e.duplicates.peers = append(e.duplicates.peers, duplicatePeer{object: object, id: id})
 	if report != nil {
 		report.RecordID = id
 		e.duplicates.reports = append(e.duplicates.reports, *report)
@@ -930,10 +989,11 @@ func duplicateFieldDiffs(fields []string, candidate, existing storage.Record) []
 
 // mappedDuplicateCandidate applies a custom duplicate rule's objectMapping
 // (native XMAP): the matching rule object's fields read the mapped input
-// fields, and every unmapped field is blank for the comparison.
+// fields, and every unmapped field is blank for the comparison. XMAP captured one
+// mapped field, so a mapping of several fields stays unenforced.
 func mappedDuplicateCandidate(rule storage.DuplicateRule, matching storage.MatchingRule, record storage.Record) (storage.Record, bool) {
 	mapping := matching.Mapping
-	if mapping == nil || len(mapping.Fields) == 0 ||
+	if mapping == nil || len(mapping.Fields) != 1 ||
 		(mapping.InputObject != "" && !strings.EqualFold(mapping.InputObject, rule.Object)) ||
 		(mapping.OutputObject != "" && !strings.EqualFold(mapping.OutputObject, matching.Object)) {
 		return storage.Record{}, false

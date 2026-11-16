@@ -45,3 +45,60 @@ func TestMatchBlanksUpdateGateRequiresDuplicateEnforcement(t *testing.T) {
 		})
 	}
 }
+
+// A record inserted as an allowed duplicate is compared with its insert-time
+// values on a later update in the same transaction (native RPT rows). The rows
+// cover only that shape: a record inserted without a match keeps the stored-value
+// comparison, so moving it away and back after another record took its original
+// value is blocked (documented gap in docs/KNOWN_GAPS.md).
+func TestUpdateGateBaselineCoversOnlyAllowedDuplicateInserts(t *testing.T) {
+	for _, tc := range []struct {
+		name        string
+		firstEmail  string
+		wantBlocked bool
+	}{
+		{"insertedAsDuplicate", "a@example.invalid", false},
+		{"insertedWithoutMatch", "b@example.invalid", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			org := storage.OrgState{APIVersion: "67.0", Objects: map[string]storage.ObjectState{}}
+			storage.EnsureStandardObject(&org, "Contact")
+			match := storage.MatchingRule{Object: "Contact", Name: "Blank_Exact", Status: "Active", Items: []storage.MatchingRuleItem{{Field: "Email", Method: "Exact", BlankBehavior: "MatchBlanks"}}}
+			object := org.Objects["Contact"]
+			object.Definition.DuplicateRules = []storage.DuplicateRule{{Name: "BlankRule", Object: "Contact", Active: true, ActionOnInsert: "Allow", ActionOnUpdate: "Block", MatchRules: []storage.MatchingRule{match}}}
+			org.Objects["Contact"] = object
+			engine := dml.NewEngine(&org)
+			engine.Options.EnforceDuplicateRules = true
+			contact := func(name, email string) storage.Record {
+				return storage.Record{Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue(name), "Email": storage.StringValue(email)}}
+			}
+			insert := func(record storage.Record) storage.ID {
+				t.Helper()
+				got := engine.Insert([]storage.Record{record})
+				if len(got) != 1 || !got[0].Success {
+					t.Fatalf("insert: %+v", got)
+				}
+				return got[0].ID
+			}
+			update := func(id storage.ID, email string) dml.Result {
+				t.Helper()
+				got := engine.Update([]storage.Record{{Object: "Contact", ID: id, Fields: map[string]storage.Value{"Email": storage.StringValue(email)}}})
+				if len(got) != 1 {
+					t.Fatalf("update: %+v", got)
+				}
+				return got[0]
+			}
+			insert(contact("A", "a@example.invalid"))
+			target := insert(contact("B", tc.firstEmail))
+			if got := update(target, "away@example.invalid"); !got.Success {
+				t.Fatalf("move away: %+v", got)
+			}
+			insert(contact("C", tc.firstEmail))
+			got := update(target, tc.firstEmail)
+			blocked := !got.Success && got.StatusCode == "DUPLICATES_DETECTED"
+			if blocked != tc.wantBlocked {
+				t.Fatalf("move back: blocked=%v want %v: %+v", blocked, tc.wantBlocked, got)
+			}
+		})
+	}
+}
