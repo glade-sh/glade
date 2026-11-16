@@ -18,6 +18,11 @@ func valueCollectionCallDiagnostic(d diagnostic.Diagnostic, receiver, method str
 	base, _ := semaGenericBaseAndArgs(receiver)
 	switch base {
 	case "Integer", "Long", "Double", "Decimal", "String", "List", "Set", "Map":
+	case "Datetime":
+		// surf_datetime_locale dt10 (API 62 and 67).
+	case "JSONParser", "AsyncInfo", "System.JSONParser", "System.AsyncInfo":
+		// surf_json jn08 and surf_async_options as10-as12 name the System type.
+		receiver = "System." + strings.TrimPrefix(base, "System.")
 	default:
 		return d
 	}

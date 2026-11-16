@@ -1493,7 +1493,9 @@ platformStaticCall:
 		if vm.currentQueueableMaxDepth > 0 {
 			return Int(int64(vm.currentQueueableMaxDepth)), nil
 		}
-		return Int(0), nil
+		// Native as02 (surf_async_options): a job submitted without options
+		// reports a null maximum.
+		return typedNull("Integer"), nil
 	case "AsyncInfo.getMinimumQueueableDelayInMinutes", "System.AsyncInfo.getMinimumQueueableDelayInMinutes":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("AsyncInfo.getMinimumQueueableDelayInMinutes expects 0 arguments")
@@ -2328,6 +2330,10 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("JSON.deserializeUntyped expects String")
 		}
+		// Native jn04 (surf_json): empty or blank input, lower-case "no content".
+		if strings.TrimSpace(args[0].Text) == "" {
+			return Null, jsonDeserializeException("%s", "no content to map to Object due to end of input")
+		}
 		decoded, err := decodeJSONUntypedValue(args[0].Text)
 		if err != nil {
 			return Null, jsonDeserializeException("JSON.deserializeUntyped invalid JSON input: %v", err)
@@ -2347,6 +2353,10 @@ platformStaticCall:
 		}
 		strict := callee == "JSON.deserializeStrict"
 		reportColumn := !strict && args[1].Kind == ValueObject && args[1].Type == "Type" && strings.EqualFold(jsonDeserializeTypeName(args[1]), "reports.ReportTypeColumn")
+		// Native jn04 (surf_json): empty input, capital "No content".
+		if args[0].Text == "" {
+			return Null, jsonDeserializeException("%s", "No content to map to Object due to end of input")
+		}
 		decoded, err := decodeJSONValueForDeserialize(args[0].Text, strict, reportColumn)
 		if err != nil {
 			return Null, jsonDeserializeException("%s", err.Error())

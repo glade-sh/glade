@@ -1275,6 +1275,11 @@ func decodeJSONUntypedValue(text string) (Value, error) {
 	decoder, text := newApexJSONDecoder(text)
 	value, err := decodeJSONUntypedToken(decoder, text)
 	if err != nil {
+		// Native jn03 (surf_json): an out-of-range bare root number reports
+		// the text alone; nested numbers keep their location.
+		if number, ok := err.(*jsonNumberInputError); ok && strings.TrimSpace(text) == number.text {
+			number.root = true
+		}
 		return Null, jsonUnexpectedCharacterError(jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset())), text)
 	}
 	return value, nil
@@ -1366,6 +1371,15 @@ func decodeJSONUntypedToken(decoder *apexJSONDecoder, source string) (Value, err
 			return Null, &jsonNumberInputError{text: value.String(), line: line, column: column}
 		}
 		decimal, err := decimalFromText(value.String())
+		if errors.Is(err, strconv.ErrRange) {
+			// Native jn03 (surf_json): 1e400 parses to a Decimal rendered 1E+400.
+			canonical, canonicalErr := canonicalDecimalText(value.String())
+			if canonicalErr != nil {
+				return Null, canonicalErr
+			}
+			parsed, _ := strconv.ParseFloat(value.String(), 64)
+			return Value{Kind: ValueDecimal, Decimal: parsed, Text: canonical}, nil
+		}
 		if err != nil {
 			return Null, err
 		}
@@ -1611,9 +1625,13 @@ type jsonNumberInputError struct {
 	text   string
 	line   int
 	column int
+	root   bool
 }
 
 func (err *jsonNumberInputError) Error() string {
+	if err.root {
+		return fmt.Sprintf("For input string: %q", err.text)
+	}
 	return fmt.Sprintf("For input string: %q at [line:%d, column:%d]", err.text, err.line, err.column)
 }
 

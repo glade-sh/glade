@@ -370,6 +370,15 @@ func (v Value) writeText(w *textWriter) {
 				w.WriteString(displayIDText(raw.Text))
 				return
 			}
+			// Native dt05 (surf_datetime_locale): a Time renders with its
+			// milliseconds and a trailing Z in concatenation, like toString.
+			if strings.EqualFold(v.Type, "Time") {
+				if clock, err := parseTimeText(raw.Text); err == nil {
+					w.WriteString(clock)
+					w.WriteString("Z")
+					return
+				}
+			}
 			w.WriteString(raw.Text)
 			return
 		}

@@ -1156,7 +1156,9 @@ func datetimeFromLocalParts(year, month, day, hour, minute, second, millisecond 
 		}
 		return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
 	}
-	return zone.instantFromLocal(year, time.Month(month), day, hour, minute, second, millisecond, false), nil
+	// Native dt03 (surf_datetime_locale): an ambiguous local time takes the
+	// post-transition (standard-time) occurrence, as valueOf does.
+	return zone.instantFromLocal(year, time.Month(month), day, hour, minute, second, millisecond, true), nil
 }
 
 func datetimeKiritimatiFromUniqueLocalParts(year, month, day, hour, minute, second, millisecond int) (time.Time, error) {
@@ -1499,16 +1501,19 @@ type dayFirstParseGrammar struct {
 }
 
 var (
-	dayFirstDotDate       = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+)$`)
-	dayFirstDotDatetime   = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+), (\d{1,2}):(\d{2})$`)
-	dayFirstSlashDate     = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+)$`)
-	dayFirstSlashDatetime = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+), (\d{1,2}):(\d{2})$`)
-	dayFirstSpaceDatetime = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+) (\d{1,2}):(\d{2})$`)
-	dayFirstParseGrammars = map[string]dayFirstParseGrammar{
+	dayFirstDotDate     = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+)$`)
+	dayFirstDotDatetime = regexp.MustCompile(`^(\d{2})\.(\d{2})\.(\d+), (\d{1,2}):(\d{2})$`)
+	dayFirstSlashDate   = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+)$`)
+	// surf_datetime_locale dt02: an en_GB user's Date.parse accepts unpadded
+	// day and month ("3/8/2026" is 3 August).
+	dayFirstSlashDateLoose = regexp.MustCompile(`^(\d{1,2})/(\d{1,2})/(\d+)$`)
+	dayFirstSlashDatetime  = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+), (\d{1,2}):(\d{2})$`)
+	dayFirstSpaceDatetime  = regexp.MustCompile(`^(\d{2})/(\d{2})/(\d+) (\d{1,2}):(\d{2})$`)
+	dayFirstParseGrammars  = map[string]dayFirstParseGrammar{
 		"de_DE": {date: dayFirstDotDate, datetime: dayFirstDotDatetime, zeroTwoDigit: true},
 		"no":    {date: dayFirstDotDate, datetime: dayFirstDotDatetime},
 		"no_NO": {date: dayFirstDotDate, datetime: dayFirstDotDatetime},
-		"en_GB": {date: dayFirstSlashDate, datetime: dayFirstSlashDatetime},
+		"en_GB": {date: dayFirstSlashDateLoose, datetime: dayFirstSlashDatetime},
 		"fr_FR": {date: dayFirstSlashDate, datetime: dayFirstSpaceDatetime},
 	}
 )

@@ -74,6 +74,15 @@ func runSurfFamily(t *testing.T, family string) {
 	if len(native) != 2*len(cases) {
 		t.Fatalf("native rows %d, want %d", len(native), 2*len(cases))
 	}
+	// Queried records carry the org instance's REST version in their url, which
+	// differs from the class API version under test.
+	runtimeAPI := ""
+	urlVersion := regexp.MustCompile(`/services/data/v([0-9]+\.0)/`)
+	for _, text := range native {
+		if match := urlVersion.FindStringSubmatch(text); match != nil {
+			runtimeAPI = match[1]
+		}
+	}
 	releaseRuntimeCachesAfterTest(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -81,7 +90,7 @@ func runSurfFamily(t *testing.T, family string) {
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
 			classes := filepath.Join(root, "force-app/main/default/classes")
 			entries, err := os.ReadDir(filepath.Join(dir, "project"))
-			if err != nil {
+			if err != nil && !os.IsNotExist(err) {
 				t.Fatal(err)
 			}
 			for _, entry := range entries {
@@ -110,7 +119,14 @@ func runSurfFamily(t *testing.T, family string) {
 					t.Fatalf("native:\n%s\nGlade:\n%s", want, got)
 				}
 			}
-			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: func() *storage.OrgState { o := orgFromIndex(index); o.APIVersion = api; return &o }()})
+			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: func() *storage.OrgState {
+				o := orgFromIndex(index)
+				o.APIVersion = api
+				if runtimeAPI != "" {
+					o.APIVersion = runtimeAPI
+				}
+				return &o
+			}()})
 			var tests []string
 			byClass := map[string]surfCase{}
 			for _, c := range cases {
@@ -135,7 +151,7 @@ func runSurfFamily(t *testing.T, family string) {
 				return
 			}
 			sort.Strings(tests)
-			result := Run(index, Options{SelectedClasses: tests, NoDiskCache: true, Parallelism: 1})
+			result := Run(index, Options{SelectedClasses: tests, RuntimeRESTAPIVersion: runtimeAPI, NoDiskCache: true, Parallelism: 1})
 			observed := map[string]string{}
 			for _, suite := range result.Suites {
 				for _, c := range suite.Cases {

@@ -198,6 +198,15 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 		return method == "appendreplacement" || method == "appendtail"
 	case "asyncoptions":
 		return method == "getminimumqueueabledelayinminutes"
+	case "asyncinfo", "system.asyncinfo":
+		// Native surf_async_options as10-as12 (API 62 and 67).
+		return method == "getqueueablesignature" || method == "getparentjobid" || method == "gettriggertype"
+	case "jsonparser", "system.jsonparser":
+		// Native surf_json jn08 (API 62 and 67).
+		return method == "getposition"
+	case "datetime":
+		// Native surf_datetime_locale dt10 (API 62 and 67).
+		return method == "monthsbetween"
 	case "database":
 		return method == "lock" || method == "unlock"
 	case "quickaction":

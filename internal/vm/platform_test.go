@@ -12230,7 +12230,8 @@ Test.stopTest();
 	queueProgram, err := CompileAnonymous(`
 System.assertEquals(false, System.AsyncInfo.hasMaxStackDepth());
 System.assertEquals(1, System.AsyncInfo.getCurrentQueueableStackDepth());
-System.assertEquals(0, System.AsyncInfo.getMaximumQueueableStackDepth());
+// Native surf_async_options as02: no options means a null maximum.
+System.assertEquals(null, System.AsyncInfo.getMaximumQueueableStackDepth());
 // Native bare-enqueue rows at source62/67 distinguish absent delay from zero.
 System.assertEquals(null, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
 `)

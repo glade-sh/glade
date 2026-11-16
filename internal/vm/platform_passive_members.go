@@ -2829,6 +2829,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !ok {
 				return Null, receiver, false, true, unsupportedCallError("Datetime.formatLong timezone " + vm.currentUserTimeZoneID())
 			}
+			if text, shaped := datetimeFormatLongForLocale(local, vm.currentUserInfoField("LocaleSidKey", "en_US")); shaped {
+				return String(text), receiver, false, true, nil
+			}
 			return String(local.Format("1/2/2006, 3:04:05 PM") + " " + label), receiver, false, true, nil
 		case "isSameDay":
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
@@ -6240,4 +6243,38 @@ func (vm *VM) exceptionAnonymousFrameCount(exception Value) int {
 		return 1
 	}
 	return 0
+}
+
+// datetimeFormatLongForLocale shapes Datetime.formatLong for the locales the
+// native surf_datetime_locale rows captured (en_GB, de_DE, ja_JP). They use a
+// 24-hour clock and a GMT-offset zone token; English month names do not appear.
+// Other locales keep the en_US shape until rows exist for them.
+func datetimeFormatLongForLocale(local time.Time, locale string) (string, bool) {
+	var layout string
+	clock := ""
+	switch locale {
+	case "en_GB":
+		layout = "02/01/2006, 15:04:05"
+	case "de_DE":
+		layout = "02.01.2006, 15:04:05"
+	case "ja_JP":
+		layout = "2006/01/02"
+		clock = fmt.Sprintf(" %d:%02d:%02d", local.Hour(), local.Minute(), local.Second())
+	default:
+		return "", false
+	}
+	_, offset := local.Zone()
+	zone := "GMT"
+	if offset != 0 {
+		sign := "+"
+		if offset < 0 {
+			sign = "-"
+			offset = -offset
+		}
+		zone += sign + strconv.Itoa(offset/3600)
+		if minutes := offset % 3600 / 60; minutes != 0 {
+			zone += fmt.Sprintf(":%02d", minutes)
+		}
+	}
+	return local.Format(layout) + clock + " " + zone, true
 }

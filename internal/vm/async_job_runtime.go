@@ -1521,6 +1521,11 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		vm.currentFinalizer = Value{}
 		jobTransaction := vm.beginDMLRollbackPoint(vm.testContext == nil, false)
 		bodyEntered := false
+		// Native as04 (surf_async_options, API 62 and 67): a Queueable that does
+		// not implement Database.AllowsCallouts cannot call out.
+		previousCalloutDisabled := vm.futureCalloutDisabled
+		vm.futureCalloutDisabled = !vm.typeMatches(job.Object.Type, "Database.AllowsCallouts", make(map[string]bool))
+		defer func() { vm.futureCalloutDisabled = previousCalloutDisabled }()
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withQueueableJob(job, func() (Value, error) {
 				if staticExecute {
