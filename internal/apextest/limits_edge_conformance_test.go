@@ -32,16 +32,9 @@ func TestSOSLIsTestEdgesNativeConformance(t *testing.T) {
 }
 
 func TestTestBoundaryEdgesNativeConformance(t *testing.T) {
-	// Natively a depth failure unwinds every nested activation: only the DML
-	// statement in the outermost trigger sees it, as a catchable DmlException
-	// or a failed SaveResult (trm_catch, trm_partial).
-	const unwind = "Glade reports the trigger depth failure to the innermost DML statement, not the outermost trigger's"
-	edgeFamily{dir: "testdata/conformance/test_boundary_edges", skip: map[string]string{
-		"trm_catch/anonymous":   unwind,
-		"trm_catch/istest":      unwind,
-		"trm_partial/anonymous": unwind,
-		"trm_partial/istest":    unwind,
-	}}.replay(t)
+	// A depth failure unwinds every nested activation: only the DML statement in
+	// the outermost trigger sees it (trm_catch, trm_partial; trigger_depth_unwind).
+	edgeFamily{dir: "testdata/conformance/test_boundary_edges"}.replay(t)
 }
 
 func TestSOSLSearchMatrixNativeConformance(t *testing.T) {

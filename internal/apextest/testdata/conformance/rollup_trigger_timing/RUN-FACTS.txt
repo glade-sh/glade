@@ -1,0 +1,8 @@
+family=rollup_trigger_timing
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=OBS lines from the USER_DEBUG log (anonymous) or the test assertion message (isTest); Salesforce ids masked as <id>
+repeats=two clean runs per family; rows identical across both runs and both APIs
+notes=the caller-side T= value is the last RtLog.add entry only (the capture's add keeps the separator but drops the earlier text); read the trigger-side EV lines for the roll-up values
+local_replay=gap_capture_conformance_test.go; the local Admin profile carries the permission set the native user held
