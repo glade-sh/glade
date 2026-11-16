@@ -213,7 +213,7 @@ func standardCorroboratedSurname(a, b string) (bool, float64) {
 	for i := range len(left) {
 		cost += keyboardCost(rune(left[i]), rune(right[i]))
 	}
-	score := 100 * (1 - cost/float64(len(a)))
+	score := float64(100 * (1 - cost/float64(len(a))))
 	confidence := averageWith100(score)
 	if len(left) == 3 && score < 94 {
 		return false, 0

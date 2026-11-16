@@ -167,10 +167,14 @@ func editSimilarity(a, b string) float64 {
 	if longest == 0 {
 		return 100
 	}
-	return 100 * (1 - float64(levenshtein(ra, rb))/float64(longest))
+	return float64(100 * (1 - float64(levenshtein(ra, rb))/float64(longest)))
 }
 
 // averageWith100 is the single-item rule confidence of the Maximum methods.
+//
+// Callers pass products as float64(100 * x). An explicit conversion stops the
+// compiler fusing the multiply into this add (FMA on arm64, not amd64), which
+// would make confidences differ in the last bit across architectures.
 func averageWith100(score float64) float64 { return (100 + score) / 2 }
 
 // ---- First Name: Exact, Initials, Jaro-Winkler, Name Variant; threshold 85 ----
@@ -218,7 +222,7 @@ func firstNameAlgorithms(x, y, fx, fy string) (bool, float64) {
 		return true, 100
 	}
 	score := jaroWinkler(x, y)
-	return score >= firstNameJaroWinkler-1e-9, averageWith100(100 * score)
+	return score >= firstNameJaroWinkler-1e-9, averageWith100(float64(100 * score))
 }
 
 // firstNameKey is the match key of a first name; empty for a dictionary name
@@ -583,7 +587,7 @@ func keyboardSimilarity(a, b string) (float64, bool) {
 		}
 	}
 	extra := len(rb) - len(ra)
-	score := 100 * (1 - (cost+0.25*float64(extra))/float64(n))
+	score := 100 * (1 - (cost+float64(0.25*float64(extra)))/float64(n))
 	switch {
 	case extra == 0 && different == 1:
 		return score, true

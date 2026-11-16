@@ -476,5 +476,5 @@ func jaroWinkler(a, b string) float64 {
 	if jaro < 0.7 {
 		return jaro
 	}
-	return jaro + min(0.1, 1/float64(len(long)))*float64(prefix)*(1-jaro)
+	return jaro + float64(min(0.1, 1/float64(len(long)))*float64(prefix)*(1-jaro))
 }

@@ -71,7 +71,7 @@ func standardFirstName(a, b string) (bool, float64) {
 		return false, 0
 	}
 	score := jaroWinkler(x, y)
-	return score >= firstNameJaroWinkler-1e-9, averageWith100(100 * score)
+	return score >= firstNameJaroWinkler-1e-9, averageWith100(float64(100 * score))
 }
 
 // standardFirstNameHead is the first word of a folded name with leading and
@@ -375,7 +375,7 @@ func standardStreet(a, b string) (bool, float64) {
 		confidence *= 0.91
 	}
 	if pa.name != pb.name {
-		confidence *= 1 - 0.2*(1-editSimilarity(pa.name, pb.name)/100)
+		confidence *= 1 - float64(0.2*(1-editSimilarity(pa.name, pb.name)/100))
 	}
 	if pa.suite != "" && pb.suite != "" && pa.suite != pb.suite {
 		confidence *= 0.97
