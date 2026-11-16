@@ -1,0 +1,95 @@
+id	api	route	observation
+fs1	62.0	istest	0/20/0/20>1/20/1/20>2/20/2/20>3/20/3/20
+fs1	62.0	anonymous	0/20/0/20>1/20/1/20>2/20/2/20>3/20/3/20
+fs1	67.0	istest	0/20/0/20>1/20/1/20>2/20/2/20>3/20/3/20
+fs1	67.0	anonymous	0/20/0/20>1/20/1/20>2/20/2/20>3/20/3/20
+fs2	62.0	istest	0/0>1/1>0/0>1/1>1/1
+fs2	67.0	istest	0/0>1/1>0/0>1/1>1/1
+sp_set150	62.0	istest	150|150|150|150|150|150|0
+sp_set150	62.0	anonymous	150|150|150|150|150|150|0
+sp_set150	67.0	istest	150|150|150|150|150|150|0
+sp_set150	67.0	anonymous	150|150|150|150|150|150|0
+sp_set151	62.0	istest	UNCATCHED|System.LimitException|Too many DML statements: 151
+sp_set151	62.0	anonymous	UNCATCHED|System.LimitException|Too many DML statements: 151
+sp_set151	67.0	istest	UNCATCHED|System.LimitException|Too many DML statements: 151
+sp_set151	67.0	anonymous	UNCATCHED|System.LimitException|Too many DML statements: 151
+sp_pairs75	62.0	istest	150|150|150|150|150|150|0
+sp_pairs75	62.0	anonymous	150|150|150|150|150|150|0
+sp_pairs75	67.0	istest	150|150|150|150|150|150|0
+sp_pairs75	67.0	anonymous	150|150|150|150|150|150|0
+sp_pairs76	62.0	istest	UNCATCHED|System.LimitException|Too many DML statements: 151
+sp_pairs76	62.0	anonymous	UNCATCHED|System.LimitException|Too many DML statements: 151
+sp_pairs76	67.0	istest	UNCATCHED|System.LimitException|Too many DML statements: 151
+sp_pairs76	67.0	anonymous	UNCATCHED|System.LimitException|Too many DML statements: 151
+sp_rb101	62.0	istest	101|none|102|150|102|150|102|150|0
+sp_rb101	62.0	anonymous	101|none|102|150|102|150|102|150|0
+sp_rb101	67.0	istest	101|none|102|150|102|150|102|150|0
+sp_rb101	67.0	anonymous	101|none|102|150|102|150|102|150|0
+runas101	62.0	istest	101|150|101|150|101|150|0|101|150
+runas101	67.0	istest	101|150|101|150|101|150|0|101|150
+runas151	62.0	istest	UNCATCHED|System.LimitException|Too many DML statements: 151
+runas151	67.0	istest	UNCATCHED|System.LimitException|Too many DML statements: 151
+co100	62.0	istest	100|100
+co100	62.0	anonymous	100|100
+co100	67.0	istest	100|100
+co100	67.0	anonymous	100|100
+co101	62.0	istest	UNCATCHED|System.LimitException|Too many callouts: 101
+co101	62.0	anonymous	UNCATCHED|System.LimitException|Too many callouts: 101
+co101	67.0	istest	UNCATCHED|System.LimitException|Too many callouts: 101
+co101	67.0	anonymous	UNCATCHED|System.LimitException|Too many callouts: 101
+em10	62.0	istest	10|10
+em10	67.0	istest	10|10
+em11	62.0	istest	UNCATCHED|System.LimitException|Too many Email Invocations: 11
+em11	67.0	istest	UNCATCHED|System.LimitException|Too many Email Invocations: 11
+dr10000	62.0	istest	1|10000|10000
+dr10000	62.0	anonymous	1|10000|10000
+dr10000	67.0	istest	1|10000|10000
+dr10000	67.0	anonymous	1|10000|10000
+dr10001	62.0	istest	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dr10001	62.0	anonymous	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dr10001	67.0	istest	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dr10001	67.0	anonymous	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dru10000	62.0	anonymous	10000|1|10000|10000
+dru10000	67.0	anonymous	10000|1|10000|10000
+dru10001	62.0	anonymous	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dru10001	67.0	anonymous	UNCATCHED|System.LimitException|Too many DML rows: 10001
+qr50000	62.0	anonymous	50000|50000|50000
+qr50000	67.0	anonymous	50000|50000|50000
+qr50001	62.0	anonymous	UNCATCHED|System.LimitException|Too many query rows: 50001
+qr50001	67.0	anonymous	UNCATCHED|System.LimitException|Too many query rows: 50001
+qrun	62.0	anonymous	UNCATCHED|System.LimitException|Too many query rows: 50001
+qrun	67.0	anonymous	UNCATCHED|System.LimitException|Too many query rows: 50001
+ql10000	62.0	anonymous	10000|10000|0
+ql10000	67.0	anonymous	10000|10000|0
+ql10001	62.0	anonymous	UNCATCHED|System.LimitException|Too many query locator rows: 10001
+ql10001	67.0	anonymous	UNCATCHED|System.LimitException|Too many query locator rows: 10001
+qlun	62.0	anonymous	UNCATCHED|System.LimitException|Too many query locator rows: 10001
+qlun	67.0	anonymous	UNCATCHED|System.LimitException|Too many query locator rows: 10001
+pi150	62.0	istest	150|150
+pi150	62.0	anonymous	150|150
+pi150	67.0	istest	150|150
+pi150	67.0	anonymous	150|150
+pi151	62.0	istest	UNCATCHED|System.LimitException|Too many Publish Immediate DML: 151
+pi151	62.0	anonymous	UNCATCHED|System.LimitException|Too many Publish Immediate DML: 151
+pi151	67.0	istest	UNCATCHED|System.LimitException|Too many Publish Immediate DML: 151
+pi151	67.0	anonymous	UNCATCHED|System.LimitException|Too many Publish Immediate DML: 151
+enq50	62.0	istest	50|50|0|50
+enq50	62.0	anonymous	50|50|0|50
+enq50	67.0	istest	50|50|0|50
+enq50	67.0	anonymous	50|50|0|50
+enq51	62.0	istest	UNCATCHED|System.LimitException|Too many queueable jobs added to the queue: 51
+enq51	62.0	anonymous	UNCATCHED|System.LimitException|Too many queueable jobs added to the queue: 51
+enq51	67.0	istest	UNCATCHED|System.LimitException|Too many queueable jobs added to the queue: 51
+enq51	67.0	anonymous	UNCATCHED|System.LimitException|Too many queueable jobs added to the queue: 51
+fut50	62.0	istest	0|50|50|50
+fut50	62.0	anonymous	0|50|50|50
+fut50	67.0	istest	0|50|50|50
+fut50	67.0	anonymous	0|50|50|50
+fut51	62.0	istest	UNCATCHED|System.LimitException|Too many future calls: 51
+fut51	62.0	anonymous	UNCATCHED|System.LimitException|Too many future calls: 51
+fut51	67.0	istest	UNCATCHED|System.LimitException|Too many future calls: 51
+fut51	67.0	anonymous	UNCATCHED|System.LimitException|Too many future calls: 51
+enq51_start	62.0	istest	UNCATCHED|System.LimitException|Too many queueable jobs added to the queue: 51
+enq51_start	67.0	istest	UNCATCHED|System.LimitException|Too many queueable jobs added to the queue: 51
+fut51_start	62.0	istest	UNCATCHED|System.LimitException|Too many future calls: 51
+fut51_start	67.0	istest	UNCATCHED|System.LimitException|Too many future calls: 51
