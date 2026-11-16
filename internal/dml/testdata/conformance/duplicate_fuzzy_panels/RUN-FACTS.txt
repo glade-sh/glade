@@ -46,3 +46,27 @@ org: a fresh 1-day Developer Edition scratch org on a campaign Dev Hub (SF_SKIP_
 preflight: both panels and the company panels ran through glade exec at API 67.0 before the capture
 result: dk01 native 91 matches (self pairs included), Glade 49, none false; dk02 native 115, Glade 105, none false. dk01: every same-score pair of a near and a far code matches natively at 96 (flat 92.41 and 91.65), so the Metaphone code distance is not the component. dk02: pure extensions match natively at 3 and 4 trailing letters on all five stems, at 5 on three stems and at 6 on two; flat scores 91.40 (Bellingmoor, 6 trailing, native match) and 91.88 (Hartlebury, 5 trailing, no match) overlap, so the flat score does not decide it alone
 use: TestLastNameKeyboardFuzzyPanelsNativeRows requires zero extra matches on dk01 and dk02 (group dk); TestLastNameKeyboardFallbackMargin and TestLastNameKeyboardFlatMargin take their highest native non-match from them
+
+fifth blind panel set (group rkeyboard, panels rk01 to rk08 plus the ctl_hk2 and ctl_hk2_end controls; 10 cases, 4 native rows each)
+date: 2026-11-16 (UTC), 16:23 to 16:25
+purpose: final review of campaign/v0312-keyboard-k1 b770ecf3e8; tests the flat score (keyboardFlatDistance), which is not gated by shape, at keyboardFallbackMargin 93 on names no capture or fit has seen
+values: 24 new stems (7 to 17 letters), each with up to nine generated variants (187 values): the flat score decides every stem and variant pair; six classes sit at flat 93.0 to about 93.9 (many near substitutions, two or more same-column substitutions, three or more trailing letters, substitutions with one or two trailing letters, one far substitution, a shorter variant), two sit just under 93, and one has same-column substitutions only (flat 100)
+predictions: frozen before the org was created from glade at b770ecf3e8 (fuzzyLastName, every within-panel ordered pair that matches, with the rounded confidence); 637 lines, 416 decided by the flat score; sha256 4c5f45920e2e386fc8c88877fe2cd8bbc19af6dcab79a87727ad29f7819b7294
+controls: ctl_hk2 first and last equal the committed hk2 row
+apis and routes: 62.0 and 67.0 on the anonymous endpoint, class deployed at 67.0; the @IsTest route was not captured; two repeats; all 40 observations agree per case
+org: a fresh 1-day Developer Edition scratch org on a campaign Dev Hub (SF_SKIP_NEW_VERSION_CHECK=true), deleted after the run; deletion verified
+preflight: rk03 and rk07 ran through glade exec at API 67.0 before the capture and equalled their predictions
+ids: no record, org or user id, username or alias is stored
+result: 865 native matches (self pairs included); 623 of the 637 predicted matches are native; 14 are not (7 pairs, all decided by the flat score at 93.01 to 93.50): Marlingford/Marlingvlfdbmga, Blakynhuf/Blakehnjrxg, Garthwick/Garthkidib, Hetheringglhshqwxcqgzh/Hetheringtonxhqs, Micklethwaighammkkmqz/Micklethwzitnaj, Osbaldestonmere/Osbalddxtohjdfdcfvfsd, Osbalddxtohjdfdcfvfsd/Osbaledsgonjdfe. Every one has two or more same-column substitutions (which the flat score charges nothing) and five also have four to six trailing letters. The twelve variants with same-column substitutions only match natively at 98 to 100. 242 native matches are not reported
+
+sixth blind panel set (group skeyboard, panels sk01 to sk08 plus the ctl_hk2 and ctl_hk2_end controls; 10 cases, 4 native rows each)
+date: 2026-11-16 (UTC), 16:31 to 16:33
+purpose: tests one candidate repair of the rkeyboard false matches on fresh names: the flat score with a same-column substitution charged 0.05 (the neighbour cost of the base scorer) in place of nothing
+values: 24 new stems (9 to 15 letters), each with up to ten generated variants (237 values); nine classes sit at a candidate score of 93.0 to about 93.9 (two, or three or more, same-column substitutions; same-column substitutions with two to six trailing letters; and the rkeyboard classes), and one class holds pairs b770ecf3e8 matches (flat 93 or more) that the candidate drops (92.0 to 93.0)
+predictions: frozen before the org was created; the candidate's and b770ecf3e8's verdict for every within-panel ordered pair either matches; 849 lines; sha256 8bfd7c779e647fec3ecc89fb13350a1c3c177815442138c65cd30669b78b522a
+controls: ctl_hk2 first and last equal the committed hk2 row
+apis and routes: 62.0 and 67.0 on the anonymous endpoint, class deployed at 67.0; the @IsTest route was not captured; two repeats; all 40 observations agree per case
+org: a fresh 1-day Developer Edition scratch org on a campaign Dev Hub (SF_SKIP_NEW_VERSION_CHECK=true), deleted after the run; deletion verified
+preflight: sk03 ran through glade exec at API 67.0 before the capture
+ids: no record, org or user id, username or alias is stored
+result: 1,159 native matches (self pairs included); all 743 candidate matches are native (466 decided by the candidate score, 276 of them at 93.0 to 93.5); all 849 b770ecf3e8 matches are native too, so the 106 pairs the candidate drops are native matches
