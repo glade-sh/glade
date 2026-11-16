@@ -94,15 +94,23 @@ func assertApexProjectHistoryRebalances(t *testing.T, planner, output string, di
 	}
 }
 
+// nShardHistoryFixture gives every shard balanceFixtureTests equal tests, so no
+// test is large enough to trigger the one-dominant-test tolerance.
+const balanceFixtureTests = 20
+
 func nShardHistoryFixture(t *testing.T, elapsed []float64) (string, []string) {
 	t.Helper()
 	root := t.TempDir()
-	names := make([]string, len(elapsed))
+	var all []string
+	names := make([][]string, len(elapsed))
 	shards := make([]map[string]any, len(elapsed))
 	for i := range names {
-		names[i] = fmt.Sprintf("TestBalance%02d", i)
-		shards[i] = map[string]any{"index": i, "tests": []string{names[i]},
-			"estimatedDurationMillis": 0, "regex": "^(?:" + names[i] + ")$"}
+		for j := 0; j < balanceFixtureTests; j++ {
+			names[i] = append(names[i], fmt.Sprintf("TestBalance%02dx%02d", i, j))
+		}
+		all = append(all, names[i]...)
+		shards[i] = map[string]any{"index": i, "tests": names[i],
+			"estimatedDurationMillis": 0, "regex": "^(?:" + strings.Join(names[i], "|") + ")$"}
 	}
 	plan := map[string]any{"version": 1, "package": fixturePackage, "historyUsed": false, "shards": shards}
 	dirs := make([]string, len(elapsed))
@@ -114,12 +122,16 @@ func nShardHistoryFixture(t *testing.T, elapsed []float64) (string, []string) {
 		writeJSONFixture(t, filepath.Join(dirs[i], "plan.json"), plan)
 		writeJSONFixture(t, filepath.Join(dirs[i], "selected-shard.json"), shards[i])
 		writeJSONFixture(t, filepath.Join(dirs[i], "validation-summary.json"), map[string]any{
-			"valid": true, "expected": []string{names[i]}, "passed": []string{names[i]}, "errors": []string{},
+			"valid": true, "expected": names[i], "passed": names[i], "errors": []string{},
 		})
+		var events strings.Builder
+		for _, name := range names[i] {
+			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%g}\n",
+				fixturePackage, name, elapsed[i]/balanceFixtureTests)
+		}
 		for file, data := range map[string]string{
-			"discovery.txt": strings.Join(names, "\n") + "\n",
-			"events.json": fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%g}\n",
-				fixturePackage, names[i], elapsed[i]),
+			"discovery.txt": strings.Join(all, "\n") + "\n",
+			"events.json":   events.String(),
 		} {
 			if err := os.WriteFile(filepath.Join(dirs[i], file), []byte(data), 0600); err != nil {
 				t.Fatal(err)
@@ -173,7 +185,11 @@ func TestCIApexNShardBalanceTimingRoutes(t *testing.T) {
 								elapsed[0] = 3 // Median is the mean for two shards.
 							}
 							if timing == "above" {
-								elapsed[0] += 0.001
+								// Above the ratio by more than the shard's largest test.
+								elapsed[0] = 1.6
+								if count == 2 {
+									elapsed[0] = 4
+								}
 							}
 						}
 						output, dirs := nShardHistoryFixture(t, elapsed)

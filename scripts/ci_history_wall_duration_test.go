@@ -196,8 +196,9 @@ func TestCIApexHistoryWallTimeFallsBackToElapsed(t *testing.T) {
 	})
 }
 
-// The balance gate must see the same weights the planner will use: a shard
-// whose parents hide four minutes behind parallel subtests is not balanced.
+// The balance gate must see the same weights the planner will use. A shard
+// whose parent hides four minutes behind parallel subtests is that one
+// dominant test: the history keeps the wall weight and the gate tolerates it.
 func TestCIApexHistoryBalanceGateUsesWallTime(t *testing.T) {
 	events := [][]wallEvent{
 		parallelParent("TestWall00", 240),
@@ -207,11 +208,15 @@ func TestCIApexHistoryBalanceGateUsesWallTime(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "push")
 	t.Setenv("GITHUB_HEAD_REF", "")
 	output, dirs := wallHistoryFixture(t, fixturePackage, true, events)
-	if out, err := runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs); err == nil || !strings.Contains(out, "shard 0 elapsed") || !strings.Contains(out, "exceeds 1.5x") {
-		t.Fatalf("history-planned skew hidden behind parallel subtests must be rejected: %v\n%s", err, out)
+	out, err := runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs)
+	if err != nil || !strings.Contains(out, "dominated by one test TestWall00 at 240.") {
+		t.Fatalf("a wall-time dominant test must keep history with an advisory: %v\n%s", err, out)
+	}
+	if got := readWallHistory(t, output); got["TestWall00"] != 240000 {
+		t.Fatalf("history-planned refresh must keep wall durations: %v", got)
 	}
 	output, dirs = wallHistoryFixture(t, fixturePackage, false, events)
-	out, err := runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs)
+	out, err = runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs)
 	if err != nil || !strings.Contains(out, "timing advisory:") {
 		t.Fatalf("fallback-planned skew must stay advisory: %v\n%s", err, out)
 	}

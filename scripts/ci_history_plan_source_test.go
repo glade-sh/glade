@@ -94,6 +94,10 @@ func TestCIDurationHistoryFallbackPlanTimingAdvisory(t *testing.T) {
 							packageName = semaFixturePackage
 						}
 						fixture := durationHistoryRouteFixture(t, packageName, elapsed)
+						if route == "apex" {
+							// The Apex gate tolerates one dominant test; use many small ones.
+							fixture = durationHistoryRouteSpreadFixture(t, packageName, elapsed)
+						}
 						setPlanHistoryUsed(t, fixture.shards[:], source == "history")
 						out, err := runDurationHistoryRoute(t, route, entry, fixture)
 						wantErr := source == "history" && event != "pull_request"
@@ -123,11 +127,17 @@ func TestCIDurationHistoryFallbackPlanTimingAdvisory(t *testing.T) {
 						if err != nil {
 							t.Fatal(err)
 						}
-						if err := json.Unmarshal(data, &history); err != nil || history.Package != packageName || !history.Complete || len(history.Tests) != 2 {
+						if err := json.Unmarshal(data, &history); err != nil || history.Package != packageName || !history.Complete || len(history.Tests) != map[string]int{"sema": 2, "apex": 64}[route] {
 							t.Fatalf("invalid refreshed history: %s err=%v", data, err)
 						}
-						for index, test := range history.Tests {
-							if test.DurationMillis != int64(math.Round(elapsed[index]*1000)) {
+						perShard := len(history.Tests) / 2
+						for index := 0; index < 2; index++ {
+							var total int64
+							for _, test := range history.Tests[index*perShard : (index+1)*perShard] {
+								total += test.DurationMillis
+							}
+							// Each spread test rounds to a millisecond.
+							if diff := total - int64(math.Round(elapsed[index]*1000)); diff > 32 || diff < -32 {
 								t.Fatalf("history lost observed duration: %s", data)
 							}
 						}
