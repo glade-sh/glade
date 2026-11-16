@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -71,8 +72,9 @@ var ruleMatchKeysResiduals = map[string]string{
 	// "Kate" and "Katie" score 100 natively behind the initial key; here
 	// Jaro-Winkler 0.95.
 	"C1.Kthree.f6": "1@99.0", "C1.Kfour.f6": "1@99.0", "C1.Kseven.f6": "1@99.0", "C1.Keight.f6": "1@99.0", "C1.Knine.f6": "1@99.0",
-	// "Alex" and "Xander" are a Name Variant pair natively; the table lacks it.
-	"C1.Keight.f4": "1@95.0", "B2.s_cmp_c.8": "0@", "B2.s_cmp_l.8": "0@",
+	// "Alex" and "Xander" are a Name Variant pair natively on the standard
+	// rule only (standardNameVariants); the custom table lacks it.
+	"C1.Keight.f4": "1@95.0",
 	// Keyboard Distance of "Test 1" and "Last 1" (96 natively).
 	"C1.Ktwo.l5b": "1@97.0", "C1.Kthree.l5b": "1@99.0", "C1.Kfive.l5b": "1@99.0",
 }
@@ -252,5 +254,199 @@ func TestStandardInitialsNeedASCIIInitial(t *testing.T) {
 	}
 	if _, ok := standardInitialKeyedFirst("Keith", "K"); ok {
 		t.Fatal("phone path: a Kelvin-sign name matched an ASCII initial")
+	}
+}
+
+// NATIVE surname_keyboard, surname_substitution (panels A to J, exact first
+// name and equal email): a surname pair the standard rule keeps apart with
+// equal first names is not found through a blank or a merely similar first
+// name, and a pair it finds stays found. The email path scores the surname
+// the same way whatever the first names.
+func TestStandardEmailPathSurnamePanelsHoldForAnyFirstName(t *testing.T) {
+	rules := map[string]ruleMatchKeysRule{"Contact": {Object: "Contact"}, "Lead": {Object: "Lead"}}
+	names := map[string]string{"Contact": "Standard_Contact_Match_Rule_v1_1", "Lead": "Standard_Lead_Match_Rule_v1_0"}
+	pairs, misses := 0, 0
+	for _, fixture := range []struct {
+		dir    string
+		tables []string
+	}{
+		{surnameNativeDir, []string{"pairs1.tsv", "pairs1b.tsv", "pairs2.tsv"}},
+		{"testdata/conformance/surname_substitution/", []string{"pairs.tsv"}},
+	} {
+		inputs := map[string][]map[string]string{}
+		for _, name := range fixture.tables {
+			for _, p := range surnameTable(t, fixture.dir, name) {
+				inputs["m_"+p["method"]] = append(inputs["m_"+p["method"]], p)
+			}
+		}
+		for _, row := range surnameTable(t, fixture.dir, "org.tsv") {
+			if row["api"] != "67.0" || row["route"] != "anonymous" || row["repeat"] != "1" {
+				continue
+			}
+			entries := strings.Split(strings.Split(row["observation"], "|")[2], ",")
+			for _, p := range inputs[row["method"]] {
+				if p["variant"] != "std" {
+					continue
+				}
+				index, err := strconv.Atoi(p["index"])
+				if err != nil {
+					t.Fatal(err)
+				}
+				find, _, _ := strings.Cut(strings.SplitN(entries[index], ":", 2)[1], "/")
+				native := find != "-"
+				record := func(first, last string) map[string]string {
+					fields := map[string]string{"LastName": last, "Email": "s@k.example"}
+					if first != "" {
+						fields["FirstName"] = first
+					}
+					if p["obj"] == "Lead" {
+						fields["Company"] = "Co " + last
+					}
+					return fields
+				}
+				pairs++
+				if !native {
+					misses++
+				}
+				for _, first := range []string{"Brannock", "Brannok", ""} {
+					got := ruleMatchKeysFind(t, names[p["obj"]], rules[p["obj"]], record("Brannock", p["seed"]), record(first, p["cand"]))
+					if (got != "0@") != native {
+						t.Errorf("%s %s/%s candidate first name %q: got %s, native match %v", p["method"], p["seed"], p["cand"], first, got, native)
+					}
+				}
+			}
+		}
+	}
+	if pairs != 1088 || misses != 76 {
+		t.Fatalf("%d pairs, %d native misses", pairs, misses)
+	}
+}
+
+// Differential (origin/main ad1577dbc6): shapes no row measures keep main. A
+// cross-object rule's phone path keeps the standard First Name item, and a
+// Last Name without a letter keeps its Keyboard Distance raw score.
+func TestDuplicateRuleMatchKeysCrossObjectAndLetterlessKeepMain(t *testing.T) {
+	for _, c := range []struct{ a, b, want string }{
+		{"Y", "Y R S", "0@"},
+		{"J", "Jane", "0@"},
+		{"Kristen", "Cristen", "1@95.0"},
+		{"Mary Ann", "MaryAnn", "1@99.0"},
+	} {
+		record := func(first string) map[string]string {
+			return map[string]string{"FirstName": first, "LastName": "Harlow", "Phone": "4155550123"}
+		}
+		row := standardNativeRow{Object: "Contact", ExistObject: "Lead", Rule: "Standard_Lead_Match_Rule_v1_0", Existing: []map[string]string{record(c.a)}, Candidates: []map[string]string{record(c.b)}}
+		matches, _ := standardRowMatches(t, row)
+		got := "0@"
+		for _, confidence := range matches {
+			got = fmt.Sprintf("1@%.1f", math.Floor(confidence+0.5))
+		}
+		if got != c.want {
+			t.Errorf("cross-object phone path %s/%s: got %s, origin/main %s", c.a, c.b, got, c.want)
+		}
+	}
+	either := ruleMatchKeysRule{Object: "Contact", Filter: "(1 AND 2) OR 3"}
+	for _, item := range [][2]string{{"FirstName", "FirstName"}, {"LastName", "LastName"}, {"Email", "Exact"}} {
+		either.Items = append(either.Items, struct {
+			Field  string `json:"field"`
+			Method string `json:"method"`
+		}{item[0], item[1]})
+	}
+	for _, c := range []struct{ a, b, want string }{{"42", "97", "1@88.0"}, {"王", "42", "1@88.0"}} {
+		stored := map[string]string{"FirstName": "Dana", "LastName": c.a, "Email": "probe@fixture.example"}
+		candidate := map[string]string{"FirstName": "Dana", "LastName": c.b, "Email": "probe@fixture.example"}
+		if got := ruleMatchKeysFind(t, "Either", either, stored, candidate); got != c.want {
+			t.Errorf("letterless last name %s/%s: got %s, origin/main %s", c.a, c.b, got, c.want)
+		}
+	}
+}
+
+// The initial-keyed First Name item compares at most maxFuzzyInputRunes
+// runes, like every other fuzzy item (FuzzyScore).
+func TestFirstNameInitialKeyedCapsInput(t *testing.T) {
+	long := strings.Repeat("a", maxFuzzyInputRunes)
+	if ok, score := firstNameInitialKeyed(long+"b", long+"c"); !ok || score != 100 {
+		t.Fatalf("text past the cap was compared: %v %.1f", ok, score)
+	}
+}
+
+// NATIVE standard_first_names/org.tsv (C9 c9s1, c9s2): the standard Contact
+// rule over 68 first names under one last name and email address, API 62.0
+// and 67.0, anonymous and @IsTest, two repeats. Every directed pair must give
+// the native verdict and confidence: Name Variant pairs and equal Metaphone 3
+// codes score 100, Jaro-Winkler from 0.85 scores (200 + s) / 3 ("Mark" finds
+// "Mary" at 96, "Patrick" "Patricia" at 98), and the variant table is not
+// transitive ("Edward" does not find "Theodore", "Bob" does not find "Bill").
+func TestStandardFirstNameNativePanels(t *testing.T) {
+	const dir = "testdata/conformance/standard_first_names/"
+	raw, err := os.ReadFile(dir + "cases.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases map[string]struct {
+		Object string   `json:"object"`
+		Rule   string   `json:"rule"`
+		Fields []string `json:"fields"`
+		Values []string `json:"values"`
+	}
+	if err := json.Unmarshal(raw, &cases); err != nil {
+		t.Fatal(err)
+	}
+	const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+	rows := surnameTable(t, dir, "org.tsv")
+	if len(rows) != 16 {
+		t.Fatalf("%d observations", len(rows))
+	}
+	rule := ruleMatchKeysRule{Object: "Contact"}
+	seen := map[string]string{}
+	pairs, matches := 0, 0
+	for _, row := range rows {
+		c, ok := cases[row["method"]]
+		if !ok || c.Rule != "Standard_Contact_Duplicate_Rule" || c.Object != "Contact" {
+			t.Fatalf("unknown case %v", row)
+		}
+		if first, ok := seen[row["method"]]; ok {
+			if first != row["observation"] {
+				t.Fatalf("%s: observations differ", row["method"])
+			}
+			continue
+		}
+		seen[row["method"]] = row["observation"]
+		count, body, _ := strings.Cut(row["observation"], ":")
+		if count != strconv.Itoa(len(c.Values)) {
+			t.Fatalf("%s: %s values", row["method"], count)
+		}
+		native := map[string]string{}
+		for _, token := range strings.Split(body, ",") {
+			confidence := "100.0"
+			if len(token) > 2 {
+				confidence = token[2:]
+			}
+			native[token[:2]] = "1@" + confidence
+		}
+		record := func(value string) map[string]string {
+			fields := map[string]string{}
+			for i, part := range strings.Split(value, "|") {
+				fields[c.Fields[i]] = part
+			}
+			return fields
+		}
+		for i, candidate := range c.Values {
+			for j, existing := range c.Values {
+				want, ok := native[digits[i:i+1]+digits[j:j+1]]
+				if !ok {
+					want = "0@"
+				} else {
+					matches++
+				}
+				pairs++
+				if got := ruleMatchKeysFind(t, "Standard_Contact_Match_Rule_v1_1", rule, record(existing), record(candidate)); got != want {
+					t.Errorf("%s %s finds %s: got %s, native %s", row["method"], candidate, existing, got, want)
+				}
+			}
+		}
+	}
+	if len(seen) != 2 || pairs != 35*35+33*33 || matches != 89+71 {
+		t.Fatalf("%d cases, %d pairs, %d native matches", len(seen), pairs, matches)
 	}
 }

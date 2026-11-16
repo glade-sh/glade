@@ -13,7 +13,8 @@ import (
 // before it takes the initial), and the pairs the tables keep apart stay
 // apart.
 func firstNameInitialKeyed(a, b string) (bool, float64) {
-	x, y := strings.ToLower(strings.TrimSpace(a)), strings.ToLower(strings.TrimSpace(b))
+	a, b = capFuzzyInput(strings.TrimSpace(a)), capFuzzyInput(strings.TrimSpace(b))
+	x, y := strings.ToLower(a), strings.ToLower(b)
 	fx, fy := foldLowered(x), foldLowered(y)
 	if x == y || nameVariantOf(fx, fy) {
 		return true, 100
@@ -361,7 +362,7 @@ const standardFirstNameJaroWinkler = 0.85
 func standardFirstNameScore(a, b string) (bool, float64) {
 	x, y := strings.ToLower(strings.TrimSpace(capFuzzyInput(a))), strings.ToLower(strings.TrimSpace(capFuzzyInput(b)))
 	fx, fy := foldLowered(x), foldLowered(y)
-	if x == y || nameVariantOf(fx, fy) || standardInitials(a, b, fx, fy) {
+	if x == y || nameVariantOf(fx, fy) || standardNameVariants[orderedPair(fx, fy)] || standardInitials(a, b, fx, fy) {
 		return true, 100
 	}
 	jx, jy := standardNameLetters(fx), standardNameLetters(fy)
@@ -440,4 +441,28 @@ func standardASCIIInitial(s string) bool {
 		}
 	}
 	return false
+}
+
+// standardNameVariants are first-name pairs the standard Contact rule scores
+// 100 on the email path, in either direction, that the shared dictionary and
+// Glade's Metaphone 3 codes do not give (NATIVE standard_first_names c9s1 and
+// c9s2; duplicate_rule_match_keys B2 s_cmp 8; "Raymond" and "Rae", "Susan"
+// and "Su" from the fuzzy_first_alias_keys standard panel i1sb). The table is
+// pairwise, never closed transitively: natively "Edward" does not find
+// "Theodore" although both find "Ted", nor "John" "Henry" although both find
+// "Hank". No custom-rule row shows these pairs, so custom rules do not read it.
+var standardNameVariants = map[[2]string]bool{
+	orderedPair("alex", "xander"):    true,
+	orderedPair("edward", "ted"):     true,
+	orderedPair("hank", "jack"):      true,
+	orderedPair("hank", "john"):      true,
+	orderedPair("jack", "john"):      true,
+	orderedPair("marjorie", "peggy"): true,
+	orderedPair("mary", "molly"):     true,
+	orderedPair("mary", "polly"):     true,
+	orderedPair("matt", "matthew"):   true,
+	orderedPair("molly", "polly"):    true,
+	orderedPair("rae", "raymond"):    true,
+	orderedPair("sally", "sarah"):    true,
+	orderedPair("su", "susan"):       true,
 }

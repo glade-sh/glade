@@ -464,7 +464,8 @@ func standardPersonOf(org *storage.OrgState, object string, record storage.Recor
 //     row measures it, so it keeps the standard First Name item).
 //
 // The phone and company paths need the surname key (standardLastName) and
-// both first names. A cross-object rule keeps the surname key on every path.
+// both first names. A cross-object rule keeps the surname key and the
+// standard First Name item on every path.
 // The best path decides.
 func standardPersonMatch(object string, candidate, existing standardPerson) (bool, float64) {
 	best, found := 0.0, false
@@ -497,7 +498,13 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 		}
 	}
 	if phone := standardCompare(candidate.phone, existing.phone, standardPhone(object)); phone.ok() {
-		if first, ok := standardInitialKeyedFirst(candidate.first, existing.first); ok {
+		if candidate.kind != existing.kind {
+			// No row measures a cross-object phone path: it keeps the
+			// standard First Name item and its confidence.
+			if first := standardCompare(candidate.first, existing.first, standardFirstName); first.ok() {
+				take(standardProduct(last.confidence, first.confidence, phone.confidence))
+			}
+		} else if first, ok := standardInitialKeyedFirst(candidate.first, existing.first); ok {
 			take(standardProduct(last.confidence, first, phone.confidence))
 		}
 	}
@@ -518,10 +525,10 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 // the standard fixture's Field.Contact.Last: "Kovalski" finds "Kowalski") and
 // the first name by standardFirstNameScore. Blank names are ignored when the
 // grouping includes Email: two blank last names agree, and a blank candidate
-// first name matches any existing one. decided is false when the email path
-// leaves the pair to the other paths (an existing record without a first
-// name, a candidate's surname that the captured exact-first-name panels keep
-// apart).
+// first name matches any existing one. A surname pair inside the measured
+// exact-first-name panels keeps the panels' verdict whatever the first names.
+// decided is false when the email path leaves the pair to the other paths (an
+// existing record without a first name, first names that do not match).
 func standardEmailPath(candidate, existing standardPerson) (matched bool, confidence float64, decided bool) {
 	lastConfidence := 100.0
 	switch {
@@ -535,32 +542,38 @@ func standardEmailPath(candidate, existing standardPerson) (matched bool, confid
 	case candidate.last == "" || existing.last == "":
 		return false, 0, true
 	default:
-		if candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
-			// The exact-first-name surname panels (duplicate_save_behavior)
-			// measure these keyboard geometries; their verdict stands.
-			if matched, confidence := standardCorroboratedSurname(candidate.last, existing.last); matched {
-				return true, confidence, true
-			}
-			if last := standardCompare(candidate.last, existing.last, standardLastName); last.ok() {
-				if last.confidence < 100 && standardIsTerminalSwap(candidate.last, existing.last) {
-					matched, confidence := standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
-					return matched, confidence, true
+		// The exact-first-name surname panels (duplicate_save_behavior,
+		// surname_keyboard, surname_substitution) measure these keyboard
+		// geometries. Their verdict on the surname stands whatever the first
+		// names: a pair they keep apart with equal first names is not found
+		// through a blank or a merely similar first name either.
+		panel := false
+		if matched, confidence := standardCorroboratedSurname(candidate.last, existing.last); matched {
+			lastConfidence, panel = confidence, true
+		} else if last := standardCompare(candidate.last, existing.last, standardLastName); last.ok() {
+			if last.confidence < 100 && standardIsTerminalSwap(candidate.last, existing.last) {
+				matched, confidence := standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
+				if !matched {
+					return false, 0, true
 				}
-			} else if standardSurnamePanelShape(candidate.last, existing.last) {
+				lastConfidence, panel = confidence, true
+			}
+		} else if standardSurnamePanelShape(candidate.last, existing.last) {
+			return false, 0, true
+		}
+		if !panel {
+			var matched bool
+			if standardHasLetter(candidate.last) && standardHasLetter(existing.last) {
+				matched, lastConfidence = lastNameAlgorithms(foldText(capFuzzyInput(candidate.last)), foldText(capFuzzyInput(existing.last)))
+			} else {
+				// A name without a letter has no phonetic code: the keyed item
+				// decides ("42" finds "43" at 99 and never "王"; Shapes.Contact.Last).
+				last := standardCompare(candidate.last, existing.last, standardLastName)
+				matched, lastConfidence = last.ok(), last.confidence
+			}
+			if !matched {
 				return false, 0, true
 			}
-		}
-		var matched bool
-		if standardHasLetter(candidate.last) && standardHasLetter(existing.last) {
-			matched, lastConfidence = lastNameAlgorithms(foldText(capFuzzyInput(candidate.last)), foldText(capFuzzyInput(existing.last)))
-		} else {
-			// A name without a letter has no phonetic code: the keyed item
-			// decides ("42" finds "43" at 99 and never "王"; Shapes.Contact.Last).
-			last := standardCompare(candidate.last, existing.last, standardLastName)
-			matched, lastConfidence = last.ok(), last.confidence
-		}
-		if !matched {
-			return false, 0, true
 		}
 	}
 	switch {

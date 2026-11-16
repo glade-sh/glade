@@ -206,7 +206,7 @@ func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
 // firstNameAlgorithms scores a pair of lower-cased first names (x, y) and
 // their folds (fx, fy) once a match key has let the pair through: the
 // Initials rule scores 100, otherwise Jaro-Winkler decides at the threshold.
-// The key is the matching rule's concern (customFirstNameKeyMode).
+// The key is the matching rule's concern (customRuleKeyModes).
 func firstNameAlgorithms(x, y, fx, fy string) (bool, float64) {
 	if firstNameInitials(fx, fy) || firstNameInitials(fy, fx) {
 		return true, 100

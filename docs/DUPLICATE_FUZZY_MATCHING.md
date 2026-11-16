@@ -475,9 +475,12 @@ B2 `s_*`, and the `Standard.Field.*`, `Standard.*.NameConfidence` rows):
   finds `Harlow III`, never `Harlow Jr`; Keyboard Distance otherwise). The
   first name is scored by Exact, Initials, Jaro-Winkler at 0.85, Metaphone 3
   and Name Variant (`Y` finds `Y R S`, `Jane` finds `John`, `Mary Ann` finds
-  `MaryAnn`). Two blank last names are ignored beside two first names. The
-  exact-first-name surname panels (`duplicate_save_behavior`) keep their
-  measured keyboard geometry.
+  `MaryAnn`). The standard rule also scores a few pairs 100 that custom rules
+  do not (`Jack` and `John`, `Ted` and `Edward`, `Molly` and `Mary`; NATIVE
+  `standard_first_names`); the pairs are not transitive. Two blank last names are ignored beside two first names. The
+  measured surname panels (`duplicate_save_behavior`, `surname_keyboard`,
+  `surname_substitution`) keep their keyboard geometry whatever the first
+  names.
 - The phone path is keyed on `First_Name (1,1) Last_Name Phone`: the surname
   key applies (`McAllen` does not find `Mc Allen`), and an initial or a name
   that differs only in spaces passes when the initials agree.
