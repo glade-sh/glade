@@ -1155,6 +1155,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 	if value, handled, err := vm.callLocaleNumberFormatMember(receiver, method, args); handled || err != nil {
 		return value, true, err
 	}
+	if receiver.Kind == ValueString && strings.EqualFold(method, "template") && len(args) == 1 && args[0].Kind == ValueNull {
+		return Null, true, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if receiver.Kind == ValueString && strings.EqualFold(method, "template") && len(args) == 1 && args[0].Kind == ValueMap {
 		text, err := stringTemplate(receiver.Text, args[0], func(value Value) (string, error) {
 			if value.Kind != ValueObject {
@@ -1165,7 +1168,13 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return "", vm.ambiguousOverloadError("toString", nil)
 			}
 			if !ok || target.IsStatic || methodHasModifier(target.Modifiers, "passive-generated") {
-				return value.String(), nil
+				// Dates and Datetimes render as they do in a string concatenation.
+				// NATIVE String.template Date and Datetime values apex_release_gates/org.tsv anonymous 62.0 67.0
+				text, err := vm.stubNamespaceExpressionText(value, result)
+				if err != nil {
+					return "", err
+				}
+				return concatStringText(value, text), nil
 			}
 			out, err := vm.callMethodWithReceiver(target, value, nil, result)
 			if err != nil {

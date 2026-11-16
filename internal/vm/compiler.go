@@ -387,7 +387,7 @@ func lexMultilineString(source string, start int) (token, int, error) {
 	}
 	for i < len(source) {
 		if i+len(delimiter) <= len(source) && source[i:i+len(delimiter)] == delimiter {
-			return token{kind: tokenString, text: text.String(), pos: start}, i + len(delimiter), nil
+			return token{kind: tokenString, text: multilineStringValue(text.String()), pos: start}, i + len(delimiter), nil
 		}
 		if source[i] == '\r' && i+1 < len(source) && source[i+1] == '\n' {
 			text.WriteByte('\n')
@@ -398,6 +398,82 @@ func lexMultilineString(source string, start int) (token, int, error) {
 		i++
 	}
 	return token{}, start, fmt.Errorf("unterminated multiline string literal at byte %d", start)
+}
+
+// multilineStringValue turns the raw body of a multiline string into its
+// value. Salesforce strips the common indentation, trailing whitespace on each
+// line, and then reads escapes; the delimiter line counts toward the common
+// indentation even when it holds only whitespace.
+// NATIVE multiline string indentation apex_release_gates/org.tsv anonymous 62.0 67.0
+func multilineStringValue(raw string) string {
+	lines := strings.Split(raw, "\n")
+	isBlank := func(line string) bool { return strings.TrimSpace(line) == "" }
+	indent := -1
+	for i, line := range lines {
+		if isBlank(line) && i != len(lines)-1 {
+			continue
+		}
+		width := len(line) - len(strings.TrimLeft(line, " \t\f\v"))
+		if indent < 0 || width < indent {
+			indent = width
+		}
+	}
+	if indent < 0 {
+		indent = 0
+	}
+	stripped := make([]string, len(lines))
+	for i, line := range lines {
+		if isBlank(line) {
+			continue
+		}
+		stripped[i] = strings.TrimRight(line[indent:], " \t\f\v")
+	}
+	return multilineStringEscapes(strings.Join(stripped, "\n"))
+}
+
+func multilineStringEscapes(text string) string {
+	if !strings.Contains(text, "\\") {
+		return text
+	}
+	var out strings.Builder
+	for i := 0; i < len(text); i++ {
+		if text[i] != '\\' || i+1 >= len(text) {
+			out.WriteByte(text[i])
+			continue
+		}
+		i++
+		switch text[i] {
+		case 'n':
+			out.WriteByte('\n')
+		case 'r':
+			out.WriteByte('\r')
+		case 't':
+			out.WriteByte('\t')
+		case 'b':
+			out.WriteByte('\b')
+		case 'f':
+			out.WriteByte('\f')
+		case 's':
+			out.WriteByte(' ')
+		case '\'', '"', '\\':
+			out.WriteByte(text[i])
+		case '\n':
+			// A backslash before a line break joins the two lines.
+		case 'u':
+			if end := apexUnicodeEscapeEnd(text, i-1); end > i-1 {
+				if decoded, err := unescapeJavaLike("Apex string literal", text[i-1:end]); err == nil {
+					out.WriteString(decoded)
+					i = end - 1
+					continue
+				}
+			}
+			out.WriteString("\\u")
+		default:
+			out.WriteByte('\\')
+			out.WriteByte(text[i])
+		}
+	}
+	return out.String()
 }
 
 func lexSingleString(source string, start int) (token, int, error) {
