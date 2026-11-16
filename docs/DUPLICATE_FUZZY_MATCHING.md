@@ -562,6 +562,16 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   three-item rules are in the second fixture; its gaps are listed under
   "Standard rules".
 - Unsupported fuzzy rules (unknown method names) are still left unenforced.
+- Remaining gaps of `duplicate_runtime_behavior/` (field differences, update
+  gate, entity ids, report sets): the field differences of custom rules with a
+  fuzzy item and of Person Account rules are not captured, so Glade reports
+  none; the fuzzy confidence behind `FDIFF2` (`fuzzyFirst`,
+  `queryHasStoredNull`) is compared only for the field differences of the
+  records both sides return, because the fuzzy scorer owns it; the update gate
+  compares an Apex update of a record inserted in the same transaction with its
+  insert-time values (NATIVE `RPT_*`), while other repeat edits compare with
+  the stored values; a flow update, a standard-rule update report and
+  `runAsCurrentUser` are not captured.
 
 ## Standard rules
 
@@ -682,6 +692,13 @@ company). NATIVE `Standard.Cross.ContactToLead` and `Standard.Cross.LeadToContac
 the structure is the Lead rule in the first direction and the Contact rule in
 the second, and a Lead candidate's company never equals a Contact's account.
 Glade enforces them when the rule is active.
+
+Custom cross-object rules (a duplicate rule whose matching rule belongs to
+another object, joined by an `objectMapping`) are enforced for the captured
+shape: NATIVE `XMAP` (`duplicate_runtime_behavior/`) maps one input field onto
+one output field, the matching rule reads the mapped values, and every unmapped
+field counts as blank. Mappings of several fields, mappings between standard
+objects and Person Account custom rules are not captured and stay unenforced.
 
 ### Custom rules: OR groups and three items
 

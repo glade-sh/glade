@@ -103,6 +103,11 @@ func normalizeDuplicateRuntime(value any) any {
 		for key, item := range v {
 			out[key] = normalizeDuplicateRuntime(item)
 		}
+		if _, ok := out["kp"].(string); ok && out["raw"] != nil {
+			// ENT rows list the object's key prefix, which the org allocates in
+			// creation order like an id; the comparisons against it stay.
+			out["kp"] = "<kp>"
+		}
 		return out
 	case []any:
 		out := make([]any, len(v))

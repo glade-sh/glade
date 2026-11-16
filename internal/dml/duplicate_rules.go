@@ -20,8 +20,9 @@ type DuplicateMatch struct {
 	// MatchRecord.matchConfidence), parallel to Records.
 	Confidences []float64
 	// FieldDiffs holds each record's compared-field differences (Datacloud
-	// MatchRecord.getFieldDiffs), parallel to Records. Nil means the rule's
-	// field set is not pinned by a native row.
+	// MatchRecord.getFieldDiffs), parallel to Records. The matcher leaves it
+	// nil; AttachFieldDiffs fills it for a result that is reported. Nil also
+	// means the rule's field set is not pinned by a native row.
 	FieldDiffs [][]DuplicateFieldDiff
 }
 
@@ -54,9 +55,6 @@ func (b byMatchCreation) Less(i, j int) bool {
 func (b byMatchCreation) Swap(i, j int) {
 	b.m.Records[i], b.m.Records[j] = b.m.Records[j], b.m.Records[i]
 	b.m.Confidences[i], b.m.Confidences[j] = b.m.Confidences[j], b.m.Confidences[i]
-	if len(b.m.FieldDiffs) == len(b.m.Records) {
-		b.m.FieldDiffs[i], b.m.FieldDiffs[j] = b.m.FieldDiffs[j], b.m.FieldDiffs[i]
-	}
 }
 
 // DuplicateResult mirrors Datacloud.DuplicateResult for one duplicate rule.
@@ -242,7 +240,14 @@ func customDuplicateMatch(rule storage.MatchingRule, keys []fuzzyKeyMode, candid
 			}
 		default:
 			// DR10: Exact compares text without letter case.
-			matches[i] = strings.EqualFold(duplicateExactText(left), duplicateExactText(right))
+			l, r := strings.TrimSpace(workflowValueString(left)), strings.TrimSpace(workflowValueString(right))
+			if len(l) > duplicateExactLimit {
+				l = duplicateExactPrefix(l)
+			}
+			if len(r) > duplicateExactLimit {
+				r = duplicateExactPrefix(r)
+			}
+			matches[i] = strings.EqualFold(l, r)
 			scores[i] = 100
 			if !matches[i] {
 				scores[i] = 50
@@ -351,20 +356,9 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 		return result, false
 	}
 	for _, matching := range rule.MatchRules {
-		personStandard := personRule && strings.EqualFold(matching.Object, "PersonAccount") && strings.EqualFold(matching.Name, "Standard_PersonAccount_Match_Rule_v1_0") && len(matching.Items) == 0
-		standard := (storage.IsStandardMatchingRule(matching.Object, matching.Name) && len(matching.Items) == 0) || personStandard
-		scanObject := matching.Object
-		if personRule && strings.EqualFold(matching.Object, "PersonAccount") {
-			// A Person Account rule compares person accounts with each other.
-			scanObject = "Account"
-		}
-		candidate := record
-		if !strings.EqualFold(scanObject, rule.Object) && !(standard && standardCrossObject(rule.Object, matching.Object)) {
-			mapped, ok := mappedDuplicateCandidate(rule, matching, record)
-			if standard || !ok {
-				return result, false
-			}
-			candidate = mapped
+		standard, personStandard, scanObject, candidate, shaped := duplicateMatchingShape(rule, matching, record)
+		if !shaped {
+			return result, false
 		}
 		fuzzy := false
 		if !standard {
@@ -437,9 +431,6 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 				}
 				match.Records = append(match.Records, existing.Clone())
 				match.Confidences = append(match.Confidences, confidence)
-				if fields := duplicateDiffFields(matching, standard, personStandard); len(fields) > 0 || len(match.FieldDiffs) > 0 {
-					match.FieldDiffs = append(match.FieldDiffs, duplicateFieldDiffs(fields, candidate, existing))
-				}
 			}
 		}
 		sort.Sort(byMatchCreation{&match})
@@ -448,14 +439,61 @@ func FindDuplicateMatchesWithAccess(org *storage.OrgState, rule storage.Duplicat
 		if len(match.Records) > 100 {
 			match.Records = match.Records[:100]
 			match.Confidences = match.Confidences[:100]
-			if len(match.FieldDiffs) > 100 {
-				match.FieldDiffs = match.FieldDiffs[:100]
-			}
 		}
 		sort.Stable(byDuplicateConfidence{&match})
 		result.Matches = append(result.Matches, match)
 	}
 	return result, true
+}
+
+// duplicateMatchingShape classifies one matching rule of a duplicate rule for
+// a record: whether it is a builtin or Person Account standard rule, the object
+// it scans, and the candidate the scan compares (the record, or its objectMapping
+// image for a cross-object custom rule). ok is false for a cross-object shape
+// no native row pins.
+func duplicateMatchingShape(rule storage.DuplicateRule, matching storage.MatchingRule, record storage.Record) (standard, personStandard bool, scanObject string, candidate storage.Record, ok bool) {
+	personRule := strings.EqualFold(rule.Subtype, "PersonAccount")
+	personStandard = personRule && strings.EqualFold(matching.Object, "PersonAccount") && strings.EqualFold(matching.Name, "Standard_PersonAccount_Match_Rule_v1_0") && len(matching.Items) == 0
+	standard = (storage.IsStandardMatchingRule(matching.Object, matching.Name) && len(matching.Items) == 0) || personStandard
+	scanObject = matching.Object
+	if personRule && strings.EqualFold(matching.Object, "PersonAccount") {
+		// A Person Account rule compares person accounts with each other.
+		scanObject = "Account"
+	}
+	candidate = record
+	if !strings.EqualFold(scanObject, rule.Object) && !(standard && standardCrossObject(rule.Object, matching.Object)) {
+		mapped, mappedOK := mappedDuplicateCandidate(rule, matching, record)
+		if standard || !mappedOK {
+			return standard, personStandard, scanObject, candidate, false
+		}
+		candidate = mapped
+	}
+	return standard, personStandard, scanObject, candidate, true
+}
+
+// AttachFieldDiffs fills FieldDiffs for every match that has records. Only a
+// result that is shown needs them (Find, a blocked or alerting save), so the
+// matcher does not compute them for every candidate of every statement.
+func (r *DuplicateResult) AttachFieldDiffs(rule storage.DuplicateRule, record storage.Record) {
+	for i := range r.Matches {
+		match := &r.Matches[i]
+		if len(match.Records) == 0 || i >= len(rule.MatchRules) {
+			continue
+		}
+		matching := rule.MatchRules[i]
+		standard, personStandard, _, candidate, ok := duplicateMatchingShape(rule, matching, record)
+		if !ok {
+			continue
+		}
+		fields := duplicateDiffFields(matching, standard, personStandard)
+		if len(fields) == 0 {
+			continue
+		}
+		match.FieldDiffs = make([][]DuplicateFieldDiff, len(match.Records))
+		for j, existing := range match.Records {
+			match.FieldDiffs[j] = duplicateFieldDiffs(fields, candidate, existing)
+		}
+	}
 }
 
 // standardCrossObject reports the one cross-object shape the native rows pin:
@@ -523,14 +561,19 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 	}
 	exclude := func(id storage.ID) bool { return !update && e.duplicates.stamp == stamp && e.duplicates.batch[id] }
 	var report *DuplicateReport
-	for _, rule := range ActiveDuplicateRulesForRecord(e.Org, record.Object, record) {
+	rules := ActiveDuplicateRulesForRecord(e.Org, record.Object, record)
+	gateBase := prior
+	if update && len(rules) > 0 {
+		gateBase = e.updateGateBaseline(record, prior)
+	}
+	for _, rule := range rules {
 		if !update && e.Options.UpsertCapturedInsertRulesOnly && !upsertCapturedEmailRule(rule, record) && !standardAccountInsertRule(rule) {
 			continue
 		}
 		gated := false
 		if update {
 			var changed bool
-			gated, changed = customFuzzyFieldsChanged(rule, record, prior)
+			gated, changed = customFuzzyFieldsChanged(rule, record, gateBase, e.Options.EnforceDuplicateRules)
 			if !e.Options.EnforceDuplicateRules && !gated {
 				continue
 			}
@@ -552,7 +595,7 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 		if !found.HasRecords() {
 			// Native REP: records inserted together report as one set although
 			// they never alert or block one another.
-			if peers := e.peerDuplicateReport(rule, record, update, stamp); peers != nil && report == nil {
+			if peers := e.peerDuplicateReport(rule, record, update, stamp, nil); peers != nil && report == nil {
 				report = peers
 			}
 			continue
@@ -566,11 +609,13 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 		case strings.EqualFold(action, "Block"):
 			// DR01/DR05: Block ignores DuplicateRuleHeader.allowSave.
 			found.AllowSave = false
+			found.AttachFieldDiffs(rule, record)
 			return nil, duplicateRuleError(found)
 		case strings.EqualFold(action, "Allow"):
 			found.AllowSave = true
 			// DR03/DR04: an alert fails the save unless the explicit options allow it.
 			if duplicateOperationsInclude(operations, "Alert") && !e.Options.AllowDuplicateSave {
+				found.AttachFieldDiffs(rule, record)
 				return nil, duplicateRuleError(found)
 			}
 			// CM01 pins insert reports; native REP also records an update into a
@@ -580,13 +625,13 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 				continue
 			}
 			if report == nil {
-				if peers := e.peerDuplicateReport(rule, record, update, stamp); peers != nil {
-					report = peers
-					continue
-				}
 				var matches []storage.Record
 				for _, match := range found.Matches {
 					matches = append(matches, match.Records...)
+				}
+				if peers := e.peerDuplicateReport(rule, record, update, stamp, matches); peers != nil {
+					report = peers
+					continue
 				}
 				report = &DuplicateReport{Rule: rule, Object: record.Object, RecordID: record.ID, Matches: matches}
 			}
@@ -601,23 +646,42 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 }
 
 // peerDuplicateReport reports an Allow+Report insert that matches records
-// inserted earlier by the same statement. Enforcement never sees them.
-func (e *Engine) peerDuplicateReport(rule storage.DuplicateRule, record storage.Record, update bool, stamp *string) *DuplicateReport {
+// inserted earlier by the same statement. Enforcement never sees them, so the
+// scan is limited to those peers; base holds the matches enforcement found, and
+// the report lists them first. It returns nil when no peer matches.
+func (e *Engine) peerDuplicateReport(rule storage.DuplicateRule, record storage.Record, update bool, stamp *string, base []storage.Record) *DuplicateReport {
 	if update || e.Options.UpsertCapturedInsertRulesOnly || !strings.EqualFold(rule.ActionOnInsert, "Allow") || !duplicateOperationsInclude(rule.OperationsOnInsert, "Report") {
 		return nil
 	}
 	if stamp == nil || e.duplicates.stamp != stamp || len(e.duplicates.batch) == 0 {
 		return nil
 	}
-	all, supported := e.findDuplicateMatches(rule, record, nil)
-	if !supported || !all.HasRecords() {
+	batch := e.duplicates.batch
+	peers, supported := e.findDuplicateMatches(rule, record, func(id storage.ID) bool { return !batch[id] })
+	if !supported || !peers.HasRecords() {
 		return nil
 	}
-	var matches []storage.Record
-	for _, match := range all.Matches {
+	matches := append([]storage.Record(nil), base...)
+	for _, match := range peers.Matches {
 		matches = append(matches, match.Records...)
 	}
 	return &DuplicateReport{Rule: rule, Object: record.Object, RecordID: record.ID, Matches: matches}
+}
+
+// updateGateBaseline returns the record state the update gate compares with.
+// Natively (RPT rows) a record inserted in this transaction is compared with
+// the values it had at its first update, so moving back to them does not run
+// the rule again; a record from an earlier transaction, or any other update,
+// compares with the stored values.
+func (e *Engine) updateGateBaseline(record storage.Record, prior *storage.Record) *storage.Record {
+	if prior == nil || e.RecordCreations == nil || !e.RecordCreations.Contains(record.ID) {
+		return prior
+	}
+	if base, ok := e.RecordCreations.Baseline(record.ID); ok {
+		return &base
+	}
+	e.RecordCreations.SetBaseline(record.ID, prior.Clone())
+	return prior
 }
 
 // The committed upsert observation contains one matching report rule and one
@@ -694,7 +758,11 @@ func standardAccountInsertRule(rule storage.DuplicateRule) bool {
 // Custom edit rows cover exact and fuzzy items, AND and OR logic, and
 // zero, one or multiple filter conditions. Filters decide scope separately.
 // A nonblank matching value must change; sparse and same-value edits do not run.
-func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record, prior *storage.Record) (gated, changed bool) {
+//
+// allowMatchBlanks admits an Exact MatchBlanks item to the gate. Only Apex DML
+// (EnforceDuplicateRules) has native rows for it; the upsert-by-ID update route
+// keeps skipping MatchBlanks rules.
+func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record, prior *storage.Record, allowMatchBlanks bool) (gated, changed bool) {
 	if prior == nil || len(rule.MatchRules) != 1 {
 		return false, false
 	}
@@ -703,7 +771,7 @@ func customFuzzyFieldsChanged(rule storage.DuplicateRule, record storage.Record,
 		return false, false
 	}
 	for _, item := range match.Items {
-		matchBlanks := strings.EqualFold(item.BlankBehavior, "MatchBlanks") && strings.EqualFold(item.Method, "Exact")
+		matchBlanks := allowMatchBlanks && strings.EqualFold(item.BlankBehavior, "MatchBlanks") && strings.EqualFold(item.Method, "Exact")
 		if !matchBlanks && !strings.EqualFold(item.BlankBehavior, "NullNotAllowed") || (!strings.EqualFold(item.Method, "Exact") && !FuzzyMethodSupported(item.Method)) {
 			return false, false
 		}
@@ -883,8 +951,12 @@ func mappedDuplicateCandidate(rule storage.DuplicateRule, matching storage.Match
 // (native X99: values equal in the first 99 characters match).
 const duplicateExactLimit = 99
 
-func duplicateExactText(value storage.Value) string {
-	text := strings.TrimSpace(workflowValueString(value))
+// duplicateExactPrefix keeps the first 99 characters of a trimmed value that
+// is longer than 99 bytes (bytes bound characters, so shorter values never
+// reach it). Native counts characters of an unrecorded unit (code points or
+// UTF-16 units); the X99 rows are ASCII, so counting runes is an assumption
+// that only differs for characters outside the Basic Multilingual Plane.
+func duplicateExactPrefix(text string) string {
 	if runes := []rune(text); len(runes) > duplicateExactLimit {
 		return string(runes[:duplicateExactLimit])
 	}

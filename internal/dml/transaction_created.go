@@ -7,6 +7,29 @@ import "github.com/glade-sh/glade/internal/storage"
 type RecordCreations struct {
 	ids   map[storage.ID]int
 	order []storage.ID
+	// baselines holds a created record's state at its first duplicate-rule
+	// checked update in the transaction (see Engine.updateGateBaseline).
+	baselines map[storage.ID]storage.Record
+}
+
+// Baseline returns the state recorded by SetBaseline for a created record.
+func (r *RecordCreations) Baseline(id storage.ID) (storage.Record, bool) {
+	if r == nil {
+		return storage.Record{}, false
+	}
+	record, ok := r.baselines[creationID(id)]
+	return record, ok
+}
+
+// SetBaseline records the state of a record created in this transaction.
+func (r *RecordCreations) SetBaseline(id storage.ID, record storage.Record) {
+	if r == nil || !r.Contains(id) {
+		return
+	}
+	if r.baselines == nil {
+		r.baselines = make(map[storage.ID]storage.Record)
+	}
+	r.baselines[creationID(id)] = record
 }
 
 func creationID(id storage.ID) storage.ID {
@@ -39,6 +62,7 @@ func (r *RecordCreations) Record(id storage.ID) {
 func (r *RecordCreations) Forget(id storage.ID) {
 	if r != nil {
 		delete(r.ids, creationID(id))
+		delete(r.baselines, creationID(id))
 	}
 }
 
@@ -57,6 +81,7 @@ func (r *RecordCreations) Rollback(mark int) {
 		id := r.order[i]
 		if index, ok := r.ids[id]; ok && index == i {
 			delete(r.ids, id)
+			delete(r.baselines, id)
 		}
 	}
 	clear(r.order[mark:])
