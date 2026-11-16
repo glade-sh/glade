@@ -30,6 +30,8 @@ No changes yet.
 
 - **Apex surface rows.** Captured rows at API 62.0 and 67.0 now drive `SObject.hashCode` (the sum of each assigned field name's hash XOR its value's hash), `String.format` with an unmatched brace, `String.join` with a null separator, `Time` text, `formatLong` in more locales and half-hour offsets, the Adelaide, Auckland and Kathmandu time zones and the DST overlap choice, `Date.parse` for `en_GB` and the captured `ja_JP` shape, several `JSON` edge cases, `AsyncInfo` diagnostics, and callouts from a Queueable or a Finalizer. Rows outside these shapes keep their earlier behavior.
 
+- **`hashCode` values.** Captured rows at API 62.0 and 67.0 drive `hashCode` for Decimal (as a Double alone, and with its scale inside a List, Set or SObject field, using a queried field's declared scale), Id (its 18-character text), Date, Datetime (including the term that depends on the user locale's first day of week and minimal days), Time, Integer, and child and parent relationship values on an SObject. An empty child list hashes the same as an absent one, so such records also compare equal and dedupe together in a Set or Map.
+
 - **Numeric results match across architectures.** Floating-point products in Apex math, SOQL and duplicate-matching scores are no longer fused into one multiply-add on arm64, so macOS arm64 and Linux amd64 return the same bits. Duplicate match results with equal shown confidence sort by creation order, as captured natively at API 62.0 and 67.0.
 
 - **Street duplicate matching.** Street names with a spelled hundred follow a single-digit multiplier, and ordinal-first and hundred shapes outside the captured rows keep their earlier scores.
