@@ -1147,15 +1147,21 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 // A pair outside the fitted routes, or one the fitted scorer rejects, keeps
 // the word scorer's decision.
 func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
-	ok, score := fuzzyCompanyRouted(a, b, matchBlanks)
+	if a == b && companySimpleExact(a) {
+		return true, 100
+	}
+	ma, mb := companyMarks(a), companyMarks(b)
+	ok, score := fuzzyCompanyRouted(a, b, matchBlanks, ma, mb)
 	if ok {
 		return ok, score
 	}
 	if companyDoubledEqual(a, b) {
 		return true, 100
 	}
-	if confidence, matched := companySlashScore(a, b); matched {
-		return true, confidence
+	if (ma|mb)&companyMarkQualifier != 0 {
+		if confidence, matched := companySlashScore(a, b); matched {
+			return true, confidence
+		}
 	}
 	return ok, score
 }
@@ -1165,7 +1171,7 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 // "Vexlett Packard" and "Vexlet Packard" match at 100 in both directions;
 // NATIVE fuzzy_matching rows reject "Pioneer Atlas" and "Pioneer Atlass".
 func companyDoubledEqual(a, b string) bool {
-	if a == b || !strings.ContainsAny(a, " -") || !strings.ContainsAny(b, " -") {
+	if a == b {
 		return false
 	}
 	i, j, skipped := 0, 0, false
@@ -1200,16 +1206,13 @@ func companyDoubledEqual(a, b string) bool {
 			return false
 		}
 		if x == 0 && i >= len(a) && j >= len(b) {
-			return skipped
+			return skipped && strings.ContainsAny(a, " -") && strings.ContainsAny(b, " -")
 		}
 	}
 }
 
-func fuzzyCompanyRouted(a, b string, matchBlanks bool) (bool, float64) {
-	if a == b && companySimpleExact(a) {
-		return true, 100
-	}
-	route := companyFitRoute(a, b)
+func fuzzyCompanyRouted(a, b string, matchBlanks bool, ma, mb int) (bool, float64) {
+	route := companyFitRouteMarked(a, b, ma, mb)
 	if route == companyRouteNone {
 		return legacyFuzzyCompany(a, b, matchBlanks)
 	}

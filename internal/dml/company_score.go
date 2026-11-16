@@ -695,7 +695,10 @@ const (
 )
 
 func companyFitRoute(a, b string) int {
-	ma, mb := companyMarks(a), companyMarks(b)
+	return companyFitRouteMarked(a, b, companyMarks(a), companyMarks(b))
+}
+
+func companyFitRouteMarked(a, b string, ma, mb int) int {
 	switch {
 	case companyFitShapeMarked(a, b, ma, mb):
 		return companyRouteShape
