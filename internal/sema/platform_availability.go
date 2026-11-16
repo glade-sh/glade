@@ -42,6 +42,15 @@ var observedPlatformSourceMemberAvailability = map[string]apexversion.Range{
 	"connectapi.namedcredentials.deletenamedcredential":    {Since: 62},
 	"connectapi.namedcredentials.updateexternalcredential": {Since: 62},
 	"connectapi.namedcredentials.deleteexternalcredential": {Since: 62},
+	// apex_release_gates/org.tsv compiles these at source APIs 62 through 67,
+	// although the release notes date them to 66 and 67.
+	"system.eventbus.publishwithaccesslevel": {Since: 62},
+	"invocable.action.getversion":            {Since: 62},
+	"system.system.pausejobbyid":             {Since: 62},
+	"system.system.pausejobbyname":           {Since: 62},
+	"system.system.resumejobbyid":            {Since: 62},
+	"system.system.resumejobbyname":          {Since: 62},
+	"invocable.action.getdescribe":           {Since: 62},
 }
 
 var observedPlatformSourceExactAvailability = map[string]apexversion.Range{
@@ -54,6 +63,16 @@ var observedPlatformSourceExactAvailability = map[string]apexversion.Range{
 	"apex:connectapi.namedcredentials.deletenamedcredential(string)":                                       {Since: 62},
 	"apex:connectapi.namedcredentials.updateexternalcredential(string,connectapi.externalcredentialinput)": {Since: 62},
 	"apex:connectapi.namedcredentials.deleteexternalcredential(string)":                                    {Since: 62},
+	"apex:system.eventbus.publishwithaccesslevel(list<sobject>,accesslevel)":                               {Since: 62},
+	"apex:system.eventbus.publishwithaccesslevel(sobject,accesslevel)":                                     {Since: 62},
+	"apex:system.system.purgeoldasyncjobs(date,integer)":                                                   {Since: 62},
+	"apex:invocable.action.createcustomaction(string,string,string,string)":                                {Since: 62},
+	"apex:invocable.action.getversion()":                                                                   {Since: 62},
+	"apex:system.system.pausejobbyid(string)":                                                              {Since: 62},
+	"apex:system.system.pausejobbyname(string)":                                                            {Since: 62},
+	"apex:system.system.resumejobbyid(string)":                                                             {Since: 62},
+	"apex:system.system.resumejobbyname(string)":                                                           {Since: 62},
+	"apex:invocable.action.getdescribe()":                                                                  {Since: 62},
 }
 
 func semaPlatformTypeUnavailable(version, typeName string) bool {

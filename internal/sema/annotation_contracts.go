@@ -463,7 +463,8 @@ func isTestTypeArgumentsAllowed(typ typesys.TypeSymbol, annotation apexast.Annot
 				return false
 			}
 		case "testfor":
-			if _, ok := apexStringLiteralValue(argument.Value); !ok {
+			value, ok := apexStringLiteralValue(argument.Value)
+			if !ok || !isTestTestForPrefixesAllowed(value) {
 				return false
 			}
 			if apexversion.Before(typ.EffectiveAPIVersion, 66) {
@@ -566,4 +567,22 @@ func annotationPropertyTrue(annotations []apexast.Annotation, annotationName, pr
 		}
 	}
 	return false
+}
+
+// isTestTestForPrefixesAllowed checks the "prefix:name, ..." shape that
+// Salesforce requires for testFor: every entry starts with ApexClass: or
+// ApexTrigger:.
+// NATIVE IsTest testFor invalid prefix apex_release_gates/compile.tsv deploy 66.0 67.0
+func isTestTestForPrefixesAllowed(value string) bool {
+	for _, entry := range strings.Split(value, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		lower := strings.ToLower(entry)
+		if !strings.HasPrefix(lower, "apexclass:") && !strings.HasPrefix(lower, "apextrigger:") {
+			return false
+		}
+	}
+	return true
 }
