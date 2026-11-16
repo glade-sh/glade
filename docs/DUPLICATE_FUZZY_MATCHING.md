@@ -303,16 +303,19 @@ Unchanged from the third run's model.
   trailing number as suite).
 - NATIVE Title: words are lower-cased. Dots inside a word are dropped
   (`C.E.O.` is `ceo`, `V.P.` is `vp`); a trailing comma of the whole title is
-  dropped, a comma inside it stays on its word and blocks prefix matches
-  (`Zorp, Quill` does not find `Zorps Quill`, `Director, IT` does not find
-  `Director/IT`). `of`, `and`, `the`, `&` and `it` are stop words (`Director
-  IT` and `Director` are 100; `&` is a stop word of its own, so `Zorp &
-  Quill` and `Quill and Zorp` are 93, not 100). Exact when the content words
+  dropped, a comma or semicolon inside it stays on its word and counts as a
+  character (`Zorp, Quill` does not find `Zorps Quill`, `Director, IT` does
+  not find `Director/IT`). `of`, `and`, `the`, `&` and `it` are stop words
+  (`Director IT` and `Director` are 100; `&` is a stop word of its own, so
+  `Zorp & Quill` and `Quill and Zorp` are 93, not 100; an ampersand at the
+  edge of a word is that stop word, `Chief& Officer`). Exact when the content words
   are the same sequence or all words sort equal (`Sales Director`/`Director
   Sales` 100, `VP Sales`/`VP of Sales` 100, `Sales`/`Sales Sales` 100). A word
   equals any word it starts, two letters or more (`Dir`/`Director`,
   `Eng`/`Engineering`, `II`/`III`, `Pr`/`Product` and `Principal`), except
-  `IT`. Two one-word titles need an exact match (`Director`/`Directors` and
+  `IT`. Two words one edit apart are equal when the longer has six characters
+  or more (`Coordinator`/`Coordinater`, `Zorps`/`Zorpas`, `Alpha,`/`Alphas`
+  and `Alpha,`/`Alpha;`; not `Alpha`/`Alphs`, `Zorp,`/`Zorps` or `CEO`/`CFO`). Two one-word titles need an exact match (`Director`/`Directors` and
   `Dir`/`Director` no match), but a prefix is enough when one title has more
   words (`Dir` finds `Director of IT`). Initials match (`CMO`/`Chief Marketing
   Officer`, `BDM`/`Business Development Manager`, `Bus Dev Manager`/`Business
@@ -328,10 +331,18 @@ Unchanged from the third run's model.
   (4,6) 4, (5,6) 2, and (3,6) no match. Other shared words out of order lose 3,
   or 5 for two shared words in a title of four. A candidate with a stop word
   whose words all occur in the existing title scores 94 where the base is 93
-  (`Zorp Of` finds `Zorp of Quill`). A title of stop words alone finds a
-  longer title that has all its words (`of` finds `Zorp of Quill` 89, `of
-  the` 91); the longer title does not find it, and `of` does not find `the`.
-  `Director of IT` and `Head of IT` share only stop words and score 88. One
+  (`Zorp Of` finds `Zorp of Quill`). The same content words in the same
+  order are exact whatever the stop words (`Zorp Quill` finds `Zorps and
+  Quill` at 100). Two titles whose content words share nothing score by the
+  stop words they share (`titleStopOverlapConfidence`, by candidate words,
+  existing words and shared words): a candidate inside the existing title
+  (`of` finds `of the` 91, `Zorp of Quill` 89 and longer titles 88; `of it`
+  finds `Zorp of IT` 94), the existing title inside the candidate (`Zorp of
+  IT` finds `of it` 91; a one-word title is never found, so `Zorp IT` does not
+  find `IT`), or neither (`Director of IT` and `Head of IT` 88; `Director IT`
+  and `Head of IT` no match). A title of stop words alone has no content:
+  `IT` finds `the it` at 91 and `the it` does not find `IT`. Counts no row
+  holds do not match. One
   shared word against a five-word title matches only from the one-word side
   (`Global` finds `Senior Global Regional Operations Analyst`, not the
   reverse); Glade matches neither.

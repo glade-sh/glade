@@ -2,6 +2,7 @@ package dml
 
 import (
 	"encoding/json"
+	"maps"
 	"math"
 	"os"
 	"path/filepath"
@@ -11,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 const titleVariantFixture = "testdata/conformance/fuzzy_title_variant"
@@ -225,4 +228,98 @@ func titleVariantFirstNamePairs(t *testing.T) map[string]bool {
 		}
 	}
 	return out
+}
+
+// NATIVE fuzzy_title_variant/org.tsv (f1s/f1s1): the standard Contact rule,
+// one last name and email address, API 62.0 and 67.0, both routes, two
+// repeats. The Name Variant entries added from the custom First Name panels
+// hold under the standard rule too: "Dave", "David" and "Davy" find each
+// other at 100, as do "Sandy" and "Xander", and "Marjorie" and "Peggy". Glade
+// reports no pair native does not. The native pairs Glade lacks are other
+// variants of "Alexander" ("Sandy" finds "Zander"), which no custom row backs.
+func TestFuzzyTitleVariantStandardNames(t *testing.T) {
+	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
+	var groups map[string]map[string]string
+	body, err := os.ReadFile(filepath.Join(titleVariantFixture, "cases.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(body, &groups); err != nil {
+		t.Fatal(err)
+	}
+	call := groups["f1s"]["f1s1"]
+	if !strings.Contains(call, "'Standard_Contact_Duplicate_Rule', 'FirstName+LastName+Email'") {
+		t.Fatalf("case %q", call)
+	}
+	var names []string
+	var records []storage.Record
+	for _, q := range titleVariantQuoted.FindAllStringSubmatch(call, -1)[3:] {
+		parts := strings.Split(q[1], "|")
+		names = append(names, parts[0])
+		records = append(records, storage.Record{Object: "Contact", Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue(parts[0]), "LastName": storage.StringValue(parts[1]), "Email": storage.StringValue(parts[2]),
+		}})
+	}
+	body, err = os.ReadFile(filepath.Join(titleVariantFixture, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+	native := map[[2]string]int{}
+	rows := 0
+	for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
+		f := strings.Split(line, "\t")
+		if f[3] != "f1s" || f[4] != "f1s1" {
+			continue
+		}
+		rows++
+		_, list, _ := strings.Cut(f[5], ":")
+		row := map[[2]string]int{}
+		for _, token := range strings.Split(list, ",") {
+			confidence := 100
+			if len(token) > 2 {
+				v, err := strconv.ParseFloat(token[2:], 64)
+				if err != nil {
+					t.Fatalf("invalid token %q", token)
+				}
+				confidence = int(v)
+			}
+			row[[2]string{names[strings.IndexByte(digits, token[0])], names[strings.IndexByte(digits, token[1])]}] = confidence
+		}
+		if rows > 1 && !maps.Equal(row, native) {
+			t.Fatal("native rows differ")
+		}
+		native = row
+	}
+	if rows != 8 {
+		t.Fatalf("native rows %d", rows)
+	}
+	hit, exact := 0, 0
+	for i, a := range names {
+		matcher := standardDuplicateMatcher(nil, "Contact", "Contact", records[i])
+		for j, b := range names {
+			ok, confidence := matcher(records[j])
+			n, found := native[[2]string{a, b}]
+			switch {
+			case ok && !found:
+				t.Errorf("%s=>%s: Glade %v, native has no match", a, b, confidence)
+			case ok:
+				hit++
+				if int(confidence+0.5) == n {
+					exact++
+				}
+			}
+		}
+	}
+	if len(native) != 51 || hit != 37 || exact != 35 {
+		t.Errorf("native=%d hit=%d exact=%d, want 51, 37, 35", len(native), hit, exact)
+	}
+	for _, pair := range [][2]string{{"Dave", "Davy"}, {"Davy", "Dave"}, {"David", "Davy"}, {"Davy", "David"}, {"Sandy", "Xander"}, {"Xander", "Sandy"}, {"Marjorie", "Peggy"}, {"Peggy", "Marjorie"}} {
+		if native[pair] != 100 {
+			t.Errorf("%s=>%s: native %d", pair[0], pair[1], native[pair])
+		}
+		if ok, confidence := standardFirstName(pair[0], pair[1]); !ok || confidence != 100 {
+			t.Errorf("%s=>%s: standard first name %v %v", pair[0], pair[1], ok, confidence)
+		}
+	}
 }
