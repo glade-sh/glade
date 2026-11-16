@@ -39,34 +39,9 @@ func TestSharingAccessFollowNativeConformance(t *testing.T) {
 
 // sharingAccessCarried maps family/api/method (api "*" for every API) to the
 // reason a native row is not asserted.
-var sharingAccessCarried = func() map[string]string {
-	// The api67_access_defaults adm rows are no counterexample: that capture
-	// deployed the administrator profile with the field grants, so the field
-	// was readable before the test assigned anything.
-	const assignment = "native does not apply a permission set that the test assigns to the running administrator to that test's own context (sharing_access_follow f_adm_* rows: Secret__c stays ungranted with and without the assignment); Glade applies the assignment at once"
-	const setup = "native setup fails: the administrator's default-mode Secret__c insert at 67.0+ lacks the field because the in-test Sam_Admin assignment does not apply (f_adm_* rows); sharing_access_follow repeats the shape with system-mode setup"
-	carried := map[string]string{
-		"sharing_access_gate/*/d5_12_ins_user_outside":      assignment,
-		"sharing_access_gate/67.0/d5_06_query_user":         setup,
-		"sharing_access_gate/67.0/d5_07_dynquery_user":      setup,
-		"sharing_access_follow/*/f_adm_psa_cond_ins_user":   assignment,
-		"sharing_access_follow/*/f_adm_psa_uncond_ins_user": assignment,
-		"sharing_access_follow/*/f_undelete_sh_user":        "undelete of a record deleted by another user: recycle-bin access is not modeled (native INSUFFICIENT_ACCESS_OR_READONLY)",
-		"sharing_access_extra/67.0/u3_05_cursor_user":       setup,
-		"sharing_access_extra/67.0/u3_05b_cursor_def":       setup,
-		"sharing_access_extra/67.0/u3_05c_cursor_sys":       setup,
-		"sharing_access_extra/68.0/u3_05_cursor_user":       setup,
-		"sharing_access_extra/68.0/u3_05b_cursor_def":       setup,
-		"sharing_access_extra/68.0/u3_05c_cursor_sys":       setup,
-	}
-	for _, api := range []string{"67.0", "68.0"} {
-		for _, method := range []string{"u1_07_child_denied", "u1_08_parent_denied", "u3_01_sys_clause_user_arg", "u3_02_user_clause_sys_arg",
-			"u3_03_binds_sys_clause_user_arg", "u3_03b_binds_user_clause_sys_arg", "u3_03c_count_sys_clause_user_arg", "u3_04_null_level"} {
-			carried["sharing_access_modes/"+api+"/"+method] = setup
-		}
-	}
-	return carried
-}()
+var sharingAccessCarried = map[string]string{
+	"sharing_access_follow/*/f_undelete_sh_user": "undelete of a record deleted by another user: recycle-bin access is not modeled (native INSUFFICIENT_ACCESS_OR_READONLY)",
+}
 
 func sharingAccessCarry(family, api, method string) (string, bool) {
 	for _, key := range []string{family + "/" + api + "/" + method, family + "/*/" + method} {
