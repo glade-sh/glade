@@ -280,14 +280,14 @@ func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeC
 			continue
 		}
 		if options.extended && !classes.inside() && ch == '#' {
-			end := strings.IndexByte(source[i:], '\n')
+			// A comment ends at any Java line terminator (only \n under d);
+			// regexp2 ends it at \n, so the text is dropped and \n written.
+			end, size := javaCommentEnd(source, i, options.unixLines)
+			out.WriteByte('\n')
 			if end < 0 {
-				out.WriteString(source[i:])
-				out.WriteByte('\n')
 				break
 			}
-			out.WriteString(source[i : i+end+1])
-			i += end
+			i = end + size - 1
 			continue
 		}
 		if explicitFold && options.caseInsens && ch == '[' && !classes.inside() {
@@ -306,8 +306,8 @@ func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeC
 					continue
 				}
 				if ch == '#' {
-					if end := strings.IndexByte(source[i:], '\n'); end >= 0 {
-						i += end
+					if end, size := javaCommentEnd(source, i, options.unixLines); end >= 0 {
+						i = end + size - 1
 						continue
 					}
 					break
@@ -421,4 +421,24 @@ func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeC
 		out.WriteByte(ch)
 	}
 	return out.String()
+}
+
+// javaCommentEnd finds the line terminator that ends a (?x) comment starting
+// at from: \n, \r, U+0085, U+2028 or U+2029, and only \n under (?d). It
+// returns the terminator's index and byte length, or -1.
+func javaCommentEnd(source string, from int, unixLines bool) (int, int) {
+	for i := from; i < len(source); i++ {
+		switch {
+		case source[i] == '\n':
+			return i, 1
+		case unixLines:
+		case source[i] == '\r':
+			return i, 1
+		case strings.HasPrefix(source[i:], "\u0085"), strings.HasPrefix(source[i:], "\u2028"), strings.HasPrefix(source[i:], "\u2029"):
+			r, size := utf8.DecodeRuneInString(source[i:])
+			_ = r
+			return i, size
+		}
+	}
+	return -1, 0
 }

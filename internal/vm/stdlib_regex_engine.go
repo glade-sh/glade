@@ -19,10 +19,13 @@ func compileRegexp2Pattern(callee, source string) (string, *regexp2.Regexp, erro
 }
 
 func compileRegexp2PatternWithException(callee, source, exceptionType string) (string, *regexp2.Regexp, error) {
-	if err := validateJavaRegexSource(source, exceptionType); err != nil {
-		return "", nil, err
+	effective := regexNormalizeExtended(source)
+	if effective == source {
+		if err := validateJavaRegexSource(source, exceptionType); err != nil {
+			return "", nil, err
+		}
 	}
-	regexp2Source, err := compileRegexp2Source(callee, source)
+	regexp2Source, err := compileRegexp2Source(callee, effective)
 	if err != nil {
 		return "", nil, err
 	}

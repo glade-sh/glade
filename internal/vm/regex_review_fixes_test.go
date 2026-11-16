@@ -203,9 +203,35 @@ func TestRegexRootIsBareCaret(t *testing.T) {
 	}
 }
 
-// (?x) patterns get the linear precheck too (D6).
+// (?x) patterns get the linear precheck too (D6). The plan is checked
+// directly, so no wall-clock bound is needed.
 func TestRegexExtendedPatternsGetLinearPrecheck(t *testing.T) {
-	start := time.Now()
+	miss := strings.Repeat("a", 23) + "c"
+	for _, tc := range []struct {
+		pattern  string
+		anchored bool
+	}{
+		{"(?x) ^(a+)+b # comment", true},
+		{"(?x) (a+)+ b", false},
+		{"(?ix) ^ ( A+ )+ \\  b", true},
+	} {
+		plan, err := compileRegexp2PlanForInput("Pattern.compile", tc.pattern, miss)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if plan.linear == nil {
+			t.Fatalf("%q: no linear precheck", tc.pattern)
+		}
+		if tc.anchored && plan.linearProg == nil {
+			t.Fatalf("%q: no linear program", tc.pattern)
+		}
+		if !plan.noLinearMatch(miss) {
+			t.Errorf("%q: precheck should report no match", tc.pattern)
+		}
+		if _, ok := regexStripExtended(tc.pattern); !ok {
+			t.Errorf("%q: regexStripExtended refused", tc.pattern)
+		}
+	}
 	runRegexApex(t, `
 String s = 'a'.repeat(23) + 'c';
 Matcher m = Pattern.compile('(?x) ^(a+)+b # comment').matcher(s);
@@ -222,9 +248,21 @@ Matcher c = Pattern.compile('^(a+)+[]|]b').matcher(s);
 c.find();
 System.assertEquals(false, c.hitEnd());
 `)
-	if time.Since(start) > 1500*time.Millisecond {
-		t.Fatalf("took %v: a precheck was skipped", time.Since(start))
-	}
+}
+
+// Java ends a (?x) comment at \n, \r, U+0085, U+2028 or U+2029 (only \n under
+// d), and reads whitespace inside tokens (native rows d16_*).
+func TestRegexExtendedCommentsAndSplitTokens(t *testing.T) {
+	runRegexApex(t, `
+System.assertEquals(true, Pattern.compile('(?x)a #c\r|b').matcher('b').find());
+System.assertEquals(true, Pattern.compile('(?x)a #c\u2028|b').matcher('b').find());
+System.assertEquals(false, Pattern.compile('(?xd)a #c\r|b').matcher('b').find());
+Matcher g = Pattern.compile('(?x)( ?:a)').matcher('a');
+System.assertEquals(true, g.find());
+System.assertEquals(0, g.groupCount());
+System.assertEquals(true, Pattern.compile('(?x)\\0 1 4 2').matcher('b').find());
+System.assertEquals(true, Pattern.compile('(?x)\\x2 3').matcher('#').find());
+`)
 }
 
 func TestRegexStripExtended(t *testing.T) {
@@ -238,7 +276,7 @@ func TestRegexStripExtended(t *testing.T) {
 			t.Errorf("regexStripExtended(%q) = %q, %v; want %q", source, got, ok, want)
 		}
 	}
-	for _, source := range []string{"(?x)[a ]+", "(?x)a{1, 2}", "(?x)a(?-x:b )", "a(?x) b", "(?x)caf\u00e9", "(?x)a\r#c\n"} {
+	for _, source := range []string{"(?x)[a ]+", "(?x)a{1, 2}", "(?x)a(?-x:b )", "a(?x) b", "(?x)caf\u00e9", "(?x)a\r#c\n", "(?x)(a+)+#c\r|b\n", "(?x)a#c\u00e9\n", "(?x)\\1 0", "(?x)\\p {L}"} {
 		if got, ok := regexStripExtended(source); ok {
 			t.Errorf("regexStripExtended(%q) = %q, want refusal", source, got)
 		}

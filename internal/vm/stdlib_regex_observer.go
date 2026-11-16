@@ -440,7 +440,7 @@ func regexStripExtended(src string) (string, bool) {
 			switch {
 			case n == ' ':
 				out.WriteString("[ ]")
-			case n == 'Q' || n == 'E' || n == '\t' || n == '\n' || n == '\v' || n == '\f' || n >= 0x80:
+			case n >= '1' && n <= '9' || strings.IndexByte("QEpPuckN", n) >= 0 || n == '\t' || n == '\n' || n == '\v' || n == '\f' || n >= 0x80:
 				return "", false
 			default:
 				out.WriteByte(c)
@@ -451,6 +451,9 @@ func regexStripExtended(src string) (string, bool) {
 		case c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f':
 		case c == '#':
 			for i < len(src) && src[i] != '\n' {
+				if src[i] == '\r' || src[i] >= 0x80 {
+					return "", false
+				}
 				i++
 			}
 		case c == '(' && i+1 < len(src) && src[i+1] == '?':
@@ -489,4 +492,17 @@ func regexStripExtended(src string) (string, bool) {
 		}
 	}
 	return out.String(), true
+}
+
+// regexNormalizeExtended returns the plain form of a simple (?x) pattern, or
+// source itself when the pattern is not simple or the plain form is invalid.
+func regexNormalizeExtended(source string) string {
+	if !regexSourceHasInlineFlag(source, 'x') {
+		return source
+	}
+	stripped, ok := regexStripExtended(javaRegexRemoveQuoting(source))
+	if !ok || javaRegexSyntaxCheck(stripped) != nil {
+		return source
+	}
+	return stripped
 }

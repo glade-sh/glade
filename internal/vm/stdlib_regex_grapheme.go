@@ -76,10 +76,15 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 			return plan, nil
 		}
 	}
-	if err := validateJavaRegexSource(source, exceptionType); err != nil {
-		return nil, err
+	// A simple (?x) pattern is read as the plain pattern Java sees: whitespace
+	// and comments gone, so escapes split by whitespace read as one token.
+	effective := regexNormalizeExtended(source)
+	if effective == source {
+		if err := validateJavaRegexSource(source, exceptionType); err != nil {
+			return nil, err
+		}
 	}
-	regexp2Source, loopNames, err := compileRegexp2SourceLoops(callee, source, traits)
+	regexp2Source, loopNames, err := compileRegexp2SourceLoops(callee, effective, traits)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +113,7 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 	}
 	re.MatchTimeout = regexp2MatchTimeout
 	plan := &regexp2Plan{
-		originalSource:     source,
+		originalSource:     effective,
 		source:             regexp2Source,
 		matchSource:        markedSource,
 		re:                 re,
@@ -118,8 +123,8 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		endAssertionGroups: endGroups,
 		loopGroups:         loopNames,
 	}
-	nestSource, linearSource, linearOK := javaRegexRemoveQuoting(source), regexp2Source, true
-	if regexSourceHasInlineFlag(source, 'x') {
+	nestSource, linearSource, linearOK := javaRegexRemoveQuoting(effective), regexp2Source, true
+	if regexSourceHasInlineFlag(effective, 'x') {
 		// Go cannot read (?x); strip the whitespace and comments Java ignores.
 		var ok1, ok2 bool
 		nestSource, ok1 = regexStripExtended(nestSource)

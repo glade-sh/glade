@@ -25,3 +25,5 @@ hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repea
   Java keeps its Start wrapper unless the root node is a bare ^: (^(a+)+b) and (?:^(a+)+b) on 23 a plus c give
   hitEnd=true. (?i)^(s+)+x on 20 s plus U+017F gives find=false hitEnd=false (ASCII-only fold without u).
   d15 anonymous and @IsTest rows: two repeats, 62.0 and 67.0, in org.tsv (classes Rxd150062 and Rxd150067).
+(?x) rows d16 (62.0 and 67.0, anonymous and @IsTest, two repeats): a comment ends at \r and at U+2028 but, under d, only at \n;
+  whitespace splits tokens: (?x)( ?:a) is a non-capturing group, (?x)\0 1 4 2 reads octal 142 and (?x)\x2 3 reads hex 23.
