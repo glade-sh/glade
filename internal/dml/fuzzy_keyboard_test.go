@@ -470,7 +470,7 @@ func keyboardMarginPanels(t *testing.T) []keyboardNativePanel {
 	for _, name := range slices.Sorted(maps.Keys(values)) {
 		out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
 	}
-	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard")...)
+	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard", "rkeyboard", "skeyboard")...)
 }
 
 // keyboardTwinPanels reads the blind panels of
@@ -554,8 +554,8 @@ func TestLastNameKeyboardFlatMargin(t *testing.T) {
 		}
 	}
 	t.Logf("%d captured non-matches at 90 or more; highest %.4f (%s)", pairs, highest, top)
-	if keyboardFallbackMargin <= highest || highest < 92.80 || highest > 92.82 {
-		t.Errorf("keyboardFallbackMargin %v, highest captured flat non-match %.4f (%s), want 92.8091 below the margin until a new capture raises it", keyboardFallbackMargin, highest, top)
+	if keyboardFallbackMargin <= highest || highest < 92.50 || highest > 92.51 {
+		t.Errorf("keyboardFallbackMargin %v, highest captured flat non-match %.4f (%s), want 92.5015 below the margin until a new capture raises it", keyboardFallbackMargin, highest, top)
 	}
 }
 
@@ -571,7 +571,7 @@ func TestKeyboardFlatDistanceValues(t *testing.T) {
 		{"ingleborn", "inglebornxbqm", 100 - 100*(0.2437*4)/13, true},
 		{"abc", "abc", 100, true},
 		{"qa", "za", 100 - 100*0.0759*2/2, true}, // q to z: top to bottom row is two steps
-		{"qa", "qz", 100, true},                  // a to z: one row apart costs nothing
+		{"qa", "qz", 100 - 100*0.05/2, true},     // a to z: one row apart, the same column, costs 0.05
 		{"qa", "qp", 100 - 100*0.0759*9/2, true},
 		{"qa", "qs", 100 - 100*0.0759*1/2, true},
 		{"harlow", "harløw", 0, false},

@@ -115,23 +115,25 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		exact, base int
 	}
 	want := map[string]tally{
-		"k1":  {fuzzyNameKeysCount{native: 180, hit: 100, miss: 80, confidence: 10}, 934, 878},
-		"k2":  {fuzzyNameKeysCount{native: 182, hit: 108, miss: 74, confidence: 8}, 942, 888},
-		"k3":  {fuzzyNameKeysCount{native: 194, hit: 124, miss: 70, confidence: 14}, 940, 896},
-		"hk1": {fuzzyNameKeysCount{native: 122, hit: 82, miss: 40, confidence: 8}, 628, 600},
+		"k1":  {fuzzyNameKeysCount{native: 180, hit: 98, miss: 82, confidence: 8}, 934, 878},
+		"k2":  {fuzzyNameKeysCount{native: 182, hit: 106, miss: 76, confidence: 4}, 944, 888},
+		"k3":  {fuzzyNameKeysCount{native: 194, hit: 122, miss: 72, confidence: 12}, 940, 896},
+		"hk1": {fuzzyNameKeysCount{native: 122, hit: 82, miss: 40, confidence: 6}, 630, 600},
 		"hk2": {fuzzyNameKeysCount{native: 58, hit: 46, miss: 12, confidence: 6}, 238, 228},
-		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 1454, miss: 602, confidence: 350}, 5204, 4374},
-		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1397, miss: 754, confidence: 212}, 14667, 14303},
+		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 1434, miss: 622, confidence: 332}, 5202, 4374},
+		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1379, miss: 772, confidence: 194}, 14667, 14303},
+		"rk":  {fuzzyNameKeysCount{native: 865, hit: 489, miss: 376, confidence: 78}, 3969, 3757},
+		"sk":  {fuzzyNameKeysCount{native: 1159, hit: 743, miss: 416, confidence: 230}, 6409, 6145},
 		"dk":  {fuzzyNameKeysCount{native: 206, hit: 154, miss: 52, confidence: 12}, 1186, 1168},
-		"ck":  {fuzzyNameKeysCount{native: 2087, hit: 1823, miss: 264, confidence: 404}, 5893, 4917},
+		"ck":  {fuzzyNameKeysCount{native: 2087, hit: 1799, miss: 288, confidence: 376}, 5897, 4917},
 	}
 	// The blind panels are counted by group: tk (tk01 to tk22), bk, ck and dk (dk01, dk02).
-	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard") {
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard", "rkeyboard", "skeyboard") {
 		values[panel.name] = panel.values
 		observations[panel.name] = ""
 	}
 	twin := map[string]map[[2]int]float64{}
-	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard") {
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard", "rkeyboard", "skeyboard") {
 		twin[panel.name] = panel.native
 	}
 	rounded := func(matched bool, confidence float64) float64 {
@@ -154,6 +156,10 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 				group = "ck"
 			case strings.HasPrefix(method, "dk"):
 				group = "dk"
+			case strings.HasPrefix(method, "rk"):
+				group = "rk"
+			case strings.HasPrefix(method, "sk"):
+				group = "sk"
 			}
 		} else {
 			native = fuzzyNameKeysPanel(t, observations[method], len(vals))

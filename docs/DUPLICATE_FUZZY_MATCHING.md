@@ -252,15 +252,22 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    97; its score is below the margin, so Glade keeps the earlier result).
    A second, flat score follows the fitted one in every shape
    (`keyboardFlatDistance` in `internal/dml/fuzzy_keyboard_flat.go`). Each key
-   step costs 0.0759 whatever the position or key pair, each trailing letter
-   costs 0.2437, the sum is divided by the longer length, and the pair
+   step costs 0.0759 whatever the position or key pair, a substitution of
+   two letters zero steps apart (the same column) costs 0.05, each trailing
+   letter costs 0.2437, the sum is divided by the longer length, and the pair
    matches at `keyboardFallbackMargin` (93) with confidence
    `(100 + score) / 2`. It is a clean-room fit to the native rows; it adds the
    matches the fitted table misses and keeps every earlier match and
-   confidence. Over every captured LastName pair it adds 582 unordered pairs
-   and no false match; the highest captured native non-match scores 92.81
-   (`Kesterloy` and `Kestermlinb`, tk07). It recovers 86 of the ck native
-   matches the fitted table left, with no false match on the blind ck panel.
+   confidence. Over the earlier captured LastName pairs it adds 545 unordered
+   pairs and no false match; the highest captured native non-match scores
+   92.50 (`Ingleborn` and `Inglebornxbqm`, tk14), 0.50 below the margin. It
+   recovers 74 of the ck native matches the fitted table left. A first
+   version charged nothing for a same-column substitution; the blind panel
+   rkeyboard then showed 14 false matches (7 pairs) at 93.01 to 93.50, and
+   charging 0.05 (the base scorer's neighbour cost) removed them: 0 false
+   matches on rkeyboard (rk01 to rk08) and on skeyboard (sk01 to sk08,
+   predictions frozen first, 743 predicted matches all native). The margin is
+   a margin over captured names, not a native constant.
    Spaces, punctuation and accents keep the fitted costs.
    The fourth blind panel set (`dkeyboard`: dk01, dk02) was captured after
    this score and its predictions were frozen. It shows no false match, and

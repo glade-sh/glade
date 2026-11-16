@@ -70,3 +70,5 @@ org: a fresh 1-day Developer Edition scratch org on a campaign Dev Hub (SF_SKIP_
 preflight: sk03 ran through glade exec at API 67.0 before the capture
 ids: no record, org or user id, username or alias is stored
 result: 1,159 native matches (self pairs included); all 743 candidate matches are native (466 decided by the candidate score, 276 of them at 93.0 to 93.5); all 849 b770ecf3e8 matches are native too, so the 106 pairs the candidate drops are native matches
+
+correction (flat score, same-column substitution): the dkeyboard predictions above were frozen from the flat score before it charged 0.05 for a substitution of two letters in the same column; rkeyboard found that score matched 7 pairs native does not (93.01 to 93.50). The repaired score keeps the dkeyboard result (0 false matches, hit 154 of 206 native). The highest captured native non-match under the repaired score is 92.50 (tk14), not 92.81.
