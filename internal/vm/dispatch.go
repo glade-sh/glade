@@ -572,6 +572,10 @@ platformStaticCall:
 			return Null, fmt.Errorf("Database.query expects query String")
 		}
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			// Native sharing_access_modes u3_04 rows (APIs 62.0-68.0).
+			if args[1].Kind == ValueNull {
+				return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
+			}
 			return Null, fmt.Errorf("Database.query expects AccessLevel")
 		}
 		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, false, true); err != nil {
@@ -585,6 +589,9 @@ platformStaticCall:
 			return Null, vm.scalarCountRouteError(args[0].Text, vm.expandSOQLBinds)
 		}
 		if len(args) == 2 {
+			if err, handled := vm.runAsAccessLevelClauseConflict("Database.query", args[0].Text, args[1]); handled && err != nil {
+				return Null, err
+			}
 			return vm.namedApexReferenceDynamicQueryFault(vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result))
 		}
 		if err := vm.userModeInaccessibleAnonymousSystemQuery(args[0].Text); err != nil {
@@ -610,6 +617,9 @@ platformStaticCall:
 			}
 			return Null, fmt.Errorf("Database.queryWithBinds expects AccessLevel")
 		}
+		if err, handled := vm.runAsAccessLevelClauseConflict("Database.queryWithBinds", args[0].Text, args[2]); handled && err != nil {
+			return Null, err
+		}
 		if err := vm.validateDynamicQueryAccessLevel(args[0].Text, args[2]); err != nil {
 			return Null, err
 		}
@@ -633,7 +643,16 @@ platformStaticCall:
 			return Null, fmt.Errorf("Database.countQuery expects query String")
 		}
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			// Native sharing_access_follow f_u3_04c rows (APIs 62.0-68.0).
+			if args[1].Kind == ValueNull {
+				return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
+			}
 			return Null, fmt.Errorf("Database.countQuery expects AccessLevel")
+		}
+		if len(args) == 2 {
+			if err, handled := vm.runAsAccessLevelClauseConflict("Database.countQuery", args[0].Text, args[1]); handled && err != nil {
+				return Null, err
+			}
 		}
 		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, true, true); err != nil {
 			return Null, err

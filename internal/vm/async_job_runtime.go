@@ -1312,6 +1312,12 @@ func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 	}
 	if vm.testContext != nil {
 		job.RunAsUser = vm.eventSubscriberRunAsUser()
+		// Native sharing_access_modes u2_06b rows (APIs 62.0-68.0): a
+		// Queueable enqueued inside runAs and drained by a Test.stopTest
+		// outside the block still runs as the enqueuing user.
+		if job.RunAsUser.Kind == "" && job.Kind == "Queueable" && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth {
+			job.RunAsUser = vm.testContext.CurrentUser
+		}
 		vm.recordApexClass(vm.asyncClassName(job))
 		// async_lifecycle_c14 Y8 (API 62/67) and the scheduleBatch-isTest rows
 		// of async_static_callbacks, async_context_ids and async_route_twins:
@@ -1595,7 +1601,11 @@ func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result
 	if mode == "" || inheritedTestEntry {
 		sharing = "without sharing"
 	}
-	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
+	// Native sharing_access_modes d3_b_Inh and d3_f_Inh rows (APIs 62.0-68.0):
+	// an inherited-sharing Batchable or @future entered from the test method
+	// runs without sharing, as a Queueable does, at every API.
+	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) &&
+		vm.currentAsyncKind != "Future" && vm.currentAsyncKind != "BatchApex" {
 		sharing = "with sharing"
 	}
 	var bodyEntered *bool
@@ -1644,7 +1654,10 @@ func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Resul
 				if !target.SourceContextBound {
 					mode, _ = vm.classSharingMode(target.ClassName)
 				}
-				if mode == "" {
+				// Native sharing_access_modes d3_fin_Inh rows (APIs 62.0-68.0): an
+				// inherited-sharing finalizer run by Test.stopTest enters with
+				// sharing too.
+				if mode == "" || mode == "inherited sharing" && vm.testContext != nil {
 					return vm.callMethodWithReceiver(target, finalizer, args, result, "with sharing")
 				}
 				return vm.callAsyncEntry(target, finalizer, args, result, false)

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Access modes under `System.runAs`.** Captured explicit `USER_MODE` DML on a readable object without the operation's permission now raises `DML operation <OP> not allowed` (or the field-access `DmlException` for upsert) and returns failed rows for partial Database calls. User-mode DML on a record hidden by sharing reports the platform's row error instead of a `SecurityException`. Each `runAs(User)` block counts one DML statement. Captured `COUNT()` queries on unreadable objects, clause and `AccessLevel` conflicts, `stripInaccessible` root and relationship results, user-mode undelete without the delete permission, inherited sharing in Batchable, `@future` and finalizer callbacks, and `Search.suggest` in tests follow native rows. User-mode DML on an inaccessible custom field raises `DmlException` from source API 55.0.
+
 - **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets. API 67 default-mode administrator DML and dynamic queries honor captured access to newly deployed Account Text fields.
 
 - Default Developer eager orgs omit three standard objects whose absence was observed in native lookup and query results.

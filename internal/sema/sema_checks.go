@@ -1462,7 +1462,15 @@ func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion 
 		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", soql.FormulaWhereVersionMessage, "FORMULA", findQueryIdentifier(ctx.queryText, "FORMULA", 0))}
 	}
 	if apiVersion >= 67 && strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") {
-		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))}
+		d := ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))
+		// Native sharing_access_gate anonymous rows (API 67.0 and 68.0) report
+		// the compile error at the opening bracket of the static query. Class
+		// compile positions have no row and keep the identifier.
+		if ctx.file == "" && ctx.queryOffset > 0 {
+			bracket := ctx.locator.position(ctx.queryOffset - 1)
+			d.Range.Start = bracket
+		}
+		return []diagnostic.Diagnostic{d}
 	}
 	return nil
 }

@@ -151,35 +151,54 @@ func (vm *VM) explicitRunAsUserMode() bool {
 		apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 59)
 }
 
-// readonlyRunAsObject resolves a record's object when the running user can
-// read it but holds none of the create, edit and delete grants: the C137
-// readonly permission set. Other grant mixes return false.
-func (vm *VM) readonlyRunAsObject(record Value) (string, bool) {
+// explicitRunAsMissingGrant resolves a record's object when the running user
+// can read it but lacks the grant the operation needs: create for insert, edit
+// for update, delete for delete, and both create and edit for upsert.
+func (vm *VM) explicitRunAsMissingGrant(op string, record Value) (string, bool) {
 	if record.Kind != ValueObject {
 		return "", false
 	}
 	objectName, ok := vm.resolveObjectName(record.Type)
-	if !ok || !vm.currentUserObjectPermission(objectName, "isAccessible") ||
-		vm.currentUserObjectPermission(objectName, "isCreateable") ||
-		vm.currentUserObjectPermission(objectName, "isUpdateable") ||
-		vm.currentUserObjectPermission(objectName, "isDeletable") {
+	if !ok || !vm.currentUserObjectPermission(objectName, "isAccessible") {
 		return "", false
 	}
-	return objectName, true
+	switch op {
+	case "insert":
+		return objectName, !vm.currentUserObjectPermission(objectName, "isCreateable")
+	case "update":
+		return objectName, !vm.currentUserObjectPermission(objectName, "isUpdateable")
+	case "delete":
+		return objectName, !vm.currentUserObjectPermission(objectName, "isDeletable")
+	case "upsert":
+		return objectName, !vm.currentUserObjectPermission(objectName, "isCreateable") && !vm.currentUserObjectPermission(objectName, "isUpdateable")
+	case "undelete":
+		return objectName, !vm.currentUserObjectPermission(objectName, "isDeletable")
+	}
+	return "", false
 }
 
-// Native C137_353-359 and C137_374-380 (istest, runAs, APIs 59.0-68.0):
-// explicit USER_MODE DML on a readonly Account or custom object fails as the
-// API 67 default does. insert, update and delete raise TypeException
-// "DML operation <OP> not allowed on <object>"; upsert raises the field-access
-// DmlException. Unreadable objects keep the SecurityException (C137_234).
-func (vm *VM) explicitRunAsReadonlyDMLDenial(op string, value Value) error {
+// undeleteGrantFailure is the row failure for an undelete without the delete
+// grant (native sharing_access_follow f_undelete_obj rows, APIs 62.0-68.0).
+func undeleteGrantFailure(record Value) dml.Result {
+	_, id, _ := objectFieldValue(record, "Id")
+	text, _ := idValueText(id)
+	return dml.Result{ID: storage.ID(text), Error: "Entity type is not undeletable", StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}
+}
+
+// Native C137_353-359 and C137_374-380 (readonly grant, APIs 59.0-68.0) and
+// sharing_access_modes d1 rows (readonly, create-only and edit-only grants,
+// APIs 62.0-68.0), all in runAs: explicit USER_MODE DML on a readable object
+// without the operation's grant raises TypeException "DML operation <OP> not
+// allowed on <object>"; upsert raises the field-access DmlException naming the
+// record's written fields. Unreadable objects keep the SecurityException
+// (C137_234).
+func (vm *VM) explicitRunAsObjectDMLDenial(op string, value Value) error {
 	switch op {
-	case "insert", "update", "delete", "upsert":
+	case "insert", "update", "delete", "upsert", "undelete":
 	default:
 		return nil
 	}
-	if !vm.explicitRunAsUserMode() {
+	if !vm.explicitRunAsUserMode() || op == "undelete" && !apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 62) {
 		return nil
 	}
 	records := dmlAccessRecords(value)
@@ -188,25 +207,48 @@ func (vm *VM) explicitRunAsReadonlyDMLDenial(op string, value Value) error {
 	}
 	objectName := ""
 	for _, record := range records {
-		name, ok := vm.readonlyRunAsObject(record)
-		if !ok || objectName != "" && name != objectName {
+		name, denied := vm.explicitRunAsMissingGrant(op, record)
+		if !denied || objectName != "" && name != objectName {
 			return nil
 		}
 		objectName = name
 	}
+	if op == "undelete" {
+		results := make([]dml.Result, len(records))
+		for i, record := range records {
+			results[i] = undeleteGrantFailure(record)
+		}
+		return statementDMLException(op, results, []string{objectName})
+	}
+	if op == "upsert" {
+		var fields []string
+		for _, field := range explicitSObjectFieldNamesInInsertionOrder(records[0]) {
+			if !strings.EqualFold(field, "Id") {
+				fields = append(fields, vm.resolveSObjectFieldName(objectName, field))
+			}
+		}
+		return userModeFieldDMLException(op, objectName, records[0], fields, 0)
+	}
 	return readonlyObjectDMLException(op, objectName)
 }
 
-// Native C137_198/240 (unreadable) and C137_359/380 (readonly): explicit
-// USER_MODE Database.insert(rows, false) in runAs returns a failed SaveResult
-// per row, without writes, at APIs 59.0-68.0. Mixed lists keep the old path.
-func (vm *VM) explicitRunAsInsertFailures(value Value) ([]dml.Result, bool) {
-	if !vm.explicitRunAsUserMode() || value.Kind != ValueList || len(value.List) == 0 {
+// explicitRunAsPartialFailures is the allOrNone=false counterpart in runAs at
+// APIs 59.0-68.0: each row fails without writes. Insert, update and new-record
+// upsert rows carry CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY and the TypeException
+// text (an upsert of a new record names INSERT); delete rows carry
+// DELETE_FAILED. An unreadable object fails insert rows with the denied-entity
+// text (C137_198/240, d1_10). Mixed lists keep the old path.
+func (vm *VM) explicitRunAsPartialFailures(op string, value Value) ([]dml.Result, bool) {
+	if !vm.explicitRunAsUserMode() {
 		return nil, false
 	}
-	results := make([]dml.Result, len(value.List))
+	records := dmlAccessRecords(value)
+	if len(records) == 0 {
+		return nil, false
+	}
+	results := make([]dml.Result, len(records))
 	objectName := ""
-	for i, record := range value.List {
+	for i, record := range records {
 		if record.Kind != ValueObject {
 			return nil, false
 		}
@@ -215,14 +257,36 @@ func (vm *VM) explicitRunAsInsertFailures(value Value) ([]dml.Result, bool) {
 			return nil, false
 		}
 		objectName = canonical
-		message := fmt.Sprintf("Access to entity '%s' denied", canonical)
-		if vm.currentUserObjectPermission(canonical, "isAccessible") {
-			if _, readonly := vm.readonlyRunAsObject(record); !readonly {
+		_, id, hasID := objectFieldValue(record, "Id")
+		if op == "upsert" && hasID && id.Kind != ValueNull {
+			return nil, false
+		}
+		if !vm.currentUserObjectPermission(canonical, "isAccessible") {
+			if op != "insert" {
 				return nil, false
 			}
-			message = fmt.Sprintf("DML operation INSERT not allowed on %s", canonical)
+			results[i] = dml.Result{Error: fmt.Sprintf("Access to entity '%s' denied", canonical), StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}
+			continue
 		}
-		results[i] = dml.Result{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}
+		if _, denied := vm.explicitRunAsMissingGrant(op, record); !denied {
+			return nil, false
+		}
+		switch op {
+		case "insert", "upsert":
+			results[i] = dml.Result{Error: fmt.Sprintf("DML operation INSERT not allowed on %s", canonical), StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}
+		case "update":
+			results[i] = dml.Result{Error: fmt.Sprintf("DML operation UPDATE not allowed on %s", canonical), StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}
+		case "delete":
+			text, _ := idValueText(id)
+			results[i] = dml.Result{ID: storage.ID(text), Error: fmt.Sprintf("DML operation DELETE not allowed on %s", canonical), StatusCode: "DELETE_FAILED"}
+		case "undelete":
+			if !apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 62) {
+				return nil, false
+			}
+			results[i] = undeleteGrantFailure(record)
+		default:
+			return nil, false
+		}
 	}
 	return results, true
 }
@@ -275,6 +339,12 @@ func (vm *VM) defaultRunAsSOQLDenial(query soql.Query) error {
 	// no_account_read_profile_user (API 67.0): a static SELECT COUNT() FROM
 	// Account by a profile without Account access raises the entity denial.
 	unfilteredCustomCount = unfilteredCustomCount || query.Count && query.Where == nil && strings.EqualFold(query.Object, "Account")
+	// sharing_access_modes d6 rows (API 67.0 and 68.0): static COUNT() and the
+	// default Database.countQuery, unfiltered or with one Name equality, on an
+	// unreadable custom object or Account raise the same entity denial.
+	unfilteredCustomCount = unfilteredCustomCount || (vm.dynamicSOQLBindRoute == "" || vm.dynamicSOQLBindRoute == "Database.countQuery") &&
+		runAsCountDenialShape(query) && (query.Where == nil || strings.EqualFold(query.Where.Field, "Name")) &&
+		(vm.ordinaryCustomPermissionObject(query.Object) || strings.EqualFold(query.Object, "Account"))
 	if !unfilteredCustomCount {
 		where := query.Where
 		if where == nil || !strings.EqualFold(where.Field, "Id") || where.Op != "=" || where.Not ||
@@ -330,4 +400,119 @@ func (vm *VM) defaultRunAsDeleteFailures(value Value) ([]dml.Result, bool) {
 		results[i] = dml.Result{ID: storage.ID(text), Error: fmt.Sprintf("DML operation DELETE not allowed on %s", objectName), StatusCode: "DELETE_FAILED"}
 	}
 	return results, true
+}
+
+// runAsSharingDenialText is the row text for a record the running user cannot
+// write through sharing. Native sharing_access_modes d2 and d6_07 rows (runAs
+// Standard User, custom objects, APIs 62.0-68.0) and C137_180/208/222/250
+// (runAs, Account and a custom object, APIs 59.0-68.0): update reports the
+// cross-reference id, delete the object id. Other contexts keep their text.
+func (vm *VM) runAsSharingDenialText(op, objectName string, id storage.ID) (string, bool) {
+	if vm.testContext == nil || vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth ||
+		!apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 59) ||
+		!(hasSuffixFold(objectName, "__c") || strings.EqualFold(objectName, "Account")) {
+		return "", false
+	}
+	switch op {
+	case "update":
+		text := string(id)
+		if len(text) > 15 {
+			text = text[:15]
+		}
+		return runAsCrossReferenceDenial + text, true
+	case "delete":
+		return runAsObjectIDDenial, true
+	}
+	return "", false
+}
+
+const (
+	runAsCrossReferenceDenial = "insufficient access rights on cross-reference id: "
+	runAsObjectIDDenial       = "insufficient access rights on object id"
+)
+
+func isRunAsSharingDenialText(text string) bool {
+	return strings.HasPrefix(text, runAsCrossReferenceDenial) || text == runAsObjectIDDenial
+}
+
+func (vm *VM) explicitRunAsSharingRowFailure(op, objectName string) bool {
+	if (op != "update" && op != "delete") || !hasSuffixFold(objectName, "__c") || vm.testContext == nil ||
+		vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth || !apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 62) {
+		return false
+	}
+	permission, _ := userModeDMLPermissions(op)
+	return vm.currentUserObjectPermission(objectName, permission)
+}
+
+// runAsCountDenialShape is a flat COUNT() with no filter or one positive
+// equality on Name or Id: the captured entity-denial shapes.
+func runAsCountDenialShape(query soql.Query) bool {
+	if !query.Count || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 || len(query.GroupBy) != 0 || query.Having != nil ||
+		len(query.Order) != 0 || query.HasLimit || query.HasOffset || query.ForUpdate || query.ForView || query.ForReference || query.AllRows || query.UsingScope != "" {
+		return false
+	}
+	where := query.Where
+	if where == nil {
+		return true
+	}
+	return (strings.EqualFold(where.Field, "Name") || strings.EqualFold(where.Field, "Id")) && where.Op == "=" && !where.Not &&
+		len(where.And) == 0 && len(where.Or) == 0 && !where.Range && where.Subquery == nil
+}
+
+const accessLevelClauseConflictMessage = "Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level."
+
+// runAsAccessLevelClauseConflict orders a WITH USER_MODE or WITH SYSTEM_MODE
+// clause against an AccessLevel argument inside runAs at APIs 62.0-68.0
+// (native sharing_access_modes u3 and sharing_access_follow f_u3 rows). The
+// clash raises the SecurityException, except that Database.query and
+// queryWithBinds first check a selected field the user cannot read: under a
+// USER_MODE clause the QueryException lists it, under a SYSTEM_MODE clause with
+// a USER_MODE argument the QueryException has no inaccessible map.
+// Database.countQuery with a USER_MODE argument always raises the clash. Two
+// SYSTEM_MODE selections and other contexts keep their existing routes.
+func (vm *VM) runAsAccessLevelClauseConflict(route, queryText string, accessLevel Value) (error, bool) {
+	if vm.testContext == nil || vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth || vm.Org == nil ||
+		!apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 62) || !isDatabaseAccessLevelValue(accessLevel) || accessLevelPermissionSetID(accessLevel) != "" {
+		return nil, false
+	}
+	query, err := vm.parseSOQLAt(queryText)
+	if err != nil {
+		return nil, false
+	}
+	clause := strings.ToUpper(strings.TrimSpace(query.SecurityMode))
+	argument := databaseAccessLevelSecurityMode(accessLevel)
+	if clause != "USER_MODE" && clause != "SYSTEM_MODE" || clause == "SYSTEM_MODE" && argument != "USER_MODE" {
+		return nil, false
+	}
+	conflict := newExceptionError("SecurityException", accessLevelClauseConflictMessage)
+	if route == "Database.countQuery" {
+		if argument != "USER_MODE" {
+			return nil, false
+		}
+		return conflict, true
+	}
+	objectName, ok := vm.resolveObjectName(query.Object)
+	if !ok || !vm.currentUserObjectPermission(objectName, "isAccessible") || len(query.ChildQueries) != 0 || len(query.Typeofs) != 0 {
+		return nil, false
+	}
+	var denied []string
+	for _, field := range query.Fields {
+		if strings.ContainsAny(field, ". ()") {
+			return nil, false
+		}
+		canonical := vm.resolveSObjectFieldName(objectName, field)
+		if strings.EqualFold(canonical, "Id") {
+			continue
+		}
+		if !vm.currentUserFieldPermission(objectName, canonical, "isAccessible") {
+			denied = append(denied, canonical)
+		}
+	}
+	if len(denied) == 0 {
+		return conflict, true
+	}
+	if clause == "USER_MODE" {
+		return userModeFieldException(objectName, denied, false), true
+	}
+	return newExceptionError("QueryException", soql.MissingColumnMessage(denied[0], objectName)), true
 }

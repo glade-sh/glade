@@ -2309,6 +2309,15 @@ func (vm *VM) searchSuggest(args []Value) (Value, error) {
 		return Null, newExceptionError("SearchException", "limit must be greater than or equal to 1")
 	}
 	results := Object("Search.SuggestionResults")
+	// Native sharing_access_extra u3_07 and sharing_access_follow f_suggest
+	// rows (administrator and Standard User, with and without an access level,
+	// APIs 62.0-68.0): records inserted by a test are not suggested. Fixed
+	// search results keep their existing route.
+	if vm.testContext != nil && !vm.fixedSearchResultsSet {
+		results.Fields["suggestionResults"] = typedList("List<Search.SuggestionResult>")
+		results.Fields["hasMoreResults"] = Bool(false)
+		return results, nil
+	}
 	suggestions, err := vm.searchSuggestionRows(args[0].Text, args[1].Text, args[2], accessLevel)
 	if err != nil {
 		return Null, err
@@ -4003,6 +4012,14 @@ func (vm *VM) enforceSOQLSecurityScanned(query soql.Query, permissionSetID strin
 	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
 		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) || vm.api62DynamicSecurePermissionDenial(query, permissionSetID) {
 			return newExceptionError("QueryException", "Insufficient permissions: secure query included inaccessible field")
+		}
+		// Native C137_201/243 (APIs 59.0-68.0) and sharing_access_modes
+		// d6_*_cntu rows (62.0-68.0), in runAs: a static COUNT() WITH
+		// USER_MODE on an unreadable object raises the entity denial. The
+		// Database.countQuery AccessLevel overload keeps QueryException
+		// (C137_205/247).
+		if mode == "USER_MODE" && permissionSetID == "" && vm.dynamicSOQLBindRoute == "" && vm.explicitRunAsUserMode() && runAsCountDenialShape(query) {
+			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 		}
 		if mode == "USER_MODE" && permissionSetID == "" {
 			if scanUserMode {

@@ -302,13 +302,15 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 				return Null, err
 			}
 		}
-		if ordinaryDatabaseCall && op == "insert" && isUserModeAccessLevel(accessLevel) && accessLevelPermissionSetID(accessLevel) == "" && externalIDField == "" {
+		if ordinaryDatabaseCall && isUserModeAccessLevel(accessLevel) && accessLevelPermissionSetID(accessLevel) == "" && externalIDField == "" {
 			if !allOrNone {
-				if failures, handled := vm.explicitRunAsInsertFailures(args[0]); handled {
+				if failures, handled := vm.explicitRunAsPartialFailures(op, args[0]); handled {
 					return fieldKeyDMLResultsValue(op, args[0], failures), nil
 				}
-			} else if err := vm.explicitRunAsReadonlyDMLDenial(op, args[0]); err != nil {
-				return Null, err
+			} else if op != "upsert" {
+				if err := vm.explicitRunAsObjectDMLDenial(op, args[0]); err != nil {
+					return Null, err
+				}
 			}
 		}
 		if err := vm.userModeUpsertKeyFieldDenial(op, args[0], externalIDField, accessLevelPermissionSetID(accessLevel)); err != nil {
@@ -451,7 +453,7 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 		if isDatabaseAccessLevelValue(accessLevel) && dmlMode == "SYSTEM_MODE" && externalIDField == "" {
 			accessDenied := false
 			for i := range results {
-				if results[i].Success || results[i].Error != "insufficient access rights on record" {
+				if results[i].Success || results[i].Error != "insufficient access rights on record" && !isRunAsSharingDenialText(results[i].Error) {
 					continue
 				}
 				switch op {
@@ -1755,6 +1757,24 @@ func firstFailureHasRecordID(results []dml.Result) bool {
 	return false
 }
 
+// userModeLegacySecurityExceptionAPI is the pre-58 source API range in which a
+// failed "insert as user" statement raises SecurityException. Native
+// sharing_access_modes gate rows d5_05 (Account without Name, Standard User):
+// SecurityException at 55.0-57.0, DmlException from 58.0.
+func userModeLegacySecurityExceptionAPI(version string) bool {
+	return apexversion.AtLeast(version, 55) && !apexversion.AtLeast(version, 58)
+}
+
+// legacyUserModeSecurityException keeps the DmlException message under the
+// SecurityException type; the legacy exception carries no DML row details.
+func legacyUserModeSecurityException(err error) error {
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) {
+		return err
+	}
+	return newExceptionError("SecurityException", thrown.value.Fields["message"].Text)
+}
+
 func statementDMLException(op string, results []dml.Result, objectTypes []string) error {
 	if op == "update" {
 		for index, result := range results {
@@ -2726,7 +2746,11 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 				if op == "delete" {
 					code = "INSUFFICIENT_ACCESS_OR_READONLY"
 				}
-				failures[i] = dml.Result{ID: record.ID, Error: "insufficient access rights on record", StatusCode: code}
+				message := "insufficient access rights on record"
+				if text, ok := vm.runAsSharingDenialText(op, record.Object, stored.ID); ok {
+					message = text
+				}
+				failures[i] = dml.Result{ID: record.ID, Error: message, StatusCode: code}
 			}
 		}
 		if hasDMLFailures(failures) {
@@ -6974,7 +6998,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	}
 	if dmlMode == "USER_MODE" {
 		if mode == ir.DMLModeUser && (externalIDField == "" || strings.EqualFold(externalIDField, "Id")) {
-			if err := vm.explicitRunAsReadonlyDMLDenial(op, value); err != nil {
+			if err := vm.explicitRunAsObjectDMLDenial(op, value); err != nil {
 				return err
 			}
 		}
@@ -7073,7 +7097,11 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
 			vm.addVisualforceDMLPageMessages(results)
-			return statementDMLException(op, results, vm.dmlExceptionObjectTypes(value))
+			err := statementDMLException(op, results, vm.dmlExceptionObjectTypes(value))
+			if mode == ir.DMLModeUser && op == "insert" && dmlResult.StatusCode == "REQUIRED_FIELD_MISSING" && userModeLegacySecurityExceptionAPI(vm.currentSourceExecutionPolicy().APIVersion) {
+				return legacyUserModeSecurityException(err)
+			}
+			return err
 		}
 	}
 	if expr.Kind == ir.ExprVariable {
