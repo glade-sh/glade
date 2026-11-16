@@ -36,7 +36,32 @@ func (vm *VM) applySOQLSetOptions(raw string, lookup func(string) (Value, error)
 	if value.Kind != ValueObject || value.Type != queryOptionsType {
 		return "", unsupportedCallError("SET OPTIONS bind of " + value.Type)
 	}
+	if reason := unsupportedQueryOptions(value, raw[:match[0]]); reason != "" {
+		return "", unsupportedCallError("SET OPTIONS " + reason)
+	}
 	return raw[:match[0]], nil
+}
+
+var soqlFromAccount = regexp.MustCompile(`(?is)\bFROM\s+Account\b`)
+
+// unsupportedQueryOptions returns a reason when the bound options fall outside
+// the captured shapes: withDataspace('default') and withHonorEmptyStrings(true)
+// on Account. A non-null explicitNamespace is a 68.0 gate with a captured
+// 67.0 QueryException only for packaged classes, so it keeps base.
+func unsupportedQueryOptions(options Value, query string) string {
+	if ns := options.Fields["explicitNamespace"]; ns.Kind != ValueNull && ns.Kind != "" {
+		return "key explicitNamespace"
+	}
+	if ds := options.Fields["dataspace"]; ds.Kind != ValueNull && ds.Kind != "" && (ds.Kind != ValueString || ds.Text != "default") {
+		return "key dataspace other than 'default'"
+	}
+	if h := options.Fields["honorEmptyStrings"]; h.Kind != ValueNull && h.Kind != "" && !(h.Kind == ValueBool && h.Bool) {
+		return "key honorEmptyStrings other than true"
+	}
+	if !soqlFromAccount.MatchString(query) {
+		return "on an object other than Account"
+	}
+	return ""
 }
 
 // containsFoldASCII is an allocation-free ASCII case-insensitive Contains for

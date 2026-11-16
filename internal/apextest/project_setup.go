@@ -199,6 +199,7 @@ func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[stri
 }
 
 func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSymbol) bool, caches ...*sourceCache) map[string]vm.Method {
+	integrationFeature := integrationTestsEnabled(index)
 	type methodCompileJob struct {
 		ClassName  string
 		TypeAccess string
@@ -258,7 +259,7 @@ func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSy
 			// Setup methods are also callable helpers, including from a selected
 			// test class whose helper owner is not selected. Automatic setup
 			// execution remains scoped by compileTestSetupMethodsForClasses.
-			if member.Kind != apexast.DeclarationMethod || (member.IsTest && strings.EqualFold(member.Type, "void") && !isTestSetup(member.Modifiers)) {
+			if member.Kind != apexast.DeclarationMethod || (member.IsTest && strings.EqualFold(member.Type, "void") && !isTestSetup(member.Modifiers, isIntegrationTestClass(integrationFeature, typ))) {
 				continue
 			}
 			if !sourceLoaded {

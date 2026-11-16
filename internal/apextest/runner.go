@@ -218,6 +218,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 	filters := testFilters(opts.Filter)
 	selectedClasses := selectedClassSet(opts.SelectedClasses)
 	selectedMethod := strings.TrimSpace(opts.SelectedMethod)
+	integrationFeature := integrationTestsEnabled(index)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
@@ -229,7 +230,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 			continue
 		}
 		costHint := testCaseCostHintForType(typ)
-		integration := integrationTestsEnabled(index) && hasModifier(typ.Modifiers, "IntegrationTest")
+		integration := isIntegrationTestClass(integrationFeature, typ)
 		var tearDowns []string
 		if integration {
 			for _, member := range typ.Members {
@@ -246,7 +247,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 			if !member.IsTest && !integrationMethod {
 				continue
 			}
-			if isTestSetup(member.Modifiers) {
+			if isTestSetup(member.Modifiers, integration) {
 				continue
 			}
 			testName := typ.Name + "." + member.Name
@@ -4963,6 +4964,7 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 	programs := make(map[string][]ir.Program)
 	programErrs := make(map[string]error)
 	sources := sourceCacheFor(caches)
+	integrationFeature := integrationTestsEnabled(index)
 	for _, typ := range index.Types {
 		if !typ.HasSourceSnapshot() {
 			continue
@@ -4976,8 +4978,9 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 		if selectedClasses != nil && !selectedClasses[typ.Name] {
 			continue
 		}
+		integration := isIntegrationTestClass(integrationFeature, typ)
 		for _, member := range typ.Members {
-			if member.Kind != apexast.DeclarationMethod || !isTestSetup(member.Modifiers) {
+			if member.Kind != apexast.DeclarationMethod || !isTestSetup(member.Modifiers, integration) {
 				continue
 			}
 			source, err := sources.read(typ.File)
@@ -8351,16 +8354,24 @@ func skipBlockComment(source string, start int) int {
 	return len(source) - 1
 }
 
-func isTestSetup(modifiers []string) bool {
+// isTestSetup reports a @TestSetup method. With integration set (an
+// @IntegrationTest class under the ApexIntegrationTests feature), @BeforeClass
+// also counts: it runs once before the class methods, like @TestSetup, and its
+// data is visible to every method. No row covers @BeforeClass elsewhere.
+func isTestSetup(modifiers []string, integration bool) bool {
 	for _, modifier := range modifiers {
 		trimmed := strings.TrimPrefix(modifier, "@")
-		// @BeforeClass of an @IntegrationTest class runs once before its
-		// methods, like @TestSetup; its data is visible to every method.
-		if strings.EqualFold(trimmed, "TestSetup") || strings.EqualFold(trimmed, "BeforeClass") {
+		if strings.EqualFold(trimmed, "TestSetup") || integration && strings.EqualFold(trimmed, "BeforeClass") {
 			return true
 		}
 	}
 	return false
+}
+
+// isIntegrationTestClass reports an @IntegrationTest class with the
+// ApexIntegrationTests feature on.
+func isIntegrationTestClass(featureOn bool, typ typesys.TypeSymbol) bool {
+	return featureOn && hasModifier(typ.Modifiers, "IntegrationTest")
 }
 
 func isSeeAllDataTest(modifiers []string) bool {
