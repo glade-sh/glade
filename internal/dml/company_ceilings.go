@@ -14,6 +14,14 @@ import (
 //     word on both sides has three letters or fewer ("Aeo Uia1235"). Two names
 //     with a balanced two-word base ("Orbel Trade12345") add one point.
 //   - companyCeiling: a qualifier or direction pair that the scorer matched.
+//     A spaced slash against a parenthesis form on one two-word base with
+//     different suffixes is no match on a base under 12 letters; on 12 or 13
+//     letters the spaced slash candidate reports 90 (fuzzy_residual_panels
+//     r2co_p1: "Zorvex Fright / East" finds "Zorvex Fright (West)" at 90, and
+//     "Zorvex Freights / East" its form at 91). The parenthesis candidate and
+//     two suffixes that differ in one vowel keep the scorer's result
+//     (company_name_fit R2_par: "(East)" finds "/ Mast" at 91, "/ East" finds
+//     "(Oast)" at 93).
 
 // companyVowelWords are the qualifiers the fitted vowel and consonant
 // suffix families cover; a same-qualifier pair with another word of four
@@ -127,11 +135,17 @@ func companyCeiling(a, b string, score float64) (bool, float64) {
 		if sx == sy {
 			return true, score
 		}
+		if companyVowelSwap(sx, sy) {
+			return true, score
+		}
 		letters := utf8.RuneCountInString(bx[0]) + utf8.RuneCountInString(bx[1])
-		if letters >= 13 {
+		if letters < 12 {
+			return false, 0
+		}
+		if x.form == "slash" && letters <= 13 {
 			return true, 90
 		}
-		return false, 0
+		return true, score
 	}
 	return true, score
 }
@@ -167,4 +181,23 @@ func companyDirectionCeiling(a, b string, score float64) (bool, float64) {
 		return true, item
 	}
 	return false, 0
+}
+
+// companyVowelSwap reports two qualifiers of one length that differ in one
+// letter, a vowel on both sides ("East" and "Oast", "West" and "Wast").
+func companyVowelSwap(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	differ := 0
+	for i := 0; i < len(a); i++ {
+		if a[i] == b[i] {
+			continue
+		}
+		if !strings.ContainsRune("aeiou", rune(a[i])) || !strings.ContainsRune("aeiou", rune(b[i])) {
+			return false
+		}
+		differ++
+	}
+	return differ == 1
 }
