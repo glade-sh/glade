@@ -16,14 +16,14 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// A list built inside a class method, from anonymous Apex and from an
-// @IsTest method, gives the same strict outcome whether its heap checks are
+// A list built inside a class method, from anonymous Apex, from an @IsTest
+// method and from a Queueable run by Test.stopTest (async caps), gives the same strict outcome whether its heap checks are
 // priced or walked. The method frame also drops a record local at each body
 // exit, which a priced check must not keep counting.
 func TestStrictHeapPricedChecksProjectRoutes(t *testing.T) {
 	t.Cleanup(apextest.InvalidateRuntimeCaches)
 	for _, api := range []string{"62.0", "67.0"} {
-		for _, route := range []string{"anonymous", "isTest"} {
+		for _, route := range []string{"anonymous", "isTest", "queueable"} {
 			for _, heapCap := range []int{0, 40000} {
 				name := api + "/" + route + "/default"
 				if heapCap != 0 {
@@ -109,8 +109,16 @@ func strictHeapProjectMachine(t *testing.T, api, route string) (*vm.VM, ir.Progr
         return Limits.getHeapSize();
     }
 }`)
-	write(classes+"HeapAppendWorkerTest.cls", `@IsTest private class HeapAppendWorkerTest { @IsTest static void build() { HeapAppendWorker.build(300); } }`)
-	for _, name := range []string{"HeapAppendWorker", "HeapAppendWorkerTest"} {
+	write(classes+"HeapAppendJob.cls", `public class HeapAppendJob implements Queueable {
+    public void execute(QueueableContext context) {
+        System.debug('async heap ' + HeapAppendWorker.build(300) + ' of ' + Limits.getLimitHeapSize());
+    }
+}`)
+	write(classes+"HeapAppendWorkerTest.cls", `@IsTest private class HeapAppendWorkerTest {
+    @IsTest static void build() { HeapAppendWorker.build(300); }
+    @IsTest static void async() { Test.startTest(); System.enqueueJob(new HeapAppendJob()); Test.stopTest(); }
+}`)
+	for _, name := range []string{"HeapAppendWorker", "HeapAppendWorkerTest", "HeapAppendJob"} {
 		write(classes+name+".cls-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>")
 	}
 	p, err := project.Load(root)
@@ -133,12 +141,12 @@ func strictHeapProjectMachine(t *testing.T, api, route string) (*vm.VM, ir.Progr
 		t.Fatal(err)
 	}
 	source := "HeapAppendWorker.build(300);"
-	if route == "isTest" {
+	if method := map[string]string{"isTest": "build", "queueable": "async"}[route]; method != "" {
 		machine.EnableTestContext()
-		if err := apextest.RegisterTestMethodForRequest(machine, index, "HeapAppendWorkerTest", "build"); err != nil {
+		if err := apextest.RegisterTestMethodForRequest(machine, index, "HeapAppendWorkerTest", method); err != nil {
 			t.Fatal(err)
 		}
-		source = "HeapAppendWorkerTest.build();"
+		source = "HeapAppendWorkerTest." + method + "();"
 	}
 	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: api})
 	if err != nil {
