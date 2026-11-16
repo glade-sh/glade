@@ -19,8 +19,8 @@ import (
 // Heap readings depend on process-wide caches that earlier tests warm, which
 // shrinks the full-registration delta. The measurement therefore runs in a
 // fresh subprocess: the test binary re-executes itself with an env flag.
-// A fresh process measures about 21 MiB; the floor leaves margin for noise.
-const passiveHeapFullFloor = 16 << 20
+// A fresh process measures about 21 MiB.
+const passiveHeapFullFloor = 20 << 20
 
 const passiveHeapChildEnv = "GLADE_PASSIVE_HEAP_CHILD"
 
