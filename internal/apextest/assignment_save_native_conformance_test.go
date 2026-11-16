@@ -107,8 +107,15 @@ func assertAssignmentSavePayload(t *testing.T, id, message string, want map[stri
 	}
 }
 
+// Each API version is its own top-level test: both together ran 190-364 s in
+// one CI shard, which the scheduler could not balance as one test. The
+// original name keeps 62.0, so its duration history stays valid.
 func TestAssignmentSaveNativeConformanceAPIRoutes(t *testing.T) {
-	testAssignmentSaveNativeAPIRoutes(t, assignmentSaveFixture)
+	testAssignmentSaveNativeAPIs(t, assignmentSaveFixture, []string{"62.0"})
+}
+
+func TestAssignmentSaveNativeConformanceAPIRoutes67(t *testing.T) {
+	testAssignmentSaveNativeAPIs(t, assignmentSaveFixture, []string{"67.0"})
 }
 
 func TestAssignmentSaveScalarAndFilteredNativeConformanceAPIRoutes(t *testing.T) {
@@ -121,13 +128,18 @@ func TestAssignmentSaveUserModeNativeConformanceAPIRoutes(t *testing.T) {
 
 func testAssignmentSaveNativeAPIRoutes(t *testing.T, fixture string, routes ...string) {
 	t.Helper()
+	testAssignmentSaveNativeAPIs(t, fixture, []string{"62.0", "67.0"}, routes...)
+}
+
+func testAssignmentSaveNativeAPIs(t *testing.T, fixture string, apis []string, routes ...string) {
+	t.Helper()
 	if len(routes) == 0 {
 		routes = []string{"anonymous", "named_istest"}
 	}
 	restoreDisk := EnableDiskCacheForTesting()
 	t.Cleanup(restoreDisk)
 	t.Cleanup(InvalidateRuntimeCaches)
-	for _, api := range []string{"62.0", "67.0"} {
+	for _, api := range apis {
 		t.Run(api, func(t *testing.T) {
 			native := map[string]map[string]map[string]any{}
 			for _, route := range routes {
