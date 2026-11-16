@@ -1,13 +1,19 @@
 package vm
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 const regexp2UnixDollarMarker = "(?#__gladeRegexUnixDollar)"
 
 type javaRegexOptions struct {
-	unixLines bool
-	dotall    bool
-	extended  bool
+	unixLines   bool
+	dotall      bool
+	extended    bool
+	multiline   bool
+	caseInsens  bool
+	unicodeCase bool
 }
 
 // K006-K023: retain every nesting level and treat a leading ] as a literal,
@@ -37,16 +43,150 @@ func (c *javaRegexClassState) advance(source string, i int) {
 	}
 }
 
-// R069/R070/R273 exercise Java's d/u options. regexp2 already folds Unicode
-// under i; d controls line terminators and must be translated at each scope.
-func rewriteJavaRegexFlagsForRegexp2(source string) string {
+// regexTraits describes the subject text, so the translator can keep regexp2's
+// faster native forms whenever Java and regexp2 agree on that text.
+type regexTraits struct {
+	nonASCII  bool // text holds a code point above U+007F
+	lineTerms bool // text holds \r, U+0085, U+2028 or U+2029
+}
+
+// regexTraitsAll is the conservative choice when no subject text is known.
+var regexTraitsAll = regexTraits{nonASCII: true, lineTerms: true}
+
+func regexTraitsOf(input string) regexTraits {
+	var t regexTraits
+	for i := 0; i < len(input); i++ {
+		b := input[i]
+		switch {
+		case b >= 0x80:
+			t.nonASCII = true
+			if b == 0xC2 && i+1 < len(input) && input[i+1] == 0x85 || b == 0xE2 && i+2 < len(input) && input[i+1] == 0x80 && (input[i+2] == 0xA8 || input[i+2] == 0xA9) {
+				t.lineTerms = true
+			}
+		case b == '\r':
+			t.lineTerms = true
+		}
+		if t.nonASCII && t.lineTerms {
+			break
+		}
+	}
+	return t
+}
+
+// normalizedFor clears the traits the pattern cannot depend on, so plans for
+// such patterns are shared across subject texts.
+func (t regexTraits) normalizedFor(source string) regexTraits {
+	if !t.nonASCII && !t.lineTerms {
+		return t
+	}
+	out := regexTraits{}
+	hasI := regexSourceHasInlineFlag(source, 'i')
+	if t.nonASCII && (hasI || strings.Contains(source, `\b`) || strings.Contains(source, `\B`)) {
+		out.nonASCII = true
+	}
+	if t.lineTerms && strings.Contains(source, "^") && regexSourceHasInlineFlag(source, 'm') {
+		out.lineTerms = true
+	}
+	return out
+}
+
+// regexSourceHasInlineFlag reports whether a (?flags) group in source sets flag.
+func regexSourceHasInlineFlag(source string, flag byte) bool {
+	for i := 0; i+2 < len(source); i++ {
+		if source[i] == '\\' {
+			i++
+			continue
+		}
+		if source[i] != '(' || source[i+1] != '?' {
+			continue
+		}
+		for j := i + 2; j < len(source); j++ {
+			c := source[j]
+			if c == flag {
+				return true
+			}
+			if !strings.ContainsRune("idmsucxU-", rune(c)) {
+				break
+			}
+		}
+	}
+	return false
+}
+
+func regexSourceNeedsExplicitFold(source string, traits regexTraits) bool {
+	if !regexSourceHasInlineFlag(source, 'i') {
+		return false
+	}
+	if !traits.nonASCII {
+		ascii := true
+		for i := 0; i < len(source); i++ {
+			if source[i] >= 0x80 {
+				ascii = false
+				break
+			}
+		}
+		if ascii && !strings.Contains(source, `\u`) && !strings.Contains(source, `\x`) {
+			return false
+		}
+	}
+	// A back reference compares captured text; regexp2's own folding stays.
+	for i := 0; i+1 < len(source); i++ {
+		if source[i] == '\\' {
+			if source[i+1] >= '1' && source[i+1] <= '9' || source[i+1] == 'k' {
+				return false
+			}
+			i++
+		}
+	}
+	return true
+}
+
+const (
+	regexCaretAnyTerminator = `(?:(?!\z)(?:\A|(?<=[\n\u0085\u2028\u2029])|(?<=\r)(?!\n)))`
+	regexCaretUnixLines     = `(?:(?!\z)(?:\A|(?<=\n)))`
+	regexASCIIWordBoundary  = `(?:(?<=[A-Za-z0-9_])(?![A-Za-z0-9_])|(?<![A-Za-z0-9_])(?=[A-Za-z0-9_]))`
+	regexASCIINotBoundary   = `(?:(?<=[A-Za-z0-9_])(?=[A-Za-z0-9_])|(?<![A-Za-z0-9_])(?![A-Za-z0-9_]))`
+)
+
+// R069/R070/R273 exercise Java's d/u options. d controls line terminators and
+// must be translated at each scope. Java folds case for ASCII letters only
+// unless u is set, and ^ with m follows Java's line terminators; both differ
+// from regexp2, so they are translated here when the subject text needs it.
+func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeClasses bool) string {
 	var out strings.Builder
 	options := javaRegexOptions{}
+	explicitFold := regexSourceNeedsExplicitFold(source, traits)
 	var stack []javaRegexOptions
 	var classes javaRegexClassState
 	for i := 0; i < len(source); i++ {
 		ch := source[i]
 		if ch == '\\' {
+			if i+1 < len(source) && !classes.inside() && (source[i+1] == 'b' || source[i+1] == 'B') && traits.nonASCII && !unicodeClasses {
+				if source[i+1] == 'b' {
+					out.WriteString(regexASCIIWordBoundary)
+				} else {
+					out.WriteString(regexASCIINotBoundary)
+				}
+				i++
+				continue
+			}
+			if explicitFold && options.caseInsens && !classes.inside() && i+1 < len(source) {
+				if consumed, text, ok := foldEscapeAtom(source[i:], options.unicodeCase); ok {
+					out.WriteString(text)
+					i += consumed - 1
+					continue
+				}
+				switch source[i+1] {
+				case 'p', 'P', 'x':
+					if i+2 < len(source) && source[i+2] == '{' {
+						if end := strings.IndexByte(source[i:], '}'); end >= 0 {
+							out.WriteString(source[i : i+end+1])
+							i += end
+							continue
+						}
+					}
+				}
+			}
 			out.WriteByte(ch)
 			if i+1 < len(source) {
 				i++
@@ -68,6 +208,13 @@ func rewriteJavaRegexFlagsForRegexp2(source string) string {
 			out.WriteString(source[i : i+end+1])
 			i += end
 			continue
+		}
+		if explicitFold && options.caseInsens && ch == '[' && !classes.inside() {
+			if end := javaRegexCharClassEnd(source, i); end >= 0 {
+				out.WriteString(foldClassText(source[i:end+1], options.unicodeCase, options.extended))
+				i = end
+				continue
+			}
 		}
 		classes.advance(source, i)
 		if classes.inside() {
@@ -97,6 +244,14 @@ func rewriteJavaRegexFlagsForRegexp2(source string) string {
 					continue
 				}
 			}
+			if strings.HasPrefix(source[i:], "(?<") && i+3 < len(source) && source[i+3] != '=' && source[i+3] != '!' {
+				if end := strings.IndexByte(source[i:], '>'); end >= 0 {
+					out.WriteString(source[i : i+end+1])
+					i += end
+					stack = append(stack, options)
+					continue
+				}
+			}
 			if strings.HasPrefix(source[i:], "(?") {
 				j, enabled, scoped, sawFlag := i+2, true, options, false
 				var flags strings.Builder
@@ -110,14 +265,25 @@ func rewriteJavaRegexFlagsForRegexp2(source string) string {
 						switch flag {
 						case 'd':
 							scoped.unixLines = enabled
-						case 'u', 'U', 'c':
-							// Unicode classes are rewritten by the shared class pass; c is CANON_EQ.
+						case 'u':
+							scoped.unicodeCase = enabled
+						case 'U':
+							scoped.unicodeCase = enabled
+						case 'c':
+							// CANON_EQ is not modelled.
+						case 'i':
+							scoped.caseInsens = enabled
+							if !explicitFold {
+								flags.WriteByte(flag)
+							}
 						default:
 							flags.WriteByte(flag)
 							if flag == 's' {
 								scoped.dotall = enabled
 							} else if flag == 'x' {
 								scoped.extended = enabled
+							} else if flag == 'm' {
+								scoped.multiline = enabled
 							}
 						}
 					}
@@ -149,8 +315,27 @@ func rewriteJavaRegexFlagsForRegexp2(source string) string {
 				out.WriteString(`[^\n\r\u0085\u2028\u2029]`)
 			}
 			continue
+		} else if ch == '^' && options.multiline {
+			switch {
+			case options.unixLines:
+				out.WriteString(regexCaretUnixLines)
+			case traits.lineTerms:
+				out.WriteString(regexCaretAnyTerminator)
+			default:
+				// Only \n ends a line here, so regexp2's multiline anchor works once
+				// the position at the end of the text is excluded.
+				out.WriteString(`(?:(?!\z)^)`)
+			}
+			continue
 		} else if ch == '$' && options.unixLines {
 			out.WriteString(regexp2UnixDollarMarker)
+		} else if explicitFold && options.caseInsens && !strings.ContainsRune("()[]{}.*+?^$|", rune(ch)) && !(options.extended && javaASCIISpace(rune(ch))) {
+			r, size := utf8.DecodeRuneInString(source[i:])
+			if variants := javaFoldVariants(r, options.unicodeCase); len(variants) > 1 {
+				out.WriteString(runeSetClassFromList(variants))
+				i += size - 1
+				continue
+			}
 		}
 		out.WriteByte(ch)
 	}

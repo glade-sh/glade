@@ -36,6 +36,10 @@ func compileRegexp2PatternWithException(callee, source, exceptionType string) (s
 }
 
 func compileRegexp2Source(callee, source string) (string, error) {
+	return compileRegexp2SourceFor(callee, source, regexTraitsAll)
+}
+
+func compileRegexp2SourceFor(callee, source string, traits regexTraits) (string, error) {
 	converted, err := javaRegexQuoteEscapesToGo(source)
 	if err != nil {
 		return "", unsupportedCallError(callee + " " + err.Error())
@@ -43,7 +47,7 @@ func compileRegexp2Source(callee, source string) (string, error) {
 	regexp2Source := rewriteJavaNumericEscapesForRegexp2(converted)
 	unicodeCharacterClass := false
 	regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
-	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source)
+	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source, traits, unicodeCharacterClass)
 	regexp2Source = rewriteJavaRegexEscapesForRegexp2(regexp2Source)
 	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source = rewriteJavaShorthandClassesForRegexp2(regexp2Source, unicodeCharacterClass)

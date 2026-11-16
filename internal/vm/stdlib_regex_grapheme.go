@@ -63,14 +63,15 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 	if err := validateJavaRegexSource(source, exceptionType); err != nil {
 		return nil, err
 	}
-	regexp2Source, err := compileRegexp2Source(callee, source)
+	traits := regexTraitsOf(input).normalizedFor(source)
+	regexp2Source, err := compileRegexp2SourceFor(callee, source, traits)
 	if err != nil {
 		return nil, err
 	}
 	// A pattern without grapheme tokens compiles independently of its input:
 	// it needs no cluster table and its plan can be shared between calls.
 	inputIndependent := !regexSourceUsesGraphemeTokens(regexp2Source)
-	cacheKey := regexp2PlanCacheKey{callee: callee, source: source, exceptionType: exceptionType}
+	cacheKey := regexp2PlanCacheKey{callee: callee, source: source, exceptionType: exceptionType, traits: traits}
 	if inputIndependent {
 		if plan, ok := regexp2PlanCache.lookup(cacheKey); ok {
 			return plan, nil
@@ -121,6 +122,7 @@ type regexp2PlanCacheKey struct {
 	callee        string
 	source        string
 	exceptionType string
+	traits        regexTraits
 }
 
 // regexp2PlanCacheLimit bounds the shared plan cache. Patterns built from data
