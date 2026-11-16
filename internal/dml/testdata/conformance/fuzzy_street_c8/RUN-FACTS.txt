@@ -1,0 +1,13 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for custom Account matching rules with one Street item (BillingStreet), NullNotAllowed (rule N4Street) and MatchBlanks (rule N4StreetMB), duplicate rules Allow with alert; standard Account duplicate rule inactive
+date: 2026-11-15
+CLI: @salesforce/cli/2.157.8 darwin-arm64 node-v26.13.0
+org: seven runs, each on a fresh 30-day Developer Edition scratch org on a campaign Dev Hub, deleted after the run; deletion verified every time (active scratch record 1 -> 0, local target no longer resolves); org readback {"OrganizationType": "Developer Edition", "LanguageLocaleKey": "en_US"}
+probe: FuzzyPanel.run inserts one record per value (DMLOptions allowSave), then calls findDuplicates on unsaved copies of every value; each match is candidate index, existing index (base 36) and the confidence when not 100; record ids are compared inside Apex and never exported
+apis: 62.0 and 67.0; class ApiVersion read back after each deploy
+routes: anonymous Apex and named @IsTest methods; two repeats each
+log guard: debug level ERROR; each run fails on Apex log truncation, an incomplete observation frame or a class API mismatch; a canary panel brackets every six panels; none failed
+ids: no record, org or user id, username or alias is stored
+blanks: the MatchBlanks panels (matchblanks.txt) carry one blank street; a match to a record that is not in the panel (an earlier blank record in the org, token index "?") is dropped from the stored observation; the blank pair itself is not scored by the test, the rule path decides blanks
+runs: 1 qa1 to qa3 (line break), qb1, qb2 (Jr, name words), qc1 (RR), qd1, qd2 (ß and ss), qe1, qe2 (suffix pairs), qf1 (Rue), qg1, qg2 (Fl and Floor); 2 qb3, qb4, qc2, qh1, qh2 (accents), qi1 to qi10 (111 suffix pairs), qj1 to qj5 (74 key words); 3 qm1 (other characters outside ASCII) and twin panels; 4 qg3, qg4; 5 qs1 to qs4 (suite values); 6 qn1 to qn4 (number words), qs5, qs6; 7 qs7, qv1 and twin panels
+holdout: 31 twin panels (group "holdout") repeat panels of the fit runs with other street names and numbers: gqa1 gqa3 gqb1 gqb2 gqb3 gqb4 gqc1 gqc2 gqd1 gqf1 hqa1 hqa2 hqa3 hqb1 hqb2 hqb3 hqb4 hqc1 hqc2 hqd1 hqd2 hqe2 hqf1 hqh2 hqi1 hqi2 hqi3 hqi5 hqn1 hqs7 hqs8. Each was scored once, against the model as it stood, and none was read before it was scored. A twin panel that disagreed on that first scoring was read, informed the next capture, and is stored as fit: hqg2, hqg3, hqg4, hqs1 to hqs6, hqv1 and gqd2
+note: "PO Box A" has no self match natively (fuzzy_street_c5)

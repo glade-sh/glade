@@ -15,8 +15,9 @@ import (
 // Glade may match that the native rows do not; every such pair is pinned in the
 // fixture's residuals.tsv, so the count cannot grow unseen.
 var streetNativeDirs = map[string]int{
-	"testdata/conformance/fuzzy_street_c4": 2,
+	"testdata/conformance/fuzzy_street_c4": 0,
 	"testdata/conformance/fuzzy_street_c5": 0,
+	"testdata/conformance/fuzzy_street_c8": 0,
 }
 
 const streetPanelDigits = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -51,6 +52,8 @@ func streetNativePanel(t *testing.T, observation string) map[string]string {
 // NATIVE fuzzy_street_c4/org.tsv:9 istest 67.0
 // NATIVE fuzzy_street_c5/org.tsv:2 anonymous 62.0
 // NATIVE fuzzy_street_c5/org.tsv:9 istest 67.0
+// NATIVE fuzzy_street_c8/org.tsv:2 anonymous 62.0
+// NATIVE fuzzy_street_c8/org.tsv:9 istest 67.0
 // Every pair of each street panel's values through a custom Street rule
 // (Datacloud.FindDuplicates, anonymous and @IsTest, APIs 62.0 and 67.0, two
 // repeats, all identical per case). Fit panels and holdout panels are scored
@@ -101,6 +104,16 @@ func streetNativeRows(t *testing.T, dir string, maxExtra int) {
 			t.Fatalf("%s: %d observations, want 8 (2 APIs x 2 routes x 2 repeats)", name, counts[name])
 		}
 	}
+	// matchblanks.txt names the panels captured under a Match Blank Fields item.
+	matchBlanks := map[string]bool{}
+	if body, err := os.ReadFile(filepath.Join(dir, "matchblanks.txt")); err == nil {
+		for _, name := range strings.Fields(string(body)) {
+			if panels[name] == nil {
+				t.Fatalf("matchblanks.txt names the unknown panel %q", name)
+			}
+			matchBlanks[name] = true
+		}
+	}
 	residuals := map[string][2]string{}
 	if body, err := os.ReadFile(filepath.Join(dir, "residuals.tsv")); err == nil {
 		for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
@@ -120,13 +133,17 @@ func streetNativeRows(t *testing.T, dir string, maxExtra int) {
 		nat := streetNativePanel(t, native[name])
 		for i, a := range values {
 			for j, b := range values {
+				if strings.TrimSpace(a) == "" || strings.TrimSpace(b) == "" {
+					// A blank street never reaches the scorer; the rule path decides.
+					continue
+				}
 				pair := streetPanelDigits[i:i+1] + streetPanelDigits[j:j+1]
 				want := "-"
 				if v, ok := nat[pair]; ok {
 					want = v
 				}
 				got := "-"
-				if match, score := FuzzyScore("Street", a, b, false); match {
+				if match, score := FuzzyScore("Street", a, b, matchBlanks[name]); match {
 					got = fmt.Sprint(int(math.Floor(fuzzyItemScore("Street", score) + 0.5)))
 				}
 				if want == "-" && got != "-" {
@@ -254,11 +271,80 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		// A compass word before the name (sd1, nd4).
 		{"500 North Calder Rd", "500 Northwest Calder Rd", true, 91},
 		{"85 North Sorrel Dr", "85 Northern Sorrel Dr", false, 0},
+		// fuzzy_street_c8: the key reads a line break as a word separator,
+		// the score deletes it (qa1, qa2). With no street number the break
+		// still finds the same street without it.
+		{"Calder Rd Suite 200", "Calder Rd\nSuite 200", true, 69},
+		{"Calder Rd\nSuite 200", "Calder Rd Suite 200", true, 69},
+		{"Calder Rd\nSuite 200", "Calder Rd,\nSuite 200", true, 88},
+		{"Calder Rd\nSuite 200", "Calder RdSuite 200", false, 0},
+		{"Calder Rd Suite200", "Calder Rd\nSuite200", true, 94},
+		{"Calder Rd #200", "Calder Rd\n#200", true, 92},
+		{"Calder Rd\n#200", "Calder Rd #200", true, 46},
+		{"Oak St Suite 200", "Oak St\nSuite 200", true, 64},
+		{"Calder Plaza Suite 200", "Calder Plaza\nSuite 200", true, 84},
+		// A name of four words does not split (qb1, qb3).
+		{"100 N Martin Luther King Jr Blvd", "100 N Martin Luther King Blvd", true, 45},
+		{"100 N Martin Luther King Blvd", "100 N Martin Luther King Jr Blvd", true, 91},
+		{"100 N Martin Luther King Blvd Suite 5", "100 N Martin Luther King Jr Blvd Suite 5", true, 93},
+		{"100 N Martin Luther King Jr Blvd", "100 N Martin Luther King Blvd Suite 5", false, 0},
+		{"14 Kingsley Blvd Jr", "14 Kingsley King Jr Blvd", true, 72},
+		{"14 Hawthorne Meadow Blvd Jr", "14 Hawthorne Meadow Blvd", true, 44},
+		{"14 Dana Blvd Jr", "14 Dana Jr Blvd", false, 0},
+		// A rural route reports 100 for itself (qc1); Rt, Rte and Rd are left
+		// out of the key (qc2, qj1).
+		{"RR 4", "RR 4", true, 100},
+		{"Rural Route 4", "Rural Route 4", true, 100},
+		{"HC 4", "HC 4", true, 88},
+		{"Rural Rt 4", "Rural Rte 4", true, 80},
+		{"Rural Rt 4", "Rural Rd 4", true, 72},
+		{"604 Sts Ln W", "604 Sts Ln N", false, 0},
+		{"615 Pk Ln W", "615 Pk Ln N", false, 0},
+		// Accented letters fold, other characters outside ASCII are deleted
+		// (qh1, qh2, qm1, qd1).
+		{"7 Bor\u00fcden Rd", "7 Boruden Rd", true, 100},
+		{"7 Dun\u00f8wick Rd", "7 Dunwick Rd", true, 100},
+		{"Fu\u00dfweg 5", "Fuweg 5", true, 88},
+		{"Friedrichstra\u00dfe 43", "Friedrichstr. 43", true, 78},
+		{"12 Hauptstra\u00dfe S\u00fcd", "12 Hauptstrasse Sud", true, 90},
+		{"7 Ob\u2019rien Rd", "7 Obrien Rd", true, 100},
+		// Suffix words (qe1, qe2): Aly is the suffix Alley; Lp and Loop, Pkwy
+		// and Parkway stay in the name.
+		{"12 Hazel Aly", "12 Hazel Alley", true, 93},
+		{"1 Infinite Lp", "1 Infinity Loop", true, 82},
+		{"1600 Amphitheatre Pkwy", "1600 Amphitheater Parkway", true, 81},
+		{"2 Quarry Lp", "2 Quarri Loop", true, 79},
+		// Rue is a word of the name (qf1).
+		{"7 Rue Royale", "7 Rue Royal", true, 92},
+		{"12 Rue de Rivoli", "12 Rue Rivoli", true, 82},
+		{"12 Rue Rivoli", "12 Ave Rivoli", true, 85},
+		{"12 Rue Rivoli", "12 Rivoli", false, 0},
+		{"Rue Royale", "Rue Royale", true, 86},
 	} {
 		match, score := FuzzyScore("Street", c.a, c.b, false)
 		got := int(math.Floor(score + 0.5))
 		if match != c.match || (match && got != c.conf) {
 			t.Errorf("%q / %q: got %v %d, native %v %d", c.a, c.b, match, got, c.match, c.conf)
+		}
+	}
+	// Match Blank Fields scores the same sections (fuzzy_street_c8 qd2, qg2):
+	// the floor words are suites there too, and the name similarity decides
+	// where the street has no number.
+	for _, c := range []struct {
+		a, b  string
+		match bool
+		conf  int
+	}{
+		{"200 Park Ave Fl 5", "200 Park Ave Floor 5", true, 93},
+		{"Hauptstra\u00dfe 5", "Hauptstr. 5", true, 86},
+		{"Hauptstrasse 5", "Hauptstr. 5", true, 76},
+		{"Haupt Str. 5", "Hauptstr. 5", true, 92},
+		{"Fu\u00dfweg 5", "Fuweg 5", true, 100},
+	} {
+		match, score := FuzzyScore("Street", c.a, c.b, true)
+		got := int(math.Floor(score + 0.5))
+		if match != c.match || (match && got != c.conf) {
+			t.Errorf("MatchBlanks %q / %q: got %v %d, native %v %d", c.a, c.b, match, got, c.match, c.conf)
 		}
 	}
 	// The shared scorer the standard rules call keeps its behavior.
