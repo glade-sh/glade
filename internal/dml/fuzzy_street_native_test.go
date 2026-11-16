@@ -15,10 +15,11 @@ import (
 // Glade may match that the native rows do not; every such pair is pinned in the
 // fixture's residuals.tsv, so the count cannot grow unseen.
 var streetNativeDirs = map[string]int{
-	"testdata/conformance/fuzzy_street_c4": 0,
-	"testdata/conformance/fuzzy_street_c5": 0,
-	"testdata/conformance/fuzzy_street_c8": 0,
-	"testdata/conformance/fuzzy_street_c9": 8,
+	"testdata/conformance/fuzzy_street_c4":  0,
+	"testdata/conformance/fuzzy_street_c5":  0,
+	"testdata/conformance/fuzzy_street_c8":  0,
+	"testdata/conformance/fuzzy_street_c9":  8,
+	"testdata/conformance/fuzzy_street_c10": 0,
 }
 
 const streetPanelDigits = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -213,6 +214,18 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"15 Elm Drive", "15 Elm", true, 75},
 		{"77 Wren Ave", "77 Wren Av", true, 80},
 		{"77 Wren Xq", "77 Wren St", false, 0},
+		// Number words and ordinals in the name (fuzzy_street_c10 o1 to o8,
+		// e1 to e4): a name of numbers only, or after a directional, is
+		// compared as one string; an ordinal first word is no street number.
+		{"500 Twenty One St", "500 Twenty First St", false, 0},
+		{"500 Twenty One St", "500 Twenty One Street", false, 0},
+		{"500 Twenty First Street", "500 Twenty One Street", true, 88},
+		{"300 E Twenty Third St", "300 E Twenty Third Street", false, 0},
+		{"300 E Twenty Third Street", "300 Twenty Third Street", true, 45},
+		{"500 Twenty First Street", "500 Twenty Tenth Street", true, 80},
+		{"500 Twenty First St", "500 Twenty First Street", true, 88},
+		{"Third Ave", "3rd Ave", true, 88},
+		{"101st St", "101st St", true, 88},
 		{"77 Wren St", "77 Wren St Xq", false, 0},
 		{"14 Dana Blvd Jr", "14 Dana Jr Blvd", false, 0},
 		// The similarity gate is 87 (nt1, nd4).
