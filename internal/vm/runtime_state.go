@@ -63,6 +63,11 @@ type VM struct {
 	// USER_MODE (an AccessLevel argument, or a statement "as user" while
 	// explicitUserModeStatement is set).
 	explicitUserModeAccess, explicitUserModeStatement bool
+	// runAsRecordAccessCaptured marks a DML call shape whose hidden-record
+	// failure the sharing_access_modes d2 rows capture as a DML row failure.
+	runAsRecordAccessCaptured bool
+	// staticSOQLQuery is set while a static [SELECT ...] expression runs.
+	staticSOQLQuery bool
 	// userModeSingleRecord marks the field check of single-record user-mode DML.
 	userModeSingleRecord   bool
 	knowledgeIssuedParents map[storage.ID]bool
@@ -154,6 +159,10 @@ type VM struct {
 	heapStaticContainers  []heapStaticContainerRef
 	heapStaticFlatOK      bool
 	heapSeen              map[approxVisitKey]bool
+	// heapEvalSeq counts expression evaluations; heapCheck prices strict
+	// heap checks after simple statements (see heap_strict_cache.go).
+	heapEvalSeq uint64
+	heapCheck   heapCheckCache
 	// classOverlay holds registrations made on top of a frozen generation
 	// until the next FreezeClassLookup (see class_lookup_overlay.go).
 	classOverlay *classLookupOverlay
@@ -276,6 +285,10 @@ type VM struct {
 	hasStatement            bool
 	toolingExecuteAnonymous bool
 	triggerDepth            int
+	triggerActivations      []triggerActivation
+	// inFinalizer is set while a Queueable finalizer runs: it keeps the
+	// synchronous query, CPU and relationship-subquery caps.
+	inFinalizer             bool
 	activeTriggerNamespaces []string
 	installContextDepth     int
 	// --- Transaction state (savepoints) ---
@@ -284,11 +297,13 @@ type VM struct {
 	savepointMarks     map[string]storage.IsolationMark
 	emailSavepoints    map[string][]CapturedEmail
 	savepointOrder     map[string]int
-	nextSavepoint      int
-	recordCreations    *dml.RecordCreations
-	lookupHistoryScope *storage.LookupHistoryScope
-	duplicateReports   []dml.DuplicateReport
-	creationSavepoints map[string]recordCreationCheckpoint
+	// boundaryReleasedSavepoints records savepoints ended at startTest or stopTest.
+	boundaryReleasedSavepoints map[string]bool
+	nextSavepoint              int
+	recordCreations            *dml.RecordCreations
+	lookupHistoryScope         *storage.LookupHistoryScope
+	duplicateReports           []dml.DuplicateReport
+	creationSavepoints         map[string]recordCreationCheckpoint
 	// --- Visualforce / page context ---
 	pageMessages              []Value
 	currentPage               Value
@@ -2413,7 +2428,7 @@ func (vm *VM) SetContext(ctx context.Context) {
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	vm.ensureMetadataCacheGeneration()
 	engine := dml.NewEngine(vm.Org)
-	engine.DuplicateMatcher = vm.newDuplicateMatcher()
+	engine.DuplicateMatcher, engine.DuplicatePeerMatcher = vm.newDuplicateMatchers()
 	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
 	if vm.work.tracking {
 		engine.FlowMatchObserver = func() { vm.work.flowRuns++ }
@@ -3484,6 +3499,7 @@ func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, 
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	vm.invalidateHeapCheckCache()
 	defer vm.BeginReportTransaction()()
 	// String == reads the running user's locale once, at transaction start:
 	// a DML update of the user's own LocaleSidKey before the first comparison

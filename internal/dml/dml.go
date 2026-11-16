@@ -20,9 +20,12 @@ type Engine struct {
 	UserHasCustomPermission func(string) bool
 	// DuplicateMatcher lets Apex apply its current sharing and field access
 	// through the common duplicate evaluator. Non-Apex callers use the evaluator directly.
-	DuplicateMatcher  func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (DuplicateResult, bool)
-	Options           Options
-	FlowActionInvoker func(storage.FlowAction, storage.Record) error
+	DuplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (DuplicateResult, bool)
+	// DuplicatePeerMatcher is DuplicateMatcher limited to the given records, the
+	// ones the current statement inserted earlier. Nil scans them without access checks.
+	DuplicatePeerMatcher func(storage.DuplicateRule, storage.Record, map[storage.ID]storage.Record) (DuplicateResult, bool)
+	Options              Options
+	FlowActionInvoker    func(storage.FlowAction, storage.Record) error
 	// FlowMatchObserver is called once each time a flow rule matches a record.
 	// It is advisory and must not change execution.
 	FlowMatchObserver func()
@@ -1162,7 +1165,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 	if err := storage.ValidateID(record.ID); err != nil {
 		return "", err
 	}
-	e.noteDuplicateInsert(statementStamp, duplicateReport, record.ID)
+	e.noteDuplicateInsert(statementStamp, duplicateReport, objectName, record.ID)
 	if record.HierarchyNameUsesRecordID || customTextNameUsesRecordID(object.Definition, record) {
 		if record.Fields == nil {
 			record.Fields = make(map[string]storage.Value)
@@ -1217,6 +1220,10 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 	object.PutRecord(record.ID, storedRecord)
 	e.Org.Objects[objectName] = object
 	e.RecordCreations.Record(record.ID)
+	if e.duplicates.insertMatched {
+		e.RecordCreations.MarkDuplicate(record.ID)
+		e.duplicates.insertMatched = false
+	}
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	e.recalculateSummaryFieldsForChildren(objectName, record)
 	if err := e.reconcilePrivateOwnerShares(objectName, record.ID); err != nil {

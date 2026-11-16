@@ -98,16 +98,16 @@ func companyFitPanels(t *testing.T, prefixes ...string) map[string]companyFitPan
 // false matches are a ceiling.
 func TestCompanyShapePanelCounts(t *testing.T) {
 	want := map[string][4]int{
-		"R1_dbl":  {65, 41, 41, 0},
-		"R1_dir":  {190, 157, 61, 4},
+		"R1_dbl":  {65, 63, 63, 0},
+		"R1_dir":  {190, 169, 67, 4},
 		"R1_num":  {159, 152, 81, 30},
-		"R1_dig":  {371, 371, 213, 2},
+		"R1_dig":  {371, 371, 237, 2},
 		"R1_join": {55, 55, 39, 2},
 		"R1_qf2":  {65, 56, 40, 2},
-		"R2_vow":  {240, 148, 45, 0},
+		"R2_vow":  {240, 210, 63, 0},
 		"R2_let":  {529, 526, 340, 0},
-		"R2_glu":  {325, 325, 167, 0},
-		"R2_par":  {352, 273, 109, 0},
+		"R2_glu":  {325, 325, 324, 0},
+		"R2_par":  {352, 313, 124, 0},
 	}
 	panels := companyFitPanels(t, "R1_", "R2_")
 	if len(panels) != len(want) {

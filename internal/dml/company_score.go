@@ -379,12 +379,16 @@ func companyDigitScore(a, b string) (float64, bool) {
 		}
 		return 0, false
 	}
-	if sx == 0 && sy == 0 && companyOneDigitApart(dx, dy) && len(strings.Fields(x)) > 1 && !strings.HasSuffix(x, "#") {
+	if sx == 0 && sy == 0 && len(strings.Fields(x)) > 1 && !strings.HasSuffix(x, "#") {
 		// NATIVE company_name_fit/org.tsv:4: "Test Account1" and
 		// "Test Account2" match at 100 in both directions. R2_glu: so do
 		// "Test Account12" and "Test Account13", and "Test Account123" and
-		// "Test Account124"; "Test Account11" and "Test Account22" score 97.
-		return 100, true
+		// "Test Account124".
+		if companyOneDigitApart(dx, dy) {
+			return 100, true
+		}
+		w := strings.Fields(x)
+		return companyGluedScore(a, b, dx, dy, companyDesignators[w[len(w)-1]]), true
 	}
 	if sx != 0 || sy != 0 || len(strings.Fields(x)) != 1 || len([]rune(x)) < 6 {
 		return 0, false
@@ -423,6 +427,44 @@ func companyOneDigitApart(x, y string) bool {
 		}
 	}
 	return n == 1
+}
+
+// companyGluedScore scores two digit runs glued to one multiword base that
+// are not one position apart.
+// NATIVE company_name_fit/org.tsv R2_glu (301 of 302 directed pairs), R3_glu
+// and R4_glu: runs where one starts the other or adds one digit to it score
+// 100; other runs score the syllable alignment of the whole names ("Test
+// Account11" and "Test Account22" 97, "Test Account1" and "Test Account20"
+// 95, "Test Account456" and "Test Account1" 91). After a legal designator
+// only a run that starts the other scores 100: "Test Account Inc1" and "Test
+// Account Inc12" 100, "Test Account Inc2" and "Test Account Inc12" 99 and 98.
+func companyGluedScore(a, b, dx, dy string, designator bool) float64 {
+	if strings.HasPrefix(dx, dy) || strings.HasPrefix(dy, dx) || !designator && companyDigitsNear(dx, dy) {
+		return 100
+	}
+	return companySAPS(companyScoreWords(a, false), companyScoreWords(b, false))
+}
+
+// companyDigitsNear reports two digit runs where one starts the other or one
+// is the other with a single digit added. NATIVE company_name_fit/org.tsv
+// R2_glu: "Test Account1" and "Test Account123" match at 100 both ways, as do
+// "Test Account1" and "Test Account21", and "Test Account13" and "Test
+// Account123"; "Test Account3" and "Test Account123" score 97.
+func companyDigitsNear(x, y string) bool {
+	if strings.HasPrefix(x, y) || strings.HasPrefix(y, x) {
+		return true
+	}
+	if len(x) > len(y) {
+		x, y = y, x
+	}
+	if len(y) != len(x)+1 {
+		return false
+	}
+	i := 0
+	for i < len(x) && x[i] == y[i] {
+		i++
+	}
+	return x[i:] == y[i+1:]
 }
 
 // companyVowel reports a lower-case vowel or "y".
@@ -621,8 +663,7 @@ func companyFitCovered(route int, a, b string) bool {
 			if x.form == "dash" && y.form == "slash" && !strings.Contains(b, " / ") {
 				return companyAlikeWords(bx, by) && strings.Join(sx, " ") == strings.Join(sy, " ")
 			}
-			return strings.Join(bx, " ") == strings.Join(by, " ") && len(sx) == len(sy) && len(sx) > 0 &&
-				(strings.Join(sx, " ") == strings.Join(sy, " ") || len(sx) == 1 && companySuffixFinds(sx[0], sy[0], x.form == "paren" || y.form == "paren", x.form == "slash" || y.form == "slash"))
+			return companyDashSuffixCovered(x, y, bx, by, sx, sy)
 		}
 		// NATIVE company_name_fit/org.tsv D1_qf: a slash and a parenthesis
 		// form match when the suffixes have the same number of words and the
@@ -641,6 +682,22 @@ func companyFitCovered(route int, a, b string) bool {
 	return true
 }
 
+// companyDashSuffixCovered is the dash and spaced slash part of the
+// qualifier route: one base, suffixes of one word count, and equal suffixes
+// or a suffix that companySuffixFinds accepts.
+func companyDashSuffixCovered(x, y companyQualifier, bx, by, sx, sy []string) bool {
+	if strings.Join(bx, " ") != strings.Join(by, " ") || len(sx) != len(sy) || len(sx) == 0 {
+		return false
+	}
+	if strings.Join(sx, " ") == strings.Join(sy, " ") {
+		return true
+	}
+	if len(sx) != 1 {
+		return false
+	}
+	return companySuffixFinds(sx[0], sy[0], x.form == "paren" || y.form == "paren", x.form == "slash" || y.form == "slash")
+}
+
 // companySuffixFinds reports whether a candidate suffix finds a different
 // stored suffix across two qualifier forms.
 //
@@ -657,6 +714,8 @@ func companyFitCovered(route int, a, b string) bool {
 // A vowel suffix between a spaced slash and a parenthesis keeps the rule above
 // and with it the earlier decision: R2_par matches "Zorvex Freight (East)" and
 // "Zorvex Freight / West", R1_dir does not match the same pair on "Orbel Trade".
+// R4 to R7: a vowel candidate across a dash and a parenthesis form matches on
+// some bases only; it stays unmatched.
 func companySuffixFinds(candidate, stored string, paren, spaced bool) bool {
 	if candidate == "" || stored == "" || !isASCII(candidate) || !isASCII(stored) {
 		return false
@@ -851,6 +910,21 @@ const (
 	companyMarkJoin
 	companyMarkQualifier
 )
+
+// companySpacedHyphen reports a hyphen after a space, as in " - ".
+func companySpacedHyphen(s string) bool {
+	for i := strings.IndexByte(s, '-'); i >= 0; {
+		if i > 0 && s[i-1] == ' ' {
+			return true
+		}
+		next := strings.IndexByte(s[i+1:], '-')
+		if next < 0 {
+			return false
+		}
+		i += next + 1
+	}
+	return false
+}
 
 func companyMarks(s string) int {
 	m := 0
@@ -1051,4 +1125,85 @@ func companyFitKeyASCII(s string, dst []byte) (key []byte, words int, ok bool) {
 		kept = w - first
 	}
 	return key, kept, true
+}
+
+// companyStemFirstWord returns the candidate with its first word replaced by
+// the stored name's first word when the two first words share the six-letter
+// match key and one is the other with letters added after it, or both have
+// one length and differ in one letter after it. Both names must have at
+// least two words of ASCII letters only.
+//
+// NATIVE company_name_fit/org.tsv R1_dbl and R3_key (custom CompanyName rule,
+// API 62.0 and 67.0, both routes): "Vexlet Packard" and each of "Vexlets",
+// "Vexleta", "Vexletab", "Vexletcd", "Vexleter", "Vexletronics" and
+// "Vexlettt Packard" match at 100 in both directions, as do "Vexleta" and
+// "Vexletab", "Vexlets" and "Vexleta", "Vexlett" and "Vexlets", "Qelthorin
+// Freight" and "Qelthorins Freight", and "Zorvexs Marine Supply" and
+// "Zorvexa Marine Supply". The rest of the name keeps the word scorer's
+// rules: "Vexlet Packardd" finds "Vexlett Packard" at 100 and "Vexlet
+// Packard Group" finds "Vexleta Packard" at 91. Not matched: "Vexlets" and
+// "Vexleter", "Vexletab" and "Vexletcd" (two letters), "Vexle" and
+// "Vexles" (five letters), and the one-word names "Vexlets" and "Vexlet".
+func companyStemFirstWord(a, b string) (string, bool) {
+	// first is the leading run of letters after any spaces.
+	first := func(s string) (string, int) {
+		at := 0
+		for at < len(s) && s[at] == ' ' {
+			at++
+		}
+		end := at
+		for end < len(s) && (s[end]|0x20 >= 'a' && s[end]|0x20 <= 'z') {
+			end++
+		}
+		return s[at:end], at
+	}
+	// shaped reports two or more words of ASCII letters and spaces only.
+	shaped := func(s string) bool {
+		words := 0
+		for i := 0; i < len(s); i++ {
+			switch c := s[i]; {
+			case c == ' ':
+			case c|0x20 >= 'a' && c|0x20 <= 'z':
+				if i == 0 || s[i-1] == ' ' {
+					words++
+				}
+			default:
+				return false
+			}
+		}
+		return words >= 2
+	}
+	x, at := first(a)
+	y, _ := first(b)
+	if len(x) < 6 || len(y) < 6 {
+		return "", false
+	}
+	lower := func(c byte) byte {
+		if c >= 'A' && c <= 'Z' {
+			return c + 'a' - 'A'
+		}
+		return c
+	}
+	common := 0
+	for common < len(x) && common < len(y) && lower(x[common]) == lower(y[common]) {
+		common++
+	}
+	if common < 6 || common == len(x) && common == len(y) {
+		return "", false
+	}
+	if common < len(x) && common < len(y) {
+		// Neither starts the other: one length, one differing letter.
+		if len(x) != len(y) {
+			return "", false
+		}
+		for i := common + 1; i < len(x); i++ {
+			if lower(x[i]) != lower(y[i]) {
+				return "", false
+			}
+		}
+	}
+	if !shaped(a) || !shaped(b) || companyAlignedWords[strings.ToLower(x)] || companyAlignedWords[strings.ToLower(y)] {
+		return "", false
+	}
+	return a[:at] + y + a[at+len(x):], true
 }

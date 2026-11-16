@@ -15,6 +15,7 @@ import (
 )
 
 func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
+	vm.heapEvalSeq++
 	if expr.Pos > 0 {
 		// Name the call token for the frame the callee pushes. Arguments and
 		// receivers evaluate first and restore this value as they return.

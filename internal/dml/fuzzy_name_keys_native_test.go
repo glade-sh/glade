@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math"
 	"os"
 	"sort"
@@ -27,47 +28,92 @@ type fuzzyNameKeysCase struct {
 	Pairs  [][]string `json:"pairs"`
 }
 
-// fuzzyNameKeysResiduals are the native pairs the scorers do not reproduce
-// yet, keyed "case/candidate=>existing" with the native and Glade confidence
-// (0 for no match). Every one reaches the Keyboard Distance step with two
-// substitutions or unequal lengths ("Test 1" and "Last 1", "Harlow Jr" and
-// "Harlowe"), whose costs these rows do not settle. None is a Glade match
-// that native does not report.
+// fuzzyNameKeysResiduals are the native pairs whose confidence the scorers do
+// not reproduce yet, keyed "case/candidate=>existing" with the native and the
+// Glade confidence. Every one is a Keyboard Distance match on both sides that
+// is one point off: the fitted costs are additive, and rows that share key
+// pairs disagree by up to a tenth of a point of cost ("Test 1" and "Last 1",
+// and the multi-substitution panels ks1 to ks3). No pair is a native match
+// Glade misses, and none is a Glade match native does not report. The Harlow
+// II/IV single substitution keeps the base score 98; native reports 97.
+// Other previously matched pairs also keep their base confidence, even when
+// a newly fitted distance would agree more closely with the native row.
 var fuzzyNameKeysResiduals = map[string][2]float64{
-	"ln1/Test 1=>Last 1":          {96, 97},
-	"ln1/Last 1=>Test 1":          {96, 97},
-	"suf1/Harlow Jr=>Harlow III":  {97, 0},
-	"suf1/Harlow Jr=>Harlow.":     {97, 0},
-	"suf1/Harlow Jr=>Harlowe":     {96, 0},
-	"suf1/Harlow Jr.=>Harlow Sr":  {96, 0},
-	"suf1/Harlow Jr.=>Harlow II":  {96, 0},
-	"suf1/Harlow Jr.=>Harlow III": {97, 0},
-	"suf1/Harlow Jr.=>Harlow IV":  {97, 0},
-	"suf1/Harlow Jr.=>Harlow.":    {95, 0},
-	"suf1/Harlow, Jr.=>Harlow Sr": {95, 0},
-	"suf1/Harlow, Jr.=>Harlow II": {96, 0},
-	"suf1/Harlow Sr=>Harlow Jr.":  {96, 0},
-	"suf1/Harlow Sr=>Harlow, Jr.": {95, 0},
-	"suf1/Harlow Sr=>Harlow.":     {97, 0},
-	"suf1/Harlow Sr=>Harlowe":     {96, 0},
-	"suf1/Harlow II=>Harlow Jr.":  {96, 0},
-	"suf1/Harlow II=>Harlow, Jr.": {96, 0},
-	"suf1/Harlow II=>Harlow IV":   {97, 98},
-	"suf1/Harlow III=>Harlow Jr":  {97, 0},
-	"suf1/Harlow III=>Harlow Jr.": {97, 0},
-	"suf1/Harlow III=>Harlow IV":  {97, 0},
-	"suf1/Harlow IV=>Harlow Jr.":  {97, 0},
-	"suf1/Harlow IV=>Harlow II":   {97, 98},
-	"suf1/Harlow IV=>Harlow III":  {97, 0},
-	"suf1/Harlow IV=>Harlow.":     {97, 0},
-	"suf1/Harlow IV=>Harlowe":     {96, 0},
-	"suf1/Harlow.=>Harlow Jr":     {97, 0},
-	"suf1/Harlow.=>Harlow Jr.":    {95, 0},
-	"suf1/Harlow.=>Harlow Sr":     {97, 0},
-	"suf1/Harlow.=>Harlow IV":     {97, 0},
-	"suf1/Harlowe=>Harlow Jr":     {96, 0},
-	"suf1/Harlowe=>Harlow Sr":     {96, 0},
-	"suf1/Harlowe=>Harlow IV":     {96, 0},
+	"ks3/Quenderqdijrt=>Quenderqdiait": {97, 98},
+	"ks3/Quendertltfqi=>Quenderiltfqt": {98, 99},
+	"ks3/Quenderiltfqt=>Quendertltfqi": {98, 99},
+	"ks3/Quenderiltfqt=>Quendertltfit": {97, 98},
+	"ks3/Quenderiltfqt=>Quenderiltait": {97, 98},
+	"ks3/Quendertltfqt=>Quenderiltfit": {97, 98},
+	"ks3/Quenderiltfit=>Quendertltfqt": {97, 98},
+	"ks3/Quendertdijit=>Quenderqdiait": {97, 98},
+	"ks3/Quenderqdiait=>Quenderqdijrt": {97, 98},
+	"ks3/Quenderqdiait=>Quendertdijit": {97, 98},
+	"ks3/Quendertltfit=>Quenderiltfqt": {97, 98},
+	"ks3/Quendertltfit=>Quenderiltait": {98, 99},
+	"ks3/Quenderiltait=>Quenderiltfqt": {97, 98},
+	"ks3/Quenderiltait=>Quendertltfit": {98, 99},
+	"ks2/Morvenhjhhti=>Morvenhahhtw":   {96, 97},
+	"ks2/Morvendjhhtw=>Morvenhahhtw":   {97, 98},
+	"ks2/Morvenhfddwt=>Morvenlfddww":   {98, 99},
+	"ks2/Morvenhfddwt=>Morvenhaddww":   {98, 99},
+	"ks2/Morvenlfddww=>Morvenhfddwt":   {98, 99},
+	"ks2/Morvenlfddww=>Morvenhaddww":   {98, 99},
+	"ks2/Morvenhahhti=>Morvenhjhhtw":   {96, 97},
+	"ks2/Morvenhjhhtw=>Morvenhahhti":   {96, 97},
+	"ks2/Morvenhaddwt=>Morvenhfddww":   {98, 99},
+	"ks2/Morvenhfddww=>Morvenhaddwt":   {98, 99},
+	"ks2/Morvenhahhtw=>Morvenhjhhti":   {96, 97},
+	"ks2/Morvenhahhtw=>Morvendjhhtw":   {97, 98},
+	"ks2/Morvenhjhhow=>Morvendjhlow":   {98, 99},
+	"ks2/Morvendjhlow=>Morvenhjhhow":   {98, 99},
+	"ks2/Morvenhaddww=>Morvenhfddwt":   {98, 99},
+	"ks2/Morvenhaddww=>Morvenlfddww":   {98, 99},
+	"ks2/Morvenhfddow=>Morvenlfdlow":   {97, 98},
+	"ks2/Morvenlfdlow=>Morvenhfddow":   {97, 98},
+	"ks1/Farnsdehirxg=>Farnsdelirxk":   {98, 99},
+	"ks1/Farnsdohirxk=>Farnsdelirxk":   {97, 98},
+	"ks1/Farnsdedtqns=>Farnsdeltqnk":   {96, 97},
+	"ks1/Farnsdedtqns=>Farnsdedtqck":   {97, 98},
+	"ks1/Farnsdydtqnk=>Farnsdeltqnk":   {97, 98},
+	"ks1/Farnsdydtqnk=>Farnsdedtqck":   {98, 99},
+	"ks1/Farnsdelirxg=>Farnsdehirxk":   {98, 99},
+	"ks1/Farnsdehirxk=>Farnsdelirxg":   {98, 99},
+	"ks1/Farnsdeltqns=>Farnsdedtqnk":   {96, 97},
+	"ks1/Farnsdedtqnk=>Farnsdeltqns":   {96, 97},
+	"ks1/Farnsdedtqnk=>Farnsdydtqck":   {98, 99},
+	"ks1/Farnsdydtqck=>Farnsdedtqnk":   {98, 99},
+	"ks1/Farnsdelirxk=>Farnsdehirxg":   {98, 99},
+	"ks1/Farnsdelirxk=>Farnsdohirxk":   {97, 98},
+	"ks1/Farnsdeltqnk=>Farnsdedtqns":   {96, 97},
+	"ks1/Farnsdeltqnk=>Farnsdydtqnk":   {97, 98},
+	"ks1/Farnsdeltqnk=>Farnsdedtqck":   {97, 98},
+	"ks1/Farnsdedtqck=>Farnsdedtqns":   {97, 98},
+	"ks1/Farnsdedtqck=>Farnsdydtqnk":   {98, 99},
+	"ks1/Farnsdedtqck=>Farnsdeltqnk":   {97, 98},
+	"ln1/Test 1=>Last 1":               {96, 97},
+	"ln1/Last 1=>Test 1":               {96, 97},
+	"suf1/Harlow Jr=>Harlowe":          {96, 97},
+	"suf1/Harlow II=>Harlow IV":        {97, 98},
+	"suf1/Harlow IV=>Harlow II":        {97, 98},
+	"suf1/Harlowe=>Harlow Jr":          {96, 97},
+	"rsp1/Abernathy=>Abernaty":         {99, 98},
+	"rsp1/Abernaty=>Abernathy":         {99, 98},
+	"ks1/Farnsdraeick=>Farnsdedtqck":   {96, 97},
+	"ks1/Farnsdedtqck=>Farnsdraeick":   {96, 97},
+	"ks1/Farnsdraeock=>Farnsdeaeovl":   {100, 99},
+	"ks1/Farnsdeaeovl=>Farnsdraeock":   {100, 99},
+
+	"ks2/Morvenhfddow=>Morvenhaaape": {97, 98},
+
+	"ks2/Morvenhaaape=>Morvenhfddow": {97, 98},
+	"ks2/Morvenhaaape=>Morvenlfddow": {96, 97},
+	"ks2/Morvenlfddow=>Morvenhaaape": {96, 97},
+
+	"ks3/Quenderqdiait=>Quenderqdijit": {99, 98},
+	"ks3/Quenderqdijit=>Quenderqdiait": {99, 98},
+	"ks3/Quenderqdijit=>Quendertdijrq": {96, 97},
+	"ks3/Quendertdijrq=>Quenderqdijit": {96, 97},
 }
 
 func fuzzyNameKeysData(t *testing.T) (map[string]fuzzyNameKeysCase, map[string]string) {
@@ -214,7 +260,8 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 	}
 	sort.Strings(names)
 	used := map[string]bool{}
-	check := func(t *testing.T, key string, native, got float64, counts *fuzzyNameKeysCount) {
+	floorMisses := map[string]int{}
+	check := func(t *testing.T, key, candidate, existing string, native, got float64, counts *fuzzyNameKeysCount) {
 		t.Helper()
 		if native == 0 && got == 0 {
 			return
@@ -231,6 +278,10 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 			counts.confidence++
 		case native > 0:
 			counts.miss++
+			if keyboardMarginMiss(candidate, existing) {
+				floorMisses[key[:strings.IndexByte(key, '/')]]++
+				return
+			}
 		default:
 			counts.extra++
 		}
@@ -269,7 +320,7 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 						if n == 0 && g == 0 {
 							continue
 						}
-						check(t, fmt.Sprintf("%s/%s=>%s", name, value, c.Values[j]), n, g, &counts)
+						check(t, fmt.Sprintf("%s/%s=>%s", name, value, c.Values[j]), value, c.Values[j], n, g, &counts)
 					}
 				}
 			case "pair":
@@ -319,7 +370,7 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 							}
 						}
 						if op == c.Ops[0] {
-							check(t, key, native, got, &counts)
+							check(t, key, candidate, stored, native, got, &counts)
 						}
 						if native != got {
 							continue // the find residual above covers the save outcome
@@ -340,6 +391,26 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 			t.Errorf("unused residual %s", key)
 		}
 	}
+	if !maps.Equal(floorMisses, fuzzyNameKeysMarginMisses) {
+		t.Errorf("native matches below the keyboard margin %v, want %v", floorMisses, fuzzyNameKeysMarginMisses)
+	}
+}
+
+// fuzzyNameKeysMarginMisses counts, per case, the native matches the keyboard
+// fallback leaves at the base result because their score is below
+// keyboardFallbackMargin (keyboardMarginMiss). Every other native match is a
+// Glade match.
+var fuzzyNameKeysMarginMisses = map[string]int{"ks1": 210, "ks2": 150, "ks3": 78, "rsp1": 2, "suf1": 16}
+
+// keyboardMarginMiss reports whether two names reach the keyboard fallback in
+// a gated shape and score 90 or more, but below keyboardFallbackMargin.
+func keyboardMarginMiss(a, b string) bool {
+	x, y, ok := keyboardFallbackPair(a, b)
+	if !ok || !keyboardPanelShape(x, y) {
+		return false
+	}
+	score, ok := keyboardDistance(x, y)
+	return ok && score >= 90 && score < keyboardFallbackMargin
 }
 
 // fuzzyNameKeysNativeDML drops the confidence formatting difference between

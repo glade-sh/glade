@@ -1,0 +1,589 @@
+api	method	observation
+62.0	d1_01_ins_user	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+62.0	d1_02_upd_user	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+62.0	d1_03_del_user	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c left=1
+62.0	d1_04_ups_user_new	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Name)
+62.0	d1_04b_ups_user_old	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Name, OwnerId)
+62.0	d1_05_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:(); n=0
+62.0	d1_05b_dbins_t	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+62.0	d1_05c_dbins_one_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+62.0	d1_06_dbupd_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation UPDATE not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation UPDATE not allowed on Sam_RO__c:();
+62.0	d1_06b_dbupd_t	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+62.0	d1_07_dbdel_f	FAIL DELETE_FAILED:DML operation DELETE not allowed on Sam_RO__c:();FAIL DELETE_FAILED:DML operation DELETE not allowed on Sam_RO__c:(); left=2
+62.0	d1_07b_dbdel_t	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+62.0	d1_07c_dbups_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+62.0	d1_08_create_only_upd	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+62.0	d1_08b_create_only_del	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+62.0	d1_08c_create_only_ins	ok
+62.0	d1_09_edit_only_ins	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+62.0	d1_09b_edit_only_del	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+62.0	d1_09c_edit_only_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+62.0	d1_10_none_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'Sam_None__c' denied:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'Sam_None__c' denied:();
+62.0	d1_10b_none_ins_user	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+62.0	d1_11_ro_ins_def	ok
+62.0	d1_12_ro_ins_sys	ok
+62.0	d1_13_ro_list_ins_user	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+62.0	d1_14_ro_ins_user_outside	ok
+62.0	d2_cnt_W	sys=1 def=1 usr=1
+62.0	d2_cnt_Wo	sys=2 def=2 usr=1
+62.0	d2_del_W_dbsf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+62.0	d2_del_W_dbuf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+62.0	d2_del_W_def	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+62.0	d2_del_W_sys	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+62.0	d2_del_W_usr	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+62.0	d2_del_Wo_dbsf	ok; left=1
+62.0	d2_del_Wo_dbuf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+62.0	d2_del_Wo_def	ok left=1
+62.0	d2_del_Wo_sys	ok left=1
+62.0	d2_del_Wo_usr	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+62.0	d2_upd_W_dbdf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+62.0	d2_upd_W_dbsf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+62.0	d2_upd_W_dbuf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+62.0	d2_upd_W_dbut	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+62.0	d2_upd_W_def	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+62.0	d2_upd_W_sys	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+62.0	d2_upd_W_usr	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+62.0	d2_upd_Wo_dbdf	ok; name=u
+62.0	d2_upd_Wo_dbsf	ok; name=u
+62.0	d2_upd_Wo_dbuf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+62.0	d2_upd_Wo_dbut	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+62.0	d2_upd_Wo_def	ok name=u
+62.0	d2_upd_Wo_sys	ok name=u
+62.0	d2_upd_Wo_usr	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+62.0	d2_upd_own_W_usr	ok
+62.0	d2_upd_own_Wo_usr	ok
+62.0	d3_b_Inh	b sys=2 def=2 usr=1 ;;
+62.0	d3_b_None	b sys=2 def=2 usr=1 ;;
+62.0	d3_b_W	b sys=1 def=1 usr=1 ;;
+62.0	d3_b_Wo	b sys=2 def=2 usr=1 ;;
+62.0	d3_chain	c_enqueue EX System.AsyncException: Maximum stack depth has been reached. ;; c_outer sys=2 def=2 usr=1 ;;
+62.0	d3_f_Inh	f sys=2 def=2 usr=1 ;;
+62.0	d3_f_None	f sys=2 def=2 usr=1 ;;
+62.0	d3_f_W	f sys=1 def=1 usr=1 ;;
+62.0	d3_f_Wo	f sys=2 def=2 usr=1 ;;
+62.0	d3_fin_Inh	fin sys=1 def=1 usr=1 ;;
+62.0	d3_fin_None	fin sys=1 def=1 usr=1 ;;
+62.0	d3_fin_W	fin sys=1 def=1 usr=1 ;;
+62.0	d3_fin_Wo	fin sys=2 def=2 usr=1 ;;
+62.0	d3_q_Inh_enqW	q sys=2 def=2 usr=1 ;;
+62.0	d3_q_Inh_enqWo	q sys=2 def=2 usr=1 ;;
+62.0	d3_q_None_admin	q sys=2 def=2 usr=2 ;;
+62.0	d3_q_None_enqW	q sys=2 def=2 usr=1 ;;
+62.0	d3_q_None_enqWo	q sys=2 def=2 usr=1 ;;
+62.0	d3_q_W_enqW	q sys=1 def=1 usr=1 ;;
+62.0	d3_q_W_enqWo	q sys=1 def=1 usr=1 ;;
+62.0	d3_q_Wo_enqW	q sys=2 def=2 usr=1 ;;
+62.0	d3_q_Wo_enqWo	q sys=2 def=2 usr=1 ;;
+62.0	d4_01_empty	in=1 after=1
+62.0	d4_02_two	after=2
+62.0	d4_03_getrunas	one=1 two=2 dml=2 limit=150 dmlLimit=150 alias=true
+62.0	d4_04_insert	in=2 after=2
+62.0	d4_05_nested	outer=1 inner=2 after=2
+62.0	d4_06_limit149	ran at=150 after=150
+62.0	d4_06b_limit150	RAW System.LimitException: Too many DML statements: 151
+62.0	d4_08_startTest	d=1
+62.0	d6_07_none_del_W_def	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+62.0	d6_07_none_del_W_sys	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+62.0	d6_07_none_del_W_usr	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+62.0	d6_07_none_del_Wo_def	ok
+62.0	d6_07_none_del_Wo_sys	ok
+62.0	d6_07_none_del_Wo_usr	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+62.0	d6_acct_cnt	n=1
+62.0	d6_acct_cntid	n=1
+62.0	d6_acct_cntu	EX System.SecurityException: Access to entity 'Account' denied
+62.0	d6_acct_cntw	n=1
+62.0	d6_acct_dyn	n=1
+62.0	d6_acct_lim	n=1
+62.0	d6_acct_ord	n=1
+62.0	d6_none_cnt	n=1
+62.0	d6_none_cntid	n=1
+62.0	d6_none_cntu	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+62.0	d6_none_cntw	n=1
+62.0	d6_none_dyn	n=1
+62.0	d6_none_lim	n=1
+62.0	d6_none_ord	n=1
+62.0	u1_01_none_true	EX System.NoAccessException: No access to entity
+62.0	u1_01b_none_default	EX System.NoAccessException: No access to entity
+62.0	u1_01c_none_admin	rm= recs=Name; mod={}
+62.0	u1_02_none_false	rm=Sam_None__c=Name; recs=; mod={0}
+62.0	u1_03_ro_creatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+62.0	u1_03_ro_readable	rm= recs=Name; mod={}
+62.0	u1_03_ro_updatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+62.0	u1_03_ro_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+62.0	u1_04_sam_ro_c_creatable	rm= recs=Name; mod={}
+62.0	u1_04_sam_ro_c_updatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+62.0	u1_04_sam_ro_c_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+62.0	u1_04_sam_ro_e_creatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+62.0	u1_04_sam_ro_e_updatable	rm= recs=Name; mod={}
+62.0	u1_04_sam_ro_e_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+62.0	u1_04c_obj_upsertable	rm=Sam_Obj__c=Secret__c; recs=Name,Open__c; mod={0}
+62.0	u1_05_aggregate	EX System.InvalidParameterValueException: AggregateResult SObject types are not supported
+62.0	u1_06_null_list	EX System.NullPointerException: Argument cannot be null.
+62.0	u1_06b_null_type	EX System.NullPointerException: Argument cannot be null.
+62.0	u1_06c_empty	rm= recs= mod={}
+62.0	u1_07_child_denied	rm= recs=Id,Name,Sam_Nones__r; mod={}
+62.0	u1_08_parent_denied	rm=Sam_None__c=Name;Sam_Obj__c=None__c; recs=Id,Name,None__r; mod={0}
+62.0	u1_09_mixed_types	rm=Sam_Obj__c=Secret__c; recs=Name;Name; mod={0}
+62.0	u1_10_field_denied	rm=Sam_Obj__c=Secret__c; recs=Name,Open__c; mod={0}
+62.0	u2_01_inactive	EX System.TypeException: System.runAs can only be used with an active user
+62.0	u2_02_null	EX System.NullPointerException: Attempt to de-reference a null object
+62.0	u2_03_nested	a=true b=true c=true d=true
+62.0	u2_05_start_inside	started stopped
+62.0	u2_05b_runas_inside_start	inside stopped
+62.0	u2_06_queue_user	qu same=true ;;
+62.0	u2_06b_queue_stop_outside	qu same=true ;;
+62.0	u2_07_fresh_grant	ins=ok n=1
+62.0	u3_01_sys_clause_user_arg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+62.0	u3_02_user_clause_sys_arg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+62.0	u3_03_binds_sys_clause_user_arg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+62.0	u3_03b_binds_user_clause_sys_arg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+62.0	u3_03c_count_sys_clause_user_arg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+62.0	u3_04_null_level	EX System.NullPointerException: Argument 2 cannot be null
+62.0	u3_04b_null_level_dml	EX System.NullPointerException: Argument 3 cannot be null
+62.0	u4_07_inner	inner sys=1 def=1 usr=1 innerW sys=1 def=1 usr=1 outer sys=2 def=2 usr=1
+62.0	u4_08_mixed_wo_parent	child sys=2 def=1 usr=1 parent sys=2 def=2 usr=1
+62.0	u4_08b_mixed_om_parent	child sys=1 def=1 usr=1 parent sys=1 def=1 usr=1 direct sys=1 def=1 usr=1
+62.0	u4_08c_wo_child_om_parent	child sys=2 def=1 usr=1 parent sys=1 def=1 usr=1
+62.0	u9_pb_W	sys=1 def=1
+62.0	u9_pb_Wo	sys=1 def=1
+66.0	d1_01_ins_user	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+66.0	d1_02_upd_user	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+66.0	d1_03_del_user	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c left=1
+66.0	d1_04_ups_user_new	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Name)
+66.0	d1_04b_ups_user_old	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Name, OwnerId)
+66.0	d1_05_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:(); n=0
+66.0	d1_05b_dbins_t	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+66.0	d1_05c_dbins_one_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+66.0	d1_06_dbupd_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation UPDATE not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation UPDATE not allowed on Sam_RO__c:();
+66.0	d1_06b_dbupd_t	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+66.0	d1_07_dbdel_f	FAIL DELETE_FAILED:DML operation DELETE not allowed on Sam_RO__c:();FAIL DELETE_FAILED:DML operation DELETE not allowed on Sam_RO__c:(); left=2
+66.0	d1_07b_dbdel_t	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+66.0	d1_07c_dbups_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+66.0	d1_08_create_only_upd	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+66.0	d1_08b_create_only_del	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+66.0	d1_08c_create_only_ins	ok
+66.0	d1_09_edit_only_ins	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+66.0	d1_09b_edit_only_del	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+66.0	d1_09c_edit_only_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+66.0	d1_10_none_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'Sam_None__c' denied:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'Sam_None__c' denied:();
+66.0	d1_10b_none_ins_user	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+66.0	d1_11_ro_ins_def	ok
+66.0	d1_12_ro_ins_sys	ok
+66.0	d1_13_ro_list_ins_user	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+66.0	d1_14_ro_ins_user_outside	ok
+66.0	d2_cnt_W	sys=1 def=1 usr=1
+66.0	d2_cnt_Wo	sys=2 def=2 usr=1
+66.0	d2_del_W_dbsf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+66.0	d2_del_W_dbuf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+66.0	d2_del_W_def	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+66.0	d2_del_W_sys	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+66.0	d2_del_W_usr	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+66.0	d2_del_Wo_dbsf	ok; left=1
+66.0	d2_del_Wo_dbuf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+66.0	d2_del_Wo_def	ok left=1
+66.0	d2_del_Wo_sys	ok left=1
+66.0	d2_del_Wo_usr	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+66.0	d2_upd_W_dbdf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+66.0	d2_upd_W_dbsf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+66.0	d2_upd_W_dbuf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+66.0	d2_upd_W_dbut	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+66.0	d2_upd_W_def	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+66.0	d2_upd_W_sys	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+66.0	d2_upd_W_usr	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+66.0	d2_upd_Wo_dbdf	ok; name=u
+66.0	d2_upd_Wo_dbsf	ok; name=u
+66.0	d2_upd_Wo_dbuf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+66.0	d2_upd_Wo_dbut	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+66.0	d2_upd_Wo_def	ok name=u
+66.0	d2_upd_Wo_sys	ok name=u
+66.0	d2_upd_Wo_usr	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+66.0	d2_upd_own_W_usr	ok
+66.0	d2_upd_own_Wo_usr	ok
+66.0	d3_b_Inh	b sys=2 def=2 usr=1 ;;
+66.0	d3_b_None	b sys=2 def=2 usr=1 ;;
+66.0	d3_b_W	b sys=1 def=1 usr=1 ;;
+66.0	d3_b_Wo	b sys=2 def=2 usr=1 ;;
+66.0	d3_chain	c_enqueue EX System.AsyncException: Maximum stack depth has been reached. ;; c_outer sys=2 def=2 usr=1 ;;
+66.0	d3_f_Inh	f sys=2 def=2 usr=1 ;;
+66.0	d3_f_None	f sys=2 def=2 usr=1 ;;
+66.0	d3_f_W	f sys=1 def=1 usr=1 ;;
+66.0	d3_f_Wo	f sys=2 def=2 usr=1 ;;
+66.0	d3_fin_Inh	fin sys=1 def=1 usr=1 ;;
+66.0	d3_fin_None	fin sys=1 def=1 usr=1 ;;
+66.0	d3_fin_W	fin sys=1 def=1 usr=1 ;;
+66.0	d3_fin_Wo	fin sys=2 def=2 usr=1 ;;
+66.0	d3_q_Inh_enqW	q sys=2 def=2 usr=1 ;;
+66.0	d3_q_Inh_enqWo	q sys=2 def=2 usr=1 ;;
+66.0	d3_q_None_admin	q sys=2 def=2 usr=2 ;;
+66.0	d3_q_None_enqW	q sys=2 def=2 usr=1 ;;
+66.0	d3_q_None_enqWo	q sys=2 def=2 usr=1 ;;
+66.0	d3_q_W_enqW	q sys=1 def=1 usr=1 ;;
+66.0	d3_q_W_enqWo	q sys=1 def=1 usr=1 ;;
+66.0	d3_q_Wo_enqW	q sys=2 def=2 usr=1 ;;
+66.0	d3_q_Wo_enqWo	q sys=2 def=2 usr=1 ;;
+66.0	d4_01_empty	in=1 after=1
+66.0	d4_02_two	after=2
+66.0	d4_03_getrunas	one=1 two=2 dml=2 limit=150 dmlLimit=150 alias=true
+66.0	d4_04_insert	in=2 after=2
+66.0	d4_05_nested	outer=1 inner=2 after=2
+66.0	d4_06_limit149	ran at=150 after=150
+66.0	d4_06b_limit150	RAW System.LimitException: Too many DML statements: 151
+66.0	d4_08_startTest	d=1
+66.0	d6_07_none_del_W_def	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+66.0	d6_07_none_del_W_sys	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+66.0	d6_07_none_del_W_usr	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+66.0	d6_07_none_del_Wo_def	ok
+66.0	d6_07_none_del_Wo_sys	ok
+66.0	d6_07_none_del_Wo_usr	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+66.0	d6_acct_cnt	n=1
+66.0	d6_acct_cntid	n=1
+66.0	d6_acct_cntu	EX System.SecurityException: Access to entity 'Account' denied
+66.0	d6_acct_cntw	n=1
+66.0	d6_acct_dyn	n=1
+66.0	d6_acct_lim	n=1
+66.0	d6_acct_ord	n=1
+66.0	d6_none_cnt	n=1
+66.0	d6_none_cntid	n=1
+66.0	d6_none_cntu	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+66.0	d6_none_cntw	n=1
+66.0	d6_none_dyn	n=1
+66.0	d6_none_lim	n=1
+66.0	d6_none_ord	n=1
+66.0	u1_01_none_true	EX System.NoAccessException: No access to entity
+66.0	u1_01b_none_default	EX System.NoAccessException: No access to entity
+66.0	u1_01c_none_admin	rm= recs=Name; mod={}
+66.0	u1_02_none_false	rm=Sam_None__c=Name; recs=; mod={0}
+66.0	u1_03_ro_creatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+66.0	u1_03_ro_readable	rm= recs=Name; mod={}
+66.0	u1_03_ro_updatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+66.0	u1_03_ro_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+66.0	u1_04_sam_ro_c_creatable	rm= recs=Name; mod={}
+66.0	u1_04_sam_ro_c_updatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+66.0	u1_04_sam_ro_c_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+66.0	u1_04_sam_ro_e_creatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+66.0	u1_04_sam_ro_e_updatable	rm= recs=Name; mod={}
+66.0	u1_04_sam_ro_e_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+66.0	u1_04c_obj_upsertable	rm=Sam_Obj__c=Secret__c; recs=Name,Open__c; mod={0}
+66.0	u1_05_aggregate	EX System.InvalidParameterValueException: AggregateResult SObject types are not supported
+66.0	u1_06_null_list	EX System.NullPointerException: Argument cannot be null.
+66.0	u1_06b_null_type	EX System.NullPointerException: Argument cannot be null.
+66.0	u1_06c_empty	rm= recs= mod={}
+66.0	u1_07_child_denied	rm= recs=Id,Name,Sam_Nones__r; mod={}
+66.0	u1_08_parent_denied	rm=Sam_None__c=Name;Sam_Obj__c=None__c; recs=Id,Name,None__r; mod={0}
+66.0	u1_09_mixed_types	rm=Sam_Obj__c=Secret__c; recs=Name;Name; mod={0}
+66.0	u1_10_field_denied	rm=Sam_Obj__c=Secret__c; recs=Name,Open__c; mod={0}
+66.0	u2_01_inactive	EX System.TypeException: System.runAs can only be used with an active user
+66.0	u2_02_null	EX System.NullPointerException: Attempt to de-reference a null object
+66.0	u2_03_nested	a=true b=true c=true d=true
+66.0	u2_05_start_inside	started stopped
+66.0	u2_05b_runas_inside_start	inside stopped
+66.0	u2_06_queue_user	qu same=true ;;
+66.0	u2_06b_queue_stop_outside	qu same=true ;;
+66.0	u2_07_fresh_grant	ins=ok n=1
+66.0	u3_01_sys_clause_user_arg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+66.0	u3_02_user_clause_sys_arg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+66.0	u3_03_binds_sys_clause_user_arg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+66.0	u3_03b_binds_user_clause_sys_arg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+66.0	u3_03c_count_sys_clause_user_arg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+66.0	u3_04_null_level	EX System.NullPointerException: Argument 2 cannot be null
+66.0	u3_04b_null_level_dml	EX System.NullPointerException: Argument 3 cannot be null
+66.0	u4_07_inner	inner sys=1 def=1 usr=1 innerW sys=1 def=1 usr=1 outer sys=2 def=2 usr=1
+66.0	u4_08_mixed_wo_parent	child sys=2 def=1 usr=1 parent sys=2 def=2 usr=1
+66.0	u4_08b_mixed_om_parent	child sys=1 def=1 usr=1 parent sys=1 def=1 usr=1 direct sys=1 def=1 usr=1
+66.0	u4_08c_wo_child_om_parent	child sys=2 def=1 usr=1 parent sys=1 def=1 usr=1
+66.0	u9_pb_W	sys=1 def=1
+66.0	u9_pb_Wo	sys=1 def=1
+67.0	d1_01_ins_user	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+67.0	d1_02_upd_user	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+67.0	d1_03_del_user	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c left=1
+67.0	d1_04_ups_user_new	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Name)
+67.0	d1_04b_ups_user_old	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Name, OwnerId)
+67.0	d1_05_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:(); n=0
+67.0	d1_05b_dbins_t	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+67.0	d1_05c_dbins_one_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+67.0	d1_06_dbupd_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation UPDATE not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation UPDATE not allowed on Sam_RO__c:();
+67.0	d1_06b_dbupd_t	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+67.0	d1_07_dbdel_f	FAIL DELETE_FAILED:DML operation DELETE not allowed on Sam_RO__c:();FAIL DELETE_FAILED:DML operation DELETE not allowed on Sam_RO__c:(); left=2
+67.0	d1_07b_dbdel_t	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+67.0	d1_07c_dbups_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+67.0	d1_08_create_only_upd	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+67.0	d1_08b_create_only_del	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+67.0	d1_08c_create_only_ins	ok
+67.0	d1_09_edit_only_ins	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+67.0	d1_09b_edit_only_del	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+67.0	d1_09c_edit_only_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+67.0	d1_10_none_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'Sam_None__c' denied:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'Sam_None__c' denied:();
+67.0	d1_10b_none_ins_user	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d1_11_ro_ins_def	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+67.0	d1_12_ro_ins_sys	ok
+67.0	d1_13_ro_list_ins_user	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+67.0	d1_14_ro_ins_user_outside	ok
+67.0	d2_cnt_W	sys=1 def=1 usr=1
+67.0	d2_cnt_Wo	sys=2 def=1 usr=1
+67.0	d2_del_W_dbsf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+67.0	d2_del_W_dbuf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+67.0	d2_del_W_def	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+67.0	d2_del_W_sys	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+67.0	d2_del_W_usr	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+67.0	d2_del_Wo_dbsf	ok; left=1
+67.0	d2_del_Wo_dbuf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+67.0	d2_del_Wo_def	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+67.0	d2_del_Wo_sys	ok left=1
+67.0	d2_del_Wo_usr	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+67.0	d2_upd_W_dbdf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+67.0	d2_upd_W_dbsf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+67.0	d2_upd_W_dbuf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+67.0	d2_upd_W_dbut	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+67.0	d2_upd_W_def	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+67.0	d2_upd_W_sys	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+67.0	d2_upd_W_usr	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+67.0	d2_upd_Wo_dbdf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+67.0	d2_upd_Wo_dbsf	ok; name=u
+67.0	d2_upd_Wo_dbuf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+67.0	d2_upd_Wo_dbut	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+67.0	d2_upd_Wo_def	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+67.0	d2_upd_Wo_sys	ok name=u
+67.0	d2_upd_Wo_usr	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+67.0	d2_upd_own_W_usr	ok
+67.0	d2_upd_own_Wo_usr	ok
+67.0	d3_b_Inh	b sys=2 def=1 usr=1 ;;
+67.0	d3_b_None	b sys=1 def=1 usr=1 ;;
+67.0	d3_b_W	b sys=1 def=1 usr=1 ;;
+67.0	d3_b_Wo	b sys=2 def=1 usr=1 ;;
+67.0	d3_chain	c_enqueue EX System.AsyncException: Maximum stack depth has been reached. ;; c_outer sys=2 def=1 usr=1 ;;
+67.0	d3_f_Inh	f sys=2 def=1 usr=1 ;;
+67.0	d3_f_None	f sys=1 def=1 usr=1 ;;
+67.0	d3_f_W	f sys=1 def=1 usr=1 ;;
+67.0	d3_f_Wo	f sys=2 def=1 usr=1 ;;
+67.0	d3_fin_Inh	fin sys=1 def=1 usr=1 ;;
+67.0	d3_fin_None	fin sys=1 def=1 usr=1 ;;
+67.0	d3_fin_W	fin sys=1 def=1 usr=1 ;;
+67.0	d3_fin_Wo	fin sys=2 def=1 usr=1 ;;
+67.0	d3_q_Inh_enqW	q sys=2 def=1 usr=1 ;;
+67.0	d3_q_Inh_enqWo	q sys=2 def=1 usr=1 ;;
+67.0	d3_q_None_admin	q sys=2 def=2 usr=2 ;;
+67.0	d3_q_None_enqW	q sys=1 def=1 usr=1 ;;
+67.0	d3_q_None_enqWo	q sys=1 def=1 usr=1 ;;
+67.0	d3_q_W_enqW	q sys=1 def=1 usr=1 ;;
+67.0	d3_q_W_enqWo	q sys=1 def=1 usr=1 ;;
+67.0	d3_q_Wo_enqW	q sys=2 def=1 usr=1 ;;
+67.0	d3_q_Wo_enqWo	q sys=2 def=1 usr=1 ;;
+67.0	d4_01_empty	in=1 after=1
+67.0	d4_02_two	after=2
+67.0	d4_03_getrunas	one=1 two=2 dml=2 limit=150 dmlLimit=150 alias=true
+67.0	d4_04_insert	in=2 after=2
+67.0	d4_05_nested	outer=1 inner=2 after=2
+67.0	d4_06_limit149	ran at=150 after=150
+67.0	d4_06b_limit150	RAW System.LimitException: Too many DML statements: 151
+67.0	d4_08_startTest	d=1
+67.0	d6_07_none_del_W_def	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_07_none_del_W_sys	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+67.0	d6_07_none_del_W_usr	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_07_none_del_Wo_def	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_07_none_del_Wo_sys	ok
+67.0	d6_07_none_del_Wo_usr	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_acct_cnt	EX System.SecurityException: Access to entity 'Account' denied
+67.0	d6_acct_cntid	EX System.SecurityException: Access to entity 'Account' denied
+67.0	d6_acct_cntu	EX System.SecurityException: Access to entity 'Account' denied
+67.0	d6_acct_cntw	EX System.SecurityException: Access to entity 'Account' denied
+67.0	d6_acct_dyn	EX System.SecurityException: Access to entity 'Account' denied
+67.0	d6_acct_lim	EX System.QueryException: sObject type 'Account' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	d6_acct_ord	EX System.QueryException: sObject type 'Account' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Account={Name}}
+67.0	d6_none_cnt	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_none_cntid	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_none_cntu	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_none_cntw	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_none_dyn	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+67.0	d6_none_lim	EX System.QueryException: sObject type 'Sam_None__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	d6_none_ord	EX System.QueryException: sObject type 'Sam_None__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_None__c={Name}}
+67.0	u1_01_none_true	EX System.NoAccessException: No access to entity
+67.0	u1_01b_none_default	EX System.NoAccessException: No access to entity
+67.0	u1_01c_none_admin	rm= recs=Name; mod={}
+67.0	u1_02_none_false	rm=Sam_None__c=Name; recs=; mod={0}
+67.0	u1_03_ro_creatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+67.0	u1_03_ro_readable	rm= recs=Name; mod={}
+67.0	u1_03_ro_updatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+67.0	u1_03_ro_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+67.0	u1_04_sam_ro_c_creatable	rm= recs=Name; mod={}
+67.0	u1_04_sam_ro_c_updatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+67.0	u1_04_sam_ro_c_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+67.0	u1_04_sam_ro_e_creatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+67.0	u1_04_sam_ro_e_updatable	rm= recs=Name; mod={}
+67.0	u1_04_sam_ro_e_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+67.0	u1_04c_obj_upsertable	rm=Sam_Obj__c=Secret__c; recs=Name,Open__c; mod={0}
+67.0	u1_05_aggregate	EX System.InvalidParameterValueException: AggregateResult SObject types are not supported
+67.0	u1_06_null_list	EX System.NullPointerException: Argument cannot be null.
+67.0	u1_06b_null_type	EX System.NullPointerException: Argument cannot be null.
+67.0	u1_06c_empty	rm= recs= mod={}
+67.0	u1_07_child_denied	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_None__c, check errors on Exception or Result!
+67.0	u1_08_parent_denied	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u1_09_mixed_types	rm=Sam_Obj__c=Secret__c; recs=Name;Name; mod={0}
+67.0	u1_10_field_denied	rm=Sam_Obj__c=Secret__c; recs=Name,Open__c; mod={0}
+67.0	u2_01_inactive	EX System.TypeException: System.runAs can only be used with an active user
+67.0	u2_02_null	EX System.NullPointerException: Attempt to de-reference a null object
+67.0	u2_03_nested	a=true b=true c=true d=true
+67.0	u2_05_start_inside	started stopped
+67.0	u2_05b_runas_inside_start	inside stopped
+67.0	u2_06_queue_user	qu same=true ;;
+67.0	u2_06b_queue_stop_outside	qu same=true ;;
+67.0	u2_07_fresh_grant	ins=ok n=1
+67.0	u3_01_sys_clause_user_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_02_user_clause_sys_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_03_binds_sys_clause_user_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_03b_binds_user_clause_sys_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_03c_count_sys_clause_user_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_04_null_level	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_04b_null_level_dml	EX System.NullPointerException: Argument 3 cannot be null
+67.0	u4_07_inner	inner sys=1 def=1 usr=1 innerW sys=1 def=1 usr=1 outer sys=2 def=1 usr=1
+67.0	u4_08_mixed_wo_parent	child sys=2 def=1 usr=1 parent sys=2 def=2 usr=1
+67.0	u4_08b_mixed_om_parent	child sys=1 def=1 usr=1 parent sys=1 def=1 usr=1 direct sys=1 def=1 usr=1
+67.0	u4_08c_wo_child_om_parent	child sys=2 def=1 usr=1 parent sys=1 def=1 usr=1
+67.0	u9_pb_W	sys=1 def=1
+67.0	u9_pb_Wo	sys=1 def=1
+68.0	d1_01_ins_user	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+68.0	d1_02_upd_user	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+68.0	d1_03_del_user	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c left=1
+68.0	d1_04_ups_user_new	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Name)
+68.0	d1_04b_ups_user_old	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Name, OwnerId)
+68.0	d1_05_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:(); n=0
+68.0	d1_05b_dbins_t	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+68.0	d1_05c_dbins_one_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+68.0	d1_06_dbupd_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation UPDATE not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation UPDATE not allowed on Sam_RO__c:();
+68.0	d1_06b_dbupd_t	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+68.0	d1_07_dbdel_f	FAIL DELETE_FAILED:DML operation DELETE not allowed on Sam_RO__c:();FAIL DELETE_FAILED:DML operation DELETE not allowed on Sam_RO__c:(); left=2
+68.0	d1_07b_dbdel_t	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+68.0	d1_07c_dbups_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+68.0	d1_08_create_only_upd	EX System.TypeException: DML operation UPDATE not allowed on Sam_RO__c
+68.0	d1_08b_create_only_del	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+68.0	d1_08c_create_only_ins	ok
+68.0	d1_09_edit_only_ins	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+68.0	d1_09b_edit_only_del	EX System.TypeException: DML operation DELETE not allowed on Sam_RO__c
+68.0	d1_09c_edit_only_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:DML operation INSERT not allowed on Sam_RO__c:();
+68.0	d1_10_none_dbins_f	FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'Sam_None__c' denied:();FAIL CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Access to entity 'Sam_None__c' denied:();
+68.0	d1_10b_none_ins_user	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d1_11_ro_ins_def	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+68.0	d1_12_ro_ins_sys	ok
+68.0	d1_13_ro_list_ins_user	EX System.TypeException: DML operation INSERT not allowed on Sam_RO__c
+68.0	d1_14_ro_ins_user_outside	ok
+68.0	d2_cnt_W	sys=1 def=1 usr=1
+68.0	d2_cnt_Wo	sys=2 def=1 usr=1
+68.0	d2_del_W_dbsf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+68.0	d2_del_W_dbuf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+68.0	d2_del_W_def	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+68.0	d2_del_W_sys	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+68.0	d2_del_W_usr	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+68.0	d2_del_Wo_dbsf	ok; left=1
+68.0	d2_del_Wo_dbuf	FAIL INSUFFICIENT_ACCESS_OR_READONLY:insufficient access rights on object id:(); left=2
+68.0	d2_del_Wo_def	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+68.0	d2_del_Wo_sys	ok left=1
+68.0	d2_del_Wo_usr	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=() left=2
+68.0	d2_upd_W_dbdf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+68.0	d2_upd_W_dbsf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+68.0	d2_upd_W_dbuf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+68.0	d2_upd_W_dbut	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+68.0	d2_upd_W_def	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+68.0	d2_upd_W_sys	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+68.0	d2_upd_W_usr	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+68.0	d2_upd_Wo_dbdf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+68.0	d2_upd_Wo_dbsf	ok; name=u
+68.0	d2_upd_Wo_dbuf	FAIL INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY:insufficient access rights on cross-reference id: [ID]:(); name=adm
+68.0	d2_upd_Wo_dbut	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+68.0	d2_upd_Wo_def	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+68.0	d2_upd_Wo_sys	ok name=u
+68.0	d2_upd_Wo_usr	EX System.DmlException: Update failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY, insufficient access rights on cross-reference id: [ID]: [] | n=1 st=INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY f=() name=adm
+68.0	d2_upd_own_W_usr	ok
+68.0	d2_upd_own_Wo_usr	ok
+68.0	d3_b_Inh	b sys=2 def=1 usr=1 ;;
+68.0	d3_b_None	b sys=1 def=1 usr=1 ;;
+68.0	d3_b_W	b sys=1 def=1 usr=1 ;;
+68.0	d3_b_Wo	b sys=2 def=1 usr=1 ;;
+68.0	d3_chain	c_enqueue EX System.AsyncException: Maximum stack depth has been reached. ;; c_outer sys=2 def=1 usr=1 ;;
+68.0	d3_f_Inh	f sys=2 def=1 usr=1 ;;
+68.0	d3_f_None	f sys=1 def=1 usr=1 ;;
+68.0	d3_f_W	f sys=1 def=1 usr=1 ;;
+68.0	d3_f_Wo	f sys=2 def=1 usr=1 ;;
+68.0	d3_fin_Inh	fin sys=1 def=1 usr=1 ;;
+68.0	d3_fin_None	fin sys=1 def=1 usr=1 ;;
+68.0	d3_fin_W	fin sys=1 def=1 usr=1 ;;
+68.0	d3_fin_Wo	fin sys=2 def=1 usr=1 ;;
+68.0	d3_q_Inh_enqW	q sys=2 def=1 usr=1 ;;
+68.0	d3_q_Inh_enqWo	q sys=2 def=1 usr=1 ;;
+68.0	d3_q_None_admin	q sys=2 def=2 usr=2 ;;
+68.0	d3_q_None_enqW	q sys=1 def=1 usr=1 ;;
+68.0	d3_q_None_enqWo	q sys=1 def=1 usr=1 ;;
+68.0	d3_q_W_enqW	q sys=1 def=1 usr=1 ;;
+68.0	d3_q_W_enqWo	q sys=1 def=1 usr=1 ;;
+68.0	d3_q_Wo_enqW	q sys=2 def=1 usr=1 ;;
+68.0	d3_q_Wo_enqWo	q sys=2 def=1 usr=1 ;;
+68.0	d4_01_empty	in=1 after=1
+68.0	d4_02_two	after=2
+68.0	d4_03_getrunas	one=1 two=2 dml=2 limit=150 dmlLimit=150 alias=true
+68.0	d4_04_insert	in=2 after=2
+68.0	d4_05_nested	outer=1 inner=2 after=2
+68.0	d4_06_limit149	ran at=150 after=150
+68.0	d4_06b_limit150	RAW System.LimitException: Too many DML statements: 151
+68.0	d4_08_startTest	d=1
+68.0	d6_07_none_del_W_def	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_07_none_del_W_sys	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+68.0	d6_07_none_del_W_usr	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_07_none_del_Wo_def	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_07_none_del_Wo_sys	ok
+68.0	d6_07_none_del_Wo_usr	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_acct_cnt	EX System.SecurityException: Access to entity 'Account' denied
+68.0	d6_acct_cntid	EX System.SecurityException: Access to entity 'Account' denied
+68.0	d6_acct_cntu	EX System.SecurityException: Access to entity 'Account' denied
+68.0	d6_acct_cntw	EX System.SecurityException: Access to entity 'Account' denied
+68.0	d6_acct_dyn	EX System.SecurityException: Access to entity 'Account' denied
+68.0	d6_acct_lim	EX System.QueryException: sObject type 'Account' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	d6_acct_ord	EX System.QueryException: sObject type 'Account' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Account={Name}}
+68.0	d6_none_cnt	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_none_cntid	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_none_cntu	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_none_cntw	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_none_dyn	EX System.SecurityException: Access to entity 'Sam_None__c' denied
+68.0	d6_none_lim	EX System.QueryException: sObject type 'Sam_None__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	d6_none_ord	EX System.QueryException: sObject type 'Sam_None__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_None__c={Name}}
+68.0	u1_01_none_true	EX System.NoAccessException: No access to entity
+68.0	u1_01b_none_default	EX System.NoAccessException: No access to entity
+68.0	u1_01c_none_admin	rm= recs=Name; mod={}
+68.0	u1_02_none_false	rm=Sam_None__c=Name; recs=; mod={0}
+68.0	u1_03_ro_creatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+68.0	u1_03_ro_readable	rm= recs=Name; mod={}
+68.0	u1_03_ro_updatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+68.0	u1_03_ro_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+68.0	u1_04_sam_ro_c_creatable	rm= recs=Name; mod={}
+68.0	u1_04_sam_ro_c_updatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+68.0	u1_04_sam_ro_c_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+68.0	u1_04_sam_ro_e_creatable	EX System.NoAccessException: No access to entity: Sam_RO__c
+68.0	u1_04_sam_ro_e_updatable	rm= recs=Name; mod={}
+68.0	u1_04_sam_ro_e_upsertable	EX System.NoAccessException: No access to entity: Sam_RO__c
+68.0	u1_04c_obj_upsertable	rm=Sam_Obj__c=Secret__c; recs=Name,Open__c; mod={0}
+68.0	u1_05_aggregate	EX System.InvalidParameterValueException: AggregateResult SObject types are not supported
+68.0	u1_06_null_list	EX System.NullPointerException: Argument cannot be null.
+68.0	u1_06b_null_type	EX System.NullPointerException: Argument cannot be null.
+68.0	u1_06c_empty	rm= recs= mod={}
+68.0	u1_07_child_denied	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_None__c, check errors on Exception or Result!
+68.0	u1_08_parent_denied	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u1_09_mixed_types	rm=Sam_Obj__c=Secret__c; recs=Name;Name; mod={0}
+68.0	u1_10_field_denied	rm=Sam_Obj__c=Secret__c; recs=Name,Open__c; mod={0}
+68.0	u2_01_inactive	EX System.TypeException: System.runAs can only be used with an active user
+68.0	u2_02_null	EX System.NullPointerException: Attempt to de-reference a null object
+68.0	u2_03_nested	a=true b=true c=true d=true
+68.0	u2_05_start_inside	started stopped
+68.0	u2_05b_runas_inside_start	inside stopped
+68.0	u2_06_queue_user	qu same=true ;;
+68.0	u2_06b_queue_stop_outside	qu same=true ;;
+68.0	u2_07_fresh_grant	ins=ok n=1
+68.0	u3_01_sys_clause_user_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_02_user_clause_sys_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_03_binds_sys_clause_user_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_03b_binds_user_clause_sys_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_03c_count_sys_clause_user_arg	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_04_null_level	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_04b_null_level_dml	EX System.NullPointerException: Argument 3 cannot be null
+68.0	u4_07_inner	inner sys=1 def=1 usr=1 innerW sys=1 def=1 usr=1 outer sys=2 def=1 usr=1
+68.0	u4_08_mixed_wo_parent	child sys=2 def=1 usr=1 parent sys=2 def=2 usr=1
+68.0	u4_08b_mixed_om_parent	child sys=1 def=1 usr=1 parent sys=1 def=1 usr=1 direct sys=1 def=1 usr=1
+68.0	u4_08c_wo_child_om_parent	child sys=2 def=1 usr=1 parent sys=1 def=1 usr=1
+68.0	u9_pb_W	sys=1 def=1
+68.0	u9_pb_Wo	sys=1 def=1

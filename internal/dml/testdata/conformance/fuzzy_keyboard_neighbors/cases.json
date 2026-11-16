@@ -1,0 +1,54 @@
+{
+  "kn1": {
+    "kind": "panel",
+    "object": "Contact",
+    "rule": "N1Last",
+    "fields": [
+      "LastName"
+    ],
+    "item": "LastName",
+    "values": [
+      "Farnsdelwick",
+      "Farnsdraeovk",
+      "Farnsdelwicka",
+      "Farnsdraeovka",
+      "Harnsdelwick",
+      "Harnsdraeovk",
+      "Farnsdelwicks",
+      "Farnsdraeovks",
+      "Barnsdelwick",
+      "Barnsdraeovk",
+      "Marnsdelwi",
+      "Marnsdraeo",
+      "Farnsdelwicke",
+      "Farnsdraeovko"
+    ]
+  },
+  "kn2": {
+    "kind": "panel",
+    "object": "Contact",
+    "rule": "N1Last",
+    "fields": [
+      "LastName"
+    ],
+    "item": "LastName",
+    "values": [
+      "Farnsdelwick",
+      "Farnsdekwuck",
+      "Fagnsdelwibk",
+      "Farmsdwlwick",
+      "Fatnsdelqick",
+      "Farnsfelwivk",
+      "Farnxdelwjck",
+      "Farbsdelwidk",
+      "Farnsdepwicl",
+      "Farnsdrlwocj",
+      "Quenderthwait",
+      "Quendertjwsit",
+      "Qurnderthwaiy",
+      "Quenfertheait",
+      "Quenderthwsiy",
+      "Farnsdekwucl"
+    ]
+  }
+}

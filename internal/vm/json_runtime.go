@@ -389,6 +389,15 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		if state.rejectUnsupportedTypes && !value.classInstance && strings.EqualFold(value.Type, "JSONParser") {
 			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Type unsupported in JSON: common.apex.json.ApexJsonParser")})
 		}
+		isException := state.rejectUnsupportedTypes && vm.jsonExceptionValue(value)
+		if isException {
+			if apexversion.AtLeast(vm.jsonCallerAPIVersion(), 63) {
+				panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Type unsupported in JSON: "+shortTypeName(exceptionTypeName(value.Type)))})
+			}
+			if isBuiltinExceptionType(value.Type) {
+				panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Apex Type unsupported in JSON: "+vm.exceptionQualifiedTypeName(value.Type))})
+			}
+		}
 		value = vm.picklistEntryJSONView(value, suppressObjectNulls)
 		if strings.EqualFold(value.Type, "Database.QueryLocator") {
 			return &queryLocatorJSONError{}
@@ -505,6 +514,11 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		var extras []string
 		for field := range value.Fields {
 			fieldKey := strings.ToLower(field)
+			// Below API 63 a custom exception serializes its declared fields
+			// only, not the message and trace members the runtime stores.
+			if isException {
+				break
+			}
 			if isInheritedInstanceFieldStorage(field) || isInternalSObjectField(field) || seen[fieldKey] {
 				continue
 			}
@@ -4751,4 +4765,20 @@ func (vm *VM) fillDuplicateFieldSlots(obj Value, owner string, field Field, fiel
 		}
 		obj.Fields[slot] = value
 	}
+}
+
+// jsonExceptionValue reports an Exception instance, built in or declared.
+func (vm *VM) jsonExceptionValue(value Value) bool {
+	return value.Kind == ValueObject && isExceptionType(value.Type) && vm.typeMatches(value.Type, "Exception", make(map[string]bool))
+}
+
+// jsonCallerAPIVersion is the API version of the code that called into JSON.
+func (vm *VM) jsonCallerAPIVersion() string {
+	if vm.currentMethod.APIVersion != "" {
+		return vm.currentMethod.APIVersion
+	}
+	if vm.Org != nil {
+		return vm.Org.APIVersion
+	}
+	return ""
 }

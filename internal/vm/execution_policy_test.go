@@ -60,20 +60,17 @@ func TestWithUserModeAutomatedProcessFollowsAPIVersion(t *testing.T) {
 	}
 }
 
-func TestElasticAsyncLimitKeysAPI67(t *testing.T) {
-	for _, test := range []struct {
-		version string
-		present bool
-	}{{"65.0", false}, {"66.0", false}, {"67.0", true}} {
+// A default scratch Developer org lists no elastic async entries at API 66 or
+// 67; the release notes tie them to orgs that enable elastic limits.
+// NATIVE OrgLimits elastic keys absent apex_release_gates/org.tsv OlProbe66/OL1 OlProbe67/OL1 OlProbe67/OL2 anonymous istest 66.0 67.0
+func TestElasticAsyncLimitKeysAbsentByDefault(t *testing.T) {
+	for _, version := range []string{"65.0", "66.0", "67.0"} {
 		machine := New(io.Discard)
-		machine.currentMethod = Method{APIVersion: test.version}
-		present := map[string]bool{}
+		machine.currentMethod = Method{APIVersion: version}
 		for _, limit := range machine.orgLimitValues() {
-			present[limit.Fields["name"].String()] = true
-		}
-		for _, name := range []string{"DailyAsyncApexElasticExecutions", "DailyAsyncApexProcessed"} {
-			if present[name] != test.present {
-				t.Fatalf("API %s %s present = %t, want %t", test.version, name, present[name], test.present)
+			switch name := limit.Fields["name"].String(); name {
+			case "DailyAsyncApexElasticExecutions", "DailyAsyncApexProcessed":
+				t.Fatalf("API %s lists %s; native lists neither", version, name)
 			}
 		}
 	}

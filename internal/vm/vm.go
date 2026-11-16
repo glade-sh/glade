@@ -306,10 +306,10 @@ func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value,
 	if !method.IsStatic {
 		return Null, fmt.Errorf("@future method %s must be static", method.Name)
 	}
-	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
+	if err := vm.incrementLimit("futureCalls", 1); err != nil {
 		return Null, err
 	}
-	if err := vm.incrementLimit("futureCalls", 1); err != nil {
+	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
 	if len(args) != len(method.Params) {

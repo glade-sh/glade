@@ -775,7 +775,12 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, actualField); ok {
 					actualField = canonical
 					fieldDef := definition.Fields[canonical]
-					if strings.TrimSpace(fieldDef.Formula) != "" || fieldDef.Type == storage.FieldSummary || systemFieldDynamicPutReadOnly(canonical) ||
+					// A record that already has an Id cannot take a new master through
+					// a dynamic put when the relationship is not reparentable.
+					// NATIVE master-detail dynamic put apex_release_gates/org.tsv anonymous 62.0 67.0
+					masterDetailLocked := !receiver.classInstance && fieldDef.MasterDetail && !fieldDef.ReparentableMasterDetail &&
+						sObjectIDFromFields(receiver.Fields) != ""
+					if strings.TrimSpace(fieldDef.Formula) != "" || fieldDef.Type == storage.FieldSummary || systemFieldDynamicPutReadOnly(canonical) || masterDetailLocked ||
 						!receiver.classInstance && storage.StandardFeatureEnabledFieldDynamicPutReadOnly(definition, canonical) {
 						return Null, true, newExceptionError("System.SObjectException", "Field "+canonical+" is not editable")
 					}

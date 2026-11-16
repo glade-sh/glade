@@ -572,6 +572,10 @@ platformStaticCall:
 			return Null, fmt.Errorf("Database.query expects query String")
 		}
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			// Native sharing_access_modes u3_04 rows (APIs 62.0-68.0).
+			if args[1].Kind == ValueNull {
+				return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
+			}
 			return Null, fmt.Errorf("Database.query expects AccessLevel")
 		}
 		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, false, true); err != nil {
@@ -585,6 +589,9 @@ platformStaticCall:
 			return Null, vm.scalarCountRouteError(args[0].Text, vm.expandSOQLBinds)
 		}
 		if len(args) == 2 {
+			if err, handled := vm.runAsAccessLevelClauseConflict("Database.query", args[0].Text, args[1]); handled && err != nil {
+				return Null, err
+			}
 			return vm.namedApexReferenceDynamicQueryFault(vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result))
 		}
 		if err := vm.userModeInaccessibleAnonymousSystemQuery(args[0].Text); err != nil {
@@ -610,6 +617,9 @@ platformStaticCall:
 			}
 			return Null, fmt.Errorf("Database.queryWithBinds expects AccessLevel")
 		}
+		if err, handled := vm.runAsAccessLevelClauseConflict("Database.queryWithBinds", args[0].Text, args[2]); handled && err != nil {
+			return Null, err
+		}
 		if err := vm.validateDynamicQueryAccessLevel(args[0].Text, args[2]); err != nil {
 			return Null, err
 		}
@@ -633,7 +643,16 @@ platformStaticCall:
 			return Null, fmt.Errorf("Database.countQuery expects query String")
 		}
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			// Native sharing_access_follow f_u3_04c rows (APIs 62.0-68.0).
+			if args[1].Kind == ValueNull {
+				return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
+			}
 			return Null, fmt.Errorf("Database.countQuery expects AccessLevel")
+		}
+		if len(args) == 2 {
+			if err, handled := vm.runAsAccessLevelClauseConflict("Database.countQuery", args[0].Text, args[1]); handled && err != nil {
+				return Null, err
+			}
 		}
 		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, true, true); err != nil {
 			return Null, err
@@ -918,6 +937,13 @@ platformStaticCall:
 		}
 		targetOrder, ok := vm.savepointOrder[idValue.Text]
 		if !ok {
+			if vm.boundaryReleasedSavepoints[idValue.Text] {
+				// The refused rollback still charges its DML statement (test_boundary_edges sb2).
+				if err := vm.incrementSavepointStatement(); err != nil {
+					return Null, err
+				}
+				return Null, newExceptionError("System.TypeException", "Savepoint does not exist in this context")
+			}
 			return Null, newExceptionError("System.TypeException", "Database.rollback received invalid Savepoint")
 		}
 		if targetOrder <= vm.reportInvalidSavepointOrder {
@@ -2286,6 +2312,11 @@ platformStaticCall:
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
 			typeName := jsonDeserializeTypeName(args[1])
+			// From API 63 an Exception type is not a JSON target.
+			// NATIVE JSON.deserialize into an Exception apex_release_gates/org.tsv JxProbe63/JX11 anonymous 62.0 63.0 67.0
+			if isExceptionType(typeName) && apexversion.AtLeast(vm.jsonCallerAPIVersion(), 63) && vm.typeMatches(typeName, "Exception", make(map[string]bool)) {
+				return Null, newExceptionError("System.JSONException", "Type unsupported in JSON: "+shortTypeName(exceptionTypeName(typeName)))
+			}
 			// A gated platform namespace (ConnectApi, Slack) joins the view.
 			typesys.RequestGatedPlatformNamespaceFor(typeName)
 			_, recordType := vm.explicitSchemaRecordType(typeValueIdentityName(args[1]))
@@ -3182,13 +3213,26 @@ platformStaticCall:
 	case "FlexQueue.moveJobToEnd", "FlexQueue.moveJobToFront":
 		return vm.moveFlexQueueJob(callee, args)
 	case "System.pauseJobById", "System.pauseJobByName", "System.resumeJobById", "System.resumeJobByName":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("%s expects job identifier String", callee)
-		}
-		return Null, nil
+		return vm.pauseResumeJob(callee, args)
 	case "System.purgeOldAsyncJobs":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("System.purgeOldAsyncJobs expects Date and optional limit")
+		}
+		// NATIVE purgeOldAsyncJobs argument checks apex_release_gates/org.tsv anonymous 62.0 67.0
+		for i, arg := range args {
+			if arg.Kind == ValueNull {
+				return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("Argument %d cannot be null", i+1))
+			}
+		}
+		if len(args) == 2 && args[1].Kind == ValueInt && args[1].Int <= 0 {
+			return Null, newExceptionError("System.IllegalArgumentException", "The max number of records to be deleted must be a valid number greater than zero.")
+		}
+		// A purge that runs counts one DML statement and one DML row.
+		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+			return Null, err
+		}
+		if err := vm.incrementLimit("dmlRows", 1); err != nil {
+			return Null, err
 		}
 		return Int(0), nil
 	case "Test.enqueueBatchJobs":

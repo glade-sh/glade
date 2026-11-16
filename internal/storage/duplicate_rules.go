@@ -41,6 +41,23 @@ type MatchingRule struct {
 	Status        string             `json:"status,omitempty" xml:"ruleStatus"`
 	BooleanFilter string             `json:"booleanFilter,omitempty" xml:"booleanFilter"`
 	Items         []MatchingRuleItem `json:"items,omitempty" xml:"matchingRuleItems"`
+	// Mapping is the duplicate rule's objectMapping for this matching rule:
+	// the candidate object's input fields feed the matching rule's fields on
+	// another object. It belongs to the reference, not the matching rule.
+	Mapping *MatchingRuleMapping `json:"mapping,omitempty" xml:"-"`
+}
+
+// MatchingRuleMapping maps fields of the duplicate rule's own object (the
+// input) onto the matching rule object's fields (the output).
+type MatchingRuleMapping struct {
+	InputObject  string                `json:"inputObject,omitempty"`
+	OutputObject string                `json:"outputObject,omitempty"`
+	Fields       []MatchingRuleMapPair `json:"fields,omitempty"`
+}
+
+type MatchingRuleMapPair struct {
+	Input  string `json:"input"`
+	Output string `json:"output"`
 }
 
 type MatchingRuleItem struct {

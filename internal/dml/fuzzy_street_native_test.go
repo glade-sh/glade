@@ -15,8 +15,11 @@ import (
 // Glade may match that the native rows do not; every such pair is pinned in the
 // fixture's residuals.tsv, so the count cannot grow unseen.
 var streetNativeDirs = map[string]int{
-	"testdata/conformance/fuzzy_street_c4": 2,
-	"testdata/conformance/fuzzy_street_c5": 0,
+	"testdata/conformance/fuzzy_street_c4":  0,
+	"testdata/conformance/fuzzy_street_c5":  0,
+	"testdata/conformance/fuzzy_street_c8":  0,
+	"testdata/conformance/fuzzy_street_c9":  8,
+	"testdata/conformance/fuzzy_street_c10": 0,
 }
 
 const streetPanelDigits = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -51,6 +54,10 @@ func streetNativePanel(t *testing.T, observation string) map[string]string {
 // NATIVE fuzzy_street_c4/org.tsv:9 istest 67.0
 // NATIVE fuzzy_street_c5/org.tsv:2 anonymous 62.0
 // NATIVE fuzzy_street_c5/org.tsv:9 istest 67.0
+// NATIVE fuzzy_street_c8/org.tsv:2 anonymous 62.0
+// NATIVE fuzzy_street_c8/org.tsv:9 istest 67.0
+// NATIVE fuzzy_street_c9/org.tsv:2 anonymous 62.0
+// NATIVE fuzzy_street_c9/org.tsv:9 istest 67.0
 // Every pair of each street panel's values through a custom Street rule
 // (Datacloud.FindDuplicates, anonymous and @IsTest, APIs 62.0 and 67.0, two
 // repeats, all identical per case). Fit panels and holdout panels are scored
@@ -101,6 +108,16 @@ func streetNativeRows(t *testing.T, dir string, maxExtra int) {
 			t.Fatalf("%s: %d observations, want 8 (2 APIs x 2 routes x 2 repeats)", name, counts[name])
 		}
 	}
+	// matchblanks.txt names the panels captured under a Match Blank Fields item.
+	matchBlanks := map[string]bool{}
+	if body, err := os.ReadFile(filepath.Join(dir, "matchblanks.txt")); err == nil {
+		for _, name := range strings.Fields(string(body)) {
+			if panels[name] == nil {
+				t.Fatalf("matchblanks.txt names the unknown panel %q", name)
+			}
+			matchBlanks[name] = true
+		}
+	}
 	residuals := map[string][2]string{}
 	if body, err := os.ReadFile(filepath.Join(dir, "residuals.tsv")); err == nil {
 		for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n")[1:] {
@@ -120,13 +137,17 @@ func streetNativeRows(t *testing.T, dir string, maxExtra int) {
 		nat := streetNativePanel(t, native[name])
 		for i, a := range values {
 			for j, b := range values {
+				if strings.TrimSpace(a) == "" || strings.TrimSpace(b) == "" {
+					// A blank street never reaches the scorer; the rule path decides.
+					continue
+				}
 				pair := streetPanelDigits[i:i+1] + streetPanelDigits[j:j+1]
 				want := "-"
 				if v, ok := nat[pair]; ok {
 					want = v
 				}
 				got := "-"
-				if match, score := FuzzyScore("Street", a, b, false); match {
+				if match, score := FuzzyScore("Street", a, b, matchBlanks[name]); match {
 					got = fmt.Sprint(int(math.Floor(fuzzyItemScore("Street", score) + 0.5)))
 				}
 				if want == "-" && got != "-" {
@@ -193,6 +214,24 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"15 Elm Drive", "15 Elm", true, 75},
 		{"77 Wren Ave", "77 Wren Av", true, 80},
 		{"77 Wren Xq", "77 Wren St", false, 0},
+		// Number words and ordinals in the name (fuzzy_street_c10 o1 to o8,
+		// e1 to e4): a name of numbers only, or after a directional, is
+		// compared as one string; an ordinal first word is no street number.
+		{"500 Twenty One St", "500 Twenty First St", false, 0},
+		{"500 Twenty One St", "500 Twenty One Street", false, 0},
+		{"500 Twenty First Street", "500 Twenty One Street", true, 88},
+		{"300 E Twenty Third St", "300 E Twenty Third Street", false, 0},
+		{"300 E Twenty Third Street", "300 Twenty Third Street", true, 45},
+		{"500 Twenty First Street", "500 Twenty Tenth Street", true, 80},
+		{"500 Twenty First St", "500 Twenty First Street", true, 88},
+		// A word then a bare number is not a whole-number name: base rules
+		// (review of v0311-street-ordinal, base ea16f75824).
+		{"500 Main 5 Street", "500 Main 5 St", true, 88},
+		{"500 Main Street", "500 Main 5 St", true, 74},
+		{"500 Oak Hill 21 Street", "500 Oak Hill 21 St", true, 91},
+		{"100 Vane 7 Street", "100 Vane 7 St", true, 88},
+		{"Third Ave", "3rd Ave", true, 88},
+		{"101st St", "101st St", true, 88},
 		{"77 Wren St", "77 Wren St Xq", false, 0},
 		{"14 Dana Blvd Jr", "14 Dana Jr Blvd", false, 0},
 		// The similarity gate is 87 (nt1, nd4).
@@ -254,11 +293,108 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		// A compass word before the name (sd1, nd4).
 		{"500 North Calder Rd", "500 Northwest Calder Rd", true, 91},
 		{"85 North Sorrel Dr", "85 Northern Sorrel Dr", false, 0},
+		// fuzzy_street_c8: the key reads a line break as a word separator,
+		// the score deletes it (qa1, qa2). With no street number the break
+		// still finds the same street without it.
+		{"Calder Rd Suite 200", "Calder Rd\nSuite 200", true, 69},
+		{"Calder Rd\nSuite 200", "Calder Rd Suite 200", true, 69},
+		{"Calder Rd\nSuite 200", "Calder Rd,\nSuite 200", true, 88},
+		{"Calder Rd\nSuite 200", "Calder RdSuite 200", false, 0},
+		{"Calder Rd Suite200", "Calder Rd\nSuite200", true, 94},
+		{"Calder Rd #200", "Calder Rd\n#200", true, 92},
+		{"Calder Rd\n#200", "Calder Rd #200", true, 46},
+		{"Oak St Suite 200", "Oak St\nSuite 200", true, 64},
+		{"Calder Plaza Suite 200", "Calder Plaza\nSuite 200", true, 84},
+		// A name of four words does not split (qb1, qb3).
+		{"100 N Martin Luther King Jr Blvd", "100 N Martin Luther King Blvd", true, 45},
+		{"100 N Martin Luther King Blvd", "100 N Martin Luther King Jr Blvd", true, 91},
+		{"100 N Martin Luther King Blvd Suite 5", "100 N Martin Luther King Jr Blvd Suite 5", true, 93},
+		{"100 N Martin Luther King Jr Blvd", "100 N Martin Luther King Blvd Suite 5", false, 0},
+		{"14 Kingsley Blvd Jr", "14 Kingsley King Jr Blvd", true, 72},
+		{"14 Hawthorne Meadow Blvd Jr", "14 Hawthorne Meadow Blvd", true, 44},
+		{"14 Dana Blvd Jr", "14 Dana Jr Blvd", false, 0},
+		// A rural route reports 100 for itself (qc1); Rt, Rte and Rd are left
+		// out of the key (qc2, qj1).
+		{"RR 4", "RR 4", true, 100},
+		{"Rural Route 4", "Rural Route 4", true, 100},
+		{"HC 4", "HC 4", true, 88},
+		{"Rural Rt 4", "Rural Rte 4", true, 80},
+		{"Rural Rt 4", "Rural Rd 4", true, 72},
+		{"604 Sts Ln W", "604 Sts Ln N", false, 0},
+		{"615 Pk Ln W", "615 Pk Ln N", false, 0},
+		// Accented letters fold, other characters outside ASCII are deleted
+		// (qh1, qh2, qm1, qd1).
+		{"7 Bor\u00fcden Rd", "7 Boruden Rd", true, 100},
+		{"7 Dun\u00f8wick Rd", "7 Dunwick Rd", true, 100},
+		{"Fu\u00dfweg 5", "Fuweg 5", true, 88},
+		{"Friedrichstra\u00dfe 43", "Friedrichstr. 43", true, 78},
+		{"12 Hauptstra\u00dfe S\u00fcd", "12 Hauptstrasse Sud", true, 90},
+		{"7 Ob\u2019rien Rd", "7 Obrien Rd", true, 100},
+		// Suffix words (qe1, qe2): Aly is the suffix Alley; Lp and Loop, Pkwy
+		// and Parkway stay in the name.
+		{"12 Hazel Aly", "12 Hazel Alley", true, 93},
+		{"1 Infinite Lp", "1 Infinity Loop", true, 82},
+		{"1600 Amphitheatre Pkwy", "1600 Amphitheater Parkway", true, 81},
+		{"2 Quarry Lp", "2 Quarri Loop", true, 79},
+		// Rue is a word of the name (qf1).
+		{"7 Rue Royale", "7 Rue Royal", true, 92},
+		{"12 Rue de Rivoli", "12 Rue Rivoli", true, 82},
+		{"12 Rue Rivoli", "12 Ave Rivoli", true, 85},
+		{"12 Rue Rivoli", "12 Rivoli", false, 0},
+		{"Rue Royale", "Rue Royale", true, 86},
+		// fuzzy_street_c9 (r1, r7): a street name on one side only is a
+		// mismatch; a street with no key word finds nothing; one word that is
+		// not a number is the name; characters outside ASCII are deleted, so
+		// two Cyrillic or CJK streets with one house number are one street.
+		{"12", "12 St", false, 0},
+		{"12", "12 Park", false, 0},
+		{"12 St", "12 Rd", false, 0},
+		{"12 Park", "12 Park St", true, 85},
+		{"12 Park", "12 Park Street", true, 50},
+		{"12 Park Street", "12 Park", true, 75},
+		{"Park St", "Park St", false, 0},
+		{"\u6e2f\u533a", "\u6e2f\u533a", false, 0},
+		{"\u6e2f\u533a", "\u5317\u533a", false, 0},
+		{"3F", "3F", true, 86},
+		{"\u6e2f\u533a 3F", "\u5317\u533a 3F", true, 86},
+		{"\u0422\u0432\u0435\u0440\u0441\u043a\u0430\u044f 5", "\u0410\u0440\u0431\u0430\u0442\u0441\u043a\u0430\u044f 5", true, 100},
+		{"\u0422\u0432\u0435\u0440\u0441\u043a\u0430\u044f 5", "\u0422\u0432\u0435\u0440\u0441\u043a\u0430\u044f 7", false, 0},
+		{"12 \u0391\u03b8\u03b7\u03bd\u03ce\u03bd", "12", true, 100},
+		{"12 \u0391\u03b8\u03b7\u03bd\u03ce\u03bd St", "12", false, 0},
 	} {
 		match, score := FuzzyScore("Street", c.a, c.b, false)
 		got := int(math.Floor(score + 0.5))
 		if match != c.match || (match && got != c.conf) {
 			t.Errorf("%q / %q: got %v %d, native %v %d", c.a, c.b, match, got, c.match, c.conf)
+		}
+	}
+	// Match Blank Fields scores the same sections (fuzzy_street_c8 qd2, qg2):
+	// the floor words are suites there too, and the name similarity decides
+	// where the street has no number.
+	for _, c := range []struct {
+		a, b  string
+		match bool
+		conf  int
+	}{
+		{"200 Park Ave Fl 5", "200 Park Ave Floor 5", true, 93},
+		{"Hauptstra\u00dfe 5", "Hauptstr. 5", true, 86},
+		{"Hauptstrasse 5", "Hauptstr. 5", true, 76},
+		{"Haupt Str. 5", "Hauptstr. 5", true, 92},
+		{"Fu\u00dfweg 5", "Fuweg 5", true, 100},
+		{"3F", "3F", true, 100},
+		{"Park St", "Park Street", false, 0},
+		{"12", "12 Park", false, 0},
+		// A word then a bare number is not a whole-number name: base rules
+		// (review of v0311-street-ordinal, base ea16f75824).
+		{"500 Main 5 Street", "500 Main 5 St", true, 88},
+		{"500 Main Street", "500 Main 5 St", true, 74},
+		{"500 Oak Hill 21 Street", "500 Oak Hill 21 St", true, 91},
+		{"100 Vane 7 Street", "100 Vane 7 St", true, 88},
+	} {
+		match, score := FuzzyScore("Street", c.a, c.b, true)
+		got := int(math.Floor(score + 0.5))
+		if match != c.match || (match && got != c.conf) {
+			t.Errorf("MatchBlanks %q / %q: got %v %d, native %v %d", c.a, c.b, match, got, c.match, c.conf)
 		}
 	}
 	// The shared scorer the standard rules call keeps its behavior.

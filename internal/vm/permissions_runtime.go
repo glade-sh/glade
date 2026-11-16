@@ -653,6 +653,11 @@ func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforce
 			return Null, Null, Null, newExceptionError("NoDataFoundException", fmt.Sprintf("Invalid permission set id: %s", scopedPermissionSetID))
 		}
 	}
+	// Native u1_05 rows (APIs 62.0-68.0): a List<AggregateResult> argument
+	// raises InvalidParameterValueException. Other list types keep their path.
+	if elementType, ok := collectionElementType(records.Type); ok && strings.EqualFold(elementType, "AggregateResult") && len(records.List) > 0 {
+		return Null, Null, Null, newExceptionError("InvalidParameterValueException", "AggregateResult SObject types are not supported")
+	}
 	defer vm.beginPermissionCheckMemo()()
 	out := cloneValue(records)
 	out.Type = records.Type
@@ -871,7 +876,15 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 				scopedPermissionSetID != "" && op == "insert" && vm.userModeSingleRecord && (api == "62.0" || api == "67.0" || api == "68.0") ||
 				scopedPermissionSetID == "" && op == "insert" && api == "68.0" && vm.explicitUserModePartialRecord && vm.currentUserProfileName(vm.fieldPermissionPrincipal()) == "System Administrator"
 			standardObjectCustomField := capturedShape && !wideAccountRecord && !(op == "upsert" && vm.explicitUserModeAccess) && vm.capturedAdminAccountRecord(record, objectName, canonicalField) && vm.capturedAccountCustomFieldPrincipal(objectName)
-			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField) || standardFieldDenial || standardExternalUpsert || standardObjectCustomField) {
+			// Native sharing_access_modes gate rows (Standard User in runAs,
+			// source API 55.0-62.0 and 67.0): a denied custom field of a custom
+			// object raises the same DmlException or failed row below API 62.
+			customObjectField := vm.ordinaryCustomPermissionObject(objectName) && isCustomSchemaName(canonicalField)
+			if (op == "insert" || op == "update" || op == "upsert") && customObjectField && userModeCustomObjectFieldDMLAPI(api) && !adminOptionalFieldPolicyAPI(api) {
+				policyFields = append(policyFields, canonicalField)
+				continue
+			}
+			if (op == "insert" || op == "update" || op == "upsert") && adminOptionalFieldPolicyAPI(vm.currentSourceExecutionPolicy().APIVersion) && (customObjectField || standardFieldDenial || standardExternalUpsert || standardObjectCustomField) {
 				policyFields = append(policyFields, canonicalField)
 				continue
 			}
@@ -1317,6 +1330,12 @@ func adminOptionalFieldPolicyAPI(version string) bool {
 	return apexversion.AtLeast(version, 62) && !apexversion.AtLeast(version, 69)
 }
 
+// userModeCustomObjectFieldDMLAPI bounds the custom-object field DmlException
+// below API 62 to the captured source APIs 55.0 through 61.0.
+func userModeCustomObjectFieldDMLAPI(version string) bool {
+	return apexversion.AtLeast(version, 55) && !apexversion.AtLeast(version, 62)
+}
+
 // sobjectFormulaField reports a formula or auto-number field of objectName.
 // DML never writes one, so a queried value on the record is not a write the
 // user-mode field check governs. Native rows at API 67.0 with the capture's
@@ -1367,6 +1386,13 @@ func (vm *VM) enforceDMLRecordAccess(op string, value Value, externalIDField str
 			}
 		}
 		if found && !vm.currentUserCanWriteRecord(record.Object, stored, vm.currentUserID(), op) {
+			// Native sharing_access_modes d2 rows (runAs Standard User with the
+			// object grant, Private custom object, APIs 62.0-68.0): explicit
+			// USER_MODE update and delete of a record hidden by sharing fail as
+			// DML rows, like system mode with sharing, not a SecurityException.
+			if userMode && vm.explicitRunAsSharingRowFailure(op, record.Object) {
+				continue
+			}
 			// A denied User update is a DmlException row failure at API 67.0
 			// too, not the SecurityException (native user_self_update
 			// otherUserTitle and otherStandardUserTitle rows); the DML record
@@ -1631,6 +1657,18 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 	}
 	objectPermission := stripInaccessibleObjectPermission(accessType)
 	if enforceRootObjectCRUD && objectPermission != "" && !vm.currentUserObjectPermissionWithScope(objectName, objectPermission, scopedPermissionSetID) {
+		// Native sharing_access_modes u1_01 rows (APIs 62.0-68.0): READABLE on
+		// an object the user cannot read omits the object name; the other
+		// access types name it (u1_03, u1_04).
+		if strings.EqualFold(strings.TrimSpace(accessType), "READABLE") && scopedPermissionSetID == "" {
+			return false, newExceptionError("NoAccessException", "No access to entity")
+		}
+		return false, newExceptionError("NoAccessException", "No access to entity: "+objectName)
+	}
+	// Native u1_04 rows: UPSERTABLE also needs the create grant; an edit-only
+	// user gets the same root denial as a create-only user.
+	if enforceRootObjectCRUD && strings.EqualFold(strings.TrimSpace(accessType), "UPSERTABLE") && scopedPermissionSetID == "" &&
+		!vm.currentUserObjectPermissionWithScope(objectName, "isCreateable", scopedPermissionSetID) {
 		return false, newExceptionError("NoAccessException", "No access to entity: "+objectName)
 	}
 	fieldPermission := stripInaccessibleFieldPermission(accessType)
@@ -1650,10 +1688,54 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 	// Disabling root CRUD enforcement suppresses the exception; it does not
 	// retain readable fields of an inaccessible object. Id is handled separately.
 	readableObject := accessType != "READABLE" || vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", scopedPermissionSetID)
+	// Native sharing_access_follow f_u1_07/f_u1_08 rows (READABLE, Standard
+	// User in runAs, APIs 62.0-68.0): a child subquery of an unreadable custom object
+	// stays untouched; a lookup to an unreadable object is removed even with
+	// field access, and its parent relationship stays with the parent's own
+	// fields stripped. Other access types and contexts keep their rules.
+	relationshipRows := strings.EqualFold(strings.TrimSpace(accessType), "READABLE") && scopedPermissionSetID == "" &&
+		vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && vm.Org != nil
 	for _, field := range orderedSObjectFieldIteration(*record) {
 		value, ok := record.Fields[field]
 		if !ok {
 			continue
+		}
+		if relationshipRows {
+			if value.Kind == ValueList {
+				if childObjectName := sObjectListObjectName(value); childObjectName != "" {
+					if resolved, ok := vm.resolveObjectName(childObjectName); ok && hasSuffixFold(resolved, "__c") && !vm.currentUserObjectPermission(resolved, "isAccessible") {
+						continue
+					}
+				}
+			}
+			if value.Kind == ValueObject {
+				if _, ok := vm.parentRelationshipField(objectName, field); ok {
+					parentModified, err := vm.stripInaccessibleRecord(accessType, &value, false, removedFields, scopedPermissionSetID)
+					if err != nil {
+						return false, err
+					}
+					record.Fields[field] = value
+					modified = modified || parentModified
+					continue
+				}
+			}
+			if _, definition, ok := vm.sObjectFieldDefinition(objectName, vm.resolveSObjectFieldName(objectName, field)); ok &&
+				definition.Type == storage.FieldReference && len(definition.ReferenceTo) > 0 && !isSObjectSystemField(field) {
+				readableTarget := false
+				for _, target := range definition.ReferenceTo {
+					if resolved, ok := vm.resolveObjectName(target); ok && vm.currentUserObjectPermission(resolved, "isAccessible") {
+						readableTarget = true
+					}
+				}
+				if !readableTarget {
+					canonicalField := vm.resolveSObjectFieldName(objectName, field)
+					delete(record.Fields, field)
+					unmarkQueriedSObjectField(record, field)
+					addStripInaccessibleRemovedField(removedFields, objectName, canonicalField)
+					modified = true
+					continue
+				}
+			}
 		}
 		// Schema defaults expose OwnerId to callers just like an explicit
 		// assignment. Its read permission still applies when root CRUD is disabled.
@@ -1778,6 +1860,9 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 			}
 			field := selectedFieldValue.Text
 			if strings.EqualFold(field, "object") || strings.EqualFold(field, "Id") || recordHasSObjectField(*record, field) {
+				continue
+			}
+			if relationshipRows && strings.Contains(field, ".") {
 				continue
 			}
 			canonicalField := vm.resolveSObjectFieldName(objectName, field)

@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math"
 	"sort"
@@ -136,7 +137,12 @@ func datacloudDuplicateResultValue(result dml.DuplicateResult, find bool) Value 
 	matches := typedList("List<Datacloud.MatchResult>")
 	for _, match := range result.Matches {
 		item := Object("Datacloud.MatchResult")
-		item.Fields["entityType"] = String(match.Object)
+		entity := match.Object
+		if len(match.Records) == 0 && strings.HasSuffix(strings.ToLower(entity), "__c") {
+			// Native ENT: an empty custom-object result names the object's 01I id.
+			entity = duplicateObjectDefinitionID(entity)
+		}
+		item.Fields["entityType"] = String(entity)
 		item.Fields["rule"] = String(match.Rule)
 		item.Fields["matchEngine"] = String(match.Engine)
 		item.Fields["size"] = Int(int64(len(match.Records)))
@@ -153,7 +159,16 @@ func datacloudDuplicateResultValue(result dml.DuplicateResult, find bool) Value 
 			}
 			matchRecord.Fields["matchConfidence"] = decimalAsDouble(Decimal(confidence))
 			matchRecord.Fields["additionalInformation"] = typedList("List<Datacloud.AdditionalInformationMap>")
-			matchRecord.Fields["fieldDiffs"] = typedList("List<Datacloud.FieldDiff>")
+			diffs := typedList("List<Datacloud.FieldDiff>")
+			if i < len(match.FieldDiffs) {
+				for _, diff := range match.FieldDiffs[i] {
+					item := Object("Datacloud.FieldDiff")
+					item.Fields["name"] = String(diff.Name)
+					item.Fields["difference"] = String(diff.Difference)
+					diffs.List = append(diffs.List, item)
+				}
+			}
+			matchRecord.Fields["fieldDiffs"] = diffs
 			records.List = append(records.List, matchRecord)
 		}
 		item.Fields["matchRecords"] = records
@@ -178,6 +193,7 @@ func databaseDuplicateErrorValue(err dml.Error) Value {
 var datacloudDuplicateMembers = map[string]map[string]string{
 	"datacloud.duplicateresult": {"getduplicaterule": "duplicateRule", "getduplicateruleentitytype": "duplicateRuleEntityType", "geterrormessage": "errorMessage", "getmatchresults": "matchResults", "isallowsave": "allowSave"},
 	"datacloud.matchresult":     {"getentitytype": "entityType", "geterrors": "errors", "getmatchengine": "matchEngine", "getmatchrecords": "matchRecords", "getrule": "rule", "getsize": "size", "issuccess": "success"},
+	"datacloud.fielddiff":       {"getdifference": "difference", "getname": "name"},
 	"datacloud.matchrecord":     {"getadditionalinformation": "additionalInformation", "getfielddiffs": "fieldDiffs", "getmatchconfidence": "matchConfidence", "getrecord": "record"},
 }
 
@@ -210,8 +226,13 @@ func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, by
 			}
 			return nil, newExceptionError("System.HandledException", "No active duplicate rules are defined for the "+label+" object type.")
 		}
-		if !byID && strings.EqualFold(object, "Opportunity") {
+		if strings.EqualFold(object, "Opportunity") {
 			return nil, newExceptionError("System.HandledException", "The FindDuplicates API doesn't support the Opportunity object.")
+		}
+		// Native NOREG: a custom object with no active rule throws, naming the
+		// object (Find) or its 01I definition id (FindByIds).
+		if message, ok := noActiveDuplicateRulesMessage(vm.Org, object, byID); ok {
+			return nil, newExceptionError("System.HandledException", message)
 		}
 	}
 	var out []Value
@@ -229,6 +250,7 @@ func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, by
 		if found.HasRecords() {
 			found.AllowSave = strings.EqualFold(rule.ActionOnInsert, "Allow")
 			found.Message = rule.AlertText
+			found.AttachFieldDiffs(rule, record)
 		}
 		out = append(out, datacloudDuplicateResultValue(found, true))
 	}
@@ -377,7 +399,7 @@ func (vm *VM) commitDuplicateReports(reports []dml.DuplicateReport) {
 		storage.EnsureStandardObject(vm.Org, name)
 	}
 	engine := vm.newDMLEngine(nil)
-	for _, report := range reports {
+	for _, report := range mergeDuplicateReports(reports) {
 		if !live(report.Object, report.RecordID) {
 			continue
 		}
@@ -419,10 +441,17 @@ type duplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.I
 // The matcher belongs to one DML engine or Find call. Access decisions must
 // not survive that operation, since a later statement can change permissions.
 func (vm *VM) newDuplicateMatcher() duplicateMatcher {
+	matcher, _ := vm.newDuplicateMatchers()
+	return matcher
+}
+
+// newDuplicateMatchers returns the org matcher and a matcher limited to given
+// candidate records (the peers of one statement); both share one access cache.
+func (vm *VM) newDuplicateMatchers() (duplicateMatcher, func(storage.DuplicateRule, storage.Record, map[storage.ID]storage.Record) (dml.DuplicateResult, bool)) {
 	type fieldKey struct{ principal, object, field string }
 	access := make(map[fieldKey]bool)
-	return func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
-		return vm.findDuplicateMatches(rule, record, exclude, func(object, field string) bool {
+	scan := func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among map[storage.ID]storage.Record) (dml.DuplicateResult, bool) {
+		return vm.findDuplicateMatches(rule, record, exclude, among, func(object, field string) bool {
 			key := fieldKey{vm.currentUserID(), strings.ToLower(object), strings.ToLower(field)}
 			allowed, ok := access[key]
 			if !ok {
@@ -432,12 +461,17 @@ func (vm *VM) newDuplicateMatcher() duplicateMatcher {
 			return allowed
 		})
 	}
+	return func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
+			return scan(rule, record, exclude, nil)
+		}, func(rule storage.DuplicateRule, record storage.Record, among map[storage.ID]storage.Record) (dml.DuplicateResult, bool) {
+			return scan(rule, record, nil, among)
+		}
 }
 
 // Both Find and DML use the same record access policy. Enforce rules search
 // visible members; Bypass rules can detect hidden members without disclosing
 // them. The legacy explicit without-sharing route discloses Bypass members.
-func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
+func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among map[storage.ID]storage.Record, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
 	policy := vm.currentSourceExecutionPolicy()
 	if vm.testContext == nil || policy.DataMode == "USER_MODE" {
 		for _, matching := range rule.MatchRules {
@@ -468,7 +502,7 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 	userID := ""
 	principalResolved := false
 	var unrestricted map[string]bool
-	return dml.FindDuplicateMatchesWithAccess(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
+	return dml.FindDuplicateMatchesAmong(vm.Org, rule, record, exclude, func(existing storage.Record) (bool, bool) {
 		if !principalResolved {
 			userID = vm.currentUserID()
 			principalResolved = true
@@ -492,7 +526,7 @@ func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Re
 			return visible, visible
 		}
 		return true, visible || legacyWithout
-	})
+	}, among)
 }
 
 // The field-hidden Contact rows pin the default API 67 partial insert result
@@ -554,4 +588,94 @@ func (vm *VM) duplicateMatchingFieldAccessible(object, field string) bool {
 		}
 	}
 	return !denied
+}
+
+func noActiveDuplicateRulesMessage(org *storage.OrgState, object string, byID bool) (string, bool) {
+	if org == nil || !strings.HasSuffix(strings.ToLower(object), "__c") {
+		return "", false
+	}
+	name, ok := storage.ResolveObjectName(*org, object)
+	if !ok {
+		return "", false
+	}
+	token := name
+	if byID {
+		token = duplicateObjectDefinitionID(name)
+	}
+	if len(org.Objects[name].Definition.DuplicateRules) == 0 {
+		return "No duplicate rules are defined for the " + token + " object.", true
+	}
+	return "No active duplicate rules are defined for the " + token + " object type.", true
+}
+
+// duplicateObjectDefinitionID derives the stable 15-character 01I id Glade
+// reports where the platform names a custom object's definition id. Glade keeps
+// no definition ids, so the id is a digest of the lower-cased object name.
+func duplicateObjectDefinitionID(object string) string {
+	const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	sum := sha256.Sum256([]byte("customobject:" + strings.ToLower(object)))
+	id := []byte("01I")
+	for _, b := range sum[:12] {
+		id = append(id, alphabet[int(b)%len(alphabet)])
+	}
+	return string(id)
+}
+
+// mergeDuplicateReports joins the reports of one rule that share a record, so
+// records that match each other commit as a single set (native REP: two
+// matching inserts, or a seed and two matching inserts, make one set). A report
+// joins the first earlier set of the same rule and object that shares a record
+// with it; each group keeps a record index so the merge is linear.
+func mergeDuplicateReports(reports []dml.DuplicateReport) []dml.DuplicateReport {
+	type group struct{ first map[storage.ID]int }
+	var merged []dml.DuplicateReport
+	var members []map[storage.ID]struct{}
+	groups := map[string]*group{}
+	for _, report := range reports {
+		key := strings.ToLower(report.Rule.Name) + "\x00" + strings.ToLower(report.Rule.Object) + "\x00" + strings.ToLower(report.Object)
+		g := groups[key]
+		if g == nil {
+			g = &group{first: map[storage.ID]int{}}
+			groups[key] = g
+		}
+		target := -1
+		if i, ok := g.first[report.RecordID]; ok {
+			target = i
+		}
+		for _, match := range report.Matches {
+			if i, ok := g.first[match.ID]; ok && (target < 0 || i < target) {
+				target = i
+			}
+		}
+		if target < 0 {
+			index := len(merged)
+			set := map[storage.ID]struct{}{report.RecordID: {}}
+			g.first[report.RecordID] = index
+			for _, match := range report.Matches {
+				set[match.ID] = struct{}{}
+				if _, ok := g.first[match.ID]; !ok {
+					g.first[match.ID] = index
+				}
+			}
+			merged = append(merged, report)
+			members = append(members, set)
+			continue
+		}
+		into, set := &merged[target], members[target]
+		add := func(record storage.Record) {
+			if _, ok := set[record.ID]; ok {
+				return
+			}
+			into.Matches = append(into.Matches, record)
+			set[record.ID] = struct{}{}
+			if i, ok := g.first[record.ID]; !ok || target < i {
+				g.first[record.ID] = target
+			}
+		}
+		add(storage.Record{ID: report.RecordID, Object: report.Object})
+		for _, match := range report.Matches {
+			add(match)
+		}
+	}
+	return merged
 }

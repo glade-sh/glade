@@ -37,3 +37,25 @@ func BenchmarkStrictHeapLoop(b *testing.B) {
 		}
 	}
 }
+
+// BenchmarkStrictHeapListAppend builds a 3,000-record list in strict mode.
+func BenchmarkStrictHeapListAppend(b *testing.B) {
+	heapVerifyAgainstFullWalk = false
+	for i := 0; i < b.N; i++ {
+		runStrictListAppend(b, 3000)
+	}
+}
+
+// BenchmarkPermissiveHeapListAppend is the permissive twin of
+// BenchmarkStrictHeapListAppend.
+func BenchmarkPermissiveHeapListAppend(b *testing.B) {
+	program, err := CompileAnonymous(strictListAppendSource(3000))
+	if err != nil {
+		b.Fatal(err)
+	}
+	for i := 0; i < b.N; i++ {
+		if _, err := New(nil).Execute(program); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

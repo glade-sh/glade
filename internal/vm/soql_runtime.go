@@ -6,10 +6,12 @@ import (
 	"math/big"
 	"path"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/project"
@@ -150,6 +152,10 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	if err := vm.validateSOQLSelection(query, false); err != nil {
 		return nil, err
 	}
+	// NATIVE nested child subquery depth apex_release_gates/org.tsv anonymous 62.0 67.0
+	if soqlChildQueryDepth(query) > 4 {
+		return nil, newExceptionError("System.QueryException", "SOQL statements cannot query aggregate relationships more than 4 level(s) away from the root entity object.")
+	}
 	// R007-R012/R062: OFFSET query handles contain no records. Ordinary SOQL
 	// still paginates normally. Validation above retains its existing errors.
 	if accounting != soqlOrdinaryAccounting && query.HasOffset {
@@ -208,8 +214,10 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			return nil, err
 		}
 		// A child relationship selection spends the
-		// aggregate-query budget even when the parent query returns no rows.
-		for range query.ChildQueries {
+		// aggregate-query budget even when the parent query returns no rows,
+		// and so does each child nested inside another child.
+		// NATIVE nested child subquery aggregate count apex_release_gates/org.tsv anonymous 62.0 67.0
+		for range soqlChildQueryCount(query) {
 			if err := vm.incrementLimit("aggregateQueries", 1); err != nil {
 				return nil, err
 			}
@@ -2172,6 +2180,18 @@ func (vm *VM) testSetCreatedDate(args []Value) (Value, error) {
 	return Null, newExceptionError("DmlException", "record not found: "+idText)
 }
 
+// soslParameterAccessLevel tags an AccessLevel passed as a Search.query or
+// Search.find argument; its denial text differs from a WITH clause.
+func soslParameterAccessLevel(level Value) Value {
+	fields := make(map[string]Value, len(level.Fields)+1)
+	for name, value := range level.Fields {
+		fields[name] = value
+	}
+	fields["soslParameter"] = Bool(true)
+	level.Fields = fields
+	return level
+}
+
 func (vm *VM) searchQuery(args []Value) (Value, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return Null, fmt.Errorf("Search.query expects query String and optional access level")
@@ -2190,7 +2210,7 @@ func (vm *VM) searchQuery(args []Value) (Value, error) {
 		if args[1].Kind == ValueNull {
 			return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
 		}
-		accessLevel = args[1]
+		accessLevel = soslParameterAccessLevel(args[1])
 		if err := vm.validateExplicitAccessLevel(accessLevel); err != nil {
 			return Null, err
 		}
@@ -2216,7 +2236,7 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 		if args[1].Kind == ValueNull {
 			return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
 		}
-		accessLevel = args[1]
+		accessLevel = soslParameterAccessLevel(args[1])
 		if err := vm.validateExplicitAccessLevel(accessLevel); err != nil {
 			return Null, err
 		}
@@ -2254,7 +2274,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 			// to generate snippets (native APIs 62/67 return null per field).
 			snippet, snippets := soslSnippetsForRecord(record, query.WithSnippet && !vm.fixedSearchResultsSet, query.Terms)
 			row.Fields["snippet"] = String(snippet)
-			if vm.fixedSearchResultsSet {
+			if vm.fixedSearchResultsSet || soslObjectHasNoSnippets(group.ObjectName) {
+				// Account and Contact results carry no default snippet, with or
+				// without WITH SNIPPET (sosl_search_matrix wi_*_find, snip_*).
 				row.Fields["snippet"] = Null
 			}
 			row.Fields["snippets"] = snippets
@@ -2309,6 +2331,15 @@ func (vm *VM) searchSuggest(args []Value) (Value, error) {
 		return Null, newExceptionError("SearchException", "limit must be greater than or equal to 1")
 	}
 	results := Object("Search.SuggestionResults")
+	// Native sharing_access_extra u3_07 and sharing_access_follow f_suggest
+	// rows (administrator and Standard User, with and without an access level,
+	// APIs 62.0-68.0): records inserted by a test are not suggested. Fixed
+	// search results keep their existing route.
+	if vm.testContext != nil && !vm.fixedSearchResultsSet {
+		results.Fields["suggestionResults"] = typedList("List<Search.SuggestionResult>")
+		results.Fields["hasMoreResults"] = Bool(false)
+		return results, nil
+	}
 	suggestions, err := vm.searchSuggestionRows(args[0].Text, args[1].Text, args[2], accessLevel)
 	if err != nil {
 		return Null, err
@@ -2484,10 +2515,21 @@ func (vm *VM) prepareSOSLSearch(raw string, inline bool, accessLevel Value) (str
 	if err := soslMultiObjectOffsetError(query); err != nil {
 		return "", query, Null, err
 	}
-	if vm.testContext == nil && (len([]rune(query.SearchText)) < 2 || query.Expression != nil && query.Expression.Operator == "INVALID_SEARCH_TERM") {
+	if vm.testContext == nil && (soslSearchTextTooShort(query.SearchText) || query.Expression != nil && query.Expression.Operator == "INVALID_SEARCH_TERM") {
 		return "", query, Null, newExceptionError("SearchException", "search term must be longer than one character: "+query.SearchText)
 	}
 	return queryText, query, accessLevel, nil
+}
+
+// soslSearchTextTooShort applies the two-character minimum to the text left
+// after leading and trailing wildcards (sosl_validation, sosl_search_matrix
+// wc_*). A single Han character is accepted (wc_cjk).
+func soslSearchTextTooShort(text string) bool {
+	core := []rune(strings.Trim(text, "*?"))
+	if len(core) >= 2 {
+		return false
+	}
+	return !(len(core) == 1 && unicode.Is(unicode.Han, core[0]))
 }
 
 func (vm *VM) executeSOSLSource(raw string, execResult *Result, accessLevel Value, inline bool) (Value, error) {
@@ -2539,10 +2581,12 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		var virtualRecords map[storage.ID]storage.Record
 		if vm.Org != nil {
 			matcherBoundary := query.MatchUnsupported
-			if query.SpellCorrection != nil && *query.SpellCorrection {
-				matcherBoundary = "SOSL WITH SPELL_CORRECTION local runtime"
+			expression := query.Expression
+			if strings.EqualFold(specObjectName, "Document") {
+				// Alone or beside another object (sosl_search_matrix op_doc, doc_*).
+				expression = sosl.ImplicitOr(expression)
 			}
-			records, err := vm.soslRecordsForSpec(spec, specObjectName, query.Terms, query.Expression, query.Scope, query.PricebookID, accessLevel, matcherBoundary)
+			records, err := vm.soslRecordsForSpec(spec, specObjectName, query.Terms, expression, query.Scope, query.PricebookID, accessLevel, matcherBoundary)
 			if err != nil {
 				return nil, err
 			}
@@ -2579,9 +2623,6 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		// do not establish the index's highlight or target-length formatting.
 		if len(rows.List) > 0 && query.WithHighlight {
 			return nil, unsupportedCallError("SOSL WITH HIGHLIGHT result formatting")
-		}
-		if len(rows.List) > 0 && query.SnippetTargetLength && !vm.fixedSearchResultsSet {
-			return nil, unsupportedCallError("SOSL WITH SNIPPET TARGET_LENGTH result formatting")
 		}
 		groups = append(groups, soslResultGroup{ObjectName: specObjectName, Rows: rows, VirtualRecords: virtualRecords})
 	}
@@ -2632,7 +2673,7 @@ func (vm *VM) soslRecordsForSpec(spec sosl.ReturningObject, objectName string, p
 	if !ok {
 		return nil, nil
 	}
-	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel); err != nil {
+	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel, false); err != nil {
 		var inaccessible soslFieldInaccessibleError
 		if errors.As(err, &inaccessible) {
 			// api67_sosl_locator_matching rows: the field check fires only when
@@ -2768,12 +2809,21 @@ type soslFieldInaccessibleError struct{ message string }
 
 func (e soslFieldInaccessibleError) Error() string { return e.message }
 
-func (vm *VM) enforceSOSLAccess(objectName string, spec sosl.ReturningObject, accessLevel Value) error {
+func (vm *VM) enforceSOSLAccess(objectName string, spec sosl.ReturningObject, accessLevel Value, suggestion bool) error {
 	if databaseAccessLevelSecurityMode(accessLevel) != "USER_MODE" {
 		return nil
 	}
 	permissionSetID := accessLevelPermissionSetID(accessLevel)
 	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
+		if accessLevel.Fields["soslParameter"].Bool {
+			// Search.query(String, AccessLevel) (sosl_istest_edges am_dyn_user).
+			return newExceptionError("QueryException", soslMissingObjectMessage(objectName))
+		}
+		if !suggestion {
+			// A default search at API 67 and WITH USER_MODE deny with a
+			// SecurityException (sosl_istest_edges am_*_default, am_with_user).
+			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
+		}
 		return newExceptionError("QueryException", fmt.Sprintf("sObject type '%s' is not supported by USER_MODE", objectName))
 	}
 	fields := make([]string, 0, len(spec.Fields)+1)
@@ -2831,7 +2881,7 @@ func (vm *VM) soslRecordMatchesExpression(objectName string, record storage.Reco
 	}
 	switch expression.Operator {
 	case "TERM":
-		if expression.Term.NeedsMatcher && !(scope == sosl.SearchScopeName && expression.Term.NameWordGlob) {
+		if expression.Term.NeedsMatcher && !soslTermMatcherSupported(expression.Term, scope) {
 			return false, unsupportedCallError("SOSL wildcard index matching")
 		}
 		return vm.soslRecordMatchesSearchPattern(objectName, record, expression.Term, scope, accessLevel)
@@ -2857,6 +2907,16 @@ func (vm *VM) soslRecordMatchesExpression(objectName string, record storage.Reco
 	default:
 		return false, unsupportedCallError("SOSL unknown search expression operator")
 	}
+}
+
+// soslTermMatcherSupported lists the wildcard and escape shapes with native
+// rows (sosl_search_matrix wc_* and esc_*). Every other shape stays at the
+// matcher boundary.
+func soslTermMatcherSupported(term sosl.SearchTerm, scope sosl.SearchScope) bool {
+	if term.WordGlobPrefix || term.LeadingStar || term.EscapedLiteral {
+		return true
+	}
+	return term.NameWordGlob && (scope == sosl.SearchScopeName || scope == sosl.SearchScopeAll || scope == "")
 }
 
 func (vm *VM) soslRecordMatchesSearch(objectName string, record storage.Record, patterns []sosl.SearchTerm, scope sosl.SearchScope, accessLevel Value) (bool, error) {
@@ -2895,7 +2955,7 @@ func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.R
 			canonical = field
 		}
 		definition, hasDefinition := object.Definition.Fields[canonical]
-		if !hasDefinition || !soslSearchableField(definition) || !soslFieldMatchesScope(canonical, definition, scope) {
+		if !hasDefinition || !soslSearchableField(definition) || !(soslFieldMatchesScope(canonical, definition, scope) || scope == sosl.SearchScopeName && soslNativeNameScopeField(objectName, canonical)) {
 			continue
 		}
 		if userMode && !vm.currentUserFieldPermissionWithScope(objectName, canonical, "isAccessible", permissionSetID) {
@@ -2936,6 +2996,20 @@ func soslFieldMatchesScope(fieldName string, field storage.Field, scope sosl.Sea
 	}
 }
 
+// soslNativeNameScopeField lists the fields beyond the name fields that IN NAME
+// FIELDS searched in native rows (sosl_search_matrix nf_name, nf_multi).
+func soslNativeNameScopeField(objectName, field string) bool {
+	switch strings.ToLower(objectName) {
+	case "account":
+		return strings.EqualFold(field, "Website") || strings.EqualFold(field, "Site")
+	case "contact":
+		return strings.EqualFold(field, "AssistantName")
+	case "lead":
+		return strings.EqualFold(field, "Company")
+	}
+	return false
+}
+
 func soslIsNameField(fieldName string, field storage.Field) bool {
 	name := strings.ToLower(strings.TrimSpace(fieldName))
 	return name == "name" || name == "firstname" || name == "lastname" || name == "subject" || field.NamePointing
@@ -2955,6 +3029,16 @@ func soslIsPhoneField(fieldName string, field storage.Field) bool {
 
 // NAME FIELDS captures establish word matching only on space-separated ASCII names.
 func soslFieldTextMatches(text string, term sosl.SearchTerm, scope sosl.SearchScope) (bool, error) {
+	switch {
+	case term.LeadingStar:
+		return false, nil
+	case term.EscapedLiteral:
+		return soslTokenPhraseMatches(text, term.Text), nil
+	case term.WordGlobPrefix:
+		return soslWordGlobMatches(text, term.Text, true)
+	case term.NameWordGlob && scope != sosl.SearchScopeName:
+		return soslWordGlobMatches(text, term.Text, false)
+	}
 	if text != "" && scope == sosl.SearchScopeName && (term.NameWordGlob || term.Prefix && soslNameWord.MatchString(term.Text)) {
 		if !soslNameWords.MatchString(text) {
 			if term.NameWordGlob {
@@ -3001,6 +3085,50 @@ var (
 	soslNorthAmericanPhone = regexp.MustCompile(`^\+1 \(([0-9]{3})\) ([0-9]{3})-([0-9]{4})$`)
 )
 
+// soslTokens splits text into lower-case letter and digit runs.
+func soslTokens(text string) []string {
+	return strings.FieldsFunc(strings.ToLower(text), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsNumber(r) })
+}
+
+// soslTokenPhraseMatches finds the literal's tokens as consecutive whole tokens.
+func soslTokenPhraseMatches(text, literal string) bool {
+	want := soslTokens(literal)
+	have := soslTokens(text)
+	if len(want) == 0 {
+		return false
+	}
+	for i := 0; i+len(want) <= len(have); i++ {
+		if slices.Equal(have[i:i+len(want)], want) {
+			return true
+		}
+	}
+	return false
+}
+
+// soslWordGlobMatches matches one ASCII word pattern against each token. An
+// interior * expands to at most two letters and a longer expansion stays at
+// the matcher boundary, like the NAME FIELDS matcher.
+func soslWordGlobMatches(text, pattern string, prefix bool) (bool, error) {
+	pattern = strings.ToLower(pattern)
+	full := pattern
+	if prefix {
+		full += "*"
+	}
+	for _, word := range soslTokens(text) {
+		matched, _ := path.Match(full, word)
+		if !matched {
+			// A word that continues past a complete match does not match
+			// (sosl_search_matrix wc_qm, wc_mid: Coppers is not returned).
+			continue
+		}
+		if !prefix && strings.Contains(pattern, "*") && len(word)-(len(pattern)-1) > 2 {
+			return false, unsupportedCallError("SOSL wildcard index matching")
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
 func soslTextMatchesPattern(text string, pattern sosl.SearchTerm) bool {
 	text = strings.TrimSpace(text)
 	if text == "" {
@@ -3028,7 +3156,7 @@ func (vm *VM) searchSuggestionRows(query, objectName string, option Value, acces
 		return out, nil
 	}
 	spec := sosl.ReturningObject{Object: objectName, Fields: []sosl.SelectExpr{{Field: "Id"}, {Field: "Name"}}}
-	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel); err != nil {
+	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel, true); err != nil {
 		var inaccessible soslFieldInaccessibleError
 		if errors.As(err, &inaccessible) {
 			return Null, newExceptionError("QueryException", inaccessible.Error())
@@ -3084,7 +3212,7 @@ func (vm *VM) soslRecordMatchesSuggestion(objectName string, record storage.Reco
 
 func soslSnippetsForRecord(record storage.Record, enabled bool, terms []sosl.SearchTerm) (string, Value) {
 	snippets := typedMap("Map<String,String>")
-	if !enabled {
+	if !enabled || soslObjectHasNoSnippets(record.Object) {
 		return "", snippets
 	}
 	fields := make([]string, 0, len(record.Fields))
@@ -3110,6 +3238,15 @@ func soslSnippetsForRecord(record storage.Record, enabled bool, terms []sosl.Sea
 		}
 	}
 	return "", snippets
+}
+
+// soslObjectHasNoSnippets lists the objects whose results returned null from
+// getSnippet() and getSnippet(field) for every matched field
+// (sosl_search_matrix sw_snippet_field, snip_acct_fields, snip_contact). Other
+// objects keep the local snippet text; a Case snippet is marked up natively
+// (snip_case) and that markup is not modeled.
+func soslObjectHasNoSnippets(objectName string) bool {
+	return strings.EqualFold(objectName, "Account") || strings.EqualFold(objectName, "Contact")
 }
 
 func soslSnippetMatches(text string, terms []sosl.SearchTerm) bool {
@@ -4004,6 +4141,14 @@ func (vm *VM) enforceSOQLSecurityScanned(query soql.Query, permissionSetID strin
 		if vm.userModeInaccessibleSecureDenial(query, permissionSetID) || vm.api62DynamicSecurePermissionDenial(query, permissionSetID) {
 			return newExceptionError("QueryException", "Insufficient permissions: secure query included inaccessible field")
 		}
+		// Native C137_201/243 (APIs 59.0-68.0) and sharing_access_modes
+		// d6_*_cntu rows (62.0-68.0), in runAs: a static COUNT() WITH
+		// USER_MODE on an unreadable object raises the entity denial. The
+		// Database.countQuery AccessLevel overload keeps QueryException
+		// (C137_205/247).
+		if mode == "USER_MODE" && permissionSetID == "" && vm.staticSOQLQuery && vm.dynamicSOQLBindRoute == "" && vm.explicitRunAsUserMode() && runAsCountDenialShape(query) {
+			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
+		}
 		if mode == "USER_MODE" && permissionSetID == "" {
 			if scanUserMode {
 				if err, _ := vm.userModeAccessScanError(query, objectName, true); err != nil {
@@ -4853,13 +4998,38 @@ func (vm *VM) securityFieldNames(objectName, expression, mode string, projection
 }
 
 func soqlLimitRows(result soql.Result) int {
-	rows := len(result.Records)
-	for _, record := range result.Records {
+	return soqlRecordRows(result.Records)
+}
+
+// soqlRecordRows counts the rows at every nesting depth of a child subquery.
+func soqlRecordRows(records []storage.Record) int {
+	rows := len(records)
+	for _, record := range records {
 		for _, children := range record.Children {
-			rows += len(children)
+			rows += soqlRecordRows(children)
 		}
 	}
 	return rows
+}
+
+// soqlChildQueryCount counts the child subqueries at every nesting depth.
+func soqlChildQueryCount(query soql.Query) int {
+	count := 0
+	for _, child := range query.ChildQueries {
+		count += 1 + soqlChildQueryCount(child.Query)
+	}
+	return count
+}
+
+// soqlChildQueryDepth is the number of child levels below the root query.
+func soqlChildQueryDepth(query soql.Query) int {
+	depth := 0
+	for _, child := range query.ChildQueries {
+		if d := 1 + soqlChildQueryDepth(child.Query); d > depth {
+			depth = d
+		}
+	}
+	return depth
 }
 
 func aggregateCount(value Value) (Value, bool) {
@@ -5314,6 +5484,9 @@ func (vm *VM) executeSOQLWithAccessLevel(raw string, accessLevel Value, execResu
 	return out, nil
 }
 func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
+	saved := vm.staticSOQLQuery
+	vm.staticSOQLQuery = true
+	defer func() { vm.staticSOQLQuery = saved }()
 	value, err := vm.executeSOQL(raw, execResult)
 	if err != nil {
 		if value, err = vm.namedApexReferenceStaticQuery(raw, err); err != nil {
@@ -5434,6 +5607,9 @@ func (vm *VM) soqlResultObjectName(raw string) string {
 	return objectName
 }
 func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, error) {
+	saved := vm.staticSOQLQuery
+	vm.staticSOQLQuery = true
+	defer func() { vm.staticSOQLQuery = saved }()
 	value, err := vm.executeSOQLQuery(raw, result)
 	if err != nil {
 		if value, err = vm.namedApexReferenceStaticQuery(raw, err); err != nil {

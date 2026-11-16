@@ -41,14 +41,8 @@ func TestCompanyNameNativeConformance(t *testing.T) {
 	// generalized shape. Preserve the earlier decisions for these eight
 	// directed pairs: company_name_fit/org.tsv:68 and
 	// duplicate_fuzzy_matching/org.tsv:90,431.
-	//
-	// B3_cw1 "jg" is a plain name with a different last word against a stored
-	// " - " suffix. The panel matches it (94) and rejects four other plain
-	// names that score the same against that suffix, so no captured variable
-	// separates them yet. It keeps the prior decision.
 	residuals := map[string]map[string]bool{
 		"B3_ca1": {"lm": true, "lo": true, "ml": true, "mo": true, "no": true, "ol": true, "om": true, "on": true},
-		"B3_cw1": {"jg": true},
 	}
 	for _, row := range rows[1:] {
 		if row[0] != "62.0" || row[1] != "istest" || row[2] != "1" {

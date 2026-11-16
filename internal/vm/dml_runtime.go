@@ -302,6 +302,17 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 				return Null, err
 			}
 		}
+		if ordinaryDatabaseCall && isUserModeAccessLevel(accessLevel) && accessLevelPermissionSetID(accessLevel) == "" && externalIDField == "" {
+			if !allOrNone {
+				if failures, handled := vm.explicitRunAsPartialFailures(op, args[0]); handled {
+					return fieldKeyDMLResultsValue(op, args[0], failures), nil
+				}
+			} else if op != "upsert" {
+				if err := vm.explicitRunAsObjectDMLDenial(op, args[0]); err != nil {
+					return Null, err
+				}
+			}
+		}
 		if err := vm.userModeUpsertKeyFieldDenial(op, args[0], externalIDField, accessLevelPermissionSetID(accessLevel)); err != nil {
 			return Null, err
 		}
@@ -421,7 +432,10 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
 	dmlOptions.ExplicitUserMode = isUserModeAccessLevel(accessLevel)
 	dmlOptions.ExplicitUserModePartialRecord = dmlOptions.ExplicitUserMode && !allOrNone && args[0].Kind == ValueObject
+	savedCaptured := vm.runAsRecordAccessCaptured
+	vm.runAsRecordAccessCaptured = isUserModeAccessLevel(accessLevel) || !allOrNone && op == "update" && args[0].Kind == ValueList
 	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode, accessLevelPermissionSetID(accessLevel))
+	vm.runAsRecordAccessCaptured = savedCaptured
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
@@ -442,7 +456,7 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 		if isDatabaseAccessLevelValue(accessLevel) && dmlMode == "SYSTEM_MODE" && externalIDField == "" {
 			accessDenied := false
 			for i := range results {
-				if results[i].Success || results[i].Error != "insufficient access rights on record" {
+				if results[i].Success || results[i].Error != "insufficient access rights on record" && !isRunAsSharingDenialText(results[i].Error) {
 					continue
 				}
 				switch op {
@@ -1746,6 +1760,24 @@ func firstFailureHasRecordID(results []dml.Result) bool {
 	return false
 }
 
+// userModeLegacySecurityExceptionAPI is the pre-58 source API range in which a
+// failed "insert as user" statement raises SecurityException. Native
+// sharing_access_modes gate rows d5_05 (Account without Name, Standard User):
+// SecurityException at 55.0-57.0, DmlException from 58.0.
+func userModeLegacySecurityExceptionAPI(version string) bool {
+	return apexversion.AtLeast(version, 55) && !apexversion.AtLeast(version, 58)
+}
+
+// legacyUserModeSecurityException keeps the DmlException message under the
+// SecurityException type; the legacy exception carries no DML row details.
+func legacyUserModeSecurityException(err error) error {
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) {
+		return err
+	}
+	return newExceptionError("SecurityException", thrown.value.Fields["message"].Text)
+}
+
 func statementDMLException(op string, results []dml.Result, objectTypes []string) error {
 	if op == "update" {
 		for index, result := range results {
@@ -2647,6 +2679,22 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			}()
 		}
 	}
+	if reparentFailures, err := vm.masterDetailReparentFailures(op, records, targets, allOrNone, resolvedMode); err != nil {
+		return nil, err
+	} else if hasDMLFailures(reparentFailures) {
+		if allOrNone {
+			return reparentFailures, nil
+		}
+		records, _, targets = filterDMLInputs(records, nil, targets, reparentFailures)
+		if len(records) == 0 {
+			return reparentFailures, nil
+		}
+		defer func() {
+			if outErr == nil {
+				out = mergeDMLResults(reparentFailures, out)
+			}
+		}()
+	}
 	// In the captured two-master configuration, a user-mode insert needs
 	// read access to both private parents, even when object and field access
 	// allow the operation.
@@ -2717,7 +2765,11 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 				if op == "delete" {
 					code = "INSUFFICIENT_ACCESS_OR_READONLY"
 				}
-				failures[i] = dml.Result{ID: record.ID, Error: "insufficient access rights on record", StatusCode: code}
+				message := "insufficient access rights on record"
+				if text, ok := vm.runAsSharingDenialText(op, record.Object, stored.ID); ok {
+					message = text
+				}
+				failures[i] = dml.Result{ID: record.ID, Error: message, StatusCode: code}
 			}
 		}
 		if hasDMLFailures(failures) {
@@ -6866,6 +6918,16 @@ func (vm *VM) chargeAccountPermissionDML(rows int) error {
 	return vm.incrementLimit("cpuTime", rows)
 }
 
+// allAccountRecords reports a non-empty record set of Account SObjects only.
+func allAccountRecords(vm *VM, records []Value) bool {
+	for _, record := range records {
+		if record.Kind != ValueObject || !strings.EqualFold(vm.canonicalSObjectValueType(record), "Account") {
+			return false
+		}
+	}
+	return len(records) > 0
+}
+
 func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode ir.DMLMode, result *Result) error {
 	if mode == ir.DMLModeSystem {
 		if err := vm.validateExplicitAccessLevel(accessLevelValue("SYSTEM_MODE")); err != nil {
@@ -6964,6 +7026,17 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		}
 	}
 	if dmlMode == "USER_MODE" {
+		// A selector-free Account upsert with person accounts enabled keeps the
+		// Account branch below, which charges the statement and its rows
+		// before the field-access DmlException (native person_account_followups
+		// review/permissions.tsv and review2/permissions.tsv readonly rows,
+		// APIs 62.0 and 67.0: |1|1 scalar, |1|2 list).
+		if mode == ir.DMLModeUser && (externalIDField == "" || strings.EqualFold(externalIDField, "Id")) &&
+			!(op == "upsert" && vm.accountPersonAccountsEnabled() && allAccountRecords(vm, dmlAccessRecords(value))) {
+			if err := vm.explicitRunAsObjectDMLDenial(op, value); err != nil {
+				return err
+			}
+		}
 		if err := vm.userModeUpsertKeyFieldDenial(op, value, externalIDField, ""); err != nil {
 			return err
 		}
@@ -7048,7 +7121,10 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		vm.testContext != nil && vm.testContext.RunAsDepth > 0 && !vm.runAsSecureDefaults() && vm.objectPermissionsDeleteInput(value) {
 		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, false, true, dmlMode)
 	} else {
+		savedCaptured := vm.runAsRecordAccessCaptured
+		vm.runAsRecordAccessCaptured = mode == ir.DMLModeUser || op == "delete" && value.Kind == ValueObject
 		results, err = vm.applyDMLWithRecordAccess(op, value, true, externalIDField, dmlOptions, result, dmlMode)
+		vm.runAsRecordAccessCaptured = savedCaptured
 	}
 	if err != nil {
 		return vm.flowCoreStatementInsertError(op, value, err)
@@ -7059,7 +7135,11 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
 			vm.addVisualforceDMLPageMessages(results)
-			return statementDMLException(op, results, vm.dmlExceptionObjectTypes(value))
+			err := statementDMLException(op, results, vm.dmlExceptionObjectTypes(value))
+			if mode == ir.DMLModeUser && op == "insert" && dmlResult.StatusCode == "REQUIRED_FIELD_MISSING" && userModeLegacySecurityExceptionAPI(vm.currentSourceExecutionPolicy().APIVersion) {
+				return legacyUserModeSecurityException(err)
+			}
+			return err
 		}
 	}
 	if expr.Kind == ir.ExprVariable {

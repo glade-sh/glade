@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Access modes under `System.runAs`.** Captured explicit `USER_MODE` DML on a readable object without the operation's permission now raises `DML operation <OP> not allowed` (or the field-access `DmlException` for upsert) and returns failed rows for partial Database calls. User-mode DML on a record hidden by sharing reports the platform's row error instead of a `SecurityException`. Each `runAs(User)` block counts one DML statement. Captured `COUNT()` queries on unreadable objects, clause and `AccessLevel` conflicts, `stripInaccessible` root and relationship results, user-mode undelete without the delete permission, inherited sharing in Batchable, `@future` and finalizer callbacks, and `Search.suggest` in tests follow native rows. User-mode DML on an inaccessible custom field raises `DmlException` from source API 55.0.
+
 - **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets. API 67 default-mode administrator DML and dynamic queries honor captured access to newly deployed Account Text fields.
 
 - Default Developer eager orgs omit three standard objects whose absence was observed in native lookup and query results.
@@ -10,9 +12,11 @@
 
 - **Visualforce test startup.** Test runs keep the digests of unchanged Visualforce input files in the project's test cache and reuse them on the next run. A missing, damaged or untrusted cache file is ignored and rebuilt, and the disk cache setting that turns off the runtime cache also turns this one off.
 
+- **Strict-mode list building runs in linear time.** With `--limit-mode strict`, a loop that adds records or scalars to a local list no longer re-measures the whole heap after every statement, so building 10,000 records takes about as long as in permissive mode instead of growing with the square of the list size. The heap count, the statement where a heap LimitException is thrown and its message are unchanged. A loop whose body calls methods or reads fields still takes the full heap walk.
+
 - **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 
-- Apex reports the captured line-break errors beside a receiver dot in more places: loop, do-while, else-if and switch headers, member headers of nested classes, local methods in anonymous code, and trigger loops. Only the captured forms change; other code keeps its earlier diagnostics.
+- **Line-break errors.** Apex reports the captured line-break errors beside a receiver dot in more places: loop, do-while, else-if and switch headers, member headers of nested classes, local methods in anonymous code, and trigger loops. Only the captured forms change; other code keeps its earlier diagnostics.
 
 - **Duplicate rule match keys.** Match keys follow the matching rule. A custom rule that pairs a fuzzy First Name with a fuzzy Last Name keys the first name on its initial, and the standard Contact and Lead rules score both names without a key when the email addresses agree, so initials, phonetic first names and spaced surnames such as `Mc Allen` now match as they do in Salesforce.
 
@@ -20,11 +24,19 @@
 
 - **Duplicate matching, Title and First Name.** Fuzzy Title matching covers word order, stop words, punctuation and word subsets from native panels, and the First Name Name Variant table gains the pairs those panels confirm (`docs/DUPLICATE_FUZZY_MATCHING.md`).
 
-- **Company duplicate matching.** Custom Company Name rules score numbered names, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
+- **Company duplicate matching.** Custom Company Name rules score numbered names and glued digit runs, first words that differ past the match key, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
 
 - **Custom street matching.** Fuzzy Street rules follow four native captures at APIs 62.0 and 67.0: the match key (number and name, street words such as Park or Plaza left out), a match at edit similarity 87 whatever the section score, line breaks, number signs, hyphens, letters and directionals after the number, PO boxes, leading suites and number words. Standard rules are unchanged.
 
 - **Duplicate matching.** Between two plain ASCII values, City rules count inner spaces as typed. Custom ZIP rules also split the code at a period or slash. The standard Account rule accepts the captured ZIP extension shapes, and its ZIP item matches a value that is not a ZIP code only as typed.
+
+- Custom Last Name duplicate matching recognizes more names with multiple keyboard substitutions or trailing characters, based on native captures.
+
+- **Governor limits and SOSL match more captured behavior.** Limit exhaustion text, `Limits.getFindSimilarCalls`, the savepoint and `System.runAs` counters, test-boundary savepoints, the trigger depth failure, async aggregate and finalizer caps, SOSL wildcard, escape and `NAME FIELDS` matching, and the `WITH SPELL_CORRECTION`, `WITH SNIPPET(target_length)` and `WITH METADATA` clauses follow native rows at APIs 62.0 and 67.0. Other wildcard shapes and `WITH NETWORK` still report that they are unsupported, and a nested subquery in a SOSL `WHERE` clause is still rejected.
+
+- **Duplicate rule behavior.** `Datacloud.MatchRecord.getFieldDiffs()` lists the compared fields as Same, Different or Null for the builtin Account, Contact and Lead rules and for custom rules of Exact items. `FindDuplicates` and `FindDuplicatesByIds` throw a `HandledException` for a custom object with no active duplicate rule, and for Opportunity by id. Exact items compare the first 99 characters. A custom rule's `objectMapping` matches another object's fields. An Exact MatchBlanks item gates updates when its value changes. Allow+Report commits one record set for records that match each other and records an update into a match for such a rule. Within a set, Glade lists the matches enforcement found first and then the records inserted earlier by the same statement; this order is a design choice, because no native row pins the order inside a set. A record inserted as an allowed duplicate is compared with its insert-time values when it is updated again in the same transaction, so moving back to them saves, as it does natively. Other records keep the stored-value comparison, which no native row covers. An empty custom-object result reports a stable 01I id as its entity type, as the platform reports the object's definition id. The fuzzy confidence scores behind some field differences are not modeled yet.
+
+- **Apex release-note gates.** Captured rows now drive several API 62 to 67 behaviors: exception JSON stops at API 63, scheduled jobs pause and resume, multiline strings strip common indentation and read escapes, `String.template` follows the platform messages, Shift-JIS and Windows-31J are separate charsets, `getRelationshipOrder` answers for standard master-detail fields, updates that carry a non-reparentable master follow the API 63 and user-mode rules, nested child subqueries count at every depth, exception classes may override `equals` and `hashCode`, and `OrgLimits` no longer lists the elastic async entries that a default org does not have. At API 67.0 this includes a user-visible change: under the default user mode, `update` fails for a record that carries a non-reparentable master-detail field, even when the value is unchanged (for example a queried record that selected the field, or a record updated right after its insert); `update as system` is not affected. Some rows stay unmatched; see `internal/apextest/apex_release_gates_native_conformance_test.go`.
 
 ## v0.3.10
 
@@ -69,6 +81,7 @@ v0.3.10 improves Apex compatibility, language server diagnostics, debugger respo
 - **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
 
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
+
 - **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
 
 ### Known issues

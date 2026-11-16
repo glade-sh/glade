@@ -320,7 +320,28 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if lastNameWordKey(x) != lastNameWordKey(y) {
 		return false, 0
 	}
-	return lastNameAlgorithms(x, y)
+	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+		return true, 100
+	}
+	length, substitutions, trailing := keyboardNameShape(x, y)
+	if substitutions == 1 && trailing == 0 {
+		// A single substitution keeps the base scorer.
+		return lastNameKeyboard(x, y)
+	}
+	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
+		return matched, confidence
+	}
+	// lastNameKeyboard without its terminal swap step, which did not apply.
+	base, ok := keyboardSimilarity(x, y)
+	matched, confidence := ok && base >= 90, averageWith100(base)
+	if matched || !keyboardPanelCell(length, substitutions, trailing) {
+		return matched, confidence
+	}
+	if score, ok := keyboardDistance(x, y); ok && score >= keyboardFallbackMargin {
+		return true, averageWith100(score)
+	}
+	return matched, confidence
 }
 
 // lastNameAlgorithms scores two folded last names without a match key:
@@ -334,21 +355,107 @@ func lastNameAlgorithms(x, y string) (bool, float64) {
 	return lastNameKeyboard(x, y)
 }
 
+// keyboardPanelShape gates the fallback to the joint shapes the native rows
+// hold. A shape is (length, substitutions, trailing): the longer folded,
+// apostrophe-stripped name in runes, the positional differences, and the
+// unpaired suffix (keyboardNameShape). A shape passes when a captured pair of that
+// shape that reaches the fallback is a native match (keyboardPanelCells). Every
+// other shape keeps the base keyboard result.
+func keyboardPanelShape(a, b string) bool {
+	return keyboardPanelCell(keyboardNameShape(a, b))
+}
+
+// keyboardNameShape is (length, substitutions, trailing) of two prepared names.
+func keyboardNameShape(a, b string) (length, substitutions, trailing int) {
+	na, nb := 0, 0
+	for len(a) > 0 && len(b) > 0 {
+		ra, sa := utf8.DecodeRuneInString(a)
+		rb, sb := utf8.DecodeRuneInString(b)
+		if ra != rb {
+			substitutions++
+		}
+		na++
+		nb++
+		a, b = a[sa:], b[sb:]
+	}
+	na += utf8.RuneCountInString(a)
+	nb += utf8.RuneCountInString(b)
+	if nb > na {
+		return nb, substitutions, nb - na
+	}
+	return na, substitutions, na - nb
+}
+
+func keyboardPanelCell(length, substitutions, trailing int) bool {
+	if length >= len(keyboardPanelCells) || substitutions >= len(keyboardPanelCells[length]) {
+		return false
+	}
+	return keyboardPanelCells[length][substitutions]>>uint(trailing)&1 == 1
+}
+
+// keyboardPanelCells[length][substitutions] has bit t set when a captured
+// pair with t trailing characters reaches the fallback and native matches it:
+// fuzzy_name_keys/org.tsv:10-25,122-169 (cases.json supplies the panel
+// values) and the LastName rows of duplicate_fuzzy_matching/org.tsv.
+// TestLastNameKeyboardPanelCells rebuilds it from the native rows.
+var keyboardPanelCells = [16][9]uint16{
+	4:  {0x0000, 0x0002, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	5:  {0x0000, 0x0002, 0x0002, 0x0000, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	6:  {0x0000, 0x0006, 0x0002, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	7:  {0x0000, 0x0006, 0x0007, 0x0003, 0x0003, 0x0000, 0x0000, 0x0000, 0x0000},
+	8:  {0x0008, 0x0006, 0x0006, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	9:  {0x0008, 0x000e, 0x0006, 0x0007, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	10: {0x0018, 0x000e, 0x0002, 0x000b, 0x0003, 0x0000, 0x0000, 0x0000, 0x0000},
+	11: {0x0018, 0x0006, 0x0006, 0x0006, 0x0004, 0x0000, 0x0000, 0x0000, 0x0000},
+	12: {0x0018, 0x000e, 0x000a, 0x000b, 0x0001, 0x0001, 0x0001, 0x0000, 0x0000},
+	13: {0x0038, 0x0000, 0x0000, 0x0001, 0x0001, 0x0001, 0x0001, 0x0000, 0x0000},
+	14: {0x0030, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	15: {0x0040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+}
+
+// keyboardFallbackMargin is the one score the fallback needs, in every gated
+// shape. The fitted costs are not reliable between 88 and about 92.3 in any
+// shape: native non-matches score as high as 90.84 in substitution shapes
+// (duplicate_fuzzy_panels k1-k3) and 92.26 in extension-only shapes (the
+// blind twin tk01-tk22, "Ingleborn"/"Inglebornxbqm"). The highest captured
+// native non-match of any shape that reaches the fallback, in every panel
+// (fitted, k1-k3, hk1, hk2, tk01-tk22), is 92.2615; the margin sits 0.74
+// above it. A pair scoring below it keeps the base result. The fitted score
+// is a model, so no margin can be proved; TestLastNameKeyboardFallbackMargin
+// pins the highest captured non-match and requires the margin above it, and
+// the second blind panel (bk01 on) was scored with this margin before it was
+// read. Per-shape floors are gone: a floor existed only where an earlier
+// panel happened to hold a counterexample, and a fresh panel found 108 more.
+const keyboardFallbackMargin = 93.0
+
 var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")
 
-// lastNameKeyboard is the Keyboard Distance step of the Last Name method on
-// two folded names whose apostrophes are removed.
+// lastNameKeyboard is the Keyboard Distance step of the standard rules' Last
+// Name on two folded names whose apostrophes are removed. It keeps the costs
+// the standard rows were fitted with (keyboardSimilarity); the custom Last
+// Name method also retains this score for previously accepted pairs.
 func lastNameKeyboard(x, y string) (bool, float64) {
-	if len(x) == 8 && standardIsTerminalSwap(x, y) {
-		a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
-		// Only the captured five-column geometry overrides ordinary membership.
-		if abs(a[0]-b[0]) <= 1 && abs(a[1]-b[1]) == 5 {
-			ordinary, ok := keyboardSimilarity(x, y)
-			return standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
-		}
+	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
+		return matched, confidence
 	}
 	score, ok := keyboardSimilarity(x, y)
 	return ok && score >= 90, averageWith100(score)
+}
+
+// lastNameTerminalSwap decides two eight-letter names whose last two letters
+// are swapped, for the captured five-column geometry only.
+func lastNameTerminalSwap(x, y string) (matched bool, confidence float64, swap bool) {
+	if len(x) != 8 || !standardIsTerminalSwap(x, y) {
+		return false, 0, false
+	}
+	a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
+	// Only the captured five-column geometry overrides ordinary membership.
+	if abs(a[0]-b[0]) > 1 || abs(a[1]-b[1]) != 5 {
+		return false, 0, false
+	}
+	ordinary, ok := keyboardSimilarity(x, y)
+	matched, confidence = standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
+	return matched, confidence, true
 }
 
 // lastNameCode is the whole-name match key of a folded last name, cached by
@@ -658,6 +765,25 @@ var knownStreetSuffixes = map[string]string{
 
 var streetPrefixSuffixes = map[string]bool{"rue": true}
 
+// customStreetSuffixes are the suffix words of the custom Street method: the
+// known suffixes and "Aly"/"Alley". NATIVE fuzzy_street_c8/org.tsv qe1: "12
+// Hazel Aly" and "12 Hazel Alley" are one street (93), as "Ave" and "Avenue"
+// are. The standard rules keep knownStreetSuffixes.
+var customStreetSuffixes = func() map[string]string {
+	m := map[string]string{"aly": "alley", "alley": "alley"}
+	for k, v := range knownStreetSuffixes {
+		m[k] = v
+	}
+	return m
+}()
+
+func streetSuffixes(custom bool) map[string]string {
+	if custom {
+		return customStreetSuffixes
+	}
+	return knownStreetSuffixes
+}
+
 var streetDirections = map[string]bool{"n": true, "s": true, "e": true, "w": true, "ne": true, "nw": true, "se": true, "sw": true, "north": true, "south": true, "east": true, "west": true}
 
 // streetCompassWords are the spelled directionals the custom Street method
@@ -671,10 +797,17 @@ var streetLongDirections = map[string]bool{"northeast": true, "northwest": true,
 var streetOrdinals = map[string]string{"first": "1st", "second": "2nd", "third": "3rd", "fourth": "4th", "fifth": "5th", "sixth": "6th", "seventh": "7th", "eighth": "8th", "ninth": "9th", "tenth": "10th"}
 
 // streetNumberWords are the number words the custom Street method reads as
-// digits. NATIVE fuzzy_street_c5/org.tsv nw1, fuzzy_street_c4 cs1: "200 Ten
-// St" is "200 10 St", "Eleven" is "11", "Twenty" is "20" and "One Calder
-// Plaza" is "1 Calder Plaza"; "Hundred", "Eleventh" and "Twentieth" stay words.
-var streetNumberWords = map[string]string{"one": "1", "ten": "10", "eleven": "11", "twenty": "20"}
+// digits. NATIVE fuzzy_street_c5/org.tsv nw1, fuzzy_street_c4 cs1,
+// fuzzy_street_c8/org.tsv qn1 to qn4: "200 Ten St" is "200 10 St", "One Calder
+// Plaza" is "1 Calder Plaza" and "Suite Five" is "Suite 5": zero to nineteen
+// and the tens from twenty to ninety. "Hundred", "Thousand", "Million",
+// "Eleventh" and "Twentieth" stay words.
+var streetNumberWords = map[string]string{
+	"zero": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8",
+	"nine": "9", "ten": "10", "eleven": "11", "twelve": "12", "thirteen": "13", "fourteen": "14", "fifteen": "15",
+	"sixteen": "16", "seventeen": "17", "eighteen": "18", "nineteen": "19", "twenty": "20", "thirty": "30",
+	"forty": "40", "fifty": "50", "sixty": "60", "seventy": "70", "eighty": "80", "ninety": "90",
+}
 
 var digitsOnly = regexp.MustCompile(`^[0-9]+$`)
 
@@ -682,14 +815,81 @@ var digitsOnly = regexp.MustCompile(`^[0-9]+$`)
 var streetSuiteDesignators = map[string]bool{"suite": true, "ste": true, "apt": true, "unit": true, "rm": true, "bldg": true}
 
 // streetFloorDesignators are more suite designators for the custom Street
-// method under NullNotAllowed. NATIVE duplicate_fuzzy_matching/org.tsv: "600
-// Montgomery St Fl 3" finds "600 Montgomery St" at 89 and "600 Montgomery St
-// Fl 4" at 90. fuzzy_street_c5/org.tsv nf1: "Rd Fl 3", "Rd Floor 3", "Rd Room
-// 3", "Rd Building 3" and "Rd Apartment 3" find the street without the suite;
+// method, under NullNotAllowed and Match Blank Fields alike. NATIVE
+// duplicate_fuzzy_matching/org.tsv: "600 Montgomery St Fl 3" finds "600
+// Montgomery St" at 89 and "600 Montgomery St Fl 4" at 90.
+// fuzzy_street_c5/org.tsv nf1: "Rd Fl 3", "Rd Floor 3", "Rd Room 3", "Rd
+// Building 3" and "Rd Apartment 3" find the street without the suite;
 // "Level", "Lot", "Dept", "No", "PMB", "Stop", "Trailer" and "Space" do not.
-// The MatchBlanks rows keep "200 Park Ave" and "200 Park Ave Fl 5" apart, so
-// that mode keeps the words in the street name.
+// fuzzy_street_c8/org.tsv qg2, qs3: the Match Blank Fields rows read them the
+// same way.
 var streetFloorDesignators = map[string]bool{"fl": true, "floor": true, "room": true, "building": true, "apartment": true}
+
+// streetCustomSuiteValue reports a suite value of the custom Street method: a
+// number, a number with one letter, one letter, or a letter with a number.
+// NATIVE fuzzy_street_c8/org.tsv qs1, qs2: "Suite 5", "5A", "A", "A5", "12B"
+// and "Five" split; "5th", "1st", "21st", "5 5", "5 B" and "5 Rear" do not.
+func streetCustomSuiteValue(w string) bool {
+	if w == "" || streetDirections[w] {
+		return false
+	}
+	isDigit := func(c byte) bool { return c >= '0' && c <= '9' }
+	isLetter := func(c byte) bool { return c >= 'a' && c <= 'z' }
+	allDigits := func(t string) bool {
+		if t == "" {
+			return false
+		}
+		for i := 0; i < len(t); i++ {
+			if !isDigit(t[i]) {
+				return false
+			}
+		}
+		return true
+	}
+	n := len(w)
+	switch {
+	case allDigits(w): // 5
+		return true
+	case n == 1: // A
+		return isLetter(w[0])
+	case isLetter(w[n-1]) && allDigits(w[:n-1]): // 5A
+		return true
+	case isLetter(w[0]) && allDigits(w[1:]): // A5
+		return true
+	case n >= 3 && w[n-2] == '-' && isLetter(w[n-1]) && allDigits(w[:n-2]): // 5-A
+		return true
+	case n >= 3 && w[1] == '-' && isLetter(w[0]) && allDigits(w[2:]): // A-5
+		return true
+	}
+	return false
+}
+
+// streetDigitBeforeLast reports a word with a digit that is not the last word.
+func streetDigitBeforeLast(words []string) bool {
+	for i := 0; i+1 < len(words); i++ {
+		if strings.ContainsAny(words[i], "0123456789") {
+			return true
+		}
+	}
+	return false
+}
+
+// streetCustomTail reports the words after a suffix that leave it a suffix in
+// the custom Street method: nothing, a directional, or a suite.
+func streetCustomTail(rest []string) bool {
+	if len(rest) > 0 && (streetDirections[rest[0]] || streetLongDirections[rest[0]]) {
+		rest = rest[1:]
+	}
+	switch len(rest) {
+	case 0:
+		return true
+	case 1:
+		return streetCustomSuiteValue(rest[0])
+	case 2:
+		return (streetSuiteDesignators[rest[0]] || streetFloorDesignators[rest[0]]) && streetCustomSuiteValue(rest[1])
+	}
+	return false
+}
 
 // streetSuiteToken reports a trailing token that is a suite value: a number,
 // a number with letters ("2B") or a single letter that is not a direction.
@@ -719,15 +919,35 @@ func streetClean(s string) string { return streetCleanFor(s, false) }
 var (
 	streetBreakReplacer = strings.NewReplacer(",\r\n", "", ",\n", "", ",\r", "", "\r\n", "", "\n", "", "\r", "")
 	streetPunctReplacer = strings.NewReplacer(",", " ", ".", "", "#", "", "/", "", ":", "")
+	// streetKeyBreakReplacer reads a line break as a word separator
+	// (streetKeyClean); streetSharedPunctReplacer is the punctuation step of
+	// the shared cleaning. Both are built once: a duplicate scan cleans two
+	// streets for every stored record.
+	streetKeyBreakReplacer    = strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ")
+	streetSharedPunctReplacer = strings.NewReplacer(",", " ", ".", "", "#", " ")
 )
 
 func streetCleanFor(s string, custom bool) string {
+	return streetCleanBreaks(s, custom, true)
+}
+
+// streetKeyClean is the custom cleaning with a line break read as a word
+// separator, which is how the match key reads the address. NATIVE
+// fuzzy_street_c8: "Calder Rd Suite 200" and "Calder Rd\nSuite 200" share a
+// key although the break is deleted when the street is scored.
+func streetKeyClean(s string) string { return streetCleanBreaks(s, true, false) }
+
+func streetCleanBreaks(s string, custom, deleteBreaks bool) string {
 	s = strings.ToLower(s)
 	if custom {
 		if strings.ContainsAny(s, "\r\n") {
-			s = streetBreakReplacer.Replace(s)
+			if deleteBreaks {
+				s = streetBreakReplacer.Replace(s)
+			} else {
+				s = streetKeyBreakReplacer.Replace(s)
+			}
 		}
-		words := strings.Fields(streetPunctReplacer.Replace(s))
+		words := strings.Fields(streetPunctReplacer.Replace(streetFoldASCII(s)))
 		for i, w := range words {
 			if n, ok := streetNumberWords[w]; ok {
 				words[i] = n
@@ -738,9 +958,37 @@ func streetCleanFor(s string, custom bool) string {
 	return streetCleanWords(s, true)
 }
 
+// streetFoldASCII reads the accented letters of a custom Street address as
+// their base letters and deletes every other character outside ASCII that is
+// not white space. NATIVE fuzzy_street_c8/org.tsv qh1, qh2, qm1, qd1, qd2:
+// "Borüden" is "Boruden" (the same for ö, ä, é, è, ñ, ç, å, ê, í and the
+// capitals); ß, ø, æ, ł, đ, œ, þ, ð, я, α, 中 and the signs –, ’, ° and € are
+// deleted: "Fußweg 5" is "Fuweg 5" and "Hauptstraße Süd" scores as
+// "Hauptstrae Sud". The text is lower case.
+func streetFoldASCII(s string) string {
+	ascii := true
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			ascii = false
+			break
+		}
+	}
+	if ascii {
+		return s
+	}
+	var out []rune
+	for _, r := range stripAccents(s) {
+		if r >= 0x80 && !unicode.IsSpace(r) {
+			continue
+		}
+		out = append(out, r)
+	}
+	return string(out)
+}
+
 func streetCleanWords(s string, hash bool) string {
 	if hash {
-		s = strings.NewReplacer(",", " ", ".", "", "#", " ").Replace(s)
+		s = streetSharedPunctReplacer.Replace(s)
 	}
 	words := strings.Fields(s)
 	for i, w := range words {
@@ -768,7 +1016,7 @@ func isAlphaWord(w string) bool {
 // directional (dropped) or the suite, whose designator word is dropped. With
 // no known suffix a trailing number is the suite and a trailing directional
 // is dropped.
-func parseStreet(s string) streetParts { return parseStreetFor(s, false, false) }
+func parseStreet(s string) streetParts { return parseStreetFor(s, false) }
 
 var streetPOBox = regexp.MustCompile(`^p ?o ?box ([0-9]+)$`)
 
@@ -778,7 +1026,7 @@ var streetPOBox = regexp.MustCompile(`^p ?o ?box ([0-9]+)$`)
 // letters still make a street number.
 var streetGluedNumber = regexp.MustCompile(`^[0-9]+[a-z]{3,}$`)
 
-func parseStreetFor(s string, custom, floors bool) streetParts {
+func parseStreetFor(s string, custom bool) streetParts {
 	var p streetParts
 	cleaned := streetCleanFor(s, custom)
 	if custom {
@@ -793,7 +1041,15 @@ func parseStreetFor(s string, custom, floors bool) streetParts {
 	words := strings.Fields(cleaned)
 	switch {
 	case len(words) == 0 || words[0][0] < '0' || words[0][0] > '9':
+	case custom && len(words) == 1 && !digitsOnly.MatchString(words[0]):
+		// NATIVE fuzzy_street_c9/org.tsv r7: a street of one word that is
+		// not a number is all name ("3F" reports 86 for itself, 100 under
+		// Match Blank Fields; "12" reports 100).
 	case custom && streetGluedNumber.MatchString(words[0]):
+	case custom && streetOrdinalWord(words[0]):
+		// NATIVE fuzzy_street_c10/org.tsv o4, o5: an ordinal first word is
+		// no street number ("3rd Ave" and "Third Ave" report 88 for
+		// themselves, as a street with no number does; "101st St" too).
 	case custom:
 		// NATIVE fuzzy_street_c5/org.tsv nl1, np1, np2, fuzzy_street_c4 cl1
 		// to cl3: a directional between the number and a street name with a
@@ -804,9 +1060,16 @@ func parseStreetFor(s string, custom, floors bool) streetParts {
 		// match key (streetCustomKey) decides which of them keep two streets
 		// apart.
 		p.number, words = words[0], words[1:]
+		// NATIVE fuzzy_street_c10/org.tsv e4: whole numbers after the street
+		// number belong to the number when a word follows: "500 Twenty First
+		// Street" finds "500 Twenty Tenth Street" at 80 (number "500 20", names
+		// "1st" and "10th"), not at 86.
+		for len(words) > 1 && streetDigits(words[0]) && !streetAllNumbers(words) {
+			p.number, words = p.number+" "+words[0], words[1:]
+		}
 		if len(words) > 2 && (streetDirections[words[0]] || streetCompassWords[words[0]]) {
 			for _, w := range words[2:] {
-				if _, ok := knownStreetSuffixes[w]; ok {
+				if _, ok := streetSuffixes(custom)[w]; ok {
 					words = words[1:]
 					break
 				}
@@ -821,35 +1084,64 @@ func parseStreetFor(s string, custom, floors bool) streetParts {
 			words = words[1:]
 		}
 	}
-	suffixAt := -1
+	suffixAt, wholeName := -1, false
 	for i := 1; i < len(words); i++ {
-		if _, ok := knownStreetSuffixes[words[i]]; ok {
+		if _, ok := streetSuffixes(custom)[words[i]]; ok {
+			if custom && !streetCustomTail(words[i+1:]) {
+				// NATIVE fuzzy_street_c8/org.tsv qs6: a known suffix word
+				// whose tail is not a suite or directional is a word of the
+				// name; the next known suffix word is tried ("Elm Ave Ave
+				// A5" has the suffix at the second Ave). A number before
+				// the last word of the tail ("Ave 5 5", "Suite 5 B") leaves
+				// every word in the name and no suite.
+				wholeName = wholeName || streetDigitBeforeLast(words[i+1:])
+				continue
+			}
 			suffixAt = i
 			break
 		}
 	}
 	switch {
-	case len(words) > 1 && streetPrefixSuffixes[words[0]]:
+	case suffixAt < 0 && wholeName:
+		// Every known suffix word has a tail with a number before its last
+		// word: the street has no suffix and no suite, and every word is
+		// the name.
+	case !custom && len(words) > 1 && streetPrefixSuffixes[words[0]]:
+		// The custom method reads "Rue" as a word of the name (NATIVE
+		// fuzzy_street_c8/org.tsv qf1: "7 Rue Royale" against "7 Rue Royal"
+		// scores name 90, 92 in all; "12 Rue de Rivoli" finds "12 Rue
+		// Rivoli" at 82). The match key still leaves it out.
 		p.suffix, words = words[0], words[1:]
+	case suffixAt > 0 && custom:
+		// NATIVE cu3, fuzzy_street_c8/org.tsv qb3, qs1, qs2: what follows the
+		// suffix must be nothing, a directional, or a suite (one value, with
+		// or without a designator word). Anything else means the word is
+		// not a suffix: the street has no suffix and every word is the
+		// name. "77 Wren St Xq" matches no other street; "14 Kingsley Blvd
+		// Jr" (name "kingsley blvd jr") finds "14 Kingsley King Jr Blvd" at
+		// 72; "200 Elm Ave Suite 5th" and "Suite 5 5" do not split.
+		p.suffix = customStreetSuffixes[words[suffixAt]]
+		rest := words[suffixAt+1:]
+		words = words[:suffixAt]
+		if len(rest) > 0 && (streetDirections[rest[0]] || streetLongDirections[rest[0]]) {
+			rest = rest[1:]
+		}
+		switch {
+		case len(rest) == 2:
+			p.suite = rest[1]
+		case len(rest) == 1:
+			p.suite = rest[0]
+		}
 	case suffixAt > 0:
-		p.suffix = knownStreetSuffixes[words[suffixAt]]
+		p.suffix = streetSuffixes(custom)[words[suffixAt]]
 		rest := words[suffixAt+1:]
 		words = words[:suffixAt]
 		if len(rest) > 0 && streetDirections[rest[0]] {
 			rest = rest[1:]
 		}
 		switch {
-		case len(rest) >= 2 && (streetSuiteDesignators[rest[0]] || floors && streetFloorDesignators[rest[0]]):
+		case len(rest) >= 2 && streetSuiteDesignators[rest[0]]:
 			p.suite = strings.Join(rest[1:], "")
-		case custom && len(rest) == 1 && len(rest[0]) > 1 && isAlphaWord(rest[0]) && !streetLongDirections[rest[0]]:
-			// NATIVE cu3: "77 Wren St Xq" matches no other street, so a
-			// lone word after the suffix is not a suite.
-			words = append(words, rest...)
-		case floors && len(rest) >= 2 && streetFloorDesignators[rest[len(rest)-1]]:
-			// NATIVE duplicate_fuzzy_matching/org.tsv: "1010 Market Street,
-			// 12th Floor" does not find "1010 Market St Floor 12": a number
-			// before the floor word stays in the street name.
-			words = append(words, rest...)
 		case len(rest) == 1 || (len(rest) >= 2 && !isAlphaWord(rest[0])):
 			p.suite = strings.Join(rest, "")
 		default:
@@ -863,7 +1155,7 @@ func parseStreetFor(s string, custom, floors bool) streetParts {
 		// or a single letter is the suite only after a designator word ("Way
 		// Suite 2B" but not "AveApt 3B"). A trailing directional stays in the
 		// street name ("St N" finds "Str N" at 61, "Str N" finds "St N" at 79).
-		if n := len(words); n > 1 && (digitsOnly.MatchString(words[n-1]) || n > 2 && streetSuiteToken(words[n-1]) && streetSuiteDesignators[words[n-2]]) {
+		if n := len(words); n > 1 && (digitsOnly.MatchString(words[n-1]) || n > 2 && streetCustomSuiteValue(words[n-1]) && (streetSuiteDesignators[words[n-2]] || streetFloorDesignators[words[n-2]])) {
 			p.suite, words = words[n-1], words[:n-1]
 		}
 	default:
@@ -876,6 +1168,16 @@ func parseStreetFor(s string, custom, floors bool) streetParts {
 	}
 	p.name = strings.Join(words, " ")
 	return p
+}
+
+// streetAllNumbers reports words that are whole numbers only.
+func streetAllNumbers(words []string) bool {
+	for _, w := range words {
+		if !streetDigits(w) {
+			return false
+		}
+	}
+	return true
 }
 
 const streetKeyLength = 5
@@ -919,10 +1221,13 @@ func streetSectionsWith(pa, pb streetParts, matchBlanks bool, similarity func(a,
 	return streetSectionScore(pa, pb, matchBlanks, similarity, false)
 }
 
-// streetSectionScore is streetSections. With numberAlways a street number on
-// one side only counts as a mismatch instead of being left out. NATIVE
-// fuzzy_street_c4/org.tsv cj2: "41 Harlan Ave" finds "41\nHarlan Ave" (no
-// street number) at 77, not 87.
+// streetSectionScore is streetSections. With numberAlways (the custom method)
+// a street number or a street name on one side only counts as a mismatch
+// instead of being left out. NATIVE fuzzy_street_c4/org.tsv cj2: "41 Harlan
+// Ave" finds "41\nHarlan Ave" (no street number) at 77, not 87.
+// fuzzy_street_c9/org.tsv r7: "12" finds neither "12 St" nor "12 Park" nor "12
+// Park St", while "12 Park" finds "12 Park St" at 85 (a suffix on one side is
+// left out).
 func streetSectionScore(pa, pb streetParts, matchBlanks bool, similarity func(a, b string) float64, numberAlways bool) float64 {
 	num, den := 0.0, 0.0
 	for _, section := range []struct {
@@ -940,7 +1245,7 @@ func streetSectionScore(pa, pb streetParts, matchBlanks bool, similarity func(a,
 				}
 			}
 		case section.x == "" || section.y == "":
-			if section.number && numberAlways {
+			if (section.number || section.name) && numberAlways {
 				den += section.weight
 			}
 		case section.name:
@@ -1361,8 +1666,13 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 		return true, 100
 	}
 	ma, mb := companyMarks(a), companyMarks(b)
-	if (ma|mb)&companyMarkQualifier != 0 && !companySlashKeys(a, b) {
-		return false, 0
+	if (ma|mb)&companyMarkQualifier != 0 {
+		if x, y, ok := companySpacedAsDash(a, b); ok {
+			return fuzzyCompany(x, y, matchBlanks)
+		}
+		if !companySlashKeys(a, b) {
+			return false, 0
+		}
 	}
 	ok, score := fuzzyCompanyRouted(a, b, matchBlanks, ma, mb)
 	if ok {
@@ -1371,9 +1681,31 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 	if companyDoubledEqual(a, b) {
 		return true, 100
 	}
+	if (ma|mb)&(companyMarkDigit|companyMarkJoin|companyMarkQualifier) == 0 {
+		// NATIVE company_name_fit/org.tsv R4_stem: a first word followed only
+		// by a legal designator is a one-word name and does not match this
+		// way ("Vexlets Inc" does not find "Vexlet Inc" or "Vexlet LLC").
+		if stemmed, ok := companyStemFirstWord(a, b); ok && len(companyWords(a)) >= 2 && len(companyWords(b)) >= 2 {
+			if matched, confidence := legacyFuzzyCompany(stemmed, b, matchBlanks); matched {
+				return true, confidence
+			}
+		}
+	}
 	if (ma|mb)&companyMarkQualifier != 0 {
 		if confidence, matched := companySlashScore(a, b); matched {
 			return true, confidence
+		}
+	}
+	if (ma^mb)&companyMarkJoin != 0 && (ma|mb)&companyMarkDigit == 0 {
+		// One side is the dash form, the other plain and without a hyphen.
+		dashed := a
+		if mb&companyMarkJoin != 0 {
+			dashed = b
+		}
+		if companySpacedHyphen(dashed) {
+			if confidence, matched := companyVowelSuffixScore(a, b); matched {
+				return true, confidence
+			}
 		}
 	}
 	return ok, score

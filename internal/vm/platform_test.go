@@ -1258,7 +1258,10 @@ System.assertEquals('Nook Supply', ((Account)results.get('Account')[0].getSObjec
 Search.SearchResults snippetResults = Search.find(
 	'FIND {North} IN ALL FIELDS RETURNING Account(Id, Name, Site) WITH SNIPPET'
 );
-System.assertEquals('North dock', snippetResults.get('Account')[0].getSnippet('Site'));
+// NATIVE an Account result has no field snippet sosl_search_matrix/org.tsv:168 anonymous 62.0
+// NATIVE an Account result has no field snippet sosl_search_matrix/org.tsv:169 anonymous 67.0
+System.assertEquals(null, snippetResults.get('Account')[0].getSnippet('Site'));
+System.assertEquals(null, snippetResults.get('Account')[0].getSnippet());
 
 Search.SuggestionOption option = new Search.SuggestionOption();
 option.setLimit(5);
@@ -1302,7 +1305,8 @@ System.runAs(u) {
 	try {
 		Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Score__c)', AccessLevel.USER_MODE);
 	} catch (QueryException qe) {
-		caught = qe.getMessage().contains('Account') || qe.getMessage().contains('Score__c');
+		// NATIVE denial names the object in lower case sosl_istest_edges/org.tsv am_dyn_user istest 62.0 67.0
+		caught = qe.getMessage().toLowerCase().contains('account') || qe.getMessage().contains('Score__c');
 	}
 	System.assert(caught);
 	List<List<SObject>> systemRows = Search.query(
@@ -8939,10 +8943,11 @@ try { FlexQueue.moveJobToFront('707000000000001'); System.assert(false); } catch
 try { FlexQueue.moveJobToEnd('707000000000001'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
 try { FlexQueue.moveBeforeJob('707000000000001', '707000000000002'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
 try { FlexQueue.moveAfterJob('707000000000001', '707000000000002'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
-System.pauseJobById('08e000000000001');
-System.pauseJobByName('local job');
-System.resumeJobById('08e000000000001');
-System.resumeJobByName('local job');
+// NATIVE pause and resume of a job that does not exist apex_release_gates/org.tsv PjProbe67/PJ4 anonymous 62.0 67.0
+try { System.pauseJobById('08e000000000001'); System.assert(false); } catch(AsyncException e) { System.assertEquals('No Apex job with CronTriggerId 08e000000000001 exists', e.getMessage()); }
+try { System.pauseJobByName('local job'); System.assert(false); } catch(AsyncException e) { System.assertEquals('No Apex job named local job exists', e.getMessage()); }
+try { System.resumeJobById('08e000000000001'); System.assert(false); } catch(AsyncException e) { System.assertEquals('No Apex job with CronTriggerId 08e000000000001 exists', e.getMessage()); }
+try { System.resumeJobByName('local job'); System.assert(false); } catch(AsyncException e) { System.assertEquals('No Apex job named local job exists', e.getMessage()); }
 System.assertEquals(0, System.purgeOldAsyncJobs(Date.today()));
 System.assertEquals(0, System.purgeOldAsyncJobs(Date.today(), 10));
 List<Id> batchJobIds = Test.enqueueBatchJobs(2);
@@ -15357,10 +15362,11 @@ System.assertEquals(1, [SELECT Id FROM Account].size());
 func TestExecInvocableActionInvocationDTOAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
 Invocable.Action action = Invocable.Action.createStandardAction('localNoop');
-System.assertEquals('localNoop', action.getName());
+// NATIVE a standard action has a type, no name and no version apex_release_gates/org.tsv IaProbe67/IA1 anonymous 66.0 67.0
+System.assertEquals(null, action.getName());
 System.assertEquals('localNoop', action.getType());
 System.assertEquals('', action.getNamespace());
-System.assertEquals('', action.getVersion());
+System.assertEquals(null, action.getVersion());
 System.assertEquals(true, action.isStandard());
 Boolean rejected=false;
 try {action.invoke();} catch(TypeException e){rejected='"localNoop" isn\'t a valid action type.'.equals(e.getMessage());}

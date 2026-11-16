@@ -206,16 +206,64 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    that form). This replaced a hand-written stand-in that rejected anything it
    could not prove and missed dropped vowels, silent letters and name codes.
 3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
-   are compared position by position; the cost of two different keys is 0.05
-   for neighbours and 0.08 for each further step, where the distance is the
-   column distance plus two between the top and bottom rows (`P4.LN.KB1`: 25
-   replacement letters on two bases); an accent costs 0.16; a trailing extra
-   letter about 0.25; the sum is divided by the longer length. The rows do
-   not pin the score down for three or more substituted letters, an inserted
-   letter or more than two trailing letters (`Martinez` finds
-   `Martinezkmptr` at 95 but `Frank` does not find `Franklin`), so Glade
-   matches by keyboard only one substitution, two with a score of 92 or
-   more, or up to two trailing letters.
+   are compared position by position over the shorter length, with no
+   alignment. In `fuzzy_name_keys` panels ks1 to ks3, suf1 and rsp1,
+   `Farnsdelwick` finds
+   `Farnsdraeovk` at 96 with five substitutions; `Abernathy` finds `Abernaty`
+   at 99; `Frank` does not find `Franklin`). The sum is divided by the longer
+   length. The costs are fitted to the 2,528 distinct native pairs that reach
+   this step (`keyboardDistance` in `internal/dml/fuzzy_keyboard.go`) for
+   unequal lengths or two or more substitutions. Equal-length pairs with one
+   substitution retain the earlier `keyboardSimilarity` scorer. Pairs that
+   the earlier scorer already matched also retain its confidence; the new
+   scorer applies only when that scorer did not match and the pair's joint
+   shape is one where a captured pair needs it: the longer name's length in
+   runes, the count of positional substitutions and the count of trailing
+   runes, taken together, for a fitted pair native matches and the earlier
+   scorer does not. The native rows hold 78 such shapes (`keyboardPanelCells`
+   in `internal/dml/fuzzy_match.go`), with lengths 4–15. For any other
+   shape, including untested combinations inside those ranges, the earlier
+   keyboard scorer decides. Inside a shape the new scorer decides only at a score of
+   93 or more (`keyboardFallbackMargin`), one margin for every shape. The
+   fitted score is not reliable below it: native non-matches score 90.1 to
+   90.84 in substitution shapes (`duplicate_fuzzy_panels` k1 to k3:
+   `Kellingswokwr` and `Kellinglkokzh`, `Gilderpajt` and `Gildewrarb`) and up
+   to 92.26 in extension-only shapes (the blind twin panels tk01 to tk22:
+   `Ingleborn` and `Inglebornxbqm`), while native matches also sit there
+   (`Farnsdelwick` and `Farnsdraeovk` score 92.07). The margin is 0.74 above
+   the highest captured native non-match of any shape in any panel (fitted
+   rows, k1 to k3, hk1, hk2, tk01 to tk22). Per-shape floors were tried and
+   dropped: a floor existed only where an earlier panel held a
+   counterexample, and a fresh panel then showed 108 more false matches. The
+   margin leaves the earlier result for the native matches that score below
+   it, so recall in these panels is below the fitted scorer's and above the
+   earlier scorer's. The shape table was fitted to k1 to k3 with hk1 in view;
+   hk1 and hk2 are not held-out evidence for it. The twin panels and the
+   second blind panel (bk01 to bk09) were captured after the code they score
+   and fitted nothing; `TestLastNameKeyboardFuzzyPanelsNativeRows` requires
+   zero extra matches on them and `TestLastNameKeyboardFallbackMargin`
+   requires the margin above the highest captured non-match. Panels kept out
+   of the fit agree on every pair Glade matches:
+   `fuzzy_keyboard_neighbors` (`Farnsdelwicka` finds `Farnsdraeovka`, native
+   97; its score is below the margin, so Glade keeps the earlier result).
+   The fitted costs are:
+   - a substitution costs by key distance, the column distance plus two
+     between the top and bottom rows: 0.06 for neighbours and 0.079 a step
+     beyond; the final character of two names of equal length is one step
+     cheaper. About 120 key pairs need a cost other than the
+     formula and are listed in the code;
+   - an accent costs 0.16; a letter against a space or punctuation mark and a
+     space against a punctuation mark have their own costs; digits never
+     substitute;
+   - a trailing character costs by the character, with one table after an
+     otherwise equal name (about 0.25) and one after a substitution (top row
+     about 0.2, bottom row about 0.35).
+
+   The one-substitution legacy score does not reproduce every native
+   confidence: `Harlow II` / `Harlow IV` rounds to 98, versus native 97.
+   The standard rules keep the earlier
+   costs (`keyboardSimilarity`: one substitution, two with a score of 92 or
+   more, or up to two trailing letters), which their rows were fitted with.
 
 The apostrophe-removed form matches (`O'Connor`/`OConnor`, `O’Leary`/`OLeary`);
 a space splits the last word (`O'Brien`/`O Brien`, `Mc Donald`/`McDonald`).
@@ -265,8 +313,9 @@ underscore join does not match its spaced name and a hyphen join matches only
 when the aligned words are alike (`Vexlett-Packard`/`Vexlet Packard` yes,
 `Quen-State Paving`/`Quen State Painting` no). A slash and a parenthesis form
 need equal suffix word counts and alike bases. Known gaps, each with a residual
-in the test: 15 native matches the word scorer also rejects, such as `Zorvex
-Partnership`/`Zorvex` and the `East`/`West` plain-to-dash pairs, and 10 pairs
+in the test: 13 native matches the word scorer also rejects, such as `Zorvex
+Partnership`/`Zorvex` and three `East`/`West` pairs across a dash and a
+parenthesis or plain form, and 10 pairs
 the word scorer matches and native does not (`Zorvex Partner`/`Zorvex Partner
 Inc`).
 
@@ -280,8 +329,8 @@ those shapes and bound the rules:
   captured match with a slash has unequal joined keys.
 - A doubled letter matches only past the first six letters of the first word:
   `Vexlett Packard`/`Vexlet Packard` yes, `Vexllet Packard`, `Qell
-  Systems`/`Qel Systems` no. Native also matches other endings past the key
-  (`Vexlets Packard`, `Vexlet Packardd`); Glade does not yet.
+  Systems`/`Qel Systems` no. Other endings past the key match too; see the R3
+  rules below.
 - Two different one-word suffixes across a dash and a spaced slash match when
   both start with a consonant and are alike (`West`/`Best`, `Mast`/`Last`). A
   suffix that starts with a vowel finds an alike consonant suffix and is not
@@ -293,15 +342,72 @@ those shapes and bound the rules:
   of the number. `Zorvex Region1` finds `Zorvex Region 1 East`, and `Zorvex
   Region 2 East` finds `Zorvex Region 1 West`; the reverse pairs do not match.
 - Digit runs glued to the same multiword name score 100 when they have one
-  length and differ in one position (`Test Account12`/`Test Account13`);
-  `Test Account11`/`Test Account22` keeps 97.
+  length and differ in one position (`Test Account12`/`Test Account13`), when
+  one starts the other (`Test Account1`/`Test Account123`) or when one is the
+  other with one digit added (`Test Account1`/`Test Account21`). Other glued
+  runs score the syllable alignment of the whole names: `Test
+  Account11`/`Test Account22` 97, `Test Account1`/`Test Account20` 95, `Test
+  Account456`/`Test Account1` 91 (301 of the 302 directed `R2_glu` pairs).
 - A hyphen or underscore digit join scores 91 against a single consonant
   (`Test Account_2`/`Test Account D`); a vowel or `Y` keeps its earlier score.
 
-`TestCompanyShapePanelCounts` pins each panel: 2,104 of 2,351 captured matches
-reported, 1,136 exact confidences, 40 matches native does not report. The
-largest gaps are vowel suffixes against parenthesis forms and letters past the
-match key.
+`TestCompanyShapePanelCounts` pins each panel: 2,240 of 2,351 captured matches
+reported, 1,378 exact confidences, 40 matches native does not report.
+
+The R3 capture (rows `R3_*`, four panels of 23 names) isolates the rules the
+R1 and R2 rows left open:
+
+- First words that share the six-letter match key match at 100 in both
+  directions when one is the other with letters added (`Vexlet`/`Vexletronics`,
+  `Qelthorin`/`Qelthoriner`) or when both have one length and differ in one
+  letter after the key (`Vexlets`/`Vexleta`, `Zorvexs`/`Zorvexa`); the rest of
+  the name keeps the word scorer's rules (`Vexlet Packardd`/`Vexlett Packard`
+  100, `Vexlet Packard Group`/`Vexleta Packard` 91). Both names need two or
+  more words of letters only. Not matched: `Vexlets`/`Vexleter`,
+  `Vexletab`/`Vexletcd`, `Vexle`/`Vexles` and the one-word names. Native
+  also matches some longer and tripled endings in one direction
+  (`Vexlettt`/`Vexlets` 97, `Vexlets`/`Vexletronics` 91,
+  `Qelthorins`/`Qelthoriner` 100); Glade does not yet.
+- A spaced slash against a spaced slash or a plain form with the same base
+  and a different one-word suffix scores as the dash form, whatever the suffix
+  lengths (`Orbel Trade / Art` finds `Orbel Trade / North`). Names with digits
+  and a vowel candidate against a parenthesis form keep the earlier decision.
+- A plain candidate whose suffix starts with a vowel and has four or more
+  letters finds a dash suffix of the same length that differs from it only in
+  its first two letters (`East` finds `- West` at 93 and `- Mast` at 94, not
+  `- North`), and a vowel dash suffix that differs only in its first letter at
+  96. The base needs two words besides a legal designator.
+
+The R4 to R7 captures (rows `R4_*` to `R7_*`, fifteen panels of 25 or 26
+names) test those rules on names they were not fitted on. They confirm the
+first-word rule, the spaced slash rule and the plain vowel candidate, and they
+set these limits:
+
+- A first word followed only by a legal designator is a one-word name:
+  `Vexlets Inc` does not find `Vexlet Inc`, `Vexlets Group` finds `Vexlet
+  Group`.
+- After a legal designator a glued run scores 100 only when it starts the
+  other (`Test Account Inc1`/`Test Account Inc12`); one added digit does not
+  (`Test Account Inc2`/`Test Account Inc12` 99 and 98).
+- A vowel suffix against a consonant suffix across a dash and a parenthesis
+  form (`(East)`/`- West`, `(Oast)`/`- Best`, and the first-letter change
+  `(East)`/`- Wast`) matches on some bases and not on others. 100 further bases
+  were captured. No length or score of the whole names orders them: by the syllable
+  alignment of the two names `Mandolar Outlet` rejects at 95.45 and `Orbelvanto
+  Bank` matches at 93.00, and `Plovdi Trade` matches where `Zorvex Audio`
+  rejects at the same 94.05. Native reports these matches at 90 to 93. Glade
+  reports none of them.
+- A dash candidate with a vowel suffix against a plain name (`- East`/`West`,
+  native 91) is the same: it matches on `Orbel Trade`, `Zorvex Freight` and
+  `Qa Trade` and not on `Mandolar Oil`, `Orbel Oil Outlet` or `Ab Logistics`.
+  Glade reports none.
+- Suffixes of one to three letters do not follow the four-letter rules
+  (`Zorvex Freight Art` does not find `Zorvex Freight - Bat`).
+
+`TestCompanyIsolationPanelCounts` pins the R3 panels (400 of 458 captured
+matches reported, 297 exact confidences, none that native does not report) and
+the R4 to R7 panels (1,224 of 1,398, 864 exact, 33 that native does not
+report; the word scorer and the earlier rules report those 33 too).
 
 ### Phone
 
@@ -367,10 +473,11 @@ Unchanged from the third run's model.
   the third run shows no name-similarity guard: `Pennsylvania`/`Pennsylxxxia`
   (name similarity 75, S 85) matches. `Crt` behaves as a suffix word of its
   own (`8 Pine Crt` matches `8 Pine` at 80 and does not match `8 Pine Court`);
-  `Ct`, `Court`, `Ter`, `Pl` and `Sq` stay in the name. Glade rejects a pair
+  `Ct`, `Court`, `Ter`, `Pl` and `Sq` stay in the name. The shared scorer (standard rules) rejects a pair
   whose last name word and name stem both differ (`Harbor Lp`/`Harbour Loop`
   does not match natively) and, with no street number on either side, a name
-  similarity under 80 (`Calle 8 No 5`/`Calle 8 Numero 5`). A single letter
+  similarity under 80 (`Calle 8 No 5`/`Calle 8 Numero 5`); the custom method
+  needs neither, the match key (below) keeps those pairs apart. A single letter
   after the number is not only `E`: natively `100 A`, `I`, `O` and `Y Main St`
   match `100 Main St` at 83 and `De`, `La`, `Et`, `And`, `The` do not; Glade
   drops `E` only. Confidence `(S + edit similarity of the cleaned strings) / 2`:
@@ -436,7 +543,9 @@ default they never do; one blank value never matches.
 Recall is the share of native matching pairs Glade also matches; false matches
 are pairs Glade matches that native does not; confidence MAE is the mean
 absolute difference between Glade's rounded confidence and the native one over
-the pairs both match. API 67.0 rows, every ordered pair of every row. "fit"
+the pairs both match. The table records the earlier Metaphone 3 fit before
+the keyboard changes above; current per-row bounds and residuals are in the
+conformance tests. API 67.0 rows, every ordered pair of every row. "fit"
 is every row the model or its tables were built from (runs one to three, `P4.*`
 and `N4.*`). The held-out rows were written without sight of the model and
 scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
@@ -455,8 +564,14 @@ scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
 | Company | fit | 1619/1665 (97.2%) | 0 | 0.083 |
 | Company | holdout seen once, then one rule changed | 145/149 (97.3%) | 0 | 0.159 |
 | Company | holdout (unbiased) | 162/164 (98.8%) | 0 | 0.117 |
-| Street | fit | 2011/2179 (92.3%) | 0 | 0.208 |
-| Street | holdout (unbiased) | 151/151 (100.0%) | 0 | 0.318 |
+| Street | fit, older rows | 2179/2179 (100.0%) | 0 | 0.000 |
+| Street | holdout (unbiased), older rows | 151/151 (100.0%) | 0 | 0.000 |
+| Street | fit, `fuzzy_street_c4`, `c5`, `c8` | 9348/9348 (100.0%) | 0 | 0.000 |
+| Street | holdout, `fuzzy_street_c4`, `c5`, `c8` | 3428/3428 (100.0%) | 0 | 0.000 |
+| Street | fit, `fuzzy_street_c9` | 218/218 (100.0%) | 0 | 0.000 |
+| Street | holdout, `fuzzy_street_c9` | 906/906 (100.0%) | 0 | 0.000 |
+| Street | fit, `fuzzy_street_c10` | 1522/1522 (100.0%) | 0 | 0.000 |
+| Street | holdout, `fuzzy_street_c10` | 882/882 (100.0%) | 0 | 0.000 |
 | City | fit | 531/531 (100.0%) | 0 | 0.000 |
 | City | holdout (unbiased) | 57/57 (100.0%) | 0 | 0.000 |
 | ZIP | fit | 225/225 (100.0%) | 0 | 0.000 |
@@ -478,16 +593,17 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
 
 ## Gaps
 
-- Last Name: Glade does not reproduce the 2 of 201 unbiased-holdout, 2 of 173
-  seen-once and about 590 of the fit pairs that native matches and the port
-  does not. They are Keyboard Distance matches of three or more edits, long
+- Last Name: Glade does not reproduce the 2 of 201 unbiased-holdout and 2 of
+  173 seen-once pairs that native matches and the port does not. They are long
   names the key cuts differently (`Kowalczyk`/`Kowalsky`), respellings the
   port codes apart (`Robards`/`Robertz`, `Waalker`/`Walkker`) and a
   hyphenated surname against its first part (`Fitzgerald`/`Fitzgerald-Lee`).
-- Keyboard Distance: the cost of trailing letters depends on the letters
-  (`Williams`/`Williamson` 98, `Stevenson`/`Stevensonnn` 97), which the flat
-  0.25 misses by one point; three or more substitutions, insertions and more
-  than two trailing letters are not matched.
+- Keyboard Distance: the costs are additive, and native rows that share key
+  pairs disagree by up to a tenth of a point of cost, so about one confidence
+  may differ by one point; previously matched pairs retain their earlier
+  confidence as listed in `fuzzyNameKeysResiduals`. No row measures a
+  trailing `c`, `q`, `u`, `w`, `x` or digit on a native match. The standard
+  rules do not use the refit yet.
 - First Name: the Name Variant dictionary and its alias keys are unpublished.
   Glade carries the pairs and alias-keyed names proven for about 2,700 common
   first names and 590 nickname families. A nickname pair outside those rows
@@ -500,8 +616,9 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   `&` inside a word against the joined spelling (`AT&T` finds `ATT` one way)
   and acronyms outside the proven entries are misses.
 - Street: see "Custom rule panels" for the custom Street method, its match
-  key and the pairs still open. The Street rows of the table above predate
-  that scorer.
+  key and what is not measured. The Street rows of the table above are the
+  custom method's rates on the older rows and on the `fuzzy_street` captures;
+  the standard rules keep the shared scorer.
 - Title: the (k, n) table covers up to six words. A word moved to the other
   end of a title (a rotation) keeps the flat loss of 3 where the native loss
   varies, and `Director IT` finds `Director - IT` at 94 natively but `Director,
@@ -511,6 +628,16 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   three-item rules are in the second fixture; its gaps are listed under
   "Standard rules".
 - Unsupported fuzzy rules (unknown method names) are still left unenforced.
+- Remaining gaps of `duplicate_runtime_behavior/` (field differences, update
+  gate, entity ids, report sets): the field differences of custom rules with a
+  fuzzy item and of Person Account rules are not captured, so Glade reports
+  none; the fuzzy confidence behind `FDIFF2` (`fuzzyFirst`,
+  `queryHasStoredNull`) is compared only for the field differences of the
+  records both sides return, because the fuzzy scorer owns it; the update gate
+  compares an Apex update of a record inserted in the same transaction with its
+  insert-time values (NATIVE `RPT_*`), while other repeat edits compare with
+  the stored values; a flow update, a standard-rule update report and
+  `runAsCurrentUser` are not captured.
 
 ## Standard rules
 
@@ -631,6 +758,18 @@ company). NATIVE `Standard.Cross.ContactToLead` and `Standard.Cross.LeadToContac
 the structure is the Lead rule in the first direction and the Contact rule in
 the second, and a Lead candidate's company never equals a Contact's account.
 Glade enforces them when the rule is active.
+
+Custom cross-object rules (a duplicate rule whose matching rule belongs to
+another object, joined by an `objectMapping`) are enforced for the captured
+shape: NATIVE `XMAP` (`duplicate_runtime_behavior/`) maps one input field onto
+one output field, the matching rule reads the mapped values, and every unmapped
+field counts as blank. Mappings of several fields, mappings between standard
+objects and Person Account custom rules are not captured and stay unenforced.
+
+An Allow+Report rule commits one set for records that match each other.
+Glade lists the matches enforcement found first, then the peers inserted
+earlier by the same statement. That order is a design choice: the `REPR` rows
+list sorted names, so no native row pins the order inside a set.
 
 ### Custom rules: OR groups and three items
 
@@ -856,30 +995,42 @@ validation of the current implementation.
 
 Street suffix and title changes are limited to the following shapes:
 
-- Street, custom rules only. Fixtures `testdata/conformance/fuzzy_street_c4`
-  and `fuzzy_street_c5` under `internal/dml` (four captures, API 62.0 and 67.0,
-  both routes, two repeats, all identical). The standard rules keep the shared
-  scorer.
-  - Cleaning: a line break is deleted, not a space (`Rd\nSuite 200` is
-    `RdSuite 200`; a comma before the break goes with it). A number sign, slash
-    or colon is deleted where it stands (`Ave#5`, `Ave/5` and `Ave:5` are
-    `Ave5`; `Ave #5` is `Ave 5`). A hyphen stays. `One`, `Ten`, `Eleven` and
-    `Twenty` are digits; `Hundred`, `Eleventh` and `Twentieth` are not.
-  - Match key: the first five characters of each of the first two words that
-    are not stop words, hyphens removed. `7 Morven Rd` finds `7 Morvex Rd` and
-    not `7 Morvxn Rd`; `12345 Morven Rd` finds `123456 Morven Rd` and not `12346
-    Morven Rd`. Stop words are the known suffix words, the suite designators,
-    the letters `A C E F I K O P U Y Z`, `SE`, `De La Et And The`, and 110 of
-    216 probed street words (`Park`, `Hill`, `Orchard`, `Plaza`, `Court`,
-    `Way`, `Calle`, `Via`, ...; the list is `streetKeyStopWords`). With `Park`
-    and `Ln` left out, `101 Park Ln W` keys on `101` and `W`: it finds `101 W
-    Park Ln` and not `101 Park Ln N`, while `121 Tully Ln W` finds `121 Tully
-    Ln N`. A PO box keys on its number.
+- Street, custom rules only. Fixtures `testdata/conformance/fuzzy_street_c4`,
+  `fuzzy_street_c5`, `fuzzy_street_c8` and `fuzzy_street_c9` under
+  `internal/dml` (API 62.0 and 67.0, both routes, two repeats, all identical). The standard rules keep the
+  shared scorer.
+  - Cleaning: a line break is deleted when the street is scored, not turned
+    into a space (`Rd\nSuite 200` is `RdSuite 200`; a comma before the break
+    goes with it); the match key reads it as a word separator. A number sign,
+    slash or colon is deleted where it stands (`Ave#5`, `Ave/5` and `Ave:5` are
+    `Ave5`; `Ave #5` is `Ave 5`). A hyphen stays. Accented letters read as their
+    base letters (`Borüden` is `Boruden`, the same for ö, ä, é, è, ñ, ç, å, ê,
+    í and the capitals). Every other character outside ASCII is deleted: ß, ø,
+    æ, ł, đ, œ, þ, ð, я, α, 中 and the signs –, ’, ° and €. `Fußweg 5` is `Fuweg 5`
+    and `Hauptstraße Süd` scores as `Hauptstrae Sud`. The words zero to nineteen
+    and twenty to ninety are digits (`Suite Five` is `Suite 5`, `Ten St` is `10
+    St`); `Hundred`, `Thousand`, `Million`, `Eleventh` and `Twentieth` are not.
+  - Match key, checked first even when two addresses clean to one string
+    (`Calder Rd\nSuite 200` finds nothing in `Calder RdSuite 200`): the first
+    five characters of each of the first two words that are not stop words,
+    hyphens removed. `7 Morven Rd` finds `7 Morvex Rd` and not `7 Morvxn Rd`;
+    `12345 Morven Rd` finds `123456 Morven Rd` and not `12346 Morven Rd`. Stop
+    words are the known suffix words, the suite designators, the letters `A C E
+    F I K O P U Y Z`, `SE`, `De La Et And The`, `Rue`, `Str Sts Boul Avenu Pk
+    Pky Pkway Ctr Cres Rte Rt`, and 110 of 216 probed street words (`Park`,
+    `Hill`, `Orchard`, `Plaza`, `Court`, `Way`, `Calle`, `Via`, ...; the list is
+    `streetKeyStopWords`). 74 more suffix spellings were probed one word per
+    pair (`qj1` to `qj5`); the ten above are stop words and the rest are not.
+    With `Park` and `Ln` left out, `101 Park Ln W` keys on `101` and `W`: it
+    finds `101 W Park Ln` and not `101 Park Ln N`, while `121 Tully Ln W` finds
+    `121 Tully Ln N`. A PO box keys on its number. Native never rejects a pair
+    for its last word or for a low name similarity apart from this key:
+    `2 Harbor Lp` and `2 Harbour Loop` differ in the key (`Harbor` is a stop
+    word), `1 Infinite Lp` and `1 Infinity Loop` share it and match at 82.
   - Decision: with equal keys a pair matches when the section score reaches 80
     or the edit similarity of the cleaned addresses reaches 87, whatever the
     section score. Four edits in 31 characters (87.10) match; three in 23
-    (86.96) do not. This replaces the earlier 87.5 rule for unknown suffixes:
-    it applies to every shape, with or without a trailing directional.
+    (86.96) do not.
   - Confidence: `(S + E) / 2`, rounded half up. The edit similarity is 0 when
     the edit distance equals the candidate's length: `15 Elm` finds `15 Elm
     Drive` at 50 and the reverse pair reports 75; `77 Wren St` finds `77 Wren
@@ -888,34 +1039,113 @@ Street suffix and title changes are limited to the following shapes:
     Street` 88).
   - Sections: a directional between the number and a name with a known suffix
     is dropped from the name (`101 N Park Ln` finds `101 Park Ln N` at 85);
-    other single letters stay in it. Under NullNotAllowed `Fl`, `Floor`,
-    `Room`, `Building` and `Apartment` introduce a suite; `Level`, `Lot`,
-    `Dept`, `No`, `PMB`, `Stop`, `Trailer` and `Space` do not.
+    other single letters stay in it. After a known suffix the street may carry
+    nothing, a directional (a compass word counts), or one suite value, with or
+    without `Suite`, `Ste`, `Apt`, `Unit`, `Rm`, `Bldg`, `Fl`, `Floor`, `Room`,
+    `Building` or `Apartment`. A suite value is a number, a number and one
+    letter, one letter, a letter and a number, or either with one hyphen
+    (`5`, `5A`, `A`, `A5`, `5-A`, `A-5`), under Match Blank Fields as well as
+    NullNotAllowed. Anything else after the word (`Suite 5th`, `Suite 5 5`,
+    `Suite AB`, `Blvd Jr`, `Fl 5th`) means that word is not a suffix: the next
+    known suffix word is tried, and with none every word belongs to the name.
+    `Level`, `Lot`, `Dept`, `No`, `PMB`, `Stop`, `Trailer` and `Space` are not
+    designators. `Aly` and `Alley` are one suffix (93); `Lp`, `Loop`, `Pkwy`,
+    `Parkway` and the other unlisted spellings are name words. `Rue` is a word
+    of the name: `7 Rue Royale` finds `7 Rue Royal` at 92.
   - Streets that do not split: a word of letters then a digit (`Ave#5`,
-    `Box410`), a hyphen outside a number range (`72-A`, `Vane-Oak`), a number
-    before the last word of a street that does not start with one (`Suite 9 73
-    Morrow Rd`, `RR 4 Box 22`), one more word after the suffix (`St Xq`), or
-    four words with no number and no suffix. Such a street reports 100 for
-    itself. As the stored value it scores the edit similarity alone; as the
-    candidate against a split street its section score is 0. `Ave #5` finds
-    `Ave#5` at 93 and `Ave#5` finds `Ave #5` at 47. These pairs match only at
-    edit similarity 87.
+    `Box410`, `RR4`) that is not a suite value, a hyphen outside a number range
+    or a suite value (`72-A`, `Vane-Oak`), a number before the last word of a
+    street that does not start with one (`Suite 9 73 Morrow Rd`, `RR 4 Box 22`),
+    a rural route (`RR 4`, `R R 4`, `Rural Route 4`), or a name of four words or
+    more after the number, a leading directional and the suffix (`100 N Martin
+    Luther King Jr Blvd`, `14 Hawthorne Meadow Blvd Jr`, `Morven Tully Harbor
+    Tower`; `100 N Martin Luther King Blvd` has three and splits). Such a street
+    reports 100 for itself. As the stored value it scores the edit similarity
+    alone; as the candidate against a split street its section score is 0.
+    `Ave #5` finds `Ave#5` at 93 and `Ave#5` finds `Ave #5` at 47. These pairs
+    match only at edit similarity 87.
   - PO box: `PO Box N`, `P.O. Box N`, `P O Box N` and `POBox N` are one address;
     `PO Box410` scores as a whole string against them (90 both ways). `POB`,
     `Post Office Box`, `Box` and `POBox52` are not PO boxes. A street that is
     only a suffix word, `PO Box` and `PO Box A` match nothing.
-  - Measured, every ordered pair of every panel: fit panels 31,071 of 31,077
-    pairs agree (2 misses, 2 extra matches, 2 confidences); holdout panels
-    5,736 of 5,742 agree (6 misses, 0 extra matches, 0 confidences). `hu1`
-    began as a holdout panel and informed a rule, so it counts as fit. The
-    `Orchard Ln` holdout panel `hd1` scored 114 extra matches against the
-    earlier model; `Orchard` was then probed as one word pair (`ng7`) and the
-    panel scored again unread. `residuals.tsv` pins the 12 differing pairs.
-  - Open: `Calder Rd Suite 200` against `Calder Rd\nSuite 200` with no street
-    number (native 69, Glade no match); `100 N Martin Luther King Jr Blvd`
-    against the same street without `Jr` (native 45 one way; Glade 91, and two
-    extra matches against the `Suite 5` form); `RR 4` against itself (native
-    100, Glade 88).
+  - Measured, every ordered pair of every panel that has a street on both
+    sides (`fuzzy_street_c4`, `c5` and `c8`): the fit panels agree on 66,023 of
+    66,023 pairs and the holdout panels on 23,876 of 23,876 (0 misses, 0 extra
+    matches, 0 differing confidences in either set). The previous scorer
+    (`fc2dfc7863`) disagreed on the same pairs with 1,356 misses, 1,366 extra
+    matches and 956 confidences in the fit panels and 368 misses, 686 extra
+    matches and 491 confidences in the holdout panels. Row by row, 115,057 pairs
+    compared with the previous scorer: 5,223 changed, all to the native value;
+    0 regressions and 0 new false matches. The shared scorer the standard rules
+    call returns the same verdict and score on all 68,965 pairs it was run on.
+  - Holdout: `hu1` began as a holdout panel and informed a rule, so it counts
+    as fit. The `Orchard Ln` holdout panel `hd1` scored 114 extra matches
+    against an earlier model; `Orchard` was then probed as one word pair
+    (`ng7`) and the panel scored again unread. The 42 twin panels of `c8`
+    (`RUN-FACTS.txt` lists the 31 that stay holdout) were each scored once,
+    against the model as it stood: 31 agreed on every pair. The other eleven (`hqg2`,
+    `hqg3`, `hqg4`, `hqs1` to `hqs6`, `hqv1`, `gqd2`) disagreed on the words
+    after a suffix (a suite value such as `5th`, `Fl 5th` or `Level 5`), on
+    number words, or on the section score of a whole candidate under Match
+    Blank Fields. They were read, new panels captured, and they are stored as
+    fit. `fuzzy_street_c4` hs1 and `fuzzy_street_c5` mj1, never read, agree on
+    every pair now.
+  - Review panels, `fuzzy_street_c9` (three captures in shapes the earlier
+    fixtures do not hold). Eight panels were scored once against `2a69555ed7`
+    and shaped no rule: names of four words and more, compound number words,
+    floor words in other positions, two differing name words, streets with no
+    number under both blank modes, more suite values, `Aly`, `Calle` and `Via`.
+    They agree on 4,340 of 4,348 pairs (0 misses, 8 extra matches, 0
+    confidences); the previous scorer (`fc2dfc7863`) had 186 misses, 204 extra
+    matches and 55 confidences there. Four panels (`r1`, `r1m`, `r7`, `r7m`)
+    were read and shaped three rules:
+    - A street name on one side only is a mismatch, as a street number is.
+      `12` finds neither `12 St` nor `12 Park` nor `12 Park St`; `12 Park`
+      finds `12 Park St` at 85, because a suffix on one side is left out.
+    - A street with no key word finds nothing, itself included: `Park St`, and
+      an address with no ASCII letter or digit (`港区`).
+    - A street of one word that is not a number is the name: `3F` reports 86
+      for itself, 100 under Match Blank Fields.
+
+    The deletion of characters outside ASCII holds for whole scripts: natively
+    `Тверская 5` finds `Арбатская 5` and `5` at 100 and not `Тверская 7`;
+    `東京都港区1-2-3` finds `大阪市北区1-2-3`. Two addresses in such a script
+    are one street when their ASCII digits and letters agree. The twins of the
+    four panels (`g1`, `g1m`, `g7`, `g7m`: other scripts, words and numbers)
+    were scored once after the three rules were frozen and agree on all 2,034
+    pairs.
+  - Ordinal and compound number words, `fuzzy_street_c10` (two captures; the
+    eight false matches that `fuzzy_street_c9/residuals.tsv` pinned are closed
+    and the file is gone). Three rules, read from the 1,522 native matches of
+    the fit panels:
+    - A name of whole numbers only before the suffix (`500 Twenty One St`,
+      `500 21 Ave`, `1 Hundred 1 St`), or a directional before a name that
+      opens with a number and goes on to numbers or ordinals (`300 E Twenty
+      Third St`), is compared as one string: it matches only at edit
+      similarity 87, as a stored value it reports that similarity, and as a
+      candidate against a split street half of it. `500 Twenty One St` finds
+      neither `500 Twenty One Street` nor `500 Twenty First St` (no suffix
+      spelling matches it, `Rd` and `Road` included) while `500 Twenty First
+      Street` finds `500 Twenty One Street` at 88; `300 E Twenty Third
+      Street` finds `300 Twenty Third Street` at 45 and the reverse at 89.
+      A name that ends in an ordinal splits as any other street (`500 Twenty
+      First St` finds `500 Twenty First Street` at 88).
+    - Whole numbers after the street number belong to the number when a word
+      follows: `500 Twenty First Street` finds `500 Twenty Tenth Street` at
+      80 and `500 Twenty Third Street` finds `500 Twenty Second Street` at 75,
+      not at 86 and 84.
+    - An ordinal first word is no street number: `3rd Ave`, `Third Ave` and
+      `101st St` report 88 for themselves, as a street with no number does.
+
+    Twelve panels (`h1`, `h2`, `h3`, `h6`, `h7`, `h8` and their Match Blank
+    twins: other numbers and names) were scored after the model's predictions
+    for them were frozen in a file (hash in `RUN-FACTS.txt`) and agree on every
+    pair. The directional rule is read for `E`, `W`, `N` and `East` before a
+    number name; other directionals before one are not measured. Not measured
+    either: a number name with no suffix word, a suffix word before a tail.
+  - Not measured: Match Blank Fields for a street that is whole as the stored
+    value, a blank street number with a name of four words, non-ASCII white
+    space, and suite values longer than the shapes in `qs1` to `qs7`.
 - Title: when the shorter title is an exact-word subset of a six-word title,
   two to five shared words score 89, 93, 95 and 98; five shared words out of
   order score 96. An exact-word subset candidate can match a five-word title

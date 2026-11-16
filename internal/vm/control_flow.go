@@ -98,6 +98,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		if err := vm.maybePauseForDebug(inst); err != nil {
 			return execOutcome{}, err
 		}
+		heapPlan := vm.planHeapStatement(inst)
 		switch inst.Op {
 		case ir.OpDeclare:
 			if err := vm.finalCollectionIncrementResultError(inst, result); err != nil {
@@ -170,7 +171,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 				return out, err
 			}
 		case ir.OpIf:
-			condition, err := vm.eval(inst.Expr, result)
+			condition, err := vm.evalHeapNeutral(inst.Expr, result)
 			if err != nil {
 				return execOutcome{}, err
 			}
@@ -257,7 +258,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		default:
 			return execOutcome{}, fmt.Errorf("unsupported instruction %q", inst.Op)
 		}
-		if err := vm.updateHeapLimit(); err != nil {
+		if err := vm.updateHeapLimitAfter(heapPlan); err != nil {
 			return execOutcome{}, err
 		}
 	}
@@ -265,12 +266,33 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 }
 
 func (vm *VM) updateHeapLimit() error {
+	return vm.updateHeapLimitAfter(heapStatementPlan{})
+}
+
+// updateHeapLimitAfter is the strict per-statement heap check. A statement
+// planned by planHeapStatement is priced from the previous exact check when
+// the plan still holds; every other check walks the heap.
+func (vm *VM) updateHeapLimitAfter(plan heapStatementPlan) error {
 	if vm.limitMode != LimitModeStrict {
 		return nil
 	}
-	total := vm.currentHeapSize()
+	total, ok := vm.heapSizeFromPlan(plan)
+	if ok {
+		if heapVerifyAgainstFullWalk {
+			vm.verifyHeapSize(total)
+		}
+		vm.armHeapCheck()
+	} else {
+		total = vm.heapSizeAndArm()
+	}
 	vm.limits.HeapSize = total
 	return vm.checkLimit("heapSize", vm.limits.HeapSize, vm.limitCaps.HeapSize)
+}
+
+func (vm *VM) verifyHeapSize(total int) {
+	if want := vm.currentHeapSizeFullWalk(); want != total {
+		panic(fmt.Sprintf("incremental heap size %d != full walk %d", total, want))
+	}
 }
 
 func (vm *VM) currentHeapSize() int {
@@ -1053,7 +1075,7 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1097,7 +1119,7 @@ func (vm *VM) executeDoWhile(source string, inst ir.Instruction, result *Result)
 		default:
 			return out, nil
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1172,7 +1194,7 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if err := vm.chargeLoopIteration("for", iteration); err != nil {
 			return execOutcome{}, err
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1735,6 +1757,18 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 			}
 		}
 		if err := vm.ensureRunAsUserRecord(&user); err != nil {
+			return execOutcome{}, err
+		}
+	}
+	// runAs with a User charges a DML statement; Limits.getRunAs is that
+	// counter (limits_counter_edges runas101, runas151). The Package.Version
+	// form has no row and charges nothing. Native sharing_access_modes d4 rows
+	// (APIs 62.0-68.0) agree: one DML statement per runAs(User) on entry,
+	// nested blocks included, the 151st raises the DML LimitException,
+	// runAs(Version) counts none (u2_04), and the count does not mark
+	// callout-pending work.
+	if changesUser {
+		if err := vm.incrementSavepointStatement(); err != nil {
 			return execOutcome{}, err
 		}
 	}

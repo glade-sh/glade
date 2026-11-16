@@ -14,6 +14,26 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// releaseSavepointsAtTestBoundary ends every active savepoint at startTest and
+// stopTest; a later rollback to one fails (test_boundary_edges sb1, sb2, sb4,
+// APIs 62 and 67).
+func (vm *VM) releaseSavepointsAtTestBoundary() {
+	for id := range vm.savepointOrder {
+		delete(vm.savepoints, id)
+		delete(vm.savepointMarks, id)
+		delete(vm.emailSavepoints, id)
+		delete(vm.creationSavepoints, id)
+		delete(vm.flowPathSavepoints, id)
+		delete(vm.calloutPendingWork.savepoints, id)
+		vm.releaseChangeDataCapture(id)
+		delete(vm.savepointOrder, id)
+		if vm.boundaryReleasedSavepoints == nil {
+			vm.boundaryReleasedSavepoints = make(map[string]bool)
+		}
+		vm.boundaryReleasedSavepoints[id] = true
+	}
+}
+
 func (vm *VM) testStart() (Value, error) {
 	if vm.testContext == nil {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Method only allowed during testing", Stack: vm.stackFrames()}
@@ -21,6 +41,7 @@ func (vm *VM) testStart() (Value, error) {
 	if vm.testContext.Started {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing already started", Stack: vm.stackFrames()}
 	}
+	vm.releaseSavepointsAtTestBoundary()
 	vm.testContext.Started = true
 	vm.testContext.Stopped = false
 	vm.fakeNow = vm.fakeNow.Add(time.Second)
@@ -47,6 +68,7 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 	vm.testContext.Stopped = true
 	vm.prepareTestStopAsyncJobs()
 	err := vm.drainTestWork(result)
+	vm.releaseSavepointsAtTestBoundary()
 	// The test boundary clears pending DML and active-savepoint callout guards.
 	vm.calloutPendingWork = calloutPendingWork{}
 	vm.cpuBudgetUsed = vm.testContext.parentCPUBudget
@@ -300,10 +322,11 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 			}
 		}
 	}
-	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
+	// The specific counter first: its exhaustion text is the native message.
+	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
 		return Null, err
 	}
-	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
+	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
 	if len(args) == 1 {
@@ -613,6 +636,11 @@ func (vm *VM) abortJob(args []Value) (Value, error) {
 			continue
 		}
 		if job.Kind == "ScheduledApex" || job.Kind == "ScheduledBatch" {
+			// Aborting a scheduled job deletes its CronTrigger: one DML statement.
+			// NATIVE abortJob on a scheduled job apex_release_gates/org.tsv PjProbe67/PJ7 anonymous 62.0 63.0 67.0
+			if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+				return Null, err
+			}
 			vm.testContext.AsyncJobs[i].ScheduledAborted = true
 		} else {
 			vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs[:i], vm.testContext.AsyncJobs[i+1:]...)
@@ -650,6 +678,10 @@ func (vm *VM) enqueueTestBatchJobs(args []Value) (Value, error) {
 	}
 	if args[0].Kind != ValueInt {
 		return Null, fmt.Errorf("Test.enqueueBatchJobs expects Integer")
+	}
+	if args[0].Int > 105 && vm.Org != nil {
+		// Five active jobs plus a flex queue of 100 (test_boundary_edges bt_enq106).
+		return Null, newExceptionError("System.AsyncException", fmt.Sprintf("You've exceeded the limit of 100 jobs in the flex queue for org %s. Wait for some of your batch jobs to finish before adding more. To monitor and reorder jobs, use the Apex Flex Queue page in Setup.", vm.Org.OrgID))
 	}
 	ids := typedList("List<Id>")
 	ids.nativeListMembership = true
@@ -1312,6 +1344,12 @@ func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 	}
 	if vm.testContext != nil {
 		job.RunAsUser = vm.eventSubscriberRunAsUser()
+		// Native sharing_access_modes u2_06b rows (APIs 62.0-68.0): a
+		// Queueable enqueued inside runAs and drained by a Test.stopTest
+		// outside the block still runs as the enqueuing user.
+		if job.RunAsUser.Kind == "" && job.Kind == "Queueable" && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth {
+			job.RunAsUser = vm.testContext.CurrentUser
+		}
 		vm.recordApexClass(vm.asyncClassName(job))
 		// async_lifecycle_c14 Y8 (API 62/67) and the scheduleBatch-isTest rows
 		// of async_static_callbacks, async_context_ids and async_route_twins:
@@ -1595,7 +1633,11 @@ func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result
 	if mode == "" || inheritedTestEntry {
 		sharing = "without sharing"
 	}
-	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
+	// Native sharing_access_modes d3_b_Inh and d3_f_Inh rows (APIs 62.0-68.0):
+	// an inherited-sharing Batchable or @future entered from the test method
+	// runs without sharing, as a Queueable does, at every API.
+	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) &&
+		vm.currentAsyncKind != "Future" && vm.currentAsyncKind != "BatchApex" {
 		sharing = "with sharing"
 	}
 	var bodyEntered *bool
@@ -1633,7 +1675,16 @@ func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Resul
 	if len(target.Params) == 0 {
 		args = nil
 	}
+	syncQueries, syncCPUTimeMS := vm.limitCaps.Queries, vm.limitCaps.CPUTimeMS
 	_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+		if vm.limitCaps.nativeDefaults {
+			// async_limit_messages a_fgetters_fin: a finalizer keeps the
+			// synchronous query and CPU caps with the asynchronous heap.
+			vm.limitCaps.Queries, vm.limitCaps.CPUTimeMS = syncQueries, syncCPUTimeMS
+			previousFinalizer := vm.inFinalizer
+			vm.inFinalizer = true
+			defer func() { vm.inFinalizer = previousFinalizer }()
+		}
 		return vm.withQueueableDelay(job, func() (Value, error) {
 			return vm.withAsyncKind("Queueable", func() (Value, error) {
 				// B44X01Z/02Z/05Z: omitted finalizers enter with sharing at API
@@ -1644,7 +1695,10 @@ func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Resul
 				if !target.SourceContextBound {
 					mode, _ = vm.classSharingMode(target.ClassName)
 				}
-				if mode == "" {
+				// Native sharing_access_modes d3_fin_Inh rows (APIs 62.0-68.0): an
+				// inherited-sharing finalizer run by Test.stopTest enters with
+				// sharing too.
+				if mode == "" || mode == "inherited sharing" && vm.testContext != nil {
 					return vm.callMethodWithReceiver(target, finalizer, args, result, "with sharing")
 				}
 				return vm.callAsyncEntry(target, finalizer, args, result, false)
