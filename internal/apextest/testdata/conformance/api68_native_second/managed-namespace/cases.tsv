@@ -1,9 +1,0 @@
-id	api	route	phase	variant	source
-Q4-PACKAGED-68	68.0	anonymous	case	-	snippets/q4.apex
-Q4-PACKAGED-67	67.0	anonymous	case	-	snippets/q4.apex
-Q4-SUBSCRIBER-68	68.0	anonymous	case	-	snippets/q4sub.apex
-K3-PACKAGED-68	68.0	anonymous	case	-	snippets/k3.apex
-K3-PACKAGED-67	67.0	anonymous	case	-	snippets/k3.apex
-NAMESPACE-INSTALL-BETA-WITH-AGE	68.0	install	case	-	04t-beta-with-age
-NAMESPACE-INSTALL-BETA-NO-AGE	68.0	install	case	-	04t-beta-no-age
-NAMESPACE-INSTALL-BETA-JSON-WITH-AGE	68.0	install	case	-	04t-beta-json-with-age

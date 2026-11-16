@@ -32,21 +32,13 @@ var api68SecondPassPartialGaps = map[string]api68PartialGap{
 // The data is checked in so the rows stay reviewable; each needs a source the
 // capture could not provide or a feature Glade does not model.
 var api68SecondPassNotReplayed = map[string]string{
-	"elastic-enabled/ELASTIC-ENABLED-SETTING":                "enableAsyncApexElasticExecutions is an Apex settings flag Glade does not read; the settings file was not captured",
-	"elastic-enabled/ELASTIC-ENABLED-LIMITS":                 "OrgLimits keys and daily usage are org history; Glade models 19 keys sized from transaction caps and no elastic keys",
-	"elastic-enabled/ELASTIC-ENABLED-ENQ":                    "the CapElasticProbe class source was not captured; daily usage is org history",
-	"elastic-enabled/ELASTIC-ENABLED-READ":                   "the CapElasticProbe class source was not captured; daily usage is org history",
-	"elastic-enabled/ELASTIC-OVERRIDE250-SETTING":            "asyncApexExecutionsOverride is an Apex settings value Glade does not read",
-	"elastic-enabled/ELASTIC-OVERRIDE250-LIMITS":             "OrgLimits keys and daily usage are org history; the elastic ceiling min(2 x override, licensed) is not modeled",
-	"elastic-enabled/ELASTIC-RESTORE":                        "Apex settings deploy is not modeled",
-	"managed-namespace/Q4-PACKAGED-68":                       "calls an installed first-generation managed class whose source is not visible or captured",
-	"managed-namespace/Q4-PACKAGED-67":                       "calls an installed first-generation managed class whose source is not visible or captured",
-	"managed-namespace/Q4-SUBSCRIBER-68":                     "needs the installed package field gladetest1__Age__c and an Account row from a prior row; the package metadata was not captured",
-	"managed-namespace/K3-PACKAGED-68":                       "calls an installed first-generation managed class whose source is not visible or captured",
-	"managed-namespace/K3-PACKAGED-67":                       "calls an installed first-generation managed class whose source is not visible or captured",
-	"managed-namespace/NAMESPACE-INSTALL-BETA-WITH-AGE":      "package install is not a Glade route",
-	"managed-namespace/NAMESPACE-INSTALL-BETA-NO-AGE":        "package install is not a Glade route",
-	"managed-namespace/NAMESPACE-INSTALL-BETA-JSON-WITH-AGE": "package install is not a Glade route",
+	"elastic-enabled/ELASTIC-ENABLED-SETTING":     "enableAsyncApexElasticExecutions is an Apex settings flag Glade does not read; the settings file was not captured",
+	"elastic-enabled/ELASTIC-ENABLED-LIMITS":      "OrgLimits keys and daily usage are org history; Glade models 19 keys sized from transaction caps and no elastic keys",
+	"elastic-enabled/ELASTIC-ENABLED-ENQ":         "the CapElasticProbe class source was not captured; daily usage is org history",
+	"elastic-enabled/ELASTIC-ENABLED-READ":        "the CapElasticProbe class source was not captured; daily usage is org history",
+	"elastic-enabled/ELASTIC-OVERRIDE250-SETTING": "asyncApexExecutionsOverride is an Apex settings value Glade does not read",
+	"elastic-enabled/ELASTIC-OVERRIDE250-LIMITS":  "OrgLimits keys and daily usage are org history; the elastic ceiling min(2 x override, licensed) is not modeled",
+	"elastic-enabled/ELASTIC-RESTORE":             "Apex settings deploy is not modeled",
 }
 
 // The inventory test keeps the exported rows consistent: every case has a
@@ -56,7 +48,7 @@ func TestAPI68NativeSecondPassInventory(t *testing.T) {
 	api68NativeRoot = "testdata/conformance/api68_native_second"
 	defer func() { api68NativeRoot = previous }()
 	seen := map[string]bool{}
-	for _, family := range []string{"elastic-enabled", "managed-namespace"} {
+	for _, family := range []string{"elastic-enabled"} {
 		for _, row := range api68NativeFamilyCases(t, family) {
 			key := family + "/" + row.id
 			if _, listed := api68SecondPassNotReplayed[key]; !listed {

@@ -1624,7 +1624,7 @@ func optionGroupTemplateJS(inputType string) string {
 	}
 	requiredMarker := ""
 	if inputType == "checkbox" {
-		// api68_native B01: a required checkbox group puts a hidden asterisk and
+		// Native API 68 capture: a required checkbox group puts a hidden asterisk and
 		// an assistive "required" span before the label, at API 67 and 68.
 		requiredMarker = `...($cmp.required ? [api_element("abbr", { classMap: { "slds-required": true }, attrs: { "aria-hidden": "true", title: "required" }, key: 3 }, [api_text("*")]), api_element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [api_text("required")])] : []),`
 	}
@@ -1636,7 +1636,7 @@ func selectTemplateJS() string {
 }
 
 func sliderTemplateJS() string {
-	// api68_native B24: a fractional step shows the range and the value with
+	// Native API 68 capture: a fractional step shows the range and the value with
 	// the step's decimal places ("0.0-100.0", "50.0" at step 0.1). Integer
 	// steps were not captured and keep the base rendering.
 	return `[api_element("label", { classMap: { "slds-form-element": true, "slds-slider": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), ...(sliderStepDecimals($cmp.step) > 0 ? [api_element("span", { classMap: { "slds-slider-label__range": true }, key: 3 }, [api_text(Number($cmp.min ?? 0).toFixed(sliderStepDecimals($cmp.step)) + "-" + Number($cmp.max ?? 100).toFixed(sliderStepDecimals($cmp.step)))])] : []), api_element("input", { classMap: { "slds-slider__range": true }, attrs: { type: "range", min: String($cmp.min ?? "0"), max: String($cmp.max ?? "100"), step: String($cmp.step ?? "1") }, props: { value: String($cmp.value ?? "0"), disabled: Boolean($cmp.disabled) }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } }), ...(sliderStepDecimals($cmp.step) > 0 ? [api_element("span", { classMap: { "slds-slider__value": true }, key: 4 }, [api_text(Number($cmp.value ?? 0).toFixed(sliderStepDecimals($cmp.step)))])] : [])])]`
@@ -1685,7 +1685,7 @@ func inputRichTextTemplateJS() string {
 	return `[api_element("label", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("textarea", { classMap: { "slds-textarea": true, "slds-rich-text-editor__textarea": true }, props: { value: $cmp.value || "", disabled: Boolean($cmp.disabled) }, key: 2, on: { change: api_bind($cmp.handleRichTextChange), input: api_bind($cmp.handleRichTextChange) } })])]`
 }
 
-// api68_native B17: with show-address-lookup the component renders the
+// Native API 68 capture: with show-address-lookup the component renders the
 // address label, a "Search Address" combobox, then one labeled input per
 // address part. Without the lookup the base rendering is unchanged.
 func inputAddressTemplateJS() string {

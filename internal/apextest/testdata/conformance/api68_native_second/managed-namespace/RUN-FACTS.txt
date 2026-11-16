@@ -1,9 +1,0 @@
-capture: managed-namespace
-started: 2026-11-16T19:35Z
-finished: 2026-11-16T20:30Z
-orgs: 00D<id>, 00D<id>, 00D<id>, 00D<id> (scratch subscribers, Developer, max API 68.0)
-package: Glade Test1 (gladetest1), first-generation managed, the packaging org
-versions uploaded: api68-namespace-capture-b (beta, with Account.Age__c), api68-namespace-capture-managed (1.0 released), api68-ns-noage (1.1 released), api68-ns-beta12 (1.2 beta, no field), api68-ns-json (1.2 beta build 2, with field + JSON method)
-route: install a 1GP beta into a no-namespace scratch org, deploy a subscriber-local Collision__c/Age__c, call the packaged global classes from anonymous Apex
-install results: beta without Account.Age__c installs; beta or released with Account.Age__c fails with an opaque install error; released 1.0/1.1 by id were not visible to subscribers
-truncated debug logs: none
