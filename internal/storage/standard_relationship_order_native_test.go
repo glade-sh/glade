@@ -94,3 +94,41 @@ func describeOrder(order *int) string {
 	}
 	return strconv.Itoa(*order)
 }
+
+// A standard definition persisted before the table existed carries the overlay
+// marker but no order. The overlay check must repair it.
+func TestStandardRelationshipOrderRepairsPersistedDefinition(t *testing.T) {
+	definition, ok := StandardObjectDefinition("EntitlementContact")
+	if !ok {
+		t.Fatal("EntitlementContact is not a standard object")
+	}
+	for _, name := range []string{"ContactId", "EntitlementId"} {
+		field := definition.Fields[name]
+		if field.RelationshipOrder == nil {
+			t.Fatalf("%s has no order after the standard overlay", name)
+		}
+		field.RelationshipOrder = nil
+		definition.Fields[name] = field
+	}
+	if !standardRelationshipOrderNeedsRepair(definition) {
+		t.Fatal("a persisted definition without orders must need repair")
+	}
+	EnsureStandardObjectFields(&definition)
+	for name, want := range map[string]int{"ContactId": 1, "EntitlementId": 0} {
+		if order := definition.Fields[name].RelationshipOrder; order == nil || *order != want {
+			t.Errorf("%s order = %v, native %d", name, describeOrder(order), want)
+		}
+	}
+	// An unlisted field stays null, and the clone of a definition does not
+	// share the order with the memoized catalog definition.
+	fresh, _ := StandardObjectDefinition("EntitlementContact")
+	*fresh.Fields["ContactId"].RelationshipOrder = 7
+	again, _ := StandardObjectDefinition("EntitlementContact")
+	if *again.Fields["ContactId"].RelationshipOrder != 1 {
+		t.Fatal("mutating a returned definition changed the memoized catalog definition")
+	}
+	account, _ := StandardObjectDefinition("Account")
+	if account.Fields["ParentId"].RelationshipOrder != nil {
+		t.Fatal("Account.ParentId must keep a null order")
+	}
+}
