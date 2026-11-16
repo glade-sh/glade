@@ -447,6 +447,16 @@ set these limits:
   Glade reports none.
 - Suffixes of one to three letters do not follow the four-letter rules
   (`Zorvex Freight Art` does not find `Zorvex Freight - Bat`).
+- A spaced slash against a parenthesis form on one two-word base with
+  different one-word suffixes does not match on a base under 12 letters
+  (`Orbel Trade / East` and `Orbel Trade (West)`, `Mandolar Oil`, `Ab
+  Logistics`). On a base of 12 or 13 letters the spaced slash candidate finds
+  the parenthesis form at 90 (`Zorvex Fright / East`, `Zorvex Freight / East`
+  against `(West)`); the parenthesis candidate and longer bases keep the
+  scorer's result. Two suffixes that differ in one vowel (`East`/`Oast`,
+  `West`/`Wast`) keep the scorer's match on every base (native 93 and 94,
+  Glade 91). NATIVE `company_name_fit` R2_par, R4_sp, R7_sp and
+  `fuzzy_residual_panels` t4co1_p1, r2co_p1.
 
 `TestCompanyIsolationPanelCounts` pins the R3 panels (400 of 458 captured
 matches reported, 297 exact confidences, none that native does not report) and
@@ -547,7 +557,17 @@ Unchanged from the third run's model.
   `Dir`/`Director` no match), but a prefix is enough when one title has more
   words (`Dir` finds `Director of IT`). Initials match (`CMO`/`Chief Marketing
   Officer`, `BDM`/`Business Development Manager`, `Bus Dev Manager`/`Business
-  Development Manager` 100). Otherwise the confidence depends on the number of
+  Development Manager` 100). A title of single letters (`A B C`, `B C D`)
+  that no other path matches finds a title with a word of letters only that
+  starts with one of them, the article `A` aside on both sides: `A B C` finds
+  `Chief Officer` and `Alpha, Beta`, not `Alpha,Beta`, `Able` or `Zorp
+  Quill`, and `C A` does not find `Alpha Beta`. The confidence follows the
+  larger of the two word counts without stop words: 93 up to two, 89 at
+  three, 88 at four or more (`A B C D` finds `Chief Officer` at 89, `A B C D
+  E` at 88; NATIVE `fuzzy_title_variant` f1t3, `fuzzy_residual_panels`
+  t3ti1_p1 and r2ti_p1). A one-letter title alone (`B`) and an acronym word
+  against letters (`ABC`/`B C`) match natively and not in Glade.
+  Otherwise the confidence depends on the number of
   shared words k and the larger content-word count n: (1,2) 93, (1,3) 89,
   (1,4) 88, (2,3) 95, (2,4) 93, (2,5) 91, (3,4) 97, (3,5) 94, (4,5) 97, and
   six words in their own table. The same words in a different order with a
@@ -769,7 +789,16 @@ B2 `s_*`, and the `Standard.Field.*`, `Standard.*.NameConfidence` rows):
   `standard_first_names`); the pairs are not transitive. Two blank last names are ignored beside two first names. The
   measured surname panels (`duplicate_save_behavior`, `surname_keyboard`,
   `surname_substitution`) keep their keyboard geometry whatever the first
-  names.
+  names. A surname pair those paths leave unmatched still matches on equal
+  Metaphone 3 codes with equal space and hyphen counts (100) or on a raw
+  keyboard score: 93 or more for two names of one length, and for two names
+  one letter apart 91 or more with the extra letter last and 93 or more with
+  it at its best position (`Smth` finds `Smiht`, `Kowalsky` finds
+  `Kowalczyk`, `Morrice` finds `Morrisun` and not `Morrison` or `Morrisin`;
+  NATIVE `fuzzy_residual_panels`). The names share their first letter and
+  have nine letters or fewer; accented letters are not stripped. The rule
+  confidence is (200 + score) / 3 cut to a whole number (`Smyth`/`Smiht` 98,
+  `Garsia`/`Gracia` 97, `Larchmon`/`Larchbon` 99).
 - The phone path is keyed on `First_Name (1,1) Last_Name Phone`: the surname
   key applies (`McAllen` does not find `Mc Allen`), and an initial or a name
   that differs only in spaces passes when the initials agree.
@@ -1009,13 +1038,24 @@ on both sides), so no row covers blank Account names or Contact last names.
   the phone comparison. Identical international and extension strings in the
   Contact save fixture return no match with only the names as corroboration.
 - Standard phone confidence: the Contact and Lead phone item scores 100 for
-  the same national number, 91 when both numbers carry one country digit and
-  only the line differs, and 88 for any other line difference; the rule
-  confidence is the mean with the two exact names (and a present Lead
-  company): 96 and 97 for 88, 97 and 98 for 91. Records that each carry an
-  email address keep 97 and 98 for every line difference
-  (`Field.Contact.Phone`, `Field.Lead.Phone`). `phone_city_zip` N5.spt1 and
-  N5.slt1 are exact.
+  the same national number, 91 when both numbers carry the country digit 1 and
+  only the line differs, and 88 for any other line difference. The rule
+  confidence is the mean of that item with the exact items: the two names, a
+  present Lead company, and one more when both records carry the same first
+  name and the name dictionary lists it under its own spelling (`Jonathan`,
+  `Robert`, `Margaret`; not `Quill`, and not the alias `Jo`). A line
+  difference so reports 96 on the Contact rule and 97 on the Lead rule, and
+  one point more with a dictionary first name or with the country digit on
+  both numbers (two points with both on the Contact rule). The last name and
+  email addresses on the records do not change it. `phone_city_zip` N5.spt1
+  and N5.slt1 and the `fuzzy_residual_panels` phone panels are exact. A first
+  name the captured dictionary rows do not list scores as an unknown name.
+- Standard surname residuals (`fuzzy_residual_panels` t1ln1_p1, t1em1_p1,
+  r2ln_p1, r3ln_p1): native finds some surnames Glade does not, among them
+  `Morrison`/`Harrison`, `Morrison`/`Kowalsky`, `Tarvele`/`Tarvelin`,
+  `Calloway`/`Callowiys` and `Pemberton`/`Pembertzb`, and reports some
+  confidences one point away; `residuals.tsv` in that fixture pins every such
+  pair. The test reports no surname pair that native does not.
 - Standard Person Account matching rule: not activatable by metadata deploy,
   so not captured; unenforced in Glade.
 - Raw (below threshold) item scores for Company Name and Title count 50 in an
