@@ -280,6 +280,13 @@ func reOrderCompare(id string, native, got []string) reOutcome {
 func reCollationCompare(id string, native, got []string) reOutcome {
 	got = reMarkerLines(got, "C2|")
 	soql := strings.Contains(id, "_q_")
+	if strings.Contains(id, "_site_") {
+		// SOQL text order on a Text field: strings that differ only in case
+		// tie in the locale collation, and the native order inside such a run
+		// is not stable across queries (Apple/apple, Müller/müller). Compare
+		// each run of case-only ties as a set.
+		native, got = reCanonicalTieRuns(native), reCanonicalTieRuns(got)
+	}
 	out := reCompareLines(native, got, nil, nil)
 	if soql {
 		// SOQL text order is a locale collation fitted at 98% adjacent
@@ -311,6 +318,28 @@ func reCollationCompare(id string, native, got []string) reOutcome {
 			}
 			out.mismatches = append(out.mismatches, fmt.Sprintf("%s: %d/%d positions agree", head[1], same, len(a)))
 		}
+	}
+	return out
+}
+
+func reCanonicalTieRuns(lines []string) []string {
+	out := make([]string, len(lines))
+	for i, line := range lines {
+		head, body, ok := strings.Cut(strings.TrimPrefix(line, "C2|"), "|")
+		if !ok {
+			out[i] = line
+			continue
+		}
+		items := strings.Split(body, "~")
+		for start := 0; start < len(items); {
+			end := start + 1
+			for end < len(items) && strings.EqualFold(items[end], items[start]) {
+				end++
+			}
+			sort.Strings(items[start:end])
+			start = end
+		}
+		out[i] = "C2|" + head + "|" + strings.Join(items, "~")
 	}
 	return out
 }
@@ -485,7 +514,7 @@ func TestReverseEngineeredNativeConformance(t *testing.T) {
 				apis = append(apis, api)
 			}
 			sort.Strings(apis)
-			totalRows, totalMatched := 0, 0
+			totalRows, totalMatched, infoRows, infoMatched := 0, 0, 0, 0
 			for _, api := range apis {
 				t.Run(api, func(t *testing.T) {
 					kinds := map[string]string{}
@@ -501,8 +530,13 @@ func TestReverseEngineeredNativeConformance(t *testing.T) {
 					got := reReplay(t, family.dir, api, order, kinds, wanted, nativeLines)
 					for _, r := range byAPI[api] {
 						outcome := family.compare(r.id, r.lines, got[r.id], r.kind)
-						totalRows += outcome.rows
-						totalMatched += outcome.matched
+						if outcome.informational {
+							infoRows += outcome.rows
+							infoMatched += outcome.matched
+						} else {
+							totalRows += outcome.rows
+							totalMatched += outcome.matched
+						}
 						t.Run(r.id, func(t *testing.T) {
 							if len(outcome.mismatches) == 0 {
 								return
@@ -521,7 +555,7 @@ func TestReverseEngineeredNativeConformance(t *testing.T) {
 					}
 				})
 			}
-			t.Logf("RE-SUMMARY %s rows=%d matched=%d", family.dir, totalRows, totalMatched)
+			t.Logf("RE-SUMMARY %s rows=%d matched=%d not-fitted rows=%d matched=%d", family.dir, totalRows, totalMatched, infoRows, infoMatched)
 		})
 	}
 }
