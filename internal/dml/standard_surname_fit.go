@@ -15,8 +15,10 @@ import "strings"
 // Otherwise the names need one first letter and a raw keyboard score at or
 // above a floor: 93 for two names of one length (two or more letters), 91
 // for two names that differ by one trailing letter (shorter name two to eight
-// letters). The item is the raw score; the rule confidence is the mean of the
-// item with two exact items, (200 + item) / 3.
+// letters), which also need 93 with the extra letter at its best position
+// (standardSurnameInserted). The item is the raw score; the rule confidence is
+// the mean of the item with two exact items, (200 + item) / 3, cut to a whole
+// number ("Smyth" and "Smiht" score 96.4 and report 98, not 98.8 rounded).
 func standardSurnameFit(rawA, rawB string) (item float64, ok bool) {
 	a, b := standardSurnameFold(rawA), standardSurnameFold(rawB)
 	if a == b {
@@ -49,7 +51,38 @@ func standardSurnameFit(rawA, rawB string) (item float64, ok bool) {
 	if !ok || score < floor {
 		return 0, false
 	}
+	if len(a) != len(b) && standardSurnameInserted(a, b) < standardSurnameInsertedFloor {
+		return 0, false
+	}
 	return score, true
+}
+
+// standardSurnameInsertedFloor is the second floor of two names one letter
+// apart: the keyboard score with the extra letter at its best position.
+// NATIVE fuzzy_residual_panels boundaries r2ln_p1 and r3ln_p1: "Morrice" does
+// not find "Morrison" (91.25, and 92.25 at best) or "Morrisin" (92.25), and
+// "Tarvele" does not find "Tarvelon" (91.88, 92.88 at best), while "Smth"
+// finds "Smiht" (91.8, 93.0 at best), "Kowalsky" finds "Kowalczyk" (91.33,
+// 94.89 at best) and "Morrice" finds "Morrisun" (93.25).
+const standardSurnameInsertedFloor = 93
+
+// standardSurnameInserted is the best keyboard score of two folded names one
+// letter apart over every position of the extra letter after the first.
+func standardSurnameInserted(a, b string) float64 {
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	best := 0.0
+	var buffer [16]byte
+	for skip := 1; skip < len(b) && len(b) <= len(buffer); skip++ {
+		aligned := append(append(buffer[:0], b[:skip]...), b[skip+1:]...)
+		if score, ok := standardSurnameKeyboard(a, string(aligned)); ok {
+			// The extra letter costs 0.25 of the longer length.
+			score = 100 * (1 - ((100-score)/100*float64(len(a))+0.25)/float64(len(b)))
+			best = max(best, score)
+		}
+	}
+	return best
 }
 
 func standardSurnameFold(s string) string {

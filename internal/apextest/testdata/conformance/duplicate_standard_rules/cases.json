@@ -136,7 +136,7 @@
    "min_recall": 0.8181
   },
   "62/Standard.Contact.NameConfidence": {
-   "max_conf_mae": 0.304,
+   "max_conf_mae": 0.174,
    "max_extra": 0,
    "min_recall": 0.9999
   },
@@ -196,7 +196,7 @@
    "min_recall": 0.9935
   },
   "62/Standard.Field.Contact.Last": {
-   "max_conf_mae": 0.041,
+   "max_conf_mae": 0.011,
    "max_extra": 0,
    "min_recall": 0.9999
   },
@@ -216,7 +216,7 @@
    "min_recall": 0.9935
   },
   "62/Standard.Field.Lead.Last": {
-   "max_conf_mae": 0.041,
+   "max_conf_mae": 0.011,
    "max_extra": 0,
    "min_recall": 0.9999
   },
@@ -251,7 +251,7 @@
    "min_recall": 0.8181
   },
   "62/Standard.Lead.NameConfidence": {
-   "max_conf_mae": 0.304,
+   "max_conf_mae": 0.174,
    "max_extra": 0,
    "min_recall": 0.9999
   },
@@ -841,7 +841,7 @@
    "min_recall": 0.8181
   },
   "67/Standard.Contact.NameConfidence": {
-   "max_conf_mae": 0.304,
+   "max_conf_mae": 0.174,
    "max_extra": 0,
    "min_recall": 0.9999
   },
@@ -906,7 +906,7 @@
    "min_recall": 0.9935
   },
   "67/Standard.Field.Contact.Last": {
-   "max_conf_mae": 0.041,
+   "max_conf_mae": 0.011,
    "max_extra": 0,
    "min_recall": 0.9999
   },
@@ -926,7 +926,7 @@
    "min_recall": 0.9935
   },
   "67/Standard.Field.Lead.Last": {
-   "max_conf_mae": 0.041,
+   "max_conf_mae": 0.011,
    "max_extra": 0,
    "min_recall": 0.9999
   },
@@ -961,7 +961,7 @@
    "min_recall": 0.8181
   },
   "67/Standard.Lead.NameConfidence": {
-   "max_conf_mae": 0.304,
+   "max_conf_mae": 0.174,
    "max_extra": 0,
    "min_recall": 0.9999
   },

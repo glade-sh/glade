@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"math"
 	"regexp"
 	"strings"
 	"unicode"
@@ -245,27 +246,40 @@ func standardWebsite(a, b string) (bool, float64) {
 // up to the last four digits on the standard Account rule.
 const standardAccountPhoneLineMismatch = 94
 
-// The Contact and Lead phone item (N5.spt1, N5.slt1): 100 for the same
-// national number, 91 when both numbers carry the country digit 1 and only the
-// line differs, 88 for any other line difference. The rule confidence is the
-// mean of its items (standardPhoneShare). Records that each carry an email
-// address score every line difference at 91 (Field.Contact.Phone and
-// Field.Lead.Phone, whose records all differ in the address); the pairs
-// without an address are the panels above.
+// The Contact and Lead phone item (phone_city_zip N5.spt1 and N5.slt1,
+// fuzzy_residual_panels t2c_p1 and t2l_p1): 100 for the same national number,
+// 91 when both numbers carry the country digit 1 and only the line differs,
+// 88 for any other line difference. The rule confidence is the mean of its
+// items (standardPhoneShare).
 const (
 	standardPhoneLineCountry = 91
 	standardPhoneLineOther   = 88
 )
 
 // standardPhoneShare is the share of a Contact or Lead phone item in the rule
-// confidence: the item is one of three the rule averages with two exact
-// names, or one of four with a present Lead company. A phone path whose item
-// is not 100 keeps the product with the other items' shares.
-func standardPhoneShare(phone float64, withCompany bool) float64 {
-	if withCompany {
-		return (300 + phone) / 4
+// confidence: the mean of the item with the rule's exact items. The exact
+// items are the two names, a present Lead company, and one more when both
+// records carry one first name that the name dictionary lists under its own
+// spelling. NATIVE fuzzy_residual_panels r4pc_p1, r3pc_p1 and r3pl_p1: a line
+// difference scores 97 on the Contact rule for "Jonathan", "Robert",
+// "William", "Margaret", "Maximilian", "Nathan" and "Nathaniel" (98 with the
+// country digit on both numbers, and on the Lead rule), and 96 for "Quill",
+// "Quillon", "Zqwertyuo" and the alias "Jo" (97 with the country digit, and
+// on the Lead rule), whatever the last name and with or without an email
+// address on the records.
+func standardPhoneShare(phone float64, exactItems int) float64 {
+	return (100*float64(exactItems) + phone) / float64(exactItems+1)
+}
+
+// standardDictionaryFirstName reports two equal first names with a name
+// dictionary entry of their own (not a name keyed by an alias, such as "Jo").
+func standardDictionaryFirstName(a, b string) bool {
+	x, y := foldText(strings.TrimSpace(a)), foldText(strings.TrimSpace(b))
+	if x != y || !nameVariantHeads[x] {
+		return false
 	}
-	return (200 + phone) / 3
+	_, alias := nameAliasKeys[x]
+	return !alias
 }
 
 func standardPhone(object string) func(a, b string) (bool, float64) {
@@ -540,18 +554,21 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 		}
 	}
 	if phone := standardCompare(candidate.phone, existing.phone, standardPhone(object)); phone.ok() {
-		if phone.confidence == standardPhoneLineOther && strings.TrimSpace(candidate.email) != "" && strings.TrimSpace(existing.email) != "" {
-			phone.confidence = standardPhoneLineCountry
-		}
 		if candidate.kind != existing.kind {
 			// No row measures a cross-object phone path: it keeps the
 			// standard First Name item and its confidence.
 			if first := standardCompare(candidate.first, existing.first, standardFirstName); first.ok() {
-				take(standardProduct(last.confidence, first.confidence, standardPhoneShare(phone.confidence, false)))
+				take(standardProduct(last.confidence, first.confidence, standardPhoneShare(phone.confidence, 2)))
 			}
 		} else if first, ok := standardInitialKeyedFirst(candidate.first, existing.first); ok {
-			withCompany := candidate.kind == "lead" && strings.TrimSpace(candidate.company) != "" && strings.TrimSpace(existing.company) != ""
-			take(standardProduct(last.confidence, first, standardPhoneShare(phone.confidence, withCompany)))
+			exact := 2
+			if candidate.kind == "lead" && strings.TrimSpace(candidate.company) != "" && strings.TrimSpace(existing.company) != "" {
+				exact++
+			}
+			if standardDictionaryFirstName(candidate.first, existing.first) {
+				exact++
+			}
+			take(standardProduct(last.confidence, first, standardPhoneShare(phone.confidence, exact)))
 		}
 	}
 	// No row measures the company path's first names: it keeps the
@@ -605,7 +622,7 @@ func standardEmailPath(candidate, existing standardPerson) (matched bool, confid
 				lastConfidence, panel = confidence, true
 			}
 		} else if item, fitted := standardSurnameFit(candidate.last, existing.last); fitted {
-			lastConfidence, panel = (200+item)/3, true
+			lastConfidence, panel = math.Floor((200+item)/3), true
 		} else if standardSurnamePanelShape(candidate.last, existing.last) {
 			return false, 0, true
 		}
