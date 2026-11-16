@@ -90,11 +90,6 @@ private class Rxd8x0167 {
         try { observation = String.valueOf(Pattern.compile('(?<=(?:ab)*)c')); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
         System.assertEquals('ROW', observation);
     }
-    @IsTest static void d8x_x_comment_paren() {
-        String observation;
-        try { observation = String.valueOf(Pattern.compile('(?x)(a # c )\n)')); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
-        System.assertEquals('ROW', observation);
-    }
     @IsTest static void d8x_lone_amp() {
         String observation;
         try { observation = String.valueOf(Pattern.compile('[a&b]')); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }

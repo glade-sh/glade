@@ -793,9 +793,9 @@ func (p *javaRegexParser) family(singleLetter bool) {
 	p.next()
 	var name string
 	if singleLetter {
-		if c := p.at(p.cursor); c != 0 {
-			name = string(c)
-		}
+		// Java names the property after whatever is there, including the NUL past
+		// the end of the pattern (regex_java_divergence d1_x_bare).
+		name = string(p.at(p.cursor))
 		p.read()
 	} else {
 		i := p.cursor
