@@ -689,7 +689,7 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value
 // (native partial_dml_multifield throw rows, APIs 62.0, 67.0 and 68.0).
 func userModeFieldDMLException(op, objectName string, record Value, fields []string, index int) error {
 	message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result! ", objectName)
-	exception := Object("DmlException")
+	exception := Object("System.DmlException")
 	exception.Fields["message"] = String(message)
 	types := make([]string, index+1)
 	results := make([]dml.Result, index+1)
@@ -851,6 +851,9 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			continue
 		}
 		allowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
+		if allowed && vm.adminLegacyExplicitUserModeFieldDenied(op, objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
+			allowed = false
+		}
 		if allowed && !wideAccountRecord && vm.adminStandardCustomFieldDMLDenied(op, record, objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
 			allowed = false
 		}
@@ -2628,4 +2631,23 @@ func (vm *VM) markTestAssignedPermissionSets(results []dml.Result) {
 // capture's org already held with it.
 func (vm *VM) MarkPermissionAssignmentsPreexisting() {
 	vm.permAssignmentsPreexisting = true
+}
+
+// adminLegacyExplicitUserModeFieldDenied applies the captured sharing_access_gate
+// d5_12 rows at source APIs 55.0 to 61.0: the test runner's administrator, with
+// no effective grant, cannot write an optional custom field of an ordinary
+// custom object through an explicit "insert as user" of one record. A permission
+// set that the test assigned to the administrator does not count (permset_in_test).
+func (vm *VM) adminLegacyExplicitUserModeFieldDenied(op, objectName, fieldName, method, scopedPermissionSetID string) bool {
+	if op != "insert" || !vm.explicitUserModeAccess || !vm.userModeSingleRecord || scopedPermissionSetID != "" || vm.testContext == nil || vm.testContext.RunAsDepth != 0 || vm.Org == nil {
+		return false
+	}
+	if !userModeCustomObjectFieldDMLAPI(vm.currentSourceExecutionPolicy().APIVersion) || !isCustomSchemaName(fieldName) {
+		return false
+	}
+	user := vm.fieldPermissionPrincipal()
+	if vm.currentUserProfileName(user) != "System Administrator" || !vm.adminFieldNeedsExplicitGrant(objectName, fieldName) {
+		return false
+	}
+	return !vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), objectName, fieldName, method)
 }
