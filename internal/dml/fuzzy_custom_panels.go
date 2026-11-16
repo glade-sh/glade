@@ -43,22 +43,23 @@ func customStreet(a, b string, matchBlanks bool) (bool, float64) {
 		p := parseStreetFor(a, true, !matchBlanks)
 		return true, (streetSectionScore(p, p, matchBlanks, streetCandidateSimilarity, true) + 100) / 2
 	}
-	similarity := streetCandidateSimilarity(x, y)
 	if !streetCustomKeysAgree(x, y) {
-		return false, similarity
+		return false, 0
 	}
+	similarity := streetCandidateSimilarity(x, y)
+	gate := similarity >= streetSimilarityGate-1e-9
 	wholeX, wholeY := streetWhole(x), streetWhole(y)
 	if wholeX || wholeY {
 		confidence := similarity
 		if !wholeY && !streetPOBox.MatchString(y) {
 			confidence = similarity / 2
 		}
-		return similarity >= streetSimilarityGate, confidence
+		return gate, confidence
 	}
 	pa, pb := parseStreetFor(a, true, !matchBlanks), parseStreetFor(b, true, !matchBlanks)
 	sections := streetSectionScore(pa, pb, matchBlanks, streetCandidateSimilarity, true)
 	confidence := (sections + similarity) / 2
-	if similarity >= streetSimilarityGate {
+	if gate {
 		return true, confidence
 	}
 	if streetTwoEdits(pa, pb) {
