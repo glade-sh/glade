@@ -6918,6 +6918,16 @@ func (vm *VM) chargeAccountPermissionDML(rows int) error {
 	return vm.incrementLimit("cpuTime", rows)
 }
 
+// allAccountRecords reports a non-empty record set of Account SObjects only.
+func allAccountRecords(vm *VM, records []Value) bool {
+	for _, record := range records {
+		if record.Kind != ValueObject || !strings.EqualFold(vm.canonicalSObjectValueType(record), "Account") {
+			return false
+		}
+	}
+	return len(records) > 0
+}
+
 func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode ir.DMLMode, result *Result) error {
 	if mode == ir.DMLModeSystem {
 		if err := vm.validateExplicitAccessLevel(accessLevelValue("SYSTEM_MODE")); err != nil {
@@ -7016,7 +7026,13 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		}
 	}
 	if dmlMode == "USER_MODE" {
-		if mode == ir.DMLModeUser && (externalIDField == "" || strings.EqualFold(externalIDField, "Id")) {
+		// A selector-free Account upsert with person accounts enabled keeps the
+		// Account branch below, which charges the statement and its rows
+		// before the field-access DmlException (native person_account_followups
+		// review/permissions.tsv and review2/permissions.tsv readonly rows,
+		// APIs 62.0 and 67.0: |1|1 scalar, |1|2 list).
+		if mode == ir.DMLModeUser && (externalIDField == "" || strings.EqualFold(externalIDField, "Id")) &&
+			!(op == "upsert" && vm.accountPersonAccountsEnabled() && allAccountRecords(vm, dmlAccessRecords(value))) {
 			if err := vm.explicitRunAsObjectDMLDenial(op, value); err != nil {
 				return err
 			}
