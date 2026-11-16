@@ -6,9 +6,14 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// textWriteTrimSet is the captured trim set: space and tab. Base already trims
+// spaces on STRING fields; other control characters (CR, LF, VT, FF, NUL and
+// the rest of C0) were not captured and keep base behavior.
+const textWriteTrimSet = " \t"
+
 // normalizeTextWrites applies the collation capture (re_collation, API 62.0 and
-// 67.0): a Text field write is trimmed of leading and trailing whitespace, and
-// a value that is empty afterwards is stored as null. Only plain Text fields
+// 67.0): a Text field write is trimmed of leading and trailing space and tab,
+// and a value that is empty afterwards is stored as null. Only plain Text fields
 // were captured (Account Name and Site, custom object Name); text areas,
 // picklists, email, phone and URL fields keep their existing behavior.
 func normalizeTextWrites(definition storage.ObjectDefinition, namespace string, record *storage.Record) {
@@ -19,11 +24,14 @@ func normalizeTextWrites(definition storage.ObjectDefinition, namespace string, 
 		if value.Kind != storage.ValueString {
 			continue
 		}
+		if !hasTrimEdge(value.String) {
+			continue
+		}
 		canonical, ok := storage.ResolveFieldName(definition, namespace, name)
 		if !ok || !isPlainTextWriteField(definition.Fields[canonical]) {
 			continue
 		}
-		trimmed := strings.TrimFunc(value.String, func(r rune) bool { return r <= ' ' })
+		trimmed := strings.Trim(value.String, textWriteTrimSet)
 		if trimmed == "" {
 			delete(record.Fields, name)
 			if record.ExplicitNulls == nil {
@@ -48,4 +56,12 @@ func isPlainTextWriteField(field storage.Field) bool {
 		return true
 	}
 	return false
+}
+
+// hasTrimEdge reports whether text starts or ends with a trimmed character.
+func hasTrimEdge(text string) bool {
+	if text == "" {
+		return false
+	}
+	return strings.IndexByte(textWriteTrimSet, text[0]) >= 0 || strings.IndexByte(textWriteTrimSet, text[len(text)-1]) >= 0
 }

@@ -24,6 +24,11 @@ import (
 // Each row is one native payload line. A case replays its Apex and compares
 // the Glade lines to the native lines. Shapes the captures did not fit stay at
 // base behavior: they are compared and logged but never fail the test.
+//
+// Strictness is not uniform. Most rows must match exactly. Collation SOQL rows
+// pass at a 70 percent adjacent-position agreement, timestamp rows compare
+// features rather than values, and group-by, describe and _tx_ rows are
+// informational only. A pass does not mean every row matched exactly.
 
 var reIDPattern = regexp.MustCompile(`\b(?:001|a0[0-9A-Za-z])[A-Za-z0-9]{12}(?:[A-Za-z0-9]{3})?\b`)
 
@@ -522,6 +527,14 @@ func TestReverseEngineeredNativeConformance(t *testing.T) {
 					for _, r := range byAPI[api] {
 						kinds[r.id] = map[string]string{"anonymous": "anonymous", "istest": "istest"}[r.kind]
 						wanted[r.id] = true
+					}
+					// Setup cases build the org state the later queries read.
+					// A setup case without a native row at this API is replayed
+					// but not compared.
+					for _, id := range order {
+						if strings.Contains(id, "_setup_") && !wanted[id] {
+							kinds[id], wanted[id] = "anonymous", true
+						}
 					}
 					nativeLines := map[string][]string{}
 					for _, r := range byAPI[api] {

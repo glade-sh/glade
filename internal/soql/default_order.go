@@ -4,27 +4,21 @@ import "strings"
 
 // Default result order without ORDER BY (re_order_default capture, API 62.0 and
 // 67.0). A prefix LIKE on the name field is served by the name index, so the
-// rows come back in index order:
+// rows come back in index order. Only the captured shapes fire:
 //
-//   - an Account query filtered by Name LIKE 'prefix%' returns ascending Name;
-//   - a child subquery filtered by Name or LastName LIKE 'prefix%' returns the
-//     children by descending Name (LastName).
+//   - an Account query whose entire WHERE clause is Name LIKE 'prefix%' returns
+//     ascending Name;
+//   - an Account to Contacts child subquery whose entire WHERE clause is
+//     LastName LIKE 'prefix%' returns the contacts by descending LastName.
 //
-// Unfiltered queries, other filters and other objects keep the Id order. The
-// capture did not fit GROUP BY, custom-object or describe order.
+// Every other object, field, compound filter (AND, OR, NOT) and unfiltered
+// query keeps the Id order. The capture did not fit GROUP BY, custom-object or
+// describe order, nor any other child object.
 
-// indexedNamePrefixField returns the canonical name of the first field in
-// fields that the condition constrains with a prefix LIKE, joined by AND only.
+// indexedNamePrefixField returns the canonical field name when the condition
+// is a single prefix LIKE on one of fields and is the whole WHERE clause.
 func indexedNamePrefixField(condition *Condition, objectName string, fields ...string) (string, bool) {
-	if condition == nil || condition.Not || len(condition.Or) > 0 {
-		return "", false
-	}
-	if len(condition.And) > 0 {
-		for i := range condition.And {
-			if field, ok := indexedNamePrefixField(&condition.And[i], objectName, fields...); ok {
-				return field, true
-			}
-		}
+	if condition == nil || condition.Not || len(condition.Or) > 0 || len(condition.And) > 0 {
 		return "", false
 	}
 	if !strings.EqualFold(condition.Op, "LIKE") || condition.Subquery != nil || condition.Formula != nil {
@@ -57,12 +51,13 @@ func defaultParentOrder(query Query, objectName string) []OrderSpec {
 	return query.Order
 }
 
-// defaultChildOrder is the order of a child subquery without ORDER BY.
+// defaultChildOrder is the order of a child subquery without ORDER BY. Only
+// Contact with a LastName prefix LIKE was captured.
 func defaultChildOrder(query Query, childObjectName string) []OrderSpec {
-	if len(query.Order) > 0 {
+	if len(query.Order) > 0 || !strings.EqualFold(childObjectName, "Contact") {
 		return query.Order
 	}
-	if field, ok := indexedNamePrefixField(query.Where, childObjectName, "Name", "LastName"); ok {
+	if field, ok := indexedNamePrefixField(query.Where, childObjectName, "LastName"); ok {
 		return []OrderSpec{{Field: field, Desc: true}}
 	}
 	return query.Order

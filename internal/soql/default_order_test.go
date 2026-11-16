@@ -19,7 +19,8 @@ func TestDefaultParentOrderShapes(t *testing.T) {
 	}{
 		{"account name prefix", Query{Where: likeCondition("Name", "GLA%")}, "Account", 1},
 		{"account qualified", Query{Where: likeCondition("Account.Name", "GLA%")}, "Account", 1},
-		{"account and list", Query{Where: &Condition{And: []Condition{{Field: "Site", Op: "=", Value: storage.StringValue("x")}, *likeCondition("Name", "A%")}}}, "Account", 1},
+		{"account and list keeps base", Query{Where: &Condition{And: []Condition{{Field: "Site", Op: "=", Value: storage.StringValue("x")}, *likeCondition("Name", "A%")}}}, "Account", 0},
+		{"single-element and keeps base", Query{Where: &Condition{And: []Condition{*likeCondition("Name", "A%")}}}, "Account", 0},
 		{"unfiltered keeps base", Query{}, "Account", 0},
 		{"leading wildcard keeps base", Query{Where: likeCondition("Name", "%GLA")}, "Account", 0},
 		{"or keeps base", Query{Where: &Condition{Or: []Condition{*likeCondition("Name", "A%"), *likeCondition("Name", "B%")}}}, "Account", 0},
@@ -47,8 +48,18 @@ func TestDefaultChildOrderShapes(t *testing.T) {
 	if order := defaultChildOrder(Query{Where: likeCondition("LastName", "GLC%")}, "Contact"); len(order) != 1 || order[0].Field != "LastName" || !order[0].Desc {
 		t.Fatalf("order = %v; want LastName descending", order)
 	}
-	if order := defaultChildOrder(Query{Where: likeCondition("Name", "X%")}, "Case"); len(order) != 1 || !order[0].Desc {
-		t.Fatalf("order = %v; want Name descending", order)
+	if order := defaultChildOrder(Query{Where: likeCondition("Name", "X%")}, "Case"); len(order) != 0 {
+		t.Fatalf("Case Name child order = %v; want base", order)
+	}
+	if order := defaultChildOrder(Query{Where: likeCondition("Name", "X%")}, "Contact"); len(order) != 0 {
+		t.Fatalf("Contact Name child order = %v; want base", order)
+	}
+	if order := defaultChildOrder(Query{Where: likeCondition("LastName", "X%")}, "Lead"); len(order) != 0 {
+		t.Fatalf("Lead LastName child order = %v; want base", order)
+	}
+	and := &Condition{And: []Condition{{Field: "Email", Op: "=", Value: storage.StringValue("x")}, *likeCondition("LastName", "X%")}}
+	if order := defaultChildOrder(Query{Where: and}, "Contact"); len(order) != 0 {
+		t.Fatalf("compound child order = %v; want base", order)
 	}
 	if order := defaultChildOrder(Query{}, "Contact"); len(order) != 0 {
 		t.Fatalf("unfiltered child order = %v; want base", order)

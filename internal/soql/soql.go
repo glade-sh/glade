@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -5223,33 +5224,69 @@ func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinitio
 		}
 		nullsIgnored[i] = !strings.Contains(field, ".") && StandardLookupIgnoresNullsClause(definition.APIName, field)
 	}
-	sort.SliceStable(records, func(i, j int) bool {
-		for column, spec := range order {
-			left, ok := recordValue(org, definition, records[i], spec.Field, userIDs...)
-			if !ok {
-				left = storage.NullValue()
-			}
-			right, ok := recordValue(org, definition, records[j], spec.Field, userIDs...)
-			if !ok {
-				right = storage.NullValue()
-			}
-			if ranks := picklistRanks[column]; ranks != nil && left.Kind != storage.ValueNull && right.Kind != storage.ValueNull {
-				left = storage.IntegerValue(int64(ranks[left.String]))
-				right = storage.IntegerValue(int64(ranks[right.String]))
-			}
-			if legacyNulls[column] || nullsIgnored[column] {
-				spec.Nulls = "FIRST"
-				if spec.Desc {
-					spec.Nulls = "LAST"
-				}
-			}
-			cmp := orderCompare(left, right, spec)
-			if cmp != 0 {
-				return cmp < 0
+	// Resolve each sort value once per record. recordValue is deterministic
+	// for a record, so the order is identical to resolving it per comparison.
+	specs := make([]OrderSpec, len(order))
+	copy(specs, order)
+	for column := range specs {
+		if legacyNulls[column] || nullsIgnored[column] {
+			specs[column].Nulls = "FIRST"
+			if specs[column].Desc {
+				specs[column].Nulls = "LAST"
 			}
 		}
-		return false
+	}
+	values := make([][]storage.Value, len(order))
+	for column, spec := range order {
+		column := column
+		values[column] = make([]storage.Value, len(records))
+		ranks := picklistRanks[column]
+		for i := range records {
+			value, ok := recordValue(org, definition, records[i], spec.Field, userIDs...)
+			if !ok {
+				value = storage.NullValue()
+			}
+			if ranks != nil && value.Kind != storage.ValueNull {
+				value = storage.IntegerValue(int64(ranks[value.String]))
+			}
+			values[column][i] = value
+		}
+	}
+	compare := func(i, j int) int {
+		for column := range specs {
+			if cmp := orderCompare(values[column][i], values[column][j], specs[column]); cmp != 0 {
+				return cmp
+			}
+		}
+		return 0
+	}
+	sorted := true
+	for i := 1; i < len(records); i++ {
+		if compare(i, i-1) < 0 {
+			sorted = false
+			break
+		}
+	}
+	if sorted {
+		return
+	}
+	index := make([]int, len(records))
+	for i := range index {
+		index[i] = i
+	}
+	// pdqsort with the original position as the final key gives the same
+	// result as a stable sort and avoids its extra merge passes.
+	slices.SortFunc(index, func(a, b int) int {
+		if cmp := compare(a, b); cmp != 0 {
+			return cmp
+		}
+		return a - b
 	})
+	ordered := make([]storage.Record, len(records))
+	for i, from := range index {
+		ordered[i] = records[from]
+	}
+	copy(records, ordered)
 }
 
 func aggregateOrderedBefore(leftRecord, rightRecord storage.Record, order []OrderSpec) bool {
