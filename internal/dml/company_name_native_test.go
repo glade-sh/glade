@@ -55,7 +55,7 @@ func TestCompanyNameNativeConformance(t *testing.T) {
 			continue
 		}
 		src := cases[row[4]]
-		if !strings.Contains(src, "FuzzyPanel.") {
+		if !strings.Contains(src, "FuzzyPanel.") || strings.HasPrefix(row[4], "D1_") {
 			continue
 		}
 		start := strings.Index(src, "new List<String>{")

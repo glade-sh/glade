@@ -250,6 +250,23 @@ side with more words than the other (`Dunder-Mifflin Paper`/`Dunder Mifflin`),
 short ampersand forms (`Q&V`/`QV`) and a plain name against a different ` - `
 suffix. The standard Account rule keeps the word scorer for every pair.
 
+The D1 capture (`company_name_fit` rows `D1_*`) settled the shapes the fit had
+extrapolated. Same words with different numbers match (`Zorvex Region 1
+Sales`/`Zorvex Region 2 Sales`); with a differing word, both names need a
+number and the numbers must be equal or one must start the other, and a digit
+glued to a word (`Zorvex Region1`) does not match `Zorvex Region 1 Sales`. An
+underscore join does not match its spaced name, a hyphen join matches only
+when the aligned words are alike (`Vexlett-Packard`/`Vexlet Packard` yes,
+`Quen-State Paving`/`Quen State Painting` no), and two multiword names that
+differ only by a doubled letter match at 100. A slash and a parenthesis form
+need equal suffix word counts and alike bases; a dash or spaced slash against a
+different suffix matches only the similar suffix in one direction (`East`
+finds `West`, `North` finds neither). Known gaps, each with a residual in the
+test: 18 native matches the word scorer also rejects, such as `Zorvex
+Partnership`/`Zorvex` and the `East`/`West` plain-to-dash pairs, and 10 pairs
+the word scorer matches and native does not (`Zorvex Partner`/`Zorvex Partner
+Inc`).
+
 ### Phone
 
 Letters and digits are the characters of the number; separators are dropped.

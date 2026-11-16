@@ -103,6 +103,7 @@ func TestCompanyFitKeepsWordScorerOutsideCapturedShapes(t *testing.T) {
 		{"Zorvex Marine SARL", "Zorvex Mariner BV"},
 		{"Zorvex Freight - North", "Zorvex Freight/West"},
 		{"Zorvex Freight (East)", "Zorvex Freight - North"},
+		{"Zorvex Region 1 West", "Zorvex Region 2 East"},
 	} {
 		for _, p := range [][2]string{pair, {pair[1], pair[0]}} {
 			got, score := fuzzyCompany(p[0], p[1], false)
@@ -117,7 +118,6 @@ func TestCompanyFitKeepsWordScorerOutsideCapturedShapes(t *testing.T) {
 		{"Qelthorin Freights", "Qelthorin Freights 1"},
 		{"Zorvex Region 1 Sales", "Zorvex Region 2 Sales"},
 		{"Test Account1", "Test Account 1"},
-		{"Zorvex Freight 1 West", "Zorvex Freight 2 East"},
 		{"7-Zorval", "7 Zorval"},
 		{"Zorvex Freight - West", "Zorvex Freight/West"},
 	} {
