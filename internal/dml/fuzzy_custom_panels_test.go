@@ -13,10 +13,6 @@ import (
 // differ inside the match key or with a different second word; plurals outside
 // the captured lengths or already matched by a proven word pair; titles of seven
 // words. Street has its own scorer and test (TestCustomStreetNeighbourShapes).
-// The keyboard fallback scores "Brandenstock"/"Brandewxtovz" (shape (12, 4, 0),
-// 91.18, above the shape's floor) as it scores the native match
-// "Brandensjojn"/"Brandepswohk" of the same shape and score (NATIVE
-// duplicate_fuzzy_panels/org.tsv:34 k1 pair 12, 96).
 func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
 	for _, c := range []struct {
 		method, a, b string
@@ -30,7 +26,7 @@ func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
 		{"LastName", "Brandenstock", "Brqndenstock", false, 0.0000},
 		{"LastName", "Kellingsworth", "Kellingswortz", true, 98.7692},
 		{"LastName", "Tolvermandel", "Tolverwanqez", false, 95.3333},
-		{"LastName", "Brandenstock", "Brandewxtovz", true, 95.5917},
+		{"LastName", "Brandenstock", "Brandewxtovz", false, 95.9167},
 		{"Title", "Global Principal Retail Brand Strategist", "Strategist", false, 0.0000},
 		{"Title", "Brand Strategist", "Deputy Senior Global Principal Retail Brand Strategist", true, 91.0000},
 		{"Title", "Strategist", "Deputy Senior Global Principal Retail Brand Strategist", false, 0.0000},
@@ -98,10 +94,8 @@ func TestCustomFuzzyExtensionsCapturedPairs(t *testing.T) {
 			t.Errorf("%s %q/%q matched; native keeps them apart", c.method, c.a, c.b)
 		}
 	}
-	// The standard rules call the shared scorers, which these rows do not
-	// change. Without a match key the Last Name steps stop at the base
-	// Keyboard Distance (lastNameAlgorithms).
-	if match, _ := lastNameAlgorithms("brandenstock", "brandepswohk"); match {
+	// The standard rules call the shared scorers, which these rows do not change.
+	if match, _ := fuzzyLastName("Brandenstock", "Brandepswohk", false); match {
 		t.Error("shared Last Name scorer changed")
 	}
 	if match, _ := fuzzyStreet("418 Larkwhistle St", "418 Larkwhistle Strt", false); match {

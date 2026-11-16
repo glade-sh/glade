@@ -338,7 +338,7 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if matched || !keyboardPanelCell(length, substitutions, trailing) {
 		return matched, confidence
 	}
-	if score, ok := keyboardDistance(x, y); ok && score >= 90 && score > keyboardPanelFloor(length, substitutions, trailing) {
+	if score, ok := keyboardDistance(x, y); ok && score >= keyboardFallbackMargin {
 		return true, averageWith100(score)
 	}
 	return matched, confidence
@@ -413,33 +413,20 @@ var keyboardPanelCells = [16][9]uint16{
 	15: {0x0040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
 }
 
-// keyboardPanelFloor is the highest Keyboard Distance score of a captured
-// native non-match of the shape, or 0: the fallback matches only above it.
-// The duplicate_fuzzy_panels keyboard panels (org.tsv:34-57) hold the
-// non-matches at 90 and above: "Kellingswokwr" and "Kellinglkokzh" score
-// 90.1 under the fitted costs, where native finds no match.
-// TestLastNameKeyboardPanelFloors rebuilds the table from the native rows.
-func keyboardPanelFloor(length, substitutions, trailing int) float64 {
-	for _, f := range keyboardPanelFloors {
-		if int(f.length) == length && int(f.substitutions) == substitutions && int(f.trailing) == trailing {
-			return f.score
-		}
-	}
-	return 0
-}
-
-type keyboardFloor struct {
-	length, substitutions, trailing uint8
-	score                           float64
-}
-
-var keyboardPanelFloors = [...]keyboardFloor{
-	{10, 3, 0, 90.64999999999999},
-	{10, 4, 0, 91.21000000000001},
-	{12, 4, 0, 90.85833333333333},
-	{13, 4, 0, 90.10000000000001},
-	{13, 5, 0, 90.68461538461538},
-}
+// keyboardFallbackMargin is the one score the fallback needs, in every gated
+// shape. The fitted costs are not reliable between 88 and about 92.3 in any
+// shape: native non-matches score as high as 90.84 in substitution shapes
+// (duplicate_fuzzy_panels k1-k3) and 92.26 in extension-only shapes (the
+// blind twin tk01-tk22, "Ingleborn"/"Inglebornxbqm"). The highest captured
+// native non-match of any shape that reaches the fallback, in every panel
+// (fitted, k1-k3, hk1, hk2, tk01-tk22), is 92.2615; the margin sits 0.74
+// above it. A pair scoring below it keeps the base result. The fitted score
+// is a model, so no margin can be proved; TestLastNameKeyboardFallbackMargin
+// pins the highest captured non-match and requires the margin above it, and
+// the second blind panel (bk01 on) was scored with this margin before it was
+// read. Per-shape floors are gone: a floor existed only where an earlier
+// panel happened to hold a counterexample, and a fresh panel found 108 more.
+const keyboardFallbackMargin = 93.0
 
 var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")
 

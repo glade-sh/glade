@@ -25,7 +25,7 @@ func TestKeyboardDistanceNativeShapes(t *testing.T) {
 	}{
 		{"Harlow II", "Harlow IV", true, 98},         // suf1: native 97; preserve the base score
 		{"Harlow Jr", "Harlowe", true, 97},           // suf1: a space against a letter, two trailing; native 96 (fuzzyNameKeysResiduals)
-		{"Farnsdelwick", "Farnsdraeovk", true, 96},   // ks1: five substitutions
+		{"Farnsdelwick", "Farnsdraeovk", false, 0},   // ks1: native matches at 96; the fitted score is 92.07, below the fallback margin
 		{"Abernathy", "Abernaty", true, 98},          // rsp1: h/y and a trailing y; native 99 (fuzzyNameKeysResiduals)
 		{"Campbell", "Cambell", false, 0},            // rsp1
 		{"Richardson", "Richardsop", true, 98},       // P4.LN.KB1
@@ -406,20 +406,6 @@ func keyboardFitPanels(t *testing.T) []keyboardNativePanel {
 	return out
 }
 
-// keyboardFloorPanels are the native panels whose non-matches bound the
-// fallback score: the fitted panels and the keyboard group of
-// duplicate_fuzzy_panels. Its hkeyboard group is a held-out check
-// (TestLastNameKeyboardFuzzyPanelsNativeRows) and sets no floor.
-func keyboardFloorPanels(t *testing.T) []keyboardNativePanel {
-	t.Helper()
-	out := keyboardFitPanels(t)
-	values, observations := fuzzyPanelsLastName(t, "keyboard")
-	for _, name := range slices.Sorted(maps.Keys(values)) {
-		out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
-	}
-	return out
-}
-
 // The gate table is exactly the shapes of the fitted pairs that reach the
 // fallback (keyboardFallbackPair) and that native matches in either
 // direction. A shape whose captured pairs native never matches gives the
@@ -459,51 +445,69 @@ func TestLastNameKeyboardPanelCells(t *testing.T) {
 	}
 }
 
-// The floor table is exactly the highest fallback score of a captured native
-// non-match (either direction) in each gated shape, where that score reaches
-// 90. NATIVE duplicate_fuzzy_panels/org.tsv:34-57 holds every such pair; the
-// fitted rows keep their non-matches below 90.
-func TestLastNameKeyboardPanelFloors(t *testing.T) {
-	want := map[[3]int]float64{}
-	for _, panel := range keyboardFloorPanels(t) {
+// keyboardMarginPanels are every native LastName panel that reaches the
+// fallback: the fitted panels, the keyboard and hkeyboard groups of
+// duplicate_fuzzy_panels, and the blind twin and second blind panel
+// (tk01-tk22 and bk01 on; the ctl_ controls replay hk2).
+func keyboardMarginPanels(t *testing.T) []keyboardNativePanel {
+	t.Helper()
+	out := keyboardFitPanels(t)
+	values, observations := fuzzyPanelsLastName(t, "keyboard", "hkeyboard")
+	for _, name := range slices.Sorted(maps.Keys(values)) {
+		out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
+	}
+	return append(out, keyboardTwinPanels(t, "tkeyboard")...)
+}
+
+// keyboardTwinPanels reads the anonymous-route panels of
+// internal/dml/testdata/conformance/duplicate_fuzzy_panels (four native
+// observations each: two APIs, two repeats) without their ctl_ controls.
+func keyboardTwinPanels(t *testing.T, groups ...string) []keyboardNativePanel {
+	t.Helper()
+	var out []keyboardNativePanel
+	for _, group := range groups {
+		values, observations := fuzzyPanelsLastNameFrom(t, fuzzyPanelsTwinDir, 4, group)
+		for _, name := range slices.Sorted(maps.Keys(values)) {
+			if strings.HasPrefix(name, "ctl_") {
+				continue
+			}
+			out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
+		}
+	}
+	return out
+}
+
+// The fallback margin clears the highest Keyboard Distance score of every
+// captured native non-match (an ordered pair, in any shape) that reaches the
+// fallback in any panel, by at least 0.5. The highest is "Ingleborn" /
+// "Inglebornxbqm" (tk14, 92.2615); the k1-k3 and hk panels alone reach 90.84.
+func TestLastNameKeyboardFallbackMargin(t *testing.T) {
+	highest, pairs, top := 0.0, 0, ""
+	for _, panel := range keyboardMarginPanels(t) {
 		for i, a := range panel.values {
 			for j, b := range panel.values {
-				if j <= i || a == "" || b == "" {
+				if i == j || a == "" || b == "" || panel.native[[2]int{i, j}] > 0 {
 					continue
 				}
 				x, y, ok := keyboardFallbackPair(a, b)
-				if !ok || !keyboardPanelShape(x, y) || panel.native[[2]int{i, j}] > 0 && panel.native[[2]int{j, i}] > 0 {
+				if !ok {
 					continue
 				}
 				if score, ok := keyboardDistance(x, y); ok && score >= 90 {
-					shape := keyboardShape(x, y)
-					want[shape] = math.Max(want[shape], score)
+					pairs++
+					if score > highest {
+						highest, top = score, panel.name+" "+a+"/"+b
+					}
 				}
 			}
 		}
 	}
-	got := map[[3]int]float64{}
-	for _, f := range keyboardPanelFloors {
-		shape := [3]int{int(f.length), int(f.substitutions), int(f.trailing)}
-		if _, dup := got[shape]; dup {
-			t.Fatalf("floor %v listed twice", shape)
-		}
-		got[shape] = f.score
+	t.Logf("%d captured non-matches at 90 or more; highest %.4f (%s)", pairs, highest, top)
+	if highest < 92.26 || highest > 92.27 {
+		t.Errorf("highest captured non-match %.4f (%s), want 92.2615 until a new capture raises it", highest, top)
 	}
-	if !maps.Equal(want, got) {
-		var b strings.Builder
-		for _, shape := range slices.SortedFunc(maps.Keys(want), func(p, q [3]int) int { return slices.Compare(p[:], q[:]) }) {
-			fmt.Fprintf(&b, "\t{%d, %d, %d, %v},\n", shape[0], shape[1], shape[2], want[shape])
-		}
-		t.Fatalf("captured non-matches changed; keyboardPanelFloors should be:\n%s", b.String())
-	}
-	for shape, floor := range want {
-		if keyboardPanelFloor(shape[0], shape[1], shape[2]) != floor {
-			t.Errorf("keyboardPanelFloor%v = %v, want %v", shape, keyboardPanelFloor(shape[0], shape[1], shape[2]), floor)
-		}
-	}
-	if keyboardPanelFloor(12, 3, 0) != 0 {
-		t.Error("a shape without a captured non-match has a floor")
+	if keyboardFallbackMargin < highest+0.5 {
+		t.Errorf("keyboardFallbackMargin %v is not 0.5 above the highest captured non-match %.4f", keyboardFallbackMargin, highest)
 	}
 }
 
@@ -541,18 +545,16 @@ const fuzzyKeyboardNeighborsDir = "testdata/conformance/fuzzy_keyboard_neighbors
 // were captured after the fit and are not part of the gate table
 // (TestLastNameKeyboardPanelCells reads fuzzy_name_keys and
 // duplicate_fuzzy_matching only). kn1 holds neighbors of the captured
-// five-substitution pair: "Farnsdelwicka" finds "Farnsdraeovka" at 97 (Glade
-// 96), shape (13, 5, 0). kn2 holds two and three substitutions on other key
-// pairs. Glade reports no pair native does not. Twelve of the native pairs
-// Glade lacks are shape (13, 5, 1), "Farnsdelwick" against "Farnsdraeovka":
-// no fitted row holds that shape, so it keeps the base result. The other two
-// are "Marnsdelwi" and "Marnsdraeo" (native 96, shape (10, 4, 0)), which
-// score 91.09, not above the 91.21 of "Gilderpajt" and "Gildewrarb", a native
-// non-match of the same shape (keyboardFloorMiss).
+// five-substitution pair: "Farnsdelwicka" finds "Farnsdraeovka" natively at
+// 97, shape (13, 5, 0), fitted score 92.0, below keyboardFallbackMargin, so
+// Glade keeps the base result. kn2 holds two and three substitutions on other
+// key pairs. Glade reports no pair native does not. The native pairs Glade
+// lacks are either shape (13, 5, 1), which no fitted row holds, or gated
+// pairs scoring 90 or more below the margin (keyboardMarginMiss).
 func TestLastNameKeyboardNeighborsNativeRows(t *testing.T) {
 	cases, observations := fuzzyNameKeysDataFrom(t, fuzzyKeyboardNeighborsDir)
 	want := map[string]fuzzyNameKeysCount{
-		"kn1": {native: 70, hit: 56, miss: 14, confidence: 10},
+		"kn1": {native: 70, hit: 38, miss: 32, confidence: 2},
 		"kn2": {native: 52, hit: 52, confidence: 2},
 	}
 	if len(cases) != len(want) {
@@ -588,7 +590,7 @@ func TestLastNameKeyboardNeighborsNativeRows(t *testing.T) {
 					counts.native++
 					counts.miss++
 					x, y := lastNameApostrophes.Replace(foldText(a)), lastNameApostrophes.Replace(foldText(b))
-					if keyboardFloorMiss(a, b) {
+					if keyboardMarginMiss(a, b) {
 						break
 					}
 					if shape := keyboardShape(x, y); shape != [3]int{13, 5, 1} || keyboardPanelShape(x, y) {
@@ -609,7 +611,7 @@ func TestLastNameKeyboardNeighborsNativeRows(t *testing.T) {
 	if matched, _ := keyboardBase(t, "Farnsdelwicka", "Farnsdraeovka"); matched {
 		t.Error("the base scorer matches Farnsdelwicka/Farnsdraeovka")
 	}
-	if matched, confidence := fuzzyLastName("Farnsdelwicka", "Farnsdraeovka", false); !matched || math.Floor(confidence+0.5) != 96 {
-		t.Errorf("Farnsdelwicka/Farnsdraeovka: %v %v, want a match at 96 (native 97)", matched, confidence)
+	if matched, confidence := fuzzyLastName("Farnsdelwicka", "Farnsdraeovka", false); matched {
+		t.Errorf("Farnsdelwicka/Farnsdraeovka: matched at %v; its fitted score is below the fallback margin (native 97)", confidence)
 	}
 }

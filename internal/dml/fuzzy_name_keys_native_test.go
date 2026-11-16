@@ -94,85 +94,25 @@ var fuzzyNameKeysResiduals = map[string][2]float64{
 	"ln1/Test 1=>Last 1":               {96, 97},
 	"ln1/Last 1=>Test 1":               {96, 97},
 	"suf1/Harlow Jr=>Harlowe":          {96, 97},
-	"suf1/Harlow, Jr.=>Harlow II":      {96, 95},
-	"suf1/Harlow II=>Harlow, Jr.":      {96, 95},
 	"suf1/Harlow II=>Harlow IV":        {97, 98},
 	"suf1/Harlow IV=>Harlow II":        {97, 98},
-	"suf1/Harlow IV=>Harlow.":          {97, 96},
-	"suf1/Harlow.=>Harlow IV":          {97, 96},
 	"suf1/Harlowe=>Harlow Jr":          {96, 97},
 	"rsp1/Abernathy=>Abernaty":         {99, 98},
 	"rsp1/Abernaty=>Abernathy":         {99, 98},
-	"ks1/Farnsdelwick=>Farnsdraeick":   {97, 96},
-	"ks1/Farnsdelwick=>Farnsdeaeock":   {97, 96},
-	"ks1/Farnsdelwick=>Farnsdraeock":   {97, 96},
-	"ks1/Farnsdelwick=>Farnsdeaeovk":   {97, 96},
-	"ks1/Farnsdraeick=>Farnsdelwick":   {97, 96},
-	"ks1/Farnsdraeick=>Farnsdeleovk":   {97, 96},
 	"ks1/Farnsdraeick=>Farnsdedtqck":   {96, 97},
-	"ks1/Farnsdraeick=>Farnsdedtqnk":   {95, 96},
-	"ks1/Farnsdeaeock=>Farnsdelwick":   {97, 96},
-	"ks1/Farnsdeaeock=>Farnsdedtqck":   {97, 96},
-	"ks1/Farnsdeleovk=>Farnsdraeick":   {97, 96},
 	"ks1/Farnsdedtqck=>Farnsdraeick":   {96, 97},
-	"ks1/Farnsdedtqck=>Farnsdeaeock":   {97, 96},
-	"ks1/Farnsdraeock=>Farnsdelwick":   {97, 96},
-	"ks1/Farnsdraeock=>Farnsdeleovl":   {97, 96},
 	"ks1/Farnsdraeock=>Farnsdeaeovl":   {100, 99},
-	"ks1/Farnsdeaeovk=>Farnsdelwick":   {97, 96},
-	"ks1/Farnsdeleovl=>Farnsdraeock":   {97, 96},
-	"ks1/Farnsdydtqck=>Farnsdraeovk":   {95, 96},
-	"ks1/Farnsdedtqnk=>Farnsdraeick":   {95, 96},
-	"ks1/Farnsdedtqnk=>Farnsdraeovk":   {95, 96},
-	"ks1/Farnsdedtqnk=>Farnsdeaeovl":   {95, 96},
-	"ks1/Farnsdraeovk=>Farnsdydtqck":   {95, 96},
-	"ks1/Farnsdraeovk=>Farnsdedtqnk":   {95, 96},
 	"ks1/Farnsdeaeovl=>Farnsdraeock":   {100, 99},
-	"ks1/Farnsdeaeovl=>Farnsdedtqnk":   {95, 96},
-	"ks2/Morvenhallow=>Morvenjsalow":   {97, 96},
-	"ks2/Morvenjsalow=>Morvenhallow":   {97, 96},
-	"ks2/Morvenjsalow=>Morvenhaaapw":   {97, 96},
-	"ks2/Morvenjsalow=>Morvendjhlow":   {96, 95},
-	"ks2/Morvenjsalow=>Morvenhahhtw":   {96, 95},
-	"ks2/Morvenjsalow=>Morvenhsaapw":   {97, 96},
-	"ks2/Morvenjsalow=>Morvenhsaape":   {97, 96},
-
-	"ks2/Morvenhaaapw=>Morvenjsalow": {97, 96},
 
 	"ks2/Morvenhfddow=>Morvenhaaape": {97, 98},
-	"ks2/Morvenhfddow=>Morvenhaddwt": {96, 95},
-
-	"ks2/Morvendjhlow=>Morvenjsalow": {96, 95},
-	"ks2/Morvenhahhtw=>Morvenjsalow": {96, 95},
-
-	"ks2/Morvenhsaapw=>Morvenjsalow": {97, 96},
 
 	"ks2/Morvenhaaape=>Morvenhfddow": {97, 98},
 	"ks2/Morvenhaaape=>Morvenlfddow": {96, 97},
 	"ks2/Morvenlfddow=>Morvenhaaape": {96, 97},
-	"ks2/Morvenlfddow=>Morvenhfddwt": {96, 95},
-	"ks2/Morvenhfddww=>Morvenhsaape": {95, 96},
-	"ks2/Morvenhaddwt=>Morvenhfddow": {96, 95},
 
-	"ks2/Morvenhsaape=>Morvenjsalow": {97, 96},
-	"ks2/Morvenhsaape=>Morvenhfddww": {95, 96},
-
-	"ks2/Morvenhfddwt=>Morvenlfddow":   {96, 95},
-	"ks3/Quenderyjeait=>Quendertltfqt": {95, 96},
-	"ks3/Quenderqdiait=>Quenderyjesit": {96, 95},
 	"ks3/Quenderqdiait=>Quenderqdijit": {99, 98},
-	"ks3/Quenderyjesit=>Quenderqdiait": {96, 95},
-	"ks3/Quenderyjesit=>Quenderiltfqt": {95, 96},
-	"ks3/Quendertltfqt=>Quenderyjeait": {95, 96},
-	"ks3/Quendertltfqt=>Quendertdijrt": {95, 96},
-	"ks3/Quendertltfqt=>Quenderyjesot": {95, 96},
-	"ks3/Quendertltfqt=>Quendertjesoy": {95, 96},
 	"ks3/Quenderqdijit=>Quenderqdiait": {99, 98},
 	"ks3/Quenderqdijit=>Quendertdijrq": {96, 97},
-	"ks3/Quendertdijrt=>Quendertltfqt": {95, 96},
-	"ks3/Quenderyjesot=>Quendertltfqt": {95, 96},
-	"ks3/Quendertjesoy=>Quendertltfqt": {95, 96},
-	"ks3/Quenderiltfqt=>Quenderyjesit": {95, 96},
 	"ks3/Quendertdijrq=>Quenderqdijit": {96, 97},
 }
 
@@ -338,7 +278,7 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 			counts.confidence++
 		case native > 0:
 			counts.miss++
-			if keyboardFloorMiss(candidate, existing) {
+			if keyboardMarginMiss(candidate, existing) {
 				floorMisses[key[:strings.IndexByte(key, '/')]]++
 				return
 			}
@@ -451,29 +391,26 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 			t.Errorf("unused residual %s", key)
 		}
 	}
-	if !maps.Equal(floorMisses, fuzzyNameKeysFloorMisses) {
-		t.Errorf("native matches below a keyboard floor %v, want %v", floorMisses, fuzzyNameKeysFloorMisses)
+	if !maps.Equal(floorMisses, fuzzyNameKeysMarginMisses) {
+		t.Errorf("native matches below the keyboard margin %v, want %v", floorMisses, fuzzyNameKeysMarginMisses)
 	}
 }
 
-// fuzzyNameKeysFloorMisses counts, per case, the native matches the keyboard
-// fallback leaves at the base result because their score does not clear the
-// floor of their shape (keyboardFloorMiss). Every other native match is a
+// fuzzyNameKeysMarginMisses counts, per case, the native matches the keyboard
+// fallback leaves at the base result because their score is below
+// keyboardFallbackMargin (keyboardMarginMiss). Every other native match is a
 // Glade match.
-var fuzzyNameKeysFloorMisses = map[string]int{"ks1": 26, "ks2": 22, "ks3": 14}
+var fuzzyNameKeysMarginMisses = map[string]int{"ks1": 210, "ks2": 150, "ks3": 78, "rsp1": 2, "suf1": 16}
 
-// keyboardFloorMiss reports whether two names reach the keyboard fallback in
-// a gated shape and score 90 or more, but not above the shape's floor: the
-// highest score of a captured native non-match of that shape
-// (keyboardPanelFloors).
-func keyboardFloorMiss(a, b string) bool {
+// keyboardMarginMiss reports whether two names reach the keyboard fallback in
+// a gated shape and score 90 or more, but below keyboardFallbackMargin.
+func keyboardMarginMiss(a, b string) bool {
 	x, y, ok := keyboardFallbackPair(a, b)
 	if !ok || !keyboardPanelShape(x, y) {
 		return false
 	}
-	length, substitutions, trailing := keyboardNameShape(x, y)
 	score, ok := keyboardDistance(x, y)
-	return ok && score >= 90 && score <= keyboardPanelFloor(length, substitutions, trailing)
+	return ok && score >= 90 && score < keyboardFallbackMargin
 }
 
 // fuzzyNameKeysNativeDML drops the confidence formatting difference between

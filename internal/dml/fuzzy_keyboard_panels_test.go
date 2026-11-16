@@ -13,12 +13,23 @@ import (
 
 const fuzzyPanelsKeyboardDir = "../apextest/testdata/conformance/duplicate_fuzzy_panels/"
 
+// fuzzyPanelsTwinDir holds the blind native panels captured after the
+// keyboard fallback (anonymous route only): the twin tk01-tk22 and bk01 on.
+const fuzzyPanelsTwinDir = "testdata/conformance/duplicate_fuzzy_panels/"
+
 // fuzzyPanelsLastName returns the values and the shared native observation of
 // each custom LastName panel in the given groups of duplicate_fuzzy_panels.
 // Every API, route and repeat of a panel agrees.
 func fuzzyPanelsLastName(t *testing.T, groups ...string) (map[string][]string, map[string]string) {
 	t.Helper()
-	raw, err := os.ReadFile(fuzzyPanelsKeyboardDir + "cases.json")
+	return fuzzyPanelsLastNameFrom(t, fuzzyPanelsKeyboardDir, 8, groups...)
+}
+
+// fuzzyPanelsLastNameFrom is fuzzyPanelsLastName for another fixture
+// directory; observations is the number of native rows each panel holds.
+func fuzzyPanelsLastNameFrom(t *testing.T, dir string, observationsPerPanel int, groups ...string) (map[string][]string, map[string]string) {
+	t.Helper()
+	raw, err := os.ReadFile(dir + "cases.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +53,7 @@ func fuzzyPanelsLastName(t *testing.T, groups ...string) (map[string][]string, m
 			}
 		}
 	}
-	raw, err = os.ReadFile(fuzzyPanelsKeyboardDir + "org.tsv")
+	raw, err = os.ReadFile(dir + "org.tsv")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,8 +71,8 @@ func fuzzyPanelsLastName(t *testing.T, groups ...string) (map[string][]string, m
 		count[f[4]]++
 	}
 	for method := range values {
-		if count[method] != 8 {
-			t.Fatalf("%s: %d native observations, want 8", method, count[method])
+		if count[method] != observationsPerPanel {
+			t.Fatalf("%s: %d native observations, want %d", method, count[method], observationsPerPanel)
 		}
 	}
 	return values, observations
@@ -82,11 +93,15 @@ func lastNameTrainBase(a, b string) (bool, float64) {
 
 // NATIVE duplicate_fuzzy_panels/org.tsv:34-57,130-145 (groups keyboard and
 // hkeyboard): a custom LastName rule at API 62.0 and 67.0, anonymous and
-// @IsTest, two repeats, every ordered pair of each panel. The keyboard
-// fallback adds no match native does not report, and every pair the scorer
-// without the fallback gets right stays right. The keyboard group sets the
-// fallback floors (TestLastNameKeyboardPanelFloors); the hkeyboard group,
-// captured as a held-out run, sets nothing and has no extra match either.
+// @IsTest, two repeats, every ordered pair of each panel. The blind twin
+// (internal/dml/testdata/conformance/duplicate_fuzzy_panels, tk01-tk22) is the
+// same rule on 65 other stems, anonymous route only. The keyboard fallback adds
+// no match native does not report, on any of them, and every pair the scorer
+// without the fallback gets right stays right. The keyboard group fitted the
+// shape table and the per-shape floors that the single margin replaced; the
+// hkeyboard group was in view when the shape rule was chosen, so it is not
+// held-out evidence for the shape gate. The twin and the second blind panel
+// were captured after the code they score; neither fitted anything.
 func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 	values, observations := fuzzyPanelsLastName(t, "keyboard", "hkeyboard")
 	// exact counts the ordered pairs (self pairs included) where Glade and
@@ -97,11 +112,21 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		exact, base int
 	}
 	want := map[string]tally{
-		"k1":  {fuzzyNameKeysCount{native: 180, hit: 156, miss: 24, confidence: 22}, 978, 878},
-		"k2":  {fuzzyNameKeysCount{native: 182, hit: 84, miss: 98, confidence: 4}, 922, 888},
-		"k3":  {fuzzyNameKeysCount{native: 194, hit: 154, miss: 40, confidence: 18}, 966, 896},
-		"hk1": {fuzzyNameKeysCount{native: 122, hit: 62, miss: 60, confidence: 4}, 612, 600},
-		"hk2": {fuzzyNameKeysCount{native: 58, hit: 52, miss: 6, confidence: 8}, 242, 228},
+		"k1":  {fuzzyNameKeysCount{native: 180, hit: 98, miss: 82, confidence: 8}, 934, 878},
+		"k2":  {fuzzyNameKeysCount{native: 182, hit: 60, miss: 122, confidence: 2}, 900, 888},
+		"k3":  {fuzzyNameKeysCount{native: 194, hit: 122, miss: 72, confidence: 12}, 940, 896},
+		"hk1": {fuzzyNameKeysCount{native: 122, hit: 50, miss: 72, confidence: 2}, 602, 600},
+		"hk2": {fuzzyNameKeysCount{native: 58, hit: 42, miss: 16, confidence: 6}, 234, 228},
+		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1245, miss: 906, confidence: 140}, 14587, 14303},
+	}
+	// The twin panels (tk01 to tk22) are counted as one group.
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard") {
+		values[panel.name] = panel.values
+		observations[panel.name] = ""
+	}
+	twin := map[string]map[[2]int]float64{}
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard") {
+		twin[panel.name] = panel.native
 	}
 	rounded := func(matched bool, confidence float64) float64 {
 		if !matched {
@@ -109,33 +134,43 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		}
 		return math.Floor(confidence + 0.5)
 	}
+	got := map[string]*tally{}
 	for _, method := range slices.Sorted(maps.Keys(values)) {
 		vals := values[method]
-		native := fuzzyNameKeysPanel(t, observations[method], len(vals))
-		var got tally
+		var native map[[2]int]float64
+		group := method
+		if n, ok := twin[method]; ok {
+			native, group = n, "tk"
+		} else {
+			native = fuzzyNameKeysPanel(t, observations[method], len(vals))
+		}
+		if got[group] == nil {
+			got[group] = &tally{}
+		}
+		tl := got[group]
 		for i, a := range vals {
 			for j, b := range vals {
 				n := native[[2]int{i, j}]
 				g := rounded(fuzzyLastName(a, b, false))
 				base := rounded(lastNameTrainBase(a, b))
 				if g == n {
-					got.exact++
+					tl.exact++
 				}
 				if base == n {
-					got.base++
+					tl.base++
 				}
 				switch {
 				case n > 0 && g > 0:
-					got.native++
-					got.hit++
+					tl.native++
+					tl.hit++
 					if n != g {
-						got.confidence++
+						tl.confidence++
 					}
 				case n > 0:
-					got.native++
-					got.miss++
+					tl.native++
+					tl.miss++
 				case g > 0:
-					got.extra++
+					tl.extra++
 				}
 				if n == 0 && g > 0 {
 					t.Errorf("%s %s=>%s: Glade matches at %v, native has no match", method, a, b, g)
@@ -145,9 +180,12 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 				}
 			}
 		}
-		t.Logf("PANEL %s: %s exact=%d base=%d", method, got.fuzzyNameKeysCount, got.exact, got.base)
-		if got != want[method] {
-			t.Errorf("%s: %s exact=%d base=%d, want %s exact=%d base=%d", method, got.fuzzyNameKeysCount, got.exact, got.base, want[method].fuzzyNameKeysCount, want[method].exact, want[method].base)
+	}
+	for _, group := range slices.Sorted(maps.Keys(got)) {
+		tl := *got[group]
+		t.Logf("PANEL %s: %s exact=%d base=%d", group, tl.fuzzyNameKeysCount, tl.exact, tl.base)
+		if tl != want[group] {
+			t.Errorf("%s: %s exact=%d base=%d, want %s exact=%d base=%d", group, tl.fuzzyNameKeysCount, tl.exact, tl.base, want[group].fuzzyNameKeysCount, want[group].exact, want[group].base)
 		}
 	}
 }

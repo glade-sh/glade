@@ -1,0 +1,15 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for the custom Contact LastName rule G4Last, blind twin of the duplicate_fuzzy_panels keyboard panels
+date: 2026-11-16 (UTC)
+purpose: final review of campaign/v0311-keyboard2 836c54df4c; values were generated before the run and were never used to fit or gate
+values: 65 new stems (lengths 7 to 13), 8 random variants each (2 to 6 substitutions from the fifth letter on, some with a dropped or added tail, some pure extensions or truncations) plus one near miss; 22 panels of up to 27 values (tk01 to tk22); 585 values
+selection: variants were picked with a Python port of the 836c54df4c scorer to favour pairs it would newly match; the port ignores the match key
+probe: the duplicate_fuzzy_panels FuzzyPanel.cls and rule metadata, unchanged; each case runs FuzzyPanel.run inside a savepoint and rolls back; the observation is written to the debug log in 200-character frames with a frame count and length check
+controls: ctl_hk2 (first case) and ctl_hk2_end (last case) replay the hk2 values; both equal duplicate_fuzzy_panels/org.tsv hk2
+apis: 62.0 and 67.0 on the anonymous endpoint; the class stayed deployed at 67.0
+routes: anonymous Apex only; the @IsTest route was not captured
+repeats: two full passes; all 96 observations agree across API and repeat
+org: a fresh 1-day Developer Edition scratch org on a campaign Dev Hub, deleted after the run; deletion verified (the alias no longer resolves; the hub's active scratch count returned to its earlier value)
+ids: no record, org or user id, username or alias is stored
+result at 836c54df4c (fuzzyLastName, within-stem ordered pairs): 4,680 pairs, 1,566 native matches; train B 330f4b706b exact on 3,350, head exact on 4,018; 1,078 native matches gained; 108 Glade matches native does not report (false-matches-836c54df4c.tsv); 0 pairs lost
+group: tkeyboard (panels tk01 to tk22 plus the ctl_hk2 and ctl_hk2_end controls); cases.json and org.tsv in this directory hold only blind panels captured after the code they score
+use: TestLastNameKeyboardFuzzyPanelsNativeRows requires zero extra matches on tk01-tk22; TestLastNameKeyboardFallbackMargin takes the highest native non-match from them
