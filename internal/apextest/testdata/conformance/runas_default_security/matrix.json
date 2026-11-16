@@ -8,9 +8,9 @@
   ],
   "shapeCount": 378,
   "counts": {
-    "ASSERTED": 1714,
+    "ASSERTED": 1794,
     "NO_ANSWER": 30,
-    "CARRIED": 146
+    "CARRIED": 66
   },
   "nativeRuns": {
     "59.0/anonymous": {
@@ -26894,7 +26894,7 @@
               "et": null
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -26950,7 +26950,7 @@
               "et": null
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -27006,7 +27006,7 @@
               "et": null
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -27062,7 +27062,7 @@
               "et": null
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -27118,7 +27118,7 @@
               "et": null
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -33095,7 +33095,7 @@
             }
           },
           "nativeObject": "C137A59c1fd362bMode__c",
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -33152,7 +33152,7 @@
             }
           },
           "nativeObject": "C137A628e8513ddMode__c",
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -33209,7 +33209,7 @@
             }
           },
           "nativeObject": "C137A6681cdc2ccMode__c",
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -33266,7 +33266,7 @@
             }
           },
           "nativeObject": "C137A67f2cff417Mode__c",
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -33323,7 +33323,7 @@
             }
           },
           "nativeObject": "C137A685de21342Mode__c",
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -49932,7 +49932,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -49955,7 +49955,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -49978,7 +49978,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -50001,7 +50001,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -50024,7 +50024,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -50070,7 +50070,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -50094,7 +50094,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -50118,7 +50118,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -50142,7 +50142,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -50166,7 +50166,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -50212,7 +50212,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -50236,7 +50236,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -50260,7 +50260,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -50284,7 +50284,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -50308,7 +50308,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -50356,7 +50356,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -50382,7 +50382,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -50408,7 +50408,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -50434,7 +50434,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -50460,7 +50460,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -50509,7 +50509,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -50536,7 +50536,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -50563,7 +50563,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -50590,7 +50590,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -50617,7 +50617,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -50662,7 +50662,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -50685,7 +50685,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -50708,7 +50708,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -50731,7 +50731,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -50754,7 +50754,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -50833,7 +50833,7 @@
             }
           },
           "nativeObject": "C137A59c1fd362bMode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -50890,7 +50890,7 @@
             }
           },
           "nativeObject": "C137A628e8513ddMode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -50947,7 +50947,7 @@
             }
           },
           "nativeObject": "C137A6681cdc2ccMode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -51004,7 +51004,7 @@
             }
           },
           "nativeObject": "C137A67f2cff417Mode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -51061,7 +51061,7 @@
             }
           },
           "nativeObject": "C137A685de21342Mode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -53369,7 +53369,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -53392,7 +53392,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -53415,7 +53415,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -53438,7 +53438,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -53461,7 +53461,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -53507,7 +53507,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -53531,7 +53531,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -53555,7 +53555,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -53579,7 +53579,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -53603,7 +53603,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -53649,7 +53649,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -53673,7 +53673,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -53697,7 +53697,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -53721,7 +53721,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -53745,7 +53745,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -53793,7 +53793,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -53819,7 +53819,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -53845,7 +53845,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -53871,7 +53871,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -53897,7 +53897,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -53946,7 +53946,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -53973,7 +53973,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -54000,7 +54000,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -54027,7 +54027,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -54054,7 +54054,7 @@
               "et": "System.DmlException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -54099,7 +54099,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -54122,7 +54122,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -54145,7 +54145,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -54168,7 +54168,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -54191,7 +54191,7 @@
               "et": "System.TypeException"
             }
           },
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -54270,7 +54270,7 @@
             }
           },
           "nativeObject": "C137A59c1fd362bMode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -54327,7 +54327,7 @@
             }
           },
           "nativeObject": "C137A628e8513ddMode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -54384,7 +54384,7 @@
             }
           },
           "nativeObject": "C137A6681cdc2ccMode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -54441,7 +54441,7 @@
             }
           },
           "nativeObject": "C137A67f2cff417Mode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -54498,7 +54498,7 @@
             }
           },
           "nativeObject": "C137A685de21342Mode__c",
-          "carryReason": "Explicit USER_MODE readonly DML exception/result shaping is outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
