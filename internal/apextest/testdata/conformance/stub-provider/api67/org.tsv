@@ -1,0 +1,14 @@
+id	api	route	compiled	success	outcome
+st01	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"staticCalls":1,"value":"real-stat"}
+st03	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"St
+st04	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"isTarget":true,"ctorCount":0,"ctorField":n
+st05	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"St
+st06	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["unnamed__0"],"types":["String"],"result
+st07	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"St
+st08	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"providerCalls":1,"value":"stub-run","created":true}
+st09	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["unnamed__0"],"types":["String"],"result
+st10	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"error":"System.NullPointerException|stubProvider cannot be null","creat
+st11	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"privateStaticCalls":1,"value":"real-hidden
+st12	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[{"args":[],"names":[],"types":[],"result":"String","member":"ru
+st13	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"providerCalls":0,"error":"System.TypeException|Test.createStub() cannot
+st14	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"error":"System.TypeException|Test.createSt
