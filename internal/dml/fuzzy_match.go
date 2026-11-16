@@ -320,7 +320,28 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if lastNameWordKey(x) != lastNameWordKey(y) {
 		return false, 0
 	}
-	return lastNameAlgorithms(x, y)
+	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+		return true, 100
+	}
+	length, substitutions, trailing := keyboardNameShape(x, y)
+	if substitutions == 1 && trailing == 0 {
+		// A single substitution keeps the base scorer.
+		return lastNameKeyboard(x, y)
+	}
+	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
+		return matched, confidence
+	}
+	// lastNameKeyboard without its terminal swap step, which did not apply.
+	base, ok := keyboardSimilarity(x, y)
+	matched, confidence := ok && base >= 90, averageWith100(base)
+	if matched || !keyboardPanelCell(length, substitutions, trailing) {
+		return matched, confidence
+	}
+	if score, ok := keyboardDistance(x, y); ok && score >= keyboardFallbackMargin {
+		return true, averageWith100(score)
+	}
+	return matched, confidence
 }
 
 // lastNameAlgorithms scores two folded last names without a match key:
@@ -334,21 +355,107 @@ func lastNameAlgorithms(x, y string) (bool, float64) {
 	return lastNameKeyboard(x, y)
 }
 
+// keyboardPanelShape gates the fallback to the joint shapes the native rows
+// hold. A shape is (length, substitutions, trailing): the longer folded,
+// apostrophe-stripped name in runes, the positional differences, and the
+// unpaired suffix (keyboardNameShape). A shape passes when a captured pair of that
+// shape that reaches the fallback is a native match (keyboardPanelCells). Every
+// other shape keeps the base keyboard result.
+func keyboardPanelShape(a, b string) bool {
+	return keyboardPanelCell(keyboardNameShape(a, b))
+}
+
+// keyboardNameShape is (length, substitutions, trailing) of two prepared names.
+func keyboardNameShape(a, b string) (length, substitutions, trailing int) {
+	na, nb := 0, 0
+	for len(a) > 0 && len(b) > 0 {
+		ra, sa := utf8.DecodeRuneInString(a)
+		rb, sb := utf8.DecodeRuneInString(b)
+		if ra != rb {
+			substitutions++
+		}
+		na++
+		nb++
+		a, b = a[sa:], b[sb:]
+	}
+	na += utf8.RuneCountInString(a)
+	nb += utf8.RuneCountInString(b)
+	if nb > na {
+		return nb, substitutions, nb - na
+	}
+	return na, substitutions, na - nb
+}
+
+func keyboardPanelCell(length, substitutions, trailing int) bool {
+	if length >= len(keyboardPanelCells) || substitutions >= len(keyboardPanelCells[length]) {
+		return false
+	}
+	return keyboardPanelCells[length][substitutions]>>uint(trailing)&1 == 1
+}
+
+// keyboardPanelCells[length][substitutions] has bit t set when a captured
+// pair with t trailing characters reaches the fallback and native matches it:
+// fuzzy_name_keys/org.tsv:10-25,122-169 (cases.json supplies the panel
+// values) and the LastName rows of duplicate_fuzzy_matching/org.tsv.
+// TestLastNameKeyboardPanelCells rebuilds it from the native rows.
+var keyboardPanelCells = [16][9]uint16{
+	4:  {0x0000, 0x0002, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	5:  {0x0000, 0x0002, 0x0002, 0x0000, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	6:  {0x0000, 0x0006, 0x0002, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	7:  {0x0000, 0x0006, 0x0007, 0x0003, 0x0003, 0x0000, 0x0000, 0x0000, 0x0000},
+	8:  {0x0008, 0x0006, 0x0006, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	9:  {0x0008, 0x000e, 0x0006, 0x0007, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	10: {0x0018, 0x000e, 0x0002, 0x000b, 0x0003, 0x0000, 0x0000, 0x0000, 0x0000},
+	11: {0x0018, 0x0006, 0x0006, 0x0006, 0x0004, 0x0000, 0x0000, 0x0000, 0x0000},
+	12: {0x0018, 0x000e, 0x000a, 0x000b, 0x0001, 0x0001, 0x0001, 0x0000, 0x0000},
+	13: {0x0038, 0x0000, 0x0000, 0x0001, 0x0001, 0x0001, 0x0001, 0x0000, 0x0000},
+	14: {0x0030, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	15: {0x0040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+}
+
+// keyboardFallbackMargin is the one score the fallback needs, in every gated
+// shape. The fitted costs are not reliable between 88 and about 92.3 in any
+// shape: native non-matches score as high as 90.84 in substitution shapes
+// (duplicate_fuzzy_panels k1-k3) and 92.26 in extension-only shapes (the
+// blind twin tk01-tk22, "Ingleborn"/"Inglebornxbqm"). The highest captured
+// native non-match of any shape that reaches the fallback, in every panel
+// (fitted, k1-k3, hk1, hk2, tk01-tk22), is 92.2615; the margin sits 0.74
+// above it. A pair scoring below it keeps the base result. The fitted score
+// is a model, so no margin can be proved; TestLastNameKeyboardFallbackMargin
+// pins the highest captured non-match and requires the margin above it, and
+// the second blind panel (bk01 on) was scored with this margin before it was
+// read. Per-shape floors are gone: a floor existed only where an earlier
+// panel happened to hold a counterexample, and a fresh panel found 108 more.
+const keyboardFallbackMargin = 93.0
+
 var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")
 
-// lastNameKeyboard is the Keyboard Distance step of the Last Name method on
-// two folded names whose apostrophes are removed.
+// lastNameKeyboard is the Keyboard Distance step of the standard rules' Last
+// Name on two folded names whose apostrophes are removed. It keeps the costs
+// the standard rows were fitted with (keyboardSimilarity); the custom Last
+// Name method also retains this score for previously accepted pairs.
 func lastNameKeyboard(x, y string) (bool, float64) {
-	if len(x) == 8 && standardIsTerminalSwap(x, y) {
-		a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
-		// Only the captured five-column geometry overrides ordinary membership.
-		if abs(a[0]-b[0]) <= 1 && abs(a[1]-b[1]) == 5 {
-			ordinary, ok := keyboardSimilarity(x, y)
-			return standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
-		}
+	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
+		return matched, confidence
 	}
 	score, ok := keyboardSimilarity(x, y)
 	return ok && score >= 90, averageWith100(score)
+}
+
+// lastNameTerminalSwap decides two eight-letter names whose last two letters
+// are swapped, for the captured five-column geometry only.
+func lastNameTerminalSwap(x, y string) (matched bool, confidence float64, swap bool) {
+	if len(x) != 8 || !standardIsTerminalSwap(x, y) {
+		return false, 0, false
+	}
+	a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
+	// Only the captured five-column geometry overrides ordinary membership.
+	if abs(a[0]-b[0]) > 1 || abs(a[1]-b[1]) != 5 {
+		return false, 0, false
+	}
+	ordinary, ok := keyboardSimilarity(x, y)
+	matched, confidence = standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
+	return matched, confidence, true
 }
 
 // lastNameCode is the whole-name match key of a folded last name, cached by
