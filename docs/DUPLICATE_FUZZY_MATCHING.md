@@ -245,7 +245,7 @@ Sections are compared exactly with weights 10, 50, 30, 10; the confidence is
 the weighted score; a match needs 80. A letter typed for a digit therefore
 still matches (`312 555 O199` finds `312-555-0199` and `312-555-0190` at 90).
 A country digit other than 1 never matches the same number with a different
-or no country digit. The D1 custom phone panels (`phone_city_zip`: line
+or no country digit. The N5 custom phone panels (`phone_city_zip`: line
 transpositions and the 80 threshold, extensions written `x12`, `ext. 12`,
 `,12`, `#12` and more, international numbers with `+`, `00` and `011`
 prefixes, and seven to nine digit numbers) are reproduced pair for pair by
@@ -264,9 +264,9 @@ Unchanged from the third run's model.
   `Dusseldorf` 95, `St. Louis`/`St Louis` 94) decides at 85 (`Salt Lake City`/
   `Salt Lake Ciyt` 85.7 matches, `San Francisco`/`San Francsico` 84.6 does
   not). Confidence `(100 + score) / 2`. Inner spaces count as typed
-  (`phone_city_zip` D1.cm1: `Los Angeles`/`Los  Angeles` 96, `LosAngeles`/
+  (`phone_city_zip` N5.cm1: `Los Angeles`/`Los  Angeles` 96, `LosAngeles`/
   `Los  Angeles` no match); tabs, line breaks and non-ASCII text keep the
-  folded comparison, which no row measures. The D1 City panels (one edit at
+  folded comparison, which no row measures. The N5 City panels (one edit at
   each position of `City`, a length series from one to eleven letters, multi-
   word, abbreviation and city-plus-state values) are reproduced pair for pair
   under the custom and the standard Account rule, which match the same pairs.
@@ -327,8 +327,8 @@ Unchanged from the third run's model.
   side (`Global` finds `Senior Global Regional Operations Analyst`, not the
   reverse); Glade matches neither.
 - NATIVE Zip: only the segment before the first hyphen, space, period or
-  slash decides (`phone_city_zip` D1.zu1: `12345.6789` and `12345/6789` find
-  `12345`); confidence 100, the extension is never scored (D1.zx1:
+  slash decides (`phone_city_zip` N5.zu1: `12345.6789` and `12345/6789` find
+  `12345`); confidence 100, the extension is never scored (N5.zx1:
   `94105-0001`/`94105-0002` 100); a value under three characters matches
   nothing.
 
@@ -455,14 +455,14 @@ extension of up to five digits (`94105` finds `94105-1234`, `94105-` and
 `94105-000` at 100, two different extensions score 95, `94105 1234` with a
 space is not an extension, one space beside the hyphen of a four-digit
 extension is, and non-US codes match only themselves with their inner spaces
-as typed: `phone_city_zip` D1.szu1, D1.szx1, D1.szn1), the website drops case, the scheme, a leading `www.` and a lone
+as typed: `phone_city_zip` N5.szu1, N5.szx1, N5.szn1), the website drops case, the scheme, a leading `www.` and a lone
 trailing slash (`acme.com/` does not find `acme.com`; `a-cme.com` finds
 `acme.com` at 94), phone numbers differing in the last four digits score 94 for
 an Account, 97 for a Contact and 98 for a Lead, and a letter typed for a
 digit finds nothing. The standard Contact and Lead phone key leaves out the
-last four digits (`phone_city_zip` D1.spt1, D1.slt1: `1-415-555-1234` finds
+last four digits (`phone_city_zip` N5.spt1, N5.slt1: `1-415-555-1234` finds
 `1-415-555-1243`, `415-555-4321` and `+1 415 555 9999`); the verdicts of the
-D1 standard phone panels are exact.
+N5 standard phone panels are exact.
 
 The same structure holds with the state and country equal on both records
 and with them blank (`Standard.Account.Truth` kept them equal,
@@ -697,7 +697,7 @@ on both sides), so no row covers blank Account names or Contact last names.
 - Standard phone confidence: with no email address on either record, two
   numbers that differ in the last four digits score 96 on the Contact rule and
   97 on the Lead rule unless both carry the country digit 1 (97 and 98, as
-  Glade scores every such pair; `phone_city_zip` D1.spt1, D1.slt1, 224 pairs).
+  Glade scores every such pair; `phone_city_zip` N5.spt1, N5.slt1, 224 pairs).
   The fit rows for 97 and 98 have an email address on every record, so the
   point follows the rule's other fields and is not modeled.
 - Standard Person Account matching rule: not activatable by metadata deploy,

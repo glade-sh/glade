@@ -146,7 +146,7 @@ func standardZip(a, b string) (bool, float64) {
 }
 
 // standardZipParts splits "12345" or "12345-6789" into the five digits and the
-// extension. NATIVE (phone_city_zip D1.szu1, D1.szx1): the extension after a
+// extension. NATIVE (phone_city_zip N5.szu1, N5.szx1): the extension after a
 // hyphen has up to five digits and may be empty ("12345-", "12345-678" and
 // "12345-67890" all find "12345", and "12345-678" scores 95 against
 // "12345-6789"); one space on either side of the hyphen is kept apart from a

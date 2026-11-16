@@ -120,7 +120,7 @@ func panelMatches(t *testing.T, panel nativePanel) map[[2]int]float64 {
 
 // standardPhoneLineResidual: the standard Contact and Lead rules score two
 // numbers that differ only in the last four digits one point under Glade's
-// fitted 97 and 98 unless both carry the country digit 1 (D1.spt1, D1.slt1,
+// fitted 97 and 98 unless both carry the country digit 1 (N5.spt1, N5.slt1,
 // records without an email address). The rows that fitted 97 and 98 have an
 // email address on every record, so the difference follows the other fields
 // of the rule and is not modeled; the verdicts are exact.
