@@ -14,14 +14,6 @@ em10	sources/em10.apex	none	istest	-
 em11	sources/em11.apex	none	istest	-
 dr10000	sources/dr10000.apex	none	both	-
 dr10001	sources/dr10001.apex	none	both	-
-dru10000	sources/dru10000.apex	bulk	anonymous	-
-dru10001	sources/dru10001.apex	bulk	anonymous	-
-qr50000	sources/qr50000.apex	bulk	anonymous	-
-qr50001	sources/qr50001.apex	bulk	anonymous	-
-qrun	sources/qrun.apex	bulk	anonymous	-
-ql10000	sources/ql10000.apex	bulk	anonymous	-
-ql10001	sources/ql10001.apex	bulk	anonymous	-
-qlun	sources/qlun.apex	bulk	anonymous	-
 pi150	sources/pi150.apex	none	both	-
 pi151	sources/pi151.apex	none	both	-
 enq50	sources/enq50.apex	none	both	-

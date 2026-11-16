@@ -183,6 +183,13 @@ func (f edgeFamily) replay(t *testing.T) {
 		if reason, ok := f.skip[id+"/"+route]; ok {
 			t.Skipf("known gap: %s (native org.tsv:%d %q, Glade %q)", reason, row.line, row.observation, got)
 		}
+		if strings.HasPrefix(row.observation, "COMPILEERR|") {
+			// Only the rejection is compared; compiler wording is not claimed.
+			if !strings.HasPrefix(got, "COMPILEERR|") {
+				t.Errorf("native org.tsv:%d %s %s: want a compile error, got %q", row.line, route, api, got)
+			}
+			return
+		}
 		if got != row.observation {
 			t.Errorf("native org.tsv:%d %s %s: got %q, want %q", row.line, route, api, got, row.observation)
 		}
