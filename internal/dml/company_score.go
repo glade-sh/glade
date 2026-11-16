@@ -2,6 +2,7 @@ package dml
 
 import (
 	"math"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -378,9 +379,11 @@ func companyDigitScore(a, b string) (float64, bool) {
 		}
 		return 0, false
 	}
-	if sx == 0 && sy == 0 && dx != dy && len(dx) == len(dy) && len(strings.Fields(x)) > 1 && !strings.HasSuffix(x, "#") {
+	if sx == 0 && sy == 0 && companyOneDigitApart(dx, dy) && len(strings.Fields(x)) > 1 && !strings.HasSuffix(x, "#") {
 		// NATIVE company_name_fit/org.tsv:4: "Test Account1" and
-		// "Test Account2" match at 100 in both directions.
+		// "Test Account2" match at 100 in both directions. R2_glu: so do
+		// "Test Account12" and "Test Account13", and "Test Account123" and
+		// "Test Account124"; "Test Account11" and "Test Account22" score 97.
 		return 100, true
 	}
 	if sx != 0 || sy != 0 || len(strings.Fields(x)) != 1 || len([]rune(x)) < 6 {
@@ -407,15 +410,37 @@ func companyDigitScore(a, b string) (float64, bool) {
 	return 91, true
 }
 
+// companyOneDigitApart reports two digit runs of one length that differ in
+// one position.
+func companyOneDigitApart(x, y string) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	n := 0
+	for i := 0; i < len(x); i++ {
+		if x[i] != y[i] {
+			n++
+		}
+	}
+	return n == 1
+}
+
+// companyVowel reports a lower-case vowel or "y".
+func companyVowel(c byte) bool {
+	return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' || c == 'y'
+}
+
 // companyJoinLetterScore is the hyphen or underscore digit join against a
-// single trailing letter other than "a" on the same base. NATIVE
+// single trailing consonant on the same base. NATIVE
 // company_name_fit/org.tsv:12 (B1_co1_b): "Test Account_2" and "Test Account B"
-// match at 91; "Test Account A" matches the join at 100.
+// match at 91; "Test Account A" matches the join at 100. R2_let: the other
+// consonants score 91 in both directions; a vowel or "Y" scores 94 or 97 and
+// keeps the earlier score.
 func companyJoinLetterScore(a, b, x, y, dx, dy string, sx, sy byte) (float64, bool) {
 	letter := func(s string) (string, bool) {
 		s = strings.ToLower(strings.TrimSpace(s))
 		i := strings.LastIndexByte(s, ' ')
-		if i < 0 || len([]rune(s[i+1:])) != 1 || companyNumber(s[i+1:]) || s[i+1:] == "a" {
+		if i < 0 || len(s[i+1:]) != 1 || s[i+1] < 'a' || s[i+1] > 'z' || companyVowel(s[i+1]) {
 			return "", false
 		}
 		return s[:i], true
@@ -559,8 +584,7 @@ func companyFitCovered(route int, a, b string) bool {
 			// NATIVE company_name_fit/org.tsv D1_nd: with a differing
 			// word, both names carry a number and the numbers are equal or
 			// one starts the other.
-			if !foldedEqual(companyDropLetters(x), companyDropLetters(y)) &&
-				(!companyNumbersRelated(a, b) || companyGlued(a) || companyGlued(b)) {
+			if companyNumberGate(a, b) {
 				return false
 			}
 			ok, _ := legacyFuzzyCompany(x, y, false)
@@ -589,32 +613,145 @@ func companyFitCovered(route int, a, b string) bool {
 		sx, sy := companyScoreWords(x.suffix, false), companyScoreWords(y.suffix, false)
 		bx, by := companyScoreWords(x.base, false), companyScoreWords(y.base, false)
 		if x.form == "dash" || y.form == "dash" || strings.Contains(a, " / ") || strings.Contains(b, " / ") {
-			// NATIVE D1_qf: "West" and "East" suffixes match across a dash
-			// or a spaced slash on the same base, in one direction only:
-			// "East" finds "West" and "West" does not find "East";
-			// "West" and "North" do not match.
+			// NATIVE D1_qf, R1_dir, R2_vow, R2_par: two different one-word
+			// suffixes match across a dash or a spaced slash on the same
+			// base as companySuffixFinds describes.
 			// A dash form finds an unspaced slash form only at the same suffix.
+			// NATIVE D1_qf: "Zorvex Freight - West" finds "Zorvex Freights/West".
 			if x.form == "dash" && y.form == "slash" && !strings.Contains(b, " / ") {
-				return strings.Join(bx, " ") == strings.Join(by, " ") && strings.Join(sx, " ") == strings.Join(sy, " ")
+				return companyAlikeWords(bx, by) && strings.Join(sx, " ") == strings.Join(sy, " ")
 			}
 			return strings.Join(bx, " ") == strings.Join(by, " ") && len(sx) == len(sy) && len(sx) > 0 &&
-				(strings.Join(sx, " ") == strings.Join(sy, " ") || jaroWinkler(sx[0], sy[0]) >= .8 && strings.Join(sx, " ") < strings.Join(sy, " "))
+				(strings.Join(sx, " ") == strings.Join(sy, " ") || len(sx) == 1 && companySuffixFinds(sx[0], sy[0], x.form == "paren" || y.form == "paren", x.form == "slash" || y.form == "slash"))
 		}
 		// NATIVE company_name_fit/org.tsv D1_qf: a slash and a parenthesis
 		// form match when the suffixes have the same number of words and the
 		// bases are alike word by word ("Freight" and "Freights"); a longer
 		// suffix ("West Coast") or a longer base ("Freight Services") does
 		// not match.
-		if len(sx) != len(sy) || len(bx) != len(by) {
-			return false
+		// NATIVE R1_qf2: a slash after a single letter ("c/o West") is not
+		// a qualifier; "Orbel Trade (West)" finds "Orbel Trade c/o West".
+		if companySlashLetter(x) || companySlashLetter(y) {
+			return true
 		}
-		for i := range bx {
-			if !strings.HasPrefix(bx[i], by[i]) && !strings.HasPrefix(by[i], bx[i]) {
-				return false
-			}
+		if len(sx) != len(sy) || !companyAlikeWords(bx, by) {
+			return false
 		}
 	}
 	return true
+}
+
+// companySuffixFinds reports whether a candidate suffix finds a different
+// stored suffix across two qualifier forms.
+//
+// NATIVE company_name_fit/org.tsv R1_dir, R2_vow and R2_par, dash against
+// spaced slash: suffixes that start with consonants match in both directions
+// when they are alike ("West", "Best" and "Nest"; "Mast" and "Last"; not
+// "West" and "Mast" or "North"). A suffix that starts with a vowel finds an
+// alike consonant suffix ("East" finds "West" and "Mast") and is not found by
+// it. Two vowel suffixes match when only the first letter differs ("East",
+// "Oast", "Uast"); "East" does not find "Ease".
+//
+// Against a parenthesis form only suffixes with the same consonants match
+// ("West" and "Wast"): "Orbel Trade - East" does not find "Orbel Trade (West)".
+// A vowel suffix between a spaced slash and a parenthesis keeps the rule above
+// and with it the earlier decision: R2_par matches "Zorvex Freight (East)" and
+// "Zorvex Freight / West", R1_dir does not match the same pair on "Orbel Trade".
+func companySuffixFinds(candidate, stored string, paren, spaced bool) bool {
+	if candidate == "" || stored == "" || !isASCII(candidate) || !isASCII(stored) {
+		return false
+	}
+	vc, vs := companyVowel(candidate[0]), companyVowel(stored[0])
+	switch {
+	case paren && !(spaced && vc):
+		return !vc && !vs && companyConsonants(candidate) == companyConsonants(stored)
+	case vs && !vc:
+		return false
+	case vs:
+		return candidate[1:] == stored[1:]
+	}
+	return jaroWinkler(candidate, stored) >= .8
+}
+
+// companyConsonants is a word without its vowels.
+func companyConsonants(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r < 0x80 && companyVowel(byte(r)) {
+			return -1
+		}
+		return r
+	}, s)
+}
+
+// companyAlikeWords reports equal word counts where each word starts the
+// word across from it or is started by it ("freight" and "freights").
+func companyAlikeWords(x, y []string) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	for i := range x {
+		if !strings.HasPrefix(x[i], y[i]) && !strings.HasPrefix(y[i], x[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// companySlashLetter reports a slash form whose slash follows a single letter.
+func companySlashLetter(q companyQualifier) bool {
+	n := len(q.base)
+	return q.form == "slash" && n > 0 && q.base[n-1] != ' ' && (n == 1 || q.base[n-2] == ' ')
+}
+
+// companyNumberGate reports a numbered pair with a differing word whose
+// numbers do not relate. NATIVE company_name_fit/org.tsv D1_nd covers names
+// of up to three words; R1_num and R1_dig keep the fitted decision for longer
+// names ("Qorvan Depot 4 North" and "Qorvan Depot 3 North East" match), and a
+// "#", a "No" before a number and a number with a letter ("3A") are part of
+// the number, not a differing word. R2_let: neither is a Roman numeral
+// ("Test Account II" and "Test Account-1" match).
+func companyNumberGate(a, b string) bool {
+	x, markedA := companyGateWords(a)
+	y, markedB := companyGateWords(b)
+	if markedA || markedB || len(x) > 3 || len(y) > 3 || slices.Equal(x, y) {
+		return false
+	}
+	gluedA, gluedB := companyGlued(a), companyGlued(b)
+	last := len(y) - 1
+	switch {
+	case gluedA && !gluedB && len(x) == last && slices.Equal(x, y[:last]) && companyVowel(y[last][0]) &&
+		strings.TrimLeft(companyFirstNumber(a), "0") == strings.TrimLeft(companyFirstNumber(b), "0"):
+		// NATIVE D1_nd and R2_vow: "Zorvex Region1" finds "Zorvex Region 1
+		// East" and "Zorvex Region 1 Oast", not "Zorvex Region 1 West".
+		return false
+	case !gluedA && !gluedB && len(x) == 3 && len(y) == 3 && slices.Equal(x[:2], y[:2]) &&
+		companyVowel(x[2][0]) && !companyVowel(y[2][0]) && companySuffixFinds(x[2], y[2], false, false):
+		// NATIVE D1_nd and R2_vow: "Zorvex Region 2 East" finds "Zorvex
+		// Region 1 West" and "Zorvex Region 1 Oast" finds "Zorvex Region 2
+		// Mast"; neither is found in return.
+		return false
+	}
+	return !companyNumbersRelated(a, b) || gluedA || gluedB
+}
+
+// companyGateWords is the words of a name without its numbers, number
+// markers and single characters. marked reports a "No" before a number; such
+// a pair keeps the fitted decision (NATIVE R1_num: "Qorvan Depot No 3" and
+// "Qorvan Depot North" match).
+func companyGateWords(s string) (out []string, marked bool) {
+	fields := strings.Fields(strings.ToLower(s))
+	for i, w := range fields {
+		if (w == "no" || w == "no.") && i+1 < len(fields) && companyFirstNumber(fields[i+1][:1]) != "" {
+			marked = true
+			continue
+		}
+		w = companyUnnumbered(w)
+		w = strings.Trim(w, "#")
+		if utf8.RuneCountInString(w) > 1 && companyFirstNumber(w) == "" && strings.Trim(w, "ivx") != "" {
+			out = append(out, w)
+		}
+	}
+	return out, marked
 }
 
 // companyNumbersRelated reports that both names hold a number and that, with
@@ -638,18 +775,6 @@ func companyGlued(s string) bool {
 		}
 	}
 	return false
-}
-
-// companyDropLetters removes the single-character words. NATIVE
-// company_name_fit/org.tsv:4,12: "Test Account B" matches "Test Account 1".
-func companyDropLetters(s string) string {
-	var out []string
-	for _, w := range strings.Fields(s) {
-		if utf8.RuneCountInString(w) > 1 {
-			out = append(out, w)
-		}
-	}
-	return strings.Join(out, " ")
 }
 
 // companyFirstNumber is the first run of ASCII digits in s.

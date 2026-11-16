@@ -15,7 +15,9 @@ import (
 
 // companyD1Residuals are the captured D1 directed pairs the fitted scorer does
 // not reproduce, keyed "panel/candidate=>stored". "miss" is a native match
-// Glade does not report; the word scorer rejects it too. "word" is a pair the
+// Glade does not report; the word scorer rejects it too. The two " - " and
+// parenthesis pairs with "East" and "West" stay missed because R1_dir rejects
+// the same pair on a shorter base word. "word" is a pair the
 // word scorer matches and native does not ("Zorvex Partner" and "Zorvex
 // Partner Inc", "Zorvex Freight West" and "Zorvex Freight (West Coast)"); it
 // is the base decision, not a fitted match. No residual is a match the fit
@@ -37,16 +39,13 @@ var companyD1Residuals = map[string]string{
 	"D1_dp/Zorvex Partnership=>Zorvex Partner":               "miss",
 	"D1_dp/Zorvex=>Zorvex Partnership":                       "miss",
 	"D1_jn/Zorvex Marine Supplies=>Zorvex-Marine Supply":     "miss",
-	"D1_nd/Zorvex Region 1 East=>Zorvex Region 2 West":       "miss",
 	"D1_nd/Zorvex Region 1 Sales=>Zorvex Region 10":          "miss",
 	"D1_nd/Zorvex Region 1 West=>Zorvex Region 10":           "miss",
 	"D1_nd/Zorvex Region 11 Sales=>Zorvex Region 1":          "miss",
-	"D1_nd/Zorvex Region 2 East=>Zorvex Region 1 West":       "miss",
-	"D1_nd/Zorvex Region1=>Zorvex Region 1 East":             "miss",
-	"D1_nd/Zorvex Region2=>Zorvex Region 2 East":             "miss",
 	"D1_qf/Zorvex Freight (West Coast)=>Zorvex Freight West": "word",
+	"D1_qf/Zorvex Freight (East)=>Zorvex Freight - West":     "miss",
+	"D1_qf/Zorvex Freight - East=>Zorvex Freight (West)":     "miss",
 	"D1_qf/Zorvex Freight - East=>Zorvex Freight West":       "miss",
-	"D1_qf/Zorvex Freight - West=>Zorvex Freights/West":      "miss",
 	"D1_qf/Zorvex Freight East=>Zorvex Freight - West":       "miss",
 	"D1_qf/Zorvex Freight East=>Zorvex Freight / West":       "miss",
 	"D1_qf/Zorvex Freight West=>Zorvex Freight (West Coast)": "word",

@@ -255,17 +255,47 @@ extrapolated. Same words with different numbers match (`Zorvex Region 1
 Sales`/`Zorvex Region 2 Sales`); with a differing word, both names need a
 number and the numbers must be equal or one must start the other, and a digit
 glued to a word (`Zorvex Region1`) does not match `Zorvex Region 1 Sales`. An
-underscore join does not match its spaced name, a hyphen join matches only
+underscore join does not match its spaced name and a hyphen join matches only
 when the aligned words are alike (`Vexlett-Packard`/`Vexlet Packard` yes,
-`Quen-State Paving`/`Quen State Painting` no), and two multiword names that
-differ only by a doubled letter match at 100. A slash and a parenthesis form
-need equal suffix word counts and alike bases; a dash or spaced slash against a
-different suffix matches only the similar suffix in one direction (`East`
-finds `West`, `North` finds neither). Known gaps, each with a residual in the
-test: 18 native matches the word scorer also rejects, such as `Zorvex
+`Quen-State Paving`/`Quen State Painting` no). A slash and a parenthesis form
+need equal suffix word counts and alike bases. Known gaps, each with a residual
+in the test: 15 native matches the word scorer also rejects, such as `Zorvex
 Partnership`/`Zorvex` and the `East`/`West` plain-to-dash pairs, and 10 pairs
 the word scorer matches and native does not (`Zorvex Partner`/`Zorvex Partner
 Inc`).
+
+The R1 and R2 captures (rows `R1_*` and `R2_*`, ten panels of 23 names) vary
+those shapes and bound the rules:
+
+- A slash joins the words on either side of it in the match key. `Zorvex
+  Freight/West` keeps the key of `Zorvex Freight West`; `Orbel Trade/West`
+  does not match `Orbel Trade West`, `Orbel Trade - West` or `Orbel
+  Trade/East`, and `Orbel Trade/Midwest` matches `Orbel Trade/Mideast`. No
+  captured match with a slash has unequal joined keys.
+- A doubled letter matches only past the first six letters of the first word:
+  `Vexlett Packard`/`Vexlet Packard` yes, `Vexllet Packard`, `Qell
+  Systems`/`Qel Systems` no. Native also matches other endings past the key
+  (`Vexlets Packard`, `Vexlet Packardd`); Glade does not yet.
+- Two different one-word suffixes across a dash and a spaced slash match when
+  both start with a consonant and are alike (`West`/`Best`, `Mast`/`Last`). A
+  suffix that starts with a vowel finds an alike consonant suffix and is not
+  found by it (`East` finds `West`). Two vowel suffixes match when only the
+  first letter differs. Against a parenthesis form only suffixes with the same
+  consonants match (`West`/`Wast`).
+- The number rule above covers names of up to three words. A `#`, a `No`
+  before a number, a number with a letter (`3A`) and a Roman numeral are part
+  of the number. `Zorvex Region1` finds `Zorvex Region 1 East`, and `Zorvex
+  Region 2 East` finds `Zorvex Region 1 West`; the reverse pairs do not match.
+- Digit runs glued to the same multiword name score 100 when they have one
+  length and differ in one position (`Test Account12`/`Test Account13`);
+  `Test Account11`/`Test Account22` keeps 97.
+- A hyphen or underscore digit join scores 91 against a single consonant
+  (`Test Account_2`/`Test Account D`); a vowel or `Y` keeps its earlier score.
+
+`TestCompanyShapePanelCounts` pins each panel: 2,104 of 2,351 captured matches
+reported, 1,136 exact confidences, 40 matches native does not report. The
+largest gaps are vowel suffixes against parenthesis forms and letters past the
+match key.
 
 ### Phone
 

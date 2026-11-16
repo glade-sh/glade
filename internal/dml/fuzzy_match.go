@@ -1151,6 +1151,9 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 		return true, 100
 	}
 	ma, mb := companyMarks(a), companyMarks(b)
+	if (ma|mb)&companyMarkQualifier != 0 && !companySlashKeys(a, b) {
+		return false, 0
+	}
 	ok, score := fuzzyCompanyRouted(a, b, matchBlanks, ma, mb)
 	if ok {
 		return ok, score
@@ -1206,7 +1209,7 @@ func companyDoubledEqual(a, b string) bool {
 			return false
 		}
 		if x == 0 && i >= len(a) && j >= len(b) {
-			return skipped && strings.ContainsAny(a, " -") && strings.ContainsAny(b, " -")
+			return skipped && strings.ContainsAny(a, " -") && strings.ContainsAny(b, " -") && companyKeyPrefix(a, b)
 		}
 	}
 }
@@ -1412,4 +1415,42 @@ func fuzzyItemScore(method string, confidence float64) float64 {
 		return math.Max(0, 2*confidence-100)
 	}
 	return confidence
+}
+
+// companySlashKeys reports whether two names share the fitted match key when
+// a slash joins the words on either side of it. NATIVE company_name_fit/org.tsv
+// R1_dir and R1_qf2: "Orbel Trade/West" matches neither "Orbel Trade/East",
+// "Orbel Trade West" nor "Orbel Trade - West", and "Orbel Trade/Midwest"
+// matches "Orbel Trade/Mideast"; D1_qf: "Zorvex Freight/West" matches all
+// three of its forms. No captured match with a slash has unequal joined keys.
+func companySlashKeys(a, b string) bool {
+	if strings.IndexByte(a, '/') < 0 && strings.IndexByte(b, '/') < 0 {
+		return true
+	}
+	same, _, _ := companyFitKeys(strings.ReplaceAll(a, "/", ""), strings.ReplaceAll(b, "/", ""))
+	return same
+}
+
+// companyKeyPrefix reports that the first words agree in their first six
+// characters, the part the match key keeps. NATIVE company_name_fit/org.tsv
+// R1_dbl: "Vexlett Packard" matches "Vexlet Packard" and "Vexlettt Packard";
+// "Vexllet Packard", "Vvexlet Packard", "Qell Systems" and "Qel Systems" do
+// not match their single-letter forms.
+func companyKeyPrefix(a, b string) bool {
+	for i := 0; i < 6; i++ {
+		if i >= len(a) || i >= len(b) {
+			return false
+		}
+		x, y := a[i], b[i]
+		if x >= 'A' && x <= 'Z' {
+			x += 'a' - 'A'
+		}
+		if y >= 'A' && y <= 'Z' {
+			y += 'a' - 'A'
+		}
+		if x != y || x == ' ' || x == '-' {
+			return false
+		}
+	}
+	return true
 }
