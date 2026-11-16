@@ -8,6 +8,8 @@
 
 - **Debugger startup checks a consistent set of project inputs.** A cold `glade dap` start now builds its org, runtime and startup cache entry from one set of observed project files, including optional files found absent and directory listings. If a file changes while the debugger starts, Glade rebuilds, up to three times. When the project is still changing after the third build, the debugger stops with a message naming the file instead of starting from a mix of old and new files. Finder files and common editor temporary files do not trigger rebuilds where they are not project inputs. Startup cache entries from earlier releases are rebuilt once.
 
+- **Visualforce test startup.** Test runs keep the digests of unchanged Visualforce input files in the project's test cache and reuse them on the next run. A missing, damaged or untrusted cache file is ignored and rebuilt, and the disk cache setting that turns off the runtime cache also turns this one off.
+
 - **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 
 - Apex reports the captured line-break errors beside a receiver dot in more places: loop, do-while, else-if and switch headers, member headers of nested classes, local methods in anonymous code, and trigger loops. Only the captured forms change; other code keeps its earlier diagnostics.
@@ -15,11 +17,9 @@
 - **Duplicate rule match keys.** Match keys follow the matching rule. A custom rule that pairs a fuzzy First Name with a fuzzy Last Name keys the first name on its initial, and the standard Contact and Lead rules score both names without a key when the email addresses agree, so initials, phonetic first names and spaced surnames such as `Mc Allen` now match as they do in Salesforce.
 
 - **Duplicate matching, Title and First Name.** Fuzzy Title matching covers word order, stop words, punctuation and word subsets from native panels, and the First Name Name Variant table gains the pairs those panels confirm (`docs/DUPLICATE_FUZZY_MATCHING.md`).
-- **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 
 - **Company duplicate matching.** Custom Company Name rules score numbered names, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
 
-- **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 - **Custom street matching.** Fuzzy Street rules follow four native captures at APIs 62.0 and 67.0: the match key (number and name, street words such as Park or Plaza left out), a match at edit similarity 87 whatever the section score, line breaks, number signs, hyphens, letters and directionals after the number, PO boxes, leading suites and number words. Standard rules are unchanged.
 
 - **Duplicate matching.** Between two plain ASCII values, City rules count inner spaces as typed. Custom ZIP rules also split the code at a period or slash. The standard Account rule accepts the captured ZIP extension shapes, and its ZIP item matches a value that is not a ZIP code only as typed.
@@ -67,8 +67,6 @@ v0.3.10 improves Apex compatibility, language server diagnostics, debugger respo
 - **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
 
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
-
-
 - **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
 
 ### Known issues
