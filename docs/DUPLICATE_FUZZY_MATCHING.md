@@ -974,12 +974,14 @@ on both sides), so no row covers blank Account names or Contact last names.
   matching paths. Missing records on those panels cannot all be attributed to
   the phone comparison. Identical international and extension strings in the
   Contact save fixture return no match with only the names as corroboration.
-- Standard phone confidence: with no email address on either record, two
-  numbers that differ in the last four digits score 96 on the Contact rule and
-  97 on the Lead rule unless both carry the country digit 1 (97 and 98, as
-  Glade scores every such pair; `phone_city_zip` N5.spt1, N5.slt1, 224 pairs).
-  The fit rows for 97 and 98 have an email address on every record, so the
-  point follows the rule's other fields and is not modeled.
+- Standard phone confidence: the Contact and Lead phone item scores 100 for
+  the same national number, 91 when both numbers carry one country digit and
+  only the line differs, and 88 for any other line difference; the rule
+  confidence is the mean with the two exact names (and a present Lead
+  company): 96 and 97 for 88, 97 and 98 for 91. Records that each carry an
+  email address keep 97 and 98 for every line difference
+  (`Field.Contact.Phone`, `Field.Lead.Phone`). `phone_city_zip` N5.spt1 and
+  N5.slt1 are exact.
 - Standard Person Account matching rule: not activatable by metadata deploy,
   so not captured; unenforced in Glade.
 - Raw (below threshold) item scores for Company Name and Title count 50 in an
