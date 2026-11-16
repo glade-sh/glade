@@ -399,9 +399,11 @@ set these limits:
   reports none of them. Capture S1 (26 further bases) found no separator in
   length, word class, first-word length or vowel identity either; the rows are
   pinned as misses in `company_s1_panels_test.go`.
-- Two parenthesis forms on one base that differ only in the E, O or U suffix
-  word (`(East)`/`(Oast)`/`(Uast)`) match at 100 in every direction on every
-  captured base (S1, R2_par, R3_long). Glade scores them 100.
+- Two parenthesis forms on one base whose one-word suffixes both start with a
+  vowel and differ only in that letter (`(East)`/`(Oast)`/`(Uast)`) match at
+  100 in every direction on every captured base (S1, R2_par, R3_long). Glade
+  scores them 100 for any vowel pair. The captures cover E, O and U; I and A
+  are untested.
 - Word endings on the `Vexlet` stem (S1 `s1_d`) that Glade still misses, such
   as `Vexletob`/`Vexleta` at 96 and `Vexlettt`/`Vexletab` at 93, and
   `Qelthorins`/`Qelthoriner` at 100, rest on one base each and are pinned, as

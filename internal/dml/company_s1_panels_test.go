@@ -49,6 +49,7 @@ func TestCompanyS1PanelCounts(t *testing.T) {
 
 // Two parenthesis forms on one base that differ only in the E, O or U suffix
 // word match at 100 in both directions on every captured base.
+// companyVowelParenScore fires for any vowel pair; I and A are untested.
 func TestCompanyVowelParenConfidence(t *testing.T) {
 	bases := []string{"Orbel Trade", "Zorvex Fret", "Brix Marine", "Mandolar Bank", "Plovdi Trade", "Zorvex Audio"}
 	suffixes := []string{"East", "Oast", "Uast"}

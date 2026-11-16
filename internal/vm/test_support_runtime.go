@@ -48,7 +48,7 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 	}
 	if args[1].Kind == ValueObject {
 		// Native callout-mocks cm08 (62.0 and 67.0): a source class that
-		// that does not implement HttpCalloutMock is refused at registration. The
+		// does not implement HttpCalloutMock is refused at registration. The
 		// WebServiceMock path has no captured mismatch row and keeps base.
 		if class, sourceClass := vm.lookupClass(args[1].Type); sourceClass && !class.PlatformType {
 			interfaces := vm.resolvedInterfaceNamesInHierarchy(class)
