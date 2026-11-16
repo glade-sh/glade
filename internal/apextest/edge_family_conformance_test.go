@@ -263,6 +263,9 @@ func (f edgeFamily) replay(t *testing.T) {
 						continue
 					}
 					t.Run(c.id, func(t *testing.T) {
+						if c.post != "-" && c.post != "" {
+							t.Skip("anonymous Apex does not drain the job queue; the @IsTest row covers the same governor")
+						}
 						source := "String obs='';\ntry {\n" + strings.ReplaceAll(f.source(t, c.id, "anonymous"), "__A__", maj) +
 							"\n} catch (Exception e) { obs = e.getTypeName() + '|' + e.getMessage(); }\nSystem.debug('OBS|' + obs + '|END');\n"
 						machine := runner.newMachine()
@@ -286,9 +289,6 @@ func (f edgeFamily) replay(t *testing.T) {
 							if got == "" {
 								t.Fatalf("no observation in debug: %q", result.Debug)
 							}
-						}
-						if c.post != "-" && c.post != "" {
-							t.Skipf("asynchronous observation; checked by the family's async test")
 						}
 						check(t, c.id, api, "anonymous", got)
 					})

@@ -36,3 +36,10 @@ func TestSOSLSearchMatrixNativeConformance(t *testing.T) {
 func TestSOSLCandidateCapsNativeConformance(t *testing.T) {
 	edgeFamily{dir: "testdata/conformance/sosl_candidate_caps"}.replay(t)
 }
+
+// Governor caps and messages inside Queueable, future, Batch and finalizer
+// transactions. The anonymous rows record the job status the org reported;
+// the @IsTest rows run the same job at stopTest.
+func TestAsyncLimitMessagesNativeConformance(t *testing.T) {
+	edgeFamily{dir: "testdata/conformance/async_limit_messages"}.replay(t)
+}
