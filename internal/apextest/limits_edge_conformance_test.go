@@ -11,3 +11,18 @@ func TestLimitsCounterEdgesNativeConformance(t *testing.T) {
 func TestSOSLIsTestEdgesNativeConformance(t *testing.T) {
 	edgeFamily{dir: "testdata/conformance/sosl_istest_edges"}.replay(t)
 }
+
+func TestTestBoundaryEdgesNativeConformance(t *testing.T) {
+	edgeFamily{dir: "testdata/conformance/test_boundary_edges"}.replay(t)
+}
+
+func TestSOSLSearchMatrixNativeConformance(t *testing.T) {
+	edgeFamily{dir: "testdata/conformance/sosl_search_matrix", skip: map[string]string{
+		"wi_network/anonymous":      "the scratch org has no Networks; the row records that org's error, not a search shape",
+		"wi_network_find/anonymous": "the scratch org has no Networks; the row records that org's error, not a search shape",
+	}}.replay(t)
+}
+
+func TestSOSLCandidateCapsNativeConformance(t *testing.T) {
+	edgeFamily{dir: "testdata/conformance/sosl_candidate_caps"}.replay(t)
+}

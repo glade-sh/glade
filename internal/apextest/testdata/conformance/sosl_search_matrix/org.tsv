@@ -1,0 +1,141 @@
+id	api	route	observation
+dc_nested	62.0	anonymous	
+dc_nested	67.0	anonymous	
+dc_unknown	62.0	anonymous	System.SearchException|The category group name is not valid for the entities you are searching: Geography
+dc_unknown	67.0	anonymous	System.SearchException|The category group name is not valid for the entities you are searching: Geography
+esc_backslash	62.0	anonymous	back\slash qzx
+esc_backslash	67.0	anonymous	back\slash qzx
+esc_brace	62.0	anonymous	brk{ley qzx
+esc_brace	67.0	anonymous	brk{ley qzx
+esc_colon	62.0	anonymous	col:on qzx
+esc_colon	67.0	anonymous	col:on qzx
+esc_qm	62.0	anonymous	q?mark qzx
+esc_qm	67.0	anonymous	q?mark qzx
+esc_quote	62.0	anonymous	quo"te qzx
+esc_quote	67.0	anonymous	quo"te qzx
+esc_star	62.0	anonymous	st*ar qzx
+esc_star	67.0	anonymous	st*ar qzx
+nf_all	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+nf_all	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+nf_all_multi	62.0	anonymous	Cznx qzx ; Lznx qzx ; copper qzx ; copper qzx
+nf_all_multi	67.0	anonymous	Cznx qzx ; Lznx qzx ; copper qzx ; copper qzx
+nf_multi	62.0	anonymous	Cznx qzx ; Lznx qzx ; copper qzx ; copper qzx
+nf_multi	67.0	anonymous	Cznx qzx ; Lznx qzx ; copper qzx ; copper qzx
+nf_name	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+nf_name	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+of_0	62.0	anonymous	zork two qzx
+of_0	67.0	anonymous	zork two qzx
+of_1999	62.0	anonymous	
+of_1999	67.0	anonymous	
+of_2000	62.0	anonymous	
+of_2000	67.0	anonymous	
+of_2000o	62.0	anonymous	
+of_2000o	67.0	anonymous	
+of_2001	62.0	anonymous	System.SearchException|SOSL offset should be between 0 and 2000
+of_2001	67.0	anonymous	System.SearchException|SOSL offset should be between 0 and 2000
+of_2001i	62.0	anonymous	System.SearchException|SOSL offset should be between 0 and 2000
+of_2001i	67.0	anonymous	System.SearchException|SOSL offset should be between 0 and 2000
+of_2001o	62.0	anonymous	System.SearchException|SOSL offset should be between 0 and 2000
+of_2001o	67.0	anonymous	System.SearchException|SOSL offset should be between 0 and 2000
+of_m1	62.0	anonymous	System.SearchException|SOSL offset should be between 0 and 2000
+of_m1	67.0	anonymous	System.SearchException|SOSL offset should be between 0 and 2000
+op_acct	62.0	anonymous	zork one qzx,zork one two qzx
+op_acct	67.0	anonymous	zork one qzx,zork one two qzx
+op_doc	62.0	anonymous	one only qzx,zork one qzx,zork only qzx
+op_doc	67.0	anonymous	one only qzx,zork one qzx,zork only qzx
+pr_and_or	62.0	anonymous	quux one qzx,quux qzx,quux two qzx,zork one qzx,zork one two qzx
+pr_and_or	67.0	anonymous	quux one qzx,quux qzx,quux two qzx,zork one qzx,zork one two qzx
+pr_andnot	62.0	anonymous	zork one qzx
+pr_andnot	67.0	anonymous	zork one qzx
+pr_notchain	62.0	anonymous	zork two qzx
+pr_notchain	67.0	anonymous	zork two qzx
+pr_or_and	62.0	anonymous	quux one qzx,quux qzx,quux two qzx,zork one two qzx,zork two qzx
+pr_or_and	67.0	anonymous	quux one qzx,quux qzx,quux two qzx,zork one two qzx,zork two qzx
+pr_paren	62.0	anonymous	quux two qzx,zork one two qzx,zork two qzx
+pr_paren	67.0	anonymous	quux two qzx,zork one two qzx,zork two qzx
+rt1	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+rt1	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+rt1i	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+rt1i	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+rt2	62.0	anonymous	System.QueryException|unexpected token: 'LIMIT'
+rt2	67.0	anonymous	System.QueryException|unexpected token: 'LIMIT'
+rt2i	62.0	anonymous	COMPILEERR|Unexpected token 'LIMIT'.
+rt2i	67.0	anonymous	COMPILEERR|Unexpected token 'LIMIT'.
+rt3	62.0	anonymous	System.QueryException|unexpected token: 'WHERE'
+rt3	67.0	anonymous	System.QueryException|unexpected token: 'WHERE'
+rt3i	62.0	anonymous	COMPILEERR|Unexpected token 'WHERE'.
+rt3i	67.0	anonymous	COMPILEERR|Unexpected token 'WHERE'.
+rt4	62.0	anonymous	System.QueryException|duplicate field selected: Name
+rt4	67.0	anonymous	System.QueryException|duplicate field selected: Name
+sw_absent	62.0	anonymous	System.NoDataFoundException|You are trying to retrieve a SObject type that was not part of the search query [Contact]
+sw_absent	67.0	anonymous	System.NoDataFoundException|You are trying to retrieve a SObject type that was not part of the search query [Contact]
+sw_snippet_field	62.0	anonymous	null
+sw_snippet_field	67.0	anonymous	null
+wc_aq	62.0	istest	
+wc_aq	62.0	anonymous	System.SearchException|search term must be longer than one character: a?
+wc_aq	67.0	istest	
+wc_aq	67.0	anonymous	System.SearchException|search term must be longer than one character: a?
+wc_astar	62.0	istest	
+wc_astar	62.0	anonymous	System.SearchException|search term must be longer than one character: a*
+wc_astar	67.0	istest	
+wc_astar	67.0	anonymous	System.SearchException|search term must be longer than one character: a*
+wc_cjk	62.0	istest	
+wc_cjk	62.0	anonymous	
+wc_cjk	67.0	istest	
+wc_cjk	67.0	anonymous	
+wc_e	62.0	istest	
+wc_e	62.0	anonymous	System.SearchException|search term must be longer than one character: é
+wc_e	67.0	istest	
+wc_e	67.0	anonymous	System.SearchException|search term must be longer than one character: é
+wc_end	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_end	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_esc	62.0	anonymous	Copper Wire qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_esc	67.0	anonymous	Copper Wire qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_lead	62.0	anonymous	
+wc_lead	67.0	anonymous	
+wc_mid	62.0	anonymous	Copper Wire qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_mid	67.0	anonymous	Copper Wire qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_qm	62.0	anonymous	Copper Wire qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_qm	67.0	anonymous	Copper Wire qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_qmstar	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_qmstar	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wc_qq	62.0	istest	
+wc_qq	62.0	anonymous	System.SearchException|search term must be longer than one character: ??
+wc_qq	67.0	istest	
+wc_qq	67.0	anonymous	System.SearchException|search term must be longer than one character: ??
+wc_starA	62.0	istest	
+wc_starA	62.0	anonymous	System.SearchException|search term must be longer than one character: *a
+wc_starA	67.0	istest	
+wc_starA	67.0	anonymous	System.SearchException|search term must be longer than one character: *a
+wi_meta	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_meta	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_meta_find	62.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_meta_find	67.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_network	62.0	anonymous	UNCATCHED|System.UnexpectedException|Networks are not enabled for your organization. 
+wi_network	67.0	anonymous	UNCATCHED|System.UnexpectedException|Networks are not enabled for your organization. 
+wi_network_find	62.0	anonymous	UNCATCHED|System.UnexpectedException|Networks are not enabled for your organization. 
+wi_network_find	67.0	anonymous	UNCATCHED|System.UnexpectedException|Networks are not enabled for your organization. 
+wi_snip	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_snip	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_snip1000	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_snip1000	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_snip1000_find	62.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_snip1000_find	67.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_snip50	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_snip50	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_snip50_find	62.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_snip50_find	67.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_snip_find	62.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_snip_find	67.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_spell_false	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_spell_false	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_spell_false_find	62.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_spell_false_find	67.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_spell_true	62.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_spell_true	67.0	anonymous	Copper Wire qzx,Coppers qzx,Nfx Alpha qzx,Nfx Gamma qzx,copper beta qzx,copper silver qzx
+wi_spell_true_find	62.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+wi_spell_true_find	67.0	anonymous	Copper Wire qzx=null ; Coppers qzx=null ; Nfx Alpha qzx=null ; Nfx Gamma qzx=null ; copper beta qzx=null ; copper silver qzx=null
+rt5	62.0	anonymous	1|nP
+rt5	67.0	anonymous	1|nP
+rt6	62.0	anonymous	1|Np
+rt6	67.0	anonymous	1|Np

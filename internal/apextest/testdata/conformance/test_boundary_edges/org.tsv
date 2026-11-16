@@ -1,0 +1,59 @@
+id	api	route	observation
+dt_start2	62.0	istest	UNCATCHED|System.FinalException|Testing already started
+dt_start2	67.0	istest	UNCATCHED|System.FinalException|Testing already started
+dt_stop2	62.0	istest	UNCATCHED|System.FinalException|Testing already stopped
+dt_stop2	67.0	istest	UNCATCHED|System.FinalException|Testing already stopped
+dt_stop0	62.0	istest	UNCATCHED|System.FinalException|Testing has not started
+dt_stop0	67.0	istest	UNCATCHED|System.FinalException|Testing has not started
+dt_start_after_stop	62.0	istest	UNCATCHED|System.FinalException|Testing already started
+dt_start_after_stop	67.0	istest	UNCATCHED|System.FinalException|Testing already started
+sb1	62.0	istest	start|caught:System.TypeException:Savepoint does not exist in this context|1
+sb1	67.0	istest	start|caught:System.TypeException:Savepoint does not exist in this context|1
+sb2	62.0	istest	stop|caught:System.TypeException:Savepoint does not exist in this context|1
+sb2	67.0	istest	stop|caught:System.TypeException:Savepoint does not exist in this context|1
+sb3	62.0	istest	1>0>1>2>1
+sb3	67.0	istest	1>0>1>2>1
+sb4	62.0	istest	start|caught:System.TypeException:Savepoint does not exist in this context
+sb4	67.0	istest	start|caught:System.TypeException:Savepoint does not exist in this context
+bt_loop6	62.0	istest	1:ok;2:ok;3:ok;4:ok;5:ok;6:ok;0
+bt_loop6	67.0	istest	1:ok;2:ok;3:ok;4:ok;5:ok;6:ok;0
+bt_start6	62.0	istest	1:ok;2:ok;3:ok;4:ok;5:ok;6:ok;
+bt_start6	67.0	istest	1:ok;2:ok;3:ok;4:ok;5:ok;6:ok;
+bt_enq5	62.0	istest	ok
+bt_enq5	67.0	istest	ok
+bt_enq105	62.0	istest	ok
+bt_enq105	67.0	istest	ok
+bt_enq106	62.0	istest	System.AsyncException:You've exceeded the limit of 100 jobs in the flex queue for org 00DREDACTED. Wait for some of your batch jobs to finish before adding more. To monitor and reorder jobs, use the Apex Flex Queue page in Setup.
+bt_enq106	67.0	istest	System.AsyncException:You've exceeded the limit of 100 jobs in the flex queue for org 00DREDACTED. Wait for some of your batch jobs to finish before adding more. To monitor and reorder jobs, use the Apex Flex Queue page in Setup.
+pe_list500	62.0	istest	500|400|LIMIT_EXCEEDED:The number of platform event messages published from an Apex test context exceeded the limit of 500.
+pe_list500	67.0	istest	500|400|LIMIT_EXCEEDED:The number of platform event messages published from an Apex test context exceeded the limit of 500.
+pe_list501	62.0	istest	501|400|LIMIT_EXCEEDED:The number of platform event messages published from an Apex test context exceeded the limit of 500.
+pe_list501	67.0	istest	501|400|LIMIT_EXCEEDED:The number of platform event messages published from an Apex test context exceeded the limit of 500.
+pe_single501	62.0	istest	UNCATCHED|System.LimitException|Too many DML statements: 151
+pe_single501	67.0	istest	UNCATCHED|System.LimitException|Too many DML statements: 151
+pe_after_stop	62.0	istest	false:The number of platform event messages published from an Apex test context exceeded the limit of 500.|false:The number of platform event messages published from an Apex test context exceeded the limit of 500.
+pe_after_stop	67.0	istest	false:The number of platform event messages published from an Apex test context exceeded the limit of 500.|false:The number of platform event messages published from an Apex test context exceeded the limit of 500.
+tr_depth	62.0	istest	System.DmlException|Update failed. First exception on row 0 with id <id>; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, EdgeRecTrg62: execution of AfterUpdate\n\ncaused by: System.DmlException: Update failed. First exception on row 0 with id <id>; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, EdgeRecTrg62: maximum trigger depth exceeded\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate: []\n\nTrigger.EdgeRecTrg62: line 5, column 1: []|depth=16
+tr_depth	62.0	anonymous	System.DmlException|Update failed. First exception on row 0 with id <id>; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, EdgeRecTrg62: execution of AfterUpdate\n\ncaused by: System.DmlException: Update failed. First exception on row 0 with id <id>; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, EdgeRecTrg62: maximum trigger depth exceeded\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate\nEdge_Rec62 trigger event AfterUpdate: []\n\nTrigger.EdgeRecTrg62: line 5, column 1: []|depth=16
+tr_depth	67.0	istest	System.DmlException|Update failed. First exception on row 0 with id <id>; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, EdgeRecTrg67: execution of AfterUpdate\n\ncaused by: System.DmlException: Update failed. First exception on row 0 with id <id>; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, EdgeRecTrg67: maximum trigger depth exceeded\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate: []\n\nTrigger.EdgeRecTrg67: line 5, column 1: []|depth=16
+tr_depth	67.0	anonymous	System.DmlException|Update failed. First exception on row 0 with id <id>; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, EdgeRecTrg67: execution of AfterUpdate\n\ncaused by: System.DmlException: Update failed. First exception on row 0 with id <id>; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, EdgeRecTrg67: maximum trigger depth exceeded\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate\nEdge_Rec67 trigger event AfterUpdate: []\n\nTrigger.EdgeRecTrg67: line 5, column 1: []|depth=16
+pe_n100	62.0	istest	100|100|none
+pe_n100	67.0	istest	100|100|none
+pe_n399	62.0	istest	399|399|none
+pe_n399	67.0	istest	399|399|none
+pe_n400	62.0	istest	400|400|none
+pe_n400	67.0	istest	400|400|none
+pe_n401	62.0	istest	401|401|none
+pe_n401	67.0	istest	401|401|none
+pe_n450	62.0	istest	450|450|none
+pe_n450	67.0	istest	450|450|none
+pe_n499	62.0	istest	499|499|none
+pe_n499	67.0	istest	499|499|none
+pe_300_200	62.0	istest	300:300;200:0;
+pe_300_200	67.0	istest	300:300;200:0;
+pe_250_250	62.0	istest	250:250;250:200;
+pe_250_250	67.0	istest	250:250;250:200;
+pe_499_1	62.0	istest	499:499;1:0;
+pe_499_1	67.0	istest	499:499;1:0;
+pe_100_100	62.0	istest	100:100;100:100;
+pe_100_100	67.0	istest	100:100;100:100;
