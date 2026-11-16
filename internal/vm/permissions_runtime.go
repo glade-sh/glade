@@ -95,6 +95,9 @@ func (vm *VM) currentUserHasDirectPermission(permission string) bool {
 // (r6flow_expiry); group and uncaptured states keep the existing lookup.
 func (vm *VM) currentUserHasPermission(permission string) bool {
 	return storage.CustomPermissionGrantedWhere(vm.Org, storage.ID(vm.currentUserID()), vm.currentUserPermissionFields(), permission, func(assignment storage.Record) bool {
+		if vm.permissionAssignmentNotYetApplied(assignment, vm.currentUserID()) {
+			return false
+		}
 		if group, ok := assignment.GetField("PermissionSetGroupId"); ok && storageValueIDText(group) != "" {
 			return true
 		}
@@ -2249,6 +2252,9 @@ func (vm *VM) assignedPermissionSources(userID string, activeOnly bool) []permis
 		if record.System.IsDeleted {
 			continue
 		}
+		if vm.permissionAssignmentNotYetApplied(record, userID) {
+			continue
+		}
 		group, hasGroup := record.GetField("PermissionSetGroupId")
 		if activeOnly && (!hasGroup || storageValueIDText(group) == "") {
 			active, known := dml.PermissionAssignmentState(record, func() time.Time { return vm.fakeNow })
@@ -2537,4 +2543,81 @@ func (vm *VM) deployedPermissionSetIDs() []string {
 		}
 	}
 	return out
+}
+
+// permissionAssignmentNotYetApplied reports a permission set assignment that
+// the running user's current context does not see. Natively the grant of a set
+// that a test assigns to the running user (from the method, a runAs block,
+// @TestSetup or around Test.startTest) is absent outside System.runAs and
+// inside the runAs block that made the assignment; a block entered afterwards
+// applies it until that block ends (permset_in_test rows, APIs 62.0 and
+// 67.0). Other users' runAs blocks, asynchronous jobs and assignments that
+// existed before the test keep the immediate grant.
+func (vm *VM) permissionAssignmentNotYetApplied(assignment storage.Record, userID string) bool {
+	if !assignment.TestAssigned || vm == nil || vm.testContext == nil || vm.permAssignAll || userID == "" {
+		return false
+	}
+	principal := vm.currentUserID()
+	if !storage.IDsEqual(storage.ID(userID), storage.ID(principal)) {
+		return false
+	}
+	if assignee, ok := assignment.GetField("AssigneeId"); !ok || !storage.IDsEqual(storage.ID(storageValueIDText(assignee)), storage.ID(principal)) {
+		return false
+	}
+	runner := vm.permRunnerUserID
+	if vm.testContext.RunAsDepth == 0 {
+		runner = principal
+	}
+	if runner == "" || !storage.IDsEqual(storage.ID(runner), storage.ID(principal)) {
+		return false
+	}
+	_, seen := vm.permAssignVisible[assignment.ID]
+	return !seen
+}
+
+// beginRunAsPermissionFrame records which test-made assignments a runAs block
+// sees at its start and returns the function that restores the outer frame.
+func (vm *VM) beginRunAsPermissionFrame(userBefore string) func() {
+	previousVisible, previousRunner := vm.permAssignVisible, vm.permRunnerUserID
+	if vm.testContext != nil && vm.testContext.RunAsDepth == 0 {
+		vm.permRunnerUserID = userBefore
+	}
+	visible := map[storage.ID]struct{}{}
+	if vm.Org != nil {
+		for _, record := range vm.Org.Objects["PermissionSetAssignment"].Records {
+			if record.TestAssigned && !record.System.IsDeleted {
+				visible[record.ID] = struct{}{}
+			}
+		}
+	}
+	vm.permAssignVisible = visible
+	return func() { vm.permAssignVisible, vm.permRunnerUserID = previousVisible, previousRunner }
+}
+
+// markTestAssignedPermissionSets flags PermissionSetAssignment rows that a
+// successful insert created inside a test.
+func (vm *VM) markTestAssignedPermissionSets(results []dml.Result) {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.permAssignAll {
+		return
+	}
+	for _, result := range results {
+		if !result.Success || result.ID == "" {
+			continue
+		}
+		state := vm.Org.Objects["PermissionSetAssignment"]
+		storedID, record, ok := storage.LookupRecordByID(state.Records, result.ID)
+		if !ok || record.TestAssigned {
+			continue
+		}
+		storage.EnsureMutableObjectRecords(vm.Org, "PermissionSetAssignment")
+		state = vm.Org.Objects["PermissionSetAssignment"]
+		storedID, record, ok = storage.LookupRecordByID(state.Records, result.ID)
+		if !ok {
+			continue
+		}
+		vm.recordIsolationJournalMutation("PermissionSetAssignment", storedID, record, true)
+		record.TestAssigned = true
+		state.PutRecord(storedID, record)
+		vm.Org.Objects["PermissionSetAssignment"] = state
+	}
 }

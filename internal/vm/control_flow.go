@@ -1776,6 +1776,7 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		return execOutcome{}, err
 	}
 	previous := vm.testContext.CurrentUser
+	runnerBefore := vm.currentUserID()
 	previousPackageVersion := vm.testContext.CurrentPackageVersion
 	var priorDescribes map[describeCacheKey]Value
 	var runAsUserID string
@@ -1806,6 +1807,9 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	// The administrator capture has no runAs boundary. Stop using its
 	// transaction-local assignment marker after entering one.
 	vm.mixedDML.newAdminPermissionSetID = ""
+	if changesUser {
+		defer vm.beginRunAsPermissionFrame(runnerBefore)()
+	}
 	vm.testContext.RunAsDepth++
 	if packageVersion.Kind != "" {
 		vm.testContext.CurrentPackageVersion = packageVersion

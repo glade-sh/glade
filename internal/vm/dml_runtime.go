@@ -2540,6 +2540,13 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if len(records) == 0 {
 		return nil, nil
 	}
+	if op == "insert" && strings.EqualFold(records[0].Object, "PermissionSetAssignment") {
+		defer func() {
+			if outErr == nil {
+				vm.markTestAssignedPermissionSets(out)
+			}
+		}()
+	}
 	// Preserve the original operation size across chunking and partial retries.
 	operationSize := len(records)
 	if len(triggerRetries) > 1 {

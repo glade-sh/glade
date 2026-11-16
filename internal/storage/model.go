@@ -1263,6 +1263,10 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// TestAssigned marks a PermissionSetAssignment that a test, a @TestSetup
+	// method or code they call inserted. Natively the running user's own
+	// context does not see it (permset_in_test rows).
+	TestAssigned bool `json:"testAssigned,omitempty"`
 	// CriteriaSharingOwned identifies a share created by criteria reconciliation.
 	CriteriaSharingOwned bool `json:"criteriaSharingOwned,omitempty"`
 	// triggerAssignments tracks explicit before-trigger assignments during DML.
