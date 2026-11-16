@@ -84,6 +84,10 @@ type Options struct {
 	ProjectSnapshot            *project.Project
 	SourceDigests              *typesys.SourceDigestSet
 	Progress                   func(TestProgress)
+	// debugSink receives each test method's System.debug lines. It is a
+	// package-internal conformance transport: native captures read the test
+	// log, and the report has no debug section.
+	debugSink func(class, method string, lines []string)
 }
 
 // DiskRuntimeCachePolicyReason identifies the reason a test run will or will
@@ -3363,6 +3367,9 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 		machine.SetWorkTracking(true)
 	}
 	result, err := machine.ExecuteTestInClass(invokeProgram, testCase.ClassName)
+	if opts.debugSink != nil {
+		opts.debugSink(testCase.ClassName, testCase.MethodName, result.Debug)
+	}
 	if opts.WorkSink != nil {
 		opts.WorkSink(testCase.ClassName, testCase.MethodName, machine.WorkCounts(), machine.MethodWork())
 	}

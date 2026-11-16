@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome
+ELASTIC-250-SETTING	68.0	deploy	true	true	deployed
+ELASTIC-250-LIMITS	68.0	anonymous	true	true	AT250;DailyAsyncApexExecutions=15/250;AT250;DailyAsyncApexElasticExecutions=ABSENT [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+ELASTIC-250-ENQ	68.0	anonymous	true	true	BEFORE;DailyAsyncApexExecutions=15/250;BEFORE;DailyAsyncApexElasticExecutions=ABSENT;JOB=<id> [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+ELASTIC-250-RESTORE	68.0	deploy	true	true	deployed

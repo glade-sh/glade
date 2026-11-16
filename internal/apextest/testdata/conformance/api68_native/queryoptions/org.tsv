@@ -1,0 +1,15 @@
+id	api	route	compiled	success	outcome
+QO-DEPLOY-68	68.0	deploy	true	true	deployed
+QO-BUILDER-68	68.0	anonymous	true	true	EMPTY=true;SNAPSHOT=false;CURRENT=true;NULL_DS=System.IllegalArgumentException: dataspace cannot be null or empty;EMPTY_DS=System.IllegalArgumentException: dataspace cannot be null or empty;NULL_NS=System.IllegalArgumentException: explicitNamespace cannot be null [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+QO-NULL-68	68.0	anonymous	true	true	NULL_OPTIONS=System.QueryException: SET OPTIONS bind value cannot be null [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+QO-SETOPTIONS-68	68.0	anonymous	true	true	DATASPACE=default;HONOR=true;PLATFORM_ROWS=1 [LIMITS soql=1/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+QO-COMPILE-BAD-68	68.0	deploy	false	false	ApexClass CapQ1Bad68: SET OPTIONS bind variable must be of type Database.QueryOptions
+QO-DEPLOY-67	67.0	deploy	true	true	deployed
+QO-BUILDER-67	67.0	anonymous	true	true	EMPTY=true;SNAPSHOT=false;CURRENT=true;NULL_DS=System.IllegalArgumentException: dataspace cannot be null or empty;EMPTY_DS=System.IllegalArgumentException: dataspace cannot be null or empty;NULL_NS=System.IllegalArgumentException: explicitNamespace cannot be null [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+QO-NULL-67	67.0	anonymous	true	true	NULL_OPTIONS=System.QueryException: SET OPTIONS bind value cannot be null [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+QO-SETOPTIONS-67	67.0	anonymous	true	true	DATASPACE=default;HONOR=true;PLATFORM_ROWS=1 [LIMITS soql=1/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+QO-COMPILE-BAD-67	67.0	deploy	false	false	ApexClass CapQ1Bad67: SET OPTIONS bind variable must be of type Database.QueryOptions
+QO-DEPLOY-62	62.0	deploy	true	true	deployed
+QO-FORMULA-68	68.0	anonymous	true	true	ROWS=1;NAME=S68-HIGH [LIMITS soql=1/100,dml=1/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+QO-FORMULA-67	67.0	anonymous	true	true	FORMULA_ERR=System.QueryException: FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs. [LIMITS soql=0/100,dml=1/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+QO-FORMULA-62	62.0	anonymous	true	true	FORMULA_ERR=System.QueryException: FORMULA() in a SOQL WHERE clause is a Beta feature available in Winter '27 and later, and only in Developer Edition, scratch, and sandbox orgs. [LIMITS soql=0/100,dml=1/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]

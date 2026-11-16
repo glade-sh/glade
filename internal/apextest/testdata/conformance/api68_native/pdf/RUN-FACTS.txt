@@ -1,0 +1,12 @@
+capture: pdf
+started: 2026-11-16T03:18:30Z
+finished: 2026-11-16T03:18:56Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+PDF bytes are not stable; the capture records size and PDF structural markers only
+Visualforce PDF accessibility release update is beta in Winter27, enforcement Spring27
