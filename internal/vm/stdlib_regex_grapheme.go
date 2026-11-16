@@ -116,7 +116,7 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		endAssertionGroups: endGroups,
 		loopGroups:         loopNames,
 	}
-	if javaRegexNestsUnboundedRepeats(javaRegexRemoveQuoting(source)) {
+	if javaRegexNestsUnboundedRepeats(javaRegexRemoveQuoting(source)) && regexLinearAnchorsSafe(source) && regexLinearAnchorsSafe(regexp2Source) {
 		// Java matches these in polynomial time; regexp2 backtracks exponentially
 		// when the match fails. A linear engine decides whether any match exists.
 		if linear, err := regexp.Compile(regexp2Source); err == nil {
@@ -380,6 +380,40 @@ func (p *regexp2Plan) publicGroupNumber(group int) (int, bool) {
 		return 0, false
 	}
 	return p.publicGroupNumbers[group], true
+}
+
+// regexLinearAnchorsSafe reports whether RE2 reads the anchors of source as
+// Java does. Java's $ also matches before a final line terminator, and with
+// (?m) before \r, U+0085, U+2028 and U+2029, which RE2 does not. A linear "no
+// match" for such a pattern could be wrong, so the pattern gets no precheck.
+func regexLinearAnchorsSafe(source string) bool {
+	for i := 0; i < len(source); i++ {
+		switch source[i] {
+		case '\\':
+			if i+1 < len(source) {
+				switch source[i+1] {
+				case 'A', 'Z', 'z', 'G':
+					return false
+				}
+				i++
+			}
+		case '$':
+			return false
+		case '(':
+			if i+1 < len(source) && source[i+1] == '?' {
+				for j := i + 2; j < len(source); j++ {
+					c := source[j]
+					if c == 'm' || c == 'd' {
+						return false
+					}
+					if !strings.ContainsRune("idmsucxU-", rune(c)) {
+						break
+					}
+				}
+			}
+		}
+	}
+	return true
 }
 
 // noLinearMatch reports that the linear engine found no match anywhere in

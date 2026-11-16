@@ -190,6 +190,7 @@ func foldClassText(class string, unicodeCase, extended bool) string {
 		i++
 	}
 	first := true
+	trailingHyphen := false
 	// item reads one literal or escape. It returns the rune, its source length,
 	// and false when the item is a set escape that stays untouched.
 	item := func(at int) (rune, int, bool) {
@@ -263,6 +264,9 @@ func foldClassText(class string, unicodeCase, extended bool) string {
 					break
 				}
 			}
+			if c == '-' && i+n == len(body) {
+				trailingHyphen = true
+			}
 			out.WriteString(body[i : i+n])
 			if variants := javaFoldVariants(r, unicodeCase); len(variants) > 1 {
 				extras = append(extras, variants[1:]...)
@@ -272,6 +276,12 @@ func foldClassText(class string, unicodeCase, extended bool) string {
 		}
 	}
 	if len(extras) > 0 {
+		if trailingHyphen {
+			// Keep the final literal hyphen last, so it cannot become a range.
+			text := out.String()
+			out.Reset()
+			out.WriteString(text[:len(text)-1])
+		}
 		sort.Slice(extras, func(a, b int) bool { return extras[a] < extras[b] })
 		var prev rune = -1
 		for _, r := range extras {
@@ -280,6 +290,9 @@ func foldClassText(class string, unicodeCase, extended bool) string {
 			}
 			prev = r
 			out.WriteString(fmtRuneEscape(r))
+		}
+		if trailingHyphen {
+			out.WriteByte('-')
 		}
 	}
 	out.WriteByte(']')

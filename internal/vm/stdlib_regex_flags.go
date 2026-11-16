@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -48,33 +49,49 @@ func (c *javaRegexClassState) advance(source string, i int) {
 // regexTraits describes the subject text, so the translator can keep regexp2's
 // faster native forms whenever Java and regexp2 agree on that text.
 type regexTraits struct {
-	nonASCII  bool // text holds a code point above U+007F
-	lineTerms bool // text holds \r, U+0085, U+2028 or U+2029
-	longText  bool // text is long enough to overflow Java's loop recursion
+	nonASCII     bool // text holds a code point above U+007F
+	foldUnsafe   bool // text holds U+0130 or U+212A, which regexp2 folds onto ASCII letters
+	wordNonASCII bool // text holds a non-ASCII character that regexp2 treats as a word character
+	lineTerms    bool // text holds \r, U+0085, U+2028 or U+2029
+	longText     bool // text is long enough to overflow Java's loop recursion
 }
 
 // regexTraitsAll is the conservative choice when no subject text is known.
-var regexTraitsAll = regexTraits{nonASCII: true, lineTerms: true}
+var regexTraitsAll = regexTraits{nonASCII: true, foldUnsafe: true, wordNonASCII: true, lineTerms: true}
 
 func regexTraitsOf(input string) regexTraits {
 	var t regexTraits
-	for i := 0; i < len(input); i++ {
+	for i := 0; i < len(input); {
 		b := input[i]
 		switch {
 		case b >= 0x80:
 			t.nonASCII = true
-			if b == 0xC2 && i+1 < len(input) && input[i+1] == 0x85 || b == 0xE2 && i+2 < len(input) && input[i+1] == 0x80 && (input[i+2] == 0xA8 || input[i+2] == 0xA9) {
+			r, size := utf8.DecodeRuneInString(input[i:])
+			switch {
+			case r == 0x85 || r == 0x2028 || r == 0x2029:
 				t.lineTerms = true
+			case r == 0x130 || r == 0x212A:
+				t.foldUnsafe = true
 			}
+			if !t.wordNonASCII && regexp2WordRune(r) {
+				t.wordNonASCII = true
+			}
+			i += size
+			if t.lineTerms && t.foldUnsafe && t.wordNonASCII {
+				return t
+			}
+			continue
 		case b == '\r':
 			t.lineTerms = true
 		}
-		if t.nonASCII && t.lineTerms {
-			break
-		}
-
+		i++
 	}
 	return t
+}
+
+// regexp2WordRune mirrors regexp2's \w and \b word class for one rune.
+func regexp2WordRune(r rune) bool {
+	return unicode.IsLetter(r) || unicode.Is(unicode.Mn, r) || unicode.IsDigit(r) || unicode.Is(unicode.Pc, r) || r == 0x200C || r == 0x200D
 }
 
 // regexTraitsFor returns the traits of input that source can depend on. The
@@ -82,7 +99,9 @@ func regexTraitsOf(input string) regexTraits {
 // scan is remembered for the next call on the same text, so a find loop over a
 // long input does not rescan it for every match.
 func regexTraitsFor(source, input string) regexTraits {
-	needNonASCII := regexSourceHasInlineFlag(source, 'i') || strings.Contains(source, `\b`) || strings.Contains(source, `\B`)
+	needFold := regexSourceHasInlineFlag(source, 'i')
+	needWord := strings.Contains(source, `\b`) || strings.Contains(source, `\B`)
+	needNonASCII := needFold || needWord
 	needLineTerms := strings.Contains(source, "^") && regexSourceHasInlineFlag(source, 'm')
 	needLong := len(input) >= regexLoopMinInput && strings.Contains(source, ")") && strings.ContainsAny(source, "*+{")
 	if !needNonASCII && !needLineTerms && !needLong {
@@ -91,7 +110,9 @@ func regexTraitsFor(source, input string) regexTraits {
 	var out regexTraits
 	if needNonASCII || needLineTerms {
 		scanned := regexTraitsOfCached(input)
-		out.nonASCII = needNonASCII && scanned.nonASCII
+		out.nonASCII = needFold && scanned.nonASCII
+		out.foldUnsafe = needFold && scanned.foldUnsafe
+		out.wordNonASCII = needWord && scanned.wordNonASCII
 		out.lineTerms = needLineTerms && scanned.lineTerms
 	}
 	if needLong && regexSourceHasLoopGroups(source) {
@@ -171,15 +192,21 @@ func regexSourceNeedsExplicitFold(source string, traits regexTraits) bool {
 	if !regexSourceHasInlineFlag(source, 'i') {
 		return false
 	}
-	if !traits.nonASCII {
-		ascii := true
-		for i := 0; i < len(source); i++ {
-			if source[i] >= 0x80 {
-				ascii = false
-				break
-			}
+	// For an ASCII-only pattern, regexp2's own folding differs from Java's only
+	// on U+0130 and U+212A, unless the u flag asks for Unicode folding.
+	ascii := true
+	for i := 0; i < len(source); i++ {
+		if source[i] >= 0x80 {
+			ascii = false
+			break
 		}
-		if ascii && !strings.Contains(source, `\u`) && !strings.Contains(source, `\x`) {
+	}
+	if ascii && !strings.Contains(source, `\u`) && !strings.Contains(source, `\x`) {
+		if regexSourceHasInlineFlag(source, 'u') {
+			if !traits.nonASCII {
+				return false
+			}
+		} else if !traits.foldUnsafe {
 			return false
 		}
 	}
@@ -215,7 +242,7 @@ func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeC
 	for i := 0; i < len(source); i++ {
 		ch := source[i]
 		if ch == '\\' {
-			if i+1 < len(source) && !classes.inside() && (source[i+1] == 'b' || source[i+1] == 'B') && traits.nonASCII && !unicodeClasses && !(i+2 < len(source) && source[i+2] == '{') {
+			if i+1 < len(source) && !classes.inside() && (source[i+1] == 'b' || source[i+1] == 'B') && traits.wordNonASCII && !unicodeClasses && !(i+2 < len(source) && source[i+2] == '{') {
 				if source[i+1] == 'b' {
 					out.WriteString(regexASCIIWordBoundary)
 				} else {

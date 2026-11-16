@@ -257,11 +257,12 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 }
 
 func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anchored, full bool) (bool, error) {
-	if !anchored && p.noLinearMatch(input) {
-		// A search that tries every start and finds nothing reads to the end,
-		// except when the pattern begins with an anchor.
-		return !strings.HasPrefix(p.originalSource, "^"), nil
-	}
+	// A precheck miss means the find failed. The observer search can still run
+	// out of time on the shapes the precheck exists for; then the answer is an
+	// estimate: a search that tries every start reads to the end, except when
+	// the pattern begins with an anchor. The linear engine is only built for
+	// patterns without $, \A, \z and (?m), so this estimate is rarely reached.
+	missed := !anchored && p.noLinearMatch(input)
 	source, slot := regexp2EndObserverSource(p.matchSource, p.re)
 	if anchored {
 		source = `\G(?:` + source + ")"
@@ -277,9 +278,24 @@ func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anch
 	match, err := searchRegexp2(re, input, func() (*regexp2.Match, error) {
 		return re.FindStringMatchStartingAt(input, startByte)
 	})
+	if err != nil && missed {
+		return !strings.HasPrefix(regexStripLeadingFlags(p.originalSource), "^"), nil
+	}
 	if err != nil || match == nil {
 		return false, err
 	}
 	group := match.GroupByNumber(slot)
 	return group != nil && len(group.Captures) > 0, nil
+}
+
+// regexStripLeadingFlags removes leading (?flags) groups from a pattern.
+func regexStripLeadingFlags(source string) string {
+	for strings.HasPrefix(source, "(?") {
+		end := strings.IndexByte(source, ')')
+		if end < 0 || strings.Trim(source[2:end], "idmsucxU-") != "" {
+			break
+		}
+		source = source[end+1:]
+	}
+	return source
 }
