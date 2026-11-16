@@ -4018,7 +4018,7 @@ func (vm *VM) enforceSOQLSecurityScanned(query soql.Query, permissionSetID strin
 		// USER_MODE on an unreadable object raises the entity denial. The
 		// Database.countQuery AccessLevel overload keeps QueryException
 		// (C137_205/247).
-		if mode == "USER_MODE" && permissionSetID == "" && vm.dynamicSOQLBindRoute == "" && vm.explicitRunAsUserMode() && runAsCountDenialShape(query) {
+		if mode == "USER_MODE" && permissionSetID == "" && vm.staticSOQLQuery && vm.dynamicSOQLBindRoute == "" && vm.explicitRunAsUserMode() && runAsCountDenialShape(query) {
 			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 		}
 		if mode == "USER_MODE" && permissionSetID == "" {
@@ -5331,6 +5331,9 @@ func (vm *VM) executeSOQLWithAccessLevel(raw string, accessLevel Value, execResu
 	return out, nil
 }
 func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
+	saved := vm.staticSOQLQuery
+	vm.staticSOQLQuery = true
+	defer func() { vm.staticSOQLQuery = saved }()
 	value, err := vm.executeSOQL(raw, execResult)
 	if err != nil {
 		if value, err = vm.namedApexReferenceStaticQuery(raw, err); err != nil {
@@ -5451,6 +5454,9 @@ func (vm *VM) soqlResultObjectName(raw string) string {
 	return objectName
 }
 func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, error) {
+	saved := vm.staticSOQLQuery
+	vm.staticSOQLQuery = true
+	defer func() { vm.staticSOQLQuery = saved }()
 	value, err := vm.executeSOQLQuery(raw, result)
 	if err != nil {
 		if value, err = vm.namedApexReferenceStaticQuery(raw, err); err != nil {

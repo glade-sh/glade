@@ -432,7 +432,10 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
 	dmlOptions.ExplicitUserMode = isUserModeAccessLevel(accessLevel)
 	dmlOptions.ExplicitUserModePartialRecord = dmlOptions.ExplicitUserMode && !allOrNone && args[0].Kind == ValueObject
+	savedCaptured := vm.runAsRecordAccessCaptured
+	vm.runAsRecordAccessCaptured = isUserModeAccessLevel(accessLevel) || !allOrNone && op == "update" && args[0].Kind == ValueList
 	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode, accessLevelPermissionSetID(accessLevel))
+	vm.runAsRecordAccessCaptured = savedCaptured
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
@@ -7086,7 +7089,10 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		vm.testContext != nil && vm.testContext.RunAsDepth > 0 && !vm.runAsSecureDefaults() && vm.objectPermissionsDeleteInput(value) {
 		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, false, true, dmlMode)
 	} else {
+		savedCaptured := vm.runAsRecordAccessCaptured
+		vm.runAsRecordAccessCaptured = mode == ir.DMLModeUser || op == "delete" && value.Kind == ValueObject
 		results, err = vm.applyDMLWithRecordAccess(op, value, true, externalIDField, dmlOptions, result, dmlMode)
+		vm.runAsRecordAccessCaptured = savedCaptured
 	}
 	if err != nil {
 		return vm.flowCoreStatementInsertError(op, value, err)

@@ -342,7 +342,7 @@ func (vm *VM) defaultRunAsSOQLDenial(query soql.Query) error {
 	// sharing_access_modes d6 rows (API 67.0 and 68.0): static COUNT() and the
 	// default Database.countQuery, unfiltered or with one Name equality, on an
 	// unreadable custom object or Account raise the same entity denial.
-	unfilteredCustomCount = unfilteredCustomCount || (vm.dynamicSOQLBindRoute == "" || vm.dynamicSOQLBindRoute == "Database.countQuery") &&
+	unfilteredCustomCount = unfilteredCustomCount || (vm.staticSOQLQuery && vm.dynamicSOQLBindRoute == "" || vm.dynamicSOQLBindRoute == "Database.countQuery") &&
 		runAsCountDenialShape(query) && (query.Where == nil || strings.EqualFold(query.Where.Field, "Name")) &&
 		(vm.ordinaryCustomPermissionObject(query.Object) || strings.EqualFold(query.Object, "Account"))
 	if !unfilteredCustomCount {
@@ -435,8 +435,10 @@ func isRunAsSharingDenialText(text string) bool {
 	return strings.HasPrefix(text, runAsCrossReferenceDenial) || text == runAsObjectIDDenial
 }
 
+// explicitRunAsSharingRowFailure reports a captured user-mode update or delete
+// of a hidden custom-object record that fails as a DML row (d2 rows).
 func (vm *VM) explicitRunAsSharingRowFailure(op, objectName string) bool {
-	if (op != "update" && op != "delete") || !hasSuffixFold(objectName, "__c") || vm.testContext == nil ||
+	if !vm.runAsRecordAccessCaptured || (op != "update" && op != "delete") || !hasSuffixFold(objectName, "__c") || vm.testContext == nil ||
 		vm.testContext.RunAsDepth <= vm.testContext.PackageRunAsDepth || !apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 62) {
 		return false
 	}

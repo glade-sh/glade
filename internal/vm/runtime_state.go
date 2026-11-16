@@ -63,6 +63,11 @@ type VM struct {
 	// USER_MODE (an AccessLevel argument, or a statement "as user" while
 	// explicitUserModeStatement is set).
 	explicitUserModeAccess, explicitUserModeStatement bool
+	// runAsRecordAccessCaptured marks a DML call shape whose hidden-record
+	// failure the sharing_access_modes d2 rows capture as a DML row failure.
+	runAsRecordAccessCaptured bool
+	// staticSOQLQuery is set while a static [SELECT ...] expression runs.
+	staticSOQLQuery bool
 	// userModeSingleRecord marks the field check of single-record user-mode DML.
 	userModeSingleRecord   bool
 	knowledgeIssuedParents map[storage.ID]bool

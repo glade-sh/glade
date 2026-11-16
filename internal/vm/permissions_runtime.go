@@ -1689,7 +1689,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 	// retain readable fields of an inaccessible object. Id is handled separately.
 	readableObject := accessType != "READABLE" || vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", scopedPermissionSetID)
 	// Native sharing_access_follow f_u1_07/f_u1_08 rows (READABLE, Standard
-	// User in runAs, APIs 62.0-68.0): a child subquery of an unreadable object
+	// User in runAs, APIs 62.0-68.0): a child subquery of an unreadable custom object
 	// stays untouched; a lookup to an unreadable object is removed even with
 	// field access, and its parent relationship stays with the parent's own
 	// fields stripped. Other access types and contexts keep their rules.
@@ -1703,7 +1703,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		if relationshipRows {
 			if value.Kind == ValueList {
 				if childObjectName := sObjectListObjectName(value); childObjectName != "" {
-					if resolved, ok := vm.resolveObjectName(childObjectName); ok && !vm.currentUserObjectPermission(resolved, "isAccessible") {
+					if resolved, ok := vm.resolveObjectName(childObjectName); ok && hasSuffixFold(resolved, "__c") && !vm.currentUserObjectPermission(resolved, "isAccessible") {
 						continue
 					}
 				}
