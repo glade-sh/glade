@@ -312,7 +312,12 @@ Sections are compared exactly with weights 10, 50, 30, 10; the confidence is
 the weighted score; a match needs 80. A letter typed for a digit therefore
 still matches (`312 555 O199` finds `312-555-0199` and `312-555-0190` at 90).
 A country digit other than 1 never matches the same number with a different
-or no country digit.
+or no country digit. The N5 custom phone panels (`phone_city_zip`: line
+transpositions and the 80 threshold, extensions written `x12`, `ext. 12`,
+`,12`, `#12` and more, international numbers with `+`, `00` and `011`
+prefixes, and seven to nine digit numbers) are reproduced pair for pair by
+this model: a different line is a candidate at 90, no extension form finds
+another or the bare number, and short numbers never match.
 
 ### City, Street, ZIP, Title
 
@@ -325,7 +330,14 @@ Unchanged from the third run's model.
   lower-cased strings (accents and dots count as edits: `Düsseldorf`/
   `Dusseldorf` 95, `St. Louis`/`St Louis` 94) decides at 85 (`Salt Lake City`/
   `Salt Lake Ciyt` 85.7 matches, `San Francisco`/`San Francsico` 84.6 does
-  not). Confidence `(100 + score) / 2`.
+  not). Confidence `(100 + score) / 2`. Inner spaces count as typed
+  (`phone_city_zip` N5.cm1: `Los Angeles`/`Los  Angeles` 96, `LosAngeles`/
+  `Los  Angeles` no match); tabs, line breaks and non-ASCII text keep the
+  folded comparison, which no row measures. The raw City score an unmatched
+  item adds inside AND and OR groups compares the same text. The N5 City panels (one edit at
+  each position of `City`, a length series from one to eleven letters, multi-
+  word, abbreviation and city-plus-state values) are reproduced pair for pair
+  under the custom and the standard Account rule, which match the same pairs.
 - NATIVE Street: addresses are lower-cased, dots and number signs removed,
   commas spaced, ordinal words spelled as numbers (`Fifth` = `5th`). Sections:
   the number is a leading token starting with a digit (`221B` included); a
@@ -410,8 +422,11 @@ Unchanged from the third run's model.
   shared word against a five-word title matches only from the one-word side
   (`Global` finds `Senior Global Regional Operations Analyst`, not the
   reverse); Glade matches neither.
-- NATIVE Zip: only the segment before the first hyphen or space decides;
-  confidence 100; a value under three characters matches nothing.
+- NATIVE Zip: only the segment before the first hyphen, space, period or
+  slash decides (`phone_city_zip` N5.zu1: `12345.6789` and `12345/6789` find
+  `12345`); confidence 100, the extension is never scored (N5.zx1:
+  `94105-0001`/`94105-0002` 100); a value under three characters matches
+  nothing.
 
 NATIVE blanks: with Match Blank Fields two blank values match (100); with the
 default they never do; one blank value never matches.
@@ -534,13 +549,18 @@ city 95 report 89), website times the better of street and phone on the
 Website path, the city or ZIP gating that path without scoring it
 (`Standard.Account.WebsitePath`). The standard items are the fuzzy methods
 with their own scales: ZIP is five digits with an optional hyphenated
-extension (`94105` finds `94105-1234` at 100, two different extensions score
-95, `94105 1234` with a space is not an extension, non-US codes match only
-themselves), the website drops case, the scheme, a leading `www.` and a lone
+extension of up to five digits (`94105` finds `94105-1234`, `94105-` and
+`94105-000` at 100, two different extensions score 95, `94105 1234` with a
+space is not an extension, one space beside the hyphen of a four-digit
+extension is, and non-US codes match only themselves with their inner spaces
+as typed: `phone_city_zip` N5.szu1, N5.szx1, N5.szn1), the website drops case, the scheme, a leading `www.` and a lone
 trailing slash (`acme.com/` does not find `acme.com`; `a-cme.com` finds
 `acme.com` at 94), phone numbers differing in the last four digits score 94 for
 an Account, 97 for a Contact and 98 for a Lead, and a letter typed for a
-digit finds nothing.
+digit finds nothing. The standard Contact and Lead phone key leaves out the
+last four digits (`phone_city_zip` N5.spt1, N5.slt1: `1-415-555-1234` finds
+`1-415-555-1243`, `415-555-4321` and `+1 415 555 9999`); the verdicts of the
+N5 standard phone panels are exact.
 
 The same structure holds with the state and country equal on both records
 and with them blank (`Standard.Account.Truth` kept them equal,
@@ -804,6 +824,12 @@ on both sides), so no row covers blank Account names or Contact last names.
   matching paths. Missing records on those panels cannot all be attributed to
   the phone comparison. Identical international and extension strings in the
   Contact save fixture return no match with only the names as corroboration.
+- Standard phone confidence: with no email address on either record, two
+  numbers that differ in the last four digits score 96 on the Contact rule and
+  97 on the Lead rule unless both carry the country digit 1 (97 and 98, as
+  Glade scores every such pair; `phone_city_zip` N5.spt1, N5.slt1, 224 pairs).
+  The fit rows for 97 and 98 have an email address on every record, so the
+  point follows the rule's other fields and is not modeled.
 - Standard Person Account matching rule: not activatable by metadata deploy,
   so not captured; unenforced in Glade.
 - Raw (below threshold) item scores for Company Name and Title count 50 in an

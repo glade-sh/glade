@@ -122,15 +122,18 @@ var (
 	standardURLScheme = regexp.MustCompile(`^[a-z][a-z0-9+.-]*://`)
 )
 
-// standardZip: a five digit code with an optional hyphenated four digit
-// extension. The first five digits weigh 90 and the extension 10: two
-// extensions that differ score 95, an extension against none scores 100, and
-// "94105 1234" with a space is not an extension at all. Any other value
-// matches only itself.
+// standardZip: a five digit code with an optional hyphenated extension. The
+// first five digits weigh 90 and the extension 10: two extensions that differ
+// score 95, an extension against none scores 100, and "94105 1234" with a
+// space is not an extension at all. Any other value matches only itself, its
+// inner spaces as typed (plainSpaced).
 func standardZip(a, b string) (bool, float64) {
 	headA, extA, okA := standardZipParts(a)
 	headB, extB, okB := standardZipParts(b)
 	if !okA || !okB {
+		if plainSpaced(a) && plainSpaced(b) {
+			return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b)), 100
+		}
 		return strings.EqualFold(strings.Join(strings.Fields(a), " "), strings.Join(strings.Fields(b), " ")), 100
 	}
 	if headA != headB {
@@ -143,7 +146,13 @@ func standardZip(a, b string) (bool, float64) {
 }
 
 // standardZipParts splits "12345" or "12345-6789" into the five digits and the
-// extension.
+// extension. NATIVE (phone_city_zip N5.szu1, N5.szx1): the extension after a
+// hyphen has up to five digits and may be empty ("12345-", "12345-678" and
+// "12345-67890" all find "12345", and "12345-678" scores 95 against
+// "12345-6789"); one space on either side of the hyphen is kept apart from a
+// four digit extension ("12345 -6789" and "12345- 6789" find "12345-6789" at
+// 100). "12345--6789", "12345-678A" and other separators match only
+// themselves.
 func standardZipParts(s string) (head, ext string, ok bool) {
 	digits := func(t string) bool {
 		for i := 0; i < len(t); i++ {
@@ -156,8 +165,10 @@ func standardZipParts(s string) (head, ext string, ok bool) {
 	switch {
 	case len(s) == 5 && digits(s):
 		return s, "", true
-	case len(s) == 10 && s[5] == '-' && digits(s[:5]) && digits(s[6:]):
+	case len(s) >= 6 && len(s) <= 11 && s[5] == '-' && digits(s[:5]) && digits(s[6:]):
 		return s[:5], s[6:], true
+	case len(s) == 11 && (s[5:7] == " -" || s[5:7] == "- ") && digits(s[:5]) && digits(s[7:]):
+		return s[:5], s[7:], true
 	}
 	return "", "", false
 }

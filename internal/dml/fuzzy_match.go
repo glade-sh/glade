@@ -568,12 +568,14 @@ func phoneKeypadEquivalent(country, area, exchange, line, otherCountry, otherAre
 	return true
 }
 
-// ---- ZIP: the segment before the first hyphen or space decides ----
+// ---- ZIP: the segment before the first hyphen, space, period or slash decides ----
 
+// fuzzyZip: NATIVE (phone_city_zip N5.zu1) "12345.6789" and "12345/6789"
+// find "12345" and "12345-6789" as a hyphen does.
 func fuzzyZip(a, b string, _ bool) (bool, float64) {
 	head := func(s string) string {
 		s = foldText(s)
-		if i := strings.IndexAny(s, "- "); i >= 0 {
+		if i := strings.IndexAny(s, "- ./"); i >= 0 {
 			return s[:i]
 		}
 		return s
@@ -609,8 +611,31 @@ func cityKey(s string) string {
 	return string(out)
 }
 
+// plainSpaced reports a value whose only white space is ASCII spaces and
+// whose characters are all ASCII. NATIVE (phone_city_zip N5.cm1 and N5.szn1):
+// between two such values inner spaces count as typed: "Los Angeles" finds
+// "Los  Angeles" at 96, not 100, "LosAngeles" no longer finds it, and
+// "SW1A 1AA" does not find "SW1A  1AA". Any other pair keeps the folded
+// comparison, which no row measures.
+func plainSpaced(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c >= 0x80 || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' {
+			return false
+		}
+	}
+	return true
+}
+
+// cityTexts is the text the City method compares for a pair (plainSpaced).
+func cityTexts(a, b string) (string, string) {
+	if plainSpaced(a) && plainSpaced(b) {
+		return strings.ToLower(strings.TrimSpace(a)), strings.ToLower(strings.TrimSpace(b))
+	}
+	return foldText(a), foldText(b)
+}
+
 func fuzzyCity(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
+	x, y := cityTexts(a, b)
 	if x == y {
 		return true, 100
 	}
