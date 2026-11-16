@@ -14,6 +14,8 @@ func TestPhoneCityZipUncapturedNeighborsKeepBase(t *testing.T) {
 		{"City", "Los\tAngeles", "Los Angeles", true, 100},
 		{"City", "Los \tAngeles", "Los Angeles", true, 100},
 		{"City", "São  Paulo", "São Paulo", true, 100},
+		{"City", "Los  Angeles", "Los\tAngeles", true, 100},
+		{"City", "Paris  Nord", "París Nord", true, 95},
 		{"Zip", "12345_6789", "12345", false, 0},
 		{"Zip", "12345,6789", "12345", false, 0},
 		{"Zip", "12345:6789", "12345-6789", false, 0},
@@ -33,6 +35,8 @@ func TestPhoneCityZipUncapturedNeighborsKeepBase(t *testing.T) {
 		{"12345-123456", "12345", false, 100},
 		{"12345  -6789", "12345-6789", false, 100},
 		{"SW1A\t1AA", "SW1A 1AA", true, 100},
+		{"SW1A  1AA", "SW1A\t1AA", true, 100},
+		{"STRASSE 1", "straße 1", false, 100},
 		{"Å1A  1A1", "å1a 1a1", true, 100},
 	} {
 		if match, score := standardZip(tc.a, tc.b); match != tc.match || score != tc.score {

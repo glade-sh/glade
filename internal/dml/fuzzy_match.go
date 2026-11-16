@@ -576,22 +576,28 @@ func cityKey(s string) string {
 	return string(out)
 }
 
-// spacedText is the lower-cased, trimmed value with its inner spaces as typed.
-// NATIVE (phone_city_zip D1.cm1 and D1.szn1): "Los Angeles" finds
-// "Los  Angeles" at 96, not 100, and "LosAngeles" no longer finds it;
-// "SW1A 1AA" does not find "SW1A  1AA". A value with any other white space or
-// a non-ASCII character keeps the folded form, which no row measures.
-func spacedText(s string) string {
+// plainSpaced reports a value whose only white space is ASCII spaces and
+// whose characters are all ASCII. NATIVE (phone_city_zip D1.cm1 and D1.szn1):
+// between two such values inner spaces count as typed: "Los Angeles" finds
+// "Los  Angeles" at 96, not 100, "LosAngeles" no longer finds it, and
+// "SW1A 1AA" does not find "SW1A  1AA". Any other pair keeps the folded
+// comparison, which no row measures.
+func plainSpaced(s string) bool {
 	for i := 0; i < len(s); i++ {
 		if c := s[i]; c >= 0x80 || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' {
-			return foldText(s)
+			return false
 		}
 	}
-	return strings.ToLower(strings.TrimSpace(s))
+	return true
 }
 
 func fuzzyCity(a, b string, _ bool) (bool, float64) {
-	x, y := spacedText(a), spacedText(b)
+	var x, y string
+	if plainSpaced(a) && plainSpaced(b) {
+		x, y = strings.ToLower(strings.TrimSpace(a)), strings.ToLower(strings.TrimSpace(b))
+	} else {
+		x, y = foldText(a), foldText(b)
+	}
 	if x == y {
 		return true, 100
 	}

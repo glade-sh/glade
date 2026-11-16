@@ -126,12 +126,15 @@ var (
 // first five digits weigh 90 and the extension 10: two extensions that differ
 // score 95, an extension against none scores 100, and "94105 1234" with a
 // space is not an extension at all. Any other value matches only itself, its
-// inner spaces as typed (spacedText).
+// inner spaces as typed (plainSpaced).
 func standardZip(a, b string) (bool, float64) {
 	headA, extA, okA := standardZipParts(a)
 	headB, extB, okB := standardZipParts(b)
 	if !okA || !okB {
-		return spacedText(a) == spacedText(b), 100
+		if plainSpaced(a) && plainSpaced(b) {
+			return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b)), 100
+		}
+		return strings.EqualFold(strings.Join(strings.Fields(a), " "), strings.Join(strings.Fields(b), " ")), 100
 	}
 	if headA != headB {
 		return false, 0
