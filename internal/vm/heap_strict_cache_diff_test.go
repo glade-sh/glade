@@ -123,6 +123,32 @@ for (Integer i = 0; i < 300; i++) {
   if (Math.mod(i, 19) == 0) { System.debug('s ' + i + ' ' + Limits.getHeapSize()); }
 }
 System.debug('end ' + Limits.getHeapSize());`,
+	"pure calls in conditions": `List<Account> l = new List<Account>();
+List<Integer> n = new List<Integer>();
+Set<String> seen = new Set<String>();
+String label = 'row';
+Integer k = 0;
+while (l.size() < 250) {
+  l.add(new Account(Name = 'a' + k));
+  if (Math.mod(k, 97) == 0 || Math.abs(k - 50) < 3) { System.debug('s ' + k + ' ' + Limits.getHeapSize()); }
+  if (!l.isEmpty() && label.length() == 3) { n.add(Math.max(k, Math.min(k, 7))); }
+  if (seen.isEmpty() && k > 100) { seen.add('late'); }
+  Integer sz = n.size();
+  label = label.length() > 6 ? 'row' : label + 'x';
+  k++;
+}
+System.debug('end ' + sz + ' ' + seen.size() + ' ' + Limits.getHeapSize());`,
+	"pure calls fail and shadow": `List<Account> l = new List<Account>();
+String nothing;
+Integer zero = 0;
+for (Integer i = 0; i < 120; i++) {
+  l.add(new Account(Name = 'e' + i));
+  try { if (nothing.length() > 0) { l.add(new Account()); } } catch (NullPointerException e) { l.add(new Account(Name = 'npe' + i)); }
+  try { if (Math.mod(i, zero) == 0) { l.add(new Account()); } } catch (MathException e) { l.add(new Account(Name = 'div' + i)); }
+  if (i == 60) { nothing = 'now set'; zero = 5; }
+  if (Math.mod(i, 15) == 0) { System.debug('s ' + i + ' ' + Limits.getHeapSize()); }
+}
+System.debug('end ' + l.size() + ' ' + Limits.getHeapSize());`,
 }
 
 type strictHeapDiffOutcome struct {

@@ -289,6 +289,73 @@ func (vm *VM) heapPureExpr(expr ir.Expr) bool {
 			return false
 		}
 		return vm.heapPureExpr(*expr.Left) && vm.heapPureExpr(*expr.Right)
+	case ir.ExprCall:
+		return vm.heapPureCall(expr)
+	}
+	return false
+}
+
+// heapPureStaticCalls are builtin static calls with a scalar result that run
+// no Apex code and write nothing.
+var heapPureStaticCalls = map[string]bool{
+	"math.mod": true, "math.abs": true, "math.min": true, "math.max": true,
+	"math.floor": true, "math.ceil": true, "math.round": true, "math.signum": true,
+}
+
+// heapPureStringMethods are String methods with a scalar result.
+var heapPureStringMethods = map[string]bool{
+	"length": true, "isempty": true, "isblank": true, "isnotblank": true,
+}
+
+// heapPureCall matches a call of a pure builtin on pure arguments: the static
+// calls above, size() and isEmpty() on a local List, Set or Map, and the
+// String methods above on a local String. None runs Apex code, and every
+// result is a scalar. An error (null receiver, divide by zero) leaves the
+// cache to lapse, as for any other unproven expression.
+func (vm *VM) heapPureCall(expr ir.Expr) bool {
+	if len(expr.NamedArgs) != 0 {
+		return false
+	}
+	for _, arg := range expr.Args {
+		if !vm.heapPureExpr(arg) {
+			return false
+		}
+	}
+	if len(vm.currentMethod.triggerLocalMethods) != 0 {
+		return false
+	}
+	receiverName, method := "", expr.Callee
+	if expr.Left != nil {
+		if expr.Left.Kind != ir.ExprVariable {
+			return false
+		}
+		receiverName = expr.Left.Name
+	} else {
+		dot := strings.LastIndex(expr.Callee, ".")
+		if dot <= 0 || dot == len(expr.Callee)-1 {
+			return false
+		}
+		receiverName, method = expr.Callee[:dot], expr.Callee[dot+1:]
+	}
+	if canonical, builtin := canonicalBuiltinStaticCall(receiverName + "." + method); builtin {
+		if _, local := vm.Globals[receiverName]; local || vm.hasRuntimeReceiver(receiverName) {
+			return false
+		}
+		return heapPureStaticCalls[strings.ToLower(canonical)] && vm.shouldUseBuiltinStaticPrecedence(receiverName+"."+method, canonical)
+	}
+	if !heapLocalName(receiverName) {
+		return false
+	}
+	receiver, ok := vm.Globals[receiverName]
+	if !ok || receiver.classInstance {
+		return false
+	}
+	method = strings.ToLower(method)
+	switch receiver.Kind {
+	case ValueList, ValueSet, ValueMap:
+		return len(expr.Args) == 0 && (method == "size" || method == "isempty")
+	case ValueString:
+		return heapPureStringMethods[method]
 	}
 	return false
 }
