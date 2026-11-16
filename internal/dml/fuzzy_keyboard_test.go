@@ -456,17 +456,22 @@ func keyboardMarginPanels(t *testing.T) []keyboardNativePanel {
 	for _, name := range slices.Sorted(maps.Keys(values)) {
 		out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
 	}
-	return append(out, keyboardTwinPanels(t, "tkeyboard")...)
+	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard")...)
 }
 
-// keyboardTwinPanels reads the anonymous-route panels of
+// keyboardTwinPanels reads the blind panels of
 // internal/dml/testdata/conformance/duplicate_fuzzy_panels (four native
-// observations each: two APIs, two repeats) without their ctl_ controls.
+// observations each for the anonymous-only twin; eight for bk, both routes) without their ctl_ controls.
 func keyboardTwinPanels(t *testing.T, groups ...string) []keyboardNativePanel {
 	t.Helper()
 	var out []keyboardNativePanel
 	for _, group := range groups {
-		values, observations := fuzzyPanelsLastNameFrom(t, fuzzyPanelsTwinDir, 4, group)
+		// tkeyboard is anonymous only (4 rows a panel); bkeyboard has both routes (8).
+		per := 4
+		if group == "bkeyboard" {
+			per = 8
+		}
+		values, observations := fuzzyPanelsLastNameFrom(t, fuzzyPanelsTwinDir, per, group)
 		for _, name := range slices.Sorted(maps.Keys(values)) {
 			if strings.HasPrefix(name, "ctl_") {
 				continue

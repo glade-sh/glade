@@ -223,17 +223,30 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    scorer does not. The native rows hold 78 such shapes (`keyboardPanelCells`
    in `internal/dml/fuzzy_match.go`), with lengths 4–15. For any other
    shape, including untested combinations inside those ranges, the earlier
-   keyboard scorer decides. Within a shape the new scorer must also score
-   above every native non-match of that shape (`keyboardPanelFloors`). The
-   `duplicate_fuzzy_panels` keyboard panels hold such non-matches at 90.1 to
-   91.21 in five shapes (`Kellingswokwr` and `Kellinglkokzh`, `Gilderpajt`
-   and `Gildewrarb`); the fitted costs score them as matches. The floor also
-   leaves 62 native matches of `fuzzy_name_keys` ks1 to ks3 at the earlier
-   result. Panels kept out of the fit agree on every pair Glade matches:
-   `fuzzy_keyboard_neighbors` (other stems, added letters, other key pairs;
-   `Farnsdelwicka` finds `Farnsdraeovka`, native 97, Glade 96, a pair the
-   earlier scorer kept apart) and the `duplicate_fuzzy_panels` hkeyboard
-   panels. The fitted costs are:
+   keyboard scorer decides. Inside a shape the new scorer decides only at a score of
+   93 or more (`keyboardFallbackMargin`), one margin for every shape. The
+   fitted score is not reliable below it: native non-matches score 90.1 to
+   90.84 in substitution shapes (`duplicate_fuzzy_panels` k1 to k3:
+   `Kellingswokwr` and `Kellinglkokzh`, `Gilderpajt` and `Gildewrarb`) and up
+   to 92.26 in extension-only shapes (the blind twin panels tk01 to tk22:
+   `Ingleborn` and `Inglebornxbqm`), while native matches also sit there
+   (`Farnsdelwick` and `Farnsdraeovk` score 92.07). The margin is 0.74 above
+   the highest captured native non-match of any shape in any panel (fitted
+   rows, k1 to k3, hk1, hk2, tk01 to tk22). Per-shape floors were tried and
+   dropped: a floor existed only where an earlier panel held a
+   counterexample, and a fresh panel then showed 108 more false matches. The
+   margin leaves the earlier result for the native matches that score below
+   it, so recall in these panels is below the fitted scorer's and above the
+   earlier scorer's. The shape table was fitted to k1 to k3 with hk1 in view;
+   hk1 and hk2 are not held-out evidence for it. The twin panels and the
+   second blind panel (bk01 to bk09) were captured after the code they score
+   and fitted nothing; `TestLastNameKeyboardFuzzyPanelsNativeRows` requires
+   zero extra matches on them and `TestLastNameKeyboardFallbackMargin`
+   requires the margin above the highest captured non-match. Panels kept out
+   of the fit agree on every pair Glade matches:
+   `fuzzy_keyboard_neighbors` (`Farnsdelwicka` finds `Farnsdraeovka`, native
+   97; its score is below the margin, so Glade keeps the earlier result).
+   The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
      beyond; the final character of two names of equal length is one step

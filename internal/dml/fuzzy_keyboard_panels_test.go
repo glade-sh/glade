@@ -117,15 +117,16 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		"k3":  {fuzzyNameKeysCount{native: 194, hit: 122, miss: 72, confidence: 12}, 940, 896},
 		"hk1": {fuzzyNameKeysCount{native: 122, hit: 50, miss: 72, confidence: 2}, 602, 600},
 		"hk2": {fuzzyNameKeysCount{native: 58, hit: 42, miss: 16, confidence: 6}, 234, 228},
+		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 772, miss: 1284, confidence: 158}, 4714, 4374},
 		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1245, miss: 906, confidence: 140}, 14587, 14303},
 	}
 	// The twin panels (tk01 to tk22) are counted as one group.
-	for _, panel := range keyboardTwinPanels(t, "tkeyboard") {
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard") {
 		values[panel.name] = panel.values
 		observations[panel.name] = ""
 	}
 	twin := map[string]map[[2]int]float64{}
-	for _, panel := range keyboardTwinPanels(t, "tkeyboard") {
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard") {
 		twin[panel.name] = panel.native
 	}
 	rounded := func(matched bool, confidence float64) float64 {
@@ -141,6 +142,9 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		group := method
 		if n, ok := twin[method]; ok {
 			native, group = n, "tk"
+			if strings.HasPrefix(method, "bk") {
+				group = "bk"
+			}
 		} else {
 			native = fuzzyNameKeysPanel(t, observations[method], len(vals))
 		}

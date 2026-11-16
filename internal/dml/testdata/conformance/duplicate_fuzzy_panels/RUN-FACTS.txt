@@ -13,3 +13,12 @@ ids: no record, org or user id, username or alias is stored
 result at 836c54df4c (fuzzyLastName, within-stem ordered pairs): 4,680 pairs, 1,566 native matches; train B 330f4b706b exact on 3,350, head exact on 4,018; 1,078 native matches gained; 108 Glade matches native does not report (false-matches-836c54df4c.tsv); 0 pairs lost
 group: tkeyboard (panels tk01 to tk22 plus the ctl_hk2 and ctl_hk2_end controls); cases.json and org.tsv in this directory hold only blind panels captured after the code they score
 use: TestLastNameKeyboardFuzzyPanelsNativeRows requires zero extra matches on tk01-tk22; TestLastNameKeyboardFallbackMargin takes the highest native non-match from them
+
+second blind panel (group bkeyboard, panels bk01 to bk09 plus the two ctl_hk2 controls; 11 cases)
+capture: same probe, rule and counting as above, captured after the single fallback margin (keyboardFallbackMargin 93) was committed at cc5916af42 and its predictions were frozen
+values: 26 new stems (7 to 13 letters; none in k1-k3, hk1, hk2 or tk01-tk22), nine values each (the stem and eight variants: 2 to 6 substitutions from the fifth letter, dropped or added tails, pure extensions and truncations); variants were picked with the Go scorer to favour same-stem pairs that reach the fallback at 91 or more; 9 panels of up to 27 values (bk01 to bk09), 234 values
+predictions: frozen before the run from glade at cc5916af42 (fuzzyLastName, every within-panel ordered pair that matches, with the rounded confidence); 772 matches; sha256 3619348a27874a44de5075ae1a9b72e56b5dfd2ae755ed590308d8bc712cdaa4 of the predictions; cases.json (bkeyboard) sha256 459a1918bc7bd6b5fc3ad23d6253f79596822a17751de59f5fbc14c76a8e46b7
+apis and routes: 62.0 and 67.0, anonymous Apex (class deployed at the run's API) and a named @IsTest method; two repeats; all 88 observations agree for every case across API, route and repeat
+org: a fresh 1-day Developer Edition scratch org on a campaign Dev Hub (SF_SKIP_NEW_VERSION_CHECK=true), deleted after the run; deletion verified (the alias no longer resolves; the hub's active scratch count returned to its earlier value)
+preflight: the bk01 panel ran through glade exec at API 67.0 before the capture
+result: 6,273 within-panel ordered pairs (self pairs included) scored at cc5916af42; native matches 2,056 (self pairs included); Glade matches 772, all native (0 false matches); scorer without the fallback exact on 4,374, with it on 4,714 (340 pairs gained)
