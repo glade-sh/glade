@@ -25,7 +25,6 @@ import (
 var parkedReleaseGateRows = map[string]string{
 	"JxProbe62/JX11b": "a custom exception built by JSON.deserialize below API 63 reports a null message; Glade reports its default text",
 	"RpProbe63/RP10":  "an explicit null put on a master-detail field is dropped before the DML layer, so the update never sees it",
-	"RpProbe67/RP10":  "same as RP10 at API 63",
 	"SjProbe62/SJ9":   "EUC-JP is a valid native spelling; Glade has no EUC-JP codec",
 	"SjProbe67/SJ9":   "same as SJ9 at API 62",
 	"OlProbe66/OL4":   "the native map holds 75 entries in a scratch Developer org; Glade lists the 17 captured for another org shape",
