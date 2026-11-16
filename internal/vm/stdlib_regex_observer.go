@@ -369,11 +369,15 @@ func linearAttemptReachesEnd(prog *syntax.Prog, input string, endRune int) bool 
 // node: no top-level alternation, and the first element, after any flag-only
 // groups, is a bare ^. A group around the ^ keeps Java's Start wrapper.
 func regexRootIsBareCaret(source string) bool {
-	if strings.Contains(source, `\Q`) {
-		return false
+	source = javaRegexRemoveQuoting(source)
+	if regexSourceHasInlineFlag(source, 'x') {
+		stripped, ok := regexStripExtended(source)
+		if !ok {
+			return false
+		}
+		source = stripped
 	}
-	rest := regexStripLeadingFlags(source)
-	if !strings.HasPrefix(rest, "^") {
+	if !strings.HasPrefix(regexStripLeadingFlags(source), "^") {
 		return false
 	}
 	depth := 0
@@ -382,11 +386,26 @@ func regexRootIsBareCaret(source string) bool {
 		case '\\':
 			i++
 		case '[':
-			for i++; i < len(source) && source[i] != ']'; i++ {
-				if source[i] == '\\' {
+			// A ] right after [ or [^ is a literal; classes nest.
+			classDepth := 1
+			i++
+			if i < len(source) && source[i] == '^' {
+				i++
+			}
+			if i < len(source) && source[i] == ']' {
+				i++
+			}
+			for ; i < len(source) && classDepth > 0; i++ {
+				switch source[i] {
+				case '\\':
 					i++
+				case '[':
+					classDepth++
+				case ']':
+					classDepth--
 				}
 			}
+			i--
 		case '(':
 			depth++
 		case ')':
@@ -398,4 +417,76 @@ func regexRootIsBareCaret(source string) bool {
 		}
 	}
 	return true
+}
+
+// regexStripExtended rewrites a (?x) pattern into the equivalent plain
+// pattern, so RE2 can read it. It accepts only the exact, simple shape: x set
+// by leading flag groups and never changed, no character classes or counted
+// repeats (Java also ignores whitespace there), ASCII text, and no carriage
+// returns (Java ends a comment at \r, regexp2 does not).
+func regexStripExtended(src string) (string, bool) {
+	var out strings.Builder
+	leading := true
+	for i := 0; i < len(src); i++ {
+		c := src[i]
+		switch {
+		case c >= 0x80, c == '\r', c == '[', c == '{':
+			return "", false
+		case c == '\\':
+			if i+1 >= len(src) {
+				return "", false
+			}
+			n := src[i+1]
+			switch {
+			case n == ' ':
+				out.WriteString("[ ]")
+			case n == 'Q' || n == 'E' || n == '\t' || n == '\n' || n == '\v' || n == '\f' || n >= 0x80:
+				return "", false
+			default:
+				out.WriteByte(c)
+				out.WriteByte(n)
+			}
+			i++
+			leading = false
+		case c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f':
+		case c == '#':
+			for i < len(src) && src[i] != '\n' {
+				i++
+			}
+		case c == '(' && i+1 < len(src) && src[i+1] == '?':
+			if i+2 < len(src) && src[i+2] == '#' {
+				return "", false
+			}
+			j := i + 2
+			for j < len(src) && strings.IndexByte("idmsuxU-", src[j]) >= 0 {
+				j++
+			}
+			if j >= len(src) || (src[j] != ')' && src[j] != ':') {
+				out.WriteString("(?")
+				i++
+				leading = false
+				continue
+			}
+			flags := src[i+2 : j]
+			if strings.Contains(flags, "x") {
+				if !leading || src[j] != ')' || strings.Contains(flags, "-") {
+					return "", false
+				}
+				flags = strings.ReplaceAll(flags, "x", "")
+				if flags == "" {
+					i = j
+					continue
+				}
+			}
+			out.WriteString("(?" + flags + string(src[j]))
+			i = j
+			if src[j] == ':' {
+				leading = false
+			}
+		default:
+			out.WriteByte(c)
+			leading = false
+		}
+	}
+	return out.String(), true
 }

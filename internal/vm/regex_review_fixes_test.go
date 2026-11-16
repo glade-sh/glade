@@ -195,10 +195,52 @@ System.assertEquals(false, f.hitEnd());
 func TestRegexRootIsBareCaret(t *testing.T) {
 	for source, want := range map[string]bool{
 		`^(a+)+b`: true, `(?i)^(a+)+b`: true, `(^(a+)+b)`: false, `(?:^(a+)+b)`: false,
-		`^a|(b+)+c`: false, `^(a|b)+c`: true, `(a+)+b`: false, `^[|](a+)+b`: true, `(?i:^a)`: false,
+		`^a|(b+)+c`: false, `^(a|b)+c`: true, `^\Qa\E(a+)+b`: true, `^(a+)+[]|]b`: true, `^(a+)+[^]|]b`: true, `^(a+)+[a[|]]b`: true, `(?x) ^(a+)+b`: true, `(?x) (^(a+)+b)`: false, `(a+)+b`: false, `^[|](a+)+b`: true, `(?i:^a)`: false,
 	} {
 		if got := regexRootIsBareCaret(source); got != want {
 			t.Errorf("regexRootIsBareCaret(%q) = %v, want %v", source, got, want)
+		}
+	}
+}
+
+// (?x) patterns get the linear precheck too (D6).
+func TestRegexExtendedPatternsGetLinearPrecheck(t *testing.T) {
+	start := time.Now()
+	runRegexApex(t, `
+String s = 'a'.repeat(23) + 'c';
+Matcher m = Pattern.compile('(?x) ^(a+)+b # comment').matcher(s);
+System.assertEquals(false, m.find());
+System.assertEquals(false, m.hitEnd());
+System.assertEquals(false, Pattern.compile('(?x) (a+)+ b').matcher(s).find());
+System.assertEquals(true, Pattern.compile('(?x) (a+)+ b # c').matcher('a'.repeat(23) + 'b').find());
+System.assertEquals(true, Pattern.compile('(?ix) ^ ( A+ )+ \\  b').matcher('a'.repeat(23) + ' b').find());
+System.assertEquals(false, Pattern.compile('^\\Qa\\E(a+)+b').matcher(s).find());
+Matcher q = Pattern.compile('^\\Qa\\E(a+)+b').matcher(s);
+q.find();
+System.assertEquals(false, q.hitEnd());
+Matcher c = Pattern.compile('^(a+)+[]|]b').matcher(s);
+c.find();
+System.assertEquals(false, c.hitEnd());
+`)
+	if time.Since(start) > 1500*time.Millisecond {
+		t.Fatalf("took %v: a precheck was skipped", time.Since(start))
+	}
+}
+
+func TestRegexStripExtended(t *testing.T) {
+	for source, want := range map[string]string{
+		"(?x) ^(a+)+b # c\n": "^(a+)+b",
+		"(?ix) a\\ b":        "(?i)a[ ]b",
+		"(?x)(a+)+(?i:b)":    "(a+)+(?i:b)",
+	} {
+		got, ok := regexStripExtended(source)
+		if !ok || got != want {
+			t.Errorf("regexStripExtended(%q) = %q, %v; want %q", source, got, ok, want)
+		}
+	}
+	for _, source := range []string{"(?x)[a ]+", "(?x)a{1, 2}", "(?x)a(?-x:b )", "a(?x) b", "(?x)caf\u00e9", "(?x)a\r#c\n"} {
+		if got, ok := regexStripExtended(source); ok {
+			t.Errorf("regexStripExtended(%q) = %q, want refusal", source, got)
 		}
 	}
 }

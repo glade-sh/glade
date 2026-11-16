@@ -118,10 +118,18 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		endAssertionGroups: endGroups,
 		loopGroups:         loopNames,
 	}
-	if javaRegexNestsUnboundedRepeats(javaRegexRemoveQuoting(source)) && regexLinearAnchorsSafe(source) && regexLinearAnchorsSafe(regexp2Source) {
+	nestSource, linearSource, linearOK := javaRegexRemoveQuoting(source), regexp2Source, true
+	if regexSourceHasInlineFlag(source, 'x') {
+		// Go cannot read (?x); strip the whitespace and comments Java ignores.
+		var ok1, ok2 bool
+		nestSource, ok1 = regexStripExtended(nestSource)
+		linearSource, ok2 = regexStripExtended(linearSource)
+		linearOK = ok1 && ok2
+	}
+	if linearOK && javaRegexNestsUnboundedRepeats(nestSource) && regexLinearAnchorsSafe(nestSource) && regexLinearAnchorsSafe(linearSource) {
 		// Java matches these in polynomial time; regexp2 backtracks exponentially
 		// when the match fails. A linear engine decides whether any match exists.
-		if linear, err := regexp.Compile(regexp2Source); err == nil {
+		if linear, err := regexp.Compile(linearSource); err == nil {
 			plan.linear = linear
 			if parsed, perr := syntax.Parse(linear.String(), syntax.Perl); perr == nil {
 				if prog, cerr := syntax.Compile(parsed.Simplify()); cerr == nil {
