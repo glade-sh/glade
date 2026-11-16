@@ -15,11 +15,11 @@ import (
 const regexp2MatchTimeout = 2 * time.Second
 
 func compileRegexp2Pattern(callee, source string) (string, *regexp2.Regexp, error) {
-	return compileRegexp2PatternWithException(callee, source, "PatternSyntaxException")
+	return compileRegexp2PatternWithException(callee, source, "StringException")
 }
 
 func compileRegexp2PatternWithException(callee, source, exceptionType string) (string, *regexp2.Regexp, error) {
-	if err := validateJavaRegexGroups(source, exceptionType); err != nil {
+	if err := validateJavaRegexSource(source, exceptionType); err != nil {
 		return "", nil, err
 	}
 	regexp2Source, err := compileRegexp2Source(callee, source)
@@ -45,7 +45,7 @@ func compileRegexp2Source(callee, source string) (string, error) {
 	regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source)
 	regexp2Source = rewriteJavaRegexEscapesForRegexp2(regexp2Source)
-	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source)
+	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source = rewriteJavaShorthandClassesForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source, err = rewriteJavaClassAlgebraForRegexp2(regexp2Source)
 	if err != nil {
@@ -219,11 +219,15 @@ func rewriteInlineUnicodeCharacterClassFlagForRegexp2(source string, enabled boo
 	return out.String(), enabled
 }
 
-func rewriteJavaUnicodeClassesForRegexp2(source string) string {
+func rewriteJavaUnicodeClassesForRegexp2(source string, unicodeCharacterClass bool) string {
 	var out strings.Builder
 	for i := 0; i < len(source); i++ {
 		if source[i] != '\\' || i+2 >= len(source) || (source[i+1] != 'p' && source[i+1] != 'P') || source[i+2] != '{' {
 			out.WriteByte(source[i])
+			if source[i] == '\\' && i+1 < len(source) {
+				i++
+				out.WriteByte(source[i])
+			}
 			continue
 		}
 		end := strings.IndexByte(source[i+3:], '}')
@@ -232,7 +236,7 @@ func rewriteJavaUnicodeClassesForRegexp2(source string) string {
 			continue
 		}
 		name := source[i+3 : i+3+end]
-		if rewritten, ok := javaUnicodeClassEscapeForRegexp2(name, source[i+1] == 'p'); ok {
+		if rewritten, ok := javaUnicodeClassEscapeForRegexp2(name, source[i+1] == 'p', unicodeCharacterClass); ok {
 			out.WriteString(rewritten)
 			i += 3 + end
 			continue
@@ -243,40 +247,29 @@ func rewriteJavaUnicodeClassesForRegexp2(source string) string {
 	return out.String()
 }
 
-func javaUnicodeClassEscapeForRegexp2(name string, positive bool) (string, bool) {
-	if strings.EqualFold(name, "javaWhitespace") {
-		if positive {
-			return `[\p{Zs}\t\n\x0B\f\r\x1C-\x1F]`, true
-		}
-		return `[^\p{Zs}\t\n\x0B\f\r\x1C-\x1F]`, true
-	}
-	if rewritten, ok := javaUnicodeClassForRegexp2(name); ok {
+func javaUnicodeClassEscapeForRegexp2(name string, positive bool, unicodeCharacterClass bool) (string, bool) {
+	if javaNativeCategoryNames[name] {
 		prefix := `\p`
 		if !positive {
 			prefix = `\P`
 		}
-		return prefix + "{" + rewritten + "}", true
+		return prefix + "{" + name + "}", true
 	}
-	return "", false
+	set, perr := javaPropertySet(name, unicodeCharacterClass)
+	if perr != nil {
+		return "", false
+	}
+	if !positive {
+		set = set.complement()
+	}
+	return runeSetClass(set), true
 }
 
-func javaUnicodeClassForRegexp2(name string) (string, bool) {
-	switch strings.ToLower(name) {
-	case "javalowercase":
-		return "Ll", true
-	case "javauppercase":
-		return "Lu", true
-	case "javadigit":
-		return "Nd", true
-	case "javaletter", "isalphabetic":
-		return "L", true
-	case "javacurrency":
-		return "Sc", true
-	}
-	if strings.HasPrefix(name, "Is") && len(name) > 2 {
-		return name[2:], true
-	}
-	return "", false
+var javaNativeCategoryNames = map[string]bool{
+	"L": true, "Lu": true, "Ll": true, "Lt": true, "Lm": true, "Lo": true, "M": true, "Mn": true, "Mc": true, "Me": true,
+	"N": true, "Nd": true, "Nl": true, "No": true, "P": true, "Pc": true, "Pd": true, "Ps": true, "Pe": true, "Pi": true,
+	"Pf": true, "Po": true, "S": true, "Sm": true, "Sc": true, "Sk": true, "So": true, "Z": true, "Zs": true, "Zl": true,
+	"Zp": true, "C": true, "Cc": true, "Cf": true, "Cs": true, "Co": true, "Cn": true,
 }
 
 func rewriteJavaShorthandClassesForRegexp2(source string, unicodeCharacterClass bool) string {

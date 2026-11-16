@@ -1573,6 +1573,13 @@ func parseJavaReplacement(callee, replacement string, groupCount int) ([]javaRep
 	return parseJavaReplacementWithNames(callee, replacement, groupCount, nil)
 }
 
+// javaReplacementSyntaxError carries the description java.util.regex.Matcher
+// reports for a malformed replacement string.
+type javaReplacementSyntaxError struct{ description string }
+
+func (e *javaReplacementSyntaxError) Error() string { return e.description }
+
+// parseJavaReplacementWithNames follows Matcher.appendExpandedReplacement.
 func parseJavaReplacementWithNames(callee, replacement string, groupCount int, namedGroups map[string]int) ([]javaReplacementSegment, error) {
 	var segments []javaReplacementSegment
 	var literal strings.Builder
@@ -1583,67 +1590,78 @@ func parseJavaReplacementWithNames(callee, replacement string, groupCount int, n
 		segments = append(segments, javaReplacementSegment{literal: literal.String(), group: -1})
 		literal.Reset()
 	}
+	isNameChar := func(c byte) bool {
+		return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+	}
 	for i := 0; i < len(replacement); i++ {
 		ch := replacement[i]
 		if ch == '\\' {
-			if i+1 >= len(replacement) {
-				return nil, fmt.Errorf("replacement trailing escape")
-			}
-			next := replacement[i+1]
-			if next == '$' {
-				literal.WriteByte('$')
-				i++
-				continue
-			}
-			literal.WriteByte(next)
 			i++
+			if i >= len(replacement) {
+				return nil, &javaReplacementSyntaxError{"character to be escaped is missing"}
+			}
+			_, size := utf8.DecodeRuneInString(replacement[i:])
+			literal.WriteString(replacement[i : i+size])
+			i += size - 1
 			continue
 		}
-		if ch == '$' {
-			if i+1 >= len(replacement) {
-				return nil, fmt.Errorf("replacement missing group reference after $")
+		if ch != '$' {
+			literal.WriteByte(ch)
+			continue
+		}
+		i++
+		if i >= len(replacement) {
+			return nil, &javaReplacementSyntaxError{"Illegal group reference: group index is missing"}
+		}
+		next := replacement[i]
+		group := -1
+		if next == '{' {
+			if namedGroups == nil {
+				return nil, unsupportedCallError(callee + " replacement named group references")
 			}
-			next := replacement[i+1]
-			if next == '{' {
-				end := strings.IndexByte(replacement[i+2:], '}')
-				if namedGroups == nil || end < 0 {
-					return nil, unsupportedCallError(callee + " replacement named group references")
-				}
-				name := replacement[i+2 : i+2+end]
-				group, ok := namedGroups[name]
-				if !ok {
-					return nil, fmt.Errorf("No group with name {%s}", name)
-				}
-				flushLiteral()
-				segments = append(segments, javaReplacementSegment{group: group})
-				i += end + 2
-				continue
+			i++
+			start := i
+			for i < len(replacement) && isNameChar(replacement[i]) {
+				i++
 			}
+			name := replacement[start:i]
+			if name == "" {
+				return nil, &javaReplacementSyntaxError{"named capturing group has 0 length name"}
+			}
+			if i >= len(replacement) || replacement[i] != '}' {
+				return nil, &javaReplacementSyntaxError{"named capturing group is missing trailing '}'"}
+			}
+			if name[0] >= '0' && name[0] <= '9' {
+				return nil, &javaReplacementSyntaxError{"capturing group name {" + name + "} starts with digit character"}
+			}
+			number, ok := namedGroups[name]
+			if !ok {
+				return nil, &javaReplacementSyntaxError{"No group with name {" + name + "}"}
+			}
+			group = number
+		} else {
 			if next < '0' || next > '9' {
-				return nil, fmt.Errorf("replacement invalid group reference")
+				return nil, &javaReplacementSyntaxError{"Illegal group reference"}
 			}
-			group := int(next - '0')
-			if group > groupCount {
-				return nil, &stringReplacementGroupError{group: group}
-			}
-			i += 1
+			group = int(next - '0')
 			for i+1 < len(replacement) {
-				next = replacement[i+1]
-				if next < '0' || next > '9' {
+				digit := replacement[i+1]
+				if digit < '0' || digit > '9' {
 					break
 				}
-				candidate := group*10 + int(next-'0')
-				if candidate > groupCount {
+				candidate := group*10 + int(digit-'0')
+				if groupCount < candidate {
 					break
 				}
 				group = candidate
 				i++
 			}
-			flushLiteral()
-			segments = append(segments, javaReplacementSegment{group: group})
-			continue
+			if group > groupCount {
+				return nil, &stringReplacementGroupError{group: group}
+			}
 		}
-		literal.WriteByte(ch)
+		flushLiteral()
+		segments = append(segments, javaReplacementSegment{group: group})
 	}
 	flushLiteral()
 	return segments, nil

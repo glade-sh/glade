@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -420,19 +421,22 @@ func matcherReplaceRegexp2(name string, matcher Value, input string, region matc
 	if match == nil {
 		return input, nil
 	}
-	var namedGroups map[string]int
-	if strings.HasPrefix(name, "Matcher.") {
-		namedGroups = map[string]int{}
-		for index, number := range plan.publicGroupNumbers {
-			groupName := plan.re.GroupNameFromNumber(number)
-			if groupName != fmt.Sprint(number) {
-				namedGroups[groupName] = index
-			}
+	namedGroups := map[string]int{}
+	for index, number := range plan.publicGroupNumbers {
+		groupName := plan.re.GroupNameFromNumber(number)
+		if groupName != fmt.Sprint(number) {
+			namedGroups[groupName] = index
 		}
 	}
 	segments, err := parseJavaReplacementWithNames(name, args[0].Text, plan.publicGroupCount(), namedGroups)
 	if err != nil {
-		if strings.HasPrefix(name, "Matcher.") {
+		var groupErr *stringReplacementGroupError
+		var syntaxErr *javaReplacementSyntaxError
+		switch {
+		case errors.As(err, &groupErr) && !strings.HasPrefix(name, "Matcher."):
+			// String routes report the group index with an Index out of Bounds prefix.
+			return "", err
+		case errors.As(err, &groupErr), errors.As(err, &syntaxErr):
 			return "", matcherReplacementError(args[0].Text, err)
 		}
 		return "", fmt.Errorf("%s %w", name, err)

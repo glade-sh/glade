@@ -56,14 +56,12 @@ func (g *graphemeBoundaryTable) isBoundaryByte(pos int) bool {
 }
 
 func compileRegexp2PlanForInput(callee, source, input string) (*regexp2Plan, error) {
-	return compileRegexp2PlanForInputWithException(callee, source, input, "PatternSyntaxException")
+	return compileRegexp2PlanForInputWithException(callee, source, input, "StringException")
 }
 
 func compileRegexp2PlanForInputWithException(callee, source, input, exceptionType string) (*regexp2Plan, error) {
-	if exceptionType == "StringException" {
-		if err := validateJavaRegexGroups(source, exceptionType); err != nil {
-			return nil, err
-		}
+	if err := validateJavaRegexSource(source, exceptionType); err != nil {
+		return nil, err
 	}
 	regexp2Source, err := compileRegexp2Source(callee, source)
 	if err != nil {

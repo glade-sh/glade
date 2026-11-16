@@ -11,10 +11,14 @@ import (
 
 // Validate Java group names before the engine accepts its broader group syntax.
 // R083-R085 record the native diagnostics, including the original source index.
-func validateJavaRegexGroups(source, exceptionType string) error {
-	if exceptionType != "StringException" {
-		return nil
+func validateJavaRegexSource(source, exceptionType string) error {
+	if err := validateJavaRegexGroups(source, exceptionType); err != nil {
+		return err
 	}
+	return validateJavaRegexProperties(source, exceptionType)
+}
+
+func validateJavaRegexGroups(source, exceptionType string) error {
 	names := map[string]bool{}
 	var classes javaRegexClassState
 	quoted := false
@@ -169,20 +173,71 @@ func matcherReplacementError(replacement string, err error) error {
 		return newExceptionError("System.StringException", fmt.Sprintf("No group %d", groupErr.group))
 	}
 	description := err.Error()
-	switch {
-	case description == "replacement trailing escape":
-		description = "character to be escaped is missing"
-	case description == "replacement missing group reference after $":
-		description = "Illegal group reference: group index is missing"
-	case strings.Contains(description, "replacement named group references"):
-		start := strings.Index(replacement, "${")
-		if start >= 0 {
-			end := strings.IndexByte(replacement[start+2:], '}')
-			if end >= 0 {
-				description = "No group with name {" + replacement[start+2:start+2+end] + "}"
-			}
-		}
-	}
 	description += "  (Invalid replacement string: '" + replacement + "'.  '$' should be escaped if you do not intend to use a backreference.  Try using Matcher.quoteReplacement() for your argument)"
 	return newExceptionError("System.StringException", description)
+}
+
+// validateJavaRegexProperties rejects \p{Name} and \P{Name} the way Pattern.family
+// does, reporting the description and the index Java reports.
+func validateJavaRegexProperties(source, exceptionType string) error {
+	if !strings.Contains(source, `\p`) && !strings.Contains(source, `\P`) {
+		return nil
+	}
+	_, unicodeClass := rewriteInlineUnicodeCharacterClassFlagForRegexp2(source, false)
+	fail := func(description string, index int) error {
+		return newExceptionError("System."+exceptionType, javaRegexSyntaxMessage(source, description, index))
+	}
+	quoted := false
+	for i := 0; i < len(source); i++ {
+		if source[i] != '\\' || i+1 >= len(source) {
+			continue
+		}
+		next := source[i+1]
+		if quoted {
+			if next == 'E' {
+				quoted = false
+			}
+			i++
+			continue
+		}
+		if next == 'Q' {
+			quoted = true
+			i++
+			continue
+		}
+		i++
+		if next != 'p' && next != 'P' {
+			continue
+		}
+		if i+1 >= len(source) {
+			return fail("Unknown character property name {}", apexStringLength(source))
+		}
+		if source[i+1] != '{' {
+			r, _ := utf8.DecodeRuneInString(source[i+1:])
+			name := string(r)
+			if javaNativeCategoryNames[name] {
+				continue
+			}
+			if _, perr := javaPropertySet(name, unicodeClass); perr != nil {
+				return fail(perr.description, apexStringLength(source[:i+1]))
+			}
+			continue
+		}
+		end := strings.IndexByte(source[i+2:], '}')
+		if end < 0 {
+			return fail("Unclosed character family", apexStringLength(source))
+		}
+		end += i + 2
+		name := source[i+2 : end]
+		if name == "" {
+			return fail("Empty character family", apexStringLength(source[:end]))
+		}
+		if !javaNativeCategoryNames[name] {
+			if _, perr := javaPropertySet(name, unicodeClass); perr != nil {
+				return fail(perr.description, apexStringLength(source[:end]))
+			}
+		}
+		i = end
+	}
+	return nil
 }
