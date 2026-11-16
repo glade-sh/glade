@@ -65,9 +65,17 @@ func TestSOSLCoreContractFamily(t *testing.T) {
 				t.Errorf("Parse(%q) terms=%#v err=%v", tc.query, parsed.Terms, err)
 			}
 		}
-		rightAssociated, err := sosl.Parse("FIND {Red AND NOT Blue AND Alpha} RETURNING Contact(Id)")
-		if err != nil || rightAssociated.Expression == nil || rightAssociated.Expression.Operator != "AND NOT" || rightAssociated.Expression.Right == nil || rightAssociated.Expression.Right.Operator != "AND" {
-			t.Fatalf("right-associated AND NOT = %#v, err=%v", rightAssociated.Expression, err)
+		// NATIVE AND NOT excludes only its own operand sosl_search_matrix/org.tsv:50 anonymous 62.0
+		// NATIVE AND NOT excludes only its own operand sosl_search_matrix/org.tsv:51 anonymous 67.0
+		// Red AND NOT Blue AND Alpha returned only the Alpha records without Blue,
+		// so the chain groups as (Red AND NOT Blue) AND Alpha.
+		chained, err := sosl.Parse("FIND {Red AND NOT Blue AND Alpha} RETURNING Contact(Id)")
+		if err != nil || chained.Expression == nil || chained.Expression.Operator != "AND" || chained.Expression.Left == nil || chained.Expression.Left.Operator != "AND NOT" || chained.Expression.Right == nil || chained.Expression.Right.Operator != "TERM" {
+			t.Fatalf("chained AND NOT = %#v, err=%v", chained.Expression, err)
+		}
+		grouped, err := sosl.Parse("FIND {Red AND NOT (Blue AND Alpha)} RETURNING Contact(Id)")
+		if err != nil || grouped.Expression == nil || grouped.Expression.Operator != "AND NOT" || grouped.Expression.Right == nil || grouped.Expression.Right.Operator != "AND" {
+			t.Fatalf("grouped AND NOT = %#v, err=%v", grouped.Expression, err)
 		}
 	})
 
