@@ -1762,7 +1762,11 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	}
 	// runAs with a User charges a DML statement; Limits.getRunAs is that
 	// counter (limits_counter_edges runas101, runas151). The Package.Version
-	// form has no row and charges nothing.
+	// form has no row and charges nothing. Native sharing_access_modes d4 rows
+	// (APIs 62.0-68.0) agree: one DML statement per runAs(User) on entry,
+	// nested blocks included, the 151st raises the DML LimitException,
+	// runAs(Version) counts none (u2_04), and the count does not mark
+	// callout-pending work.
 	if changesUser {
 		if err := vm.incrementSavepointStatement(); err != nil {
 			return execOutcome{}, err
@@ -1770,16 +1774,6 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	}
 	if err := vm.incrementLimit("runAs", 1); err != nil {
 		return execOutcome{}, err
-	}
-	// Native sharing_access_modes d4 rows (APIs 62.0-68.0): each runAs(User)
-	// counts one DML statement on entry, nested blocks included, and the 151st
-	// statement raises the DML LimitException; runAs(Version) counts none
-	// (u2_04). The count does not mark callout-pending work.
-	if changesUser {
-		vm.limits.DMLStatements++
-		if err := vm.checkLimit("dmlStatements", vm.limits.DMLStatements, vm.limitCaps.DMLStatements); err != nil {
-			return execOutcome{}, err
-		}
 	}
 	previous := vm.testContext.CurrentUser
 	previousPackageVersion := vm.testContext.CurrentPackageVersion
