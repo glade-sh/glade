@@ -405,8 +405,11 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 		}
 		var standardMatch func(existing storage.Record) (bool, float64)
 		var keys []fuzzyKeyMode
+		var prepared preparedCustomMatch
+		usePrepared := false
 		if !standard {
 			keys = customRuleKeyModes(matching)
+			prepared, usePrepared = newPreparedCustomMatch(matching, keys, candidate)
 		}
 		scan := true
 		if standard {
@@ -425,21 +428,34 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 			if !scan {
 				break
 			}
-			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
+			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) {
 				continue
 			}
 			if strings.EqualFold(scanObject, "Account") && personRule != isPersonAccountRecord(existing) {
 				continue
 			}
+			// An excluded record is skipped whatever it scores, so the
+			// exclusion is tested only for a record that would count.
 			var matched bool
 			confidence := 100.0
 			if standard {
 				matched, confidence = standardMatch(existing)
 			} else {
 				var supported bool
-				if matched, supported, confidence = customDuplicateMatch(matching, keys, candidate, existing); !supported {
+				if usePrepared {
+					matched, supported, confidence = prepared.match(existing)
+				} else {
+					matched, supported, confidence = customDuplicateMatch(matching, keys, candidate, existing)
+				}
+				if !supported {
+					if exclude != nil && exclude(existing.ID) {
+						continue
+					}
 					return result, false
 				}
+			}
+			if matched && exclude != nil && exclude(existing.ID) {
+				continue
 			}
 			if matched {
 				detect, disclose := true, true
