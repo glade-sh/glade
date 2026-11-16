@@ -35,6 +35,10 @@ func annotationCatalogForTarget(typ typesys.TypeSymbol, target, name, typeName s
 	catalog := annotationCatalogDiagnostics(typ.File, typ.Range, catalogAnnotations)
 	if placement := annotationPlacementDiagnostics(typ, target, name, typeName, modifiers, annotations); len(placement) > 0 {
 		for i := range catalog {
+			if catalog[i].NativeMessage == integrationTestUnavailableMessage {
+				// Native org availability is reported before placement.
+				continue
+			}
 			catalog[i].NativeMessage = placement[0].NativeMessage
 			catalog[i].NativeLine = placement[0].NativeLine
 			catalog[i].Range = placement[0].Range

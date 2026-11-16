@@ -114,6 +114,9 @@ func semaAPI67RejectedPlatformType(typeName string) bool {
 	// generated provider shapes are not visible to user Apex in the captured cases.
 	case "commercetax.taxenginecontext", "functions.function":
 		return true
+	// api68_native sf-archive ARCHIVE-DEPLOY-67/68 (see semaHTTPInvisibleType).
+	case "sf_archive.archiveraccessorresponse":
+		return true
 	case "messaging.sendemailoptions",
 		"system.messaging.sendemailoptions",
 		"system.messaging.singleemailmessage",

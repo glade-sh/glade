@@ -271,14 +271,25 @@ func (a *Analyzer) hasKnownAtVersion(name, version string) bool {
 	return !semaPlatformTypeUnavailable(version, name)
 }
 
+// api68_native versioning VERSION-DEPLOY-19 deploys an Apex class saved at
+// 19.0 with this warning; 20.0, 67.0 and 68.0 classes deploy without one.
+// Classes below 19.0 and triggers were not captured and get no warning.
+const (
+	retiringClassAPIVersion        = "19.0"
+	retiringClassAPIVersionMessage = "Apex API version 19.0 is scheduled for retirement. Update to the latest API version to avoid compilation errors."
+)
+
 func sourceAPIVersionDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
 		if typ.Dependency || !typ.HasSourceSnapshot() {
 			continue
 		}
-		if _, err := apexversion.PreserveSource(typ.EffectiveAPIVersion); err != nil {
+		version, err := apexversion.PreserveSource(typ.EffectiveAPIVersion)
+		if err != nil {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", NativeMessage: "Invalid api version:" + typ.EffectiveAPIVersion, Message: fmt.Sprintf("%s %q: %v", typ.Kind, typ.Name, err), File: typ.File, Range: &typ.Range})
+		} else if version == retiringClassAPIVersion && !strings.Contains(typ.Name, ".") {
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "GLADESEMA_VERSION_RETIRING", NativeMessage: retiringClassAPIVersionMessage, Message: retiringClassAPIVersionMessage, File: typ.File, Range: &typ.Range})
 		}
 	}
 	for _, trigger := range index.Triggers {
