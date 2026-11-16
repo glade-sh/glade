@@ -61,6 +61,8 @@ func TestCompanyDoubledEqual(t *testing.T) {
 		{"Vexlet Packard", "Vexlet Packard", false},
 		{"Vexlett Packard", "Vexlet Packerd", false},
 		{"Vexlett Packard", "Vexlett Packard Inc", false},
+		{"Pioneer Atlas", "Pioneer Atlass", false},
+		{"Vexlet Packard", "Vexlett Packard", true},
 		{"Café Packard", "Cafe Packard", false},
 	} {
 		if got := companyDoubledEqual(c.a, c.b); got != c.want {

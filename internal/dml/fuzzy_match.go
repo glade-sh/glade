@@ -1161,15 +1161,17 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 }
 
 // companyDoubledEqual reports two multiword ASCII names that differ only by
-// doubled letters. NATIVE company_name_fit/org.tsv D1_jn: "Vexlett Packard"
-// and "Vexlet Packard" match at 100 in both directions.
+// doubled letters in the first word. NATIVE company_name_fit/org.tsv D1_jn:
+// "Vexlett Packard" and "Vexlet Packard" match at 100 in both directions;
+// NATIVE fuzzy_matching rows reject "Pioneer Atlas" and "Pioneer Atlass".
 func companyDoubledEqual(a, b string) bool {
 	if a == b || !strings.ContainsAny(a, " -") || !strings.ContainsAny(b, " -") {
 		return false
 	}
 	i, j, skipped := 0, 0, false
 	var pa, pb byte
-	next := func(s string, k *int, prev *byte) (byte, bool) {
+	firstA, firstB := true, true
+	next := func(s string, k *int, prev *byte, first *bool) (byte, bool) {
 		for *k < len(s) {
 			c := s[*k]
 			*k++
@@ -1179,7 +1181,10 @@ func companyDoubledEqual(a, b string) bool {
 			if c >= 'A' && c <= 'Z' {
 				c += 'a' - 'A'
 			}
-			if c == *prev && c >= 'a' && c <= 'z' {
+			if c == ' ' || c == '-' {
+				*first = false
+			}
+			if c == *prev && c >= 'a' && c <= 'z' && *first {
 				skipped = true
 				continue
 			}
@@ -1189,8 +1194,8 @@ func companyDoubledEqual(a, b string) bool {
 		return 0, true
 	}
 	for {
-		x, okA := next(a, &i, &pa)
-		y, okB := next(b, &j, &pb)
+		x, okA := next(a, &i, &pa, &firstA)
+		y, okB := next(b, &j, &pb, &firstB)
 		if !okA || !okB || x != y {
 			return false
 		}
