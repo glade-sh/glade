@@ -1455,6 +1455,11 @@ func parseDateParseTextForLocale(text, locale string) (time.Time, error) {
 		// layout does not apply to these locales, so there is no fallback.
 		return parseDateParseFields(text, grammar.date, 2, 1, 3, grammar.zeroTwoDigit)
 	}
+	if locale == "ja_JP" && dateParseSlashPattern.MatchString(strings.TrimSpace(text)) {
+		// Native dt02 (surf_datetime_locale): a ja_JP user's Date.parse rejects
+		// the month-first m/d/yyyy form that en_US accepts.
+		return time.Time{}, fmt.Errorf("unsupported Date parse value %q", text)
+	}
 	if !apexYearPivotCaptured(locale) {
 		return parseDateParseTextLegacy(text)
 	}

@@ -24,7 +24,10 @@ import (
 //
 // parkedSurfRows lists rows whose native answer Glade does not match yet. A
 // parked row fails once Glade matches, so the entry is removed with the fix.
-var parkedSurfRows = map[string]string{}
+var parkedSurfRows = map[string]string{
+	"collections_strings/cs03/62.0": "SObject.hashCode() returns a platform-specific integer; the native algorithm is not derivable from two captured values",
+	"collections_strings/cs03/67.0": "same as cs03 at API 62",
+}
 
 var surfIDMask = regexp.MustCompile(`\b(?:001|003|005|006|00D|012|01p|a0[A-Za-z0-9])[0-9A-Za-z]{11,15}\b`)
 

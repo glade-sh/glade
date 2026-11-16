@@ -575,6 +575,10 @@ func stringStatic(callee string, args []Value) (Value, error) {
 }
 
 func (vm *VM) stringJoin(args []Value, result *Result) (Value, error) {
+	if len(args) == 2 && args[1].Kind == ValueNull && args[0].Kind != ValueNull {
+		// Native cs07 (surf_collections_strings): a null separator.
+		return Null, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if len(args) != 2 || args[1].Kind != ValueString {
 		return Null, fmt.Errorf("String.join expects List, Set, or Iterable and separator String")
 	}
@@ -3497,7 +3501,9 @@ func formatString(pattern string, args []Value, display func(Value) (string, err
 			}
 			end := strings.IndexByte(pattern[i+1:], '}')
 			if end < 0 {
-				return "", fmt.Errorf("String.format unmatched '{' in format pattern")
+				// Native cs05 (surf_collections_strings): a StringException that
+				// quotes the whole pattern.
+				return "", newExceptionError("System.StringException", fmt.Sprintf("Unmatched '{' braces in message %q", pattern))
 			}
 			token := strings.TrimSpace(pattern[i+1 : i+1+end])
 			replacement, err := formatStringTokenCached(token, args, display, displayCache)
