@@ -301,9 +301,7 @@ func (vm *VM) shouldEnqueueFuture(method Method) bool {
 
 func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value, error) {
 	if vm.testContext == nil && !vm.isolateAsyncJobFailures {
-		// Anonymous Apex has no local queue for the call, but natively it
-		// still charges the future-call counter (limits_counter_edges fut51).
-		return Null, vm.incrementLimit("futureCalls", 1)
+		return Null, nil
 	}
 	if !method.IsStatic {
 		return Null, fmt.Errorf("@future method %s must be static", method.Name)

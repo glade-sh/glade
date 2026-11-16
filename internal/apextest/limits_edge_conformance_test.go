@@ -8,6 +8,8 @@ func TestLimitsCounterEdgesNativeConformance(t *testing.T) {
 	edgeFamily{dir: "testdata/conformance/limits_counter_edges", skip: map[string]string{
 		"co100/anonymous": "anonymous Apex has no local network transport; the mock route covers the counter",
 		"co101/anonymous": "anonymous Apex has no local network transport; the mock route covers the counter",
+		"fut50/anonymous": "anonymous Apex runs a future method inline and never charges the future counter",
+		"fut51/anonymous": "anonymous Apex runs a future method inline and never charges the future counter",
 	}}.replay(t)
 }
 

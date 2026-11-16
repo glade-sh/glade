@@ -258,6 +258,15 @@ func (f edgeFamily) replay(t *testing.T) {
 					}
 				}
 				runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: seedVM.Org})
+				triggers, triggerErrors := compileProjectTriggers(index)
+				if len(triggerErrors) > 0 {
+					t.Fatal(triggerErrors)
+				}
+				for _, trigger := range triggers {
+					if err := runner.base.RegisterTrigger(trigger); err != nil {
+						t.Fatal(err)
+					}
+				}
 				for _, c := range cases {
 					if c.route == "istest" {
 						continue

@@ -938,6 +938,10 @@ platformStaticCall:
 		targetOrder, ok := vm.savepointOrder[idValue.Text]
 		if !ok {
 			if vm.boundaryReleasedSavepoints[idValue.Text] {
+				// The refused rollback still charges its DML statement (test_boundary_edges sb2).
+				if err := vm.incrementSavepointStatement(); err != nil {
+					return Null, err
+				}
 				return Null, newExceptionError("System.TypeException", "Savepoint does not exist in this context")
 			}
 			return Null, newExceptionError("System.TypeException", "Database.rollback received invalid Savepoint")

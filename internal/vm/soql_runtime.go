@@ -2663,7 +2663,7 @@ func (vm *VM) soslRecordsForSpec(spec sosl.ReturningObject, objectName string, p
 	if !ok {
 		return nil, nil
 	}
-	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel); err != nil {
+	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel, false); err != nil {
 		var inaccessible soslFieldInaccessibleError
 		if errors.As(err, &inaccessible) {
 			// api67_sosl_locator_matching rows: the field check fires only when
@@ -2799,19 +2799,20 @@ type soslFieldInaccessibleError struct{ message string }
 
 func (e soslFieldInaccessibleError) Error() string { return e.message }
 
-func (vm *VM) enforceSOSLAccess(objectName string, spec sosl.ReturningObject, accessLevel Value) error {
+func (vm *VM) enforceSOSLAccess(objectName string, spec sosl.ReturningObject, accessLevel Value, suggestion bool) error {
 	if databaseAccessLevelSecurityMode(accessLevel) != "USER_MODE" {
 		return nil
 	}
 	permissionSetID := accessLevelPermissionSetID(accessLevel)
 	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
-		if clause, ok := accessLevel.Fields["soslClause"]; ok && clause.Bool {
-			// WITH USER_MODE denies like a default search (sosl_istest_edges am_with_user).
-			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
-		}
 		if accessLevel.Fields["soslParameter"].Bool {
 			// Search.query(String, AccessLevel) (sosl_istest_edges am_dyn_user).
 			return newExceptionError("QueryException", soslMissingObjectMessage(objectName))
+		}
+		if !suggestion {
+			// A default search at API 67 and WITH USER_MODE deny with a
+			// SecurityException (sosl_istest_edges am_*_default, am_with_user).
+			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
 		}
 		return newExceptionError("QueryException", fmt.Sprintf("sObject type '%s' is not supported by USER_MODE", objectName))
 	}
@@ -3106,11 +3107,8 @@ func soslWordGlobMatches(text, pattern string, prefix bool) (bool, error) {
 	for _, word := range soslTokens(text) {
 		matched, _ := path.Match(full, word)
 		if !matched {
-			if !prefix {
-				if extended, _ := path.Match(pattern+"*", word); extended {
-					return false, unsupportedCallError("SOSL wildcard index matching")
-				}
-			}
+			// A word that continues past a complete match does not match
+			// (sosl_search_matrix wc_qm, wc_mid: Coppers is not returned).
 			continue
 		}
 		if !prefix && strings.Contains(pattern, "*") && len(word)-(len(pattern)-1) > 2 {
@@ -3148,7 +3146,7 @@ func (vm *VM) searchSuggestionRows(query, objectName string, option Value, acces
 		return out, nil
 	}
 	spec := sosl.ReturningObject{Object: objectName, Fields: []sosl.SelectExpr{{Field: "Id"}, {Field: "Name"}}}
-	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel); err != nil {
+	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel, true); err != nil {
 		var inaccessible soslFieldInaccessibleError
 		if errors.As(err, &inaccessible) {
 			return Null, newExceptionError("QueryException", inaccessible.Error())

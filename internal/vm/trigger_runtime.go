@@ -165,6 +165,11 @@ func dmlExceptionFromTriggerError(op string, err error) error {
 		if detail := exceptionMessage(thrown.value); detail != "" {
 			message = detail
 		}
+		if strings.Contains(message, ": maximum trigger depth exceeded\n") {
+			// The depth failure reaches each enclosing DML statement as the
+			// same DmlException (test_boundary_edges tr_depth).
+			return err
+		}
 	} else {
 		if _, readonly := triggerReadOnlyMessage(err); !readonly {
 			return err
