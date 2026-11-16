@@ -112,9 +112,13 @@ func companyCeiling(a, b string, score float64) (bool, float64) {
 	if x.form == "plain" && y.form == "plain" {
 		return companyDirectionCeiling(a, b, score)
 	}
+	markedX, markedY := x.form == "dash" || x.form == "paren", y.form == "dash" || y.form == "paren"
+	crossed := x.form == "slash" && y.form == "paren" || x.form == "paren" && y.form == "slash"
+	if !(markedX && markedY) && !(crossed && (strings.Contains(a, " / ") || strings.Contains(b, " / "))) {
+		return true, score
+	}
 	words := func(s string) []string { return companyScoreWords(s, false) }
 	bx, by := words(x.base), words(y.base)
-	markedX, markedY := x.form == "dash" || x.form == "paren", y.form == "dash" || y.form == "paren"
 	if markedX && markedY {
 		sx, sy := strings.Join(words(x.suffix), " "), strings.Join(words(y.suffix), " ")
 		if strings.Contains(sx, " ") || strings.Contains(sy, " ") {
@@ -136,8 +140,8 @@ func companyCeiling(a, b string, score float64) (bool, float64) {
 		}
 		return true, score
 	}
-	if x.form == "slash" && y.form == "paren" || x.form == "paren" && y.form == "slash" {
-		if !strings.Contains(a+b, " / ") || strings.Join(bx, " ") != strings.Join(by, " ") || len(bx) != 2 {
+	if crossed {
+		if strings.Join(bx, " ") != strings.Join(by, " ") || len(bx) != 2 {
 			return true, score
 		}
 		sx, sy := strings.Join(words(x.suffix), " "), strings.Join(words(y.suffix), " ")
