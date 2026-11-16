@@ -36,6 +36,16 @@ type SearchTerm struct {
 	NameWordGlob bool
 	// PhoneDigits identifies a bare seven- or ten-digit search term.
 	PhoneDigits bool
+	// WordGlobPrefix is an unquoted ASCII word with one interior ? or ?? and a
+	// trailing *, such as copp?r* (sosl_search_matrix wc_qmstar).
+	WordGlobPrefix bool
+	// LeadingStar is * followed by ASCII letters; the index returns nothing
+	// for it and does not raise an error (sosl_search_matrix wc_lead).
+	LeadingStar bool
+	// EscapedLiteral is an unquoted term whose only wildcard-like characters
+	// are backslash-escaped { " : \ or ?. Text holds the decoded literal and
+	// matching is by whole-token phrase (sosl_search_matrix esc_*, wc_esc).
+	EscapedLiteral bool
 }
 
 type SelectExpr struct {
@@ -391,9 +401,26 @@ func (p *parser) parseReturning(query *Query) error {
 		if p.peek().kind == tokenRParen {
 			return contract("QueryException", "unexpected token: ')'")
 		}
+		if next := p.peek(); next.kind == tokenWord && (strings.EqualFold(next.text, "LIMIT") || strings.EqualFold(next.text, "WHERE")) {
+			// An object clause needs a field first (sosl_search_matrix rt2, rt3).
+			upper := strings.ToUpper(next.text)
+			return &ContractError{Type: "QueryException", Message: "unexpected token: '" + upper + "'", InlineMessage: "Unexpected token '" + upper + "'."}
+		}
 		returning, err := p.parseReturningObject(object)
 		if err != nil {
 			return err
+		}
+		if n := len(query.Returning); n > 0 && strings.EqualFold(query.Returning[n-1].Object, returning.Object) {
+			// Adjacent specifications of one object return a single list built
+			// from the last one (sosl_search_matrix rt1, rt5, rt6).
+			query.Returning[n-1] = returning
+			if !p.accept(tokenComma) {
+				return nil
+			}
+			if p.peek().kind == tokenWord && strings.EqualFold(p.peek().text, "WITH") {
+				return p.errorf("unexpected comma before global SOSL clause")
+			}
+			continue
 		}
 		duplicate := false
 		for _, previous := range query.Returning {
@@ -854,6 +881,10 @@ func (p *parser) parseWith(query *Query) error {
 		value := p.next()
 		if value.kind == tokenWord {
 			return contract("QueryException", "unexpected token: '"+value.text+"'")
+		}
+		if value.kind == tokenString && strings.EqualFold(value.text, "LABELS") {
+			// Accepted with the same rows (sosl_search_matrix wi_meta).
+			return nil
 		}
 		return &UnsupportedFeatureError{Message: "SOSL WITH METADATA hosted search service"}
 	case strings.EqualFold(clause.text, "NETWORK"):

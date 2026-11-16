@@ -14,6 +14,26 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// releaseSavepointsAtTestBoundary ends every active savepoint at startTest and
+// stopTest; a later rollback to one fails (test_boundary_edges sb1, sb2, sb4,
+// APIs 62 and 67).
+func (vm *VM) releaseSavepointsAtTestBoundary() {
+	for id := range vm.savepointOrder {
+		delete(vm.savepoints, id)
+		delete(vm.savepointMarks, id)
+		delete(vm.emailSavepoints, id)
+		delete(vm.creationSavepoints, id)
+		delete(vm.flowPathSavepoints, id)
+		delete(vm.calloutPendingWork.savepoints, id)
+		vm.releaseChangeDataCapture(id)
+		delete(vm.savepointOrder, id)
+		if vm.boundaryReleasedSavepoints == nil {
+			vm.boundaryReleasedSavepoints = make(map[string]bool)
+		}
+		vm.boundaryReleasedSavepoints[id] = true
+	}
+}
+
 func (vm *VM) testStart() (Value, error) {
 	if vm.testContext == nil {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Method only allowed during testing", Stack: vm.stackFrames()}
@@ -21,6 +41,7 @@ func (vm *VM) testStart() (Value, error) {
 	if vm.testContext.Started {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing already started", Stack: vm.stackFrames()}
 	}
+	vm.releaseSavepointsAtTestBoundary()
 	vm.testContext.Started = true
 	vm.testContext.Stopped = false
 	vm.fakeNow = vm.fakeNow.Add(time.Second)
@@ -47,6 +68,7 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 	vm.testContext.Stopped = true
 	vm.prepareTestStopAsyncJobs()
 	err := vm.drainTestWork(result)
+	vm.releaseSavepointsAtTestBoundary()
 	// The test boundary clears pending DML and active-savepoint callout guards.
 	vm.calloutPendingWork = calloutPendingWork{}
 	vm.cpuBudgetUsed = vm.testContext.parentCPUBudget
@@ -300,10 +322,11 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 			}
 		}
 	}
-	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
+	// The specific counter first: its exhaustion text is the native message.
+	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
 		return Null, err
 	}
-	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
+	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
 	if len(args) == 1 {
@@ -650,6 +673,10 @@ func (vm *VM) enqueueTestBatchJobs(args []Value) (Value, error) {
 	}
 	if args[0].Kind != ValueInt {
 		return Null, fmt.Errorf("Test.enqueueBatchJobs expects Integer")
+	}
+	if args[0].Int > 105 && vm.Org != nil {
+		// Five active jobs plus a flex queue of 100 (test_boundary_edges bt_enq106).
+		return Null, newExceptionError("System.AsyncException", fmt.Sprintf("You've exceeded the limit of 100 jobs in the flex queue for org %s. Wait for some of your batch jobs to finish before adding more. To monitor and reorder jobs, use the Apex Flex Queue page in Setup.", vm.Org.OrgID))
 	}
 	ids := typedList("List<Id>")
 	ids.nativeListMembership = true

@@ -301,15 +301,17 @@ func (vm *VM) shouldEnqueueFuture(method Method) bool {
 
 func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value, error) {
 	if vm.testContext == nil && !vm.isolateAsyncJobFailures {
-		return Null, nil
+		// Anonymous Apex has no local queue for the call, but natively it
+		// still charges the future-call counter (limits_counter_edges fut51).
+		return Null, vm.incrementLimit("futureCalls", 1)
 	}
 	if !method.IsStatic {
 		return Null, fmt.Errorf("@future method %s must be static", method.Name)
 	}
-	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
+	if err := vm.incrementLimit("futureCalls", 1); err != nil {
 		return Null, err
 	}
-	if err := vm.incrementLimit("futureCalls", 1); err != nil {
+	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
 	if len(args) != len(method.Params) {

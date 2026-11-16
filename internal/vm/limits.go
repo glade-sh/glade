@@ -226,6 +226,10 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		return vm.checkLimit(name, vm.limits.QueueableJobs, vm.limitCaps.QueueableJobs)
 	case "batchJobs":
 		vm.limits.BatchJobs += delta
+		if vm.testContext != nil && vm.limitCaps.nativeDefaults {
+			// A test method may submit six or more batches (test_boundary_edges bt_loop6).
+			return nil
+		}
 		return vm.checkLimit(name, vm.limits.BatchJobs, vm.limitCaps.BatchJobs)
 	case "scheduledJobs":
 		vm.limits.ScheduledJobs += delta
@@ -256,12 +260,23 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		return vm.checkLimit(name, vm.limits.FetchCallsOnApexCursor, apexCursorFetchCallLimit)
 	case "runAs":
 		vm.limits.RunAs += delta
+		if vm.limitCaps.nativeDefaults {
+			// Native runAs, setSavepoint and rollback calls only charge DML
+			// statements; Limits.getRunAs and the savepoint getters alias them.
+			return nil
+		}
 		return vm.checkLimit(name, vm.limits.RunAs, vm.limitCaps.RunAs)
 	case "savepoints":
 		vm.limits.Savepoints += delta
+		if vm.limitCaps.nativeDefaults {
+			return nil
+		}
 		return vm.checkLimit(name, vm.limits.Savepoints, vm.limitCaps.Savepoints)
 	case "savepointRollbacks":
 		vm.limits.SavepointRollbacks += delta
+		if vm.limitCaps.nativeDefaults {
+			return nil
+		}
 		return vm.checkLimit(name, vm.limits.SavepointRollbacks, vm.limitCaps.SavepointRollbacks)
 	case "publishImmediateDml":
 		vm.limits.PublishImmediateDML += delta
@@ -332,6 +347,10 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 				message = fmt.Sprintf("Too many SOQL aggregate queries: %d", used)
 			case "dmlStatements":
 				message = fmt.Sprintf("Too many DML statements: %d", used)
+			default:
+				if native, ok := nativeCounterMessage(name, used, cap); ok {
+					message = native
+				}
 			}
 		}
 		return &RuntimeError{
@@ -341,6 +360,31 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 		}
 	}
 	return nil
+}
+
+// nativeCounterMessage is the LimitException text Salesforce reports when a
+// counter first passes its synchronous cap (limits_counter_edges org.tsv).
+// Row counters stop at the first row over the cap, so the count is cap+1.
+func nativeCounterMessage(name string, used, cap int) (string, bool) {
+	switch name {
+	case "queryRows":
+		return fmt.Sprintf("Too many query rows: %d", min(used, cap+1)), true
+	case "dmlRows":
+		return fmt.Sprintf("Too many DML rows: %d", min(used, cap+1)), true
+	case "queryLocatorRows":
+		return fmt.Sprintf("Too many query locator rows: %d", min(used, cap+1)), true
+	case "callouts":
+		return fmt.Sprintf("Too many callouts: %d", used), true
+	case "emailInvocations":
+		return fmt.Sprintf("Too many Email Invocations: %d", used), true
+	case "publishImmediateDml":
+		return fmt.Sprintf("Too many Publish Immediate DML: %d", used), true
+	case "queueableJobs":
+		return fmt.Sprintf("Too many queueable jobs added to the queue: %d", used), true
+	case "futureCalls":
+		return fmt.Sprintf("Too many future calls: %d", used), true
+	}
+	return "", false
 }
 
 func (vm *VM) incrementQueryLocatorRows(value Value) error {
@@ -422,7 +466,8 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.EmailInvokes)), true
 	case "getLimitEmailInvocations":
 		return Int(int64(vm.limitCaps.EmailInvokes)), true
-	case "getSoslQueries":
+	case "getSoslQueries", "getFindSimilarCalls":
+		// Native getFindSimilarCalls is the SOSL query counter (limits_counter_edges).
 		return Int(int64(vm.limits.SOSLQueries)), true
 	case "getPublishImmediateDML":
 		return Int(int64(vm.limits.PublishImmediateDML)), true
@@ -436,7 +481,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.AggregateQueries)), true
 	case "getDatabaseTime",
 		"getFieldSetsDescribes", "getFieldsDescribes",
-		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
+		"getMobilePushApexCalls", "getPicklistDescribes",
 		"getRecordTypesDescribes", "getScriptStatements":
 		return Int(0), true
 	case "getApexCursorRows":
@@ -464,7 +509,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitFetchCallsOnApexCursor":
 		return Int(apexCursorFetchCallLimit), true
 	case "getLimitFindSimilarCalls":
-		return Int(20), true
+		return Int(int64(vm.limitCaps.SOSLQueries)), true
 	case "getLimitMobilePushApexCalls":
 		return Int(10), true
 	case "getLimitQueryLocatorRows":

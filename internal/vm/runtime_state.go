@@ -281,6 +281,7 @@ type VM struct {
 	hasStatement            bool
 	toolingExecuteAnonymous bool
 	triggerDepth            int
+	triggerActivations      []string
 	activeTriggerNamespaces []string
 	installContextDepth     int
 	// --- Transaction state (savepoints) ---
@@ -289,11 +290,13 @@ type VM struct {
 	savepointMarks     map[string]storage.IsolationMark
 	emailSavepoints    map[string][]CapturedEmail
 	savepointOrder     map[string]int
-	nextSavepoint      int
-	recordCreations    *dml.RecordCreations
-	lookupHistoryScope *storage.LookupHistoryScope
-	duplicateReports   []dml.DuplicateReport
-	creationSavepoints map[string]recordCreationCheckpoint
+	// boundaryReleasedSavepoints records savepoints ended at startTest or stopTest.
+	boundaryReleasedSavepoints map[string]bool
+	nextSavepoint              int
+	recordCreations            *dml.RecordCreations
+	lookupHistoryScope         *storage.LookupHistoryScope
+	duplicateReports           []dml.DuplicateReport
+	creationSavepoints         map[string]recordCreationCheckpoint
 	// --- Visualforce / page context ---
 	pageMessages              []Value
 	currentPage               Value

@@ -13,6 +13,35 @@ type SearchExpression struct {
 	Operator    string
 	Term        SearchTerm
 	Left, Right *SearchExpression
+	// Implicit marks a conjunction written as whitespace adjacency.
+	Implicit bool
+}
+
+// ImplicitOr reads a search written only as whitespace-adjacent terms as a
+// disjunction. Documents search that way (sosl_search_matrix op_doc); any
+// explicit operator, group or phrase leaves the expression unchanged.
+func ImplicitOr(e *SearchExpression) *SearchExpression {
+	if e == nil || !onlyImplicit(e) {
+		return e
+	}
+	return convertImplicit(e)
+}
+
+func onlyImplicit(e *SearchExpression) bool {
+	switch e.Operator {
+	case "TERM":
+		return true
+	case "AND":
+		return e.Implicit && onlyImplicit(e.Left) && onlyImplicit(e.Right)
+	}
+	return false
+}
+
+func convertImplicit(e *SearchExpression) *SearchExpression {
+	if e.Operator != "AND" {
+		return e
+	}
+	return &SearchExpression{Operator: "OR", Left: convertImplicit(e.Left), Right: convertImplicit(e.Right)}
 }
 
 type searchExpressionParser struct {
@@ -115,15 +144,17 @@ func (p *searchExpressionParser) expression(minPrecedence int) (*SearchExpressio
 			p.pos += consume
 		}
 		nextPrecedence := precedence + 1
-		if precedence == 2 {
-			// AND and AND NOT associate right-to-left in FIND expressions.
+		if precedence == 2 && op != "AND NOT" {
+			// AND associates right-to-left in FIND expressions. AND NOT excludes
+			// only its own operand: a AND NOT b AND c keeps c as a separate
+			// requirement (sosl_search_matrix pr_notchain).
 			nextPrecedence = precedence
 		}
 		right, err := p.expression(nextPrecedence)
 		if err != nil {
 			return nil, err
 		}
-		left = &SearchExpression{Operator: op, Left: left, Right: right}
+		left = &SearchExpression{Operator: op, Left: left, Right: right, Implicit: !explicit}
 	}
 	return left, nil
 }
@@ -161,6 +192,16 @@ func (p *searchExpressionParser) primary() (*SearchExpression, error) {
 	if term.NeedsMatcher && !prefix {
 		term.NameWordGlob = nameWordGlob.MatchString(literal)
 	}
+	if term.NeedsMatcher && prefix && wordGlobPrefix.MatchString(literal) {
+		term.WordGlobPrefix = true
+	}
+	if !prefix && leadingStarWord.MatchString(item) {
+		term.LeadingStar = true
+		term.Text = item
+	}
+	if decoded, ok := escapedLiteral(item); ok {
+		term.EscapedLiteral, term.Text, term.Prefix = true, decoded, false
+	}
 	if strings.HasPrefix(item, "\"") && strings.HasSuffix(item, "\"") {
 		phrase := item[1 : len(item)-1]
 		term = SearchTerm{Text: decodeSearchWildcardMarkers(phrase), NeedsMatcher: searchNeedsMatcher(phrase)}
@@ -196,5 +237,35 @@ func searchNeedsMatcher(text string) bool {
 // Match only the interior wildcard forms established for ASCII name words.
 // Check the undecoded token so escaped punctuation stays literal.
 var nameWordGlob = regexp.MustCompile(`^[A-Za-z]+(\*|\?{1,2})[A-Za-z]+$`)
+
+// A word with one interior ? or ?? and a trailing *: copp?r*.
+var wordGlobPrefix = regexp.MustCompile(`^[A-Za-z]+\?{1,2}[A-Za-z]+$`)
+
+// A leading * and ASCII letters: *opper.
+var leadingStarWord = regexp.MustCompile(`^\*[A-Za-z]+$`)
+
+// escapedLiteral decodes an unquoted term whose backslashes escape only
+// { " : \ or ?, with no unescaped wildcard.
+func escapedLiteral(item string) (string, bool) {
+	if !strings.Contains(item, `\`) || strings.Contains(item, "*") || strings.HasPrefix(item, `"`) {
+		return "", false
+	}
+	var out strings.Builder
+	for i := 0; i < len(item); i++ {
+		switch c := item[i]; c {
+		case '\\':
+			if i+1 >= len(item) || !strings.ContainsRune(`{":\?`, rune(item[i+1])) {
+				return "", false
+			}
+			i++
+			out.WriteByte(item[i])
+		case '?':
+			return "", false
+		default:
+			out.WriteByte(c)
+		}
+	}
+	return out.String(), out.Len() > 0
+}
 
 var phoneDigits = regexp.MustCompile(`^([0-9]{7}|[0-9]{10})$`)

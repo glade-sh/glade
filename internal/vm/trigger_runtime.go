@@ -72,8 +72,17 @@ type triggerExecutionError struct {
 func (e *triggerExecutionError) Error() string { return e.detail }
 func (e *triggerExecutionError) Unwrap() error { return e.cause }
 
+func triggerEventName(trigger Trigger) string {
+	return strings.ToUpper(trigger.Timing[:1]) + trigger.Timing[1:] + strings.ToUpper(trigger.Operation[:1]) + trigger.Operation[1:]
+}
+
 func (vm *VM) wrapTriggerExecutionError(trigger Trigger, err error) error {
 	if hasSuffixFold(trigger.Object, "__e") {
+		return err
+	}
+	var depthFailure *apexThrowError
+	if errors.As(err, &depthFailure) && vm.triggerDepth > 1 && strings.Contains(exceptionMessage(depthFailure.value), ": maximum trigger depth exceeded\n") {
+		// Only the outermost activation wraps the depth failure.
 		return err
 	}
 	var flowFailure *invocableFlowCallerTriggerFailure
@@ -684,11 +693,16 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 		return nil, nil
 	}
 	if vm.triggerDepth >= maxTriggerDepth {
-		return nil, newExceptionError("DmlException", fmt.Sprintf("maximum trigger depth exceeded (%d)", maxTriggerDepth))
+		// test_boundary_edges tr_depth (APIs 62 and 67): the depth failure names
+		// the trigger and lists each active activation.
+		detail := triggers[0].Name + ": maximum trigger depth exceeded\n" + strings.Join(vm.triggerActivations, "\n")
+		return nil, &triggerExecutionError{cause: newExceptionError("DmlException", detail), detail: detail}
 	}
 	vm.triggerDepth++
+	vm.triggerActivations = append(vm.triggerActivations, strings.TrimSuffix(object, "__c")+" trigger event "+triggerEventName(triggers[0]))
 	defer func() {
 		vm.triggerDepth--
+		vm.triggerActivations = vm.triggerActivations[:len(vm.triggerActivations)-1]
 	}()
 	failures := make([]dml.Result, len(records))
 	for _, trigger := range triggers {
