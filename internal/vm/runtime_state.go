@@ -209,22 +209,25 @@ type VM struct {
 	// the innermost System.runAs block saw when it started; permAssignAll
 	// lifts the rule inside an asynchronous job (its own transaction), and
 	// permRunnerUserID is the user that ran the test outside every block.
-	permAssignVisible       map[storage.ID]struct{}
-	permAssignAll           bool
-	permRunnerUserID        string
-	localAsyncJobs          []AsyncJob
-	localAsyncSeq           int
-	flowAsyncSeq            uint64
-	flowPathSavepoints      map[string]uint64
-	runningProcessRecords   map[storage.ID]int
-	processErrorSequence    int
-	localAsyncDrain         bool
-	localAsyncChain         bool
-	rejectAsyncActions      bool
-	isolateAsyncJobFailures bool
-	actionAsyncSavepoints   map[string]int
-	asyncActionViolation    bool
-	executionUser           Value
+	permAssignVisible map[storage.ID]struct{}
+	permAssignAll     bool
+	permRunnerUserID  string
+	// permAssignmentsPreexisting stops flagging assignments as test-made: the
+	// project's configured assignments stand for sets the org already had.
+	permAssignmentsPreexisting bool
+	localAsyncJobs             []AsyncJob
+	localAsyncSeq              int
+	flowAsyncSeq               uint64
+	flowPathSavepoints         map[string]uint64
+	runningProcessRecords      map[storage.ID]int
+	processErrorSequence       int
+	localAsyncDrain            bool
+	localAsyncChain            bool
+	rejectAsyncActions         bool
+	isolateAsyncJobFailures    bool
+	actionAsyncSavepoints      map[string]int
+	asyncActionViolation       bool
+	executionUser              Value
 	// Captured once from the runner's initial org, before test setup inserts.
 	// Clones share this immutable ID set; EnableTestContext must not recapture it.
 	testDocumentBaseline          map[storage.ID]struct{}

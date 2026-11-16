@@ -222,7 +222,19 @@ func TestSharingAccessUncapturedNeighborsKeepBase(t *testing.T) {
 // Test.startTest. A block that makes the assignment does not see it itself.
 // Another user's assignment applies in that user's runAs block.
 func TestPermissionSetAssignedInTestNativeConformance(t *testing.T) {
-	family := filepath.Join("testdata/conformance", "permset_in_test")
+	runPermissionSetInTestFamily(t, "permset_in_test", 108)
+}
+
+// The same rule for a set that grants an Account custom field together with a
+// tab, an Apex class, a user permission, Account object access or a second
+// field, and for a runAs block of the same user.
+func TestPermissionSetAssignedInTestAccountFieldNativeConformance(t *testing.T) {
+	runPermissionSetInTestFamily(t, "permset_in_test_account", 22)
+}
+
+func runPermissionSetInTestFamily(t *testing.T, name string, count int) {
+	t.Helper()
+	family := filepath.Join("testdata/conformance", name)
 	raw, err := os.Open(filepath.Join(family, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -236,7 +248,7 @@ func TestPermissionSetAssignedInTestNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 1+108 || strings.Join(rows[0], ",") != "api,method,observation" {
+	if len(rows) != 1+count || strings.Join(rows[0], ",") != "api,method,observation" {
 		t.Fatalf("incomplete native rows: %d", len(rows))
 	}
 	root := t.TempDir()
@@ -272,7 +284,7 @@ func TestPermissionSetAssignedInTestNativeConformance(t *testing.T) {
 			}
 			_, got, _ := strings.Cut(run.Suites[0].Cases[0].Problem.Message, " => ")
 			if strings.TrimSpace(got) != strings.TrimSpace(want) {
-				t.Fatalf("NATIVE %s permset_in_test/org.tsv:%d istest %s\nnative=%q\nglade =%q", method, line, api, want, strings.TrimSpace(got))
+				t.Fatalf("NATIVE %s %s/org.tsv:%d istest %s\nnative=%q\nglade =%q", method, name, line, api, want, strings.TrimSpace(got))
 			}
 		})
 	}

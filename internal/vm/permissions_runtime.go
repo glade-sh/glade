@@ -2597,7 +2597,7 @@ func (vm *VM) beginRunAsPermissionFrame(userBefore string) func() {
 // markTestAssignedPermissionSets flags PermissionSetAssignment rows that a
 // successful insert created inside a test.
 func (vm *VM) markTestAssignedPermissionSets(results []dml.Result) {
-	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.permAssignAll {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.permAssignAll || vm.permAssignmentsPreexisting {
 		return
 	}
 	for _, result := range results {
@@ -2620,4 +2620,12 @@ func (vm *VM) markTestAssignedPermissionSets(results []dml.Result) {
 		state.PutRecord(storedID, record)
 		vm.Org.Objects["PermissionSetAssignment"] = state
 	}
+}
+
+// MarkPermissionAssignmentsPreexisting makes the assignments this VM inserts
+// count as part of the org before the test, so they apply at once. The project
+// configuration (glade.yml test.permissionSets) seeds the sets a native
+// capture's org already held with it.
+func (vm *VM) MarkPermissionAssignmentsPreexisting() {
+	vm.permAssignmentsPreexisting = true
 }
