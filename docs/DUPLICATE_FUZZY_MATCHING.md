@@ -313,8 +313,9 @@ underscore join does not match its spaced name and a hyphen join matches only
 when the aligned words are alike (`Vexlett-Packard`/`Vexlet Packard` yes,
 `Quen-State Paving`/`Quen State Painting` no). A slash and a parenthesis form
 need equal suffix word counts and alike bases. Known gaps, each with a residual
-in the test: 10 native matches the word scorer also rejects, such as `Zorvex
-Partnership`/`Zorvex`, and 10 pairs
+in the test: 13 native matches the word scorer also rejects, such as `Zorvex
+Partnership`/`Zorvex` and three `East`/`West` pairs across a dash and a
+parenthesis or plain form, and 10 pairs
 the word scorer matches and native does not (`Zorvex Partner`/`Zorvex Partner
 Inc`).
 
@@ -350,8 +351,8 @@ those shapes and bound the rules:
 - A hyphen or underscore digit join scores 91 against a single consonant
   (`Test Account_2`/`Test Account D`); a vowel or `Y` keeps its earlier score.
 
-`TestCompanyShapePanelCounts` pins each panel: 2,291 of 2,351 captured matches
-reported, 1,415 exact confidences, 36 matches native does not report.
+`TestCompanyShapePanelCounts` pins each panel: 2,240 of 2,351 captured matches
+reported, 1,378 exact confidences, 40 matches native does not report.
 
 The R3 capture (rows `R3_*`, four panels of 23 names) isolates the rules the
 R1 and R2 rows left open:
@@ -367,26 +368,46 @@ R1 and R2 rows left open:
   also matches some longer and tripled endings in one direction
   (`Vexlettt`/`Vexlets` 97, `Vexlets`/`Vexletronics` 91,
   `Qelthorins`/`Qelthoriner` 100); Glade does not yet.
-- A spaced slash against a spaced slash, plain or parenthesis form with the
-  same base and a different one-word suffix scores as the dash form.
-- A dash candidate whose suffix starts with a vowel finds a plain name with an
-  alike suffix of the same length (`- East` finds `West` and `Mast` at 91,
-  `Oast` at 94; `- Oast` does not find `West`). A plain candidate whose
-  suffix starts with a vowel finds a dash suffix that differs from it only in
+- A spaced slash against a spaced slash or a plain form with the same base
+  and a different one-word suffix scores as the dash form, whatever the suffix
+  lengths (`Orbel Trade / Art` finds `Orbel Trade / North`). Names with digits
+  and a vowel candidate against a parenthesis form keep the earlier decision.
+- A plain candidate whose suffix starts with a vowel and has four or more
+  letters finds a dash suffix of the same length that differs from it only in
   its first two letters (`East` finds `- West` at 93 and `- Mast` at 94, not
   `- North`), and a vowel dash suffix that differs only in its first letter at
-  96.
-- Across a dash and a parenthesis form, a vowel candidate suffix that differs
-  only in its first letter matches on every base (`(East)`/`- Wast`). Other
-  consonant suffixes depend on the length of the whole name: they match when
-  the syllable alignment of the two names reaches 94 (`Zorvex Fret`, `Orbel
-  Tradex`, `Orbel Trading`, `Orbelvanto Trade`, `Zorvex Freight`: 94.57 and
-  up) and not at 93.90 or less (`Orbel Trade`, `Qa Freight`, `Qa Trade`). The
-  threshold is fitted between those values; `Zorvex Freightways (Oast)`/`-
-  Best` matches natively at 93.97 and stays unmatched.
+  96. The base needs two words besides a legal designator.
 
-`TestCompanyIsolationPanelCounts` pins the R3 panels: 422 of 458 captured
-matches reported, 303 exact confidences, none that native does not report.
+The R4 to R7 captures (rows `R4_*` to `R7_*`, fifteen panels of 25 or 26
+names) test those rules on names they were not fitted on. They confirm the
+first-word rule, the spaced slash rule and the plain vowel candidate, and they
+set these limits:
+
+- A first word followed only by a legal designator is a one-word name:
+  `Vexlets Inc` does not find `Vexlet Inc`, `Vexlets Group` finds `Vexlet
+  Group`.
+- After a legal designator a glued run scores 100 only when it starts the
+  other (`Test Account Inc1`/`Test Account Inc12`); one added digit does not
+  (`Test Account Inc2`/`Test Account Inc12` 99 and 98).
+- A vowel suffix against a consonant suffix across a dash and a parenthesis
+  form (`(East)`/`- West`, `(Oast)`/`- Best`, and the first-letter change
+  `(East)`/`- Wast`) matches on some bases and not on others. 100 further bases
+  were captured. No length or score of the whole names orders them: by the syllable
+  alignment of the two names `Mandolar Outlet` rejects at 95.45 and `Orbelvanto
+  Bank` matches at 93.00, and `Plovdi Trade` matches where `Zorvex Audio`
+  rejects at the same 94.05. Native reports these matches at 90 to 93. Glade
+  reports none of them.
+- A dash candidate with a vowel suffix against a plain name (`- East`/`West`,
+  native 91) is the same: it matches on `Orbel Trade`, `Zorvex Freight` and
+  `Qa Trade` and not on `Mandolar Oil`, `Orbel Oil Outlet` or `Ab Logistics`.
+  Glade reports none.
+- Suffixes of one to three letters do not follow the four-letter rules
+  (`Zorvex Freight Art` does not find `Zorvex Freight - Bat`).
+
+`TestCompanyIsolationPanelCounts` pins the R3 panels (400 of 458 captured
+matches reported, 297 exact confidences, none that native does not report) and
+the R4 to R7 panels (1,224 of 1,398, 864 exact, 33 that native does not
+report; the word scorer and the earlier rules report those 33 too).
 
 ### Phone
 

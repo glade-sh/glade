@@ -54,21 +54,22 @@ func companyLetters(s string) bool {
 }
 
 // companySpacedAsDash rewrites a spaced slash suffix as a dash suffix when
-// the pair has one base and two different one-word suffixes, and the other
-// name is a spaced slash, plain or parenthesis form.
+// the pair has one base and two different one-word suffixes, no digit, and
+// the other name is a spaced slash or a plain form.
 //
-// NATIVE company_name_fit/org.tsv R2_vow and R2_par (API 62.0 and 67.0, both
-// routes): every such pair scores what the same pair with " - " in place of
-// " / " scores. "Orbel Trade / West" finds "Orbel Trade / East" at 93 and
-// "Orbel Trade / East" finds "Orbel Trade / West" at 95, as across two dash
-// forms; "Orbel Trade / East" finds "Orbel Trade West" at 91 and "Orbel
-// Trade East" finds "Orbel Trade / Mast" at 94, as with the dash forms; and
-// "Zorvex Freight / East" against "Zorvex Freight (West)" scores and decides
-// as "Zorvex Freight - East" does. A spaced slash against a dash form or an
-// unspaced slash does not score as two dash forms, and a pair with one
-// suffix keeps its own confidences.
+// NATIVE company_name_fit/org.tsv R2_vow, R2_par, R4_sp and R7_sp (API 62.0
+// and 67.0, both routes): "Orbel Trade / West" finds "Orbel Trade / East" at
+// 93 and "Orbel Trade / East" finds "Orbel Trade / West" at 95, as across
+// two dash forms, and suffixes of different lengths follow ("Orbel Trade /
+// Art" finds "Orbel Trade / North" and "Orbel Trade / Outer"); "Orbel Trade
+// East" finds "Orbel Trade / Mast" at 94, as it finds the dash form. A spaced
+// slash against a dash form or an unspaced slash does not score as two dash
+// forms, and a pair with one suffix keeps its own confidences. Against a
+// parenthesis form a vowel candidate matches on some bases only ("Zorvex
+// Freight", not "Orbel Trade" or "Mandolar Oil"); parenthesis forms and names
+// with digits keep the earlier decision.
 func companySpacedAsDash(a, b string) (string, string, bool) {
-	if !strings.Contains(a, " / ") && !strings.Contains(b, " / ") {
+	if !strings.Contains(a, " / ") && !strings.Contains(b, " / ") || strings.ContainsAny(a, "0123456789()") || strings.ContainsAny(b, "0123456789()") {
 		return a, b, false
 	}
 	ba, sa, fa, okA := companySuffixParts(a)
@@ -85,83 +86,57 @@ func companySpacedAsDash(a, b string) (string, string, bool) {
 	return dash(a, fa), dash(b, fb), true
 }
 
-// companyVowelSuffixScore scores a dash form against a plain form on one
-// base when the candidate's one-word suffix starts with a vowel and the
-// stored suffix differs and has the same length. The word scorer rejects
-// every such pair. The caller tries it only when one name has " - ", the
-// other has no hyphen or underscore, and neither has a digit.
+// companyVowelSuffixScore scores a plain candidate against a dash form on
+// one base when the candidate's one-word suffix starts with a vowel and the
+// stored suffix differs and has the same length of four or more letters. The
+// word scorer rejects every such pair. The caller tries it only when one name
+// has " - ", the other has no hyphen or underscore, and neither has a digit.
 //
-// NATIVE company_name_fit/org.tsv R2_vow, R2_par and R3_long (API 62.0 and
-// 67.0, both routes), on "Orbel Trade", "Zorvex Freight" and "Qa Trade":
-//   - Dash candidate: "- East" finds "West", "Best", "Nest" and "Mast" at 91,
-//     "- Oast" finds "Mast" but not "West"; "- Ease" finds neither; "- East"
-//     and "- Oast" find "Oast" and "East" at 94.
-//   - Plain candidate: "East" finds "- West", "- Best" and "- Nest" at 93 and
-//     "- Wast", "- Mast" and "- Last" at 94, "Oast" finds "- West" and "-
-//     Mast"; neither finds "- North" or "- South". "East" and "Oast" find
-//     "- Oast" and "- East" at 96, not "- Ease".
+// NATIVE company_name_fit/org.tsv R2_vow, R2_par, R3_long and R7_pl (API 62.0
+// and 67.0, both routes), on "Orbel Trade", "Zorvex Freight", "Qa Trade" and
+// six further bases: "East" finds "- West", "- Best" and "- Nest" at 93 and
+// "- Wast", "- Mast" and "- Last" at 94, "Oast" finds "- West" and "- Mast";
+// neither finds "- North" or "- South". "East" and "Oast" find "- Oast" and
+// "- East" at 96, not "- Ease". R4_misc: "Art" does not find "- Bat".
 //
-// A consonant candidate keeps the word scorer's decision.
+// The dash candidate ("- East" and "West", native 91) matches on some bases
+// and not on others (R7_pl: not on "Mandolar Oil", "Orbel Oil Outlet" or "Ab
+// Logistics") and keeps the word scorer's decision, as a consonant candidate
+// does.
 func companyVowelSuffixScore(a, b string) (float64, bool) {
 	ba, c, fa, okA := companySuffixParts(a)
 	bb, s, fb, okB := companySuffixParts(b)
-	if !okA || !okB || c == s || len(c) != len(s) || !companyVowelStart(c) || strings.Join(ba, " ") != strings.Join(bb, " ") {
+	if !okA || !okB || c == s || len(c) != len(s) || len(c) < 4 || !companyVowelStart(c) || !companyTwoWordBase(ba) || strings.Join(ba, " ") != strings.Join(bb, " ") {
+		return 0, false
+	}
+	if fa != "plain" || fb != "dash" {
 		return 0, false
 	}
 	switch {
-	case fa == "dash" && fb == "plain":
-		if companyVowelStart(s) {
-			if c[1:] == s[1:] {
-				return 94, true
-			}
-			return 0, false
-		}
-		if jaroWinkler(c, s) >= .8 {
-			return 91, true
-		}
-	case fa == "plain" && fb == "dash":
-		switch {
-		case c[1:] == s[1:] && companyVowelStart(s):
-			return 96, true
-		case companyVowelStart(s):
-		case c[1:] == s[1:]:
-			return 94, true
-		case c[2:] == s[2:]:
-			return 93, true
-		}
+	case c[1:] == s[1:] && companyVowelStart(s):
+		return 96, true
+	case companyVowelStart(s):
+	case c[1:] == s[1:]:
+		return 94, true
+	case c[2:] == s[2:]:
+		return 93, true
 	}
 	return 0, false
+}
+
+// companyTwoWordBase reports base words that are still two or more after one
+// trailing legal designator is removed; a shorter base keeps the word
+// scorer's decision. NATIVE company_name_fit/org.tsv R4_stem: a word and a
+// designator are a one-word name ("Vexlets Inc" does not find "Vexlet Inc").
+func companyTwoWordBase(base []string) bool {
+	n := len(base)
+	if n > 0 && companyDesignators[base[n-1]] {
+		n--
+	}
+	return n >= 2
 }
 
 // companyVowelStart reports a word that starts with a, e, i, o or u.
 func companyVowelStart(s string) bool {
 	return s != "" && strings.IndexByte("aeiou", s[0]) >= 0
-}
-
-// companyVowelParenFinds reports whether a candidate suffix that starts with
-// a vowel finds a different stored suffix of the same length across a dash
-// and a parenthesis form.
-//
-// NATIVE company_name_fit/org.tsv R1_dir, R2_par, R3_base and R3_long (API
-// 62.0 and 67.0, both routes): a suffix that differs only in its first letter
-// matches on every base ("Orbel Trade (East)" finds "Orbel Trade - Wast",
-// "Zorvex Freight - Oast" finds "Zorvex Freight (Mast)" and "(East)"). Other
-// consonant suffixes match by the syllable alignment of the whole names: at
-// 94.57 or more they match ("(East)" and "- West" on "Zorvex Fret", "Orbel
-// Tradex", "Orbel Trading", "Orbelvanto Trade" and "Zorvex Freight"), at
-// 93.90 or less they do not ("Orbel Trade", "Qa Freight", "Qa Trade", and
-// "(Oast)" and "- Best" on "Zorvex Freight"). The threshold of 94 is fitted
-// between those values; "Zorvex Freightways (Oast)" finds "- Best" natively
-// at 93.97 and stays unmatched.
-func companyVowelParenFinds(candidate, stored, a, b string) bool {
-	if len(candidate) != len(stored) || !companyVowelStart(candidate) {
-		return false
-	}
-	if candidate[1:] == stored[1:] {
-		return true
-	}
-	if companyVowelStart(stored) {
-		return false
-	}
-	return companySAPSRaw(companyScoreWords(a, false), companyScoreWords(b, false)) >= 94
 }

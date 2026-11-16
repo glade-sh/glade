@@ -41,7 +41,9 @@ func TestCompanyStemFirstWordShapes(t *testing.T) {
 		ok   bool
 	}{
 		{"Orbel Trade / East", "Orbel Trade West", true},
-		{"Orbel Trade / East", "Orbel Trade (West)", true},
+		{"Orbel Trade / East", "Orbel Trade (West)", false},
+		{"Orbel Trade / West", "Orbel Trade (Best)", false},
+		{"Orbel Trade 7 / East", "Orbel Trade 7 West", false},
 		{"Orbel Trade / East", "Orbel Trade / West", true},
 		{"Orbel Trade / East", "Orbel Trade - West", false},
 		{"Orbel Trade / East", "Orbel Trade/West", false},

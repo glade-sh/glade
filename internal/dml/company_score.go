@@ -220,11 +220,6 @@ func companyMarked(words []string) []rune {
 	return out
 }
 func companySAPS(a, b []string) float64 {
-	return math.Round(companySAPSRaw(a, b))
-}
-
-// companySAPSRaw is companySAPS before rounding.
-func companySAPSRaw(a, b []string) float64 {
 	x, y := companyMarked(a), companyMarked(b)
 	if len(x) == 0 {
 		if len(y) == 0 {
@@ -287,7 +282,7 @@ func companySAPSRaw(a, b []string) float64 {
 		}
 		prev, cur = cur, prev
 	}
-	return (100 + 100*float64(prev[len(y)])/float64(self)) / 2
+	return math.Round((100 + 100*float64(prev[len(y)])/float64(self)) / 2)
 }
 
 // companyFitScore returns the unfloored confidence. The display floor does not
@@ -389,7 +384,11 @@ func companyDigitScore(a, b string) (float64, bool) {
 		// "Test Account2" match at 100 in both directions. R2_glu: so do
 		// "Test Account12" and "Test Account13", and "Test Account123" and
 		// "Test Account124".
-		return companyGluedScore(a, b, dx, dy), true
+		if companyOneDigitApart(dx, dy) {
+			return 100, true
+		}
+		w := strings.Fields(x)
+		return companyGluedScore(a, b, dx, dy, companyDesignators[w[len(w)-1]]), true
 	}
 	if sx != 0 || sy != 0 || len(strings.Fields(x)) != 1 || len([]rune(x)) < 6 {
 		return 0, false
@@ -430,14 +429,17 @@ func companyOneDigitApart(x, y string) bool {
 	return n == 1
 }
 
-// companyGluedScore scores two digit runs glued to one multiword base.
-// NATIVE company_name_fit/org.tsv R2_glu (301 of 302 directed pairs) and
-// R3_glu: runs that differ in one position, or where one starts the other or
-// adds one digit to it, score 100; other runs score the syllable alignment of
-// the whole names ("Test Account11" and "Test Account22" 97, "Test Account1"
-// and "Test Account20" 95, "Test Account456" and "Test Account1" 91).
-func companyGluedScore(a, b, dx, dy string) float64 {
-	if companyOneDigitApart(dx, dy) || companyDigitsNear(dx, dy) {
+// companyGluedScore scores two digit runs glued to one multiword base that
+// are not one position apart.
+// NATIVE company_name_fit/org.tsv R2_glu (301 of 302 directed pairs), R3_glu
+// and R4_glu: runs where one starts the other or adds one digit to it score
+// 100; other runs score the syllable alignment of the whole names ("Test
+// Account11" and "Test Account22" 97, "Test Account1" and "Test Account20"
+// 95, "Test Account456" and "Test Account1" 91). After a legal designator
+// only a run that starts the other scores 100: "Test Account Inc1" and "Test
+// Account Inc12" 100, "Test Account Inc2" and "Test Account Inc12" 99 and 98.
+func companyGluedScore(a, b, dx, dy string, designator bool) float64 {
+	if strings.HasPrefix(dx, dy) || strings.HasPrefix(dy, dx) || !designator && companyDigitsNear(dx, dy) {
 		return 100
 	}
 	return companySAPS(companyScoreWords(a, false), companyScoreWords(b, false))
@@ -661,7 +663,7 @@ func companyFitCovered(route int, a, b string) bool {
 			if x.form == "dash" && y.form == "slash" && !strings.Contains(b, " / ") {
 				return companyAlikeWords(bx, by) && strings.Join(sx, " ") == strings.Join(sy, " ")
 			}
-			return companyDashSuffixCovered(x, y, bx, by, sx, sy, a, b)
+			return companyDashSuffixCovered(x, y, bx, by, sx, sy)
 		}
 		// NATIVE company_name_fit/org.tsv D1_qf: a slash and a parenthesis
 		// form match when the suffixes have the same number of words and the
@@ -682,8 +684,8 @@ func companyFitCovered(route int, a, b string) bool {
 
 // companyDashSuffixCovered is the dash and spaced slash part of the
 // qualifier route: one base, suffixes of one word count, and equal suffixes
-// or a suffix that companyVowelParenFinds or companySuffixFinds accepts.
-func companyDashSuffixCovered(x, y companyQualifier, bx, by, sx, sy []string, a, b string) bool {
+// or a suffix that companySuffixFinds accepts.
+func companyDashSuffixCovered(x, y companyQualifier, bx, by, sx, sy []string) bool {
 	if strings.Join(bx, " ") != strings.Join(by, " ") || len(sx) != len(sy) || len(sx) == 0 {
 		return false
 	}
@@ -693,11 +695,7 @@ func companyDashSuffixCovered(x, y companyQualifier, bx, by, sx, sy []string, a,
 	if len(sx) != 1 {
 		return false
 	}
-	paren := x.form == "paren" || y.form == "paren"
-	if paren && (x.form == "dash" || y.form == "dash") && companyVowelStart(sx[0]) {
-		return companyVowelParenFinds(sx[0], sy[0], a, b)
-	}
-	return companySuffixFinds(sx[0], sy[0], paren, x.form == "slash" || y.form == "slash")
+	return companySuffixFinds(sx[0], sy[0], x.form == "paren" || y.form == "paren", x.form == "slash" || y.form == "slash")
 }
 
 // companySuffixFinds reports whether a candidate suffix finds a different
@@ -711,12 +709,13 @@ func companyDashSuffixCovered(x, y companyQualifier, bx, by, sx, sy []string, a,
 // it. Two vowel suffixes match when only the first letter differs ("East",
 // "Oast", "Uast"); "East" does not find "Ease".
 //
-// Against a parenthesis form only consonant suffixes with the same consonants
-// match ("West" and "Wast"); a vowel candidate across a dash and a parenthesis
-// form is decided by companyVowelParenFinds, and a spaced slash with one base
-// and a one-word suffix scores as the dash form (companySpacedAsDash). A
-// vowel suffix between another spaced slash shape and a parenthesis keeps the
-// rule above.
+// Against a parenthesis form only suffixes with the same consonants match
+// ("West" and "Wast"): "Orbel Trade - East" does not find "Orbel Trade (West)".
+// A vowel suffix between a spaced slash and a parenthesis keeps the rule above
+// and with it the earlier decision: R2_par matches "Zorvex Freight (East)" and
+// "Zorvex Freight / West", R1_dir does not match the same pair on "Orbel Trade".
+// R4 to R7: a vowel candidate across a dash and a parenthesis form matches on
+// some bases only; it stays unmatched.
 func companySuffixFinds(candidate, stored string, paren, spaced bool) bool {
 	if candidate == "" || stored == "" || !isASCII(candidate) || !isASCII(stored) {
 		return false

@@ -1682,7 +1682,10 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 		return true, 100
 	}
 	if (ma|mb)&(companyMarkDigit|companyMarkJoin|companyMarkQualifier) == 0 {
-		if stemmed, ok := companyStemFirstWord(a, b); ok {
+		// NATIVE company_name_fit/org.tsv R4_stem: a first word followed only
+		// by a legal designator is a one-word name and does not match this
+		// way ("Vexlets Inc" does not find "Vexlet Inc" or "Vexlet LLC").
+		if stemmed, ok := companyStemFirstWord(a, b); ok && len(companyWords(a)) >= 2 && len(companyWords(b)) >= 2 {
 			if matched, confidence := legacyFuzzyCompany(stemmed, b, matchBlanks); matched {
 				return true, confidence
 			}
