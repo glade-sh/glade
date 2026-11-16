@@ -14,7 +14,7 @@
 
 - **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 
-- Apex reports the captured line-break errors beside a receiver dot in more places: loop, do-while, else-if and switch headers, member headers of nested classes, local methods in anonymous code, and trigger loops. Only the captured forms change; other code keeps its earlier diagnostics.
+- **Line-break errors.** Apex reports the captured line-break errors beside a receiver dot in more places: loop, do-while, else-if and switch headers, member headers of nested classes, local methods in anonymous code, and trigger loops. Only the captured forms change; other code keeps its earlier diagnostics.
 
 - **Duplicate rule match keys.** Match keys follow the matching rule. A custom rule that pairs a fuzzy First Name with a fuzzy Last Name keys the first name on its initial, and the standard Contact and Lead rules score both names without a key when the email addresses agree, so initials, phonetic first names and spaced surnames such as `Mc Allen` now match as they do in Salesforce.
 
@@ -77,6 +77,7 @@ v0.3.10 improves Apex compatibility, language server diagnostics, debugger respo
 - **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
 
 - **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
+
 - **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
 
 ### Known issues
