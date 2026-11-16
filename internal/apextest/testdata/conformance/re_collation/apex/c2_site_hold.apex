@@ -1,0 +1,87 @@
+List<Account> old=[SELECT Id FROM Account WHERE Name LIKE 'GLA%']; if(!old.isEmpty()){delete old;}
+List<Account> rows=new List<Account>();
+rows.add(new Account(Name='GLA000',Site='_n/'));
+rows.add(new Account(Name='GLA001',Site='水火'));
+rows.add(new Account(Name='GLA002',Site='cvt  '));
+rows.add(new Account(Name='GLA003',Site='oeuwaf'));
+rows.add(new Account(Name='GLA004',Site='dçí'));
+rows.add(new Account(Name='GLA005',Site='sy IX'));
+rows.add(new Account(Name='GLA006',Site='ψγ'));
+rows.add(new Account(Name='GLA007',Site=' aouwbk'));
+rows.add(new Account(Name='GLA008',Site='雷水'));
+rows.add(new Account(Name='GLA009',Site='fôbryòiá'));
+rows.add(new Account(Name='GLA010',Site='irgd '));
+rows.add(new Account(Name='GLA011',Site='  z'));
+rows.add(new Account(Name='GLA012',Site='TEYδNûAM'));
+rows.add(new Account(Name='GLA013',Site='итяюэуиэ'));
+rows.add(new Account(Name='GLA014',Site='a*?mo.rnh/v\'_'));
+rows.add(new Account(Name='GLA015',Site=null));
+rows.add(new Account(Name='GLA016',Site='qbc WCITW'));
+rows.add(new Account(Name='GLA017',Site='pmluiuhrjjv'));
+rows.add(new Account(Name='GLA018',Site='ζôυδεοüìFγî'));
+rows.add(new Account(Name='GLA019',Site='ö5aäüäa1r'));
+rows.add(new Account(Name='GLA020',Site='Öûüqq'));
+rows.add(new Account(Name='GLA021',Site='土界界风'));
+rows.add(new Account(Name='GLA022',Site='sntfy	'));
+rows.add(new Account(Name='GLA023',Site='vydoj1chuvb'));
+rows.add(new Account(Name='GLA024',Site='Ejah'));
+rows.add(new Account(Name='GLA025',Site='äm'));
+rows.add(new Account(Name='GLA026',Site='us&\\=t)'));
+rows.add(new Account(Name='GLA027',Site='Öátem'));
+rows.add(new Account(Name='GLA028',Site='jyen83jrcqe'));
+rows.add(new Account(Name='GLA029',Site='bkyyf9549dzt'));
+rows.add(new Account(Name='GLA030',Site='0'));
+rows.add(new Account(Name='GLA031',Site='kcwehkez'));
+rows.add(new Account(Name='GLA032',Site=null));
+rows.add(new Account(Name='GLA033',Site=' h'));
+rows.add(new Account(Name='GLA034',Site='6á0crômÜ5yôjgtbù'));
+rows.add(new Account(Name='GLA035',Site='a'));
+rows.add(new Account(Name='GLA036',Site='o'));
+rows.add(new Account(Name='GLA037',Site='QOιBàíδòμ'));
+rows.add(new Account(Name='GLA038',Site='	uekh'));
+rows.add(new Account(Name='GLA039',Site='gz&.pw**ucpy'));
+rows.add(new Account(Name='GLA040',Site='á'));
+rows.add(new Account(Name='GLA041',Site='fbzÅöïxä'));
+rows.add(new Account(Name='GLA042',Site='	ipspq'));
+rows.add(new Account(Name='GLA043',Site='вдецкочц'));
+rows.add(new Account(Name='GLA044',Site='ëîúÜp'));
+rows.add(new Account(Name='GLA045',Site='BrqAyfQrBA'));
+rows.add(new Account(Name='GLA046',Site='uJdoefUbSSh'));
+rows.add(new Account(Name='GLA047',Site='AyiqQrxhEL'));
+rows.add(new Account(Name='GLA048',Site='天界世山'));
+rows.add(new Account(Name='GLA049',Site=null));
+rows.add(new Account(Name='GLA050',Site='mn44gmti'));
+rows.add(new Account(Name='GLA051',Site='\''));
+rows.add(new Account(Name='GLA052',Site='iyn86vh'));
+rows.add(new Account(Name='GLA053',Site='iirwmzrarmb'));
+rows.add(new Account(Name='GLA054',Site='lwugb PWOJ'));
+rows.add(new Account(Name='GLA055',Site='d'));
+rows.add(new Account(Name='GLA056',Site='	'));
+rows.add(new Account(Name='GLA057',Site='qkioso'));
+rows.add(new Account(Name='GLA058',Site='εθφνφμα'));
+rows.add(new Account(Name='GLA059',Site='  uiow'));
+insert rows;
+List<Account> q63=[SELECT Site FROM Account WHERE Name LIKE 'GLA%' ORDER BY Site ASC];
+List<String> out63=new List<String>();
+for(Account a:q63){out63.add(a.Site==null?'<null>':a.Site);}
+System.debug('C2|SITE_H_ASC_D|'+String.join(out63,'~'));
+List<Account> q67=[SELECT Site FROM Account WHERE Name LIKE 'GLA%' ORDER BY Site ASC NULLS FIRST];
+List<String> out67=new List<String>();
+for(Account a:q67){out67.add(a.Site==null?'<null>':a.Site);}
+System.debug('C2|SITE_H_ASC_FIRST|'+String.join(out67,'~'));
+List<Account> q71=[SELECT Site FROM Account WHERE Name LIKE 'GLA%' ORDER BY Site ASC NULLS LAST];
+List<String> out71=new List<String>();
+for(Account a:q71){out71.add(a.Site==null?'<null>':a.Site);}
+System.debug('C2|SITE_H_ASC_LAST|'+String.join(out71,'~'));
+List<Account> q75=[SELECT Site FROM Account WHERE Name LIKE 'GLA%' ORDER BY Site DESC];
+List<String> out75=new List<String>();
+for(Account a:q75){out75.add(a.Site==null?'<null>':a.Site);}
+System.debug('C2|SITE_H_DESC_D|'+String.join(out75,'~'));
+List<Account> q79=[SELECT Site FROM Account WHERE Name LIKE 'GLA%' ORDER BY Site DESC NULLS FIRST];
+List<String> out79=new List<String>();
+for(Account a:q79){out79.add(a.Site==null?'<null>':a.Site);}
+System.debug('C2|SITE_H_DESC_FIRST|'+String.join(out79,'~'));
+List<Account> q83=[SELECT Site FROM Account WHERE Name LIKE 'GLA%' ORDER BY Site DESC NULLS LAST];
+List<String> out83=new List<String>();
+for(Account a:q83){out83.add(a.Site==null?'<null>':a.Site);}
+System.debug('C2|SITE_H_DESC_LAST|'+String.join(out83,'~'));

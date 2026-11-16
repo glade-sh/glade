@@ -1,0 +1,30 @@
+family: order-default
+source: fresh Developer scratch orgs on a campaign Dev Hub, deleted after each run
+payloads: USER_DEBUG lines (anonymous) or assertion messages (isTest); Salesforce ids masked as <id>
+62.0,67.0 rows: payloads identical at both API versions
+
+--- request-order 20261116T042700Z
+capture: request-order
+started: 2026-11-16T04:27:08Z
+finished: 2026-11-16T04:35:25Z
+apis: 62.0 67.0
+routes: anonymous 
+cases: 25
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 1a2c8429f4256900
+mode: live
+holdout inputs sha256: 72da65b3fb7e64a78fea0cc9c4485fa62c76fdd529238bc1721220fb4a5bbe0a
+
+--- request-supp 20261116T044238Z
+capture: request-supp
+started: 2026-11-16T04:42:46Z
+finished: 2026-11-16T04:44:42Z
+apis: 62.0 67.0
+routes: anonymous 
+cases: 11
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 8b71b0f1e2c2f372
+mode: live
+
