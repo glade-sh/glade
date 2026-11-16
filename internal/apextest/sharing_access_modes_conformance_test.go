@@ -292,7 +292,9 @@ func runPermissionSetInTestFamily(t *testing.T, name string, count int) {
 
 // Shapes next to the permset_in_test rows keep their earlier behavior: an
 // asynchronous job and a Version runAs still see the assignment at
-// once. They have no native rows. expected.tsv records the base results.
+// once, and the administrator's update, list insert and default-mode insert
+// below API 62.0 still pass without a field grant. They have no native rows.
+// expected.tsv records the base results.
 func TestPermissionSetAssignedInTestUncapturedNeighborsKeepBase(t *testing.T) {
 	neighbors := "testdata/permset_in_test_neighbors"
 	raw, err := os.Open(filepath.Join(neighbors, "expected.tsv"))
@@ -308,7 +310,7 @@ func TestPermissionSetAssignedInTestUncapturedNeighborsKeepBase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 4 || strings.Join(rows[0], ",") != "api,method,observation" {
+	if len(rows) != 7 || strings.Join(rows[0], ",") != "api,method,observation" {
 		t.Fatalf("incomplete neighbor rows: %d", len(rows))
 	}
 	root := t.TempDir()
@@ -339,7 +341,7 @@ func TestPermissionSetAssignedInTestUncapturedNeighborsKeepBase(t *testing.T) {
 	for _, row := range rows[1:] {
 		api, method, want := row[0], row[1], row[2]
 		t.Run(api+"/"+method, func(t *testing.T) {
-			run := Run(index, Options{SelectedClasses: []string{"PfNeighbor67"}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
+			run := Run(index, Options{SelectedClasses: []string{"PfNeighbor" + strings.TrimSuffix(api, ".0")}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
 			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
 				t.Fatalf("missing runner observation %+v", run.Summary())
 			}
