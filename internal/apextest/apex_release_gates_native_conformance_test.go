@@ -23,8 +23,6 @@ import (
 // parkedReleaseGateRows lists rows whose native answer Glade does not match
 // yet. Each names the missing evidence or the reason the row stays out.
 var parkedReleaseGateRows = map[string]string{
-	"OlProbe67/OL1":   "the native scratch org omits the elastic OrgLimit entries; the release notes list them for orgs with the elastic feature, and Glade follows the notes",
-	"OlProbe67/OL2":   "same as OL1",
 	"JxProbe62/JX11b": "a custom exception built by JSON.deserialize below API 63 reports a null message; Glade reports its default text",
 	"RpProbe63/RP10":  "an explicit null put on a master-detail field is dropped before the DML layer, so the update never sees it",
 	"RpProbe67/RP10":  "same as RP10 at API 63",
