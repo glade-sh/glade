@@ -1907,7 +1907,12 @@ platformStaticCall:
 			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return Bool(hmac.Equal(actual, []byte(expected))), nil
+	case "Crypto.generateKeyPair", "Crypto.getPrivateKey", "Crypto.parseJwe":
+		return Null, vm.cryptoKeyServiceGate(callee)
 	case "Crypto.encrypt":
+		if len(args) == 9 {
+			return Null, vm.cryptoKeyServiceGate(callee)
+		}
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Crypto.encrypt expects algorithm, privateKey Blob, initializationVector Blob, and clearText Blob")
 		}
@@ -1942,6 +1947,9 @@ platformStaticCall:
 		}
 		return platformScalar("Blob", string(cipherText)), nil
 	case "Crypto.decrypt":
+		if len(args) == 9 {
+			return Null, vm.cryptoKeyServiceGate(callee)
+		}
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Crypto.decrypt expects algorithm, privateKey Blob, initializationVector Blob, and cipherText Blob")
 		}

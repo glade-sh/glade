@@ -514,6 +514,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := callApprovalRequestMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err
 	}
+	if receiver.Type == jweTokenType {
+		if value, handled, err := callJweTokenMember(receiver, method, args); handled || err != nil {
+			return value, receiver, false, handled, err
+		}
+	}
 	// R243/R254 guards are local argument/context failures; no hosted operation
 	// is performed, and other members retain the existing DTO implementation.
 	if strings.EqualFold(receiver.Type, "commercepayments.PaymentsHttp") && strings.EqualFold(method, "send") && len(args) == 1 {

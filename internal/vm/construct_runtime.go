@@ -379,6 +379,11 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 	if strings.EqualFold(typeName, "Auth.VerificationResult") {
 		return constructAuthVerificationResult(args, namedArgs)
 	}
+	if isJweTokenType(typeName) {
+		if class, registered := vm.lookupClass(typeName); !registered || class.PlatformType {
+			return constructJweToken(args, namedArgs)
+		}
+	}
 	if strings.EqualFold(typeName, "Auth.TokenValidationResult") {
 		if len(namedArgs) != 0 || len(args) != 1 || (args[0].Kind != ValueBool && args[0].Kind != ValueNull) {
 			return Null, fmt.Errorf("Auth.TokenValidationResult constructor expects Boolean")

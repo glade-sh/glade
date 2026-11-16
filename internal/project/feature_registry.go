@@ -143,6 +143,12 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 		},
 	},
 	{
+		// api68_native crypto-ec/crypto-jwe: without this feature the EC key
+		// and JWE Crypto methods raise SecurityException.
+		Name:      "PlatformEncryption",
+		Consumers: []FeatureConsumer{{"vm", "internal/vm/crypto_key_service.go"}},
+	},
+	{
 		Name:      "Territory2",
 		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
 	},

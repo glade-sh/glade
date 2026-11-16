@@ -14,4 +14,33 @@ var api68PlatformSymbolOverlays = []StandardSymbolSpec{
 		{Name: "getDataCloudFlexCredits", ReturnType: "Integer", Static: true},
 		{Name: "getLimitDataCloudFlexCredits", ReturnType: "Integer", Static: true},
 	}},
+	// crypto-ec and crypto-jwe deploy at 67.0 and 68.0 (CRYPTO-DEPLOY-*,
+	// JWE-DEPLOY-*): the EC key pair helpers, parseJwe and the 9-argument
+	// JWE encrypt and decrypt overloads compile.
+	{Name: "Crypto", Methods: []StandardMethodSpec{
+		{Name: "generateKeyPair", ReturnType: "Blob", Parameters: []string{"String"}, Static: true},
+		{Name: "getPrivateKey", ReturnType: "Blob", Parameters: []string{"Blob"}, Static: true},
+		{Name: "getPublicKey", ReturnType: "Blob", Parameters: []string{"Blob"}, Static: true},
+		{Name: "parseJwe", ReturnType: "System.JweToken", Parameters: []string{"Blob"}, Static: true},
+		{Name: "encrypt", ReturnType: "Blob", Parameters: []string{"String", "String", "Blob", "Blob", "Blob", "Blob", "Blob", "Blob", "Blob"}, Static: true},
+		{Name: "decrypt", ReturnType: "Blob", Parameters: []string{"String", "String", "Blob", "Blob", "Blob", "Blob", "Blob", "Blob", "Blob"}, Static: true},
+	}},
+	// crypto-jwe JWE-CONTAINER-67/68: the 8-argument container and getters.
+	{
+		Name:                "JweToken",
+		SuperClass:          "Object",
+		Constructors:        [][]string{{"String", "String", "Blob", "Blob", "Blob", "Blob", "Blob", "Blob"}},
+		ReplaceConstructors: true,
+		Methods: []StandardMethodSpec{
+			{Name: "getAlgorithm", ReturnType: "String"},
+			{Name: "getEncryptionAlgorithm", ReturnType: "String"},
+			{Name: "getEphemeralPublicKey", ReturnType: "Blob"},
+			{Name: "getEncryptedKey", ReturnType: "Blob"},
+			{Name: "getIv", ReturnType: "Blob"},
+			{Name: "getCiphertext", ReturnType: "Blob"},
+			{Name: "getTag", ReturnType: "Blob"},
+			{Name: "getAad", ReturnType: "Blob"},
+			{Name: "toString", ReturnType: "String"},
+		},
+	},
 }
