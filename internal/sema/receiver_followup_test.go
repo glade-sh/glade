@@ -65,6 +65,7 @@ func TestReceiverFollowupRulesMatchFixtures(t *testing.T) {
 		}
 		seen[rule.id] = true
 	}
+	platformSeen := map[string]bool{}
 	for id, file := range cases {
 		source, err := os.ReadFile(filepath.Join("testdata/receiver_split", file))
 		if err != nil {
@@ -87,6 +88,16 @@ func TestReceiverFollowupRulesMatchFixtures(t *testing.T) {
 		if seen[id] {
 			want = id
 		}
+		// NATIVE testdata/receiver_split/org.tsv:470-507 (platform_*): the
+		// same unit with UserInfo.getName() as the broken call. The call
+		// rule of the CrProbe.value() fixture applies to it.
+		if base, platform := strings.CutPrefix(id, "platform_"); platform && !strings.HasSuffix(base, "_same") {
+			platformSeen[base] = true
+			if matched != base {
+				t.Errorf("%s: matched rule %q, want %q", id, matched, base)
+			}
+			continue
+		}
 		if matched != want {
 			t.Errorf("%s: matched rule %q, want %q", id, matched, want)
 		}
@@ -94,6 +105,12 @@ func TestReceiverFollowupRulesMatchFixtures(t *testing.T) {
 	}
 	for id := range seen {
 		t.Errorf("%s: rule has no fixture", id)
+	}
+	// Every call rule has a platform-method row beside its support-class row.
+	for _, rule := range receiverFollowupRules {
+		if (rule.resolve == "call") != platformSeen[rule.id] {
+			t.Errorf("%s: resolve %q, platform-method fixture %v", rule.id, rule.resolve, platformSeen[rule.id])
+		}
 	}
 }
 

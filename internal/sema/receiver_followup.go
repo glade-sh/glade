@@ -21,8 +21,12 @@ type receiverFollowupRule struct {
 	dot     int    // index of the broken dot
 	report  int    // index of the reported token
 	message string // %s is the reported token
-	resolve string // "call": the broken name is a zero-argument public static String method; "field": a static String field
-	lead    bool   // the diagnostic replaces those of the whole statement
+	// "call": the broken name is a zero-argument public static String method,
+	// captured with a project class (CrProbe.value(), org.tsv:310-469) and with
+	// a platform class (UserInfo.getName(), org.tsv:470-507); "field": a static
+	// String field.
+	resolve string
+	lead    bool // the diagnostic replaces those of the whole statement
 }
 
 var receiverFollowupRules = []receiverFollowupRule{

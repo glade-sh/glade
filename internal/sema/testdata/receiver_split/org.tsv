@@ -467,3 +467,41 @@ trigger_block_declaration_bound	67.0	trigger	false	deploy fails: 3:1 Extra ';', 
 trigger_try_bound	67.0	trigger	false	deploy fails: 3:1 Missing ';' at 'value'
 trigger_foreach_call_bound	67.0	trigger	false	deploy fails: 3:1 Missing ')' at 'value'
 trigger_local_type_bound	67.0	trigger	false	deploy fails: 3:1 Unexpected token 'String'.
+platform_foreach_bound	62.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_foreach_bound_block	62.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_for_init_bound	62.0	anonymous	false	2:1 Missing ';' at 'getName'
+platform_for_init_bound_block	62.0	anonymous	false	2:1 Missing ';' at 'getName'
+platform_dowhile_bound	62.0	anonymous	false	2:1 Expecting ')' but was: 'getName'
+platform_dowhile_bound_block	62.0	anonymous	false	2:1 Expecting ')' but was: 'getName'
+platform_else_if_bound	62.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_when_value_bound	62.0	anonymous	false	2:8 Missing '{' at '('
+platform_local_body_bound	62.0	anonymous	false	1:8 Unexpected token 'f'.
+platform_local_body_arg_bound	62.0	anonymous	false	1:8 Unexpected token 'f'.
+platform_method_foreach_bound	62.0	class	false	deploy fails: 3:1 Missing ')' at 'getName' | 3:21 Expecting ';' but was: ')' | 2:47 Variable does not exist:
+platform_method_for_init_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'getName' | 3:17 Extra ')', at ';'. | 2:47 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodForInit
+platform_method_dowhile_bound	62.0	class	false	deploy fails: 3:1 Expecting ')' but was: 'getName' | 3:18 Extra ';', at ')'. | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodDoWhile
+platform_method_when_bound	62.0	class	false	deploy fails: 3:8 Missing '{' at '(' | 3:9 Unexpected token ')'. | 3:11 Missing ';' at '{' | 5:1 Expecting '}' but was: '<EOF>' | 3:1 Invalid type: UserInfo. | 3:1 String cannot be a when type variable block
+platform_method_throw_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'getName' | 2:37 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodThrow | 3:1 Unreachable statement
+platform_trigger_foreach_call_bound	62.0	trigger	false	deploy fails: 3:1 Missing ')' at 'getName'
+platform_foreach_same	62.0	anonymous	true	ok
+platform_dowhile_same	62.0	anonymous	true	ok
+platform_method_foreach_same	62.0	class	true	deploy ok (no component failure)
+platform_foreach_bound	67.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_foreach_bound_block	67.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_for_init_bound	67.0	anonymous	false	2:1 Missing ';' at 'getName'
+platform_for_init_bound_block	67.0	anonymous	false	2:1 Missing ';' at 'getName'
+platform_dowhile_bound	67.0	anonymous	false	2:1 Expecting ')' but was: 'getName'
+platform_dowhile_bound_block	67.0	anonymous	false	2:1 Expecting ')' but was: 'getName'
+platform_else_if_bound	67.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_when_value_bound	67.0	anonymous	false	2:8 Missing '{' at '('
+platform_local_body_bound	67.0	anonymous	false	1:8 Unexpected token 'f'.
+platform_local_body_arg_bound	67.0	anonymous	false	1:8 Unexpected token 'f'.
+platform_method_foreach_bound	67.0	class	false	deploy fails: 3:1 Missing ')' at 'getName' | 3:21 Expecting ';' but was: ')' | 2:47 Variable does not exist:
+platform_method_for_init_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'getName' | 3:17 Extra ')', at ';'. | 2:47 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodForInit
+platform_method_dowhile_bound	67.0	class	false	deploy fails: 3:1 Expecting ')' but was: 'getName' | 3:18 Extra ';', at ')'. | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodDoWhile
+platform_method_when_bound	67.0	class	false	deploy fails: 3:8 Missing '{' at '(' | 3:9 Unexpected token ')'. | 3:11 Missing ';' at '{' | 5:1 Expecting '}' but was: '<EOF>' | 3:1 Invalid type: UserInfo. | 3:1 String cannot be a when type variable block
+platform_method_throw_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'getName' | 2:37 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodThrow | 3:1 Unreachable statement
+platform_trigger_foreach_call_bound	67.0	trigger	false	deploy fails: 3:1 Missing ')' at 'getName'
+platform_foreach_same	67.0	anonymous	true	ok
+platform_dowhile_same	67.0	anonymous	true	ok
+platform_method_foreach_same	67.0	class	true	deploy ok (no component failure)
