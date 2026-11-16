@@ -28,12 +28,13 @@ func javaFixedInfo(n int32) javaTreeInfo {
 }
 
 type javaRegexParser struct {
-	t        []rune
-	n        int
-	cursor   int
-	comments bool
-	groups   int
-	names    map[string]bool
+	t         []rune
+	n         int
+	cursor    int
+	comments  bool
+	unixLines bool
+	groups    int
+	names     map[string]bool
 
 	escapeInfo javaTreeInfo
 
@@ -190,6 +191,15 @@ func (p *javaRegexParser) at(i int) rune {
 
 func javaASCIISpace(c rune) bool { return c == ' ' || c >= 9 && c <= 13 }
 
+func (p *javaRegexParser) lineSeparator(ch rune) bool {
+	if p.unixLines {
+		return ch == '\n'
+	}
+	return ch == '\n' || ch == '\r' || ch == 0x85 || ch == 0x2028 || ch == 0x2029
+}
+
+// pastWhitespace is Java's peekPastWhitespace: the cursor ends on the first
+// character that is neither whitespace nor part of a comment, and ch is it.
 func (p *javaRegexParser) pastWhitespace(ch rune) rune {
 	for javaASCIISpace(ch) || ch == '#' {
 		for javaASCIISpace(ch) {
@@ -199,9 +209,29 @@ func (p *javaRegexParser) pastWhitespace(ch rune) rune {
 		if ch == '#' {
 			p.cursor++
 			ch = p.at(p.cursor)
-			for ch != 0 && ch != '\n' && ch != '\r' && ch != 0x85 && ch != 0x2028 && ch != 0x2029 {
+			for ch != 0 && !p.lineSeparator(ch) {
 				p.cursor++
 				ch = p.at(p.cursor)
+			}
+		}
+	}
+	return ch
+}
+
+// parsePastWhitespace is Java's parsePastWhitespace: ch was just consumed, and
+// the cursor ends after the character it returns.
+func (p *javaRegexParser) parsePastWhitespace(ch rune) rune {
+	for javaASCIISpace(ch) || ch == '#' {
+		for javaASCIISpace(ch) {
+			ch = p.at(p.cursor)
+			p.cursor++
+		}
+		if ch == '#' {
+			ch = p.at(p.cursor)
+			p.cursor++
+			for ch != 0 && !p.lineSeparator(ch) {
+				ch = p.at(p.cursor)
+				p.cursor++
 			}
 		}
 	}
@@ -220,7 +250,7 @@ func (p *javaRegexParser) read() rune {
 	ch := p.at(p.cursor)
 	p.cursor++
 	if p.comments {
-		ch = p.pastWhitespace(ch)
+		ch = p.parsePastWhitespace(ch)
 	}
 	return ch
 }
@@ -252,7 +282,7 @@ func (p *javaRegexParser) accept(ch rune, description string) {
 	test := p.at(p.cursor)
 	p.cursor++
 	if p.comments {
-		test = p.pastWhitespace(test)
+		test = p.parsePastWhitespace(test)
 	}
 	if test != ch {
 		p.fail(description)
@@ -824,14 +854,18 @@ func (p *javaRegexParser) addFlag() {
 	ch := p.peek()
 	for {
 		switch ch {
-		case 'i', 'm', 's', 'd', 'u', 'c', 'U':
+		case 'i', 'm', 's', 'u', 'c', 'U':
+		case 'd':
+			p.unixLines = true
 		case 'x':
 			p.comments = true
 		case '-':
 			ch = p.next()
 			for {
 				switch ch {
-				case 'i', 'm', 's', 'd', 'u', 'c', 'U':
+				case 'i', 'm', 's', 'u', 'c', 'U':
+				case 'd':
+					p.unixLines = false
 				case 'x':
 					p.comments = false
 				default:
@@ -850,7 +884,7 @@ func (p *javaRegexParser) addFlag() {
 // minLen -1 because it adds no node.
 func (p *javaRegexParser) group0() javaTreeInfo {
 	groupStart := p.cursor
-	saveComments := p.comments
+	saveComments, saveUnix := p.comments, p.unixLines
 	var body javaTreeInfo
 	zeroWidth := false
 	ch := p.next()
@@ -898,7 +932,7 @@ func (p *javaRegexParser) group0() javaTreeInfo {
 		body = p.expr()
 	}
 	p.accept(')', "Unclosed group")
-	p.comments = saveComments
+	p.comments, p.unixLines = saveComments, saveUnix
 	groupEnd := p.cursor
 	q := p.quantifier()
 	if zeroWidth {

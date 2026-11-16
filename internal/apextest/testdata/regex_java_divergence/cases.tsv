@@ -1025,3 +1025,7 @@ d16_xd_cr	solo	"Matcher m = Pattern.compile('(?xd)a #c\\r|b').matcher('b'); Bool
 d16_x_spacegrp	solo	"Matcher m = Pattern.compile('(?x)( ?:a)').matcher('a'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
 d16_x_octal	solo	"Matcher m = Pattern.compile('(?x)\\\\0 1 4 2').matcher('b'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
 d16_x_hex	solo	"Matcher m = Pattern.compile('(?x)\\\\x2 3').matcher('#'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
+d17_x_look	solo	"Matcher m = Pattern.compile('(?x)(? =a)a').matcher('a'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
+d17_x_spacecolon	solo	"Matcher m = Pattern.compile('(?x)(? :a)').matcher('a'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
+d17_x_namedref	solo	"Matcher m = Pattern.compile('(?x)( ?<n>a)\\\\k<n>').matcher('aa'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
+d17_x_classcr	solo	"Matcher m = Pattern.compile('(?x)[a#c\\rb]').matcher('b'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"

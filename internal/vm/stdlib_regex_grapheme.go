@@ -78,12 +78,10 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 	}
 	// A simple (?x) pattern is read as the plain pattern Java sees: whitespace
 	// and comments gone, so escapes split by whitespace read as one token.
-	effective := regexNormalizeExtended(source)
-	if effective == source {
-		if err := validateJavaRegexSource(source, exceptionType); err != nil {
-			return nil, err
-		}
+	if err := validateJavaRegexSource(source, exceptionType); err != nil {
+		return nil, err
 	}
+	effective := regexNormalizeExtended(source)
 	regexp2Source, loopNames, err := compileRegexp2SourceLoops(callee, effective, traits)
 	if err != nil {
 		return nil, err

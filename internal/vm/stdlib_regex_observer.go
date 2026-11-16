@@ -440,8 +440,23 @@ func regexStripExtended(src string) (string, bool) {
 			switch {
 			case n == ' ':
 				out.WriteString("[ ]")
-			case n >= '1' && n <= '9' || strings.IndexByte("QEpPuckN", n) >= 0 || n == '\t' || n == '\n' || n == '\v' || n == '\f' || n >= 0x80:
+			case n >= '1' && n <= '9' || strings.IndexByte("QEpPcN", n) >= 0 || n == '\t' || n == '\n' || n == '\v' || n == '\f' || n >= 0x80:
 				return "", false
+			case n == 'k':
+				// \k<name> reads its name raw; accept only a plain name.
+				end := strings.IndexByte(src[i:], '>')
+				if i+2 >= len(src) || src[i+2] != '<' || end < 0 {
+					return "", false
+				}
+				for _, nc := range src[i+3 : i+end] {
+					if !(nc >= 'a' && nc <= 'z' || nc >= 'A' && nc <= 'Z' || nc >= '0' && nc <= '9') {
+						return "", false
+					}
+				}
+				out.WriteString(src[i : i+end+1])
+				i += end
+				leading = false
+				continue
 			default:
 				out.WriteByte(c)
 				out.WriteByte(n)

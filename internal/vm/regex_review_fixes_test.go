@@ -282,3 +282,34 @@ func TestRegexStripExtended(t *testing.T) {
 		}
 	}
 }
+
+// Under (?x) Java skips whitespace and comments on ordinary reads, but reads
+// the character after (? , after a backslash, after { and at the end of a
+// class range raw (native rows d17_*).
+func TestRegexExtendedRawReads(t *testing.T) {
+	for _, source := range []string{"(?x)(? =a)a", "(?x)(? !b)", "(?x)(? <=a)", "(?x)(? >a)", "(?x)(? <n>a)", "(?x)a{ 1,2}"} {
+		if e := javaRegexSyntaxCheck(source); e == nil {
+			t.Errorf("%q should be rejected", source)
+		} else if source != "(?x)a{ 1,2}" && e.description != "Unknown inline modifier" {
+			t.Errorf("%q: %s", source, e.description)
+		}
+	}
+	for _, source := range []string{"(?x)(? :a)", "(?x)(? i)a", "(?x)( ?<n>a)\\k<n>", "(?x)\\x2 3", "(?x)\\0 1 4 2", "(?x)\\u00 41", "(?x)[a#c\rb]", "(?x)a #c\r|b", "(?xd)a #c\r|b", "(?x)a{1 ,2}"} {
+		if e := javaRegexSyntaxCheck(source); e != nil {
+			t.Errorf("%q rejected: %s", source, e.description)
+		}
+	}
+	runRegexApex(t, `
+for (String p : new List<String>{'(?x)(? =a)a', '(?x)(? !b)', '(?x)(? <=a)', '(?x)(? >a)', '(?x)(? <n>a)'}) {
+    try { Pattern.compile(p); System.assert(false, 'compiled ' + p); }
+    catch (StringException e) { System.assert(e.getMessage().contains('Unknown inline modifier'), e.getMessage()); }
+}
+Matcher g = Pattern.compile('(?x)(? :a)').matcher('a');
+System.assertEquals(true, g.find());
+System.assertEquals(0, g.groupCount());
+Matcher n = Pattern.compile('(?x)( ?<n>a)\\k<n>').matcher('aa');
+System.assertEquals(true, n.find());
+System.assertEquals(1, n.groupCount());
+System.assertEquals(true, Pattern.compile('(?x)[a#c\r' + 'b]').matcher('b').find());
+`)
+}

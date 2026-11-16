@@ -27,3 +27,5 @@ hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repea
   d15 anonymous and @IsTest rows: two repeats, 62.0 and 67.0, in org.tsv (classes Rxd150062 and Rxd150067).
 (?x) rows d16 (62.0 and 67.0, anonymous and @IsTest, two repeats): a comment ends at \r and at U+2028 but, under d, only at \n;
   whitespace splits tokens: (?x)( ?:a) is a non-capturing group, (?x)\0 1 4 2 reads octal 142 and (?x)\x2 3 reads hex 23.
+(?x) rows d17 (62.0 and 67.0, anonymous and @IsTest, two repeats): the character after (? is read raw, so (?x)(? =a)a is an Unknown inline modifier
+  while (?x)(? :a) is a non-capturing group; ( ?<n>a)\k<n> compiles with 1 group; a comment inside a class ends at \r.
