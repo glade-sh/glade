@@ -48,8 +48,8 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 	}
 	if args[1].Kind == ValueObject {
 		// Native callout-mocks cm08 (62.0 and 67.0): a source class that
-		// implements other interfaces but not HttpCalloutMock is refused at
-		// registration. A class with no declared interface is left alone.
+		// that does not implement HttpCalloutMock is refused at registration. The
+		// WebServiceMock path has no captured mismatch row and keeps base.
 		if class, sourceClass := vm.lookupClass(args[1].Type); sourceClass && !class.PlatformType {
 			interfaces := vm.resolvedInterfaceNamesInHierarchy(class)
 			implements := false
@@ -61,7 +61,7 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 			if !implements && (vm.typeMatches(args[1].Type, "HttpCalloutMock", make(map[string]bool)) || vm.typeMatches(args[1].Type, "System.HttpCalloutMock", make(map[string]bool))) {
 				implements = true
 			}
-			if len(interfaces) > 0 && !implements {
+			if !implements {
 				return Null, newExceptionError("System.TypeException", "Mock object doesn't implement the supplied interface")
 			}
 		}
@@ -799,9 +799,12 @@ func (vm *VM) testLoadDataFieldValue(objectName, fieldName, raw string) (Value, 
 		if err != nil || strings.TrimSpace(raw) == "" {
 			return Null, testLoadDataCSVError{fmt.Sprintf("CSV Parse error: '%s' is not valid for the type xsd:double", raw)}
 		}
-		// Native loaddata-settings ld09: the cell is read as a Double, so a whole
-		// number is the Decimal 5.0.
-		if text := strings.TrimSpace(raw); !strings.ContainsAny(text, ".eE") {
+		// Native loaddata-settings ld09: loaded into a custom setting's scale-zero
+		// Number, a whole-number cell reads as the Decimal 5.0. Other objects are
+		// uncaptured and keep their value.
+		if text := strings.TrimSpace(raw); !strings.ContainsAny(text, ".eE") &&
+			storage.IsCustomSettingDefinition(object.Definition) && field.ScaleSpecified && field.Scale == 0 &&
+			strings.EqualFold(strings.TrimSpace(field.DisplayType), "DOUBLE") {
 			if withPoint, convErr := decimalFromText(text + ".0"); convErr == nil {
 				return withPoint, nil
 			}

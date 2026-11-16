@@ -16242,7 +16242,8 @@ System.assertEquals(2, CounterMock.idx);
 	machine := New(nil)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "CounterMock",
+		Name:       "CounterMock",
+		Interfaces: []string{"HttpCalloutMock"},
 		StaticFields: map[string]Field{
 			"idx": {Name: "idx", Type: "Integer", Static: true, Value: Int(0), InitialValue: Int(0)},
 		},
@@ -16315,7 +16316,8 @@ System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'page-2']);
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "CounterMock",
+		Name:       "CounterMock",
+		Interfaces: []string{"HttpCalloutMock"},
 		StaticFields: map[string]Field{
 			"idx": {Name: "idx", Type: "Integer", Static: true, Value: Int(0), InitialValue: Int(0)},
 		},
