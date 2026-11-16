@@ -2194,7 +2194,8 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	if _, err := stringStatic("String.format", []Value{String("{0,number,#.00}"), List(Int(42))}); err == nil || err.Error() != "Cannot format given Object as a Number" {
 		t.Fatalf("String.format expected typed number StringException, got %v", err)
 	}
-	if _, err := stringStatic("String.format", []Value{String("{0"), List(Int(42))}); err == nil || !strings.Contains(err.Error(), "unmatched") {
+	if _, err := stringStatic("String.format", []Value{String("{0"), List(Int(42))}); err == nil || err.Error() != `Unmatched '{' braces in message "{0"` {
+		// Native surf_collections_strings cs05: a StringException quoting the pattern.
 		t.Fatalf("String.format expected unmatched brace error, got %v", err)
 	}
 	if _, err := stringStatic("String.fromCharArray", []Value{List(String("x"))}); err == nil {
