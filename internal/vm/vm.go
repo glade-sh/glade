@@ -1455,9 +1455,10 @@ func parseDateParseTextForLocale(text, locale string) (time.Time, error) {
 		// layout does not apply to these locales, so there is no fallback.
 		return parseDateParseFields(text, grammar.date, 2, 1, 3, grammar.zeroTwoDigit)
 	}
-	if locale == "ja_JP" && dateParseSlashPattern.MatchString(strings.TrimSpace(text)) {
+	if locale == "ja_JP" && dateParseMonthFirstFullYear.MatchString(strings.TrimSpace(text)) {
 		// Native dt02 (surf_datetime_locale): a ja_JP user's Date.parse rejects
-		// the month-first m/d/yyyy form that en_US accepts.
+		// the month-first m/d/yyyy form that en_US accepts. Two-digit years
+		// have no row and keep the legacy grammar.
 		return time.Time{}, fmt.Errorf("unsupported Date parse value %q", text)
 	}
 	if !apexYearPivotCaptured(locale) {
@@ -1487,6 +1488,8 @@ func parseDateParseTextLegacy(text string) (time.Time, error) {
 
 // Date.parse and Datetime.parse field grammars. Month and day take one or two
 // digits; the year token follows parseApexYearToken.
+var dateParseMonthFirstFullYear = regexp.MustCompile(`^\d{1,2}/\d{1,2}/\d{4}$`)
+
 var (
 	dateParseSlashPattern     = regexp.MustCompile(`^(\d{1,2})/(\d{1,2})/(\d+)$`)
 	dateParseDashPattern      = regexp.MustCompile(`^(\d+)-(\d{1,2})-(\d{1,2})$`)
