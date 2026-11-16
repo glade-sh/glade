@@ -143,6 +143,8 @@ func unresolvedCursorJSON(receiver Value) bool {
 }
 
 func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, cursor bool, result *Result) (Value, error) {
+	inlineQuery := vm.inlineQueryLocatorCall
+	vm.inlineQueryLocatorCall = false
 	if query.Kind == ValueNull {
 		return Null, newExceptionError("NullPointerException", "Argument 1 cannot be null")
 	}
@@ -209,7 +211,7 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 			return Null, newExceptionError("QueryException", message)
 		}
 	}
-	if !cursor && !mapBinds {
+	if !cursor && !mapBinds && !inlineQuery {
 		if err := vm.validateDynamicSOQLBindSyntaxMode(query.Text, false, true); err != nil {
 			return Null, err
 		}
