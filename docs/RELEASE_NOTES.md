@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+No changes yet.
+
+## v0.3.12
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v94`, `salesforce-platform-v74`, `apextest-runtime-v44`). The first run after upgrading rebuilds them.
+
 ### Changes
 
 - **Feature-enabled orgs.** A project whose scratch definition lists `PlatformEncryption` runs the EC key pair, `ES256`, `ES384` and `ES512` sign and verify, `Crypto.parseJwe` and the nine-argument JWE `Crypto.encrypt` and `Crypto.decrypt` as captured (key sizes, token sizes and error text). A project that lists `ApexIntegrationTests` deploys `@IntegrationTest`, `@BeforeClass` and `@TearDown`; `glade test` runs each `@IntegrationTest` method with the `@BeforeClass` data visible and `@TearDown` after each passing method (a product-path test covers this; `@BeforeClass` is setup only in an `@IntegrationTest` class). Of 41 second-pass rows, 34 are replayed (2 partial) and 7 elastic rows are inventory only. The 2 partial rows, `INTEGRATION-RUN-67` and `-68`, match only with the `COUNT` and `STATIC` values masked: the fixture `COUNT` is org history, and native shares the `@BeforeClass` static with the first method only. Known gap: glade runs `@TearDown` inside the test's transaction, while native gives it its own limits. Orgs without those features keep the feature-off behavior above. Elastic Apex executions, managed-package namespace collisions and Data Cloud cursors are not modeled.
@@ -19,6 +27,20 @@
 - **Standard and custom duplicate matching, residual fits.** The standard Contact and Lead rules score a phone line difference at item 91 (country digit `1` on both numbers) or 88 and report the mean with the rule's exact items, one of which is a first name the name dictionary lists: 96 and 97, one point more with such a first name or with the country digit. The standard surname item finds `Kovalski`/`Kowalski`, `Smyth`/`Smiht`, `Smth`/`Smiht`, `Garsia`/`Gracia` and `Kowalsky`/`Kowalczyk` through the Metaphone 3 key and a raw keyboard score with floors of 93 (one length) and 91 with 93 at the best position of the extra letter (one letter apart). A custom Title item matches a single-letter title such as `A B C` to a title with a word starting with one of its letters, the article `A` aside, at 93, 89 or 88 by word count. Company Name matching no longer matches 33 captured non-matches: long glued-digit runs against short ones, a base that extends the other with another qualifier, the same unlisted qualifier across a dash and a parenthesis, a spaced slash against a parenthesis on a base under 12 letters, and a plain `West`/`East` pair on a two-letter first word. New native panels (`fuzzy_residual_panels`) pin the pairs Glade still misses.
 
 - **Permission sets assigned to the running user in a test.** A permission set that a test, a `@TestSetup` method or code they call assigns to the running user grants nothing outside `System.runAs`, as in Salesforce (APIs 62.0 and 67.0, field and custom permissions). A `runAs` block entered after the assignment applies it until the block ends; the block that makes the assignment does not see it. Another user's `runAs` block, asynchronous jobs and `glade.yml` `test.permissionSets` keep the immediate grant. Test classes that relied on the earlier behavior now need `System.runAs(new User(Id = UserInfo.getUserId()))` around the code that uses the grant, or a deployed profile grant. Explicit `insert as user` by the administrator below API 62.0 now needs a field grant, and a user-mode field-denial exception reports `System.DmlException` when uncaught.
+
+- **Apex surface rows.** Captured rows at API 62.0 and 67.0 now drive `SObject.hashCode` (the sum of each assigned field name's hash XOR its value's hash), `String.format` with an unmatched brace, `String.join` with a null separator, `Time` text, `formatLong` in more locales and half-hour offsets, the Adelaide, Auckland and Kathmandu time zones and the DST overlap choice, `Date.parse` for `en_GB` and the captured `ja_JP` shape, several `JSON` edge cases, `AsyncInfo` diagnostics, and callouts from a Queueable or a Finalizer. Rows outside these shapes keep their earlier behavior.
+
+- **Numeric results match across architectures.** Floating-point products in Apex math, SOQL and duplicate-matching scores are no longer fused into one multiply-add on arm64, so macOS arm64 and Linux amd64 return the same bits. Duplicate match results with equal shown confidence sort by creation order, as captured natively at API 62.0 and 67.0.
+
+- **Street duplicate matching.** Street names with a spelled hundred follow a single-digit multiplier, and ordinal-first and hundred shapes outside the captured rows keep their earlier scores.
+
+- **`@TestSetup` failures.** An exception in a `@TestSetup` method fails every test method of the class with the setup exception, as native test runs report it.
+
+### Performance
+
+- **Custom duplicate matching.** A custom matching rule reads its candidate side once per scan and scores an item only while the filter can still change, so bulk inserts under fuzzy rules run faster. Match outcomes are unchanged.
+
+- **Strict-mode heap checks.** With `--limit-mode strict`, `Math.mod`, `abs`, `min`, `max`, `floor`, `ceil`, `round` and `signum`, `size()` and `isEmpty()` on a local collection, and `String` length and blank checks no longer force a full heap walk. Heap counts and limit errors are unchanged.
 
 ## v0.3.11
 
