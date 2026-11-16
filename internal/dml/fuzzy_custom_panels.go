@@ -126,6 +126,9 @@ func streetWhole(x string, parsed streetParts) bool {
 		return true
 	}
 	words := strings.Fields(x)
+	if streetNumericName(words) {
+		return true
+	}
 	for i, w := range words {
 		if i == len(words)-1 && parsed.suite != "" && w == parsed.suite {
 			// NATIVE fuzzy_street_c8/org.tsv qs1: the suite value is not a
@@ -143,6 +146,74 @@ func streetWhole(x string, parsed streetParts) bool {
 		}
 	}
 	return false
+}
+
+// streetOrdinalWord reports digits followed by st, nd, rd or th.
+func streetOrdinalWord(w string) bool {
+	n := len(w)
+	if n < 3 {
+		return false
+	}
+	switch w[n-2:] {
+	case "st", "nd", "rd", "th":
+		return streetDigits(w[:n-2])
+	}
+	return false
+}
+
+// streetDigits reports a non-empty word of ASCII digits (digitsOnly without
+// the regular expression, on the scoring path of every pair).
+func streetDigits(w string) bool {
+	for i := 0; i < len(w); i++ {
+		if w[i] < '0' || w[i] > '9' {
+			return false
+		}
+	}
+	return w != ""
+}
+
+// streetNumericName reports a cleaned street (number words already digits)
+// that starts with a street number and ends with a known suffix word, where
+// the word before the suffix is a whole number ("500 20 1 St" for "Twenty
+// One", "500 21 Ave", "1 Hundred 1 St" for "One Hundred One"), or where a
+// directional is followed by a name that opens with a number and goes on to
+// numbers or ordinals ("300 E 20 3rd St" for "E Twenty Third"). NATIVE
+// fuzzy_street_c10/org.tsv: such a street is compared as one string. As the
+// stored value it scores the edit similarity alone and as the candidate
+// against a split street half of it ("300 E Twenty Third Street" finds "300
+// Twenty Third Street" at 45, the reverse at 89); it matches only at 87, so
+// "Twenty One St" finds neither "Twenty One Street" nor "Twenty First St"
+// while "Twenty One Street" finds "Twenty First Street" at 88. A name that
+// ends in an ordinal ("23rd", "20 3rd", "E 23rd") splits as any other street.
+func streetNumericName(words []string) bool {
+	if len(words) < 3 || words[0][0] < '0' || words[0][0] > '9' {
+		return false
+	}
+	rest := words[1:]
+	directional := streetDirections[rest[0]] || streetCompassWords[rest[0]]
+	if directional {
+		rest = rest[1:]
+	}
+	last := len(rest) - 1
+	if last < 1 {
+		return false
+	}
+	if _, ok := customStreetSuffixes[rest[last]]; !ok {
+		return false
+	}
+	name := rest[:last]
+	if streetDigits(name[last-1]) {
+		return true
+	}
+	if !directional || !streetDigits(name[0]) {
+		return false
+	}
+	for _, w := range name[1:] {
+		if !streetOrdinalWord(w) {
+			return false
+		}
+	}
+	return true
 }
 
 // streetKeyStopWords are left out of the match key, with the known suffix

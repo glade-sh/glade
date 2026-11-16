@@ -511,7 +511,9 @@ scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
 | Street | fit, `fuzzy_street_c4`, `c5`, `c8` | 9348/9348 (100.0%) | 0 | 0.000 |
 | Street | holdout, `fuzzy_street_c4`, `c5`, `c8` | 3428/3428 (100.0%) | 0 | 0.000 |
 | Street | fit, `fuzzy_street_c9` | 218/218 (100.0%) | 0 | 0.000 |
-| Street | holdout, `fuzzy_street_c9` | 906/906 (100.0%) | 8 | 0.000 |
+| Street | holdout, `fuzzy_street_c9` | 906/906 (100.0%) | 0 | 0.000 |
+| Street | fit, `fuzzy_street_c10` | 1522/1522 (100.0%) | 0 | 0.000 |
+| Street | holdout, `fuzzy_street_c10` | 882/882 (100.0%) | 0 | 0.000 |
 | City | fit | 531/531 (100.0%) | 0 | 0.000 |
 | City | holdout (unbiased) | 57/57 (100.0%) | 0 | 0.000 |
 | ZIP | fit | 225/225 (100.0%) | 0 | 0.000 |
@@ -1054,12 +1056,35 @@ Street suffix and title changes are limited to the following shapes:
     four panels (`g1`, `g1m`, `g7`, `g7m`: other scripts, words and numbers)
     were scored once after the three rules were frozen and agree on all 2,034
     pairs.
-  - Pinned residuals: eight false matches in `fuzzy_street_c9/residuals.tsv`,
-    which the previous scorer has too. They are ordinal and compound number
-    words: `300 E Twenty Third St` finds `300 E Twenty Third Street` (89),
-    `500 Twenty First St` finds `500 Twenty One St` and `500 20 1 St` (83),
-    `40 Forty Second St` finds `40 Forty Two St` (82). Natively each of these
-    streets finds only itself. The `c4` and `c5` `residuals.tsv` files are gone.
+  - Ordinal and compound number words, `fuzzy_street_c10` (two captures; the
+    eight false matches that `fuzzy_street_c9/residuals.tsv` pinned are closed
+    and the file is gone). Three rules, read from the 1,522 native matches of
+    the fit panels:
+    - A name of whole numbers only before the suffix (`500 Twenty One St`,
+      `500 21 Ave`, `1 Hundred 1 St`), or a directional before a name that
+      opens with a number and goes on to numbers or ordinals (`300 E Twenty
+      Third St`), is compared as one string: it matches only at edit
+      similarity 87, as a stored value it reports that similarity, and as a
+      candidate against a split street half of it. `500 Twenty One St` finds
+      neither `500 Twenty One Street` nor `500 Twenty First St` (no suffix
+      spelling matches it, `Rd` and `Road` included) while `500 Twenty First
+      Street` finds `500 Twenty One Street` at 88; `300 E Twenty Third
+      Street` finds `300 Twenty Third Street` at 45 and the reverse at 89.
+      A name that ends in an ordinal splits as any other street (`500 Twenty
+      First St` finds `500 Twenty First Street` at 88).
+    - Whole numbers after the street number belong to the number when a word
+      follows: `500 Twenty First Street` finds `500 Twenty Tenth Street` at
+      80 and `500 Twenty Third Street` finds `500 Twenty Second Street` at 75,
+      not at 86 and 84.
+    - An ordinal first word is no street number: `3rd Ave`, `Third Ave` and
+      `101st St` report 88 for themselves, as a street with no number does.
+
+    Twelve panels (`h1`, `h2`, `h3`, `h6`, `h7`, `h8` and their Match Blank
+    twins: other numbers and names) were scored after the model's predictions
+    for them were frozen in a file (hash in `RUN-FACTS.txt`) and agree on every
+    pair. The directional rule is read for `E`, `W`, `N` and `East` before a
+    number name; other directionals before one are not measured. Not measured
+    either: a number name with no suffix word, a suffix word before a tail.
   - Not measured: Match Blank Fields for a street that is whole as the stored
     value, a blank street number with a name of four words, non-ASCII white
     space, and suite values longer than the shapes in `qs1` to `qs7`.

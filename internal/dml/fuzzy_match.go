@@ -1046,6 +1046,10 @@ func parseStreetFor(s string, custom bool) streetParts {
 		// not a number is all name ("3F" reports 86 for itself, 100 under
 		// Match Blank Fields; "12" reports 100).
 	case custom && streetGluedNumber.MatchString(words[0]):
+	case custom && streetOrdinalWord(words[0]):
+		// NATIVE fuzzy_street_c10/org.tsv o4, o5: an ordinal first word is
+		// no street number ("3rd Ave" and "Third Ave" report 88 for
+		// themselves, as a street with no number does; "101st St" too).
 	case custom:
 		// NATIVE fuzzy_street_c5/org.tsv nl1, np1, np2, fuzzy_street_c4 cl1
 		// to cl3: a directional between the number and a street name with a
@@ -1056,6 +1060,13 @@ func parseStreetFor(s string, custom bool) streetParts {
 		// match key (streetCustomKey) decides which of them keep two streets
 		// apart.
 		p.number, words = words[0], words[1:]
+		// NATIVE fuzzy_street_c10/org.tsv e4: whole numbers after the street
+		// number belong to the number when a word follows: "500 Twenty First
+		// Street" finds "500 Twenty Tenth Street" at 80 (number "500 20", names
+		// "1st" and "10th"), not at 86.
+		for len(words) > 1 && streetDigits(words[0]) && !streetAllNumbers(words) {
+			p.number, words = p.number+" "+words[0], words[1:]
+		}
 		if len(words) > 2 && (streetDirections[words[0]] || streetCompassWords[words[0]]) {
 			for _, w := range words[2:] {
 				if _, ok := streetSuffixes(custom)[w]; ok {
@@ -1157,6 +1168,16 @@ func parseStreetFor(s string, custom bool) streetParts {
 	}
 	p.name = strings.Join(words, " ")
 	return p
+}
+
+// streetAllNumbers reports words that are whole numbers only.
+func streetAllNumbers(words []string) bool {
+	for _, w := range words {
+		if !streetDigits(w) {
+			return false
+		}
+	}
+	return true
 }
 
 const streetKeyLength = 5
