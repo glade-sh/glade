@@ -140,3 +140,22 @@ func companyTwoWordBase(base []string) bool {
 func companyVowelStart(s string) bool {
 	return s != "" && strings.IndexByte("aeiou", s[0]) >= 0
 }
+
+// companyVowelParenScore raises two parenthesis forms on one base whose
+// one-word suffixes both start with a vowel and differ only in that letter
+// to 100. The word scorer already matches them at 91.
+//
+// NATIVE company_name_fit/org.tsv s1_b (API 62.0 and 67.0, both routes, six
+// bases): "Orbel Trade (East)", "(Oast)" and "(Uast)" match one another at
+// 100 in every direction. Against a stored " - West" the same names match on
+// some bases only; that verdict gate has no supported separator (s1_a, s1_c)
+// and is not scored.
+func companyVowelParenScore(a, b string) bool {
+	if strings.ContainsAny(a, "0123456789/") || strings.ContainsAny(b, "0123456789/") {
+		return false
+	}
+	ba, c, fa, okA := companySuffixParts(a)
+	bb, s, fb, okB := companySuffixParts(b)
+	return okA && okB && fa == "paren" && fb == "paren" && c != s && len(c) == len(s) && len(c) >= 4 &&
+		companyVowelStart(c) && companyVowelStart(s) && c[1:] == s[1:] && companyTwoWordBase(ba) && strings.Join(ba, " ") == strings.Join(bb, " ")
+}

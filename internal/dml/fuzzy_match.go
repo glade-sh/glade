@@ -1676,6 +1676,9 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 	}
 	ok, score := fuzzyCompanyRouted(a, b, matchBlanks, ma, mb)
 	if ok {
+		if score < 100 && (ma&mb)&companyMarkQualifier != 0 && companyVowelParenScore(a, b) {
+			return true, 100
+		}
 		return ok, score
 	}
 	if companyDoubledEqual(a, b) {
