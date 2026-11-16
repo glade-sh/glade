@@ -2,7 +2,6 @@ package vm
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 )
@@ -97,10 +96,11 @@ func TestStrictHeapPureCallLoopScalesLinearly(t *testing.T) {
 	}
 }
 
-// Report timings for 1k, 4k and 8k rows: go test -run TestStrictHeapPureCallTimings -v.
+// Report timings for 1k, 4k and 8k rows: go test -run TestStrictHeapPureCallTimings -v. The loop is
+// quadratic without pure-call pricing, so the 8k run takes minutes there.
 func TestStrictHeapPureCallTimings(t *testing.T) {
-	if testing.Short() || os.Getenv("GLADE_VM_HEAP_TIMINGS") == "" {
-		t.Skip("set GLADE_VM_HEAP_TIMINGS=1 to print timings")
+	if testing.Short() {
+		t.Skip("timing report")
 	}
 	previous := heapVerifyAgainstFullWalk
 	heapVerifyAgainstFullWalk = false
