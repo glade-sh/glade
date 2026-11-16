@@ -47,6 +47,22 @@ function timeText(value) {
   return new Intl.DateTimeFormat(locale, { timeZone: "UTC", hour: "numeric", minute: "2-digit" }).format(date).replace(/\u202f/g, " ");
 }
 function dateFormatExample() { return dateText("2024-12-31"); }
+// Native API 68 captures (en_US and fr_FR): format messages and hints carry a
+// concrete example, "11:30 AM" for a time, and read in the user's language.
+// Only these two languages were captured; other locales keep the English text.
+const isFrench = /^fr(?:[-_]|$)/i.test(String(locale));
+// The same time message was captured as "h:mm a" in a release 67 org at saved
+// API 59.0 and 67.0 (l18_salesforce.json r_input_time_conversion) and as "11:30
+// AM" in the release 68 org at saved API 67.0 and 68.0. The shim has no org
+// release to select between them, so time keeps the accepted older text.
+function badInputMessage(isTime) {
+  if (isTime) return "Your entry does not match the allowed format h:mm a.";
+  return (isFrench ? "Votre entr\u00e9e ne correspond pas au format autoris\u00e9 " : "Your entry does not match the allowed format ") + dateFormatExample() + ".";
+}
+// Dates are read the way dateText reads them: the native date input accepts
+// values such as "42" (year 2042) that a detached date control would reject.
+function unreadableDate(value) { return Number.isNaN(new Date(String(value)).getTime()); }
+function formatHint() { return "Format" + (isFrench ? "\u00a0: " : ": ") + dateFormatExample(); }
 function tmpl($api, $cmp) {
   const { h: element, t: text, b: bind, f: flatten } = $api;
   const checkbox = $cmp.isCheckbox;
@@ -91,7 +107,7 @@ function tmpl($api, $cmp) {
     }
   }
   if (["date", "datetime-local"].includes($cmp.type) && !$cmp._message) {
-    children.push(element("div", { classMap: { "slds-form-element__help": true }, key: 8 }, [text("Format: " + dateFormatExample())]));
+    children.push(element("div", { classMap: { "slds-form-element__help": true }, key: 8 }, [text(formatHint())]));
   }
   if ($cmp.type === "datetime-local") {
     for (const key of [9, 10]) children.push(element("div", { attrs: { role: "alert" }, key }, []));
@@ -100,6 +116,7 @@ function tmpl($api, $cmp) {
     const help = [];
     if ($cmp._message) {
       if (!$cmp.isTemporal || $cmp.type === "date") help.push(element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [text($cmp.label || "")]));
+      else if ($cmp.type === "datetime-local" && $cmp.dateHalfBad) help.push(element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [text("Date")]));
       help.push(text($cmp._message));
     }
     children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { role: "alert" }, key: 3 }, help));
@@ -164,6 +181,12 @@ class __INPUT_CLASS__ extends LightningElement {
   get pattern() { return this._pattern ?? (this.type === "color" ? colorPattern : undefined); }
   set pattern(value) { this._pattern = value; }
   get isCheckbox() { return ["checkbox", "checkbox-button", "toggle"].includes(this.type); }
+  // Native API 68 captures: a datetime whose date half cannot be read reports
+  // on the date; the time half stays silent. A bad time half reports its own.
+  get dateHalfBad() {
+    if (this.type !== "datetime-local" || !this.value) return false;
+    return unreadableDate(String(this.value).split("T")[0]);
+  }
   get isTemporal() { return ["date", "time", "datetime-local"].includes(this.type); }
   get controlType() {
     if (this.isCheckbox) return "checkbox";
@@ -207,7 +230,10 @@ class __INPUT_CLASS__ extends LightningElement {
     if (this.type === "email") result.typeMismatch = false;
     result.customError = this._customValidity !== "";
     result.valid = native.valid && !result.customError;
-    if (this.type === "time" && this.value && !input.value) {
+    // Native API 68 captures: an unreadable date or time value is bad input; an
+    // unreadable datetime value is ignored unless the field is required.
+    const unreadable = this.type === "time" ? !input.value : unreadableDate(this.value);
+    if (this.isTemporal && this.value && unreadable && (this.type !== "datetime-local" || this.required)) {
       result.badInput = true;
       result.valueMissing = false;
       result.valid = false;
@@ -243,8 +269,8 @@ class __INPUT_CLASS__ extends LightningElement {
       stepMismatch: "Your entry isn't a valid increment."
     };
     if (this.isTemporal) {
-      if (this.type === "time") defaults.badInput = "Your entry does not match the allowed format h:mm a.";
-      else defaults.valueMissing = "Complete this field with format " + dateFormatExample() + ".";
+      defaults.badInput = badInputMessage(this.type === "time" || (this.type === "datetime-local" && !this.dateHalfBad));
+      if (this.type !== "time") defaults.valueMissing = "Complete this field with format " + dateFormatExample() + ".";
       for (const [flag, property, direction] of [["rangeUnderflow", "min", "later"], ["rangeOverflow", "max", "earlier"]]) {
         const bound = this.type === "date" ? dateText(this[property]) : this[property];
         defaults[flag] = "Value must be " + bound + " or " + direction + ".";

@@ -24,14 +24,14 @@ import (
 // from captures-lwc) show the same output at saved component API 67.0 and
 // 68.0: these base-component changes follow the org release, not the version.
 var api68LWCGaps = map[string]string{
-	"b07": "lightning-datatable renders a plain table shim: no navigation-mode header, row selection or row-error icon button, so the rowTitle accessible names are not produced",
-	"b15": "lightning-input is a plain input: no date, time or datetime validation help text, locale format examples or date picker hints",
-	"b18": "lightning-input-field is source-backed on local record endpoints; the Contact Email placeholder needs a record-edit-form fixture with field metadata that this harness does not build",
-	"b25": "lightning-tabset renders every tab: it measures no width, so no overflow button or More Tabs menu appears",
+	"m03_m04":       "toast timing: the local toast service has no timers, so a toast stays until cleared. The capture measured onScreenMs per mode with 100 ms polling (event dismissible and pester about 20.6 s, module dismissible about 5.1 s, the other modes still shown at 30 s); those are not exact timer constants",
+	"b11_time_half": "a time typed into the datetime time input is not validated: the local datetime keeps one value and its time input has no input handler",
+	"b15_time":      "time format message: release 68 captures show the concrete example (11:30 AM, fr_FR 11:30) at saved API 67.0 and 68.0; the accepted l18 rows from a release 67 org show h:mm a at 59.0 and 67.0. The shim cannot select by org release, so it keeps h:mm a",
+	"b15_picker":    "date and datetime pickers: the native picker button text (Select a date for Date) and the Date and Time sub-labels are not rendered; only the messages and hints are matched",
 }
 
-// TestAPI68LWCBaseComponentNative replays the B01, B17 and B24 native rows
-// against the browser-rendered local shims. CI neither imports the capture
+// TestAPI68LWCBaseComponentNative replays the B01, B07, B11, B15, B17, B18, B24
+// and B25 native rows against the browser-rendered local shims. CI neither imports the capture
 // tools nor calls Salesforce.
 func TestAPI68LWCBaseComponentNative(t *testing.T) {
 	if _, err := exec.LookPath("node"); err != nil {
@@ -90,15 +90,75 @@ func TestAPI68LWCBaseComponentNative(t *testing.T) {
 		native[key] = json.RawMessage(row[2])
 		items = append(items, key)
 	}
-	shims := map[string]string{}
-	for _, name := range []string{"checkboxGroup", "inputAddress", "slider"} {
-		shims[name] = LightningBaseComponentModuleJS(name)
+	runtimeRoot := filepath.Join(repoRoot, "lwcruntime", "src")
+	runtimeServer := http.StripPrefix("/lightning/runtime/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := filepath.Join(runtimeRoot, filepath.FromSlash(r.URL.Path))
+		if _, err := os.Stat(path); err != nil {
+			// Source-backed components name .js files that live as .mjs.
+			path = strings.TrimSuffix(path, ".js") + ".mjs"
+		}
+		switch filepath.Ext(path) {
+		case ".css":
+			w.Header().Set("Content-Type", "text/css")
+		case ".woff2", ".woff", ".svg", ".png":
+		default:
+			w.Header().Set("Content-Type", "text/javascript")
+		}
+		http.ServeFile(w, r, path)
+	}))
+	imports := SalesforceImportMap()
+	imports["lwc"] = "/lwc.js"
+	imports["@lwc/synthetic-shadow"] = "/shadow.js"
+	imports["@glade/shell/diagnostics"] = "/diagnostics.js"
+	imports["@glade/slds"] = "/lightning/runtime/slds/slds-loader.js"
+	importJSON := func(locale string) string {
+		merged := map[string]string{}
+		for key, value := range imports {
+			merged[key] = value
+		}
+		if locale != "" {
+			merged["@salesforce/i18n/locale"] = "/locale/" + locale + ".js"
+		}
+		raw, err := json.Marshal(merged)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(raw)
 	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/":
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, `<!doctype html><script>window.process={env:{NODE_ENV:"production"}}</script><script type="importmap">{"imports":{"lwc":"/lwc.js","@glade/shell/diagnostics":"/diagnostics.js"}}</script><script type="module" src="/entry.js"></script>`)
+			locale := ""
+			if strings.HasSuffix(r.URL.RawQuery, "_fr_FR") {
+				locale = "fr-FR"
+			}
+			fmt.Fprintf(w, `<!doctype html><script>window.process={env:{NODE_ENV:"production"}}</script><script type="importmap">{"imports":%s}</script><script type="module" src="/entry.js"></script>`, importJSON(locale))
+		case strings.HasPrefix(r.URL.Path, "/locale/"):
+			w.Header().Set("Content-Type", "text/javascript")
+			fmt.Fprintf(w, "export default %q;\n", strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/locale/"), ".js"))
+		case r.URL.Path == "/shadow.js":
+			w.Header().Set("Content-Type", "text/javascript")
+			http.ServeFile(w, r, filepath.Join(toolchain, "third_party/lwc/node_modules/@lwc/synthetic-shadow/dist/index.js"))
+		case strings.HasPrefix(r.URL.Path, "/lightning/shims/core/"):
+			name := strings.TrimPrefix(r.URL.Path, "/lightning/shims/core/")
+			path := filepath.Join(runtimeRoot, "shims", filepath.Base(name))
+			if _, err := os.Stat(path); err != nil {
+				path = strings.TrimSuffix(path, ".js") + ".mjs"
+			}
+			w.Header().Set("Content-Type", "text/javascript")
+			http.ServeFile(w, r, path)
+		case strings.HasPrefix(r.URL.Path, "/lightning/runtime/"):
+			runtimeServer.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, "/lightning/shims/i18n/"):
+			w.Header().Set("Content-Type", "text/javascript")
+			fmt.Fprint(w, I18nModuleJS(strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/lightning/shims/i18n/"), ".js")))
+		case r.URL.Path == "/lightning/shims/lightning/uiObjectInfoApi.js":
+			w.Header().Set("Content-Type", "text/javascript")
+			fmt.Fprint(w, UIObjectInfoAPIModuleJS())
+		case r.URL.Path == "/lightning/shims/lightning/uiRecordApi.js":
+			w.Header().Set("Content-Type", "text/javascript")
+			fmt.Fprint(w, UIRecordAPIModuleJS())
 		case r.URL.Path == "/lwc.js":
 			http.ServeFile(w, r, filepath.Join(toolchain, "third_party/lwc/node_modules/@lwc/engine-dom/dist/index.js"))
 		case r.URL.Path == "/diagnostics.js":
@@ -109,7 +169,7 @@ func TestAPI68LWCBaseComponentNative(t *testing.T) {
 			http.ServeFile(w, r, "testdata/api68_lwc/entry.mjs")
 		case strings.HasPrefix(r.URL.Path, "/shim/"):
 			w.Header().Set("Content-Type", "text/javascript")
-			fmt.Fprint(w, shims[strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/shim/"), ".js")])
+			fmt.Fprint(w, LightningBaseComponentModuleJS(strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/shim/"), ".js")))
 		default:
 			http.NotFound(w, r)
 		}
@@ -119,7 +179,7 @@ func TestAPI68LWCBaseComponentNative(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "node", "testdata/api68_lwc/browser.mjs")
 	cmd.Stdin = bytes.NewReader(input)
@@ -148,20 +208,68 @@ func TestAPI68LWCBaseComponentNative(t *testing.T) {
 	}
 }
 
-// api68LWCContains reports whether every native attribute is present with the
-// same value and the visible text lines are equal. The shim may carry extra
-// attributes the capture did not record.
+// api68LWCContains reports whether the glade observation satisfies a native
+// row. A row with lines needs the visible text lines equal; a row with contains
+// needs those lines in order among glade's lines and none of absent. Native
+// attributes, error buttons, tab names, menu items and field input attributes
+// must each match what the capture recorded. The shim may carry extra
+// attributes and lines the capture row did not claim.
 func api68LWCContains(got, want any) bool {
 	g, _ := got.(map[string]any)
 	w, _ := want.(map[string]any)
-	if !reflect.DeepEqual(g["lines"], w["lines"]) {
+	if wantLines, ok := w["lines"]; ok && !reflect.DeepEqual(g["lines"], wantLines) {
 		return false
+	}
+	gotLines, _ := g["lines"].([]any)
+	if raw, ok := w["contains"].([]any); ok {
+		next := 0
+		for _, line := range gotLines {
+			if next < len(raw) && line == raw[next] {
+				next++
+			}
+		}
+		if next != len(raw) {
+			return false
+		}
+	}
+	if raw, ok := w["absent"].([]any); ok {
+		for _, absent := range raw {
+			for _, line := range gotLines {
+				if line == absent {
+					return false
+				}
+			}
+		}
 	}
 	gotAttrs, _ := g["attrs"].(map[string]any)
 	wantAttrs, _ := w["attrs"].(map[string]any)
 	for key, raw := range wantAttrs {
 		have, _ := gotAttrs[key].(map[string]any)
 		for name, value := range raw.(map[string]any) {
+			if have[name] != value {
+				return false
+			}
+		}
+	}
+	for _, key := range []string{"tabs", "menu"} {
+		if value, ok := w[key]; ok && !reflect.DeepEqual(g[key], value) {
+			return false
+		}
+	}
+	if raw, ok := w["errorButtons"].([]any); ok {
+		have, _ := g["errorButtons"].([]any)
+		if len(have) != len(raw) {
+			return false
+		}
+		for index := range raw {
+			if !reflect.DeepEqual(have[index], raw[index]) {
+				return false
+			}
+		}
+	}
+	if raw, ok := w["fieldInput"].(map[string]any); ok {
+		have, _ := g["fieldInput"].(map[string]any)
+		for name, value := range raw {
 			if have[name] != value {
 				return false
 			}

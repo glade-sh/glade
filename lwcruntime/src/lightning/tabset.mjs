@@ -10,7 +10,12 @@ import MenuItem from "./menuItem.mjs";
 
 function renderTabBar($api, $cmp) {
   const { h, t, c, b, i } = $api;
-  const headers = $cmp.headers || [];
+  const allHeaders = $cmp.headers || [];
+  // Native API 68 capture (tabset in a 260px container, twelve tabs): tabs
+  // that do not fit leave the tab bar and are listed only in the "More Tabs"
+  // menu. With no measured overflow every header keeps both places.
+  const headers = $cmp.visibleCount == null ? allHeaders : allHeaders.slice(0, $cmp.visibleCount);
+  const menuHeaders = $cmp.visibleCount == null ? allHeaders : allHeaders.slice($cmp.visibleCount);
   const items = i(headers, header => {
     const label = header.label == null ? "" : String(header.label);
     return h("li", {
@@ -39,7 +44,7 @@ function renderTabBar($api, $cmp) {
     key: 1,
     props: { label: "More", alternativeText: "Tabs", title: "More Tabs", variant: "bare" },
     on: { select: b($cmp.handleMenuSelect) },
-  }, i(headers, header => c("lightning-menu-item", MenuItem, {
+  }, i(menuHeaders, header => c("lightning-menu-item", MenuItem, {
     key: "menu-" + header.key,
     props: { label: header.label, value: header.key },
   }, [])))]);
@@ -54,6 +59,57 @@ const barTemplate = registerTemplate(renderTabBar);
 freezeTemplate(barTemplate);
 
 class TabBar extends LightningElement {
+  get headers() {
+    return this.headersValue;
+  }
+
+  set headers(value) {
+    this.headersValue = value;
+    this.visibleCount = undefined;
+  }
+
+  connectedCallback() {
+    if (typeof ResizeObserver !== "function") return;
+    this.resizeObserver = new ResizeObserver(() => {
+      const width = this.containerWidth();
+      if (width !== this.lastWidth && this.visibleCount !== undefined) this.visibleCount = undefined;
+    });
+    this.resizeObserver.observe(this.template.host.parentElement || this.template.host);
+  }
+
+  disconnectedCallback() {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
+  }
+
+  containerWidth() {
+    return (this.template.host.parentElement || this.template.host).getBoundingClientRect().width;
+  }
+
+  renderedCallback() {
+    if (this.visibleCount !== undefined) return;
+    const ul = this.template.querySelector("ul");
+    const width = this.containerWidth();
+    this.lastWidth = width;
+    if (!ul || !(width > 0)) return;
+    // Measure natural widths: a max-content list does not shrink its items.
+    const previous = ul.style.width;
+    ul.style.width = "max-content";
+    const widths = [...ul.children].map(item => item.getBoundingClientRect().width);
+    ul.style.width = previous;
+    const overflow = widths.pop() || 0;
+    const total = widths.reduce((sum, value) => sum + value, 0);
+    if (total <= width) return;
+    let used = overflow;
+    let count = 0;
+    for (const value of widths) {
+      if (used + value > width) break;
+      used += value;
+      count++;
+    }
+    this.visibleCount = Math.max(count, 1);
+  }
+
   handleSelect(event) {
     event.preventDefault();
     const key = event.currentTarget.dataset.tabKey;
@@ -82,8 +138,8 @@ class TabBar extends LightningElement {
   }
 }
 registerDecorators(TabBar, {
-  publicProps: { headers: { config: 0 } },
-  fields: ["focusedKey"],
+  publicProps: { headers: { config: 3 } },
+  fields: ["focusedKey", "headersValue", "visibleCount"],
 });
 const LightningTabBar = registerComponent(TabBar, {
   tmpl: barTemplate,
