@@ -3309,7 +3309,7 @@ func validateQueryReferencesWithChildCache(org storage.OrgState, definition stor
 		}
 		if fields, known := fieldDefinitionsForReference(org, definition, field); known {
 			for _, fieldDef := range fields {
-				if fieldDef.Groupable != nil && !*fieldDef.Groupable {
+				if (fieldDef.Groupable != nil && !*fieldDef.Groupable) || customNumberNotGroupable(fieldDef) {
 					message := fmt.Sprintf("field '%s' can not be grouped in a query call", field)
 					return unexpectedQueryError(message, message)
 				}
@@ -5682,4 +5682,11 @@ func foldTurkish(text string) string {
 		}
 		return unicode.ToLower(r)
 	}, text)
+}
+
+// A custom Number field is not groupable (default_order_rest group_num, APIs
+// 62.0 and 67.0); the describe flag for it is false as well. An explicit flag
+// on the definition wins.
+func customNumberNotGroupable(field storage.Field) bool {
+	return field.Groupable == nil && field.Type == storage.FieldDecimal && !field.AutoNumber && strings.HasSuffix(field.APIName, "__c")
 }

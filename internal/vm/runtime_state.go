@@ -296,6 +296,9 @@ type VM struct {
 	toolingExecuteAnonymous bool
 	triggerDepth            int
 	triggerActivations      []triggerActivation
+	// outerTriggerLimits are the governor counters when the outermost trigger
+	// activation began; a depth failure restores the DML and query counters.
+	outerTriggerLimits Limits
 	// inFinalizer is set while a Queueable finalizer runs: it keeps the
 	// synchronous query, CPU and relationship-subquery caps.
 	inFinalizer             bool

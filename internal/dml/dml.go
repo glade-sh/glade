@@ -111,6 +111,7 @@ type Engine struct {
 	flowDepth                 int
 	summaryOrder              []string
 	summaryUpdates            map[string]SummaryUpdate
+	summaryHold               *storage.SummaryHold
 	automationRoll            map[string]bool
 	uniqueBatch               *uniqueBatchContext
 	activityRefresh           *activityRefreshBatch

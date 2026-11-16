@@ -3232,8 +3232,15 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if op == "update" && vm.inAfterUndeleteTrigger() {
 		engine.Options.AllowUpdateDeleted = true
 	}
-	if !allOrNone && vm.hasAfterTriggerForDML(op, records) {
+	hasAfterTrigger := vm.hasAfterTriggerForDML(op, records)
+	if !allOrNone && hasAfterTrigger {
 		ensurePartialAfterTriggerBackup()
+	}
+	if hasAfterTrigger && vm.installContextDepth == 0 {
+		// Native after-triggers read the parent roll-ups as they stood before
+		// the statement (rollup_trigger_timing).
+		engine.BeginSummaryHold(records)
+		defer engine.ReleaseSummaryHold()
 	}
 	var results []dml.Result
 	switch op {
@@ -3340,6 +3347,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
 	}
+	engine.ReleaseSummaryHold()
 	if op == "insert" || op == "update" {
 		assignmentFailures, err := vm.applyAssignmentRuleUpdates(&engine, records, engineResults, result)
 		if err != nil {
@@ -4007,8 +4015,15 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		engine.Options.UpsertChangedExactDuplicatesOnly = true
 	}
 	engine.PriorRecords = dmlPriorRecordsByID(before)
-	if !allOrNone && vm.hasAfterTriggerForDML("upsert", records) {
+	hasAfterTrigger := vm.hasAfterTriggerForDML("upsert", records)
+	if !allOrNone && hasAfterTrigger {
 		ensurePartialAfterTriggerBackup()
+	}
+	if hasAfterTrigger && vm.installContextDepth == 0 {
+		// The hold covers the insert group's after-triggers only; an upsert of
+		// both kinds is not captured.
+		engine.BeginSummaryHold(records)
+		defer engine.ReleaseSummaryHold()
 	}
 	var engineResults []dml.Result
 	engine.Options.AllowApexIDLookupUpsert = true
@@ -4087,6 +4102,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			vm.rollbackAfterTriggerFailures(kind, afterRecords, afterFailures, partialAfterTriggerBackup)
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
+		engine.ReleaseSummaryHold()
 		if _, err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, "", "", nil, nil); err != nil {
 			return results, err
 		}

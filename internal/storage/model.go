@@ -70,12 +70,22 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 	return config.NormalizeOrgDomainURL(raw)
 }
 
+// SummaryHold carries the parent roll-up values as they stood before one DML
+// statement. A child after-trigger reads them until the statement finishes
+// (rollup_trigger_timing native rows); the stored value is already current.
+type SummaryHold struct {
+	Values map[string]Value
+}
+
 type OrgState struct {
 	ChangeDataCaptureTestSetup *ChangeDataCaptureSnapshot `json:"-"`
 	// Formula execution context is set on a per-query OrgState value copy.
 	// It is neither persisted nor stored in query or schema caches.
 	formulaUserID           ID
 	formulaPermissionFields map[string]Value
+	// SummaryHolds freeze roll-up values for the statements whose after-triggers
+	// are running. Never persisted; see SummaryHold.
+	SummaryHolds []*SummaryHold `json:"-"`
 
 	OrgID      string                 `json:"orgId,omitempty"`
 	APIVersion string                 `json:"apiVersion,omitempty"`

@@ -72,6 +72,16 @@ type triggerExecutionError struct {
 func (e *triggerExecutionError) Error() string { return e.detail }
 func (e *triggerExecutionError) Unwrap() error { return e.cause }
 
+// triggerDepthUnwind is the depth failure while it leaves the nested trigger
+// activations. Natively no Apex catch in an inner activation observes it: it
+// reaches the DML statement in the outermost trigger, which sees a catchable
+// DmlException or a failed SaveResult (trigger_depth_unwind, test_boundary_edges
+// trm_catch and trm_partial). It deliberately has no Unwrap to the exception,
+// so the Apex try/catch machinery cannot intercept it on the way out.
+type triggerDepthUnwind struct{ failure *triggerExecutionError }
+
+func (e *triggerDepthUnwind) Error() string { return e.failure.detail }
+
 // triggerActivation is one running trigger event, for the depth failure text.
 type triggerActivation struct{ object, timing, operation string }
 
@@ -708,7 +718,14 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 		for _, activation := range vm.triggerActivations {
 			detail.WriteString("\n" + strings.TrimSuffix(activation.object, "__c") + " trigger event " + triggerEventName(activation.timing, activation.operation))
 		}
-		return nil, &triggerExecutionError{cause: newExceptionError("DmlException", detail.String()), detail: detail.String()}
+		failure := &triggerExecutionError{cause: newExceptionError("DmlException", detail.String()), detail: detail.String()}
+		if vm.triggerDepth > 1 {
+			return nil, &triggerDepthUnwind{failure: failure}
+		}
+		return nil, failure
+	}
+	if vm.triggerDepth == 0 {
+		vm.outerTriggerLimits = vm.limits
 	}
 	vm.triggerDepth++
 	// The text is built only for a depth failure; this runs for every trigger event.
@@ -721,6 +738,15 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 	for _, trigger := range triggers {
 		triggerFailures, err := vm.runTrigger(trigger, records, oldRecords, result)
 		if err != nil {
+			var unwind *triggerDepthUnwind
+			if vm.triggerDepth == 2 && errors.As(err, &unwind) {
+				// This activation was started by the DML statement of the
+				// outermost trigger: the failure surfaces there. The aborted chain's
+				// statements and queries are not visible afterwards (d2_limits).
+				vm.limits.Queries, vm.limits.QueryRows = vm.outerTriggerLimits.Queries, vm.outerTriggerLimits.QueryRows
+				vm.limits.DMLStatements, vm.limits.DMLRows = vm.outerTriggerLimits.DMLStatements, vm.outerTriggerLimits.DMLRows
+				return nil, unwind.failure
+			}
 			return nil, err
 		}
 		mergeDMLFailuresInPlace(failures, triggerFailures)

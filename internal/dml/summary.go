@@ -11,6 +11,119 @@ import (
 
 var summaryCandidateBuilds atomic.Uint64
 
+// BeginSummaryHold freezes the roll-up values of the parents these child
+// records belong to, before the statement changes any child. Reads of those
+// roll-ups return the frozen values until ReleaseSummaryHold. Records may lack
+// the foreign key (a delete names only an Id), so the stored copies count too.
+func (e *Engine) BeginSummaryHold(records []storage.Record) {
+	if e == nil || e.Org == nil || e.summaryHold != nil || len(records) == 0 {
+		return
+	}
+	// Most statements touch an object with no roll-up over it. Decide that per
+	// object name, once, before collecting any records.
+	var relationsByObject map[string][]summaryRelation
+	last, lastRelations := "", []summaryRelation(nil)
+	for i, record := range records {
+		if i == 0 || record.Object != last {
+			canonical, ok := storage.ResolveObjectName(*e.Org, record.Object)
+			if !ok {
+				canonical = record.Object
+			}
+			last, lastRelations = record.Object, e.summaryRelationsForChild(canonical)
+			if len(lastRelations) > 0 {
+				if relationsByObject == nil {
+					relationsByObject = make(map[string][]summaryRelation)
+				}
+				relationsByObject[canonical] = lastRelations
+			}
+		}
+	}
+	if len(relationsByObject) == 0 {
+		return
+	}
+	var hold *storage.SummaryHold
+	for child, relations := range relationsByObject {
+		var childRecords []storage.Record
+		for _, record := range records {
+			canonical, ok := storage.ResolveObjectName(*e.Org, record.Object)
+			if !ok {
+				canonical = record.Object
+			}
+			if canonical != child {
+				continue
+			}
+			childRecords = append(childRecords, record)
+			if record.ID != "" {
+				if _, stored, ok := storage.LookupRecordByID(e.Org.Objects[child].Records, record.ID); ok {
+					childRecords = append(childRecords, stored)
+				}
+			}
+		}
+		for _, relation := range relations {
+			parentObject, ok := e.Org.Objects[relation.parentObject]
+			if !ok {
+				continue
+			}
+			parentIDs := canonicalSummaryParentIDs(parentObject.Records, summaryParentIDs(childRecords, relation.fkFieldName))
+			values, ok := e.evaluateSummaryFieldBatch(relation, parentIDs)
+			if !ok {
+				continue
+			}
+			if hold == nil {
+				hold = &storage.SummaryHold{Values: make(map[string]storage.Value)}
+			}
+			for id, value := range values {
+				hold.Values[summaryHoldKey(relation.parentObject, id, relation.parentField)] = value
+			}
+		}
+	}
+	if hold != nil {
+		e.summaryHold = hold
+		e.Org.SummaryHolds = append(e.Org.SummaryHolds, hold)
+	}
+}
+
+// ReleaseSummaryHold ends the hold BeginSummaryHold started. It is safe to call
+// again, and after a rollback replaced the org.
+func (e *Engine) ReleaseSummaryHold() {
+	if e == nil || e.summaryHold == nil {
+		return
+	}
+	if e.Org != nil {
+		for i, hold := range e.Org.SummaryHolds {
+			if hold == e.summaryHold {
+				e.Org.SummaryHolds = append(e.Org.SummaryHolds[:i:i], e.Org.SummaryHolds[i+1:]...)
+				break
+			}
+		}
+	}
+	e.summaryHold = nil
+}
+
+func summaryHoldKey(object string, id storage.ID, field string) string {
+	return strings.ToLower(object) + "\x00" + strings.ToLower(string(id)) + "\x00" + strings.ToLower(field)
+}
+
+// heldSummary returns the frozen value of a parent's roll-up, innermost
+// statement first.
+func (e *Engine) heldSummary(parent storage.Record, field storage.Field) (storage.Value, bool) {
+	object, ok := storage.ResolveObjectName(*e.Org, parent.Object)
+	if !ok {
+		object = parent.Object
+	}
+	id := parent.ID
+	if storedID, _, ok := storage.LookupRecordByID(e.Org.Objects[object].Records, id); ok {
+		id = storedID
+	}
+	key := summaryHoldKey(object, id, field.APIName)
+	for i := len(e.Org.SummaryHolds) - 1; i >= 0; i-- {
+		if value, ok := e.Org.SummaryHolds[i].Values[key]; ok {
+			return value, true
+		}
+	}
+	return storage.Value{}, false
+}
+
 func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, childRecords ...storage.Record) {
 	if e == nil || e.Org == nil || len(childRecords) == 0 {
 		return
@@ -345,6 +458,11 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 	}
 	if e == nil || e.Org == nil || parent.ID == "" || childObject == "" || fkObject == "" || fkField == "" || !strings.EqualFold(childObject, fkObject) {
 		return storage.Value{}, false
+	}
+	if len(e.Org.SummaryHolds) > 0 {
+		if value, ok := e.heldSummary(parent, field); ok {
+			return value, true
+		}
 	}
 	canonicalChild, ok := storage.ResolveObjectName(*e.Org, childObject)
 	if !ok {
