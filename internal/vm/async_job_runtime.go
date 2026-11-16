@@ -636,6 +636,11 @@ func (vm *VM) abortJob(args []Value) (Value, error) {
 			continue
 		}
 		if job.Kind == "ScheduledApex" || job.Kind == "ScheduledBatch" {
+			// Aborting a scheduled job deletes its CronTrigger: one DML statement.
+			// NATIVE abortJob on a scheduled job apex_release_gates/org.tsv PjProbe67/PJ7 anonymous 62.0 63.0 67.0
+			if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+				return Null, err
+			}
 			vm.testContext.AsyncJobs[i].ScheduledAborted = true
 		} else {
 			vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs[:i], vm.testContext.AsyncJobs[i+1:]...)

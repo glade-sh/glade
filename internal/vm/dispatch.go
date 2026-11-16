@@ -2312,6 +2312,11 @@ platformStaticCall:
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
 			typeName := jsonDeserializeTypeName(args[1])
+			// From API 63 an Exception type is not a JSON target.
+			// NATIVE JSON.deserialize into an Exception apex_release_gates/org.tsv JxProbe63/JX11 anonymous 62.0 63.0 67.0
+			if isExceptionType(typeName) && apexversion.AtLeast(vm.jsonCallerAPIVersion(), 63) && vm.typeMatches(typeName, "Exception", make(map[string]bool)) {
+				return Null, newExceptionError("System.JSONException", "Type unsupported in JSON: "+shortTypeName(exceptionTypeName(typeName)))
+			}
 			// A gated platform namespace (ConnectApi, Slack) joins the view.
 			typesys.RequestGatedPlatformNamespaceFor(typeName)
 			_, recordType := vm.explicitSchemaRecordType(typeValueIdentityName(args[1]))
@@ -3208,13 +3213,26 @@ platformStaticCall:
 	case "FlexQueue.moveJobToEnd", "FlexQueue.moveJobToFront":
 		return vm.moveFlexQueueJob(callee, args)
 	case "System.pauseJobById", "System.pauseJobByName", "System.resumeJobById", "System.resumeJobByName":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("%s expects job identifier String", callee)
-		}
-		return Null, nil
+		return vm.pauseResumeJob(callee, args)
 	case "System.purgeOldAsyncJobs":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("System.purgeOldAsyncJobs expects Date and optional limit")
+		}
+		// NATIVE purgeOldAsyncJobs argument checks apex_release_gates/org.tsv anonymous 62.0 67.0
+		for i, arg := range args {
+			if arg.Kind == ValueNull {
+				return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("Argument %d cannot be null", i+1))
+			}
+		}
+		if len(args) == 2 && args[1].Kind == ValueInt && args[1].Int <= 0 {
+			return Null, newExceptionError("System.IllegalArgumentException", "The max number of records to be deleted must be a valid number greater than zero.")
+		}
+		// A purge that runs counts one DML statement and one DML row.
+		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+			return Null, err
+		}
+		if err := vm.incrementLimit("dmlRows", 1); err != nil {
+			return Null, err
 		}
 		return Int(0), nil
 	case "Test.enqueueBatchJobs":
