@@ -118,22 +118,41 @@ func panelMatches(t *testing.T, panel nativePanel) map[[2]int]float64 {
 	return got
 }
 
-// standardPhoneLineResidual: the standard Contact and Lead rules score two
-// numbers that differ only in the last four digits one point under Glade's
-// fitted 97 and 98 unless both carry the country digit 1 (N5.spt1, N5.slt1,
-// records without an email address). The rows that fitted 97 and 98 have an
-// email address on every record, so the difference follows the other fields
-// of the rule and is not modeled; the verdicts are exact.
-func standardPhoneLineResidual(panel nativePanel, got, native float64) bool {
-	return panel.Rule != "custom" && panel.Method == "Phone" && got-native == 1 && (got == 97 || got == 98)
+// standardPhoneLineResiduals are the only confidences Glade does not
+// reproduce: the standard Contact and Lead rules score two numbers that differ
+// only in the last four digits one point under Glade's fitted 97 and 98 unless
+// both carry the country digit 1 (N5.spt1, N5.slt1, records without an email
+// address). The rows that fitted 97 and 98 have an email address on every
+// record, so the difference follows the other fields of the rule and is not
+// modeled; the verdicts are exact. Each entry is the panel, Glade's
+// confidence, the native confidence and the number of pairs.
+var standardPhoneLineResiduals = map[string]struct {
+	glade, native float64
+	pairs         int
+}{
+	"N5.spt1": {97, 96, 112},
+	"N5.slt1": {98, 97, 112},
+}
+
+// standardPhoneLineResidual reports a pair the residual table allows: in its
+// panel, at its two confidences, and not with the country digit 1 on both
+// numbers.
+func standardPhoneLineResidual(panel nativePanel, a, b string, got, native float64) bool {
+	allowed, ok := standardPhoneLineResiduals[panel.ID]
+	if !ok || got != allowed.glade || native != allowed.native {
+		return false
+	}
+	ca, _, _, _, okA := phoneParts(a)
+	cb, _, _, _, okB := phoneParts(b)
+	return okA && okB && !(ca == "1" && cb == "1")
 }
 
 // NATIVE Phone, City and ZIP panels: testdata/phone_city_zip/org.tsv, custom
 // and standard rules, anonymous and @IsTest, API 62.0 and 67.0, two repeats.
 // Every ordered pair is reproduced, verdict and confidence, except the
-// standard phone confidences of standardPhoneLineResidual.
+// standard phone confidences of standardPhoneLineResiduals.
 func TestPhoneCityZipNativeConformance(t *testing.T) {
-	residual := 0
+	residual := map[string]int{}
 	for _, panel := range loadNativePanels(t, "testdata/phone_city_zip", 8) {
 		t.Run(panel.ID, func(t *testing.T) {
 			want := map[[2]int]float64{}
@@ -148,8 +167,8 @@ func TestPhoneCityZipNativeConformance(t *testing.T) {
 					switch {
 					case match != ok:
 						t.Errorf("%q/%q: matched %v, native %v", a, b, match, ok)
-					case match && score != expected && standardPhoneLineResidual(panel, score, expected):
-						residual++
+					case match && score != expected && standardPhoneLineResidual(panel, a, b, score, expected):
+						residual[panel.ID]++
 					case match && score != expected:
 						t.Errorf("%q/%q: %v, native %v", a, b, score, expected)
 					}
@@ -157,7 +176,12 @@ func TestPhoneCityZipNativeConformance(t *testing.T) {
 			}
 		})
 	}
-	if residual != 224 {
-		t.Errorf("got %d standard phone residual pairs, want 224", residual)
+	for id, allowed := range standardPhoneLineResiduals {
+		if residual[id] != allowed.pairs {
+			t.Errorf("%s: got %d standard phone residual pairs, want %d", id, residual[id], allowed.pairs)
+		}
+	}
+	if len(residual) != len(standardPhoneLineResiduals) {
+		t.Errorf("residual pairs outside the table: %v", residual)
 	}
 }

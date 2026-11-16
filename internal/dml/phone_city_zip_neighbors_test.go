@@ -44,3 +44,28 @@ func TestPhoneCityZipUncapturedNeighborsKeepBase(t *testing.T) {
 		}
 	}
 }
+
+// The raw City confidence an unmatched item adds inside AND and OR groups
+// compares the same text as the verdict: between two plain ASCII values the
+// inner spaces count as typed (N5.cm1: "LosAngeles" does not find
+// "Los  Angeles", edit similarity 83.3), and any other pair keeps the folded
+// text (those pairs match, so only their raw score is pinned here).
+func TestCityRawConfidenceFollowsVerdictSpacing(t *testing.T) {
+	for _, tc := range []struct {
+		a, b    string
+		want    float64
+		matched bool
+	}{
+		{"LosAngeles", "Los  Angeles", averageWith100(100 * (1 - 2.0/12)), false},
+		{"Los Angles", "Los  Angeles", averageWith100(100 * (1 - 2.0/12)), false},
+		{"LosAngeles", "Los Angeles", averageWith100(100 * (1 - 1.0/11)), true},
+		{"LosAngeles", "Los\tAngeles", averageWith100(100 * (1 - 1.0/11)), true},
+	} {
+		if got := FuzzyRawConfidence("City", tc.a, tc.b, false); got != tc.want {
+			t.Errorf("%q/%q: %v, want %v", tc.a, tc.b, got, tc.want)
+		}
+		if matched, _ := FuzzyScore("City", tc.a, tc.b, false); matched != tc.matched {
+			t.Errorf("%q/%q: matched %v, want %v", tc.a, tc.b, matched, tc.matched)
+		}
+	}
+}
