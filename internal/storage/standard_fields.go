@@ -159,6 +159,7 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		ensureStandardRelationship(definition, definition.Fields[name])
 	}
 	RemoveCustomSettingUnsupportedFields(definition)
+	applyStandardRelationshipOrder(definition)
 	markStandardFieldsOverlay(definition, featureSignature)
 }
 
@@ -169,7 +170,7 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
 		return true
 	}
-	if masterDetailOwnerFieldsNeedRepair(definition) {
+	if masterDetailOwnerFieldsNeedRepair(definition) || standardRelationshipOrderNeedsRepair(definition) {
 		return true
 	}
 	plan := standardOverlayCheckPlanFor(definition.APIName)
@@ -228,7 +229,7 @@ func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSigna
 	if generatedStandardIDLabelRepair(definition) != "" {
 		return true
 	}
-	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
+	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardRelationshipOrderNeedsRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
 }
 
 func apexClassLengthNillabilityNeedsRepair(definition ObjectDefinition) bool {
