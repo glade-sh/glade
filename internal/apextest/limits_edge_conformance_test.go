@@ -16,6 +16,12 @@ func TestLimitsCounterEdgesNativeConformance(t *testing.T) {
 	}}.replay(t)
 }
 
+// DML row boundary at 10,000 and 10,001 inserted rows. Strict mode charges heap
+// per allocation, so building the lists dominates; the family runs apart.
+func TestLimitsDMLRowEdgesNativeConformance(t *testing.T) {
+	edgeFamily{dir: "testdata/conformance/limits_dml_row_edges"}.replay(t)
+}
+
 // Row counters over a 60,000-row table: query rows, locator rows and DML rows.
 func TestLimitsRowEdgesNativeConformance(t *testing.T) {
 	edgeFamily{dir: "testdata/conformance/limits_row_edges"}.replay(t)

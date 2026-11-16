@@ -1,0 +1,9 @@
+id	api	route	observation
+dr10000	62.0	istest	1|10000|10000
+dr10000	62.0	anonymous	1|10000|10000
+dr10000	67.0	istest	1|10000|10000
+dr10000	67.0	anonymous	1|10000|10000
+dr10001	62.0	istest	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dr10001	62.0	anonymous	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dr10001	67.0	istest	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dr10001	67.0	anonymous	UNCATCHED|System.LimitException|Too many DML rows: 10001
