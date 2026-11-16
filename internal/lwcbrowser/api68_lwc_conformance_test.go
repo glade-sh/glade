@@ -26,7 +26,6 @@ import (
 var api68LWCGaps = map[string]string{
 	"m03_m04":       "toast timing: the local toast service has no timers, so a toast stays until cleared. The capture measured onScreenMs per mode with 100 ms polling (event dismissible and pester about 20.6 s, module dismissible about 5.1 s, the other modes still shown at 30 s); those are not exact timer constants",
 	"b11_time_half": "a time typed into the datetime time input is not validated: the local datetime keeps one value and its time input has no input handler",
-	"b15_time":      "time format message: release 68 captures show the concrete example (11:30 AM, fr_FR 11:30) at saved API 67.0 and 68.0; the accepted l18 rows from a release 67 org show h:mm a at 59.0 and 67.0. The shim cannot select by org release, so it keeps h:mm a",
 	"b15_picker":    "date and datetime pickers: the native picker button text (Select a date for Date) and the Date and Time sub-labels are not rendered; only the messages and hints are matched",
 }
 

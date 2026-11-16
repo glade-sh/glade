@@ -51,13 +51,13 @@ function dateFormatExample() { return dateText("2024-12-31"); }
 // concrete example, "11:30 AM" for a time, and read in the user's language.
 // Only these two languages were captured; other locales keep the English text.
 const isFrench = /^fr(?:[-_]|$)/i.test(String(locale));
-// The same time message was captured as "h:mm a" in a release 67 org at saved
-// API 59.0 and 67.0 (l18_salesforce.json r_input_time_conversion) and as "11:30
-// AM" in the release 68 org at saved API 67.0 and 68.0. The shim has no org
-// release to select between them, so time keeps the accepted older text.
+// Release 68 captures (saved API 67.0 and 68.0) show the concrete example for a
+// time too. The older "h:mm a" text, captured in a release 67 org, is kept as
+// history in l18_salesforce.json (r_input_time_conversion). The text follows
+// the org release, not the saved version.
 function badInputMessage(isTime) {
-  if (isTime) return "Your entry does not match the allowed format h:mm a.";
-  return (isFrench ? "Votre entr\u00e9e ne correspond pas au format autoris\u00e9 " : "Your entry does not match the allowed format ") + dateFormatExample() + ".";
+  const example = isTime ? timeText("11:30") : dateFormatExample();
+  return (isFrench ? "Votre entr\u00e9e ne correspond pas au format autoris\u00e9 " : "Your entry does not match the allowed format ") + example + ".";
 }
 // Dates are read the way dateText reads them: the native date input accepts
 // values such as "42" (year 2042) that a detached date control would reject.
