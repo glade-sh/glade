@@ -9,3 +9,5 @@ dt07	istest	Dt7NewInstanceTest
 dt08	istest	Dt8GmtTest
 dt09	anonymous	dt09.apex
 dt10	anonymous	dt10.apex
+dt11	istest	Dt9HalfTest
+dt12	istest	Dt10AmbigTest

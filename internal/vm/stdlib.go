@@ -3502,8 +3502,8 @@ func formatString(pattern string, args []Value, display func(Value) (string, err
 			end := strings.IndexByte(pattern[i+1:], '}')
 			if end < 0 {
 				// Native cs05 (surf_collections_strings): a StringException that
-				// quotes the whole pattern.
-				return "", newExceptionError("System.StringException", fmt.Sprintf("Unmatched '{' braces in message %q", pattern))
+				// quotes the whole raw pattern; quotes, backslashes, newlines and non-ASCII are not escaped (fm01, fm02).
+				return "", newExceptionError("System.StringException", "Unmatched '{' braces in message \""+pattern+"\"")
 			}
 			token := strings.TrimSpace(pattern[i+1 : i+1+end])
 			replacement, err := formatStringTokenCached(token, args, display, displayCache)

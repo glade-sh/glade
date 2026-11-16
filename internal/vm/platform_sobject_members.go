@@ -3,6 +3,8 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"math/big"
+	"math/bits"
 	"sort"
 	"strconv"
 	"strings"
@@ -3223,7 +3225,10 @@ func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
 		seen[value.Ref] = true
 		defer delete(seen, value.Ref)
 	}
-	hash := javaStringHashCode(strings.ToLower(stripSObjectNamespacePrefix(canonicalRuntimePlatformType(value.Type))))
+	// Native hash rows (surf_collections_strings hs02): the sum, over assigned
+	// fields, of fieldName.hashCode() ^ fieldValue.hashCode(). The object type
+	// does not take part, and an empty record hashes to 0.
+	var hash int32
 	for field, child := range value.Fields {
 		// Preserve the legacy hash for record shapes outside the captured
 		// System.hashCode rule, even when equality retains an explicit null Id.
@@ -3233,14 +3238,23 @@ func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
 		if !sObjectEqualityFieldIncluded(value, field, child) {
 			continue
 		}
-		hash += javaStringHashCode(strings.ToLower(field)) ^ sObjectFieldHashCode(child, seen)
+		hash += javaStringHashCode(field) ^ sObjectFieldHashCode(child, seen)
 	}
 	return hash
 }
 
 func sObjectFieldHashCode(value Value, seen map[uint64]bool) int32 {
-	if id, ok := sObjectIDFromValue(value); ok {
-		return javaStringHashCode(canonicalIDMapKey(string(id)))
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		if id, ok := sObjectIDFromValue(value); ok {
+			text := string(id)
+			if len(text) == 15 && looksLikeID(text) {
+				text = apexIDTo18(text)
+			}
+			return javaStringHashCode(text)
+		}
+	}
+	if value.Kind == ValueDecimal {
+		return javaBigDecimalHashCode(value)
 	}
 	if isRelationshipNull(value) || sObjectHashMissingRelationship(value, seen) {
 		return 0
@@ -3306,4 +3320,64 @@ func sObjectHashMissingRelationship(value Value, seen map[uint64]bool) bool {
 		}
 	}
 	return seenField
+}
+
+// javaBigDecimalHashCode mirrors java.math.BigDecimal.hashCode: 31 times the
+// unscaled value's BigInteger hash, plus the scale. The native row hs02 pins
+// the scale-0 case (a Decimal field set to 1 hashes to 31); other scales follow
+// the same Java rule.
+func javaBigDecimalHashCode(value Value) int32 {
+	text := strings.TrimSpace(value.Text)
+	if text == "" {
+		text = strconv.FormatFloat(value.Decimal, 'f', -1, 64)
+	}
+	negative := false
+	if strings.HasPrefix(text, "-") {
+		negative = true
+		text = text[1:]
+	} else if strings.HasPrefix(text, "+") {
+		text = text[1:]
+	}
+	exponent := 0
+	if at := strings.IndexAny(text, "eE"); at >= 0 {
+		parsed, err := strconv.Atoi(strings.TrimPrefix(text[at+1:], "+"))
+		if err != nil {
+			return valueHashCode(value)
+		}
+		exponent = parsed
+		text = text[:at]
+	}
+	scale := 0
+	if dot := strings.IndexByte(text, '.'); dot >= 0 {
+		scale = len(text) - dot - 1
+		text = text[:dot] + text[dot+1:]
+	}
+	scale -= exponent
+	unscaled, ok := new(big.Int).SetString(text, 10)
+	if !ok {
+		return valueHashCode(value)
+	}
+	var hash int32
+	if unscaled.Sign() != 0 {
+		words := unscaled.Bits()
+		var mag []uint32
+		for i := len(words) - 1; i >= 0; i-- {
+			word := uint64(words[i])
+			if bits.UintSize == 64 {
+				mag = append(mag, uint32(word>>32), uint32(word))
+			} else {
+				mag = append(mag, uint32(word))
+			}
+		}
+		for len(mag) > 0 && mag[0] == 0 {
+			mag = mag[1:]
+		}
+		for _, word := range mag {
+			hash = 31*hash + int32(word)
+		}
+		if negative {
+			hash = -hash
+		}
+	}
+	return 31*hash + int32(scale)
 }

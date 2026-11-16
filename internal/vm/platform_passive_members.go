@@ -2956,7 +2956,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return receiver.Fields["id"], receiver, false, true, nil
 		case "getDisplayName":
 			if len(args) == 0 {
-				return vm.timeZoneDisplayName(receiver), receiver, false, true, nil
+				name, err := vm.timeZoneDisplayName(receiver)
+				return name, receiver, false, true, err
 			}
 			return Null, receiver, false, true, unsupportedCallError("TimeZone.getDisplayName locale/style overloads")
 		case "getOffset":

@@ -1201,8 +1201,8 @@ func datetimeKiritimatiFromUniqueLocalParts(year, month, day, hour, minute, seco
 }
 
 func datetimeValueOfLocalClock(value time.Time, zoneID string) (time.Time, error) {
-	// Native user-zone rows 061/062 observe the String valueOf overload,
-	// not newInstance or parse. Keep those constructors' overlap choice.
+	// A repeated civil time resolves to the later instant, as newInstance does
+	// (surf_datetime_locale dt03 and dg01: Los Angeles, Sydney, Auckland, Adelaide).
 	if zoneID == "America/Los_Angeles" {
 		if zone, ok := supportedNamedTimeZone(zoneID); ok {
 			return zone.instantFromLocal(value.Year(), value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, true), nil
@@ -1819,6 +1819,9 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 		}
 		if zone, ok := supportedNamedTimeZone(zoneID); ok {
 			_, name := zone.displayNameAt(value)
+			if name == "" {
+				return "", unsupportedCallError("Datetime.format long zone name " + zoneID)
+			}
 			return name, nil
 		}
 		return zoneLabel, nil
@@ -2063,7 +2066,13 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"Asia/Tokyo":        {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
 	"Pacific/Honolulu":  {id: "Pacific/Honolulu", standardOffset: -10 * time.Hour, standardLabel: "HST", standardDisplayName: "Hawaii-Aleutian Standard Time"},
 	"Pacific/Pago_Pago": {id: "Pacific/Pago_Pago", standardOffset: -11 * time.Hour, standardLabel: "SST", standardDisplayName: "Samoa Standard Time"},
-	"Australia/Sydney":  {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
+	// Owned API 62/67 dh01 and dg01 (surf_datetime_locale): offsets, labels and
+	// the ambiguous and skipped civil times. Display names were not captured, so
+	// getDisplayName and the long zone pattern stay unsupported for these three.
+	"Asia/Kathmandu":     {id: "Asia/Kathmandu", standardOffset: 5*time.Hour + 45*time.Minute, standardLabel: "NPT"},
+	"Australia/Adelaide": {id: "Australia/Adelaide", standardOffset: 9*time.Hour + 30*time.Minute, daylightOffset: 10*time.Hour + 30*time.Minute, standardLabel: "ACST", daylightLabel: "ACDT", daylightRule: "sydney"},
+	"Pacific/Auckland":   {id: "Pacific/Auckland", standardOffset: 12 * time.Hour, daylightOffset: 13 * time.Hour, standardLabel: "NZST", daylightLabel: "NZDT", daylightRule: "auckland"},
+	"Australia/Sydney":   {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
 }
 
 func supportedNamedTimeZone(id string) (modeledTimeZone, bool) {
@@ -2109,10 +2118,10 @@ func timeZoneOffsetMillis(receiver Value, instant time.Time) (Value, error) {
 	return offsetValue, nil
 }
 
-func (vm *VM) timeZoneDisplayName(receiver Value) Value {
+func (vm *VM) timeZoneDisplayName(receiver Value) (Value, error) {
 	idValue := receiver.Fields["id"]
 	if idValue.Kind != ValueString {
-		return idValue
+		return idValue, nil
 	}
 	offset := time.Duration(0)
 	longName := "Pacific Standard Time"
@@ -2125,11 +2134,14 @@ func (vm *VM) timeZoneDisplayName(receiver Value) Value {
 			}
 		} else if location, ok := supportedNamedTimeZone(locationValue.Text); ok {
 			offset, longName = location.displayNameAt(vm.fakeNow)
+			if longName == "" {
+				return Null, unsupportedCallError("TimeZone.getDisplayName " + locationValue.Text)
+			}
 		}
 	} else if offsetValue := receiver.Fields["offsetMillis"]; offsetValue.Kind == ValueInt {
 		offset = time.Duration(offsetValue.Int) * time.Millisecond
 	}
-	return String(fmt.Sprintf("(GMT%s) %s (%s)", formatTimeZoneDisplayOffset(offset), longName, idValue.Text))
+	return String(fmt.Sprintf("(GMT%s) %s (%s)", formatTimeZoneDisplayOffset(offset), longName, idValue.Text)), nil
 }
 
 func formatTimeZoneDisplayOffset(offset time.Duration) string {
@@ -2192,6 +2204,10 @@ func (zone modeledTimeZone) isDaylight(instant time.Time) bool {
 		start := time.Date(year, time.March, lastWeekdayOfMonth(year, time.March, time.Sunday), 1, 0, 0, 0, time.UTC)
 		end := time.Date(year, time.October, lastWeekdayOfMonth(year, time.October, time.Sunday), 1, 0, 0, 0, time.UTC)
 		return !instant.Before(start) && instant.Before(end)
+	case "auckland":
+		start := localRuleTransitionUTC(year, time.September, lastWeekdayOfMonth(year, time.September, time.Sunday), 2, zone.standardOffset)
+		end := localRuleTransitionUTC(year, time.April, nthWeekdayOfMonth(year, time.April, time.Sunday, 1), 3, zone.daylightOffset)
+		return !instant.Before(start) || instant.Before(end)
 	case "sydney":
 		start := localRuleTransitionUTC(year, time.October, nthWeekdayOfMonth(year, time.October, time.Sunday, 1), 2, zone.standardOffset)
 		end := localRuleTransitionUTC(year, time.April, nthWeekdayOfMonth(year, time.April, time.Sunday, 1), 3, zone.daylightOffset)

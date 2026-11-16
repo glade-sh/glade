@@ -23,3 +23,7 @@ as11	62.0	anonymous	"COMPILE|Method does not exist or incorrect signature: void 
 as11	67.0	anonymous	"COMPILE|Method does not exist or incorrect signature: void getParentJobId() from the type System.AsyncInfo"
 as12	62.0	anonymous	"COMPILE|Method does not exist or incorrect signature: void getTriggerType() from the type System.AsyncInfo"
 as12	67.0	anonymous	"COMPILE|Method does not exist or incorrect signature: void getTriggerType() from the type System.AsyncInfo"
+as13	62.0	istest	"Fail|System.AssertException: Assertion Failed: OBS|res=ok:201;ctx=SUCCESS;count=1"
+as13	67.0	istest	"Fail|System.AssertException: Assertion Failed: OBS|res=ok:201;ctx=SUCCESS;count=1"
+as14	62.0	istest	"Fail|System.AssertException: Assertion Failed: OBS|res=ok:201;ctx=SUCCESS;count=1"
+as14	67.0	istest	"Fail|System.AssertException: Assertion Failed: OBS|res=ok:201;ctx=SUCCESS;count=1"
