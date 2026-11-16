@@ -1666,8 +1666,13 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 		return true, 100
 	}
 	ma, mb := companyMarks(a), companyMarks(b)
-	if (ma|mb)&companyMarkQualifier != 0 && !companySlashKeys(a, b) {
-		return false, 0
+	if (ma|mb)&companyMarkQualifier != 0 {
+		if x, y, ok := companySpacedAsDash(a, b); ok {
+			return fuzzyCompany(x, y, matchBlanks)
+		}
+		if !companySlashKeys(a, b) {
+			return false, 0
+		}
 	}
 	ok, score := fuzzyCompanyRouted(a, b, matchBlanks, ma, mb)
 	if ok {
@@ -1676,9 +1681,28 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 	if companyDoubledEqual(a, b) {
 		return true, 100
 	}
+	if (ma|mb)&(companyMarkDigit|companyMarkJoin|companyMarkQualifier) == 0 {
+		if stemmed, ok := companyStemFirstWord(a, b); ok {
+			if matched, confidence := legacyFuzzyCompany(stemmed, b, matchBlanks); matched {
+				return true, confidence
+			}
+		}
+	}
 	if (ma|mb)&companyMarkQualifier != 0 {
 		if confidence, matched := companySlashScore(a, b); matched {
 			return true, confidence
+		}
+	}
+	if (ma^mb)&companyMarkJoin != 0 && (ma|mb)&companyMarkDigit == 0 {
+		// One side is the dash form, the other plain and without a hyphen.
+		dashed := a
+		if mb&companyMarkJoin != 0 {
+			dashed = b
+		}
+		if companySpacedHyphen(dashed) {
+			if confidence, matched := companyVowelSuffixScore(a, b); matched {
+				return true, confidence
+			}
 		}
 	}
 	return ok, score

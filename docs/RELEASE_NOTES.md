@@ -22,7 +22,7 @@
 
 - **Duplicate matching, Title and First Name.** Fuzzy Title matching covers word order, stop words, punctuation and word subsets from native panels, and the First Name Name Variant table gains the pairs those panels confirm (`docs/DUPLICATE_FUZZY_MATCHING.md`).
 
-- **Company duplicate matching.** Custom Company Name rules score numbered names, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
+- **Company duplicate matching.** Custom Company Name rules score numbered names and glued digit runs, first words that differ past the match key, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
 
 - **Custom street matching.** Fuzzy Street rules follow four native captures at APIs 62.0 and 67.0: the match key (number and name, street words such as Park or Plaza left out), a match at edit similarity 87 whatever the section score, line breaks, number signs, hyphens, letters and directionals after the number, PO boxes, leading suites and number words. Standard rules are unchanged.
 
