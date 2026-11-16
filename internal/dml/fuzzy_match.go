@@ -797,9 +797,11 @@ var streetLongDirections = map[string]bool{"northeast": true, "northwest": true,
 var streetOrdinals = map[string]string{"first": "1st", "second": "2nd", "third": "3rd", "fourth": "4th", "fifth": "5th", "sixth": "6th", "seventh": "7th", "eighth": "8th", "ninth": "9th", "tenth": "10th"}
 
 // streetNumberWords are the number words the custom Street method reads as
-// digits. NATIVE fuzzy_street_c5/org.tsv nw1, fuzzy_street_c4 cs1: "200 Ten
-// St" is "200 10 St", "Eleven" is "11", "Twenty" is "20" and "One Calder
-// Plaza" is "1 Calder Plaza"; "Hundred", "Eleventh" and "Twentieth" stay words.
+// digits. NATIVE fuzzy_street_c5/org.tsv nw1, fuzzy_street_c4 cs1,
+// fuzzy_street_c8/org.tsv qn1 to qn4: "200 Ten St" is "200 10 St", "One Calder
+// Plaza" is "1 Calder Plaza" and "Suite Five" is "Suite 5": zero to nineteen
+// and the tens from twenty to ninety. "Hundred", "Thousand", "Million",
+// "Eleventh" and "Twentieth" stay words.
 var streetNumberWords = map[string]string{
 	"zero": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8",
 	"nine": "9", "ten": "10", "eleven": "11", "twelve": "12", "thirteen": "13", "fourteen": "14", "fifteen": "15",
@@ -813,13 +815,14 @@ var digitsOnly = regexp.MustCompile(`^[0-9]+$`)
 var streetSuiteDesignators = map[string]bool{"suite": true, "ste": true, "apt": true, "unit": true, "rm": true, "bldg": true}
 
 // streetFloorDesignators are more suite designators for the custom Street
-// method under NullNotAllowed. NATIVE duplicate_fuzzy_matching/org.tsv: "600
-// Montgomery St Fl 3" finds "600 Montgomery St" at 89 and "600 Montgomery St
-// Fl 4" at 90. fuzzy_street_c5/org.tsv nf1: "Rd Fl 3", "Rd Floor 3", "Rd Room
-// 3", "Rd Building 3" and "Rd Apartment 3" find the street without the suite;
+// method, under NullNotAllowed and Match Blank Fields alike. NATIVE
+// duplicate_fuzzy_matching/org.tsv: "600 Montgomery St Fl 3" finds "600
+// Montgomery St" at 89 and "600 Montgomery St Fl 4" at 90.
+// fuzzy_street_c5/org.tsv nf1: "Rd Fl 3", "Rd Floor 3", "Rd Room 3", "Rd
+// Building 3" and "Rd Apartment 3" find the street without the suite;
 // "Level", "Lot", "Dept", "No", "PMB", "Stop", "Trailer" and "Space" do not.
-// The MatchBlanks rows keep "200 Park Ave" and "200 Park Ave Fl 5" apart, so
-// that mode keeps the words in the street name.
+// fuzzy_street_c8/org.tsv qg2, qs3: the Match Blank Fields rows read them the
+// same way.
 var streetFloorDesignators = map[string]bool{"fl": true, "floor": true, "room": true, "building": true, "apartment": true}
 
 // streetCustomSuiteValue reports a suite value of the custom Street method: a
@@ -1079,6 +1082,9 @@ func parseStreetFor(s string, custom bool) streetParts {
 	}
 	switch {
 	case suffixAt < 0 && wholeName:
+		// Every known suffix word has a tail with a number before its last
+		// word: the street has no suffix and no suite, and every word is
+		// the name.
 	case !custom && len(words) > 1 && streetPrefixSuffixes[words[0]]:
 		// The custom method reads "Rue" as a word of the name (NATIVE
 		// fuzzy_street_c8/org.tsv qf1: "7 Rue Royale" against "7 Rue Royal"
