@@ -15,7 +15,7 @@ two versions agree on every row.
 ```bash
 glade test --code-coverage
 glade test --code-coverage --json
-glade test --class InvoiceServiceTest --code-coverage --junit reports/junit.xml
+glade test --class RefinementServiceTest --code-coverage --junit reports/junit.xml
 glade test --coverage-gate RunLocalTests
 glade test --coverage-gate RunSpecifiedTests --class-file tests.txt
 ```
