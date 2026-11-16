@@ -323,7 +323,18 @@ func (vm *VM) callLocaleNumberFormatMember(receiver Value, method string, args [
 		if math.Abs(receiver.Decimal) >= 1e15 {
 			text = strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)
 		} else {
+			// numfmt capture: format() rounds the shortest-repr digits (the
+			// Double.toString digits) to three places half-even, not the exact
+			// binary expansion (64915579597028.883 reads 64,915,579,597,028.88).
 			text = strconv.FormatFloat(receiver.Decimal, 'f', 3, 64)
+			if shortest, ok := new(big.Rat).SetString(strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)); ok {
+				if rounded, err := roundRatToScaleUnchecked("Double.format", shortest, 3, "HALF_EVEN"); err == nil {
+					text = rounded.FloatString(3)
+					if rounded.Sign() == 0 && math.Signbit(receiver.Decimal) {
+						text = "-" + strings.TrimPrefix(text, "-")
+					}
+				}
+			}
 			text = strings.TrimSuffix(strings.TrimRight(text, "0"), ".")
 		}
 		value = String(formatDecimalTextWithGrouping(text))

@@ -4496,12 +4496,10 @@ func decimalValueOfText(text string) (Value, error) {
 	if !ok {
 		return value, nil
 	}
-	scale := 33 - 1 - decimalRatExponent(new(big.Rat).Abs(rat))
-	rounded, err := roundRatToScaleUnchecked("Decimal.valueOf", rat, scale, "HALF_EVEN")
-	if err != nil {
-		return Null, err
+	out, ok := decimalRound33(rat)
+	if !ok {
+		return Null, fmt.Errorf("Decimal.valueOf value cannot be represented")
 	}
-	out := decimalFromRat(rounded, scale)
 	if math.IsInf(out.Decimal, 0) {
 		out.Decimal = parsed
 	}

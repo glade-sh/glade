@@ -416,8 +416,8 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 			AggregateInputRows: aggregateQueryInputRows(org, object.Definition, matchedRecords, query, context.formulaActor()),
 		}, nil
 	}
-	if len(query.Order) > 0 {
-		sortRecordsByOrder(org, object.Definition, matchedRecords, collateOrder(query.Order, query.textComparator), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
+	if order := defaultParentOrder(query, objectName); len(order) > 0 {
+		sortRecordsByOrder(org, object.Definition, matchedRecords, collateOrder(order, query.textComparator), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	if query.ForUpdate {
@@ -2503,8 +2503,8 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 			matched = append(matched, child)
 		}
 	}
-	if len(query.Order) > 0 {
-		sortRecordsByOrder(org, childObject.Definition, matched, collateOrder(query.Order, context.textComparatorForQuery()), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
+	if order := defaultChildOrder(query, childObjectName); len(order) > 0 {
+		sortRecordsByOrder(org, childObject.Definition, matched, collateOrder(order, context.textComparatorForQuery()), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
 	}
 	matched = applyWindow(matched, query.Offset, query.Limit, query.HasLimit)
 	out := make([]storage.Record, 0, len(matched))

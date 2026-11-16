@@ -614,23 +614,86 @@ func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
 		if rightRat.Sign() == 0 {
 			return Null, false
 		}
-		result.Quo(leftRat, rightRat)
-		out, ok := decimalRatToPrecision(result, 33)
-		if ok {
-			minimumScale := max(decimalScale(left)-decimalScale(right), 0)
-			if decimalScale(out) < minimumScale {
-				rounded, _ := valueDecimalRat(out)
-				padded := decimalFromRat(rounded, int64(minimumScale))
-				if decimalPrecision(padded) <= 33 {
-					out = padded
-				}
-			}
-		}
-		return out, ok
+		return decimalDivideBigDecimal(left, right, leftRat, rightRat)
 	default:
 		return Null, false
 	}
 	out := decimalFromRat(result, int64(scale))
+	if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
+		return Null, false
+	}
+	return out, true
+}
+
+// decimalDivideBigDecimal follows the numfmt capture: a quotient that
+// terminates within 33 digits is the scaled-integer quotient (scale is the
+// dividend scale minus the divisor scale plus the digits added); any other
+// quotient is rounded half-up to 33 significant digits and keeps every digit.
+func decimalDivideBigDecimal(left, right Value, leftRat, rightRat *big.Rat) (Value, bool) {
+	s1, s2 := decimalScale(left), decimalScale(right)
+	unscaled := func(rat *big.Rat, scale int) (*big.Int, bool) {
+		scaled := new(big.Rat).Set(rat)
+		factor := new(big.Rat).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(absInt(scale))), nil))
+		if scale >= 0 {
+			scaled.Mul(scaled, factor)
+		} else {
+			scaled.Quo(scaled, factor)
+		}
+		return scaled.Num(), scaled.IsInt()
+	}
+	a, okA := unscaled(leftRat, s1)
+	b, okB := unscaled(rightRat, s2)
+	if okA && okB && b.Sign() != 0 {
+		ten := big.NewInt(10)
+		for k := 0; k <= 33; k++ {
+			num := new(big.Int).Mul(a, new(big.Int).Exp(ten, big.NewInt(int64(k)), nil))
+			quotient, remainder := new(big.Int).QuoRem(num, b, new(big.Int))
+			if remainder.Sign() != 0 {
+				continue
+			}
+			if len(new(big.Int).Abs(quotient).String()) > 33 {
+				break
+			}
+			exponent := s2 - s1 - k
+			value := new(big.Rat).SetInt(quotient)
+			factor := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(absInt(exponent))), nil))
+			if exponent >= 0 {
+				value.Mul(value, factor)
+			} else {
+				value.Quo(value, factor)
+			}
+			out := decimalFromRat(value, int64(s1-s2+k))
+			if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
+				return Null, false
+			}
+			return out, true
+		}
+	}
+	return decimalRound33(new(big.Rat).Quo(leftRat, rightRat))
+}
+
+// decimalRound33 rounds rat half-up to 33 significant digits and keeps all of
+// them. A carry into a 34th digit drops the last (zero) digit and one scale.
+func decimalRound33(rat *big.Rat) (Value, bool) {
+	if rat.Sign() == 0 {
+		return decimalFromRat(rat, 0), true
+	}
+	scale := 33 - 1 - decimalRatExponent(new(big.Rat).Abs(rat))
+	rounded, err := roundRatToScaleUnchecked("Decimal", rat, scale, "HALF_UP")
+	if err != nil {
+		return Null, false
+	}
+	units := new(big.Rat).Set(rounded)
+	factor := new(big.Rat).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(absInt(int(scale)))), nil))
+	if scale >= 0 {
+		units.Mul(units, factor)
+	} else {
+		units.Quo(units, factor)
+	}
+	if len(new(big.Int).Abs(units.Num()).String()) > 33 {
+		scale--
+	}
+	out := decimalFromRat(rounded, scale)
 	if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
 		return Null, false
 	}

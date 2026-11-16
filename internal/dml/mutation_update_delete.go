@@ -22,6 +22,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err != nil {
 		return err
 	}
+	normalizeTextWrites(object.Definition, e.Org.Namespace, &record)
 	normalizeNameFields(objectName, object.Definition, &record)
 	if record.ID == "" {
 		return errUpdateRequiresID

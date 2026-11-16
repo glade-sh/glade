@@ -102,7 +102,7 @@ func reProject(t *testing.T, family, api string) string {
 // reReplay runs every anonymous case of family at api, in cases.tsv order, on
 // one machine so setup cases and later queries share the org state, and
 // returns the debug lines per case. isTest cases return the assertion message.
-func reReplay(t *testing.T, family, api string, order []string, kinds map[string]string, wanted map[string]bool) map[string][]string {
+func reReplay(t *testing.T, family, api string, order []string, kinds map[string]string, wanted map[string]bool, native map[string][]string) map[string][]string {
 	t.Helper()
 	root := reProject(t, family, api)
 	index := loadTestIndex(t, root)
@@ -119,7 +119,14 @@ func reReplay(t *testing.T, family, api string, order []string, kinds map[string
 		if err != nil {
 			t.Fatal(err)
 		}
-		program, err := vm.CompileAnonymousWithOptions(string(source), vm.CompileOptions{APIVersion: api})
+		text := string(source)
+		if strings.Contains(id, "_cmp_") {
+			// The capture indexed an unordered query result, whose native
+			// order is not fitted. The payload carries each pair, so replay the
+			// comparisons on the recorded strings.
+			text = reCompareScript(native[id])
+		}
+		program, err := vm.CompileAnonymousWithOptions(text, vm.CompileOptions{APIVersion: api})
 		if err != nil {
 			got[id] = []string{"COMPILE|" + err.Error()}
 			continue
@@ -150,6 +157,25 @@ func reReplay(t *testing.T, family, api string, order []string, kinds map[string
 		got[id] = []string{message}
 	}
 	return got
+}
+
+func reApexLiteral(text string) string {
+	r := strings.NewReplacer("\\", "\\\\", "'", "\\'", "\t", "\\t", "\n", "\\n", "\r", "\\r")
+	return "'" + r.Replace(text) + "'"
+}
+
+func reCompareScript(native []string) string {
+	var script strings.Builder
+	for _, line := range native {
+		// C2|CMPF|left~right~sign
+		parts := strings.Split(line, "~")
+		prefix, left, _ := strings.Cut(parts[0], "|")
+		tag, left, _ := strings.Cut(left, "|")
+		_ = prefix
+		fmt.Fprintf(&script, "{String a=%s; String b=%s; Integer c=a.compareTo(b); System.debug(%s+a+'~'+b+'~'+(c<0?'-':(c>0?'+':'0')));}\n",
+			reApexLiteral(left), reApexLiteral(parts[1]), reApexLiteral("C2|"+tag+"|"))
+	}
+	return script.String()
 }
 
 // reMarkerLines keeps the probe payload lines of a debug transcript.
@@ -304,7 +330,9 @@ func reTimestampFeatures(id string, lines []string) []string {
 			continue
 		}
 		switch {
-		case f[2] == "R" && strings.HasPrefix(f[3], "GLA") && len(f) == 7:
+		case f[2] == "R" && !strings.HasPrefix(f[3], "GLA"):
+			// The org's sample Account is not a probe row.
+		case f[2] == "R" && len(f) == 7:
 			nRows++
 			c, l, s := f[4], f[5], f[6]
 			if c == l && l == s {
@@ -323,7 +351,7 @@ func reTimestampFeatures(id string, lines []string) []string {
 				batches[key] = map[string]bool{}
 			}
 			batches[key][c+"/"+l+"/"+s] = true
-		case f[2] == "R" && strings.HasPrefix(f[3], "GLA") && len(f) == 10:
+		case f[2] == "R" && len(f) == 10:
 			before, after := f[4:7], f[7:10]
 			if before[0] == "-1" {
 				newN++
@@ -450,7 +478,11 @@ func TestReverseEngineeredNativeConformance(t *testing.T) {
 						kinds[r.id] = map[string]string{"anonymous": "anonymous", "istest": "istest"}[r.kind]
 						wanted[r.id] = true
 					}
-					got := reReplay(t, family.dir, api, order, kinds, wanted)
+					nativeLines := map[string][]string{}
+					for _, r := range byAPI[api] {
+						nativeLines[r.id] = r.lines
+					}
+					got := reReplay(t, family.dir, api, order, kinds, wanted, nativeLines)
 					for _, r := range byAPI[api] {
 						outcome := family.compare(r.id, r.lines, got[r.id], r.kind)
 						totalRows += outcome.rows
