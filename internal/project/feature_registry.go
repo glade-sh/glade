@@ -145,8 +145,11 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 	{
 		// api68_native integration: without this feature each @IntegrationTest
 		// reports the native deploy problem.
-		Name:      "ApexIntegrationTests",
-		Consumers: []FeatureConsumer{{"sema", "internal/sema/annotation_contracts.go"}},
+		Name: "ApexIntegrationTests",
+		Consumers: []FeatureConsumer{
+			{"sema", "internal/sema/annotation_contracts.go"},
+			{"apextest", "internal/apextest/runner.go"},
+		},
 	},
 	{
 		// api68_native crypto-ec/crypto-jwe: without this feature the EC key

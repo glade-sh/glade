@@ -9,6 +9,18 @@ import (
 // PlatformEncryption and ApexIntegrationTests features. Glade models those
 // features only when the project scratch definition lists them; the default
 // org keeps the feature-off behavior the first pass captured.
+//
+// Of the 41 second-pass rows, 34 are replayed (2 of them partial) and 7 are
+// inventory-only. The 2 partial rows, INTEGRATION-RUN-67 and -68, match only
+// after the COUNT and STATIC segments are masked (see below). The 7
+// inventory-only rows are the elastic-enabled rows listed in
+// api68SecondPassNotReplayed.
+//
+// Known gap: glade runs @TearDown inside the test method's transaction, as
+// try { method(); } finally { teardown(); }. Native gives @TearDown its own
+// limits block (the INTEGRATION-RUN rows show five LIMITS blocks: BeforeClass,
+// method, teardown, method, teardown). The harness strips LIMITS, so the
+// difference is not compared.
 func TestAPI68NativeSecondPassConformance(t *testing.T) {
 	api68ReplayFamilies(t, "testdata/conformance/api68_native_second", api68SecondPassGaps, api68SecondPassPartialGaps)
 }

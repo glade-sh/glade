@@ -183,6 +183,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	artifacts.Sources = sources
 	features := capturedOrgShapeFeatures(p)
 	labelNames, labelsKnown := projectCustomLabels(p)
+	flowShapes := project.FlowRunModeShapes(p, nil)
 	parser := apexast.NewParser()
 	defer parser.Close()
 	projectBinding := p.PackageNamespaceBinding()
@@ -203,7 +204,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		CustomLabelsKnown:     labelsKnown,
 		OrgShapeFeatures:      features,
 		CustomMetadataRecords: s.CustomMetadataRecords,
-		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features, labelNames, labelsKnown),
+		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features, labelNames, labelsKnown, flowShapes),
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -300,7 +301,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 			NativeMessage: rejection.Message,
 		})
 	}
-	for _, rejection := range project.FlowRunModeRejections(p, nil) {
+	for _, rejection := range project.FlowRunModeRejectionsFromShapes(p, flowShapes) {
 		idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
 			Severity:      diagnostic.Error,
 			Code:          flowRunModeDiagnosticCode,
@@ -1330,10 +1331,10 @@ func capturedOrgShapeFeatures(p project.Project) []string {
 
 func incrementalProjectIdentity(p project.Project) string {
 	labelNames, labelsKnown := projectCustomLabels(p)
-	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p), labelNames, labelsKnown)
+	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p), labelNames, labelsKnown, project.FlowRunModeShapes(p, nil))
 }
 
-func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool) string {
+func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool, flowShapes map[string]string) string {
 	ledger := incrementalProjectIdentityLedger{
 		OrgShapeFeatures:           features,
 		VisualforcePageNames:       projectVisualforcePageNames(p),
@@ -1344,7 +1345,7 @@ func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNa
 		DependencyDiagnostics:      p.DependencyDiagnostics,
 		EmailServiceDigests:        emailServiceDigests(p),
 		PermissionMutingDigests:    permissionMutingDigests(p),
-		FlowRunModeShapes:          project.FlowRunModeShapes(p, nil),
+		FlowRunModeShapes:          flowShapes,
 		AccountSharingReasonShapes: project.AccountSharingReasonShapes(p, nil),
 	}
 	for _, dep := range p.ManagedPackageDependencies {

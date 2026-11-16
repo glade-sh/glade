@@ -2,12 +2,46 @@ package project
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/xml"
 	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+// flowShapeCache maps a Flow file's content hash to its parsed shape, so
+// repeated identity checks read a file but parse it once. It is cleared when it
+// grows past flowShapeCacheLimit.
+var (
+	flowShapeCacheMu sync.Mutex
+	flowShapeCache   = map[[sha256.Size]byte]string{}
+)
+
+const flowShapeCacheLimit = 8192
+
+func flowShapeForContent(data []byte) (string, bool) {
+	key := sha256.Sum256(data)
+	flowShapeCacheMu.Lock()
+	shape, ok := flowShapeCache[key]
+	flowShapeCacheMu.Unlock()
+	if ok {
+		return shape, true
+	}
+	var parsed flowRunModeShape
+	if err := xml.Unmarshal(data, &parsed); err != nil {
+		return "", false
+	}
+	shape = strings.TrimSpace(parsed.APIVersion) + "|" + strings.TrimSpace(parsed.RunInMode)
+	flowShapeCacheMu.Lock()
+	if len(flowShapeCache) >= flowShapeCacheLimit {
+		flowShapeCache = map[[sha256.Size]byte]string{}
+	}
+	flowShapeCache[key] = shape
+	flowShapeCacheMu.Unlock()
+	return shape, true
+}
 
 // FlowRunModeRejection names a Flow file that Salesforce rejects at deploy
 // time because its run mode needs a later Flow API version.
@@ -39,14 +73,14 @@ func FlowRunModeShapes(p Project, read func(string) ([]byte, error)) map[string]
 		if err != nil || !bytes.Contains(data, []byte("runInMode")) {
 			continue
 		}
-		var shape flowRunModeShape
-		if err := xml.Unmarshal(data, &shape); err != nil {
+		shape, ok := flowShapeForContent(data)
+		if !ok {
 			continue
 		}
 		if shapes == nil {
 			shapes = make(map[string]string)
 		}
-		shapes[file] = strings.TrimSpace(shape.APIVersion) + "|" + strings.TrimSpace(shape.RunInMode)
+		shapes[file] = shape
 	}
 	return shapes
 }
@@ -57,7 +91,13 @@ func FlowRunModeShapes(p Project, read func(string) ([]byte, error)) map[string]
 // same Flow saved at 68.0 (FLOW-DEPLOY-68). A Flow without an apiVersion
 // element was not captured and is not rejected.
 func FlowRunModeRejections(p Project, read func(string) ([]byte, error)) []FlowRunModeRejection {
-	shapes := FlowRunModeShapes(p, read)
+	return FlowRunModeRejectionsFromShapes(p, FlowRunModeShapes(p, read))
+}
+
+// FlowRunModeRejectionsFromShapes is FlowRunModeRejections over shapes the
+// caller already read with FlowRunModeShapes, so an index build reads each
+// Flow file once.
+func FlowRunModeRejectionsFromShapes(p Project, shapes map[string]string) []FlowRunModeRejection {
 	var rejections []FlowRunModeRejection
 	for _, file := range p.FlowFiles {
 		shape, ok := shapes[file]

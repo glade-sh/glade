@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -288,7 +289,7 @@ func sourceAPIVersionDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
 		version, err := apexversion.PreserveSource(typ.EffectiveAPIVersion)
 		if err != nil {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_VERSION", NativeMessage: "Invalid api version:" + typ.EffectiveAPIVersion, Message: fmt.Sprintf("%s %q: %v", typ.Kind, typ.Name, err), File: typ.File, Range: &typ.Range})
-		} else if version == retiringClassAPIVersion && !strings.Contains(typ.Name, ".") {
+		} else if version == retiringClassAPIVersion && typ.Kind == apexast.DeclarationClass && !strings.Contains(typ.Name, ".") {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Warning, Code: "GLADESEMA_VERSION_RETIRING", NativeMessage: retiringClassAPIVersionMessage, Message: retiringClassAPIVersionMessage, File: typ.File, Range: &typ.Range})
 		}
 	}
