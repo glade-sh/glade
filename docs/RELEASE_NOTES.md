@@ -26,6 +26,8 @@
 
 - **Duplicate matching.** Between two plain ASCII values, City rules count inner spaces as typed. Custom ZIP rules also split the code at a period or slash. The standard Account rule accepts the captured ZIP extension shapes, and its ZIP item matches a value that is not a ZIP code only as typed.
 
+- Custom Last Name duplicate matching recognizes more names with multiple keyboard substitutions or trailing characters, based on native captures.
+
 ## v0.3.10
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.

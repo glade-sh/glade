@@ -206,16 +206,44 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    that form). This replaced a hand-written stand-in that rejected anything it
    could not prove and missed dropped vowels, silent letters and name codes.
 3. Keyboard Distance, decided at 90, confidence `(100 + score) / 2`. Strings
-   are compared position by position; the cost of two different keys is 0.05
-   for neighbours and 0.08 for each further step, where the distance is the
-   column distance plus two between the top and bottom rows (`P4.LN.KB1`: 25
-   replacement letters on two bases); an accent costs 0.16; a trailing extra
-   letter about 0.25; the sum is divided by the longer length. The rows do
-   not pin the score down for three or more substituted letters, an inserted
-   letter or more than two trailing letters (`Martinez` finds
-   `Martinezkmptr` at 95 but `Frank` does not find `Franklin`), so Glade
-   matches by keyboard only one substitution, two with a score of 92 or
-   more, or up to two trailing letters.
+   are compared position by position over the shorter length, with no
+   alignment. In `fuzzy_name_keys` panels ks1 to ks3, suf1 and rsp1,
+   `Farnsdelwick` finds
+   `Farnsdraeovk` at 96 with five substitutions; `Abernathy` finds `Abernaty`
+   at 99; `Frank` does not find `Franklin`). The sum is divided by the longer
+   length. The costs are fitted to the 2,528 distinct native pairs that reach
+   this step (`keyboardDistance` in `internal/dml/fuzzy_keyboard.go`) for
+   unequal lengths or two or more substitutions. Equal-length pairs with one
+   substitution retain the earlier `keyboardSimilarity` scorer. Pairs that
+   the earlier scorer already matched also retain its confidence; the new
+   scorer applies only when that scorer did not match and the pair's joint
+   shape is one a captured pair has: the longer name's length in runes, the
+   count of positional substitutions and the count of trailing runes, taken
+   together. The native rows hold 210 such shapes (`keyboardPanelCells` in
+   `internal/dml/fuzzy_match.go`), with lengths 4–15. For any other shape,
+   including untested combinations inside those ranges, the earlier keyboard
+   scorer decides. Two panels captured after the fit and kept out of it
+   (`fuzzy_keyboard_neighbors`: other stems, added letters, other key pairs)
+   agree on every pair Glade matches: `Farnsdelwicka` finds `Farnsdraeovka`
+   (native 97, Glade 96), a pair the earlier scorer kept apart. The fitted
+   costs are:
+   - a substitution costs by key distance, the column distance plus two
+     between the top and bottom rows: 0.06 for neighbours and 0.079 a step
+     beyond; the final character of two names of equal length is one step
+     cheaper. About 120 key pairs need a cost other than the
+     formula and are listed in the code;
+   - an accent costs 0.16; a letter against a space or punctuation mark and a
+     space against a punctuation mark have their own costs; digits never
+     substitute;
+   - a trailing character costs by the character, with one table after an
+     otherwise equal name (about 0.25) and one after a substitution (top row
+     about 0.2, bottom row about 0.35).
+
+   The one-substitution legacy score does not reproduce every native
+   confidence: `Harlow II` / `Harlow IV` rounds to 98, versus native 97.
+   The standard rules keep the earlier
+   costs (`keyboardSimilarity`: one substitution, two with a score of 92 or
+   more, or up to two trailing letters), which their rows were fitted with.
 
 The apostrophe-removed form matches (`O'Connor`/`OConnor`, `O’Leary`/`OLeary`);
 a space splits the last word (`O'Brien`/`O Brien`, `Mc Donald`/`McDonald`).
@@ -436,7 +464,9 @@ default they never do; one blank value never matches.
 Recall is the share of native matching pairs Glade also matches; false matches
 are pairs Glade matches that native does not; confidence MAE is the mean
 absolute difference between Glade's rounded confidence and the native one over
-the pairs both match. API 67.0 rows, every ordered pair of every row. "fit"
+the pairs both match. The table records the earlier Metaphone 3 fit before
+the keyboard changes above; current per-row bounds and residuals are in the
+conformance tests. API 67.0 rows, every ordered pair of every row. "fit"
 is every row the model or its tables were built from (runs one to three, `P4.*`
 and `N4.*`). The held-out rows were written without sight of the model and
 scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
@@ -478,16 +508,17 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
 
 ## Gaps
 
-- Last Name: Glade does not reproduce the 2 of 201 unbiased-holdout, 2 of 173
-  seen-once and about 590 of the fit pairs that native matches and the port
-  does not. They are Keyboard Distance matches of three or more edits, long
+- Last Name: Glade does not reproduce the 2 of 201 unbiased-holdout and 2 of
+  173 seen-once pairs that native matches and the port does not. They are long
   names the key cuts differently (`Kowalczyk`/`Kowalsky`), respellings the
   port codes apart (`Robards`/`Robertz`, `Waalker`/`Walkker`) and a
   hyphenated surname against its first part (`Fitzgerald`/`Fitzgerald-Lee`).
-- Keyboard Distance: the cost of trailing letters depends on the letters
-  (`Williams`/`Williamson` 98, `Stevenson`/`Stevensonnn` 97), which the flat
-  0.25 misses by one point; three or more substitutions, insertions and more
-  than two trailing letters are not matched.
+- Keyboard Distance: the costs are additive, and native rows that share key
+  pairs disagree by up to a tenth of a point of cost, so about one confidence
+  may differ by one point; previously matched pairs retain their earlier
+  confidence as listed in `fuzzyNameKeysResiduals`. No row measures a
+  trailing `c`, `q`, `u`, `w`, `x` or digit on a native match. The standard
+  rules do not use the refit yet.
 - First Name: the Name Variant dictionary and its alias keys are unpublished.
   Glade carries the pairs and alias-keyed names proven for about 2,700 common
   first names and 590 nickname families. A nickname pair outside those rows

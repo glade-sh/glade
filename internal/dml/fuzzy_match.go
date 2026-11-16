@@ -331,24 +331,113 @@ func lastNameAlgorithms(x, y string) (bool, float64) {
 	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 		return true, 100
 	}
-	return lastNameKeyboard(x, y)
+	if singleKeyboardSubstitution(x, y) {
+		return lastNameKeyboard(x, y)
+	}
+	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
+		return matched, confidence
+	}
+	if matched, confidence := lastNameKeyboard(x, y); matched || !keyboardPanelShape(x, y) {
+		return matched, confidence
+	}
+	score, ok := keyboardDistance(x, y)
+	return ok && score >= 90, averageWith100(score)
+}
+
+// keyboardPanelShape gates the fallback to the joint shapes the native rows
+// hold: fuzzy_name_keys/org.tsv:10-25,122-169 (cases.json supplies the panel
+// values) and the LastName rows of duplicate_fuzzy_matching/org.tsv. A shape
+// is (length, substitutions, trailing): the longer folded, apostrophe-stripped
+// name in runes, the positional differences, and the unpaired suffix. Only a
+// shape that some captured pair brings to the fallback passes; every other
+// shape keeps the base keyboard result.
+func keyboardPanelShape(a, b string) bool {
+	substitutions, na, nb := 0, 0, 0
+	for len(a) > 0 && len(b) > 0 {
+		ra, sa := utf8.DecodeRuneInString(a)
+		rb, sb := utf8.DecodeRuneInString(b)
+		if ra != rb {
+			substitutions++
+		}
+		na++
+		nb++
+		a, b = a[sa:], b[sb:]
+	}
+	na += utf8.RuneCountInString(a)
+	nb += utf8.RuneCountInString(b)
+	longer, trailing := na, na-nb
+	if nb > na {
+		longer, trailing = nb, nb-na
+	}
+	if longer >= len(keyboardPanelCells) || substitutions >= len(keyboardPanelCells[longer]) {
+		return false
+	}
+	return keyboardPanelCells[longer][substitutions]>>uint(trailing)&1 == 1
+}
+
+// keyboardPanelCells[length][substitutions] has bit t set when a captured
+// pair with t trailing characters reaches the fallback.
+// TestLastNameKeyboardPanelCells rebuilds it from the native rows.
+var keyboardPanelCells = [16][9]uint16{
+	4:  {0x0000, 0x0002, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	5:  {0x0000, 0x0002, 0x0007, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	6:  {0x0000, 0x0006, 0x000f, 0x0007, 0x0007, 0x0000, 0x0000, 0x0000, 0x0000},
+	7:  {0x0000, 0x004e, 0x001f, 0x000f, 0x000f, 0x0007, 0x0000, 0x0000, 0x0000},
+	8:  {0x0008, 0x001e, 0x0016, 0x000f, 0x0017, 0x0007, 0x0003, 0x0000, 0x0000},
+	9:  {0x0018, 0x001e, 0x003f, 0x000f, 0x000f, 0x000b, 0x0007, 0x0000, 0x0000},
+	10: {0x0018, 0x001e, 0x000e, 0x007f, 0x000f, 0x0014, 0x001f, 0x0005, 0x0000},
+	11: {0x0038, 0x0036, 0x003e, 0x006e, 0x0087, 0x0065, 0x0036, 0x0008, 0x0004},
+	12: {0x0078, 0x006e, 0x003e, 0x001b, 0x010b, 0x0043, 0x0029, 0x0014, 0x0000},
+	13: {0x0038, 0x0000, 0x0010, 0x0081, 0x02d1, 0x0001, 0x0011, 0x0000, 0x0000},
+	14: {0x0070, 0x0000, 0x0020, 0x0000, 0x0020, 0x0000, 0x0020, 0x0000, 0x0000},
+	15: {0x00c0, 0x0060, 0x0050, 0x0048, 0x0040, 0x0000, 0x0000, 0x0020, 0x0000},
+}
+
+// singleKeyboardSubstitution counts positions in runes, as keyboardSimilarity does.
+func singleKeyboardSubstitution(a, b string) bool {
+	different := 0
+	for len(a) > 0 && len(b) > 0 {
+		ra, na := utf8.DecodeRuneInString(a)
+		rb, nb := utf8.DecodeRuneInString(b)
+		if ra != rb {
+			different++
+			if different > 1 {
+				return false
+			}
+		}
+		a, b = a[na:], b[nb:]
+	}
+	return len(a) == 0 && len(b) == 0 && different == 1
 }
 
 var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")
 
-// lastNameKeyboard is the Keyboard Distance step of the Last Name method on
-// two folded names whose apostrophes are removed.
+// lastNameKeyboard is the Keyboard Distance step of the standard rules' Last
+// Name on two folded names whose apostrophes are removed. It keeps the costs
+// the standard rows were fitted with (keyboardSimilarity); the custom Last
+// Name method also retains this score for previously accepted pairs.
 func lastNameKeyboard(x, y string) (bool, float64) {
-	if len(x) == 8 && standardIsTerminalSwap(x, y) {
-		a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
-		// Only the captured five-column geometry overrides ordinary membership.
-		if abs(a[0]-b[0]) <= 1 && abs(a[1]-b[1]) == 5 {
-			ordinary, ok := keyboardSimilarity(x, y)
-			return standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
-		}
+	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
+		return matched, confidence
 	}
 	score, ok := keyboardSimilarity(x, y)
 	return ok && score >= 90, averageWith100(score)
+}
+
+// lastNameTerminalSwap decides two eight-letter names whose last two letters
+// are swapped, for the captured five-column geometry only.
+func lastNameTerminalSwap(x, y string) (matched bool, confidence float64, swap bool) {
+	if len(x) != 8 || !standardIsTerminalSwap(x, y) {
+		return false, 0, false
+	}
+	a, b := qwertyPosition[rune(x[6])], qwertyPosition[rune(x[7])]
+	// Only the captured five-column geometry overrides ordinary membership.
+	if abs(a[0]-b[0]) > 1 || abs(a[1]-b[1]) != 5 {
+		return false, 0, false
+	}
+	ordinary, ok := keyboardSimilarity(x, y)
+	matched, confidence = standardTerminalSwap(x, averageWith100(ordinary), ok && ordinary >= 90)
+	return matched, confidence, true
 }
 
 // lastNameCode is the whole-name match key of a folded last name, cached by
