@@ -1,0 +1,9 @@
+family=collation
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=USER_DEBUG lines (anonymous) or assertion messages (isTest); Salesforce ids masked as <id>
+rows 62.0,67.0=payloads identical at both API versions
+holdout_inputs_sha256=cf38fda8846df6549902c269a00cb1d06bc377bc2d7b996df53da9988d0402a2
+sf_cli=2.157.8
+run=request-collation 20261116T044238Z
