@@ -104,11 +104,21 @@ func TestCPUFollowupMessageAcrossLocalCaps(t *testing.T) {
 			t.Fatalf("cap %d: %v", cap, err)
 		}
 	}
+	// Explicit local caps keep the generic text for every other governor.
 	machine := New(nil)
 	machine.SetLimitMode(LimitModeStrict)
+	machine.SetLimitCaps(defaultLimitCaps())
 	err := machine.checkLimit("dmlRows", 3, 2)
 	var limitErr *RuntimeError
 	if !errors.As(err, &limitErr) || limitErr.Message != "Too many dmlRows: 3 out of 2" {
 		t.Fatalf("other governor message changed: %v", err)
+	}
+	// NATIVE DML rows text limits_dml_row_edges/org.tsv:7 anonymous 62.0
+	// NATIVE DML rows text limits_dml_row_edges/org.tsv:9 anonymous 67.0
+	machine = New(nil)
+	machine.SetLimitMode(LimitModeStrict)
+	err = machine.checkLimit("dmlRows", 10001, 10000)
+	if !errors.As(err, &limitErr) || limitErr.Message != "Too many DML rows: 10001" {
+		t.Fatalf("native DML rows message: %v", err)
 	}
 }

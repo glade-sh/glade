@@ -1302,7 +1302,8 @@ System.runAs(u) {
 	try {
 		Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Score__c)', AccessLevel.USER_MODE);
 	} catch (QueryException qe) {
-		caught = qe.getMessage().contains('Account') || qe.getMessage().contains('Score__c');
+		// NATIVE denial names the object in lower case sosl_istest_edges/org.tsv am_dyn_user istest 62.0 67.0
+		caught = qe.getMessage().toLowerCase().contains('account') || qe.getMessage().contains('Score__c');
 	}
 	System.assert(caught);
 	List<List<SObject>> systemRows = Search.query(
