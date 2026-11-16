@@ -35,6 +35,17 @@ type javaRegexParser struct {
 	names    map[string]bool
 
 	escapeInfo javaTreeInfo
+
+	loops    []javaLoopGroup
+	repeated []javaLoopGroup // every group followed by a repeating quantifier
+}
+
+// javaLoopGroup is a quantified group whose body Java cannot match in a fixed
+// way. Java matches it with a recursive Loop node, one stack frame set per
+// iteration. start is the index of the opening parenthesis and end the index
+// after the closing one, in the \Q-normalised pattern.
+type javaLoopGroup struct {
+	start, end int
 }
 
 const (
@@ -42,6 +53,35 @@ const (
 )
 
 func javaRegexSyntaxCheck(pattern string) (err *javaSyntaxError) {
+	_, err = javaRegexParse(pattern)
+	return err
+}
+
+// javaRegexLoopGroups returns the groups Java matches with recursive loops.
+func javaRegexLoopGroups(normalized string) []javaLoopGroup {
+	p, err := javaRegexParse(normalized)
+	if err != nil || p == nil {
+		return nil
+	}
+	// Only outermost loops: an inner loop's captures accumulate across the outer
+	// iterations, which do not nest on the stack.
+	var outer []javaLoopGroup
+	for _, loop := range p.loops {
+		nested := false
+		for _, other := range p.repeated {
+			if other != loop && other.start <= loop.start && other.end >= loop.end {
+				nested = true
+				break
+			}
+		}
+		if !nested {
+			outer = append(outer, loop)
+		}
+	}
+	return outer
+}
+
+func javaRegexParse(pattern string) (parser *javaRegexParser, err *javaSyntaxError) {
 	p := &javaRegexParser{names: map[string]bool{}, groups: 1}
 	p.t = javaRemoveQEQuoting([]rune(pattern))
 	p.n = len(p.t)
@@ -49,7 +89,7 @@ func javaRegexSyntaxCheck(pattern string) (err *javaSyntaxError) {
 	defer func() {
 		if r := recover(); r != nil {
 			if se, ok := r.(*javaSyntaxError); ok {
-				err = se
+				parser, err = nil, se
 				return
 			}
 			panic(r)
@@ -62,7 +102,7 @@ func javaRegexSyntaxCheck(pattern string) (err *javaSyntaxError) {
 		}
 		p.fail("Unexpected character '" + string(p.peek()) + "'")
 	}
-	return nil
+	return p, nil
 }
 
 // javaRemoveQEQuoting mirrors Pattern.RemoveQEQuoting, which rewrites \Q...\E
@@ -806,6 +846,7 @@ func (p *javaRegexParser) addFlag() {
 // group0 parses a group and its quantifier. A flag-only group "(?i)" returns
 // minLen -1 because it adds no node.
 func (p *javaRegexParser) group0() javaTreeInfo {
+	groupStart := p.cursor
 	saveComments := p.comments
 	var body javaTreeInfo
 	zeroWidth := false
@@ -855,6 +896,7 @@ func (p *javaRegexParser) group0() javaTreeInfo {
 	}
 	p.accept(')', "Unclosed group")
 	p.comments = saveComments
+	groupEnd := p.cursor
 	q := p.quantifier()
 	if zeroWidth {
 		return javaFixedInfo(0)
@@ -862,9 +904,13 @@ func (p *javaRegexParser) group0() javaTreeInfo {
 	if !q.set {
 		return body
 	}
+	if !q.question {
+		p.repeated = append(p.repeated, javaLoopGroup{start: groupStart, end: groupEnd})
+	}
 	if q.possessive || q.question || body.deterministic {
 		return javaCurlyInfo(body, q)
 	}
+	p.loops = append(p.loops, javaLoopGroup{start: groupStart, end: groupEnd})
 	return javaTreeInfo{minLen: 0, maxLen: 0, maxValid: false, deterministic: false}
 }
 

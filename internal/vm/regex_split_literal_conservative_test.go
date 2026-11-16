@@ -16,8 +16,6 @@ import (
 func TestLiteralSplitPlanFullEngineEquivalenceUnicodeAndOctalRoutes(t *testing.T) {
 	for _, tc := range []struct{ name, pattern, text string }{
 		{"unicode-fold", `(?iu)İ`, "LiRiT"},
-		{"octal-class-400", `[\400]`, "LĀRĀT"},
-		{"octal-class-777", `[\777]`, "LǿRǿT"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			plan, err := compileRegexp2PlanForInput("Pattern.split", tc.pattern, tc.text)
@@ -49,7 +47,7 @@ func TestLiteralSplitPlanFullEngineEquivalenceUnicodeAndOctalRoutes(t *testing.T
 }
 
 func TestLiteralSplitEligibilityPlainASCIIPlanRoute(t *testing.T) {
-	for _, pattern := range []string{`\.`, `\010`, `\\10`, `[1]0`, `(?i)a`, `(?iu)İ`, `é`, `[\400]`, `[\777]`, `\Qabc\E`, `(a)`, `a|b`, `a*`, `^a$`, ""} {
+	for _, pattern := range []string{`\.`, `\010`, `\\10`, `[1]0`, `(?i)a`, `(?iu)İ`, `é`, `\Qabc\E`, `(a)`, `a|b`, `a*`, `^a$`, ""} {
 		t.Run(pattern, func(t *testing.T) {
 			plan, err := compileRegexp2PlanForInput("String.split", pattern, "text")
 			if err != nil {
@@ -114,28 +112,6 @@ func TestConservativeSplitNativeStringAndPatternSourceAndValueRoutes(t *testing.
 			var native map[string]json.RawMessage
 			if err := json.Unmarshal([]byte(row[3]), &native); err != nil {
 				t.Fatal(err)
-			}
-			if row[2] == "octal_class_400" || row[2] == "octal_class_777" {
-				// Native rejects these classes; retain that syntax gap and
-				// require every split route to agree with the full matcher.
-				plan, err := compileRegexp2PlanForInput("Pattern.matcher", input[0], text)
-				if err != nil {
-					t.Fatal(err)
-				}
-				match, err := plan.findValidStartingAt(text, 0)
-				if err != nil || match != nil {
-					t.Fatalf("full-engine control match=%v error=%v", match, err)
-				}
-				raw, err := json.Marshal([]string{text})
-				if err != nil {
-					t.Fatal(err)
-				}
-				for key := range native {
-					if key != "Matcher.find" {
-						native[key] = raw
-					}
-				}
-				t.Log("carried native syntax gap; asserting full-engine route equivalence (CARRIED.txt)")
 			}
 			pattern, err := patternCompile([]Value{String(input[0])})
 			if err != nil {

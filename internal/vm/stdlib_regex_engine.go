@@ -40,26 +40,35 @@ func compileRegexp2Source(callee, source string) (string, error) {
 }
 
 func compileRegexp2SourceFor(callee, source string, traits regexTraits) (string, error) {
-	converted, err := javaRegexQuoteEscapesToGo(source)
-	if err != nil {
-		return "", unsupportedCallError(callee + " " + err.Error())
+	translated, _, err := compileRegexp2SourceLoops(callee, source, traits)
+	return translated, err
+}
+
+// compileRegexp2SourceLoops also returns the private captures that count the
+// iterations of recursive loop groups when the subject text is long.
+func compileRegexp2SourceLoops(callee, source string, traits regexTraits) (string, []string, error) {
+	converted := javaRegexRemoveQuoting(source)
+	var loopNames []string
+	if traits.longText {
+		converted, loopNames = instrumentJavaLoopGroups(converted)
 	}
-	regexp2Source := rewriteJavaNumericEscapesForRegexp2(converted)
+	converted = normalizeJavaRegexEscapesForGo(converted)
+	regexp2Source := rewriteJavaStackedQuantifiersForRegexp2(rewriteJavaNumericEscapesForRegexp2(converted))
 	unicodeCharacterClass := false
 	regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source, traits, unicodeCharacterClass)
 	regexp2Source = rewriteJavaRegexEscapesForRegexp2(regexp2Source)
 	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source = rewriteJavaShorthandClassesForRegexp2(regexp2Source, unicodeCharacterClass)
-	regexp2Source, err = rewriteJavaClassAlgebraForRegexp2(regexp2Source)
+	regexp2Source, err := rewriteJavaClassAlgebraForRegexp2(regexp2Source)
 	if err != nil {
-		return "", unsupportedCallError(callee + " " + err.Error())
+		return "", nil, unsupportedCallError(callee + " " + err.Error())
 	}
 	regexp2Source = rewriteSimplePossessiveQuantifiersForRegexp2(regexp2Source)
 	if feature := unsupportedRegexp2JavaRegexFeature(regexp2Source); feature != "" {
-		return "", unsupportedCallError(callee + " " + feature)
+		return "", nil, unsupportedCallError(callee + " " + feature)
 	}
-	return regexp2Source, nil
+	return regexp2Source, loopNames, nil
 }
 
 func unsupportedRegexp2JavaRegexFeature(source string) string {

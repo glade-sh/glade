@@ -48,6 +48,7 @@ func (c *javaRegexClassState) advance(source string, i int) {
 type regexTraits struct {
 	nonASCII  bool // text holds a code point above U+007F
 	lineTerms bool // text holds \r, U+0085, U+2028 or U+2029
+	longText  bool // text is long enough to overflow Java's loop recursion
 }
 
 // regexTraitsAll is the conservative choice when no subject text is known.
@@ -55,6 +56,7 @@ var regexTraitsAll = regexTraits{nonASCII: true, lineTerms: true}
 
 func regexTraitsOf(input string) regexTraits {
 	var t regexTraits
+	t.longText = len(input) >= regexLoopMinInput
 	for i := 0; i < len(input); i++ {
 		b := input[i]
 		switch {
@@ -69,6 +71,7 @@ func regexTraitsOf(input string) regexTraits {
 		if t.nonASCII && t.lineTerms {
 			break
 		}
+
 	}
 	return t
 }
@@ -76,10 +79,17 @@ func regexTraitsOf(input string) regexTraits {
 // normalizedFor clears the traits the pattern cannot depend on, so plans for
 // such patterns are shared across subject texts.
 func (t regexTraits) normalizedFor(source string) regexTraits {
-	if !t.nonASCII && !t.lineTerms {
+	if !t.nonASCII && !t.lineTerms && !t.longText {
 		return t
 	}
 	out := regexTraits{}
+	if t.longText && strings.Contains(source, ")") && strings.ContainsAny(source, "*+{") {
+		// The parser decides whether a group is a recursive loop, and only when
+		// the text is long enough to matter.
+		if len(javaRegexLoopGroups(javaRegexRemoveQuoting(source))) > 0 {
+			out.longText = true
+		}
+	}
 	hasI := regexSourceHasInlineFlag(source, 'i')
 	if t.nonASCII && (hasI || strings.Contains(source, `\b`) || strings.Contains(source, `\B`)) {
 		out.nonASCII = true

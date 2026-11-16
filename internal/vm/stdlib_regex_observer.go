@@ -33,6 +33,7 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 		}
 		return "(?(" + name + ")|" + atom + ")"
 	}
+	closerAt := map[int]string{}
 	var out strings.Builder
 	// Anchor-only expressions still need a declared slot for the conditions.
 	// This definition cannot capture or change the observation result.
@@ -64,6 +65,16 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 					out.WriteString(source[start:i])
 					continue
 				}
+			}
+			if strings.HasPrefix(source[i:], "(?!") {
+				// A negative lookahead drops captures made inside it, which would
+				// hide reads at the end of the input. Observe its body through a
+				// positive lookahead that the path may skip.
+				out.WriteString("(?:(?=")
+				i += 3
+				stack = append(stack, extended)
+				closerAt[len(stack)] = ")|)"
+				continue
 			}
 			if strings.HasPrefix(source[i:], "(?") {
 				j, scoped, enabled, sawFlag := i+2, extended, true, false
@@ -106,11 +117,17 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 			stack = append(stack, extended)
 			out.WriteString(source[start:i])
 		case ')':
-			if len(stack) > 0 {
-				extended = stack[len(stack)-1]
-				stack = stack[:len(stack)-1]
+			depth := len(stack)
+			if depth > 0 {
+				extended = stack[depth-1]
+				stack = stack[:depth-1]
 			}
-			out.WriteByte(ch)
+			if closer, ok := closerAt[depth]; ok && depth > 0 {
+				delete(closerAt, depth)
+				out.WriteString(closer)
+			} else {
+				out.WriteByte(ch)
+			}
 			i++
 		case '|', '*', '+', '?':
 			out.WriteByte(ch)
@@ -227,6 +244,11 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 		match, err = searchRegexp2(re, input, func() (*regexp2.Match, error) {
 			return re.FindNextMatch(previous)
 		})
+	}
+	if match != nil && err == nil {
+		if depthErr := p.checkStackDepth(match); depthErr != nil {
+			return nil, depthErr
+		}
 	}
 	return match, err
 }

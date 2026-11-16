@@ -3,7 +3,9 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"unicode/utf16"
 	"unicode/utf8"
 
 	"github.com/dlclark/regexp2/syntax"
@@ -332,6 +334,19 @@ func rewriteJavaNumericEscapesForRegexp2(source string) string {
 			}
 			i = j - 1
 			changed = true
+		case next == 'u' && i+11 < len(source)+0 && source[i+6] == '\\' && source[i+7] == 'u':
+			// Java joins an escaped surrogate pair into one code point (Pattern.u).
+			high, okHigh := parseJavaHexQuad(source[i+2 : i+6])
+			low, okLow := parseJavaHexQuad(source[i+8 : i+12])
+			if okHigh && okLow && high >= 0xD800 && high <= 0xDBFF && low >= 0xDC00 && low <= 0xDFFF {
+				out.WriteRune(utf16.DecodeRune(high, low))
+				i += 11
+				changed = true
+				continue
+			}
+			out.WriteByte(ch)
+			out.WriteByte(next)
+			i++
 		case next == 'N' && i+2 < len(source) && source[i+2] == '{':
 			end := strings.IndexByte(source[i+3:], '}')
 			if end >= 0 {
@@ -373,4 +388,107 @@ func javaOctalEscapeValue(rest string) (rune, int) {
 		return n*64 + m*8 + rune(rest[2]-'0'), 3
 	}
 	return n*8 + m, 2
+}
+
+// rewriteJavaStackedQuantifiersForRegexp2 groups an atom that already has a
+// quantifier before a following {n,m}: Java reads a{1,2}{3} as (?:a{1,2}){3},
+// while regexp2 rejects the nested repetition.
+func rewriteJavaStackedQuantifiersForRegexp2(source string) string {
+	if !strings.Contains(source, "}{") && !strings.Contains(source, "*{") && !strings.Contains(source, "+{") && !strings.Contains(source, "?{") {
+		return source
+	}
+	var out []byte
+	var groups []int
+	atomStart := -1
+	quantified := false
+	for i := 0; i < len(source); {
+		ch := source[i]
+		switch {
+		case ch == '\\' && i+1 < len(source):
+			size := 2
+			switch source[i+1] {
+			case 'p', 'P', 'x', 'k':
+				if i+2 < len(source) && (source[i+2] == '{' || source[i+2] == '<') {
+					closer := byte('}')
+					if source[i+2] == '<' {
+						closer = '>'
+					}
+					if end := strings.IndexByte(source[i:], closer); end >= 0 {
+						size = end + 1
+					}
+				}
+			case 'c':
+				size = 3
+			}
+			if i+size > len(source) {
+				size = len(source) - i
+			}
+			atomStart, quantified = len(out), false
+			out = append(out, source[i:i+size]...)
+			i += size
+		case ch == '[':
+			end := javaRegexCharClassEnd(source, i)
+			if end < 0 {
+				return source
+			}
+			atomStart, quantified = len(out), false
+			out = append(out, source[i:end+1]...)
+			i = end + 1
+		case ch == '(':
+			groups = append(groups, len(out))
+			quantified = false
+			out = append(out, ch)
+			i++
+		case ch == ')':
+			if len(groups) > 0 {
+				atomStart = groups[len(groups)-1]
+				groups = groups[:len(groups)-1]
+			}
+			quantified = false
+			out = append(out, ch)
+			i++
+		case ch == '*' || ch == '+' || ch == '?':
+			out = append(out, ch)
+			i++
+			if i < len(source) && (source[i] == '?' || source[i] == '+') && ch != '?' || i < len(source) && ch == '?' && (source[i] == '?' || source[i] == '+') {
+				out = append(out, source[i])
+				i++
+			}
+			quantified = true
+		case ch == '{':
+			end := strings.IndexByte(source[i:], '}')
+			if end < 0 || !isRegexCountQuantifier(source[i+1:i+end]) {
+				atomStart, quantified = len(out), false
+				out = append(out, ch)
+				i++
+				break
+			}
+			if quantified && atomStart >= 0 {
+				wrapped := append([]byte("(?:"), out[atomStart:]...)
+				wrapped = append(wrapped, ')')
+				out = append(out[:atomStart], wrapped...)
+			}
+			out = append(out, source[i:i+end+1]...)
+			i += end + 1
+			if i < len(source) && (source[i] == '?' || source[i] == '+') {
+				out = append(out, source[i])
+				i++
+			}
+			quantified = true
+		default:
+			_, size := utf8.DecodeRuneInString(source[i:])
+			atomStart, quantified = len(out), false
+			out = append(out, source[i:i+size]...)
+			i += size
+		}
+	}
+	return string(out)
+}
+
+func parseJavaHexQuad(text string) (rune, bool) {
+	if len(text) != 4 {
+		return 0, false
+	}
+	v, err := strconv.ParseUint(text, 16, 16)
+	return rune(v), err == nil
 }

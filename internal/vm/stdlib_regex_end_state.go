@@ -63,14 +63,14 @@ func instrumentRegexp2EndAssertions(source string, original *regexp2.Regexp) (st
 			i++
 		}
 		if ch == '\\' {
-			if !inClass && i+1 < len(source) && source[i+1] == 'b' {
+			if !inClass && i+1 < len(source) && (source[i+1] == 'b' || source[i+1] == 'B') {
 				for next <= maxSlot && reserved[next] {
 					next++
 				}
 				if next > maxSlot {
 					return source, nil
 				}
-				out.WriteString("(?<" + strconv.Itoa(next) + `>\b)`)
+				out.WriteString("(?<" + strconv.Itoa(next) + `>\` + string(source[i+1]) + `)`)
 				groups = append(groups, regexp2EndAssertion{group: next, multiline: true})
 				next++
 				i++
@@ -152,6 +152,19 @@ func instrumentRegexp2EndAssertions(source string, original *regexp2.Regexp) (st
 					i = j
 					continue
 				}
+			}
+			if strings.HasPrefix(source[i:], "(?!") {
+				// Java sets requireEnd when a negative lookahead is tried at the end of
+				// the input: more input could make it fail (Pattern.Neg).
+				for next <= maxSlot && reserved[next] {
+					next++
+				}
+				if next > maxSlot {
+					return source, nil
+				}
+				out.WriteString("(?:(?<" + strconv.Itoa(next) + `>\z)|)`)
+				groups = append(groups, regexp2EndAssertion{group: next, multiline: true})
+				next++
 			}
 			optionStack = append(optionStack, options)
 		case ')':

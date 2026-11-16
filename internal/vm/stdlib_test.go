@@ -2271,14 +2271,13 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	if err != nil || !handled || escapedUnderscore.Text != "AB,C.D" {
 		t.Fatalf("replaceAll escaped underscore = %#v handled=%v err=%v", escapedUnderscore, handled, err)
 	}
-	var runtimeErr *RuntimeError
-	_, _, err = callStringMember(String("abc"), "replaceFirst", []Value{String("(?<word>[a-z]+)"), String("${word}")})
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceFirst replacement named group references") {
-		t.Fatalf("replaceFirst named regex unsupported err = %#v", err)
+	namedFirst, handled, err := callStringMember(String("abc"), "replaceFirst", []Value{String("(?<word>[a-z]+)"), String("<${word}>")})
+	if err != nil || !handled || namedFirst.Text != "<abc>" {
+		t.Fatalf("replaceFirst named group = %#v handled=%v err=%v", namedFirst, handled, err)
 	}
 	_, _, err = callStringMember(String("abc"), "replaceAll", []Value{String("([a-z]+)"), String("${word}")})
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceAll replacement named group references") {
-		t.Fatalf("replaceAll named replacement unsupported err = %#v", err)
+	if err == nil || !strings.Contains(err.Error(), "No group with name {word}") {
+		t.Fatalf("replaceAll missing named group err = %v", err)
 	}
 	backrefSplit, handled, err := callStringMember(String("axa axb bxb"), "split", []Value{String(`([ab])x\1`), Int(-1)})
 	if err != nil || !handled || backrefSplit.Kind != ValueList || len(backrefSplit.List) != 3 || backrefSplit.List[0].Text != "" || backrefSplit.List[1].Text != " axb " || backrefSplit.List[2].Text != "" {

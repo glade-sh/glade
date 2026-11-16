@@ -31,6 +31,7 @@ type regexp2Plan struct {
 	internalGroupNames map[string]bool
 	publicGroupNumbers []int
 	endAssertionGroups []regexp2EndAssertion
+	loopGroups         []string
 }
 
 func buildGraphemeBoundaryTable(input string) *graphemeBoundaryTable {
@@ -60,28 +61,31 @@ func compileRegexp2PlanForInput(callee, source, input string) (*regexp2Plan, err
 }
 
 func compileRegexp2PlanForInputWithException(callee, source, input, exceptionType string) (*regexp2Plan, error) {
-	if err := validateJavaRegexSource(source, exceptionType); err != nil {
-		return nil, err
-	}
 	traits := regexTraitsOf(input).normalizedFor(source)
-	regexp2Source, err := compileRegexp2SourceFor(callee, source, traits)
-	if err != nil {
-		return nil, err
-	}
 	// A pattern without grapheme tokens compiles independently of its input:
 	// it needs no cluster table and its plan can be shared between calls.
-	inputIndependent := !regexSourceUsesGraphemeTokens(regexp2Source)
+	inputIndependent := !regexSourceUsesGraphemeTokens(source)
 	cacheKey := regexp2PlanCacheKey{callee: callee, source: source, exceptionType: exceptionType, traits: traits}
 	if inputIndependent {
 		if plan, ok := regexp2PlanCache.lookup(cacheKey); ok {
 			return plan, nil
 		}
 	}
+	if err := validateJavaRegexSource(source, exceptionType); err != nil {
+		return nil, err
+	}
+	regexp2Source, loopNames, err := compileRegexp2SourceLoops(callee, source, traits)
+	if err != nil {
+		return nil, err
+	}
 	var table *graphemeBoundaryTable
 	if !inputIndependent {
 		table = buildGraphemeBoundaryTable(input)
 	}
 	internal := map[string]bool{}
+	for _, name := range loopNames {
+		internal[name] = true
+	}
 	regexp2Source = rewriteGraphemeTokensForRegexp2(regexp2Source, table, internal)
 	re, err := regexp2.Compile(regexp2Source, regexp2.None)
 	if err != nil {
@@ -107,6 +111,7 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		internalGroupNames: internal,
 		publicGroupNumbers: publicGroups,
 		endAssertionGroups: endGroups,
+		loopGroups:         loopNames,
 	}
 	if inputIndependent {
 		regexp2PlanCache.store(cacheKey, plan)
@@ -267,6 +272,9 @@ func (p *regexp2Plan) findValidStartingAt(input string, startAt int) (*regexp2.M
 	})
 	for match != nil && err == nil {
 		if p.validGraphemeMatch(input, match) {
+			if err := p.checkStackDepth(match); err != nil {
+				return nil, err
+			}
 			return match, nil
 		}
 		match, err = p.findNext(input, match)
@@ -278,6 +286,9 @@ func (p *regexp2Plan) findNextValid(input string, prev *regexp2.Match) (*regexp2
 	match, err := p.findNext(input, prev)
 	for match != nil && err == nil {
 		if p.validGraphemeMatch(input, match) {
+			if err := p.checkStackDepth(match); err != nil {
+				return nil, err
+			}
 			return match, nil
 		}
 		match, err = p.findNext(input, match)

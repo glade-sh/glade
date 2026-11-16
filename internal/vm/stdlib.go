@@ -3035,12 +3035,17 @@ func isEscapedRegexByte(source string, index int) bool {
 }
 
 func javaRegexQuoteEscapesToGo(source string) (string, error) {
+	return normalizeJavaRegexEscapesForGo(javaRegexRemoveQuoting(source)), nil
+}
+
+// javaRegexRemoveQuoting rewrites \Q...\E into escaped literals before the
+// pattern is parsed, as Pattern does, so every later index and the x flag see
+// the quoted text as ordinary characters.
+func javaRegexRemoveQuoting(source string) string {
 	if !strings.Contains(source, `\Q`) {
-		return normalizeJavaRegexEscapesForGo(source), nil
+		return source
 	}
-	// Pattern rewrites \Q...\E into escaped literals before it parses, so every
-	// later index and the x flag see the quoted text as ordinary characters.
-	return normalizeJavaRegexEscapesForGo(string(javaRemoveQEQuoting([]rune(source)))), nil
+	return string(javaRemoveQEQuoting([]rune(source)))
 }
 
 // Salesforce's Java regex accepts an escaped underscore as a literal
