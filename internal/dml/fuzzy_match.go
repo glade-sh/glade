@@ -919,6 +919,12 @@ func streetClean(s string) string { return streetCleanFor(s, false) }
 var (
 	streetBreakReplacer = strings.NewReplacer(",\r\n", "", ",\n", "", ",\r", "", "\r\n", "", "\n", "", "\r", "")
 	streetPunctReplacer = strings.NewReplacer(",", " ", ".", "", "#", "", "/", "", ":", "")
+	// streetKeyBreakReplacer reads a line break as a word separator
+	// (streetKeyClean); streetSharedPunctReplacer is the punctuation step of
+	// the shared cleaning. Both are built once: a duplicate scan cleans two
+	// streets for every stored record.
+	streetKeyBreakReplacer    = strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ")
+	streetSharedPunctReplacer = strings.NewReplacer(",", " ", ".", "", "#", " ")
 )
 
 func streetCleanFor(s string, custom bool) string {
@@ -938,7 +944,7 @@ func streetCleanBreaks(s string, custom, deleteBreaks bool) string {
 			if deleteBreaks {
 				s = streetBreakReplacer.Replace(s)
 			} else {
-				s = strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ").Replace(s)
+				s = streetKeyBreakReplacer.Replace(s)
 			}
 		}
 		words := strings.Fields(streetPunctReplacer.Replace(streetFoldASCII(s)))
@@ -982,7 +988,7 @@ func streetFoldASCII(s string) string {
 
 func streetCleanWords(s string, hash bool) string {
 	if hash {
-		s = strings.NewReplacer(",", " ", ".", "", "#", " ").Replace(s)
+		s = streetSharedPunctReplacer.Replace(s)
 	}
 	words := strings.Fields(s)
 	for i, w := range words {
@@ -1035,6 +1041,10 @@ func parseStreetFor(s string, custom bool) streetParts {
 	words := strings.Fields(cleaned)
 	switch {
 	case len(words) == 0 || words[0][0] < '0' || words[0][0] > '9':
+	case custom && len(words) == 1 && !digitsOnly.MatchString(words[0]):
+		// NATIVE fuzzy_street_c9/org.tsv r7: a street of one word that is
+		// not a number is all name ("3F" reports 86 for itself, 100 under
+		// Match Blank Fields; "12" reports 100).
 	case custom && streetGluedNumber.MatchString(words[0]):
 	case custom:
 		// NATIVE fuzzy_street_c5/org.tsv nl1, np1, np2, fuzzy_street_c4 cl1
@@ -1190,10 +1200,13 @@ func streetSectionsWith(pa, pb streetParts, matchBlanks bool, similarity func(a,
 	return streetSectionScore(pa, pb, matchBlanks, similarity, false)
 }
 
-// streetSectionScore is streetSections. With numberAlways a street number on
-// one side only counts as a mismatch instead of being left out. NATIVE
-// fuzzy_street_c4/org.tsv cj2: "41 Harlan Ave" finds "41\nHarlan Ave" (no
-// street number) at 77, not 87.
+// streetSectionScore is streetSections. With numberAlways (the custom method)
+// a street number or a street name on one side only counts as a mismatch
+// instead of being left out. NATIVE fuzzy_street_c4/org.tsv cj2: "41 Harlan
+// Ave" finds "41\nHarlan Ave" (no street number) at 77, not 87.
+// fuzzy_street_c9/org.tsv r7: "12" finds neither "12 St" nor "12 Park" nor "12
+// Park St", while "12 Park" finds "12 Park St" at 85 (a suffix on one side is
+// left out).
 func streetSectionScore(pa, pb streetParts, matchBlanks bool, similarity func(a, b string) float64, numberAlways bool) float64 {
 	num, den := 0.0, 0.0
 	for _, section := range []struct {
@@ -1211,7 +1224,7 @@ func streetSectionScore(pa, pb streetParts, matchBlanks bool, similarity func(a,
 				}
 			}
 		case section.x == "" || section.y == "":
-			if section.number && numberAlways {
+			if (section.number || section.name) && numberAlways {
 				den += section.weight
 			}
 		case section.name:

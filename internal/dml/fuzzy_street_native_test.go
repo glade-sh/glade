@@ -18,6 +18,7 @@ var streetNativeDirs = map[string]int{
 	"testdata/conformance/fuzzy_street_c4": 0,
 	"testdata/conformance/fuzzy_street_c5": 0,
 	"testdata/conformance/fuzzy_street_c8": 0,
+	"testdata/conformance/fuzzy_street_c9": 8,
 }
 
 const streetPanelDigits = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -54,6 +55,8 @@ func streetNativePanel(t *testing.T, observation string) map[string]string {
 // NATIVE fuzzy_street_c5/org.tsv:9 istest 67.0
 // NATIVE fuzzy_street_c8/org.tsv:2 anonymous 62.0
 // NATIVE fuzzy_street_c8/org.tsv:9 istest 67.0
+// NATIVE fuzzy_street_c9/org.tsv:2 anonymous 62.0
+// NATIVE fuzzy_street_c9/org.tsv:9 istest 67.0
 // Every pair of each street panel's values through a custom Street rule
 // (Datacloud.FindDuplicates, anonymous and @IsTest, APIs 62.0 and 67.0, two
 // repeats, all identical per case). Fit panels and holdout panels are scored
@@ -320,6 +323,25 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"12 Rue Rivoli", "12 Ave Rivoli", true, 85},
 		{"12 Rue Rivoli", "12 Rivoli", false, 0},
 		{"Rue Royale", "Rue Royale", true, 86},
+		// fuzzy_street_c9 (r1, r7): a street name on one side only is a
+		// mismatch; a street with no key word finds nothing; one word that is
+		// not a number is the name; characters outside ASCII are deleted, so
+		// two Cyrillic or CJK streets with one house number are one street.
+		{"12", "12 St", false, 0},
+		{"12", "12 Park", false, 0},
+		{"12 St", "12 Rd", false, 0},
+		{"12 Park", "12 Park St", true, 85},
+		{"12 Park", "12 Park Street", true, 50},
+		{"12 Park Street", "12 Park", true, 75},
+		{"Park St", "Park St", false, 0},
+		{"\u6e2f\u533a", "\u6e2f\u533a", false, 0},
+		{"\u6e2f\u533a", "\u5317\u533a", false, 0},
+		{"3F", "3F", true, 86},
+		{"\u6e2f\u533a 3F", "\u5317\u533a 3F", true, 86},
+		{"\u0422\u0432\u0435\u0440\u0441\u043a\u0430\u044f 5", "\u0410\u0440\u0431\u0430\u0442\u0441\u043a\u0430\u044f 5", true, 100},
+		{"\u0422\u0432\u0435\u0440\u0441\u043a\u0430\u044f 5", "\u0422\u0432\u0435\u0440\u0441\u043a\u0430\u044f 7", false, 0},
+		{"12 \u0391\u03b8\u03b7\u03bd\u03ce\u03bd", "12", true, 100},
+		{"12 \u0391\u03b8\u03b7\u03bd\u03ce\u03bd St", "12", false, 0},
 	} {
 		match, score := FuzzyScore("Street", c.a, c.b, false)
 		got := int(math.Floor(score + 0.5))
@@ -340,6 +362,9 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"Hauptstrasse 5", "Hauptstr. 5", true, 76},
 		{"Haupt Str. 5", "Hauptstr. 5", true, 92},
 		{"Fu\u00dfweg 5", "Fuweg 5", true, 100},
+		{"3F", "3F", true, 100},
+		{"Park St", "Park Street", false, 0},
+		{"12", "12 Park", false, 0},
 	} {
 		match, score := FuzzyScore("Street", c.a, c.b, true)
 		got := int(math.Floor(score + 0.5))

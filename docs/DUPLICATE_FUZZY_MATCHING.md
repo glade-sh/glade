@@ -510,6 +510,8 @@ scored once: `Holdout4.*` for Street, City, ZIP, Phone and Title,
 | Street | holdout (unbiased), older rows | 151/151 (100.0%) | 0 | 0.000 |
 | Street | fit, `fuzzy_street_c4`, `c5`, `c8` | 9348/9348 (100.0%) | 0 | 0.000 |
 | Street | holdout, `fuzzy_street_c4`, `c5`, `c8` | 3428/3428 (100.0%) | 0 | 0.000 |
+| Street | fit, `fuzzy_street_c9` | 218/218 (100.0%) | 0 | 0.000 |
+| Street | holdout, `fuzzy_street_c9` | 906/906 (100.0%) | 8 | 0.000 |
 | City | fit | 531/531 (100.0%) | 0 | 0.000 |
 | City | holdout (unbiased) | 57/57 (100.0%) | 0 | 0.000 |
 | ZIP | fit | 225/225 (100.0%) | 0 | 0.000 |
@@ -934,8 +936,8 @@ validation of the current implementation.
 Street suffix and title changes are limited to the following shapes:
 
 - Street, custom rules only. Fixtures `testdata/conformance/fuzzy_street_c4`,
-  `fuzzy_street_c5` and `fuzzy_street_c8` under `internal/dml` (API 62.0 and
-  67.0, both routes, two repeats, all identical). The standard rules keep the
+  `fuzzy_street_c5`, `fuzzy_street_c8` and `fuzzy_street_c9` under
+  `internal/dml` (API 62.0 and 67.0, both routes, two repeats, all identical). The standard rules keep the
   shared scorer.
   - Cleaning: a line break is deleted when the street is scored, not turned
     into a space (`Rd\nSuite 200` is `RdSuite 200`; a comma before the break
@@ -1028,11 +1030,39 @@ Street suffix and title changes are limited to the following shapes:
     Blank Fields. They were read, new panels captured, and they are stored as
     fit. `fuzzy_street_c4` hs1 and `fuzzy_street_c5` mj1, never read, agree on
     every pair now.
-  - Pinned residuals: none. The two `residuals.tsv` files are gone.
+  - Review panels, `fuzzy_street_c9` (three captures in shapes the earlier
+    fixtures do not hold). Eight panels were scored once against `2a69555ed7`
+    and shaped no rule: names of four words and more, compound number words,
+    floor words in other positions, two differing name words, streets with no
+    number under both blank modes, more suite values, `Aly`, `Calle` and `Via`.
+    They agree on 4,340 of 4,348 pairs (0 misses, 8 extra matches, 0
+    confidences); the previous scorer (`fc2dfc7863`) had 186 misses, 204 extra
+    matches and 55 confidences there. Four panels (`r1`, `r1m`, `r7`, `r7m`)
+    were read and shaped three rules:
+    - A street name on one side only is a mismatch, as a street number is.
+      `12` finds neither `12 St` nor `12 Park` nor `12 Park St`; `12 Park`
+      finds `12 Park St` at 85, because a suffix on one side is left out.
+    - A street with no key word finds nothing, itself included: `Park St`, and
+      an address with no ASCII letter or digit (`港区`).
+    - A street of one word that is not a number is the name: `3F` reports 86
+      for itself, 100 under Match Blank Fields.
+
+    The deletion of characters outside ASCII holds for whole scripts: natively
+    `Тверская 5` finds `Арбатская 5` and `5` at 100 and not `Тверская 7`;
+    `東京都港区1-2-3` finds `大阪市北区1-2-3`. Two addresses in such a script
+    are one street when their ASCII digits and letters agree. The twins of the
+    four panels (`g1`, `g1m`, `g7`, `g7m`: other scripts, words and numbers)
+    were scored once after the three rules were frozen and agree on all 2,034
+    pairs.
+  - Pinned residuals: eight false matches in `fuzzy_street_c9/residuals.tsv`,
+    which the previous scorer has too. They are ordinal and compound number
+    words: `300 E Twenty Third St` finds `300 E Twenty Third Street` (89),
+    `500 Twenty First St` finds `500 Twenty One St` and `500 20 1 St` (83),
+    `40 Forty Second St` finds `40 Forty Two St` (82). Natively each of these
+    streets finds only itself. The `c4` and `c5` `residuals.tsv` files are gone.
   - Not measured: Match Blank Fields for a street that is whole as the stored
-    value, a blank street number with a name of four words, compound number
-    words (`Twenty One`), non-ASCII white space, and suite values longer than the
-    shapes in `qs1` to `qs7`.
+    value, a blank street number with a name of four words, non-ASCII white
+    space, and suite values longer than the shapes in `qs1` to `qs7`.
 - Title: when the shorter title is an exact-word subset of a six-word title,
   two to five shared words score 89, 93, 95 and 98; five shared words out of
   order score 96. An exact-word subset candidate can match a five-word title

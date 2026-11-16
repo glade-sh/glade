@@ -220,7 +220,14 @@ func streetCustomKey(x string) []string {
 // AB Main St" and "100 A B Main St", nn1 "72 Vane Oak St" and "72 VaneOak
 // St", nr1 "RR 4 Box 22" and "RR4 Box 22").
 func streetCustomKeysAgree(x, y string) bool {
-	if slices.Equal(streetCustomKey(x), streetCustomKey(y)) {
+	kx := streetCustomKey(x)
+	if len(kx) == 0 {
+		// NATIVE fuzzy_street_c9/org.tsv r1, r7: a street with no key word
+		// finds nothing, itself included ("Park St", and an address with
+		// no ASCII letter or digit, which cleans to nothing).
+		return false
+	}
+	if slices.Equal(kx, streetCustomKey(y)) {
 		return true
 	}
 	if strings.ReplaceAll(x, " ", "") != strings.ReplaceAll(y, " ", "") {
