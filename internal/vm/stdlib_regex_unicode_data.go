@@ -1,5 +1,7 @@
-// Code generated from Unicode 15.0 data (blocks from UCD charblocks plus 14.0 and 15.0 additions;
-// emoji properties from emoji-data). Java 21 resolves \p{InX} and \p{IsEmoji...} against these.
+// Unicode data for the Java \p{InBlock} and \p{IsEmoji...} properties. The block
+// ranges come from the Unicode Character Database block list with the 14.0 and
+// 15.0 blocks added; the emoji and Bidi_Mirrored ranges are the Unicode 15.0
+// property tables. Java 21 resolves these names against Unicode 15.0 data.
 
 package vm
 
