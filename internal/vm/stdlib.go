@@ -4079,6 +4079,10 @@ func javaStringHashCodeExact(text string) int32 {
 }
 
 func valueHashCode(value Value) int32 {
+	return valueHashCodeEnv(hashEnv{}, value)
+}
+
+func valueHashCodeEnv(env hashEnv, value Value) int32 {
 	value = value.currentMapKeySet()
 	// An Id hashes its 18-character text, whether it was written as 15 or 18.
 	if text, ok := typedIDValueText(value); ok {
@@ -4108,13 +4112,13 @@ func valueHashCode(value Value) int32 {
 	case ValueList:
 		hash := int32(1)
 		for _, item := range value.List {
-			hash = 31*hash + valueHashCode(item)
+			hash = 31*hash + valueHashCodeEnv(env, item)
 		}
 		return hash
 	case ValueSet:
 		parts := make([]int, 0, len(value.Set))
 		for _, item := range value.Set {
-			parts = append(parts, int(valueHashCode(item)))
+			parts = append(parts, int(valueHashCodeEnv(env, item)))
 		}
 		sort.Ints(parts)
 		hash := int32(1)
@@ -4130,12 +4134,12 @@ func valueHashCode(value Value) int32 {
 		sort.Strings(keys)
 		hash := int32(1)
 		for _, key := range keys {
-			hash += valueHashCode(mapStoredKey(value, key)) ^ valueHashCode(value.Map[key])
+			hash += valueHashCodeEnv(env, mapStoredKey(value, key)) ^ valueHashCodeEnv(env, value.Map[key])
 		}
 		return hash
 	case ValueObject:
 		if sObjectValueType(value.Type) {
-			return sObjectHashCode(value, make(map[uint64]bool))
+			return sObjectHashCodeEnv(env, value, make(map[uint64]bool))
 		}
 		// Equal SObjectType and SObjectField tokens share a hash (org capture
 		// schema_token_hash); equality ignores case, so the hash does too.
@@ -4172,7 +4176,7 @@ func valueHashCode(value Value) int32 {
 				return javaStringHashCode(canonicalTypeValueIdentity(typeName))
 			}
 		}
-		if hash, ok := platformTemporalHashCode(value); ok {
+		if hash, ok := platformTemporalHashCode(env, value); ok {
 			return hash
 		}
 		if platformScalarObject(value.Type) {
@@ -4602,10 +4606,18 @@ func sigmaFollowedByCased(runes []rune, at int) bool {
 }
 
 // platformTemporalHashCode follows the native Date, Datetime and Time rows
-// (surf_collections_strings cs19, cs22, cs23): a Date hashes as Long.hashCode of
-// its UTC milliseconds, a Datetime as that hash XOR 577755, and a Time as its
-// milliseconds of day.
-func platformTemporalHashCode(value Value) (int32, bool) {
+// (surf_collections_strings cs19, cs22-cs32): a Date hashes as Long.hashCode of
+// its UTC milliseconds, a Datetime as that hash XOR a calendar term, and a Time
+// as its milliseconds of day.
+//
+// The calendar term is FITTED, not derived. 577755 (en_US, ja_JP) and 577677
+// (de_DE) match 13 distinct instants, a nonzero millisecond, three time zones
+// (Los Angeles, Kolkata, Auckland) and APIs 62.0 and 67.0; the zone never
+// changed it. The locale difference equals (firstDayOfWeek<<1)^(minimalDays<<4)
+// for Sunday/1 versus Monday/4, but the base value has no clean Calendar
+// decomposition. KNOWN GAP: only en_US, ja_JP and de_DE were captured, so any
+// other locale uses the en_US term.
+func platformTemporalHashCode(env hashEnv, value Value) (int32, bool) {
 	if value.Kind != ValueObject || value.classInstance || value.projectClass {
 		return 0, false
 	}
@@ -4622,7 +4634,7 @@ func platformTemporalHashCode(value Value) (int32, bool) {
 		if err != nil {
 			return 0, false
 		}
-		return long(instant.UnixMilli()) ^ 577755, true
+		return long(instant.UnixMilli()) ^ env.calendarTerm(), true
 	case strings.EqualFold(value.Type, "Time"):
 		clock, err := parsePlatformTime(value)
 		if err != nil {

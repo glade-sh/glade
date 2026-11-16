@@ -3218,6 +3218,10 @@ func isSObjectFieldTokenType(typeName string) bool {
 // Equal SObjects hash their visible field values, not the record map's address.
 // Internal selection/error/clone markers do not participate in value equality.
 func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
+	return sObjectHashCodeEnv(hashEnv{}, value, seen)
+}
+
+func sObjectHashCodeEnv(env hashEnv, value Value, seen map[uint64]bool) int32 {
 	if value.Ref != 0 {
 		if seen[value.Ref] {
 			return 0
@@ -3247,12 +3251,12 @@ func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
 			hash += javaStringHashCode(field) ^ int32(len(child.List))
 			continue
 		}
-		hash += javaStringHashCode(field) ^ sObjectFieldHashCode(child, seen)
+		hash += javaStringHashCode(field) ^ sObjectFieldHashCode(env, env.readField(value, field, child), seen)
 	}
 	return hash
 }
 
-func sObjectFieldHashCode(value Value, seen map[uint64]bool) int32 {
+func sObjectFieldHashCode(env hashEnv, value Value, seen map[uint64]bool) int32 {
 	if text, ok := typedIDValueText(value); ok {
 		return javaStringHashCode(displayIDText(text))
 	}
@@ -3260,10 +3264,10 @@ func sObjectFieldHashCode(value Value, seen map[uint64]bool) int32 {
 		return 0
 	}
 	if value.Kind == ValueObject && sObjectValueType(value.Type) {
-		return sObjectHashCode(value, seen)
+		return sObjectHashCodeEnv(env, value, seen)
 	}
 	if value.Kind != ValueList && value.Kind != ValueSet && value.Kind != ValueMap {
-		return valueHashCode(value)
+		return valueHashCodeEnv(env, value)
 	}
 	if value.Ref != 0 {
 		if seen[value.Ref] {
@@ -3277,15 +3281,15 @@ func sObjectFieldHashCode(value Value, seen map[uint64]bool) int32 {
 	case ValueList:
 		hash = 1
 		for _, item := range value.List {
-			hash = 31*hash + sObjectFieldHashCode(item, seen)
+			hash = 31*hash + sObjectFieldHashCode(env, item, seen)
 		}
 	case ValueSet:
 		for _, item := range value.Set {
-			hash += sObjectFieldHashCode(item, seen)
+			hash += sObjectFieldHashCode(env, item, seen)
 		}
 	case ValueMap:
 		for key, item := range value.Map {
-			hash += javaStringHashCode(key) ^ sObjectFieldHashCode(item, seen)
+			hash += javaStringHashCode(key) ^ sObjectFieldHashCode(env, item, seen)
 		}
 	}
 	return hash
@@ -3382,33 +3386,48 @@ func javaBigDecimalHashCode(value Value) int32 {
 	return 31*hash + int32(scale)
 }
 
-// sObjectHashReadView returns the record as a field read sees it, so a queried
-// Decimal padded to its declared scale hashes with that scale (native cs13:
-// a Number(18,2) read back as 1.50 hashes as BigDecimal 1.50).
-func (vm *VM) sObjectHashReadView(value Value) (Value, bool) {
-	var view Value
-	changed := false
-	for field, child := range value.Fields {
-		if child.Kind != ValueDecimal || isInternalSObjectField(field) {
-			continue
-		}
-		_, fieldDef, ok := vm.sObjectFieldDefinition(value.Type, field)
-		if !ok {
-			continue
-		}
-		read := coerceReadSObjectFieldRuntimeValue(value, child, fieldDef)
-		if read.Kind != ValueDecimal || read.Text == child.Text {
-			continue
-		}
-		if !changed {
-			view = value
-			view.Fields = make(map[string]Value, len(value.Fields))
-			for k, v := range value.Fields {
-				view.Fields[k] = v
-			}
-			changed = true
-		}
-		view.Fields[field] = read
+// hashEnv carries the VM context a hash needs: the declared scale a queried
+// Decimal reads back with (native cs13, cs25: a Number(18,2) holding 1.5 hashes
+// as 1.50 directly, in a List or Set, and as a nested parent) and the user's
+// locale, which sets the Datetime calendar term. The zero value hashes with
+// stored values and the en_US term.
+type hashEnv struct {
+	vm *VM
+}
+
+func (vm *VM) hashEnv() hashEnv { return hashEnv{vm: vm} }
+
+func (env hashEnv) readField(owner Value, field string, child Value) Value {
+	if env.vm == nil || child.Kind != ValueDecimal || isInternalSObjectField(field) {
+		return child
 	}
-	return view, changed
+	_, fieldDef, ok := env.vm.sObjectFieldDefinition(owner.Type, field)
+	if !ok {
+		return child
+	}
+	if read := coerceReadSObjectFieldRuntimeValue(owner, child, fieldDef); read.Kind == ValueDecimal {
+		return read
+	}
+	return child
+}
+
+// calendarTerm is the XOR term of the Datetime hash. Native Datetime.hashCode
+// is Long.hashCode(millis) XOR a constant that follows the user's locale but
+// not the time zone (surf_collections_strings cs26): 577755 for en_US and
+// ja_JP, 577677 for de_DE. The two differ by (firstDayOfWeek<<1)^(minimalDays<<4)
+// for Sunday/1 versus Monday/4, the java.util.Calendar hash shape, so the base
+// is fitted and the week data is taken from that shape. Only these three
+// locales were captured; every other locale uses the en_US term. KNOWN GAP.
+func (env hashEnv) calendarTerm() int32 {
+	const enUS = 577755
+	locale := "en_US"
+	if env.vm != nil {
+		locale = env.vm.currentUserInfoField("LocaleSidKey", "en_US")
+	}
+	switch locale {
+	case "de_DE":
+		return enUS ^ (1<<1 ^ 2<<1) ^ (1<<4 ^ 4<<4)
+	default:
+		return enUS
+	}
 }

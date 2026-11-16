@@ -1265,10 +1265,9 @@ func (vm *VM) callObjectMember(receiver Value, method string, args []Value) (Val
 		hash, err := vm.collectionHashCode(receiver, &Result{})
 		return Int(int64(hash)), true, err
 	}
-	if len(args) == 0 && strings.EqualFold(method, "hashCode") && receiver.Kind == ValueObject && sObjectValueType(receiver.Type) {
-		if view, changed := vm.sObjectHashReadView(receiver); changed {
-			return Int(int64(sObjectHashCode(view, make(map[uint64]bool)))), true, nil
-		}
+	if len(args) == 0 && strings.EqualFold(method, "hashCode") && receiver.Kind == ValueObject &&
+		(sObjectValueType(receiver.Type) || strings.EqualFold(receiver.Type, "Datetime")) {
+		return Int(int64(valueHashCodeEnv(vm.hashEnv(), receiver))), true, nil
 	}
 	if text, captured := vm.stubNamespaceObjectText(receiver, method, args); captured {
 		return String(text), true, nil

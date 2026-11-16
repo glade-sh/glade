@@ -3,6 +3,7 @@ package apextest
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/glade-sh/glade/internal/config"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -28,6 +29,18 @@ var parkedSurfRows = map[string]string{}
 
 var surfIDMask = regexp.MustCompile(`\b(?:001|003|005|006|00D|012|01p|a0[A-Za-z0-9])[0-9A-Za-z]{11,15}\b`)
 
+// maskSurfGeneratedIDs masks ids Glade generates. The synthetic ids that the
+// probe sources write literally (001000000000... and 003000000000...) stay
+// visible, so a 15- versus 18-character text difference is not hidden.
+func maskSurfGeneratedIDs(text string) string {
+	return surfIDMask.ReplaceAllStringFunc(text, func(id string) string {
+		if strings.HasPrefix(id, "001000000000") || strings.HasPrefix(id, "003000000000") {
+			return id
+		}
+		return "<id>"
+	})
+}
+
 func TestSurfNativeConformance(t *testing.T) {
 	for _, family := range []string{"json", "datetime_locale", "collections_strings", "async_options"} {
 		t.Run(family, func(t *testing.T) { runSurfFamily(t, family) })
@@ -36,6 +49,9 @@ func TestSurfNativeConformance(t *testing.T) {
 
 type surfCase struct {
 	id, route, file string
+	// user holds "locale|timeZone" for an anonymous case that ran as a user
+	// with those settings (an optional fourth cases.tsv column).
+	user string
 }
 
 func readSurfTSV(t *testing.T, path string) [][]string {
@@ -58,7 +74,11 @@ func runSurfFamily(t *testing.T, family string) {
 	dir := filepath.Join("testdata", "conformance", "surf_"+family)
 	var cases []surfCase
 	for _, row := range readSurfTSV(t, filepath.Join(dir, "cases.tsv")) {
-		cases = append(cases, surfCase{row[0], row[1], row[2]})
+		user := ""
+		if len(row) > 3 {
+			user = row[3]
+		}
+		cases = append(cases, surfCase{row[0], row[1], row[2], user})
 	}
 	native := map[string]string{}
 	for i, row := range readSurfTSV(t, filepath.Join(dir, "org.tsv")) {
@@ -86,56 +106,59 @@ func runSurfFamily(t *testing.T, family string) {
 	releaseRuntimeCachesAfterTest(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
-			root := t.TempDir()
-			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
-			classes := filepath.Join(root, "force-app/main/default/classes")
-			entries, err := os.ReadDir(filepath.Join(dir, "project"))
-			if err != nil && !os.IsNotExist(err) {
-				t.Fatal(err)
-			}
-			for _, entry := range entries {
-				if entry.IsDir() {
-					// Custom object metadata (objects/<Name>/...) deploys as is.
-					err := filepath.WalkDir(filepath.Join(dir, "project", entry.Name()), func(path string, d os.DirEntry, err error) error {
-						if err != nil || d.IsDir() {
-							return err
-						}
-						rel, err := filepath.Rel(filepath.Join(dir, "project"), path)
+			root := func() string {
+				root := t.TempDir()
+				writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+				classes := filepath.Join(root, "force-app/main/default/classes")
+				entries, err := os.ReadDir(filepath.Join(dir, "project"))
+				if err != nil && !os.IsNotExist(err) {
+					t.Fatal(err)
+				}
+				for _, entry := range entries {
+					if entry.IsDir() {
+						// Custom object metadata (objects/<Name>/...) deploys as is.
+						err := filepath.WalkDir(filepath.Join(dir, "project", entry.Name()), func(path string, d os.DirEntry, err error) error {
+							if err != nil || d.IsDir() {
+								return err
+							}
+							rel, err := filepath.Rel(filepath.Join(dir, "project"), path)
+							if err != nil {
+								return err
+							}
+							body, err := os.ReadFile(path)
+							if err != nil {
+								return err
+							}
+							writeFile(t, filepath.Join(root, "force-app/main/default", rel), string(body))
+							return nil
+						})
 						if err != nil {
-							return err
+							t.Fatal(err)
 						}
-						body, err := os.ReadFile(path)
-						if err != nil {
-							return err
-						}
-						writeFile(t, filepath.Join(root, "force-app/main/default", rel), string(body))
-						return nil
-					})
+						continue
+					}
+					body, err := os.ReadFile(filepath.Join(dir, "project", entry.Name()))
 					if err != nil {
 						t.Fatal(err)
 					}
-					continue
+					if !strings.HasSuffix(entry.Name(), ".cls") {
+						// glade.yml replays the permission sets the capture assigned.
+						writeFile(t, filepath.Join(root, entry.Name()), string(body))
+						continue
+					}
+					writeFile(t, filepath.Join(classes, entry.Name()), string(body))
+					writeFile(t, filepath.Join(classes, entry.Name()+"-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
 				}
-				body, err := os.ReadFile(filepath.Join(dir, "project", entry.Name()))
-				if err != nil {
-					t.Fatal(err)
-				}
-				if !strings.HasSuffix(entry.Name(), ".cls") {
-					// glade.yml replays the permission sets the capture assigned.
-					writeFile(t, filepath.Join(root, entry.Name()), string(body))
-					continue
-				}
-				writeFile(t, filepath.Join(classes, entry.Name()), string(body))
-				writeFile(t, filepath.Join(classes, entry.Name()+"-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
-			}
+				return root
+			}()
 			index := loadTestIndex(t, root)
 			if analysis := sema.Analyze(index); index.HasErrors() || analysis.HasErrors() {
 				t.Fatalf("native project accepted; Glade diagnostics=%v %v", index.Diagnostics, analysis.Diagnostics)
 			}
 			check := func(t *testing.T, c surfCase, got string) {
 				key := family + "/" + c.id + "/" + api
-				want := surfIDMask.ReplaceAllString(native[c.id+"/"+api], "<id>")
-				got = surfIDMask.ReplaceAllString(got, "<id>")
+				want := native[c.id+"/"+api]
+				got = maskSurfGeneratedIDs(got)
 				if reason, parked := parkedSurfRows[key]; parked {
 					if got == want {
 						t.Errorf("stale parked row (%s); Glade now matches", reason)
@@ -170,6 +193,16 @@ func runSurfFamily(t *testing.T, family string) {
 					if err != nil {
 						t.Fatal(err)
 					}
+					if c.user != "" {
+						locale, zone, _ := strings.Cut(c.user, "|")
+						configure := func(machine *vm.VM) {
+							if err := machine.ConfigureTestEnvironment(config.TestConfig{User: config.TestUserConfig{Locale: locale, TimeZone: zone, Language: "en_US"}}); err != nil {
+								t.Fatal(err)
+							}
+						}
+						check(t, c, runSurfAnonymous(t, runner, index, string(source), api, configure))
+						return
+					}
 					check(t, c, runSurfAnonymous(t, runner, index, string(source), api))
 				})
 			}
@@ -202,7 +235,7 @@ func runSurfFamily(t *testing.T, family string) {
 	}
 }
 
-func runSurfAnonymous(t *testing.T, runner *conformanceRunner, index typesys.Index, source, api string) string {
+func runSurfAnonymous(t *testing.T, runner *conformanceRunner, index typesys.Index, source, api string, configure ...func(*vm.VM)) string {
 	t.Helper()
 	if analysis := sema.AnalyzeAnonymous(index, source, api); analysis.HasErrors() {
 		for _, d := range analysis.Diagnostics {
@@ -217,7 +250,7 @@ func runSurfAnonymous(t *testing.T, runner *conformanceRunner, index typesys.Ind
 	if err != nil {
 		return "COMPILE|" + err.Error()
 	}
-	result, err := runner.execute(program)
+	result, err := runner.execute(program, configure...)
 	lines := append([]string(nil), result.Debug...)
 	if err != nil {
 		lines = append(lines, "EXC|"+err.Error())

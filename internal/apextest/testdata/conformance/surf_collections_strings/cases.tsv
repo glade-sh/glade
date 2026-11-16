@@ -23,3 +23,11 @@ cs21	istest	Hx5Test
 cs22	anonymous	cs22.apex
 cs23	anonymous	cs23.apex
 cs24	istest	Hx7Test
+cs25	anonymous	cs25.apex
+cs26	istest	Hx8Test
+cs27	anonymous	cs27.apex
+cs28	anonymous	cs27.apex	de_DE|America/Los_Angeles
+cs29	anonymous	cs27.apex	ja_JP|America/Los_Angeles
+cs30	anonymous	cs27.apex	en_US|Asia/Kolkata
+cs31	anonymous	cs27.apex	en_US|Pacific/Auckland
+cs32	anonymous	cs27.apex	de_DE|Asia/Kolkata
