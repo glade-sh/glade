@@ -82,8 +82,8 @@ type duplicateState struct {
 	stamp *string
 	batch map[storage.ID]bool
 	peers []duplicatePeer // records inserted by this statement, in insert order
-	// peerView is scratch space reused by each peer scan: the current stored
-	// state of the peers, keyed by id.
+	// peerView holds the current stored state of the peers, keyed by id, for
+	// the peer scan of this statement.
 	peerView map[storage.ID]storage.Record
 	reports  []DuplicateReport
 	// insertMatched is set while an insert is checked when a rule found a
@@ -419,14 +419,11 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 		}
 		records := org.Objects[objectName].Records
 		if among != nil {
-			records = among
+			records = duplicateAmongObject(among, objectName)
 		}
 		for _, existing := range records {
 			if !scan {
 				break
-			}
-			if among != nil && !strings.EqualFold(existing.Object, objectName) {
-				continue
 			}
 			if existing.System.IsDeleted || (record.ID != "" && storage.IDsEqual(existing.ID, record.ID)) || (exclude != nil && exclude(existing.ID)) {
 				continue
@@ -471,6 +468,25 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 		result.Matches = append(result.Matches, match)
 	}
 	return result, true
+}
+
+// duplicateAmongObject returns among itself when every record belongs to the
+// object, else a copy without the others. It keeps the object test out of the
+// scan loop of the org-wide path.
+func duplicateAmongObject(among map[storage.ID]storage.Record, objectName string) map[storage.ID]storage.Record {
+	for _, candidate := range among {
+		if strings.EqualFold(candidate.Object, objectName) {
+			continue
+		}
+		filtered := make(map[storage.ID]storage.Record, len(among))
+		for id, other := range among {
+			if strings.EqualFold(other.Object, objectName) {
+				filtered[id] = other
+			}
+		}
+		return filtered
+	}
+	return among
 }
 
 // duplicateMatchingShape classifies one matching rule of a duplicate rule for
@@ -712,11 +728,14 @@ func (e *Engine) peerMatches(rule storage.DuplicateRule, record storage.Record, 
 	if e.duplicates.peerView == nil {
 		e.duplicates.peerView = make(map[storage.ID]storage.Record, len(e.duplicates.peers))
 	}
+	// The view keeps its keys across the statement, so a peer's entry is
+	// allocated once and later refreshed in place with its current stored state.
 	earlier := e.duplicates.peerView
-	clear(earlier)
 	for _, peer := range e.duplicates.peers {
 		if id, existing, ok := storage.LookupRecordByID(e.Org.Objects[peer.object].Records, peer.id); ok {
 			earlier[id] = existing
+		} else {
+			delete(earlier, peer.id)
 		}
 	}
 	if len(earlier) == 0 {
@@ -794,7 +813,7 @@ func (e *Engine) noteDuplicateInsert(stamp *string, report *DuplicateReport, obj
 		return
 	}
 	if e.duplicates.stamp != stamp {
-		e.duplicates.stamp, e.duplicates.batch, e.duplicates.peers = stamp, make(map[storage.ID]bool), nil
+		e.duplicates.stamp, e.duplicates.batch, e.duplicates.peers, e.duplicates.peerView = stamp, make(map[storage.ID]bool), nil, nil
 	}
 	e.duplicates.batch[id] = true
 	e.duplicates.peers = append(e.duplicates.peers, duplicatePeer{object: object, id: id})
