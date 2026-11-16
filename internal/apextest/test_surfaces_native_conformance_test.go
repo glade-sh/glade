@@ -37,10 +37,13 @@ type testSurfaceObservation struct {
 	debug   string
 }
 
-var testSurfaceIDPattern = regexp.MustCompile(`\b(?:001|003|005|006|00D|00G|00Q|00e|01p|0Hp|0HM|a0[0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
+var testSurfaceIDPattern = regexp.MustCompile(`\b(?:001|003|005|006|00D|00G|00Q|00e|01p|0Hp|0HM|707|a0[0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
+
+// Row timestamps are wall-clock in the org and fixed in Glade.
+var testSurfaceTimestampPattern = regexp.MustCompile(`@\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}`)
 
 func maskTestSurfaceIDs(s string) string {
-	return testSurfaceIDPattern.ReplaceAllString(s, "<id>")
+	return testSurfaceTimestampPattern.ReplaceAllString(testSurfaceIDPattern.ReplaceAllString(s, "<id>"), "@<time>")
 }
 
 // parseTestSurfaceObservations reads observations.txt into api -> case id.
@@ -178,7 +181,17 @@ func TestTestSurfacesNativeConformance(t *testing.T) {
 								}
 								org := orgFromIndex(index)
 								org.APIVersion = api
-								result, err := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true}).execute(program)
+								runner := newConformanceRunner(t, index, conformanceRunnerOptions{Org: &org, LinkProject: true})
+								triggers, triggerErrors := compileProjectTriggers(index)
+								if len(triggerErrors) != 0 {
+									t.Fatalf("trigger compile: %v", triggerErrors)
+								}
+								for _, trigger := range triggers {
+									if err := runner.base.RegisterTrigger(trigger); err != nil {
+										t.Fatal(err)
+									}
+								}
+								result, err := runner.execute(program)
 								if err != nil {
 									t.Fatal(err)
 								}

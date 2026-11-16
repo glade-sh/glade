@@ -79,6 +79,12 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 		if vm.futureBodyDepth > 0 || vm.inBatchStartOrExecute() {
 			return Null, newExceptionError("System.AsyncException", "Future method cannot be called from a future or batch method: "+futureMethodSignature(method))
 		}
+		if vm.testContext != nil && vm.currentAsyncKind == "BatchApex" && vm.inBatchFinish {
+			// Native async-ordering ao02 and ao04 (62.0 and 67.0): a test that runs
+			// a batch finish calling an @future method fails at the call with a
+			// limit exception the finish cannot catch.
+			return Null, &RuntimeError{Type: "System.LimitException", Message: fmt.Sprintf("Too many future calls: %d", vm.limits.FutureCalls+1), Stack: vm.stackFrames()}
+		}
 		vm.futureBodyDepth++
 		defer func() { vm.futureBodyDepth-- }()
 	}

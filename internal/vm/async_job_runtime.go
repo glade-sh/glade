@@ -435,7 +435,7 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("batchJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize, DirectBatchSubmission: vm.currentAsyncKind == ""}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize, DirectBatchSubmission: vm.currentAsyncKind == "", QueueableBatchSubmission: vm.currentAsyncKind == "Queueable" && vm.testContext != nil}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -1829,7 +1829,7 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 	projectNative = projectNative && !locatorStart && vm.capturedBatchFaultScope(scope)
 	projectedErrors := 0
 	chunks := batchChunks(scope, job.BatchSize)
-	if vm.testContext != nil && vm.testExecutionEntry != nil && job.DirectBatchSubmission && len(chunks) > 1 {
+	if vm.testContext != nil && vm.testExecutionEntry != nil && (job.DirectBatchSubmission || job.QueueableBatchSubmission) && len(chunks) > 1 {
 		// async_lifecycle_c14 Y4 (API 62/67 and 68): a test method may run one
 		// executeBatch chunk. The rejection is not catchable. Scoped to a test
 		// method entry so direct VM chunk-semantics runs keep multi chunks.

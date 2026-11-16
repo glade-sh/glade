@@ -281,7 +281,7 @@ func (e *Engine) evaluateSummaryFieldBatch(relation summaryRelation, parentIDs m
 		if !ok {
 			return nil, false
 		}
-		values[parentID] = value
+		values[parentID] = summaryValueAtFieldScale(operation, value, childState.Definition, childFieldName)
 	}
 	return values, true
 }
@@ -380,7 +380,46 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 		}
 		acc.add(operation, value)
 	}
-	return acc.value(operation)
+	value, ok := acc.value(operation)
+	if !ok {
+		return value, ok
+	}
+	return summaryValueAtFieldScale(operation, value, childState.Definition, childFieldName), true
+}
+
+// summaryValueAtFieldScale gives a sum, minimum or maximum the declared scale of
+// the summarized Number, Currency or Percent field. Native rollup-summary
+// rolltest and rollanon (62.0 and 67.0): a scale-two field rolls up as 60.00,
+// 100.00 and 0.00 for an empty sum. Counts and uncaptured field shapes keep
+// their value.
+func summaryValueAtFieldScale(operation string, value storage.Value, definition storage.ObjectDefinition, fieldName string) storage.Value {
+	switch operation {
+	case "", "sum", "min", "max":
+	default:
+		return value
+	}
+	field, ok := definition.Fields[fieldName]
+	if !ok || field.Type != storage.FieldDecimal || field.Scale <= 0 {
+		return value
+	}
+	switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
+	case "CURRENCY", "PERCENT":
+	case "DOUBLE":
+		if !field.ScaleSpecified {
+			return value
+		}
+	default:
+		return value
+	}
+	number, ok := summaryNumericRat(value)
+	if !ok {
+		return value
+	}
+	text := summaryDecimalString(number)
+	if point := strings.IndexByte(text, '.'); point >= 0 && len(text)-point-1 >= field.Scale {
+		return value
+	}
+	return storage.DecimalValue(number.FloatString(field.Scale))
 }
 
 func EvaluateRecordSummaryValueInOrg(field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (storage.Value, bool) {

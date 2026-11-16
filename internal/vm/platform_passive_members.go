@@ -1191,6 +1191,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				for i := range vm.testContext.EventPublishes {
 					vm.testContext.EventPublishes[i].Fail = true
 				}
+				// Native platform-events pe02/pe03/pe05/pe06/pe08 (62.0 and 67.0):
+				// fail() discards the platform events pending at the call. Later
+				// publishes and change events (held in the change journal until
+				// delivery) are unaffected, as are events already delivered.
+				vm.testContext.PlatformEvents = nil
 			}
 			return Null, receiver, false, true, nil
 		}

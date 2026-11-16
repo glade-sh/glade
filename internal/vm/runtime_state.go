@@ -881,6 +881,9 @@ type AsyncJob struct {
 
 	// Direct submissions retain the observed phase state at a batch fault.
 	DirectBatchSubmission bool
+	// QueueableBatchSubmission marks a batch submitted by a Queueable body that
+	// a test runs (native async-ordering ao01 at 62.0 and 67.0).
+	QueueableBatchSubmission bool
 
 	// Scheduled test payloads outlive cancellation but require an active replacement to run.
 	ScheduledAborted            bool

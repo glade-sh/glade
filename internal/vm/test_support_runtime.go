@@ -2,6 +2,7 @@ package vm
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -44,6 +45,15 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 			return Null, newExceptionError("System.TypeException", "Supplied type is not an interface")
 		}
 		return Null, unsupportedCallError("Test.setMock " + mockType + " mock surface")
+	}
+	if args[1].Kind == ValueObject {
+		// Native callout-mocks cm08 (62.0 and 67.0): a source class that does not
+		// implement the supplied interface is refused at registration.
+		if _, sourceClass := vm.lookupClass(args[1].Type); sourceClass && !vm.typeMatches(args[1].Type, "HttpCalloutMock", make(map[string]bool)) && !vm.typeMatches(args[1].Type, "System.HttpCalloutMock", make(map[string]bool)) {
+			if class, _ := vm.lookupClass(args[1].Type); !class.PlatformType {
+				return Null, newExceptionError("System.TypeException", "Mock object doesn't implement the supplied interface")
+			}
+		}
 	}
 	vm.testContext.HTTPMock = args[1]
 	vm.testContext.httpMockSourceUnit = vm.currentMethod.SourceUnit
@@ -288,6 +298,13 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 			if !class.Dependency && classIsInner(class) {
 				return Null, newExceptionError("System.TypeException", "Test.createStub() cannot be called with inner Apex classes")
 			}
+			// Native stub-provider st13 (62.0 and 67.0): a Database.Batchable
+			// class is refused before the provider is consulted.
+			for _, iface := range vm.resolvedInterfaceNamesInHierarchy(class) {
+				if batchableInterfaceName(iface) {
+					return Null, newExceptionError("System.TypeException", "Test.createStub() cannot be invoked for batch apex")
+				}
+			}
 			onlyPrivateConstructors := len(class.Constructors) > 0
 			for _, constructor := range class.Constructors {
 				if constructor.Access != "" && !strings.EqualFold(constructor.Access, "private") {
@@ -447,6 +464,10 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 			}
 			value, err := vm.testLoadDataFieldValue(objectName, fieldName, raw)
 			if err != nil {
+				var csvErr testLoadDataCSVError
+				if errors.As(err, &csvErr) {
+					return Null, newExceptionError("System.StringException", strings.ReplaceAll(csvErr.message, "{line}", strconv.Itoa(rowIndex+2)))
+				}
 				return Null, fmt.Errorf("Test.loadData row %d %s.%s: %w", rowIndex+2, objectName, fieldName, err)
 			}
 			vm.setExplicitSObjectFieldValue(&record, fieldName, value)
@@ -700,8 +721,15 @@ func storageStringForExternalID(record storage.Record, field string) string {
 		return ""
 	}
 }
+
+// testLoadDataCSVError is a native Test.loadData parse failure, thrown as a
+// StringException before any row is inserted. {line} is the 1-based CSV line.
+type testLoadDataCSVError struct{ message string }
+
+func (e testLoadDataCSVError) Error() string { return e.message }
+
 func (vm *VM) testLoadDataFieldValue(objectName, fieldName, raw string) (Value, error) {
-	if strings.TrimSpace(raw) == "" {
+	if raw == "" {
 		return Null, nil
 	}
 	if vm == nil || vm.Org == nil {
@@ -723,9 +751,19 @@ func (vm *VM) testLoadDataFieldValue(objectName, fieldName, raw string) (Value, 
 	if !ok {
 		return String(raw), nil
 	}
+	if strings.TrimSpace(raw) == "" && field.Type != storage.FieldDecimal {
+		return Null, nil
+	}
 	switch field.Type {
 	case storage.FieldBoolean:
-		return Bool(strings.EqualFold(raw, "true") || raw == "1"), nil
+		// Native loaddata-settings ld05 (62.0 and 67.0).
+		switch {
+		case strings.EqualFold(raw, "true") || raw == "1":
+			return Bool(true), nil
+		case strings.EqualFold(raw, "false") || raw == "0":
+			return Bool(false), nil
+		}
+		return Null, testLoadDataCSVError{fmt.Sprintf("CSV Parse error: '%s' is not valid for type xsd:boolean, should be '0', '1', 'true' or 'false'", raw)}
 	case storage.FieldInteger:
 		parsed, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 64)
 		if err != nil {
@@ -733,12 +771,19 @@ func (vm *VM) testLoadDataFieldValue(objectName, fieldName, raw string) (Value, 
 		}
 		return Int(parsed), nil
 	case storage.FieldDecimal:
+		// Native loaddata-settings ld03b and ld05 (62.0 and 67.0): a space-only
+		// cell is not a blank number, and a bad number is a StringException.
 		value, err := decimalFromText(strings.TrimSpace(raw))
-		if err != nil {
-			return Null, err
+		if err != nil || strings.TrimSpace(raw) == "" {
+			return Null, testLoadDataCSVError{fmt.Sprintf("CSV Parse error: '%s' is not valid for the type xsd:double", raw)}
 		}
 		return value, nil
 	case storage.FieldID, storage.FieldReference:
+		// Native loaddata-settings ld06 (62.0 and 67.0): an Id column takes Ids,
+		// not the Name of a parent record.
+		if validateApexIDShape(raw) != nil {
+			return Null, testLoadDataCSVError{"Invalid ID value on line {line}: " + raw}
+		}
 		return platformScalar("Id", raw), nil
 	case storage.FieldDate:
 		return platformScalar("Date", raw), nil
