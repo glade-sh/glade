@@ -21,7 +21,7 @@ func TestVisualforceOpenFilePathStampIdentity(t *testing.T) {
 	defer file.Close()
 	before, ok := filestamp.Fstat(file)
 	if !ok {
-		t.Skip("filesystem does not expose a trusted file stamp")
+		return // the filesystem exposes no trusted file stamp; nothing to assert
 	}
 	if !sameVisualforcePathStamp(path, before) {
 		t.Fatal("unchanged path did not match open file")

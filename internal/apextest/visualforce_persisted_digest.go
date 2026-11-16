@@ -138,7 +138,7 @@ func saveVisualforceDigestCache(root string, paths []string) error {
 	if len(data) > visualforceDigestCacheLimit {
 		return errors.New("visualforce digest cache is too large")
 	}
-	tmp, err := os.CreateTemp(dir, ".visualforce-digests-*")
+	tmp, err := os.CreateTemp(dir, "vfdigest.*.tmp")
 	if err != nil {
 		return err
 	}
