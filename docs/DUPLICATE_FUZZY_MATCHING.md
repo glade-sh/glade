@@ -250,6 +250,18 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    of the fit agree on every pair Glade matches:
    `fuzzy_keyboard_neighbors` (`Farnsdelwicka` finds `Farnsdraeovka`, native
    97; its score is below the margin, so Glade keeps the earlier result).
+   A second, flat score follows the fitted one in every shape
+   (`keyboardFlatDistance` in `internal/dml/fuzzy_keyboard_flat.go`). Each key
+   step costs 0.0759 whatever the position or key pair, each trailing letter
+   costs 0.2437, the sum is divided by the longer length, and the pair
+   matches at `keyboardFallbackMargin` (93) with confidence
+   `(100 + score) / 2`. It is a clean-room fit to the native rows; it adds the
+   matches the fitted table misses and keeps every earlier match and
+   confidence. Over every captured LastName pair it adds 582 unordered pairs
+   and no false match; the highest captured native non-match scores 92.81
+   (`Kesterloy` and `Kestermlinb`, tk07). It recovers 86 of the ck native
+   matches the fitted table left, with no false match on the blind ck panel.
+   Spaces, punctuation and accents keep the fitted costs.
    The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step

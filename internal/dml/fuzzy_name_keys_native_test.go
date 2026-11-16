@@ -400,7 +400,7 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 // fallback leaves at the base result because their score is below
 // keyboardFallbackMargin (keyboardMarginMiss). Every other native match is a
 // Glade match.
-var fuzzyNameKeysMarginMisses = map[string]int{"ks1": 210, "ks2": 150, "ks3": 78, "rsp1": 2, "suf1": 16}
+var fuzzyNameKeysMarginMisses = map[string]int{"ks1": 198, "ks2": 140, "ks3": 78, "rsp1": 2, "suf1": 14}
 
 // keyboardMarginMiss reports whether two names reach the keyboard fallback in
 // a gated shape and score 90 or more, but below keyboardFallbackMargin.

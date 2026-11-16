@@ -335,10 +335,17 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	// lastNameKeyboard without its terminal swap step, which did not apply.
 	base, ok := keyboardSimilarity(x, y)
 	matched, confidence := ok && base >= 90, averageWith100(base)
-	if matched || !keyboardPanelCell(length, substitutions, trailing) {
+	if matched {
 		return matched, confidence
 	}
-	if score, ok := keyboardDistance(x, y); ok && score >= keyboardFallbackMargin {
+	// The per-key-pair score keeps the gated shapes it matched, then the flat
+	// score (fuzzy_keyboard_flat.go) decides every other pair at the same margin.
+	if keyboardPanelCell(length, substitutions, trailing) {
+		if score, ok := keyboardDistance(x, y); ok && score >= keyboardFallbackMargin {
+			return true, averageWith100(score)
+		}
+	}
+	if score, ok := keyboardFlatDistance(x, y); ok && score >= keyboardFallbackMargin {
 		return true, averageWith100(score)
 	}
 	return matched, confidence

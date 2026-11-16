@@ -115,14 +115,14 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		exact, base int
 	}
 	want := map[string]tally{
-		"k1":  {fuzzyNameKeysCount{native: 180, hit: 98, miss: 82, confidence: 8}, 934, 878},
-		"k2":  {fuzzyNameKeysCount{native: 182, hit: 60, miss: 122, confidence: 2}, 900, 888},
-		"k3":  {fuzzyNameKeysCount{native: 194, hit: 122, miss: 72, confidence: 12}, 940, 896},
-		"hk1": {fuzzyNameKeysCount{native: 122, hit: 50, miss: 72, confidence: 2}, 602, 600},
-		"hk2": {fuzzyNameKeysCount{native: 58, hit: 42, miss: 16, confidence: 6}, 234, 228},
-		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 772, miss: 1284, confidence: 158}, 4714, 4374},
-		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1245, miss: 906, confidence: 140}, 14587, 14303},
-		"ck":  {fuzzyNameKeysCount{native: 2087, hit: 1651, miss: 436, confidence: 336}, 5789, 4917},
+		"k1":  {fuzzyNameKeysCount{native: 180, hit: 100, miss: 80, confidence: 10}, 934, 878},
+		"k2":  {fuzzyNameKeysCount{native: 182, hit: 108, miss: 74, confidence: 8}, 942, 888},
+		"k3":  {fuzzyNameKeysCount{native: 194, hit: 124, miss: 70, confidence: 14}, 940, 896},
+		"hk1": {fuzzyNameKeysCount{native: 122, hit: 82, miss: 40, confidence: 8}, 628, 600},
+		"hk2": {fuzzyNameKeysCount{native: 58, hit: 46, miss: 12, confidence: 6}, 238, 228},
+		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 1454, miss: 602, confidence: 350}, 5204, 4374},
+		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1397, miss: 754, confidence: 212}, 14667, 14303},
+		"ck":  {fuzzyNameKeysCount{native: 2087, hit: 1823, miss: 264, confidence: 404}, 5893, 4917},
 	}
 	// The blind panels are counted by group: tk (tk01 to tk22), bk and ck.
 	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard") {
