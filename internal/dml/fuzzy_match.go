@@ -324,18 +324,18 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 		return true, 100
 	}
-	if singleKeyboardSubstitution(x, y) {
+	length, substitutions, trailing := keyboardNameShape(x, y)
+	if substitutions == 1 && trailing == 0 {
+		// A single substitution keeps the base scorer.
 		return lastNameKeyboard(x, y)
 	}
 	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
 		return matched, confidence
 	}
-	matched, confidence := lastNameKeyboard(x, y)
-	if matched {
-		return matched, confidence
-	}
-	length, substitutions, trailing := keyboardNameShape(x, y)
-	if !keyboardPanelCell(length, substitutions, trailing) {
+	// lastNameKeyboard without its terminal swap step, which did not apply.
+	base, ok := keyboardSimilarity(x, y)
+	matched, confidence := ok && base >= 90, averageWith100(base)
+	if matched || !keyboardPanelCell(length, substitutions, trailing) {
 		return matched, confidence
 	}
 	if score, ok := keyboardDistance(x, y); ok && score >= 90 && score > keyboardPanelFloor(length, substitutions, trailing) {
@@ -439,23 +439,6 @@ var keyboardPanelFloors = [...]keyboardFloor{
 	{12, 4, 0, 90.85833333333333},
 	{13, 4, 0, 90.10000000000001},
 	{13, 5, 0, 90.68461538461538},
-}
-
-// singleKeyboardSubstitution counts positions in runes, as keyboardSimilarity does.
-func singleKeyboardSubstitution(a, b string) bool {
-	different := 0
-	for len(a) > 0 && len(b) > 0 {
-		ra, na := utf8.DecodeRuneInString(a)
-		rb, nb := utf8.DecodeRuneInString(b)
-		if ra != rb {
-			different++
-			if different > 1 {
-				return false
-			}
-		}
-		a, b = a[na:], b[nb:]
-	}
-	return len(a) == 0 && len(b) == 0 && different == 1
 }
 
 var lastNameApostrophes = strings.NewReplacer("'", "", "\u2019", "")

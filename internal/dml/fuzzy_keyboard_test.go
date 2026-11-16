@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // NATIVE fuzzy_name_keys/org.tsv (suf1, rsp1, ks1) and
@@ -312,6 +313,23 @@ func keyboardShape(x, y string) [3]int {
 		}
 	}
 	return [3]int{len(ry), diff, len(ry) - len(rx)}
+}
+
+// singleKeyboardSubstitution counts positions in runes, as keyboardSimilarity does.
+func singleKeyboardSubstitution(a, b string) bool {
+	different := 0
+	for len(a) > 0 && len(b) > 0 {
+		ra, na := utf8.DecodeRuneInString(a)
+		rb, nb := utf8.DecodeRuneInString(b)
+		if ra != rb {
+			different++
+			if different > 1 {
+				return false
+			}
+		}
+		a, b = a[na:], b[nb:]
+	}
+	return len(a) == 0 && len(b) == 0 && different == 1
 }
 
 // keyboardFallbackPair reports whether two names reach the keyboard
