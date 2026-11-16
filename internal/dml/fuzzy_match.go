@@ -3,7 +3,7 @@ package dml
 import (
 	"math"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -1114,14 +1114,44 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 
 // ---- Title: Acronym, Exact, Kullback-Leibler distance; threshold 50 ----
 
-var titleStopWords = map[string]bool{"and": true, "of": true, "the": true}
+// NATIVE (fuzzcap-C9 c9t4): "&" is a stop word of its own: "Zorp & Quill"
+// equals "Zorp and Quill" by content and scores 93, not 100, against "Quill and
+// Zorp".
+var titleStopWords = map[string]bool{"and": true, "of": true, "the": true, "&": true}
 
 func titleWords(s string) []string {
-	var out []string
-	for _, w := range strings.Fields(strings.ReplaceAll(strings.ToLower(s), "&", " and ")) {
-		if w = strings.Trim(w, ".,"); w != "" {
-			out = append(out, w)
+	fields := strings.Fields(strings.ToLower(s))
+	// The words usually are the fields; an ampersand split needs more room.
+	out := fields[:0]
+	if strings.IndexByte(s, '&') >= 0 {
+		out = make([]string, 0, len(fields)+2)
+	}
+	for _, w := range fields {
+		// NATIVE (fuzzcap-B3 tt1): dots inside a word do not count ("C.E.O."
+		// is "ceo", "V.P." is "vp").
+		if w = strings.ReplaceAll(strings.Trim(w, "."), ".", ""); titleTrim(w) == "" {
+			continue
 		}
+		// NATIVE (fuzzy_title_variant f1t3): an ampersand at the edge of a
+		// word is a word of its own ("Chief& Officer" and "Chief &Officer"
+		// are "Chief & Officer"); inside a word it stays ("Chief&Officer").
+		if len(w) > 1 && w[0] == '&' {
+			out = append(out, "&")
+			w = w[1:]
+		}
+		if len(w) > 1 && w[len(w)-1] == '&' {
+			out = append(out, w[:len(w)-1], "&")
+			continue
+		}
+		out = append(out, w)
+	}
+	// A comma inside the title stays on its word and blocks prefix matches
+	// (NATIVE fuzzcap-B3 tt2 and fuzzcap-C9 c9t4: "Director, IT" does not
+	// find "Director/IT", "Zorp, Quill" does not find "Zorps Quill"); a
+	// trailing comma of the whole title is dropped ("Zorp Quill," finds
+	// "Zorp Quills"). titleTrim removes the comma for every other comparison.
+	if n := len(out); n > 0 {
+		out[n-1] = titleTrim(out[n-1])
 	}
 	return out
 }
@@ -1134,14 +1164,46 @@ var titleNoPrefix = map[string]bool{"it": true}
 
 // titleWordEqual treats a word as equal to any word it starts (two letters
 // or more): "Dir" and "Director", "Eng" and "Engineering".
-func titleWordEqual(a, b string) bool {
-	if a == b {
+func titleWordEqual(a, b string) bool { return titleWordEqualRaw(a, b) }
+
+// titleWordEqualRaw compares the words as given: equal, one starts the
+// other, or one edit apart when the longer has six characters or more.
+// NATIVE (duplicate_fuzzy_matching Holdout3 and Holdout4 Title rows,
+// fuzzy_title_variant f2t1): "Coordinator" equals "Coordinater", "Assistant"
+// "Asistant", "Zorps" "Zorpas" and "Alphas" "Alphs"; "Alpha" does not equal
+// "Alphs" and "CEO" does not equal "CFO". A comma or semicolon inside the
+// title stays on its word and counts as a character (c9t4b, tt2, f1t3, f2t1):
+// "Alpha," equals "Alphas" and "Alpha;", "Alph," equals "Alpha,"; "Zorp,"
+// equals neither "Zorps" nor "Zorp;", "Alph," does not equal "Alpha", and
+// "Director," does not equal "Director/IT".
+func titleWordEqualRaw(a, b string) bool {
+	if a == b || titlePrefixEqual(a, b) {
 		return true
 	}
-	if min(len(a), len(b)) < 2 {
+	return max(len(a), len(b)) >= 6 && titleOneEdit(a, b)
+}
+
+// titleOneEdit: one substitution, insertion or deletion turns a into b.
+func titleOneEdit(a, b string) bool {
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	if len(b)-len(a) > 1 {
 		return false
 	}
-	if titleNoPrefix[a] || titleNoPrefix[b] {
+	i := 0
+	for i < len(a) && a[i] == b[i] {
+		i++
+	}
+	if len(a) == len(b) {
+		return i < len(a) && a[i+1:] == b[i+1:]
+	}
+	return a[i:] == b[i+1:]
+}
+
+// titlePrefixEqual: one word starts the other, two letters or more.
+func titlePrefixEqual(a, b string) bool {
+	if min(len(a), len(b)) < 2 || titleNoPrefix[a] || titleNoPrefix[b] {
 		return false
 	}
 	return strings.HasPrefix(a, b) || strings.HasPrefix(b, a)
@@ -1156,12 +1218,175 @@ func titleHasEqual(w string, words []string) bool {
 	return false
 }
 
-func titleInitials(words []string) string {
+func titleHasWords(words []string, want ...string) bool {
+	for _, w := range want {
+		found := false
+		for _, v := range words {
+			if titleTrim(v) == w {
+				found = true
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func titleAllStop(words []string) bool {
+	for _, w := range words {
+		if t := titleTrim(w); !titleStopWords[t] && t != "it" {
+			return false
+		}
+	}
+	return true
+}
+
+// titleStopOverlap scores two titles whose content words share nothing by
+// the words they do share, which are stop words. NATIVE (fuzzy_title_variant
+// c9t4a, tt2, f1t1, f2t2), by candidate word count, existing word count and
+// shared words. A candidate inside the existing title: "of" finds "of the"
+// at 91, "Zorp of Quill" at 89 and a longer title at 88; "of it" finds "Zorp
+// of IT" at 94. The existing title inside the candidate: "Zorp of IT" finds
+// "of it" at 91; a one-word title is never found this way ("Zorp IT" does
+// not find "IT"). Neither inside the other: "Director of IT" finds "Head of
+// IT" at 88, and "Director IT" does not. Every other count is no match.
+func titleStopOverlap(wa, wb []string) (bool, float64) {
+	la, lb := len(wa), len(wb)
+	if la > 5 || lb > 5 {
+		if la != 1 {
+			return false, 0
+		}
+		lb = 5
+	}
+	shared := 0
+	for _, w := range wa {
+		if titleHasWords(wb, titleTrim(w)) {
+			shared++
+		}
+	}
+	if shared == 0 || shared > 4 {
+		return false, 0
+	}
+	confidence := titleStopOverlapConfidence[la][lb][shared]
+	return confidence != 0, float64(confidence)
+}
+
+// titleStopOverlapConfidence[candidate words][existing words][shared words].
+var titleStopOverlapConfidence = [6][6][5]uint8{
+	1: {2: {1: 91}, 3: {1: 89}, 4: {1: 88}, 5: {1: 88}},
+	2: {3: {2: 94}, 4: {2: 91}, 5: {2: 90}},
+	3: {2: {2: 91}, 3: {2: 88}, 4: {3: 95}, 5: {3: 93}},
+	4: {3: {3: 93}, 4: {3: 90}, 5: {3: 88, 4: 96}},
+	5: {3: {3: 89}, 4: {4: 95}},
+}
+
+func titleTrim(w string) string { return strings.Trim(w, ",") }
+
+// titleContent drops the stop words. NATIVE (fuzzcap-B3 tt2): "it" is dropped
+// too ("Director IT", "Director, IT" and "IT Director" are "Director" at 100)
+// unless nothing else is left ("IT" against "Information Technology").
+func titleContent(words []string) []string {
+	dropped := false
+	for _, w := range words {
+		if t := titleTrim(w); titleStopWords[t] || t == "it" {
+			dropped = true
+			break
+		}
+	}
+	if !dropped {
+		return words
+	}
+	out := make([]string, 0, len(words))
+	for _, w := range words {
+		if !titleStopWords[titleTrim(w)] && titleTrim(w) != "it" {
+			out = append(out, w)
+		}
+	}
+	if len(out) == 0 {
+		for _, w := range words {
+			if !titleStopWords[titleTrim(w)] {
+				out = append(out, w)
+			}
+		}
+	}
+	return out
+}
+
+// titleSameWords: the two word lists are equal, a comma aside.
+func titleSameWords(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] && titleTrim(a[i]) != titleTrim(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// titleSameWordSet: the two word lists hold the same words, a comma aside,
+// in any order.
+func titleSameWordSet(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	if titleSameWords(a, b) {
+		return true
+	}
+	for _, w := range a {
+		w = titleTrim(w)
+		inA, inB := 0, 0
+		for i := range a {
+			if titleTrim(a[i]) == w {
+				inA++
+			}
+			if titleTrim(b[i]) == w {
+				inB++
+			}
+		}
+		if inA != inB {
+			return false
+		}
+	}
+	return true
+}
+
+// titleIsInitials: text is the first letters of words, a comma aside.
+func titleIsInitials(text string, words []string) bool {
+	text = titleTrim(text)
+	if len(text) != len(words) {
+		return false
+	}
+	for i, w := range words {
+		if w[0] != text[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// titleJoin concatenates words without their commas.
+func titleJoin(words []string) string {
+	if len(words) == 1 {
+		return titleTrim(words[0])
+	}
 	var b strings.Builder
 	for _, w := range words {
-		b.WriteString(w[:1])
+		b.WriteString(titleTrim(w))
 	}
 	return b.String()
+}
+
+// titleReordered: two shared-word lists of one length differ in order.
+func titleReordered(a, b []string) bool {
+	for i := range a {
+		if !titleWordEqual(a[i], b[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 // titleConfidence is the rule confidence the native rows report by shared
@@ -1179,22 +1404,22 @@ var titleConfidenceSix = map[int]float64{2: 89, 3: 93, 4: 95, 5: 98}
 // larger word count.
 var titleShortSide = map[[2]int]float64{{1, 5}: 88, {2, 5}: 90, {2, 6}: 89}
 
+// uniqueWords drops repeated words. A title has few words, so it compares
+// them directly and returns words itself when none repeats.
 func uniqueWords(words []string) []string {
-	seen := map[string]bool{}
-	var out []string
-	for _, w := range words {
-		if !seen[w] {
-			seen[w] = true
-			out = append(out, w)
+	for i := 1; i < len(words); i++ {
+		if !slices.Contains(words[:i], words[i]) {
+			continue
 		}
+		out := append(make([]string, 0, len(words)-1), words[:i]...)
+		for _, w := range words[i+1:] {
+			if !slices.Contains(out, w) {
+				out = append(out, w)
+			}
+		}
+		return out
 	}
-	return out
-}
-
-func sortedCopy(words []string) []string {
-	out := append([]string(nil), words...)
-	sort.Strings(out)
-	return out
+	return words
 }
 
 // fuzzyTitle returns the rule confidence directly (see titleConfidence); the
@@ -1204,24 +1429,32 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	if len(wa) == 0 || len(wb) == 0 {
 		return foldText(a) == foldText(b), 100
 	}
-	var ca, cb []string
-	for _, w := range wa {
-		if !titleStopWords[w] {
-			ca = append(ca, w)
-		}
-	}
-	for _, w := range wb {
-		if !titleStopWords[w] {
-			cb = append(cb, w)
-		}
-	}
-	if strings.Join(ca, " ") == strings.Join(cb, " ") || strings.Join(sortedCopy(wa), " ") == strings.Join(sortedCopy(wb), " ") {
+	ca, cb := titleContent(wa), titleContent(wb)
+	stopA, stopB := titleAllStop(wa), titleAllStop(wb)
+	if !stopA && !stopB && titleSameWords(ca, cb) || titleSameWordSet(wa, wb) {
 		return true, 100
 	}
-	if len(ca) == 1 && len(cb) == 1 {
-		return false, 0
+	if stopA || stopB {
+		// A title of stop words alone has no content. Its acronym still
+		// counts ("IT" finds "Information Technology"); otherwise the shared
+		// stop words decide.
+		if stopA != stopB && (stopA && len(cb) > 1 && titleIsInitials(titleJoin(ca), cb) || stopB && len(ca) > 1 && titleIsInitials(titleJoin(cb), ca)) {
+			return true, 100
+		}
+		return titleStopOverlap(wa, wb)
 	}
-	if (len(cb) > 1 && strings.Join(ca, "") == titleInitials(cb)) || (len(ca) > 1 && strings.Join(cb, "") == titleInitials(ca)) {
+	if len(ca) == 1 && len(cb) == 1 {
+		// Two one-word titles need an exact match. NATIVE (fuzzcap-B3 tt2,
+		// fuzzy_title_variant f1t2): when a title has more words (only stop
+		// words, such as "of" and "IT", count as nothing), the words may
+		// differ by a prefix: "Dir" finds "Director of IT", "Director/IT"
+		// finds "Director IT" and "Zorp and" finds "Zorps".
+		if (len(wa) > 1 || len(wb) > 1) && titleWordEqualRaw(ca[0], cb[0]) {
+			return true, 100
+		}
+		return titleStopOverlap(wa, wb)
+	}
+	if len(cb) > 1 && titleIsInitials(titleJoin(ca), cb) || len(ca) > 1 && titleIsInitials(titleJoin(cb), ca) {
 		return true, 100
 	}
 	var sharedA, sharedB []string
@@ -1241,7 +1474,7 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	// "Attorney at Law": "at" starts "attorney" only when read from one side).
 	k := min(len(uniqueWords(sharedA)), len(uniqueWords(sharedB)))
 	if k == 0 {
-		return false, 0
+		return titleStopOverlap(wa, wb)
 	}
 	if k == len(ua) && k == len(ub) && len(sharedB) == len(cb) {
 		// The same content words in a different order: exact unless a stop
@@ -1249,7 +1482,17 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		if len(wa) == len(ca) && len(wb) == len(cb) {
 			return true, 100
 		}
-		return true, 93.5
+		// NATIVE (fuzzy_title_variant f1t2): the same order is exact
+		// whatever the stop words ("Zorp Quill" finds "Zorps and Quill").
+		if len(sharedA) == len(sharedB) && !titleReordered(sharedA, sharedB) {
+			return true, 100
+		}
+		// NATIVE (fuzzcap-C9 c9t4): 94 when the candidate has no stop word
+		// ("Zorp Quill" finds "Quill of Zorp"), 93 when it has one.
+		if len(wa) == len(ca) {
+			return true, 94
+		}
+		return true, 93
 	}
 	sameOrder := len(sharedA) > 0
 	for i := 0; i < min(len(sharedA), len(sharedB)); i++ {
@@ -1295,14 +1538,76 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	if !ok {
 		confidence = 88
 	}
+	if sameOrder && n == 2 && k == 1 && confidence == 93 && len(wa) > len(ca) && titleAllIn(wa, wb) {
+		// NATIVE (fuzzcap-C9 c9t4, fuzzcap-B3 tt2): a candidate with a stop
+		// word whose words are all in the existing title: "Zorp Of" finds
+		// "Zorp of Quill" and "Director IT" finds "Director - IT" at 94.
+		confidence = 94
+	}
 	if !sameOrder {
-		if n == 6 && exactSubset && len(short) < len(long) && k == 5 {
+		if exactSubset && len(short) == k && len(short) < len(long) && k >= 2 && titleReversed(sharedA, sharedB) {
+			// NATIVE (fuzzcap-C9 c9t2d, c9t3c, c9t3d): all words of the
+			// shorter title in the longer one, in the reverse order (a word
+			// moved to the other end keeps the general penalty). The penalty
+			// depends on the direction and the two lengths.
+			pen, known := titleReorderPenalty(len(ua) < len(ub), k, len(long))
+			if !known {
+				pen = 3
+			}
+			if pen < 0 {
+				return false, 0
+			}
+			return true, confidence - float64(pen)
+		}
+		switch {
+		case n == 6 && exactSubset && len(short) < len(long) && k == 5:
 			confidence -= 2
-		} else {
+		case k == 2 && n == 4 && !exactSubset:
+			// NATIVE (fuzzcap-C9 c9t2d): two shared words out of order in a
+			// title of four.
+			confidence -= 5
+		default:
 			confidence -= 3
 		}
 	}
 	return true, confidence
+}
+
+func titleReversed(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !titleWordEqual(a[i], b[len(b)-1-i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func titleAllIn(words, other []string) bool {
+	for _, w := range words {
+		if !slices.Contains(other, w) {
+			return false
+		}
+	}
+	return len(other) > len(words)
+}
+
+// titleReorderPenalty is the confidence a title loses when all its content
+// words (candidate shorter) or all the words of the existing title
+// (candidate longer) occur in the other title in a different order, by shared
+// and longer word count. A negative penalty is no match.
+func titleReorderPenalty(candidateShorter bool, k, long int) (int, bool) {
+	type key struct{ k, long int }
+	shorter := map[key]int{{2, 3}: 1, {3, 4}: 2, {3, 5}: 1, {3, 6}: 2, {4, 6}: 1, {5, 6}: 2}
+	longer := map[key]int{{2, 3}: 4, {3, 4}: 4, {3, 5}: 5, {3, 6}: -1, {4, 6}: 4, {5, 6}: 2}
+	table := longer
+	if candidateShorter {
+		table = shorter
+	}
+	p, ok := table[key{k, long}]
+	return p, ok
 }
 
 // fuzzyItemScore converts a method's single-item confidence into the item

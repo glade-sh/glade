@@ -303,11 +303,12 @@ darrell darryl daryl
 darren darryl daryl
 darryl darrell darren daryl
 daryl darrell darren darryl
-dave davey david davide davis
+dave davey david davide davis davy
 davey dave david davide davis
-david dave davey davide davis
+david dave davey davide davis davy
 davide dave davey david davis
 davis dave davey david davide
+davy dave david
 deanna diana diane dianne
 deb debbie debby deborah debra
 debbie deb debby deborah debra
@@ -894,7 +895,7 @@ marisa maria mariah mariam marian marie marion marisela marisol marissa marla ma
 marisela maria marion marisa marisol marissa
 marisol maria marion marisa marisela marissa
 marissa maria mariah mariam marian marie marisa marisela marisol marla marlene mary
-marjorie greta maggie margaret margarita margaux marge margie margo margot marguerite meg rita
+marjorie greta maggie margaret margarita margaux marge margie margo margot marguerite meg peggy rita
 mark marc marcelo marco marcus marek marko markus
 marko marc marcelo marco marcus marek mark markus
 markus marc marcelo marco marcus marek mark marko marlin marlon
@@ -1056,7 +1057,7 @@ paula paola paulette pauline
 paulette paola paula pauline
 pauline paola paula paulette
 pedro pete peter petr pieter piotr
-peggy greta maggie margaret marge margie margot meg rita
+peggy greta maggie margaret marge margie margot marjorie meg rita
 penelope penny
 penny penelope
 percival percy
@@ -1177,7 +1178,7 @@ samson sam sammy
 samuel sam sami sammy
 sander sandy
 sandrine sandy
-sandy sander sandrine
+sandy sander sandrine xander
 sara sarah
 sarah sara
 scott scotty
@@ -1370,7 +1371,7 @@ winifred winnie
 winnie winifred
 woodrow woody
 woody woodrow
-xander zander
+xander sandy zander
 yan yannis
 yannis yan
 yehmi yemi
