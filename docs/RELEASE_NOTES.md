@@ -12,7 +12,7 @@
 
 - **Visualforce test startup.** Test runs keep the digests of unchanged Visualforce input files in the project's test cache and reuse them on the next run. A missing, damaged or untrusted cache file is ignored and rebuilt, and the disk cache setting that turns off the runtime cache also turns this one off.
 
-- **Strict-mode list building runs in linear time.** With `--limit-mode strict`, a loop that adds records or scalars to a local list no longer re-measures the whole heap after every statement, so building 10,000 records takes about as long as in permissive mode instead of growing with the square of the list size. The heap count, the statement where a heap LimitException is thrown and its message are unchanged.
+- **Strict-mode list building runs in linear time.** With `--limit-mode strict`, a loop that adds records or scalars to a local list no longer re-measures the whole heap after every statement, so building 10,000 records takes about as long as in permissive mode instead of growing with the square of the list size. The heap count, the statement where a heap LimitException is thrown and its message are unchanged. A loop whose body calls methods or reads fields still takes the full heap walk.
 
 - **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 
