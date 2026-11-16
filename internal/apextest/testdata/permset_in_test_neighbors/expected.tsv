@@ -1,0 +1,4 @@
+api	method	observation
+67.0	n1_queueable	cr=true
+67.0	n2_runas_version	cr=true
+67.0	n3_runas_user_assign_other	cr=true

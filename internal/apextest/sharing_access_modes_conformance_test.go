@@ -277,3 +277,64 @@ func TestPermissionSetAssignedInTestNativeConformance(t *testing.T) {
 		})
 	}
 }
+
+// Shapes next to the permset_in_test rows keep their earlier behavior: an
+// asynchronous job and a Version runAs still see the assignment at
+// once. They have no native rows. expected.tsv records the base results.
+func TestPermissionSetAssignedInTestUncapturedNeighborsKeepBase(t *testing.T) {
+	neighbors := "testdata/permset_in_test_neighbors"
+	raw, err := os.Open(filepath.Join(neighbors, "expected.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	reader := csv.NewReader(raw)
+	reader.Comma = '\t'
+	reader.LazyQuotes = true
+	reader.FieldsPerRecord = 3
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 4 || strings.Join(rows[0], ",") != "api,method,observation" {
+		t.Fatalf("incomplete neighbor rows: %d", len(rows))
+	}
+	root := t.TempDir()
+	for _, source := range []struct{ from, to string }{
+		{"testdata/conformance/permset_in_test/project", ""},
+		{filepath.Join(neighbors, "classes"), "force-app/main/default/classes"},
+	} {
+		err := filepath.WalkDir(source.from, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.IsDir() {
+				return err
+			}
+			body, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			rel, err := filepath.Rel(source.from, path)
+			if err != nil {
+				return err
+			}
+			writeFile(t, filepath.Join(root, source.to, rel), string(body))
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	index := loadTestIndex(t, root)
+	for _, row := range rows[1:] {
+		api, method, want := row[0], row[1], row[2]
+		t.Run(api+"/"+method, func(t *testing.T) {
+			run := Run(index, Options{SelectedClasses: []string{"PfNeighbor67"}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
+			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
+				t.Fatalf("missing runner observation %+v", run.Summary())
+			}
+			_, got, ok := strings.Cut(run.Suites[0].Cases[0].Problem.Message, " => ")
+			if !ok || strings.TrimSpace(got) != want {
+				t.Fatalf("base=%q\nglade=%q", want, run.Suites[0].Cases[0].Problem.Message)
+			}
+		})
+	}
+}
