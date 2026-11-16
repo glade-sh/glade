@@ -3,7 +3,9 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"unicode/utf16"
 
 	"github.com/dlclark/regexp2"
 )
@@ -516,4 +518,49 @@ func expandRegexp2PlanReplacement(plan *regexp2Plan, match *regexp2.Match, segme
 		out.WriteString(group.String())
 	}
 	return out.String()
+}
+
+// writeRegexObjectText prints Pattern and Matcher the way the native runtime
+// does: the wrapped java.util.regex object's own toString.
+func writeRegexObjectText(w *textWriter, v Value) bool {
+	switch v.Type {
+	case "Pattern":
+		source, ok := v.Fields["source"]
+		if !ok || source.Kind != ValueString {
+			return false
+		}
+		w.WriteString("Pattern:[delegate=Pattern[")
+		w.WriteString(source.Text)
+		w.WriteString("]]")
+		return true
+	case "Matcher":
+		source, ok := v.Fields["patternSource"]
+		if !ok || source.Kind != ValueString {
+			return false
+		}
+		input := v.Fields["input"]
+		start, end := v.Fields["regionStart"], v.Fields["regionEnd"]
+		if input.Kind != ValueString || start.Kind != ValueInt || end.Kind != ValueInt {
+			return false
+		}
+		last := ""
+		if groups := v.Fields["groups"]; groups.Kind == ValueList && len(groups.List) >= 2 && groups.List[0].Kind == ValueInt && groups.List[1].Kind == ValueInt {
+			units := utf16.Encode([]rune(input.Text))
+			from, to := int(groups.List[0].Int), int(groups.List[1].Int)
+			if from >= 0 && from <= to && to <= len(units) {
+				last = string(utf16.Decode(units[from:to]))
+			}
+		}
+		w.WriteString("Matcher:[delegate=Matcher[pattern=")
+		w.WriteString(source.Text)
+		w.WriteString(" region=")
+		w.WriteString(strconv.FormatInt(start.Int, 10))
+		w.WriteString(",")
+		w.WriteString(strconv.FormatInt(end.Int, 10))
+		w.WriteString(" lastmatch=")
+		w.WriteString(last)
+		w.WriteString("]]")
+		return true
+	}
+	return false
 }

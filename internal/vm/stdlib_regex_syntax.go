@@ -12,10 +12,10 @@ import (
 // Validate Java group names before the engine accepts its broader group syntax.
 // R083-R085 record the native diagnostics, including the original source index.
 func validateJavaRegexSource(source, exceptionType string) error {
-	if err := validateJavaRegexGroups(source, exceptionType); err != nil {
-		return err
+	if se := javaRegexSyntaxCheck(source); se != nil {
+		return newExceptionError("System."+exceptionType, javaRegexSyntaxMessage(source, se.description, se.index))
 	}
-	return validateJavaRegexProperties(source, exceptionType)
+	return nil
 }
 
 func validateJavaRegexGroups(source, exceptionType string) error {
@@ -240,4 +240,137 @@ func validateJavaRegexProperties(source, exceptionType string) error {
 		i = end
 	}
 	return nil
+}
+
+// javaCapturingGroupCount counts capturing groups in the order Java numbers them.
+func javaCapturingGroupCount(source string) int {
+	count := 0
+	var classes javaRegexClassState
+	for i := 0; i < len(source); i++ {
+		if source[i] == '\\' {
+			i++
+			continue
+		}
+		classes.advance(source, i)
+		if classes.inside() || source[i] != '(' {
+			continue
+		}
+		if i+1 < len(source) && source[i+1] == '?' {
+			if i+3 < len(source) && source[i+2] == '<' && source[i+3] != '=' && source[i+3] != '!' {
+				count++
+			}
+			continue
+		}
+		count++
+	}
+	return count
+}
+
+// rewriteJavaNumericEscapesForRegexp2 resolves the escapes whose meaning Java
+// and regexp2 disagree on: \0nn octal sequences and numeric back references.
+// Java extends \N while the longer number names a group opened so far, treats
+// \0 as octal, and lets a reference to a missing group fail to match.
+func rewriteJavaNumericEscapesForRegexp2(source string) string {
+	if !strings.Contains(source, `\`) {
+		return source
+	}
+	total := javaCapturingGroupCount(source)
+	var out strings.Builder
+	var classes javaRegexClassState
+	opened := 0
+	changed := false
+	for i := 0; i < len(source); i++ {
+		ch := source[i]
+		if ch != '\\' {
+			classes.advance(source, i)
+			if !classes.inside() && ch == '(' {
+				if i+1 < len(source) && source[i+1] == '?' {
+					if i+3 < len(source) && source[i+2] == '<' && source[i+3] != '=' && source[i+3] != '!' {
+						opened++
+					}
+				} else {
+					opened++
+				}
+			}
+			out.WriteByte(ch)
+			continue
+		}
+		if i+1 >= len(source) {
+			out.WriteByte(ch)
+			continue
+		}
+		next := source[i+1]
+		switch {
+		case next == '0':
+			value, used := javaOctalEscapeValue(source[i+2:])
+			if used == 0 {
+				out.WriteString(source[i : i+2])
+				i++
+				continue
+			}
+			fmt.Fprintf(&out, `\u%04X`, value)
+			i += 1 + used
+			changed = true
+		case next >= '1' && next <= '9' && !classes.inside():
+			number := int(next - '0')
+			j := i + 2
+			for j < len(source) && source[j] >= '0' && source[j] <= '9' {
+				candidate := number*10 + int(source[j]-'0')
+				if opened < candidate {
+					break
+				}
+				number = candidate
+				j++
+			}
+			switch {
+			case number > total:
+				out.WriteString(`(?!)`)
+			case j < len(source) && source[j] >= '0' && source[j] <= '9':
+				fmt.Fprintf(&out, `(?:\%d)`, number)
+			default:
+				fmt.Fprintf(&out, `\%d`, number)
+			}
+			i = j - 1
+			changed = true
+		case next == 'N' && i+2 < len(source) && source[i+2] == '{':
+			end := strings.IndexByte(source[i+3:], '}')
+			if end >= 0 {
+				if r, ok := javaCharacterByName(source[i+3 : i+3+end]); ok {
+					fmt.Fprintf(&out, `\u%04X`, r)
+					i += 3 + end
+					changed = true
+					continue
+				}
+			}
+			out.WriteByte(ch)
+			out.WriteByte(next)
+			i++
+		default:
+			out.WriteByte(ch)
+			out.WriteByte(next)
+			i++
+		}
+	}
+	if !changed {
+		return source
+	}
+	return out.String()
+}
+
+// javaOctalEscapeValue reads the digits after \0 as java.util.regex does and
+// returns the code point and how many source bytes follow the zero.
+func javaOctalEscapeValue(rest string) (rune, int) {
+	isOctalByte := func(b byte) bool { return b >= '0' && b <= '7' }
+	if len(rest) == 0 || !isOctalByte(rest[0]) {
+		return 0, 0
+	}
+	n := rune(rest[0] - '0')
+	if len(rest) < 2 || !isOctalByte(rest[1]) {
+		return n, 1 + 1 - 1
+	}
+	m := rune(rest[1] - '0')
+	if len(rest) >= 3 && isOctalByte(rest[2]) && n <= 3 {
+		return n*64 + m*8 + rune(rest[2]-'0'), 3
+	}
+	return n*8 + m, 2
 }

@@ -71,6 +71,20 @@ func rewriteJavaRegexFlagsForRegexp2(source string) string {
 		}
 		classes.advance(source, i)
 		if classes.inside() {
+			if options.extended && ch != '[' && ch != ']' {
+				// Java applies the x flag inside classes: whitespace is ignored and
+				// # starts a comment (R-rows d9_x_class_*).
+				if javaASCIISpace(rune(ch)) {
+					continue
+				}
+				if ch == '#' {
+					if end := strings.IndexByte(source[i:], '\n'); end >= 0 {
+						i += end
+						continue
+					}
+					break
+				}
+			}
 			out.WriteByte(ch)
 			continue
 		}
@@ -86,7 +100,7 @@ func rewriteJavaRegexFlagsForRegexp2(source string) string {
 			if strings.HasPrefix(source[i:], "(?") {
 				j, enabled, scoped, sawFlag := i+2, true, options, false
 				var flags strings.Builder
-				for j < len(source) && strings.ContainsRune("idmsuxU-", rune(source[j])) {
+				for j < len(source) && strings.ContainsRune("idmsucxU-", rune(source[j])) {
 					flag := source[j]
 					if flag == '-' {
 						enabled = false
@@ -96,8 +110,8 @@ func rewriteJavaRegexFlagsForRegexp2(source string) string {
 						switch flag {
 						case 'd':
 							scoped.unixLines = enabled
-						case 'u', 'U':
-							// Unicode classes are rewritten by the shared class pass.
+						case 'u', 'U', 'c':
+							// Unicode classes are rewritten by the shared class pass; c is CANON_EQ.
 						default:
 							flags.WriteByte(flag)
 							if flag == 's' {

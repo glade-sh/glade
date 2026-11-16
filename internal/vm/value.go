@@ -319,6 +319,9 @@ func (v Value) writeText(w *textWriter) {
 		if writeHTTPDTOText(w, v) {
 			return
 		}
+		if writeRegexObjectText(w, v) {
+			return
+		}
 		if strings.EqualFold(v.Runtime, "System.Location") {
 			writeLocationText(w, v)
 			return

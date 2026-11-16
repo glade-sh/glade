@@ -40,7 +40,7 @@ func compileRegexp2Source(callee, source string) (string, error) {
 	if err != nil {
 		return "", unsupportedCallError(callee + " " + err.Error())
 	}
-	regexp2Source := converted
+	regexp2Source := rewriteJavaNumericEscapesForRegexp2(converted)
 	unicodeCharacterClass := false
 	regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source)
