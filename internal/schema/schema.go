@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -468,7 +467,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if objectName == "" {
 			continue
 		}
-		field, err := loadField(path)
+		field, err := loadField(p.ReadFile, path)
 		if err != nil {
 			return Schema{}, err
 		}
@@ -495,7 +494,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if objectName == "" {
 			continue
 		}
-		recordType, err := loadRecordType(path)
+		recordType, err := loadRecordType(p.ReadFile, path)
 		if err != nil {
 			return Schema{}, err
 		}
@@ -519,7 +518,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if objectName == "" {
 			continue
 		}
-		rule, err := loadValidationRule(path, validationRuleSourceNamespace(p.Namespace, objectName))
+		rule, err := loadValidationRule(p.ReadFile, path, validationRuleSourceNamespace(p.Namespace, objectName))
 		if err != nil {
 			return Schema{}, err
 		}
@@ -567,7 +566,7 @@ func LoadProject(p project.Project) (Schema, error) {
 
 	records := make([]CustomMetadataRecord, 0, len(p.CustomMetadataFiles))
 	for _, path := range p.CustomMetadataFiles {
-		record, err := loadCustomMetadataRecord(path)
+		record, err := loadCustomMetadataRecord(p.ReadFile, path)
 		if err != nil {
 			return Schema{}, err
 		}
@@ -616,7 +615,7 @@ func loadPinnedSchemaSnapshot(p project.Project) ([]Object, error) {
 	if path == "" || configured == "" {
 		return nil, errors.New("project.schemaSnapshot and project.schemaSnapshotSHA256 must be configured together")
 	}
-	data, err := os.ReadFile(path) // #nosec G304 -- path is an explicit project configuration value bound to a required SHA-256.
+	data, err := p.ReadFile(path) // #nosec G304 -- path is an explicit project configuration value bound to a required SHA-256.
 	if err != nil {
 		return nil, err
 	}
@@ -771,8 +770,8 @@ func isCustomEntityName(name string) bool {
 	return false
 }
 
-func loadValidationRule(path, namespace string) (ValidationRule, error) {
-	data, err := os.ReadFile(path)
+func loadValidationRule(read func(string) ([]byte, error), path, namespace string) (ValidationRule, error) {
+	data, err := read(path)
 	if err != nil {
 		return ValidationRule{}, err
 	}
@@ -809,8 +808,8 @@ func validationRuleFromXML(raw validationRuleXML, fallback, namespace string) Va
 	}
 }
 
-func loadRecordType(path string) (RecordType, error) {
-	data, err := os.ReadFile(path)
+func loadRecordType(read func(string) ([]byte, error), path string) (RecordType, error) {
+	data, err := read(path)
 	if err != nil {
 		return RecordType{}, err
 	}
@@ -889,7 +888,7 @@ func recordTypePicklistDefaults(values []recordTypePicklistXML) map[string]strin
 }
 
 func loadObject(path string, p project.Project) (Object, error) {
-	data, err := os.ReadFile(path)
+	data, err := p.ReadFile(path)
 	if err != nil {
 		return Object{}, err
 	}
@@ -944,7 +943,7 @@ func loadObject(path string, p project.Project) (Object, error) {
 
 func loadSharingReasons(objectPath string, p project.Project) ([]string, map[string]string) {
 	dir := filepath.Join(filepath.Dir(objectPath), "sharingReasons")
-	entries, err := os.ReadDir(dir)
+	entries, err := p.ReadDir(dir)
 	if err != nil {
 		return nil, nil
 	}
@@ -955,7 +954,7 @@ func loadSharingReasons(objectPath string, p project.Project) ([]string, map[str
 		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".sharingreason-meta.xml") {
 			continue
 		}
-		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		data, err := p.ReadFile(filepath.Join(dir, entry.Name()))
 		if err != nil {
 			continue
 		}
@@ -985,8 +984,8 @@ func loadSharingReasons(objectPath string, p project.Project) ([]string, map[str
 	return reasons, labels
 }
 
-func loadField(path string) (Field, error) {
-	data, err := os.ReadFile(path)
+func loadField(read func(string) ([]byte, error), path string) (Field, error) {
+	data, err := read(path)
 	if err != nil {
 		return Field{}, err
 	}
@@ -1221,7 +1220,7 @@ func hasNamespaceToken(name string) bool {
 func loadValueSets(p project.Project) (map[string][]PicklistValue, error) {
 	sets := make(map[string][]PicklistValue)
 	for _, path := range append(append([]string{}, p.GlobalValueSetFiles...), p.StandardValueSetFiles...) {
-		values, err := loadValueSet(path)
+		values, err := loadValueSet(p.ReadFile, path)
 		if err != nil {
 			return nil, err
 		}
@@ -1234,8 +1233,8 @@ func loadValueSets(p project.Project) (map[string][]PicklistValue, error) {
 	return sets, nil
 }
 
-func loadValueSet(path string) ([]PicklistValue, error) {
-	data, err := os.ReadFile(path)
+func loadValueSet(read func(string) ([]byte, error), path string) ([]PicklistValue, error) {
+	data, err := read(path)
 	if err != nil {
 		return nil, err
 	}
@@ -1316,8 +1315,8 @@ func stringSliceContainsFold(values []string, value string) bool {
 	return false
 }
 
-func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
-	data, err := os.ReadFile(path)
+func loadCustomMetadataRecord(read func(string) ([]byte, error), path string) (CustomMetadataRecord, error) {
+	data, err := read(path)
 	if err != nil {
 		return CustomMetadataRecord{}, err
 	}

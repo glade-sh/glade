@@ -2,7 +2,6 @@ package apextest
 
 import (
 	"encoding/xml"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -43,7 +42,7 @@ func applyCustomPermissionRecordsInNamespace(org *storage.OrgState, p project.Pr
 	}
 	for _, file := range p.CustomPermissionFiles {
 		name := metadataNameFromPath(file, ".custompermission-meta.xml", ".custompermission")
-		data, err := os.ReadFile(file)
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}

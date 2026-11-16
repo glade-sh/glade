@@ -20,6 +20,9 @@ func (vm *VM) lazyStandardObject(name string) (string, bool) {
 	if vm == nil || vm.Org == nil || !vm.Org.LazyStandardSpreadEnabled() {
 		return "", false
 	}
+	if vm.Org.SuppressesSpreadObject(name) {
+		return "", false
+	}
 	return storage.EnsureLazyStandardObject(vm.Org, name)
 }
 

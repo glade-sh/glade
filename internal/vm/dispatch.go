@@ -944,6 +944,9 @@ platformStaticCall:
 			restored.IDSequences = maxOrgIDSequences(restored.IDSequences, currentSequences)
 			*vm.Org = restored
 		}
+		// A rollback leaves the captured first-assignment sequence. Re-evaluate
+		// later grants instead of retaining its transaction-local marker.
+		vm.mixedDML.newAdminPermissionSetID = ""
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
 		if kept, ok := vm.actionAsyncSavepoints[idValue.Text]; ok && kept <= len(vm.localAsyncJobs) {
 			clear(vm.localAsyncJobs[kept:])

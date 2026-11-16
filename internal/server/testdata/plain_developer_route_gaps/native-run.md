@@ -1,0 +1,3 @@
+# Native REST and UI version gaps
+
+A fresh Developer scratch org with a 30-day duration and no features or settings was used. The org was deleted and its absence independently verified through the Dev Hub. `objects.txt` supplies the requested names. REST probes request object describe and `SELECT Id ... LIMIT 1`; UI probes request object info both as a batch and individually. The Account and synthetic missing-object controls were checked at every API. `org.tsv` records REST describe status and error, query status and error; batch UI status and error; and singleton UI presence, error, and canonical API name. A dash marks an inapplicable field. These rows cover only the listed requests and API versions.

@@ -46,13 +46,18 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 			if err := captureProviderAdapterGeneration(loaded, paths, bodies, generation, func(path string) ([]byte, error) { return readProjectMetadataFile(loaded, path) }); err != nil {
 				return err
 			}
+			if err := captureVisualforceRuntimeInputs(loaded, generation); err != nil {
+				return err
+			}
 		}
 	}
 	var loadedRoots []string
+	readMarker := os.ReadFile
 	if capturedProject != nil {
 		loadedRoots = loadedProjectRoots(*capturedProject)
+		readMarker = capturedProject.ReadFile
 	}
-	units, err := captureRuntimeSourceUnitsInRoots(index, generation, bodies, loadedRoots)
+	units, err := captureRuntimeSourceUnitsInRoots(index, generation, bodies, loadedRoots, readMarker)
 	if err != nil {
 		return err
 	}
@@ -62,6 +67,7 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 	cache.projectMetadataPrepared = true
 	cache.capturedProject = capturedProject
 	cache.runtimeSourceUnits = units
+	cache.recentVisualforce = generation.recentVisualforce
 	if cache.capturedMetadata == nil {
 		cache.capturedMetadata = make(map[string]typesys.ApexMetadataInput)
 	}
@@ -69,6 +75,123 @@ func (cache *sourceCache) captureProjectRuntimeMetadata(index typesys.Index, gen
 		cache.capturedMetadata[path] = generation.inputs[path]
 	}
 	return nil
+}
+
+// captureVisualforceRuntimeInputs includes every project file used by page
+// validation in the runtime identity. Projects without pages keep their
+// existing key. The same view observes every file for debugger builds.
+func captureVisualforceRuntimeInputs(p project.Project, generation *runtimeMetadataGeneration) error {
+	var projects []project.Project
+	seen := map[string]bool{}
+	var visit func(project.Project)
+	visit = func(q project.Project) {
+		if seen[q.Root] {
+			return
+		}
+		seen[q.Root] = true
+		projects = append(projects, q)
+		for _, dep := range q.ManagedPackageDependencies {
+			if dep.Status == "loaded" && dep.Project != nil {
+				visit(*dep.Project)
+			}
+		}
+	}
+	visit(p)
+	hasPages := false
+	for _, q := range projects {
+		hasPages = hasPages || len(q.VisualforcePageFiles) != 0
+	}
+	if !hasPages {
+		return nil
+	}
+	var diskInputs []string
+	useDiskDigests := generation.allowVisualforceDiskDigests && p.Inputs() == nil && p.Root != "" && diskCacheEnabled() && firstVisualforceDigestGeneration(p.Root)
+	generation.persistVisualforceAtEnd = useDiskDigests
+	if useDiskDigests {
+		for _, q := range projects {
+			if q.Inputs() != nil {
+				continue
+			}
+			for group, paths := range visualforceRuntimeInputGroups(q) {
+				for _, path := range paths {
+					diskInputs = append(diskInputs, path)
+					if group < 2 && !strings.HasSuffix(strings.ToLower(path), "-meta.xml") {
+						diskInputs = append(diskInputs, path+"-meta.xml")
+					}
+				}
+			}
+		}
+		_ = loadVisualforceDigestCache(p.Root, diskInputs)
+	}
+	for _, q := range projects {
+		groups := visualforceRuntimeInputGroups(q)
+		for group, paths := range groups {
+			for _, path := range paths {
+				inputs := []string{path}
+				if group < 2 && !strings.HasSuffix(strings.ToLower(path), "-meta.xml") {
+					inputs = append(inputs, path+"-meta.xml")
+				}
+				for _, input := range inputs {
+					if q.Inputs() == nil {
+						if generation.visualforceInputs == nil {
+							generation.visualforceInputs = make(map[string]bool)
+						}
+						generation.visualforceInputs[input] = true
+					}
+					if _, ok := generation.inputs[input]; ok {
+						continue
+					}
+					var digest [sha256.Size]byte
+					var err error
+					if q.Inputs() == nil {
+						if trusted, ok := oldTrustedVisualforceDigest(input); ok {
+							generation.inputs[input] = typesys.ApexMetadataInput{Present: true, Digest: trusted}
+							continue
+						}
+						recent, captured, captureErr := captureRecentVisualforceInput(input, recentVisualforceBudget-generation.recentVisualforceBytes)
+						if captured {
+							err = captureErr
+							if err == nil {
+								digest = recent.digest
+								if generation.recentVisualforce == nil {
+									generation.recentVisualforce = make(map[string]recentVisualforceInput)
+								}
+								generation.recentVisualforce[input] = recent
+								generation.recentVisualforceBytes += int64(len(recent.content))
+							}
+						} else {
+							digest, err = currentFileDigest(input)
+						}
+					} else {
+						var data []byte
+						data, err = q.ReadFile(input)
+						if err == nil {
+							digest = sha256.Sum256(data)
+						}
+					}
+					if os.IsNotExist(err) {
+						generation.inputs[input] = typesys.ApexMetadataInput{}
+						continue
+					}
+					if err != nil {
+						return err
+					}
+					generation.inputs[input] = typesys.ApexMetadataInput{Present: true, Digest: digest}
+				}
+			}
+		}
+	}
+	if useDiskDigests {
+		_ = saveVisualforceDigestCache(p.Root, diskInputs)
+	}
+	return nil
+}
+
+func visualforceRuntimeInputGroups(q project.Project) [][]string {
+	return [][]string{q.VisualforcePageFiles, q.VisualforceComponentFiles,
+		q.EmailTemplateFiles, q.FlowFiles, q.LabelFiles, q.TranslationFiles,
+		q.StaticResourceFiles, q.StaticResourceMetas, q.MessageChannelFiles,
+		q.TabFiles, q.ProfileFiles, q.PermissionSetFiles, q.PermissionSetGroupFiles}
 }
 
 // dependencyAdminProfileFiles lists the System Administrator profile files of
@@ -252,12 +375,14 @@ func containingSourceRoot(path, primary string, loaded []string) string {
 	return best
 }
 
-func readSourceRootFile(root, path string) ([]byte, error) {
+// readSourceRootFile reads through read, which is a project input view reader
+// when the caller has a loaded project.
+func readSourceRootFile(read func(string) ([]byte, error), root, path string) ([]byte, error) {
 	path, err := sourceRootPath(root, path)
 	if err != nil {
 		return nil, err
 	}
-	return os.ReadFile(filepath.Clean(path))
+	return read(filepath.Clean(path))
 }
 
 func readProjectMetadataFile(snapshot project.Project, path string) ([]byte, error) {
@@ -293,5 +418,5 @@ func readProjectMetadataFile(snapshot project.Project, path string) ([]byte, err
 	if root == "" {
 		return nil, fmt.Errorf("metadata path %q is outside source root %q", path, snapshot.Root)
 	}
-	return readSourceRootFile(root, path)
+	return readSourceRootFile(snapshot.ReadFile, root, path)
 }

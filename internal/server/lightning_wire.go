@@ -1986,6 +1986,9 @@ func defaultPicklistValueName(field storage.Field, _ string) string {
 
 func findChildObjectForRelationship(org *storage.OrgState, parentObjectName string, relation storage.Relationship) (string, storage.ObjectState, bool) {
 	for name, object := range org.Objects {
+		if org.SuppressesSpreadObject(name) {
+			continue
+		}
 		field, ok := object.Definition.Fields[relation.Field]
 		if !ok || field.Type != storage.FieldReference {
 			continue

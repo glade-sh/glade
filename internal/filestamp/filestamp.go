@@ -33,11 +33,20 @@ type Stamp struct {
 // or non-regular file, and on file systems or platforms without a trustworthy
 // ctime (see stamp_unix.go); callers then hash.
 func Stat(path string) (Stamp, bool) {
+	_, stamp, ok := StatWithInfo(path)
+	return stamp, ok
+}
+
+// StatWithInfo returns the file information and stamp from one observation.
+// The information is retained for non-regular files even when the stamp is not
+// trusted; callers must use ok before relying on the stamp.
+func StatWithInfo(path string) (os.FileInfo, Stamp, bool) {
 	info, err := os.Stat(path)
 	if err != nil {
-		return Stamp{}, false
+		return nil, Stamp{}, false
 	}
-	return statStamp(path, info)
+	stamp, ok := statStamp(path, info)
+	return info, stamp, ok
 }
 
 // Fstat stamps an open file.

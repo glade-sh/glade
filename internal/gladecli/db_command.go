@@ -1300,7 +1300,7 @@ func buildExecOrgState(root string, p project.Project, index typesys.Index, cata
 			storage.EnsureStandardObject(&org, name)
 		}
 	}
-	if err := resource.ApplyProjectEventSubscribers(&org, index, nil); err != nil {
+	if err := resource.ApplyProjectEventSubscribers(&org, index, p.ReadFile); err != nil {
 		return storage.OrgState{}, err
 	}
 	if err := storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords); err != nil {

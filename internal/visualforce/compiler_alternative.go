@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -54,7 +53,7 @@ func validateAlternativeRenderingPages(p project.Project, only map[string]bool) 
 }
 
 func validateAlternativeRenderingFile(path string, p project.Project) error {
-	source, err := os.ReadFile(path)
+	source, err := p.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -266,7 +265,7 @@ func loadEmbeddingFlow(p project.Project, name string) (*embeddingFlow, error) {
 		if !strings.EqualFold(fileName, name) && !(p.Namespace != "" && strings.EqualFold(p.Namespace+"__"+fileName, name)) {
 			continue
 		}
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -357,10 +356,10 @@ func validateEmbeddingEmailFields(source string, attributes map[string]string, p
 // dependencies. A loaded dependency is installed in the org with its
 // resources, so a page of p may name them.
 func projectStaticResources(p project.Project) ([]storage.StaticResourceMetadata, error) {
-	registry, err := resource.LoadProject(project.Project{
+	registry, err := resource.LoadProject((project.Project{
 		Root: p.Root, Namespace: p.Namespace, StaticResourceFiles: p.StaticResourceFiles,
 		StaticResourceMetas: p.StaticResourceMetas, ManagedPackageDependencies: p.ManagedPackageDependencies,
-	})
+	}).WithInputs(p.Inputs()))
 	if err != nil {
 		return nil, err
 	}

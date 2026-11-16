@@ -1,0 +1,4 @@
+route	apis	input
+rest	61.0 62.0 63.0 64.0	describe and SELECT Id LIMIT 1 for each object
+ui-batch	60.0 61.0 62.0 63.0 64.0 65.0 66.0	object-info batch for all objects
+ui-single	60.0 61.0 62.0 63.0 64.0 65.0 66.0	object-info for each object

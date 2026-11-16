@@ -121,14 +121,14 @@ func (c *loadCache) strictIndex(p project.Project, fallbackAPIVersion string) (p
 func parseStrictIndex(p project.Project, fallbackAPIVersion string) (parsedIndex, error) {
 	var parsed parsedIndex
 	for _, path := range p.VisualforcePageFiles {
-		page, err := parsePageFile(path, fallbackAPIVersion)
+		page, err := parsePageFile(path, fallbackAPIVersion, p)
 		if err != nil {
 			return parsedIndex{}, err
 		}
 		parsed.pages = append(parsed.pages, page)
 	}
 	for _, path := range p.VisualforceComponentFiles {
-		component, err := parseComponentFile(path, fallbackAPIVersion)
+		component, err := parseComponentFile(path, fallbackAPIVersion, p)
 		if err != nil {
 			return parsedIndex{}, err
 		}

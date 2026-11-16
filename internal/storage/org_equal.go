@@ -27,8 +27,14 @@ func (o OrgState) persistedView() OrgState {
 	o.SystemTimestampSequence = 0
 	o.RuntimeSchemaStamp = ""
 	o.objectNameCache = nil
+	// The registry may be populated through by-value org lookups. Snapshot it
+	// under its lock before reflect compares persisted state.
+	o.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	o.keyPrefixesValidated = false
 	o.lazyStandardSpread = false
+	o.eagerStandardSpread = false
+	o.spreadInstalled = nil
+	o.spreadExplicit = nil
 	o.spreadPrefixSeed = nil
 	o.keyPrefixesValidatedObjectCount = 0
 	o.keyPrefixesValidatedPrefixes = nil

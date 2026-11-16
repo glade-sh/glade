@@ -183,7 +183,7 @@ func TestProcessBuilderSeveralAfterSaveFlowsStayUnrun(t *testing.T) {
 			idx.Flows = append(idx.Flows, after())
 			paths = append(paths, "")
 		}
-		if err := leaveUncoveredProcessesUnrun(idx, paths, nil); err != nil {
+		if err := leaveUncoveredProcessesUnrun(os.ReadFile, idx, paths, nil); err != nil {
 			t.Fatal(err)
 		}
 		if got := idx.Flows[0].ObjectName == "Cedar__c"; got != tc.runs {
