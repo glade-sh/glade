@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-No changes yet.
+### Changes
+
+- **ConnectApi `setTest` results.** In tests, a registered `ConnectApi.ChatterFeeds.getFeedElementsFromFeed` result is matched by exact overload and argument values, now also in `@IsTest(SeeAllData=true)` classes. The getter validates `subjectId` first (`Parameter required` for null, `Illegal value` for a malformed id; `'me'` stays distinct from the user id). ConnectApi services other than the registered results remain unsupported; creating a favorite and moderation reads are not covered.
 
 ## v0.3.11
 
