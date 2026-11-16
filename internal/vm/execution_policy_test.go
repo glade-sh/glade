@@ -63,7 +63,7 @@ func TestWithUserModeAutomatedProcessFollowsAPIVersion(t *testing.T) {
 // A default scratch Developer org lists no elastic async entries at API 66 or
 // 67; the release notes tie them to orgs that enable elastic limits.
 // NATIVE OrgLimits elastic keys absent apex_release_gates/org.tsv OlProbe66/OL1 OlProbe67/OL1 OlProbe67/OL2 anonymous istest 66.0 67.0
-func TestElasticAsyncLimitKeysAbsentByDefault(t *testing.T) {
+func TestElasticAsyncLimitKeysAPI67(t *testing.T) {
 	for _, version := range []string{"65.0", "66.0", "67.0"} {
 		machine := New(io.Discard)
 		machine.currentMethod = Method{APIVersion: version}
