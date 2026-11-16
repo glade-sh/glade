@@ -562,12 +562,18 @@ func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value 
 		if fieldValue.Kind != ValueDecimal {
 			continue
 		}
+		// Native loaddata-settings ld07 to ld10 (62.0 and 67.0): a declared
+		// scale-zero Number keeps its stored text. An Integer or field default
+		// reads 7, a CSV cell loaded as a Double reads 5.0.
+		if vm.customSettingScaleZeroField(record.Object, kind, name) {
+			continue
+		}
 		if rational, ok := valueDecimalRat(fieldValue); ok {
 			text := rational.FloatString(decimalScale(fieldValue))
 			if strings.Contains(text, ".") {
 				text = strings.TrimRight(strings.TrimRight(text, "0"), ".")
 			}
-			if !strings.Contains(text, ".") && !vm.customSettingScaleZeroField(record.Object, kind, name) {
+			if !strings.Contains(text, ".") {
 				text += ".0"
 			}
 			if normalized, err := decimalFromText(text); err == nil {

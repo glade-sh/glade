@@ -436,6 +436,12 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 	if err != nil {
 		return Null, fmt.Errorf("Test.loadData CSV parse failed: %w", err)
 	}
+	// The trimmed parse hides a space-only cell. Keep the plain parse to tell a
+	// blank cell from a space (native loaddata-settings ld03b).
+	var plainRows [][]string
+	if plain, plainErr := csv.NewReader(strings.NewReader(content)).ReadAll(); plainErr == nil && len(plain) == len(rows) {
+		plainRows = plain
+	}
 	out := typedList("List<" + objectName + ">")
 	if len(rows) == 0 {
 		return Null, newExceptionError("System.StringException", "Static Resource has no content: "+args[1].Text)
@@ -454,6 +460,11 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 			raw := ""
 			if i < len(csvRow) {
 				raw = csvRow[i]
+			}
+			if raw == "" && plainRows != nil {
+				if plainRow := plainRows[rowIndex+1]; i < len(plainRow) && strings.TrimSpace(plainRow[i]) == "" {
+					raw = plainRow[i]
+				}
 			}
 			if lookupField, value, handled, err := vm.testLoadDataRelationshipValue(objectName, fieldName, raw); handled || err != nil {
 				if err != nil {
@@ -776,6 +787,13 @@ func (vm *VM) testLoadDataFieldValue(objectName, fieldName, raw string) (Value, 
 		value, err := decimalFromText(strings.TrimSpace(raw))
 		if err != nil || strings.TrimSpace(raw) == "" {
 			return Null, testLoadDataCSVError{fmt.Sprintf("CSV Parse error: '%s' is not valid for the type xsd:double", raw)}
+		}
+		// Native loaddata-settings ld09: the cell is read as a Double, so a whole
+		// number is the Decimal 5.0.
+		if text := strings.TrimSpace(raw); !strings.ContainsAny(text, ".eE") {
+			if withPoint, convErr := decimalFromText(text + ".0"); convErr == nil {
+				return withPoint, nil
+			}
 		}
 		return value, nil
 	case storage.FieldID, storage.FieldReference:

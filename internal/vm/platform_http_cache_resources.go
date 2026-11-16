@@ -1487,7 +1487,7 @@ func (vm *VM) staticResourceMockResponse(mock Value, resourceName string) Value 
 	}
 	if status, ok := mock.Fields["status"]; ok {
 		response.Fields["status"] = status
-	} else if _, hasCode := mock.Fields["statusCode"]; !hasCode && mock.Type == "StaticResourceCalloutMock" {
+	} else if code, hasCode := mock.Fields["statusCode"]; (!hasCode || (code.Kind == ValueInt && code.Int == 200)) && mock.Type == "StaticResourceCalloutMock" {
 		// Native callout-mocks cm06 (62.0 and 67.0): an unconfigured
 		// StaticResourceCalloutMock answers 200 with status "OK".
 		response.Fields["status"] = String("OK")
