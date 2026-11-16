@@ -63,41 +63,62 @@ func runMultiTestHistory(t *testing.T, packageName, output string, dirs []string
 }
 
 // A shard over 1.5x the median because of one indivisible test keeps its
-// history. Imbalance that survives removing that test still rejects.
+// history only when it is within 1.5x the median without that test, within
+// 2.5x the median as a whole, and that test is not over twice its own recorded
+// duration. Every other imbalance rejects.
 func TestCIApexHistoryBalanceGateToleratesOneDominantTest(t *testing.T) {
-	// Three other shards of 100s put the four-shard median at 100s and the
-	// limit at 150s.
-	others := func(first []float64) [][]float64 {
-		return [][]float64{first, {50, 50}, {50, 50}, {50, 50}}
-	}
+	// Fixed other shards hold the four-shard median at 100s: the ratio limit
+	// is 150s and the whole-shard cap is 250s.
+	hundred := [][]float64{{50, 50}, {50, 50}, {50, 50}}
 	cases := []struct {
-		name   string
-		shard0 []float64
-		accept bool
+		name     string
+		shard0   []float64
+		others   [][]float64
+		recorded map[string]float64 // seconds, written as the predecessor history
+		accept   bool
 	}{
-		{"one test holds most of the shard", []float64{400, 100, 100}, true},
-		{"largest test at exactly 60 percent", []float64{300, 200}, true},
-		{"one test above 60 percent with several small tests", []float64{600, 100, 100, 100}, true},
-		// The release run shape: the largest test is about 35% of the shard
-		// and the other tests are slow but would fit without it.
-		{"largest test 35 percent and the remainder within the ratio", []float64{80, 50, 50, 50}, true},
-		{"largest test 35 percent and the remainder over the ratio", []float64{364, 200, 160, 160, 160}, false},
-		{"many equal tests all slow", []float64{50, 50, 50, 50, 50, 50}, false},
-		{"largest test below 60 percent and remainder over the ratio", []float64{80, 90, 90}, false},
-		{"largest test just under 60 percent with a heavy remainder", []float64{290, 200}, false},
+		// The two observed failures, scaled to their own medians.
+		{"run 43921954853 E=1023 L=364 M=671", []float64{364, 110, 110, 110, 110, 110, 109}, [][]float64{{335.5, 335.5}, {335.5, 335.5}, {335.5, 335.5}}, map[string]float64{"TestDom00x00": 221}, true},
+		{"run 43881372471 E=971 L=591 M=646", []float64{591, 380}, [][]float64{{323, 323}, {323, 323}, {323, 323}}, map[string]float64{"TestDom00x00": 378}, true},
+		{"largest test 35 percent and the remainder at the ratio", []float64{80, 50, 50, 50}, hundred, nil, true},
+		{"largest test at the ratio boundary", []float64{100, 50, 50}, hundred, nil, true},
+		{"just over the whole-shard cap", []float64{100, 100, 50.001}, hundred, nil, false},
+		// Real imbalance.
+		{"hair over the remainder bound", []float64{10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 0.001}, hundred, nil, false},
+		{"largest test 3x the median with the shard over 2.5x", []float64{300, 100}, hundred, nil, false},
+		{"one test far above the median", []float64{600, 100, 100, 100}, hundred, nil, false},
+		{"largest test at 60 percent with a remainder over the ratio", []float64{300, 200}, hundred, nil, false},
+		{"largest test 35 percent and the remainder over the ratio", []float64{364, 200, 160, 160, 160}, hundred, nil, false},
+		{"many equal tests all slow", []float64{50, 50, 50, 50, 50, 50}, hundred, nil, false},
+		{"largest test below 60 percent and remainder over the ratio", []float64{80, 90, 90}, hundred, nil, false},
+		// One test regressed against its own record.
+		{"largest test at 2x its record", []float64{100, 50, 50}, hundred, map[string]float64{"TestDom00x00": 50}, true},
+		{"largest test over 2x its record", []float64{100, 50, 50}, hundred, map[string]float64{"TestDom00x00": 49}, false},
+		{"largest test over 2x its record with no other skew", []float64{200, 40}, hundred, map[string]float64{"TestDom00x00": 90}, false},
+		{"largest test with no record", []float64{200, 40}, hundred, nil, true},
 	}
 	for _, event := range []string{"push", "schedule", "workflow_dispatch"} {
 		for _, tc := range cases {
 			t.Run(event+"/"+tc.name, func(t *testing.T) {
 				t.Setenv("GITHUB_EVENT_NAME", event)
 				t.Setenv("GITHUB_HEAD_REF", "")
-				output, dirs := multiTestHistoryFixture(t, fixturePackage, others(tc.shard0))
+				t.Setenv("CI_APEXTEST_HISTORY_PATH", "")
+				if tc.recorded != nil {
+					var rows []map[string]any
+					for name, seconds := range tc.recorded {
+						rows = append(rows, map[string]any{"name": name, "durationMillis": int64(seconds * 1000)})
+					}
+					path := filepath.Join(t.TempDir(), "recorded.json")
+					writeJSONFixture(t, path, map[string]any{"version": 1, "package": fixturePackage, "complete": true, "tests": rows})
+					t.Setenv("CI_APEXTEST_HISTORY_PATH", path)
+				}
+				output, dirs := multiTestHistoryFixture(t, fixturePackage, append([][]float64{tc.shard0}, tc.others...))
 				out, err := runMultiTestHistory(t, fixturePackage, output, dirs)
 				if tc.accept {
 					if err != nil || !strings.Contains(out, "duration history timing advisory:") || !strings.Contains(out, "dominated by one test") {
 						t.Fatalf("one-test overrun must keep history with an advisory: %v\n%s", err, out)
 					}
-					if got := readWallHistory(t, output); len(got) != len(tc.shard0)+6 {
+					if got := readWallHistory(t, output); len(got) != len(tc.shard0)+2*len(tc.others) {
 						t.Fatalf("history lost tests: %v", got)
 					}
 					return

@@ -1639,6 +1639,19 @@ try:
     total_duration_millis = 0
     shard_elapsed = []
     shard_largest = []
+    recorded = {}
+    for recorded_path in (os.environ.get("CI_APEXTEST_HISTORY_PATH", ""), os.path.join(os.path.dirname(SCRIPT), "..", "internal", "apextest", "testdata", "shard_durations.json")):
+        # The predecessor history wins; the committed weight table fills gaps.
+        try:
+            with open(recorded_path, encoding="utf-8") as source:
+                for row in json.load(source).get("tests", []):
+                    if isinstance(row.get("name"), str) and isinstance(row.get("durationMillis"), (int, float)):
+                        recorded.setdefault(row["name"], row["durationMillis"] / 1000.0)
+        except (OSError, ValueError, AttributeError):
+            pass
+
+    def recorded_duration(name):
+        return recorded.get(name)
     for index, shard_dir in enumerate(shard_dirs):
         selected = load_json(os.path.join(shard_dir, "selected-shard.json"))
         validate_shard(selected, index, f"selected shard {index}")
@@ -1791,12 +1804,17 @@ try:
             if elapsed > 1.5 * median:
                 message = f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x {SHARD_COUNT}-shard median {median:.6f}s"
                 # One indivisible test can push a shard over the ratio on
-                # runner variance alone. Do not reject when that one test
-                # holds at least 60% of the shard, or when the shard is within
-                # the ratio without it. A shard that stays over the ratio
-                # with its largest test removed is real imbalance and rejects.
+                # runner variance alone. Keep the history when the shard is
+                # within the ratio without its largest test, the whole shard
+                # stays within 2.5x the median, and that test is not more
+                # than twice its own recorded duration. A shard that stays
+                # over the ratio with its largest test removed, or one test
+                # that regressed, is real imbalance and rejects.
                 largest, largest_name = shard_largest[index]
-                if PACKAGE.endswith("/internal/apextest") and (largest >= 0.6 * elapsed or elapsed - largest <= 1.5 * median):
+                baseline = recorded_duration(largest_name)
+                regressed = baseline is not None and baseline > 0 and largest > 2 * baseline
+                if (PACKAGE.endswith("/internal/apextest") and not regressed
+                        and elapsed - largest <= 1.5 * median and elapsed <= 2.5 * median):
                     print(f"::warning::[ci] {LABEL} duration history timing advisory: {message}; dominated by one test {largest_name} at {largest:.6f}s ({largest / elapsed:.0%} of the shard), so the history is kept", file=sys.stderr)
                     continue
                 head_ref = os.environ.get("GITHUB_HEAD_REF", "")
