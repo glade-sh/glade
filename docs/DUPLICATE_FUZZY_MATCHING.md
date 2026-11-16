@@ -484,10 +484,9 @@ unbiased holdout 193/201 (96.0%, 0.041), all with 0 false matches. The
   the word beyond what the length and last letter explain; vowel variants, an
   `&` inside a word against the joined spelling (`AT&T` finds `ATT` one way)
   and acronyms outside the proven entries are misses.
-- Street: unknown suffix abbreviations are matched only against a known
-  suffix with an edit similarity of 87.5 or more (see "Custom rule panels");
-  `Strret`, `Avnue` and `Blvdd` match natively and not in Glade; single letters
-  after the number other than `E`.
+- Street: see "Custom rule panels" for the custom Street method, its match
+  key and the pairs still open. The Street rows of the table above predate
+  that scorer.
 - Title: the (k, n) table covers up to six words. A word moved to the other
   end of a title (a rotation) keeps the flat loss of 3 where the native loss
   varies, and `Director IT` finds `Director - IT` at 94 natively but `Director,
@@ -831,10 +830,66 @@ validation of the current implementation.
 
 Street suffix and title changes are limited to the following shapes:
 
-- Street: a numbered address with the same one-word name and one known suffix
-  matches an unknown alphabetic suffix when section score is 74 to below 80
-  and cleaned edit similarity is at least 87.5. Confidence uses the existing
-  formula. The custom rule path applies this extension.
+- Street, custom rules only. Fixtures `testdata/conformance/fuzzy_street_c4`
+  and `fuzzy_street_c5` under `internal/dml` (four captures, API 62.0 and 67.0,
+  both routes, two repeats, all identical). The standard rules keep the shared
+  scorer.
+  - Cleaning: a line break is deleted, not a space (`Rd\nSuite 200` is
+    `RdSuite 200`; a comma before the break goes with it). A number sign, slash
+    or colon is deleted where it stands (`Ave#5`, `Ave/5` and `Ave:5` are
+    `Ave5`; `Ave #5` is `Ave 5`). A hyphen stays. `One`, `Ten`, `Eleven` and
+    `Twenty` are digits; `Hundred`, `Eleventh` and `Twentieth` are not.
+  - Match key: the first five characters of each of the first two words that
+    are not stop words, hyphens removed. `7 Morven Rd` finds `7 Morvex Rd` and
+    not `7 Morvxn Rd`; `12345 Morven Rd` finds `123456 Morven Rd` and not `12346
+    Morven Rd`. Stop words are the known suffix words, the suite designators,
+    the letters `A C E F I K O P U Y Z`, `SE`, `De La Et And The`, and 110 of
+    216 probed street words (`Park`, `Hill`, `Orchard`, `Plaza`, `Court`,
+    `Way`, `Calle`, `Via`, ...; the list is `streetKeyStopWords`). With `Park`
+    and `Ln` left out, `101 Park Ln W` keys on `101` and `W`: it finds `101 W
+    Park Ln` and not `101 Park Ln N`, while `121 Tully Ln W` finds `121 Tully
+    Ln N`. A PO box keys on its number.
+  - Decision: with equal keys a pair matches when the section score reaches 80
+    or the edit similarity of the cleaned addresses reaches 87, whatever the
+    section score. Four edits in 31 characters (87.10) match; three in 23
+    (86.96) do not. This replaces the earlier 87.5 rule for unknown suffixes:
+    it applies to every shape, with or without a trailing directional.
+  - Confidence: `(S + E) / 2`, rounded half up. The edit similarity is 0 when
+    the edit distance equals the candidate's length: `15 Elm` finds `15 Elm
+    Drive` at 50 and the reverse pair reports 75; `77 Wren St` finds `77 Wren
+    Str` at 60 and the reverse reports 78. A street number on one side only
+    counts as a mismatch. An identical street reports `(S + 100) / 2` (`Test
+    Street` 88).
+  - Sections: a directional between the number and a name with a known suffix
+    is dropped from the name (`101 N Park Ln` finds `101 Park Ln N` at 85);
+    other single letters stay in it. Under NullNotAllowed `Fl`, `Floor`,
+    `Room`, `Building` and `Apartment` introduce a suite; `Level`, `Lot`,
+    `Dept`, `No`, `PMB`, `Stop`, `Trailer` and `Space` do not.
+  - Streets that do not split: a word of letters then a digit (`Ave#5`,
+    `Box410`), a hyphen outside a number range (`72-A`, `Vane-Oak`), a number
+    before the last word of a street that does not start with one (`Suite 9 73
+    Morrow Rd`, `RR 4 Box 22`), one more word after the suffix (`St Xq`), or
+    four words with no number and no suffix. Such a street reports 100 for
+    itself. As the stored value it scores the edit similarity alone; as the
+    candidate against a split street its section score is 0. `Ave #5` finds
+    `Ave#5` at 93 and `Ave#5` finds `Ave #5` at 47. These pairs match only at
+    edit similarity 87.
+  - PO box: `PO Box N`, `P.O. Box N`, `P O Box N` and `POBox N` are one address;
+    `PO Box410` scores as a whole string against them (90 both ways). `POB`,
+    `Post Office Box`, `Box` and `POBox52` are not PO boxes. A street that is
+    only a suffix word, `PO Box` and `PO Box A` match nothing.
+  - Measured, every ordered pair of every panel: fit panels 31,071 of 31,077
+    pairs agree (2 misses, 2 extra matches, 2 confidences); holdout panels
+    5,736 of 5,742 agree (6 misses, 0 extra matches, 0 confidences). `hu1`
+    began as a holdout panel and informed a rule, so it counts as fit. The
+    `Orchard Ln` holdout panel `hd1` scored 114 extra matches against the
+    earlier model; `Orchard` was then probed as one word pair (`ng7`) and the
+    panel scored again unread. `residuals.tsv` pins the 12 differing pairs.
+  - Open: `Calder Rd Suite 200` against `Calder Rd\nSuite 200` with no street
+    number (native 69, Glade no match); `100 N Martin Luther King Jr Blvd`
+    against the same street without `Jr` (native 45 one way; Glade 91, and two
+    extra matches against the `Suite 5` form); `RR 4` against itself (native
+    100, Glade 88).
 - Title: when the shorter title is an exact-word subset of a six-word title,
   two to five shared words score 89, 93, 95 and 98; five shared words out of
   order score 96. An exact-word subset candidate can match a five-word title

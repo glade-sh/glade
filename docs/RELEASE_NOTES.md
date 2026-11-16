@@ -19,6 +19,9 @@
 
 - **Company duplicate matching.** Custom Company Name rules score numbered names, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
 
+- **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
+- **Custom street matching.** Fuzzy Street rules follow four native captures at APIs 62.0 and 67.0: the match key (number and name, street words such as Park or Plaza left out), a match at edit similarity 87 whatever the section score, line breaks, number signs, hyphens, letters and directionals after the number, PO boxes, leading suites and number words. Standard rules are unchanged.
+
 ## v0.3.10
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
