@@ -42,7 +42,7 @@ func fuzzyFirstAliasKeysCompare(values []string, native map[[2]int]float64, got 
 	return counts
 }
 
-// NATIVE fuzzy_first_alias_keys/org.tsv:2-17 (i1a, i1b): a custom FirstName
+// NATIVE fuzzy_first_alias_keys/org.tsv:2-17 (i1a, i1b), 34-41 (i1c): a custom FirstName
 // rule at API 62.0 and 67.0, anonymous and @IsTest, two repeats. Every
 // ordered pair goes through the shared duplicate-rule matcher and must agree
 // exactly. "Ty" finds "Tyr" at 96 and no other name: not "Tye", "Tyh", "Tyw",
@@ -51,12 +51,20 @@ func fuzzyFirstAliasKeysCompare(values []string, native map[[2]int]float64, got 
 // "Bo" and "Guy" keep their own key: "B" finds "Bo", "Bo" finds "Boe".
 func TestFuzzyFirstAliasKeysNativeRows(t *testing.T) {
 	cases, observations := fuzzyNameKeysDataFrom(t, fuzzyFirstAliasKeysDir)
-	if len(cases) != 4 {
+	if len(cases) != 5 {
 		t.Fatalf("cases %d", len(cases))
 	}
 	want := map[string]fuzzyNameKeysCount{
 		"i1a": {native: 72, hit: 72},
 		"i1b": {native: 90, hit: 90},
+		// org.tsv:34-41: the alias-keyed names as the first word of a longer
+		// name. The key follows the first word: "Ty Ann" finds "Tyr Ann" at 98
+		// and neither "Tye Ann" nor "T Ann"; "Ray Ann" finds "Raym Ann" and
+		// not "Raye Ann" or "Raya"; "Sue Ann" finds "Sues Ann" and not
+		// "Su Ann". "Ray" finds "Rayma" and "Sue" finds "Suesa" at 95. An
+		// initial alone finds a longer name under its key at 100 ("T." finds
+		// "Tye Ann"); "T Ann" finds "Tye Ann" by Jaro-Winkler at 96.
+		"i1c": {native: 94, hit: 94},
 	}
 	for name, total := range want {
 		c := cases[name]
@@ -142,77 +150,6 @@ func TestFuzzyFirstAliasKeysStandardRows(t *testing.T) {
 		t.Logf("PANEL %s: %s", name, counts)
 		if exact := counts.hit - counts.confidence; counts.native != floor[0] || counts.hit < floor[1] || exact < floor[2] || counts.extra != 0 {
 			t.Errorf("%s counts %s, want native=%d hit>=%d exact>=%d extra=0", name, counts, floor[0], floor[1], floor[2])
-		}
-	}
-}
-
-// baseFirstNameGate is the first-word gate of fuzzyFirstName before the
-// custom alias keys: the names are compared when it reports true.
-func baseFirstNameGate(a, b string) bool {
-	fx, fy := foldLowered(strings.ToLower(strings.TrimSpace(a))), foldLowered(strings.ToLower(strings.TrimSpace(b)))
-	wx, wy := firstNameWord(fx), firstNameWord(fy)
-	if wx == wy {
-		return true
-	}
-	kx, ky := firstNameKey(wx), firstNameKey(wy)
-	return kx != "" && kx == ky && !nameKeptApart[orderedPair(fx, fy)]
-}
-
-// The custom alias keys come from rows where the alias-keyed name is one
-// word alone (i1a, i1b; hf1 pairs it with "T W" and "T L"). No row holds the
-// word leading a longer name, so two names of several words keep the gate
-// they had before the keys: "Ty Ann" still finds "Tye Ann".
-func TestFuzzyFirstAliasKeysOtherShapesKeepBase(t *testing.T) {
-	matches := [][2]string{{"Ty Ann", "Tye Ann"}, {"Ray Ann", "Raye Ann"}, {"Sue Ann", "Su Ann"}}
-	for _, pair := range matches {
-		for _, p := range [][2]string{pair, {pair[1], pair[0]}} {
-			if ok, _ := fuzzyFirstName(p[0], p[1], false); !ok {
-				t.Errorf("%q=>%q: no match, base matches", p[0], p[1])
-			}
-		}
-	}
-	if ok, confidence := fuzzyFirstName("Ty Ann", "Tye Ann", false); !ok || math.Abs(confidence-98.10) > 0.01 {
-		t.Errorf("Ty Ann=>Tye Ann: %v %.2f, base true 98.10", ok, confidence)
-	}
-	heads := []string{"Ty", "Tye", "Tyr", "Tyl", "T", "Ray", "Raye", "Raym", "Rayma", "Rae", "R", "Sue", "Su", "Sues", "Suesa", "S"}
-	var names []string
-	for _, head := range heads {
-		names = append(names, head+" Ann", head+" A", head+". Ann", head+" Ann Lee")
-	}
-	for _, a := range names {
-		for _, b := range names {
-			gate := baseFirstNameGate(a, b)
-			ok, _ := fuzzyFirstName(a, b, false)
-			fx, fy := foldLowered(strings.ToLower(a)), foldLowered(strings.ToLower(b))
-			want := gate && (fx == fy || nameVariantOf(fx, fy) || firstNameInitials(fx, fy) || firstNameInitials(fy, fx) ||
-				jaroWinkler(strings.ToLower(a), strings.ToLower(b)) >= firstNameJaroWinkler-1e-9)
-			if fx == fy || nameVariantOf(fx, fy) {
-				want = true
-			}
-			if ok != want {
-				t.Errorf("%q=>%q: match %v, base %v", a, b, ok, want)
-			}
-		}
-	}
-}
-
-// Neighbors no row holds follow the nearest rows: a single word under the
-// alias key matches as "Raym", "Sues" and "Tyr" do, one under the spelled
-// key stays apart as "Rae", "Su" and "Tye" do, a punctuated initial is the
-// initial ("S" does not find "Sue"), and an initial leading a longer name
-// stays apart from the alias-keyed name as "T W" and "T L" do from "Ty".
-func TestFuzzyFirstAliasKeysNeighbors(t *testing.T) {
-	for _, c := range []struct {
-		a, b string
-		want bool
-	}{
-		{"Ray", "Rayma", true}, {"Sue", "Suesa", true},
-		{"Ray", "Raya", false}, {"Sue", "Suey", false}, {"Ty", "Tyy", false},
-		{"S.", "Sue", false}, {"Sue", "S.", false}, {"T.", "Ty", false},
-		{"R W", "Ray", false}, {"Sue", "S L", false},
-	} {
-		if ok, _ := fuzzyFirstName(c.a, c.b, false); ok != c.want {
-			t.Errorf("%q=>%q: match %v, want %v", c.a, c.b, ok, c.want)
 		}
 	}
 }
