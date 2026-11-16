@@ -287,6 +287,132 @@ public class DupProbe {
   out.sort();
   System.debug('REPROBS|'+v+'|'+JSON.serialize(new Map<String,Object>{'sets'=>out,'totalSets'=>totalSets,'records'=>nm.size()}));
  }
+ public static void lb(String t) {for(SObject r:Database.query('SELECT Id,Name FROM '+t)) lab.put(r.Id,(String)r.get('Name'));}
+ public static Map<String,Object> ins1(String t,String name,String key,String scope,Boolean opt) {
+  SObject s=mk(t,name,key,null,scope);
+  Map<String,Object> r=sv(opt?Database.insert(s,allow()):Database.insert(s,false));
+  if(s.Id!=null) reg(s);
+  return r;
+ }
+ public static Map<String,Object> up1(String t,String name,String f,String val,Boolean opt) {
+  lb(t);
+  SObject r=Database.query('SELECT Id FROM '+t+' WHERE Name=\''+name+'\' LIMIT 1');
+  SObject s=r.getSObjectType().newSObject(r.Id);s.put(f,val);
+  return opt?sv(Database.update(s,allow())):sv(Database.update(s,false));
+ }
+ public static void rptSame(Map<String,Object> o) {
+  String t='DupGate__c';
+  o.put('insA',ins1(t,'A','pk','na',false));o.put('insC',ins1(t,'C','pk','na',false));
+  o.put('toK5',up1(t,'C','Key__c','pk5',false));o.put('back',up1(t,'C','Key__c','pk',false));
+  o.put('toK5b',up1(t,'C','Key__c','pk5',false));o.put('backb',up1(t,'C','Key__c','pk',false));
+ }
+ public static void rptOther(Map<String,Object> o) {
+  String t='DupGate__c';
+  ins1(t,'A','pk','na',false);ins1(t,'B','pk7','na',false);
+  o.put('insC',ins1(t,'C','pk','na',false));
+  o.put('other',up1(t,'C','Other__c','o2',false));
+  o.put('to7',up1(t,'C','Key__c','pk7',false));
+  o.put('back',up1(t,'C','Key__c','pk',false));
+  o.put('insF',ins1(t,'F','pk','na',false));
+  o.put('fAway',up1(t,'F','Key__c','pk5',false));
+  o.put('fTo7',up1(t,'F','Key__c','pk7',false));
+  o.put('insG',ins1(t,'G','pk','na',false));
+  o.put('gDirect7',up1(t,'G','Key__c','pk7',false));
+ }
+ public static void rptCtrl(Map<String,Object> o) {
+  String t='DupGate__c';
+  ins1(t,'A','pk','na',false);ins1(t,'B','pk7','na',false);
+  o.put('insE',ins1(t,'E','pk2','na',false));
+  o.put('into',up1(t,'E','Key__c','pk',false));o.put('intoAgain',up1(t,'E','Key__c','pk',false));
+  o.put('away',up1(t,'E','Key__c','pk5',false));o.put('backInto',up1(t,'E','Key__c','pk',false));
+  o.put('insD',ins1(t,'D','pk2','na',false));
+  o.put('dAway',up1(t,'D','Key__c','pk5',false));o.put('dTo7',up1(t,'D','Key__c','pk7',false));
+ }
+ public static void rptAlrt(Map<String,Object> o) {
+  String t='DupOpt__c';
+  ins1(t,'A','pk','alrt',false);
+  o.put('insC',ins1(t,'C','pk','alrt',true));
+  o.put('toK5',up1(t,'C','Key__c','pk5',false));o.put('back',up1(t,'C','Key__c','pk',false));o.put('backAgain',up1(t,'C','Key__c','pk',false));
+  o.put('insD',ins1(t,'D','pk2','alrt',false));
+  o.put('into',up1(t,'D','Key__c','pk',false));o.put('intoAgain',up1(t,'D','Key__c','pk',false));
+  o.put('dAway',up1(t,'D','Key__c','pk5',false));o.put('dBack',up1(t,'D','Key__c','pk',false));
+ }
+ public static void rptAllow(Map<String,Object> o) {
+  String t='DupGate__c';
+  ins1(t,'A','pk','na',false);
+  o.put('insE',ins1(t,'E','pk2','na',false));
+  o.put('blocked',up1(t,'E','Key__c','pk',false));o.put('retryAllow',up1(t,'E','Key__c','pk',true));
+  o.put('away',up1(t,'E','Key__c','pk5',false));o.put('backPlain',up1(t,'E','Key__c','pk',false));
+  o.put('insF',ins1(t,'F','pk2','na',false));
+  o.put('fAllow',up1(t,'F','Key__c','pk',true));
+  o.put('fAway',up1(t,'F','Key__c','pk5',false));o.put('fBack',up1(t,'F','Key__c','pk',false));
+ }
+ public static Map<String,Object> tk(String tok,String obj) {
+  String kp=Schema.getGlobalDescribe().get(obj).getDescribe().getKeyPrefix();
+  return new Map<String,Object>{'len'=>tok.length(),'p3'=>tok.length()>=3?tok.substring(0,3):tok,'isName'=>tok==obj,'isKeyPrefix'=>tok==kp,'startsKeyPrefix'=>tok.startsWith(kp),'kp'=>kp,'raw'=>tok};
+ }
+ public static Map<String,Object> entOf(List<Datacloud.FindDuplicatesResult> fr,String obj) {
+  List<Object> rs=new List<Object>();
+  for(Datacloud.FindDuplicatesResult f:fr) for(Datacloud.DuplicateResult d:f.getDuplicateResults()) {
+   List<Object> ms=new List<Object>();
+   for(Datacloud.MatchResult m:d.getMatchResults()) ms.add(new Map<String,Object>{'n'=>m.getSize(),'ent'=>tk(m.getEntityType(),obj)});
+   rs.add(new Map<String,Object>{'top'=>tk(d.getDuplicateRuleEntityType(),obj),'m'=>ms});
+  }
+  return new Map<String,Object>{'obj'=>obj,'r'=>rs};
+ }
+ public static void ent(Map<String,Object> o) {
+  List<Object> out=new List<Object>();
+  for(List<String> v:new List<List<String>>{new List<String>{'DupGate__c','na'},new List<String>{'DupOpt__c','blk'},new List<String>{'DupKey__c','x99'}}) {
+   String obj=v[0];
+   Map<String,Object> r=new Map<String,Object>{'obj'=>obj};
+   r.put('empty',entOf(Datacloud.FindDuplicates.findDuplicates(new List<SObject>{mk(obj,'q','zz-none',null,v[1])}),obj));
+   SObject s=mk(obj,'S','zz-seed',null,v[1]);insert s;reg(s);
+   r.put('matched',entOf(Datacloud.FindDuplicates.findDuplicates(new List<SObject>{mk(obj,'q','zz-seed',null,v[1])}),obj));
+   SObject u=mk(obj,'U','zz-solo',null,v[1]);insert u;reg(u);
+   r.put('byIdsEmpty',entOf(Datacloud.FindDuplicatesByIds.findDuplicatesByIds(new List<Id>{u.Id}),obj));
+   out.add(r);
+  }
+  o.put('custom',out);
+  List<Object> std=new List<Object>();
+  Contact c=new Contact(FirstName='Zq',LastName='Xyzzy');
+  std.add(entOf(Datacloud.FindDuplicates.findDuplicates(new List<SObject>{c}),'Contact'));
+  Account a=new Account(Name='Zqxyzzy Holdings');
+  std.add(entOf(Datacloud.FindDuplicates.findDuplicates(new List<SObject>{a}),'Account'));
+  Lead l=new Lead(FirstName='Zq',LastName='Xyzzy',Company='Zqxyzzy Co');
+  std.add(entOf(Datacloud.FindDuplicates.findDuplicates(new List<SObject>{l}),'Lead'));
+  o.put('std',std);
+  List<Object> msgs=new List<Object>();
+  for(String k:new List<String>{'DupNone__c','DupNone2__c'}) {
+   SObject s=mk(k,'q','k1',null,'off');insert s;
+   Map<String,Object> r=new Map<String,Object>{'obj'=>k};
+   try {Datacloud.FindDuplicatesByIds.findDuplicatesByIds(new List<Id>{s.Id});} catch(Exception e) {
+    Matcher m=Pattern.compile('for the (\\S+) object').matcher(e.getMessage());
+    r.put('msg',e.getMessage().replaceFirst('for the \\S+ object','for the TOKEN object'));
+    if(m.find()) r.put('tok',tk(m.group(1),k));
+   }
+   msgs.add(r);
+  }
+  o.put('noreg',msgs);
+ }
+ public static void rptPhase(String key,Map<String,Object> o) {
+  String t='DupGate__c';
+  if(key=='RPTM_1') {o.put('insA',ins1(t,'MA','mk','na',false));o.put('insC',ins1(t,'MC','mk','na',false));}
+  else if(key=='RPTM_2'||key=='RPTM_4') o.put('toK5',up1(t,'MC','Key__c','mk5',false));
+  else if(key=='RPTM_3'||key=='RPTM_5') o.put('back',up1(t,'MC','Key__c','mk',false));
+  else if(key=='RPTN_1') {ins1(t,'NA','nk','na',false);ins1(t,'NB','nk7','na',false);o.put('insC',ins1(t,'NC','nk','na',false));o.put('insD',ins1(t,'ND','nk','na',false));}
+  else if(key=='RPTN_2') {o.put('other',up1(t,'NC','Other__c','o2',false));o.put('dAway',up1(t,'ND','Key__c','nk5',false));}
+  else if(key=='RPTN_3') {o.put('to7',up1(t,'NC','Key__c','nk7',false));o.put('dTo7',up1(t,'ND','Key__c','nk7',false));}
+  else if(key=='RPTN_4') o.put('back',up1(t,'NC','Key__c','nk',false));
+  else if(key=='RPTO_1') {ins1(t,'OA','ok','na',false);o.put('insE',ins1(t,'OE','ok2','na',false));}
+  else if(key=='RPTO_2'||key=='RPTO_3') o.put('into',up1(t,'OE','Key__c','ok',false));
+  else if(key=='RPTO_4') o.put('away',up1(t,'OE','Key__c','ok5',false));
+  else if(key=='RPTO_5') o.put('backInto',up1(t,'OE','Key__c','ok',false));
+ }
+ public static void phase(String key) {
+  Map<String,Object> o=new Map<String,Object>();
+  try {rptPhase(key,o);} catch(Exception e) {o.put('x',e.getTypeName());o.put('xm',e.getMessage());}
+  System.debug('RPTOBS|'+key+'|'+JSON.serialize(o));
+ }
  public static void run(String key,Map<String,Object> o) {
   List<String> p=key.split('_');
   if(p[0]=='ORD') ord('DupOrd__c',p[1],p[2],o);
@@ -304,6 +430,12 @@ public class DupProbe {
   else if(p[0]=='SGATE') sgate(p[1],o);
   else if(key=='OPT_blk') optBlk(o);
   else if(key=='OPT_alrt') optAlrt(o);
+  else if(key=='RPT_same') rptSame(o);
+  else if(key=='RPT_other') rptOther(o);
+  else if(key=='RPT_ctrl') rptCtrl(o);
+  else if(key=='RPT_alrt') rptAlrt(o);
+  else if(key=='RPT_allow') rptAllow(o);
+  else if(key=='ENT') ent(o);
  }
  public static void emit(String key) {
   Map<String,Object> o=new Map<String,Object>();

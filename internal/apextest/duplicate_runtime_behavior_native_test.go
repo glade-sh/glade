@@ -26,10 +26,7 @@ const duplicateRuntimeFixture = "testdata/conformance/duplicate_runtime_behavior
 // masked when the rows were committed.
 type duplicateRuntimeRows map[string]string
 
-var (
-	duplicateRuntimeIDs     = regexp.MustCompile(`\b(01I|a0[0-9a-zA-Z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
-	duplicateRuntimeObjects = regexp.MustCompile(`for the (\S+) object`)
-)
+var duplicateRuntimeIDs = regexp.MustCompile(`\b(01I|a0[0-9a-zA-Z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
 
 func readDuplicateRuntimeRows(t *testing.T) duplicateRuntimeRows {
 	t.Helper()
@@ -95,30 +92,26 @@ func duplicateRuntimeProject(t *testing.T, api string, keys []string) string {
 	return root
 }
 
-// normalizeDuplicateRuntime masks platform ids. A no-match result of a custom
-// object reports an object id as its entity natively; Glade reports the name.
-func normalizeDuplicateRuntime(value any, native bool) any {
+// normalizeDuplicateRuntime masks platform ids (15 or 18 characters) and nothing
+// else. An empty custom-object result reports the object's 01I id as its
+// match-level entity natively (ENT rows), so the id mask is all that is needed;
+// object names in messages and entity types are compared as they are.
+func normalizeDuplicateRuntime(value any) any {
 	switch v := value.(type) {
 	case map[string]any:
 		out := map[string]any{}
 		for key, item := range v {
-			out[key] = normalizeDuplicateRuntime(item, native)
-		}
-		if recs, ok := out["recs"].([]any); ok && len(recs) == 0 {
-			if _, ok := out["ent"]; ok {
-				out["ent"] = "-"
-			}
+			out[key] = normalizeDuplicateRuntime(item)
 		}
 		return out
 	case []any:
 		out := make([]any, len(v))
 		for i, item := range v {
-			out[i] = normalizeDuplicateRuntime(item, native)
+			out[i] = normalizeDuplicateRuntime(item)
 		}
 		return out
 	case string:
-		text := duplicateRuntimeIDs.ReplaceAllString(v, "<id>")
-		return duplicateRuntimeObjects.ReplaceAllString(text, "for the <obj> object")
+		return duplicateRuntimeIDs.ReplaceAllString(v, "<id>")
 	}
 	return value
 }
@@ -132,7 +125,7 @@ func compareDuplicateRuntime(t *testing.T, key, want, got string) {
 	if err := json.Unmarshal([]byte(got), &gotValue); err != nil {
 		t.Fatalf("%s: Glade observation is not JSON: %v\n%s", key, err, got)
 	}
-	wantValue, gotValue = normalizeDuplicateRuntime(wantValue, true), normalizeDuplicateRuntime(gotValue, false)
+	wantValue, gotValue = normalizeDuplicateRuntime(wantValue), normalizeDuplicateRuntime(gotValue)
 	for _, member := range duplicateRuntimeFuzzyScoring[key] {
 		// The fuzzy scorer decides confidence and membership for these members;
 		// only the field differences of the records both sides return are pinned.
@@ -140,27 +133,11 @@ func compareDuplicateRuntime(t *testing.T, key, want, got string) {
 		deleteDuplicateRuntimePath(wantValue, member)
 		deleteDuplicateRuntimePath(gotValue, member)
 	}
-	for _, skip := range duplicateRuntimeParked[key] {
-		deleteDuplicateRuntimePath(wantValue, skip)
-		deleteDuplicateRuntimePath(gotValue, skip)
-	}
 	if !reflect.DeepEqual(wantValue, gotValue) {
 		wantJSON, _ := json.Marshal(wantValue)
 		gotJSON, _ := json.Marshal(gotValue)
 		t.Fatalf("%s differs\nnative: %s\nglade:  %s", key, wantJSON, gotJSON)
 	}
-}
-
-// duplicateRuntimeParked lists top-level payload members that no native row
-// proves for Glade yet; each stays at its previous behavior.
-//
-// GATE_* and SGATE_* update the same record again after it was inserted as an
-// allowed duplicate in the same transaction; the final update into a duplicate
-// natively saves, while a record not inserted as a duplicate is blocked
-// (SGATE2). The rows do not settle the rule, so that step stays unmodeled.
-var duplicateRuntimeParked = map[string][]string{
-	"GATE_na": {"u4"}, "GATE_mb": {"u4"}, "GATE_two": {"u4"}, "GATE_items": {"u4"}, "GATE_mbBlank": {"u4"},
-	"SGATE_na": {"u6"}, "SGATE_mb": {"u6"}, "SGATE_two": {"u6"}, "SGATE_items": {"u6"}, "SGATE_mbBlank": {"u6"},
 }
 
 // duplicateRuntimeFuzzyScoring lists members whose fuzzy confidence or member
@@ -329,6 +306,53 @@ func TestDuplicateRuntimeBehaviorCommittedReports(t *testing.T) {
 				}
 				got := run("DupProbe.repRead('" + version + "');")
 				compareDuplicateRuntime(t, id, want, got)
+			}
+		})
+	}
+}
+
+// NATIVE repeat update of a record inserted as an allowed duplicate, one
+// transaction per step testdata/conformance/duplicate_runtime_behavior/org.tsv committed_anonymous 62.0
+// RPT_* rows run a ladder in one transaction; RPTM_*, RPTN_* and RPTO_* rows run
+// the same shapes with every step in its own request against persisted records.
+// Natively a record inserted in the transaction runs the update gate against
+// its insert-time values, so moving back to them saves; a later transaction
+// compares with the stored value and blocks.
+func TestDuplicateRuntimeBehaviorSeparateTransactions(t *testing.T) {
+	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
+	rows := readDuplicateRuntimeRows(t)
+	phases := []string{"RPTM_1", "RPTM_2", "RPTM_3", "RPTM_4", "RPTM_5", "RPTN_1", "RPTN_2", "RPTN_3", "RPTN_4", "RPTO_1", "RPTO_2", "RPTO_3", "RPTO_4", "RPTO_5"}
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			index := loadTestIndex(t, duplicateRuntimeProject(t, api, []string{"NOREG"}))
+			org := capturedFixtureOrg(t, index, api)
+			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
+			for _, phase := range phases {
+				want, ok := rows[api+"/committed_anonymous/"+phase]
+				if !ok {
+					t.Fatalf("missing native row %s", phase)
+				}
+				program, err := vm.CompileAnonymousWithOptions("DupProbe.phase('"+phase+"');", vm.CompileOptions{APIVersion: api})
+				if err != nil {
+					t.Fatal(err)
+				}
+				machine := runner.newMachine()
+				machine.SetOrg(&org)
+				result, err := machine.Execute(program)
+				if err != nil {
+					t.Fatalf("%s: %v", phase, err)
+				}
+				org = *machine.Org
+				got := ""
+				for _, message := range result.Debug {
+					if _, payload, ok := strings.Cut(message, "RPTOBS|"+phase+"|"); ok {
+						got = payload
+					}
+				}
+				if got == "" {
+					t.Fatalf("%s: missing observation", phase)
+				}
+				compareDuplicateRuntime(t, phase, want, got)
 			}
 		})
 	}
