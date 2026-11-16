@@ -93,10 +93,6 @@ func ecInvalidBlob(reason string) error {
 	return newExceptionError("System.InvalidParameterValueException", "Invalid EC key pair blob: "+reason)
 }
 
-func (vm *VM) cryptoEncryptionEnabled() bool {
-	return vm.Org != nil && vm.Org.HasFeature("PlatformEncryption")
-}
-
 func cryptoBlobBytes(arg Value) ([]byte, bool) {
 	if arg.Kind != ValueObject || arg.Type != "Blob" {
 		return nil, false

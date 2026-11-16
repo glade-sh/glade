@@ -15,6 +15,11 @@ const cryptoKeyServiceUnavailableMessage = "This crypto method is not available.
 // argument validation: an invalid algorithm alias, a truncated key blob and a
 // three-part token all fail with the same text. Orgs that declare the
 // PlatformEncryption feature run the key and JWE surface in crypto_ec_jwe.go.
+// cryptoEncryptionEnabled reports the PlatformEncryption scratch feature.
+func (vm *VM) cryptoEncryptionEnabled() bool {
+	return vm.Org != nil && vm.Org.HasFeature("PlatformEncryption")
+}
+
 func (vm *VM) cryptoKeyServiceGate(callee string, args []Value) (Value, error) {
 	if !vm.cryptoEncryptionEnabled() {
 		return Null, newExceptionError("System.SecurityException", cryptoKeyServiceUnavailableMessage)
