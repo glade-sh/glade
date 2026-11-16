@@ -199,5 +199,7 @@ func runSurfAnonymous(t *testing.T, runner *conformanceRunner, index typesys.Ind
 	if err != nil {
 		lines = append(lines, "EXC|"+err.Error())
 	}
-	return strings.Join(lines, "\n")
+	// The native debug log carries a carriage return in a message as a line
+	// feed (cs06 csvCr), so compare on that footing.
+	return strings.ReplaceAll(strings.Join(lines, "\n"), "\r", "\n")
 }
