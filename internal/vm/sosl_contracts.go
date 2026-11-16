@@ -192,10 +192,6 @@ func soslMissingObjectMessage(name string) string {
 func soslAccessLevel(mode string) Value {
 	level := Object("AccessLevel")
 	level.Text = mode
-	if level.Fields == nil {
-		level.Fields = map[string]Value{}
-	}
-	level.Fields["soslClause"] = Bool(true)
 	return level
 }
 
