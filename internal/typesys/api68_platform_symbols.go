@@ -43,4 +43,29 @@ var api68PlatformSymbolOverlays = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 	},
+	// queryoptions QO-BUILDER-*, QO-NULL-*, QO-SETOPTIONS-* at 67.0 and 68.0.
+	// explicitNamespace is only ever passed null natively; its Boolean type
+	// is unproven.
+	{
+		Name:                "Database.QueryOptions",
+		SuperClass:          "Object",
+		ReplaceConstructors: true,
+		Methods: []StandardMethodSpec{
+			{Name: "builder", ReturnType: "Database.QueryOptionsBuilder", Static: true},
+			{Name: "getDataspace", ReturnType: "String"},
+			{Name: "getExplicitNamespace", ReturnType: "Boolean"},
+			{Name: "getHonorEmptyStrings", ReturnType: "Boolean"},
+		},
+	},
+	{
+		Name:                "Database.QueryOptionsBuilder",
+		SuperClass:          "Object",
+		ReplaceConstructors: true,
+		Methods: []StandardMethodSpec{
+			{Name: "withDataspace", ReturnType: "Database.QueryOptionsBuilder", Parameters: []string{"String"}},
+			{Name: "withExplicitNamespace", ReturnType: "Database.QueryOptionsBuilder", Parameters: []string{"Boolean"}},
+			{Name: "withHonorEmptyStrings", ReturnType: "Database.QueryOptionsBuilder", Parameters: []string{"Boolean"}},
+			{Name: "build", ReturnType: "Database.QueryOptions"},
+		},
+	},
 }

@@ -5091,6 +5091,10 @@ func (vm *VM) soqlBindMapLookup(binds Value) func(string) (Value, error) {
 }
 
 func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error), call func(string) (Value, error)) (string, error) {
+	raw, err := vm.applySOQLSetOptions(raw, lookup)
+	if err != nil {
+		return "", err
+	}
 	columns, _ := soql.BindColumns(raw)
 	return vm.expandSOQLBindsWithContextLiteral(raw, lookup, call, func(value Value, offset int) string {
 		if column, ok := columns[offset]; ok && vm.Org != nil {

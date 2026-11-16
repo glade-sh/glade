@@ -757,6 +757,20 @@ func (p *parser) parseQuery() (Query, error) {
 				return Query{}, p.errorf("expected ROWS after ALL")
 			}
 			q.AllRows = true
+		case p.matchWord("SET"):
+			// api68_native queryoptions captures SET OPTIONS :bind as the
+			// last clause, after LIMIT.
+			if err := checkClauseOrder("SET OPTIONS", 11); err != nil {
+				return Query{}, err
+			}
+			if !p.matchWord("OPTIONS") {
+				return Query{}, p.errorf("expected OPTIONS after SET")
+			}
+			text := p.advance().text
+			if len(text) < 2 || text[0] != ':' || !isSOQLBindName(strings.SplitN(text[1:], ".", 2)[0]) {
+				return Query{}, unexpectedToken(text, "expected SET OPTIONS bind")
+			}
+			q.OptionsBind = text[1:]
 		case p.matchWord("USING"):
 			if err := checkClauseOrder("USING SCOPE", 1); err != nil {
 				return Query{}, err

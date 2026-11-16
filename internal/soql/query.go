@@ -7,27 +7,29 @@ import (
 )
 
 type Query struct {
-	Fields               []string
-	ChildQueries         []ChildQuery
-	Typeofs              []TypeofSpec
-	Object               string
-	Where                *Condition
-	Having               *Condition
-	OrderBy              string
-	OrderDesc            bool
-	Order                []OrderSpec
-	Limit                int
-	HasLimit             bool
-	LimitBind            string
-	Offset               int
-	HasOffset            bool
-	OffsetBind           string
-	Count                bool
-	ForUpdate            bool
-	ForView              bool
-	ForReference         bool
-	AllRows              bool
-	UsingScope           string
+	Fields       []string
+	ChildQueries []ChildQuery
+	Typeofs      []TypeofSpec
+	Object       string
+	Where        *Condition
+	Having       *Condition
+	OrderBy      string
+	OrderDesc    bool
+	Order        []OrderSpec
+	Limit        int
+	HasLimit     bool
+	LimitBind    string
+	Offset       int
+	HasOffset    bool
+	OffsetBind   string
+	Count        bool
+	ForUpdate    bool
+	ForView      bool
+	ForReference bool
+	AllRows      bool
+	UsingScope   string
+	// OptionsBind names the SET OPTIONS bind (api68_native queryoptions).
+	OptionsBind          string
 	SecurityMode         string
 	DataCategoryGroup    string
 	DataCategoryOperator string

@@ -514,6 +514,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := callApprovalRequestMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err
 	}
+	if receiver.Type == queryOptionsType || receiver.Type == queryOptionsBuilderType {
+		if value, mutated, handled, err := callQueryOptionsMember(receiver, method, args); handled || err != nil {
+			return value, receiver, mutated, handled, err
+		}
+	}
 	if receiver.Type == jweTokenType {
 		if value, handled, err := callJweTokenMember(receiver, method, args); handled || err != nil {
 			return value, receiver, false, handled, err

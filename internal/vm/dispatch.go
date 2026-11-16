@@ -1907,6 +1907,11 @@ platformStaticCall:
 			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return Bool(hmac.Equal(actual, []byte(expected))), nil
+	case "Database.QueryOptions.builder":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.QueryOptions.builder expects 0 arguments")
+		}
+		return newQueryOptionsBuilder(), nil
 	case "Crypto.generateKeyPair", "Crypto.getPrivateKey", "Crypto.parseJwe":
 		return Null, vm.cryptoKeyServiceGate(callee)
 	case "Crypto.encrypt":
