@@ -205,6 +205,10 @@ func writeBoundedDecimalText(w *textWriter, v Value) {
 		}
 	}
 	if first < 0 {
+		if scale := decimalScale(v); scale > 6 {
+			w.WriteString("0E-" + strconv.Itoa(scale))
+			return
+		}
 		w.WriteString(text)
 		return
 	}

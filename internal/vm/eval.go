@@ -628,7 +628,7 @@ func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
 // decimalDivideBigDecimal follows the numfmt capture: a quotient that
 // terminates within 33 digits is the scaled-integer quotient (scale is the
 // dividend scale minus the divisor scale plus the digits added); any other
-// quotient is rounded half-up to 33 significant digits and keeps every digit.
+// quotient is rounded to 33 significant digits (ties to even, per the native gap rows) and keeps every digit.
 func decimalDivideBigDecimal(left, right Value, leftRat, rightRat *big.Rat) (Value, bool) {
 	s1, s2 := decimalScale(left), decimalScale(right)
 	unscaled := func(rat *big.Rat, scale int) (*big.Int, bool) {
@@ -672,14 +672,14 @@ func decimalDivideBigDecimal(left, right Value, leftRat, rightRat *big.Rat) (Val
 	return decimalRound33(new(big.Rat).Quo(leftRat, rightRat))
 }
 
-// decimalRound33 rounds rat half-up to 33 significant digits and keeps all of
+// decimalRound33 rounds rat to 33 significant digits and keeps all of
 // them. A carry into a 34th digit drops the last (zero) digit and one scale.
 func decimalRound33(rat *big.Rat) (Value, bool) {
 	if rat.Sign() == 0 {
 		return decimalFromRat(rat, 0), true
 	}
 	scale := 33 - 1 - decimalRatExponent(new(big.Rat).Abs(rat))
-	rounded, err := roundRatToScaleUnchecked("Decimal", rat, scale, "HALF_UP")
+	rounded, err := roundRatToScaleUnchecked("Decimal", rat, scale, "HALF_EVEN")
 	if err != nil {
 		return Null, false
 	}

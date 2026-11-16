@@ -149,7 +149,10 @@ func valueTextCases() []valueTextCase {
 		{"decimal", Value{Kind: ValueDecimal, Text: "1.25"}, "1.25"},
 		{"decimal small", Value{Kind: ValueDecimal, Text: "0.000000012300"}, "1.2300E-8"},
 		{"decimal small negative", Value{Kind: ValueDecimal, Text: "-0.000000012300"}, "-1.2300E-8"},
-		{"decimal zero scale", Value{Kind: ValueDecimal, Text: "0.00000000"}, "0.00000000"},
+		// re_numfmt rows N3|PAIRF0|42 and N3|PAIRF0|65: a zero of scale 8 or 26
+		// renders 0E-8 and 0E-26 (BigDecimal.toString); scale 6 or less stays plain.
+		{"decimal zero scale", Value{Kind: ValueDecimal, Text: "0.00000000"}, "0E-8"},
+		{"decimal zero scale 6", Value{Kind: ValueDecimal, Text: "0.000000"}, "0.000000"},
 		{"decimal exponent", Value{Kind: ValueDecimal, Text: "1.2300E-8"}, "1.2300E-8"},
 		{"double", decimalAsDouble(Decimal(0.5)), "0.5"},
 		{"boolean", Bool(true), "true"},
