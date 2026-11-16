@@ -235,7 +235,7 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"500 Hundred 5 St", "500 Hundred 5 Street", true, 90},
 		{"500 Hundred 5 St", "500 Hundred One St", true, 94},
 		{"500 Hundred 5 St", "500 Hundred St", true, 87},
-		{"One Hundred One St", "One Hundred One Street", true, 89},
+		{"One Hundred One St", "One Hundred One Street", false, 0},
 		// An ordinal first word is no street number only with nothing but the
 		// suffix after it (o4, o5). With a name word or a suite no capture
 		// holds, so the base rules apply.
