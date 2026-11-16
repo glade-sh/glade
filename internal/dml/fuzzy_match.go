@@ -2115,8 +2115,113 @@ func uniqueWords(words []string) []string {
 }
 
 // fuzzyTitle returns the rule confidence directly (see titleConfidence); the
-// caller converts it to the item score.
+// caller converts it to the item score. A pair the title paths leave unmatched
+// still matches when one title is initials alone (titleInitialsLetter).
 func fuzzyTitle(a, b string, _ bool) (bool, float64) {
+	if matched, confidence := fuzzyTitleWords(a, b, false); matched {
+		return true, confidence
+	}
+	if titleInitialsLetter(a, b) {
+		return true, titleInitialsConfidence
+	}
+	return false, 0
+}
+
+// titleInitialsConfidence is the rule confidence of the title initials path:
+// the item scores 86 beside an exact last name, (100 + 86) / 2.
+const titleInitialsConfidence = 93
+
+// titleRawTokens are the whitespace tokens of a title in lower case, without
+// periods, with an ampersand as a separator.
+func titleRawTokens(s string) []string {
+	s = strings.ToLower(s)
+	if strings.ContainsAny(s, ".&") {
+		s = strings.NewReplacer(".", "", "&", " ").Replace(s)
+	}
+	return strings.Fields(s)
+}
+
+// titleInitialsLetter reports titles of which one is single letters alone (two
+// or more, "A B C") and the other, not single letters alone, has a word of
+// letters only that starts with one of them. NATIVE (fuzzy_title_variant
+// f1t3): "A B C" finds "Chief Officer", "Alpha, Beta" and "Chief&Officer"
+// but not "Alpha,Beta" (one word with a comma) or "Zorp Quill". The single
+// letter title keeps its stop words; the other title drops of, the, and, a,
+// an and it, so "Quill and Zorp" does not start with the letter "a".
+func titleInitialsLetter(a, b string) bool {
+	return titleInitialsOneWay(a, b) || titleInitialsOneWay(b, a)
+}
+
+func titleInitialsOneWay(initials, other string) bool {
+	if !titleSingleLetters(initials) {
+		return false
+	}
+	ti := titleRawTokens(initials)
+	if len(ti) < 2 {
+		return false
+	}
+	letters := ""
+	for _, t := range ti {
+		if utf8.RuneCountInString(t) != 1 {
+			return false
+		}
+		letters += t
+	}
+	to := titleRawTokens(other)
+	single := true
+	for _, t := range to {
+		if utf8.RuneCountInString(t) != 1 {
+			single = false
+			break
+		}
+	}
+	if single {
+		return false
+	}
+	for _, t := range to {
+		switch t {
+		case "of", "the", "and", "a", "an", "it":
+			continue
+		}
+		if first, _ := utf8.DecodeRuneInString(t); titleAllLetters(t) && strings.ContainsRune(letters, first) {
+			return true
+		}
+	}
+	return false
+}
+
+// titleSingleLetters reports two or more tokens of titleRawTokens that are all
+// one character, without allocating: the check that almost every title pair
+// fails.
+func titleSingleLetters(s string) bool {
+	tokens, run := 0, 0
+	for _, r := range s {
+		switch {
+		case r == '.':
+		case r == '&' || unicode.IsSpace(r):
+			run = 0
+		default:
+			if run++; run > 1 {
+				return false
+			}
+			if run == 1 {
+				tokens++
+			}
+		}
+	}
+	return tokens >= 2
+}
+
+func titleAllLetters(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) {
+			return false
+		}
+	}
+	return s != ""
+}
+
+func fuzzyTitleWords(a, b string, _ bool) (bool, float64) {
 	wa, wb := titleWords(a), titleWords(b)
 	if len(wa) == 0 || len(wb) == 0 {
 		return foldText(a) == foldText(b), 100
