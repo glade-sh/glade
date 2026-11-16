@@ -1,0 +1,8 @@
+A permission set that a test assigns to the running user: grant timing by place of read. Field permission (Pf_Fld__c.Secret__c), object permission (Pf_Obj__c) and custom permission (Pf_Cust), each from its own permission set.
+org: fresh scratch org from a campaign Dev Hub, Developer Edition, deleted after the run (delete verified). Org id, usernames, alias and host are not recorded.
+capture date: 2026-11-16 (UTC), two repeats with identical rows. sf 2.157.8. Class source API 62.0 and 67.0 (PfA, PfS, PfT <N>), deployed at 67.0.
+route: named @IsTest methods, one transaction each, one run of each class. Each method ends in System.assert(false, 'RESULT => ...') so the observation is the assertion text.
+PfA: the test assigns in the method (v01 directly, v02 inside runAs(self), v03 before startTest, v04 inside startTest, v05 nested runAs, v06 unassign, v07 to another user inside runAs(self), v08 to another user directly, v09 two runAs blocks, v10 both users).
+PfS: @TestSetup assigns directly. PfT: @TestSetup assigns inside runAs(self). Both run s01 to s04 (plain, with DML readers, startTest, unassign).
+observation: A, D = outside any runAs (before, after); B = inside runAs(running user); C = inside runAs(other Standard User with the set assigned); X = inside the runAs block that made the assignment; E = after stopTest inside runAs. cr/rd = describe isCreateable/isAccessible, q = user-mode query, ins = insert as user, perm = FeatureManagement.checkPermission.
+The administrator already holds object access on custom objects, so the object-permission rows read true in every place; they show no grant timing.
