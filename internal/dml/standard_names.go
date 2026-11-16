@@ -13,16 +13,33 @@ import (
 // before it takes the initial), and the pairs the tables keep apart stay
 // apart.
 func firstNameInitialKeyed(a, b string) (bool, float64) {
-	a, b = capFuzzyInput(strings.TrimSpace(a)), capFuzzyInput(strings.TrimSpace(b))
-	x, y := strings.ToLower(a), strings.ToLower(b)
-	fx, fy := foldLowered(x), foldLowered(y)
-	if x == y || nameVariantOf(fx, fy) {
+	return newFirstNameInitialSide(a).keyed(b)
+}
+
+// firstNameInitialSide is the candidate side of firstNameInitialKeyed, read
+// once when one name is compared with many.
+type firstNameInitialSide struct {
+	x, fx string
+	ix    rune
+}
+
+func newFirstNameInitialSide(a string) firstNameInitialSide {
+	x := strings.ToLower(capFuzzyInput(strings.TrimSpace(a)))
+	fx := foldLowered(x)
+	return firstNameInitialSide{x: x, fx: fx, ix: firstNameInitialOf(fx)}
+}
+
+// keyed is firstNameInitialKeyed(a, b) for the side's name a.
+func (side firstNameInitialSide) keyed(b string) (bool, float64) {
+	y := strings.ToLower(capFuzzyInput(strings.TrimSpace(b)))
+	fy := foldLowered(y)
+	if side.x == y || nameVariantOf(side.fx, fy) {
 		return true, 100
 	}
-	if ix, iy := firstNameInitialOf(fx), firstNameInitialOf(fy); ix == utf8.RuneError || ix != iy || nameKeptApart[orderedPair(fx, fy)] {
+	if iy := firstNameInitialOf(fy); side.ix == utf8.RuneError || side.ix != iy || nameKeptApart[orderedPair(side.fx, fy)] {
 		return false, 0
 	}
-	return firstNameAlgorithms(x, y, fx, fy)
+	return firstNameAlgorithms(side.x, y, side.fx, fy)
 }
 
 // firstNameInitialOf is the first letter or digit of a folded first name's

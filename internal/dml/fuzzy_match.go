@@ -1603,11 +1603,13 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 	if foldedEqual(a, b) {
 		return true, 100
 	}
-	wa, wb := companyWords(a), companyWords(b)
+	// The cached words are shared: read them only.
+	ia, ib := companyKeyOf(a), companyKeyOf(b)
+	wa, wb := ia.words, ib.words
 	if len(wa) == 0 || len(wb) == 0 {
 		return false, 0
 	}
-	ja, jb := strings.Join(wa, " "), strings.Join(wb, " ")
+	ja, jb := ia.joined, ib.joined
 	if strings.Contains(a, "-") != strings.Contains(b, "-") {
 		// A hyphenated name matches only the same words spelled with a space;
 		// the rows score it 97 or 100 by direction and match neither its
@@ -1617,12 +1619,12 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 	if companyAcronyms[ja] == jb || companyAcronyms[jb] == ja {
 		return true, 100
 	}
-	if len(wa) == 1 && len(wb) == 1 && companyKey(wa) == companyKey(wb) {
+	if len(wa) == 1 && len(wb) == 1 && ia.key == ib.key {
 		if ok, c := companySingleWordMatch(wa[0], wb[0]); ok {
 			return true, c
 		}
 	}
-	if companyKey(wa) != companyKey(wb) {
+	if ia.key != ib.key {
 		return false, 0
 	}
 	confidence := 100.0

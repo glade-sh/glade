@@ -33,6 +33,12 @@ type preparedCustomItem struct {
 	// text is the candidate's comparison text: trimmed and cut to the Exact
 	// limit for an Exact item, the raw value text for a fuzzy item.
 	text string
+	// scorer and scored are FuzzyScore's scorer for the method and its
+	// trimmed, capped candidate text; first is the candidate side of an
+	// initial-keyed First Name item.
+	scorer fuzzyScorer
+	scored string
+	first  firstNameInitialSide
 }
 
 // maxPreparedItems bounds the plan (a matching rule has at most ten items);
@@ -227,6 +233,11 @@ func newPreparedCustomMatch(rule storage.MatchingRule, keys []fuzzyKeyMode, cand
 			}
 		default:
 			prepared.text = workflowValueString(left)
+			if prepared.initialKey {
+				prepared.first = newFirstNameInitialSide(prepared.text)
+			} else {
+				prepared.scorer, prepared.scored = fuzzyScorerFor(item.Method, prepared.text)
+			}
 		}
 		p.items[i] = prepared
 	}
@@ -264,9 +275,14 @@ func (p *preparedCustomMatch) verdict(i int, existing storage.Record) (matched b
 	}
 	if !item.exact {
 		if item.initialKey {
-			return firstNameInitialKeyed(item.text, raw)
+			return item.first.keyed(raw)
 		}
-		return FuzzyScore(item.method, item.text, raw, item.matchBlanks)
+		if item.scorer == nil {
+			return FuzzyScore(item.method, item.text, raw, item.matchBlanks)
+		}
+		// FuzzyScore with the candidate side resolved: both texts are
+		// trimmed and not blank here.
+		return item.scorer(item.scored, capFuzzyInput(trimmed), item.matchBlanks)
 	}
 	if len(trimmed) > duplicateExactLimit {
 		trimmed = duplicateExactPrefix(trimmed)
@@ -334,4 +350,23 @@ func (p *preparedCustomMatch) match(existing storage.Record) (matched, supported
 		return true, true, confidence
 	}
 	return true, true, 100
+}
+
+// fuzzyScorerFor resolves FuzzyScore's scorer for a method and the trimmed,
+// capped candidate text. scorer is nil when FuzzyScore would not score the
+// pair (unknown method or blank text); callers then call FuzzyScore.
+func fuzzyScorerFor(method, left string) (scorer fuzzyScorer, text string) {
+	key := strings.ToLower(strings.TrimSpace(method))
+	scorer, ok := fuzzyScorers[key]
+	if !ok {
+		return nil, ""
+	}
+	if custom, ok := customFuzzyScorers[key]; ok {
+		scorer = custom
+	}
+	left = strings.TrimSpace(left)
+	if left == "" {
+		return nil, ""
+	}
+	return scorer, capFuzzyInput(left)
 }

@@ -36,6 +36,9 @@ func (c *standardKeyCache[V]) get(key string, compute func(string) V) V {
 
 type companyKeyInfo struct {
 	key, joined string
+	// words is companyWords of the name. It is shared by every reader of
+	// the cache entry, so callers must not modify it.
+	words []string
 }
 
 var (
@@ -48,7 +51,7 @@ var (
 func companyKeyOf(s string) companyKeyInfo {
 	return companyKeyCache.get(s, func(s string) companyKeyInfo {
 		words := companyWords(s)
-		return companyKeyInfo{key: companyKey(words), joined: strings.Join(words, " ")}
+		return companyKeyInfo{key: companyKey(words), joined: strings.Join(words, " "), words: words}
 	})
 }
 
