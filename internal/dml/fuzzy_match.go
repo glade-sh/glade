@@ -533,12 +533,14 @@ func phoneKeypadEquivalent(country, area, exchange, line, otherCountry, otherAre
 	return true
 }
 
-// ---- ZIP: the segment before the first hyphen or space decides ----
+// ---- ZIP: the segment before the first hyphen, space, period or slash decides ----
 
+// fuzzyZip: NATIVE (phone_city_zip D1.zu1) "12345.6789" and "12345/6789"
+// find "12345" and "12345-6789" as a hyphen does.
 func fuzzyZip(a, b string, _ bool) (bool, float64) {
 	head := func(s string) string {
 		s = foldText(s)
-		if i := strings.IndexAny(s, "- "); i >= 0 {
+		if i := strings.IndexAny(s, "- ./"); i >= 0 {
 			return s[:i]
 		}
 		return s
@@ -574,8 +576,22 @@ func cityKey(s string) string {
 	return string(out)
 }
 
+// spacedText is the lower-cased, trimmed value with its inner spaces as typed.
+// NATIVE (phone_city_zip D1.cm1 and D1.szn1): "Los Angeles" finds
+// "Los  Angeles" at 96, not 100, and "LosAngeles" no longer finds it;
+// "SW1A 1AA" does not find "SW1A  1AA". A value with any other white space or
+// a non-ASCII character keeps the folded form, which no row measures.
+func spacedText(s string) string {
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c >= 0x80 || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' {
+			return foldText(s)
+		}
+	}
+	return strings.ToLower(strings.TrimSpace(s))
+}
+
 func fuzzyCity(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
+	x, y := spacedText(a), spacedText(b)
 	if x == y {
 		return true, 100
 	}

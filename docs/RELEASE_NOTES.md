@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Duplicate matching.** Custom phone rules recognize seven-letter vanity numbers in the captured phone shape when matched to their [ITU-T E.161](https://www.itu.int/rec/T-REC-E.161/en) keypad digits.
+- **Duplicate matching.** City rules count inner spaces as typed, custom ZIP rules also split at a period or slash, and the standard Account rule accepts the captured ZIP extension shapes.
 
 ## v0.3.10
 
