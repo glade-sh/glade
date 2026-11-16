@@ -261,3 +261,17 @@ func TestCompanyIsolationRowsRoute(t *testing.T) {
 		}
 	}
 }
+
+// The ceiling's test for a plain name agrees with splitCompanyQualifier on
+// every captured panel name and on the edge shapes of each form.
+func TestCompanyPlainFormAgreesWithQualifierSplit(t *testing.T) {
+	names := []string{"", " ", "Orbel Trade", "Orbel Trade - ", " - East", "Orbel (Trade", "Orbel Trade) ", "Orbel (Trade) ", "Orbel/Trade", "Orbel -Trade", "Orbel Trade (East) Inc"}
+	for _, panel := range companyFitPanels(t, "R1_", "R2_", "R3_", "R4_", "R5_", "R6_", "R7_", "s1_") {
+		names = append(names, panel.values...)
+	}
+	for _, name := range names {
+		if got, want := companyPlainForm(name), splitCompanyQualifier(name).form == "plain"; got != want {
+			t.Errorf("%q: plain %v, split form plain %v", name, got, want)
+		}
+	}
+}

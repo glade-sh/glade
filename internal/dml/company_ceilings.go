@@ -99,6 +99,15 @@ func companyCeiling(a, b string, score float64) (bool, float64) {
 	if a == b {
 		return true, score
 	}
+	// Every term needs a qualifier form on both names or a direction word in
+	// both; most matched pairs have neither and return here without
+	// splitting the names.
+	switch plainA, plainB := companyPlainForm(a), companyPlainForm(b); {
+	case plainA != plainB:
+		return true, score
+	case plainA && (!companyHasDirection(a) || !companyHasDirection(b)):
+		return true, score
+	}
 	x, y := splitCompanyQualifier(a), splitCompanyQualifier(b)
 	if x.form == "plain" && y.form == "plain" {
 		return companyDirectionCeiling(a, b, score)
@@ -200,4 +209,32 @@ func companyVowelSwap(a, b string) bool {
 		differ++
 	}
 	return differ == 1
+}
+
+// companyPlainForm reports a name splitCompanyQualifier leaves plain: no
+// slash, no closing parenthesis form and no spaced dash.
+func companyPlainForm(s string) bool {
+	s = strings.TrimSpace(s)
+	if strings.Contains(s, "/") || strings.Contains(s, " - ") {
+		return false
+	}
+	return !strings.HasSuffix(s, ")") || !strings.Contains(s, "(")
+}
+
+// companyHasDirection reports a name that holds a direction word's letters,
+// in any case: the cheap test before companyDirectionCeiling splits words.
+func companyHasDirection(s string) bool {
+	for i := 0; i+4 <= len(s); i++ {
+		switch s[i] | 0x20 {
+		case 'e', 'w':
+			if strings.EqualFold(s[i+1:i+4], "ast") || strings.EqualFold(s[i+1:i+4], "est") {
+				return true
+			}
+		case 'n', 's':
+			if i+5 <= len(s) && (strings.EqualFold(s[i+1:i+5], "orth") || strings.EqualFold(s[i+1:i+5], "outh")) {
+				return true
+			}
+		}
+	}
+	return false
 }
