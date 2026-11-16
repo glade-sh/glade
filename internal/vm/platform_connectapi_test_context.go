@@ -47,7 +47,7 @@ func (vm *VM) callConnectAPIServiceInSiloedTest(callee string, args []Value) (Va
 	siloed := vm.connectAPIDataSiloedTest()
 	// A method with a setTest counterpart resolves registered results in every
 	// data context (native rows, SeeAllData=true classes: connectapi_settest).
-	if !siloed && (vm.testContext == nil || !vm.connectAPIHasTestSetter(className, methodName)) {
+	if !siloed && (vm.testContext == nil || !vm.testContext.SeeAllDataSet || !vm.connectAPIHasTestSetter(className, methodName)) {
 		return Null, false, nil
 	}
 	method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
