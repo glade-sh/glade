@@ -2679,6 +2679,22 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			}()
 		}
 	}
+	if reparentFailures, err := vm.masterDetailReparentFailures(op, records, targets, allOrNone, resolvedMode); err != nil {
+		return nil, err
+	} else if hasDMLFailures(reparentFailures) {
+		if allOrNone {
+			return reparentFailures, nil
+		}
+		records, _, targets = filterDMLInputs(records, nil, targets, reparentFailures)
+		if len(records) == 0 {
+			return reparentFailures, nil
+		}
+		defer func() {
+			if outErr == nil {
+				out = mergeDMLResults(reparentFailures, out)
+			}
+		}()
+	}
 	// In the captured two-master configuration, a user-mode insert needs
 	// read access to both private parents, even when object and field access
 	// allow the operation.
