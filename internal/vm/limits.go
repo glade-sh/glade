@@ -506,6 +506,17 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		"getMobilePushApexCalls", "getPicklistDescribes",
 		"getRecordTypesDescribes", "getScriptStatements":
 		return Int(0), true
+	// api68_native limits/LIMITS-DC-* and LIMITS-FLEX-* (67.0, 68.0): a
+	// Developer scratch org without Data Cloud reports no Data Cloud cursor
+	// usage, the shared cursor caps and an Integer.MAX flex-credit cap.
+	case "getDataCloudCursors", "getDataCloudCursorRows", "getDataCloudFlexCredits":
+		return Int(0), true
+	case "getLimitDataCloudCursors":
+		return Int(50), true
+	case "getLimitDataCloudCursorRows":
+		return Int(apexCursorRowLimit), true
+	case "getLimitDataCloudFlexCredits":
+		return Int(2147483647), true
 	case "getApexCursorRows":
 		return Int(int64(vm.limits.ApexCursorRows)), true
 	case "getApexCursors":
@@ -657,5 +668,11 @@ func canonicalLimitGetterName(name string) string {
 		"getLimitSavepointRollbacks",
 		"getSoslQueries",
 		"getLimitSoslQueries",
+		"getDataCloudCursors",
+		"getLimitDataCloudCursors",
+		"getDataCloudCursorRows",
+		"getLimitDataCloudCursorRows",
+		"getDataCloudFlexCredits",
+		"getLimitDataCloudFlexCredits",
 	)
 }

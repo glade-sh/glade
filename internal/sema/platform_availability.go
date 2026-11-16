@@ -35,6 +35,20 @@ var observedPlatformSourceMemberAvailability = map[string]apexversion.Range{
 	// Both cursor counter getters are admitted at API 62 and 67.
 	"system.limits.getapexcursors":      {Since: 62},
 	"system.limits.getlimitapexcursors": {Since: 62},
+	// api68_native limits/LIMITS-DEPLOY-62 and LIMITS-CURSOR-62 compile and
+	// run the pagination cursor counters at API 62.
+	"system.limits.getapexpaginationcursors":         {Since: 62},
+	"system.limits.getlimitapexpaginationcursors":    {Since: 62},
+	"system.limits.getapexpaginationcursorrows":      {Since: 62},
+	"system.limits.getlimitapexpaginationcursorrows": {Since: 62},
+	// api68_native limits/LIMITS-DC-* and LIMITS-FLEX-* run at 67 and 68;
+	// earlier source versions were not captured and stay rejected.
+	"system.limits.getdatacloudcursors":          {Since: 67},
+	"system.limits.getlimitdatacloudcursors":     {Since: 67},
+	"system.limits.getdatacloudcursorrows":       {Since: 67},
+	"system.limits.getlimitdatacloudcursorrows":  {Since: 67},
+	"system.limits.getdatacloudflexcredits":      {Since: 67},
+	"system.limits.getlimitdatacloudflexcredits": {Since: 67},
 	// credential_mock_visibility captures these references behind mock branches
 	// in named and anonymous Apex at source APIs 62, 65, 66 and 67. Their release
 	// introduction does not gate source visibility; hosted execution stays separate.
@@ -59,6 +73,16 @@ var observedPlatformSourceExactAvailability = map[string]apexversion.Range{
 	"apex:system.crypto.encryptwithmanagediv(string,blob,blob,blob)":                                       {Since: 62},
 	"apex:system.limits.getapexcursors()":                                                                  {Since: 62},
 	"apex:system.limits.getlimitapexcursors()":                                                             {Since: 62},
+	"apex:system.limits.getapexpaginationcursors()":                                                        {Since: 62},
+	"apex:system.limits.getlimitapexpaginationcursors()":                                                   {Since: 62},
+	"apex:system.limits.getapexpaginationcursorrows()":                                                     {Since: 62},
+	"apex:system.limits.getlimitapexpaginationcursorrows()":                                                {Since: 62},
+	"apex:system.limits.getdatacloudcursors()":                                                             {Since: 67},
+	"apex:system.limits.getlimitdatacloudcursors()":                                                        {Since: 67},
+	"apex:system.limits.getdatacloudcursorrows()":                                                          {Since: 67},
+	"apex:system.limits.getlimitdatacloudcursorrows()":                                                     {Since: 67},
+	"apex:system.limits.getdatacloudflexcredits()":                                                         {Since: 67},
+	"apex:system.limits.getlimitdatacloudflexcredits()":                                                    {Since: 67},
 	"apex:connectapi.namedcredentials.updatenamedcredential(string,connectapi.namedcredentialinput)":       {Since: 62},
 	"apex:connectapi.namedcredentials.deletenamedcredential(string)":                                       {Since: 62},
 	"apex:connectapi.namedcredentials.updateexternalcredential(string,connectapi.externalcredentialinput)": {Since: 62},
