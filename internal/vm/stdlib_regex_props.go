@@ -132,8 +132,6 @@ func tableSet(names ...string) runeSet {
 
 var (
 	javaPropsOnce sync.Once
-	javaPropsMu   sync.Mutex
-	javaPropsMemo = map[string]runeSet{}
 
 	javaSetLetter, javaSetDigit, javaSetUnassigned, javaSetAlphabetic runeSet
 	javaSetLowercase, javaSetUppercase, javaSetWhiteSpace             runeSet

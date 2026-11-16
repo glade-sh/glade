@@ -1,7 +1,6 @@
 package apextest
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -38,22 +37,22 @@ type regexDivergenceCarry struct {
 	value, reason string
 }
 
+// readRegexDivergenceTSV splits lines on tabs without CSV quoting: every value
+// is a JSON string, so a leading quote must reach the decoder intact.
 func readRegexDivergenceTSV(t *testing.T, name string) [][]string {
 	t.Helper()
-	f, err := os.Open(filepath.Join(regexJavaDivergenceFixture, name))
+	raw, err := os.ReadFile(filepath.Join(regexJavaDivergenceFixture, name))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
-	r := csv.NewReader(f)
-	r.Comma = '\t'
-	r.LazyQuotes = true
-	r.FieldsPerRecord = -1
-	rows, err := r.ReadAll()
-	if err != nil {
-		t.Fatal(err)
+	var rows [][]string
+	for n, line := range strings.Split(strings.TrimRight(string(raw), "\n"), "\n") {
+		if n == 0 || line == "" {
+			continue
+		}
+		rows = append(rows, strings.Split(line, "\t"))
 	}
-	return rows[1:]
+	return rows
 }
 
 func loadRegexDivergence(t *testing.T) (snippets map[string]string, rows []regexDivergenceRow, carried map[string]regexDivergenceCarry) {

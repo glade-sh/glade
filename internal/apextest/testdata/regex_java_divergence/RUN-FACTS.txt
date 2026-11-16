@@ -1,0 +1,13 @@
+capture: regex_java_divergence
+sf: @salesforce/cli/2.157.8
+apis: 62.0 and 67.0 (loop and Stack Overflow bisect rows at 67.0 only)
+routes: anonymous Apex and @IsTest, one class per group and API
+org: campaign scratch orgs (1 day each), deleted and verified gone after every run
+runs, all 2026-11-16 UTC:
+  repeat 1  14:43-15:01  309 cases (anonymous and @IsTest; first two attempts lost their org alias to a concurrent run and were redone)
+  repeat 2  15:03-15:22  326 cases (all groups, anonymous and @IsTest)
+  loop sweep 15:09-15:12  52 solo cases at 67.0 (stack overflow and nested repeat boundaries)
+  d8x       15:21-15:23   12 cases (index counting, quoting, lookbehind and stacked quantifiers)
+  followups 15:25-15:31   90 cases (null arguments, nested repeat bisect, MatchResult)
+stability: every row captured twice (repeat 1 and repeat 2) matched exactly. Rows for Pattern.quote(null) and
+  Matcher.quoteReplacement(null) were dropped: the native UnexpectedException carries volatile request numbers.

@@ -2,6 +2,8 @@ package vm
 
 import (
 	"strings"
+	"sync"
+	"sync/atomic"
 	"unicode/utf8"
 )
 
@@ -56,7 +58,6 @@ var regexTraitsAll = regexTraits{nonASCII: true, lineTerms: true}
 
 func regexTraitsOf(input string) regexTraits {
 	var t regexTraits
-	t.longText = len(input) >= regexLoopMinInput
 	for i := 0; i < len(input); i++ {
 		b := input[i]
 		switch {
@@ -76,28 +77,71 @@ func regexTraitsOf(input string) regexTraits {
 	return t
 }
 
-// normalizedFor clears the traits the pattern cannot depend on, so plans for
-// such patterns are shared across subject texts.
-func (t regexTraits) normalizedFor(source string) regexTraits {
-	if !t.nonASCII && !t.lineTerms && !t.longText {
-		return t
+// regexTraitsFor returns the traits of input that source can depend on. The
+// subject text is scanned only for a pattern that reads those traits, and the
+// scan is remembered for the next call on the same text, so a find loop over a
+// long input does not rescan it for every match.
+func regexTraitsFor(source, input string) regexTraits {
+	needNonASCII := regexSourceHasInlineFlag(source, 'i') || strings.Contains(source, `\b`) || strings.Contains(source, `\B`)
+	needLineTerms := strings.Contains(source, "^") && regexSourceHasInlineFlag(source, 'm')
+	needLong := len(input) >= regexLoopMinInput && strings.Contains(source, ")") && strings.ContainsAny(source, "*+{")
+	if !needNonASCII && !needLineTerms && !needLong {
+		return regexTraits{}
 	}
-	out := regexTraits{}
-	if t.longText && strings.Contains(source, ")") && strings.ContainsAny(source, "*+{") {
+	var out regexTraits
+	if needNonASCII || needLineTerms {
+		scanned := regexTraitsOfCached(input)
+		out.nonASCII = needNonASCII && scanned.nonASCII
+		out.lineTerms = needLineTerms && scanned.lineTerms
+	}
+	if needLong && regexSourceHasLoopGroups(source) {
 		// The parser decides whether a group is a recursive loop, and only when
 		// the text is long enough to matter.
-		if len(javaRegexLoopGroups(javaRegexRemoveQuoting(source))) > 0 {
-			out.longText = true
-		}
-	}
-	hasI := regexSourceHasInlineFlag(source, 'i')
-	if t.nonASCII && (hasI || strings.Contains(source, `\b`) || strings.Contains(source, `\B`)) {
-		out.nonASCII = true
-	}
-	if t.lineTerms && strings.Contains(source, "^") && regexSourceHasInlineFlag(source, 'm') {
-		out.lineTerms = true
+		out.longText = true
 	}
 	return out
+}
+
+var (
+	regexLoopSourceMu    sync.Mutex
+	regexLoopSourceCache = map[string]bool{}
+)
+
+// regexSourceHasLoopGroups memoises the parse for the sources it has seen.
+func regexSourceHasLoopGroups(source string) bool {
+	regexLoopSourceMu.Lock()
+	known, ok := regexLoopSourceCache[source]
+	regexLoopSourceMu.Unlock()
+	if ok {
+		return known
+	}
+	has := len(javaRegexLoopGroups(javaRegexRemoveQuoting(source))) > 0
+	regexLoopSourceMu.Lock()
+	if len(regexLoopSourceCache) >= 1024 {
+		regexLoopSourceCache = map[string]bool{}
+	}
+	regexLoopSourceCache[source] = has
+	regexLoopSourceMu.Unlock()
+	return has
+}
+
+type regexTraitsMemoEntry struct {
+	input  string
+	traits regexTraits
+}
+
+var regexTraitsMemo atomic.Pointer[regexTraitsMemoEntry]
+
+func regexTraitsOfCached(input string) regexTraits {
+	if len(input) < 128 {
+		return regexTraitsOf(input)
+	}
+	if entry := regexTraitsMemo.Load(); entry != nil && len(entry.input) == len(input) && entry.input == input {
+		return entry.traits
+	}
+	traits := regexTraitsOf(input)
+	regexTraitsMemo.Store(&regexTraitsMemoEntry{input: input, traits: traits})
+	return traits
 }
 
 // regexSourceHasInlineFlag reports whether a (?flags) group in source sets flag.

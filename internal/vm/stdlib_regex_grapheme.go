@@ -64,7 +64,7 @@ func compileRegexp2PlanForInput(callee, source, input string) (*regexp2Plan, err
 }
 
 func compileRegexp2PlanForInputWithException(callee, source, input, exceptionType string) (*regexp2Plan, error) {
-	traits := regexTraitsOf(input).normalizedFor(source)
+	traits := regexTraitsFor(source, input)
 	// A pattern without grapheme tokens compiles independently of its input:
 	// it needs no cluster table and its plan can be shared between calls.
 	inputIndependent := !regexSourceUsesGraphemeTokens(source)
