@@ -118,6 +118,6 @@
     "./internal/visualforce": 7,
     "./internal/vm": 69,
     "./internal/watch": 1,
-    "./internal/dml": 2
+    "./internal/dml": 3
   }
 }
