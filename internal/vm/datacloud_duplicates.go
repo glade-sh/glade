@@ -153,7 +153,16 @@ func datacloudDuplicateResultValue(result dml.DuplicateResult, find bool) Value 
 			}
 			matchRecord.Fields["matchConfidence"] = decimalAsDouble(Decimal(confidence))
 			matchRecord.Fields["additionalInformation"] = typedList("List<Datacloud.AdditionalInformationMap>")
-			matchRecord.Fields["fieldDiffs"] = typedList("List<Datacloud.FieldDiff>")
+			diffs := typedList("List<Datacloud.FieldDiff>")
+			if i < len(match.FieldDiffs) {
+				for _, diff := range match.FieldDiffs[i] {
+					item := Object("Datacloud.FieldDiff")
+					item.Fields["name"] = String(diff.Name)
+					item.Fields["difference"] = String(diff.Difference)
+					diffs.List = append(diffs.List, item)
+				}
+			}
+			matchRecord.Fields["fieldDiffs"] = diffs
 			records.List = append(records.List, matchRecord)
 		}
 		item.Fields["matchRecords"] = records
@@ -178,6 +187,7 @@ func databaseDuplicateErrorValue(err dml.Error) Value {
 var datacloudDuplicateMembers = map[string]map[string]string{
 	"datacloud.duplicateresult": {"getduplicaterule": "duplicateRule", "getduplicateruleentitytype": "duplicateRuleEntityType", "geterrormessage": "errorMessage", "getmatchresults": "matchResults", "isallowsave": "allowSave"},
 	"datacloud.matchresult":     {"getentitytype": "entityType", "geterrors": "errors", "getmatchengine": "matchEngine", "getmatchrecords": "matchRecords", "getrule": "rule", "getsize": "size", "issuccess": "success"},
+	"datacloud.fielddiff":       {"getdifference": "difference", "getname": "name"},
 	"datacloud.matchrecord":     {"getadditionalinformation": "additionalInformation", "getfielddiffs": "fieldDiffs", "getmatchconfidence": "matchConfidence", "getrecord": "record"},
 }
 
@@ -210,8 +220,13 @@ func (vm *VM) duplicateResultsForRecord(record storage.Record, object string, by
 			}
 			return nil, newExceptionError("System.HandledException", "No active duplicate rules are defined for the "+label+" object type.")
 		}
-		if !byID && strings.EqualFold(object, "Opportunity") {
+		if strings.EqualFold(object, "Opportunity") {
 			return nil, newExceptionError("System.HandledException", "The FindDuplicates API doesn't support the Opportunity object.")
+		}
+		// Native NOREG: a custom object with no active rule throws, naming the
+		// object (Find) or its object id (FindByIds, which Glade cannot give).
+		if message, ok := noActiveDuplicateRulesMessage(vm.Org, object); ok {
+			return nil, newExceptionError("System.HandledException", message)
 		}
 	}
 	var out []Value
@@ -377,7 +392,7 @@ func (vm *VM) commitDuplicateReports(reports []dml.DuplicateReport) {
 		storage.EnsureStandardObject(vm.Org, name)
 	}
 	engine := vm.newDMLEngine(nil)
-	for _, report := range reports {
+	for _, report := range mergeDuplicateReports(reports) {
 		if !live(report.Object, report.RecordID) {
 			continue
 		}
@@ -554,4 +569,73 @@ func (vm *VM) duplicateMatchingFieldAccessible(object, field string) bool {
 		}
 	}
 	return !denied
+}
+
+func noActiveDuplicateRulesMessage(org *storage.OrgState, object string) (string, bool) {
+	if org == nil || !strings.HasSuffix(strings.ToLower(object), "__c") {
+		return "", false
+	}
+	name, ok := storage.ResolveObjectName(*org, object)
+	if !ok {
+		return "", false
+	}
+	if len(org.Objects[name].Definition.DuplicateRules) == 0 {
+		return "No duplicate rules are defined for the " + name + " object.", true
+	}
+	return "No active duplicate rules are defined for the " + name + " object type.", true
+}
+
+// mergeDuplicateReports joins the reports of one rule that share a record, so
+// records that match each other commit as a single set (native REP: two
+// matching inserts, or a seed and two matching inserts, make one set).
+func mergeDuplicateReports(reports []dml.DuplicateReport) []dml.DuplicateReport {
+	var merged []dml.DuplicateReport
+	for _, report := range reports {
+		target := -1
+		for i := range merged {
+			if !strings.EqualFold(merged[i].Rule.Name, report.Rule.Name) || !strings.EqualFold(merged[i].Rule.Object, report.Rule.Object) || !strings.EqualFold(merged[i].Object, report.Object) {
+				continue
+			}
+			if duplicateReportsShareRecord(merged[i], report) {
+				target = i
+				break
+			}
+		}
+		if target < 0 {
+			merged = append(merged, report)
+			continue
+		}
+		into := &merged[target]
+		members := map[storage.ID]bool{into.RecordID: true}
+		for _, match := range into.Matches {
+			members[match.ID] = true
+		}
+		if !members[report.RecordID] {
+			into.Matches = append(into.Matches, storage.Record{ID: report.RecordID, Object: report.Object})
+			members[report.RecordID] = true
+		}
+		for _, match := range report.Matches {
+			if !members[match.ID] {
+				into.Matches = append(into.Matches, match)
+				members[match.ID] = true
+			}
+		}
+	}
+	return merged
+}
+
+func duplicateReportsShareRecord(a, b dml.DuplicateReport) bool {
+	left := map[storage.ID]bool{a.RecordID: true}
+	for _, match := range a.Matches {
+		left[match.ID] = true
+	}
+	if left[b.RecordID] {
+		return true
+	}
+	for _, match := range b.Matches {
+		if left[match.ID] {
+			return true
+		}
+	}
+	return false
 }
