@@ -14,7 +14,8 @@ import (
 const fuzzyPanelsKeyboardDir = "../apextest/testdata/conformance/duplicate_fuzzy_panels/"
 
 // fuzzyPanelsTwinDir holds the blind native panels captured after the
-// keyboard fallback (anonymous route only): the twin tk01-tk22 and bk01 on.
+// keyboard fallback (anonymous route only): the twin tk01-tk22, bk01 on and
+// ck01 on.
 const fuzzyPanelsTwinDir = "testdata/conformance/duplicate_fuzzy_panels/"
 
 // fuzzyPanelsLastName returns the values and the shared native observation of
@@ -97,11 +98,13 @@ func lastNameTrainBase(a, b string) (bool, float64) {
 // (internal/dml/testdata/conformance/duplicate_fuzzy_panels, tk01-tk22) is the
 // same rule on 65 other stems, anonymous route only. The keyboard fallback adds
 // no match native does not report, on any of them, and every pair the scorer
-// without the fallback gets right stays right. The keyboard group fitted the
-// shape table and the per-shape floors that the single margin replaced; the
-// hkeyboard group was in view when the shape rule was chosen, so it is not
-// held-out evidence for the shape gate. The twin and the second blind panel
-// were captured after the code they score; neither fitted anything.
+// without the fallback gets right stays right. The fit panels (the keyboard
+// group, k1 to k3) fitted the shape table and the per-shape floors that the
+// single margin replaced; the hkeyboard group was in view when the shape rule
+// was chosen, so it is not held-out evidence for the shape gate. The twin, the
+// second and the third blind panel were captured after the code they score.
+// The twin's tk14 sets the highest native non-match the margin clears; none of
+// the three blind groups fitted the shape table.
 func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 	values, observations := fuzzyPanelsLastName(t, "keyboard", "hkeyboard")
 	// exact counts the ordered pairs (self pairs included) where Glade and
@@ -119,14 +122,15 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		"hk2": {fuzzyNameKeysCount{native: 58, hit: 42, miss: 16, confidence: 6}, 234, 228},
 		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 772, miss: 1284, confidence: 158}, 4714, 4374},
 		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1245, miss: 906, confidence: 140}, 14587, 14303},
+		"ck":  {},
 	}
-	// The twin panels (tk01 to tk22) are counted as one group.
-	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard") {
+	// The blind panels are counted by group: tk (tk01 to tk22), bk and ck.
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard") {
 		values[panel.name] = panel.values
 		observations[panel.name] = ""
 	}
 	twin := map[string]map[[2]int]float64{}
-	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard") {
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard") {
 		twin[panel.name] = panel.native
 	}
 	rounded := func(matched bool, confidence float64) float64 {
@@ -142,8 +146,11 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		group := method
 		if n, ok := twin[method]; ok {
 			native, group = n, "tk"
-			if strings.HasPrefix(method, "bk") {
+			switch {
+			case strings.HasPrefix(method, "bk"):
 				group = "bk"
+			case strings.HasPrefix(method, "ck"):
+				group = "ck"
 			}
 		} else {
 			native = fuzzyNameKeysPanel(t, observations[method], len(vals))

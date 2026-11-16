@@ -447,8 +447,8 @@ func TestLastNameKeyboardPanelCells(t *testing.T) {
 
 // keyboardMarginPanels are every native LastName panel that reaches the
 // fallback: the fitted panels, the keyboard and hkeyboard groups of
-// duplicate_fuzzy_panels, and the blind twin and second blind panel
-// (tk01-tk22 and bk01 on; the ctl_ controls replay hk2).
+// duplicate_fuzzy_panels, and the blind twin, second and third blind panels
+// (tk01-tk22, bk01 on and ck01 on; the ctl_ and rep_ controls replay earlier panels).
 func keyboardMarginPanels(t *testing.T) []keyboardNativePanel {
 	t.Helper()
 	out := keyboardFitPanels(t)
@@ -456,24 +456,24 @@ func keyboardMarginPanels(t *testing.T) []keyboardNativePanel {
 	for _, name := range slices.Sorted(maps.Keys(values)) {
 		out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
 	}
-	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard")...)
+	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard")...)
 }
 
 // keyboardTwinPanels reads the blind panels of
 // internal/dml/testdata/conformance/duplicate_fuzzy_panels (four native
-// observations each for the anonymous-only twin; eight for bk, both routes) without their ctl_ controls.
+// observations each for the anonymous-only twin; eight for bk, both routes) without their ctl_ and rep_ controls.
 func keyboardTwinPanels(t *testing.T, groups ...string) []keyboardNativePanel {
 	t.Helper()
 	var out []keyboardNativePanel
 	for _, group := range groups {
-		// tkeyboard is anonymous only (4 rows a panel); bkeyboard has both routes (8).
+		// tkeyboard and ckeyboard are anonymous only (4 rows a panel); bkeyboard has both routes (8).
 		per := 4
 		if group == "bkeyboard" {
 			per = 8
 		}
 		values, observations := fuzzyPanelsLastNameFrom(t, fuzzyPanelsTwinDir, per, group)
 		for _, name := range slices.Sorted(maps.Keys(values)) {
-			if strings.HasPrefix(name, "ctl_") {
+			if strings.HasPrefix(name, "ctl_") || strings.HasPrefix(name, "rep_") {
 				continue
 			}
 			out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})

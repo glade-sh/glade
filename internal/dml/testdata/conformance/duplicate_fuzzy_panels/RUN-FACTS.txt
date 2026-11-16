@@ -22,3 +22,15 @@ apis and routes: 62.0 and 67.0, anonymous Apex (class deployed at the run's API)
 org: a fresh 1-day Developer Edition scratch org on a campaign Dev Hub (SF_SKIP_NEW_VERSION_CHECK=true), deleted after the run; deletion verified (the alias no longer resolves; the hub's active scratch count returned to its earlier value)
 preflight: the bk01 panel ran through glade exec at API 67.0 before the capture
 result: 6,273 within-panel ordered pairs (self pairs included) scored at cc5916af42; native matches 2,056 (self pairs included); Glade matches 772, all native (0 false matches); scorer without the fallback exact on 4,374, with it on 4,714 (340 pairs gained)
+
+third blind panel (group ckeyboard, panels ck01 to ck09 plus the ctl_hk2, ctl_hk2_end and rep_bk03 controls; 12 cases, 4 native rows each)
+date: 2026-11-16 (UTC), 07:06 to 07:09
+purpose: re-review of campaign/v0311-keyboard2 971c8e2382; tests keyboardFallbackMargin 93 on names no capture or fit has seen
+values: 27 of the review's 65 generated stem groups, the stem plus eight variants that were never captured before (243 values); picked from the Go scorer's output to favour same-stem pairs that reach the fallback at 93 to 95
+predictions: frozen before the org was created; every within-panel ordered pair Glade matches at 971c8e2382 (self, base scorer or fallback at 93 or more); 1,651 lines; sha256 abeddb4ce881982665f13c796cfb10ff38670d9a5379b2afce20a56b2ed90b29
+controls: ctl_hk2 first and last equal the committed hk2 row; rep_bk03 replays the coder's bk03 panel and equals the committed bkeyboard bk03 row
+apis and routes: 62.0 and 67.0 on the anonymous endpoint, class deployed at 67.0; the @IsTest route was not captured; two repeats; all 48 observations agree per case
+org: a fresh 1-day Developer Edition scratch org on a campaign Dev Hub, deleted after the run; the alias no longer resolves and the hub's active scratch count is back to its earlier value
+ids: no record, org or user id, username or alias is stored
+result: 2,087 native matches (self pairs included); all 1,651 predicted matches are native (0 false): 243 self, 252 base, 1,156 fallback (578 pairs; 235 score 93 to 94, 132 score 94 to 95); 436 native matches Glade does not report; the highest native non-match that reaches the fallback scores 91.64
+use: TestLastNameKeyboardFuzzyPanelsNativeRows requires zero extra matches on ck01-ck09 (group ck); the ctl_ and rep_ cases are controls and are not counted as panels

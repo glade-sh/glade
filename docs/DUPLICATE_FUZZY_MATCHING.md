@@ -232,16 +232,20 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    `Ingleborn` and `Inglebornxbqm`), while native matches also sit there
    (`Farnsdelwick` and `Farnsdraeovk` score 92.07). The margin is 0.74 above
    the highest captured native non-match of any shape in any panel (fitted
-   rows, k1 to k3, hk1, hk2, tk01 to tk22). Per-shape floors were tried and
+   rows, k1 to k3, hk1, hk2, tk01 to tk22, bk, ck). Per-shape floors were tried and
    dropped: a floor existed only where an earlier panel held a
    counterexample, and a fresh panel then showed 108 more false matches. The
    margin leaves the earlier result for the native matches that score below
    it, so recall in these panels is below the fitted scorer's and above the
-   earlier scorer's. The shape table was fitted to k1 to k3 with hk1 in view;
-   hk1 and hk2 are not held-out evidence for it. The twin panels and the
-   second blind panel (bk01 to bk09) were captured after the code they score
-   and fitted nothing; `TestLastNameKeyboardFuzzyPanelsNativeRows` requires
-   zero extra matches on them and `TestLastNameKeyboardFallbackMargin`
+   earlier scorer's. The shape table comes from the fit panels
+   (`fuzzy_name_keys`, `duplicate_fuzzy_matching`) with hk1 in view; k1 to k3
+   set the earlier per-shape floors. hk1 and hk2 are not held-out evidence for
+   the table. The twin panels (tk01 to tk22), the second blind panel (bk01 to
+   bk09) and the third (ck01 to ck09) were captured after the code they
+   score. bk and ck fitted nothing; the twin's tk14 sets the highest native
+   non-match that the margin clears. `TestLastNameKeyboardFuzzyPanelsNativeRows`
+   requires zero extra matches on all three, and
+   `TestLastNameKeyboardFallbackMargin`
    requires the margin above the highest captured non-match. Panels kept out
    of the fit agree on every pair Glade matches:
    `fuzzy_keyboard_neighbors` (`Farnsdelwicka` finds `Farnsdraeovka`, native
