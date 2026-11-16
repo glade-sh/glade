@@ -1033,6 +1033,11 @@ var streetPOBox = regexp.MustCompile(`^p ?o ?box ([0-9]+)$`)
 // letters still make a street number.
 var streetGluedNumber = regexp.MustCompile(`^[0-9]+[a-z]{3,}$`)
 
+func streetKnownSuffix(w string, custom bool) bool {
+	_, ok := streetSuffixes(custom)[w]
+	return ok
+}
+
 func parseStreetFor(s string, custom bool) streetParts {
 	var p streetParts
 	cleaned := streetCleanFor(s, custom)
@@ -1053,10 +1058,12 @@ func parseStreetFor(s string, custom bool) streetParts {
 		// not a number is all name ("3F" reports 86 for itself, 100 under
 		// Match Blank Fields; "12" reports 100).
 	case custom && streetGluedNumber.MatchString(words[0]):
-	case custom && streetOrdinalWord(words[0]):
+	case custom && len(words) == 2 && streetOrdinalWord(words[0]) && streetKnownSuffix(words[1], custom):
 		// NATIVE fuzzy_street_c10/org.tsv o4, o5: an ordinal first word is
 		// no street number ("3rd Ave" and "Third Ave" report 88 for
-		// themselves, as a street with no number does; "101st St" too).
+		// themselves, as a street with no number does; "101st St" too). No
+		// capture holds an ordinal first word with a name word or a suite
+		// ("5th Main St"), so those keep the base rules.
 	case custom:
 		// NATIVE fuzzy_street_c5/org.tsv nl1, np1, np2, fuzzy_street_c4 cl1
 		// to cl3: a directional between the number and a street name with a

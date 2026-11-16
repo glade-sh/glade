@@ -205,12 +205,15 @@ func streetNumericName(words []string) bool {
 	name := rest[:last]
 	// Every word of the name is a number: a word then a bare number ("500
 	// Main 5 St", "100 Vane 7 St") is another shape and keeps the base rules.
+	// "Hundred" counts only after a number ("1 Hundred 1 St" for "One Hundred
+	// One"); a leading one ("500 Hundred 5 St") is another shape.
 	allNumbers := true
-	for _, w := range name {
-		if !streetDigits(w) && w != "hundred" {
-			allNumbers = false
-			break
+	for i, w := range name {
+		if streetDigits(w) || (w == "hundred" && i > 0 && streetDigits(name[i-1])) {
+			continue
 		}
+		allNumbers = false
+		break
 	}
 	if allNumbers && streetDigits(name[last-1]) {
 		return true
