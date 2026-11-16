@@ -478,6 +478,9 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 	vm.currentClass = method.ClassName
 	vm.currentMethod = method
 	vm.currentTrigger = false
+	if vm.coverage != nil {
+		vm.coverMethodEntry(method)
+	}
 	if vm.currentClass == "" {
 		vm.currentClass = classNameFromMethod(method.Name)
 	}

@@ -205,6 +205,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		String("trace", "").
 		String("services", "").
 		String("junit", "").
+		Bool("code-coverage", "").
+		String("coverage-gate", "").
 		String("limit-mode", "").
 		String("limit-profile", "").
 		String("limit-queries", "").
@@ -346,6 +348,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	tracePath = strings.TrimSpace(parsed.String("trace"))
 	servicesPath = strings.TrimSpace(parsed.String("services"))
 	junitPath = parsed.String("junit")
+	coverageGate, err := testreport.ParseCoverageGate(parsed.String("coverage-gate"))
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	codeCoverage := parsed.Bool("code-coverage") || coverageGate != ""
 	progressMode = progressModeFromArgs(args, progressMode)
 	if servicesPath != "" {
 		if err := enterprise.ValidateServiceConfig(servicesPath); err != nil {
@@ -667,6 +674,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		TimeoutSource:         timeoutOpts.TimeoutSource,
 		NoDiskCache:           noCache,
 		PerfCounters:          perfEnabled,
+		CodeCoverage:          codeCoverage,
+		CoverageGate:          coverageGate,
 	}
 	durationHistory, err := loadCLIDurationHistory(durationHistoryPath)
 	if err != nil {

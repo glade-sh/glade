@@ -41,6 +41,8 @@ type Run struct {
 	// from running: classes with compile errors and the classes that depend on
 	// them. Their selected test methods also appear as compile_error cases.
 	ExcludedClasses []CompileExclusion `json:"excludedClasses,omitempty"`
+	// Coverage is set only when the run recorded code coverage.
+	Coverage *Coverage `json:"coverage,omitempty"`
 }
 
 // CompileExclusion is one class excluded by the compile gate. Root names the
@@ -87,6 +89,9 @@ type Case struct {
 	Problem            *Problem        `json:"problem,omitempty"`
 	Trace              []trace.Event   `json:"trace,omitempty"`
 	Profile            *profile.Report `json:"profile,omitempty"`
+	// Coverage is this test's per-class and per-trigger coverage, set only
+	// when the run recorded code coverage.
+	Coverage []TestCoverage `json:"coverage,omitempty"`
 	// EntryNotRun marks a Fail row whose test body never ran because its
 	// @TestSetup method threw. It is runner bookkeeping, not report output.
 	EntryNotRun bool `json:"-"`
@@ -130,12 +135,15 @@ type Summary struct {
 	// ExcludedClasses counts Run.ExcludedClasses. An excluded class fails the
 	// run even when it has no selected test method.
 	ExcludedClasses int `json:"excludedClasses,omitempty"`
+	// CoverageGateFailed reports a --coverage-gate rule the run's coverage
+	// did not meet. It fails the run.
+	CoverageGateFailed bool `json:"coverageGateFailed,omitempty"`
 }
 
-// OK reports whether every selected test passed and no class was excluded
-// by a compile error.
+// OK reports whether every selected test passed, no class was excluded by a
+// compile error, and no requested coverage gate failed.
 func (s Summary) OK() bool {
-	return s.Failed == 0 && s.Errors == 0 && s.ExcludedClasses == 0
+	return s.Failed == 0 && s.Errors == 0 && s.ExcludedClasses == 0 && !s.CoverageGateFailed
 }
 
 func (r Run) Summary() Summary {
@@ -158,6 +166,7 @@ func (r Run) Summary() Summary {
 		}
 	}
 	summary.ExcludedClasses = len(r.ExcludedClasses)
+	summary.CoverageGateFailed = r.Coverage != nil && r.Coverage.Gate != nil && !r.Coverage.Gate.Passed
 	return summary
 }
 
@@ -204,6 +213,7 @@ func (r Run) MarshalJSON() ([]byte, error) {
 		Summary               Summary                  `json:"summary"`
 		Suites                []Suite                  `json:"suites"`
 		ExcludedClasses       []CompileExclusion       `json:"excludedClasses,omitempty"`
+		Coverage              *Coverage                `json:"coverage,omitempty"`
 	}
 	suites := r.Suites
 	if suites == nil {
@@ -217,6 +227,7 @@ func (r Run) MarshalJSON() ([]byte, error) {
 		Summary:               r.Summary(),
 		Suites:                suites,
 		ExcludedClasses:       r.ExcludedClasses,
+		Coverage:              r.Coverage,
 	})
 }
 
@@ -251,6 +262,7 @@ func (c Case) MarshalJSON() ([]byte, error) {
 		Problem            *Problem        `json:"problem,omitempty"`
 		Trace              []trace.Event   `json:"trace,omitempty"`
 		Profile            *profile.Report `json:"profile,omitempty"`
+		Coverage           []TestCoverage  `json:"coverage,omitempty"`
 	}
 	problem := c.Problem
 	if problem != nil {
@@ -270,6 +282,7 @@ func (c Case) MarshalJSON() ([]byte, error) {
 		Problem:            problem,
 		Trace:              c.Trace,
 		Profile:            c.Profile,
+		Coverage:           c.Coverage,
 	})
 }
 

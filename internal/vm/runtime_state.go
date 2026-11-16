@@ -371,6 +371,10 @@ type VM struct {
 	debugOutputLimit int
 	traceOutputLimit int
 	traceEnabled     bool
+	// coverage receives code coverage events; nil leaves collection off.
+	coverage         CoverageSink
+	coverageLastName string
+	coverageLastSkip bool
 	ctx              context.Context
 	contextPollCount uint8
 	activeGetters    map[string]int

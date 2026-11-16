@@ -44,6 +44,10 @@ No changes yet.
 
 - **Exception constructors on platform stubs.** Exception constructors on project-linked platform stubs keep their message and cause for every constructor shape.
 
+- **Apex code coverage.** `glade test --code-coverage` records which lines of each class and trigger the tests ran, per test and for the run, with the executable lines, unions and percentages Salesforce reports (`sf apex run test --code-coverage` at APIs 62.0 and 67.0). `--coverage-gate RunLocalTests|RunSpecifiedTests` applies the deployment coverage rule and fails the run when it is not met. JSON, the console summary and JUnit properties carry the result, from the local route, the daemon and a test server alike. Runs without the flag are unchanged. See `docs/CODE_COVERAGE.md` for the rules and known gaps.
+
+- **Test selection in long-lived runs.** In one process, a whole-class run after a single-method run of the same class reported its other methods as passed without running them; this affected the test daemon, the test server and watch loops. Each selection now compiles its own invocations.
+
 ### Performance
 
 - **Custom duplicate matching.** A custom matching rule reads its candidate side once per scan and scores an item only while the filter can still change, so bulk inserts under fuzzy rules run faster. Match outcomes are unchanged.

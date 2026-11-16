@@ -1703,6 +1703,9 @@ func urlHostValue(parsed *url.URL) string {
 }
 
 func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
+	if vm.coverage != nil {
+		vm.coverage.CoverClassInit(runtimeClassName(class), false)
+	}
 	// Derived fields run
 	// before base fields; inherited fields still have their null defaults.
 	// As with method selection, prefer the caller's source unit among

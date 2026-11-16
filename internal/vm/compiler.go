@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"unicode"
@@ -1475,17 +1476,21 @@ func (p *parser) parseTernary() (ir.Expr, error) {
 	if !p.match(tokenSymbol, "?") {
 		return condition, nil
 	}
+	whenTrueStart := p.operandStart()
 	whenTrue, err := p.parseExpression()
 	if err != nil {
 		return ir.Expr{}, err
 	}
+	whenTrue.StartPos = whenTrueStart
 	if _, err := p.expect(tokenSymbol, ":"); err != nil {
 		return ir.Expr{}, err
 	}
+	whenFalseStart := p.operandStart()
 	whenFalse, err := p.parseExpression()
 	if err != nil {
 		return ir.Expr{}, err
 	}
+	whenFalse.StartPos = whenFalseStart
 	return ir.Expr{Kind: ir.ExprCall, Callee: "__ternary", Args: []ir.Expr{condition, whenTrue, whenFalse}}, nil
 }
 
@@ -1495,10 +1500,12 @@ func (p *parser) parseNullCoalesce() (ir.Expr, error) {
 		return ir.Expr{}, err
 	}
 	for p.match(tokenSymbol, "??") {
+		rightStart := p.operandStart()
 		right, err := p.parseOr()
 		if err != nil {
 			return ir.Expr{}, err
 		}
+		right.StartPos = rightStart
 		left = ir.Expr{Kind: ir.ExprCall, Callee: "__coalesce", Args: []ir.Expr{left, right}}
 	}
 	return left, nil
@@ -1510,10 +1517,12 @@ func (p *parser) parseOr() (ir.Expr, error) {
 		return ir.Expr{}, err
 	}
 	for p.match(tokenSymbol, "||") {
+		rightStart := p.operandStart()
 		right, err := p.parseAnd()
 		if err != nil {
 			return ir.Expr{}, err
 		}
+		right.StartPos = rightStart
 		left = binary("||", left, right)
 	}
 	return left, nil
@@ -1525,10 +1534,12 @@ func (p *parser) parseAnd() (ir.Expr, error) {
 		return ir.Expr{}, err
 	}
 	for p.match(tokenSymbol, "&&") {
+		rightStart := p.operandStart()
 		right, err := p.parseBitwiseOr()
 		if err != nil {
 			return ir.Expr{}, err
 		}
+		right.StartPos = rightStart
 		left = binary("&&", left, right)
 	}
 	return left, nil
@@ -2289,6 +2300,20 @@ func (p *parser) parseArguments() ([]ir.Expr, error) {
 			return nil, err
 		}
 	}
+}
+
+// operandStart is the source offset of the next token, recorded on a
+// conditionally evaluated operand for code coverage. It returns zero when the
+// offset does not fit.
+func (p *parser) operandStart() int32 {
+	if p.pos >= len(p.tokens) {
+		return 0
+	}
+	pos := p.tokens[p.pos].pos
+	if pos <= 0 || pos > math.MaxInt32 {
+		return 0
+	}
+	return int32(pos)
 }
 
 func binary(op string, left, right ir.Expr) ir.Expr {

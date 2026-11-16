@@ -65,6 +65,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 		if expr.Operator == "||" && left.Kind == ValueBool && left.Bool {
 			return Bool(true), nil
 		}
+		if vm.coverage != nil && expr.Right.StartPos > 0 {
+			vm.coverOperand(expr.Right.StartPos)
+		}
 		right, err := vm.eval(*expr.Right, result)
 		if err != nil {
 			return Null, err
@@ -141,6 +144,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 			if conditionValue {
 				selected, other = other, selected
 			}
+			if vm.coverage != nil {
+				vm.coverOperand(selected.StartPos)
+			}
 			value, err := vm.eval(selected, result)
 			if err != nil {
 				return Null, err
@@ -158,6 +164,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 			emptyInlineQuery := expr.Args[0].Kind == ir.ExprSOQL && left.Kind == ValueList && len(left.List) == 0
 			if left.Kind != ValueNull && !emptyInlineQuery {
 				return left, nil
+			}
+			if vm.coverage != nil {
+				vm.coverOperand(expr.Args[1].StartPos)
 			}
 			return vm.eval(expr.Args[1], result)
 		}

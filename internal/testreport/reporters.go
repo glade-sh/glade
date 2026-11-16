@@ -74,6 +74,7 @@ func WriteConsoleWithOptions(w io.Writer, run Run, opts ConsoleOptions) error {
 		}
 	}
 	writeConsoleExcludedClasses(&out, run.ExcludedClasses)
+	writeConsoleCoverage(&out, run.Coverage)
 	if problemCase, ok := firstProblemCase(run); ok {
 		writeStyledConsoleProblem(&out, problemCase.suiteName, problemCase.testCase)
 	}
@@ -307,6 +308,7 @@ func WriteJUnitXML(w io.Writer, run Run) error {
 			Time:     seconds(suiteSummary.DurationMS),
 			Cases:    make([]junitTestCase, 0, len(suite.Cases)),
 		}
+		outSuite.Properties = junitCoverageProperties(run.Coverage)
 		for _, testCase := range suite.Cases {
 			outSuite.Cases = append(outSuite.Cases, makeJUnitCase(suite.Name, testCase))
 		}
@@ -362,13 +364,37 @@ type junitTestSuites struct {
 }
 
 type junitTestSuite struct {
-	Name     string          `xml:"name,attr"`
-	Tests    int             `xml:"tests,attr"`
-	Failures int             `xml:"failures,attr"`
-	Errors   int             `xml:"errors,attr"`
-	Skipped  int             `xml:"skipped,attr"`
-	Time     string          `xml:"time,attr"`
-	Cases    []junitTestCase `xml:"testcase"`
+	Name     string `xml:"name,attr"`
+	Tests    int    `xml:"tests,attr"`
+	Failures int    `xml:"failures,attr"`
+	Errors   int    `xml:"errors,attr"`
+	Skipped  int    `xml:"skipped,attr"`
+	Time     string `xml:"time,attr"`
+	// Properties carries the run's coverage summary, as sf apex run test
+	// --code-coverage --result-format junit does, only when it was recorded.
+	Properties *junitProperties `xml:"properties,omitempty"`
+	Cases      []junitTestCase  `xml:"testcase"`
+}
+
+type junitProperties struct {
+	Properties []junitProperty `xml:"property"`
+}
+
+type junitProperty struct {
+	Name  string `xml:"name,attr"`
+	Value string `xml:"value,attr"`
+}
+
+// junitCoverageProperties is the sf JUnit coverage projection: the run and
+// org-wide percentages as "<n>%" strings.
+func junitCoverageProperties(coverage *Coverage) *junitProperties {
+	if coverage == nil {
+		return nil
+	}
+	return &junitProperties{Properties: []junitProperty{
+		{Name: "testRunCoverage", Value: fmt.Sprintf("%d%%", coverage.Summary.TestRunCoverage)},
+		{Name: "orgWideCoverage", Value: fmt.Sprintf("%d%%", coverage.Summary.OrgWideCoverage)},
+	}}
 }
 
 type junitTestCase struct {

@@ -18,17 +18,77 @@ import (
 // uncovered line arrays is exactly this set. A test class (annotated
 // @IsTest) has no coverage and returns nil.
 func ExecutableLines(path, source string) []int {
+	plan := NewPlan(path, source)
+	if plan == nil {
+		return nil
+	}
+	return plan.Lines
+}
+
+// Plan is one class or trigger file's executable lines, grouped by the
+// runtime event that covers them. A statement covers its start line and the
+// lines of the operands it always evaluates; the right operand of && || ??
+// and each ternary branch cover their own lines only when they run.
+type Plan struct {
+	// Name is the top-level class or trigger name; Kind is KindClass or
+	// KindTrigger.
+	Name string
+	Kind string
+	// Lines is the sorted executable set.
+	Lines []int
+
+	// at maps the source position of a statement, lazy operand, catch clause,
+	// switch label, or method, constructor or accessor declaration to the
+	// lines its execution covers.
+	at map[point][]int
+	// iter maps a SOQL for-loop's position to the lines one iteration covers.
+	iter map[point][]int
+	// staticInit and instanceInit map a lower-case dotted class name to the
+	// field initializer lines that class's static or instance initialization
+	// covers.
+	staticInit   map[string][]int
+	instanceInit map[string][]int
+	// props maps lower-case "class#property" to the property declaration
+	// line an access covers.
+	props map[string][]int
+	// classes lists every lower-case dotted class name the file declares.
+	classes []string
+	exec    map[int]struct{}
+}
+
+const (
+	KindClass   = "class"
+	KindTrigger = "trigger"
+)
+
+type point struct{ line, col int }
+
+// NewPlan parses one class or trigger source. It returns nil for a test
+// class and for a file that declares neither a class nor a trigger.
+func NewPlan(path, source string) *Plan {
 	file := apexast.ParseSourceAST(path, source)
-	marks := &lineSet{lines: map[int]struct{}{}}
-	w := walker{marks: marks, source: source}
+	w := &walker{
+		source:       source,
+		all:          newLineSet(),
+		at:           map[point]*lineSet{},
+		iter:         map[point]*lineSet{},
+		staticInit:   map[string]*lineSet{},
+		instanceInit: map[string]*lineSet{},
+		props:        map[string]*lineSet{},
+	}
+	plan := &Plan{}
 	for _, node := range file.Nodes {
 		switch node.Kind {
 		case "class_declaration":
 			if w.isTestClass(node) {
 				return nil
 			}
-			w.classBody(node)
+			plan.Kind = KindClass
+			plan.Name = w.declName(node)
+			w.classBody(node, plan.Name)
 		case "trigger_declaration":
+			plan.Kind = KindTrigger
+			plan.Name = w.declName(node)
 			for _, child := range node.Children {
 				if child.Kind == "trigger_body" {
 					w.statements(child.Children)
@@ -38,12 +98,35 @@ func ExecutableLines(path, source string) []int {
 			// Interfaces and enums have no executable lines.
 		}
 	}
-	return marks.sorted()
+	if plan.Kind == "" {
+		return nil
+	}
+	plan.Lines = w.all.sorted()
+	plan.exec = w.all.lines
+	plan.at = freeze(w.at)
+	plan.iter = freeze(w.iter)
+	plan.staticInit = freeze(w.staticInit)
+	plan.instanceInit = freeze(w.instanceInit)
+	plan.props = freeze(w.props)
+	plan.classes = w.classes
+	return plan
+}
+
+// freeze keeps empty regions: a known position that covers nothing, such as
+// a System.debug statement, must not fall back to its own line.
+func freeze[K comparable](in map[K]*lineSet) map[K][]int {
+	out := make(map[K][]int, len(in))
+	for k, v := range in {
+		out[k] = v.sorted()
+	}
+	return out
 }
 
 type lineSet struct{ lines map[int]struct{} }
 
-func (s *lineSet) mark(line int) {
+func newLineSet() *lineSet { return &lineSet{lines: map[int]struct{}{}} }
+
+func (s *lineSet) add(line int) {
 	if line > 0 {
 		s.lines[line] = struct{}{}
 	}
@@ -59,8 +142,48 @@ func (s *lineSet) sorted() []int {
 }
 
 type walker struct {
-	marks  *lineSet
 	source string
+	all    *lineSet
+	// cur receives the lines marked while walking one region.
+	cur *lineSet
+	// eager disables lazy operand regions: a field initializer runs as one
+	// unit with no operand positions.
+	eager bool
+
+	at, iter                 map[point]*lineSet
+	staticInit, instanceInit map[string]*lineSet
+	props                    map[string]*lineSet
+	classes                  []string
+}
+
+func (w *walker) mark(line int) {
+	if line <= 0 {
+		return
+	}
+	w.all.add(line)
+	if w.cur != nil {
+		w.cur.add(line)
+	}
+}
+
+func regionIn[K comparable](m map[K]*lineSet, key K) *lineSet {
+	set := m[key]
+	if set == nil {
+		set = newLineSet()
+		m[key] = set
+	}
+	return set
+}
+
+// enter makes set the current region and returns the restore function.
+func (w *walker) enter(set *lineSet) func() {
+	previous := w.cur
+	w.cur = set
+	return func() { w.cur = previous }
+}
+
+func startOf(n apexast.ASTNode) point {
+	return point{line: n.Range.Start.Line, col: n.Range.Start.Column}
 }
 
 func (w *walker) text(n apexast.ASTNode) string {
@@ -78,6 +201,25 @@ func (w *walker) text(n apexast.ASTNode) string {
 			return ""
 		}
 		return line[start:end]
+	}
+	return ""
+}
+
+// between returns the source text between two sibling nodes: the anonymous
+// operator token of a binary expression.
+func (w *walker) between(left, right apexast.ASTNode) string {
+	start, end := left.Range.End.Offset, right.Range.Start.Offset
+	if start < 0 || end > len(w.source) || start > end {
+		return ""
+	}
+	return strings.TrimSpace(w.source[start:end])
+}
+
+func (w *walker) declName(n apexast.ASTNode) string {
+	for _, child := range n.Children {
+		if child.Kind == "identifier" {
+			return w.text(child)
+		}
 	}
 	return ""
 }
@@ -115,19 +257,21 @@ func (w *walker) annotationName(n apexast.ASTNode) string {
 	return ""
 }
 
-func (w *walker) classBody(class apexast.ASTNode) {
+func (w *walker) classBody(class apexast.ASTNode, name string) {
+	key := strings.ToLower(name)
+	w.classes = append(w.classes, key)
 	for _, child := range class.Children {
 		if child.Kind == "class_body" {
-			w.members(child.Children)
+			w.members(child.Children, key)
 		}
 	}
 }
 
-func (w *walker) members(nodes []apexast.ASTNode) {
+func (w *walker) members(nodes []apexast.ASTNode, class string) {
 	for _, n := range nodes {
 		switch n.Kind {
 		case "field_declaration":
-			w.field(n)
+			w.field(n, class)
 		case "method_declaration", "constructor_declaration":
 			w.method(n)
 		case "static_initializer", "instance_initializer":
@@ -137,12 +281,26 @@ func (w *walker) members(nodes []apexast.ASTNode) {
 				}
 			}
 		case "class_declaration":
-			w.classBody(n)
+			w.classBody(n, class+"."+w.declName(n))
 		}
 	}
 }
 
-func (w *walker) field(n apexast.ASTNode) {
+func (w *walker) isStatic(n apexast.ASTNode) bool {
+	for _, child := range n.Children {
+		if child.Kind != "modifiers" {
+			continue
+		}
+		for _, mod := range child.Children {
+			if mod.Kind == "modifier" && strings.EqualFold(strings.TrimSpace(w.text(mod)), "static") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (w *walker) field(n apexast.ASTNode, class string) {
 	var declarator *apexast.ASTNode
 	var accessors *apexast.ASTNode
 	for i := range n.Children {
@@ -157,11 +315,15 @@ func (w *walker) field(n apexast.ASTNode) {
 		return
 	}
 	if accessors != nil {
-		// A property declaration line is executable, bodies or not.
-		w.marks.mark(declarator.Range.Start.Line)
+		// A property declaration line is executable, bodies or not. An access
+		// covers it, through an accessor body or through the property itself.
+		line := declarator.Range.Start.Line
+		w.mark(line)
+		regionIn(w.props, class+"#"+strings.ToLower(w.declName(*declarator))).add(line)
 		for _, acc := range accessors.Children {
 			for _, c := range acc.Children {
 				if c.Kind == "block" {
+					regionIn(w.at, startOf(acc)).add(line)
 					w.statements(c.Children)
 				}
 			}
@@ -169,8 +331,17 @@ func (w *walker) field(n apexast.ASTNode) {
 		return
 	}
 	if w.hasInitializer(*declarator) {
-		w.marks.mark(declarator.Range.Start.Line)
+		inits := w.instanceInit
+		if w.isStatic(n) {
+			inits = w.staticInit
+		}
+		restore := w.enter(regionIn(inits, class))
+		eager := w.eager
+		w.eager = true
+		w.mark(declarator.Range.Start.Line)
 		w.initializer(*declarator)
+		w.eager = eager
+		restore()
 	}
 }
 
@@ -216,7 +387,10 @@ func (w *walker) method(n apexast.ASTNode) {
 	if name != nil {
 		line = name.Range.Start.Line
 	}
-	w.marks.mark(line)
+	// Entering the method covers its name line.
+	restore := w.enter(regionIn(w.at, startOf(n)))
+	w.mark(line)
+	restore()
 	w.statements(body.Children)
 }
 
@@ -230,9 +404,14 @@ func (w *walker) statement(n apexast.ASTNode) {
 	switch n.Kind {
 	case "block", "trigger_body", "constructor_body":
 		w.statements(n.Children)
+		return
 	case "line_comment", "block_comment":
+		return
+	}
+	defer w.enter(regionIn(w.at, startOf(n)))()
+	switch n.Kind {
 	case "local_variable_declaration":
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
 		for _, c := range n.Children {
 			if c.Kind == "variable_declarator" {
 				w.initializer(c)
@@ -242,7 +421,7 @@ func (w *walker) statement(n apexast.ASTNode) {
 		if w.isDebugOnly(n) {
 			return
 		}
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
 		w.exprs(n.Children)
 	case "do_statement":
 		for _, c := range n.Children {
@@ -253,13 +432,16 @@ func (w *walker) statement(n apexast.ASTNode) {
 			}
 		}
 	case "try_statement":
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
 		for _, c := range n.Children {
 			switch c.Kind {
 			case "block":
 				w.statement(c)
 			case "catch_clause":
-				w.marks.mark(c.Range.Start.Line)
+				// Entering the catch covers its line.
+				restore := w.enter(regionIn(w.at, startOf(c)))
+				w.mark(c.Range.Start.Line)
+				restore()
 				for _, cc := range c.Children {
 					if cc.Kind == "block" {
 						w.statement(cc)
@@ -274,7 +456,7 @@ func (w *walker) statement(n apexast.ASTNode) {
 			}
 		}
 	case "switch_expression":
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
 		for _, c := range n.Children {
 			if c.Kind != "switch_block" {
 				w.expr(c)
@@ -285,7 +467,10 @@ func (w *walker) statement(n apexast.ASTNode) {
 					switch rc.Kind {
 					case "switch_label":
 						if len(rc.Children) > 0 {
-							w.marks.mark(rc.Range.Start.Line)
+							// Testing a when label covers its line.
+							restore := w.enter(regionIn(w.at, startOf(rc)))
+							w.mark(rc.Range.Start.Line)
+							restore()
 						}
 					case "block":
 						w.statement(rc)
@@ -294,15 +479,17 @@ func (w *walker) statement(n apexast.ASTNode) {
 			}
 		}
 	case "enhanced_for_statement":
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
 		for _, c := range n.Children {
 			switch c.Kind {
 			case "block":
 				w.statement(c)
 			case "query_expression":
 				// A SOQL for loop iterates on the line that closes the query.
-				w.marks.mark(c.Range.Start.Line)
-				w.marks.mark(c.Range.End.Line)
+				w.mark(c.Range.Start.Line)
+				restore := w.enter(regionIn(w.iter, startOf(n)))
+				w.mark(c.Range.End.Line)
+				restore()
 			default:
 				w.expr(c)
 			}
@@ -311,7 +498,7 @@ func (w *walker) statement(n apexast.ASTNode) {
 		// if, for, while, while, return, throw, run-as and any
 		// statement shape no row has described: the start line, the
 		// expression lines, and nested statements.
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
 		for _, c := range n.Children {
 			switch c.Kind {
 			case "block", "if_statement", "for_statement", "enhanced_for_statement",
@@ -351,6 +538,18 @@ func (w *walker) exprs(nodes []apexast.ASTNode) {
 	}
 }
 
+// lazyExpr walks an operand that runs only when its operator selects it, in
+// a region of its own keyed by the operand's start.
+func (w *walker) lazyExpr(n apexast.ASTNode) {
+	if w.eager {
+		w.expr(n)
+		return
+	}
+	restore := w.enter(regionIn(w.at, startOf(n)))
+	w.expr(n)
+	restore()
+}
+
 // expr marks the lines of the operations inside an expression. A constant
 // expression folds to one value and adds no continuation lines. A query is one
 // operation however many lines it spans.
@@ -361,19 +560,38 @@ func (w *walker) expr(n apexast.ASTNode) {
 		"void_type", "integral_type", "boolean_type", "array_type", "scoped_type_identifier":
 		return
 	case "query_expression", "soql_query_body", "sosl_query", "find_expression":
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
 		return
 	}
 	if w.isConstant(n) {
 		return
 	}
 	if len(n.Children) == 0 {
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
 		return
 	}
 	switch n.Kind {
 	case "method_invocation", "object_creation_expression":
-		w.marks.mark(n.Range.Start.Line)
+		w.mark(n.Range.Start.Line)
+	case "binary_expression":
+		// Native rows: `&& b` is uncovered when the left side is false, and
+		// `|| a` is covered when it is evaluated.
+		if len(n.Children) == 2 {
+			switch w.between(n.Children[0], n.Children[1]) {
+			case "&&", "||", "??":
+				w.expr(n.Children[0])
+				w.lazyExpr(n.Children[1])
+				return
+			}
+		}
+	case "ternary_expression":
+		// Native rows: the branch not taken is uncovered.
+		if len(n.Children) == 3 {
+			w.expr(n.Children[0])
+			w.lazyExpr(n.Children[1])
+			w.lazyExpr(n.Children[2])
+			return
+		}
 	}
 	for _, c := range n.Children {
 		w.expr(c)

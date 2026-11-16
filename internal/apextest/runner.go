@@ -88,6 +88,15 @@ type Options struct {
 	// package-internal conformance transport: native captures read the test
 	// log, and the report has no debug section.
 	debugSink func(class, method string, lines []string)
+	// CodeCoverage records Apex code coverage for each test, class and
+	// trigger, and for the run (glade test --code-coverage).
+	CodeCoverage bool
+	// CoverageGate applies a deployment coverage rule, RunLocalTests or
+	// RunSpecifiedTests, to the run's coverage. It implies CodeCoverage.
+	CoverageGate string
+
+	// coverage collects one run's coverage events; set by runCasesGated.
+	coverage *coverageSession
 }
 
 // DiskRuntimeCachePolicyReason identifies the reason a test run will or will
@@ -564,6 +573,9 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	if runState.counters.enabled {
 		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.projectCompileNS, time.Since(freezeStarted))
 	}
+	if opts.CodeCoverage || opts.CoverageGate != "" {
+		opts.coverage = newCoverageSession()
+	}
 	suites := make(map[string][]testreport.Case)
 	order := make([]string, 0)
 	classSeen := make(map[string]bool)
@@ -650,6 +662,9 @@ assemble:
 	}
 	for _, name := range order {
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
+	}
+	if opts.coverage != nil {
+		opts.coverage.attach(&run, coverageProject(index, sources), opts.CoverageGate)
 	}
 	if runState.counters.enabled {
 		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.reportAssemblyNS, time.Since(reportStarted))
@@ -2333,7 +2348,9 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 	// retains private @isTest helper methods that the selected entry may call.
 	// The invocation program remains limited to the caller-supplied cases.
 	compileCases := expandTestCasesForClasses(index, cases)
-	key := string(baseKey) + "|tests|" + caseSetKey(compileCases)
+	// The invocation programs cover only cases, so they key the entry too: a
+	// one-method run and a whole-class run share compileCases.
+	key := string(baseKey) + "|tests|" + caseSetKey(compileCases) + "|invoke|" + caseSetKey(cases)
 	testCacheMu.RLock()
 	if cached, ok := testCache[key]; ok {
 		testCacheMu.RUnlock()
@@ -3321,6 +3338,10 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	machine.SetContext(ctx)
 	machine.EnableTestContext()
 	machine.SetCurrentPageURLNull()
+	if recorder := opts.coverage.install(machine); recorder != nil {
+		// A failed setup keeps the coverage it reached, like a failed test.
+		defer opts.coverage.recordSetup(className, recorder)
+	}
 	for i, setup := range setups {
 		machine.EnablePlatformCacheTestSetupSnapshot()
 		if err := ctx.Err(); err != nil {
@@ -3402,6 +3423,10 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 	}
 	if opts.WorkSink != nil {
 		machine.SetWorkTracking(true)
+	}
+	if recorder := opts.coverage.install(machine); recorder != nil {
+		// A failed or throwing test keeps its coverage.
+		defer opts.coverage.recordCase(testCase.ClassName, testCase.MethodName, recorder)
 	}
 	result, err := machine.ExecuteTestInClass(invokeProgram, testCase.ClassName)
 	if opts.debugSink != nil {

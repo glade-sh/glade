@@ -56,6 +56,8 @@ func runRequestV1FromOptions(
 		ShardCount:            shardCount,
 		ShardIndex:            shardIndex,
 		ReturnClassShards:     returnClassShards,
+		CodeCoverage:          options.CodeCoverage,
+		CoverageGate:          options.CoverageGate,
 	}
 }
 
@@ -79,6 +81,8 @@ func apexOptionsFromRunRequestV1(request RunRequestV1) apextest.Options {
 		ClassDurationMS:       cloneInt64Map(request.ClassDurationMS),
 		MethodDurationMS:      cloneInt64Map(request.MethodDurationMS),
 		PerfCounters:          request.PerfCounters,
+		CodeCoverage:          request.CodeCoverage,
+		CoverageGate:          request.CoverageGate,
 	}
 }
 
@@ -95,6 +99,11 @@ func validateRunRequestV1(request RunRequestV1) error {
 	case "", "flag", "environment", "default":
 	default:
 		return fmt.Errorf("unsupported test timeout source %q", request.TimeoutSource)
+	}
+	switch request.CoverageGate {
+	case "", testreport.CoverageGateRunLocalTests, testreport.CoverageGateRunSpecifiedTests:
+	default:
+		return fmt.Errorf("unsupported coverage gate %q", request.CoverageGate)
 	}
 	if request.TimeoutMS < 0 || request.SlowTestThresholdMS < 0 {
 		return fmt.Errorf("test timing values cannot be negative")

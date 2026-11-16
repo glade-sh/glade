@@ -87,6 +87,11 @@ type RunRequestV1 struct {
 	// --sibling-dependencies flag or GLADE_SIBLING_DEPENDENCIES). The daemon
 	// refuses a run whose mode differs from the one it started with.
 	SiblingDependencyScan bool `json:"siblingDependencyScan"`
+	// CodeCoverage and CoverageGate are sent only when set, so a run without
+	// coverage keeps the version 3 frame and an older strict daemon rejects
+	// a coverage run instead of answering it without coverage.
+	CodeCoverage bool   `json:"codeCoverage,omitempty"`
+	CoverageGate string `json:"coverageGate,omitempty"`
 }
 
 type LimitCapsV1 struct {
@@ -146,6 +151,7 @@ type testReportRunV1Wire struct {
 	Summary               testreport.Summary            `json:"summary"`
 	Suites                []testreport.Suite            `json:"suites"`
 	ExcludedClasses       []testreport.CompileExclusion `json:"excludedClasses,omitempty"`
+	Coverage              *testreport.Coverage          `json:"coverage,omitempty"`
 }
 
 type responseV1Wire struct {
@@ -215,6 +221,7 @@ func DecodeResponseV1(r io.Reader) (ResponseV1, error) {
 			Dependencies:          wire.Run.Dependencies,
 			Suites:                wire.Run.Suites,
 			ExcludedClasses:       wire.Run.ExcludedClasses,
+			Coverage:              wire.Run.Coverage,
 		}
 		if reconstructed := response.Run.Summary(); wire.Run.Summary != reconstructed {
 			return ResponseV1{}, fmt.Errorf("decode test daemon protocol frame: run summary does not match suites")

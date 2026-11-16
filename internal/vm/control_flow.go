@@ -976,6 +976,9 @@ func (vm *VM) setCurrentStatement(inst ir.Instruction, source string) {
 	vm.currentStatement = callFrame{Symbol: symbol, File: file, Line: line, Column: column, statement: true}
 	vm.currentSource = source
 	vm.hasStatement = true
+	if vm.coverage != nil {
+		vm.coverStatement(line, column)
+	}
 }
 
 // cachedApexMethodFrameSymbol memoizes apexMethodFrameSymbol per method and
@@ -1376,6 +1379,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		vm.Globals[inst.Name] = coerced
 		vm.VarTypes[inst.Name] = inst.Type
 		iterated = true
+		if vm.coverage != nil && inst.Expr.Kind == ir.ExprSOQL {
+			vm.coverIteration(source, inst.Pos)
+		}
 		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
@@ -1493,6 +1499,9 @@ func (vm *VM) executeTryScoped(source string, inst ir.Instruction, result *Resul
 			if !vm.exceptionMatchesAny(catchClause.Types, out.thrown) {
 				continue
 			}
+			if vm.coverage != nil {
+				vm.coverSourcePos(source, catchClause.Pos)
+			}
 			previous, existed := vm.Globals[catchClause.Name]
 			previousType, typeExisted := vm.VarTypes[catchClause.Name]
 			caught := out.thrown
@@ -1555,6 +1564,9 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 		if c.Else {
 			elseCase = c
 			continue
+		}
+		if vm.coverage != nil {
+			vm.coverSourcePos(source, c.Pos)
 		}
 		for _, expr := range c.Exprs {
 			if caseType, binding, ok := switchTypeCase(expr); ok {
