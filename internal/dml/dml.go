@@ -23,7 +23,7 @@ type Engine struct {
 	DuplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (DuplicateResult, bool)
 	// DuplicatePeerMatcher is DuplicateMatcher limited to the given records, the
 	// ones the current statement inserted earlier. Nil scans them without access checks.
-	DuplicatePeerMatcher func(storage.DuplicateRule, storage.Record, []storage.Record) (DuplicateResult, bool)
+	DuplicatePeerMatcher func(storage.DuplicateRule, storage.Record, map[storage.ID]storage.Record) (DuplicateResult, bool)
 	Options              Options
 	FlowActionInvoker    func(storage.FlowAction, storage.Record) error
 	// FlowMatchObserver is called once each time a flow rule matches a record.

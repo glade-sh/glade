@@ -447,10 +447,10 @@ func (vm *VM) newDuplicateMatcher() duplicateMatcher {
 
 // newDuplicateMatchers returns the org matcher and a matcher limited to given
 // candidate records (the peers of one statement); both share one access cache.
-func (vm *VM) newDuplicateMatchers() (duplicateMatcher, func(storage.DuplicateRule, storage.Record, []storage.Record) (dml.DuplicateResult, bool)) {
+func (vm *VM) newDuplicateMatchers() (duplicateMatcher, func(storage.DuplicateRule, storage.Record, map[storage.ID]storage.Record) (dml.DuplicateResult, bool)) {
 	type fieldKey struct{ principal, object, field string }
 	access := make(map[fieldKey]bool)
-	scan := func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among []storage.Record) (dml.DuplicateResult, bool) {
+	scan := func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among map[storage.ID]storage.Record) (dml.DuplicateResult, bool) {
 		return vm.findDuplicateMatches(rule, record, exclude, among, func(object, field string) bool {
 			key := fieldKey{vm.currentUserID(), strings.ToLower(object), strings.ToLower(field)}
 			allowed, ok := access[key]
@@ -463,7 +463,7 @@ func (vm *VM) newDuplicateMatchers() (duplicateMatcher, func(storage.DuplicateRu
 	}
 	return func(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool) (dml.DuplicateResult, bool) {
 			return scan(rule, record, exclude, nil)
-		}, func(rule storage.DuplicateRule, record storage.Record, among []storage.Record) (dml.DuplicateResult, bool) {
+		}, func(rule storage.DuplicateRule, record storage.Record, among map[storage.ID]storage.Record) (dml.DuplicateResult, bool) {
 			return scan(rule, record, nil, among)
 		}
 }
@@ -471,7 +471,7 @@ func (vm *VM) newDuplicateMatchers() (duplicateMatcher, func(storage.DuplicateRu
 // Both Find and DML use the same record access policy. Enforce rules search
 // visible members; Bypass rules can detect hidden members without disclosing
 // them. The legacy explicit without-sharing route discloses Bypass members.
-func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among []storage.Record, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
+func (vm *VM) findDuplicateMatches(rule storage.DuplicateRule, record storage.Record, exclude func(storage.ID) bool, among map[storage.ID]storage.Record, fieldAccessible func(string, string) bool) (dml.DuplicateResult, bool) {
 	policy := vm.currentSourceExecutionPolicy()
 	if vm.testContext == nil || policy.DataMode == "USER_MODE" {
 		for _, matching := range rule.MatchRules {
