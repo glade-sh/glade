@@ -16,6 +16,8 @@
 
 - **Duplicate rule match keys.** Match keys follow the matching rule. A custom rule that pairs a fuzzy First Name with a fuzzy Last Name keys the first name on its initial, and the standard Contact and Lead rules score both names without a key when the email addresses agree, so initials, phonetic first names and spaced surnames such as `Mc Allen` now match as they do in Salesforce.
 
+- **Custom First Name initials.** A custom First Name fuzzy rule no longer matches a single initial against a short one-word name (for example T and Ty) where Salesforce does not; the alias key follows the first word of a longer name, and a lone initial finds a longer name as captured. This fixes the v0.3.10 known issue.
+
 - **Duplicate matching, Title and First Name.** Fuzzy Title matching covers word order, stop words, punctuation and word subsets from native panels, and the First Name Name Variant table gains the pairs those panels confirm (`docs/DUPLICATE_FUZZY_MATCHING.md`).
 
 - **Company duplicate matching.** Custom Company Name rules score numbered names, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
