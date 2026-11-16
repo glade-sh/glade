@@ -174,8 +174,9 @@ func streetDigits(w string) bool {
 
 // streetNumericName reports a cleaned street (number words already digits)
 // that starts with a street number and ends with a known suffix word, where
-// the word before the suffix is a whole number ("500 20 1 St" for "Twenty
-// One", "500 21 Ave", "1 Hundred 1 St" for "One Hundred One"), or where a
+// every word before the suffix is a whole number or "Hundred" and the last is
+// a number ("500 20 1 St" for "Twenty One", "500 21 Ave", "1 Hundred 1 St" for
+// "One Hundred One"), or where a
 // directional is followed by a name that opens with a number and goes on to
 // numbers or ordinals ("300 E 20 3rd St" for "E Twenty Third"). NATIVE
 // fuzzy_street_c10/org.tsv: such a street is compared as one string. As the
@@ -202,7 +203,16 @@ func streetNumericName(words []string) bool {
 		return false
 	}
 	name := rest[:last]
-	if streetDigits(name[last-1]) {
+	// Every word of the name is a number: a word then a bare number ("500
+	// Main 5 St", "100 Vane 7 St") is another shape and keeps the base rules.
+	allNumbers := true
+	for _, w := range name {
+		if !streetDigits(w) && w != "hundred" {
+			allNumbers = false
+			break
+		}
+	}
+	if allNumbers && streetDigits(name[last-1]) {
 		return true
 	}
 	if !directional || !streetDigits(name[0]) {

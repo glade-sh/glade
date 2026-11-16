@@ -224,6 +224,12 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"300 E Twenty Third Street", "300 Twenty Third Street", true, 45},
 		{"500 Twenty First Street", "500 Twenty Tenth Street", true, 80},
 		{"500 Twenty First St", "500 Twenty First Street", true, 88},
+		// A word then a bare number is not a whole-number name: base rules
+		// (review of v0311-street-ordinal, base ea16f75824).
+		{"500 Main 5 Street", "500 Main 5 St", true, 88},
+		{"500 Main Street", "500 Main 5 St", true, 74},
+		{"500 Oak Hill 21 Street", "500 Oak Hill 21 St", true, 91},
+		{"100 Vane 7 Street", "100 Vane 7 St", true, 88},
 		{"Third Ave", "3rd Ave", true, 88},
 		{"101st St", "101st St", true, 88},
 		{"77 Wren St", "77 Wren St Xq", false, 0},
@@ -378,6 +384,12 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"3F", "3F", true, 100},
 		{"Park St", "Park Street", false, 0},
 		{"12", "12 Park", false, 0},
+		// A word then a bare number is not a whole-number name: base rules
+		// (review of v0311-street-ordinal, base ea16f75824).
+		{"500 Main 5 Street", "500 Main 5 St", true, 88},
+		{"500 Main Street", "500 Main 5 St", true, 74},
+		{"500 Oak Hill 21 Street", "500 Oak Hill 21 St", true, 91},
+		{"100 Vane 7 Street", "100 Vane 7 St", true, 88},
 	} {
 		match, score := FuzzyScore("Street", c.a, c.b, true)
 		got := int(math.Floor(score + 0.5))
