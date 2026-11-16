@@ -3238,23 +3238,23 @@ func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
 		if !sObjectEqualityFieldIncluded(value, field, child) {
 			continue
 		}
+		if child.Kind == ValueList {
+			// Native hs5 (surf_collections_strings cs20-cs21): a child
+			// relationship list contributes its size, and nothing when empty.
+			if len(child.List) == 0 {
+				continue
+			}
+			hash += javaStringHashCode(field) ^ int32(len(child.List))
+			continue
+		}
 		hash += javaStringHashCode(field) ^ sObjectFieldHashCode(child, seen)
 	}
 	return hash
 }
 
 func sObjectFieldHashCode(value Value, seen map[uint64]bool) int32 {
-	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
-		if id, ok := sObjectIDFromValue(value); ok {
-			text := string(id)
-			if len(text) == 15 && looksLikeID(text) {
-				text = apexIDTo18(text)
-			}
-			return javaStringHashCode(text)
-		}
-	}
-	if value.Kind == ValueDecimal {
-		return javaBigDecimalHashCode(value)
+	if text, ok := typedIDValueText(value); ok {
+		return javaStringHashCode(displayIDText(text))
 	}
 	if isRelationshipNull(value) || sObjectHashMissingRelationship(value, seen) {
 		return 0
@@ -3380,4 +3380,35 @@ func javaBigDecimalHashCode(value Value) int32 {
 		}
 	}
 	return 31*hash + int32(scale)
+}
+
+// sObjectHashReadView returns the record as a field read sees it, so a queried
+// Decimal padded to its declared scale hashes with that scale (native cs13:
+// a Number(18,2) read back as 1.50 hashes as BigDecimal 1.50).
+func (vm *VM) sObjectHashReadView(value Value) (Value, bool) {
+	var view Value
+	changed := false
+	for field, child := range value.Fields {
+		if child.Kind != ValueDecimal || isInternalSObjectField(field) {
+			continue
+		}
+		_, fieldDef, ok := vm.sObjectFieldDefinition(value.Type, field)
+		if !ok {
+			continue
+		}
+		read := coerceReadSObjectFieldRuntimeValue(value, child, fieldDef)
+		if read.Kind != ValueDecimal || read.Text == child.Text {
+			continue
+		}
+		if !changed {
+			view = value
+			view.Fields = make(map[string]Value, len(value.Fields))
+			for k, v := range value.Fields {
+				view.Fields[k] = v
+			}
+			changed = true
+		}
+		view.Fields[field] = read
+	}
+	return view, changed
 }

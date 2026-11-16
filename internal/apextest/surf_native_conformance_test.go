@@ -120,6 +120,11 @@ func runSurfFamily(t *testing.T, family string) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				if !strings.HasSuffix(entry.Name(), ".cls") {
+					// glade.yml replays the permission sets the capture assigned.
+					writeFile(t, filepath.Join(root, entry.Name()), string(body))
+					continue
+				}
 				writeFile(t, filepath.Join(classes, entry.Name()), string(body))
 				writeFile(t, filepath.Join(classes, entry.Name()+"-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
 			}
@@ -129,7 +134,7 @@ func runSurfFamily(t *testing.T, family string) {
 			}
 			check := func(t *testing.T, c surfCase, got string) {
 				key := family + "/" + c.id + "/" + api
-				want := native[c.id+"/"+api]
+				want := surfIDMask.ReplaceAllString(native[c.id+"/"+api], "<id>")
 				got = surfIDMask.ReplaceAllString(got, "<id>")
 				if reason, parked := parkedSurfRows[key]; parked {
 					if got == want {
@@ -142,8 +147,7 @@ func runSurfFamily(t *testing.T, family string) {
 				}
 			}
 			runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: func() *storage.OrgState {
-				o := orgFromIndex(index)
-				o.APIVersion = api
+				o := capturedFixtureOrg(t, index, api)
 				if runtimeAPI != "" {
 					o.APIVersion = runtimeAPI
 				}

@@ -1162,6 +1162,10 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 // Equality and hashing use the same field projection. Captured Schema
 // Checkbox presence is separate from assignment; explicit nulls remain present.
 func sObjectEqualityFieldIncluded(owner Value, field string, value Value) bool {
+	// Native cs20: a child relationship list with no rows equals an absent one.
+	if value.Kind == ValueList && len(value.List) == 0 {
+		return false
+	}
 	// Captured standard records distinguish an explicitly cleared identity
 	// from an absent field. Keep other record shapes on their existing path.
 	if strings.EqualFold(field, "Id") && value.Kind == ValueNull &&

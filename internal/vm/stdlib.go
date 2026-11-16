@@ -4011,6 +4011,12 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Object.hashCode expects 0 arguments")
 		}
+		if receiver.Kind == ValueDecimal {
+			// Decimal.hashCode() is Double.hashCode of the value (cs13): 1.5 and
+			// 1.50 agree, 0.00 is 0.
+			bits := math.Float64bits(receiver.Decimal)
+			return Int(int64(int32(bits ^ bits>>32))), true, nil
+		}
 		return Int(int64(valueHashCode(receiver))), true, nil
 	case "clone":
 		if len(args) != 0 {
@@ -4074,13 +4080,24 @@ func javaStringHashCodeExact(text string) int32 {
 
 func valueHashCode(value Value) int32 {
 	value = value.currentMapKeySet()
+	// An Id hashes its 18-character text, whether it was written as 15 or 18.
+	if text, ok := typedIDValueText(value); ok {
+		return javaStringHashCode(displayIDText(text))
+	}
 	switch value.Kind {
 	case ValueNull:
 		return 0
 	case ValueInt:
+		// An Integer hashes as itself; a Long folds its two halves (cs19).
+		if !strings.EqualFold(value.Type, "Long") && value.Int >= math.MinInt32 && value.Int <= math.MaxInt32 {
+			return int32(value.Int)
+		}
 		return int32(value.Int ^ (value.Int >> 32))
 	case ValueDecimal:
-		return javaStringHashCode(strconv.FormatFloat(value.Decimal, 'f', -1, 64))
+		// Native hs rows (surf_collections_strings cs13-cs14): a Decimal inside a
+		// List, Set or SObject field hashes as java.math.BigDecimal, so 1.5 and
+		// 1.50 differ.
+		return javaBigDecimalHashCode(value)
 	case ValueBool:
 		if value.Bool {
 			return 1231
@@ -4155,6 +4172,9 @@ func valueHashCode(value Value) int32 {
 				return javaStringHashCode(canonicalTypeValueIdentity(typeName))
 			}
 		}
+		if hash, ok := platformTemporalHashCode(value); ok {
+			return hash
+		}
 		if platformScalarObject(value.Type) {
 			if text, ok := platformScalarValue(value); ok {
 				return javaStringHashCode(value.Type + ":" + text)
@@ -4205,6 +4225,15 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 			return Null, true, fmt.Errorf("Id.toString expects 0 arguments")
 		}
 		return String(displayIDText(idText)), true, nil
+	case "hashcode":
+		// Native cs15: an Id hashes its 18-character text.
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Id.hashCode expects 0 arguments")
+		}
+		if len(idText) == 15 && validateApexIDShape(idText) == nil {
+			return Int(int64(javaStringHashCode(apexIDTo18(idText)))), true, nil
+		}
+		return Int(int64(javaStringHashCode(idText))), true, nil
 	case "to15":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.to15 expects 0 arguments")
@@ -4273,7 +4302,7 @@ func displayIDText(text string) string {
 
 func idMemberReceiver(value Value, method string) bool {
 	switch strings.ToLower(method) {
-	case "equals", "to15", "getsobjecttype":
+	case "equals", "to15", "getsobjecttype", "hashcode":
 	default:
 		return false
 	}
@@ -4570,4 +4599,36 @@ func sigmaFollowedByCased(runes []rune, at int) bool {
 		return sigmaCased(runes[i])
 	}
 	return false
+}
+
+// platformTemporalHashCode follows the native Date, Datetime and Time rows
+// (surf_collections_strings cs19, cs22, cs23): a Date hashes as Long.hashCode of
+// its UTC milliseconds, a Datetime as that hash XOR 577755, and a Time as its
+// milliseconds of day.
+func platformTemporalHashCode(value Value) (int32, bool) {
+	if value.Kind != ValueObject || value.classInstance || value.projectClass {
+		return 0, false
+	}
+	long := func(millis int64) int32 { return int32(millis ^ (millis >> 32)) }
+	switch {
+	case strings.EqualFold(value.Type, "Date"):
+		date, err := parsePlatformDate(value)
+		if err != nil {
+			return 0, false
+		}
+		return long(date.UnixMilli()), true
+	case strings.EqualFold(value.Type, "Datetime"):
+		instant, err := parsePlatformDatetime(value)
+		if err != nil {
+			return 0, false
+		}
+		return long(instant.UnixMilli()) ^ 577755, true
+	case strings.EqualFold(value.Type, "Time"):
+		clock, err := parsePlatformTime(value)
+		if err != nil {
+			return 0, false
+		}
+		return int32(clock.Milliseconds()), true
+	}
+	return 0, false
 }
