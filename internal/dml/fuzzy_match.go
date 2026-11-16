@@ -1664,13 +1664,21 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 // A pair outside the fitted routes, or one the fitted scorer rejects, keeps
 // the word scorer's decision.
 func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
+	ok, score := fuzzyCompanyBase(a, b, matchBlanks)
+	if !ok || a == b {
+		return ok, score
+	}
+	return companyCeiling(a, b, score)
+}
+
+func fuzzyCompanyBase(a, b string, matchBlanks bool) (bool, float64) {
 	if a == b && companySimpleExact(a) {
 		return true, 100
 	}
 	ma, mb := companyMarks(a), companyMarks(b)
 	if (ma|mb)&companyMarkQualifier != 0 {
 		if x, y, ok := companySpacedAsDash(a, b); ok {
-			return fuzzyCompany(x, y, matchBlanks)
+			return fuzzyCompanyBase(x, y, matchBlanks)
 		}
 		if !companySlashKeys(a, b) {
 			return false, 0
@@ -1774,7 +1782,11 @@ func fuzzyCompanyRouted(a, b string, matchBlanks bool, ma, mb int) (bool, float6
 		}
 	}
 	if route != companyRouteNone && same {
-		if raw := companyFitScore(a, b); raw >= companyFitThreshold && companyFitCovered(route, a, b) {
+		threshold, bonus := float64(companyFitThreshold), 0.0
+		if route == companyRouteShape {
+			threshold, bonus = companyGluedThreshold(a, b)
+		}
+		if raw := companyFitScore(a, b); raw+bonus >= threshold && companyFitCovered(route, a, b) {
 			if route == companyRouteJoin {
 				if matched, _ := legacyFuzzyCompany(a, b, matchBlanks); !matched {
 					return true, companyJoinConfidence(a, b, raw)

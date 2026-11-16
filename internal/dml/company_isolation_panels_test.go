@@ -31,10 +31,10 @@ func TestCompanyIsolationPanelCounts(t *testing.T) {
 		"R3_glu":  {131, 131, 112, 0},
 		"R4_ew":   {33, 26, 26, 0},
 		"R4_ob":   {50, 42, 34, 0},
-		"R4_misc": {257, 230, 127, 6},
-		"R4_sp":   {228, 197, 69, 2},
+		"R4_misc": {257, 230, 127, 0},
+		"R4_sp":   {228, 197, 69, 0},
 		"R4_stem": {83, 81, 69, 0},
-		"R4_glu":  {280, 278, 267, 20},
+		"R4_glu":  {280, 278, 267, 0},
 		"R5_hi1":  {33, 26, 26, 0},
 		"R5_hi2":  {38, 26, 26, 0},
 		"R5_hi3":  {42, 26, 26, 0},
@@ -42,8 +42,8 @@ func TestCompanyIsolationPanelCounts(t *testing.T) {
 		"R6_ew2":  {38, 26, 26, 0},
 		"R6_mix":  {49, 26, 26, 0},
 		"R7_flo":  {30, 26, 26, 0},
-		"R7_pl":   {92, 84, 37, 1},
-		"R7_sp":   {108, 104, 53, 4},
+		"R7_pl":   {92, 84, 37, 0},
+		"R7_sp":   {108, 104, 53, 0},
 	}
 	panels := companyFitPanels(t, "R3_", "R4_", "R5_", "R6_", "R7_")
 	if len(panels) != len(want) {
