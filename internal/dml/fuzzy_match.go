@@ -826,10 +826,39 @@ var streetFloorDesignators = map[string]bool{"fl": true, "floor": true, "room": 
 // number, a number with one letter, one letter, or a letter with a number.
 // NATIVE fuzzy_street_c8/org.tsv qs1, qs2: "Suite 5", "5A", "A", "A5", "12B"
 // and "Five" split; "5th", "1st", "21st", "5 5", "5 B" and "5 Rear" do not.
-var streetCustomSuiteValueRe = regexp.MustCompile(`^(?:[0-9]+[a-z]?|[a-z]|[a-z][0-9]+|[0-9]+-[a-z]|[a-z]-[0-9]+)$`)
-
 func streetCustomSuiteValue(w string) bool {
-	return streetCustomSuiteValueRe.MatchString(w) && !streetDirections[w]
+	if w == "" || streetDirections[w] {
+		return false
+	}
+	isDigit := func(c byte) bool { return c >= '0' && c <= '9' }
+	isLetter := func(c byte) bool { return c >= 'a' && c <= 'z' }
+	allDigits := func(t string) bool {
+		if t == "" {
+			return false
+		}
+		for i := 0; i < len(t); i++ {
+			if !isDigit(t[i]) {
+				return false
+			}
+		}
+		return true
+	}
+	n := len(w)
+	switch {
+	case allDigits(w): // 5
+		return true
+	case n == 1: // A
+		return isLetter(w[0])
+	case isLetter(w[n-1]) && allDigits(w[:n-1]): // 5A
+		return true
+	case isLetter(w[0]) && allDigits(w[1:]): // A5
+		return true
+	case n >= 3 && w[n-2] == '-' && isLetter(w[n-1]) && allDigits(w[:n-2]): // 5-A
+		return true
+	case n >= 3 && w[1] == '-' && isLetter(w[0]) && allDigits(w[2:]): // A-5
+		return true
+	}
+	return false
 }
 
 // streetDigitBeforeLast reports a word with a digit that is not the last word.

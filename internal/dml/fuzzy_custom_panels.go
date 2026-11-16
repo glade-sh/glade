@@ -32,27 +32,34 @@ func customStreet(a, b string, matchBlanks bool) (bool, float64) {
 	// NATIVE fuzzy_street_c8/org.tsv qa1, qa3: the key comes first, so two
 	// addresses that clean to one string still find nothing when a line break
 	// moves a word across the key ("Calder Rd\nSuite 200" and "Calder
-	// RdSuite 200").
-	if !streetCustomKeysAgree(streetKeyClean(a), streetKeyClean(b)) {
+	// RdSuite 200"). The key reads a break as a word separator.
+	kx, ky := x, y
+	if strings.ContainsAny(a, "\r\n") {
+		kx = streetKeyClean(a)
+	}
+	if strings.ContainsAny(b, "\r\n") {
+		ky = streetKeyClean(b)
+	}
+	if !streetCustomKeysAgree(kx, ky) {
 		return false, 0
 	}
+	pa, pb := parseStreetFor(a, true), parseStreetFor(b, true)
+	wholeX, wholeY := streetWhole(x, pa), streetWhole(y, pb)
 	if x == y {
 		if _, lone := knownStreetSuffixes[x]; lone || x == "pobox" || streetBarePOBox.MatchString(x) {
 			// NATIVE cs1, cp1, nr1: a street that is only a suffix word, "PO
 			// Box" with no number and "PO Box A" find nothing.
 			return false, 0
 		}
-		if streetWhole(x) {
+		if wholeX {
 			return true, 100
 		}
 		// NATIVE cs1: equal streets still average the section score with 100
 		// (Test Street 88, Test 86, Calder Rd 500 90).
-		p := parseStreetFor(a, true)
-		return true, (streetSectionScore(p, p, matchBlanks, streetCandidateSimilarity, true) + 100) / 2
+		return true, (streetSectionScore(pa, pa, matchBlanks, streetCandidateSimilarity, true) + 100) / 2
 	}
 	similarity := streetCandidateSimilarity(x, y)
 	gate := similarity >= streetSimilarityGate-1e-9
-	wholeX, wholeY := streetWhole(x), streetWhole(y)
 	if wholeX || wholeY {
 		confidence := similarity
 		if !wholeY && !streetPOBox.MatchString(y) {
@@ -61,14 +68,13 @@ func customStreet(a, b string, matchBlanks bool) (bool, float64) {
 			// numbers (NATIVE fuzzy_street_c8/org.tsv gqd2: "Waldweg2 5"
 			// finds "Waldweg 5" at 59 there and 45 under NullNotAllowed).
 			sections := 0.0
-			if matchBlanks && parseStreetFor(x, true).number == "" && parseStreetFor(y, true).number == "" {
+			if matchBlanks && pa.number == "" && pb.number == "" {
 				sections = 100.0 * 20 / 70
 			}
 			confidence = (sections + similarity) / 2
 		}
 		return gate, confidence
 	}
-	pa, pb := parseStreetFor(a, true), parseStreetFor(b, true)
 	sections := streetSectionScore(pa, pb, matchBlanks, streetCandidateSimilarity, true)
 	confidence := (sections + similarity) / 2
 	return gate || sections >= 80, confidence
@@ -92,8 +98,8 @@ var (
 	streetPOBoxKey         = regexp.MustCompile(`^(?:p ?o box ?|pobox )([0-9]+)$`)
 )
 
-// streetWhole reports a cleaned street the custom method compares as one
-// string: a word of letters followed by a digit ("Ave#5", "Box410", "RR4"), a
+// streetWhole reports a cleaned street, with its parts, that the custom method
+// compares as one string: a word of letters followed by a digit ("Ave#5", "Box410", "RR4"), a
 // hyphen in a word that is not a number range ("72-A", "Vane-Oak", but not
 // "72-74"), a number before the last word of a street that does not start
 // with one ("Suite 9 73 Morrow Rd", "RR 4 Box 22", "PO Box 52 Main"), a rural
@@ -101,11 +107,11 @@ var (
 // fuzzy_street_c5/org.tsv nh1, nn1, ns1, nr1, fuzzy_street_c8/org.tsv qb1, qc1:
 // these report 100 for an equal street and the edit similarity for a near
 // one. "PO Box 52" is a PO box and not whole.
-func streetWhole(x string) bool {
+func streetWhole(x string, parsed streetParts) bool {
 	if streetPOBox.MatchString(x) {
 		return false
 	}
-	if streetRuralRoute.MatchString(x) {
+	if strings.HasPrefix(x, "r") && streetRuralRoute.MatchString(x) {
 		// NATIVE fuzzy_street_c8/org.tsv qc1: "RR 4", "R R 4" and "Rural
 		// Route 4" report 100 for themselves, "HC 4" and "Route 4" 88.
 		return true
@@ -116,7 +122,6 @@ func streetWhole(x string) bool {
 	// Blvd", "Morven Tully Harbor Tower", "14 Hawthorne Meadow Blvd Jr"),
 	// while "100 N Martin Luther King Blvd" (three name words after the
 	// directional) is split.
-	parsed := parseStreetFor(x, true)
 	if len(strings.Fields(parsed.name)) >= streetWholeNameWords {
 		return true
 	}
