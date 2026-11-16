@@ -13459,10 +13459,12 @@ System.assertEquals(3, gap.hour());
 System.assertEquals(10, gap.hourGmt());
 
 Datetime overlap = Datetime.newInstance(2024, 11, 3, 1, 30, 0);
-System.assertEquals('2024-11-03 08:30:00', overlap.formatGmt('yyyy-MM-dd HH:mm:ss'));
+// Native surf_datetime_locale dt03: an ambiguous local time takes the
+// post-transition (standard-time) occurrence.
+System.assertEquals('2024-11-03 09:30:00', overlap.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals('11/3/2024, 1:30 AM', overlap.format());
 System.assertEquals(1, overlap.hour());
-System.assertEquals(8, overlap.hourGmt());
+System.assertEquals(9, overlap.hourGmt());
 `)
 	if err != nil {
 		t.Fatal(err)
