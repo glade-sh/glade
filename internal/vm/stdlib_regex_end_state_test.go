@@ -6,6 +6,8 @@ import (
 )
 
 // Engine preservation checks, not additional Salesforce observations or Apex facets.
+// The (?M), (?X), (?i+m) and (?m-m+m) cases were dropped: Java rejects those
+// flags, as the native rows d12f_flag_1..4 in testdata/regex_java_divergence/org.tsv show.
 func TestRegexp2EndAssertionInstrumentationPreservesPublicGroups(t *testing.T) {
 	for _, tc := range []struct {
 		name        string

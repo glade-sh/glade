@@ -1,6 +1,6 @@
 capture: regex_java_divergence
 sf: @salesforce/cli/2.157.8
-apis: 62.0 and 67.0 (loop and Stack Overflow bisect rows at 67.0 only)
+apis: 62.0 and 67.0 (loop and Stack Overflow bisect rows: 67.0 only, except d6_alt_star_replace_5000 and d6_alt_star_split_5000, which have both; the d6c rows below have both)
 routes: anonymous Apex and @IsTest, one class per group and API
 org: campaign scratch orgs (1 day each), deleted and verified gone after every run
 runs, all 2026-11-16 UTC:
@@ -11,3 +11,7 @@ runs, all 2026-11-16 UTC:
   followups 15:25-15:31   90 cases (null arguments, nested repeat bisect, MatchResult)
 stability: every row captured twice (repeat 1 and repeat 2) matched exactly. Rows for Pattern.quote(null) and
   Matcher.quoteReplacement(null) were dropped: the native UnexpectedException carries volatile request numbers.
+bisect d6c (2026-11-16 UTC, 62.0 and 67.0, anonymous, two or three fresh scratch orgs each, deleted and verified gone):
+  (\w+\s?)* over n repeats of 'a ': true to 1,050, Stack Overflow from 1,500; 1,100 to 1,200 differ between runs
+    (not kept as rows). (?:\r?\n)+ over n CRLF: true to 1,100, Stack Overflow from 1,200 (both repeats, both APIs).
+    The (a|b)* boundary stays 1,200 true and 1,300 overflow, so the loop limit depends on the body; d6c_crlf_1200 is carried.

@@ -44,3 +44,4 @@ d6c_poly_2000	*	"EXC System.StringException|true|match timeout after 2s on input
 u6_toMatchResult	*	"FAIL unsupported call \"m.toMatchResult\""	toMatchResult and MatchResult are rejected at compile time natively; Glade rejects them later or with its own code
 u6_matchResultType	*	"FAIL unsupported call \"m.toMatchResult\""	toMatchResult and MatchResult are rejected at compile time natively; Glade rejects them later or with its own code
 d10_region_astral	isTest	"TESTOUTCOME string index splits a surrogate pair"	Glade strings are UTF-8 and cannot hold a lone UTF-16 surrogate, so empty-pattern steps inside a surrogate pair and lone-surrogate classes are not modelled
+d6c_crlf_1200	*	"ret true"	the overflow boundary for (?:\r?\n)+ lies between 1,100 and 1,200 iterations; the single 1,250 limit is fit to (a|b)*
