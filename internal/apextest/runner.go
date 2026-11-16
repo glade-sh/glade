@@ -2776,7 +2776,53 @@ func rollbackJournal(journal *storage.IsolationJournal, mark testJournalMark, co
 	return err
 }
 
+// splitClassGroupsBySourceUnit gives each source unit of a class name its own
+// run group. Same-named test classes from two package directories each read
+// their own unit's custom metadata, so they cannot share one class org. A
+// class name with one source unit keeps its name as the group key, so other
+// runs are unchanged.
+func splitClassGroupsBySourceUnit(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string) {
+	groupClass := make(map[string]string, len(classOrder))
+	split := false
+	for _, className := range classOrder {
+		groupClass[className] = className
+		units := map[string]bool{}
+		for _, i := range classIndexes[className] {
+			units[planned[i].TestMethod.SourceUnit] = true
+		}
+		split = split || len(units) > 1
+	}
+	if !split {
+		return classOrder, classIndexes, groupClass
+	}
+	order := make([]string, 0, len(classOrder))
+	indexes := make(map[string][]int, len(classIndexes))
+	groupClass = make(map[string]string, len(classOrder))
+	for _, className := range classOrder {
+		var units []string
+		byUnit := map[string][]int{}
+		for _, i := range classIndexes[className] {
+			unit := planned[i].TestMethod.SourceUnit
+			if _, seen := byUnit[unit]; !seen {
+				units = append(units, unit)
+			}
+			byUnit[unit] = append(byUnit[unit], i)
+		}
+		for n, unit := range units {
+			key := className
+			if n > 0 {
+				key = className + "\x00" + unit
+			}
+			order = append(order, key)
+			indexes[key] = byUnit[unit]
+			groupClass[key] = className
+		}
+	}
+	return order, indexes, groupClass
+}
+
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
+	classOrder, classIndexes, groupClass := splitClassGroupsBySourceUnit(classOrder, classIndexes, planned)
 	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
@@ -2844,10 +2890,11 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		go func() {
 			defer wg.Done()
 			for {
-				className, ok := dispatcher.next()
+				groupKey, ok := dispatcher.next()
 				if !ok {
 					return
 				}
+				className := groupClass[groupKey]
 				classStart := time.Now()
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
@@ -2859,7 +2906,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				setupCtx, setupCancel := testContext(ctx, opts)
 				var setupLimits vm.Limits
 				classOrg := org
-				if indexes := classIndexes[className]; len(indexes) > 0 {
+				if indexes := classIndexes[groupKey]; len(indexes) > 0 {
 					classOrg = customMetadataForSourceUnit(org, planned[indexes[0]].TestMethod.SourceUnit)
 				}
 				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, classOrg, opts, counters, &setupLimits)
@@ -2869,11 +2916,11 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
 				}
-				methodIndexes := append([]int(nil), classIndexes[className]...)
+				methodIndexes := append([]int(nil), classIndexes[groupKey]...)
 				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				if opts.ParallelMethods && len(methodIndexes) > 1 {
 					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
-					if extra := adaptiveBudgets[className]; extra > methodParallelism {
+					if extra := adaptiveBudgets[groupKey]; extra > methodParallelism {
 						methodParallelism = extra
 					}
 					methodParallelism = min(methodParallelism, executionWidth)
@@ -2881,13 +2928,13 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					// methods while it runs, instead of leaving a long class serial.
 					grow := func() int {
 						allowed := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
-						if extra := adaptiveBudgets[className]; extra > allowed {
+						if extra := adaptiveBudgets[groupKey]; extra > allowed {
 							allowed = extra
 						}
 						return min(allowed, executionWidth)
 					}
 					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupLimits, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, methodParallelism, &methodWindow, grow, workerOrgs)
-					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
+					dispatcher.recordObserved(groupKey, time.Since(classStart).Milliseconds())
 					continue
 				}
 				var journal *storage.IsolationJournal
@@ -2938,7 +2985,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 						reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 					}
 				}
-				dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
+				dispatcher.recordObserved(groupKey, time.Since(classStart).Milliseconds())
 			}
 		}()
 	}
