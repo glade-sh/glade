@@ -9,6 +9,10 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 )
 
+// Digests that touch standard objects with a native relationship order include
+// those orders (relationship_order_standard/org.tsv). Apart from the order
+// entries they equal the origin/main serialization;
+// TestStandardRelationshipOrderIsTheOnlySpreadDifference checks that.
 func TestStandardSpreadUncapturedShapeSnapshot(t *testing.T) {
 	org := sourceSpreadEagerOrg([]string{project.UnspecifiedStandardFieldShape})
 	data, err := json.Marshal(org)
@@ -16,7 +20,7 @@ func TestStandardSpreadUncapturedShapeSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Serialized eager org from origin/main with the same test and inputs.
-	const base = "d383e54f7e7db22e9f6bb4359abd18c859acda34bffc44826e02d0fff30843fb"
+	const base = "c86920c2e0e6c4e16b894cc73c9f6266812a1bb2adc016a7914acc5bfdda6d30"
 	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != base {
 		t.Fatalf("uncaptured shape sha256 %s, want origin/main %s", got, base)
 	}
@@ -122,20 +126,20 @@ func TestUncapturedPlainDeveloperShapesMatchBaseline(t *testing.T) {
 		name, digest string
 		build        func() OrgState
 	}{
-		{"direct", "84f28c5d923267cf47e63683d4098f1666152c540764c10cb31ba3a764f78a72", func() OrgState {
+		{"direct", "caad0e8e6d59f4ec3fafbe1423d9050f97542e2696774a26c629374577720762", func() OrgState {
 			return sourceSpreadEagerOrg([]string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
 		}},
-		{"project-transition", "1f46db4d3c4e4280d3e84d2562c16f0fc88c9672145e70fa251f7bb310309b97", func() OrgState {
+		{"project-transition", "b0e2c1f826d978069f6829aa61c95491d1ac34ec72d29b09f97568bf60908d42", func() OrgState {
 			org := sourceSpreadEagerOrg(initial)
 			ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
 			return org
 		}},
-		{"additive-transition", "1f46db4d3c4e4280d3e84d2562c16f0fc88c9672145e70fa251f7bb310309b97", func() OrgState {
+		{"additive-transition", "b0e2c1f826d978069f6829aa61c95491d1ac34ec72d29b09f97568bf60908d42", func() OrgState {
 			org := sourceSpreadEagerOrg(initial)
 			ApplyOrgShape(&org, []string{"EnableSetPasswordInApi"})
 			return org
 		}},
-		{"unmarked-transition", "f9c31d42954390cfd23d95927c346b705c25f7a2cd2c7c9f9e36e7deaa0712f1", func() OrgState {
+		{"unmarked-transition", "d1dde048f86ccfbaab6d243d739d4e65e02005da3e030396e4a9e88022f22f45", func() OrgState {
 			org := sourceSpreadEagerOrg(initial)
 			ApplyProjectOrgShape(&org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
 			return org
@@ -161,11 +165,11 @@ func TestUncapturedSourceSpreadTransitionsMatchBaseline(t *testing.T) {
 		name, digest string
 		apply        func(*OrgState)
 	}{
-		{"project", "8fc5c9514b5c8997688ff2ab910327f11d8907db45fae8dca9d1bc22d6d53168", func(org *OrgState) {
+		{"project", "3b6a584b7ed6c44a3937d335257b1efa94985f0317747a06eca95065a709a9fc", func(org *OrgState) {
 			ApplyProjectOrgShape(org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, "EnableSetPasswordInApi"})
 		}},
-		{"additive", "8fc5c9514b5c8997688ff2ab910327f11d8907db45fae8dca9d1bc22d6d53168", func(org *OrgState) { ApplyOrgShape(org, []string{"EnableSetPasswordInApi"}) }},
-		{"unmarked", "3093f2ad5613b7823a1d626791bc8770804cc834c07f207444b33117f4d04943", func(org *OrgState) {
+		{"additive", "3b6a584b7ed6c44a3937d335257b1efa94985f0317747a06eca95065a709a9fc", func(org *OrgState) { ApplyOrgShape(org, []string{"EnableSetPasswordInApi"}) }},
+		{"unmarked", "55d66ee681f8c6d209c52b5e39009a77609e29b66f7ad28d74465f92f3cb653e", func(org *OrgState) {
 			ApplyProjectOrgShape(org, []string{project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape})
 		}},
 	}
@@ -199,7 +203,7 @@ func TestSourceSpreadRestoresPreviouslyMaterializedObjectOnShapeTransition(t *te
 		t.Fatal(err)
 	}
 	// Serialized source-backed org from origin/main with the same operations.
-	const baseline = "79841bab02c7103c6028d175cf04d2f6acb6ea098ece42bb03a8a2c961bab26b"
+	const baseline = "6caf2090c1f93da673baa1dfa96c4dff7e37d43672e6125abed3479f43d1aae3"
 	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
 		t.Fatalf("org digest %s, want origin/main %s", got, baseline)
 	}
@@ -226,7 +230,7 @@ func TestSourceSpreadRestoresRemovedObjectAfterSerialization(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const baseline = "79841bab02c7103c6028d175cf04d2f6acb6ea098ece42bb03a8a2c961bab26b"
+	const baseline = "6caf2090c1f93da673baa1dfa96c4dff7e37d43672e6125abed3479f43d1aae3"
 	if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != baseline {
 		t.Fatalf("org digest %s, want origin/main %s", got, baseline)
 	}

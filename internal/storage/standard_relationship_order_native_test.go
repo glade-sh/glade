@@ -2,9 +2,13 @@ package storage
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"os"
+	"regexp"
 	"strconv"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 // The native sweep describes every reference field of every standard object
@@ -131,4 +135,33 @@ func TestStandardRelationshipOrderRepairsPersistedDefinition(t *testing.T) {
 	if account.Fields["ParentId"].RelationshipOrder != nil {
 		t.Fatal("Account.ParentId must keep a null order")
 	}
+}
+
+// The spread neighbor digests in plain_developer_spread_neighbor_test.go and
+// standard_spread_neighbor_test.go changed with the order table. This test shows
+// the table is the whole change: the eager org without it matches the base, and
+// the org with it differs only in relationshipOrder entries.
+func TestStandardRelationshipOrderIsTheOnlySpreadDifference(t *testing.T) {
+	lead := regexp.MustCompile(`,"relationshipOrder":\d+`)
+	first := regexp.MustCompile(`\{"relationshipOrder":\d+,`)
+	build := func() []byte {
+		org := sourceSpreadEagerOrg([]string{project.UnspecifiedStandardFieldShape})
+		data, _ := json.Marshal(org)
+		return data
+	}
+	with := build()
+	saved := standardRelationshipOrders
+	standardRelationshipOrders = map[string]map[string]int{}
+	defer func() { standardRelationshipOrders = saved }()
+	without := build()
+	standardRelationshipOrders = saved
+	cleaned := first.ReplaceAll(lead.ReplaceAll(with, nil), []byte("{"))
+	cleanedBase := without
+	if string(cleaned) != string(cleanedBase) {
+		t.Fatalf("serialization differs beyond relationshipOrder: %d vs %d bytes", len(cleaned), len(cleanedBase))
+	}
+	if len(with) == len(without) {
+		t.Fatal("orders did not reach the serialization")
+	}
+	t.Logf("with=%d without=%d bytes; only relationshipOrder differs", len(with), len(without))
 }
