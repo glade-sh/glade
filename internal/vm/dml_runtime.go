@@ -302,6 +302,15 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 				return Null, err
 			}
 		}
+		if ordinaryDatabaseCall && op == "insert" && isUserModeAccessLevel(accessLevel) && accessLevelPermissionSetID(accessLevel) == "" && externalIDField == "" {
+			if !allOrNone {
+				if failures, handled := vm.explicitRunAsInsertFailures(args[0]); handled {
+					return fieldKeyDMLResultsValue(op, args[0], failures), nil
+				}
+			} else if err := vm.explicitRunAsReadonlyDMLDenial(op, args[0]); err != nil {
+				return Null, err
+			}
+		}
 		if err := vm.userModeUpsertKeyFieldDenial(op, args[0], externalIDField, accessLevelPermissionSetID(accessLevel)); err != nil {
 			return Null, err
 		}
@@ -6964,6 +6973,11 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		}
 	}
 	if dmlMode == "USER_MODE" {
+		if mode == ir.DMLModeUser && (externalIDField == "" || strings.EqualFold(externalIDField, "Id")) {
+			if err := vm.explicitRunAsReadonlyDMLDenial(op, value); err != nil {
+				return err
+			}
+		}
 		if err := vm.userModeUpsertKeyFieldDenial(op, value, externalIDField, ""); err != nil {
 			return err
 		}

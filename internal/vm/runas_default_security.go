@@ -125,16 +125,106 @@ func (vm *VM) defaultRunAsDMLDenial(op string, value Value) error {
 			vm.currentUserObjectPermission(objectName, "isDeletable")) {
 			continue // The readable denial capture has no create/edit/delete grants.
 		}
-		if op == "upsert" {
-			message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result! ", objectName)
-			exception := Object("DmlException")
-			exception.Fields["message"] = String(message)
-			exception.Fields["__dmlErrors"] = dmlExceptionErrorDetails([]dml.Result{{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}}, []string{objectName})
-			return &apexThrowError{value: exception}
-		}
-		return newExceptionError("TypeException", fmt.Sprintf("DML operation %s not allowed on %s", strings.ToUpper(op), objectName))
+		return readonlyObjectDMLException(op, objectName)
 	}
 	return nil
+}
+
+// readonlyObjectDMLException is the statement failure for a readable object
+// without the operation's grant: upsert reports the field-access DmlException,
+// the other operations a TypeException.
+func readonlyObjectDMLException(op, objectName string) error {
+	if op == "upsert" {
+		message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result! ", objectName)
+		exception := Object("DmlException")
+		exception.Fields["message"] = String(message)
+		exception.Fields["__dmlErrors"] = dmlExceptionErrorDetails([]dml.Result{{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}}, []string{objectName})
+		return &apexThrowError{value: exception}
+	}
+	return newExceptionError("TypeException", fmt.Sprintf("DML operation %s not allowed on %s", strings.ToUpper(op), objectName))
+}
+
+// explicitRunAsUserMode reports a runAs block at a source API with explicit
+// USER_MODE DML captures (C137 rows, APIs 59.0 through 68.0).
+func (vm *VM) explicitRunAsUserMode() bool {
+	return vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && vm.Org != nil &&
+		apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 59)
+}
+
+// readonlyRunAsObject resolves a record's object when the running user can
+// read it but holds none of the create, edit and delete grants: the C137
+// readonly permission set. Other grant mixes return false.
+func (vm *VM) readonlyRunAsObject(record Value) (string, bool) {
+	if record.Kind != ValueObject {
+		return "", false
+	}
+	objectName, ok := vm.resolveObjectName(record.Type)
+	if !ok || !vm.currentUserObjectPermission(objectName, "isAccessible") ||
+		vm.currentUserObjectPermission(objectName, "isCreateable") ||
+		vm.currentUserObjectPermission(objectName, "isUpdateable") ||
+		vm.currentUserObjectPermission(objectName, "isDeletable") {
+		return "", false
+	}
+	return objectName, true
+}
+
+// Native C137_353-359 and C137_374-380 (istest, runAs, APIs 59.0-68.0):
+// explicit USER_MODE DML on a readonly Account or custom object fails as the
+// API 67 default does. insert, update and delete raise TypeException
+// "DML operation <OP> not allowed on <object>"; upsert raises the field-access
+// DmlException. Unreadable objects keep the SecurityException (C137_234).
+func (vm *VM) explicitRunAsReadonlyDMLDenial(op string, value Value) error {
+	switch op {
+	case "insert", "update", "delete", "upsert":
+	default:
+		return nil
+	}
+	if !vm.explicitRunAsUserMode() {
+		return nil
+	}
+	records := dmlAccessRecords(value)
+	if len(records) == 0 {
+		return nil
+	}
+	objectName := ""
+	for _, record := range records {
+		name, ok := vm.readonlyRunAsObject(record)
+		if !ok || objectName != "" && name != objectName {
+			return nil
+		}
+		objectName = name
+	}
+	return readonlyObjectDMLException(op, objectName)
+}
+
+// Native C137_198/240 (unreadable) and C137_359/380 (readonly): explicit
+// USER_MODE Database.insert(rows, false) in runAs returns a failed SaveResult
+// per row, without writes, at APIs 59.0-68.0. Mixed lists keep the old path.
+func (vm *VM) explicitRunAsInsertFailures(value Value) ([]dml.Result, bool) {
+	if !vm.explicitRunAsUserMode() || value.Kind != ValueList || len(value.List) == 0 {
+		return nil, false
+	}
+	results := make([]dml.Result, len(value.List))
+	objectName := ""
+	for i, record := range value.List {
+		if record.Kind != ValueObject {
+			return nil, false
+		}
+		canonical, ok := vm.resolveObjectName(record.Type)
+		if !ok || (objectName != "" && objectName != canonical) {
+			return nil, false
+		}
+		objectName = canonical
+		message := fmt.Sprintf("Access to entity '%s' denied", canonical)
+		if vm.currentUserObjectPermission(canonical, "isAccessible") {
+			if _, readonly := vm.readonlyRunAsObject(record); !readonly {
+				return nil, false
+			}
+			message = fmt.Sprintf("DML operation INSERT not allowed on %s", canonical)
+		}
+		results[i] = dml.Result{Error: message, StatusCode: "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"}
+	}
+	return results, true
 }
 
 // C137_184/226 and C137_352/373 capture allOrNone=false insert on homogeneous
