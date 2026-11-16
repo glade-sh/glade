@@ -21,9 +21,9 @@
    "max_conf_mae": 0.05
   },
   "62/Account.BillingStreet.Street.NullNotAllowed": {
-   "min_recall": 0.9323,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.35
+   "max_conf_mae": 0.001
   },
   "62/Account.BillingCity.City.NullNotAllowed": {
    "min_recall": 0.9999,
@@ -41,9 +41,9 @@
    "max_conf_mae": 0.05
   },
   "62/Account.BillingStreet.Street.MatchBlanks": {
-   "min_recall": 0.9158,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.05
+   "max_conf_mae": 0.001
   },
   "62/Account.BillingCity.City.MatchBlanks": {
    "min_recall": 0.9999,
@@ -81,9 +81,9 @@
    "max_conf_mae": 0.05
   },
   "67/Account.BillingStreet.Street.NullNotAllowed": {
-   "min_recall": 0.9323,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.35
+   "max_conf_mae": 0.001
   },
   "67/Account.BillingCity.City.NullNotAllowed": {
    "min_recall": 0.9999,
@@ -101,9 +101,9 @@
    "max_conf_mae": 0.05
   },
   "67/Account.BillingStreet.Street.MatchBlanks": {
-   "min_recall": 0.9158,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.05
+   "max_conf_mae": 0.001
   },
   "67/Account.BillingCity.City.MatchBlanks": {
    "min_recall": 0.9999,
@@ -121,9 +121,9 @@
    "max_conf_mae": 0.05
   },
   "67/Holdout.Account.BillingStreet.Street.MatchBlanks": {
-   "min_recall": 0.9727,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.4
+   "max_conf_mae": 0.001
   },
   "67/Holdout.Account.BillingCity.City.MatchBlanks": {
    "min_recall": 0.9999,
@@ -141,19 +141,19 @@
    "max_conf_mae": 0.05
   },
   "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Name": {
-   "min_recall": 0.9819,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.05
+   "max_conf_mae": 0.001
   },
   "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Suffix": {
-   "min_recall": 0.9502,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.3
+   "max_conf_mae": 0.001
   },
   "67/Probe.Account.BillingStreet.Street.NullNotAllowed.Unit": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.05
+   "max_conf_mae": 0.001
   },
   "67/Probe.Account.Name.CompanyName.NullNotAllowed.Designator": {
    "min_recall": 0.9999,
@@ -222,9 +222,9 @@
    "max_conf_mae": 0.05
   },
   "67/Holdout2.Account.BillingStreet.Street.NullNotAllowed": {
-   "min_recall": 0.9024,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.8
+   "max_conf_mae": 0.001
   },
   "67/Holdout2.Account.Name.CompanyName.NullNotAllowed": {
    "min_recall": 0.9661,
@@ -254,7 +254,7 @@
   "62/Probe.Account.BillingStreet.Street.NullNotAllowed.Unit": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.05
+   "max_conf_mae": 0.001
   },
   "62/Probe.Account.Name.CompanyName.NullNotAllowed.Syllable": {
    "min_recall": 0.9463,
@@ -293,14 +293,14 @@
    "max_conf_mae": 0.05
   },
   "67/Holdout3.Account.BillingStreet.Street.NullNotAllowed.1": {
-   "min_recall": 0.8448,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.75
+   "max_conf_mae": 0.001
   },
   "67/Holdout3.Account.BillingStreet.Street.NullNotAllowed.2": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.05
+   "max_conf_mae": 0.001
   },
   "67/Holdout3.Account.Name.CompanyName.NullNotAllowed.1": {
    "min_recall": 0.875,
@@ -358,9 +358,9 @@
    "max_conf_mae": 0.05
   },
   "67/Probe3.Account.BillingStreet.Street.NullNotAllowed.1": {
-   "min_recall": 0.4938,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.55
+   "max_conf_mae": 0.001
   },
   "67/Probe3.Account.Name.CompanyName.NullNotAllowed.1": {
    "min_recall": 0.9878,
@@ -408,9 +408,9 @@
    "max_conf_mae": 0.05
   },
   "62/Probe3.Account.BillingStreet.Street.NullNotAllowed.1": {
-   "min_recall": 0.4938,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.55
+   "max_conf_mae": 0.001
   },
   "62/Probe3.Account.Name.CompanyName.NullNotAllowed.1": {
    "min_recall": 0.9878,
@@ -481,12 +481,12 @@
   "67/Holdout4.Account.BillingStreet.Street.NullNotAllowed.1": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.6
+   "max_conf_mae": 0.001
   },
   "67/Holdout4.Account.BillingStreet.Street.NullNotAllowed.2": {
    "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.05
+   "max_conf_mae": 0.001
   },
   "67/Holdout4.Account.Name.CompanyName.NullNotAllowed.1": {
    "min_recall": 0.9999,
