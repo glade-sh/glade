@@ -2140,14 +2140,20 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	if matched, confidence := fuzzyTitleWords(a, b, false); matched {
 		return true, confidence
 	}
-	if titleInitialsLetter(a, b) {
+	switch words := titleInitialsLetter(a, b); {
+	case words >= 4:
+		return true, 88
+	case words == 3:
+		return true, 89
+	case words > 0:
 		return true, titleInitialsConfidence
 	}
 	return false, 0
 }
 
-// titleInitialsConfidence is the rule confidence of the title initials path:
-// the item scores 86 beside an exact last name, (100 + 86) / 2.
+// titleInitialsConfidence is the rule confidence of the title initials path
+// with up to two words on either side: the item scores 86 beside an exact last
+// name, (100 + 86) / 2. Three words report 89 and four or more 88.
 const titleInitialsConfidence = 93
 
 // titleRawTokens are the whitespace tokens of a title in lower case, without
@@ -2162,29 +2168,40 @@ func titleRawTokens(s string) []string {
 
 // titleInitialsLetter reports titles of which one is single letters alone (two
 // or more, "A B C") and the other, not single letters alone, has a word of
-// letters only that starts with one of them. NATIVE (fuzzy_title_variant
-// f1t3): "A B C" finds "Chief Officer", "Alpha, Beta" and "Chief&Officer"
-// but not "Alpha,Beta" (one word with a comma) or "Zorp Quill". The single
-// letter title keeps its stop words; the other title drops of, the, and, a,
-// an and it, so "Quill and Zorp" does not start with the letter "a".
-func titleInitialsLetter(a, b string) bool {
-	return titleInitialsOneWay(a, b) || titleInitialsOneWay(b, a)
+// letters only that starts with one of them; zero when they are not. NATIVE
+// (fuzzy_title_variant f1t3, fuzzy_residual_panels t3ti1_p1 and r2ti_p1):
+// "A B C" finds "Chief Officer", "Alpha, Beta" and "Chief&Officer" but not
+// "Alpha,Beta" (one word with a comma) or "Zorp Quill". The article "a" is no
+// initial ("C A" does not find "Alpha Beta", "A B C" does not find "Able"),
+// and the other title drops of, the, and, a, an and it. The result is the
+// larger word count of the two titles without those words, which sets the
+// confidence: "A B C D" finds "Chief Officer" at 89, "A B C D E" at 88, and
+// "A C" finds "Bravo Charlie Delta" at 89.
+func titleInitialsLetter(a, b string) int {
+	if n := titleInitialsOneWay(a, b); n > 0 {
+		return n
+	}
+	return titleInitialsOneWay(b, a)
 }
 
-func titleInitialsOneWay(initials, other string) bool {
+func titleInitialsOneWay(initials, other string) int {
 	if !titleSingleLetters(initials) {
-		return false
+		return 0
 	}
 	ti := titleRawTokens(initials)
 	if len(ti) < 2 {
-		return false
+		return 0
 	}
-	letters := ""
+	letters, count := "", 0
 	for _, t := range ti {
 		if utf8.RuneCountInString(t) != 1 {
-			return false
+			return 0
+		}
+		if t == "a" {
+			continue
 		}
 		letters += t
+		count++
 	}
 	to := titleRawTokens(other)
 	single := true
@@ -2195,18 +2212,23 @@ func titleInitialsOneWay(initials, other string) bool {
 		}
 	}
 	if single {
-		return false
+		return 0
 	}
+	words, found := 0, false
 	for _, t := range to {
 		switch t {
 		case "of", "the", "and", "a", "an", "it":
 			continue
 		}
+		words++
 		if first, _ := utf8.DecodeRuneInString(t); titleAllLetters(t) && strings.ContainsRune(letters, first) {
-			return true
+			found = true
 		}
 	}
-	return false
+	if !found {
+		return 0
+	}
+	return max(count, words)
 }
 
 // titleSingleLetters reports two or more tokens of titleRawTokens that are all
