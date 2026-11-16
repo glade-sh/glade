@@ -239,3 +239,66 @@ func TestSharingAccessUncapturedNeighborsKeepBase(t *testing.T) {
 		})
 	}
 }
+
+// Native permset_in_test rows: a permission set that a test assigns to the
+// running user does not apply outside System.runAs. It applies inside a runAs
+// block entered after the assignment and is gone when the block ends, whether
+// the assignment came from the test method, a runAs block, @TestSetup or
+// Test.startTest. A block that makes the assignment does not see it itself.
+// Another user's assignment applies in that user's runAs block.
+func TestPermissionSetAssignedInTestNativeConformance(t *testing.T) {
+	family := filepath.Join("testdata/conformance", "permset_in_test")
+	raw, err := os.Open(filepath.Join(family, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	reader := csv.NewReader(raw)
+	reader.Comma = '\t'
+	reader.LazyQuotes = true
+	reader.FieldsPerRecord = 3
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1+108 || strings.Join(rows[0], ",") != "api,method,observation" {
+		t.Fatalf("incomplete native rows: %d", len(rows))
+	}
+	root := t.TempDir()
+	project := filepath.Join(family, "project")
+	err = filepath.WalkDir(project, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(project, path)
+		if err != nil {
+			return err
+		}
+		writeFile(t, filepath.Join(root, rel), string(body))
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := loadTestIndex(t, root)
+	for i, row := range rows[1:] {
+		api, method, want := row[0], row[1], row[2]
+		line := i + 2
+		t.Run(api+"/"+method, func(t *testing.T) {
+			prefix, name, _ := strings.Cut(method, ".")
+			class := prefix + strings.TrimSuffix(api, ".0")
+			run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: name, NoDiskCache: true, Parallelism: 1, LimitMode: vm.LimitModeStrict})
+			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
+				t.Fatalf("missing runner observation %+v", run.Summary())
+			}
+			_, got, _ := strings.Cut(run.Suites[0].Cases[0].Problem.Message, " => ")
+			if strings.TrimSpace(got) != strings.TrimSpace(want) {
+				t.Fatalf("NATIVE %s permset_in_test/org.tsv:%d istest %s\nnative=%q\nglade =%q", method, line, api, want, strings.TrimSpace(got))
+			}
+		})
+	}
+}

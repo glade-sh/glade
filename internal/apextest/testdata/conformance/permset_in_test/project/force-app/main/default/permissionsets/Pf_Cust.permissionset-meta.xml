@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>Pf Cust</label><customPermissions><enabled>true</enabled><name>Pf_Cust</name></customPermissions></PermissionSet>
