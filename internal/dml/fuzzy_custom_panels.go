@@ -29,6 +29,13 @@ var customFuzzyScorers = map[string]fuzzyScorer{
 // "Ave#5" finds "Ave #5" at 47). Such a pair matches only at 87.
 func customStreet(a, b string, matchBlanks bool) (bool, float64) {
 	x, y := streetCleanFor(a, true), streetCleanFor(b, true)
+	// NATIVE fuzzy_street_c8/org.tsv qa1, qa3: the key comes first, so two
+	// addresses that clean to one string still find nothing when a line break
+	// moves a word across the key ("Calder Rd\nSuite 200" and "Calder
+	// RdSuite 200").
+	if !streetCustomKeysAgree(streetKeyClean(a), streetKeyClean(b)) {
+		return false, 0
+	}
 	if x == y {
 		if _, lone := knownStreetSuffixes[x]; lone || x == "pobox" || streetBarePOBox.MatchString(x) {
 			// NATIVE cs1, cp1, nr1: a street that is only a suffix word, "PO
@@ -40,11 +47,8 @@ func customStreet(a, b string, matchBlanks bool) (bool, float64) {
 		}
 		// NATIVE cs1: equal streets still average the section score with 100
 		// (Test Street 88, Test 86, Calder Rd 500 90).
-		p := parseStreetFor(a, true, !matchBlanks)
+		p := parseStreetFor(a, true)
 		return true, (streetSectionScore(p, p, matchBlanks, streetCandidateSimilarity, true) + 100) / 2
-	}
-	if !streetCustomKeysAgree(x, y) {
-		return false, 0
 	}
 	similarity := streetCandidateSimilarity(x, y)
 	gate := similarity >= streetSimilarityGate-1e-9
@@ -52,23 +56,22 @@ func customStreet(a, b string, matchBlanks bool) (bool, float64) {
 	if wholeX || wholeY {
 		confidence := similarity
 		if !wholeY && !streetPOBox.MatchString(y) {
-			confidence = similarity / 2
+			// The candidate has no sections: its section score is 0, or 20
+			// of 70 where Match Blank Fields counts two blank street
+			// numbers (NATIVE fuzzy_street_c8/org.tsv gqd2: "Waldweg2 5"
+			// finds "Waldweg 5" at 59 there and 45 under NullNotAllowed).
+			sections := 0.0
+			if matchBlanks && parseStreetFor(x, true).number == "" && parseStreetFor(y, true).number == "" {
+				sections = 100.0 * 20 / 70
+			}
+			confidence = (sections + similarity) / 2
 		}
 		return gate, confidence
 	}
-	pa, pb := parseStreetFor(a, true, !matchBlanks), parseStreetFor(b, true, !matchBlanks)
+	pa, pb := parseStreetFor(a, true), parseStreetFor(b, true)
 	sections := streetSectionScore(pa, pb, matchBlanks, streetCandidateSimilarity, true)
 	confidence := (sections + similarity) / 2
-	if gate {
-		return true, confidence
-	}
-	if streetTwoEdits(pa, pb) {
-		return false, confidence
-	}
-	if pa.number == "" && pb.number == "" && pa.name != pb.name && editSimilarity(pa.name, pb.name) < 80 {
-		return false, confidence
-	}
-	return sections >= 80, confidence
+	return gate || sections >= 80, confidence
 }
 
 // streetSimilarityGate is the edit similarity of the cleaned addresses at
@@ -77,10 +80,15 @@ func customStreet(a, b string, matchBlanks bool) (bool, float64) {
 // 3 in 23 (86.96) and 2 in 15 (86.67) do not.
 const streetSimilarityGate = 87
 
+// streetWholeNameWords is the number of name words from which a street has no
+// sections.
+const streetWholeNameWords = 4
+
 var (
 	streetLettersThenDigit = regexp.MustCompile(`^[a-z]+[0-9]`)
 	streetNumberRange      = regexp.MustCompile(`^[0-9]+-[0-9]+$`)
 	streetBarePOBox        = regexp.MustCompile(`^po box( [a-z])?$`)
+	streetRuralRoute       = regexp.MustCompile(`^(?:rr|r r|rural route) [0-9]+$`)
 	streetPOBoxKey         = regexp.MustCompile(`^(?:p ?o box ?|pobox )([0-9]+)$`)
 )
 
@@ -88,21 +96,37 @@ var (
 // string: a word of letters followed by a digit ("Ave#5", "Box410", "RR4"), a
 // hyphen in a word that is not a number range ("72-A", "Vane-Oak", but not
 // "72-74"), a number before the last word of a street that does not start
-// with one ("Suite 9 73 Morrow Rd", "RR 4 Box 22", "PO Box 52 Main"), or one
-// more word after the known suffix (streetLoneWordAfterSuffix), or four words
-// with no number and no suffix (streetLongName). NATIVE
-// fuzzy_street_c5/org.tsv nh1, nn1, ns1, nr1: these report 100 for an equal
-// street and the edit similarity for a near one. "PO Box 52" is a PO box and
-// not whole.
+// with one ("Suite 9 73 Morrow Rd", "RR 4 Box 22", "PO Box 52 Main"), a rural
+// route ("RR 4", "Rural Route 4") or a name of four words. NATIVE
+// fuzzy_street_c5/org.tsv nh1, nn1, ns1, nr1, fuzzy_street_c8/org.tsv qb1, qc1:
+// these report 100 for an equal street and the edit similarity for a near
+// one. "PO Box 52" is a PO box and not whole.
 func streetWhole(x string) bool {
 	if streetPOBox.MatchString(x) {
 		return false
 	}
-	words := strings.Fields(x)
-	if streetLoneWordAfterSuffix(words) || streetLongName(words) {
+	if streetRuralRoute.MatchString(x) {
+		// NATIVE fuzzy_street_c8/org.tsv qc1: "RR 4", "R R 4" and "Rural
+		// Route 4" report 100 for themselves, "HC 4" and "Route 4" 88.
 		return true
 	}
+	// NATIVE fuzzy_street_c5/org.tsv nk2, nm1, fuzzy_street_c8/org.tsv qb1,
+	// qb2, qb3, qb4: a name of four words is whole wherever the fourth word
+	// stands ("100 N Martin Luther King Jr Blvd", "100 Martin Luther King Sr
+	// Blvd", "Morven Tully Harbor Tower", "14 Hawthorne Meadow Blvd Jr"),
+	// while "100 N Martin Luther King Blvd" (three name words after the
+	// directional) is split.
+	parsed := parseStreetFor(x, true)
+	if len(strings.Fields(parsed.name)) >= streetWholeNameWords {
+		return true
+	}
+	words := strings.Fields(x)
 	for i, w := range words {
+		if i == len(words)-1 && parsed.suite != "" && w == parsed.suite {
+			// NATIVE fuzzy_street_c8/org.tsv qs1: the suite value is not a
+			// word of the name ("Suite A5", "Suite 5-A" split).
+			continue
+		}
 		if streetLettersThenDigit.MatchString(w) {
 			return true
 		}
@@ -114,43 +138,6 @@ func streetWhole(x string) bool {
 		}
 	}
 	return false
-}
-
-// streetLoneWordAfterSuffix reports one more word after the known suffix that
-// is neither a directional nor a suite value ("77 Wren St Xq", "14 Dana Blvd
-// Jr"). NATIVE cu3, nj1: such a street reports 100 for itself and finds no
-// street that lacks the word or has it before the suffix.
-func streetLoneWordAfterSuffix(words []string) bool {
-	if len(words) > 0 && words[0][0] >= '0' && words[0][0] <= '9' {
-		words = words[1:]
-	}
-	for i := 1; i < len(words)-1; i++ {
-		if _, ok := knownStreetSuffixes[words[i]]; ok {
-			last := words[i+1]
-			return i+2 == len(words) && len(last) > 1 && isAlphaWord(last) && !streetDirections[last] && !streetLongDirections[last]
-		}
-	}
-	return false
-}
-
-// streetLongName reports a street of four or more words with no street number
-// and no known suffix; a trailing number is not counted. NATIVE
-// fuzzy_street_c5/org.tsv nk2, nm1: "Morven Tully Harbor Tower" reports 100 for
-// itself and 96, the edit similarity, for "Morven Tully Harbor Towers", while
-// "Morven Tully Tower" reports 86 and 81.
-func streetLongName(words []string) bool {
-	if n := len(words); n > 0 && digitsOnly.MatchString(words[n-1]) {
-		words = words[:n-1]
-	}
-	if len(words) < 4 || words[0][0] >= '0' && words[0][0] <= '9' {
-		return false
-	}
-	for _, w := range words {
-		if _, ok := knownStreetSuffixes[w]; ok {
-			return false
-		}
-	}
-	return true
 }
 
 // streetKeyStopWords are left out of the match key, with the known suffix
@@ -171,7 +158,7 @@ func streetLongName(words []string) bool {
 //   - "tower", "towers": nq1 "Morven Tower West" does not find "Morven Tower
 //     Wests" while "Morven Tully West" finds "Morven Tully Wests"; nk2 "Morven
 //     Plaza Tower" finds "Morven Plaza Towers".
-var streetKeyStopWords = streetWordSet("a c e f i k o p u y z se de la et and the av avn tower towers " +
+var streetKeyStopWords = streetWordSet("a c e f i k o p u y z se de la et and the av avn str sts boul avenu pk pky pkway ctr cres rte rt tower towers " +
 	"park hill ridge forest meadow grove glen harbor island mount point view village center " +
 	"circle court place square terrace trail way loop run walk row path crossing heights " +
 	"highway parkway alley bend cove dale field green hollow key knoll landing manor pass " +
