@@ -46,6 +46,8 @@ var api68NativeGaps = map[string]string{
 	"heap/HEAP-READ":                  "async getHeapSize bytes; the native org also held one more async68 row than the case sequence enqueued",
 	"heap/HEAP-READ-OVERRIDE":         "async getHeapSize bytes are not byte-exact in Glade",
 	"sharing-on/SHARE-ON-PERSISTED":   "Metadata API settings retrieve is not a Glade route",
+	"schema-pe/PE-SCHEMA-68":          "describe: UniversalAnomalyEvent is missing from the generated standard catalog; FlowOrchestrationWorkItemEvent reports permission-derived createable/queryable and sorted field keys instead of the bundle's object flags and field order",
+	"schema-pe/PE-SCHEMA-67":          "describe: UniversalAnomalyEvent is missing from the generated standard catalog",
 }
 
 // api68NativePartialGaps compare a row after removing the one segment Glade
@@ -304,6 +306,15 @@ func (o *api68NativeOrg) session() (*conformanceRunner, *vm.VM) {
 				next.Records[id] = record
 			}
 			org.Objects[name] = next
+		}
+		// Carried records keep their ids; new inserts continue after them.
+		if org.IDSequences == nil {
+			org.IDSequences = map[string]uint64{}
+		}
+		for key, value := range o.data.IDSequences {
+			if value > org.IDSequences[key] {
+				org.IDSequences[key] = value
+			}
 		}
 	}
 	o.runner = newConformanceRunner(o.t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
