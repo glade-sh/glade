@@ -40,8 +40,11 @@ func TestSharingAccessFollowNativeConformance(t *testing.T) {
 // sharingAccessCarried maps family/api/method (api "*" for every API) to the
 // reason a native row is not asserted.
 var sharingAccessCarried = func() map[string]string {
-	const assignment = "in-test administrator assignment of Sam_Admin: native leaves Secret__c ungranted (sharing_access_follow f_adm_* rows) while api67_access_defaults adm rows grant the same shape; the differing variable is not isolated"
-	const setup = "native setup fails: the administrator's default-mode Secret__c insert at 67.0+ hits the same unresolved assignment; sharing_access_follow repeats the shape with system-mode setup"
+	// The api67_access_defaults adm rows are no counterexample: that capture
+	// deployed the administrator profile with the field grants, so the field
+	// was readable before the test assigned anything.
+	const assignment = "native does not apply a permission set that the test assigns to the running administrator to that test's own context (sharing_access_follow f_adm_* rows: Secret__c stays ungranted with and without the assignment); Glade applies the assignment at once"
+	const setup = "native setup fails: the administrator's default-mode Secret__c insert at 67.0+ lacks the field because the in-test Sam_Admin assignment does not apply (f_adm_* rows); sharing_access_follow repeats the shape with system-mode setup"
 	carried := map[string]string{
 		"sharing_access_gate/*/d5_12_ins_user_outside":      assignment,
 		"sharing_access_gate/67.0/d5_06_query_user":         setup,
