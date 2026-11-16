@@ -33,6 +33,13 @@ No required local support gaps are currently tracked.
 - Status: `unsupported`
 - Gap: Screen and wait nodes, after-delete Flow and hosted scheduling are outside the local Flow contract.
 
+## DML
+
+### `dml.text-write-trim.scope`: Text write trimming set
+
+- Status: `unsupported`
+- Gap: Plain Text writes trim space and tab, and a value empty afterwards becomes null (captured on Account Name and Site and custom Name). Base already trims spaces on STRING fields. Other control characters (CR, LF, VT, FF, NUL) were not captured and keep base behavior. A blank Name was not captured; Glade keeps REQUIRED_FIELD_MISSING.
+
 ## Events
 
 ### `events.change.delivery`: Change-event hosted delivery
@@ -61,6 +68,13 @@ No required local support gaps are currently tracked.
 - Status: `unsupported`
 - Gap: DataWeave and Slack are excluded and unsupported. ConnectApi types are passive
   shapes; its hosted services are not implemented (see release policy).
+
+## SOQL
+
+### `soql.default-order.scope`: Default order without ORDER BY
+
+- Status: `unsupported`
+- Gap: Only the captured shapes return index order: an Account query whose entire WHERE clause is a Name prefix LIKE (ascending Name), and an Account to Contacts child subquery whose entire WHERE clause is a LastName prefix LIKE (descending LastName). Compound filters, other child objects, Name on children, GROUP BY, custom objects and describe order keep Id order and are not fitted.
 
 ## Security
 
