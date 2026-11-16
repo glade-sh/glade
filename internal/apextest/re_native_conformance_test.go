@@ -206,6 +206,22 @@ func reCompareLines(native, got []string, skip func(i int, line string) bool, in
 			out.matched++
 			continue
 		}
+		if strings.Contains(want, "~") {
+			a, b := strings.Split(want, "~"), strings.Split(have, "~")
+			j := 0
+			for j < len(a) && j < len(b) && a[j] == b[j] {
+				j++
+			}
+			native, glade := "<end>", "<end>"
+			if j < len(a) {
+				native = a[j]
+			}
+			if j < len(b) {
+				glade = b[j]
+			}
+			out.mismatches = append(out.mismatches, fmt.Sprintf("line %d (%.30s): first difference at item %d of %d/%d: native %.60q glade %.60q", i, want, j, len(a), len(b), native, glade))
+			continue
+		}
 		out.mismatches = append(out.mismatches, fmt.Sprintf("line %d: native %.160q glade %.160q", i, want, have))
 	}
 	if len(got) != len(native) {
