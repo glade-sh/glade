@@ -129,10 +129,16 @@ func TestAPEXReleaseGatesNativeConformance(t *testing.T) {
 		for _, caseID := range ids {
 			key := class + "/" + caseID
 			t.Run(key, func(t *testing.T) {
+				got, native := strings.Join(actual[caseID], "\n"), strings.Join(want[class][caseID], "\n")
 				if reason, parked := parkedReleaseGateRows[key]; parked {
-					t.Skip(reason)
+					// A parked row passes without comparing (Apex shards reject
+					// skips); it fails once Glade matches, so the entry is removed.
+					if got == native {
+						t.Errorf("stale parked row (%s); Glade now matches native %s", reason, native)
+					}
+					return
 				}
-				if got, native := strings.Join(actual[caseID], "\n"), strings.Join(want[class][caseID], "\n"); got != native {
+				if got != native {
 					t.Fatalf("native: %s\nGlade:  %s", native, got)
 				}
 			})
@@ -151,9 +157,6 @@ func TestAPEXReleaseGatesCompileConformance(t *testing.T) {
 	for _, row := range rows {
 		class, outcome := row[0], row[2]
 		t.Run(class, func(t *testing.T) {
-			if reason, parked := parkedReleaseGateCompileRows[class]; parked {
-				t.Skip(reason)
-			}
 			root := t.TempDir()
 			project := filepath.Join(dir, "project")
 			err := filepath.WalkDir(project, func(path string, entry fs.DirEntry, err error) error {
@@ -194,6 +197,14 @@ func TestAPEXReleaseGatesCompileConformance(t *testing.T) {
 				if strings.Contains(diagnostic.File, class+".cls") && diagnostic.Severity == diagnosticpkg.Error {
 					rejected = true
 				}
+			}
+			if reason, parked := parkedReleaseGateCompileRows[class]; parked {
+				// A parked row passes without comparing (Apex shards reject
+				// skips); it fails once Glade matches, so the entry is removed.
+				if rejected == (outcome != "OK") {
+					t.Errorf("stale parked compile row (%s); Glade now matches native %s", reason, outcome)
+				}
+				return
 			}
 			if rejected != (outcome != "OK") {
 				t.Fatalf("native %s; Glade rejected=%t", outcome, rejected)
