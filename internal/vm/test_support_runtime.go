@@ -47,10 +47,18 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 		return Null, unsupportedCallError("Test.setMock " + mockType + " mock surface")
 	}
 	if args[1].Kind == ValueObject {
-		// Native callout-mocks cm08 (62.0 and 67.0): a source class that does not
-		// implement the supplied interface is refused at registration.
-		if _, sourceClass := vm.lookupClass(args[1].Type); sourceClass && !vm.typeMatches(args[1].Type, "HttpCalloutMock", make(map[string]bool)) && !vm.typeMatches(args[1].Type, "System.HttpCalloutMock", make(map[string]bool)) {
-			if class, _ := vm.lookupClass(args[1].Type); !class.PlatformType {
+		// Native callout-mocks cm08 (62.0 and 67.0): a source class that
+		// implements other interfaces but not HttpCalloutMock is refused at
+		// registration. A class with no declared interface is left alone.
+		if class, sourceClass := vm.lookupClass(args[1].Type); sourceClass && !class.PlatformType {
+			interfaces := vm.resolvedInterfaceNamesInHierarchy(class)
+			implements := false
+			for _, iface := range interfaces {
+				if strings.EqualFold(iface, "HttpCalloutMock") || strings.EqualFold(iface, "System.HttpCalloutMock") {
+					implements = true
+				}
+			}
+			if len(interfaces) > 0 && !implements {
 				return Null, newExceptionError("System.TypeException", "Mock object doesn't implement the supplied interface")
 			}
 		}
