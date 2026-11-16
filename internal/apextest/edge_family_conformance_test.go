@@ -23,7 +23,8 @@ import (
 type edgeFamily struct {
 	dir string
 	// skip lists rows whose observation Glade cannot reproduce yet; each entry
-	// states why. A skipped row is still checked for presence in org.tsv.
+	// states why. A skipped row is still checked for presence in org.tsv, and
+	// an entry whose row now matches fails as stale.
 	skip map[string]string
 	// normalize masks a part of a row that the family does not claim.
 	normalize func(id, observation string) string
@@ -189,6 +190,9 @@ func (f edgeFamily) replay(t *testing.T) {
 			row.observation = f.normalize(id, row.observation)
 		}
 		if reason, ok := f.skip[id+"/"+route]; ok {
+			if got == row.observation {
+				t.Errorf("%s %s %s: stale known gap (%s); Glade now matches native org.tsv:%d, remove the entry", id, route, api, reason, row.line)
+			}
 			t.Skipf("known gap: %s (native org.tsv:%d %q, Glade %q)", reason, row.line, row.observation, got)
 		}
 		if strings.HasPrefix(row.observation, "COMPILEERR|") {
@@ -281,7 +285,7 @@ func (f edgeFamily) replay(t *testing.T) {
 					}
 					t.Run(c.id, func(t *testing.T) {
 						if c.post != "-" && c.post != "" {
-							t.Skip("anonymous Apex does not drain the job queue; the @IsTest row covers the same governor")
+							t.Skip("anonymous Apex does not drain the job queue; the @IsTest row covers the same governor (TestCPUFollowupMessageAcrossLocalCaps for a_cpu_*)")
 						}
 						source := "String obs='';\ntry {\n" + strings.ReplaceAll(f.source(t, c.id, "anonymous"), "__A__", maj) +
 							"\n} catch (Exception e) { obs = e.getTypeName() + '|' + e.getMessage(); }\nSystem.debug('OBS|' + obs + '|END');\n"

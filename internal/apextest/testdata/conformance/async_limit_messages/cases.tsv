@@ -20,3 +20,5 @@ a_agg76_b	sources/a_agg76_b.apex	one	both	a_agg76_b.post.apex
 a_agg151_b	sources/a_agg151_b.apex	one	both	a_agg151_b.post.apex
 a_fgetters_fin	sources/a_fgetters_fin.apex	one	anonymous	a_fgetters_fin.post.apex
 a_fsoql150_fin	sources/a_fsoql150_fin.apex	one	anonymous	a_fsoql150_fin.post.apex
+a_fgetters_fin_t	sources/a_fgetters_fin_t.apex	-	istest	-
+a_fsoql150_fin_t	sources/a_fsoql150_fin_t.apex	-	istest	-

@@ -73,6 +73,19 @@ func TestSOSLCoreContractFamily(t *testing.T) {
 		if err != nil || chained.Expression == nil || chained.Expression.Operator != "AND" || chained.Expression.Left == nil || chained.Expression.Left.Operator != "AND NOT" || chained.Expression.Right == nil || chained.Expression.Right.Operator != "TERM" {
 			t.Fatalf("chained AND NOT = %#v, err=%v", chained.Expression, err)
 		}
+		// NATIVE one list per object, last specification, first position sosl_search_matrix/org.tsv:150 anonymous 62.0
+		// NATIVE one list per object, last specification, first position sosl_search_matrix/org.tsv:151 anonymous 67.0
+		// NATIVE a bare object replaces an earlier field list sosl_search_matrix/org.tsv:154 anonymous 62.0
+		// NATIVE a bare object replaces an earlier field list sosl_search_matrix/org.tsv:155 anonymous 67.0
+		repeated, err := sosl.Parse("FIND {Red} RETURNING Account(Name), Contact(Name), Account(Phone LIMIT 1), contact")
+		if err != nil || len(repeated.Returning) != 2 || repeated.Returning[0].Object != "Account" || len(repeated.Returning[0].Fields) != 1 || repeated.Returning[0].Fields[0].Field != "Phone" || repeated.Returning[1].Object != "contact" || repeated.Returning[1].Fields[0].Field != "Id" {
+			t.Fatalf("repeated RETURNING objects = %#v, err=%v", repeated.Returning, err)
+		}
+		// An escaped star mixed with another escape has no row and stays at the matcher boundary.
+		mixed, err := sosl.Parse(`FIND {a\?b\*c} RETURNING Contact(Id)`)
+		if err != nil || len(mixed.Terms) != 1 || mixed.Terms[0].EscapedLiteral || !mixed.Terms[0].NeedsMatcher {
+			t.Fatalf("mixed escapes = %#v, err=%v", mixed.Terms, err)
+		}
 		grouped, err := sosl.Parse("FIND {Red AND NOT (Blue AND Alpha)} RETURNING Contact(Id)")
 		if err != nil || grouped.Expression == nil || grouped.Expression.Operator != "AND NOT" || grouped.Expression.Right == nil || grouped.Expression.Right.Operator != "AND" {
 			t.Fatalf("grouped AND NOT = %#v, err=%v", grouped.Expression, err)

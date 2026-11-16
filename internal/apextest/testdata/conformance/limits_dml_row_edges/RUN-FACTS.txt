@@ -6,3 +6,13 @@ sf: @salesforce/cli/2.156.8
 hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
 mode: live
 case table sha256: d4be4f16cac361d054c48e4411dda0e13ea9925e8112817dfc72b853ec1e29a9
+
+supplemental run (row dr10002; fresh scratch org; the rows ran in one review probe table with other families' cases):
+started: 2026-11-16T03:52:05.334820Z
+finished: 2026-11-16T03:57:20.599631Z
+apis: 62.0 67.0
+routes: anonymous istest
+sf: @salesforce/cli/2.156.8
+hub: campaign Dev Hub (scratch org, 1 days, deleted after the run)
+mode: live
+case table sha256: 84818974a3a3c94fbb003216cf09e055ab298cf2abe7fce1fde7c15a99bb7fe5

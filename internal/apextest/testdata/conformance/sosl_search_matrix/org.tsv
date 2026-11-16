@@ -139,3 +139,35 @@ rt5	62.0	anonymous	1|nP
 rt5	67.0	anonymous	1|nP
 rt6	62.0	anonymous	1|Np
 rt6	67.0	anonymous	1|Np
+rtd_bare_spec	62.0	anonymous	1|AccountNp:6;
+rtd_bare_spec	67.0	anonymous	1|AccountNp:6;
+rtd_inline_nonadj	62.0	anonymous	2|AccountnP:6;ContactNp:1;
+rtd_inline_nonadj	67.0	anonymous	2|AccountnP:6;ContactNp:1;
+rtd_limit_first	62.0	anonymous	1|AccountNp:6;
+rtd_limit_first	67.0	anonymous	1|AccountNp:6;
+rtd_limit_last	62.0	anonymous	1|AccountNp:1;
+rtd_limit_last	67.0	anonymous	1|AccountNp:1;
+rtd_nonadj	62.0	anonymous	2|AccountnP:6;ContactNp:1;
+rtd_nonadj	67.0	anonymous	2|AccountnP:6;ContactNp:1;
+rtd_same	62.0	anonymous	1|AccountNp:6;
+rtd_same	67.0	anonymous	1|AccountNp:6;
+rtd_spec_bare	62.0	anonymous	1|Accountnp:6;
+rtd_spec_bare	67.0	anonymous	1|Accountnp:6;
+rtd_three	62.0	anonymous	1|AccountNp:6;
+rtd_three	67.0	anonymous	1|AccountNp:6;
+rtd_where	62.0	anonymous	1|zork one qzx,zork one two qzx,zork two qzx
+rtd_where	67.0	anonymous	1|zork one qzx,zork one two qzx,zork two qzx
+doc_and	62.0	anonymous	zork one qzx
+doc_and	67.0	anonymous	zork one qzx
+doc_multi	62.0	anonymous	one only qzx,zork one qzx,zork only qzx ; zork one qzx,zork one two qzx
+doc_multi	67.0	anonymous	one only qzx,zork one qzx,zork only qzx ; zork one qzx,zork one two qzx
+doc_multi_rev	62.0	anonymous	zork one qzx,zork one two qzx ; one only qzx,zork one qzx,zork only qzx
+doc_multi_rev	67.0	anonymous	zork one qzx,zork one two qzx ; one only qzx,zork one qzx,zork only qzx
+doc_three	62.0	anonymous	one only qzx,zork one qzx,zork only qzx
+doc_three	67.0	anonymous	one only qzx,zork one qzx,zork only qzx
+snip_acct_fields	62.0	anonymous	Copper Wire qzx=null/null/null/null ; Coppers qzx=null/null/null/null ; Nfx Alpha qzx=null/null/null/null ; Nfx Gamma qzx=null/null/null/null ; copper beta qzx=null/null/null/null ; copper silver qzx=null/null/null/null
+snip_acct_fields	67.0	anonymous	Copper Wire qzx=null/null/null/null ; Coppers qzx=null/null/null/null ; Nfx Alpha qzx=null/null/null/null ; Nfx Gamma qzx=null/null/null/null ; copper beta qzx=null/null/null/null ; copper silver qzx=null/null/null/null
+snip_case	62.0	anonymous	copper qzx=<mark>copper</mark> qzx/;
+snip_case	67.0	anonymous	copper qzx=<mark>copper</mark> qzx/;
+snip_contact	62.0	anonymous	Cznx qzx=null/null;
+snip_contact	67.0	anonymous	Cznx qzx=null/null;

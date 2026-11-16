@@ -7,3 +7,5 @@ dr10001	62.0	istest	UNCATCHED|System.LimitException|Too many DML rows: 10001
 dr10001	62.0	anonymous	UNCATCHED|System.LimitException|Too many DML rows: 10001
 dr10001	67.0	istest	UNCATCHED|System.LimitException|Too many DML rows: 10001
 dr10001	67.0	anonymous	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dr10002	62.0	istest	UNCATCHED|System.LimitException|Too many DML rows: 10001
+dr10002	67.0	istest	UNCATCHED|System.LimitException|Too many DML rows: 10001

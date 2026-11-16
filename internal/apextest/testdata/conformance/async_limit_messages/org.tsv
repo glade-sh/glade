@@ -75,3 +75,7 @@ a_fgetters_fin	62.0	anonymous	Completed|null|0|100|0|300|10000|0|150|10000|50000
 a_fgetters_fin	67.0	anonymous	Completed|null|0|100|0|300|10000|0|150|10000|50000|1|1|25000000|100|10|20
 a_fsoql150_fin	62.0	anonymous	PENDING|norec
 a_fsoql150_fin	67.0	anonymous	PENDING|norec
+a_fgetters_fin_t	62.0	istest	0|100|0|300|10000|0|150|10000|50000|1|1|25000000|100|10|20
+a_fgetters_fin_t	67.0	istest	0|100|0|300|10000|0|150|10000|50000|1|1|25000000|100|10|20
+a_fsoql150_fin_t	62.0	istest	UNCATCHED|System.LimitException|Too many SOQL queries: 101
+a_fsoql150_fin_t	67.0	istest	UNCATCHED|System.LimitException|Too many SOQL queries: 101

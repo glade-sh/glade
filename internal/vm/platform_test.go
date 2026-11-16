@@ -1258,7 +1258,10 @@ System.assertEquals('Nook Supply', ((Account)results.get('Account')[0].getSObjec
 Search.SearchResults snippetResults = Search.find(
 	'FIND {North} IN ALL FIELDS RETURNING Account(Id, Name, Site) WITH SNIPPET'
 );
-System.assertEquals('North dock', snippetResults.get('Account')[0].getSnippet('Site'));
+// NATIVE an Account result has no field snippet sosl_search_matrix/org.tsv:168 anonymous 62.0
+// NATIVE an Account result has no field snippet sosl_search_matrix/org.tsv:169 anonymous 67.0
+System.assertEquals(null, snippetResults.get('Account')[0].getSnippet('Site'));
+System.assertEquals(null, snippetResults.get('Account')[0].getSnippet());
 
 Search.SuggestionOption option = new Search.SuggestionOption();
 option.setLimit(5);

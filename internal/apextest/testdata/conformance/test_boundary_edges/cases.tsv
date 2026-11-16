@@ -27,3 +27,6 @@ pe_300_200	sources/pe_300_200.apex	none	istest	-
 pe_250_250	sources/pe_250_250.apex	none	istest	-
 pe_499_1	sources/pe_499_1.apex	none	istest	-
 pe_100_100	sources/pe_100_100.apex	none	istest	-
+trm_plain	sources/trm_plain.apex	-	both	-
+trm_partial	sources/trm_partial.apex	-	both	-
+trm_catch	sources/trm_catch.apex	-	both	-

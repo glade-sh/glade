@@ -32,7 +32,16 @@ func TestSOSLIsTestEdgesNativeConformance(t *testing.T) {
 }
 
 func TestTestBoundaryEdgesNativeConformance(t *testing.T) {
-	edgeFamily{dir: "testdata/conformance/test_boundary_edges"}.replay(t)
+	// Natively a depth failure unwinds every nested activation: only the DML
+	// statement in the outermost trigger sees it, as a catchable DmlException
+	// or a failed SaveResult (trm_catch, trm_partial).
+	const unwind = "Glade reports the trigger depth failure to the innermost DML statement, not the outermost trigger's"
+	edgeFamily{dir: "testdata/conformance/test_boundary_edges", skip: map[string]string{
+		"trm_catch/anonymous":   unwind,
+		"trm_catch/istest":      unwind,
+		"trm_partial/anonymous": unwind,
+		"trm_partial/istest":    unwind,
+	}}.replay(t)
 }
 
 func TestSOSLSearchMatrixNativeConformance(t *testing.T) {
@@ -41,6 +50,7 @@ func TestSOSLSearchMatrixNativeConformance(t *testing.T) {
 		"wi_network_find/anonymous": "the scratch org has no Networks; the row records that org's error, not a search shape",
 		"of_0/anonymous":            "equally relevant matches come back in index relevance order, which is not modeled",
 		"dc_nested/anonymous":       "a nested SOQL subquery in a SOSL WHERE clause is not implemented yet",
+		"snip_case/anonymous":       "a Case snippet marks the matched term with <mark> tags; snippet markup is not modeled",
 	}}.replay(t)
 }
 
