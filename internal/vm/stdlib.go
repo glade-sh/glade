@@ -4610,13 +4610,11 @@ func sigmaFollowedByCased(runes []rune, at int) bool {
 // its UTC milliseconds, a Datetime as that hash XOR a calendar term, and a Time
 // as its milliseconds of day.
 //
-// The calendar term is FITTED, not derived. 577755 (en_US, ja_JP) and 577677
-// (de_DE) match 13 distinct instants, a nonzero millisecond, three time zones
-// (Los Angeles, Kolkata, Auckland) and APIs 62.0 and 67.0; the zone never
-// changed it. The locale difference equals (firstDayOfWeek<<1)^(minimalDays<<4)
-// for Sunday/1 versus Monday/4, but the base value has no clean Calendar
-// decomposition. KNOWN GAP: only en_US, ja_JP and de_DE were captured, so any
-// other locale uses the en_US term.
+// The calendar term is partly FITTED, not derived: a fitted base plus the
+// Calendar week term of the user's locale (see hashEnv.calendarTerm). It matches
+// 13 distinct instants, a nonzero millisecond, three time zones and 15 locales
+// at APIs 62.0 and 67.0. KNOWN GAP: locales without a region, and regions
+// outside the captured set, are unverified.
 func platformTemporalHashCode(env hashEnv, value Value) (int32, bool) {
 	if value.Kind != ValueObject || value.classInstance || value.projectClass {
 		return 0, false

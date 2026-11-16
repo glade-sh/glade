@@ -3412,22 +3412,48 @@ func (env hashEnv) readField(owner Value, field string, child Value) Value {
 }
 
 // calendarTerm is the XOR term of the Datetime hash. Native Datetime.hashCode
-// is Long.hashCode(millis) XOR a constant that follows the user's locale but
-// not the time zone (surf_collections_strings cs26): 577755 for en_US and
-// ja_JP, 577677 for de_DE. The two differ by (firstDayOfWeek<<1)^(minimalDays<<4)
-// for Sunday/1 versus Monday/4, the java.util.Calendar hash shape, so the base
-// is fitted and the week data is taken from that shape. Only these three
-// locales were captured; every other locale uses the en_US term. KNOWN GAP.
+// is Long.hashCode(millis) XOR (calendarHashBase ^ weekTerm(locale)), the
+// java.util.Calendar hash shape (firstDayOfWeek<<1) ^ (minimalDaysInFirstWeek<<4)
+// on top of a fitted base. The base, 577755 ^ 18 = 577609, carries the lenient
+// bit and the zone part and is FITTED, not derived: the time zone never changed
+// the term (Los Angeles, Kolkata, Auckland), and no clean Calendar
+// decomposition of it exists. The week term follows the user's locale
+// (surf_collections_strings cs28-cs44). KNOWN GAP: a locale without a region
+// uses the en_US term, and region data outside the captured set is unverified.
 func (env hashEnv) calendarTerm() int32 {
-	const enUS = 577755
+	const base = 577755 ^ 18
 	locale := "en_US"
 	if env.vm != nil {
 		locale = env.vm.currentUserInfoField("LocaleSidKey", "en_US")
 	}
-	switch locale {
-	case "de_DE":
-		return enUS ^ (1<<1 ^ 2<<1) ^ (1<<4 ^ 4<<4)
-	default:
-		return enUS
+	return base ^ calendarWeekTerm(locale)
+}
+
+// calendarWeekTerm returns (firstDayOfWeek<<1) ^ (minimalDaysInFirstWeek<<4)
+// with Calendar.SUNDAY = 1 through SATURDAY = 7. The region sets are the public
+// CLDR supplemental weekData (firstDay and minDays by territory); regions not
+// listed use the CLDR default of Monday and one day. Captured regions: US, CA,
+// BR, IN, CN, KR, JP, PT (Sunday); GB, FR, DE, ES, RU (Monday, minDays 4); AU
+// (Monday, 1); AE (Saturday, 1). PT is Sunday with minDays 4, as CLDR lists it.
+func calendarWeekTerm(locale string) int32 {
+	parts := strings.Split(locale, "_")
+	if len(parts) < 2 || parts[1] == "" {
+		return 1<<1 ^ 1<<4
 	}
+	region := strings.ToUpper(parts[1])
+	has := func(set string) bool { return strings.Contains(" "+set+" ", " "+region+" ") }
+	first := int32(2) // Monday
+	switch {
+	case has("AE AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY"):
+		first = 7
+	case has("MV"):
+		first = 6
+	case has("AG AS BD BR BS BT BW BZ CA CN CO DM DO ET GT GU HK HN ID IL IN JM JP KE KH KR LA MH MM MO MT MX MZ NI NP PA PE PH PK PR PT PY SA SG SV TH TT TW UM US VE VI WS YE ZA ZW"):
+		first = 1
+	}
+	min := int32(1)
+	if has("AD AN AT AX BE BG CH CZ DE DK EE ES FI FJ FO FR GB GF GG GI GP GR HU IE IM IS IT JE LI LT LU MC MQ NL NO PL PT RE RU SE SJ SK SM VA") {
+		min = 4
+	}
+	return first<<1 ^ min<<4
 }
