@@ -170,8 +170,12 @@ func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, 
 			resolved := project.Resolve(recorder)
 			var rows []testreport.TestCoverage
 			for _, c := range project.Components {
+				// Natively every per-test result also lists each uncalled
+				// trigger with no lines. Those rows carry nothing and would
+				// grow with tests times triggers, so a test lists only what it
+				// reached; the run's components still list every trigger.
 				covered, touched := resolved[c]
-				if !touched && c.Kind != apexcov.KindTrigger {
+				if !touched {
 					continue
 				}
 				listed[c] = true

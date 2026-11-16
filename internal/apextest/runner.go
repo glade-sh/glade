@@ -2348,9 +2348,7 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 	// retains private @isTest helper methods that the selected entry may call.
 	// The invocation program remains limited to the caller-supplied cases.
 	compileCases := expandTestCasesForClasses(index, cases)
-	// The invocation programs cover only cases, so they key the entry too: a
-	// one-method run and a whole-class run share compileCases.
-	key := string(baseKey) + "|tests|" + caseSetKey(compileCases) + "|invoke|" + caseSetKey(cases)
+	key := string(baseKey) + "|tests|" + caseSetKey(compileCases)
 	testCacheMu.RLock()
 	if cached, ok := testCache[key]; ok {
 		testCacheMu.RUnlock()
@@ -2363,7 +2361,11 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 			evictSnapshotCaches(baseKey)
 			return nil, nil, nil, nil, err
 		}
-		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs, nil
+		// A one-method run and a whole-class run share compileCases, but
+		// each needs the invocations of its own cases. They are one short
+		// statement per case, so they are compiled per call.
+		programs, programErrs := compileTestInvokePrograms(cases)
+		return cached.Methods, cached.MethodErrs, programs, programErrs, nil
 	}
 	testCacheMu.RUnlock()
 	methods, methodErrs := compileTestMethodsForIndex(&index, compileCases, sources)

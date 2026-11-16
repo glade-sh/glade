@@ -69,8 +69,10 @@ ternary does not take stays uncovered.
 - A failed or throwing test keeps the lines it ran.
 - Class and run coverage is the union of distinct lines. A line two tests run
   is one covered line.
-- Every trigger in the project is listed for every test and in the run, with
-  zero lines covered when no test fired it.
+- Every trigger in the project is listed in the run, with zero lines covered
+  when no test fired it, and counts toward `testRunCoverage`. Natively each
+  per-test result also lists every uncalled trigger with no lines; Glade's
+  per-test rows list only the classes and triggers that test reached.
 
 ## Percentages
 

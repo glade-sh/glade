@@ -305,6 +305,11 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 					}
 					var runs []apexcov.TestRun
 					runListed := map[string]bool{}
+					for _, c := range run.Coverage.Components {
+						if c.Type == apexcov.KindTrigger {
+							runListed[c.Name] = true
+						}
+					}
 					for _, method := range methods {
 						key := testClass + "." + method
 						covered, ok := perTest[key]
@@ -343,10 +348,13 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 							}
 							class, method, _ := strings.Cut(r.subject, ".")
 							got, ok := store.PerTest(class, method, r.detail)
-							if !ok {
+							if !ok && r.covered != "" {
 								t.Errorf("org.tsv:%d %s has no %s row", r.line, r.subject, r.detail)
 								continue
 							}
+							// A test lists only the components it reached; a
+							// native row with no covered line is the same
+							// coverage as no row.
 							covered := map[int]bool{}
 							for _, line := range got {
 								covered[line] = true
