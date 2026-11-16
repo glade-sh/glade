@@ -204,8 +204,11 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		return vm.checkLimit(name, vm.limits.Queries, vm.limitCaps.Queries)
 	case "aggregateQueries":
 		vm.limits.AggregateQueries += delta
-		if vm.currentAsyncKind == "" || vm.aggregateQueryCap() != syncAggregateQueryLimit {
-			return vm.checkLimit(name, vm.limits.AggregateQueries, vm.aggregateQueryCap())
+		if vm.currentAsyncKind == "" {
+			return vm.checkLimit(name, vm.limits.AggregateQueries, syncAggregateQueryLimit)
+		}
+		if cap := vm.aggregateQueryCap(); cap != syncAggregateQueryLimit {
+			return vm.checkLimit(name, vm.limits.AggregateQueries, cap)
 		}
 		return nil
 	case "queryRows":
