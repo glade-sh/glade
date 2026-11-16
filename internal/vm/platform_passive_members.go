@@ -4006,6 +4006,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, inputErr
 			}
 			engine := vm.newDMLEngine(result)
+			engine.UserModeRecordVisible = func(objectName string, record storage.Record) bool {
+				return vm.currentUserObjectPermission(objectName, "isAccessible") && vm.userModeRecordVisible(objectName, record, vm.currentUserInfoField("Id", "005-local-user"))
+			}
 			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
 			if err != nil {
 				if detail, ok := dml.FlowUnhandledDetail(err); ok {

@@ -90,6 +90,10 @@ type Engine struct {
 	// FlowFaultInTest reports a run inside a test, where Salesforce words a
 	// duplicate-value fault without the field or the record.
 	FlowFaultInTest func() bool
+	// UserModeRecordVisible reports whether the running user sees a record.
+	// A Flow that runs in user mode (runInMode UserMode) skips Update Records
+	// targets it cannot see.
+	UserModeRecordVisible func(objectName string, record storage.Record) bool
 
 	platformEventInterview bool
 	// recordTriggeredFlow is positive while a record-triggered after-save flow
@@ -361,6 +365,7 @@ func (e *Engine) RunAutolaunchedFlowWithOutput(rule storage.FlowRule, input Flow
 	}
 	frame := newFlowFrame()
 	frame.autolaunched = true
+	frame.userMode = strings.EqualFold(strings.TrimSpace(rule.RunInMode), "UserMode")
 	frame.stepTargets = rule.StepTargets
 	frame.textTemplates = cloneFlowTextTemplates(rule.TextTemplates)
 	for name, value := range input.Scalars {
