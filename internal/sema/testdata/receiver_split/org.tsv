@@ -307,3 +307,201 @@ bound_vertical_tab	62.0	anonymous	false	1:8 Found control character hex 0x000B (
 bound_vertical_tab	67.0	anonymous	false	1:8 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
 free_vertical_tab	62.0	anonymous	false	1:7 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
 free_vertical_tab	67.0	anonymous	false	1:7 Found control character hex 0x000B (decimal 11) that isn't valid in Apex.
+foreach_bound	62.0	anonymous	false	2:1 Missing ')' at 'value'
+foreach_bound_block	62.0	anonymous	false	2:1 Missing ')' at 'value'
+foreach_free	62.0	anonymous	false	1:17 Variable does not exist: CrProbe
+for_init_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+for_init_bound_block	62.0	anonymous	false	2:1 Missing ';' at 'value'
+dowhile_bound	62.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+dowhile_bound_block	62.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+dowhile_free	62.0	anonymous	false	1:15 Variable does not exist: CrProbe
+else_if_bound	62.0	anonymous	false	2:1 Missing ')' at 'value'
+else_if_bound_block	62.0	anonymous	false	2:1 Missing ')' at 'value'
+throw_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+throw_bound_block	62.0	anonymous	false	2:1 Missing ';' at 'value'
+return_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+return_bound_block	62.0	anonymous	false	2:1 Missing ';' at 'value'
+when_value_bound	62.0	anonymous	false	2:6 Missing '{' at '('
+when_value_free	62.0	anonymous	false	1:22 Variable does not exist: CrProbe
+when_block_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+try_body_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+catch_body_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+finally_body_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+try_body_free	62.0	anonymous	false	1:7 Variable does not exist: CrProbe
+ternary_false_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+compound_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+cast_operand_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+unary_bound	62.0	anonymous	false	2:1 Missing ';' at 'flag'
+group_field_bound	62.0	anonymous	false	2:1 Extra ')', at 'SF'.
+group_call_chain_bound	62.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+map_value_bound	62.0	anonymous	false	2:1 Expecting '}' but was: 'value'
+array_size_bound	62.0	anonymous	false	2:1 Expecting ']' but was: 'n'
+soql_bind_bound	62.0	anonymous	false	2:6 Expecting 'IDENTIFIER' but was: '('
+soql_bind_bound_top	62.0	anonymous	false	1:5 Unexpected token '<'.
+block_in_block_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+second_statement_bound	62.0	anonymous	false	2:1 Missing ';' at 'value'
+local_sig_bound	62.0	anonymous	false	1:8 Unexpected token 'f'.
+local_sig_free	62.0	anonymous	false	1:8 Unexpected token 'f'.
+local_sig_ok	62.0	anonymous	false	1:24 Invalid type: System.String
+local_return_bound	62.0	anonymous	false	2:1 Unexpected token 'String'.
+local_body_bound	62.0	anonymous	false	1:8 Unexpected token 'f'.
+local_body_arg_bound	62.0	anonymous	false	1:8 Unexpected token 'f'.
+local_body_free	62.0	anonymous	false	1:14 Variable does not exist: CrProbe
+inner_sig_bound	62.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+inner_sig_free	62.0	class	false	deploy fails: 3:1 Unexpected token '.'. | 3:1 Invalid character in identifier: . | 3:1 Invalid type: System | 2:34 Method must have a body
+inner_sig_ok	62.0	class	false	deploy fails: 2:52 Invalid type: System.String
+inner_sig_second_param	62.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+inner_return_bound	62.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+inner_field_bound	62.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+inner_field_free	62.0	class	false	deploy fails: 3:1 Unexpected token '.'. | 3:1 Unexpected token '.'.
+inner_ctor_bound	62.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+inner_prop_bound	62.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+inner_body_stmt	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:50 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteInnerBodyStmt.Part
+inner_body_arg	62.0	class	false	deploy fails: 3:1 Expecting ')' but was: 'value' | 3:8 Extra ';', at ')'. | 2:63 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteInnerBodyArg.Part
+inner_body_if	62.0	class	false	deploy fails: 3:1 Missing ')' at 'value' | 3:16 Expecting ';' but was: ')' | 2:54 Variable does not exist:
+inner_body_free	62.0	class	false	deploy fails: 2:42 Variable does not exist: CrProbe
+inner_field_init	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:48 Variable does not exist: | 3:1 Invalid constructor name: value
+inner_extends_bound	62.0	class	false	deploy fails: 4:1 Extra '{', at 'Base'. | 3:28 Invalid type: RouteInnerExtends.
+inner_implements_bound	62.0	class	false	deploy fails: 4:1 Extra '{', at 'Face'. | 3:31 Invalid type: RouteInnerImplements.
+inner_static_block	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:29 Inner types are not allowed to have static blocks
+inner_instance_init	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:32 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteInnerInit.Part
+inner_second_in_outer	62.0	class	false	deploy fails: 4:8 Extra ')', at 's'. | 2:52 Invalid type: System.String | 4:1 Identifier name is reserved: String | 4:1 Invalid type: System.
+outer_return_bound	62.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+outer_ctor_bound	62.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+outer_prop_bound	62.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+outer_instance_init	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:12 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteOuterInit
+outer_static_param_bound	62.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+method_local_decl_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'String' | 2:22 Variable does not exist: System
+method_foreach_bound	62.0	class	false	deploy fails: 3:1 Missing ')' at 'value' | 3:19 Expecting ';' but was: ')' | 2:46 Variable does not exist:
+method_for_init_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 3:15 Extra ')', at ';'. | 2:46 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodForInit
+method_dowhile_bound	62.0	class	false	deploy fails: 3:1 Expecting ')' but was: 'value' | 3:16 Extra ';', at ')'. | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodDoWhile
+method_try_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:36 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodTry
+method_when_bound	62.0	class	false	deploy fails: 3:6 Missing '{' at '(' | 3:7 Unexpected token ')'. | 3:9 Missing ';' at '{' | 5:1 Expecting '}' but was: '<EOF>' | 3:1 Invalid type: CrProbe. | 3:1 String cannot be a when type variable block
+method_ternary_false_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:54 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodTernary
+method_throw_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:36 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodThrow | 3:1 Unreachable statement
+method_else_if_bound	62.0	class	false	deploy fails: 3:1 Missing ')' at 'value' | 3:16 Expecting ';' but was: ')' | 2:54 Variable does not exist:
+trigger_foreach_bound	62.0	trigger	false	deploy fails: 3:1 Extra ')', at 'new'.
+trigger_foreach_free	62.0	trigger	false	deploy fails: 2:18 Unexpected token 'Trigger'.
+trigger_declaration_bound	62.0	trigger	false	deploy fails: 2:5 Unexpected token '<'.
+trigger_block_declaration_bound	62.0	trigger	false	deploy fails: 3:1 Extra ';', at 'new'.
+trigger_try_bound	62.0	trigger	false	deploy fails: 3:1 Missing ';' at 'value'
+trigger_foreach_call_bound	62.0	trigger	false	deploy fails: 3:1 Missing ')' at 'value'
+trigger_local_type_bound	62.0	trigger	false	deploy fails: 3:1 Unexpected token 'String'.
+foreach_bound	67.0	anonymous	false	2:1 Missing ')' at 'value'
+foreach_bound_block	67.0	anonymous	false	2:1 Missing ')' at 'value'
+foreach_free	67.0	anonymous	false	1:17 Variable does not exist: CrProbe
+for_init_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+for_init_bound_block	67.0	anonymous	false	2:1 Missing ';' at 'value'
+dowhile_bound	67.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+dowhile_bound_block	67.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+dowhile_free	67.0	anonymous	false	1:15 Variable does not exist: CrProbe
+else_if_bound	67.0	anonymous	false	2:1 Missing ')' at 'value'
+else_if_bound_block	67.0	anonymous	false	2:1 Missing ')' at 'value'
+throw_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+throw_bound_block	67.0	anonymous	false	2:1 Missing ';' at 'value'
+return_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+return_bound_block	67.0	anonymous	false	2:1 Missing ';' at 'value'
+when_value_bound	67.0	anonymous	false	2:6 Missing '{' at '('
+when_value_free	67.0	anonymous	false	1:22 Variable does not exist: CrProbe
+when_block_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+try_body_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+catch_body_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+finally_body_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+try_body_free	67.0	anonymous	false	1:7 Variable does not exist: CrProbe
+ternary_false_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+compound_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+cast_operand_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+unary_bound	67.0	anonymous	false	2:1 Missing ';' at 'flag'
+group_field_bound	67.0	anonymous	false	2:1 Extra ')', at 'SF'.
+group_call_chain_bound	67.0	anonymous	false	2:1 Expecting ')' but was: 'value'
+map_value_bound	67.0	anonymous	false	2:1 Expecting '}' but was: 'value'
+array_size_bound	67.0	anonymous	false	2:1 Expecting ']' but was: 'n'
+soql_bind_bound	67.0	anonymous	false	2:6 Expecting 'IDENTIFIER' but was: '('
+soql_bind_bound_top	67.0	anonymous	false	1:5 Unexpected token '<'.
+block_in_block_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+second_statement_bound	67.0	anonymous	false	2:1 Missing ';' at 'value'
+local_sig_bound	67.0	anonymous	false	1:8 Unexpected token 'f'.
+local_sig_free	67.0	anonymous	false	1:8 Unexpected token 'f'.
+local_sig_ok	67.0	anonymous	false	1:24 Invalid type: System.String
+local_return_bound	67.0	anonymous	false	2:1 Unexpected token 'String'.
+local_body_bound	67.0	anonymous	false	1:8 Unexpected token 'f'.
+local_body_arg_bound	67.0	anonymous	false	1:8 Unexpected token 'f'.
+local_body_free	67.0	anonymous	false	1:14 Variable does not exist: CrProbe
+inner_sig_bound	67.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+inner_sig_free	67.0	class	false	deploy fails: 3:1 Unexpected token '.'. | 3:1 Invalid character in identifier: . | 3:1 Invalid type: System | 2:34 Method must have a body
+inner_sig_ok	67.0	class	false	deploy fails: 2:52 Invalid type: System.String
+inner_sig_second_param	67.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+inner_return_bound	67.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+inner_field_bound	67.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+inner_field_free	67.0	class	false	deploy fails: 3:1 Unexpected token '.'. | 3:1 Unexpected token '.'.
+inner_ctor_bound	67.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+inner_prop_bound	67.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+inner_body_stmt	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:50 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteInnerBodyStmt.Part
+inner_body_arg	67.0	class	false	deploy fails: 3:1 Expecting ')' but was: 'value' | 3:8 Extra ';', at ')'. | 2:63 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteInnerBodyArg.Part
+inner_body_if	67.0	class	false	deploy fails: 3:1 Missing ')' at 'value' | 3:16 Expecting ';' but was: ')' | 2:54 Variable does not exist:
+inner_body_free	67.0	class	false	deploy fails: 2:42 Variable does not exist: CrProbe
+inner_field_init	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:48 Variable does not exist: | 3:1 Invalid constructor name: value
+inner_extends_bound	67.0	class	false	deploy fails: 4:1 Extra '{', at 'Base'. | 3:28 Invalid type: RouteInnerExtends.
+inner_implements_bound	67.0	class	false	deploy fails: 4:1 Extra '{', at 'Face'. | 3:31 Invalid type: RouteInnerImplements.
+inner_static_block	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:29 Inner types are not allowed to have static blocks
+inner_instance_init	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:32 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteInnerInit.Part
+inner_second_in_outer	67.0	class	false	deploy fails: 4:8 Extra ')', at 's'. | 2:52 Invalid type: System.String | 4:1 Identifier name is reserved: String | 4:1 Invalid type: System.
+outer_return_bound	67.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+outer_ctor_bound	67.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+outer_prop_bound	67.0	class	false	deploy fails: 3:1 Unexpected token 'String'. | 3:1 Unexpected token 'String'.
+outer_instance_init	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:12 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteOuterInit
+outer_static_param_bound	67.0	class	false	deploy fails: 3:8 Extra ')', at 's'. | 3:1 Identifier name is reserved: String | 3:1 Invalid type: System.
+method_local_decl_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'String' | 2:22 Variable does not exist: System
+method_foreach_bound	67.0	class	false	deploy fails: 3:1 Missing ')' at 'value' | 3:19 Expecting ';' but was: ')' | 2:46 Variable does not exist:
+method_for_init_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 3:15 Extra ')', at ';'. | 2:46 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodForInit
+method_dowhile_bound	67.0	class	false	deploy fails: 3:1 Expecting ')' but was: 'value' | 3:16 Extra ';', at ')'. | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodDoWhile
+method_try_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:36 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodTry
+method_when_bound	67.0	class	false	deploy fails: 3:6 Missing '{' at '(' | 3:7 Unexpected token ')'. | 3:9 Missing ';' at '{' | 5:1 Expecting '}' but was: '<EOF>' | 3:1 Invalid type: CrProbe. | 3:1 String cannot be a when type variable block
+method_ternary_false_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:54 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodTernary
+method_throw_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'value' | 2:36 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void value() from the type RouteMethodThrow | 3:1 Unreachable statement
+method_else_if_bound	67.0	class	false	deploy fails: 3:1 Missing ')' at 'value' | 3:16 Expecting ';' but was: ')' | 2:54 Variable does not exist:
+trigger_foreach_bound	67.0	trigger	false	deploy fails: 3:1 Extra ')', at 'new'.
+trigger_foreach_free	67.0	trigger	false	deploy fails: 2:18 Unexpected token 'Trigger'.
+trigger_declaration_bound	67.0	trigger	false	deploy fails: 2:5 Unexpected token '<'.
+trigger_block_declaration_bound	67.0	trigger	false	deploy fails: 3:1 Extra ';', at 'new'.
+trigger_try_bound	67.0	trigger	false	deploy fails: 3:1 Missing ';' at 'value'
+trigger_foreach_call_bound	67.0	trigger	false	deploy fails: 3:1 Missing ')' at 'value'
+trigger_local_type_bound	67.0	trigger	false	deploy fails: 3:1 Unexpected token 'String'.
+platform_foreach_bound	62.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_foreach_bound_block	62.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_for_init_bound	62.0	anonymous	false	2:1 Missing ';' at 'getName'
+platform_for_init_bound_block	62.0	anonymous	false	2:1 Missing ';' at 'getName'
+platform_dowhile_bound	62.0	anonymous	false	2:1 Expecting ')' but was: 'getName'
+platform_dowhile_bound_block	62.0	anonymous	false	2:1 Expecting ')' but was: 'getName'
+platform_else_if_bound	62.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_when_value_bound	62.0	anonymous	false	2:8 Missing '{' at '('
+platform_local_body_bound	62.0	anonymous	false	1:8 Unexpected token 'f'.
+platform_local_body_arg_bound	62.0	anonymous	false	1:8 Unexpected token 'f'.
+platform_method_foreach_bound	62.0	class	false	deploy fails: 3:1 Missing ')' at 'getName' | 3:21 Expecting ';' but was: ')' | 2:47 Variable does not exist:
+platform_method_for_init_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'getName' | 3:17 Extra ')', at ';'. | 2:47 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodForInit
+platform_method_dowhile_bound	62.0	class	false	deploy fails: 3:1 Expecting ')' but was: 'getName' | 3:18 Extra ';', at ')'. | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodDoWhile
+platform_method_when_bound	62.0	class	false	deploy fails: 3:8 Missing '{' at '(' | 3:9 Unexpected token ')'. | 3:11 Missing ';' at '{' | 5:1 Expecting '}' but was: '<EOF>' | 3:1 Invalid type: UserInfo. | 3:1 String cannot be a when type variable block
+platform_method_throw_bound	62.0	class	false	deploy fails: 3:1 Missing ';' at 'getName' | 2:37 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodThrow | 3:1 Unreachable statement
+platform_trigger_foreach_call_bound	62.0	trigger	false	deploy fails: 3:1 Missing ')' at 'getName'
+platform_foreach_same	62.0	anonymous	true	ok
+platform_dowhile_same	62.0	anonymous	true	ok
+platform_method_foreach_same	62.0	class	true	deploy ok (no component failure)
+platform_foreach_bound	67.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_foreach_bound_block	67.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_for_init_bound	67.0	anonymous	false	2:1 Missing ';' at 'getName'
+platform_for_init_bound_block	67.0	anonymous	false	2:1 Missing ';' at 'getName'
+platform_dowhile_bound	67.0	anonymous	false	2:1 Expecting ')' but was: 'getName'
+platform_dowhile_bound_block	67.0	anonymous	false	2:1 Expecting ')' but was: 'getName'
+platform_else_if_bound	67.0	anonymous	false	2:1 Missing ')' at 'getName'
+platform_when_value_bound	67.0	anonymous	false	2:8 Missing '{' at '('
+platform_local_body_bound	67.0	anonymous	false	1:8 Unexpected token 'f'.
+platform_local_body_arg_bound	67.0	anonymous	false	1:8 Unexpected token 'f'.
+platform_method_foreach_bound	67.0	class	false	deploy fails: 3:1 Missing ')' at 'getName' | 3:21 Expecting ';' but was: ')' | 2:47 Variable does not exist:
+platform_method_for_init_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'getName' | 3:17 Extra ')', at ';'. | 2:47 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodForInit
+platform_method_dowhile_bound	67.0	class	false	deploy fails: 3:1 Expecting ')' but was: 'getName' | 3:18 Extra ';', at ')'. | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodDoWhile
+platform_method_when_bound	67.0	class	false	deploy fails: 3:8 Missing '{' at '(' | 3:9 Unexpected token ')'. | 3:11 Missing ';' at '{' | 5:1 Expecting '}' but was: '<EOF>' | 3:1 Invalid type: UserInfo. | 3:1 String cannot be a when type variable block
+platform_method_throw_bound	67.0	class	false	deploy fails: 3:1 Missing ';' at 'getName' | 2:37 Variable does not exist: | 3:1 Method does not exist or incorrect signature: void getName() from the type RoutePlatMethodThrow | 3:1 Unreachable statement
+platform_trigger_foreach_call_bound	67.0	trigger	false	deploy fails: 3:1 Missing ')' at 'getName'
+platform_foreach_same	67.0	anonymous	true	ok
+platform_dowhile_same	67.0	anonymous	true	ok
+platform_method_foreach_same	67.0	class	true	deploy ok (no component failure)

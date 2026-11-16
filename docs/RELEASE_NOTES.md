@@ -10,6 +10,8 @@
 
 - **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
 
+- Apex reports the captured line-break errors beside a receiver dot in more places: loop, do-while, else-if and switch headers, member headers of nested classes, local methods in anonymous code, and trigger loops. Only the captured forms change; other code keeps its earlier diagnostics.
+
 ## v0.3.10
 
 v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
