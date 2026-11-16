@@ -34,9 +34,7 @@ var testSurfaceFamilies = []string{
 // testSurfaceResiduals lists rows Glade does not match yet, by family/case. A
 // listed row must still differ from native; when it starts to match, the test
 // fails until the entry is removed, so the ledger only shrinks.
-var testSurfaceResiduals = map[string]string{
-	"rollup-summary/rollanon": "the probe puts the static events list into a Map and the final children delete appends the fifth AFTER_DELETE entry afterwards; Glade copies a static-origin list on Map.put (review_round2 x_alias shows native aliasing it); trigger firing matches the rollup_trigger_timing rows",
-}
+var testSurfaceResiduals = map[string]string{}
 
 type testSurfaceObservation struct {
 	method  string

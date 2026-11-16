@@ -4581,14 +4581,52 @@ func (vm *VM) refreshCallerEscapedCollectionAliases(caller map[string]Value, sin
 	if vm == nil || len(vm.escapedCollectionLatest) == 0 || len(caller) == 0 || vm.collectionMutationSeq == since {
 		return
 	}
+	budget := 4096
 	for name, local := range caller {
-		if local.Ref == 0 || !mutableCollectionKind(local.Kind) {
+		if !mutableCollectionKind(local.Kind) {
 			continue
 		}
-		latest, ok := vm.escapedCollectionLatest[local.Ref]
-		if !ok || latest.seq <= since || latest.value.Kind != local.Kind {
-			continue
+		if local.Ref != 0 {
+			if latest, ok := vm.escapedCollectionLatest[local.Ref]; ok && latest.seq > since && latest.value.Kind == local.Kind {
+				caller[name] = latest.value
+				continue
+			}
 		}
-		caller[name] = latest.value
+		vm.refreshEscapedNestedCollections(local, since, &budget)
+	}
+}
+
+// refreshEscapedNestedCollections replaces, inside a caller's local Map or List,
+// the collections that a callee mutated through a static field or a returned
+// reference since the call began (rollup_trigger_timing x_alias: a static List
+// put into a Map is the same list natively). The nested slot is updated in
+// place; the container keeps its own identity.
+func (vm *VM) refreshEscapedNestedCollections(container Value, since uint64, budget *int) {
+	refresh := func(item *Value) {
+		if *budget <= 0 || !mutableCollectionKind(item.Kind) {
+			return
+		}
+		*budget--
+		if item.Ref != 0 {
+			if latest, ok := vm.escapedCollectionLatest[item.Ref]; ok && latest.seq > since && latest.value.Kind == item.Kind {
+				*item = latest.value
+				return
+			}
+		}
+		vm.refreshEscapedNestedCollections(*item, since, budget)
+	}
+	switch container.Kind {
+	case ValueMap:
+		for key, item := range container.Map {
+			before := item
+			refresh(&item)
+			if item.Ref != before.Ref || item.Kind != before.Kind || len(item.List) != len(before.List) || len(item.Map) != len(before.Map) {
+				container.Map[key] = item
+			}
+		}
+	case ValueList:
+		for i := range container.List {
+			refresh(&container.List[i])
+		}
 	}
 }

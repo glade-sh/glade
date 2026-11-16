@@ -80,5 +80,5 @@ func TestReviewRound1NativeConformance(t *testing.T) {
 // GROUP BY groupability by field type, the uncatchable non-groupable
 // exception, and static-list aliasing through Map.put.
 func TestReviewRound2NativeConformance(t *testing.T) {
-	gapFamily{dir: "testdata/conformance/review_round2", adminFrom: []string{"GapAccess"}, residual: map[string]string{"x_alias/*": "a List read from a static field (or returned from a static method) is copied when it is put into a Map; a local List is aliased. Native aliases both. Cause not traced in the VM; the same shape explains rollup-summary rollanon"}}.replay(t)
+	gapFamily{dir: "testdata/conformance/review_round2", adminFrom: []string{"GapAccess"}}.replay(t)
 }

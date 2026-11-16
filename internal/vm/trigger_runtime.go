@@ -845,6 +845,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	})
 	leaveBeforeUpdate := vm.enterBeforeUpdateTrigger(trigger, records)
 	defer leaveBeforeUpdate()
+	mutationSeqBefore := vm.collectionMutationSeq
 	caller := vm.Globals
 	callerTypes := vm.VarTypes
 	callerFinals := vm.finalLocals
@@ -908,6 +909,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.callStack[lastCall] = callFrame{}
 		vm.callStack = vm.callStack[:lastCall]
 		vm.Globals = caller
+		vm.refreshCallerEscapedCollectionAliases(caller, mutationSeqBefore)
 		vm.VarTypes = callerTypes
 		vm.finalLocals = callerFinals
 		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
