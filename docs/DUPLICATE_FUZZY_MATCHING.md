@@ -396,7 +396,16 @@ set these limits:
   alignment of the two names `Mandolar Outlet` rejects at 95.45 and `Orbelvanto
   Bank` matches at 93.00, and `Plovdi Trade` matches where `Zorvex Audio`
   rejects at the same 94.05. Native reports these matches at 90 to 93. Glade
-  reports none of them.
+  reports none of them. Capture S1 (26 further bases) found no separator in
+  length, word class, first-word length or vowel identity either; the rows are
+  pinned as misses in `company_s1_panels_test.go`.
+- Two parenthesis forms on one base that differ only in the E, O or U suffix
+  word (`(East)`/`(Oast)`/`(Uast)`) match at 100 in every direction on every
+  captured base (S1, R2_par, R3_long). Glade scores them 100.
+- Word endings on the `Vexlet` stem (S1 `s1_d`) that Glade still misses, such
+  as `Vexletob`/`Vexleta` at 96 and `Vexlettt`/`Vexletab` at 93, and
+  `Qelthorins`/`Qelthoriner` at 100, rest on one base each and are pinned, as
+  is `Vexlet Inc` finding `Vexlets Inc` at 93 (Glade 91).
 - A dash candidate with a vowel suffix against a plain name (`- East`/`West`,
   native 91) is the same: it matches on `Orbel Trade`, `Zorvex Freight` and
   `Qa Trade` and not on `Mandolar Oil`, `Orbel Oil Outlet` or `Ab Logistics`.
