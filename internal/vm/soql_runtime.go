@@ -152,6 +152,10 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	if err := vm.validateSOQLSelection(query, false); err != nil {
 		return nil, err
 	}
+	// NATIVE nested child subquery depth apex_release_gates/org.tsv anonymous 62.0 67.0
+	if soqlChildQueryDepth(query) > 4 {
+		return nil, newExceptionError("System.QueryException", "SOQL statements cannot query aggregate relationships more than 4 level(s) away from the root entity object.")
+	}
 	// R007-R012/R062: OFFSET query handles contain no records. Ordinary SOQL
 	// still paginates normally. Validation above retains its existing errors.
 	if accounting != soqlOrdinaryAccounting && query.HasOffset {
@@ -210,8 +214,10 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 			return nil, err
 		}
 		// A child relationship selection spends the
-		// aggregate-query budget even when the parent query returns no rows.
-		for range query.ChildQueries {
+		// aggregate-query budget even when the parent query returns no rows,
+		// and so does each child nested inside another child.
+		// NATIVE nested child subquery aggregate count apex_release_gates/org.tsv anonymous 62.0 67.0
+		for range soqlChildQueryCount(query) {
 			if err := vm.incrementLimit("aggregateQueries", 1); err != nil {
 				return nil, err
 			}
@@ -4992,13 +4998,38 @@ func (vm *VM) securityFieldNames(objectName, expression, mode string, projection
 }
 
 func soqlLimitRows(result soql.Result) int {
-	rows := len(result.Records)
-	for _, record := range result.Records {
+	return soqlRecordRows(result.Records)
+}
+
+// soqlRecordRows counts the rows at every nesting depth of a child subquery.
+func soqlRecordRows(records []storage.Record) int {
+	rows := len(records)
+	for _, record := range records {
 		for _, children := range record.Children {
-			rows += len(children)
+			rows += soqlRecordRows(children)
 		}
 	}
 	return rows
+}
+
+// soqlChildQueryCount counts the child subqueries at every nesting depth.
+func soqlChildQueryCount(query soql.Query) int {
+	count := 0
+	for _, child := range query.ChildQueries {
+		count += 1 + soqlChildQueryCount(child.Query)
+	}
+	return count
+}
+
+// soqlChildQueryDepth is the number of child levels below the root query.
+func soqlChildQueryDepth(query soql.Query) int {
+	depth := 0
+	for _, child := range query.ChildQueries {
+		if d := 1 + soqlChildQueryDepth(child.Query); d > depth {
+			depth = d
+		}
+	}
+	return depth
 }
 
 func aggregateCount(value Value) (Value, bool) {
