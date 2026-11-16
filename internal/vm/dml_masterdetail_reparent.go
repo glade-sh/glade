@@ -27,6 +27,9 @@ func (vm *VM) masterDetailReparentFailures(op string, records []storage.Record, 
 	}
 	api := vm.currentMethod.APIVersion
 	var failures []dml.Result
+	// Most objects have no non-reparentable master. Find that once per object
+	// so a bulk update does not walk the field map for every row.
+	lockedMasters := make(map[string][]string, 1)
 	for i := range records {
 		record := records[i]
 		if record.ID == "" {
@@ -38,6 +41,18 @@ func (vm *VM) masterDetailReparentFailures(op string, records []storage.Record, 
 		}
 		object, exists := vm.Org.Objects[objectName]
 		if !exists {
+			continue
+		}
+		masters, seen := lockedMasters[objectName]
+		if !seen {
+			for name, field := range object.Definition.Fields {
+				if field.MasterDetail && !field.ReparentableMasterDetail {
+					masters = append(masters, name)
+				}
+			}
+			lockedMasters[objectName] = masters
+		}
+		if len(masters) == 0 {
 			continue
 		}
 		var locked []string
@@ -58,8 +73,8 @@ func (vm *VM) masterDetailReparentFailures(op string, records []storage.Record, 
 		if userMode && i < len(targets) && targets[i] != nil {
 			// The record handed to DML keeps only changed fields. A queried
 			// master that was not touched still counts under user mode.
-			for name, field := range object.Definition.Fields {
-				if !field.MasterDetail || field.ReparentableMasterDetail || slices.Contains(locked, name) {
+			for _, name := range masters {
+				if slices.Contains(locked, name) {
 					continue
 				}
 				if _, _, present := objectFieldValue(*targets[i], name); present {

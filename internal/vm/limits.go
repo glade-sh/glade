@@ -3,8 +3,6 @@ package vm
 import (
 	"fmt"
 	"strings"
-
-	"github.com/glade-sh/glade/internal/apexversion"
 )
 
 type LimitMode string
@@ -584,12 +582,10 @@ func (vm *VM) orgLimitValues() []Value {
 		{name: "MassEmail", used: vm.limits.EmailInvokes, limit: vm.limitCaps.EmailInvokes},
 		{name: "SingleEmail", used: vm.limits.EmailInvokes, limit: vm.limitCaps.EmailInvokes},
 	}
-	if vm != nil && apexversion.AtLeast(vm.currentMethod.APIVersion, 67) {
-		specs = append(specs,
-			orgLimitSpec{name: "DailyAsyncApexElasticExecutions", used: vm.limits.AsyncJobs, limit: 2 * vm.limitCaps.AsyncJobs},
-			orgLimitSpec{name: "DailyAsyncApexProcessed", used: vm.limits.AsyncJobs, limit: vm.limitCaps.AsyncJobs},
-		)
-	}
+	// The elastic async entries (DailyAsyncApexElasticExecutions and
+	// DailyAsyncApexProcessed) belong to orgs that enable elastic limits. A
+	// default scratch Developer org lists neither at any API version.
+	// NATIVE OrgLimits elastic keys absent apex_release_gates/org.tsv OlProbe66/OL1 OlProbe67/OL1 OlProbe67/OL2 anonymous istest 66.0 67.0
 	values := make([]Value, 0, len(specs))
 	for _, spec := range specs {
 		values = append(values, orgLimitValue(spec.name, spec.used, spec.limit))
