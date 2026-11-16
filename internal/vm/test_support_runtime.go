@@ -58,6 +58,9 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 					implements = true
 				}
 			}
+			if !implements && (vm.typeMatches(args[1].Type, "HttpCalloutMock", make(map[string]bool)) || vm.typeMatches(args[1].Type, "System.HttpCalloutMock", make(map[string]bool))) {
+				implements = true
+			}
 			if len(interfaces) > 0 && !implements {
 				return Null, newExceptionError("System.TypeException", "Mock object doesn't implement the supplied interface")
 			}
