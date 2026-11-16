@@ -175,3 +175,30 @@ System.assertEquals(false, m4.find());
 System.assertEquals(true, m4.hitEnd());
 `)
 }
+
+// Java keeps its Start wrapper unless the root node is a bare ^, and (?i)
+// without u folds ASCII only (H1, H2; native rows d15_* in regex_java_divergence).
+func TestRegexHitEndRootAnchorAndLongSFold(t *testing.T) {
+	runRegexApex(t, `
+Matcher g = Pattern.compile('(^(a+)+b)').matcher('a'.repeat(23) + 'c');
+System.assertEquals(false, g.find());
+System.assertEquals(true, g.hitEnd());
+Matcher n = Pattern.compile('(?:^(a+)+b)').matcher('a'.repeat(23) + 'c');
+System.assertEquals(false, n.find());
+System.assertEquals(true, n.hitEnd());
+Matcher f = Pattern.compile('(?i)^(s+)+x').matcher('s'.repeat(20) + '\u017F');
+System.assertEquals(false, f.find());
+System.assertEquals(false, f.hitEnd());
+`)
+}
+
+func TestRegexRootIsBareCaret(t *testing.T) {
+	for source, want := range map[string]bool{
+		`^(a+)+b`: true, `(?i)^(a+)+b`: true, `(^(a+)+b)`: false, `(?:^(a+)+b)`: false,
+		`^a|(b+)+c`: false, `^(a|b)+c`: true, `(a+)+b`: false, `^[|](a+)+b`: true, `(?i:^a)`: false,
+	} {
+		if got := regexRootIsBareCaret(source); got != want {
+			t.Errorf("regexRootIsBareCaret(%q) = %v, want %v", source, got, want)
+		}
+	}
+}

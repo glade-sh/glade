@@ -22,3 +22,6 @@ hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repea
   reports hitEnd=true (also pattern_matcher R011 and d14_neg_lookahead_nomatch). A pattern anchored at the start makes one
   attempt: ^(a+)+b on 24 a gives hitEnd=true and on 23 a plus c gives false. The @IsTest rows were captured too; only
   the anonymous rows are in org.tsv.
+  Java keeps its Start wrapper unless the root node is a bare ^: (^(a+)+b) and (?:^(a+)+b) on 23 a plus c give
+  hitEnd=true. (?i)^(s+)+x on 20 s plus U+017F gives find=false hitEnd=false (ASCII-only fold without u).
+  d15 anonymous and @IsTest rows: two repeats, 62.0 and 67.0, in org.tsv (classes Rxd150062 and Rxd150067).

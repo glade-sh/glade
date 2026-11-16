@@ -50,7 +50,7 @@ func (c *javaRegexClassState) advance(source string, i int) {
 // faster native forms whenever Java and regexp2 agree on that text.
 type regexTraits struct {
 	nonASCII     bool // text holds a code point above U+007F
-	foldUnsafe   bool // text holds U+0130 or U+212A, which regexp2 folds onto ASCII letters
+	foldUnsafe   bool // text holds U+0130, U+017F or U+212A, which can fold onto ASCII letters
 	wordNonASCII bool // text holds a non-ASCII character that regexp2 treats as a word character
 	lineTerms    bool // text holds \r, U+0085, U+2028 or U+2029
 	longText     bool // text is long enough to overflow Java's loop recursion
@@ -70,7 +70,7 @@ func regexTraitsOf(input string) regexTraits {
 			switch {
 			case r == 0x85 || r == 0x2028 || r == 0x2029:
 				t.lineTerms = true
-			case r == 0x130 || r == 0x212A:
+			case r == 0x130 || r == 0x212A || r == 0x17F:
 				t.foldUnsafe = true
 			}
 			if !t.wordNonASCII && regexp2WordRune(r) {
@@ -193,7 +193,7 @@ func regexSourceNeedsExplicitFold(source string, traits regexTraits) bool {
 		return false
 	}
 	// For an ASCII-only pattern, regexp2's own folding differs from Java's only
-	// on U+0130 and U+212A, unless the u flag asks for Unicode folding.
+	// on U+0130, U+017F and U+212A, unless the u flag asks for Unicode folding.
 	ascii := true
 	for i := 0; i < len(source); i++ {
 		if source[i] >= 0x80 {

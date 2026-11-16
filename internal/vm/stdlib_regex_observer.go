@@ -261,10 +261,10 @@ func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anch
 	if !anchored && p.noLinearMatch(input) {
 		// A failed unanchored find ends in Java's Start node, which sets
 		// hitEnd (pattern_matcher R011, d14_neg_lookahead_nomatch). A pattern
-		// whose every match begins at the start of the text has no Start node:
+		// whose root node is a bare ^ has no Start node (a group around it does):
 		// Java makes one attempt, and hitEnd is true when that attempt reads
 		// past the end. The linear program decides that exactly.
-		if p.linearProg == nil || p.linearProg.StartCond()&syntax.EmptyBeginText == 0 {
+		if p.linearProg == nil || !regexRootIsBareCaret(p.originalSource) {
 			return true, nil
 		}
 		if startByte == 0 {
@@ -363,4 +363,39 @@ func linearAttemptReachesEnd(prog *syntax.Prog, input string, endRune int) bool 
 		}
 	}
 	return len(current) > 0
+}
+
+// regexRootIsBareCaret reports whether Java compiles source to a root Begin
+// node: no top-level alternation, and the first element, after any flag-only
+// groups, is a bare ^. A group around the ^ keeps Java's Start wrapper.
+func regexRootIsBareCaret(source string) bool {
+	if strings.Contains(source, `\Q`) {
+		return false
+	}
+	rest := regexStripLeadingFlags(source)
+	if !strings.HasPrefix(rest, "^") {
+		return false
+	}
+	depth := 0
+	for i := 0; i < len(source); i++ {
+		switch source[i] {
+		case '\\':
+			i++
+		case '[':
+			for i++; i < len(source) && source[i] != ']'; i++ {
+				if source[i] == '\\' {
+					i++
+				}
+			}
+		case '(':
+			depth++
+		case ')':
+			depth--
+		case '|':
+			if depth == 0 {
+				return false
+			}
+		}
+	}
+	return true
 }
