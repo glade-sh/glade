@@ -159,8 +159,8 @@ func baseFirstNameGate(a, b string) bool {
 }
 
 // The custom alias keys come from single-word panels (i1a, i1b). No row
-// holds a name of several words or one with punctuation, so those shapes keep
-// the gate they had before the keys: "Ty Ann" still finds "Tye Ann".
+// holds a name of several words, so that shape keeps the gate it had before
+// the keys: "Ty Ann" still finds "Tye Ann".
 func TestFuzzyFirstAliasKeysOtherShapesKeepBase(t *testing.T) {
 	matches := [][2]string{{"Ty Ann", "Tye Ann"}, {"Ray Ann", "Raye Ann"}, {"Sue Ann", "Su Ann"}}
 	for _, pair := range matches {
@@ -176,7 +176,7 @@ func TestFuzzyFirstAliasKeysOtherShapesKeepBase(t *testing.T) {
 	heads := []string{"Ty", "Tye", "Tyr", "Tyl", "T", "Ray", "Raye", "Raym", "Rayma", "Rae", "R", "Sue", "Su", "Sues", "Suesa", "S"}
 	var names []string
 	for _, head := range heads {
-		names = append(names, head+" Ann", head+" A", head+"-Ann", head+".", head+" Ann Lee")
+		names = append(names, head+" Ann", head+" A", head+"-Ann", head+" Ann Lee")
 	}
 	all := append(append([]string{}, heads...), names...)
 	for _, a := range names {
@@ -202,7 +202,8 @@ func TestFuzzyFirstAliasKeysOtherShapesKeepBase(t *testing.T) {
 
 // Single-word neighbors no row holds follow the nearest rows: a name under
 // the alias key matches as "Raym", "Sues" and "Tyr" do, a name under the
-// spelled key stays apart as "Rae", "Su" and "Tye" do.
+// spelled key stays apart as "Rae", "Su" and "Tye" do, and a punctuated
+// initial is the initial ("S" does not find "Sue").
 func TestFuzzyFirstAliasKeysSingleWordNeighbors(t *testing.T) {
 	for _, c := range []struct {
 		a, b string
@@ -210,6 +211,7 @@ func TestFuzzyFirstAliasKeysSingleWordNeighbors(t *testing.T) {
 	}{
 		{"Ray", "Rayma", true}, {"Sue", "Suesa", true},
 		{"Ray", "Raya", false}, {"Sue", "Suey", false}, {"Ty", "Tyy", false},
+		{"S.", "Sue", false}, {"Sue", "S.", false}, {"T.", "Ty", false},
 	} {
 		if ok, _ := fuzzyFirstName(c.a, c.b, false); ok != c.want {
 			t.Errorf("%q=>%q: match %v, want %v", c.a, c.b, ok, c.want)

@@ -198,7 +198,13 @@ func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
 		return true, 100
 	}
 	if wx, wy := firstNameWord(fx), firstNameWord(fy); wx != wy {
-		if kx, ky := customFirstNameKey(wx), customFirstNameKey(wy); kx == "" || kx != ky {
+		kx, ky := firstNameKey(wx), firstNameKey(wy)
+		apart := nameKeptApart[orderedPair(fx, fy)]
+		if !strings.Contains(fx, " ") && !strings.Contains(fy, " ") {
+			// The alias-key rows hold single-word names only.
+			kx, ky, apart = customFirstNameKey(wx), customFirstNameKey(wy), false
+		}
+		if kx == "" || kx != ky || apart {
 			return false, 0
 		}
 	}
@@ -219,7 +225,9 @@ func firstNameKey(name string) string {
 }
 
 // customFirstNameKey is firstNameKey for a custom rule, which also keys the
-// names of nameAliasKeysCustom by their alias.
+// names of nameAliasKeysCustom by their alias. fuzzyFirstName applies it when
+// both names are one word, the shape of the rows ("S." is "S"); a name
+// of several words keeps firstNameKey ("Ty Ann" finds "Tye Ann").
 func customFirstNameKey(word string) string {
 	if key, ok := nameAliasKeysCustom[word]; ok {
 		return key
