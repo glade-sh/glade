@@ -624,11 +624,16 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 		}
 		if !found.HasRecords() {
 			// Native REP: records inserted together report as one set although
-			// they never alert or block one another.
-			if report == nil {
-				if peers := e.peerDuplicateReport(rule, record, update, stamp, nil); peers != nil {
-					report = peers
-					e.duplicates.insertMatched = !update
+			// they never alert or block one another. A record that matches an
+			// earlier record of its own statement is also inserted as an allowed
+			// duplicate for the update gate (native GATE rows); that only matters
+			// when the rule can act on an update, so other rules skip the scan.
+			if !update && (report == nil && peerReportCapable(rule) || rule.ActionOnUpdate != "" && !e.duplicates.insertMatched) {
+				if peers := e.peerMatches(rule, record, stamp); peers.HasRecords() {
+					e.duplicates.insertMatched = true
+					if report == nil && peerReportCapable(rule) {
+						report = &DuplicateReport{Rule: rule, Object: record.Object, RecordID: record.ID, Matches: flattenMatches(peers)}
+					}
 				}
 			}
 			continue
@@ -661,13 +666,11 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 				continue
 			}
 			if report == nil {
-				var matches []storage.Record
-				for _, match := range found.Matches {
-					matches = append(matches, match.Records...)
-				}
-				if peers := e.peerDuplicateReport(rule, record, update, stamp, matches); peers != nil {
-					report = peers
-					continue
+				matches := flattenMatches(found)
+				if peerReportCapable(rule) && !update {
+					if peers := e.peerMatches(rule, record, stamp); peers.HasRecords() {
+						matches = append(matches, flattenMatches(peers)...)
+					}
 				}
 				report = &DuplicateReport{Rule: rule, Object: record.Object, RecordID: record.ID, Matches: matches}
 			}
@@ -681,21 +684,31 @@ func (e *Engine) checkDuplicateRules(record storage.Record, update bool, stamp *
 	return report, nil
 }
 
-// peerDuplicateReport reports an Allow+Report insert that matches records
-// inserted earlier by the same statement. Enforcement never sees them, so the
-// scan is limited to those peers; base holds the matches enforcement found. The
-// report lists them first, then the peers: a design choice, since no native row
-// pins the order inside a report set (the REPR rows list sorted names). It
-// returns nil when no peer matches.
-func (e *Engine) peerDuplicateReport(rule storage.DuplicateRule, record storage.Record, update bool, stamp *string, base []storage.Record) *DuplicateReport {
-	if update || e.Options.UpsertCapturedInsertRulesOnly || !strings.EqualFold(rule.ActionOnInsert, "Allow") || !duplicateOperationsInclude(rule.OperationsOnInsert, "Report") {
-		return nil
+// peerReportCapable reports whether an insert under the rule can report
+// records inserted earlier by the same statement (Allow with the Report operation,
+// outside the upsert-captured route).
+func peerReportCapable(rule storage.DuplicateRule) bool {
+	return strings.EqualFold(rule.ActionOnInsert, "Allow") && duplicateOperationsInclude(rule.OperationsOnInsert, "Report")
+}
+
+func flattenMatches(result DuplicateResult) []storage.Record {
+	var matches []storage.Record
+	for _, match := range result.Matches {
+		matches = append(matches, match.Records...)
 	}
-	if stamp == nil || e.duplicates.stamp != stamp || len(e.duplicates.batch) == 0 {
-		return nil
+	return matches
+}
+
+// peerMatches finds the records inserted earlier by the same statement that
+// match the record. Enforcement never sees them (they are excluded), so a
+// report lists them after the matches enforcement found, then the peers: a
+// design choice, since no native row pins the order inside a report set (the
+// REPR rows list sorted names). Only those records can match, so the scan reads
+// them directly instead of every record of the object.
+func (e *Engine) peerMatches(rule storage.DuplicateRule, record storage.Record, stamp *string) DuplicateResult {
+	if e.Options.UpsertCapturedInsertRulesOnly || stamp == nil || e.duplicates.stamp != stamp || len(e.duplicates.peers) == 0 {
+		return DuplicateResult{}
 	}
-	// Only records inserted earlier by this statement can match, so the scan
-	// reads them directly instead of every record of the object.
 	if e.duplicates.peerView == nil {
 		e.duplicates.peerView = make(map[storage.ID]storage.Record, len(e.duplicates.peers))
 	}
@@ -707,7 +720,7 @@ func (e *Engine) peerDuplicateReport(rule storage.DuplicateRule, record storage.
 		}
 	}
 	if len(earlier) == 0 {
-		return nil
+		return DuplicateResult{}
 	}
 	var peers DuplicateResult
 	var supported bool
@@ -716,14 +729,10 @@ func (e *Engine) peerDuplicateReport(rule storage.DuplicateRule, record storage.
 	} else {
 		peers, supported = FindDuplicateMatchesAmong(e.Org, rule, record, nil, nil, earlier)
 	}
-	if !supported || !peers.HasRecords() {
-		return nil
+	if !supported {
+		return DuplicateResult{}
 	}
-	matches := append([]storage.Record(nil), base...)
-	for _, match := range peers.Matches {
-		matches = append(matches, match.Records...)
-	}
-	return &DuplicateReport{Rule: rule, Object: record.Object, RecordID: record.ID, Matches: matches}
+	return peers
 }
 
 // updateGateBaseline returns the record state the update gate compares with.
