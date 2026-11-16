@@ -32,6 +32,19 @@ var parkedReleaseGateRows = map[string]string{
 	"SjProbe67/SJ9":   "same as SJ9 at API 62",
 	"OlProbe66/OL4":   "the native map holds 75 entries in a scratch Developer org; Glade lists the 17 captured for another org shape",
 	"OlProbe67/OL4":   "same as OL4 at API 66",
+	// Rows of the follow-up run that Glade does not match yet.
+	"PjIdProbe62/PI3":    "a pause by a string that is not an Id reports Invalid ID natively; Glade reports a missing job",
+	"PjIdProbe62/PI4":    "same as PI3 for resume",
+	"PjIdProbe67/PI3":    "same as PI3 at API 62",
+	"PjIdProbe67/PI4":    "same as PI4 at API 62",
+	"SjAliasProbe62/SA2": "windows-932 is a native spelling of Windows-31J; Glade does not know the name",
+	"SjAliasProbe62/SA3": "MS_Kanji is a native spelling of Shift-JIS; Glade does not know the name",
+	"SjAliasProbe62/SA4": "cp932 is a third native charset; Glade has no codec for it",
+	"SjAliasProbe62/SA5": "Windows-31J encodes the private-use area to the user-defined rows; Glade decodes them but encodes a question mark",
+	"SjAliasProbe67/SA2": "same as SA2 at API 62",
+	"SjAliasProbe67/SA3": "same as SA3 at API 62",
+	"SjAliasProbe67/SA4": "same as SA4 at API 62",
+	"SjAliasProbe67/SA5": "same as SA5 at API 62",
 }
 
 // parkedReleaseGateCompileRows lists compile rows Glade does not reject yet.

@@ -1205,3 +1205,143 @@ SjProbe67/SJX25	67.0	istest	SJX25 Windows-31J 165=%5C
 SjProbe67/SJX26	67.0	istest	SJX26 Windows-31J 8212=%3F
 SjProbe67/SJX27	67.0	istest	SJX27 Windows-31J 8741=%81%61
 SjProbe67/SJ6	67.0	istest	SJ6 efbfbd40
+RpModeProbe62/RM1	62.0	anonymous	RM1 ok name=n2
+RpModeProbe62/RM2	62.0	anonymous	RM2 ok name=n2
+RpModeProbe62/RM3	62.0	anonymous	RM3 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe62/RM4	62.0	anonymous	RM4 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe62/RM5	62.0	anonymous	RM5 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe62/RM6	62.0	anonymous	RM6 CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+RpModeProbe62/RM7	62.0	anonymous	RM7 ok name=q7
+RpModeProbe62/RM8	62.0	anonymous	RM8 ok name=q8
+RpModeProbe62/RM9	62.0	anonymous	RM9 ok name=q9
+RpModeProbe62/RM10	62.0	anonymous	RM10 s0=ok s1=ok names=q10,y10
+RpModeProbe62/RM11	62.0	anonymous	RM11 ok
+RpModeProbe62/RM12	62.0	anonymous	RM12 ok
+RpModeProbe62/RM13	62.0	anonymous	RM13 ok
+RpModeProbe62/RM14	62.0	anonymous	RM14 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe62/RM15	62.0	anonymous	RM15 ok name=n2
+RpModeProbe62/RM16	62.0	anonymous	RM16 ok
+RpModeProbe62/RM1	62.0	istest	RM1 ok name=n2
+RpModeProbe62/RM2	62.0	istest	RM2 ok name=n2
+RpModeProbe62/RM3	62.0	istest	RM3 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe62/RM4	62.0	istest	RM4 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe62/RM5	62.0	istest	RM5 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe62/RM6	62.0	istest	RM6 CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+RpModeProbe62/RM7	62.0	istest	RM7 ok name=q7
+RpModeProbe62/RM8	62.0	istest	RM8 ok name=q8
+RpModeProbe62/RM9	62.0	istest	RM9 ok name=q9
+RpModeProbe62/RM10	62.0	istest	RM10 s0=ok s1=ok names=q10,y10
+RpModeProbe62/RM11	62.0	istest	RM11 ok
+RpModeProbe62/RM12	62.0	istest	RM12 ok
+RpModeProbe62/RM13	62.0	istest	RM13 ok
+RpModeProbe62/RM14	62.0	istest	RM14 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe62/RM15	62.0	istest	RM15 ok name=n2
+RpModeProbe62/RM16	62.0	istest	RM16 ok
+RpModeProbe63/RM1	63.0	anonymous	RM1 ok name=n2
+RpModeProbe63/RM2	63.0	anonymous	RM2 ok name=n2
+RpModeProbe63/RM3	63.0	anonymous	RM3 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe63/RM4	63.0	anonymous	RM4 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe63/RM5	63.0	anonymous	RM5 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe63/RM6	63.0	anonymous	RM6 CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+RpModeProbe63/RM7	63.0	anonymous	RM7 ok name=q7
+RpModeProbe63/RM8	63.0	anonymous	RM8 ok name=q8
+RpModeProbe63/RM9	63.0	anonymous	RM9 ok name=q9
+RpModeProbe63/RM10	63.0	anonymous	RM10 s0=ok s1=ok names=q10,y10
+RpModeProbe63/RM11	63.0	anonymous	RM11 ok
+RpModeProbe63/RM12	63.0	anonymous	RM12 ok
+RpModeProbe63/RM13	63.0	anonymous	RM13 ok
+RpModeProbe63/RM14	63.0	anonymous	RM14 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe63/RM15	63.0	anonymous	RM15 ok name=n2
+RpModeProbe63/RM16	63.0	anonymous	RM16 ok
+RpModeProbe63/RM1	63.0	istest	RM1 ok name=n2
+RpModeProbe63/RM2	63.0	istest	RM2 ok name=n2
+RpModeProbe63/RM3	63.0	istest	RM3 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe63/RM4	63.0	istest	RM4 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe63/RM5	63.0	istest	RM5 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe63/RM6	63.0	istest	RM6 CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+RpModeProbe63/RM7	63.0	istest	RM7 ok name=q7
+RpModeProbe63/RM8	63.0	istest	RM8 ok name=q8
+RpModeProbe63/RM9	63.0	istest	RM9 ok name=q9
+RpModeProbe63/RM10	63.0	istest	RM10 s0=ok s1=ok names=q10,y10
+RpModeProbe63/RM11	63.0	istest	RM11 ok
+RpModeProbe63/RM12	63.0	istest	RM12 ok
+RpModeProbe63/RM13	63.0	istest	RM13 ok
+RpModeProbe63/RM14	63.0	istest	RM14 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe63/RM15	63.0	istest	RM15 ok name=n2
+RpModeProbe63/RM16	63.0	istest	RM16 ok
+RpModeProbe67/RM1	67.0	anonymous	RM1 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM2	67.0	anonymous	RM2 ok name=n2
+RpModeProbe67/RM3	67.0	anonymous	RM3 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM4	67.0	anonymous	RM4 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM5	67.0	anonymous	RM5 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM6	67.0	anonymous	RM6 CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+RpModeProbe67/RM7	67.0	anonymous	RM7 ok name=q7
+RpModeProbe67/RM8	67.0	anonymous	RM8 ok name=q8
+RpModeProbe67/RM9	67.0	anonymous	RM9 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM10	67.0	anonymous	RM10 s0=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY s1=ok names=q8,y10
+RpModeProbe67/RM11	67.0	anonymous	RM11 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM12	67.0	anonymous	RM12 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM13	67.0	anonymous	RM13 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM14	67.0	anonymous	RM14 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM15	67.0	anonymous	RM15 CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY name=n
+RpModeProbe67/RM16	67.0	anonymous	RM16 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM1	67.0	istest	RM1 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM2	67.0	istest	RM2 ok name=n2
+RpModeProbe67/RM3	67.0	istest	RM3 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM4	67.0	istest	RM4 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM5	67.0	istest	RM5 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM6	67.0	istest	RM6 CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+RpModeProbe67/RM7	67.0	istest	RM7 ok name=q7
+RpModeProbe67/RM8	67.0	istest	RM8 ok name=q8
+RpModeProbe67/RM9	67.0	istest	RM9 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM10	67.0	istest	RM10 s0=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY s1=ok names=q8,y10
+RpModeProbe67/RM11	67.0	istest	RM11 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM12	67.0	istest	RM12 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM13	67.0	istest	RM13 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM14	67.0	istest	RM14 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result! 
+RpModeProbe67/RM15	67.0	istest	RM15 CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY name=n
+RpModeProbe67/RM16	67.0	istest	RM16 System.DmlException|Operation failed due to fields being inaccessible on Sobject RpChild__c, check errors on Exception or Result!
+PjIdProbe62/PI1	62.0	anonymous	PI1 System.AsyncException|No Apex job with CronTriggerId 08e000000000001 exists
+PjIdProbe62/PI2	62.0	anonymous	PI2 System.AsyncException|No Apex job with CronTriggerId 08e000000000001 exists
+PjIdProbe62/PI3	62.0	anonymous	PI3 System.StringException|Invalid ID: {0}
+PjIdProbe62/PI4	62.0	anonymous	PI4 System.StringException|Invalid ID: {0}
+PjIdProbe62/PI1	62.0	istest	PI1 System.AsyncException|No Apex job with CronTriggerId 08e000000000001 exists
+PjIdProbe62/PI2	62.0	istest	PI2 System.AsyncException|No Apex job with CronTriggerId 08e000000000001 exists
+PjIdProbe62/PI3	62.0	istest	PI3 System.StringException|Invalid ID: {0}
+PjIdProbe62/PI4	62.0	istest	PI4 System.StringException|Invalid ID: {0}
+PjIdProbe67/PI1	67.0	anonymous	PI1 System.AsyncException|No Apex job with CronTriggerId 08e000000000001 exists
+PjIdProbe67/PI2	67.0	anonymous	PI2 System.AsyncException|No Apex job with CronTriggerId 08e000000000001 exists
+PjIdProbe67/PI3	67.0	anonymous	PI3 System.StringException|Invalid ID: {0}
+PjIdProbe67/PI4	67.0	anonymous	PI4 System.StringException|Invalid ID: {0}
+PjIdProbe67/PI1	67.0	istest	PI1 System.AsyncException|No Apex job with CronTriggerId 08e000000000001 exists
+PjIdProbe67/PI2	67.0	istest	PI2 System.AsyncException|No Apex job with CronTriggerId 08e000000000001 exists
+PjIdProbe67/PI3	67.0	istest	PI3 System.StringException|Invalid ID: {0}
+PjIdProbe67/PI4	67.0	istest	PI4 System.StringException|Invalid ID: {0}
+SjAliasProbe62/SA1	62.0	anonymous	SA1 csWindows31J %87%40%FA%40
+SjAliasProbe62/SA2	62.0	anonymous	SA2 windows-932 %87%40%FA%40
+SjAliasProbe62/SA3	62.0	anonymous	SA3 MS_Kanji %3F%3F
+SjAliasProbe62/SA4	62.0	anonymous	SA4 cp932 %3F%FA%40
+SjAliasProbe62/SA5	62.0	anonymous	SA5 Windows-31J 57344=%F0%40
+SjAliasProbe62/SA6	62.0	anonymous	SA6 Shift-JIS 57344=%3F
+SjAliasProbe62/SA1	62.0	istest	SA1 csWindows31J %87%40%FA%40
+SjAliasProbe62/SA2	62.0	istest	SA2 windows-932 %87%40%FA%40
+SjAliasProbe62/SA3	62.0	istest	SA3 MS_Kanji %3F%3F
+SjAliasProbe62/SA4	62.0	istest	SA4 cp932 %3F%FA%40
+SjAliasProbe62/SA5	62.0	istest	SA5 Windows-31J 57344=%F0%40
+SjAliasProbe62/SA6	62.0	istest	SA6 Shift-JIS 57344=%3F
+SjAliasProbe67/SA1	67.0	anonymous	SA1 csWindows31J %87%40%FA%40
+SjAliasProbe67/SA2	67.0	anonymous	SA2 windows-932 %87%40%FA%40
+SjAliasProbe67/SA3	67.0	anonymous	SA3 MS_Kanji %3F%3F
+SjAliasProbe67/SA4	67.0	anonymous	SA4 cp932 %3F%FA%40
+SjAliasProbe67/SA5	67.0	anonymous	SA5 Windows-31J 57344=%F0%40
+SjAliasProbe67/SA6	67.0	anonymous	SA6 Shift-JIS 57344=%3F
+SjAliasProbe67/SA1	67.0	istest	SA1 csWindows31J %87%40%FA%40
+SjAliasProbe67/SA2	67.0	istest	SA2 windows-932 %87%40%FA%40
+SjAliasProbe67/SA3	67.0	istest	SA3 MS_Kanji %3F%3F
+SjAliasProbe67/SA4	67.0	istest	SA4 cp932 %3F%FA%40
+SjAliasProbe67/SA5	67.0	istest	SA5 Windows-31J 57344=%F0%40
+SjAliasProbe67/SA6	67.0	istest	SA6 Shift-JIS 57344=%3F
+MlUnicodeProbe62/MU1	62.0	anonymous	MU1 [ a A b~]
+MlUnicodeProbe62/MU1	62.0	istest	MU1 [ a A b~]
+MlUnicodeProbe67/MU1	67.0	anonymous	MU1 [ a A b~]
+MlUnicodeProbe67/MU1	67.0	istest	MU1 [ a A b~]

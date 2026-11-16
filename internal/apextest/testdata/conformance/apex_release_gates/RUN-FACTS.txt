@@ -7,7 +7,16 @@ runs: four fresh 1-day scratch orgs on four campaign Dev Hubs, each deleted and 
   runs 2 and 3 repeated every case that run 4 shares with them: no row differed (run 3 changed only the PG7 counter, which a probe edit redefined)
   anonymous and istest rows agree except where a debug log drops control characters (Ml2Probe MLm) and the
   anonymous API 67 query-row counters (NsProbe67 NS rows count each row twice; the istest rows match API 62)
-cases: 1206 rows in org.tsv, 31 rows in compile.tsv
+cases: 1346 rows in org.tsv, 31 rows in compile.tsv
+follow-up run (RpModeProbe, PjIdProbe, SjAliasProbe, MlUnicodeProbe; the last 140 rows of org.tsv):
+  one fresh 1-day scratch org, started 2026-11-16T04:47Z, finished 2026-11-16T04:51Z, deleted and verified gone
+  an earlier run of the RpModeProbe cases on another fresh org (2026-11-16T04:35Z) returned the same 96 rows
+  RpModeProbe: master-detail updates under explicit user and system mode, after an insert of the same record,
+    through a parent relationship selection, per sharing declaration, and inside an API 67.0 trigger (RpModeTrigger)
+  PjIdProbe: pause and resume by a 15-character Id and by a string that is not an Id
+  SjAliasProbe: more charset spellings and a private-use code point; MlUnicodeProbe: a unicode escape in a multiline string
+  the same org at anonymous API 66.0 and 67.0 lists these OrgLimits names containing "async":
+    ConcurrentAsyncGetReportInstances, DailyAsyncApexExecutions, DailyAsyncApexTests, HourlyAsyncReportRuns, HourlyElevateAsyncReportRuns
 sf: @salesforce/cli/2.157.8
 setup: GlProbeAll permission set assigned to the running user; custom objects deployed from project/
 hub: campaign Dev Hub (scratch Developer edition org, 1 day, deleted after the run)
