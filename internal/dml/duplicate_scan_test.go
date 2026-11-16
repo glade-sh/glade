@@ -114,6 +114,12 @@ func referenceStandardStructure(object string, rel map[string]string) bool {
 		cz := eq("BillingCity") || eq("BillingPostalCode")
 		return (eq("Name") && cz) || (eq("Website") && cz && (eq("BillingStreet") || eq("Phone")))
 	case "contact", "lead":
+		// NATIVE two blank last names are ignored on the email path when
+		// both first names are present
+		// internal/apextest/testdata/conformance/duplicate_standard_rules/org.tsv Standard.Field.Contact.Last
+		if rel["LastName"] == "bb" && rel["FirstName"] == "eq" && eq("Email") {
+			return true
+		}
 		if !eq("LastName") {
 			return false
 		}
@@ -230,8 +236,11 @@ func TestStandardDuplicateMatcherFieldShapes(t *testing.T) {
 			declined++
 		}
 	}
-	if declined != 8 {
-		t.Fatalf("%d contact candidates declined; the 8 without a last name must", declined)
+	// NATIVE a candidate without a last name still finds a record without one
+	// on the email path when both have a first name
+	// internal/apextest/testdata/conformance/duplicate_standard_rules/org.tsv Standard.Field.Contact.Last
+	if declined != 6 {
+		t.Fatalf("%d contact candidates declined; the 6 without a last name and without an email address or a first name must", declined)
 	}
 }
 

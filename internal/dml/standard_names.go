@@ -1,6 +1,40 @@
 package dml
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
+
+// firstNameInitialKeyed is the First Name method behind the key
+// First_Name (1,1): the initial of the first word, punctuation removed,
+// selects the pair instead of the method's phonetic key. Equal text and a
+// Name Variant entry still score 100 first (the key substitutes aliases
+// before it takes the initial), and the pairs the tables keep apart stay
+// apart.
+func firstNameInitialKeyed(a, b string) (bool, float64) {
+	a, b = capFuzzyInput(strings.TrimSpace(a)), capFuzzyInput(strings.TrimSpace(b))
+	x, y := strings.ToLower(a), strings.ToLower(b)
+	fx, fy := foldLowered(x), foldLowered(y)
+	if x == y || nameVariantOf(fx, fy) {
+		return true, 100
+	}
+	if ix, iy := firstNameInitialOf(fx), firstNameInitialOf(fy); ix == utf8.RuneError || ix != iy || nameKeptApart[orderedPair(fx, fy)] {
+		return false, 0
+	}
+	return firstNameAlgorithms(x, y, fx, fy)
+}
+
+// firstNameInitialOf is the first letter or digit of a folded first name's
+// first word, or utf8.RuneError when it has none.
+func firstNameInitialOf(folded string) rune {
+	word := firstNameWord(folded)
+	if word == "" {
+		return utf8.RuneError
+	}
+	r, _ := utf8.DecodeRuneInString(word)
+	return r
+}
 
 // A standard Contact can match J or J. with a one-word first name beginning
 // with J. Two-letter prefixes and unrelated initials do not establish a match.
@@ -310,4 +344,125 @@ func standardIsTerminalSwap(a, b string) bool {
 	a, b = strings.ToLower(a), strings.ToLower(b)
 	i := len(a) - 2
 	return a[:i] == b[:i] && a[i] != a[i+1] && a[i] == b[i+1] && a[i+1] == b[i]
+}
+
+// standardFirstNameJaroWinkler is the standard First Name threshold, the
+// documented 85: on the email path "John" finds "Jo" (0.867) and "Jo" finds
+// "Jose" (0.867); "Jo" never finds "Johny" (0.84) nor "Jon" "Jose" (0.778)
+// (the standard fixture's Field.Contact.First and NameConfidence rows).
+const standardFirstNameJaroWinkler = 0.85
+
+// standardFirstNameScore is the standard First Name item without a match
+// key: Exact, Initials, Jaro-Winkler, Metaphone 3 and Name Variant, the best
+// of them (Salesforce Help lists Metaphone 3 for the standard rules only).
+// Names that differ only in spaces and punctuation are equal ("Mary Ann",
+// "MaryAnn" and "Mary-Ann"; B2 s_cmp_c), and equal Metaphone 3 codes score
+// 100 ("Jane" finds "John", "Maira" finds "Mary"; Field.Contact.First). The
+// score is the algorithm's, 100 or the Jaro-Winkler value as a percentage.
+func standardFirstNameScore(a, b string) (bool, float64) {
+	x, y := strings.ToLower(strings.TrimSpace(capFuzzyInput(a))), strings.ToLower(strings.TrimSpace(capFuzzyInput(b)))
+	fx, fy := foldLowered(x), foldLowered(y)
+	if x == y || nameVariantOf(fx, fy) || standardNameVariants[orderedPair(fx, fy)] || standardInitials(a, b, fx, fy) {
+		return true, 100
+	}
+	jx, jy := standardNameLetters(fx), standardNameLetters(fy)
+	if jx == jy && jx != "" {
+		return true, 100
+	}
+	if code := lastNameMetaphone3(jx); code != "" && code == lastNameMetaphone3(jy) {
+		return true, 100
+	}
+	score := jaroWinkler(x, y)
+	return score >= standardFirstNameJaroWinkler-1e-9, 100 * score
+}
+
+// standardNameLetters is a folded name with everything but letters and
+// digits removed.
+func standardNameLetters(folded string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return r
+		}
+		return -1
+	}, folded)
+}
+
+// standardInitialKeyedFirst is the first-name share of the phone path,
+// whose key is First_Name (1,1) Last_Name Phone. Both names must be present.
+// The standard First Name verdict stands, and Initials and names that differ
+// only in spaces and punctuation also pass when the initials agree (B2 s_in_c
+// and s_ctl_c_b over phone: "Y" finds "Y R S", "YR" finds "Y R", "Mary Ann"
+// finds "MaryAnn"). The confidence uses the standard first-name scale.
+func standardInitialKeyedFirst(a, b string) (float64, bool) {
+	a, b = strings.TrimSpace(a), strings.TrimSpace(b)
+	if a == "" || b == "" {
+		return 0, false
+	}
+	a, b = capFuzzyInput(a), capFuzzyInput(b)
+	fx, fy := foldText(a), foldText(b)
+	if ix := firstNameInitialOf(fx); ix != utf8.RuneError && ix == firstNameInitialOf(fy) {
+		if standardInitials(a, b, fx, fy) || standardNameLetters(fx) == standardNameLetters(fy) {
+			return 100, true
+		}
+	}
+	if matched, confidence := standardFirstName(a, b); matched {
+		// standardFirstName reports (100 + score) / 2.
+		return standardFirstNameConfidence(2*confidence - 100), true
+	}
+	return 0, false
+}
+
+// standardSurnamePanelShape reports a surname pair inside the measured
+// exact-first-name keyboard panels (standardCorroboratedSurname): single
+// words of letters with the lengths those panels cover. Their misses are
+// native verdicts too.
+func standardSurnamePanelShape(a, b string) bool {
+	if !standardSurnameLengthsMayMatch(a, b) {
+		return false
+	}
+	x, y := standardSurnamePair(a, b)
+	return standardNameWord(x) && standardNameWord(y)
+}
+
+// standardInitials is the Initials algorithm on two first names (fx, fy their
+// folds) whose typed initials are ASCII letters: natively an initial "K"
+// never finds a name typed with the Kelvin sign, U+212A ("Karl"), which
+// folding would turn into "karl" (duplicate_save_behavior calibration
+// initials).
+func standardInitials(a, b, fx, fy string) bool {
+	return standardASCIIInitial(a) && standardASCIIInitial(b) && (firstNameInitials(fx, fy) || firstNameInitials(fy, fx))
+}
+
+// standardASCIIInitial reports a name whose first letter is ASCII.
+func standardASCIIInitial(s string) bool {
+	for _, r := range s {
+		if unicode.IsLetter(r) {
+			return r < utf8.RuneSelf
+		}
+	}
+	return false
+}
+
+// standardNameVariants are first-name pairs the standard Contact rule scores
+// 100 on the email path, in either direction, that the shared dictionary and
+// Glade's Metaphone 3 codes do not give (NATIVE standard_first_names c9s1 and
+// c9s2; duplicate_rule_match_keys B2 s_cmp 8; "Raymond" and "Rae", "Susan"
+// and "Su" from the fuzzy_first_alias_keys standard panel i1sb). The table is
+// pairwise, never closed transitively: natively "Edward" does not find
+// "Theodore" although both find "Ted", nor "John" "Henry" although both find
+// "Hank". No custom-rule row shows these pairs, so custom rules do not read it.
+var standardNameVariants = map[[2]string]bool{
+	orderedPair("alex", "xander"):    true,
+	orderedPair("edward", "ted"):     true,
+	orderedPair("hank", "jack"):      true,
+	orderedPair("hank", "john"):      true,
+	orderedPair("jack", "john"):      true,
+	orderedPair("marjorie", "peggy"): true,
+	orderedPair("mary", "molly"):     true,
+	orderedPair("mary", "polly"):     true,
+	orderedPair("matt", "matthew"):   true,
+	orderedPair("molly", "polly"):    true,
+	orderedPair("rae", "raymond"):    true,
+	orderedPair("sally", "sarah"):    true,
+	orderedPair("su", "susan"):       true,
 }
