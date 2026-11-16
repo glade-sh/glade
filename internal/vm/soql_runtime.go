@@ -2266,10 +2266,13 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 			row.Fields["sObject"] = value
 			// Fixed test results select records without asking the search index
 			// to generate snippets (native APIs 62/67 return null per field).
-			_, snippets := soslSnippetsForRecord(record, query.WithSnippet && !vm.fixedSearchResultsSet, query.Terms)
-			// Indexed and fixed searches return a null default snippet for the
-			// captured Account rows (sosl_search_matrix wi_*_find).
-			row.Fields["snippet"] = Null
+			snippet, snippets := soslSnippetsForRecord(record, query.WithSnippet && !vm.fixedSearchResultsSet, query.Terms)
+			row.Fields["snippet"] = String(snippet)
+			if vm.fixedSearchResultsSet || soslObjectHasNoSnippets(group.ObjectName) {
+				// Account and Contact results carry no default snippet, with or
+				// without WITH SNIPPET (sosl_search_matrix wi_*_find, snip_*).
+				row.Fields["snippet"] = Null
+			}
 			row.Fields["snippets"] = snippets
 			list.List = append(list.List, row)
 		}
@@ -2573,7 +2576,8 @@ func (vm *VM) executeSOSLQuery(query sosl.Query, accessLevel Value) ([]soslResul
 		if vm.Org != nil {
 			matcherBoundary := query.MatchUnsupported
 			expression := query.Expression
-			if len(query.Returning) == 1 && strings.EqualFold(specObjectName, "Document") {
+			if strings.EqualFold(specObjectName, "Document") {
+				// Alone or beside another object (sosl_search_matrix op_doc, doc_*).
 				expression = sosl.ImplicitOr(expression)
 			}
 			records, err := vm.soslRecordsForSpec(spec, specObjectName, query.Terms, expression, query.Scope, query.PricebookID, accessLevel, matcherBoundary)
@@ -3202,7 +3206,7 @@ func (vm *VM) soslRecordMatchesSuggestion(objectName string, record storage.Reco
 
 func soslSnippetsForRecord(record storage.Record, enabled bool, terms []sosl.SearchTerm) (string, Value) {
 	snippets := typedMap("Map<String,String>")
-	if !enabled {
+	if !enabled || soslObjectHasNoSnippets(record.Object) {
 		return "", snippets
 	}
 	fields := make([]string, 0, len(record.Fields))
@@ -3214,11 +3218,6 @@ func soslSnippetsForRecord(record storage.Record, enabled bool, terms []sosl.Sea
 		value := record.Fields[field]
 		text := storageValueText(value)
 		if text == "" || !soslSnippetMatches(text, terms) {
-			continue
-		}
-		if strings.EqualFold(record.Object, "Account") && strings.EqualFold(field, "Name") {
-			// getSnippet("Name") is null for an Account matched on its name
-			// (sosl_search_matrix sw_snippet_field).
 			continue
 		}
 		snippet := String(text)
@@ -3233,6 +3232,15 @@ func soslSnippetsForRecord(record storage.Record, enabled bool, terms []sosl.Sea
 		}
 	}
 	return "", snippets
+}
+
+// soslObjectHasNoSnippets lists the objects whose results returned null from
+// getSnippet() and getSnippet(field) for every matched field
+// (sosl_search_matrix sw_snippet_field, snip_acct_fields, snip_contact). Other
+// objects keep the local snippet text; a Case snippet is marked up natively
+// (snip_case) and that markup is not modeled.
+func soslObjectHasNoSnippets(objectName string) bool {
+	return strings.EqualFold(objectName, "Account") || strings.EqualFold(objectName, "Contact")
 }
 
 func soslSnippetMatches(text string, terms []sosl.SearchTerm) bool {

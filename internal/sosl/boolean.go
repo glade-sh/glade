@@ -247,7 +247,8 @@ var leadingStarWord = regexp.MustCompile(`^\*[A-Za-z]+$`)
 // escapedLiteral decodes an unquoted term whose backslashes escape only
 // { " : \ or ?, with no unescaped wildcard.
 func escapedLiteral(item string) (string, bool) {
-	if !strings.Contains(item, `\`) || strings.Contains(item, "*") || strings.HasPrefix(item, `"`) {
+	// An escaped star arrives as a marker rune; that mix has no row.
+	if !strings.Contains(item, `\`) || strings.Contains(item, "*") || strings.Contains(item, escapedSearchWildcardMarker) || strings.HasPrefix(item, `"`) {
 		return "", false
 	}
 	var out strings.Builder

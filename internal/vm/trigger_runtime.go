@@ -72,8 +72,11 @@ type triggerExecutionError struct {
 func (e *triggerExecutionError) Error() string { return e.detail }
 func (e *triggerExecutionError) Unwrap() error { return e.cause }
 
-func triggerEventName(trigger Trigger) string {
-	return strings.ToUpper(trigger.Timing[:1]) + trigger.Timing[1:] + strings.ToUpper(trigger.Operation[:1]) + trigger.Operation[1:]
+// triggerActivation is one running trigger event, for the depth failure text.
+type triggerActivation struct{ object, timing, operation string }
+
+func triggerEventName(timing, operation string) string {
+	return strings.ToUpper(timing[:1]) + timing[1:] + strings.ToUpper(operation[:1]) + operation[1:]
 }
 
 func (vm *VM) wrapTriggerExecutionError(trigger Trigger, err error) error {
@@ -700,11 +703,16 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 	if vm.triggerDepth >= maxTriggerDepth {
 		// test_boundary_edges tr_depth (APIs 62 and 67): the depth failure names
 		// the trigger and lists each active activation.
-		detail := triggers[0].Name + ": maximum trigger depth exceeded\n" + strings.Join(vm.triggerActivations, "\n")
-		return nil, &triggerExecutionError{cause: newExceptionError("DmlException", detail), detail: detail}
+		var detail strings.Builder
+		detail.WriteString(triggers[0].Name + ": maximum trigger depth exceeded")
+		for _, activation := range vm.triggerActivations {
+			detail.WriteString("\n" + strings.TrimSuffix(activation.object, "__c") + " trigger event " + triggerEventName(activation.timing, activation.operation))
+		}
+		return nil, &triggerExecutionError{cause: newExceptionError("DmlException", detail.String()), detail: detail.String()}
 	}
 	vm.triggerDepth++
-	vm.triggerActivations = append(vm.triggerActivations, strings.TrimSuffix(object, "__c")+" trigger event "+triggerEventName(triggers[0]))
+	// The text is built only for a depth failure; this runs for every trigger event.
+	vm.triggerActivations = append(vm.triggerActivations, triggerActivation{object: object, timing: triggers[0].Timing, operation: triggers[0].Operation})
 	defer func() {
 		vm.triggerDepth--
 		vm.triggerActivations = vm.triggerActivations[:len(vm.triggerActivations)-1]

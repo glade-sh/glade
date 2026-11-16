@@ -1738,10 +1738,13 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 			return execOutcome{}, err
 		}
 	}
-	// runAs charges a DML statement; Limits.getRunAs is that counter
-	// (limits_counter_edges runas101, runas151).
-	if err := vm.incrementSavepointStatement(); err != nil {
-		return execOutcome{}, err
+	// runAs with a User charges a DML statement; Limits.getRunAs is that
+	// counter (limits_counter_edges runas101, runas151). The Package.Version
+	// form has no row and charges nothing.
+	if changesUser {
+		if err := vm.incrementSavepointStatement(); err != nil {
+			return execOutcome{}, err
+		}
 	}
 	if err := vm.incrementLimit("runAs", 1); err != nil {
 		return execOutcome{}, err

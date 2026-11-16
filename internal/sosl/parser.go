@@ -3,7 +3,6 @@ package sosl
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -392,7 +391,7 @@ func (p *parser) parseReturning(query *Query) error {
 		}
 		object := p.next().text
 		if !p.accept(tokenLParen) {
-			query.Returning = append(query.Returning, ReturningObject{Object: object, Fields: []SelectExpr{{Field: "Id"}}})
+			query.addReturning(ReturningObject{Object: object, Fields: []SelectExpr{{Field: "Id"}}})
 			if p.accept(tokenComma) {
 				continue
 			}
@@ -410,27 +409,7 @@ func (p *parser) parseReturning(query *Query) error {
 		if err != nil {
 			return err
 		}
-		if n := len(query.Returning); n > 0 && strings.EqualFold(query.Returning[n-1].Object, returning.Object) {
-			// Adjacent specifications of one object return a single list built
-			// from the last one (sosl_search_matrix rt1, rt5, rt6).
-			query.Returning[n-1] = returning
-			if !p.accept(tokenComma) {
-				return nil
-			}
-			if p.peek().kind == tokenWord && strings.EqualFold(p.peek().text, "WITH") {
-				return p.errorf("unexpected comma before global SOSL clause")
-			}
-			continue
-		}
-		duplicate := false
-		for _, previous := range query.Returning {
-			// C013 repeats the identical bucket. Distinct projections or filters
-			// retain their existing behavior until captured independently.
-			duplicate = duplicate || reflect.DeepEqual(previous, returning)
-		}
-		if !duplicate {
-			query.Returning = append(query.Returning, returning)
-		}
+		query.addReturning(returning)
 		if !p.accept(tokenComma) {
 			return nil
 		}
@@ -438,6 +417,20 @@ func (p *parser) parseReturning(query *Query) error {
 			return p.errorf("unexpected comma before global SOSL clause")
 		}
 	}
+}
+
+// addReturning appends one RETURNING specification. An object named again,
+// adjacent or not, with or without a field list, keeps its first position
+// and takes the last specification: one list per object
+// (sosl_search_matrix rt1, rt5, rt6 and rtd_*).
+func (q *Query) addReturning(returning ReturningObject) {
+	for i := range q.Returning {
+		if strings.EqualFold(q.Returning[i].Object, returning.Object) {
+			q.Returning[i] = returning
+			return
+		}
+	}
+	q.Returning = append(q.Returning, returning)
 }
 
 func (p *parser) parseReturningObject(object string) (ReturningObject, error) {
