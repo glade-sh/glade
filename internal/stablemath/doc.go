@@ -8,9 +8,9 @@
 // result is also the faithful one.
 //
 // The files other than doc.go are the standard library sources (BSD license,
-// see the headers) with the architecture dispatch removed and every float64
-// product wrapped in an explicit float64 conversion, which the Go spec says
-// forbids fusing. Exported names carry a Stable suffix. Regenerate by
+// see the LICENSE file in this directory and the file headers) with the
+// architecture dispatch removed and every float64 product wrapped in an
+// explicit float64 conversion, which the Go spec says forbids fusing. Exported names carry a Stable suffix. Regenerate by
 // repeating that transformation on a newer Go release, then run the
 // cross-architecture tests in internal/vm.
 package stablemath

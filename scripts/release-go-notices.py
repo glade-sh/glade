@@ -147,6 +147,20 @@ def main(binary_arg, source_root_arg, output_arg):
             "noticeFiles": [str(relative / name) for name in files],
         })
 
+    # internal/stablemath is a modified copy of Go standard library source
+    # (BSD-3, Copyright The Go Authors) compiled into the binary. Its license
+    # is shipped alongside the Go distribution license and must be present.
+    stablemath = source_root / "internal/stablemath"
+    if stablemath.is_dir():
+        relative = Path("source/go-math")
+        files = copy_notices(stablemath, output / relative, required=("LICENSE",))
+        components.append({
+            "module": "go.dev/src/math",
+            "version": "modified-copy",
+            "kind": "vendored-source",
+            "noticeFiles": [str(relative / name) for name in files],
+        })
+
     manifest = {
         "schemaVersion": 1,
         "binarySHA256": sha256_file(binary),

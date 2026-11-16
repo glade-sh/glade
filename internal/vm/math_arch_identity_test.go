@@ -7,6 +7,8 @@ import (
 	"math"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/stablemath"
 )
 
 // archIdentityInputs is a deterministic grid that exercises argument reduction,
@@ -61,6 +63,51 @@ func archIdentityLines(t testing.TB) []string {
 				math.Float64bits(lat1), math.Float64bits(lon1), math.Float64bits(lat2), math.Float64bits(lon2), archIdentityResult(got, err)))
 		}
 	}
+	lines = append(lines, archIdentitySpecialLines()...)
+	return lines
+}
+
+// archIdentitySpecialLines covers the edge inputs the grid skips: the Math.*
+// entry points reject NaN and infinities, so these call the ports directly.
+func archIdentitySpecialLines() []string {
+	special := []float64{math.NaN(), math.Inf(1), math.Inf(-1), 0, math.Copysign(0, -1), 5e-324, -5e-324, 1e300, -1e300, 709.78, -745, 1, -1}
+	unary := []struct {
+		name string
+		fn   func(float64) float64
+	}{
+		{"Sin", stablemath.SinStable}, {"Cos", stablemath.CosStable}, {"Tan", stablemath.TanStable},
+		{"Asin", stablemath.AsinStable}, {"Acos", stablemath.AcosStable}, {"Atan", stablemath.AtanStable},
+		{"Sinh", stablemath.SinhStable}, {"Cosh", stablemath.CoshStable}, {"Tanh", stablemath.TanhStable},
+		{"Exp", stablemath.ExpStable}, {"Expm1", stablemath.Expm1Stable}, {"Log", stablemath.LogStable},
+		{"Log10", stablemath.Log10Stable}, {"Cbrt", stablemath.CbrtStable},
+	}
+	var lines []string
+	for _, f := range unary {
+		for _, in := range special {
+			lines = append(lines, fmt.Sprintf("special.%s %016x %016x", f.name, math.Float64bits(in), math.Float64bits(f.fn(in))))
+		}
+	}
+	for _, x := range special {
+		for _, y := range special {
+			lines = append(lines,
+				fmt.Sprintf("special.Pow %016x %016x %016x", math.Float64bits(x), math.Float64bits(y), math.Float64bits(stablemath.PowStable(x, y))),
+				fmt.Sprintf("special.Atan2 %016x %016x %016x", math.Float64bits(x), math.Float64bits(y), math.Float64bits(stablemath.Atan2Stable(x, y))))
+		}
+	}
+	// The cases named in review: values near overflow, underflow and the
+	// subnormal range, and a huge trigonometric argument.
+	for _, c := range []struct {
+		name string
+		v    float64
+	}{
+		{"Exp(709.78)", stablemath.ExpStable(709.78)},
+		{"Exp(-745)", stablemath.ExpStable(-745)},
+		{"Log(5e-324)", stablemath.LogStable(5e-324)},
+		{"Pow(5e-324,1e-10)", stablemath.PowStable(5e-324, 1e-10)},
+		{"Sin(1e300)", stablemath.SinStable(1e300)},
+	} {
+		lines = append(lines, fmt.Sprintf("named.%s %016x", c.name, math.Float64bits(c.v)))
+	}
 	return lines
 }
 
@@ -73,7 +120,7 @@ func archIdentityResult(v Value, err error) string {
 
 // archIdentitySHA256 is the digest of archIdentityLines on amd64. The same
 // digest on arm64 proves every result is bit-identical across architectures.
-const archIdentitySHA256 = "f6299b5cf927399c6ea91f6cb8669a8a65b5954f84890949c812f23063345099"
+const archIdentitySHA256 = "071058119a4169c920d1814705c888900880c2f083195d6938b8d88039f2b7f7"
 
 // archIdentitySpot lists readable rows from the same amd64 run.
 var archIdentitySpot = map[string]string{
