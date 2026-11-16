@@ -128,6 +128,7 @@ List<Integer> n = new List<Integer>();
 Set<String> seen = new Set<String>();
 String label = 'row';
 Integer k = 0;
+Integer sz = 0;
 while (l.size() < 250) {
   l.add(new Account(Name = 'a' + k));
   if (Math.mod(k, 97) == 0 || Math.abs(k - 50) < 3) { System.debug('s ' + k + ' ' + Limits.getHeapSize()); }
