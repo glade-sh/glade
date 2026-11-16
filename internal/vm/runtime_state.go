@@ -282,6 +282,9 @@ type VM struct {
 	toolingExecuteAnonymous bool
 	triggerDepth            int
 	triggerActivations      []string
+	// inFinalizer is set while a Queueable finalizer runs: it keeps the
+	// synchronous query, CPU and relationship-subquery caps.
+	inFinalizer             bool
 	activeTriggerNamespaces []string
 	installContextDepth     int
 	// --- Transaction state (savepoints) ---

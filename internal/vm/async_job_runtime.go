@@ -1670,7 +1670,16 @@ func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Resul
 	if len(target.Params) == 0 {
 		args = nil
 	}
+	syncQueries, syncCPUTimeMS := vm.limitCaps.Queries, vm.limitCaps.CPUTimeMS
 	_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+		if vm.limitCaps.nativeDefaults {
+			// async_limit_messages a_fgetters_fin: a finalizer keeps the
+			// synchronous query and CPU caps with the asynchronous heap.
+			vm.limitCaps.Queries, vm.limitCaps.CPUTimeMS = syncQueries, syncCPUTimeMS
+			previousFinalizer := vm.inFinalizer
+			vm.inFinalizer = true
+			defer func() { vm.inFinalizer = previousFinalizer }()
+		}
 		return vm.withQueueableDelay(job, func() (Value, error) {
 			return vm.withAsyncKind("Queueable", func() (Value, error) {
 				// B44X01Z/02Z/05Z: omitted finalizers enter with sharing at API

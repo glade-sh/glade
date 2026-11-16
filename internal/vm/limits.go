@@ -166,6 +166,19 @@ func (vm *VM) heapLimitError(used, cap int) error {
 	return &RuntimeError{Type: "System.LimitException", Message: fmt.Sprintf("Apex heap size too large: %d", used), Stack: vm.stackFrames()}
 }
 
+// aggregateQueryCap is the relationship-subquery cap: 300 synchronously and in
+// a finalizer, 600 inside a Queueable, future or Batch execute (async_limit_messages
+// a_agg*, APIs 62 and 67).
+func (vm *VM) aggregateQueryCap() int {
+	if vm.limitCaps.nativeDefaults && !vm.inFinalizer {
+		switch vm.currentAsyncKind {
+		case "Queueable", "Future", "BatchApex":
+			return batchAggregateQueryLimit
+		}
+	}
+	return syncAggregateQueryLimit
+}
+
 func (vm *VM) SetLimitMode(mode LimitMode) {
 	vm.limitMode = mode
 }
@@ -191,8 +204,8 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		return vm.checkLimit(name, vm.limits.Queries, vm.limitCaps.Queries)
 	case "aggregateQueries":
 		vm.limits.AggregateQueries += delta
-		if vm.currentAsyncKind == "" {
-			return vm.checkLimit(name, vm.limits.AggregateQueries, syncAggregateQueryLimit)
+		if vm.currentAsyncKind == "" || vm.aggregateQueryCap() != syncAggregateQueryLimit {
+			return vm.checkLimit(name, vm.limits.AggregateQueries, vm.aggregateQueryCap())
 		}
 		return nil
 	case "queryRows":
@@ -334,21 +347,24 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 		message := fmt.Sprintf("Too many %s: %d out of %d", name, used, cap)
 		// API 62/67 synchronous exhaustion reports a fixed message. Explicit
 		// local caps use the same synchronous error contract.
-		if name == "cpuTime" && vm.currentAsyncKind == "" {
+		if name == "cpuTime" && (vm.currentAsyncKind == "" || vm.limitCaps.nativeDefaults && (vm.currentAsyncKind == "Queueable" || vm.currentAsyncKind == "Future")) {
 			message = "Apex CPU time limit exceeded"
 		}
-		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "" {
+		if vm.limitCaps.nativeDefaults {
 			switch name {
 			case "queries":
 				message = fmt.Sprintf("Too many SOQL queries: %d", used)
-			case "soslQueries":
-				message = fmt.Sprintf("Too many SOSL queries: %d", used)
 			case "aggregateQueries":
 				message = fmt.Sprintf("Too many SOQL aggregate queries: %d", used)
 			case "dmlStatements":
 				message = fmt.Sprintf("Too many DML statements: %d", used)
 			default:
-				if native, ok := nativeCounterMessage(name, used, cap); ok {
+				if vm.currentAsyncKind != "" {
+					break
+				}
+				if name == "soslQueries" {
+					message = fmt.Sprintf("Too many SOSL queries: %d", used)
+				} else if native, ok := nativeCounterMessage(name, used, cap); ok {
 					message = native
 				}
 			}
@@ -453,6 +469,10 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "BatchApex" {
 			return Int(0), true
 		}
+		if vm.limitCaps.nativeDefaults && vm.inFinalizer {
+			// A finalizer reports one future call (async_limit_messages a_fgetters_fin).
+			return Int(1), true
+		}
 		return Int(int64(vm.limitCaps.FutureCalls)), true
 	case "getBatchJobs":
 		return Int(int64(vm.limits.BatchJobs)), true
@@ -491,10 +511,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getFetchCallsOnApexCursor":
 		return Int(int64(vm.limits.FetchCallsOnApexCursor)), true
 	case "getLimitAggregateQueries":
-		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "BatchApex" {
-			return Int(batchAggregateQueryLimit), true
-		}
-		return Int(syncAggregateQueryLimit), true
+		return Int(int64(vm.aggregateQueryCap())), true
 	case "getLimitApexCursorRows":
 		return Int(apexCursorRowLimit), true
 	case "getLimitApexPaginationCursorRows":
