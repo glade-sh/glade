@@ -122,7 +122,7 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		"hk2": {fuzzyNameKeysCount{native: 58, hit: 42, miss: 16, confidence: 6}, 234, 228},
 		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 772, miss: 1284, confidence: 158}, 4714, 4374},
 		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1245, miss: 906, confidence: 140}, 14587, 14303},
-		"ck":  {},
+		"ck":  {fuzzyNameKeysCount{native: 2087, hit: 1651, miss: 436, confidence: 336}, 5789, 4917},
 	}
 	// The blind panels are counted by group: tk (tk01 to tk22), bk and ck.
 	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard") {

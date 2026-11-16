@@ -245,8 +245,8 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    score. bk and ck fitted nothing; the twin's tk14 sets the highest native
    non-match that the margin clears. `TestLastNameKeyboardFuzzyPanelsNativeRows`
    requires zero extra matches on all three, and
-   `TestLastNameKeyboardFallbackMargin`
-   requires the margin above the highest captured non-match. Panels kept out
+   `TestLastNameKeyboardFallbackMargin` requires the margin above the highest
+   captured non-match. Panels kept out
    of the fit agree on every pair Glade matches:
    `fuzzy_keyboard_neighbors` (`Farnsdelwicka` finds `Farnsdraeovka`, native
    97; its score is below the margin, so Glade keeps the earlier result).
