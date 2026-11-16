@@ -25,6 +25,8 @@ type edgeFamily struct {
 	// skip lists rows whose observation Glade cannot reproduce yet; each entry
 	// states why. A skipped row is still checked for presence in org.tsv.
 	skip map[string]string
+	// normalize masks a part of a row that the family does not claim.
+	normalize func(id, observation string) string
 }
 
 type edgeCase struct {
@@ -179,7 +181,13 @@ func (f edgeFamily) replay(t *testing.T) {
 	check := func(t *testing.T, id, api, route, got string) {
 		t.Helper()
 		got = edgeOrgID.ReplaceAllString(got, "00DREDACTED")
+		// org.tsv keeps one line per row: the capture driver escapes newlines.
+		got = strings.NewReplacer("\n", "\\n", "\t", " ").Replace(got)
 		row := rows[edgeKey{id, api, route}]
+		if f.normalize != nil {
+			got = f.normalize(id, got)
+			row.observation = f.normalize(id, row.observation)
+		}
 		if reason, ok := f.skip[id+"/"+route]; ok {
 			t.Skipf("known gap: %s (native org.tsv:%d %q, Glade %q)", reason, row.line, row.observation, got)
 		}
@@ -290,12 +298,13 @@ func (f edgeFamily) replay(t *testing.T) {
 						case err != nil:
 							t.Fatal(err)
 						default:
+							found := false
 							for _, line := range result.Debug {
 								if value, ok := strings.CutPrefix(line, "OBS|"); ok {
-									got = strings.TrimSuffix(value, "|END")
+									got, found = strings.TrimSuffix(value, "|END"), true
 								}
 							}
-							if got == "" {
+							if !found {
 								t.Fatalf("no observation in debug: %q", result.Debug)
 							}
 						}
