@@ -354,6 +354,9 @@ func companyDigitScore(a, b string) (float64, bool) {
 	}
 	x, dx, sx := split(a)
 	y, dy, sy := split(b)
+	if score, ok := companyJoinLetterScore(a, b, x, y, dx, dy, sx, sy); ok {
+		return score, true
+	}
 	if dx == "" || dy == "" || x != y {
 		return 0, false
 	}
@@ -374,6 +377,11 @@ func companyDigitScore(a, b string) (float64, bool) {
 			return 97, true
 		}
 		return 0, false
+	}
+	if sx == 0 && sy == 0 && dx != dy && len(dx) == len(dy) && len(strings.Fields(x)) > 1 && !strings.HasSuffix(x, "#") {
+		// NATIVE company_name_fit/org.tsv:4: "Test Account1" and
+		// "Test Account2" match at 100 in both directions.
+		return 100, true
 	}
 	if sx != 0 || sy != 0 || len(strings.Fields(x)) != 1 || len([]rune(x)) < 6 {
 		return 0, false
@@ -397,6 +405,32 @@ func companyDigitScore(a, b string) (float64, bool) {
 		return 93, true
 	}
 	return 91, true
+}
+
+// companyJoinLetterScore is the hyphen or underscore digit join against a
+// single trailing letter other than "a" on the same base.
+// NATIVE org.tsv:4,12: "Test Account A" matches the join at 100. NATIVE company_name_fit/org.tsv:12
+// (B1_co1_b): "Test Account_2" and "Test Account B" match at 91.
+func companyJoinLetterScore(a, b, x, y, dx, dy string, sx, sy byte) (float64, bool) {
+	letter := func(s string) (string, bool) {
+		s = strings.ToLower(strings.TrimSpace(s))
+		i := strings.LastIndexByte(s, ' ')
+		if i < 0 || len([]rune(s[i+1:])) != 1 || companyNumber(s[i+1:]) || s[i+1:] == "a" {
+			return "", false
+		}
+		return s[:i], true
+	}
+	if dx != "" && (sx == '-' || sx == '_') && dy == "" {
+		if base, ok := letter(b); ok && base == x {
+			return 91, true
+		}
+	}
+	if dy != "" && (sy == '-' || sy == '_') && dx == "" {
+		if base, ok := letter(a); ok && base == y {
+			return 91, true
+		}
+	}
+	return 0, false
 }
 
 type companyQualifier struct{ base, suffix, form string }

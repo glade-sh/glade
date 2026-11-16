@@ -132,7 +132,7 @@ func TestCompanyNameNativeConformance(t *testing.T) {
 		t.Fatalf("selected %d panels, want 9", len(panels))
 	}
 	// Exact confidences must not fall below the counts this fit reaches.
-	exact := map[string]int{"B1_co1_a": 157, "B1_co1_b": 102, "B1_co2": 55, "B1_co3": 69, "B3_calhelp": 2, "B3_cd1": 496, "B3_cd2": 625, "B3_cw1": 207, "B3_ca1": 38}
+	exact := map[string]int{"B1_co1_a": 159, "B1_co1_b": 104, "B1_co2": 55, "B1_co3": 69, "B3_calhelp": 2, "B3_cd1": 496, "B3_cd2": 625, "B3_cw1": 207, "B3_ca1": 38}
 	for name, c := range panels {
 		if c.exact < exact[name] {
 			t.Errorf("%s: exact confidence %d, want at least %d", name, c.exact, exact[name])
