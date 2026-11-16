@@ -30,7 +30,7 @@
 
 - Custom Last Name duplicate matching recognizes more names with multiple keyboard substitutions or trailing characters, based on native captures.
 
-- **Governor limits and SOSL match more captured behavior.** Limit exhaustion text, `Limits.getFindSimilarCalls`, the savepoint and `System.runAs` counters, test-boundary savepoints, the trigger depth failure, async aggregate and finalizer caps, SOSL wildcard, escape and `NAME FIELDS` matching, and the `WITH SPELL_CORRECTION`, `WITH SNIPPET(target_length)` and `WITH METADATA` clauses follow native rows at APIs 62.0 and 67.0. Other wildcard shapes, `WITH NETWORK` and a nested subquery in a SOSL `WHERE` clause still report that they are unsupported.
+- **Governor limits and SOSL match more captured behavior.** Limit exhaustion text, `Limits.getFindSimilarCalls`, the savepoint and `System.runAs` counters, test-boundary savepoints, the trigger depth failure, async aggregate and finalizer caps, SOSL wildcard, escape and `NAME FIELDS` matching, and the `WITH SPELL_CORRECTION`, `WITH SNIPPET(target_length)` and `WITH METADATA` clauses follow native rows at APIs 62.0 and 67.0. Other wildcard shapes and `WITH NETWORK` still report that they are unsupported, and a nested subquery in a SOSL `WHERE` clause is still rejected.
 
 ## v0.3.10
 
