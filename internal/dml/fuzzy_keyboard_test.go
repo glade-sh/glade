@@ -470,7 +470,7 @@ func keyboardMarginPanels(t *testing.T) []keyboardNativePanel {
 	for _, name := range slices.Sorted(maps.Keys(values)) {
 		out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
 	}
-	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard")...)
+	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard")...)
 }
 
 // keyboardTwinPanels reads the blind panels of
@@ -480,9 +480,9 @@ func keyboardTwinPanels(t *testing.T, groups ...string) []keyboardNativePanel {
 	t.Helper()
 	var out []keyboardNativePanel
 	for _, group := range groups {
-		// tkeyboard and ckeyboard are anonymous only (4 rows a panel); bkeyboard has both routes (8).
+		// tkeyboard and ckeyboard are anonymous only (4 rows a panel); bkeyboard and dkeyboard have both routes (8).
 		per := 4
-		if group == "bkeyboard" {
+		if group == "bkeyboard" || group == "dkeyboard" {
 			per = 8
 		}
 		values, observations := fuzzyPanelsLastNameFrom(t, fuzzyPanelsTwinDir, per, group)

@@ -262,6 +262,16 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    (`Kesterloy` and `Kestermlinb`, tk07). It recovers 86 of the ck native
    matches the fitted table left, with no false match on the blind ck panel.
    Spaces, punctuation and accents keep the fitted costs.
+   The fourth blind panel set (`dkeyboard`: dk01, dk02) was captured after
+   this score and its predictions were frozen. It shows no false match, and
+   it shows what the score lacks. In dk01 every pair with the same key steps
+   and a flat score of 91.65 to 92.41 matches natively at 96, whether the two
+   Metaphone codes are one character or four apart, so a graded Metaphone
+   component is not the missing part. In dk02 pure extensions match natively
+   at 3 and 4 trailing letters on five stems and at 5 or 6 on some (Bellingmoor
+   at 6 letters, flat 91.40, matches; Hartlebury at 5, flat 91.88, does not),
+   so no function of the flat score alone separates them. The margin stays 93;
+   the rows are pinned and the unreported matches stay misses.
    The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
@@ -424,6 +434,13 @@ set these limits:
   as `Vexletob`/`Vexleta` at 96 and `Vexlettt`/`Vexletab` at 93, and
   `Qelthorins`/`Qelthoriner` at 100, rest on one base each and are pinned, as
   is `Vexlet Inc` finding `Vexlets Inc` at 93 (Glade 91).
+- A ladder on one base (`company_name_fit` T1_first and T2_last) holds the
+  native confidence at 91 while the letters change: `Plovdi Trade (East)`
+  finds `Plovdi Trade - West` on all 13 first-word variants and on 11 of 12
+  last-word variants (not `Plovdi Trad`; `Plovdi Tradex` reports 92). The
+  earlier syllable alignment candidate predicted none of the 13 and 7 of
+  the 11. Glade still reports none; `TestCompanyVowelLadderPinnedMisses` pins
+  the rows.
 - A dash candidate with a vowel suffix against a plain name (`- East`/`West`,
   native 91) is the same: it matches on `Orbel Trade`, `Zorvex Freight` and
   `Qa Trade` and not on `Mandolar Oil`, `Orbel Oil Outlet` or `Ab Logistics`.
@@ -433,8 +450,9 @@ set these limits:
 
 `TestCompanyIsolationPanelCounts` pins the R3 panels (400 of 458 captured
 matches reported, 297 exact confidences, none that native does not report) and
-the R4 to R7 panels (1,224 of 1,398, 864 exact, 33 that native does not
-report; the word scorer and the earlier rules report those 33 too).
+the R4 to R7 panels (1,224 of 1,398, 864 exact, none that native does not
+report; the glued-digit threshold and the qualifier and direction ceilings
+removed the 33 the word scorer and the earlier rules reported).
 
 ### Phone
 
