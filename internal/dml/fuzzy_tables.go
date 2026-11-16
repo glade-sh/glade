@@ -303,11 +303,12 @@ darrell darryl daryl
 darren darryl daryl
 darryl darrell darren daryl
 daryl darrell darren darryl
-dave davey david davide davis
+dave davey david davide davis davy
 davey dave david davide davis
-david dave davey davide davis
+david dave davey davide davis davy
 davide dave davey david davis
 davis dave davey david davide
+davy dave david
 deanna diana diane dianne
 deb debbie debby deborah debra
 debbie deb debby deborah debra
@@ -894,7 +895,7 @@ marisa maria mariah mariam marian marie marion marisela marisol marissa marla ma
 marisela maria marion marisa marisol marissa
 marisol maria marion marisa marisela marissa
 marissa maria mariah mariam marian marie marisa marisela marisol marla marlene mary
-marjorie greta maggie margaret margarita margaux marge margie margo margot marguerite meg rita
+marjorie greta maggie margaret margarita margaux marge margie margo margot marguerite meg peggy rita
 mark marc marcelo marco marcus marek marko markus
 marko marc marcelo marco marcus marek mark markus
 markus marc marcelo marco marcus marek mark marko marlin marlon
@@ -1056,7 +1057,7 @@ paula paola paulette pauline
 paulette paola paula pauline
 pauline paola paula paulette
 pedro pete peter petr pieter piotr
-peggy greta maggie margaret marge margie margot meg rita
+peggy greta maggie margaret marge margie margot marjorie meg rita
 penelope penny
 penny penelope
 percival percy
@@ -1177,7 +1178,7 @@ samson sam sammy
 samuel sam sami sammy
 sander sandy
 sandrine sandy
-sandy sander sandrine
+sandy sander sandrine xander
 sara sarah
 sarah sara
 scott scotty
@@ -1370,7 +1371,7 @@ winifred winnie
 winnie winifred
 woodrow woody
 woody woodrow
-xander zander
+xander sandy zander
 yan yannis
 yannis yan
 yehmi yemi
@@ -1503,8 +1504,21 @@ var nameAliasKeys = map[string]string{
 	"zeke":    "",
 }
 
-// nameKeptApart are pairs the rows keep apart that the tables above do not
-// explain.
+// nameAliasKeysCustom are the alias keys a custom FirstName rule's rows
+// show and the standard rules' rows do not: "Ty" finds "Tyr" and no other
+// neighbor ("Tye", "Tyh", "Tyl" and the initial "T" do not find it), "Ray"
+// finds "Raym" and not "Rae", "Ra" or "R", "Sue" finds "Sues" and "Suez" and
+// not "Su" or "S". The standard rules keep these names' own key
+// (firstNameKey) and their captured pairs apart through nameKeptApart.
+var nameAliasKeysCustom = map[string]string{
+	"ray": "RM",
+	"sue": "SS",
+	"ty":  "TR",
+}
+
+// nameKeptApart are pairs the standard rules' first-name key does not keep
+// apart and the rows do; a custom rule keeps them apart by its alias keys
+// (nameAliasKeysCustom).
 var nameKeptApart = map[[2]string]bool{
 	{"ray", "rayh"}: true,
 	{"ray", "rayw"}: true,

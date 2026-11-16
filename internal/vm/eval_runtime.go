@@ -403,6 +403,14 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 				return value, err
 			}
 		}
+		if inlineQueryLocator {
+			// Salesforce compiles an inline query, so the dynamic-string bind
+			// scope rules do not apply. databaseQueryHandle consumes the mark.
+			vm.inlineQueryLocatorCall = true
+			value, err := vm.call(callee, args, namedArgs, result)
+			vm.inlineQueryLocatorCall = false
+			return value, err
+		}
 		return vm.call(callee, args, namedArgs, result)
 	case ir.ExprSOQL:
 		return vm.executeInlineSOQL(expr.Value, result)

@@ -4754,6 +4754,8 @@ func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
 func (vm *VM) rebuildEnumSuffixLookup() {
 	vm.enumSuffixLookup = make(map[string]enumClassLookup)
 	vm.enumSuffixBuilt = true
+	// Map order must not decide the answer: a project enum beats a platform
+	// enum of the same bare name, and ties go to the smaller class name.
 	for _, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue
@@ -4761,11 +4763,18 @@ func (vm *VM) rebuildEnumSuffixLookup() {
 		name := class.Name
 		if dot := strings.LastIndexByte(name, '.'); dot >= 0 && dot+1 < len(name) {
 			key := canonicalClassLookupKey(name[dot+1:])
-			if _, exists := vm.enumSuffixLookup[key]; !exists {
+			if current, exists := vm.enumSuffixLookup[key]; !exists || enumSuffixPreferred(class, current.Class) {
 				vm.enumSuffixLookup[key] = enumClassLookup{Class: class, OK: true}
 			}
 		}
 	}
+}
+
+func enumSuffixPreferred(candidate, current Class) bool {
+	if candidate.PlatformType != current.PlatformType {
+		return !candidate.PlatformType
+	}
+	return candidate.Name < current.Name
 }
 
 func isLikelyEnumValueText(text string) bool {

@@ -3,7 +3,7 @@ package dml
 import (
 	"math"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -188,7 +188,9 @@ const firstNameJaroWinkler = 0.89
 // never compared, "Vorkel" and "Vorpel" are; "Y R" and "Y R S" share the key
 // of "Y", "YR" and "Y R" do not). A dictionary name whose key comes from its
 // alias and not from its own spelling ("Kate" is keyed as "Katherine", so it
-// matches neither "Katie" nor "Katte") never matches by Jaro-Winkler. Then the
+// matches neither "Katie" nor "Katte") matches by Jaro-Winkler only under
+// that key ("Ty" finds "Tyr" and not "Tye"), and an initial does not find it
+// ("T" does not find "Ty"). Then the
 // Initials rule scores 100 (firstNameInitials), and otherwise Jaro-Winkler on
 // the lower-cased text with its inner white space as typed ("Mary Ann" finds
 // "Mary  Ann" at 99) decides at the threshold, with confidence
@@ -200,10 +202,18 @@ func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
 		return true, 100
 	}
 	if wx, wy := firstNameWord(fx), firstNameWord(fy); wx != wy {
-		if kx, ky := firstNameKey(wx), firstNameKey(wy); kx == "" || kx != ky || nameKeptApart[orderedPair(fx, fy)] {
+		if kx, ky := customFirstNameKey(wx), customFirstNameKey(wy); kx == "" || kx != ky {
 			return false, 0
 		}
 	}
+	return firstNameAlgorithms(x, y, fx, fy)
+}
+
+// firstNameAlgorithms scores a pair of lower-cased first names (x, y) and
+// their folds (fx, fy) once a match key has let the pair through: the
+// Initials rule scores 100, otherwise Jaro-Winkler decides at the threshold.
+// The key is the matching rule's concern (customRuleKeyModes).
+func firstNameAlgorithms(x, y, fx, fy string) (bool, float64) {
 	if firstNameInitials(fx, fy) || firstNameInitials(fy, fx) {
 		return true, 100
 	}
@@ -218,6 +228,15 @@ func firstNameKey(name string) string {
 		return key
 	}
 	return firstNameCodeCache.get(name, func(s string) string { return doubleMetaphone(s, firstNameKeyLength) })
+}
+
+// customFirstNameKey is firstNameKey for a custom rule, which also keys the
+// names of nameAliasKeysCustom by their alias.
+func customFirstNameKey(word string) string {
+	if key, ok := nameAliasKeysCustom[word]; ok {
+		return key
+	}
+	return firstNameKey(word)
 }
 
 // firstNameWord is the first word of a folded name with every character
@@ -250,11 +269,16 @@ func firstNameWord(folded string) string {
 // word of initials, punctuation removed, is one letter, and name is a single
 // word that starts with that letter after any leading punctuation. "P W G"
 // finds "PW", "P.W.", "P-W" and "P" at 100; "P W" finds "P W G" only by
-// Jaro-Winkler, and "Yancey" finds "Yancey R" only by Jaro-Winkler.
+// Jaro-Winkler, and "Yancey" finds "Yancey R" only by Jaro-Winkler. An
+// initial alone also finds a name of several words ("T." finds "Tye Ann" at
+// 100, "T Ann" finds it only by Jaro-Winkler).
 func firstNameInitials(initials, name string) bool {
 	word := firstNameWord(initials)
 	letter, size := utf8.DecodeRuneInString(word)
-	if size == 0 || size != len(word) || !unicode.IsLetter(letter) || strings.IndexByte(name, ' ') >= 0 {
+	if size == 0 || size != len(word) || !unicode.IsLetter(letter) {
+		return false
+	}
+	if strings.IndexByte(name, ' ') >= 0 && strings.IndexByte(initials, ' ') >= 0 {
 		return false
 	}
 	for _, r := range name {
@@ -296,6 +320,13 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if lastNameWordKey(x) != lastNameWordKey(y) {
 		return false, 0
 	}
+	return lastNameAlgorithms(x, y)
+}
+
+// lastNameAlgorithms scores two folded last names without a match key:
+// equal text apart from apostrophes and equal Metaphone 3 codes score 100,
+// otherwise Keyboard Distance decides.
+func lastNameAlgorithms(x, y string) (bool, float64) {
 	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
 	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
 		return true, 100
@@ -537,12 +568,14 @@ func phoneKeypadEquivalent(country, area, exchange, line, otherCountry, otherAre
 	return true
 }
 
-// ---- ZIP: the segment before the first hyphen or space decides ----
+// ---- ZIP: the segment before the first hyphen, space, period or slash decides ----
 
+// fuzzyZip: NATIVE (phone_city_zip N5.zu1) "12345.6789" and "12345/6789"
+// find "12345" and "12345-6789" as a hyphen does.
 func fuzzyZip(a, b string, _ bool) (bool, float64) {
 	head := func(s string) string {
 		s = foldText(s)
-		if i := strings.IndexAny(s, "- "); i >= 0 {
+		if i := strings.IndexAny(s, "- ./"); i >= 0 {
 			return s[:i]
 		}
 		return s
@@ -578,8 +611,31 @@ func cityKey(s string) string {
 	return string(out)
 }
 
+// plainSpaced reports a value whose only white space is ASCII spaces and
+// whose characters are all ASCII. NATIVE (phone_city_zip N5.cm1 and N5.szn1):
+// between two such values inner spaces count as typed: "Los Angeles" finds
+// "Los  Angeles" at 96, not 100, "LosAngeles" no longer finds it, and
+// "SW1A 1AA" does not find "SW1A  1AA". Any other pair keeps the folded
+// comparison, which no row measures.
+func plainSpaced(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c >= 0x80 || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' {
+			return false
+		}
+	}
+	return true
+}
+
+// cityTexts is the text the City method compares for a pair (plainSpaced).
+func cityTexts(a, b string) (string, string) {
+	if plainSpaced(a) && plainSpaced(b) {
+		return strings.ToLower(strings.TrimSpace(a)), strings.ToLower(strings.TrimSpace(b))
+	}
+	return foldText(a), foldText(b)
+}
+
 func fuzzyCity(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
+	x, y := cityTexts(a, b)
 	if x == y {
 		return true, 100
 	}
@@ -604,12 +660,36 @@ var streetPrefixSuffixes = map[string]bool{"rue": true}
 
 var streetDirections = map[string]bool{"n": true, "s": true, "e": true, "w": true, "ne": true, "nw": true, "se": true, "sw": true, "north": true, "south": true, "east": true, "west": true}
 
+// streetCompassWords are the spelled directionals the custom Street method
+// drops between the street number and the name.
+var streetCompassWords = map[string]bool{"north": true, "south": true, "east": true, "west": true, "northeast": true, "northwest": true, "southeast": true, "southwest": true}
+
+// streetLongDirections are the compound directional words the base parse keeps
+// as the suite after a suffix ("Peachtree St NE" against "Street Northeast").
+var streetLongDirections = map[string]bool{"northeast": true, "northwest": true, "southeast": true, "southwest": true}
+
 var streetOrdinals = map[string]string{"first": "1st", "second": "2nd", "third": "3rd", "fourth": "4th", "fifth": "5th", "sixth": "6th", "seventh": "7th", "eighth": "8th", "ninth": "9th", "tenth": "10th"}
+
+// streetNumberWords are the number words the custom Street method reads as
+// digits. NATIVE fuzzy_street_c5/org.tsv nw1, fuzzy_street_c4 cs1: "200 Ten
+// St" is "200 10 St", "Eleven" is "11", "Twenty" is "20" and "One Calder
+// Plaza" is "1 Calder Plaza"; "Hundred", "Eleventh" and "Twentieth" stay words.
+var streetNumberWords = map[string]string{"one": "1", "ten": "10", "eleven": "11", "twenty": "20"}
 
 var digitsOnly = regexp.MustCompile(`^[0-9]+$`)
 
 // streetSuiteDesignators are the words the rows drop before a suite value.
 var streetSuiteDesignators = map[string]bool{"suite": true, "ste": true, "apt": true, "unit": true, "rm": true, "bldg": true}
+
+// streetFloorDesignators are more suite designators for the custom Street
+// method under NullNotAllowed. NATIVE duplicate_fuzzy_matching/org.tsv: "600
+// Montgomery St Fl 3" finds "600 Montgomery St" at 89 and "600 Montgomery St
+// Fl 4" at 90. fuzzy_street_c5/org.tsv nf1: "Rd Fl 3", "Rd Floor 3", "Rd Room
+// 3", "Rd Building 3" and "Rd Apartment 3" find the street without the suite;
+// "Level", "Lot", "Dept", "No", "PMB", "Stop", "Trailer" and "Space" do not.
+// The MatchBlanks rows keep "200 Park Ave" and "200 Park Ave Fl 5" apart, so
+// that mode keeps the words in the street name.
+var streetFloorDesignators = map[string]bool{"fl": true, "floor": true, "room": true, "building": true, "apartment": true}
 
 // streetSuiteToken reports a trailing token that is a suite value: a number,
 // a number with letters ("2B") or a single letter that is not a direction.
@@ -627,8 +707,41 @@ type streetParts struct{ number, name, suffix, suite string }
 
 // streetClean lower-cases the address, removes dots and number signs, turns
 // commas into spaces, collapses whitespace and spells ordinal words as numbers.
-func streetClean(s string) string {
-	s = strings.NewReplacer(",", " ", ".", "", "#", " ").Replace(strings.ToLower(s))
+func streetClean(s string) string { return streetCleanFor(s, false) }
+
+// streetCleanFor is streetClean. For the custom Street method a line break is
+// deleted, not turned into a space, and a comma before it goes with it; a
+// number sign, slash or colon is deleted where it stands. NATIVE
+// fuzzy_street_c4/org.tsv cj1, cj2: "Rd\nSuite 200", "Rd,\nSuite 200" and
+// "RdSuite 200" are one street. fuzzy_street_c5/org.tsv nh1, nn1: "Ave#5",
+// "Ave/5", "Ave.5" and "Ave:5" are one street and "72/74" is "7274"; a hyphen
+// stays ("Ave-5" is another street).
+var (
+	streetBreakReplacer = strings.NewReplacer(",\r\n", "", ",\n", "", ",\r", "", "\r\n", "", "\n", "", "\r", "")
+	streetPunctReplacer = strings.NewReplacer(",", " ", ".", "", "#", "", "/", "", ":", "")
+)
+
+func streetCleanFor(s string, custom bool) string {
+	s = strings.ToLower(s)
+	if custom {
+		if strings.ContainsAny(s, "\r\n") {
+			s = streetBreakReplacer.Replace(s)
+		}
+		words := strings.Fields(streetPunctReplacer.Replace(s))
+		for i, w := range words {
+			if n, ok := streetNumberWords[w]; ok {
+				words[i] = n
+			}
+		}
+		return streetCleanWords(strings.Join(words, " "), false)
+	}
+	return streetCleanWords(s, true)
+}
+
+func streetCleanWords(s string, hash bool) string {
+	if hash {
+		s = strings.NewReplacer(",", " ", ".", "", "#", " ").Replace(s)
+	}
 	words := strings.Fields(s)
 	for i, w := range words {
 		if o, ok := streetOrdinals[w]; ok {
@@ -655,10 +768,51 @@ func isAlphaWord(w string) bool {
 // directional (dropped) or the suite, whose designator word is dropped. With
 // no known suffix a trailing number is the suite and a trailing directional
 // is dropped.
-func parseStreet(s string) streetParts {
+func parseStreet(s string) streetParts { return parseStreetFor(s, false, false) }
+
+var streetPOBox = regexp.MustCompile(`^p ?o ?box ([0-9]+)$`)
+
+// streetGluedNumber is a digit-led first word that is not a street number
+// ("41harlan" from "41\nHarlan Ave"); NATIVE cj2 scores it as a name word
+// (the equal street reports 88). nn1: "72AB Vane St" reports 100, so two
+// letters still make a street number.
+var streetGluedNumber = regexp.MustCompile(`^[0-9]+[a-z]{3,}$`)
+
+func parseStreetFor(s string, custom, floors bool) streetParts {
 	var p streetParts
-	words := strings.Fields(streetClean(s))
-	if len(words) > 0 && words[0][0] >= '0' && words[0][0] <= '9' {
+	cleaned := streetCleanFor(s, custom)
+	if custom {
+		if m := streetPOBox.FindStringSubmatch(cleaned); m != nil {
+			// NATIVE cp1: "PO Box 410", "P.O. Box 410", "P O Box 410",
+			// "PO BOX 410" and "Pobox 410" share one number and one name
+			// (95 to 100 between them; 410 and 411 or 4100 never match).
+			// "POB 410", "Post Office Box 410" and "Box 410" are plain addresses.
+			return streetParts{number: m[1], name: "pobox"}
+		}
+	}
+	words := strings.Fields(cleaned)
+	switch {
+	case len(words) == 0 || words[0][0] < '0' || words[0][0] > '9':
+	case custom && streetGluedNumber.MatchString(words[0]):
+	case custom:
+		// NATIVE fuzzy_street_c5/org.tsv nl1, np1, np2, fuzzy_street_c4 cl1
+		// to cl3: a directional between the number and a street name with a
+		// known suffix is dropped ("71 E Vane St" finds "71 Vane St" at 92 and
+		// "71 E E Vane St" at 83; "101 N Park Ln" finds "101 Park Ln N" at
+		// 85; sd1, nd4: "500 North Calder Rd" finds "500 Northwest Calder Rd"
+		// at 91). Every other single letter stays in the street name. The
+		// match key (streetCustomKey) decides which of them keep two streets
+		// apart.
+		p.number, words = words[0], words[1:]
+		if len(words) > 2 && (streetDirections[words[0]] || streetCompassWords[words[0]]) {
+			for _, w := range words[2:] {
+				if _, ok := knownStreetSuffixes[w]; ok {
+					words = words[1:]
+					break
+				}
+			}
+		}
+	default:
 		p.number, words = words[0], words[1:]
 		if len(words) > 1 && len(words[0]) == 1 && isAlphaWord(words[0]) {
 			if words[0] != "e" {
@@ -685,14 +839,32 @@ func parseStreet(s string) streetParts {
 			rest = rest[1:]
 		}
 		switch {
-		case len(rest) >= 2 && streetSuiteDesignators[rest[0]]:
+		case len(rest) >= 2 && (streetSuiteDesignators[rest[0]] || floors && streetFloorDesignators[rest[0]]):
 			p.suite = strings.Join(rest[1:], "")
+		case custom && len(rest) == 1 && len(rest[0]) > 1 && isAlphaWord(rest[0]) && !streetLongDirections[rest[0]]:
+			// NATIVE cu3: "77 Wren St Xq" matches no other street, so a
+			// lone word after the suffix is not a suite.
+			words = append(words, rest...)
+		case floors && len(rest) >= 2 && streetFloorDesignators[rest[len(rest)-1]]:
+			// NATIVE duplicate_fuzzy_matching/org.tsv: "1010 Market Street,
+			// 12th Floor" does not find "1010 Market St Floor 12": a number
+			// before the floor word stays in the street name.
+			words = append(words, rest...)
 		case len(rest) == 1 || (len(rest) >= 2 && !isAlphaWord(rest[0])):
 			p.suite = strings.Join(rest, "")
 		default:
 			// Any other word ("Fl", "Floor") is not a suite: the rows never
 			// match such an address to one without it.
 			words = append(words, rest...)
+		}
+	case custom:
+		// NATIVE fuzzy_street_c4/org.tsv cj2, fuzzy_street_c5 nd4: with no
+		// known suffix a trailing number is the suite; a number with letters
+		// or a single letter is the suite only after a designator word ("Way
+		// Suite 2B" but not "AveApt 3B"). A trailing directional stays in the
+		// street name ("St N" finds "Str N" at 61, "Str N" finds "St N" at 79).
+		if n := len(words); n > 1 && (digitsOnly.MatchString(words[n-1]) || n > 2 && streetSuiteToken(words[n-1]) && streetSuiteDesignators[words[n-2]]) {
+			p.suite, words = words[n-1], words[:n-1]
 		}
 	default:
 		if len(words) > 1 && streetSuiteToken(words[len(words)-1]) {
@@ -722,6 +894,36 @@ func streetKey(p streetParts) string {
 // out; a street number blank on both sides scores 0 under NullNotAllowed and
 // 20 under MatchBlanks.
 func streetSections(pa, pb streetParts, matchBlanks bool) float64 {
+	return streetSectionsWith(pa, pb, matchBlanks, editSimilarity)
+}
+
+// streetCandidateSimilarity is the edit similarity the custom Street method
+// reports: 0 when the edit distance equals the candidate's length, whatever
+// the stored value's length. NATIVE fuzzy_street_c4/org.tsv cu1, cu3 and
+// duplicate_fuzzy_matching: "15 Elm" finds "15 Elm Drive" at 50 and "77 Wren
+// St" finds "77 Wren Str" at 60, while the reverse pairs report 75 and 78.
+func streetCandidateSimilarity(candidate, stored string) float64 {
+	ra, rb := []rune(candidate), []rune(stored)
+	longest := max(len(ra), len(rb))
+	if longest == 0 {
+		return 100
+	}
+	distance := levenshtein(ra, rb)
+	if distance == len(ra) {
+		return 0
+	}
+	return 100 * (1 - float64(distance)/float64(longest))
+}
+
+func streetSectionsWith(pa, pb streetParts, matchBlanks bool, similarity func(a, b string) float64) float64 {
+	return streetSectionScore(pa, pb, matchBlanks, similarity, false)
+}
+
+// streetSectionScore is streetSections. With numberAlways a street number on
+// one side only counts as a mismatch instead of being left out. NATIVE
+// fuzzy_street_c4/org.tsv cj2: "41 Harlan Ave" finds "41\nHarlan Ave" (no
+// street number) at 77, not 87.
+func streetSectionScore(pa, pb streetParts, matchBlanks bool, similarity func(a, b string) float64, numberAlways bool) float64 {
 	num, den := 0.0, 0.0
 	for _, section := range []struct {
 		x, y   string
@@ -738,9 +940,12 @@ func streetSections(pa, pb streetParts, matchBlanks bool) float64 {
 				}
 			}
 		case section.x == "" || section.y == "":
+			if section.number && numberAlways {
+				den += section.weight
+			}
 		case section.name:
 			den += section.weight
-			num += section.weight * editSimilarity(section.x, section.y) / 100
+			num += section.weight * similarity(section.x, section.y) / 100
 		default:
 			den += section.weight
 			if section.x == section.y {
@@ -759,10 +964,6 @@ func streetSections(pa, pb streetParts, matchBlanks bool) float64 {
 // confidence averages that score with the edit similarity of the cleaned
 // strings.
 func fuzzyStreet(a, b string, matchBlanks bool) (bool, float64) {
-	return fuzzyStreetWithCustom(a, b, matchBlanks, false)
-}
-
-func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64) {
 	x, y := streetClean(a), streetClean(b)
 	if x == y {
 		return true, 100
@@ -786,30 +987,6 @@ func fuzzyStreetWithCustom(a, b string, matchBlanks, custom bool) (bool, float64
 		// "Calle 8 No 5" to "Calle 8 Numero 5" (name similarity 71) although the
 		// weighted score reaches 80 under MatchBlanks.
 		return false, confidence
-	}
-
-	if custom && sections >= 74 && sections < 80 && similarity >= 87.5-1e-9 {
-		ia, ib := strings.IndexByte(a, ' '), strings.IndexByte(b, ' ')
-		la, lb := strings.LastIndexByte(a, ' '), strings.LastIndexByte(b, ' ')
-		if ia > 0 && ia == ib && a[:ia] == b[:ib] && la > ia && lb > ib && strings.EqualFold(a[:la], b[:lb]) {
-			wx, wy := strings.Fields(x), strings.Fields(y)
-			// The rows cover a number, a one-word name and the suffix only.
-			if len(wx) == 3 && len(wy) == 3 && wx[0] == wy[0] && digitsOnly.MatchString(wx[0]) {
-				last := len(wx) - 1
-				if wx[1] == wy[1] && len(wx[1]) >= 2 {
-					sx, sy := wx[last], wy[last]
-					_, kx := knownStreetSuffixes[sx]
-					_, ky := knownStreetSuffixes[sy]
-					unknown := sx
-					if kx {
-						unknown = sy
-					}
-					if kx != ky && isAlphaWord(unknown) && !streetDirections[unknown] && !streetSuiteDesignators[unknown] && !streetPrefixSuffixes[unknown] {
-						return true, confidence
-					}
-				}
-			}
-		}
 	}
 	return sections >= 80, confidence
 }
@@ -863,10 +1040,15 @@ var companyStopWords = map[string]bool{"and": true, "of": true, "the": true}
 // natively "AT&T" does not match "AT and T" and "Barnes&Noble" does not match
 // "Barnes & Noble".
 func companyWords(s string) []string {
-	var words []string
-	for _, token := range strings.Fields(strings.ReplaceAll(strings.ToLower(s), "-", " ")) {
+	tokens := strings.Fields(strings.ReplaceAll(strings.ToLower(s), "-", " "))
+	words := make([]string, 0, len(tokens))
+	for _, token := range tokens {
 		if token == "&" {
 			words = append(words, "and")
+			continue
+		}
+		if companyCleanASCII(token) {
+			words = append(words, token)
 			continue
 		}
 		var clean []rune
@@ -885,21 +1067,57 @@ func companyWords(s string) []string {
 	if len(words) > 1 && companyDesignators[words[len(words)-1]] {
 		words = words[:len(words)-1]
 	}
-	var out []string
+	stop := 0
+	for _, w := range words {
+		if companyStopWords[w] {
+			stop++
+		}
+	}
+	if stop == 0 || stop == len(words) {
+		return words
+	}
+	out := make([]string, 0, len(words)-stop)
 	for _, w := range words {
 		if !companyStopWords[w] {
 			out = append(out, w)
 		}
 	}
-	if len(out) == 0 {
-		return words
-	}
 	return out
+}
+
+// companyCleanASCII reports a token of lower-case ASCII letters, digits, "&"
+// and "/" only: companyWords keeps it as it is.
+func companyCleanASCII(token string) bool {
+	for i := 0; i < len(token); i++ {
+		c := token[i]
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '&' || c == '/') {
+			return false
+		}
+	}
+	return true
 }
 
 // companyKey is the match key: the first five characters of each of the first
 // two words (help notation "Company (2,5)").
 func companyKey(words []string) string {
+	prefix := func(w string) (string, bool) {
+		w = w[:min(len(w), 5)]
+		return w, isASCII(w)
+	}
+	switch len(words) {
+	case 0:
+		return ""
+	case 1:
+		if p, ok := prefix(words[0]); ok {
+			return p
+		}
+	default:
+		p, ok := prefix(words[0])
+		q, ok2 := prefix(words[1])
+		if ok && ok2 {
+			return p + q
+		}
+	}
 	var b strings.Builder
 	for i, w := range words {
 		if i == 2 {
@@ -1017,13 +1235,67 @@ func companySingleWordMatch(candidate, existing string) (bool, float64) {
 	return true, 96
 }
 
-func fuzzyCompany(a, b string, _ bool) (bool, float64) {
-	x, y := foldText(a), foldText(b)
-	if companyAlignedWords[strings.TrimSpace(x)] || companyAlignedWords[strings.TrimSpace(y)] {
+// companyAlignedName reports a name that folds to one of companyAlignedWords.
+func companyAlignedName(s string) bool {
+	t := strings.TrimSpace(s)
+	if !isASCII(t) {
+		return companyAlignedWords[foldText(s)]
+	}
+	return strings.EqualFold(t, "partner") || strings.EqualFold(t, "partners")
+}
+
+// foldedEqual is foldText(a) == foldText(b) without building either string
+// for ASCII text.
+func foldedEqual(a, b string) bool {
+	if !isASCII(a) || !isASCII(b) {
+		return foldText(a) == foldText(b)
+	}
+	space := func(c byte) bool { return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' }
+	lower := func(c byte) byte {
+		if c >= 'A' && c <= 'Z' {
+			return c + 'a' - 'A'
+		}
+		return c
+	}
+	i, j := 0, 0
+	for {
+		for i < len(a) && space(a[i]) {
+			i++
+		}
+		for j < len(b) && space(b[j]) {
+			j++
+		}
+		if i == len(a) || j == len(b) {
+			return i == len(a) && j == len(b)
+		}
+		for i < len(a) && j < len(b) && !space(a[i]) && !space(b[j]) {
+			if lower(a[i]) != lower(b[j]) {
+				return false
+			}
+			i++
+			j++
+		}
+		if (i < len(a) && !space(a[i])) || (j < len(b) && !space(b[j])) {
+			return false
+		}
+	}
+}
+
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			return false
+		}
+	}
+	return true
+}
+
+func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
+	if companyAlignedName(a) || companyAlignedName(b) {
 		// NATIVE: a name that is only "Partner" matches nothing, itself included.
 		return false, 0
 	}
-	if x == y {
+	if foldedEqual(a, b) {
 		return true, 100
 	}
 	wa, wb := companyWords(a), companyWords(b)
@@ -1081,16 +1353,160 @@ func fuzzyCompany(a, b string, _ bool) (bool, float64) {
 	return false, 0
 }
 
+// fuzzyCompany combines the captured directional scorer with its match key.
+// A pair outside the fitted routes, or one the fitted scorer rejects, keeps
+// the word scorer's decision.
+func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
+	if a == b && companySimpleExact(a) {
+		return true, 100
+	}
+	ma, mb := companyMarks(a), companyMarks(b)
+	if (ma|mb)&companyMarkQualifier != 0 && !companySlashKeys(a, b) {
+		return false, 0
+	}
+	ok, score := fuzzyCompanyRouted(a, b, matchBlanks, ma, mb)
+	if ok {
+		return ok, score
+	}
+	if companyDoubledEqual(a, b) {
+		return true, 100
+	}
+	if (ma|mb)&companyMarkQualifier != 0 {
+		if confidence, matched := companySlashScore(a, b); matched {
+			return true, confidence
+		}
+	}
+	return ok, score
+}
+
+// companyDoubledEqual reports two multiword ASCII names that differ only by
+// doubled letters in the first word. NATIVE company_name_fit/org.tsv D1_jn:
+// "Vexlett Packard" and "Vexlet Packard" match at 100 in both directions;
+// NATIVE fuzzy_matching rows reject "Pioneer Atlas" and "Pioneer Atlass".
+func companyDoubledEqual(a, b string) bool {
+	if a == b {
+		return false
+	}
+	i, j, skipped := 0, 0, false
+	var pa, pb byte
+	firstA, firstB := true, true
+	next := func(s string, k *int, prev *byte, first *bool) (byte, bool) {
+		for *k < len(s) {
+			c := s[*k]
+			*k++
+			if c >= 0x80 {
+				return 0, false
+			}
+			if c >= 'A' && c <= 'Z' {
+				c += 'a' - 'A'
+			}
+			if c == ' ' || c == '-' {
+				*first = false
+			}
+			if c == *prev && c >= 'a' && c <= 'z' && *first {
+				skipped = true
+				continue
+			}
+			*prev = c
+			return c, true
+		}
+		return 0, true
+	}
+	for {
+		x, okA := next(a, &i, &pa, &firstA)
+		y, okB := next(b, &j, &pb, &firstB)
+		if !okA || !okB || x != y {
+			return false
+		}
+		if x == 0 && i >= len(a) && j >= len(b) {
+			return skipped && strings.ContainsAny(a, " -") && strings.ContainsAny(b, " -") && companyKeyPrefix(a, b)
+		}
+	}
+}
+
+func fuzzyCompanyRouted(a, b string, matchBlanks bool, ma, mb int) (bool, float64) {
+	route := companyFitRouteMarked(a, b, ma, mb)
+	if route == companyRouteNone {
+		return legacyFuzzyCompany(a, b, matchBlanks)
+	}
+	same, wordsA, wordsB := companyFitKeys(a, b)
+	if route == companyRouteJoin && !companyJoinWords(a, wordsA, wordsB) {
+		route = companyRouteNone
+		if companyQualifierPair(a, b) {
+			route = companyRouteQualifier
+		}
+	}
+	if route != companyRouteNone && same {
+		if raw := companyFitScore(a, b); raw >= companyFitThreshold && companyFitCovered(route, a, b) {
+			if route == companyRouteJoin {
+				if matched, _ := legacyFuzzyCompany(a, b, matchBlanks); !matched {
+					return true, companyJoinConfidence(a, b, raw)
+				}
+			}
+			return true, math.Max(91, raw)
+		}
+	}
+	return legacyFuzzyCompany(a, b, matchBlanks)
+}
+
+// A multiword ASCII name is an exact match in both scorers. Single-word
+// names keep the existing Partner exception.
+func companySimpleExact(s string) bool {
+	if len(s) < 3 || s[0] == ' ' || s[len(s)-1] == ' ' {
+		return false
+	}
+	space := false
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == ' ' {
+			space = true
+		} else if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9') {
+			return false
+		}
+	}
+	return space
+}
+
 // ---- Title: Acronym, Exact, Kullback-Leibler distance; threshold 50 ----
 
-var titleStopWords = map[string]bool{"and": true, "of": true, "the": true}
+// NATIVE (fuzzcap-C9 c9t4): "&" is a stop word of its own: "Zorp & Quill"
+// equals "Zorp and Quill" by content and scores 93, not 100, against "Quill and
+// Zorp".
+var titleStopWords = map[string]bool{"and": true, "of": true, "the": true, "&": true}
 
 func titleWords(s string) []string {
-	var out []string
-	for _, w := range strings.Fields(strings.ReplaceAll(strings.ToLower(s), "&", " and ")) {
-		if w = strings.Trim(w, ".,"); w != "" {
-			out = append(out, w)
+	fields := strings.Fields(strings.ToLower(s))
+	// The words usually are the fields; an ampersand split needs more room.
+	out := fields[:0]
+	if strings.IndexByte(s, '&') >= 0 {
+		out = make([]string, 0, len(fields)+2)
+	}
+	for _, w := range fields {
+		// NATIVE (fuzzcap-B3 tt1): dots inside a word do not count ("C.E.O."
+		// is "ceo", "V.P." is "vp").
+		if w = strings.ReplaceAll(strings.Trim(w, "."), ".", ""); titleTrim(w) == "" {
+			continue
 		}
+		// NATIVE (fuzzy_title_variant f1t3): an ampersand at the edge of a
+		// word is a word of its own ("Chief& Officer" and "Chief &Officer"
+		// are "Chief & Officer"); inside a word it stays ("Chief&Officer").
+		if len(w) > 1 && w[0] == '&' {
+			out = append(out, "&")
+			w = w[1:]
+		}
+		if len(w) > 1 && w[len(w)-1] == '&' {
+			out = append(out, w[:len(w)-1], "&")
+			continue
+		}
+		out = append(out, w)
+	}
+	// A comma inside the title stays on its word and blocks prefix matches
+	// (NATIVE fuzzcap-B3 tt2 and fuzzcap-C9 c9t4: "Director, IT" does not
+	// find "Director/IT", "Zorp, Quill" does not find "Zorps Quill"); a
+	// trailing comma of the whole title is dropped ("Zorp Quill," finds
+	// "Zorp Quills"). titleTrim removes the comma for every other comparison.
+	if n := len(out); n > 0 {
+		out[n-1] = titleTrim(out[n-1])
 	}
 	return out
 }
@@ -1103,14 +1519,46 @@ var titleNoPrefix = map[string]bool{"it": true}
 
 // titleWordEqual treats a word as equal to any word it starts (two letters
 // or more): "Dir" and "Director", "Eng" and "Engineering".
-func titleWordEqual(a, b string) bool {
-	if a == b {
+func titleWordEqual(a, b string) bool { return titleWordEqualRaw(a, b) }
+
+// titleWordEqualRaw compares the words as given: equal, one starts the
+// other, or one edit apart when the longer has six characters or more.
+// NATIVE (duplicate_fuzzy_matching Holdout3 and Holdout4 Title rows,
+// fuzzy_title_variant f2t1): "Coordinator" equals "Coordinater", "Assistant"
+// "Asistant", "Zorps" "Zorpas" and "Alphas" "Alphs"; "Alpha" does not equal
+// "Alphs" and "CEO" does not equal "CFO". A comma or semicolon inside the
+// title stays on its word and counts as a character (c9t4b, tt2, f1t3, f2t1):
+// "Alpha," equals "Alphas" and "Alpha;", "Alph," equals "Alpha,"; "Zorp,"
+// equals neither "Zorps" nor "Zorp;", "Alph," does not equal "Alpha", and
+// "Director," does not equal "Director/IT".
+func titleWordEqualRaw(a, b string) bool {
+	if a == b || titlePrefixEqual(a, b) {
 		return true
 	}
-	if min(len(a), len(b)) < 2 {
+	return max(len(a), len(b)) >= 6 && titleOneEdit(a, b)
+}
+
+// titleOneEdit: one substitution, insertion or deletion turns a into b.
+func titleOneEdit(a, b string) bool {
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	if len(b)-len(a) > 1 {
 		return false
 	}
-	if titleNoPrefix[a] || titleNoPrefix[b] {
+	i := 0
+	for i < len(a) && a[i] == b[i] {
+		i++
+	}
+	if len(a) == len(b) {
+		return i < len(a) && a[i+1:] == b[i+1:]
+	}
+	return a[i:] == b[i+1:]
+}
+
+// titlePrefixEqual: one word starts the other, two letters or more.
+func titlePrefixEqual(a, b string) bool {
+	if min(len(a), len(b)) < 2 || titleNoPrefix[a] || titleNoPrefix[b] {
 		return false
 	}
 	return strings.HasPrefix(a, b) || strings.HasPrefix(b, a)
@@ -1125,12 +1573,175 @@ func titleHasEqual(w string, words []string) bool {
 	return false
 }
 
-func titleInitials(words []string) string {
+func titleHasWords(words []string, want ...string) bool {
+	for _, w := range want {
+		found := false
+		for _, v := range words {
+			if titleTrim(v) == w {
+				found = true
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
+func titleAllStop(words []string) bool {
+	for _, w := range words {
+		if t := titleTrim(w); !titleStopWords[t] && t != "it" {
+			return false
+		}
+	}
+	return true
+}
+
+// titleStopOverlap scores two titles whose content words share nothing by
+// the words they do share, which are stop words. NATIVE (fuzzy_title_variant
+// c9t4a, tt2, f1t1, f2t2), by candidate word count, existing word count and
+// shared words. A candidate inside the existing title: "of" finds "of the"
+// at 91, "Zorp of Quill" at 89 and a longer title at 88; "of it" finds "Zorp
+// of IT" at 94. The existing title inside the candidate: "Zorp of IT" finds
+// "of it" at 91; a one-word title is never found this way ("Zorp IT" does
+// not find "IT"). Neither inside the other: "Director of IT" finds "Head of
+// IT" at 88, and "Director IT" does not. Every other count is no match.
+func titleStopOverlap(wa, wb []string) (bool, float64) {
+	la, lb := len(wa), len(wb)
+	if la > 5 || lb > 5 {
+		if la != 1 {
+			return false, 0
+		}
+		lb = 5
+	}
+	shared := 0
+	for _, w := range wa {
+		if titleHasWords(wb, titleTrim(w)) {
+			shared++
+		}
+	}
+	if shared == 0 || shared > 4 {
+		return false, 0
+	}
+	confidence := titleStopOverlapConfidence[la][lb][shared]
+	return confidence != 0, float64(confidence)
+}
+
+// titleStopOverlapConfidence[candidate words][existing words][shared words].
+var titleStopOverlapConfidence = [6][6][5]uint8{
+	1: {2: {1: 91}, 3: {1: 89}, 4: {1: 88}, 5: {1: 88}},
+	2: {3: {2: 94}, 4: {2: 91}, 5: {2: 90}},
+	3: {2: {2: 91}, 3: {2: 88}, 4: {3: 95}, 5: {3: 93}},
+	4: {3: {3: 93}, 4: {3: 90}, 5: {3: 88, 4: 96}},
+	5: {3: {3: 89}, 4: {4: 95}},
+}
+
+func titleTrim(w string) string { return strings.Trim(w, ",") }
+
+// titleContent drops the stop words. NATIVE (fuzzcap-B3 tt2): "it" is dropped
+// too ("Director IT", "Director, IT" and "IT Director" are "Director" at 100)
+// unless nothing else is left ("IT" against "Information Technology").
+func titleContent(words []string) []string {
+	dropped := false
+	for _, w := range words {
+		if t := titleTrim(w); titleStopWords[t] || t == "it" {
+			dropped = true
+			break
+		}
+	}
+	if !dropped {
+		return words
+	}
+	out := make([]string, 0, len(words))
+	for _, w := range words {
+		if !titleStopWords[titleTrim(w)] && titleTrim(w) != "it" {
+			out = append(out, w)
+		}
+	}
+	if len(out) == 0 {
+		for _, w := range words {
+			if !titleStopWords[titleTrim(w)] {
+				out = append(out, w)
+			}
+		}
+	}
+	return out
+}
+
+// titleSameWords: the two word lists are equal, a comma aside.
+func titleSameWords(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] && titleTrim(a[i]) != titleTrim(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// titleSameWordSet: the two word lists hold the same words, a comma aside,
+// in any order.
+func titleSameWordSet(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	if titleSameWords(a, b) {
+		return true
+	}
+	for _, w := range a {
+		w = titleTrim(w)
+		inA, inB := 0, 0
+		for i := range a {
+			if titleTrim(a[i]) == w {
+				inA++
+			}
+			if titleTrim(b[i]) == w {
+				inB++
+			}
+		}
+		if inA != inB {
+			return false
+		}
+	}
+	return true
+}
+
+// titleIsInitials: text is the first letters of words, a comma aside.
+func titleIsInitials(text string, words []string) bool {
+	text = titleTrim(text)
+	if len(text) != len(words) {
+		return false
+	}
+	for i, w := range words {
+		if w[0] != text[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// titleJoin concatenates words without their commas.
+func titleJoin(words []string) string {
+	if len(words) == 1 {
+		return titleTrim(words[0])
+	}
 	var b strings.Builder
 	for _, w := range words {
-		b.WriteString(w[:1])
+		b.WriteString(titleTrim(w))
 	}
 	return b.String()
+}
+
+// titleReordered: two shared-word lists of one length differ in order.
+func titleReordered(a, b []string) bool {
+	for i := range a {
+		if !titleWordEqual(a[i], b[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 // titleConfidence is the rule confidence the native rows report by shared
@@ -1148,22 +1759,22 @@ var titleConfidenceSix = map[int]float64{2: 89, 3: 93, 4: 95, 5: 98}
 // larger word count.
 var titleShortSide = map[[2]int]float64{{1, 5}: 88, {2, 5}: 90, {2, 6}: 89}
 
+// uniqueWords drops repeated words. A title has few words, so it compares
+// them directly and returns words itself when none repeats.
 func uniqueWords(words []string) []string {
-	seen := map[string]bool{}
-	var out []string
-	for _, w := range words {
-		if !seen[w] {
-			seen[w] = true
-			out = append(out, w)
+	for i := 1; i < len(words); i++ {
+		if !slices.Contains(words[:i], words[i]) {
+			continue
 		}
+		out := append(make([]string, 0, len(words)-1), words[:i]...)
+		for _, w := range words[i+1:] {
+			if !slices.Contains(out, w) {
+				out = append(out, w)
+			}
+		}
+		return out
 	}
-	return out
-}
-
-func sortedCopy(words []string) []string {
-	out := append([]string(nil), words...)
-	sort.Strings(out)
-	return out
+	return words
 }
 
 // fuzzyTitle returns the rule confidence directly (see titleConfidence); the
@@ -1173,24 +1784,32 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	if len(wa) == 0 || len(wb) == 0 {
 		return foldText(a) == foldText(b), 100
 	}
-	var ca, cb []string
-	for _, w := range wa {
-		if !titleStopWords[w] {
-			ca = append(ca, w)
-		}
-	}
-	for _, w := range wb {
-		if !titleStopWords[w] {
-			cb = append(cb, w)
-		}
-	}
-	if strings.Join(ca, " ") == strings.Join(cb, " ") || strings.Join(sortedCopy(wa), " ") == strings.Join(sortedCopy(wb), " ") {
+	ca, cb := titleContent(wa), titleContent(wb)
+	stopA, stopB := titleAllStop(wa), titleAllStop(wb)
+	if !stopA && !stopB && titleSameWords(ca, cb) || titleSameWordSet(wa, wb) {
 		return true, 100
 	}
-	if len(ca) == 1 && len(cb) == 1 {
-		return false, 0
+	if stopA || stopB {
+		// A title of stop words alone has no content. Its acronym still
+		// counts ("IT" finds "Information Technology"); otherwise the shared
+		// stop words decide.
+		if stopA != stopB && (stopA && len(cb) > 1 && titleIsInitials(titleJoin(ca), cb) || stopB && len(ca) > 1 && titleIsInitials(titleJoin(cb), ca)) {
+			return true, 100
+		}
+		return titleStopOverlap(wa, wb)
 	}
-	if (len(cb) > 1 && strings.Join(ca, "") == titleInitials(cb)) || (len(ca) > 1 && strings.Join(cb, "") == titleInitials(ca)) {
+	if len(ca) == 1 && len(cb) == 1 {
+		// Two one-word titles need an exact match. NATIVE (fuzzcap-B3 tt2,
+		// fuzzy_title_variant f1t2): when a title has more words (only stop
+		// words, such as "of" and "IT", count as nothing), the words may
+		// differ by a prefix: "Dir" finds "Director of IT", "Director/IT"
+		// finds "Director IT" and "Zorp and" finds "Zorps".
+		if (len(wa) > 1 || len(wb) > 1) && titleWordEqualRaw(ca[0], cb[0]) {
+			return true, 100
+		}
+		return titleStopOverlap(wa, wb)
+	}
+	if len(cb) > 1 && titleIsInitials(titleJoin(ca), cb) || len(ca) > 1 && titleIsInitials(titleJoin(cb), ca) {
 		return true, 100
 	}
 	var sharedA, sharedB []string
@@ -1210,7 +1829,7 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	// "Attorney at Law": "at" starts "attorney" only when read from one side).
 	k := min(len(uniqueWords(sharedA)), len(uniqueWords(sharedB)))
 	if k == 0 {
-		return false, 0
+		return titleStopOverlap(wa, wb)
 	}
 	if k == len(ua) && k == len(ub) && len(sharedB) == len(cb) {
 		// The same content words in a different order: exact unless a stop
@@ -1218,7 +1837,17 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 		if len(wa) == len(ca) && len(wb) == len(cb) {
 			return true, 100
 		}
-		return true, 93.5
+		// NATIVE (fuzzy_title_variant f1t2): the same order is exact
+		// whatever the stop words ("Zorp Quill" finds "Zorps and Quill").
+		if len(sharedA) == len(sharedB) && !titleReordered(sharedA, sharedB) {
+			return true, 100
+		}
+		// NATIVE (fuzzcap-C9 c9t4): 94 when the candidate has no stop word
+		// ("Zorp Quill" finds "Quill of Zorp"), 93 when it has one.
+		if len(wa) == len(ca) {
+			return true, 94
+		}
+		return true, 93
 	}
 	sameOrder := len(sharedA) > 0
 	for i := 0; i < min(len(sharedA), len(sharedB)); i++ {
@@ -1243,7 +1872,10 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	// The panel titles hold no stop word and repeat no word; any other title
 	// keeps the shared scoring below.
 	plain := len(wa) == len(ua) && len(wb) == len(ub)
-	exactSubset := plain && exactShared == len(short)
+	// subset is the word-order rules' reading of an exact subset; the panel
+	// extensions (exactSubset) also need plain titles.
+	subset := exactShared == len(short)
+	exactSubset := plain && subset
 	if exactSubset && k == len(ua) && len(ub) == n && (n == 5 || n == 6) && (k == 1 || (k == 2 && !sameOrder)) {
 		// NATIVE (duplicate_fuzzy_panels): a candidate whose content words
 		// all occur in a longer existing title finds it from the short side
@@ -1264,14 +1896,76 @@ func fuzzyTitle(a, b string, _ bool) (bool, float64) {
 	if !ok {
 		confidence = 88
 	}
+	if sameOrder && n == 2 && k == 1 && confidence == 93 && len(wa) > len(ca) && titleAllIn(wa, wb) {
+		// NATIVE (fuzzcap-C9 c9t4, fuzzcap-B3 tt2): a candidate with a stop
+		// word whose words are all in the existing title: "Zorp Of" finds
+		// "Zorp of Quill" and "Director IT" finds "Director - IT" at 94.
+		confidence = 94
+	}
 	if !sameOrder {
-		if n == 6 && exactSubset && len(short) < len(long) && k == 5 {
+		if subset && len(short) == k && len(short) < len(long) && k >= 2 && titleReversed(sharedA, sharedB) {
+			// NATIVE (fuzzcap-C9 c9t2d, c9t3c, c9t3d): all words of the
+			// shorter title in the longer one, in the reverse order (a word
+			// moved to the other end keeps the general penalty). The penalty
+			// depends on the direction and the two lengths.
+			pen, known := titleReorderPenalty(len(ua) < len(ub), k, len(long))
+			if !known {
+				pen = 3
+			}
+			if pen < 0 {
+				return false, 0
+			}
+			return true, confidence - float64(pen)
+		}
+		switch {
+		case n == 6 && exactSubset && len(short) < len(long) && k == 5:
 			confidence -= 2
-		} else {
+		case k == 2 && n == 4 && !subset:
+			// NATIVE (fuzzcap-C9 c9t2d): two shared words out of order in a
+			// title of four.
+			confidence -= 5
+		default:
 			confidence -= 3
 		}
 	}
 	return true, confidence
+}
+
+func titleReversed(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !titleWordEqual(a[i], b[len(b)-1-i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func titleAllIn(words, other []string) bool {
+	for _, w := range words {
+		if !slices.Contains(other, w) {
+			return false
+		}
+	}
+	return len(other) > len(words)
+}
+
+// titleReorderPenalty is the confidence a title loses when all its content
+// words (candidate shorter) or all the words of the existing title
+// (candidate longer) occur in the other title in a different order, by shared
+// and longer word count. A negative penalty is no match.
+func titleReorderPenalty(candidateShorter bool, k, long int) (int, bool) {
+	type key struct{ k, long int }
+	shorter := map[key]int{{2, 3}: 1, {3, 4}: 2, {3, 5}: 1, {3, 6}: 2, {4, 6}: 1, {5, 6}: 2}
+	longer := map[key]int{{2, 3}: 4, {3, 4}: 4, {3, 5}: 5, {3, 6}: -1, {4, 6}: 4, {5, 6}: 2}
+	table := longer
+	if candidateShorter {
+		table = shorter
+	}
+	p, ok := table[key{k, long}]
+	return p, ok
 }
 
 // fuzzyItemScore converts a method's single-item confidence into the item
@@ -1282,4 +1976,42 @@ func fuzzyItemScore(method string, confidence float64) float64 {
 		return math.Max(0, 2*confidence-100)
 	}
 	return confidence
+}
+
+// companySlashKeys reports whether two names share the fitted match key when
+// a slash joins the words on either side of it. NATIVE company_name_fit/org.tsv
+// R1_dir and R1_qf2: "Orbel Trade/West" matches neither "Orbel Trade/East",
+// "Orbel Trade West" nor "Orbel Trade - West", and "Orbel Trade/Midwest"
+// matches "Orbel Trade/Mideast"; D1_qf: "Zorvex Freight/West" matches all
+// three of its forms. No captured match with a slash has unequal joined keys.
+func companySlashKeys(a, b string) bool {
+	if strings.IndexByte(a, '/') < 0 && strings.IndexByte(b, '/') < 0 {
+		return true
+	}
+	same, _, _ := companyFitKeys(strings.ReplaceAll(a, "/", ""), strings.ReplaceAll(b, "/", ""))
+	return same
+}
+
+// companyKeyPrefix reports that the first words agree in their first six
+// characters, the part the match key keeps. NATIVE company_name_fit/org.tsv
+// R1_dbl: "Vexlett Packard" matches "Vexlet Packard" and "Vexlettt Packard";
+// "Vexllet Packard", "Vvexlet Packard", "Qell Systems" and "Qel Systems" do
+// not match their single-letter forms.
+func companyKeyPrefix(a, b string) bool {
+	for i := 0; i < 6; i++ {
+		if i >= len(a) || i >= len(b) {
+			return false
+		}
+		x, y := a[i], b[i]
+		if x >= 'A' && x <= 'Z' {
+			x += 'a' - 'A'
+		}
+		if y >= 'A' && y <= 'Z' {
+			y += 'a' - 'A'
+		}
+		if x != y || x == ' ' || x == '-' {
+			return false
+		}
+	}
+	return true
 }

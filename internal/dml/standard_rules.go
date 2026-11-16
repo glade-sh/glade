@@ -122,15 +122,18 @@ var (
 	standardURLScheme = regexp.MustCompile(`^[a-z][a-z0-9+.-]*://`)
 )
 
-// standardZip: a five digit code with an optional hyphenated four digit
-// extension. The first five digits weigh 90 and the extension 10: two
-// extensions that differ score 95, an extension against none scores 100, and
-// "94105 1234" with a space is not an extension at all. Any other value
-// matches only itself.
+// standardZip: a five digit code with an optional hyphenated extension. The
+// first five digits weigh 90 and the extension 10: two extensions that differ
+// score 95, an extension against none scores 100, and "94105 1234" with a
+// space is not an extension at all. Any other value matches only itself, its
+// inner spaces as typed (plainSpaced).
 func standardZip(a, b string) (bool, float64) {
 	headA, extA, okA := standardZipParts(a)
 	headB, extB, okB := standardZipParts(b)
 	if !okA || !okB {
+		if plainSpaced(a) && plainSpaced(b) {
+			return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b)), 100
+		}
 		return strings.EqualFold(strings.Join(strings.Fields(a), " "), strings.Join(strings.Fields(b), " ")), 100
 	}
 	if headA != headB {
@@ -143,7 +146,13 @@ func standardZip(a, b string) (bool, float64) {
 }
 
 // standardZipParts splits "12345" or "12345-6789" into the five digits and the
-// extension.
+// extension. NATIVE (phone_city_zip N5.szu1, N5.szx1): the extension after a
+// hyphen has up to five digits and may be empty ("12345-", "12345-678" and
+// "12345-67890" all find "12345", and "12345-678" scores 95 against
+// "12345-6789"); one space on either side of the hyphen is kept apart from a
+// four digit extension ("12345 -6789" and "12345- 6789" find "12345-6789" at
+// 100). "12345--6789", "12345-678A" and other separators match only
+// themselves.
 func standardZipParts(s string) (head, ext string, ok bool) {
 	digits := func(t string) bool {
 		for i := 0; i < len(t); i++ {
@@ -156,8 +165,10 @@ func standardZipParts(s string) (head, ext string, ok bool) {
 	switch {
 	case len(s) == 5 && digits(s):
 		return s, "", true
-	case len(s) == 10 && s[5] == '-' && digits(s[:5]) && digits(s[6:]):
+	case len(s) >= 6 && len(s) <= 11 && s[5] == '-' && digits(s[:5]) && digits(s[6:]):
 		return s[:5], s[6:], true
+	case len(s) == 11 && (s[5:7] == " -" || s[5:7] == "- ") && digits(s[:5]) && digits(s[7:]):
+		return s[:5], s[7:], true
 	}
 	return "", "", false
 }
@@ -171,7 +182,9 @@ func standardCompany(a, b string) (bool, float64) {
 	if !standardCompanyGate(a, b) {
 		return false, 0
 	}
-	return fuzzyCompany(a, b, false)
+	// The fitted scorer comes from custom rules; the standard Account rule is
+	// a different profile and keeps the word scorer.
+	return legacyFuzzyCompany(a, b, false)
 }
 
 // standardCity is the City method with a cheap necessary condition: two
@@ -452,63 +465,155 @@ func standardPersonOf(org *storage.OrgState, object string, record storage.Recor
 
 // standardPersonMatch is the standard Contact and Lead rule (the two share
 // one structure, and a cross-object rule applies it to a record of the other
-// object): the last name and first name, then an email address, a phone
-// number, or the company with a title or a street and a city or ZIP code. A
-// candidate without a first name still matches on the email address, as does
-// a pair without first names; an existing record without one never matches a
-// candidate that has one. The phone and company paths need both first names.
+// object). The rule is an OR of AND groups, each found through its own
+// predefined match key (Salesforce Help, "Standard Contact Matching Rule and
+// Standard Lead Matching Rule"):
+//
+//   - the email path, keyed on Email alone: the first and last names are
+//     scored without a key (standardEmailPath);
+//   - the phone path, keyed on First_Name (1,1) Last_Name Phone;
+//   - the company path, with a title or a street and a city or ZIP code
+//     (its key, First_Name (1,1) Last_Name Company (2,5), is not modeled: no
+//     row measures it, so it keeps the standard First Name item).
+//
+// The phone and company paths need the surname key (standardLastName) and
+// both first names. A cross-object rule keeps the surname key and the
+// standard First Name item on every path.
+// The best path decides.
 func standardPersonMatch(object string, candidate, existing standardPerson) (bool, float64) {
-	last := standardCompare(candidate.last, existing.last, standardLastName)
-	email := standardCompare(candidate.email, existing.email, standardExact)
-	if candidate.kind == existing.kind && email.ok() && candidate.first != "" && strings.EqualFold(candidate.first, existing.first) {
-		if matched, confidence := standardCorroboratedSurname(candidate.last, existing.last); matched {
-			return true, confidence
-		}
-		if !last.ok() {
-			return false, 0
-		}
-		if last.confidence < 100 && standardIsTerminalSwap(candidate.last, existing.last) {
-			return standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
-		}
-	}
-	if !last.ok() {
-		return false, 0
-	}
-	first := standardCompare(candidate.first, existing.first, standardFirstName)
-	// The standard rule accepts one initial with an exact surname and email
-	// or phone. A custom FirstName item does not match the same pairs.
-	if !first.ok() && candidate.kind == existing.kind && strings.EqualFold(candidate.last, existing.last) && standardFirstInitial(candidate.first, existing.first) {
-		if email.ok() {
-			return true, 100
-		}
-		if candidate.phone != "" && candidate.phone == existing.phone {
-			return standardPhone(object)(candidate.phone, existing.phone)
-		}
-	}
 	best, found := 0.0, false
 	take := func(c float64) {
 		if !found || c > best {
 			best, found = c, true
 		}
 	}
-	switch first.relation {
-	case standardMatch:
-		firstConfidence := first.confidence
-		if email.ok() {
-			take(standardProduct(last.confidence, firstConfidence, email.confidence))
+	email := standardCompare(candidate.email, existing.email, standardExact)
+	if email.ok() && candidate.kind == existing.kind {
+		if matched, confidence, decided := standardEmailPath(candidate, existing); decided {
+			if !matched {
+				return false, 0
+			}
+			take(confidence)
 		}
-		if phone := standardCompare(candidate.phone, existing.phone, standardPhone(object)); phone.ok() {
-			take(standardProduct(last.confidence, firstConfidence, phone.confidence))
-		}
-		if confidence, ok := standardCompanyPath(candidate, existing); ok {
-			take(standardProduct(last.confidence, firstConfidence, confidence))
-		}
-	case standardCandidateBlank, standardBothBlank:
-		if email.ok() {
+	}
+	last := standardCompare(candidate.last, existing.last, standardLastName)
+	if !last.ok() {
+		return found, best
+	}
+	if email.ok() && candidate.kind != existing.kind {
+		// A cross-object pair keeps the keyed email path.
+		first := standardCompare(candidate.first, existing.first, standardFirstName)
+		switch first.relation {
+		case standardMatch:
+			take(standardProduct(last.confidence, first.confidence, email.confidence))
+		case standardCandidateBlank, standardBothBlank:
 			take(standardProduct(last.confidence, email.confidence))
 		}
 	}
+	if phone := standardCompare(candidate.phone, existing.phone, standardPhone(object)); phone.ok() {
+		if candidate.kind != existing.kind {
+			// No row measures a cross-object phone path: it keeps the
+			// standard First Name item and its confidence.
+			if first := standardCompare(candidate.first, existing.first, standardFirstName); first.ok() {
+				take(standardProduct(last.confidence, first.confidence, phone.confidence))
+			}
+		} else if first, ok := standardInitialKeyedFirst(candidate.first, existing.first); ok {
+			take(standardProduct(last.confidence, first, phone.confidence))
+		}
+	}
+	// No row measures the company path's first names: it keeps the
+	// standard First Name item and its confidence.
+	if first := standardCompare(candidate.first, existing.first, standardFirstName); first.ok() {
+		if confidence, ok := standardCompanyPath(candidate, existing); ok {
+			take(standardProduct(last.confidence, first.confidence, confidence))
+		}
+	}
 	return found, best
+}
+
+// standardEmailPath is the email path of the standard Contact and Lead rule.
+// Its match key is the email address alone, so neither name is keyed: the
+// last name is scored by the Last Name algorithms (B2 s_suf: "McAllen" finds
+// "Mc Allen", "van der Berg" finds "Vanderberg", "Harlow" finds "Harlow III";
+// the standard fixture's Field.Contact.Last: "Kovalski" finds "Kowalski") and
+// the first name by standardFirstNameScore. Blank names are ignored when the
+// grouping includes Email: two blank last names agree, and a blank candidate
+// first name matches any existing one. A surname pair inside the measured
+// exact-first-name panels keeps the panels' verdict whatever the first names.
+// decided is false when the email path leaves the pair to the other paths (an
+// existing record without a first name, first names that do not match).
+func standardEmailPath(candidate, existing standardPerson) (matched bool, confidence float64, decided bool) {
+	lastConfidence := 100.0
+	switch {
+	case candidate.last == "" && existing.last == "":
+		// Two blank last names are ignored only beside two first names
+		// (Field.Contact.Last and Field.Lead.Last: "Jonathan" with no last
+		// name finds itself at 100); no row shows four blank names.
+		if candidate.first == "" || existing.first == "" {
+			return false, 0, true
+		}
+	case candidate.last == "" || existing.last == "":
+		return false, 0, true
+	default:
+		// The exact-first-name surname panels (duplicate_save_behavior,
+		// surname_keyboard, surname_substitution) measure these keyboard
+		// geometries. Their verdict on the surname stands whatever the first
+		// names: a pair they keep apart with equal first names is not found
+		// through a blank or a merely similar first name either.
+		panel := false
+		if matched, confidence := standardCorroboratedSurname(candidate.last, existing.last); matched {
+			lastConfidence, panel = confidence, true
+		} else if last := standardCompare(candidate.last, existing.last, standardLastName); last.ok() {
+			if last.confidence < 100 && standardIsTerminalSwap(candidate.last, existing.last) {
+				matched, confidence := standardTerminalSwap(strings.ToLower(candidate.last), last.confidence, true)
+				if !matched {
+					return false, 0, true
+				}
+				lastConfidence, panel = confidence, true
+			}
+		} else if standardSurnamePanelShape(candidate.last, existing.last) {
+			return false, 0, true
+		}
+		if !panel {
+			var matched bool
+			if standardHasLetter(candidate.last) && standardHasLetter(existing.last) {
+				matched, lastConfidence = lastNameAlgorithms(foldText(capFuzzyInput(candidate.last)), foldText(capFuzzyInput(existing.last)))
+			} else {
+				// A name without a letter has no phonetic code: the keyed item
+				// decides ("42" finds "43" at 99 and never "王"; Shapes.Contact.Last).
+				last := standardCompare(candidate.last, existing.last, standardLastName)
+				matched, lastConfidence = last.ok(), last.confidence
+			}
+			if !matched {
+				return false, 0, true
+			}
+		}
+	}
+	switch {
+	case candidate.first == "":
+		return true, lastConfidence, true
+	case existing.first == "":
+		return false, 0, false
+	}
+	matched, score := standardFirstNameScore(candidate.first, existing.first)
+	if !matched {
+		return false, 0, false
+	}
+	return true, standardProduct(lastConfidence, standardFirstNameConfidence(score)), true
+}
+
+// standardHasLetter reports a value with at least one letter.
+func standardHasLetter(s string) bool {
+	return strings.IndexFunc(s, unicode.IsLetter) >= 0
+}
+
+// standardFirstNameConfidence is the share of a standard first-name score in
+// the rule confidence: the item is one of three that the rule averages, so
+// a score s counts (200 + s) / 3 (B2 s_in_c: "Y R" and "Y R S" score 97 on
+// the standard rule against 95 on a custom one; the fixture's
+// NameConfidence: "Jon" and "Jo" with an exact surname score 97).
+func standardFirstNameConfidence(score float64) float64 {
+	return (200 + score) / 3
 }
 
 // standardEmailDomain is the part of an address after the last "@", in lower

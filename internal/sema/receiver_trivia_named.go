@@ -78,6 +78,14 @@ func (a *Analyzer) receiverNamedDiagnostics(index typesys.Index, model *semaType
 					}
 				}
 			}
+			if d, lead := receiverFollowupDiagnostic(source, file, route, item, func() *semaTypeMemberView { return model }); d != nil {
+				start, end := receiverStatementSpan(item.tokens, item.dot, len(source))
+				if lead {
+					start = item.tokens[item.statement].start
+				}
+				out = append(out, receiverReplacement{diagnostic: *d, file: file, start: start, end: end, field: member.Kind == apexast.DeclarationField})
+				continue
+			}
 			fieldType := member.Kind == apexast.DeclarationField && !item.declarationHasEquals
 			depth, parens := item.depth, item.parens
 			if trigger == nil && member.Name == "" {

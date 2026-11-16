@@ -244,6 +244,7 @@ func migrateLegacyPermissionInventory(org *OrgState, profileSets map[string]ID) 
 			}
 		}
 	}
+	permissionSets = mutableSeedObject(org, "PermissionSet")
 	for legacy := range synthetic {
 		if !referenced[legacy] {
 			permissionSets.DeleteRecord(legacy)
@@ -254,6 +255,18 @@ func migrateLegacyPermissionInventory(org *OrgState, profileSets map[string]ID) 
 	}
 	for _, reference := range references {
 		state := org.Objects[reference.object]
+		touched := false
+		for _, record := range state.Records {
+			if _, ok := legacyPermissionSetID(record.Fields[reference.field], remap); ok {
+				touched = true
+				break
+			}
+		}
+		if !touched {
+			continue
+		}
+		// Runtime clones share these rows; copy them before the rewrite.
+		state = mutableSeedObject(org, reference.object)
 		assigned := map[string]bool{}
 		if reference.object == "PermissionSetAssignment" {
 			for _, record := range state.Records {
@@ -280,8 +293,9 @@ func migrateLegacyPermissionInventory(org *OrgState, profileSets map[string]ID) 
 		marketing, seeded := profileSets["Marketing User"]
 		if seeded && IDsEqual(record.Fields["ParentId"].ID, marketing) && strings.EqualFold(record.Fields["SobjectType"].String, "Account") {
 			if value, ok := record.Fields["PermissionsDelete"]; ok && value.Kind == ValueBoolean && !value.Boolean {
+				objectPermissions := mutableSeedObject(org, "ObjectPermissions")
+				record = objectPermissions.Records["110000000000006"]
 				record.Fields["PermissionsDelete"] = BooleanValue(true)
-				objectPermissions := org.Objects["ObjectPermissions"]
 				objectPermissions.PutRecord("110000000000006", record)
 			}
 		}
@@ -546,18 +560,21 @@ func migrateLegacyLicenseSeeds(org *OrgState, salesforceLicenseID, communityLogi
 		{ID("00e000000000004"), "Standard Platform User", salesforceLicenseID, platformLicenseID},
 	} {
 		if profile, ok := profiles.Records[legacy.id]; ok && profile.Fields["Name"].String == legacy.name && IDsEqual(profile.Fields["UserLicenseId"].ID, legacy.from) {
+			profiles = mutableSeedObject(org, "Profile")
+			profile = profiles.Records[legacy.id]
 			profile.Fields["UserLicenseId"] = IDValue(legacy.into)
 			profiles.PutRecord(legacy.id, profile)
 		}
 	}
 	guestID := ID("00e000000000007")
 	if profile, ok := profiles.Records[guestID]; ok && legacyGuestProfileUntouched(org, profile, communityLoginLicenseID) {
-		permissionSets := org.Objects["PermissionSet"]
+		permissionSets := mutableSeedObject(org, "PermissionSet")
 		for id, set := range permissionSets.Records {
 			if IDsEqual(set.Fields["ProfileId"].ID, guestID) {
 				permissionSets.DeleteRecord(id)
 			}
 		}
+		profiles = mutableSeedObject(org, "Profile")
 		profiles.DeleteRecord(guestID)
 	}
 }
@@ -594,4 +611,15 @@ func legacyGuestProfileUntouched(org *OrgState, profile Record, seededLicenseID 
 		}
 	}
 	return true
+}
+
+// mutableSeedObject returns the named object with rows and indexes owned by
+// org. Runtime clones share the rows of metadata and setup objects with their
+// template, so a seed or migration write goes through
+// EnsureMutableObjectRecords first.
+func mutableSeedObject(org *OrgState, objectName string) ObjectState {
+	if object := org.Objects[objectName]; object.RecordsShared || object.IndexesShared {
+		EnsureMutableObjectRecords(org, objectName)
+	}
+	return org.Objects[objectName]
 }

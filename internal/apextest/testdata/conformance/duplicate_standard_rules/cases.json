@@ -138,7 +138,7 @@
   "62/Standard.Contact.NameConfidence": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.096
+   "min_recall": 0.6249
   },
   "62/Standard.Contact.Truth.S3": {
    "max_conf_mae": 0.001,
@@ -191,14 +191,14 @@
    "min_recall": 0.9999
   },
   "62/Standard.Field.Contact.First": {
-   "max_conf_mae": 0.115,
+   "max_conf_mae": 0.04,
    "max_extra": 0,
-   "min_recall": 0.7876
+   "min_recall": 0.9935
   },
   "62/Standard.Field.Contact.Last": {
-   "max_conf_mae": 0.013,
+   "max_conf_mae": 0.012,
    "max_extra": 0,
-   "min_recall": 0.8499
+   "min_recall": 0.9299
   },
   "62/Standard.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
@@ -211,14 +211,14 @@
    "min_recall": 0.9999
   },
   "62/Standard.Field.Lead.First": {
-   "max_conf_mae": 0.115,
+   "max_conf_mae": 0.04,
    "max_extra": 0,
-   "min_recall": 0.7876
+   "min_recall": 0.9935
   },
   "62/Standard.Field.Lead.Last": {
-   "max_conf_mae": 0.013,
+   "max_conf_mae": 0.012,
    "max_extra": 0,
-   "min_recall": 0.8499
+   "min_recall": 0.9299
   },
   "62/Standard.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
@@ -253,7 +253,7 @@
   "62/Standard.Lead.NameConfidence": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.096
+   "min_recall": 0.6249
   },
   "62/Standard.Lead.Truth.S3": {
    "max_conf_mae": 0.001,
@@ -281,9 +281,9 @@
    "min_recall": 0.9321
   },
   "62/Standard.Shapes.Contact.First": {
-   "max_conf_mae": 0.825,
+   "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.9443
+   "min_recall": 0.9999
   },
   "62/Standard.Shapes.Contact.Last": {
    "max_conf_mae": 0.024,
@@ -641,14 +641,14 @@
    "min_recall": 0.8968
   },
   "67/Holdout.Field.Contact.First": {
-   "max_conf_mae": 0.223,
+   "max_conf_mae": 0.151,
    "max_extra": 0,
-   "min_recall": 0.8243
+   "min_recall": 0.9159
   },
   "67/Holdout.Field.Contact.Last": {
-   "max_conf_mae": 0.048,
+   "max_conf_mae": 0.043,
    "max_extra": 0,
-   "min_recall": 0.842
+   "min_recall": 0.9473
   },
   "67/Holdout.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
@@ -661,14 +661,14 @@
    "min_recall": 0.8461
   },
   "67/Holdout.Field.Lead.First": {
-   "max_conf_mae": 0.223,
+   "max_conf_mae": 0.151,
    "max_extra": 0,
-   "min_recall": 0.8243
+   "min_recall": 0.9159
   },
   "67/Holdout.Field.Lead.Last": {
-   "max_conf_mae": 0.048,
+   "max_conf_mae": 0.043,
    "max_extra": 0,
-   "min_recall": 0.842
+   "min_recall": 0.9473
   },
   "67/Holdout.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
@@ -843,7 +843,7 @@
   "67/Standard.Contact.NameConfidence": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.096
+   "min_recall": 0.6249
   },
   "67/Standard.Contact.Truth.S3": {
    "max_conf_mae": 0.001,
@@ -901,14 +901,14 @@
    "min_recall": 0.9999
   },
   "67/Standard.Field.Contact.First": {
-   "max_conf_mae": 0.115,
+   "max_conf_mae": 0.04,
    "max_extra": 0,
-   "min_recall": 0.7876
+   "min_recall": 0.9935
   },
   "67/Standard.Field.Contact.Last": {
-   "max_conf_mae": 0.013,
+   "max_conf_mae": 0.012,
    "max_extra": 0,
-   "min_recall": 0.8499
+   "min_recall": 0.9299
   },
   "67/Standard.Field.Contact.Phone": {
    "max_conf_mae": 0.001,
@@ -921,14 +921,14 @@
    "min_recall": 0.9999
   },
   "67/Standard.Field.Lead.First": {
-   "max_conf_mae": 0.115,
+   "max_conf_mae": 0.04,
    "max_extra": 0,
-   "min_recall": 0.7876
+   "min_recall": 0.9935
   },
   "67/Standard.Field.Lead.Last": {
-   "max_conf_mae": 0.013,
+   "max_conf_mae": 0.012,
    "max_extra": 0,
-   "min_recall": 0.8499
+   "min_recall": 0.9299
   },
   "67/Standard.Field.Lead.Phone": {
    "max_conf_mae": 0.001,
@@ -963,7 +963,7 @@
   "67/Standard.Lead.NameConfidence": {
    "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.096
+   "min_recall": 0.6249
   },
   "67/Standard.Lead.Truth.S3": {
    "max_conf_mae": 0.001,
@@ -991,9 +991,9 @@
    "min_recall": 0.9321
   },
   "67/Standard.Shapes.Contact.First": {
-   "max_conf_mae": 0.825,
+   "max_conf_mae": 0.001,
    "max_extra": 0,
-   "min_recall": 0.9443
+   "min_recall": 0.9999
   },
   "67/Standard.Shapes.Contact.Last": {
    "max_conf_mae": 0.024,

@@ -11,9 +11,8 @@ import (
 // letters, over thirteen, or in the first five letters; initials against
 // names, two longer initials and initials outside a to z; first words that
 // differ inside the match key or with a different second word; plurals outside
-// the captured lengths or already matched by a proven word pair; streets
-// without a number, with a different number, a trailing directional or an
-// unknown word that is not near the suffix; titles of seven words.
+// the captured lengths or already matched by a proven word pair; titles of seven
+// words. Street has its own scorer and test (TestCustomStreetNeighbourShapes).
 func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
 	for _, c := range []struct {
 		method, a, b string
@@ -28,12 +27,6 @@ func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
 		{"LastName", "Kellingsworth", "Kellingswortz", true, 98.7692},
 		{"LastName", "Tolvermandel", "Tolverwanqez", false, 95.3333},
 		{"LastName", "Brandenstock", "Brandewxtovz", false, 95.9167},
-		{"Street", "418 Larkwhistle St", "418 Larkwhistle Sreet", false, 80.2521},
-		{"Street", "418 Larkwhistle St N", "418 Larkwhistle Strt N", false, 84.2938},
-		{"Street", "Larkwhistle St", "Larkwhistle Strt", false, 68.3036},
-		{"Street", "418 Larkwhistle St", "419 Larkwhistle Strt", false, 67.0536},
-		{"Street", "418 Larkwhistle Rd", "418 Larkwhistle Rdx", true, 87.8446},
-		{"Street", "418 Larkwhistle St", "418 Larkwhistle Ste", true, 87.8446},
 		{"Title", "Global Principal Retail Brand Strategist", "Strategist", false, 0.0000},
 		{"Title", "Brand Strategist", "Deputy Senior Global Principal Retail Brand Strategist", true, 91.0000},
 		{"Title", "Strategist", "Deputy Senior Global Principal Retail Brand Strategist", false, 0.0000},
@@ -45,6 +38,31 @@ func TestCustomFuzzyExtensionsKeepNeighbourShapes(t *testing.T) {
 		match, score := FuzzyScore(c.method, c.a, c.b, false)
 		if match != c.match || math.Abs(score-c.score) > 1e-3 {
 			t.Errorf("%s %q/%q: got %v %.4f, origin/main %v %.4f", c.method, c.a, c.b, match, score, c.match, c.score)
+		}
+	}
+}
+
+// The custom Street scorer on the neighbours of the duplicate_fuzzy_panels
+// street rows. A street without a number, or with another number, stays apart;
+// an unknown word one edit from the suffix matches at edit similarity 87 and
+// above. NATIVE fuzzy_street_c5/org.tsv nd4: a trailing directional does not
+// change that ("84 Sorrel St N" finds "84 Sorrel Strt N").
+func TestCustomStreetNeighbourShapes(t *testing.T) {
+	for _, c := range []struct {
+		a, b  string
+		match bool
+		conf  float64
+	}{
+		{"418 Larkwhistle St", "418 Larkwhistle Sreet", false, 0}, // 85.71
+		{"418 Larkwhistle St N", "418 Larkwhistle Strt N", true, 82},
+		{"Larkwhistle St", "Larkwhistle Strt", false, 0},
+		{"418 Larkwhistle St", "419 Larkwhistle Strt", false, 0},
+		{"418 Larkwhistle Rd", "418 Larkwhistle Rdx", true, 88},
+		{"418 Larkwhistle St", "418 Larkwhistle Ste", true, 88},
+	} {
+		match, score := FuzzyScore("Street", c.a, c.b, false)
+		if match != c.match || match && math.Floor(score+0.5) != c.conf {
+			t.Errorf("Street %q/%q: got %v %.2f, want %v %.0f", c.a, c.b, match, score, c.match, c.conf)
 		}
 	}
 }

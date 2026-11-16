@@ -153,3 +153,42 @@ func filterRuleConfidence(expression string, matches []bool, scores []float64) (
 	matched, confidence = node.evaluate(matches, scores)
 	return matched, confidence, true
 }
+
+// maxFilterAndGroups bounds the expansion of a filter into AND groups; a
+// matching rule has at most ten items, so real filters stay far below it.
+const maxFilterAndGroups = 64
+
+// andGroups rewrites the filter as OR-ed AND groups of item indexes (the
+// standardized form match keys are generated from). ok is false when the
+// expansion would exceed maxFilterAndGroups.
+func (n *filterConfidenceNode) andGroups() ([][]int, bool) {
+	switch n.op {
+	case 'l':
+		return [][]int{{n.leaf}}, true
+	case 'o':
+		var out [][]int
+		for _, kid := range n.kids {
+			groups, ok := kid.andGroups()
+			if !ok || len(out)+len(groups) > maxFilterAndGroups {
+				return nil, false
+			}
+			out = append(out, groups...)
+		}
+		return out, true
+	}
+	out := [][]int{nil}
+	for _, kid := range n.kids {
+		groups, ok := kid.andGroups()
+		if !ok || len(out)*len(groups) > maxFilterAndGroups {
+			return nil, false
+		}
+		next := make([][]int, 0, len(out)*len(groups))
+		for _, left := range out {
+			for _, right := range groups {
+				next = append(next, append(append([]int(nil), left...), right...))
+			}
+		}
+		out = next
+	}
+	return out, true
+}

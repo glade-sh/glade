@@ -17,3 +17,7 @@ Free-dot type-context capture: see RUN-FACTS-free-types.txt; the scratch org was
 Trivia-boundary capture: see RUN-FACTS-trivia.txt; the scratch org was deleted and deletion was verified.
 
 Vertical-tab REST capture: see RUN-FACTS-vertical.txt; the scratch org was deleted and deletion was verified.
+
+Follow-up contexts capture (org.tsv:310-469): see RUN-FACTS-followup.txt; the scratch org was deleted and deletion was verified.
+
+Platform-method capture of the follow-up call rules (org.tsv:470-507): see RUN-FACTS-platform.txt; the scratch org was deleted and deletion was verified.
