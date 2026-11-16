@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"regexp/syntax"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -258,12 +259,17 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 
 func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anchored, full bool) (bool, error) {
 	if !anchored && p.noLinearMatch(input) {
-		// A search that tries every start and finds nothing reads to the end,
-		// except when the pattern begins with an anchor. This is an estimate:
-		// Java answers false for (a+)+b on a run of a followed by c, because it
-		// never reads past the last start. The observer would time out on these
-		// shapes, so the estimate is returned at once (noted in regex_java_divergence/RUN-FACTS.txt).
-		return !strings.HasPrefix(regexStripLeadingFlags(p.originalSource), "^"), nil
+		// A failed unanchored find ends in Java's Start node, which sets
+		// hitEnd (pattern_matcher R011, d14_neg_lookahead_nomatch). A pattern
+		// whose every match begins at the start of the text has no Start node:
+		// Java makes one attempt, and hitEnd is true when that attempt reads
+		// past the end. The linear program decides that exactly.
+		if p.linearProg == nil || p.linearProg.StartCond()&syntax.EmptyBeginText == 0 {
+			return true, nil
+		}
+		if startByte == 0 {
+			return linearAttemptReachesEnd(p.linearProg, input, endRune), nil
+		}
 	}
 	source, slot := regexp2EndObserverSource(p.matchSource, p.re)
 	if anchored {
@@ -297,4 +303,64 @@ func regexStripLeadingFlags(source string) string {
 		source = source[end+1:]
 	}
 	return source
+}
+
+// linearAttemptReachesEnd reports whether some path of prog, started at the
+// beginning of input, consumes every rune up to endRune and is still alive.
+// The program has no empty-width operation other than begin of text.
+func linearAttemptReachesEnd(prog *syntax.Prog, input string, endRune int) bool {
+	runes := []rune(input)
+	if endRune < len(runes) {
+		runes = runes[:endRune]
+	}
+	var current, next []uint32
+	seen := make([]int, len(prog.Inst))
+	for i := range seen {
+		seen[i] = -1
+	}
+	var add func(list *[]uint32, pc uint32, flags syntax.EmptyOp, gen int)
+	add = func(list *[]uint32, pc uint32, flags syntax.EmptyOp, gen int) {
+		if seen[pc] == gen {
+			return
+		}
+		seen[pc] = gen
+		inst := &prog.Inst[pc]
+		switch inst.Op {
+		case syntax.InstAlt, syntax.InstAltMatch:
+			add(list, inst.Out, flags, gen)
+			add(list, inst.Arg, flags, gen)
+		case syntax.InstCapture, syntax.InstNop:
+			add(list, inst.Out, flags, gen)
+		case syntax.InstEmptyWidth:
+			if syntax.EmptyOp(inst.Arg)&^flags == 0 {
+				add(list, inst.Out, flags, gen)
+			}
+		case syntax.InstRune, syntax.InstRune1, syntax.InstRuneAny, syntax.InstRuneAnyNotNL:
+			*list = append(*list, pc)
+		}
+	}
+	prev := rune(-1)
+	var first rune = -1
+	if len(runes) > 0 {
+		first = runes[0]
+	}
+	add(&current, uint32(prog.Start), syntax.EmptyOpContext(prev, first), 0)
+	for i, r := range runes {
+		next = next[:0]
+		after := rune(-1)
+		if i+1 < len(runes) {
+			after = runes[i+1]
+		}
+		for _, pc := range current {
+			inst := &prog.Inst[pc]
+			if inst.MatchRune(r) {
+				add(&next, inst.Out, syntax.EmptyOpContext(r, after), i+1)
+			}
+		}
+		current, next = next, current
+		if len(current) == 0 {
+			return false
+		}
+	}
+	return len(current) > 0
 }

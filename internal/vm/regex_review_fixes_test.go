@@ -156,3 +156,22 @@ String s = 'aaaaaaaaaaaaaaaa' + '\u0660\u0661';
 System.assertEquals(true, Pattern.compile('(?U)(\\d+)+\\b').matcher(s).find());
 `)
 }
+
+// A failed unanchored find always sets hitEnd; a ^-anchored pattern makes one
+// attempt, and hitEnd is true only when that attempt reads past the end (F4).
+func TestRegexHitEndAfterLinearPrecheckMiss(t *testing.T) {
+	runRegexApex(t, `
+Matcher m1 = Pattern.compile('^(a+)+b').matcher('a'.repeat(24));
+System.assertEquals(false, m1.find());
+System.assertEquals(true, m1.hitEnd());
+Matcher m2 = Pattern.compile('^(a+)+b').matcher('a'.repeat(5));
+System.assertEquals(false, m2.find());
+System.assertEquals(true, m2.hitEnd());
+Matcher m3 = Pattern.compile('^(a+)+b').matcher('a'.repeat(23) + 'c');
+System.assertEquals(false, m3.find());
+System.assertEquals(false, m3.hitEnd());
+Matcher m4 = Pattern.compile('(a+)+b').matcher('a'.repeat(23) + 'c');
+System.assertEquals(false, m4.find());
+System.assertEquals(true, m4.hitEnd());
+`)
+}

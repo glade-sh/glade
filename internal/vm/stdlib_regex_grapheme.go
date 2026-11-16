@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"regexp"
+	"regexp/syntax"
 	"sort"
 	"strings"
 	"sync"
@@ -33,6 +34,7 @@ type regexp2Plan struct {
 	endAssertionGroups []regexp2EndAssertion
 	loopGroups         []string
 	linear             *regexp.Regexp // set for patterns that nest unbounded repeats
+	linearProg         *syntax.Prog   // the same pattern as a program, for the hitEnd simulation
 	linearMu           sync.Mutex
 	linearHit          string
 }
@@ -121,6 +123,11 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		// when the match fails. A linear engine decides whether any match exists.
 		if linear, err := regexp.Compile(regexp2Source); err == nil {
 			plan.linear = linear
+			if parsed, perr := syntax.Parse(linear.String(), syntax.Perl); perr == nil {
+				if prog, cerr := syntax.Compile(parsed.Simplify()); cerr == nil {
+					plan.linearProg = prog
+				}
+			}
 		}
 	}
 	if inputIndependent {

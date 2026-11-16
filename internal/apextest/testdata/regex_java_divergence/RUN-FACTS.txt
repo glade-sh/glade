@@ -18,6 +18,7 @@ bisect d6c (2026-11-16 UTC, 62.0 and 67.0, anonymous, two or three fresh scratch
 loop limit: the single limit of 1,250 iterations stays. The overflow boundary depends on the loop body
   ((a|b)* 1,200 true; (.|\n)* and (?:\r?\n)+ overflow at 1,200; (\w+\s?)* flips between 1,100 and 1,200), so no single
   number fits every row. d6b_dotnl_1200 and d6c_crlf_1200 are carried in carried.tsv for that reason.
-hitEnd estimate: after the linear precheck finds no match, Matcher.hitEnd is estimated (true unless the pattern starts
-  with ^). Java answers false for (a+)+b on a run of a followed by c. No native row covers it; the observer would time out
-  on this shape, so the estimate is returned at once.
+hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repeats): a failed unanchored find always
+  reports hitEnd=true (also pattern_matcher R011 and d14_neg_lookahead_nomatch). A pattern anchored at the start makes one
+  attempt: ^(a+)+b on 24 a gives hitEnd=true and on 23 a plus c gives false. The @IsTest rows were captured too; only
+  the anonymous rows are in org.tsv.
