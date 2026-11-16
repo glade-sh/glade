@@ -4535,7 +4535,7 @@ func decimalValueOfText(text string) (Value, error) {
 	if !ok {
 		return value, nil
 	}
-	out, ok := decimalRound33(rat)
+	out, ok := decimalRound33Wide(rat, true)
 	if !ok {
 		return Null, fmt.Errorf("Decimal.valueOf value cannot be represented")
 	}

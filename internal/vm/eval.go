@@ -675,6 +675,13 @@ func decimalDivideBigDecimal(left, right Value, leftRat, rightRat *big.Rat) (Val
 // decimalRound33 rounds rat to 33 significant digits and keeps all of
 // them. A carry into a 34th digit drops the last (zero) digit and one scale.
 func decimalRound33(rat *big.Rat) (Value, bool) {
+	return decimalRound33Wide(rat, false)
+}
+
+// decimalRound33Wide is decimalRound33 with an option to keep results beyond
+// the Double range: the exact text carries the value and Decimal may be Inf,
+// for the caller to clamp.
+func decimalRound33Wide(rat *big.Rat, allowInf bool) (Value, bool) {
 	if rat.Sign() == 0 {
 		return decimalFromRat(rat, 0), true
 	}
@@ -694,7 +701,7 @@ func decimalRound33(rat *big.Rat) (Value, bool) {
 		scale--
 	}
 	out := decimalFromRat(rounded, scale)
-	if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
+	if math.IsNaN(out.Decimal) || (!allowInf && math.IsInf(out.Decimal, 0)) {
 		return Null, false
 	}
 	return out, true
