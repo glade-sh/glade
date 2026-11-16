@@ -44,7 +44,7 @@ func TestDecimalValueOfWideMagnitudeRounds(t *testing.T) {
 	if p, s := decimalPrecision(got), decimalScale(got); p != 33 || s != -277 {
 		t.Fatalf("precision=%d scale=%d", p, s)
 	}
-	if !strings.HasPrefix(got.Text, "123456789012345678901234567890123") {
-		t.Fatalf("text = %.40s", got.Text)
+	if !strings.HasPrefix(got.Text, "1.23456789012345678901234567890123E+309") {
+		t.Fatalf("text = %.60s", got.Text)
 	}
 }
