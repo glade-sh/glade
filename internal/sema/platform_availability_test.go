@@ -186,6 +186,14 @@ func generatedPlatformSurfaceUnavailable(id, owner, member, version string) bool
 	if owner == "system.limits" && (member == "getapexcursors" || member == "getlimitapexcursors") {
 		return !semaVersionAllows(version, apexversion.Range{Since: 62})
 	}
+	// apextest api68_native limits LIMITS-DEPLOY-62/LIMITS-CURSOR-62 compile
+	// and run the pagination cursor counters at API 62.0.
+	switch member {
+	case "getapexpaginationcursors", "getlimitapexpaginationcursors", "getapexpaginationcursorrows", "getlimitapexpaginationcursorrows":
+		if owner == "system.limits" {
+			return !semaVersionAllows(version, apexversion.Range{Since: 62})
+		}
+	}
 	if member == "" {
 		// C032/N003: the native source type is already accepted at the API floor.
 		if owner == "database.paginationcursor" {
