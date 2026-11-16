@@ -3,9 +3,11 @@ package dml
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -289,7 +291,10 @@ func TestLastNameKeyboardUncapturedSweepKeepsBase(t *testing.T) {
 		}
 	}
 	t.Logf("%d captured and %d uncaptured shapes; the new scorer differs on %d uncaptured pairs", len(captured), len(checked), differs)
-	if len(captured) < 90 || len(checked) < 300 || differs < 900 {
+	// The gate holds only shapes with a recovered native match, so the sweep
+	// meets fewer captured shapes (58) and more uncaptured ones than the
+	// table of every shape that reaches the fallback did.
+	if len(captured) < 55 || len(checked) < 340 || differs < 900 {
 		t.Fatalf("sweep reached %d captured and %d uncaptured shapes, %d differing", len(captured), len(checked), differs)
 	}
 }
@@ -309,37 +314,46 @@ func keyboardShape(x, y string) [3]int {
 	return [3]int{len(ry), diff, len(ry) - len(rx)}
 }
 
-// The gate table is exactly the shapes of the captured pairs that reach the
+// keyboardFallbackPair reports whether two names reach the keyboard
 // fallback: not an exact match, same key, different Metaphone 3 code, more
 // than a single substitution, no terminal swap, and no base keyboard match.
-func TestLastNameKeyboardPanelCells(t *testing.T) {
-	cases, _ := fuzzyNameKeysData(t)
-	var want [16][9]uint16
-	measure := func(values []string) {
-		for i, a := range values {
-			for _, b := range values[i+1:] {
-				x, y := foldText(a), foldText(b)
-				if x == y || lastNameWordKey(x) != lastNameWordKey(y) {
-					continue
-				}
-				x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
-				if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) || singleKeyboardSubstitution(x, y) {
-					continue
-				}
-				if _, _, swap := lastNameTerminalSwap(x, y); swap {
-					continue
-				}
-				if matched, _ := lastNameKeyboard(x, y); matched {
-					continue
-				}
-				shape := keyboardShape(x, y)
-				want[shape[0]][shape[1]] |= 1 << uint(shape[2])
-			}
-		}
+// It returns the prepared names.
+func keyboardFallbackPair(a, b string) (string, string, bool) {
+	x, y := foldText(a), foldText(b)
+	if x == y || lastNameWordKey(x) != lastNameWordKey(y) {
+		return "", "", false
 	}
-	for _, panel := range cases {
+	x, y = lastNameApostrophes.Replace(x), lastNameApostrophes.Replace(y)
+	if x == y || lastNameMetaphone3(x) == lastNameMetaphone3(y) || singleKeyboardSubstitution(x, y) {
+		return "", "", false
+	}
+	if _, _, swap := lastNameTerminalSwap(x, y); swap {
+		return "", "", false
+	}
+	if matched, _ := lastNameKeyboard(x, y); matched {
+		return "", "", false
+	}
+	return x, y, true
+}
+
+// keyboardNativePanel is one panel of LastName values with the native
+// confidence of each matched ordered pair.
+type keyboardNativePanel struct {
+	name   string
+	values []string
+	native map[[2]int]float64
+}
+
+// keyboardFitPanels are the native LastName panels the fallback was fitted
+// to: the fuzzy_name_keys panels and the LastName rows of
+// duplicate_fuzzy_matching.
+func keyboardFitPanels(t *testing.T) []keyboardNativePanel {
+	t.Helper()
+	var out []keyboardNativePanel
+	cases, observations := fuzzyNameKeysData(t)
+	for name, panel := range cases {
 		if panel.Kind == "panel" && panel.Item == "LastName" {
-			measure(panel.Values)
+			out = append(out, keyboardNativePanel{name, panel.Values, fuzzyNameKeysPanel(t, observations[name], len(panel.Values))})
 		}
 	}
 	raw, err := os.ReadFile(filepath.Join(fuzzyFixture, "org.tsv"))
@@ -358,13 +372,56 @@ func TestLastNameKeyboardPanelCells(t *testing.T) {
 		if row.Field != "LastName" || row.Method != "LastName" {
 			continue
 		}
-		var values []string
-		for _, value := range row.Values {
+		// Null values keep their index so the native pairs line up.
+		values := make([]string, len(row.Values))
+		for i, value := range row.Values {
 			if value != nil {
-				values = append(values, *value)
+				values[i] = *value
 			}
 		}
-		measure(values)
+		native := map[[2]int]float64{}
+		for _, m := range row.Matches {
+			native[[2]int{int(m[0]), int(m[1])}] = m[2]
+		}
+		out = append(out, keyboardNativePanel{cells[0] + "/" + cells[2], values, native})
+	}
+	return out
+}
+
+// keyboardFloorPanels are the native panels whose non-matches bound the
+// fallback score: the fitted panels and the keyboard group of
+// duplicate_fuzzy_panels. Its hkeyboard group is a held-out check
+// (TestLastNameKeyboardFuzzyPanelsNativeRows) and sets no floor.
+func keyboardFloorPanels(t *testing.T) []keyboardNativePanel {
+	t.Helper()
+	out := keyboardFitPanels(t)
+	values, observations := fuzzyPanelsLastName(t, "keyboard")
+	for _, name := range slices.Sorted(maps.Keys(values)) {
+		out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
+	}
+	return out
+}
+
+// The gate table is exactly the shapes of the fitted pairs that reach the
+// fallback (keyboardFallbackPair) and that native matches in either
+// direction. A shape whose captured pairs native never matches gives the
+// fallback nothing to recover and keeps the base result.
+func TestLastNameKeyboardPanelCells(t *testing.T) {
+	var want [16][9]uint16
+	for _, panel := range keyboardFitPanels(t) {
+		for i, a := range panel.values {
+			for j, b := range panel.values {
+				if j <= i || a == "" || b == "" {
+					continue
+				}
+				x, y, ok := keyboardFallbackPair(a, b)
+				if !ok || panel.native[[2]int{i, j}] == 0 && panel.native[[2]int{j, i}] == 0 {
+					continue
+				}
+				shape := keyboardShape(x, y)
+				want[shape[0]][shape[1]] |= 1 << uint(shape[2])
+			}
+		}
 	}
 	if want != keyboardPanelCells {
 		var b strings.Builder
@@ -384,13 +441,62 @@ func TestLastNameKeyboardPanelCells(t *testing.T) {
 	}
 }
 
+// The floor table is exactly the highest fallback score of a captured native
+// non-match (either direction) in each gated shape, where that score reaches
+// 90. NATIVE duplicate_fuzzy_panels/org.tsv:34-57 holds every such pair; the
+// fitted rows keep their non-matches below 90.
+func TestLastNameKeyboardPanelFloors(t *testing.T) {
+	want := map[[3]int]float64{}
+	for _, panel := range keyboardFloorPanels(t) {
+		for i, a := range panel.values {
+			for j, b := range panel.values {
+				if j <= i || a == "" || b == "" {
+					continue
+				}
+				x, y, ok := keyboardFallbackPair(a, b)
+				if !ok || !keyboardPanelShape(x, y) || panel.native[[2]int{i, j}] > 0 && panel.native[[2]int{j, i}] > 0 {
+					continue
+				}
+				if score, ok := keyboardDistance(x, y); ok && score >= 90 {
+					shape := keyboardShape(x, y)
+					want[shape] = math.Max(want[shape], score)
+				}
+			}
+		}
+	}
+	got := map[[3]int]float64{}
+	for _, f := range keyboardPanelFloors {
+		shape := [3]int{int(f.length), int(f.substitutions), int(f.trailing)}
+		if _, dup := got[shape]; dup {
+			t.Fatalf("floor %v listed twice", shape)
+		}
+		got[shape] = f.score
+	}
+	if !maps.Equal(want, got) {
+		var b strings.Builder
+		for _, shape := range slices.SortedFunc(maps.Keys(want), func(p, q [3]int) int { return slices.Compare(p[:], q[:]) }) {
+			fmt.Fprintf(&b, "\t{%d, %d, %d, %v},\n", shape[0], shape[1], shape[2], want[shape])
+		}
+		t.Fatalf("captured non-matches changed; keyboardPanelFloors should be:\n%s", b.String())
+	}
+	for shape, floor := range want {
+		if keyboardPanelFloor(shape[0], shape[1], shape[2]) != floor {
+			t.Errorf("keyboardPanelFloor%v = %v, want %v", shape, keyboardPanelFloor(shape[0], shape[1], shape[2]), floor)
+		}
+	}
+	if keyboardPanelFloor(12, 3, 0) != 0 {
+		t.Error("a shape without a captured non-match has a floor")
+	}
+}
+
 func TestKeyboardPanelShapeBoundaries(t *testing.T) {
 	for _, c := range []struct {
 		a, b string
 		want bool
 	}{
-		{"abcd", "abxy", true},                                   // (4, 2, 0)
-		{"éééé", "ééab", true},                                   // (4, 2, 0) in runes
+		{"abc", "abxd", true},                                    // (4, 1, 1)
+		{"ééé", "ééab", true},                                    // (4, 1, 1) in runes
+		{"abcd", "abxy", false},                                  // (4, 2, 0): reaches the fallback, but native matches no such pair
 		{"abc", "abd", false},                                    // (3, 1, 0): a single substitution never reaches the gate
 		{"abc", "axy", false},                                    // (3, 2, 0)
 		{"éé", "éa", false},                                      // (2, 1, 0)
@@ -419,13 +525,16 @@ const fuzzyKeyboardNeighborsDir = "testdata/conformance/fuzzy_keyboard_neighbors
 // duplicate_fuzzy_matching only). kn1 holds neighbors of the captured
 // five-substitution pair: "Farnsdelwicka" finds "Farnsdraeovka" at 97 (Glade
 // 96), shape (13, 5, 0). kn2 holds two and three substitutions on other key
-// pairs. Glade reports no pair native does not. The twelve native pairs Glade
-// lacks are all shape (13, 5, 1), "Farnsdelwick" against "Farnsdraeovka":
-// no fitted row holds that shape, so it keeps the base result.
+// pairs. Glade reports no pair native does not. Twelve of the native pairs
+// Glade lacks are shape (13, 5, 1), "Farnsdelwick" against "Farnsdraeovka":
+// no fitted row holds that shape, so it keeps the base result. The other two
+// are "Marnsdelwi" and "Marnsdraeo" (native 96, shape (10, 4, 0)), which
+// score 91.09, not above the 91.21 of "Gilderpajt" and "Gildewrarb", a native
+// non-match of the same shape (keyboardFloorMiss).
 func TestLastNameKeyboardNeighborsNativeRows(t *testing.T) {
 	cases, observations := fuzzyNameKeysDataFrom(t, fuzzyKeyboardNeighborsDir)
 	want := map[string]fuzzyNameKeysCount{
-		"kn1": {native: 70, hit: 58, miss: 12, confidence: 10},
+		"kn1": {native: 70, hit: 56, miss: 14, confidence: 10},
 		"kn2": {native: 52, hit: 52, confidence: 2},
 	}
 	if len(cases) != len(want) {
@@ -461,6 +570,9 @@ func TestLastNameKeyboardNeighborsNativeRows(t *testing.T) {
 					counts.native++
 					counts.miss++
 					x, y := lastNameApostrophes.Replace(foldText(a)), lastNameApostrophes.Replace(foldText(b))
+					if keyboardFloorMiss(a, b) {
+						break
+					}
 					if shape := keyboardShape(x, y); shape != [3]int{13, 5, 1} || keyboardPanelShape(x, y) {
 						t.Errorf("%s/%s=>%s: native=%v, Glade has no match at shape %v", name, a, b, n, shape)
 					}

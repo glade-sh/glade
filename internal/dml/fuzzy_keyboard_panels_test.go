@@ -84,23 +84,59 @@ func lastNameTrainBase(a, b string) (bool, float64) {
 // hkeyboard): a custom LastName rule at API 62.0 and 67.0, anonymous and
 // @IsTest, two repeats, every ordered pair of each panel. The keyboard
 // fallback adds no match native does not report, and every pair the scorer
-// without the fallback gets right stays right.
+// without the fallback gets right stays right. The keyboard group sets the
+// fallback floors (TestLastNameKeyboardPanelFloors); the hkeyboard group,
+// captured as a held-out run, sets nothing and has no extra match either.
 func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 	values, observations := fuzzyPanelsLastName(t, "keyboard", "hkeyboard")
+	// exact counts the ordered pairs (self pairs included) where Glade and
+	// native agree on the match and its confidence; base is the same count
+	// without the keyboard fallback.
+	type tally struct {
+		fuzzyNameKeysCount
+		exact, base int
+	}
+	want := map[string]tally{
+		"k1":  {fuzzyNameKeysCount{native: 180, hit: 156, miss: 24, confidence: 22}, 978, 878},
+		"k2":  {fuzzyNameKeysCount{native: 182, hit: 84, miss: 98, confidence: 4}, 922, 888},
+		"k3":  {fuzzyNameKeysCount{native: 194, hit: 154, miss: 40, confidence: 18}, 966, 896},
+		"hk1": {fuzzyNameKeysCount{native: 122, hit: 62, miss: 60, confidence: 4}, 612, 600},
+		"hk2": {fuzzyNameKeysCount{native: 58, hit: 52, miss: 6, confidence: 8}, 242, 228},
+	}
+	rounded := func(matched bool, confidence float64) float64 {
+		if !matched {
+			return 0
+		}
+		return math.Floor(confidence + 0.5)
+	}
 	for _, method := range slices.Sorted(maps.Keys(values)) {
 		vals := values[method]
 		native := fuzzyNameKeysPanel(t, observations[method], len(vals))
+		var got tally
 		for i, a := range vals {
 			for j, b := range vals {
 				n := native[[2]int{i, j}]
-				rounded := func(matched bool, confidence float64) float64 {
-					if !matched {
-						return 0
-					}
-					return math.Floor(confidence + 0.5)
-				}
 				g := rounded(fuzzyLastName(a, b, false))
 				base := rounded(lastNameTrainBase(a, b))
+				if g == n {
+					got.exact++
+				}
+				if base == n {
+					got.base++
+				}
+				switch {
+				case n > 0 && g > 0:
+					got.native++
+					got.hit++
+					if n != g {
+						got.confidence++
+					}
+				case n > 0:
+					got.native++
+					got.miss++
+				case g > 0:
+					got.extra++
+				}
 				if n == 0 && g > 0 {
 					t.Errorf("%s %s=>%s: Glade matches at %v, native has no match", method, a, b, g)
 				}
@@ -108,6 +144,10 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 					t.Errorf("%s %s=>%s: Glade %v, native %v (the scorer without the fallback agrees with native)", method, a, b, g, n)
 				}
 			}
+		}
+		t.Logf("PANEL %s: %s exact=%d base=%d", method, got.fuzzyNameKeysCount, got.exact, got.base)
+		if got != want[method] {
+			t.Errorf("%s: %s exact=%d base=%d, want %s exact=%d base=%d", method, got.fuzzyNameKeysCount, got.exact, got.base, want[method].fuzzyNameKeysCount, want[method].exact, want[method].base)
 		}
 	}
 }

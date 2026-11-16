@@ -217,16 +217,23 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    substitution retain the earlier `keyboardSimilarity` scorer. Pairs that
    the earlier scorer already matched also retain its confidence; the new
    scorer applies only when that scorer did not match and the pair's joint
-   shape is one a captured pair has: the longer name's length in runes, the
-   count of positional substitutions and the count of trailing runes, taken
-   together. The native rows hold 210 such shapes (`keyboardPanelCells` in
-   `internal/dml/fuzzy_match.go`), with lengths 4–15. For any other shape,
-   including untested combinations inside those ranges, the earlier keyboard
-   scorer decides. Two panels captured after the fit and kept out of it
-   (`fuzzy_keyboard_neighbors`: other stems, added letters, other key pairs)
-   agree on every pair Glade matches: `Farnsdelwicka` finds `Farnsdraeovka`
-   (native 97, Glade 96), a pair the earlier scorer kept apart. The fitted
-   costs are:
+   shape is one where a captured pair needs it: the longer name's length in
+   runes, the count of positional substitutions and the count of trailing
+   runes, taken together, for a fitted pair native matches and the earlier
+   scorer does not. The native rows hold 78 such shapes (`keyboardPanelCells`
+   in `internal/dml/fuzzy_match.go`), with lengths 4–15. For any other
+   shape, including untested combinations inside those ranges, the earlier
+   keyboard scorer decides. Within a shape the new scorer must also score
+   above every native non-match of that shape (`keyboardPanelFloors`). The
+   `duplicate_fuzzy_panels` keyboard panels hold such non-matches at 90.1 to
+   91.21 in five shapes (`Kellingswokwr` and `Kellinglkokzh`, `Gilderpajt`
+   and `Gildewrarb`); the fitted costs score them as matches. The floor also
+   leaves 62 native matches of `fuzzy_name_keys` ks1 to ks3 at the earlier
+   result. Panels kept out of the fit agree on every pair Glade matches:
+   `fuzzy_keyboard_neighbors` (other stems, added letters, other key pairs;
+   `Farnsdelwicka` finds `Farnsdraeovka`, native 97, Glade 96, a pair the
+   earlier scorer kept apart) and the `duplicate_fuzzy_panels` hkeyboard
+   panels. The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
      beyond; the final character of two names of equal length is one step

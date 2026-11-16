@@ -11,7 +11,9 @@ import (
 //
 // The names are compared position by position over the shorter length; there
 // is no alignment; its caller applies it only to the joint (length,
-// substitutions, trailing) shapes the native rows hold (keyboardPanelShape;
+// substitutions, trailing) shapes where a native match needs it, and only
+// above the score of any native non-match of the shape (keyboardPanelShape,
+// keyboardPanelFloor;
 // "Farnsdelwick" finds "Farnsdraeovk" at 96 with five substitutions; "Abernathy" finds "Abernaty" at 99 as h/y plus a trailing
 // y). The cost is divided by the longer length, the score is 100 * (1 - cost)
 // and a score of 90 matches.

@@ -330,11 +330,18 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	if matched, confidence, swap := lastNameTerminalSwap(x, y); swap {
 		return matched, confidence
 	}
-	if matched, confidence := lastNameKeyboard(x, y); matched || !keyboardPanelShape(x, y) {
+	matched, confidence := lastNameKeyboard(x, y)
+	if matched {
 		return matched, confidence
 	}
-	score, ok := keyboardDistance(x, y)
-	return ok && score >= 90, averageWith100(score)
+	length, substitutions, trailing := keyboardNameShape(x, y)
+	if !keyboardPanelCell(length, substitutions, trailing) {
+		return matched, confidence
+	}
+	if score, ok := keyboardDistance(x, y); ok && score >= 90 && score > keyboardPanelFloor(length, substitutions, trailing) {
+		return true, averageWith100(score)
+	}
+	return matched, confidence
 }
 
 // lastNameAlgorithms scores two folded last names without a match key:
@@ -349,14 +356,18 @@ func lastNameAlgorithms(x, y string) (bool, float64) {
 }
 
 // keyboardPanelShape gates the fallback to the joint shapes the native rows
-// hold: fuzzy_name_keys/org.tsv:10-25,122-169 (cases.json supplies the panel
-// values) and the LastName rows of duplicate_fuzzy_matching/org.tsv. A shape
-// is (length, substitutions, trailing): the longer folded, apostrophe-stripped
-// name in runes, the positional differences, and the unpaired suffix. Only a
-// shape that some captured pair brings to the fallback passes; every other
-// shape keeps the base keyboard result.
+// hold. A shape is (length, substitutions, trailing): the longer folded,
+// apostrophe-stripped name in runes, the positional differences, and the
+// unpaired suffix (keyboardNameShape). A shape passes when a captured pair of that
+// shape that reaches the fallback is a native match (keyboardPanelCells). Every
+// other shape keeps the base keyboard result.
 func keyboardPanelShape(a, b string) bool {
-	substitutions, na, nb := 0, 0, 0
+	return keyboardPanelCell(keyboardNameShape(a, b))
+}
+
+// keyboardNameShape is (length, substitutions, trailing) of two prepared names.
+func keyboardNameShape(a, b string) (length, substitutions, trailing int) {
+	na, nb := 0, 0
 	for len(a) > 0 && len(b) > 0 {
 		ra, sa := utf8.DecodeRuneInString(a)
 		rb, sb := utf8.DecodeRuneInString(b)
@@ -369,32 +380,65 @@ func keyboardPanelShape(a, b string) bool {
 	}
 	na += utf8.RuneCountInString(a)
 	nb += utf8.RuneCountInString(b)
-	longer, trailing := na, na-nb
 	if nb > na {
-		longer, trailing = nb, nb-na
+		return nb, substitutions, nb - na
 	}
-	if longer >= len(keyboardPanelCells) || substitutions >= len(keyboardPanelCells[longer]) {
+	return na, substitutions, na - nb
+}
+
+func keyboardPanelCell(length, substitutions, trailing int) bool {
+	if length >= len(keyboardPanelCells) || substitutions >= len(keyboardPanelCells[length]) {
 		return false
 	}
-	return keyboardPanelCells[longer][substitutions]>>uint(trailing)&1 == 1
+	return keyboardPanelCells[length][substitutions]>>uint(trailing)&1 == 1
 }
 
 // keyboardPanelCells[length][substitutions] has bit t set when a captured
-// pair with t trailing characters reaches the fallback.
+// pair with t trailing characters reaches the fallback and native matches it:
+// fuzzy_name_keys/org.tsv:10-25,122-169 (cases.json supplies the panel
+// values) and the LastName rows of duplicate_fuzzy_matching/org.tsv.
 // TestLastNameKeyboardPanelCells rebuilds it from the native rows.
 var keyboardPanelCells = [16][9]uint16{
-	4:  {0x0000, 0x0002, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
-	5:  {0x0000, 0x0002, 0x0007, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
-	6:  {0x0000, 0x0006, 0x000f, 0x0007, 0x0007, 0x0000, 0x0000, 0x0000, 0x0000},
-	7:  {0x0000, 0x004e, 0x001f, 0x000f, 0x000f, 0x0007, 0x0000, 0x0000, 0x0000},
-	8:  {0x0008, 0x001e, 0x0016, 0x000f, 0x0017, 0x0007, 0x0003, 0x0000, 0x0000},
-	9:  {0x0018, 0x001e, 0x003f, 0x000f, 0x000f, 0x000b, 0x0007, 0x0000, 0x0000},
-	10: {0x0018, 0x001e, 0x000e, 0x007f, 0x000f, 0x0014, 0x001f, 0x0005, 0x0000},
-	11: {0x0038, 0x0036, 0x003e, 0x006e, 0x0087, 0x0065, 0x0036, 0x0008, 0x0004},
-	12: {0x0078, 0x006e, 0x003e, 0x001b, 0x010b, 0x0043, 0x0029, 0x0014, 0x0000},
-	13: {0x0038, 0x0000, 0x0010, 0x0081, 0x02d1, 0x0001, 0x0011, 0x0000, 0x0000},
-	14: {0x0070, 0x0000, 0x0020, 0x0000, 0x0020, 0x0000, 0x0020, 0x0000, 0x0000},
-	15: {0x00c0, 0x0060, 0x0050, 0x0048, 0x0040, 0x0000, 0x0000, 0x0020, 0x0000},
+	4:  {0x0000, 0x0002, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	5:  {0x0000, 0x0002, 0x0002, 0x0000, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	6:  {0x0000, 0x0006, 0x0002, 0x0003, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	7:  {0x0000, 0x0006, 0x0007, 0x0003, 0x0003, 0x0000, 0x0000, 0x0000, 0x0000},
+	8:  {0x0008, 0x0006, 0x0006, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	9:  {0x0008, 0x000e, 0x0006, 0x0007, 0x0001, 0x0000, 0x0000, 0x0000, 0x0000},
+	10: {0x0018, 0x000e, 0x0002, 0x000b, 0x0003, 0x0000, 0x0000, 0x0000, 0x0000},
+	11: {0x0018, 0x0006, 0x0006, 0x0006, 0x0004, 0x0000, 0x0000, 0x0000, 0x0000},
+	12: {0x0018, 0x000e, 0x000a, 0x000b, 0x0001, 0x0001, 0x0001, 0x0000, 0x0000},
+	13: {0x0038, 0x0000, 0x0000, 0x0001, 0x0001, 0x0001, 0x0001, 0x0000, 0x0000},
+	14: {0x0030, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+	15: {0x0040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000},
+}
+
+// keyboardPanelFloor is the highest Keyboard Distance score of a captured
+// native non-match of the shape, or 0: the fallback matches only above it.
+// The duplicate_fuzzy_panels keyboard panels (org.tsv:34-57) hold the
+// non-matches at 90 and above: "Kellingswokwr" and "Kellinglkokzh" score
+// 90.1 under the fitted costs, where native finds no match.
+// TestLastNameKeyboardPanelFloors rebuilds the table from the native rows.
+func keyboardPanelFloor(length, substitutions, trailing int) float64 {
+	for _, f := range keyboardPanelFloors {
+		if int(f.length) == length && int(f.substitutions) == substitutions && int(f.trailing) == trailing {
+			return f.score
+		}
+	}
+	return 0
+}
+
+type keyboardFloor struct {
+	length, substitutions, trailing uint8
+	score                           float64
+}
+
+var keyboardPanelFloors = [...]keyboardFloor{
+	{10, 3, 0, 90.64999999999999},
+	{10, 4, 0, 91.21000000000001},
+	{12, 4, 0, 90.85833333333333},
+	{13, 4, 0, 90.10000000000001},
+	{13, 5, 0, 90.68461538461538},
 }
 
 // singleKeyboardSubstitution counts positions in runes, as keyboardSimilarity does.

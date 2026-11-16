@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math"
 	"os"
 	"sort"
@@ -138,13 +139,11 @@ var fuzzyNameKeysResiduals = map[string][2]float64{
 
 	"ks2/Morvenhaaapw=>Morvenjsalow": {97, 96},
 
-	"ks2/Morvenlfdlow=>Morvenjsaaow": {96, 95},
 	"ks2/Morvenhfddow=>Morvenhaaape": {97, 98},
 	"ks2/Morvenhfddow=>Morvenhaddwt": {96, 95},
 
 	"ks2/Morvendjhlow=>Morvenjsalow": {96, 95},
 	"ks2/Morvenhahhtw=>Morvenjsalow": {96, 95},
-	"ks2/Morvenjsaaow=>Morvenlfdlow": {96, 95},
 
 	"ks2/Morvenhsaapw=>Morvenjsalow": {97, 96},
 
@@ -321,7 +320,8 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 	}
 	sort.Strings(names)
 	used := map[string]bool{}
-	check := func(t *testing.T, key string, native, got float64, counts *fuzzyNameKeysCount) {
+	floorMisses := map[string]int{}
+	check := func(t *testing.T, key, candidate, existing string, native, got float64, counts *fuzzyNameKeysCount) {
 		t.Helper()
 		if native == 0 && got == 0 {
 			return
@@ -338,6 +338,10 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 			counts.confidence++
 		case native > 0:
 			counts.miss++
+			if keyboardFloorMiss(candidate, existing) {
+				floorMisses[key[:strings.IndexByte(key, '/')]]++
+				return
+			}
 		default:
 			counts.extra++
 		}
@@ -376,7 +380,7 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 						if n == 0 && g == 0 {
 							continue
 						}
-						check(t, fmt.Sprintf("%s/%s=>%s", name, value, c.Values[j]), n, g, &counts)
+						check(t, fmt.Sprintf("%s/%s=>%s", name, value, c.Values[j]), value, c.Values[j], n, g, &counts)
 					}
 				}
 			case "pair":
@@ -426,7 +430,7 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 							}
 						}
 						if op == c.Ops[0] {
-							check(t, key, native, got, &counts)
+							check(t, key, candidate, stored, native, got, &counts)
 						}
 						if native != got {
 							continue // the find residual above covers the save outcome
@@ -447,6 +451,29 @@ func TestFuzzyNameKeysNativeRows(t *testing.T) {
 			t.Errorf("unused residual %s", key)
 		}
 	}
+	if !maps.Equal(floorMisses, fuzzyNameKeysFloorMisses) {
+		t.Errorf("native matches below a keyboard floor %v, want %v", floorMisses, fuzzyNameKeysFloorMisses)
+	}
+}
+
+// fuzzyNameKeysFloorMisses counts, per case, the native matches the keyboard
+// fallback leaves at the base result because their score does not clear the
+// floor of their shape (keyboardFloorMiss). Every other native match is a
+// Glade match.
+var fuzzyNameKeysFloorMisses = map[string]int{"ks1": 26, "ks2": 22, "ks3": 14}
+
+// keyboardFloorMiss reports whether two names reach the keyboard fallback in
+// a gated shape and score 90 or more, but not above the shape's floor: the
+// highest score of a captured native non-match of that shape
+// (keyboardPanelFloors).
+func keyboardFloorMiss(a, b string) bool {
+	x, y, ok := keyboardFallbackPair(a, b)
+	if !ok || !keyboardPanelShape(x, y) {
+		return false
+	}
+	length, substitutions, trailing := keyboardNameShape(x, y)
+	score, ok := keyboardDistance(x, y)
+	return ok && score >= 90 && score <= keyboardPanelFloor(length, substitutions, trailing)
 }
 
 // fuzzyNameKeysNativeDML drops the confidence formatting difference between
