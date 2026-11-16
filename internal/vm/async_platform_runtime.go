@@ -425,6 +425,10 @@ func eventBusGetOperationID(args []Value) (Value, error) {
 func (vm *VM) eventBusPublishWithAccessLevel(args []Value, result *Result) (Value, error) {
 	switch len(args) {
 	case 2:
+		// NATIVE EventBus.publishWithAccessLevel null access level apex_release_gates/org.tsv anonymous 62.0 67.0
+		if args[1].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "Argument 2 cannot be null")
+		}
 		if !isDatabaseAccessLevelValue(args[1]) {
 			return Null, fmt.Errorf("EventBus.publishWithAccessLevel AccessLevel overload expects AccessLevel")
 		}

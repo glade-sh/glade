@@ -97,7 +97,9 @@ func newSingleEmailMessage() Value {
 	} {
 		message.Fields[field] = Null
 	}
-	message.Fields["customHeaders"] = typedMap("Map<String,String>")
+	// The getter answers null until setCustomHeaders runs.
+	// NATIVE SingleEmailMessage custom headers apex_release_gates/org.tsv anonymous 67.0
+	message.Fields["customHeaders"] = Null
 	message.Fields["unsubscribeUrls"] = List()
 	for _, field := range []string{
 		"saveAsActivity", "treatBodiesAsTemplate", "treatTargetObjectAsRecipient",
@@ -2067,7 +2069,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setCustomHeaders expects Map<String,String>")
 		}
 		if args[0].Kind == ValueNull {
-			receiver.Fields["customHeaders"] = typedMap("Map<String,String>")
+			receiver.Fields["customHeaders"] = Null
 		} else {
 			receiver.Fields["customHeaders"] = cloneValue(args[0])
 		}
