@@ -241,9 +241,32 @@ func standardWebsite(a, b string) (bool, float64) {
 	return false, 0
 }
 
-// standardPhoneLineMismatch is the confidence of two numbers that agree up to
-// the last four digits, by the object whose rule scores them.
-var standardPhoneLineMismatch = map[string]float64{"account": 94, "contact": 97, "lead": 98}
+// standardAccountPhoneLineMismatch is the confidence of two numbers that agree
+// up to the last four digits on the standard Account rule.
+const standardAccountPhoneLineMismatch = 94
+
+// The Contact and Lead phone item (N5.spt1, N5.slt1): 100 for the same
+// national number, 91 when both numbers carry the country digit 1 and only the
+// line differs, 88 for any other line difference. The rule confidence is the
+// mean of its items (standardPhoneShare). Records that each carry an email
+// address score every line difference at 91 (Field.Contact.Phone and
+// Field.Lead.Phone, whose records all differ in the address); the pairs
+// without an address are the panels above.
+const (
+	standardPhoneLineCountry = 91
+	standardPhoneLineOther   = 88
+)
+
+// standardPhoneShare is the share of a Contact or Lead phone item in the rule
+// confidence: the item is one of three the rule averages with two exact
+// names, or one of four with a present Lead company. A phone path whose item
+// is not 100 keeps the product with the other items' shares.
+func standardPhoneShare(phone float64, withCompany bool) float64 {
+	if withCompany {
+		return (300 + phone) / 4
+	}
+	return (200 + phone) / 3
+}
 
 func standardPhone(object string) func(a, b string) (bool, float64) {
 	return func(a, b string) (bool, float64) {
@@ -279,7 +302,13 @@ func standardPhone(object string) func(a, b string) (bool, float64) {
 		if la == lb {
 			return true, 100
 		}
-		return true, standardPhoneLineMismatch[object]
+		switch {
+		case object == "account":
+			return true, standardAccountPhoneLineMismatch
+		case ca != "" && ca == cb:
+			return true, standardPhoneLineCountry
+		}
+		return true, standardPhoneLineOther
 	}
 }
 
@@ -511,14 +540,18 @@ func standardPersonMatch(object string, candidate, existing standardPerson) (boo
 		}
 	}
 	if phone := standardCompare(candidate.phone, existing.phone, standardPhone(object)); phone.ok() {
+		if phone.confidence == standardPhoneLineOther && strings.TrimSpace(candidate.email) != "" && strings.TrimSpace(existing.email) != "" {
+			phone.confidence = standardPhoneLineCountry
+		}
 		if candidate.kind != existing.kind {
 			// No row measures a cross-object phone path: it keeps the
 			// standard First Name item and its confidence.
 			if first := standardCompare(candidate.first, existing.first, standardFirstName); first.ok() {
-				take(standardProduct(last.confidence, first.confidence, phone.confidence))
+				take(standardProduct(last.confidence, first.confidence, standardPhoneShare(phone.confidence, false)))
 			}
 		} else if first, ok := standardInitialKeyedFirst(candidate.first, existing.first); ok {
-			take(standardProduct(last.confidence, first, phone.confidence))
+			withCompany := candidate.kind == "lead" && strings.TrimSpace(candidate.company) != "" && strings.TrimSpace(existing.company) != ""
+			take(standardProduct(last.confidence, first, standardPhoneShare(phone.confidence, withCompany)))
 		}
 	}
 	// No row measures the company path's first names: it keeps the
