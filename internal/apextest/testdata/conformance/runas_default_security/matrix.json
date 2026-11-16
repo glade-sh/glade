@@ -8,9 +8,9 @@
   ],
   "shapeCount": 378,
   "counts": {
-    "ASSERTED": 1794,
+    "ASSERTED": 1844,
     "NO_ANSWER": 30,
-    "CARRIED": 66
+    "CARRIED": 16
   },
   "nativeRuns": {
     "59.0/anonymous": {
@@ -27430,7 +27430,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -27451,7 +27451,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -27472,7 +27472,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -27493,7 +27493,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -27514,7 +27514,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -27684,7 +27684,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -27705,7 +27705,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -27726,7 +27726,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -27747,7 +27747,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -27768,7 +27768,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -27811,7 +27811,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -27832,7 +27832,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -27853,7 +27853,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -27874,7 +27874,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -27895,7 +27895,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -27938,7 +27938,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -27959,7 +27959,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -27980,7 +27980,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -28001,7 +28001,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -28022,7 +28022,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -33366,7 +33366,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -33387,7 +33387,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -33408,7 +33408,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -33429,7 +33429,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -33450,7 +33450,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -33493,7 +33493,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -33514,7 +33514,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -33535,7 +33535,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -33556,7 +33556,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -33577,7 +33577,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -33620,7 +33620,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -33641,7 +33641,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -33662,7 +33662,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -33683,7 +33683,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -33704,7 +33704,7 @@
               "et": "System.SecurityException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -33874,7 +33874,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -33895,7 +33895,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -33916,7 +33916,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -33937,7 +33937,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -33958,7 +33958,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -34001,7 +34001,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -34022,7 +34022,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -34043,7 +34043,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -34064,7 +34064,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -34085,7 +34085,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },
@@ -34128,7 +34128,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "62.0": {
           "nativeStatus": "OBSERVED",
@@ -34149,7 +34149,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "66.0": {
           "nativeStatus": "OBSERVED",
@@ -34170,7 +34170,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "67.0": {
           "nativeStatus": "OBSERVED",
@@ -34191,7 +34191,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         },
         "68.0": {
           "nativeStatus": "OBSERVED",
@@ -34212,7 +34212,7 @@
               "et": "System.QueryException"
             }
           },
-          "carryReason": "Explicit USER_MODE denied-object query diagnostics or partial SaveResults remain outside DEFAULT-mode ownership"
+          "assertionStatus": "ASSERTED"
         }
       }
     },

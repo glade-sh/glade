@@ -1,0 +1,66 @@
+api	method	observation
+54.0	n_conflict_outside	n=1
+54.0	n_conflict_sys_sys	n=1
+54.0	n_count_conflict_sys_arg	n=1
+54.0	n_count_like	n=1
+54.0	n_count_two_filters	n=1
+54.0	n_create_only_ups_user	EX System.SecurityException: Access to entity 'Sam_RO__c' denied
+54.0	n_field_user_dml	EX System.SecurityException: Access to field 'Sam_Obj__c.Secret__c' denied
+54.0	n_hidden_upd_user	EX System.SecurityException: Access to record '[ID]' denied
+54.0	n_hidden_ups_user	EX System.SecurityException: Access to record '[ID]' denied
+54.0	n_missing_name_db_user	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+54.0	n_missing_name_user_dml	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+54.0	n_readonly_dbups_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=0
+54.0	n_readonly_ins_user	EX System.SecurityException: Access to entity 'Sam_RO__c' denied
+54.0	n_strip_creatable_child	rm=Account=Sam_Nones__r,sam_nones__r; recs=Id,Name; mod={0}
+54.0	n_strip_outside_runas	rm= recs=Id,Name,Sam_Nones__r; mod={}
+54.0	n_suggest_fixed	n=1
+54.0	n_undelete_readonly_outside	ok
+58.0	n_conflict_outside	n=1
+58.0	n_conflict_sys_sys	n=1
+58.0	n_count_conflict_sys_arg	n=1
+58.0	n_count_like	n=1
+58.0	n_count_two_filters	n=1
+58.0	n_create_only_ups_user	EX System.SecurityException: Access to entity 'Sam_RO__c' denied
+58.0	n_hidden_del_sys_text	EX System.DmlException: Delete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on record: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+58.0	n_hidden_upd_user	EX System.SecurityException: Access to record '[ID]' denied
+58.0	n_hidden_ups_user	EX System.SecurityException: Access to record '[ID]' denied
+58.0	n_missing_name_db_user	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+58.0	n_missing_name_user_dml	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+58.0	n_readonly_dbups_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=0
+58.0	n_readonly_ins_user	EX System.SecurityException: Access to entity 'Sam_RO__c' denied
+58.0	n_strip_creatable_child	rm=Account=Sam_Nones__r,sam_nones__r; recs=Id,Name; mod={0}
+58.0	n_strip_outside_runas	rm= recs=Id,Name,Sam_Nones__r; mod={}
+58.0	n_suggest_fixed	n=1
+58.0	n_undelete_readonly_outside	ok
+61.0	n_conflict_outside	n=1
+61.0	n_conflict_sys_sys	n=1
+61.0	n_count_conflict_sys_arg	n=1
+61.0	n_count_like	n=1
+61.0	n_count_two_filters	n=1
+61.0	n_create_only_ups_user	EX System.SecurityException: Access to entity 'Sam_RO__c' denied
+61.0	n_hidden_upd_user	EX System.SecurityException: Access to record '[ID]' denied
+61.0	n_hidden_ups_user	EX System.SecurityException: Access to record '[ID]' denied
+61.0	n_missing_name_db_user	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+61.0	n_missing_name_user_dml	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+61.0	n_readonly_dbups_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=0
+61.0	n_strip_creatable_child	rm=Account=Sam_Nones__r,sam_nones__r; recs=Id,Name; mod={0}
+61.0	n_strip_outside_runas	rm= recs=Id,Name,Sam_Nones__r; mod={}
+61.0	n_suggest_fixed	n=1
+61.0	n_undelete_readonly_outside	ok
+67.0	n_batch_stop_outside	b sys=2 def=2 usr=2 ;;
+67.0	n_conflict_outside	n=1
+67.0	n_conflict_sys_sys	n=1
+67.0	n_count_conflict_sys_arg	n=1
+67.0	n_count_like	EX System.QueryException: sObject type 'Sam_None__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_None__c={Name}}
+67.0	n_count_two_filters	EX System.QueryException: sObject type 'Sam_None__c' is not supported. If you are attempting to use a custom object, be sure to append the '__c' after the entity name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_None__c={Name}}
+67.0	n_create_only_ups_user	EX System.SecurityException: Access to entity 'Sam_RO__c' denied
+67.0	n_field_user_dml	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c)
+67.0	n_hidden_ups_user	EX System.SecurityException: Access to record '[ID]' denied
+67.0	n_missing_name_db_user	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+67.0	n_missing_name_user_dml	EX System.DmlException: Insert failed. First exception on row 0; first error: REQUIRED_FIELD_MISSING, Required fields are missing: [Name]: [Name] | n=1 st=REQUIRED_FIELD_MISSING f=(Name)
+67.0	n_readonly_dbups_t	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_RO__c, check errors on Exception or Result!  | n=0
+67.0	n_strip_creatable_child	rm=Account=Sam_Nones__r,sam_nones__r; recs=Id,Name; mod={0}
+67.0	n_strip_outside_runas	rm=Sam_None__c=Account__c; recs=Id,Name,Sam_Nones__r; mod={0}
+67.0	n_suggest_fixed	n=1
+67.0	n_undelete_readonly_outside	ok

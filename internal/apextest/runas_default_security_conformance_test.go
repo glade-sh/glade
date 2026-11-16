@@ -62,7 +62,7 @@ func TestRunAsDefaultSecurityConformance(t *testing.T) {
 	if err := json.Unmarshal(raw, &data); err != nil {
 		t.Fatal(err)
 	}
-	wantCounts := map[string]int{"ASSERTED": 1794, "CARRIED": 66, "NO_ANSWER": 30}
+	wantCounts := map[string]int{"ASSERTED": 1844, "CARRIED": 16, "NO_ANSWER": 30}
 	if data.ShapeCount != 378 || len(data.Rows) != 378 || !reflect.DeepEqual(data.Counts, wantCounts) ||
 		strings.Join(data.APIVersions, ",") != "59.0,62.0,66.0,67.0,68.0" || len(data.Fixtures) != 5 {
 		t.Fatal("incomplete native matrix")
