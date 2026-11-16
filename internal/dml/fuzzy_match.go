@@ -188,7 +188,9 @@ const firstNameJaroWinkler = 0.89
 // never compared, "Vorkel" and "Vorpel" are; "Y R" and "Y R S" share the key
 // of "Y", "YR" and "Y R" do not). A dictionary name whose key comes from its
 // alias and not from its own spelling ("Kate" is keyed as "Katherine", so it
-// matches neither "Katie" nor "Katte") never matches by Jaro-Winkler. Then the
+// matches neither "Katie" nor "Katte") matches by Jaro-Winkler only under
+// that key ("Ty" finds "Tyr" and not "Tye"), and an initial does not find it
+// ("T" does not find "Ty"). Then the
 // Initials rule scores 100 (firstNameInitials), and otherwise Jaro-Winkler on
 // the lower-cased text with its inner white space as typed ("Mary Ann" finds
 // "Mary  Ann" at 99) decides at the threshold, with confidence
@@ -200,7 +202,7 @@ func fuzzyFirstName(a, b string, _ bool) (bool, float64) {
 		return true, 100
 	}
 	if wx, wy := firstNameWord(fx), firstNameWord(fy); wx != wy {
-		if kx, ky := firstNameKey(wx), firstNameKey(wy); kx == "" || kx != ky || nameKeptApart[orderedPair(fx, fy)] {
+		if kx, ky := customFirstNameKey(wx), customFirstNameKey(wy); kx == "" || kx != ky {
 			return false, 0
 		}
 	}
@@ -218,6 +220,15 @@ func firstNameKey(name string) string {
 		return key
 	}
 	return firstNameCodeCache.get(name, func(s string) string { return doubleMetaphone(s, firstNameKeyLength) })
+}
+
+// customFirstNameKey is firstNameKey for a custom rule, which also keys the
+// names of nameAliasKeysCustom by their alias.
+func customFirstNameKey(word string) string {
+	if key, ok := nameAliasKeysCustom[word]; ok {
+		return key
+	}
+	return firstNameKey(word)
 }
 
 // firstNameWord is the first word of a folded name with every character
@@ -250,11 +261,16 @@ func firstNameWord(folded string) string {
 // word of initials, punctuation removed, is one letter, and name is a single
 // word that starts with that letter after any leading punctuation. "P W G"
 // finds "PW", "P.W.", "P-W" and "P" at 100; "P W" finds "P W G" only by
-// Jaro-Winkler, and "Yancey" finds "Yancey R" only by Jaro-Winkler.
+// Jaro-Winkler, and "Yancey" finds "Yancey R" only by Jaro-Winkler. An
+// initial alone also finds a name of several words ("T." finds "Tye Ann" at
+// 100, "T Ann" finds it only by Jaro-Winkler).
 func firstNameInitials(initials, name string) bool {
 	word := firstNameWord(initials)
 	letter, size := utf8.DecodeRuneInString(word)
-	if size == 0 || size != len(word) || !unicode.IsLetter(letter) || strings.IndexByte(name, ' ') >= 0 {
+	if size == 0 || size != len(word) || !unicode.IsLetter(letter) {
+		return false
+	}
+	if strings.IndexByte(name, ' ') >= 0 && strings.IndexByte(initials, ' ') >= 0 {
 		return false
 	}
 	for _, r := range name {
