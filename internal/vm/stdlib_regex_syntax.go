@@ -11,107 +11,13 @@ import (
 	"github.com/dlclark/regexp2/syntax"
 )
 
-// Validate Java group names before the engine accepts its broader group syntax.
-// R083-R085 record the native diagnostics, including the original source index.
+// validateJavaRegexSource rejects a pattern when java.util.regex would, with the
+// description and index Java reports. The engine accepts broader syntax than
+// Java, so this runs before translation. R078-R086 and the regex_java_divergence
+// rows record the native diagnostics.
 func validateJavaRegexSource(source, exceptionType string) error {
 	if se := javaRegexSyntaxCheck(source); se != nil {
 		return newExceptionError("System."+exceptionType, javaRegexSyntaxMessage(source, se.description, se.index))
-	}
-	return nil
-}
-
-func validateJavaRegexGroups(source, exceptionType string) error {
-	names := map[string]bool{}
-	var classes javaRegexClassState
-	quoted := false
-	extended := false
-	var stack []bool
-	for i := 0; i < len(source); i++ {
-		if source[i] == '\\' && i+1 < len(source) {
-			if source[i+1] == 'Q' {
-				quoted = true
-			} else if source[i+1] == 'E' {
-				quoted = false
-			}
-			i++
-			if source[i] == 'c' && i+1 < len(source) {
-				i++
-			}
-			continue
-		}
-		if quoted {
-			continue
-		}
-		if extended && !classes.inside() && source[i] == '#' {
-			if end := strings.IndexByte(source[i:], '\n'); end >= 0 {
-				i += end
-				continue
-			}
-			break
-		}
-		classes.advance(source, i)
-		if classes.inside() || !strings.HasPrefix(source[i:], "(?") || i+2 >= len(source) {
-			if !classes.inside() && source[i] == '(' {
-				stack = append(stack, extended)
-			} else if !classes.inside() && source[i] == ')' && len(stack) > 0 {
-				extended = stack[len(stack)-1]
-				stack = stack[:len(stack)-1]
-			}
-			continue
-		}
-		if strings.HasPrefix(source[i:], "(?#") {
-			if end := strings.IndexByte(source[i+3:], ')'); end >= 0 {
-				i += end + 3
-				continue
-			}
-		}
-		j, scoped, enabled, sawFlag := i+2, extended, true, false
-		for j < len(source) && strings.ContainsRune("idmsuxU-", rune(source[j])) {
-			if source[j] == '-' {
-				enabled = false
-			} else {
-				sawFlag = true
-				if source[j] == 'x' {
-					scoped = enabled
-				}
-			}
-			j++
-		}
-		if sawFlag && j < len(source) && (source[j] == ':' || source[j] == ')') {
-			if source[j] == ':' {
-				stack = append(stack, extended)
-			}
-			extended = scoped
-			i = j
-			continue
-		}
-		stack = append(stack, extended)
-		if strings.HasPrefix(source[i:], "(?<") && i+3 < len(source) && source[i+3] != '=' && source[i+3] != '!' {
-			end := strings.IndexByte(source[i+3:], '>')
-			if end < 0 {
-				continue
-			}
-			end += i + 3
-			name := source[i+3 : end]
-			index, description := i+3, "capturing group name does not start with a Latin letter"
-			if len(name) > 0 && ((name[0] >= 'a' && name[0] <= 'z') || (name[0] >= 'A' && name[0] <= 'Z')) {
-				if !names[name] {
-					names[name] = true
-					continue
-				}
-				index, description = end, "Named capturing group <"+name+"> is already defined"
-			}
-			return newExceptionError("System."+exceptionType, javaRegexSyntaxMessage(source, description, apexStringLength(source[:index])))
-		}
-		next := source[i+2]
-		if strings.ContainsRune(":=!<>#P", rune(next)) {
-			continue
-		}
-		for j := i + 2; j < len(source) && source[j] != ')' && source[j] != ':'; j++ {
-			if !strings.ContainsRune("idmsuxU-", rune(source[j])) {
-				return newExceptionError("System."+exceptionType, javaRegexSyntaxMessage(source, "Unknown inline modifier", apexStringLength(source[:j])))
-			}
-		}
 	}
 	return nil
 }
@@ -177,71 +83,6 @@ func matcherReplacementError(replacement string, err error) error {
 	description := err.Error()
 	description += "  (Invalid replacement string: '" + replacement + "'.  '$' should be escaped if you do not intend to use a backreference.  Try using Matcher.quoteReplacement() for your argument)"
 	return newExceptionError("System.StringException", description)
-}
-
-// validateJavaRegexProperties rejects \p{Name} and \P{Name} the way Pattern.family
-// does, reporting the description and the index Java reports.
-func validateJavaRegexProperties(source, exceptionType string) error {
-	if !strings.Contains(source, `\p`) && !strings.Contains(source, `\P`) {
-		return nil
-	}
-	_, unicodeClass := rewriteInlineUnicodeCharacterClassFlagForRegexp2(source, false)
-	fail := func(description string, index int) error {
-		return newExceptionError("System."+exceptionType, javaRegexSyntaxMessage(source, description, index))
-	}
-	quoted := false
-	for i := 0; i < len(source); i++ {
-		if source[i] != '\\' || i+1 >= len(source) {
-			continue
-		}
-		next := source[i+1]
-		if quoted {
-			if next == 'E' {
-				quoted = false
-			}
-			i++
-			continue
-		}
-		if next == 'Q' {
-			quoted = true
-			i++
-			continue
-		}
-		i++
-		if next != 'p' && next != 'P' {
-			continue
-		}
-		if i+1 >= len(source) {
-			return fail("Unknown character property name {}", apexStringLength(source))
-		}
-		if source[i+1] != '{' {
-			r, _ := utf8.DecodeRuneInString(source[i+1:])
-			name := string(r)
-			if javaNativeCategoryNames[name] {
-				continue
-			}
-			if _, perr := javaPropertySet(name, unicodeClass); perr != nil {
-				return fail(perr.description, apexStringLength(source[:i+1]))
-			}
-			continue
-		}
-		end := strings.IndexByte(source[i+2:], '}')
-		if end < 0 {
-			return fail("Unclosed character family", apexStringLength(source))
-		}
-		end += i + 2
-		name := source[i+2 : end]
-		if name == "" {
-			return fail("Empty character family", apexStringLength(source[:end]))
-		}
-		if !javaNativeCategoryNames[name] {
-			if _, perr := javaPropertySet(name, unicodeClass); perr != nil {
-				return fail(perr.description, apexStringLength(source[:end]))
-			}
-		}
-		i = end
-	}
-	return nil
 }
 
 // javaCapturingGroupCount counts capturing groups in the order Java numbers them.
@@ -347,6 +188,12 @@ func rewriteJavaNumericEscapesForRegexp2(source string) string {
 			out.WriteByte(ch)
 			out.WriteByte(next)
 			i++
+		case next == 'c' && i+2 < len(source):
+			// Pattern.c: the control character is the next code point XOR 64.
+			r, size := utf8.DecodeRuneInString(source[i+2:])
+			fmt.Fprintf(&out, `\u%04X`, r^64)
+			i += 1 + size
+			changed = true
 		case next == 'N' && i+2 < len(source) && source[i+2] == '{':
 			end := strings.IndexByte(source[i+3:], '}')
 			if end >= 0 {

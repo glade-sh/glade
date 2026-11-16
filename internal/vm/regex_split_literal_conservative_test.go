@@ -114,6 +114,19 @@ func TestConservativeSplitNativeStringAndPatternSourceAndValueRoutes(t *testing.
 				t.Fatal(err)
 			}
 			pattern, err := patternCompile([]Value{String(input[0])})
+			if strings.HasPrefix(string(native["String.split/default"]), `"`) {
+				// Native rejects the pattern: every route reports a StringException.
+				if err == nil || !strings.Contains(err.Error(), "System.StringException") && !strings.Contains(err.Error(), "Invalid regex") {
+					t.Fatalf("Pattern.compile accepted %q: %v", input[0], err)
+				}
+				if _, err := stringRegexSplit(text, []Value{String(input[0])}); err == nil {
+					t.Fatalf("String.split accepted %q", input[0])
+				}
+				if _, err := patternSplit(input[0], []Value{String(text)}); err == nil {
+					t.Fatalf("Pattern.split accepted %q", input[0])
+				}
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}

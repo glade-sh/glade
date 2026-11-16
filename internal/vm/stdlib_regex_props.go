@@ -299,9 +299,14 @@ func javaIdentifierIgnorableSet() runeSet {
 }
 
 // javaBinaryPropertySet resolves \p{IsName} property names (case-insensitive).
-func javaBinaryPropertySet(name string) (runeSet, bool) {
+func javaBinaryPropertySet(name string, caseInsensitive bool) (runeSet, bool) {
 	javaPropsInit()
-	switch strings.ToUpper(name) {
+	upper := strings.ToUpper(name)
+	if caseInsensitive && (upper == "LOWERCASE" || upper == "UPPERCASE") {
+		// With CASE_INSENSITIVE Java resolves these to the Cased property.
+		return javaSetLowercase.union(javaSetUppercase, tableSet("Lt")), true
+	}
+	switch upper {
 	case "ALPHABETIC":
 		return javaSetAlphabetic, true
 	case "ASSIGNED":
@@ -414,7 +419,7 @@ type javaPropertyError struct {
 // javaPropertySet resolves the text between \p{ and } the way Pattern.family
 // does. unicodeClass is true under (?U). A nil set with a non-nil error means
 // Java rejects the name.
-func javaPropertySet(name string, unicodeClass bool) (runeSet, *javaPropertyError) {
+func javaPropertySet(name string, unicodeClass, caseInsensitive bool) (runeSet, *javaPropertyError) {
 	javaPropsInit()
 	unknown := &javaPropertyError{description: "Unknown character property name {" + name + "}"}
 	if eq := strings.IndexByte(name, '='); eq >= 0 {
@@ -444,7 +449,7 @@ func javaPropertySet(name string, unicodeClass bool) (runeSet, *javaPropertyErro
 	}
 	if strings.HasPrefix(name, "Is") && len(name) > 2 {
 		short := name[2:]
-		if set, ok := javaBinaryPropertySet(short); ok {
+		if set, ok := javaBinaryPropertySet(short, caseInsensitive); ok {
 			return set, nil
 		}
 		if set, ok := javaGeneralCategorySet(short); ok {

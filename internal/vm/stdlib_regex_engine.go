@@ -58,7 +58,7 @@ func compileRegexp2SourceLoops(callee, source string, traits regexTraits) (strin
 	regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source, traits, unicodeCharacterClass)
 	regexp2Source = rewriteJavaRegexEscapesForRegexp2(regexp2Source)
-	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source, unicodeCharacterClass)
+	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source, unicodeCharacterClass, regexSourceHasInlineFlag(source, 'i'))
 	regexp2Source = rewriteJavaShorthandClassesForRegexp2(regexp2Source, unicodeCharacterClass)
 	regexp2Source, err := rewriteJavaClassAlgebraForRegexp2(regexp2Source)
 	if err != nil {
@@ -232,7 +232,7 @@ func rewriteInlineUnicodeCharacterClassFlagForRegexp2(source string, enabled boo
 	return out.String(), enabled
 }
 
-func rewriteJavaUnicodeClassesForRegexp2(source string, unicodeCharacterClass bool) string {
+func rewriteJavaUnicodeClassesForRegexp2(source string, unicodeCharacterClass, caseInsensitive bool) string {
 	var out strings.Builder
 	for i := 0; i < len(source); i++ {
 		if source[i] != '\\' || i+2 >= len(source) || (source[i+1] != 'p' && source[i+1] != 'P') || source[i+2] != '{' {
@@ -249,7 +249,7 @@ func rewriteJavaUnicodeClassesForRegexp2(source string, unicodeCharacterClass bo
 			continue
 		}
 		name := source[i+3 : i+3+end]
-		if rewritten, ok := javaUnicodeClassEscapeForRegexp2(name, source[i+1] == 'p', unicodeCharacterClass); ok {
+		if rewritten, ok := javaUnicodeClassEscapeForRegexp2(name, source[i+1] == 'p', unicodeCharacterClass, caseInsensitive); ok {
 			out.WriteString(rewritten)
 			i += 3 + end
 			continue
@@ -260,7 +260,7 @@ func rewriteJavaUnicodeClassesForRegexp2(source string, unicodeCharacterClass bo
 	return out.String()
 }
 
-func javaUnicodeClassEscapeForRegexp2(name string, positive bool, unicodeCharacterClass bool) (string, bool) {
+func javaUnicodeClassEscapeForRegexp2(name string, positive bool, unicodeCharacterClass, caseInsensitive bool) (string, bool) {
 	if javaNativeCategoryNames[name] {
 		prefix := `\p`
 		if !positive {
@@ -268,7 +268,7 @@ func javaUnicodeClassEscapeForRegexp2(name string, positive bool, unicodeCharact
 		}
 		return prefix + "{" + name + "}", true
 	}
-	set, perr := javaPropertySet(name, unicodeCharacterClass)
+	set, perr := javaPropertySet(name, unicodeCharacterClass, caseInsensitive)
 	if perr != nil {
 		return "", false
 	}

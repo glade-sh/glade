@@ -1235,13 +1235,15 @@ func TestStringRegexReplacementUsesSharedMatcherSemantics(t *testing.T) {
 	}
 }
 
-func TestRegexDanglingQuantifierUsesOriginalSourcePosition(t *testing.T) {
+func TestRegexDanglingQuantifierUsesJavaParsePosition(t *testing.T) {
 	for _, tc := range []struct{ pattern, message string }{
 		{"*", "Invalid regex: Dangling meta character '*' near index 0"},
 		{"abc|+", "Invalid regex: Dangling meta character '+' near index 4"},
 		{"(?i)*", "Invalid regex: Dangling meta character '*' near index 4"},
-		{`\Q+\E|?`, "Invalid regex: Dangling meta character '?' near index 6"},
-		{"😀|*", "Invalid regex: Dangling meta character '*' near index 3"},
+		// Java parses after \Q...\E becomes escaped literals, and counts code
+		// points (regex_java_divergence d8x_qplus_alt_q, d8x_emoji_alt_star).
+		{`\Q+\E|?`, "Invalid regex: Dangling meta character '?' near index 3"},
+		{"😀|*", "Invalid regex: Dangling meta character '*' near index 2"},
 	} {
 		_, err := patternCompile([]Value{String(tc.pattern)})
 		if err == nil || !strings.Contains(err.Error(), tc.message) {

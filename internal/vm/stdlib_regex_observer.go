@@ -236,6 +236,9 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 		return nil, err
 	}
 	re.MatchTimeout = regexp2MatchTimeout
+	if p.noLinearMatch(input) {
+		return nil, nil
+	}
 	match, err := searchRegexp2(re, input, func() (*regexp2.Match, error) {
 		return re.FindStringMatchStartingAt(input, startByte)
 	})
@@ -254,6 +257,11 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 }
 
 func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anchored, full bool) (bool, error) {
+	if !anchored && p.noLinearMatch(input) {
+		// A search that tries every start and finds nothing reads to the end,
+		// except when the pattern begins with an anchor.
+		return !strings.HasPrefix(p.originalSource, "^"), nil
+	}
 	source, slot := regexp2EndObserverSource(p.matchSource, p.re)
 	if anchored {
 		source = `\G(?:` + source + ")"

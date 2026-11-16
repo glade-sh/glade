@@ -32,6 +32,9 @@ type regexp2Plan struct {
 	publicGroupNumbers []int
 	endAssertionGroups []regexp2EndAssertion
 	loopGroups         []string
+	linear             *regexp.Regexp // set for patterns that nest unbounded repeats
+	linearMu           sync.Mutex
+	linearHit          string
 }
 
 func buildGraphemeBoundaryTable(input string) *graphemeBoundaryTable {
@@ -112,6 +115,13 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		publicGroupNumbers: publicGroups,
 		endAssertionGroups: endGroups,
 		loopGroups:         loopNames,
+	}
+	if javaRegexNestsUnboundedRepeats(javaRegexRemoveQuoting(source)) {
+		// Java matches these in polynomial time; regexp2 backtracks exponentially
+		// when the match fails. A linear engine decides whether any match exists.
+		if linear, err := regexp.Compile(regexp2Source); err == nil {
+			plan.linear = linear
+		}
 	}
 	if inputIndependent {
 		regexp2PlanCache.store(cacheKey, plan)
@@ -267,6 +277,9 @@ func regexp2PublicGroupNumbers(re *regexp2.Regexp, internal map[string]bool, sou
 }
 
 func (p *regexp2Plan) findValidStartingAt(input string, startAt int) (*regexp2.Match, error) {
+	if p.noLinearMatch(input) {
+		return nil, nil
+	}
 	match, err := searchRegexp2(p.re, input, func() (*regexp2.Match, error) {
 		return p.re.FindStringMatchStartingAt(input, startAt)
 	})
@@ -367,4 +380,26 @@ func (p *regexp2Plan) publicGroupNumber(group int) (int, bool) {
 		return 0, false
 	}
 	return p.publicGroupNumbers[group], true
+}
+
+// noLinearMatch reports that the linear engine found no match anywhere in
+// input, so the backtracking search can be skipped. It answers false whenever
+// the pattern is not one that nests unbounded repeats.
+func (p *regexp2Plan) noLinearMatch(input string) bool {
+	if p.linear == nil || len(input) < 16 {
+		return false
+	}
+	p.linearMu.Lock()
+	known := p.linearHit == input
+	p.linearMu.Unlock()
+	if known {
+		return false
+	}
+	if p.linear.FindStringIndex(input) == nil {
+		return true
+	}
+	p.linearMu.Lock()
+	p.linearHit = input
+	p.linearMu.Unlock()
+	return false
 }

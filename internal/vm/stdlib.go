@@ -2514,6 +2514,11 @@ func stringStaticStripAll(args []Value) (Value, error) {
 }
 
 func stringRegexReplace(name, text string, args []Value, all bool) (string, error) {
+	for _, arg := range args {
+		if arg.Kind == ValueNull {
+			return "", newExceptionError("System.NullPointerException", "Argument cannot be null.")
+		}
+	}
 	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 		return "", fmt.Errorf("%s expects regex and replacement Strings", name)
 	}
@@ -2643,6 +2648,11 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return nil, fmt.Errorf("String.split expects regex String and optional Integer limit")
 	}
+	if len(args) >= 1 && args[0].Kind == ValueNull {
+		// Native String.split and Pattern.split reject a null argument with
+		// NullPointerException (regex_java_divergence d3_n_split, d3_n_psplit).
+		return nil, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return nil, fmt.Errorf("String.split expects regex String and optional Integer limit")
 	}
@@ -2748,6 +2758,11 @@ func patternSplit(source string, args []Value) ([]string, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
 	}
+	if len(args) >= 1 && args[0].Kind == ValueNull {
+		// Native String.split and Pattern.split reject a null argument with
+		// NullPointerException (regex_java_divergence d3_n_split, d3_n_psplit).
+		return nil, newExceptionError("System.NullPointerException", "Argument cannot be null.")
+	}
 	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
 	}
@@ -2761,6 +2776,11 @@ func patternSplit(source string, args []Value) ([]string, error) {
 func patternSplitValue(pattern Value, args []Value) ([]string, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
+	}
+	if len(args) >= 1 && args[0].Kind == ValueNull {
+		// Native String.split and Pattern.split reject a null argument with
+		// NullPointerException (regex_java_divergence d3_n_split, d3_n_psplit).
+		return nil, newExceptionError("System.NullPointerException", "Argument cannot be null.")
 	}
 	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")

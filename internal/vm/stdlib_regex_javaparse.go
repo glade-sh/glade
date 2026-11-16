@@ -20,6 +20,7 @@ type javaTreeInfo struct {
 	minLen, maxLen int32
 	maxValid       bool
 	deterministic  bool
+	unbounded      bool // holds an unbounded repetition
 }
 
 func javaFixedInfo(n int32) javaTreeInfo {
@@ -37,6 +38,7 @@ type javaRegexParser struct {
 	escapeInfo javaTreeInfo
 
 	loops    []javaLoopGroup
+	nested   bool            // an unbounded repeat of a group that holds an unbounded repeat
 	repeated []javaLoopGroup // every group followed by a repeating quantifier
 }
 
@@ -258,7 +260,7 @@ func (p *javaRegexParser) accept(ch rune, description string) {
 }
 
 func javaInfoAppend(a, b javaTreeInfo) javaTreeInfo {
-	out := javaTreeInfo{minLen: a.minLen + b.minLen, maxLen: a.maxLen + b.maxLen}
+	out := javaTreeInfo{minLen: a.minLen + b.minLen, maxLen: a.maxLen + b.maxLen, unbounded: a.unbounded || b.unbounded}
 	out.maxValid = a.maxValid && b.maxValid
 	out.deterministic = a.deterministic && b.deterministic
 	return out
@@ -285,6 +287,7 @@ func (p *javaRegexParser) expr() javaTreeInfo {
 			out.maxLen = b.maxLen
 		}
 		out.maxValid = out.maxValid && b.maxValid
+		out.unbounded = out.unbounded || b.unbounded
 	}
 	out.deterministic = false
 	return out
@@ -370,9 +373,9 @@ func (p *javaRegexParser) closure(prev javaTreeInfo) javaTreeInfo {
 
 func javaCurlyInfo(atom javaTreeInfo, q javaQuant) javaTreeInfo {
 	if q.question {
-		return javaTreeInfo{minLen: 0, maxLen: atom.maxLen, maxValid: atom.maxValid, deterministic: false}
+		return javaTreeInfo{minLen: 0, maxLen: atom.maxLen, maxValid: atom.maxValid, deterministic: false, unbounded: atom.unbounded}
 	}
-	out := javaTreeInfo{maxValid: atom.maxValid, deterministic: atom.deterministic && q.cmin == q.cmax}
+	out := javaTreeInfo{maxValid: atom.maxValid, deterministic: atom.deterministic && q.cmin == q.cmax, unbounded: atom.unbounded || q.cmax == javaMaxReps}
 	out.minLen = int32(int64(atom.minLen) * q.cmin)
 	if int64(atom.minLen)*q.cmin > math.MaxInt32 || int64(out.minLen) < 0 {
 		out.minLen = 0xFFFFFFF
@@ -812,7 +815,7 @@ func (p *javaRegexParser) family(singleLetter bool) {
 	if javaNativeCategoryNames[name] {
 		return
 	}
-	if _, perr := javaPropertySet(name, false); perr != nil {
+	if _, perr := javaPropertySet(name, false, false); perr != nil {
 		p.fail(perr.description)
 	}
 }
@@ -906,12 +909,15 @@ func (p *javaRegexParser) group0() javaTreeInfo {
 	}
 	if !q.question {
 		p.repeated = append(p.repeated, javaLoopGroup{start: groupStart, end: groupEnd})
+		if q.cmax == javaMaxReps && body.unbounded {
+			p.nested = true
+		}
 	}
 	if q.possessive || q.question || body.deterministic {
 		return javaCurlyInfo(body, q)
 	}
 	p.loops = append(p.loops, javaLoopGroup{start: groupStart, end: groupEnd})
-	return javaTreeInfo{minLen: 0, maxLen: 0, maxValid: false, deterministic: false}
+	return javaTreeInfo{minLen: 0, maxLen: 0, maxValid: false, deterministic: false, unbounded: body.unbounded || q.cmax == javaMaxReps}
 }
 
 // clazz parses a character class; the cursor starts at the opening bracket.
@@ -1047,4 +1053,12 @@ func javaCharacterByName(name string) (rune, bool) {
 		return ',', true
 	}
 	return 0, false
+}
+
+// javaRegexNestsUnboundedRepeats reports an unbounded repeat of a group that
+// itself holds an unbounded repeat, such as (a+)+. Backtracking engines take
+// exponential time to fail on these.
+func javaRegexNestsUnboundedRepeats(normalized string) bool {
+	p, err := javaRegexParse(normalized)
+	return err == nil && p != nil && p.nested
 }

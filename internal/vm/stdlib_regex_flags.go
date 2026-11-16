@@ -171,7 +171,7 @@ func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeC
 	for i := 0; i < len(source); i++ {
 		ch := source[i]
 		if ch == '\\' {
-			if i+1 < len(source) && !classes.inside() && (source[i+1] == 'b' || source[i+1] == 'B') && traits.nonASCII && !unicodeClasses {
+			if i+1 < len(source) && !classes.inside() && (source[i+1] == 'b' || source[i+1] == 'B') && traits.nonASCII && !unicodeClasses && !(i+2 < len(source) && source[i+2] == '{') {
 				if source[i+1] == 'b' {
 					out.WriteString(regexASCIIWordBoundary)
 				} else {
