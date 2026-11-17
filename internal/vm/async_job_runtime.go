@@ -86,23 +86,24 @@ func (vm *VM) DrainTestSetupAsync() error {
 	if vm == nil || vm.testContext == nil {
 		return nil
 	}
-	// Only the job kinds native rows cover drain here: Queueable, @future and
-	// Batch Apex queued by setup code. Platform events, EventBus deliveries,
-	// scheduled Apex, change data capture and jobs those jobs queue (a batch
-	// finish() that enqueues a Queueable) keep their earlier behavior: they
-	// do not run before the test methods.
-	allowed := map[string]bool{}
+	// The end of setup runs the async jobs setup code queued, and the jobs
+	// those jobs queue (a batch finish() that enqueues a Queueable), the way
+	// stopTest runs them: Queueable, @future, Batch Apex and scheduled Apex.
+	// It delivers no platform event and no change data capture event
+	// (test_runner_coverage_carry Setup*Test and R3*Test rows, API 62.0 and
+	// 67.0). Test.getEventBus().deliver() in setup delivers as it always does.
 	var futures []storage.ID
+	pending := false
 	for _, job := range vm.testContext.AsyncJobs {
 		if !setupDrainedJobKind(job.Kind) {
 			continue
 		}
-		allowed[job.ID] = true
+		pending = true
 		if job.Kind == "Future" {
 			futures = append(futures, storage.ID(job.ID))
 		}
 	}
-	if len(allowed) == 0 {
+	if !pending {
 		return nil
 	}
 	// The end of setup drains like stopTest: a Queueable that chains another
@@ -115,7 +116,7 @@ func (vm *VM) DrainTestSetupAsync() error {
 	for iteration := 0; iteration < maxLoopIterations; iteration++ {
 		var run []AsyncJob
 		for _, job := range vm.testContext.AsyncJobs {
-			if allowed[job.ID] {
+			if setupDrainedJobKind(job.Kind) && !job.Deferred {
 				run = append(run, job)
 			} else {
 				kept = append(kept, job)
@@ -128,7 +129,6 @@ func (vm *VM) DrainTestSetupAsync() error {
 		if iteration == 0 {
 			vm.prepareTestStopAsyncJobs()
 		}
-		// A batch phase requeues its own job; anything else queued here stays.
 		if err = vm.drainTestAsync(&Result{}); err != nil {
 			break
 		}
@@ -163,7 +163,7 @@ func (vm *VM) DrainTestSetupAsync() error {
 
 func setupDrainedJobKind(kind string) bool {
 	switch kind {
-	case "Queueable", "Future", "BatchApex":
+	case "Queueable", "Future", "BatchApex", "ScheduledApex":
 		return true
 	}
 	return false

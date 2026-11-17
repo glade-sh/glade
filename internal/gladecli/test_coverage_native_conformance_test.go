@@ -208,9 +208,6 @@ func parseCoverageRunClasses(t *testing.T, row coverageNativeRow, list string) [
 // reports one run against a fresh org; the replay feeds its per-test rows
 // into apexcov.Store in the native step order.
 func TestCodeCoverageNativeConformance(t *testing.T) {
-	if testing.Short() {
-		t.Skip("runs glade test over the native coverage fixtures")
-	}
 	rows := readCoverageNativeRows(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, capture := range coverageNativeCaptures {
@@ -414,9 +411,6 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 // cv1a-all, cv1b-all, cv1c-one, cv1c-all, API 62.0 and 67.0. Org-wide is
 // compared only where no earlier step covered another class.
 func TestCodeCoverageRunSummaryNative(t *testing.T) {
-	if testing.Short() {
-		t.Skip("runs glade test over the native coverage fixtures")
-	}
 	rows := readCoverageNativeRows(t)
 	cases := []struct {
 		capture int
@@ -474,9 +468,6 @@ func TestCodeCoverageRunSummaryNative(t *testing.T) {
 // A run without --code-coverage has no coverage block, as sf apex run test
 // without --code-coverage has none (org.tsv run row cv5-nocov).
 func TestCodeCoverageOffAddsNothing(t *testing.T) {
-	if testing.Short() {
-		t.Skip("runs glade test over the native coverage fixtures")
-	}
 	root := writeCoverageNativeProject(t, "67.0", coverageNativeCaptures[0])
 	run, stdout, _ := runCoverageCLI(t, root, "--class", "CvUnionTest")
 	if run.Coverage != nil || strings.Contains(stdout, `"coverage"`) {
@@ -495,9 +486,6 @@ func TestCodeCoverageOffAddsNothing(t *testing.T) {
 // same coverage, the same failed --coverage-gate and the same exit code. The
 // managed package dependency is not a coverage component.
 func TestDaemonEquivalenceCodeCoverage(t *testing.T) {
-	if testing.Short() {
-		t.Skip("infrastructure test; full suite runs in acceptance lanes")
-	}
 	scenario := daemonEquivalenceScenario{
 		name: "code_coverage",
 		classes: map[string]string{
@@ -558,9 +546,6 @@ const coverageSuiteDir = "../apextest/testdata/native_conformance/test_runner_co
 // per-test row (115 per run) and every aggregate row with the same covered
 // and uncovered lines.
 func TestCodeCoverageSuiteNative(t *testing.T) {
-	if testing.Short() {
-		t.Skip("runs glade test over the native coverage fixtures")
-	}
 	f, err := os.Open(filepath.Join(coverageSuiteDir, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -729,9 +714,6 @@ func writeCoverageCarryProject(t *testing.T, api, set string) string {
 // test_runner_coverage_carry/org.tsv per and test rows, API 62.0 and 67.0,
 // repeats r1 and r2. Each native step is one glade run of the same selection.
 func TestCodeCoverageCarryNative(t *testing.T) {
-	if testing.Short() {
-		t.Skip("runs glade test over the native coverage fixtures")
-	}
 	f, err := os.Open(filepath.Join(coverageCarryDir, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
@@ -880,5 +862,127 @@ func TestSynchronousRequiresCodeCoverage(t *testing.T) {
 	}
 	if run, _, exit := runCoverageCLI(t, root, "--synchronous", "--coverage-gate", "RunSpecifiedTests", "--class", "CvUnionTest"); run.Coverage == nil || !run.Coverage.Synchronous {
 		t.Fatalf("--synchronous with --coverage-gate: exit=%d coverage=%+v", exit, run.Coverage)
+	}
+}
+
+const coverageSetupAsyncDir = "../apextest/testdata/native_conformance/test_runner_coverage_setup_async"
+
+func writeCoverageSetupAsyncProject(t *testing.T, api string) string {
+	t.Helper()
+	root := t.TempDir()
+	writeDaemonEquivalenceFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+	base := filepath.Join(coverageSetupAsyncDir, "fixtures")
+	err := filepath.WalkDir(base, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		rel, _ := filepath.Rel(base, path)
+		source, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		dest := filepath.Join(root, "force-app/main/default", rel)
+		writeDaemonEquivalenceFile(t, dest, string(source))
+		switch {
+		case strings.HasSuffix(rel, ".cls"):
+			writeDaemonEquivalenceFile(t, dest+"-meta.xml", "<ApexClass><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>")
+		case strings.HasSuffix(rel, ".trigger"):
+			writeDaemonEquivalenceFile(t, dest+"-meta.xml", "<ApexTrigger><apiVersion>"+api+"</apiVersion><status>Active</status></ApexTrigger>")
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
+// NATIVE async work queued in @TestSetup, test_runner_coverage_setup_async/org.tsv
+// test and per rows, API 62.0 and 67.0, repeats r1 and r2: a platform event is
+// not delivered before the tests, EventBus deliver() in setup delivers, scheduled
+// Apex runs, a Queueable a batch finish() enqueues runs, and change data capture
+// is not delivered. Each test method reports what it sees through its failure
+// message; every message and every per-test row must match.
+func TestCodeCoverageSetupAsyncNative(t *testing.T) {
+	f, err := os.Open(filepath.Join(coverageSetupAsyncDir, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	type row struct {
+		line                                                     int
+		api, repeat, step, kind, class, method, component, cover string
+		detail                                                   string
+	}
+	var rows []row
+	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, 1<<20), 1<<20)
+	n := 0
+	for scanner.Scan() {
+		n++
+		if n == 1 {
+			continue
+		}
+		c := strings.Split(scanner.Text(), "\t")
+		if len(c) != 9 {
+			t.Fatalf("org.tsv:%d has %d columns", n, len(c))
+		}
+		rows = append(rows, row{n, c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8]})
+	}
+	classes := []string{"R3EventTest", "R3DeliverTest", "R3SchedTest", "R3BatchChainTest", "R3CdcTest", "R3CdcOnlyTest", "R3NoneTest"}
+	type stepArgs struct {
+		name string
+		args []string
+	}
+	steps := []stepArgs{{"all-async", []string{"--filter", strings.Join(classes, ",")}}}
+	for _, class := range classes {
+		steps = append(steps, stepArgs{class, []string{"--class", class, "--synchronous"}})
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		root := writeCoverageSetupAsyncProject(t, api)
+		for _, step := range steps {
+			t.Run(api+"/"+step.name, func(t *testing.T) {
+				run, _, _ := runCoverageCLI(t, root, append([]string{"--code-coverage"}, step.args...)...)
+				got := map[string]string{}
+				for _, suite := range run.Suites {
+					for _, c := range suite.Cases {
+						for _, r := range c.Coverage {
+							got[c.ClassName+"."+c.MethodName+"/"+r.Name] = coverageLinesText(r.CoveredLines)
+						}
+						message := ""
+						if c.Problem != nil {
+							message = c.Problem.Type + ": " + c.Problem.ResultMessage()
+						}
+						got[c.ClassName+"."+c.MethodName+"#test"] = message
+					}
+				}
+				checked := 0
+				for _, r := range rows {
+					if r.api != api || r.step != step.name {
+						continue
+					}
+					switch r.kind {
+					case "per":
+						key := r.class + "." + r.method + "/" + r.component
+						if have, ok := got[key]; !ok || have != r.cover {
+							t.Errorf("org.tsv:%d %s covered got %q (listed %v) want %q", r.line, key, have, ok, r.cover)
+						}
+					case "test":
+						key := r.class + "." + r.method + "#test"
+						want := strings.SplitN(r.detail, "|", 2)[1]
+						if have := got[key]; have != want {
+							t.Errorf("org.tsv:%d %s message\n got %q\nwant %q", r.line, key, have, want)
+						}
+					default:
+						continue
+					}
+					checked++
+				}
+				if checked == 0 {
+					t.Fatalf("no native rows for %s", step.name)
+				}
+				t.Logf("%s: checked %d rows", step.name, checked)
+			})
+		}
 	}
 }

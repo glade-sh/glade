@@ -92,8 +92,8 @@ ternary does not take stays uncovered.
 - With `--synchronous`, every trigger in the project is listed in the run and
   in every test's rows, with zero lines covered when no test fired it. In the
   default (asynchronous) report a trigger is listed only once a test reached it.
-- Async work a `@TestSetup` method enqueues (Queueable, `@future`, batch)
-  runs at the end of setup, the way `Test.stopTest` runs it. Its data is in
+- Async work a `@TestSetup` method enqueues (Queueable, `@future`, batch,
+  scheduled Apex) runs at the end of setup, the way `Test.stopTest` runs it. Its data is in
   every test method's org, its lines count, and the test method's
   `Limits.getQueueableJobs()`, `getFutureCalls()` and `getAsyncCalls()` start
   from the setup's counts. A job that throws, or a Queueable that chains
@@ -102,10 +102,12 @@ ternary does not take stays uncovered.
   no per-test rows. A setup's `@future` call leaves no `AsyncApexJob` row for
   the tests; Queueable and batch rows stay. A setup that calls
   `Test.startTest`/`stopTest` itself runs its work there and passes zero
-  counts to the tests. Other work queued in setup has no native row yet and
-  keeps its earlier behavior, not running before the tests: platform events
-  and `Test.getEventBus().deliver()`, `System.schedule`, change data capture
-  from setup DML, and a Queueable that a batch `finish()` enqueues.
+  counts to the tests. Work those jobs queue runs too: a Queueable that a
+  batch `finish()` enqueues runs before the tests. A scheduled job runs once;
+  its `CronTrigger` stays and its `AsyncApexJob` row reads `Queued`. A
+  platform event published in setup is not delivered before the tests (call
+  `Test.getEventBus().deliver()` in setup to deliver it), and change data
+  capture events from setup DML are not delivered.
 
 Per-test rows carry declaration lines, as Salesforce stores them. Within a
 test class, in method name order by code point (`Alpha`, `Gamma`, `Zeta`,
@@ -250,10 +252,6 @@ These shapes are not captured yet, or Glade does not match them:
   **CV7** package selection and package denominators, and **CV9** unit versus
   integration-test coverage are not captured. Managed package classes are
   excluded from every figure.
-- **Other async work in `@TestSetup`.** Platform events, EventBus
-  deliveries, scheduled Apex, change data capture and work queued by a
-  batch `finish()` do not run before the tests; a capture (cov-r3) is
-  pending.
 - **Synchronous or asynchronous.** Salesforce picks the shape from the API
   the run used; Glade picks it from `--synchronous`. Other differences
   between the two APIs (such as the setup rows `testsRan` counts) are not
@@ -276,7 +274,8 @@ These shapes are not captured yet, or Glade does not match them:
 The conformance tests are `internal/gladecli/test_coverage_native_conformance_test.go`
 (the step-by-step replay, the 14-method carry-over run in
 `test_runner_coverage_suite`, the carry, setup and trigger-listing rows in
-`test_runner_coverage_carry`, fresh-org run summaries and daemon
+`test_runner_coverage_carry`, the setup async rows in
+`test_runner_coverage_setup_async`, fresh-org run summaries and daemon
 equivalence) and
 `internal/apexcov/native_conformance_test.go` (line maps, unions, percentages
 and the nine deployment gates).
