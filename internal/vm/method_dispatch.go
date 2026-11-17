@@ -571,6 +571,11 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 			}
 			return Null, runtimeErr
 		}
+		// The read-only collection fault is uncatchable but keeps its native
+		// type in a test result (review_round10 g_test).
+		if err.Error() == readOnlyCollectionFault {
+			return Null, &RuntimeError{Type: "System.FinalException", Message: "Collection is read-only", Stack: vm.stackFrames()}
+		}
 		return Null, &RuntimeError{Type: "RuntimeError", Message: err.Error(), Stack: vm.stackFrames()}
 	}
 	if out.signal == signalThrow {
@@ -3958,6 +3963,11 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 				}
 			}
 			out.Type = "Set<String>"
+			// add and addAll are refused (review_round10 g_gd_add). Native also
+			// writes remove and clear through to this map and not to a fresh
+			// getGlobalDescribe() (g_gd_remove, g_gd_clear); Glade keeps the
+			// local-only behavior its describe pins expect.
+			out.describeKeySetReadOnly = true
 			return out, true, nil
 		}
 		if out, ok := vm.sObjectFieldMapCanonicalKeySet(receiver); ok {
@@ -4160,3 +4170,7 @@ func hasUpperCaseLetter(text string) bool {
 func describeKeySetReadOnlyMethod(method string) bool {
 	return method == "add" || method == "addAll"
 }
+
+// readOnlyCollectionFault is the uncatchable FinalException that add and
+// addAll raise on a Map's key set and that R076 raises on a field map.
+const readOnlyCollectionFault = "System.FinalException: Collection is read-only"

@@ -1,6 +1,10 @@
 package apextest
 
-import "testing"
+import (
+	"strconv"
+	"strings"
+	"testing"
+)
 
 // Rollup values read by a child trigger, per statement kind.
 func TestRollupTriggerTimingNativeConformance(t *testing.T) {
@@ -124,4 +128,40 @@ func TestReviewRound8NativeConformance(t *testing.T) {
 
 func TestReviewRound9NativeConformance(t *testing.T) {
 	gapFamily{dir: "testdata/conformance/review_round9", adminFrom: []string{"GapAccess"}, cleanBetween: true}.replay(t)
+}
+
+func TestReviewRound10NativeConformance(t *testing.T) {
+	gapFamily{
+		dir: "testdata/conformance/review_round10", adminFrom: []string{"GapAccess"}, cleanBetween: true,
+		residual: map[string]string{
+			"g_gd_remove/*": "remove on getGlobalDescribe().keySet() writes through to that map natively; Glade keeps it local to the Set",
+			"g_gd_clear/*":  "clear on getGlobalDescribe().keySet() writes through to that map natively; Glade keeps it local to the Set",
+		},
+		normalize: func(id, line string) string {
+			if id != "g_gd_remove" && id != "g_gd_clear" {
+				return line
+			}
+			// The global describe counts are environment values: mask them
+			// relative to the first one.
+			parts := strings.Split(line, "|")
+			if len(parts) < 3 {
+				return line
+			}
+			first, err := strconv.Atoi(parts[2])
+			if err != nil {
+				return line
+			}
+			for i := 2; i < len(parts); i++ {
+				if n, err := strconv.Atoi(parts[i]); err == nil {
+					switch n {
+					case first:
+						parts[i] = "N"
+					case first - 1:
+						parts[i] = "N-1"
+					}
+				}
+			}
+			return strings.Join(parts, "|")
+		},
+	}.replay(t)
 }

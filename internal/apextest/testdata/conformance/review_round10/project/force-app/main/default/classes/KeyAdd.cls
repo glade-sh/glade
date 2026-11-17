@@ -1,0 +1,1 @@
+public class KeyAdd { public static void run(Map<Id,KsA__c> m, Id x) { m.keySet().add(x); } }

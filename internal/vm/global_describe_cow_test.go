@@ -149,13 +149,18 @@ System.assert(Schema.getModuleDescribe('module').keySet().contains('Widget__c'))
 }
 
 // keySet on the global describe map returns a fresh Set whose contents match
-// the lower-cased unique keys; mutating it must not touch the map.
+// the lower-cased unique keys; mutating a copy of it must not touch the map.
+// NATIVE review_round10 g_gd_add: add on the key set itself raises the
+// uncatchable FinalException, and g_gd_clone_add: a clone is writable. Native
+// remove and clear on the key set itself write through to that map and not to
+// a fresh getGlobalDescribe() (g_gd_remove, g_gd_clear); Glade does not model
+// that write-through, so this test mutates the clone only.
 func TestGlobalDescribeKeySetIsFreshAndComplete(t *testing.T) {
 	for _, namespaced := range []bool{false, true} {
 		t.Run(fmt.Sprintf("namespace=%v", namespaced), func(t *testing.T) {
 			machine := describeShareUnprimedFor(namespaced)
 			program, err := CompileAnonymousWithOptions(`Map<String,Schema.SObjectType> g = Schema.getGlobalDescribe();
-Set<String> keys = g.keySet();
+Set<String> keys = g.keySet().clone();
 System.assert(keys.contains('account'));
 System.assert(!keys.contains('Account'));
 Integer n = keys.size();

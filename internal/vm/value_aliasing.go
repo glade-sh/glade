@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -4744,13 +4745,25 @@ func collectionTypeMayHoldCollections(typeName string) bool {
 	return strings.Contains(element, "<") || strings.HasPrefix(element, "list") || strings.HasPrefix(element, "set") || strings.HasPrefix(element, "map") || strings.HasPrefix(element, "iterable")
 }
 
-var collectionTypeMayHoldCache sync.Map // declared type text -> bool
+// collectionTypeMayHoldCache memoizes the declared-type answer per type text.
+// It holds at most collectionTypeMayHoldCacheLimit entries and restarts empty
+// beyond that, so a long-lived server or daemon cannot grow it without bound.
+var (
+	collectionTypeMayHoldCache sync.Map // declared type text -> bool
+	collectionTypeMayHoldCount atomic.Int64
+)
+
+const collectionTypeMayHoldCacheLimit = 2048
 
 func collectionTypeMayHoldCollectionsCached(typeName string) bool {
 	if cached, ok := collectionTypeMayHoldCache.Load(typeName); ok {
 		return cached.(bool)
 	}
 	result := collectionTypeMayHoldCollections(typeName)
+	if collectionTypeMayHoldCount.Add(1) > collectionTypeMayHoldCacheLimit {
+		collectionTypeMayHoldCache.Clear()
+		collectionTypeMayHoldCount.Store(1)
+	}
 	collectionTypeMayHoldCache.Store(typeName, result)
 	return result
 }
