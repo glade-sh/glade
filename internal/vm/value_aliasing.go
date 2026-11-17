@@ -4592,6 +4592,12 @@ func (vm *VM) refreshCallerEscapedCollectionAliases(caller map[string]Value, sin
 				continue
 			}
 		}
+		// A nested slot can only be stale if a collection inside this local was
+		// mutated during the call; the cached receiver graph answers that
+		// without visiting the elements again.
+		if local.Ref != 0 && vm.nestedCollectionsUnchangedSince(local, since, nil) {
+			continue
+		}
 		vm.refreshEscapedNestedCollections(local, since, &budget)
 	}
 }
