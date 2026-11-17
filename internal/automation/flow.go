@@ -469,7 +469,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 	}
 	name := flowFileName(path)
 	objectName := strings.TrimSpace(raw.Start.Object)
-	if objectName == "" {
+	if objectName == "" && strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") {
 		flowMergeFormulaStringAssignments(&raw)
 	}
 	flow := Flow{ObjectName: objectName, File: path}
@@ -4753,27 +4753,70 @@ func capturedCaseAfterSave(rules []storage.FlowRule, def storage.ObjectDefinitio
 	return ok
 }
 
-// flowMergeFormulaStringAssignments reads an assignment value of exactly
-// "{!Formula}" as a reference to that formula resource, in an autolaunched flow
-// (native PsrFlowTest, permset_in_test residuals, API 62.0 and 67.0: a String
-// variable assigned "{!PermText}" holds the formula's text). Other merge text
-// keeps its earlier handling.
+// flowMergeFormulaStringAssignments resolves the "{!Name}" merge fields of a
+// String assignment value in an autolaunched flow, for a Name that is a formula
+// or a variable of the flow. A value that is exactly one merge reads as a
+// reference to that resource; text around merges becomes a synthetic String
+// formula joining the pieces. Native residuals FlowShapes (API 62.0 and 67.0):
+// "{!PermText}", "a {!PermText}", "{!PlainText}" and "{!Other}" all resolve.
+// Merges of globals ($Record, $Permission ...) and unknown names keep their
+// earlier handling.
 func flowMergeFormulaStringAssignments(raw *flowXML) {
-	formulas := map[string]bool{}
+	known := map[string]bool{}
+	inline := map[string]string{}
 	for _, formula := range raw.Formulas {
-		formulas[strings.ToLower(strings.TrimSpace(formula.Name))] = true
+		known[strings.ToLower(strings.TrimSpace(formula.Name))] = true
+		inline[strings.ToLower(strings.TrimSpace(formula.Name))] = formula.Expression
 	}
+	for _, variable := range raw.Variables {
+		known[strings.ToLower(strings.TrimSpace(variable.Name))] = true
+	}
+	merge := regexp.MustCompile(`\{!([A-Za-z_][A-Za-z0-9_]*)\}`)
+	counter := 0
 	for i := range raw.Assignments {
 		for j := range raw.Assignments[i].Items {
 			value := &raw.Assignments[i].Items[j].Value
-			text := strings.TrimSpace(value.StringValue)
-			if !strings.HasPrefix(text, "{!") || !strings.HasSuffix(text, "}") {
+			text := value.StringValue
+			if value.ElementReference != "" || !strings.Contains(text, "{!") {
 				continue
 			}
-			name := strings.TrimSuffix(strings.TrimPrefix(text, "{!"), "}")
-			if formulas[strings.ToLower(name)] && value.ElementReference == "" {
-				value.StringValue, value.ElementReference = "", name
+			matches := merge.FindAllStringSubmatchIndex(text, -1)
+			if len(matches) == 0 {
+				continue
 			}
+			allKnown := true
+			for _, m := range matches {
+				if !known[strings.ToLower(text[m[2]:m[3]])] {
+					allKnown = false
+				}
+			}
+			if !allKnown {
+				continue
+			}
+			if len(matches) == 1 && matches[0][0] == 0 && matches[0][1] == len(text) {
+				value.StringValue, value.ElementReference = "", text[matches[0][2]:matches[0][3]]
+				continue
+			}
+			var pieces []string
+			last := 0
+			for _, m := range matches {
+				if m[0] > last {
+					pieces = append(pieces, strconv.Quote(text[last:m[0]]))
+				}
+				if expression, isFormula := inline[strings.ToLower(text[m[2]:m[3]])]; isFormula {
+					pieces = append(pieces, "("+expression+")")
+				} else {
+					pieces = append(pieces, text[m[2]:m[3]])
+				}
+				last = m[1]
+			}
+			if last < len(text) {
+				pieces = append(pieces, strconv.Quote(text[last:]))
+			}
+			counter++
+			name := fmt.Sprintf("GladeMerge%d", counter)
+			raw.Formulas = append(raw.Formulas, flowFormulaXML{Name: name, DataType: "String", Expression: strings.Join(pieces, " & ")})
+			value.StringValue, value.ElementReference = "", name
 		}
 	}
 }

@@ -330,6 +330,9 @@ func (vm *VM) collectionIndexOfValue(values []Value, needle Value, result *Resul
 	return -1, nil
 }
 func (vm *VM) apexCollectionElementEquals(left, right Value, result *Result) (bool, error) {
+	if valueScaleDiffers(left, right) {
+		return false, nil
+	}
 	if collectionStringLike(left) || collectionStringLike(right) {
 		return left.Equal(right), nil
 	}

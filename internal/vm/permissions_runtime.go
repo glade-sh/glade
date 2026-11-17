@@ -2563,8 +2563,9 @@ func (vm *VM) deployedPermissionSetIDs() []string {
 // @TestSetup or around Test.startTest) is absent outside System.runAs and
 // inside the runAs block that made the assignment; a block entered afterwards
 // applies it until that block ends (permset_in_test rows, APIs 62.0 and
-// 67.0). Other users' runAs blocks, asynchronous jobs and assignments that
-// existed before the test keep the immediate grant.
+// 67.0). Other users' runAs blocks and assignments that existed before the test
+// keep the immediate grant. An asynchronous job of the user who ran the test
+// reads the grant as the code that drains it does (residuals.tsv A1-A9).
 func (vm *VM) permissionAssignmentNotYetApplied(assignment storage.Record, userID string) bool {
 	if !assignment.TestAssigned || vm == nil || vm.testContext == nil || vm.permAssignAll || userID == "" {
 		return false

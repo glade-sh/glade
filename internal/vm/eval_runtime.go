@@ -23,13 +23,13 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		vm.callPos = expr.Pos
 		value, err := vm.evalExpr(expr, result)
 		vm.callPos = previous
-		if value.Kind == ValueObject && value.datetimeWeekTerm == 0 {
+		if value.Kind == ValueObject && value.datetimeWeekTerm == 0 && value.Type == "Datetime" {
 			value = vm.stampDatetimeWeekTerm(value)
 		}
 		return value, err
 	}
 	value, err := vm.evalExpr(expr, result)
-	if value.Kind == ValueObject && value.datetimeWeekTerm == 0 {
+	if value.Kind == ValueObject && value.datetimeWeekTerm == 0 && value.Type == "Datetime" {
 		value = vm.stampDatetimeWeekTerm(value)
 	}
 	return value, err
@@ -731,10 +731,10 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 		if len(left.List) != len(right.List) {
 			return false, nil
 		}
+		if valueScaleDiffers(left, right) {
+			return false, nil
+		}
 		for i := range left.List {
-			if decimalScalesDiffer(left.List[i], right.List[i]) {
-				return false, nil
-			}
 			if listElementValuesEqual(left.List[i], right.List[i], make(map[[2]uint64]bool)) {
 				continue
 			}
@@ -930,6 +930,9 @@ func mapNumericValueIdentityDiffers(left, right Value) bool {
 // equality/hash policy as membership. Preserve raw comparison for primitive,
 // mixed-type, changed-hash and other unobserved declaration shapes.
 func (vm *VM) apexSetsEqual(left, right Value, result *Result) (bool, error) {
+	if valueScaleDiffers(left, right) {
+		return false, nil
+	}
 	if left.Equal(right) {
 		return true, nil
 	}

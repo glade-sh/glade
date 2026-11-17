@@ -869,6 +869,7 @@ func snapshotAlias(value Value) aliasSnapshot {
 // only be skipped when the store leaves the record header and backing intact.
 func valueSameHeaderAndBacking(before, after Value) bool {
 	return before.scaleZeroNumberTokenDouble == after.scaleZeroNumberTokenDouble &&
+		before.datetimeWeekTerm == after.datetimeWeekTerm &&
 		before.loadedReferenceSnapshot == after.loadedReferenceSnapshot &&
 		before.platformHTTPDTO == after.platformHTTPDTO &&
 		before.projectClass == after.projectClass &&

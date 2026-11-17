@@ -1968,7 +1968,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
 		portal := portalUserTypeRecord(user)
-		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.customObjectsOnly(objectNames) && vm.namedUserIsStandardType(user)) {
+		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.hasCustomObject(objectNames) && vm.namedUserIsStandardType(user)) {
 			continue
 		}
 		if vm.testContext == nil && !vm.namedUserIsCapturedStandard(user) {
@@ -6172,8 +6172,8 @@ func (vm *VM) namedUserIsStandardType(user storage.Record) bool {
 	return true
 }
 
-// customObjectsOnly reports a project with at least one custom object in the list.
-func (vm *VM) customObjectsOnly(objectNames []string) bool {
+// hasCustomObject reports a project with at least one custom object in the list.
+func (vm *VM) hasCustomObject(objectNames []string) bool {
 	for _, name := range objectNames {
 		if vm.customObject(name) {
 			return true

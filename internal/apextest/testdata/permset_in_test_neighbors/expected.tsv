@@ -6,4 +6,4 @@ api	method	observation
 58.0	n5_list_insert_as_user	ok
 58.0	n6_default_insert	ok
 67.0	n7_lock_all_or_none	System.DmlException
-67.0	n9_page_reference_concat	/apex/pfx
+67.0	n9_page_reference_concat	System.PageReference[/apex/pfx]

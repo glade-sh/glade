@@ -214,7 +214,9 @@ type VM struct {
 	// permRunnerUserID is the user that ran the test outside every block.
 	permAssignVisible map[storage.ID]struct{}
 	permAssignAll     bool
-	permRunnerUserID  string
+	// approvalLockCall marks a running Approval.lock call.
+	approvalLockCall bool
+	permRunnerUserID string
 	// permAssignmentsPreexisting stops flagging assignments as test-made: the
 	// project's configured assignments stand for sets the org already had.
 	permAssignmentsPreexisting bool

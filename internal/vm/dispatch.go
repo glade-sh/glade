@@ -1636,6 +1636,17 @@ platformStaticCall:
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+args[0].Text)
 		}
+		// A pre-cutover civil date reads as Julian and resolves in the user's
+		// zone as the builders do, so one civil input gives one instant.
+		if zoneID := vm.currentUserTimeZoneID(); value.Before(gregorianCutover.Add(48 * time.Hour)) {
+			if location, err := time.LoadLocation(zoneID); err == nil {
+				if civil := value.In(location); time.Date(civil.Year(), civil.Month(), civil.Day(), civil.Hour(), civil.Minute(), civil.Second(), 0, time.UTC).Before(gregorianCutover) {
+					if adjusted, err := datetimeFromCapturedLocalParts(civil.Year(), int(civil.Month()), civil.Day(), civil.Hour(), civil.Minute(), civil.Second(), civil.Nanosecond()/int(time.Millisecond), zoneID); err == nil {
+						value = adjusted
+					}
+				}
+			}
+		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "String.valueOfGmt":
 		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {

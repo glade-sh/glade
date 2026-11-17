@@ -2632,6 +2632,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			t = julianReadInstant(t)
 			if len(args) == 0 {
 				if method == "toString" {
 					return String(apexDatetimeDisplayText(t)), receiver, false, true, nil
@@ -2709,6 +2710,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			t = julianReadInstant(t)
 			if method == "date" {
 				zoneID := vm.currentUserTimeZoneID()
 				_, _, local, _, ok := resolveTimeZoneForInstant(zoneID, t)
@@ -2795,6 +2797,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			t = julianReadInstant(t)
 			if strings.HasSuffix(method, "Gmt") {
 				t = t.UTC()
 				method = strings.TrimSuffix(method, "Gmt")
@@ -2834,6 +2837,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			t = julianReadInstant(t)
 			_, _, local, label, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
 			if !ok {
 				return Null, receiver, false, true, unsupportedCallError("Datetime.formatLong timezone " + vm.currentUserTimeZoneID())

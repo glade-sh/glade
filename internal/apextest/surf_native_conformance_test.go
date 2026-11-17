@@ -167,6 +167,11 @@ func runSurfFamily(t *testing.T, family string) {
 				if strings.HasPrefix(c.id, "dth_") {
 					want, got = maskSurfNowTail(want), maskSurfNowTail(got)
 				}
+				if c.id == "dth_r2_tzdisp" {
+					// TimeZone.getDisplayName names the zone at the moment of the
+					// run (the capture ran in November), so the row masks it.
+					want, got = surfZoneDisplayNow.ReplaceAllString(want, ""), surfZoneDisplayNow.ReplaceAllString(got, "")
+				}
 				if reason, parked := parkedSurfRows[key]; parked {
 					if got == want {
 						t.Errorf("stale parked row (%s); Glade now matches", reason)
@@ -288,6 +293,8 @@ func runSurfAnonymous(t *testing.T, runner *conformanceRunner, index typesys.Ind
 // each hash that precedes a millisecond value must be Long.hashCode(ms) XOR
 // 577755. A tail that holds the identity compares as masked text.
 var surfNowTailMarkers = []string{"|S=", "|SOQL="}
+
+var surfZoneDisplayNow = regexp.MustCompile(`/\(GMT[^|]*`)
 
 var surfNumberToken = regexp.MustCompile(`-?\d+`)
 

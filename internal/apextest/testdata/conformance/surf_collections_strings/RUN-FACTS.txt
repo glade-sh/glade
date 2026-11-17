@@ -31,8 +31,10 @@ Not observed, so base behavior: the cross-type direct hash grid and the rest bel
 The cross-type direct hash grid for Double, Long and
 Integer covers 1.5d, 1 and 1 only. DecHashWrap did not compile natively and
 has no row. Currency overflow, rounding-edge overflow, Julian readers
-(yearGmt and formatGmt of a pre-cutover instant), valueOf(String) local and
-other zones' history are unobserved.
+(yearGmt and formatGmt of a pre-cutover instant) are not captured; the readers
+read the same Julian civil date the builders were given, so one civil input
+round-trips (neighbor test), and Datetime.parse and the local valueOf build
+Julian too. Other zones' history is unobserved.
 
 dth_loc_* rows (SF-1b, 2026-11-16): the locale capture, API 62.0 and 67.0, test
 and anonymous, repeats agree (test r1 and r3 compared). A Datetime keeps the
@@ -53,3 +55,20 @@ field hashes still read the locale at hash time. A language-only locale maps to
 its CLDR likely region (table in platform_sobject_members.go); only de and fr are
 captured. de, fr and fa_IR are accepted as test locale keys. The Maldives
 (MV) term is still unobserved, because dv_MV is rejected.
+
+dth_r2_* rows (second batch, 2026-11-17, API 62.0 and 67.0, two repeats, one
+scratch org per repeat, deleted and verified): DateTime and Date field range
+(insert, Database.insert and update: 1700-01-01 through 4000-12-31, rejected with
+FIELD_INTEGRITY_EXCEPTION naming the value); Decimal collection equality (List ==,
+equals, contains, indexOf, List<Object>, nested lists, a Set and a record's
+Decimal field all compare scale: 1.5 differs from 1.50, 3 from 3.0); time-zone
+display (format z and zzzz, getOffset and the label follow the zone's real
+history for LA, Adelaide and Kolkata); PageReference text (every text form is
+System.PageReference[url]; JSON.serialize throws; the unset current page is
+System.PageReference[null]; new PageReference() does not exist natively); the
+SF-1b stamping shapes across users (SOQL, JSON, record field, list, map, valueOf,
+addDays).
+Masked in the harness: TimeZone.getDisplayName names the zone at the moment of
+the run, so tzdisp drops it; record ids in update messages.
+Left as base: the hash of a whole SObject (it includes the Id), UserRecordAccess
+beyond the three sharing models below, and the Maldives term.

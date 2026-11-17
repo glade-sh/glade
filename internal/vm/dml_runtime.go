@@ -1645,10 +1645,10 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 		return nil, err
 	}
 	if err := vm.checkMixedDML(op, records); err != nil {
-		if op == "lock" && !allOrNone {
+		if op == "lock" && !allOrNone && vm.approvalLockCall && strings.EqualFold(vm.mixedDML.setupObject, "PermissionSetAssignment") {
 			// Native PsrFinishLockTest.lockAfterAssignment (permset_in_test
 			// residuals, API 62.0 and 67.0): a partial Approval.lock after a
-			// setup-object insert reports MIXED_DML_OPERATION in its LockResult
+			// PermissionSetAssignment insert reports MIXED_DML_OPERATION in its LockResult
 			// instead of throwing.
 			failures := make([]dml.Result, len(records))
 			for i, record := range records {
@@ -5435,7 +5435,7 @@ func (vm *VM) vmValueFromRecord(record storage.Record) Value {
 		value.Fields["Id"] = platformScalar("Id", string(id))
 	}
 	for field, fieldValue := range record.Fields {
-		vm.putVMRecordFieldPath(value, record.Object, field, vmValueFromStorage(fieldValue))
+		vm.putVMRecordFieldPath(value, record.Object, field, vm.stampedValueFromStorage(fieldValue))
 	}
 	for relationship, records := range record.Children {
 		children := make([]Value, 0, len(records))
@@ -5489,7 +5489,7 @@ func (vm *VM) vmValueFromOrdinaryRecord(record storage.Record) Value {
 		value.Fields["Id"] = platformScalar("Id", string(record.ID))
 	}
 	for field, fieldValue := range record.Fields {
-		vm.putVMRecordFieldPath(value, record.Object, field, vmValueFromStorage(fieldValue))
+		vm.putVMRecordFieldPath(value, record.Object, field, vm.stampedValueFromStorage(fieldValue))
 	}
 	for relationship, records := range record.Children {
 		children := make([]Value, 0, len(records))
@@ -6186,6 +6186,9 @@ func coerceSObjectFieldRuntimeValue(value Value, field storage.Field) Value {
 		return value
 	}
 	converted := vmValueFromStorage(stored)
+	if value.datetimeWeekTerm != 0 && converted.Kind == ValueObject && converted.Type == "Datetime" {
+		converted.datetimeWeekTerm = value.datetimeWeekTerm
+	}
 	if field.Type == storage.FieldTime && converted.Kind == ValueString {
 		return platformScalar("Time", converted.Text)
 	}
@@ -7598,4 +7601,16 @@ func recordsIncludeObject(records []storage.Record, object string) bool {
 		}
 	}
 	return false
+}
+
+// stampedValueFromStorage materializes a stored value, stamping a Datetime with
+// the week term of the user running now: a record built or read under one user
+// keeps that user's hash term when another user reads its field (native
+// dth_r2_stp_ab and stp_ba: recAfield).
+func (vm *VM) stampedValueFromStorage(value storage.Value) Value {
+	out := vmValueFromStorage(value)
+	if value.Kind == storage.ValueDateTime {
+		out = vm.stampDatetimeWeekTerm(out)
+	}
+	return out
 }

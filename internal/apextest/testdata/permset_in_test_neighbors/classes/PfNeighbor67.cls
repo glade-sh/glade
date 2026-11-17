@@ -24,6 +24,6 @@
     try { Approval.lock(r.Id, true); s = 'locked'; } catch (Exception e) { s = e.getTypeName(); }
     fin(s);
   }
-  // Only String.valueOf of a PageReference changed (residuals.tsv PsrVfTest): concatenation keeps the plain url.
+  // Every text form of a PageReference is System.PageReference[url] (surf_collections_strings dth_r2_pgref).
   @IsTest static void n9_page_reference_concat() { PageReference p = new PageReference('/apex/pfx'); fin('' + p); }
 }

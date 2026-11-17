@@ -17,6 +17,62 @@ func decimalScalesDiffer(left, right Value) bool {
 	return decimalTextScale(left.Text) != decimalTextScale(right.Text)
 }
 
+// valueScaleDiffers reports a scale difference between two Decimals anywhere
+// inside two otherwise equal collections: nested lists, sets, map values and the
+// Decimal fields of the records a list holds. Native dec rows (DecEq, API 62.0
+// and 67.0): List ==, equals, contains and indexOf, nested lists, a List<Object>
+// and a Set of Decimals all compare scale (1.5 versus 1.50 and 3 versus 3.0).
+func valueScaleDiffers(left, right Value) bool {
+	if left.Kind == ValueDecimal && right.Kind == ValueDecimal {
+		return decimalScalesDiffer(left, right)
+	}
+	if left.Kind != right.Kind {
+		return false
+	}
+	switch left.Kind {
+	case ValueList:
+		if len(left.List) != len(right.List) {
+			return false
+		}
+		for i := range left.List {
+			if valueScaleDiffers(left.List[i], right.List[i]) {
+				return true
+			}
+		}
+	case ValueSet:
+		for _, l := range left.Set {
+			matched, sameValue := false, false
+			for _, r := range right.Set {
+				if l.Kind == ValueDecimal && r.Kind == ValueDecimal && !isFloatBackedDecimal(l) && !isFloatBackedDecimal(r) && l.Decimal == r.Decimal {
+					sameValue = true
+					if !decimalScalesDiffer(l, r) {
+						matched = true
+					}
+				}
+			}
+			if sameValue && !matched {
+				return true
+			}
+		}
+	case ValueMap:
+		for key, l := range left.Map {
+			if r, ok := right.Map[key]; ok && valueScaleDiffers(l, r) {
+				return true
+			}
+		}
+	case ValueObject:
+		if len(left.Fields) != len(right.Fields) || len(left.Fields) == 0 {
+			return false
+		}
+		for key, l := range left.Fields {
+			if r, ok := right.Fields[key]; ok && valueScaleDiffers(l, r) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func decimalTextScale(text string) int {
 	text = strings.TrimSpace(text)
 	mantissa, exponent, hasExponent := strings.Cut(strings.ToLower(text), "e")

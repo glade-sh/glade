@@ -394,6 +394,10 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		if state.rejectUnsupportedTypes && !value.classInstance && strings.EqualFold(value.Type, "JSONParser") {
 			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Type unsupported in JSON: common.apex.json.ApexJsonParser")})
 		}
+		if state.rejectUnsupportedTypes && !value.classInstance && !value.projectClass && strings.EqualFold(value.Type, "PageReference") {
+			// Native PgRef (surf_collections_strings dth_r2_pgref, API 62.0 and 67.0).
+			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Apex Type unsupported in JSON: System.PageReference")})
+		}
 		isException := state.rejectUnsupportedTypes && vm.jsonExceptionValue(value)
 		if isException {
 			if apexversion.AtLeast(vm.jsonCallerAPIVersion(), 63) {

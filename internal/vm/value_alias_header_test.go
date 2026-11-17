@@ -39,6 +39,7 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 		"list map null key flag":     func(value *Value) { value.sobjectListNullMapKey = true },
 		"set ownership token":        func(value *Value) { value.primitiveSetState = &primitiveSetState{} },
 		"report empty dimension":     func(value *Value) { value.reportEmptyDimension = true },
+		"datetime week term":         func(value *Value) { value.datetimeWeekTerm = 18 },
 	} {
 		t.Run(name, func(t *testing.T) {
 			candidate := base

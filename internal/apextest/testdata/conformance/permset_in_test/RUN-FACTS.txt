@@ -39,3 +39,15 @@ delete of an assignment; groups; the timing value (the row masks milliseconds;
 native took 31 to 67 seconds, a measurement, not a contract).
 Glade note: the timing row runs without the strict heap walk, which costs
 minutes over its 5000-row nested loop.
+
+Second batch (2026-11-17, API 62.0 and 67.0, two repeats, one scratch org per
+repeat, deleted and verified): PsrMixedTest at 67.0 (Mx_*; the assignment count
+is the org's own baseline, two higher than at 62.0, so the harness masks it; the
+67.0 inserts fail on field access before the mixed-DML rule); async drain shapes
+A1-A9 (an assignment for the running user is hidden in a job drained outside a
+runAs block and visible in a job drained inside a block entered after it; a job
+of another user sees it); FlowShapes (a String assignment resolves {!Formula},
+{!Variable} and text around them in an autolaunched flow); UserRecordAccess on
+Private, Public Read Only and Public Read/Write custom objects for a named
+limited user (Private: no access; Read Only: read; Read/Write: edit; the user's
+own records: All level).

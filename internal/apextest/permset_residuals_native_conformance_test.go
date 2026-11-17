@@ -37,7 +37,7 @@ func TestPermissionSetResidualsNativeConformance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 1+50 || strings.Join(rows[0], ",") != "api,method,observation" {
+	if len(rows) != 1+78 || strings.Join(rows[0], ",") != "api,method,observation" {
 		t.Fatalf("incomplete native rows: %d", len(rows))
 	}
 	indexes := map[string]*residualProject{}
@@ -62,6 +62,7 @@ func TestPermissionSetResidualsNativeConformance(t *testing.T) {
 		indexes[api] = &residualProject{index: loadTestIndex(t, root)}
 	}
 	msNative := regexp.MustCompile(`ms=\d+`)
+	psaRowsNative := regexp.MustCompile(`psaRows=\d+`)
 	whitespace := strings.NewReplacer("\n", " ", "\r", " ", "\t", " ")
 	for i, row := range rows[1:] {
 		api, method, want := row[0], row[1], row[2]
@@ -85,6 +86,12 @@ func TestPermissionSetResidualsNativeConformance(t *testing.T) {
 			got := strings.TrimSpace(whitespace.Replace(strings.TrimPrefix(message, "System.AssertException: ")))
 			got = strings.TrimPrefix(got, "Assertion Failed: ")
 			got = msNative.ReplaceAllString(got, "ms=<ms>")
+			if strings.HasPrefix(class, "Mx_") {
+				// The assignment count is the scratch org's own baseline: the
+				// API 67.0 org held two more assignments for the running user.
+				got = psaRowsNative.ReplaceAllString(got, "psaRows=<n>")
+				want = psaRowsNative.ReplaceAllString(want, "psaRows=<n>")
+			}
 			if got != strings.TrimSpace(want) {
 				t.Fatalf("NATIVE %s permset_in_test/residuals.tsv:%d istest %s\nnative=%q\nglade =%q", method, line, api, want, got)
 			}

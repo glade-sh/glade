@@ -9,26 +9,39 @@ import (
 )
 
 // A DateTime field holds instants from 1700-01-01T00:00:00Z through
-// 4000-12-31T00:00:00Z. Native dth_DthField_T_i09 and T_i27-T_i29
-// (surf_collections_strings, API 62.0): an insert past either end fails with
-// FIELD_INTEGRITY_EXCEPTION naming the instant in java.util.Date text. The
-// range is the documented one; the capture holds the instants 4000-12-31
-// 23:59:59.999 (rejected), 4000-12-31 00:00:00 and 1900-01-01 (accepted), and
-// 1582-10-14 through 1582-10-15 (rejected).
+// 4000-12-31T00:00:00Z, and a Date field 1700-01-01 through 4000-12-31. Native
+// dth_r2_rngins, rngdb and rngupd (surf_collections_strings, API 62.0 and
+// 67.0): an insert, a Database.insert or an update past either end fails with
+// FIELD_INTEGRITY_EXCEPTION naming the value in java.util.Date text. The rows
+// bracket both bounds: 1699-12-31 23:59:59 and 1700-01-01 00:00:00, and
+// 4000-12-31 00:00:00 and 00:00:01.
 var (
 	dateTimeFieldMin = time.Date(1700, time.January, 1, 0, 0, 0, 0, time.UTC)
 	dateTimeFieldMax = time.Date(4000, time.December, 31, 0, 0, 0, 0, time.UTC)
 )
 
 func validateDateTimeFieldRange(fieldName string, field storage.Field, value storage.Value) error {
-	if field.Type != storage.FieldDateTime || value.Kind != storage.ValueDateTime {
+	var instant time.Time
+	switch {
+	case field.Type == storage.FieldDateTime && value.Kind == storage.ValueDateTime:
+		parsed, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(value.String))
+		if err != nil {
+			return nil
+		}
+		instant = parsed.UTC()
+	case field.Type == storage.FieldDate && value.Kind == storage.ValueDate:
+		// A Date field holds 1700-01-01 through 4000-12-31 (the whole last day).
+		parsed, err := time.Parse("2006-01-02", strings.TrimSpace(value.String))
+		if err != nil {
+			return nil
+		}
+		instant = parsed.UTC()
+		if !instant.Before(dateTimeFieldMin) && !instant.After(dateTimeFieldMax) {
+			return nil
+		}
+	default:
 		return nil
 	}
-	instant, err := time.Parse(time.RFC3339Nano, strings.TrimSpace(value.String))
-	if err != nil {
-		return nil
-	}
-	instant = instant.UTC()
 	if !instant.Before(dateTimeFieldMin) && !instant.After(dateTimeFieldMax) {
 		return nil
 	}

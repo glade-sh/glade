@@ -1156,7 +1156,9 @@ func parsePlatformDatetime(value Value) (time.Time, error) {
 func julianWallClock(year, month, day, hour, minute, second, millisecond int) time.Time {
 	wall := time.Date(year, time.Month(month), day, hour, minute, second, millisecond*int(time.Millisecond), time.UTC)
 	y, m, d := wall.Date()
-	if y > 1582 || y == 1582 && (m > time.October || m == time.October && d >= 15) {
+	if y > 1582 || y == 1582 && (m > time.October || m == time.October && d >= 15) || y < 2 {
+		// Years before 2 keep the proleptic reading: the Julian shift would
+		// leave the formattable range (Date.newInstance(0, 1, 1) must stay 0000-01-01).
 		return wall
 	}
 	// The day number of 1970-01-01 is 2440588.
@@ -1164,6 +1166,38 @@ func julianWallClock(year, month, day, hour, minute, second, millisecond int) ti
 	days := int64(jdn) - 2440588
 	clock := int64(wall.Hour())*3600000 + int64(wall.Minute())*60000 + int64(wall.Second())*1000 + int64(wall.Nanosecond()/int(time.Millisecond))
 	return time.UnixMilli(days*86400000 + clock).UTC()
+}
+
+// gregorianCutover is 1582-10-15T00:00:00Z, the first instant of the Gregorian calendar.
+var gregorianCutover = time.Date(1582, time.October, 15, 0, 0, 0, 0, time.UTC)
+
+// julianReadInstant shifts a pre-cutover instant by whole days so the proleptic
+// Gregorian fields of the result are the Julian civil fields of the original.
+// The Datetime readers (year, month, day, date, format and their Gmt forms)
+// call it, so they read back the civil date the builders (julianWallClock) were
+// given. Instants from the cutover on come back unchanged. The time of day and
+// the instant itself (getTime, hashCode, comparison) are not affected.
+func julianReadInstant(t time.Time) time.Time {
+	if !t.Before(gregorianCutover) {
+		return t
+	}
+	unix := t.UTC().Unix()
+	days := unix / 86400
+	if unix%86400 < 0 {
+		days--
+	}
+	c := int(days) + 2440588 + 32082
+	d := (4*c + 3) / 1461
+	e := c - 1461*d/4
+	m := (5*e + 2) / 153
+	day := e - (153*m+2)/5 + 1
+	month := time.Month(m + 3 - 12*(m/10))
+	year := d - 4800 + m/10
+	if year < 1 {
+		return t
+	}
+	midnight := time.Unix(days*86400, 0).UTC()
+	return t.Add(time.Date(year, month, day, 0, 0, 0, 0, time.UTC).Sub(midnight))
 }
 
 // julianDayNumber is the Julian-calendar civil date to day number conversion.
@@ -1241,14 +1275,14 @@ func datetimeValueOfLocalClock(value time.Time, zoneID string) (time.Time, error
 	// A repeated civil time resolves to the later instant, as newInstance does
 	// (surf_datetime_locale dt03 and dg01: Los Angeles, Sydney, Auckland, Adelaide).
 	if zoneID == "America/Los_Angeles" {
-		if zone, ok := supportedNamedTimeZone(zoneID); ok {
-			return zone.instantFromLocal(value.Year(), value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, true), nil
+		if _, ok := supportedNamedTimeZone(zoneID); ok {
+			return datetimeFromCapturedLocalParts(value.Year(), int(value.Month()), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, zoneID)
 		}
 	}
 	if zoneID == "Pacific/Kiritimati" {
 		return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
 	}
-	return datetimeFromLocalParts(value.Year(), int(value.Month()), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, zoneID)
+	return datetimeFromCapturedLocalParts(value.Year(), int(value.Month()), value.Day(), value.Hour(), value.Minute(), value.Second(), 0, zoneID)
 }
 
 func addMonthsClamped(value time.Time, months int) time.Time {
@@ -2082,7 +2116,13 @@ type modeledTimeZone struct {
 	// Los Angeles June 1905 is PST, Adelaide January 1970 is +09:30). Before
 	// the first recorded transition the zone keeps its standard offset.
 	historicBeforeYear int
+	// historicNames names offsets the zone held in the past that are neither its
+	// standard nor its daylight offset (native TzDisp: Kolkata 1943 is IDT, India
+	// Daylight Time, at +06:30).
+	historicNames map[time.Duration]historicZoneName
 }
+
+type historicZoneName struct{ label, display string }
 
 var supportedNamedTimeZones = map[string]modeledTimeZone{
 	// Owned API62/67/68 factory/offset/display/format snapshots, January/July2026.
@@ -2103,7 +2143,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"Europe/Paris":        {id: "Europe/Paris", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Europe/Oslo":         {id: "Europe/Oslo", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
-	"Asia/Kolkata":        {id: "Asia/Kolkata", historicBeforeYear: 2008, standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
+	"Asia/Kolkata":        {id: "Asia/Kolkata", historicBeforeYear: 2008, historicNames: map[time.Duration]historicZoneName{6*time.Hour + 30*time.Minute: {"IDT", "India Daylight Time"}, 5*time.Hour + 21*time.Minute + 10*time.Second: {"IST", "India Standard Time"}}, standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
 	// Asia/Singapore: stdlib_core_c14 String (API 62.0, 67.0) observed the +0800 offset; label and display name captured 2026-11-06 (scratch org, API 68.0 anonymous).
 	"Asia/Singapore":    {id: "Asia/Singapore", standardOffset: 8 * time.Hour, standardLabel: "SGT", standardDisplayName: "Singapore Time"},
 	"Asia/Tokyo":        {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
@@ -2113,7 +2153,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	// the ambiguous and skipped civil times. Display names were not captured, so
 	// getDisplayName and the long zone pattern stay unsupported for these three.
 	"Asia/Kathmandu":     {id: "Asia/Kathmandu", standardOffset: 5*time.Hour + 45*time.Minute, standardLabel: "NPT"},
-	"Australia/Adelaide": {id: "Australia/Adelaide", historicBeforeYear: 2008, standardOffset: 9*time.Hour + 30*time.Minute, daylightOffset: 10*time.Hour + 30*time.Minute, standardLabel: "ACST", daylightLabel: "ACDT", daylightRule: "sydney"},
+	"Australia/Adelaide": {id: "Australia/Adelaide", historicBeforeYear: 2008, standardOffset: 9*time.Hour + 30*time.Minute, daylightOffset: 10*time.Hour + 30*time.Minute, standardLabel: "ACST", daylightLabel: "ACDT", standardDisplayName: "Australian Central Standard Time (South Australia)", daylightDisplayName: "Australian Central Daylight Time (South Australia)", daylightRule: "sydney"},
 	"Pacific/Auckland":   {id: "Pacific/Auckland", standardOffset: 12 * time.Hour, daylightOffset: 13 * time.Hour, standardLabel: "NZST", daylightLabel: "NZDT", daylightRule: "auckland"},
 	"Australia/Sydney":   {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
 }
@@ -2184,6 +2224,9 @@ func (vm *VM) timeZoneDisplayName(receiver Value) (Value, error) {
 	} else if offsetValue := receiver.Fields["offsetMillis"]; offsetValue.Kind == ValueInt {
 		offset = time.Duration(offsetValue.Int) * time.Millisecond
 	}
+	// The long zzzz name of Adelaide carries a region suffix that
+	// TimeZone.getDisplayName does not (native TzDisp).
+	longName = strings.TrimSuffix(longName, " (South Australia)")
 	return String(fmt.Sprintf("(GMT%s) %s (%s)", formatTimeZoneDisplayOffset(offset), longName, idValue.Text)), nil
 }
 
@@ -2248,6 +2291,9 @@ func (zone modeledTimeZone) historicOffsetAt(instant time.Time) (time.Duration, 
 	case zone.daylightRule != "" && offset == zone.daylightOffset:
 		return offset, zone.daylightLabel, true
 	}
+	if named, ok := zone.historicNames[offset]; ok {
+		return offset, named.label, true
+	}
 	return offset, name, true
 }
 
@@ -2281,7 +2327,14 @@ func (zone modeledTimeZone) historicOffsetsNear(wall time.Time) []time.Duration 
 
 func (zone modeledTimeZone) displayNameAt(instant time.Time) (time.Duration, string) {
 	offset, _ := zone.offsetAt(instant)
-	if zone.daylightRule != "" && zone.isDaylight(instant.UTC()) && zone.daylightDisplayName != "" {
+	if named, ok := zone.historicNames[offset]; ok {
+		if _, _, history := zone.historicOffsetAt(instant); history {
+			return offset, named.display
+		}
+	}
+	// Daylight follows the offset in force, so the display name uses the same
+	// history as the offset (LA 2006-03-20 is Pacific Standard Time).
+	if zone.daylightRule != "" && offset == zone.daylightOffset && zone.daylightDisplayName != "" {
 		return offset, zone.daylightDisplayName
 	}
 	return offset, zone.standardDisplayName

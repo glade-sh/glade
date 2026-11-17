@@ -223,3 +223,11 @@ dth_loc_j_mx	istest	DthLocale.j_mx
 dth_loc_anon_es_MX	anonymous	dth_locale_value.apex	es_MX|GMT
 dth_loc_k_de	istest	DthLocale.k_de
 dth_loc_anon_de_DE	anonymous	dth_locale_value.apex	de_DE|GMT
+dth_r2_rngins	istest	RngIns.t
+dth_r2_rngdb	istest	RngDb.t
+dth_r2_rngupd	istest	RngUpd.t
+dth_r2_deceq	istest	DecEq.t
+dth_r2_tzdisp	istest	TzDisp.t
+dth_r2_stp_ab	istest	Stp_ab.t
+dth_r2_stp_ba	istest	Stp_ba.t
+dth_r2_pgref	istest	PgRef.t

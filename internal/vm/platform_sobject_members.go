@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexlang"
@@ -3445,6 +3446,19 @@ func (env hashEnv) localeCalendarTerm() int32 {
 // BR, IN, CN, KR, JP, PT (Sunday); GB, FR, DE, ES, RU (Monday, minDays 4); AU
 // (Monday, 1); AE (Saturday, 1). PT is Sunday with minDays 4, as CLDR lists it.
 func calendarWeekTerm(locale string) int32 {
+	if cached, ok := calendarWeekTerms.Load(locale); ok {
+		return cached.(int32)
+	}
+	term := calendarWeekTermUncached(locale)
+	calendarWeekTerms.Store(locale, term)
+	return term
+}
+
+// calendarWeekTerms memoizes calendarWeekTerm by locale; a Datetime stamps its
+// term on every construction, so the lookup must not allocate.
+var calendarWeekTerms sync.Map
+
+func calendarWeekTermUncached(locale string) int32 {
 	parts := strings.Split(locale, "_")
 	if len(parts) < 2 || parts[1] == "" {
 		// A language-only locale takes its CLDR likely region (native dth_loc_a_de

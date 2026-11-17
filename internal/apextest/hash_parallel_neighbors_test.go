@@ -65,6 +65,15 @@ System.debug(Datetime.newInstance(0L).addDays(1).hashCode());
 System.debug(Datetime.valueOfGmt('1970-01-01 00:00:00').hashCode());
 System.debug(Date.newInstance(1970, 1, 2).hashCode() + ' ' + Time.newInstance(0, 0, 1, 0).hashCode());`,
 			"86936795\n577755\n86400000 1000"},
+		{"pre-cutover builders and readers agree", `
+Datetime a = Datetime.newInstance(1500, 1, 1, 12, 0, 0);
+System.debug(a.day() + ' ' + a.format('yyyy-MM-dd HH:mm') + ' ' + a.date());
+Datetime g = Datetime.newInstanceGmt(1500, 1, 1, 0, 0, 0);
+System.debug(g.formatGmt('yyyy-MM-dd') + ' ' + g.dateGmt() + ' ' + (g.getTime() == Datetime.valueOfGmt('1500-01-01 00:00:00').getTime()));
+System.debug(Datetime.parse('1/1/1500, 12:00 PM').getTime() == a.getTime());
+System.debug(Datetime.valueOf('1500-01-01 12:00:00').getTime() == a.getTime());
+System.debug(Date.newInstance(0, 1, 1));`,
+			"1 1500-01-01 12:00 1500-01-01 00:00:00\n1500-01-01 1500-01-01 00:00:00 true\ntrue\ntrue\n0000-01-01 00:00:00"},
 		{"list equality neighbors", `
 System.debug(new List<Double>{1.5} == new List<Double>{1.50});
 System.debug(new List<Decimal>{1.5} == new List<Decimal>{1.5});
@@ -80,15 +89,15 @@ System.debug('insert ok');
 ok.Pct__c = 123456.789;
 update ok;
 System.debug('update past the limit is unchanged');
-Hc__c early = new Hc__c(Dt__c = Datetime.newInstanceGmt(Date.newInstance(1700, 1, 1), Time.newInstance(0, 0, 0, 0)), D__c = Date.newInstance(4001, 1, 1));
+Hc__c early = new Hc__c(Dt__c = Datetime.newInstanceGmt(Date.newInstance(1700, 1, 1), Time.newInstance(0, 0, 0, 0)), D__c = Date.newInstance(4000, 12, 31));
 insert early;
 System.debug('range edge and Date field ok');
 Hc__c later = new Hc__c(Dt__c = Datetime.newInstanceGmt(Date.newInstance(2000, 1, 1), Time.newInstance(0, 0, 0, 0)));
 insert later;
-later.Dt__c = Datetime.newInstanceGmt(Date.newInstance(4000, 12, 31), Time.newInstance(23, 59, 59, 999));
+later.Dt__c = Datetime.newInstanceGmt(Date.newInstance(4000, 12, 31), Time.newInstance(0, 0, 0, 0));
 update later;
-System.debug('datetime update is unchanged');`,
-			"insert ok\nupdate past the limit is unchanged\nrange edge and Date field ok\ndatetime update is unchanged"},
+System.debug('datetime update at the bound');`,
+			"insert ok\nupdate past the limit is unchanged\nrange edge and Date field ok\ndatetime update at the bound"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if analysis := sema.AnalyzeAnonymous(index, test.source, "67.0"); analysis.HasErrors() {

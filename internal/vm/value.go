@@ -358,9 +358,19 @@ func (v Value) writeText(w *textWriter) {
 			return
 		}
 		if strings.EqualFold(v.Type, "PageReference") {
-			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString {
+			// Native PgRef (surf_collections_strings dth_r2_pgref, API 62.0 and
+			// 67.0): every text form of a PageReference, String.valueOf,
+			// toString, concatenation, format, a list and debug, is
+			// System.PageReference[url]. getUrl() keeps the bare url.
+			// A page with no url (the implicit current page of a test) is
+			// System.PageReference[null].
+			w.WriteString("System.PageReference[")
+			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString && rawURL.Text != "" {
 				w.WriteString(rawURL.Text)
+			} else {
+				w.WriteString("null")
 			}
+			w.WriteString("]")
 			return
 		}
 		if strings.EqualFold(v.Type, "Schema.SObjectType") {

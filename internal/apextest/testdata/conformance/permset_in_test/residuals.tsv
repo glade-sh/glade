@@ -49,3 +49,31 @@ api	method	observation
 67.0	PsrVersionTest.plainVersionRead	shape=plainVersionReadAfterAssign;version=40.0;insert=ok;inside=false;ex=
 67.0	PsrVersionTest.requestVersionProbe	System.ProcedureException: Method is not supported from an unmanaged namespace
 67.0	PsrVfTest.visualforcePermission	insert=ok;setCurrentPage=ok;page=System.PageReference[/apex/psrpage];render=ex:System.VisualforceException:Methods defined as TestMethod do not support getContent call
+67.0	Mx_assignmentLast.assignmentLast	variant=assignmentLast;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=3;saveResults=n/a;ex=System.DmlException:Operation failed due to fields being inaccessible on Sobject PsrObj__c, check errors on Exception or Result!
+67.0	Mx_assignmentFirst.assignmentFirst	variant=assignmentFirst;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=3;saveResults=n/a;ex=System.DmlException:Operation failed due to fields being inaccessible on Sobject PsrObj__c, check errors on Exception or Result!
+67.0	Mx_twoAssignments.twoAssignments	variant=twoAssignments;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=3;saveResults=n/a;ex=System.DmlException:Operation failed due to fields being inaccessible on Sobject PsrObj__c, check errors on Exception or Result!
+67.0	Mx_mixedDatabaseInsertLast.mixedDatabaseInsertLast	variant=mixedDatabaseInsertLast;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=4;saveResults=err:CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Operation failed due to fields being inaccessible on Sobject PsrObj__c, check errors on Exception or Result!  fieldNames: PsrField__c|ok|;ex=
+67.0	Mx_separateAssignThenRecord.separateAssignThenRecord	ok|variant=separateAssignThenRecord;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=4;saveResults=n/a;ex=System.DmlException:Operation failed due to fields being inaccessible on Sobject PsrObj__c, check errors on Exception or Result!
+67.0	Mx_separateRecordThenAssign.separateRecordThenAssign	ok|variant=separateRecordThenAssign;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=4;saveResults=n/a;ex=System.DmlException:Operation failed due to fields being inaccessible on Sobject PsrObj__c, check errors on Exception or Result!
+62.0	Asy_A1.t	A1 q:false:false | direct=false
+67.0	Asy_A1.t	A1 q:false:false | direct=false
+62.0	Asy_A2.t	A2 q:true:false | direct=false
+67.0	Asy_A2.t	A2 q:true:false | direct=false
+62.0	Asy_A3.t	A3 q:false:false | direct=false
+67.0	Asy_A3.t	A3 q:false:false | direct=false
+62.0	Asy_A4.t	A4 q:false:false | direct=false
+67.0	Asy_A4.t	A4 q:false:false | direct=false
+62.0	Asy_A5.t	A5 q:true:true | direct=false
+67.0	Asy_A5.t	A5 q:true:true | direct=false
+62.0	Asy_A6.t	A6 q:true:true | direct=false
+67.0	Asy_A6.t	A6 q:true:true | direct=false
+62.0	Asy_A7.t	A7 f:true | direct=false
+67.0	Asy_A7.t	A7 f:true | direct=false
+62.0	Asy_A8.t	A8 f:false | direct=false
+67.0	Asy_A8.t	A8 f:false | direct=false
+62.0	Asy_A9.t	A9 q:false:false | direct=false
+67.0	Asy_A9.t	A9 q:false:false | direct=false
+62.0	FlowShapes.t	flows|Fl_exact=ok:false|Fl_prefix=ok:a false|Fl_plain=ok:abcd|Fl_var=ok:vv|Fl_ref=ok:false|after_Fl_exact=ok:false|after_Fl_prefix=ok:a false|after_Fl_plain=ok:abcd|after_Fl_var=ok:vv|after_Fl_ref=ok:false
+67.0	FlowShapes.t	flows|Fl_exact=ok:false|Fl_prefix=ok:a false|Fl_plain=ok:abcd|Fl_var=ok:vv|Fl_ref=ok:false|after_Fl_exact=ok:false|after_Fl_prefix=ok:a false|after_Fl_plain=ok:abcd|after_Fl_var=ok:vv|after_Fl_ref=ok:false
+62.0	UraProbe.t	ura|Ura_Priv__c:before=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Ro__c:before=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Rw__c:before=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Priv__c:after=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Ro__c:after=r=true,e=false,d=false,t=false,a=false,m=Read|Ura_Rw__c:after=r=true,e=true,d=false,t=false,a=false,m=Edit|Ura_Priv__c:self=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Ro__c:self=r=true,e=false,d=false,t=false,a=false,m=Read|Ura_Rw__c:self=r=true,e=true,d=false,t=false,a=false,m=Edit|own_priv=r=true,e=true,d=false,t=true,a=true,m=All|own_ro=r=true,e=true,d=false,t=true,a=true,m=All|own_rw=r=true,e=true,d=false,t=true,a=true,m=All
+67.0	UraProbe.t	ura|Ura_Priv__c:before=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Ro__c:before=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Rw__c:before=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Priv__c:after=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Ro__c:after=r=true,e=false,d=false,t=false,a=false,m=Read|Ura_Rw__c:after=r=true,e=true,d=false,t=false,a=false,m=Edit|Ura_Priv__c:self=r=false,e=false,d=false,t=false,a=false,m=None|Ura_Ro__c:self=r=true,e=false,d=false,t=false,a=false,m=Read|Ura_Rw__c:self=r=true,e=true,d=false,t=false,a=false,m=Edit|own_priv=r=true,e=true,d=false,t=true,a=true,m=All|own_ro=r=true,e=true,d=false,t=true,a=true,m=All|own_rw=r=true,e=true,d=false,t=true,a=true,m=All
