@@ -51,7 +51,12 @@ func valueScaleDiffers(left, right Value) bool {
 				if scales[r.Decimal] == nil {
 					scales[r.Decimal] = make(map[int]bool)
 				}
-				scales[r.Decimal][decimalTextScale(r.Text)] = true
+				// An empty Text matches any scale, as decimalScalesDiffer treats it.
+				if r.Text == "" {
+					scales[r.Decimal][-1] = true
+				} else {
+					scales[r.Decimal][decimalTextScale(r.Text)] = true
+				}
 			}
 		}
 		if scales == nil {
@@ -61,7 +66,10 @@ func valueScaleDiffers(left, right Value) bool {
 			if l.Kind != ValueDecimal || isFloatBackedDecimal(l) {
 				continue
 			}
-			if bucket, ok := scales[l.Decimal]; ok && !bucket[decimalTextScale(l.Text)] {
+			if l.Text == "" {
+				continue
+			}
+			if bucket, ok := scales[l.Decimal]; ok && !bucket[-1] && !bucket[decimalTextScale(l.Text)] {
 				return true
 			}
 		}
