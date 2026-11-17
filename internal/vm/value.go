@@ -1107,6 +1107,27 @@ func sObjectFieldValueKey(value Value) (string, bool) {
 // the result is the scan's.
 func setMembersContained(left, right []Value) bool {
 	keyer := newSetEqualityKeyer(left, right)
+	// Key the left side first: when no left element has a key (Sets of Ids,
+	// Datetimes, user objects), the indexes cannot help and are not built.
+	leftKeys := make([]string, len(left))
+	leftKeyed := make([]bool, len(left))
+	anyKeyed, refObjects := false, false
+	for i, value := range left {
+		if key, ok := keyer.groupKey(value); ok {
+			leftKeys[i], leftKeyed[i], anyKeyed = key, true, true
+			if value.Kind == ValueObject && value.Ref != 0 {
+				refObjects = true
+			}
+		}
+	}
+	if !anyKeyed {
+		for _, value := range left {
+			if !containsValue(right, value) {
+				return false
+			}
+		}
+		return true
+	}
 	buckets := make(map[string][]int, len(right))
 	var unkeyed []int
 	var byRef map[uint64][]int
@@ -1116,23 +1137,22 @@ func setMembersContained(left, right []Value) bool {
 		} else {
 			unkeyed = append(unkeyed, i)
 		}
-		if value.Kind == ValueObject && value.Ref != 0 {
+		if refObjects && value.Kind == ValueObject && value.Ref != 0 {
 			if byRef == nil {
 				byRef = make(map[uint64][]int)
 			}
 			byRef[value.Ref] = append(byRef[value.Ref], i)
 		}
 	}
-	for _, value := range left {
-		key, ok := keyer.groupKey(value)
-		if !ok {
+	for li, value := range left {
+		if !leftKeyed[li] {
 			if !containsValue(right, value) {
 				return false
 			}
 			continue
 		}
 		found := false
-		for _, i := range buckets[key] {
+		for _, i := range buckets[leftKeys[li]] {
 			if right[i].Equal(value) {
 				found = true
 				break
