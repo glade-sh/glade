@@ -213,6 +213,7 @@ func (e *Engine) ReleaseSummaryHold() {
 		}
 	}
 	e.summaryRendered = nil
+	e.summaryRenderedOrder = nil
 	e.summaryHold = nil
 	e.summaryHoldRelations = nil
 	e.summaryHoldSuspended = false
@@ -1250,7 +1251,11 @@ func (e *Engine) OverlayHeldSummary(update *SummaryUpdate) {
 		if e.summaryRendered == nil {
 			e.summaryRendered = make(map[string]storage.Record)
 		}
-		e.summaryRendered[strings.ToLower(update.Object)+"\x00"+strings.ToLower(string(update.After.ID))] = update.After.Clone()
+		renderedKey := strings.ToLower(update.Object) + "\x00" + strings.ToLower(string(update.After.ID))
+		if _, seen := e.summaryRendered[renderedKey]; !seen {
+			e.summaryRenderedOrder = append(e.summaryRenderedOrder, renderedKey)
+		}
+		e.summaryRendered[renderedKey] = update.After.Clone()
 	}
 }
 
@@ -1262,7 +1267,9 @@ func (e *Engine) RequeueRenderedSummaryUpdates(records []storage.Record) {
 		return
 	}
 	scope := e.summaryParentKeys(records)
-	for key, rendered := range e.summaryRendered {
+	// Refire in the order the insert pass fired, not in map order.
+	for _, key := range e.summaryRenderedOrder {
+		rendered := e.summaryRendered[key]
 		if !scope[key] || !e.heldSummaryDiffersForParent(rendered.Object, rendered.ID) {
 			continue
 		}

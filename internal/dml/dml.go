@@ -119,6 +119,7 @@ type Engine struct {
 	summaryHoldSuspended      bool
 	summaryTakeScope          map[string]bool
 	summaryRendered           map[string]storage.Record
+	summaryRenderedOrder      []string
 	automationRoll            map[string]bool
 	uniqueBatch               *uniqueBatchContext
 	activityRefresh           *activityRefreshBatch
