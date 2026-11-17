@@ -147,6 +147,12 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				value.nativeListMembership = args[0].nativeListMembership
 			}
 			v, err := vm.coerceAssignable(typeName, value)
+			// A List built from a field map's key set remembers where the names
+			// came from, so a Set built from it renders like the key set
+			// (review_round9 ks_list_set). Iteration keeps the platform order.
+			if err == nil && args[0].describeKeySetText {
+				v.describeKeySetText = true
+			}
 			vm.markCollectionRefsEscaped(v)
 			vm.rememberLocalOnlyCollection(v)
 			return v, true, err
@@ -164,7 +170,7 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 			// A Set built from a field map's key set renders like it
 			// (review_round8 ks_copy); only the text order carries over, and
 			// the copy stays writable.
-			if args[0].Kind == ValueSet && args[0].describeKeySetText && err == nil {
+			if args[0].describeKeySetText && err == nil {
 				v.describeKeySetText = true
 			}
 			vm.markCollectionRefsEscaped(v)

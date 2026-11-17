@@ -7,7 +7,7 @@ import (
 
 // The field map key set iterates in platform order and renders its text
 // alphabetically; the order flag is a field of Value, so it travels with copies
-// of the set and never reaches a set built from it.
+// of the set and to sets built from it.
 func TestDescribeKeySetTextOrderFlag(t *testing.T) {
 	program, err := CompileAnonymous(`
 Set<String> keys = Schema.SObjectType.Account.fields.getMap().keySet();
@@ -24,7 +24,14 @@ System.assert(('' + copy).startsWith(expected), 'assigned copy: ' + copy);
 System.assert(('' + casted).startsWith(expected), 'cast copy: ' + casted);
 System.assertEquals(platform, new List<String>(casted), 'cast iteration keeps the platform order');
 Set<String> built = new Set<String>(platform);
-System.assert(('' + built).startsWith('{' + platform[0] + ', ' + platform[1]), 'a set built from the list keeps its own text order');
+System.assert(('' + built).startsWith(expected), 'review_round9 ks_list_set: a Set built from the key set names renders alphabetically: ' + built);
+System.assertEquals(platform[0], new List<String>(built)[0], 'iteration keeps the list order');
+Set<String> filled = new Set<String>(); filled.addAll(keys);
+System.assert(('' + filled).startsWith(expected), 'review_round9 ks_u_addall: ' + filled);
+Set<String> cloned = keys.clone(); cloned.add('aaa_added'); cloned.addAll(new Set<String>{'zzz_added'});
+System.assert(cloned.contains('aaa_added') && cloned.contains('zzz_added'), 'review_round9 ks_clone_add: a clone is writable');
+Set<String> plainFirst = new Set<String>{'zeta', 'alpha'};
+System.assert(('' + plainFirst).startsWith('{zeta'), 'an ordinary Set keeps its own order');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -58,5 +65,25 @@ try { keys.add('x'); System.assert(false, 'add must fail'); } catch (Exception e
 	_, err = machine.Execute(program)
 	if err == nil || !strings.Contains(err.Error(), "Collection is read-only") {
 		t.Fatalf("add on the key set: %v", err)
+	}
+}
+
+// NATIVE review_round9 ks_plain_map_add, 62.0 and 67.0: a plain Map's key set
+// refuses add with the same FinalException, and a clone of it is writable.
+func TestPlainMapKeySetIsReadOnly(t *testing.T) {
+	machine := New(nil)
+	program, err := CompileAnonymous(`
+Map<String,Integer> m = new Map<String,Integer>{'a' => 1};
+Set<String> copy = m.keySet().clone(); copy.add('b');
+System.assertEquals(2, copy.size());
+System.assertEquals(1, m.size());
+m.keySet().add('c');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "Collection is read-only") {
+		t.Fatalf("add on a Map key set: %v", err)
 	}
 }

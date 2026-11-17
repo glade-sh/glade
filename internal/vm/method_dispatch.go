@@ -3416,6 +3416,11 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 				changed = true
 			}
 		}
+		// Names taken from a field map's key set bring its text order along
+		// (review_round9 ks_u_addall).
+		if changed && args[0].describeKeySetText && !receiver.describeKeySetText {
+			receiver.describeKeySetText = true
+		}
 		if changed {
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
@@ -3602,6 +3607,8 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		cloned.setInsertionHashes = cloneSetInsertionHashes(receiver)
 		cloned.mapKeySetSource = nil
 		cloned.mapKeySetHashes = nil
+		// A clone is a copy: only the field map's own key set is read-only.
+		cloned.describeKeySetReadOnly = false
 		bindPrimitiveSetCloneState(receiver, &cloned)
 		return cloned, true, nil
 	case "deepClone":
@@ -3613,7 +3620,9 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 				return Null, true, fmt.Errorf("Set.deepClone preserve options expect Boolean arguments")
 			}
 		}
-		return cloneValue(receiver), true, nil
+		deep := cloneValue(receiver)
+		deep.describeKeySetReadOnly = false
+		return deep, true, nil
 	case "iterator":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Set.iterator expects 0 arguments")
@@ -3972,9 +3981,18 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if strings.HasPrefix(receiver.Runtime, "sobject-populated-fields:") {
 			out.Runtime = receiver.Runtime + ":keyset"
 		}
-		if keyType, _, ok := mapTypeArgs(receiver.Type); ok {
+		if keyType, valueType, ok := mapTypeArgs(receiver.Type); ok {
 			out.Type = "Set<" + keyType + ">"
+			// The key set of a copied or cloned field map renders like the
+			// original's (review_round9 ks_map_copy, ks_map_clone); a copy's
+			// key set is not read-only for lack of a row.
+			if strings.EqualFold(strings.TrimSpace(valueType), "Schema.SObjectField") || strings.EqualFold(strings.TrimSpace(valueType), "SObjectField") {
+				out.describeKeySetText = true
+			}
 		}
+		// A Map's key set refuses add and addAll (review_round9 ks_plain_map_add:
+		// the uncatchable FinalException at 62.0 and 67.0).
+		out.describeKeySetReadOnly = true
 		vm.bindMapKeySet(receiver, &out)
 		return out, true, nil
 	case "values":

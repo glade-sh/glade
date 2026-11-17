@@ -243,6 +243,11 @@ func (vm *VM) sObjectFieldMapCanonicalKeySet(value Value) (Value, bool) {
 		}
 		out.Set = append(out.Set, String(strings.ToLower(fieldName)))
 	}
+	// Writes through the key set reach the field map it came from
+	// (review_round9 ks_remove_effect, ks_clear_effect).
+	if vm != nil {
+		vm.bindMapKeySet(value, &out)
+	}
 	return out, true
 }
 func sObjectFieldMapCanonicalValues(value Value) (Value, bool) {
