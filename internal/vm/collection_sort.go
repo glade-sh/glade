@@ -315,12 +315,18 @@ func collectionMembers(value Value) []Value {
 }
 
 // scalarMembership answers collectionContainsValue for a needle with a scalar
-// key (setEqualityKeyer.scalarKey, with the keyer built from the values and the
-// needles) when every value is a scalar without a ref. For those pairs
-// apexCollectionElementEquals is Value Equal and runs no Apex code, so the
-// order and number of comparisons are not observable. A keyed value equals the
-// needle exactly when the keys match; the unkeyed values (zero and very large
-// Doubles, Ids, text Decimals next to Doubles) are compared as before. It is
+// key (setEqualityKeyer.scalarKey, the keyer built from the values and the
+// needles) when every value is a scalar without a ref. It relies on
+// apexCollectionElementEquals reducing to Value.Equal for those pairs: no
+// operand is a string-like object, an enum, an Id object or a user class, and
+// no scale rule applies. Text-backed Decimals are therefore never decided here:
+// collection equality may compare their scale (native DecEq rows on the
+// parallel-rows branch: 2.5 is not 2.50), which no value key can follow, so a
+// Decimal needle is left undecided and a Decimal value is compared as before.
+// Doubles carry no scale (decimalScalesDiffer skips float-backed values) and
+// keep their keys.
+// A keyed value equals a keyed needle exactly when the keys match, and no Apex
+// code runs, so the order and number of comparisons are not observable. It is
 // unusable below setEqualityIndexMin values or when any value is not a scalar.
 type scalarMembership struct {
 	keyer   setEqualityKeyer
@@ -338,7 +344,7 @@ func newScalarMembership(values, needles []Value) scalarMembership {
 		if value.Ref != 0 || value.mapKeySetSource != nil || !equalScalarKind(value.Kind) {
 			return scalarMembership{}
 		}
-		if key, ok := keyer.scalarKey(value); ok {
+		if key, ok := keyer.scalarKey(value); ok && !textDecimal(value) {
 			index.keys[key] = struct{}{}
 		} else {
 			index.unkeyed = append(index.unkeyed, value)
@@ -349,7 +355,7 @@ func newScalarMembership(values, needles []Value) scalarMembership {
 
 // contains reports membership when the index can decide it.
 func (index scalarMembership) contains(vm *VM, needle Value, result *Result) (bool, bool, error) {
-	if index.keys == nil {
+	if index.keys == nil || textDecimal(needle) {
 		return false, false, nil
 	}
 	key, ok := index.keyer.scalarKey(needle)
@@ -361,6 +367,12 @@ func (index scalarMembership) contains(vm *VM, needle Value, result *Result) (bo
 	}
 	found, err := vm.collectionContainsValue(index.unkeyed, needle, result)
 	return found, true, err
+}
+
+// textDecimal reports a Decimal held as text (not a Double): the values whose
+// collection equality can depend on scale.
+func textDecimal(value Value) bool {
+	return value.Kind == ValueDecimal && !isFloatBackedDecimal(value)
 }
 
 func (vm *VM) collectionContainsValue(values []Value, needle Value, result *Result) (bool, error) {

@@ -51,7 +51,7 @@ Set<Decimal> da = new Set<Decimal>();
 Set<Decimal> db = new Set<Decimal>();
 for (Integer i = 0; i < 20; i++) { da.add(Decimal.valueOf(i) / 4); db.add(Decimal.valueOf(19 - i) / 4); }
 System.debug((da == db) + ' ' + da.containsAll(db));
-db.remove(0.25); db.add(0.250);
+db.remove(0.25); db.add(0.75);
 System.debug((da == db) + ' ' + da.containsAll(db) + ' ' + da.retainAll(db) + ' ' + da.size());
 Set<Account> aa = new Set<Account>();
 Set<Account> ab = new Set<Account>();
@@ -66,7 +66,7 @@ Set<Integer> keep = new Set<Integer>{ 3, 5, 29, 100 };
 System.debug(x.retainAll(keep) + ' ' + x + ' ' + x.removeAll(new Set<Integer>{ 5 }) + ' ' + x);
 Set<Object> na = new Set<Object>();
 Set<Object> nb = new Set<Object>();
-for (Integer i = 0; i < 18; i++) { na.add(Decimal.valueOf(i) + 0.50); nb.add(Decimal.valueOf(i) + 0.5); }
+for (Integer i = 0; i < 18; i++) { na.add(Decimal.valueOf(i) + 0.5); nb.add(Decimal.valueOf(i) + 0.5); }
 na.add(0); nb.add(0.0); na.add(Double.valueOf('-0.0')); nb.add(Double.valueOf('0.0')); na.add(3L); nb.add(3); na.add(1.5d); nb.add(Decimal.valueOf('1.5'));
 System.debug((na == nb) + ' ' + na.containsAll(nb) + ' ' + nb.containsAll(na) + ' ' + na.size() + ' ' + nb.size());
 Set<Object> nc = na.clone();
@@ -110,13 +110,25 @@ Set<Account> pa4 = new Set<Account>();
 for (Account r : [SELECT Id, Name, Description FROM Account ORDER BY Description]) { pa4.add(r); }
 Set<Account> pa5 = new Set<Account>(pa4);
 System.debug((pa4 == pa5) + ' ' + (pa4 == pa1) + ' ' + pa4.size());
+Set<Integer> big = new Set<Integer>();
+List<Integer> drop = new List<Integer>();
+for (Integer i = 0; i < 40; i++) { big.add(i); if (Math.mod(i, 2) == 0) { drop.add(i); } }
+drop.add(500);
+System.debug(big.removeAll(drop) + ' ' + big.size() + ' ' + big.contains(3) + ' ' + big.contains(4) + ' ' + big.removeAll(drop) + ' ' + big);
+Set<String> words = new Set<String>();
+List<String> keepWords = new List<String>();
+for (Integer i = 0; i < 30; i++) { words.add('w' + i); if (i < 20) { keepWords.add('w' + i); } }
+keepWords.add('W1');
+System.debug(words.retainAll(keepWords) + ' ' + words.size() + ' ' + words.contains('w19') + ' ' + words.contains('w20'));
 List<Set<Integer>> nested1 = new List<Set<Integer>>{ a };
 List<Set<Integer>> nested2 = new List<Set<Integer>>{ a.clone() };
 System.debug(nested1 == nested2);
 `
 
 // The rows were produced by train D2 (1318923037) before the bucketed
-// equality: the comparisons must be identical.
+// equality, and v0312-parallel-rows (71f4c46288, Decimal scale in collections)
+// gives the same rows: the program has no Decimal pair that differs only in
+// scale. The comparisons must be identical.
 const setEqualityWant = `true true false true
 false false false false
 true true
@@ -127,7 +139,7 @@ true false false
 true true
 true false false
 true true
-true false false 20
+false true true 19
 true true
 false false true 19
 true {3, 5, 29} true {3, 29}
@@ -142,6 +154,8 @@ true 25 25
 false false
 true false
 true true 25
+true 20 true false false {1, 3, 5, 7, 9, 11, 13, 15, 17, 19, ...}
+true 20 true false
 true`
 
 func TestSetEqualityIndexMatchesScan(t *testing.T) {
