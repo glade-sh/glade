@@ -86,8 +86,32 @@ func (vm *VM) DrainTestSetupAsync() error {
 	if vm == nil || vm.testContext == nil || !vm.HasPendingAsyncWork() {
 		return nil
 	}
+	// The end of setup drains like stopTest: a Queueable that chains another
+	// fails with the stopTest AsyncException (native SetupChainTest rows).
+	previousStopped := vm.testContext.Stopped
+	vm.testContext.Stopped = true
+	var futures []storage.ID
+	for _, job := range vm.testContext.AsyncJobs {
+		if job.Kind == "Future" {
+			futures = append(futures, storage.ID(job.ID))
+		}
+	}
 	vm.prepareTestStopAsyncJobs()
 	err := vm.drainTestWork(&Result{})
+	vm.testContext.Stopped = previousStopped
+	// A test method sees no AsyncApexJob row for an @future call its setup
+	// queued, while Queueable and batch rows stay (native SetupFutureTest
+	// and SetupQTest rows, test_runner_coverage_carry).
+	if vm.Org != nil && len(futures) > 0 {
+		object := vm.Org.Objects["AsyncApexJob"]
+		for _, id := range futures {
+			if record, ok := object.Records[id]; ok {
+				vm.recordIsolationJournalMutation("AsyncApexJob", id, record, true)
+				object.DeleteRecord(id)
+			}
+		}
+		vm.Org.Objects["AsyncApexJob"] = object
+	}
 	var thrown *apexThrowError
 	if errors.As(err, &thrown) {
 		// A job's uncaught exception fails setup as an Apex exception, the way

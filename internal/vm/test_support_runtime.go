@@ -19,6 +19,12 @@ func (vm *VM) RestoreTestSetupLimits(used Limits) {
 	vm.limits.QueryRows = used.QueryRows
 	vm.limits.DMLStatements = used.DMLStatements
 	vm.limits.DMLRows = used.DMLRows
+	// Native rows (test_runner_coverage_setup_async, API 62.0 and 67.0): a
+	// test method after a setup that queued async work reads the setup's
+	// Queueable, future and async counts.
+	vm.limits.QueueableJobs = used.QueueableJobs
+	vm.limits.FutureCalls = used.FutureCalls
+	vm.limits.AsyncJobs = used.AsyncJobs
 }
 
 func (vm *VM) testSetMock(args []Value) (Value, error) {
