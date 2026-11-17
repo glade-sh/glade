@@ -58,6 +58,8 @@ No changes yet.
 
 - **Custom duplicate matching.** A custom matching rule reads its candidate side once per scan and scores an item only while the filter can still change, so bulk inserts under fuzzy rules run faster. Match outcomes are unchanged.
 
+- **Growing Sets and static collections.** Adding to a Set of numbers, SObjects or other non-String, non-Id elements no longer copies the whole Set on each add, and a static List or Set of scalars no longer rescans every element after each change. 6,000 adds to a Set<Integer> took about 2.3 s and now take about 50 ms; a test whose helper grows a static Set and List once per call, 6,000 times, used 79% fewer instructions. Results are unchanged.
+
 - **Strict-mode heap checks.** With `--limit-mode strict`, `Math.mod`, `abs`, `min`, `max`, `floor`, `ceil`, `round` and `signum`, `size()` and `isEmpty()` on a local collection, and `String` length and blank checks no longer force a full heap walk. Heap counts and limit errors are unchanged.
 
 - **Default Name LIKE order and Decimal division.** The default-order Account `Name LIKE` query reads each value once and skips the extra record copy, and a terminating Decimal quotient finds its scale from the divisor's factors. Results are unchanged.

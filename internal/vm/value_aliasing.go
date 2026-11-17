@@ -2491,16 +2491,27 @@ func scalarOnlyCollectionChildren(value Value) (int, bool) {
 		return 0, false
 	}
 	for i := range children {
-		child := &children[i]
-		if child.Ref != 0 {
-			return 0, false
-		}
-		switch child.Kind {
-		case ValueList, ValueSet, ValueMap, ValueObject:
+		if !staticRefWalkSkipsValue(&children[i]) {
 			return 0, false
 		}
 	}
 	return len(children), true
+}
+
+// staticRefWalkDescends reports the kinds collectAdditionalStaticFieldValueRefsWithVisits
+// recurses into.
+func staticRefWalkDescends(kind ValueKind) bool {
+	switch kind {
+	case ValueObject, ValueMap, ValueList, ValueSet:
+		return true
+	}
+	return false
+}
+
+// staticRefWalkSkipsValue reports a value the static ref walk visits without
+// effect: it has no ref to index and is not a kind the walk recurses into.
+func staticRefWalkSkipsValue(value *Value) bool {
+	return value.Ref == 0 && !staticRefWalkDescends(value.Kind)
 }
 
 func (vm *VM) collectStaticFieldValueRefsInField(value Value, location staticFieldRef) {
@@ -3171,6 +3182,10 @@ func collectAdditionalStaticFieldValueRefsWithVisits(value Value, index *staticR
 		} else if !scanKnownChildren {
 			return
 		}
+	}
+	// scalarOnlyCollectionChildren relies on this: only these kinds are walked.
+	if !staticRefWalkDescends(value.Kind) {
+		return
 	}
 	switch value.Kind {
 	case ValueObject:

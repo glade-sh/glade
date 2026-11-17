@@ -31,12 +31,9 @@ func clonePrimitiveSetState(state *primitiveSetState) *primitiveSetState {
 	}
 	cloned := *state
 	cloned.positions = maps.Clone(state.positions)
-	if state.trackedKeys != nil {
-		cloned.trackedKeys = make(map[string][]int, len(state.trackedKeys))
-		for key, indices := range state.trackedKeys {
-			cloned.trackedKeys[key] = append([]int(nil), indices...)
-		}
-	}
+	// A clone gets new slices, so a copied tracked-key index would never match
+	// them; it rebuilds on first use instead.
+	cloned.trackedKeys, cloned.untracked, cloned.trackedReady = nil, 0, false
 	// Copying the token and map also isolates nil/empty Sets, whose matching
 	// headers alone cannot establish exclusive ownership. Keep absent/stale
 	// headers intact to preserve structural alias snapshots.

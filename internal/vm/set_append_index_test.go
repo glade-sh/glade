@@ -88,3 +88,58 @@ func TestSetAppendIndexMatchesScan(t *testing.T) {
 		t.Fatalf("debug lines:\n%s\nwant:\n%s", got, setAppendIndexWant)
 	}
 }
+
+// A shallow holder of a Set (a stale local, the static snapshot an async drain
+// restores) shares the backing with the live Set until the live Set grows past
+// its capacity, exactly as a List holder does. An in-place element refresh on
+// the live collection (alias propagation writes value.Set[i] / value.List[i])
+// is then visible through the holder, and a restore of the holder carries the
+// refreshed element. 013d8af346 copied a non-String, non-Id Set on every add, so
+// such a holder kept the element it had. Natively the Set holds the object
+// itself, and a mutation of it is visible through every holder (surf_collections
+// cs03, APIs 62.0 and 67.0: "setIn=true|setAfter=false|setSize=1"), so the shared
+// view is the native-consistent one; no row restores a snapshot directly.
+func TestSetSnapshotSharesInPlaceRefreshLikeList(t *testing.T) {
+	account := func(name string) Value {
+		value := Object("Account")
+		value.Fields["Name"] = String(name)
+		return value
+	}
+	a, b, c := account("a"), account("b"), account("c")
+	live := Set()
+	live.Type = "Set<Account>"
+	live.Set = make([]Value, 0, 8)
+	live.setInsertionHashes = make([]setInsertionHash, 0, 8)
+	live.primitiveSetState = &primitiveSetState{items: live.Set, hashes: live.setInsertionHashes}
+	list := List()
+	list.List = make([]Value, 0, 8)
+	for _, item := range []Value{a, b} {
+		live = appendSetEntry(live, item, setInsertionHash{key: mapKey(item), tracked: true})
+		list.List = append(list.List, item)
+	}
+	setHolder, listHolder := live, list
+	live = appendSetEntry(live, c, setInsertionHash{key: mapKey(c), tracked: true})
+	list.List = append(list.List, c)
+
+	refreshed := a
+	refreshed.Fields = map[string]Value{"Name": String("refreshed")}
+	live.Set[0] = refreshed
+	list.List[0] = refreshed
+	if got := setHolder.Set[0].Fields["Name"].Text; got != "refreshed" {
+		t.Fatalf("Set holder element 0 = %q, want the refreshed element as for a List", got)
+	}
+	if got := listHolder.List[0].Fields["Name"].Text; got != "refreshed" {
+		t.Fatalf("List holder element 0 = %q, want refreshed", got)
+	}
+	if len(setHolder.Set) != 2 || len(listHolder.List) != 2 {
+		t.Fatal("a holder must keep its own length")
+	}
+
+	// The holder no longer owns the backing: its own add copies, so the live
+	// Set keeps its third element.
+	d := account("d")
+	setHolder = appendSetEntry(setHolder, d, setInsertionHash{key: mapKey(d), tracked: true})
+	if live.Set[2].Fields["Name"].Text != "c" || setHolder.Set[2].Fields["Name"].Text != "d" || &setHolder.Set[0] == &live.Set[0] {
+		t.Fatal("a stale holder's add wrote into the live Set's backing")
+	}
+}

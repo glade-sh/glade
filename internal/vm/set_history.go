@@ -214,6 +214,10 @@ func appendSetEntry(set Value, value Value, hash setInsertionHash) Value {
 	// The copy has the final length; later owned appends grow by append. The
 	// state object moves to the new slices, so the previous view stops owning
 	// them: it keeps its contents and copies before its own next append.
+	// Unlike the String/Id path, the copy gets no spare capacity, so the next
+	// owned append copies once more. That keeps a diverging view at exactly
+	// two final-length buffers (TestSetAppendEntryAllocatesOneBufferPerSlice);
+	// a run of owned appends is still amortized by append's own growth.
 	state := set.primitiveSetState
 	if !state.matches(set) {
 		values := make([]Value, len(set.Set), len(set.Set)+1)
