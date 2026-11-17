@@ -53,6 +53,6 @@ limited user (Private: no access; Read Only: read; Read/Write: edit; the user's
 own records: All level).
 
 Raw for the second batch rows (Mx_* at 67.0, Asy_A1-A9, FlowShapes, UraProbe):
-glade-family-cache/advisor/parallel/batch2-20261117 (README.txt names the run directories). Note: the
+the campaign evidence directory parallel/batch2-20261117 (README.txt names the run directories). Note: the
 Mx_* rows at 67.0 all fail on field access before the mixed-DML rule, so the mixed-DML behavior at 67.0
 is unobserved; the 62.0-only gate on the partial list insert message stands.

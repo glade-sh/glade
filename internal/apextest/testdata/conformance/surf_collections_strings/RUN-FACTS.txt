@@ -73,7 +73,7 @@ the run, so tzdisp drops it; record ids in update messages.
 Left as base: the hash of a whole SObject (it includes the Id), UserRecordAccess
 beyond the three sharing models below, and the Maldives term.
 
-Raw for the dth_r2_* rows: glade-family-cache/advisor/parallel/batch2-20261117 (README.txt names the run
+Raw for the dth_r2_* rows: the campaign evidence directory parallel/batch2-20261117 (README.txt names the run
 directory of each class). The dth_r3_* rows come from the same directory: cap5_r1 and cap5_r2
 (CalShapes, CalArith, CalDate, pgctor, pgctor_ok) and cap6_r1 and cap6_r2 (CalLocal2, CalParse).
 
