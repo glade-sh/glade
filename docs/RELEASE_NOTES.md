@@ -52,11 +52,15 @@ No changes yet.
 
 - **Same-named test classes from two package directories.** Each runs in its own group with its own custom metadata and only its own `@TestSetup`; before, the second class used the first class's org and ran both setups.
 
+- **Apex regular expressions follow Java.** `Pattern` and `Matcher` validate patterns with Java's syntax rules and error text, read numeric escapes, `\p{...}` property names, `\N{name}` (Unicode 15.0 names), `(?x)` comments and whitespace, extended-flag classes, Java case folding, line terminators and the ASCII word boundary as Java does, and report `hitEnd` and stack overflow like the platform. Replacement strings and null arguments follow Java. Captured native rows at API 62.0 and 67.0 back each rule.
+
 ### Performance
 
 - **Custom duplicate matching.** A custom matching rule reads its candidate side once per scan and scores an item only while the filter can still change, so bulk inserts under fuzzy rules run faster. Match outcomes are unchanged.
 
 - **Strict-mode heap checks.** With `--limit-mode strict`, `Math.mod`, `abs`, `min`, `max`, `floor`, `ceil`, `round` and `signum`, `size()` and `isEmpty()` on a local collection, and `String` length and blank checks no longer force a full heap walk. Heap counts and limit errors are unchanged.
+
+- **Default Name LIKE order and Decimal division.** The default-order Account `Name LIKE` query reads each value once and skips the extra record copy, and a terminating Decimal quotient finds its scale from the divisor's factors. Results are unchanged.
 
 ## v0.3.11
 
