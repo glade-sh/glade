@@ -4657,12 +4657,14 @@ func (vm *VM) refreshCallerEscapedCollectionAliases(caller map[string]Value, sin
 				continue
 			}
 		}
-		if !collectionTypeMayHoldCollections(local.Type) {
+		// A local whose declared element type cannot hold a collection has
+		// nothing to refresh; the answer is memoized per type text. Otherwise a
+		// nested slot can only be stale if a collection inside this local was
+		// mutated during the call, which the cached receiver graph answers
+		// without visiting the elements again.
+		if !collectionTypeMayHoldCollectionsCached(local.Type) {
 			continue
 		}
-		// A nested slot can only be stale if a collection inside this local was
-		// mutated during the call; the cached receiver graph answers that
-		// without visiting the elements again.
 		if local.Ref != 0 && vm.nestedCollectionsUnchangedSince(local, since, nil) {
 			continue
 		}
@@ -4740,4 +4742,15 @@ func collectionTypeMayHoldCollections(typeName string) bool {
 		return true
 	}
 	return strings.Contains(element, "<") || strings.HasPrefix(element, "list") || strings.HasPrefix(element, "set") || strings.HasPrefix(element, "map") || strings.HasPrefix(element, "iterable")
+}
+
+var collectionTypeMayHoldCache sync.Map // declared type text -> bool
+
+func collectionTypeMayHoldCollectionsCached(typeName string) bool {
+	if cached, ok := collectionTypeMayHoldCache.Load(typeName); ok {
+		return cached.(bool)
+	}
+	result := collectionTypeMayHoldCollections(typeName)
+	collectionTypeMayHoldCache.Store(typeName, result)
+	return result
 }
