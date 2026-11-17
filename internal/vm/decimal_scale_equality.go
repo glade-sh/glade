@@ -40,17 +40,28 @@ func valueScaleDiffers(left, right Value) bool {
 			}
 		}
 	case ValueSet:
-		for _, l := range left.Set {
-			matched, sameValue := false, false
-			for _, r := range right.Set {
-				if l.Kind == ValueDecimal && r.Kind == ValueDecimal && !isFloatBackedDecimal(l) && !isFloatBackedDecimal(r) && l.Decimal == r.Decimal {
-					sameValue = true
-					if !decimalScalesDiffer(l, r) {
-						matched = true
-					}
+		// O(n): bucket the right side's Decimals by value and keep their scales; a
+		// Set without a Decimal (Integer, String, Id ...) answers at once.
+		var scales map[float64]map[int]bool
+		for _, r := range right.Set {
+			if r.Kind == ValueDecimal && !isFloatBackedDecimal(r) {
+				if scales == nil {
+					scales = make(map[float64]map[int]bool)
 				}
+				if scales[r.Decimal] == nil {
+					scales[r.Decimal] = make(map[int]bool)
+				}
+				scales[r.Decimal][decimalTextScale(r.Text)] = true
 			}
-			if sameValue && !matched {
+		}
+		if scales == nil {
+			return false
+		}
+		for _, l := range left.Set {
+			if l.Kind != ValueDecimal || isFloatBackedDecimal(l) {
+				continue
+			}
+			if bucket, ok := scales[l.Decimal]; ok && !bucket[decimalTextScale(l.Text)] {
 				return true
 			}
 		}
