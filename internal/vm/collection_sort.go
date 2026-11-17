@@ -313,6 +313,42 @@ func collectionMembers(value Value) []Value {
 		return nil
 	}
 }
+
+// scalarMembership answers collectionContainsValue for a keyed needle when
+// every value has a Set-equality key (setEqualityBucketKey). For those pairs apexCollectionElementEquals is Value
+// Equal, which holds exactly when the keys match, and runs no Apex code, so
+// skipping the scan changes no result and no side effect. It is nil below
+// setEqualityIndexMin values or when any value has no key.
+type scalarMembership map[string]struct{}
+
+func newScalarMembership(values []Value) scalarMembership {
+	if len(values) < setEqualityIndexMin {
+		return nil
+	}
+	keys := make(scalarMembership, len(values))
+	for _, value := range values {
+		key, ok := setEqualityBucketKey(value)
+		if !ok {
+			return nil
+		}
+		keys[key] = struct{}{}
+	}
+	return keys
+}
+
+// contains reports membership when the index can decide it.
+func (keys scalarMembership) contains(needle Value) (bool, bool) {
+	if keys == nil {
+		return false, false
+	}
+	key, ok := setEqualityBucketKey(needle)
+	if !ok {
+		return false, false
+	}
+	_, found := keys[key]
+	return found, true
+}
+
 func (vm *VM) collectionContainsValue(values []Value, needle Value, result *Result) (bool, error) {
 	index, err := vm.collectionIndexOfValue(values, needle, result)
 	return index >= 0, err

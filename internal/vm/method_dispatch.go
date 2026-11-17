@@ -3514,10 +3514,15 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		out := make([]Value, 0, len(receiver.Set))
 		hashes := make([]setInsertionHash, 0, len(receiver.Set))
 		remove := collectionMembers(args[0])
+		removeKeys := newScalarMembership(remove)
 		for index, value := range receiver.Set {
-			contains, err := vm.collectionContainsValue(remove, value, result)
-			if err != nil {
-				return Null, true, err
+			contains, decided := removeKeys.contains(value)
+			if !decided {
+				var err error
+				contains, err = vm.collectionContainsValue(remove, value, result)
+				if err != nil {
+					return Null, true, err
+				}
 			}
 			if contains {
 				changed = true
@@ -3546,12 +3551,17 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		previous := snapshotAlias(receiver)
 		changed := false
 		keep := collectionMembers(args[0])
+		keepKeys := newScalarMembership(keep)
 		out := make([]Value, 0, len(receiver.Set))
 		hashes := make([]setInsertionHash, 0, len(receiver.Set))
 		for index, value := range receiver.Set {
-			contains, err := vm.collectionContainsValue(keep, value, result)
-			if err != nil {
-				return Null, true, err
+			contains, decided := keepKeys.contains(value)
+			if !decided {
+				var err error
+				contains, err = vm.collectionContainsValue(keep, value, result)
+				if err != nil {
+					return Null, true, err
+				}
 			}
 			if contains {
 				out = append(out, value)

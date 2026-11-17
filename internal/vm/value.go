@@ -912,7 +912,102 @@ func stubProxyTypeName(value Value) (string, bool) {
 }
 
 func (v Value) Equal(other Value) bool {
+	// Two scalars never reach the cycle map: equal writes it only when both
+	// carry a ref, and scalars do not recurse.
+	if v.Ref == 0 && other.Ref == 0 && equalScalarKind(v.Kind) && equalScalarKind(other.Kind) {
+		return v.equal(other, nil)
+	}
 	return v.equal(other, make(map[[2]uint64]bool))
+}
+
+func equalScalarKind(kind ValueKind) bool {
+	switch kind {
+	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
+		return true
+	}
+	return false
+}
+
+// setEqualityIndexMin is the Set size from which Set equality buckets the
+// right side instead of scanning it for every left element.
+const setEqualityIndexMin = 16
+
+// setEqualityBucketKey returns a key that two elements share whenever one
+// Equals the other, for the elements where that can be decided cheaply:
+// Null, Boolean, non-Id Strings, and Integer/Long and text-backed Decimals by
+// exact rational value (numericDecimalValuesEqual compares those by rational
+// value, across the two kinds). Every other element (Double-backed Decimals,
+// Ids, objects, collections, anything with a ref) has no key and is compared
+// with every element, as before.
+func setEqualityBucketKey(value Value) (string, bool) {
+	if value.Ref != 0 || value.mapKeySetSource != nil {
+		return "", false
+	}
+	switch value.Kind {
+	case ValueNull:
+		return "n", true
+	case ValueBool:
+		if value.Bool {
+			return "b1", true
+		}
+		return "b0", true
+	case ValueInt:
+		return "r" + strconv.FormatInt(value.Int, 10), true
+	case ValueDecimal:
+		if isFloatBackedDecimal(value) {
+			return "", false
+		}
+		rat, ok := valueDecimalRat(value)
+		if !ok {
+			return "", false
+		}
+		return "r" + rat.RatString(), true
+	case ValueString:
+		if strings.EqualFold(value.Type, "Id") {
+			return "", false
+		}
+		return "s" + value.Text, true
+	}
+	return "", false
+}
+
+// setMembersContained reports whether every left element Equals some right
+// element (right.Equal(left), as containsValue compares). It compares a keyed
+// left element only with the right elements of the same key and the right
+// elements without a key; equal is pure, so the result is the scan's.
+func setMembersContained(left, right []Value) bool {
+	buckets := make(map[string][]int, len(right))
+	var unkeyed []int
+	for i, value := range right {
+		if key, ok := setEqualityBucketKey(value); ok {
+			buckets[key] = append(buckets[key], i)
+		} else {
+			unkeyed = append(unkeyed, i)
+		}
+	}
+	for _, value := range left {
+		key, ok := setEqualityBucketKey(value)
+		if !ok {
+			if !containsValue(right, value) {
+				return false
+			}
+			continue
+		}
+		found := false
+		for _, i := range buckets[key] {
+			if right[i].Equal(value) {
+				found = true
+				break
+			}
+		}
+		for j := 0; !found && j < len(unkeyed); j++ {
+			found = right[unkeyed[j]].Equal(value)
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
@@ -981,6 +1076,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 	case ValueSet:
 		if len(v.Set) != len(other.Set) {
 			return false
+		}
+		if len(v.Set) >= setEqualityIndexMin {
+			return setMembersContained(v.Set, other.Set)
 		}
 		for _, value := range v.Set {
 			if !containsValue(other.Set, value) {
