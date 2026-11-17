@@ -354,10 +354,11 @@ func TestSetEqualityKeyEdges(t *testing.T) {
 				t.Errorf("setMembersContained(%v, %v) = %v, scan %v", order[0], order[1], got, want)
 			}
 			keep := make([]Value, setEqualityIndexMin)
+			needles := make([]Value, setEqualityIndexMin)
 			for i := range keep {
-				keep[i] = order[1]
+				keep[i], needles[i] = order[1], order[0]
 			}
-			if got, decided, err := newScalarMembership(keep, left).contains(New(nil), order[0], &Result{}); err != nil {
+			if got, decided, err := newScalarMembership(keep, needles).contains(New(nil), order[0], &Result{}); err != nil {
 				t.Fatal(err)
 			} else if decided {
 				scan, err := New(nil).collectionContainsValue(keep, order[0], &Result{})

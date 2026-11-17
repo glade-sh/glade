@@ -327,7 +327,8 @@ func collectionMembers(value Value) []Value {
 // keep their keys.
 // A keyed value equals a keyed needle exactly when the keys match, and no Apex
 // code runs, so the order and number of comparisons are not observable. It is
-// unusable below setEqualityIndexMin values or when any value is not a scalar.
+// unusable below setEqualityIndexMin values or needles, or when any value is not
+// a scalar.
 type scalarMembership struct {
 	keyer   setEqualityKeyer
 	keys    map[string]struct{}
@@ -335,7 +336,9 @@ type scalarMembership struct {
 }
 
 func newScalarMembership(values, needles []Value) scalarMembership {
-	if len(values) < setEqualityIndexMin {
+	// Building the key set costs about one scan of values, so it pays only
+	// when there are enough needles to scan for.
+	if len(values) < setEqualityIndexMin || len(needles) < setEqualityIndexMin {
 		return scalarMembership{}
 	}
 	keyer := newSetEqualityKeyer(values, needles)
