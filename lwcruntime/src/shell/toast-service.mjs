@@ -3,18 +3,22 @@ window.__gladeToasts = toasts;
 
 let nextToastId = 1;
 
-// Auto-dismiss durations, in milliseconds. These are MEASUREMENTS, not
-// documented Salesforce constants: the API 67.0 and 68.0 captures polled a
-// toast every 100 ms for 30 s in a release 68 org. They are rounded to that
-// poll granularity. A mode that is absent here was still shown at 30 s.
-//   event (ShowToastEvent) dismissible: on screen 20.6 to 20.7 s
-//   event pester: on screen 20.7 s
-//   module (lightning/toast) dismissible: on screen 5.1 to 5.2 s
+// Auto-dismiss durations, in milliseconds, measured from the push. These are
+// MEASUREMENTS, not documented Salesforce constants. The API 67.0 and 68.0
+// captures (release 68 org, polled every 100 ms for 30 s) record, per run, the
+// last poll that still saw the toast (lastSeenMs) and the first poll that saw it
+// gone (removalDetectedMs), both relative to the push. Each value here is the
+// midpoint of those two, averaged over the runs of that mode, rounded to 100 ms:
+//   event (ShowToastEvent) dismissible: seen to 20688-20786, gone by 20799-20891
+//   event pester: seen to 20771-20804, gone by 20875-20907
+//   module (lightning/toast) dismissible: seen to 5197-5299, gone by 5302-5404
 //   event sticky, module pester, module sticky: still shown at 30 s
-export const TOAST_DURATIONS_MS = {
-  event: { dismissible: 20600, pester: 20600 },
-  module: { dismissible: 5000 },
-};
+// The poll interval leaves the true timer anywhere inside each interval, about
+// +/-0.1 s. The export is frozen; setToastClock is the only test seam.
+export const TOAST_DURATIONS_MS = Object.freeze({
+  event: Object.freeze({ dismissible: 20800, pester: 20800 }),
+  module: Object.freeze({ dismissible: 5300 }),
+});
 
 // ShowToastEvent keeps its public detail to the captured { label } envelope,
 // so the options that the event cannot carry stay beside the event object.

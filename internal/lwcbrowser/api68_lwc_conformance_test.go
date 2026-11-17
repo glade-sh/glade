@@ -268,6 +268,14 @@ func api68LWCContains(got, want any) bool {
 	if raw, ok := w["ariaInvalid"]; ok && !reflect.DeepEqual(g["ariaInvalid"], raw) {
 		return false
 	}
+	// aria-describedby: per input, the elements it names, with their aria-live
+	// and whether they hold text, in the captured order.
+	if raw, ok := w["describedBy"]; ok && !reflect.DeepEqual(g["describedBy"], raw) {
+		return false
+	}
+	if _, ok := w["toasts"]; ok && g["durationsFrozen"] != true {
+		return false
+	}
 	if raw, ok := w["toasts"].(map[string]any); ok {
 		have, _ := g["toasts"].(map[string]any)
 		for kind, rawWant := range raw {

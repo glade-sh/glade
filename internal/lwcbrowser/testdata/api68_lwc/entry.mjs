@@ -1,7 +1,7 @@
 const item = location.search.slice(1).split('&')[0];
 // B25 measures real tab widths, so it runs under synthetic shadow with the
 // SLDS stylesheet, as the local shell does.
-if (item === 'b25') {
+if (item.startsWith('b25')) {
   await import('@lwc/synthetic-shadow');
   const {loadSLDS} = await import('@glade/slds');
   const style = await loadSLDS();
@@ -63,16 +63,22 @@ if (item === 'b18') {
   const field = await add('lightning-input-field', 'inputField', {fieldName: 'Email'});
   field.wireRecordUi({record: {apiName: 'Contact', fields: {}}, objectInfo: {fields: {Email: {apiName: 'Email', dataType: 'Email', label: 'Email', length: 80}}}});
 }
-if (item === 'b25') {
+if (item.startsWith('b25')) {
+  // b25 is the 260 px, 12 tab probe; b25_<width>_<tabs> are the other shapes of
+  // captures-lwc _ops2 (same tab labels, container width in px).
+  const [, width = '260', count = '12', selected] = item.match(/^b25(?:_(\d+)_(\d+))?(?:_sel(\d+))?/);
   const holder = document.createElement('div');
-  holder.style.width = '260px';
+  holder.style.width = width + 'px';
   document.body.appendChild(holder);
   const tabset = await add('lightning-tabset', 'tabset', {}, holder);
   const names = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth', 'Eleventh', 'Twelfth'];
-  for (const name of names) {
-    const tab = await add('lightning-tab', 'tab', {label: name + ' long tab'}, tabset);
+  for (const [index, name] of names.slice(0, Number(count)).entries()) {
+    const tab = await add('lightning-tab', 'tab', {label: name + ' long tab', value: 'tab' + (index + 1)}, tabset);
     tab.appendChild(document.createTextNode(name));
   }
+  // b25_<width>_<tabs>_sel<n>: the nth tab is selected, as the capture does
+  // from the More Tabs menu.
+  if (selected) tabset.activeTabValue = 'tab' + selected;
   for (let i = 0; i < 4; i++) await frame();
 }
 if (item === 'm03_m04') {
@@ -116,7 +122,10 @@ if (item === 'm03_m04') {
     }
     toasts[kind] = observed;
   }
-  window.__observation = {toasts};
+  // The duration table is frozen: setToastClock is the only seam.
+  let changed = true;
+  try { service.TOAST_DURATIONS_MS.event.dismissible = 1; service.TOAST_DURATIONS_MS.module = {}; } catch (e) { changed = false; }
+  window.__observation = {toasts, durationsFrozen: Object.isFrozen(service.TOAST_DURATIONS_MS) && Object.isFrozen(service.TOAST_DURATIONS_MS.event) && Object.isFrozen(service.TOAST_DURATIONS_MS.module) && !changed && service.TOAST_DURATIONS_MS.event.dismissible !== 1};
 }
 await frame();
 window.__ready = true;

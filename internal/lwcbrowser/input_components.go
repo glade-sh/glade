@@ -28,6 +28,8 @@ const isTextarea = __IS_TEXTAREA__;
 const colorPattern = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$";
 const validityFlags = ["badInput", "customError", "patternMismatch", "rangeOverflow", "rangeUnderflow", "stepMismatch", "tooLong", "tooShort", "typeMismatch", "valueMissing"];
 function createBaseComponent() {}
+// Help elements carry ids so the inputs can name them in aria-describedby.
+let helpCounter = 0;
 function booleanValue(value) {
   return typeof value === "string" || Boolean(value);
 }
@@ -67,6 +69,12 @@ function unreadableDate(value) { return Number.isNaN(new Date(String(value)).get
 // ("Heure" in French) and a required datetime marks both with an asterisk.
 function pickerText(label) { return (isFrench ? "S\u00e9lectionner une date pour " : "Select a date for ") + label; }
 function timeLabelText() { return isFrench ? "Heure" : "Time"; }
+// Native API 68 captures (b11, b15): a date, time or datetime input names its
+// help elements in aria-describedby. The element holding the format hint has no
+// live region; the element that carries a validation message, or can, has
+// aria-live "polite". A datetime also shares one empty live help element
+// between its date and time inputs.
+function helpIds(uid) { return { date: "help-message-" + uid + "-1", time: "help-message-" + uid + "-2", group: "help-message-" + uid + "-3" }; }
 function formatHint() { return "Format" + (isFrench ? "\u00a0: " : ": ") + dateFormatExample(); }
 function tmpl($api, $cmp) {
   const { h: element, t: text, b: bind, f: flatten } = $api;
@@ -79,6 +87,7 @@ function tmpl($api, $cmp) {
       placeholder: $cmp.placeholder,
       "aria-label": $cmp.label,
       "aria-invalid": $cmp.type === "datetime-local" ? $cmp.dateAriaInvalid : $cmp.ariaInvalid,
+      "aria-describedby": $cmp.dateDescribedBy,
       style: checkbox && $cmp.type === "checkbox" && $cmp.readOnly ? "display:none" : null,
       minlength: $cmp.minLength == null ? null : String($cmp.minLength),
       maxlength: $cmp.maxLength == null ? null : String($cmp.maxLength)
@@ -114,26 +123,27 @@ function tmpl($api, $cmp) {
   }
   const datetime = $cmp.type === "datetime-local";
   if ($cmp.type === "date" && !$cmp._message) {
-    children.push(element("div", { classMap: { "slds-form-element__help": true }, key: 8 }, [text(formatHint())]));
+    children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { id: helpIds($cmp.uid).date }, key: 8 }, [text(formatHint())]));
   }
   if (datetime) {
     // The hint stays (assistive) unless the date half reports; then the date
     // half's message takes its place, ahead of the Time sub-label.
     if ($cmp._message && $cmp.dateHalfBad) {
-      children.push(element("div", { classMap: { "slds-form-element__help": true }, key: 8 }, [element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [text("Date")]), text($cmp._message)]));
+      children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { id: helpIds($cmp.uid).date, "aria-live": "polite" }, key: 8 }, [element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [text("Date")]), text($cmp._message)]));
     } else if (!$cmp._message || $cmp.badHalf === "time") {
       // Captured: the hint stays for a time-half error; an accepted release 67
       // row (required and empty) shows no hint beside its missing-value message.
-      children.push(element("div", { classMap: { "slds-form-element__help": true, "slds-assistive-text": true }, key: 8 }, [text(formatHint())]));
+      children.push(element("div", { classMap: { "slds-form-element__help": true, "slds-assistive-text": true }, attrs: { id: helpIds($cmp.uid).date }, key: 8 }, [text(formatHint())]));
     }
     children.push(element("span", { classMap: { "slds-form-element__label": true }, key: 16 }, flatten([requiredMark(17), text(timeLabelText())])));
     children.push(element("input", {
       classMap: { "slds-input": true },
-      attrs: { type: "text", "aria-label": $cmp.label, "aria-expanded": "false", "aria-invalid": $cmp.timeAriaInvalid },
+      attrs: { type: "text", "aria-label": $cmp.label, "aria-expanded": "false", "aria-invalid": $cmp.timeAriaInvalid, "aria-describedby": $cmp.timeDescribedBy },
       props: { value: $cmp.displayTime, checked: false, disabled: $cmp.disabled, readOnly: $cmp.readOnly, required: $cmp.required }, key: 7,
       on: { input: bind($cmp.handleTimeInput), focus: bind($cmp.handleFocus), blur: bind($cmp.handleBlur), invalid: bind($cmp.handleInvalid) }
     }));
-    for (const key of [9, 10]) children.push(element("div", { attrs: { role: "alert" }, key }, []));
+    children.push(element("div", { attrs: { role: "alert" }, key: 9 }, []));
+    children.push(element("div", { attrs: { role: "alert", id: helpIds($cmp.uid).group, "aria-live": "polite" }, key: 10 }, []));
   }
   if (!isTextarea || $cmp._message) {
     const help = [];
@@ -141,7 +151,12 @@ function tmpl($api, $cmp) {
       if (!$cmp.isTemporal || $cmp.type === "date") help.push(element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [text($cmp.label || "")]));
       help.push(text($cmp._message));
     }
-    children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { role: "alert" }, key: 3 }, help));
+    const helpAttrs = { role: "alert" };
+    if ($cmp.isTemporal) {
+      helpAttrs.id = helpIds($cmp.uid).time;
+      helpAttrs["aria-live"] = "polite";
+    }
+    children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: helpAttrs, key: 3 }, help));
   }
   return [element("label", { classMap: { "slds-form-element": true, "slds-has-error": Boolean($cmp._message) }, key: 0 }, flatten(children))];
 }
@@ -162,6 +177,7 @@ class __INPUT_CLASS__ extends LightningElement {
     this._pattern = undefined;
     this._customValidity = "";
     this._message = "";
+    this.uid = ++helpCounter;
     this._reported = false;
     this._files = null;
     this._committedValue = undefined;
@@ -204,6 +220,20 @@ class __INPUT_CLASS__ extends LightningElement {
   set step(value) { this._step = value == null ? undefined : String(value); }
   get pattern() { return this._pattern ?? (this.type === "color" ? colorPattern : undefined); }
   set pattern(value) { this._pattern = value; }
+  // A date or time input names the element that holds its hint or message (the
+  // trailing help element), and a datetime adds the shared live element.
+  get dateDescribedBy() {
+    if (isTextarea || !this.isTemporal) return null;
+    const ids = helpIds(this.uid);
+    if (this.type === "time") return ids.time;
+    if (this.type === "date") return this._message ? ids.time : ids.date;
+    const hasDateHelp = !this._message || this.dateHalfBad || this.badHalf === "time";
+    return (hasDateHelp ? ids.date + " " : "") + ids.group;
+  }
+  get timeDescribedBy() {
+    const ids = helpIds(this.uid);
+    return ids.time + " " + ids.group;
+  }
   get isCheckbox() { return ["checkbox", "checkbox-button", "toggle"].includes(this.type); }
   // Native API 68 captures: a datetime whose date half cannot be read reports
   // on the date; the time half stays silent. A bad time half reports its own.

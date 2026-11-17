@@ -8,14 +8,53 @@ import {
 import ButtonMenu from "./buttonMenu.mjs";
 import MenuItem from "./menuItem.mjs";
 
+// Tab bar fit margin in pixels. Native API 67.0 and 68.0 captures at 8 px steps
+// in a 12-tab set (tab widths 112.81, 133.38, 118.03, 127.22, 113.64 px, More
+// button 82.41 px) put each step to 2, 3, 4, 5 and 11 visible tabs, and the
+// all-visible step, between the width of those tabs plus the More button plus a
+// margin of 27.7 to 31.4 px (the all-visible step has no More button). 29.5 is
+// the middle of that range. It is a fitted constant, not a documented value, and
+// it was fitted with the org's own text widths: the rule scales with the widths
+// the browser measures.
+const TAB_FIT_MARGIN = 29.5;
+
+// The indexes of the tabs that stay in the bar. Fit rule, fitted to the native
+// API 67.0 and 68.0 captures (see TAB_FIT_MARGIN): the leading n tabs stay when
+// their widths, the margin, and the More button (unless every tab fits) fit the
+// container; at least one stays, and a measured fit that holds every tab leaves
+// the menu empty. A selected tab that is not among the leading tabs stays in
+// the bar too, and the leading tabs that fit beside it keep their places: the
+// captures select tab 5 of 6 at 480 px and get tabs 1, 2 and 5, tab 4 and get
+// tabs 1 and 4, and at 260 px any selected tab is alone in the bar.
+function fitTabs(widths, overflow, width, active) {
+  const count = widths.length;
+  const fits = (sum, n) => sum + TAB_FIT_MARGIN + (n < count ? overflow : 0) <= width;
+  let total = 0;
+  let leading = 0;
+  for (let n = 1; n <= count; n++) {
+    total += widths[n - 1];
+    if (fits(total, n)) leading = n;
+  }
+  leading = Math.max(leading, 1);
+  if (active < 0 || active < leading) return Array.from({ length: leading }, (_, index) => index);
+  let kept = 0;
+  let sum = widths[active];
+  for (let k = 1; k < active; k++) {
+    sum += widths[k - 1];
+    if (!fits(sum, k + 1)) break;
+    kept = k;
+  }
+  return [...Array.from({ length: kept }, (_, index) => index), active];
+}
+
 function renderTabBar($api, $cmp) {
   const { h, t, c, b, i } = $api;
   const allHeaders = $cmp.headers || [];
-  // Native API 68 capture (tabset in a 260px container, twelve tabs): tabs
-  // that do not fit leave the tab bar and are listed only in the "More Tabs"
-  // menu. With no measured overflow every header keeps both places.
-  const headers = $cmp.visibleCount == null ? allHeaders : allHeaders.slice(0, $cmp.visibleCount);
-  const menuHeaders = $cmp.visibleCount == null ? allHeaders : allHeaders.slice($cmp.visibleCount);
+  // Native API 67/68 captures (tabsets of 3 to 12 tabs in containers of 260 to
+  // 2400 px): tabs that do not fit leave the tab bar and are listed only in the
+  // "More Tabs" menu. With no measured layout every header keeps both places.
+  const headers = $cmp.visibleKeys == null ? allHeaders : allHeaders.filter(header => $cmp.visibleKeys.includes(header.key));
+  const menuHeaders = $cmp.visibleKeys == null ? allHeaders : allHeaders.filter(header => !$cmp.visibleKeys.includes(header.key));
   const items = i(headers, header => {
     const label = header.label == null ? "" : String(header.label);
     return h("li", {
@@ -65,14 +104,14 @@ class TabBar extends LightningElement {
 
   set headers(value) {
     this.headersValue = value;
-    this.visibleCount = undefined;
+    this.visibleKeys = undefined;
   }
 
   connectedCallback() {
     if (typeof ResizeObserver !== "function") return;
     this.resizeObserver = new ResizeObserver(() => {
       const width = this.containerWidth();
-      if (width !== this.lastWidth && this.visibleCount !== undefined) this.visibleCount = undefined;
+      if (width !== this.lastWidth && this.visibleKeys !== undefined) this.visibleKeys = undefined;
     });
     this.resizeObserver.observe(this.template.host.parentElement || this.template.host);
   }
@@ -87,7 +126,7 @@ class TabBar extends LightningElement {
   }
 
   renderedCallback() {
-    if (this.visibleCount !== undefined) return;
+    if (this.visibleKeys !== undefined) return;
     const ul = this.template.querySelector("ul");
     const width = this.containerWidth();
     this.lastWidth = width;
@@ -98,16 +137,8 @@ class TabBar extends LightningElement {
     const widths = [...ul.children].map(item => item.getBoundingClientRect().width);
     ul.style.width = previous;
     const overflow = widths.pop() || 0;
-    const total = widths.reduce((sum, value) => sum + value, 0);
-    if (total <= width) return;
-    let used = overflow;
-    let count = 0;
-    for (const value of widths) {
-      if (used + value > width) break;
-      used += value;
-      count++;
-    }
-    this.visibleCount = Math.max(count, 1);
+    if (!widths.length) return;
+    this.visibleKeys = fitTabs(widths, overflow, width, (this.headers || []).findIndex(header => header.selected)).map(index => this.headers[index].key);
   }
 
   handleSelect(event) {
@@ -139,7 +170,7 @@ class TabBar extends LightningElement {
 }
 registerDecorators(TabBar, {
   publicProps: { headers: { config: 3 } },
-  fields: ["focusedKey", "headersValue", "visibleCount"],
+  fields: ["focusedKey", "headersValue", "visibleKeys"],
 });
 const LightningTabBar = registerComponent(TabBar, {
   tmpl: barTemplate,

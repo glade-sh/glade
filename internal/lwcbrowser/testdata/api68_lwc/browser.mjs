@@ -18,7 +18,7 @@ try {
       errors.push(item + ' not ready: ' + e.message.split('\n')[0] + ' | ' + errors.slice(-3).join(' ; '));
       continue;
     }
-    if (item === 'b25') {
+    if (item === 'b25' || item.startsWith('b25_')) {
       // Open the overflow menu, as the capture does, before reading it.
       await page.evaluate(() => {
         function find(root) {
@@ -32,7 +32,23 @@ try {
         if (!button) throw new Error('More Tabs button not found');
         button.click();
       });
-      await page.waitForTimeout(300);
+      // Wait for the opened menu, not a fixed delay: the button reports
+      // expanded and, when the shape overflows, its items are present.
+      try {
+        await page.waitForFunction(overflowing => {
+          function find(root, test) {
+            for (const el of root.querySelectorAll('*')) {
+              if (test(el)) return true;
+              if (el.shadowRoot && find(el.shadowRoot, test)) return true;
+            }
+            return false;
+          }
+          const open = find(document, el => el.nodeName.toLowerCase() === 'button' && el.getAttribute('title') === 'More Tabs' && el.getAttribute('aria-expanded') === 'true');
+          return open && (!overflowing || find(document, el => el.nodeName.toLowerCase() === 'lightning-menu-item'));
+        }, !item.endsWith('_all'), {timeout: 5000});
+      } catch (e) {
+        errors.push(item + ' menu did not open: ' + e.message.split('\n')[0]);
+      }
     }
     out[item] = await page.evaluate(() => {
       // Visible text lines and the attributes the native capture records, read
@@ -76,7 +92,16 @@ try {
         if (input) for (const key of ['inputmode', 'maxlength', 'name', 'placeholder', 'type']) if (input.hasAttribute(key)) fieldInput[key] = input.getAttribute(key);
       }
       const ariaInvalid = deepAll(document, 'input').map(input => input.getAttribute('aria-invalid'));
-      return {lines, attrs, errorButtons, tabs, menu, fieldInput, ariaInvalid, ...(window.__observation || {})};
+      // The elements each input names in aria-describedby: their aria-live and
+      // whether they hold text, in the order the input lists them.
+      const describedBy = deepAll(document, 'input').map(input => {
+        const root = input.getRootNode();
+        return (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean).map(id => {
+          const target = root.querySelector('[id="' + id + '"]');
+          return target ? {live: target.getAttribute('aria-live'), hasText: text(target) !== ''} : {missing: id};
+        });
+      });
+      return {lines, attrs, errorButtons, tabs, menu, fieldInput, ariaInvalid, describedBy, ...(window.__observation || {})};
     });
   }
   out.errors = errors;
