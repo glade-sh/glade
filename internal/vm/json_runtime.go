@@ -4357,7 +4357,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		if err != nil {
 			return Null, true, jsonDeserializeException("%s", jsonDateDeserializeErrorMessage(text))
 		}
-		return platformScalar("Date", value.Format("2006-01-02")), true, nil
+		return platformScalar("Date", dateLabelFromGregorian(value)), true, nil
 	case "Datetime":
 		text, ok := raw.(string)
 		if !ok {

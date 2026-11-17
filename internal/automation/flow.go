@@ -4759,16 +4759,27 @@ func capturedCaseAfterSave(rules []storage.FlowRule, def storage.ObjectDefinitio
 // reference to that resource; text around merges becomes a synthetic String
 // formula joining the pieces. Native residuals FlowShapes (API 62.0 and 67.0):
 // "{!PermText}", "a {!PermText}", "{!PlainText}" and "{!Other}" all resolve.
+// The target must be a String too: native rejects the merge into any other type
+// at deploy time (flow-target-reject raw).
 // Merges of globals ($Record, $Permission ...) and unknown names keep their
 // earlier handling.
 func flowMergeFormulaStringAssignments(raw *flowXML) {
 	known := map[string]bool{}
 	inline := map[string]string{}
+	// Only String resources: native renders a Number with its scale (2.50),
+	// a Date as January 2, 2026, and a Number formula as 7.00 (RUN-FACTS), and
+	// those renderings are not modeled, so such a merge keeps its earlier text.
 	for _, formula := range raw.Formulas {
+		if !strings.EqualFold(strings.TrimSpace(formula.DataType), "String") {
+			continue
+		}
 		known[strings.ToLower(strings.TrimSpace(formula.Name))] = true
 		inline[strings.ToLower(strings.TrimSpace(formula.Name))] = formula.Expression
 	}
 	for _, variable := range raw.Variables {
+		if !strings.EqualFold(strings.TrimSpace(variable.DataType), "String") {
+			continue
+		}
 		known[strings.ToLower(strings.TrimSpace(variable.Name))] = true
 	}
 	merge := regexp.MustCompile(`\{!([A-Za-z_][A-Za-z0-9_]*)\}`)

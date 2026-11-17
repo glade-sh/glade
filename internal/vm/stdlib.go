@@ -4656,6 +4656,10 @@ func platformTemporalHashCode(env hashEnv, value Value) (int32, bool) {
 	long := func(millis int64) int32 { return int32(millis ^ (millis >> 32)) }
 	switch {
 	case strings.EqualFold(value.Type, "Date"):
+		if days, ok := datePreGregorian(value); ok {
+			// The hash is Long.hashCode of the real instant of a Julian civil date.
+			return long(days * 86400000), true
+		}
 		date, err := parsePlatformDate(value)
 		if err != nil {
 			return 0, false

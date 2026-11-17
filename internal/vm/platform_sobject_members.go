@@ -17,7 +17,19 @@ import (
 )
 
 func apexDatetimeDisplayText(instant time.Time) string {
-	return instant.UTC().Format("2006-01-02 15:04:05")
+	utc := instant.UTC()
+	if utc.Before(hybridYearEnd) {
+		seconds := utc.Unix()
+		days := seconds / 86400
+		if seconds%86400 < 0 {
+			days--
+		}
+		if year, month, day := hybridCivil(days); year >= 1 {
+			clock := utc.Sub(time.Unix(days*86400, 0).UTC())
+			return fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", year, month, day, int(clock/time.Hour), int(clock/time.Minute)%60, int(clock/time.Second)%60)
+		}
+	}
+	return utc.Format("2006-01-02 15:04:05")
 }
 
 func (vm *VM) displayString(value Value, result *Result) (string, error) {

@@ -5882,7 +5882,9 @@ func TestExecPageReferenceLocalMapsStartTypedAndMutable(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference blank = new PageReference();
 System.assertEquals('', blank.getUrl());
-// A page with no url is System.PageReference[null], like the implicit current page.
+// new PageReference() does not compile natively (sema rejects it: surf_collections_strings
+// dth_r2_pgctor); the VM keeps it for internal callers. A page with no url prints
+// System.PageReference[null], like the implicit current page.
 System.assertEquals('System.PageReference[null]', blank.toString());
 System.assertEquals('System.PageReference[null]', String.valueOf(blank));
 System.assertEquals(0, blank.getParameters().size());

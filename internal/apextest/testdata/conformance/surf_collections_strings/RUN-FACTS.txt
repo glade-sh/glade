@@ -72,3 +72,29 @@ Masked in the harness: TimeZone.getDisplayName names the zone at the moment of
 the run, so tzdisp drops it; record ids in update messages.
 Left as base: the hash of a whole SObject (it includes the Id), UserRecordAccess
 beyond the three sharing models below, and the Maldives term.
+
+Raw for the dth_r2_* rows: glade-family-cache/advisor/parallel/batch2-20261117 (README.txt names the run
+directory of each class). The dth_r3_* rows come from the same directory: cap5_r1 and cap5_r2
+(CalShapes, CalArith, CalDate, pgctor, pgctor_ok) and cap6_r1 and cap6_r2 (CalLocal2, CalParse).
+
+dth_r3_* rows (third batch, 2026-11-17, API 62.0 and 67.0, two repeats): the hybrid calendar. A Date before
+1582-10-15 is a Julian civil date (1500-02-29 exists; Date 1500-01-01 hashes as the real instant and
+serializes as 1500-01-10); a Datetime keeps its real instant, and every reader (valueOf in the user's
+zone, concatenation and toString in GMT, year/month/day/dayOfYear, date, format) reads the Julian civil
+date, while JSON.serialize writes the proleptic Gregorian text. addMonths and addYears work on the civil
+date and clamp to the month's own length (Julian 1400-02-29 plus a year is 1401-02-28). The Date members
+addDays, addMonths, addYears, daysBetween, dayOfYear, toStartOfWeek, daysInMonth and isLeapYear follow
+the same calendar. Year 1 is Julian; years before 1 stay proleptic (uncaptured). Datetime.parse and
+Date.parse read no date before 1700 (Invalid date/time), and valueOf reads any year. Before a zone's
+first recorded transition (Los Angeles before 1883) the offset is the standard one and formatLong names
+it GMT-8. pgctor: new PageReference() fails to compile natively; pgctor_ok: System.debug of a
+PageReference prints System.PageReference[url]. JSON.deserialize of a Date reads the Gregorian date and
+keeps it as the Julian label of the same instant, so its JSON text round-trips.
+Native answers not modeled, kept out of the harness: the typed flow merges (FlowTyped in cap5: a Number
+variable merges as 2.50, a Number formula as 7.00, a Boolean as true, a Date as January 2, 2026) and the
+deploy-time rejection of a String merge into a Number, Boolean or Date flow variable (flow-target-reject).
+The flow merge change is gated to String variables and formulas and String targets.
+Gap: the readers show a Julian leap day that the Gregorian calendar lacks (1500-02-29) for the text
+forms, the day/month/year/dayOfYear/date readers and the numeric-token formats of format and
+formatGmt; other format tokens (weekday names, day of year, week fields) of such a date still read the
+next day.

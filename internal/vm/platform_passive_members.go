@@ -2483,6 +2483,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Matcher":
 		return callMatcherMember(receiver, method, args)
 	case "Date":
+		if out, ok := vm.dateHybridMember(receiver, method, args); ok {
+			return out, receiver, false, true, nil
+		}
 		switch method {
 		case "format", "toString":
 			if len(args) != 0 {
@@ -2632,10 +2635,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			rawInstant := t
 			t = julianReadInstant(t)
 			if len(args) == 0 {
 				if method == "toString" {
-					return String(apexDatetimeDisplayText(t)), receiver, false, true, nil
+					return String(apexDatetimeDisplayText(rawInstant)), receiver, false, true, nil
 				}
 				if method == "formatGmt" {
 					return Null, receiver, false, true, fmt.Errorf("Datetime.formatGmt expects pattern String")
@@ -2697,9 +2701,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			} else {
 				t = t.UTC()
 			}
+			julianLeapYear := 0
+			if rawInstant.Before(hybridYearEnd) {
+				if y, ok := julianOnlyLeapDay(rawInstant, offset); ok && simpleDatePattern.MatchString(args[0].Text) {
+					// 1500-02-29 has no Gregorian twin: format 2000-02-29 and
+					// restore the year.
+					julianLeapYear = y
+					t = time.Date(2000, time.February, 29, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
+				}
+			}
 			formatted, err := formatApexDatetimePattern(t, args[0].Text, tzID, zoneLabel, offset, vm.currentUserInfoField("LocaleSidKey", "en_US"))
 			if err != nil {
 				return Null, receiver, false, true, newExceptionError("System.StringException", err.Error())
+			}
+			if julianLeapYear != 0 {
+				formatted = strings.ReplaceAll(formatted, "2000", fmt.Sprintf("%04d", julianLeapYear))
 			}
 			return String(formatted), receiver, false, true, nil
 		case "date", "dateGmt":
@@ -2710,7 +2726,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			rawInstant := t
 			t = julianReadInstant(t)
+			if rawInstant.Before(hybridYearEnd) {
+				offset := time.Duration(0)
+				if method == "date" {
+					if _, off, _, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t); ok {
+						offset = off
+					}
+				}
+				seconds := rawInstant.UTC().Unix() + int64(offset/time.Second)
+				days := seconds / 86400
+				if seconds%86400 < 0 {
+					days--
+				}
+				return hybridDateValue(days), receiver, false, true, nil
+			}
 			if method == "date" {
 				zoneID := vm.currentUserTimeZoneID()
 				_, _, local, _, ok := resolveTimeZoneForInstant(zoneID, t)
@@ -2777,9 +2808,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			case "addDays":
 				t = t.AddDate(0, 0, amount)
 			case "addMonths":
-				t = addMonthsClamped(t, amount)
+				t = addMonthsHybrid(t, amount)
 			case "addYears":
-				t = addMonthsClamped(t, amount*12)
+				t = addMonthsHybrid(t, amount*12)
 			case "addHours":
 				t = t.Add(time.Duration(amount) * time.Hour)
 			case "addMinutes":
@@ -2797,6 +2828,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			rawInstant := t
 			t = julianReadInstant(t)
 			if strings.HasSuffix(method, "Gmt") {
 				t = t.UTC()
@@ -2807,6 +2839,28 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Null, receiver, false, true, unsupportedCallError("Datetime." + method + " timezone " + vm.currentUserTimeZoneID())
 				}
 				t = local
+			}
+			if rawInstant.Before(hybridYearEnd) && (method == "year" || method == "month" || method == "day" || method == "dayOfYear") {
+				// The civil fields of a date in the hybrid calendar's early years,
+				// including the Julian leap day and the days the cutover skipped
+				// (native CalShapes: 1500-02-29 has day 60, 1582-10-15 day 278).
+				_, offset := t.Zone()
+				seconds := rawInstant.UTC().Unix() + int64(offset)
+				days := seconds / 86400
+				if seconds%86400 < 0 {
+					days--
+				}
+				year, month, day := hybridCivil(days)
+				switch method {
+				case "year":
+					return Int(int64(year)), receiver, false, true, nil
+				case "month":
+					return Int(int64(month)), receiver, false, true, nil
+				case "day":
+					return Int(int64(day)), receiver, false, true, nil
+				default:
+					return Int(days - hybridDays(year, 1, 1) + 1), receiver, false, true, nil
+				}
 			}
 			switch method {
 			case "year":
@@ -2837,10 +2891,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			rawInstant := t
 			t = julianReadInstant(t)
 			_, _, local, label, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
 			if !ok {
 				return Null, receiver, false, true, unsupportedCallError("Datetime.formatLong timezone " + vm.currentUserTimeZoneID())
+			}
+			if zone, modeled := supportedNamedTimeZone(vm.currentUserTimeZoneID()); modeled && zone.beforeFirstTransition(rawInstant) {
+				// Before the zone's first recorded transition the long form names
+				// the offset (native CalLocal2: 1500 in Los Angeles is GMT-8).
+				_, seconds := local.Zone()
+				label = formatGMTOffsetLabel(time.Duration(seconds) * time.Second)
 			}
 			if text, shaped := datetimeFormatLongForLocale(local, vm.currentUserInfoField("LocaleSidKey", "en_US")); shaped {
 				return String(text), receiver, false, true, nil

@@ -45,6 +45,9 @@ func TestHashParallelNeighborsKeepBase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// A class with its own equals() keeps deciding List and Set equality.
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/NbW.cls"), `public class NbW { public Decimal d; public NbW(Decimal x) { d = x; } public Boolean equals(Object o) { return o instanceof NbW && ((NbW) o).d == d; } public Integer hashCode() { return 1; } }`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/NbW.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion><status>Active</status></ApexClass>`)
 	index := loadTestIndex(t, root)
 	runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: func() *storage.OrgState {
 		o := capturedFixtureOrg(t, index, "67.0")
@@ -70,10 +73,18 @@ Datetime a = Datetime.newInstance(1500, 1, 1, 12, 0, 0);
 System.debug(a.day() + ' ' + a.format('yyyy-MM-dd HH:mm') + ' ' + a.date());
 Datetime g = Datetime.newInstanceGmt(1500, 1, 1, 0, 0, 0);
 System.debug(g.formatGmt('yyyy-MM-dd') + ' ' + g.dateGmt() + ' ' + (g.getTime() == Datetime.valueOfGmt('1500-01-01 00:00:00').getTime()));
-System.debug(Datetime.parse('1/1/1500, 12:00 PM').getTime() == a.getTime());
+System.debug(Datetime.parse('1/1/1700, 12:00 PM').getTime() == Datetime.newInstance(1700, 1, 1, 12, 0, 0).getTime());
 System.debug(Datetime.valueOf('1500-01-01 12:00:00').getTime() == a.getTime());
 System.debug(Date.newInstance(0, 1, 1));`,
 			"1 1500-01-01 12:00 1500-01-01 00:00:00\n1500-01-01 1500-01-01 00:00:00 true\ntrue\ntrue\n0000-01-01 00:00:00"},
+		{"class instances with equals() ignore Decimal scale", `
+List<NbW> a = new List<NbW>{new NbW(1.5)}; List<NbW> b = new List<NbW>{new NbW(1.50)};
+System.debug(a == b);
+System.debug(a.equals(b));
+System.debug(a.contains(new NbW(1.50)));
+System.debug(a.indexOf(new NbW(1.50)));
+System.debug(new Set<NbW>{new NbW(1.5)} == new Set<NbW>{new NbW(1.50)});`,
+			"true\ntrue\ntrue\n0\ntrue"},
 		{"list equality neighbors", `
 System.debug(new List<Double>{1.5} == new List<Double>{1.50});
 System.debug(new List<Decimal>{1.5} == new List<Decimal>{1.5});

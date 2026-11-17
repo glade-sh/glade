@@ -1154,17 +1154,8 @@ func parsePlatformDatetime(value Value) (time.Time, error) {
 // proleptic Gregorian instant of the same civil date. Dates from the cutover
 // on use the Gregorian calendar, so the helper changes nothing there.
 func julianWallClock(year, month, day, hour, minute, second, millisecond int) time.Time {
-	wall := time.Date(year, time.Month(month), day, hour, minute, second, millisecond*int(time.Millisecond), time.UTC)
-	y, m, d := wall.Date()
-	if y > 1582 || y == 1582 && (m > time.October || m == time.October && d >= 15) || y < 2 {
-		// Years before 2 keep the proleptic reading: the Julian shift would
-		// leave the formattable range (Date.newInstance(0, 1, 1) must stay 0000-01-01).
-		return wall
-	}
-	// The day number of 1970-01-01 is 2440588.
-	jdn := julianDayNumber(y, int(m), d)
-	days := int64(jdn) - 2440588
-	clock := int64(wall.Hour())*3600000 + int64(wall.Minute())*60000 + int64(wall.Second())*1000 + int64(wall.Nanosecond()/int(time.Millisecond))
+	days := hybridDays(year, month, day)
+	clock := (int64(hour)*3600+int64(minute)*60+int64(second))*1000 + int64(millisecond)
 	return time.UnixMilli(days*86400000 + clock).UTC()
 }
 
@@ -1172,11 +1163,12 @@ func julianWallClock(year, month, day, hour, minute, second, millisecond int) ti
 var gregorianCutover = time.Date(1582, time.October, 15, 0, 0, 0, 0, time.UTC)
 
 // julianReadInstant shifts a pre-cutover instant by whole days so the proleptic
-// Gregorian fields of the result are the Julian civil fields of the original.
-// The Datetime readers (year, month, day, date, format and their Gmt forms)
-// call it, so they read back the civil date the builders (julianWallClock) were
-// given. Instants from the cutover on come back unchanged. The time of day and
-// the instant itself (getTime, hashCode, comparison) are not affected.
+// Gregorian fields of the result are the hybrid-calendar civil fields of the
+// original. The Datetime readers (year, month, day, date, format, text and
+// their Gmt forms) call it, so they read back the civil date the builders
+// (julianWallClock) were given. Instants from the cutover on come back
+// unchanged. The time of day and the instant itself (getTime, hashCode,
+// comparison, JSON) are not affected.
 func julianReadInstant(t time.Time) time.Time {
 	if !t.Before(gregorianCutover) {
 		return t
@@ -1186,18 +1178,12 @@ func julianReadInstant(t time.Time) time.Time {
 	if unix%86400 < 0 {
 		days--
 	}
-	c := int(days) + 2440588 + 32082
-	d := (4*c + 3) / 1461
-	e := c - 1461*d/4
-	m := (5*e + 2) / 153
-	day := e - (153*m+2)/5 + 1
-	month := time.Month(m + 3 - 12*(m/10))
-	year := d - 4800 + m/10
+	year, month, day := hybridCivil(days)
 	if year < 1 {
 		return t
 	}
 	midnight := time.Unix(days*86400, 0).UTC()
-	return t.Add(time.Date(year, month, day, 0, 0, 0, 0, time.UTC).Sub(midnight))
+	return t.Add(time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC).Sub(midnight))
 }
 
 // julianDayNumber is the Julian-calendar civil date to day number conversion.
@@ -2299,6 +2285,30 @@ func (zone modeledTimeZone) historicOffsetAt(instant time.Time) (time.Duration, 
 
 // historicOffsetsNear lists the distinct offsets the zone had within two days
 // of a wall-clock time, so a local time resolves against the real transitions.
+// beforeFirstTransition reports an instant before the first recorded offset
+// change of a zone that reads its history.
+func (zone modeledTimeZone) beforeFirstTransition(instant time.Time) bool {
+	location := zone.historicLocation()
+	if location == nil {
+		return false
+	}
+	start, _ := instant.In(location).ZoneBounds()
+	return start.IsZero()
+}
+
+// formatGMTOffsetLabel renders an offset as GMT-8 or GMT+5:30.
+func formatGMTOffsetLabel(offset time.Duration) string {
+	sign := "+"
+	if offset < 0 {
+		sign, offset = "-", -offset
+	}
+	minutes := int(offset / time.Minute)
+	if minutes%60 == 0 {
+		return fmt.Sprintf("GMT%s%d", sign, minutes/60)
+	}
+	return fmt.Sprintf("GMT%s%d:%02d", sign, minutes/60, minutes%60)
+}
+
 func (zone modeledTimeZone) historicOffsetsNear(wall time.Time) []time.Duration {
 	if zone.historicBeforeYear == 0 || wall.Year() >= zone.historicBeforeYear {
 		return nil

@@ -61,6 +61,11 @@ func valueScaleDiffers(left, right Value) bool {
 			}
 		}
 	case ValueObject:
+		// Only a record's Decimal fields: an instance of a class with its own
+		// equals() goes through that equals(), never through this walk.
+		if left.classInstance || left.projectClass || right.classInstance || right.projectClass || !sObjectValueType(left.Type) {
+			return false
+		}
 		if len(left.Fields) != len(right.Fields) || len(left.Fields) == 0 {
 			return false
 		}

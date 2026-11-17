@@ -231,3 +231,8 @@ dth_r2_tzdisp	istest	TzDisp.t
 dth_r2_stp_ab	istest	Stp_ab.t
 dth_r2_stp_ba	istest	Stp_ba.t
 dth_r2_pgref	istest	PgRef.t
+dth_r3_calshapes	istest	CalShapes.t
+dth_r3_calarith	istest	CalArith.t
+dth_r3_caldate	istest	CalDate.t
+dth_r3_callocal2	istest	CalLocal2.t
+dth_r3_calparse	istest	CalParse.t
