@@ -13,7 +13,17 @@ type primitiveSetState struct {
 	hashes    []setInsertionHash
 	element   string
 	positions map[string]int
+	// trackedKeys indexes the tracked insertion hashes (numeric and SObject
+	// elements) by key, in insertion order, while trackedReady holds; untracked
+	// counts the entries without a tracked hash, which every lookup must compare.
+	trackedKeys  map[string][]int
+	untracked    int
+	trackedReady bool
 }
+
+// trackedIndexMinSize is the Set size from which a tracked-hash lookup builds
+// the key index instead of scanning.
+const trackedIndexMinSize = 32
 
 func clonePrimitiveSetState(state *primitiveSetState) *primitiveSetState {
 	if state == nil {
@@ -21,6 +31,12 @@ func clonePrimitiveSetState(state *primitiveSetState) *primitiveSetState {
 	}
 	cloned := *state
 	cloned.positions = maps.Clone(state.positions)
+	if state.trackedKeys != nil {
+		cloned.trackedKeys = make(map[string][]int, len(state.trackedKeys))
+		for key, indices := range state.trackedKeys {
+			cloned.trackedKeys[key] = append([]int(nil), indices...)
+		}
+	}
 	// Copying the token and map also isolates nil/empty Sets, whose matching
 	// headers alone cannot establish exclusive ownership. Keep absent/stale
 	// headers intact to preserve structural alias snapshots.
@@ -140,6 +156,47 @@ func appendPrimitiveSetEntry(set Value, value Value, hash setInsertionHash) (Val
 		state.positions[key] = len(set.Set) - 1
 	}
 	state.items, state.hashes = set.Set, set.setInsertionHashes
+	if state.trackedReady {
+		state.untracked++
+	}
 	set.primitiveSetState = state
 	return set, true
+}
+
+// prepareTrackedIndex builds the tracked-hash key index of a Set whose state
+// matches it.
+func prepareTrackedIndex(set Value, state *primitiveSetState) {
+	if state.trackedReady {
+		return
+	}
+	state.trackedKeys = make(map[string][]int)
+	state.untracked = 0
+	for i := range set.Set {
+		hash := set.setInsertionHashAt(i)
+		if !hash.tracked {
+			state.untracked++
+			continue
+		}
+		state.trackedKeys[hash.key] = append(state.trackedKeys[hash.key], i)
+	}
+	state.trackedReady = true
+}
+
+// trackedSetCandidates returns, in order, the indices a tracked-hash lookup
+// must compare: the entries whose tracked hash has the same key. ok is false
+// when the Set has untracked entries (they must be compared too), when its
+// state is not current, or when it is too small to index.
+func trackedSetCandidates(set Value, hash setInsertionHash) ([]int, bool) {
+	if !hash.tracked || len(set.Set) < trackedIndexMinSize {
+		return nil, false
+	}
+	state := set.primitiveSetState
+	if !state.matches(set) {
+		return nil, false
+	}
+	prepareTrackedIndex(set, state)
+	if state.untracked != 0 {
+		return nil, false
+	}
+	return state.trackedKeys[hash.key], true
 }

@@ -123,6 +123,19 @@ func (vm *VM) setIndexOfValueWithHash(set Value, needle Value, hash setInsertion
 		if index, ok := primitiveSetIndex(set, needle); ok {
 			return index, nil
 		}
+	} else if candidates, ok := trackedSetCandidates(set, hash); ok {
+		// Every entry is tracked, so the scan below compares exactly the
+		// entries with this key, in this order.
+		for _, index := range candidates {
+			equal, err := vm.equalsUserSetKey(set.Set[index], needle, result)
+			if err != nil {
+				return -1, err
+			}
+			if equal {
+				return index, nil
+			}
+		}
+		return -1, nil
 	}
 	for index, value := range set.Set {
 		stored := set.setInsertionHashAt(index)
@@ -191,19 +204,45 @@ func (vm *VM) setContainsValue(set Value, needle Value, result *Result) (bool, e
 }
 
 // Insertion callers capture once after coercion and reuse that hash for the
-// duplicate decision. Primitive append ownership protects surviving prefixes;
-// other sets copy both slices before mutation.
+// duplicate decision. Append ownership protects surviving prefixes: a Set
+// whose state token matches appends in place, any other view copies both
+// slices before mutation.
 func appendSetEntry(set Value, value Value, hash setInsertionHash) Value {
 	if updated, ok := appendPrimitiveSetEntry(set, value, hash); ok {
 		return updated
 	}
-	hashes := make([]setInsertionHash, len(set.Set), len(set.Set)+1)
-	copy(hashes, set.setInsertionHashes)
-	values := make([]Value, len(set.Set)+1)
-	copy(values, set.Set)
-	values[len(set.Set)] = value
-	set.Set = values
-	set.setInsertionHashes = append(hashes, hash)
+	// The copy has the final length; later owned appends grow by append. The
+	// state object moves to the new slices, so the previous view stops owning
+	// them: it keeps its contents and copies before its own next append.
+	state := set.primitiveSetState
+	if !state.matches(set) {
+		values := make([]Value, len(set.Set), len(set.Set)+1)
+		copy(values, set.Set)
+		hashes := make([]setInsertionHash, len(set.Set), len(set.Set)+1)
+		copy(hashes, set.setInsertionHashes)
+		set.Set, set.setInsertionHashes = values, hashes
+		if state == nil {
+			state = &primitiveSetState{}
+		}
+		state.trackedKeys, state.untracked, state.trackedReady = nil, 0, false
+	} else if len(set.setInsertionHashes) < len(set.Set) {
+		hashes := make([]setInsertionHash, len(set.Set), cap(set.Set))
+		copy(hashes, set.setInsertionHashes)
+		set.setInsertionHashes = hashes
+	}
+	set.Set = append(set.Set, value)
+	set.setInsertionHashes = append(set.setInsertionHashes, hash)
+	// The primitive String/Id positions do not follow this append.
+	state.element, state.positions = "", nil
+	if state.trackedReady {
+		if hash.tracked {
+			state.trackedKeys[hash.key] = append(state.trackedKeys[hash.key], len(set.Set)-1)
+		} else {
+			state.untracked++
+		}
+	}
+	state.items, state.hashes = set.Set, set.setInsertionHashes
+	set.primitiveSetState = state
 	return set
 }
 
