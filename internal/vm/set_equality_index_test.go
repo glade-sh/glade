@@ -120,13 +120,25 @@ List<String> keepWords = new List<String>();
 for (Integer i = 0; i < 30; i++) { words.add('w' + i); if (i < 20) { keepWords.add('w' + i); } }
 keepWords.add('W1');
 System.debug(words.retainAll(keepWords) + ' ' + words.size() + ' ' + words.contains('w19') + ' ' + words.contains('w20'));
+List<Account> ins = new List<Account>();
+for (Integer i = 0; i < 20; i++) { ins.add(new Account(Name = 'Q' + i, Description = 'q' + i)); }
+insert ins;
+Set<Account> qi = new Set<Account>(ins);
+Set<Account> qq1 = new Set<Account>([SELECT Id, Name, Description FROM Account WHERE Name LIKE 'Q%']);
+Set<Account> qq2 = new Set<Account>([SELECT Id, Name, Description FROM Account WHERE Name LIKE 'Q%' ORDER BY Description DESC]);
+Set<Account> qq3 = new Set<Account>([SELECT Id, Name FROM Account WHERE Name LIKE 'Q%']);
+System.debug((qq1 == qq2) + ' ' + (qi == qq1) + ' ' + (qq1 == qq3) + ' ' + qq1.size() + ' ' + qi.size());
+List<Account> moved = [SELECT Id, Name, Description FROM Account WHERE Name LIKE 'Q%'];
+moved[0].Description = 'other';
+Set<Account> qq4 = new Set<Account>(moved);
+System.debug((qq1 == qq4) + ' ' + qq1.equals(qq4) + ' ' + qq4.containsAll(qq1));
 List<Set<Integer>> nested1 = new List<Set<Integer>>{ a };
 List<Set<Integer>> nested2 = new List<Set<Integer>>{ a.clone() };
 System.debug(nested1 == nested2);
 `
 
 // The rows were produced by train D2 (1318923037) before the bucketed
-// equality, and v0312-parallel-rows (71f4c46288, Decimal scale in collections)
+// equality, and v0312-parallel-rows (71f4c46288 and 208b6521b8, Decimal scale in collections)
 // gives the same rows: the program has no Decimal pair that differs only in
 // scale. The comparisons must be identical.
 const setEqualityWant = `true true false true
@@ -156,6 +168,8 @@ true false
 true true 25
 true 20 true false false {1, 3, 5, 7, 9, 11, 13, 15, 17, 19, ...}
 true 20 true false
+true true false 20 20
+false false false
 true`
 
 func TestSetEqualityIndexMatchesScan(t *testing.T) {
@@ -230,8 +244,15 @@ func randomEqualityRecord(rng *rand.Rand, textDecimals bool, pool []Value) Value
 	if rng.Intn(3) == 0 {
 		record.Fields["NumberOfEmployees"] = randomEqualityScalar(rng, textDecimals)
 	}
-	if rng.Intn(4) == 0 {
+	switch rng.Intn(4) {
+	case 0:
 		record.Fields["Id"] = String([]string{"001000000000001", "001000000000001AAA", "001000000000002AAA"}[rng.Intn(3)])
+	case 1:
+		// Queried and inserted records hold their Id as an Id object with a ref.
+		record.Fields["Id"] = platformScalar("Id", []string{"001000000000001", "001000000000001AAA", "001000000000002AAA"}[rng.Intn(3)])
+	}
+	if rng.Intn(3) == 0 {
+		record.Fields["OwnerId"] = platformScalar("Id", "005000000000001AAA")
 	}
 	switch rng.Intn(10) {
 	case 0:
@@ -326,10 +347,23 @@ func TestSetEqualityKeyEdges(t *testing.T) {
 		{account(map[string]Value{"Name": String("a"), "NumberOfEmployees": Int(3)}), account(map[string]Value{"Name": String("a"), "NumberOfEmployees": double(3)})},
 		{account(map[string]Value{"Name": String("a"), "Phone": Null}), account(map[string]Value{"Name": String("a")})},
 		{shared, stale},
+		{account(map[string]Value{"Id": platformScalar("Id", "001000000000001")}), account(map[string]Value{"Id": platformScalar("Id", "001000000000001AAA")})},
+		{account(map[string]Value{"Id": platformScalar("Id", "001000000000001AAA"), "Name": String("a")}), account(map[string]Value{"Id": String("001000000000001"), "Name": String("a")})},
+		{account(map[string]Value{"Id": platformScalar("Id", "001000000000001AAA")}), account(map[string]Value{"Id": platformScalar("Id", "001000000000002AAA")})},
 		{account(map[string]Value{"ns__Rating__c": String("x")}), account(map[string]Value{"Rating__c": String("x")})},
 		{account(map[string]Value{"Name": String("a"), "name": Null}), account(map[string]Value{"Name": String("a")})},
 		{account(map[string]Value{"Name": Null, "name": String("a")}), account(map[string]Value{"Name": String("a")})},
 		{account(map[string]Value{"Name": String("a")}), account(map[string]Value{"Name": String("A")})},
+	}
+	// Records whose Id is an Id object (queried or inserted rows) must get a
+	// group key, or Set equality over them stays quadratic.
+	for _, record := range []Value{
+		account(map[string]Value{"Id": platformScalar("Id", "001000000000001AAA"), "Name": String("a")}),
+		account(map[string]Value{"Id": platformScalar("Id", "001000000000001AAA"), "OwnerId": platformScalar("Id", "005000000000001AAA")}),
+	} {
+		if _, ok := (setEqualityKeyer{}).groupKey(record); !ok {
+			t.Errorf("record %v with an Id object has no group key", record)
+		}
 	}
 	for _, pair := range pairs {
 		a, b := pair[0], pair[1]

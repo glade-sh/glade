@@ -1078,11 +1078,14 @@ func sObjectEqualityGroupKey(value Value) (string, bool) {
 // and the scalars setEqualityBucketKey covers key as there. Relationship
 // nulls, objects, collections and Doubles have no key.
 func sObjectFieldValueKey(value Value) (string, bool) {
-	if value.Ref != 0 || value.mapKeySetSource != nil {
-		return "", false
-	}
+	// Checked before the ref test: Id objects carry a ref, and
+	// sObjectFieldValuesEqual compares any two Id texts by apexIDTextEqual
+	// whatever their refs.
 	if id, ok := sObjectIDFromValue(value); ok {
 		return "I" + canonicalIDMapKey(string(id)), true
+	}
+	if value.Ref != 0 || value.mapKeySetSource != nil {
+		return "", false
 	}
 	switch value.Kind {
 	case ValueObject, ValueList, ValueSet, ValueMap:
