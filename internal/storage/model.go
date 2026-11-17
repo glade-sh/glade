@@ -1118,6 +1118,21 @@ type FlowAssignment struct {
 	LiteralValue string `json:"literalValue,omitempty"`
 	Formula      string `json:"formula,omitempty"`
 	SourceField  string `json:"sourceField,omitempty"`
+	// Merge holds the parts of a String assignment that merges a Number or Date
+	// resource. It applies only for a user locale captured natively; any other
+	// locale runs the unrewritten LiteralValue.
+	Merge []FlowMergePart `json:"merge,omitempty"`
+}
+
+// FlowMergePart is one piece of a merged flow string: literal Text, or a
+// resource read by Ref (a variable) or Expression (a formula resource) and
+// rendered by Kind ("number" with Scale, "date", or "" for plain text).
+type FlowMergePart struct {
+	Text       string `json:"text,omitempty"`
+	Ref        string `json:"ref,omitempty"`
+	Expression string `json:"expression,omitempty"`
+	Kind       string `json:"kind,omitempty"`
+	Scale      int    `json:"scale,omitempty"`
 }
 
 type FlowLoop struct {

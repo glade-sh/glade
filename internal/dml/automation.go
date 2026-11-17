@@ -1638,6 +1638,9 @@ func (e *Engine) applyFlowAssignmentStep(assignment storage.FlowAssignment, fram
 }
 
 func (e *Engine) flowFrameValue(assignment storage.FlowAssignment, frame *flowFrame) (storage.Value, bool) {
+	if text, ok := e.flowMergedText(assignment.Merge, frame); ok {
+		return storage.StringValue(text), true
+	}
 	if strings.TrimSpace(assignment.SourceField) != "" {
 		return e.flowFrameReferenceValue(assignment.SourceField, frame)
 	}

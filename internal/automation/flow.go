@@ -118,6 +118,9 @@ type flowAssignmentItemXML struct {
 	AssignToReference string       `xml:"assignToReference"`
 	Operator          string       `xml:"operator"`
 	Value             flowValueXML `xml:"value"`
+	// merge holds the parts of a String assignment that merges a Number or
+	// Date; the value stays the original text (see flowMergeFormulaStringAssignments).
+	merge []storage.FlowMergePart
 }
 
 type flowRecordUpdateXML struct {
@@ -2997,6 +3000,18 @@ func modeledFlowAssignment(assignment flowAssignmentXML, item flowAssignmentItem
 		sourceField = firstNonBlank(flowLookupSourceFieldValue(item.Value, variables, lookups), strings.TrimSpace(item.Value.ElementReference))
 		sourceField = flowCoreAssignmentSourceField(item, variables, lookups, sourceField)
 	}
+	merge := append([]storage.FlowMergePart(nil), item.merge...)
+	for i := range merge {
+		if merge[i].Expression == "" {
+			continue
+		}
+		expression, known := formulas[strings.ToLower(strings.TrimSpace(merge[i].Expression))]
+		if !known {
+			merge = nil
+			break
+		}
+		merge[i].Expression = expression
+	}
 	return storage.FlowAssignment{
 		Name:         firstNonBlank(assignment.Name, assignment.Label, target),
 		Target:       target,
@@ -3004,6 +3019,7 @@ func modeledFlowAssignment(assignment flowAssignmentXML, item flowAssignmentItem
 		LiteralValue: flowLiteralOrVariableValue(item.Value, variables),
 		Formula:      formula,
 		SourceField:  sourceField,
+		Merge:        merge,
 	}, true
 }
 
@@ -4763,9 +4779,11 @@ func capturedCaseAfterSave(rules []storage.FlowRule, def storage.ObjectDefinitio
 // String assignment value in an autolaunched flow, for a Name that is a formula
 // or a variable of the flow. A value that is exactly one merge of a String or
 // Boolean resource reads as a reference to it; every other merge becomes a
-// synthetic String formula joining the pieces, which renders a Number with its
-// declared scale (2.50, 7.00) and a Date as January 2, 2026. Native FlowShapes
-// and FlowTyped rows (API 62.0 and 67.0). A resource of any other type
+// synthetic String formula joining the pieces. A merge of a Number or a Date
+// keeps its original text on the value and puts the parts on the item (merge),
+// because native renders them in the user's locale (FlowTyped, FlowLocale rows):
+// the run time renders the parts for a captured locale and otherwise runs the
+// original text. Native FlowShapes and FlowTyped rows (API 62.0 and 67.0). A resource of any other type
 // (Currency, DateTime ...), a Number without a declared scale, a merge of
 // globals ($Record, $Permission ...) and unknown names keep their earlier
 // handling. The target of the assignment must be a String variable: native
@@ -4802,20 +4820,6 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 		}
 	}
 	merge := regexp.MustCompile(`\{!([A-Za-z_][A-Za-z0-9_]*)\}`)
-	piece := func(name string) string {
-		r := known[strings.ToLower(name)]
-		ref := name
-		if r.formula {
-			ref = "(" + r.expression + ")"
-		}
-		switch r.dataType {
-		case "number":
-			return "GLADENUMBERTEXT(" + ref + ", " + r.scale + ")"
-		case "date":
-			return "GLADEDATETEXT(" + ref + ")"
-		}
-		return ref
-	}
 	counter := 0
 	for i := range raw.Assignments {
 		for j := range raw.Assignments[i].Items {
@@ -4851,13 +4855,58 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 					continue
 				}
 			}
+			typed := false
+			for _, m := range matches {
+				if dataType := known[strings.ToLower(text[m[2]:m[3]])].dataType; dataType == "number" || dataType == "date" {
+					typed = true
+				}
+			}
+			if typed {
+				// A Number or Date reads in the user's locale, which is known only
+				// at run time. The value keeps its original text; the parts go on
+				// the item and apply for a locale captured natively. A target that
+				// is not a declared String variable keeps its earlier handling.
+				if dataType, declared := targets[target]; declared && dataType == "string" {
+					var parts []storage.FlowMergePart
+					last := 0
+					for _, m := range matches {
+						if m[0] > last {
+							parts = append(parts, storage.FlowMergePart{Text: text[last:m[0]]})
+						}
+						name := text[m[2]:m[3]]
+						r := known[strings.ToLower(name)]
+						part := storage.FlowMergePart{Ref: name, Kind: r.dataType}
+						if r.formula {
+							// Holds the formula's name until modeledFlowAssignment
+							// resolves its normalized expression.
+							part.Ref, part.Expression = "", name
+						}
+						if r.dataType == "number" {
+							part.Scale, _ = strconv.Atoi(r.scale)
+						} else if r.dataType != "date" {
+							part.Kind = ""
+						}
+						parts = append(parts, part)
+						last = m[1]
+					}
+					if last < len(text) {
+						parts = append(parts, storage.FlowMergePart{Text: text[last:]})
+					}
+					item.merge = parts
+				}
+				continue
+			}
 			var pieces []string
 			last := 0
 			for _, m := range matches {
 				if m[0] > last {
 					pieces = append(pieces, strconv.Quote(text[last:m[0]]))
 				}
-				pieces = append(pieces, piece(text[m[2]:m[3]]))
+				ref := text[m[2]:m[3]]
+				if r := known[strings.ToLower(ref)]; r.formula {
+					ref = "(" + r.expression + ")"
+				}
+				pieces = append(pieces, ref)
 				last = m[1]
 			}
 			if last < len(text) {
@@ -4866,14 +4915,6 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 			counter++
 			name := fmt.Sprintf("GladeMerge%d", counter)
 			expression := strings.Join(pieces, " & ")
-			for _, m := range matches {
-				if dataType := known[strings.ToLower(text[m[2]:m[3]])].dataType; dataType == "number" || dataType == "date" {
-					// The rendering of these two follows the user's locale; the
-					// original text stays for a locale that was not captured.
-					expression = "GLADELOCALEMERGE(" + strconv.Quote(text) + ", " + expression + ")"
-					break
-				}
-			}
 			raw.Formulas = append(raw.Formulas, flowFormulaXML{Name: name, DataType: "String", Expression: expression})
 			value.StringValue, value.ElementReference = "", name
 		}

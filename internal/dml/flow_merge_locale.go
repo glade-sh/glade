@@ -1,26 +1,26 @@
 package dml
 
 import (
+	"math/big"
 	"strings"
 	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// flowMergeLocale returns the LocaleSidKey of the user the flow runs as. A
-// missing user, a missing field or a blank value returns "", which is not a
-// captured locale, so the merge keeps its original text. The default running
-// user stores LocaleSidKey en_US explicitly (storage fixture), so a blank means
-// the field was cleared and nothing native was captured for it.
-func (p *formulaParser) flowMergeLocale() string {
-	if p == nil || p.org == nil {
+// flowUserLocale returns the LocaleSidKey of a user. A missing user, a missing
+// field or a blank value returns "", which is not a captured locale, so a merge
+// keeps its original text. The default running user stores LocaleSidKey en_US
+// explicitly (storage fixture), so a blank means the field was cleared and
+// nothing native was captured for it.
+func flowUserLocale(org *storage.OrgState, userID storage.ID) string {
+	if org == nil {
 		return ""
 	}
-	users, ok := p.org.Objects["User"]
+	users, ok := org.Objects["User"]
 	if !ok {
 		return ""
 	}
-	userID := p.setupActor()
 	if userID == "" {
 		userID = storage.DefaultUserID
 	}
@@ -32,6 +32,58 @@ func (p *formulaParser) flowMergeLocale() string {
 		return value.String
 	}
 	return ""
+}
+
+// flowMergedText renders a String assignment that merges a Number or Date for
+// the running user's locale. It reports false for a locale that was not
+// captured natively, so the caller keeps the unrewritten text of the flow
+// (the compiled LiteralValue). Literal text is copied as is: no formula
+// string literal carries it.
+func (e *Engine) flowMergedText(parts []storage.FlowMergePart, frame *flowFrame) (string, bool) {
+	if e == nil || frame == nil || len(parts) == 0 {
+		return "", false
+	}
+	locale := flowUserLocale(e.Org, e.systemUserID())
+	if _, captured := flowMergeLocales[locale]; !captured {
+		return "", false
+	}
+	var out strings.Builder
+	for _, part := range parts {
+		if part.Ref == "" && part.Expression == "" {
+			out.WriteString(part.Text)
+			continue
+		}
+		var value storage.Value
+		var ok bool
+		if part.Expression != "" {
+			value, ok = e.flowContextFormulaValue(part.Expression, frame)
+		} else {
+			value, ok = e.flowFrameReferenceValue(part.Ref, frame)
+		}
+		if !ok {
+			return "", false
+		}
+		text := workflowValueString(value)
+		if value.Kind == storage.ValueDecimal {
+			text = value.Decimal
+		}
+		switch part.Kind {
+		case "number":
+			number, ok := new(big.Rat).SetString(strings.TrimSpace(text))
+			if !ok || part.Scale < 0 {
+				return "", false
+			}
+			text = flowNumberText(number.FloatString(part.Scale), locale)
+		case "date":
+			date, err := time.Parse("2006-01-02", strings.TrimSpace(text))
+			if err != nil {
+				return "", false
+			}
+			text = flowDateText(date, locale)
+		}
+		out.WriteString(text)
+	}
+	return out.String(), true
 }
 
 // flowLocaleRule holds what a captured user locale does to a Number and a Date
