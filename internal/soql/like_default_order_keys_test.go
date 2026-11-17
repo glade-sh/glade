@@ -158,7 +158,7 @@ func TestSortShortcutFallbackValues(t *testing.T) {
 				return orderCompare(left, right, order[0]) < 0
 			})
 			got := append([]storage.Record(nil), records...)
-			sortRecordsByOrderTop(org, definition, got, order, false, false, 0)
+			sortRecordsByOrderTop(org, definition, got, order, false, false, 0, nil)
 			for i := range got {
 				if got[i].ID != want[i].ID {
 					t.Fatalf("%s desc=%v row %d: got %s want %s", field, desc, i, got[i].ID, want[i].ID)

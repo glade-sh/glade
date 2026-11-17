@@ -358,6 +358,14 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 
 	predicateScratch := &predicateScratch{}
 	matchedRecords := make([]storage.Record, 0, len(ids))
+	// The default order sorts by the text the lone LIKE already read; keep it
+	// per matched row so the sort need not read it again.
+	defaultOrder := defaultParentOrder(query, objectName)
+	var likeTexts []string
+	predicateScratch.captureLike = len(query.Order) == 0 && len(defaultOrder) == 1
+	if predicateScratch.captureLike {
+		likeTexts = make([]string, 0, len(ids))
+	}
 	for _, idText := range ids {
 		record := object.Records[storage.ID(idText)]
 		if recordHiddenFromSOQL(object.Definition, record) {
@@ -382,11 +390,21 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 				continue
 			}
 		}
+		if predicateScratch.captureLike {
+			predicateScratch.like = storage.Value{}
+		}
 		if matchesWithScratch(org, object.Definition, record, query.Where, context, predicateScratch) {
 			if context.WindowRecordVisible != nil && (query.HasLimit || query.HasOffset) && !queryHasAggregates(query) && !context.WindowRecordVisible(objectName, callbackRecord(objectName, record)) {
 				continue
 			}
 			matchedRecords = append(matchedRecords, record)
+			if predicateScratch.captureLike {
+				if predicateScratch.like.Kind == storage.ValueString && likeTexts != nil {
+					likeTexts = append(likeTexts, predicateScratch.like.String)
+				} else {
+					likeTexts = nil
+				}
+			}
 		}
 	}
 	if queryHasAggregates(query) {
@@ -418,14 +436,14 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 			AggregateInputRows: aggregateQueryInputRows(org, object.Definition, matchedRecords, query, context.formulaActor()),
 		}, nil
 	}
-	if order := defaultParentOrder(query, objectName); len(order) > 0 {
+	if order := defaultOrder; len(order) > 0 {
 		// The default (index) order feeds only the LIMIT window, so rank just
 		// the rows the window keeps. An explicit ORDER BY keeps the full sort.
 		top := 0
 		if len(query.Order) == 0 && query.HasLimit && query.Limit > 0 {
 			top = query.Offset + query.Limit
 		}
-		sortRecordsByOrderTop(org, object.Definition, matchedRecords, collateOrder(order, query.textComparator), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, top, context.formulaActor())
+		sortRecordsByOrderTop(org, object.Definition, matchedRecords, collateOrder(order, query.textComparator), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, top, likeTexts, context.formulaActor())
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	if query.ForUpdate {
@@ -1883,6 +1901,10 @@ type predicateScratch struct {
 	bounds    map[literalBoundsKey]literalBounds
 	patterns  map[string]*compiledLikePattern
 	textKinds map[textEqualityKindKey]textEqualityKind
+	// captureLike asks the LIKE case to keep the operand it read in like. It
+	// is set only for the default-order shape (a lone prefix LIKE).
+	captureLike bool
+	like        storage.Value
 }
 
 // textEqualityKind records how equality on one declared field treats text
@@ -2042,6 +2064,9 @@ func matchesWithScratch(org storage.OrgState, definition storage.ObjectDefinitio
 		}
 		return compareValuesForCollation(left, bound, comparator, true) <= 0
 	case "LIKE":
+		if scratch != nil && scratch.captureLike {
+			scratch.like = left
+		}
 		return likeMatchWithScratch(left, condition.Value, scratch)
 	case "NOT LIKE":
 		return !likeMatchWithScratch(left, condition.Value, scratch)
@@ -5183,14 +5208,15 @@ func compareSOQLTextFolded(left, right string) int {
 }
 
 func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder bool, userIDs ...storage.ID) {
-	sortRecordsByOrderTop(org, definition, records, order, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder, 0, userIDs...)
+	sortRecordsByOrderTop(org, definition, records, order, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder, 0, nil, userIDs...)
 }
 
 // sortRecordsByOrderTop is sortRecordsByOrder for a caller that reads only the
 // first top rows (top > 0). Those rows are exactly the first top rows of the
 // full stable sort, in the same order. The remaining rows follow them in no
-// promised order.
-func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder bool, top int, userIDs ...storage.ID) {
+// promised order. firstTexts, when it has one entry per record, holds the text
+// value of the first order column as the caller already read it.
+func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder bool, top int, firstTexts []string, userIDs ...storage.ID) {
 	// picklist_order_native.json observes setup order and one unlisted value
 	// after configured values. Keep unobserved incomplete shapes on their
 	// existing whole-column fallback so comparisons retain a total order.
@@ -5261,7 +5287,11 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 		if isPlain && ranks == nil && len(records) > 1 {
 			// Key-only column: skip the value matrix when every row holds
 			// non-null ASCII text.
-			if texts, ok := storedTexts(org, records, plain); ok {
+			texts, ok := firstTexts, column == 0 && len(firstTexts) == len(records)
+			if !ok {
+				texts, ok = storedTexts(org, records, plain)
+			}
+			if ok {
 				if columnKeys := asciiTextSortKeys(texts, spec.textComparator); columnKeys != nil {
 					keys[column] = columnKeys
 					commons[column], prefixes[column] = keyPrefixes(columnKeys)

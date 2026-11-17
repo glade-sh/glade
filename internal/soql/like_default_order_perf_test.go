@@ -60,7 +60,7 @@ func TestSortRecordsByOrderMatchesReference(t *testing.T) {
 					})
 					for _, top := range []int{0, 1, 5, 17, n / 3} {
 						got := append([]storage.Record(nil), records...)
-						sortRecordsByOrderTop(org, definition, got, order, false, false, top)
+						sortRecordsByOrderTop(org, definition, got, order, false, false, top, nil)
 						keep := len(got)
 						if top > 0 && top < len(got)/2 {
 							keep = top
