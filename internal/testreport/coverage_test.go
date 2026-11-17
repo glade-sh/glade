@@ -3,6 +3,7 @@ package testreport
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -90,6 +91,9 @@ func TestCoverageConsoleAndJUnit(t *testing.T) {
 	if !strings.Contains(junit.String(), `<property name="testRunCoverage" value="29%"></property>`) || !strings.Contains(junit.String(), `<property name="orgWideCoverage" value="28%"></property>`) {
 		t.Fatalf("junit missing coverage properties:\n%s", junit.String())
 	}
+	if !strings.Contains(junit.String(), `<property name="coverageGate" value="RunLocalTests:failed"></property>`) || !strings.Contains(junit.String(), `<property name="coverageGateWarning" value="Average test coverage across all Apex Classes`) {
+		t.Fatalf("junit missing coverage gate properties:\n%s", junit.String())
+	}
 	run.Coverage = nil
 	junit.Reset()
 	if err := WriteJUnitXML(&junit, run); err != nil {
@@ -108,5 +112,40 @@ func TestParseCoverageGate(t *testing.T) {
 	}
 	if _, err := ParseCoverageGate("RunAllTests"); err == nil {
 		t.Fatal("RunAllTests accepted")
+	}
+}
+
+// NATIVE per-test carry-over (test_runner_coverage_suite/org.tsv): in method
+// name order a later test's row holds the declaration lines earlier tests
+// covered, a class an earlier test reached keeps a row, and every trigger has
+// a row in every test.
+func TestNativePerTestRowsCarriesDeclarationLines(t *testing.T) {
+	run := Run{
+		Suites: []Suite{{Name: "T", Cases: []Case{
+			{ClassName: "T", MethodName: "beta", Coverage: []TestCoverage{{Name: "C", Type: "class", CoveredLines: []int{5, 6}}}},
+			{ClassName: "T", MethodName: "Alpha", Coverage: []TestCoverage{{Name: "C", Type: "class", CoveredLines: []int{2, 3}}}},
+			{ClassName: "T", MethodName: "gamma"},
+		}}},
+		Coverage: &Coverage{Components: []ComponentCoverage{
+			{Name: "C", Type: "class", TotalLines: 4, CoveredLines: []int{2, 3, 5, 6}, Declaration: []int{2, 5}},
+			{Name: "Trg", Type: "trigger", TotalLines: 2, UncoveredLines: []int{2, 3}},
+		}},
+	}
+	got := NativePerTestRows(run)
+	rows := map[string][]TestCoverage{}
+	for _, c := range got.Suites[0].Cases {
+		rows[c.MethodName] = c.Coverage
+	}
+	if fmt.Sprint(rows["Alpha"]) != "[{C class 2 2 [2 3]} {Trg trigger 0 2 []}]" {
+		t.Fatalf("Alpha rows %v", rows["Alpha"])
+	}
+	if fmt.Sprint(rows["beta"]) != "[{C class 3 1 [2 5 6]} {Trg trigger 0 2 []}]" {
+		t.Fatalf("beta rows %v", rows["beta"])
+	}
+	if fmt.Sprint(rows["gamma"]) != "[{C class 2 2 [2 5]} {Trg trigger 0 2 []}]" {
+		t.Fatalf("gamma rows %v", rows["gamma"])
+	}
+	if len(run.Suites[0].Cases[0].Coverage) != 1 {
+		t.Fatal("NativePerTestRows changed its input")
 	}
 }

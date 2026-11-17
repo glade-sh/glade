@@ -93,10 +93,6 @@ var coverageNativeCaptures = []coverageNativeCapture{
 // coverageNativeKnownGaps lists native rows Glade does not reproduce, with
 // the reason. docs/CODE_COVERAGE.md lists the same gaps.
 var coverageNativeKnownGaps = map[string]string{
-	// A Queueable enqueued in @TestSetup runs at the end of setup natively
-	// and its lines count for the method row. glade test does not run async
-	// work enqueued in @TestSetup.
-	"2:cvasync-setup": "async work enqueued in @TestSetup does not run",
 	// Native listed only CvUnion for this two-method run, without the
 	// uncalled trigger every other run lists; no captured fact explains it.
 	"1:cv2-ab/run": "native run omitted the uncalled trigger once",
@@ -245,18 +241,6 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 						}
 					}
 				}
-				perTest := map[string]map[string][]int{}
-				listed := map[string][]string{}
-				for _, suite := range run.Suites {
-					for _, c := range suite.Cases {
-						key := c.ClassName + "." + c.MethodName
-						perTest[key] = map[string][]int{}
-						for _, row := range c.Coverage {
-							perTest[key][row.Name] = row.CoveredLines
-							listed[key] = append(listed[key], row.Name)
-						}
-					}
-				}
 				store := apexcov.NewStore(nativeExec)
 				var steps []string
 				seen := map[string]bool{}
@@ -303,26 +287,49 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 						checked["nocov"]++
 						continue
 					}
+					// Each step is its own glade run of the step's selection:
+					// per-test rows carry declaration lines between the run's
+					// tests, as the native rows of that step do.
+					args := []string{"--code-coverage", "--class", testClass}
+					if len(methods) == 1 {
+						args = append(args, "--method", methods[0])
+					} else {
+						var names []string
+						for _, method := range methods {
+							names = append(names, testClass+"."+method)
+						}
+						args = append(args, "--filter", strings.Join(names, ","))
+					}
+					stepRun, _, _ := runCoverageCLI(t, root, args...)
+					if stepRun.Coverage == nil {
+						t.Fatalf("step %s: no coverage", step)
+					}
+					stepRows := map[string]map[string][]int{}
+					for _, suite := range stepRun.Suites {
+						for _, c := range suite.Cases {
+							stepRows[c.ClassName+"."+c.MethodName] = map[string][]int{}
+							for _, row := range c.Coverage {
+								stepRows[c.ClassName+"."+c.MethodName][row.Name] = row.CoveredLines
+							}
+						}
+					}
 					var runs []apexcov.TestRun
 					runListed := map[string]bool{}
-					for _, c := range run.Coverage.Components {
-						if c.Type == apexcov.KindTrigger {
-							runListed[c.Name] = true
-						}
+					for _, c := range stepRun.Coverage.Components {
+						runListed[c.Name] = true
 					}
 					for _, method := range methods {
 						key := testClass + "." + method
-						covered, ok := perTest[key]
+						covered, ok := stepRows[key]
 						if !ok {
 							t.Fatalf("step %s: glade ran no %s", step, key)
 						}
 						runs = append(runs, apexcov.TestRun{TestClass: testClass, Method: method, Covered: covered})
-						for _, name := range listed[key] {
-							runListed[name] = true
-						}
+					}
+					if len(stepRows) != len(methods) {
+						t.Fatalf("step %s: glade ran %d tests, native %d", step, len(stepRows), len(methods))
 					}
 					store.Record(runs)
-					solo := m[1] == "1"
 					for _, r := range rows {
 						if r.api != api || r.step != step {
 							continue
@@ -340,21 +347,12 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 							}
 							checked["org"]++
 						case "per":
-							// A run of several methods carries method-signature
-							// lines between per-test rows natively; only solo
-							// rows are compared.
-							if !solo {
-								continue
-							}
 							class, method, _ := strings.Cut(r.subject, ".")
 							got, ok := store.PerTest(class, method, r.detail)
-							if !ok && r.covered != "" {
+							if !ok {
 								t.Errorf("org.tsv:%d %s has no %s row", r.line, r.subject, r.detail)
 								continue
 							}
-							// A test lists only the components it reached; a
-							// native row with no covered line is the same
-							// coverage as no row.
 							covered := map[int]bool{}
 							for _, line := range got {
 								covered[line] = true
@@ -542,5 +540,153 @@ func TestDaemonEquivalenceCodeCoverage(t *testing.T) {
 		if !reflect.DeepEqual(got, oracle) {
 			t.Errorf("%s diverged from local oracle:\nwant %s\n got %s", mode.name, formatDaemonEquivalenceSnapshot(oracle), formatDaemonEquivalenceSnapshot(got))
 		}
+	}
+}
+
+const coverageSuiteDir = "../apextest/testdata/native_conformance/test_runner_coverage_suite"
+
+// NATIVE per-test carry-over and trigger rows, test_runner_coverage_suite/org.tsv,
+// API 62.0 and 67.0, repeats r1 and r2: one synchronous run of CovSuiteTest
+// (14 methods). glade test --code-coverage --json reports every native
+// per-test row (115 per run) and every aggregate row with the same covered
+// and uncovered lines.
+func TestCodeCoverageSuiteNative(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs glade test over the native coverage fixtures")
+	}
+	f, err := os.Open(filepath.Join(coverageSuiteDir, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	type row struct {
+		line                              int
+		api, repeat, source, name, method string
+		covered, uncovered                string
+	}
+	var rows []row
+	scanner := bufio.NewScanner(f)
+	n := 0
+	for scanner.Scan() {
+		n++
+		if n == 1 {
+			continue
+		}
+		cols := strings.Split(scanner.Text(), "\t")
+		if len(cols) != 9 {
+			t.Fatalf("org.tsv:%d has %d columns", n, len(cols))
+		}
+		rows = append(rows, row{n, cols[0], cols[1], cols[2], cols[3], cols[4], cols[7], cols[8]})
+	}
+	entries, err := os.ReadDir(filepath.Join(coverageSuiteDir, "fixtures"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, api := range []string{"62.0", "67.0"} {
+		t.Run(api, func(t *testing.T) {
+			root := t.TempDir()
+			writeDaemonEquivalenceFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+			for _, e := range entries {
+				source, err := os.ReadFile(filepath.Join(coverageSuiteDir, "fixtures", e.Name()))
+				if err != nil {
+					t.Fatal(err)
+				}
+				dir, meta := "classes", "<ApexClass><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>"
+				if strings.HasSuffix(e.Name(), ".trigger") {
+					dir, meta = "triggers", "<ApexTrigger><apiVersion>"+api+"</apiVersion><status>Active</status></ApexTrigger>"
+				}
+				path := filepath.Join(root, "force-app/main/default", dir, e.Name())
+				writeDaemonEquivalenceFile(t, path, string(source))
+				writeDaemonEquivalenceFile(t, path+"-meta.xml", meta)
+			}
+			run, _, _ := runCoverageCLI(t, root, "--code-coverage", "--class", "CovSuiteTest")
+			if run.Coverage == nil {
+				t.Fatal("no coverage")
+			}
+			lines := map[string]testreport.ComponentCoverage{}
+			for _, c := range run.Coverage.Components {
+				lines[c.Name] = c
+			}
+			perTest := map[string][]int{}
+			listed := map[string]bool{}
+			for _, suite := range run.Suites {
+				for _, c := range suite.Cases {
+					for _, r := range c.Coverage {
+						perTest[c.MethodName+"/"+r.Name] = r.CoveredLines
+						listed[c.MethodName+"/"+r.Name] = true
+					}
+				}
+			}
+			checked, nativeRows := 0, map[string]bool{}
+			for _, r := range rows {
+				if r.api != api {
+					continue
+				}
+				switch r.source {
+				case "aggregate":
+					c, ok := lines[r.name]
+					if !ok {
+						// An untouched empty class: the Tooling aggregate lists it
+						// at 0/0; glade lists only what the run reached.
+						if r.covered != "" || r.uncovered != "" {
+							t.Errorf("org.tsv:%d %s missing from glade components", r.line, r.name)
+						}
+						continue
+					}
+					if coverageLinesText(c.CoveredLines) != r.covered || coverageLinesText(c.UncoveredLines) != r.uncovered {
+						t.Errorf("org.tsv:%d aggregate %s\n got %v / %v\nwant %s / %s", r.line, r.name, c.CoveredLines, c.UncoveredLines, r.covered, r.uncovered)
+					}
+				case "per-test":
+					key := r.method + "/" + r.name
+					nativeRows[key] = true
+					if !listed[key] {
+						t.Errorf("org.tsv:%d no glade row %s", r.line, key)
+						continue
+					}
+					got := perTest[key]
+					covered := map[int]bool{}
+					for _, line := range got {
+						covered[line] = true
+					}
+					var uncovered []int
+					for _, line := range append(append([]int(nil), lines[r.name].CoveredLines...), lines[r.name].UncoveredLines...) {
+						if !covered[line] {
+							uncovered = append(uncovered, line)
+						}
+					}
+					sort.Ints(uncovered)
+					if coverageLinesText(got) != r.covered || coverageLinesText(uncovered) != r.uncovered {
+						t.Errorf("org.tsv:%d %s\n got %v / %v\nwant %s / %s", r.line, key, got, uncovered, r.covered, r.uncovered)
+					}
+				}
+				checked++
+			}
+			for key := range listed {
+				if !nativeRows[key] {
+					t.Errorf("glade row %s has no native row", key)
+				}
+			}
+			t.Logf("checked %d rows", checked)
+		})
+	}
+}
+
+// The RunLocalTests rule is org-wide, so it refuses a partial selection;
+// RunSpecifiedTests applies to one.
+func TestCoverageGateRunLocalTestsRejectsPartialSelections(t *testing.T) {
+	root := writeCoverageNativeProject(t, "67.0", coverageNativeCaptures[0])
+	for _, args := range [][]string{
+		{"--class", "CvUnionTest"}, {"--filter", "CvUnion"}, {"--shard-count", "2", "--shard-index", "0"}, {"--changed-since", "HEAD"},
+	} {
+		all := append([]string{"test", "--project", root, "--no-serve", "--no-progress", "--coverage-gate", "RunLocalTests"}, args...)
+		var stdout, stderr bytes.Buffer
+		exit := Run(context.Background(), all, &stdout, &stderr)
+		if exit == 0 || !strings.Contains(stdout.String()+stderr.String(), "--coverage-gate RunLocalTests needs every local test") {
+			t.Fatalf("%v: exit=%d stdout=%s stderr=%s", args, exit, stdout.String(), stderr.String())
+		}
+	}
+	run, _, _ := runCoverageCLI(t, root, "--coverage-gate", "RunSpecifiedTests", "--class", "CvUnionTest")
+	if run.Coverage == nil || run.Coverage.Gate == nil || run.Coverage.Gate.TestLevel != "RunSpecifiedTests" {
+		t.Fatalf("RunSpecifiedTests with a selector: %+v", run.Coverage)
 	}
 }

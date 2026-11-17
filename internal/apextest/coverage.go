@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"crypto/sha256"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -26,8 +27,14 @@ func newCoverageSession() *coverageSession {
 	return &coverageSession{cases: map[string]*apexcov.Recorder{}, setups: map[string]*apexcov.Recorder{}}
 }
 
-func coverageCaseKey(className, methodName string) string {
-	return strings.ToLower(className) + "\x00" + strings.ToLower(methodName)
+// coverageCaseKey and coverageSetupKey include the test class file: two
+// same-named test classes from different source units keep their own rows.
+func coverageCaseKey(className, methodName, file string) string {
+	return strings.ToLower(className) + "\x00" + strings.ToLower(methodName) + "\x00" + filepath.Clean(file)
+}
+
+func coverageSetupKey(className, file string) string {
+	return strings.ToLower(className) + "\x00" + filepath.Clean(file)
 }
 
 // install gives machine a fresh recorder when coverage is on.
@@ -40,13 +47,13 @@ func (s *coverageSession) install(machine *vm.VM) *apexcov.Recorder {
 	return recorder
 }
 
-func (s *coverageSession) recordCase(className, methodName string, recorder *apexcov.Recorder) {
+func (s *coverageSession) recordCase(className, methodName, file string, recorder *apexcov.Recorder) {
 	if s == nil || recorder == nil {
 		return
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	key := coverageCaseKey(className, methodName)
+	key := coverageCaseKey(className, methodName, file)
 	if previous := s.cases[key]; previous != nil {
 		previous.Merge(recorder)
 		return
@@ -56,13 +63,13 @@ func (s *coverageSession) recordCase(className, methodName string, recorder *ape
 
 // recordSetup keeps a class's @TestSetup events. Salesforce attributes them to
 // each test method's coverage row.
-func (s *coverageSession) recordSetup(className string, recorder *apexcov.Recorder) {
+func (s *coverageSession) recordSetup(className, file string, recorder *apexcov.Recorder) {
 	if s == nil || recorder == nil {
 		return
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	key := strings.ToLower(className)
+	key := coverageSetupKey(className, file)
 	if previous := s.setups[key]; previous != nil {
 		previous.Merge(recorder)
 		return
@@ -164,8 +171,8 @@ func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, 
 			testCase := &suite.Cases[ci]
 			recorder := apexcov.NewRecorder()
 			s.mu.Lock()
-			recorder.Merge(s.setups[strings.ToLower(testCase.ClassName)])
-			recorder.Merge(s.cases[coverageCaseKey(testCase.ClassName, testCase.MethodName)])
+			recorder.Merge(s.setups[coverageSetupKey(testCase.ClassName, testCase.SelectedSourceFile)])
+			recorder.Merge(s.cases[coverageCaseKey(testCase.ClassName, testCase.MethodName, testCase.SelectedSourceFile)])
 			s.mu.Unlock()
 			resolved := project.Resolve(recorder)
 			var rows []testreport.TestCoverage
@@ -223,6 +230,7 @@ func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, 
 			CoveredPercent: apexcov.Percent(count.Covered, count.Total),
 			CoveredLines:   nonNilLines(lines.Covered),
 			UncoveredLines: nonNilLines(lines.Uncovered),
+			Declaration:    append([]int(nil), c.Plan.Decl...),
 		})
 	}
 	runTotal, orgTotal := sumCounts(runParts), sumCounts(orgParts)

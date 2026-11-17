@@ -77,6 +77,29 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 	return Null, err
 }
 
+// DrainTestSetupAsync runs the async work a @TestSetup method left queued,
+// the way stopTest runs it, so the setup org that every test method starts
+// from holds its effects. Natively a Queueable enqueued in @TestSetup runs at
+// the end of setup and its lines count as covered
+// (test_runner_coverage/org.tsv cvasync-setup, API 62.0 and 67.0).
+func (vm *VM) DrainTestSetupAsync() error {
+	if vm == nil || vm.testContext == nil || !vm.HasPendingAsyncWork() {
+		return nil
+	}
+	vm.prepareTestStopAsyncJobs()
+	err := vm.drainTestWork(&Result{})
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		// A job's uncaught exception fails setup as an Apex exception, the way
+		// it would surface from setup code.
+		if len(thrown.stack) == 0 {
+			thrown.stack = vm.rawStackFrames()
+		}
+		return runtimeError(thrown.value, thrown.stack)
+	}
+	return err
+}
+
 // Queueables, futures and scheduled Apex submitted before startTest execute at
 // stopTest (async execution F036/F040), and so does Batch Apex (batch_event_async
 // two_beforeOnly and two_beforeAndInside, API 62/67). Scheduled batches expose

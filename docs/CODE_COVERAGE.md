@@ -26,9 +26,18 @@ glade test --coverage-gate RunSpecifiedTests --class-file tests.txt
   `--code-coverage` and applies that test level's deployment rule. A failed
   gate fails the run (exit code `1`, JSON status `failed`), like a failed test.
 
-Both flags work with every `glade test` route: a local run, `--daemon`, a
-running test server (`--connect` or auto-connect), `--watch`, class shards and
-selectors. The routes return the same coverage.
+Both flags work on every `glade test` route: a local run, `--daemon`, and a
+running test server (`--connect` or auto-connect). The routes return the same
+coverage.
+
+- `--code-coverage` also works with selectors, class shards and `--watch`. The
+  org-wide figure then counts only that run's coverage: a shard's org-wide
+  percent is shard-local, and shards are not merged.
+- `--coverage-gate RunLocalTests` needs every local test. It refuses
+  `--class`, `--method`, `--class-file`, `--filter`, `--shard-count`,
+  `--changed-since`, `--last-failed`, `--watch` and `--write-class-shards`.
+- `--coverage-gate RunSpecifiedTests` applies to a selection; that is its
+  meaning.
 
 ## What counts
 
@@ -69,10 +78,26 @@ ternary does not take stays uncovered.
 - A failed or throwing test keeps the lines it ran.
 - Class and run coverage is the union of distinct lines. A line two tests run
   is one covered line.
-- Every trigger in the project is listed in the run, with zero lines covered
-  when no test fired it, and counts toward `testRunCoverage`. Natively each
-  per-test result also lists every uncalled trigger with no lines; Glade's
-  per-test rows list only the classes and triggers that test reached.
+- Every trigger in the project is listed in the run, and in every test's
+  rows, with zero lines covered when no test fired it. It counts toward
+  `testRunCoverage`.
+- Async work a `@TestSetup` method enqueues (Queueable, `@future`, batch)
+  runs at the end of setup, the way `Test.stopTest` runs it. Its data is in
+  every test method's org and its lines count. A job that throws fails setup,
+  and every test method fails with the job's exception.
+
+Per-test rows carry declaration lines, as Salesforce stores them. Within a
+test class, in method name order (ignoring case):
+
+- a test has a row for every class an earlier test reached, even when it did
+  not reach that class itself;
+- a row holds the test's own lines plus the method, constructor and property
+  declaration lines that earlier tests covered. Statement lines are never
+  carried.
+
+So a test's row can show a method name line covered that the test never
+called. The run totals are unaffected: they are the union of lines, and every
+carried line was covered by an earlier test.
 
 ## Percentages
 
@@ -153,7 +178,12 @@ Each case carries its own rows:
 
 A test's uncovered lines are the component's executable lines (its
 `coveredLines` and `uncoveredLines` in `data.coverage.components`) less the
-test's `coveredLines`. Per-test rows omit them to keep large runs small.
+test's `coveredLines`. Per-test rows omit them to keep large runs small. Each
+component also lists `declarationLines`, the lines that carry between rows.
+
+The test daemon and server send compact rows (each test's own lines for what
+it reached); the JSON writer adds the carried lines and trigger rows, so every
+route prints the same rows.
 
 The envelope `summary` gains `coverageGateFailed: true` when a gate fails.
 
@@ -168,9 +198,12 @@ Mapping to `sf apex run test --code-coverage --json`:
 
 ### JUnit
 
-As with sf, JUnit carries only the two percentages: each `<testsuite>` gets
+As with sf, JUnit carries the two percentages: each `<testsuite>` gets
 `<properties>` with `testRunCoverage` and `orgWideCoverage` (for example
-`45%`). There is no per-line data in JUnit.
+`45%`). With `--coverage-gate` it also gets `coverageGate`
+(`RunLocalTests:failed`) and one `coverageGateWarning` per warning, which sf
+does not have, so a CI tool that reads only JUnit sees a failed gate. There is
+no per-line data in JUnit.
 
 ## One run against a fresh org
 
@@ -193,14 +226,22 @@ These shapes are not captured yet, or Glade does not match them:
   **CV7** package selection and package denominators, and **CV9** unit versus
   integration-test coverage are not captured. Managed package classes are
   excluded from every figure.
-- **Async work enqueued in `@TestSetup`.** Natively a Queueable enqueued in
-  setup runs at the end of setup and its lines count. `glade test` does not
-  run async work enqueued in `@TestSetup`, so those lines stay uncovered.
-- **Per-test rows of a multi-method run.** Natively, per-test rows in a run
-  of several methods carry method-signature lines over from earlier methods.
-  Glade's per-test rows match the native rows of solo runs.
+- **Async work in `@TestSetup`, beyond one Queueable.** The Queueable row is
+  captured. `@future`, batch, chained jobs, a throwing job, limits after setup
+  and a setup that calls `Test.stopTest` itself follow the `Test.stopTest`
+  rules and are not captured yet. A chained job stays queued, as it does at
+  `stopTest`.
+- **Carry-over edges.** The rule is captured for one test class run alone, with
+  method names that start in lower case. Mixed-case name order, carry across
+  two test classes in one asynchronous run, `@TestSetup` lines, and a rerun of
+  a subset are not captured yet.
 - **One run listing.** One native two-method run listed no uncalled trigger;
-  every other captured run lists them. Glade always lists every trigger.
+  every other captured run lists them. Glade always lists every trigger. A
+  fresh-org recapture of that run is pending.
+- **Empty classes.** An untouched class with no executable lines is not
+  listed; the Tooling `ApexCodeCoverageAggregate` lists every deployed class
+  with a row, including 0/0, and none for interfaces. A class with no lines
+  that a test reaches is listed at 0/0, as natively. No percentage changes.
 - **Partly executed statements.** A statement covers all of its non-lazy
   lines when it starts. A multi-line statement that throws before reaching a
   later operand line still counts that line. No row covers this shape.
@@ -213,6 +254,8 @@ These shapes are not captured yet, or Glade does not match them:
   equivalent.
 
 The conformance tests are `internal/gladecli/test_coverage_native_conformance_test.go`
-(the replay, fresh-org run summaries and daemon equivalence) and
+(the step-by-step replay, the 14-method carry-over run in
+`test_runner_coverage_suite`, fresh-org run summaries and daemon
+equivalence) and
 `internal/apexcov/native_conformance_test.go` (line maps, unions, percentages
 and the nine deployment gates).

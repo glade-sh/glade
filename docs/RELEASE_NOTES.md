@@ -44,9 +44,13 @@ No changes yet.
 
 - **Exception constructors on platform stubs.** Exception constructors on project-linked platform stubs keep their message and cause for every constructor shape.
 
-- **Apex code coverage.** `glade test --code-coverage` records which lines of each class and trigger the tests ran, per test and for the run, with the executable lines, unions and percentages Salesforce reports (`sf apex run test --code-coverage` at APIs 62.0 and 67.0). `--coverage-gate RunLocalTests|RunSpecifiedTests` applies the deployment coverage rule and fails the run when it is not met. JSON, the console summary and JUnit properties carry the result, from the local route, the daemon and a test server alike. Runs without the flag are unchanged. See `docs/CODE_COVERAGE.md` for the rules and known gaps.
+- **Apex code coverage.** `glade test --code-coverage` records which lines of each class and trigger the tests ran, per test and for the run, with the executable lines, carried per-test rows, unions and percentages Salesforce reports (`sf apex run test --code-coverage` at APIs 62.0 and 67.0). `--coverage-gate RunLocalTests|RunSpecifiedTests` applies the deployment coverage rule and fails the run when it is not met; RunLocalTests needs every local test and refuses selectors and shards. JSON, the console summary and JUnit properties carry the result, from the local route, the daemon and a test server alike. Runs without the flag are unchanged. See `docs/CODE_COVERAGE.md` for the rules and known gaps.
 
-- **Test selection in long-lived runs.** In one process, a whole-class run after a single-method run of the same class reported its other methods as passed without running them; this affected the test daemon, the test server and watch loops. Each selection now compiles its own invocations.
+- **Async work enqueued in `@TestSetup` runs.** A Queueable enqueued in `@TestSetup` now runs at the end of setup, as the native rows show, so its records are in every test method's data. `@future` and batch work queued in setup run by the same `Test.stopTest` rule. A setup whose job throws fails every test method with the job's exception. Tests that relied on the work never running may now fail.
+
+- **Every selected test method runs in long-lived processes.** In the test daemon, the test server and watch loops, a whole-class run after a single-method run of the same class reported its other methods as passed without running them. Those methods now run and may fail. One-shot `glade test` runs, the usual CI shape, were not affected. A test whose invocation is missing now fails as a runner error instead of passing.
+
+- **Same-named test classes from two package directories.** Each runs in its own group with its own custom metadata and only its own `@TestSetup`; before, the second class used the first class's org and ran both setups.
 
 ### Performance
 

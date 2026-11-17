@@ -283,7 +283,7 @@ func writeStyledConsoleProblem(out *strings.Builder, suiteName string, testCase 
 func WriteJSON(w io.Writer, run Run) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	return enc.Encode(run)
+	return enc.Encode(NativePerTestRows(run))
 }
 
 func WriteJUnitXML(w io.Writer, run Run) error {
@@ -391,10 +391,23 @@ func junitCoverageProperties(coverage *Coverage) *junitProperties {
 	if coverage == nil {
 		return nil
 	}
-	return &junitProperties{Properties: []junitProperty{
+	props := &junitProperties{Properties: []junitProperty{
 		{Name: "testRunCoverage", Value: fmt.Sprintf("%d%%", coverage.Summary.TestRunCoverage)},
 		{Name: "orgWideCoverage", Value: fmt.Sprintf("%d%%", coverage.Summary.OrgWideCoverage)},
 	}}
+	// sf JUnit has no gate field. A failed gate fails the run, so a CI tool
+	// that reads only JUnit must see it too.
+	if gate := coverage.Gate; gate != nil {
+		status := "passed"
+		if !gate.Passed {
+			status = "failed"
+		}
+		props.Properties = append(props.Properties, junitProperty{Name: "coverageGate", Value: gate.TestLevel + ":" + status})
+		for _, warning := range gate.Warnings {
+			props.Properties = append(props.Properties, junitProperty{Name: "coverageGateWarning", Value: warning})
+		}
+	}
+	return props
 }
 
 type junitTestCase struct {

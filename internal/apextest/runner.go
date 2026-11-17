@@ -596,13 +596,19 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		}
 		key := testCaseKey(testCase)
 		testMethodErr := testMethodErrors[key]
+		invokeProgram, hasInvoke := testInvokePrograms[key]
+		invokeErr := testInvokeErrors[key]
+		if !hasInvoke && invokeErr == nil {
+			// An empty program runs nothing and would report Pass.
+			invokeErr = fmt.Errorf("internal error: no compiled invocation for %s.%s", testCase.ClassName, testCase.MethodName)
+		}
 		planned[i] = testCasePlan{
 			TestCase:           testCase,
 			TestMethod:         testMethods[key],
 			TestRuntimeMethods: testRuntimeMethods[testMethodSourceKey(testCase.ClassName, testCase.File)],
 			TestMethodErr:      testMethodErr,
-			InvokeProgram:      testInvokePrograms[key],
-			InvokeProgErr:      testInvokeErrors[key],
+			InvokeProgram:      invokeProgram,
+			InvokeProgErr:      invokeErr,
 		}
 	}
 	if emitProgress {
@@ -1278,11 +1284,11 @@ type setupCompileCacheEntry struct {
 	ProgramErrs map[string]error
 }
 
+// testCompileCacheEntry holds compiled test methods. Invocation programs are
+// compiled per call for the requested cases and are never cached.
 type testCompileCacheEntry struct {
-	Methods     map[string]vm.Method
-	MethodErrs  map[string]error
-	Programs    map[string]ir.Program
-	ProgramErrs map[string]error
+	Methods    map[string]vm.Method
+	MethodErrs map[string]error
 }
 
 var (
@@ -2383,7 +2389,7 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 		return methods, methodErrs, programs, programErrs, err
 	}
 	testCacheMu.Lock()
-	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs, Programs: programs, ProgramErrs: programErrs}
+	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs}
 	testCacheMu.Unlock()
 	return methods, methodErrs, programs, programErrs, nil
 }
@@ -2781,19 +2787,21 @@ func rollbackJournal(journal *storage.IsolationJournal, mark testJournalMark, co
 // their own unit's custom metadata, so they cannot share one class org. A
 // class name with one source unit keeps its name as the group key, so other
 // runs are unchanged.
-func splitClassGroupsBySourceUnit(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string) {
+func splitClassGroupsBySourceUnit(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string, map[string]bool) {
 	groupClass := make(map[string]string, len(classOrder))
-	split := false
+	splitClasses := map[string]bool{}
 	for _, className := range classOrder {
 		groupClass[className] = className
 		units := map[string]bool{}
 		for _, i := range classIndexes[className] {
 			units[planned[i].TestMethod.SourceUnit] = true
 		}
-		split = split || len(units) > 1
+		if len(units) > 1 {
+			splitClasses[className] = true
+		}
 	}
-	if !split {
-		return classOrder, classIndexes, groupClass
+	if len(splitClasses) == 0 {
+		return classOrder, classIndexes, groupClass, splitClasses
 	}
 	order := make([]string, 0, len(classOrder))
 	indexes := make(map[string][]int, len(classIndexes))
@@ -2818,11 +2826,34 @@ func splitClassGroupsBySourceUnit(classOrder []string, classIndexes map[string][
 			groupClass[key] = className
 		}
 	}
-	return order, indexes, groupClass
+	return order, indexes, groupClass, splitClasses
+}
+
+// groupSetups returns the @TestSetup methods, invocations and errors of one
+// run group. A class name split across source units runs only the setup
+// declared in its group's own file.
+func groupSetups(className string, split bool, file string, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error) ([]vm.Method, error, []ir.Program, error) {
+	if !split {
+		return setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className]
+	}
+	var methods []vm.Method
+	var programs []ir.Program
+	all, allPrograms := setups[className], setupInvokePrograms[className]
+	for i, method := range all {
+		if filepath.Clean(method.File) != filepath.Clean(file) {
+			continue
+		}
+		methods = append(methods, method)
+		if i < len(allPrograms) {
+			programs = append(programs, allPrograms[i])
+		}
+	}
+	key := setupSourceKey(className, file)
+	return methods, setupErrors[key], programs, setupInvokeErrors[key]
 }
 
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
-	classOrder, classIndexes, groupClass := splitClassGroupsBySourceUnit(classOrder, classIndexes, planned)
+	classOrder, classIndexes, groupClass, splitClasses := splitClassGroupsBySourceUnit(classOrder, classIndexes, planned)
 	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
@@ -2906,10 +2937,13 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				setupCtx, setupCancel := testContext(ctx, opts)
 				var setupLimits vm.Limits
 				classOrg := org
+				groupFile := ""
 				if indexes := classIndexes[groupKey]; len(indexes) > 0 {
 					classOrg = customMetadataForSourceUnit(org, planned[indexes[0]].TestMethod.SourceUnit)
+					groupFile = planned[indexes[0]].TestCase.File
 				}
-				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, classOrg, opts, counters, &setupLimits)
+				classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr := groupSetups(className, splitClasses[className], groupFile, setups, setupErrors, setupInvokePrograms, setupInvokeErrors)
+				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr, triggerErrors, classOrg, opts, counters, &setupLimits)
 				if setupCancel != nil {
 					setupCancel()
 				}
@@ -3389,7 +3423,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	machine.SetCurrentPageURLNull()
 	if recorder := opts.coverage.install(machine); recorder != nil {
 		// A failed setup keeps the coverage it reached, like a failed test.
-		defer opts.coverage.recordSetup(className, recorder)
+		defer opts.coverage.recordSetup(className, setups[0].File, recorder)
 	}
 	for i, setup := range setups {
 		machine.EnablePlatformCacheTestSetupSnapshot()
@@ -3399,13 +3433,16 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 		if i >= len(setupPrograms) {
 			return setupOrg, machine.DeterministicRandomState(), fmt.Errorf("missing compiled @TestSetup invocation for %s", setup.Name), false
 		}
-		result, err := machine.ExecuteTestInClass(setupPrograms[i], setup.ClassName)
+		result, err := machine.ExecuteTestInClassFromSourceUnit(setupPrograms[i], setup.ClassName, setup.SourceUnit)
 		if err != nil {
 			return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 		}
 		if len(limits) > 0 && limits[0] != nil {
 			*limits[0] = result.Limits
 		}
+	}
+	if err := machine.DrainTestSetupAsync(); err != nil {
+		return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 	}
 	machine.CaptureChangeDataCaptureTestSetup()
 	return setupOrg, machine.DeterministicRandomState(), nil, false
@@ -3475,7 +3512,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 	}
 	if recorder := opts.coverage.install(machine); recorder != nil {
 		// A failed or throwing test keeps its coverage.
-		defer opts.coverage.recordCase(testCase.ClassName, testCase.MethodName, recorder)
+		defer opts.coverage.recordCase(testCase.ClassName, testCase.MethodName, testCase.File, recorder)
 	}
 	result, err := machine.ExecuteTestInClass(invokeProgram, testCase.ClassName)
 	if opts.debugSink != nil {
@@ -5095,24 +5132,35 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 			source, err := sources.read(typ.File)
 			if err != nil {
 				errs[typ.Name] = err
+				errs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, member.BodyRange, source, sources.apexAPIVersion(typ.File), namedPrefixApprovals(index, typ, member, source))
 			if err != nil {
 				errs[typ.Name] = err
+				errs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			method.IsStatic = true
+			method.SourceUnit = sources.runtimeSourceUnit(typ.File)
 			out[typ.Name] = append(out[typ.Name], method)
 			program, err := vm.CompileAnonymous(method.Name + "();")
 			if err != nil {
 				programErrs[typ.Name] = err
+				programErrs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			programs[typ.Name] = append(programs[typ.Name], program)
 		}
 	}
 	return out, errs, programs, programErrs
+}
+
+// setupSourceKey keys a @TestSetup error by class and file, so two same-named
+// test classes from different source units keep their own errors. The maps
+// also keep the class-name key every other caller reads.
+func setupSourceKey(className, file string) string {
+	return className + "\x00" + filepath.Clean(file)
 }
 
 // compileTestMethods compiles test methods by the name path only. Runner paths

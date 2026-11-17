@@ -36,6 +36,11 @@ type Plan struct {
 	Kind string
 	// Lines is the sorted executable set.
 	Lines []int
+	// Decl is the sorted subset that method, constructor and accessor entry
+	// and property access cover: name lines and property declaration lines.
+	// Natively a per-test row also holds the Decl lines earlier tests of the
+	// same run covered.
+	Decl []int
 
 	// at maps the source position of a statement, lazy operand, catch clause,
 	// switch label, or method, constructor or accessor declaration to the
@@ -75,6 +80,7 @@ func NewPlan(path, source string) *Plan {
 		staticInit:   map[string]*lineSet{},
 		instanceInit: map[string]*lineSet{},
 		props:        map[string]*lineSet{},
+		decl:         newLineSet(),
 	}
 	plan := &Plan{}
 	for _, node := range file.Nodes {
@@ -102,6 +108,7 @@ func NewPlan(path, source string) *Plan {
 		return nil
 	}
 	plan.Lines = w.all.sorted()
+	plan.Decl = w.decl.sorted()
 	plan.exec = w.all.lines
 	plan.at = freeze(w.at)
 	plan.iter = freeze(w.iter)
@@ -153,6 +160,7 @@ type walker struct {
 	at, iter                 map[point]*lineSet
 	staticInit, instanceInit map[string]*lineSet
 	props                    map[string]*lineSet
+	decl                     *lineSet
 	classes                  []string
 }
 
@@ -319,6 +327,7 @@ func (w *walker) field(n apexast.ASTNode, class string) {
 		// covers it, through an accessor body or through the property itself.
 		line := declarator.Range.Start.Line
 		w.mark(line)
+		w.decl.add(line)
 		regionIn(w.props, class+"#"+strings.ToLower(w.declName(*declarator))).add(line)
 		for _, acc := range accessors.Children {
 			for _, c := range acc.Children {
@@ -391,6 +400,7 @@ func (w *walker) method(n apexast.ASTNode) {
 	restore := w.enter(regionIn(w.at, startOf(n)))
 	w.mark(line)
 	restore()
+	w.decl.add(line)
 	w.statements(body.Children)
 }
 

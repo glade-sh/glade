@@ -40,6 +40,10 @@ type ComponentCoverage struct {
 	CoveredPercent int    `json:"coveredPercent"`
 	CoveredLines   []int  `json:"coveredLines"`
 	UncoveredLines []int  `json:"uncoveredLines"`
+	// Declaration lists the executable lines a method, constructor or
+	// property declaration covers. NativePerTestRows carries the covered ones
+	// from earlier tests into later per-test rows, as Salesforce does.
+	Declaration []int `json:"declarationLines,omitempty"`
 }
 
 // TestCoverage is one test method's coverage of one class or trigger: the
@@ -138,4 +142,112 @@ func formatLineList(lines []int, limit int) string {
 		parts = append(parts, fmt.Sprint(line))
 	}
 	return strings.Join(parts, ",")
+}
+
+// NativePerTestRows returns run with per-test coverage rows shaped as
+// Salesforce stores them for one run (ApexCodeCoverage, sf --code-coverage
+// records). The run records compact rows, each test's own lines for the
+// components it reached; the report writers expand them here, after the test
+// daemon wire, so the wire stays small. Within each test class, in method
+// name order:
+//   - a test has a row for every component it or an earlier test reached, and
+//     for every trigger, empty when no test fired it;
+//   - a row holds the test's own lines plus the declaration lines (method,
+//     constructor and property) that earlier tests covered.
+//
+// The rule reproduces the 115 per-test rows of a 14-method native run at API
+// 62.0 and 67.0 (advisor cov-holdout, mirrored in
+// internal/apextest/testdata/native_conformance/test_runner_coverage).
+// A run without coverage is returned unchanged.
+func NativePerTestRows(run Run) Run {
+	if run.Coverage == nil {
+		return run
+	}
+	components := run.Coverage.Components
+	decl := make([]map[int]bool, len(components))
+	for i, c := range components {
+		decl[i] = map[int]bool{}
+		for _, line := range c.Declaration {
+			decl[i][line] = true
+		}
+	}
+	byName := map[string]int{}
+	for i, c := range components {
+		byName[c.Type+"\x00"+c.Name] = i
+	}
+	suites := make([]Suite, len(run.Suites))
+	for si, suite := range run.Suites {
+		cases := append([]Case(nil), suite.Cases...)
+		order := make([]int, len(cases))
+		for i := range order {
+			order[i] = i
+		}
+		sort.SliceStable(order, func(a, b int) bool {
+			return lessTestMethodName(cases[order[a]].MethodName, cases[order[b]].MethodName)
+		})
+		reached := make([]bool, len(components))
+		carried := make([]map[int]bool, len(components))
+		for i := range carried {
+			carried[i] = map[int]bool{}
+		}
+		for _, ci := range order {
+			own := map[int][]int{}
+			for _, row := range cases[ci].Coverage {
+				if i, ok := byName[row.Type+"\x00"+row.Name]; ok {
+					own[i] = row.CoveredLines
+				}
+			}
+			var rows []TestCoverage
+			for i, c := range components {
+				lines, ownRow := own[i]
+				if !ownRow && !reached[i] && c.Type != "trigger" {
+					continue
+				}
+				set := map[int]bool{}
+				for _, line := range lines {
+					set[line] = true
+				}
+				for line := range carried[i] {
+					set[line] = true
+				}
+				merged := make([]int, 0, len(set))
+				for line := range set {
+					merged = append(merged, line)
+				}
+				sort.Ints(merged)
+				rows = append(rows, TestCoverage{
+					Name:              c.Name,
+					Type:              c.Type,
+					NumLinesCovered:   len(merged),
+					NumLinesUncovered: c.TotalLines - len(merged),
+					CoveredLines:      merged,
+				})
+			}
+			for i := range components {
+				if lines, ok := own[i]; ok {
+					reached[i] = true
+					for _, line := range lines {
+						if decl[i][line] {
+							carried[i][line] = true
+						}
+					}
+				}
+			}
+			cases[ci].Coverage = rows
+		}
+		suites[si] = suite
+		suites[si].Cases = cases
+	}
+	run.Suites = suites
+	return run
+}
+
+// lessTestMethodName orders test methods the way the native carry follows
+// them: by name, ignoring case, then by the exact name.
+func lessTestMethodName(a, b string) bool {
+	la, lb := strings.ToLower(a), strings.ToLower(b)
+	if la != lb {
+		return la < lb
+	}
+	return a < b
 }

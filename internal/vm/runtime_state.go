@@ -3515,6 +3515,17 @@ func (vm *VM) ExecuteInClass(program ir.Program, className string) (result Resul
 }
 
 // ExecuteTestInClass scopes the sharing entry to an actual test invocation.
+// ExecuteTestInClassFromSourceUnit is ExecuteTestInClass with the entry
+// bound to one source unit: a call the program makes to a name that two
+// source units declare resolves to that unit's declaration, as a call from
+// that unit's own code does.
+func (vm *VM) ExecuteTestInClassFromSourceUnit(program ir.Program, className, sourceUnit string) (Result, error) {
+	previous := vm.currentMethod.SourceUnit
+	vm.currentMethod.SourceUnit = sourceUnit
+	defer func() { vm.currentMethod.SourceUnit = previous }()
+	return vm.ExecuteTestInClass(program, className)
+}
+
 func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, error) {
 	previousEntry, previousTest := vm.entrySharingMode, vm.testExecutionEntry
 	if vm.entrySharingMode == "" {

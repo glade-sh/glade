@@ -393,6 +393,22 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	lastFailed = parsed.Bool("last-failed")
 	wizard = parsed.Bool("wizard")
 	debug = parsed.Bool("debug")
+	if coverageGate == testreport.CoverageGateRunLocalTests {
+		// The RunLocalTests rule is org-wide: it needs every local test's
+		// coverage, so a partial selection would fail a passing project.
+		for _, partial := range []struct {
+			set  bool
+			name string
+		}{
+			{strings.TrimSpace(filter) != "", "--filter"}, {className != "", "--class"}, {methodName != "", "--method"},
+			{classFile != "", "--class-file"}, {shardCount > 0, "--shard-count"}, {strings.TrimSpace(changedSince) != "", "--changed-since"},
+			{lastFailed, "--last-failed"}, {watchMode, "--watch"}, {writeClassShardsDir != "", "--write-class-shards"},
+		} {
+			if partial.set {
+				return testreport.Run{}, fmt.Errorf("--coverage-gate RunLocalTests needs every local test; it cannot be combined with %s (use RunSpecifiedTests for a selection)", partial.name)
+			}
+		}
+	}
 	if parsed.String("debounce") != "" {
 		parsedDebounce, err := time.ParseDuration(parsed.String("debounce"))
 		if err != nil {
@@ -1454,7 +1470,7 @@ func writeTestJSONEnvelopeWithStop(w io.Writer, result testreport.Run, junitPath
 		Tests:       flattenTestCases(result),
 		Artifacts:   artifacts,
 		Suggestions: testreport.NextCommands(summary),
-		Data:        result,
+		Data:        testreport.NativePerTestRows(result),
 	})
 }
 
