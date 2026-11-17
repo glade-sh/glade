@@ -1949,13 +1949,14 @@ func sObjectProjectedMapKey(v Value, seen map[uint64]bool) string {
 
 // describeKeySetTextOrder lists a field map's key set for text. Iteration and
 // List conversion follow the platform field order (default_order_rest d3), but
-// the set's text is alphabetical (record_type_shape list_forms keySetDebug and
+// the set's text is alphabetical by the API names' own case (each element's Int
+// holds its rank; describe_share_behavior_test keeps `ownerid, owner__c`) (record_type_shape list_forms keySetDebug and
 // keySetConcat, both APIs): the two row sets differ in how the set is read.
 func describeKeySetTextOrder(set Value) []Value {
 	if !set.describeKeySetText {
 		return set.Set
 	}
 	items := append([]Value(nil), set.Set...)
-	sort.SliceStable(items, func(i, j int) bool { return items[i].Text < items[j].Text })
+	sort.SliceStable(items, func(i, j int) bool { return items[i].Int < items[j].Int })
 	return items
 }
