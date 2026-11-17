@@ -418,7 +418,7 @@ func TestJavaCharacterByNameFollowsCodePointOf(t *testing.T) {
 	for name, want := range map[string]rune{
 		"GREEK SMALL LETTER ALPHA": 0x3B1, "greek small letter alpha": 0x3B1, "  LATIN SMALL LETTER A  ": 'a',
 		"LATIN SMALL LETTER A WITH GRAVE": 0xE0, "NO-BREAK SPACE": 0xA0, "GRINNING FACE": 0x1F600,
-		"NULL": 0, "DELETE": 0x7F, "LINE FEED (LF)": 10, "NEXT LINE (NEL)": 0x85, "APPLICATION PROGRAM COMMAND": 0x9F,
+		"NULL": 0, "BELL": 0x1F514, "DELETE": 0x7F, "LINE FEED (LF)": 10, "NEXT LINE (NEL)": 0x85, "APPLICATION PROGRAM COMMAND": 0x9F,
 		"CJK UNIFIED IDEOGRAPHS 4E00": 0x4E00, "cjk unified ideographs 4e00": 0x4E00, "HANGUL SYLLABLES AC00": 0xAC00,
 		"CJK UNIFIED IDEOGRAPHS EXTENSION B 20000": 0x20000, "PRIVATE USE AREA E000": 0xE000, "TANGUT 17000": 0x17000,
 	} {
@@ -432,6 +432,20 @@ func TestJavaCharacterByNameFollowsCodePointOf(t *testing.T) {
 		if got, ok := javaCharacterByName(name); ok {
 			t.Errorf("javaCharacterByName(%q) = %U, want unknown", name, got)
 		}
+	}
+	// Names added after Unicode 15.0 are unknown to Java 21, whatever x/text carries.
+	for _, name := range []string{"FACE WITH BAGS UNDER EYES", "IDEOGRAPHIC DESCRIPTION CHARACTER SURROUND FROM RIGHT", "IDEOGRAPHIC DESCRIPTION CHARACTER SUBTRACTION"} {
+		if got, ok := javaCharacterByName(name); ok {
+			t.Errorf("javaCharacterByName(%q) = %U, want unknown", name, got)
+		}
+	}
+	for _, r := range javaNamesAfterUnicode15 {
+		if javaCharacterName(r[0]) != "" || javaCharacterName(r[1]) != "" {
+			t.Errorf("range %U-%U still has a name", r[0], r[1])
+		}
+	}
+	if got, ok := javaCharacterByName("SHAKING FACE"); !ok || got != 0x1FAE8 {
+		t.Errorf("SHAKING FACE (Unicode 15.0) = %U, %v", got, ok)
 	}
 	runRegexApex(t, `
 System.assertEquals(true, Pattern.compile('\\N{GREEK SMALL LETTER ALPHA}').matcher('α').find());

@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -8,6 +9,8 @@ import (
 
 	"golang.org/x/text/unicode/runenames"
 )
+
+//go:generate go run gen_regex_name_age.go
 
 // java.lang.Character.codePointOf resolves \N{name}. The name is trimmed of
 // characters up to U+0020 and upper-cased. It is looked up in the Unicode name
@@ -75,12 +78,16 @@ func javaInitNames() {
 	javaNamesOnce.Do(func() {
 		javaNameToRune = make(map[string]rune, 41000)
 		for r := rune(0); r <= utf8.MaxRune; r++ {
-			if name := runenames.Name(r); name != "" && name[0] != '<' {
+			if name := runenames.Name(r); name != "" && name[0] != '<' && !javaNewerThanUnicode15(r) {
 				javaNameToRune[name] = r
 			}
 		}
+		// The Unicode 1.0 control names fill gaps only: \N{BELL} is U+1F514, not
+		// U+0007 (native row d22_name_bell_emoji).
 		for r, name := range javaControlNames {
-			javaNameToRune[name] = r
+			if _, taken := javaNameToRune[name]; !taken {
+				javaNameToRune[name] = r
+			}
 		}
 	})
 }
@@ -91,6 +98,9 @@ func javaInitNames() {
 func javaCharacterName(r rune) string {
 	if name, ok := javaControlNames[r]; ok {
 		return name
+	}
+	if javaNewerThanUnicode15(r) {
+		return ""
 	}
 	if name := runenames.Name(r); name != "" && name[0] != '<' {
 		return name
@@ -121,4 +131,12 @@ func javaCharacterByName(name string) (rune, bool) {
 		}
 	}
 	return 0, false
+}
+
+// javaNewerThanUnicode15 reports a code point that x/text's tables name but
+// Java 21 (Unicode 15.0) does not. x/text carries the 17.0 tables under Go 1.27
+// and later and the 15.0 tables before, so the exclusion keeps both the same.
+func javaNewerThanUnicode15(r rune) bool {
+	i := sort.Search(len(javaNamesAfterUnicode15), func(i int) bool { return javaNamesAfterUnicode15[i][1] >= r })
+	return i < len(javaNamesAfterUnicode15) && javaNamesAfterUnicode15[i][0] <= r
 }
