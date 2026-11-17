@@ -170,3 +170,7 @@ func TestReviewRound10NativeConformance(t *testing.T) {
 		},
 	}.replay(t)
 }
+
+func TestReviewRound11NativeConformance(t *testing.T) {
+	gapFamily{dir: "testdata/conformance/review_round11", cleanBetween: true}.replay(t)
+}

@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -83,7 +84,16 @@ System.assertEquals(Account.SObjectType, Schema.getGlobalDescribe().get('account
 					t.Fatal(err)
 				}
 				for range 2 {
-					if _, err := machine.Execute(program); err != nil {
+					_, err := machine.Execute(program)
+					// NATIVE review_round11 gw_chained_put, gw_chained_remove and
+					// gw_putall: only clear is writable on the global describe.
+					if mutation != "clear()" {
+						if err == nil || !strings.Contains(err.Error(), "Collection is read-only") {
+							t.Fatalf("err=%v, want the read-only fault", err)
+						}
+						continue
+					}
+					if err != nil {
 						t.Fatal(err)
 					}
 				}

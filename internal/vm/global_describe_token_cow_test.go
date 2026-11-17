@@ -85,14 +85,14 @@ System.assertEquals('Contact', String.valueOf(holder.get('account')));
 System.assertEquals('Contact', String.valueOf(sibling.get('account')));
 System.assertEquals('Contact', String.valueOf(Schema.getGlobalDescribe().get('account')));
 `},
-		{"detached holder after put", `
+		{"detached holder after key-set remove", `
 Map<String,Schema.SObjectType> holder = Schema.getGlobalDescribe();
-holder.put('private', Account.SObjectType);
+holder.keySet().remove('user');
 Schema.SObjectType token = holder.get('account');
 token.object = 'Contact';
 System.assertEquals('Contact', String.valueOf(holder.get('account')));
 System.assertEquals('Contact', String.valueOf(Schema.getGlobalDescribe().get('account')));
-System.assertEquals('Account', String.valueOf(holder.get('private')));
+System.assert(!holder.containsKey('user'));
 `},
 		{"values loop", `
 for (Schema.SObjectType token : Schema.getGlobalDescribe().values()) { token.object = 'Contact'; }
@@ -165,13 +165,15 @@ func TestGlobalDescribeTokenWritePrivatizesOnce(t *testing.T) {
 	}
 }
 
-// put/remove on the map never reach the shared token set or another VM.
+// Writes to the map never reach the shared token set or another VM.
+// put, putAll and remove are read-only on the global describe (review_round11
+// gw_put, gw_putall, gk_direct); key-set writes and clear detach instead.
 func TestGlobalDescribeMapPutRemoveIsolationWithSharedTokens(t *testing.T) {
 	mutations := []string{
-		`holder.put('private', Account.SObjectType);`,
-		`holder.put('private', holder.get('account'));`,
-		`holder.remove('account');`,
-		`holder.putAll(new Map<String,Schema.SObjectType>{'private' => User.SObjectType});`,
+		`holder.keySet().remove('account');`,
+		`holder.keySet().removeAll(new Set<String>{'account'});`,
+		`holder.keySet().retainAll(new Set<String>{'user'});`,
+		`holder.keySet().clear();`,
 		`holder.clear();`,
 	}
 	for _, namespaced := range []bool{false, true} {
@@ -184,14 +186,13 @@ func TestGlobalDescribeMapPutRemoveIsolationWithSharedTokens(t *testing.T) {
 				size := len(readerSize.Map)
 				describeShareRunApex(t, writer, `Map<String,Schema.SObjectType> holder = Schema.getGlobalDescribe();
 `+mutation+`
-holder.put('another', User.SObjectType);
-System.assert(holder.containsKey('another'));`)
+holder.keySet().remove('user');
+System.assert(!holder.containsKey('user'));`)
 				again := describeShareClone(base, template)
 				for _, machine := range []*VM{reader, again} {
 					describeShareRunApex(t, machine, `Map<String,Schema.SObjectType> holder = Schema.getGlobalDescribe();
 System.assert(holder.containsKey('account'));
-System.assert(!holder.containsKey('private'));
-System.assert(!holder.containsKey('another'));
+System.assert(holder.containsKey('user'));
 System.assertEquals(Account.SObjectType, holder.get('account'));`)
 				}
 				if got := len(again.schemaGlobalDescribe().Map); got != size {
@@ -218,7 +219,7 @@ func TestGlobalDescribeTokensConcurrentClones(t *testing.T) {
 			source := `Schema.SObjectType token = Schema.getGlobalDescribe().get('account');
 System.assertEquals('Account', String.valueOf(token));
 Map<String,Schema.SObjectType> holder = Schema.getGlobalDescribe();
-holder.put('private', token);
+holder.keySet().remove('user');
 if (` + fmt.Sprint(worker%2) + ` == 1) {
 	token.object = '` + name + `';
 	System.assertEquals('` + name + `', String.valueOf(Schema.getGlobalDescribe().get('account')));

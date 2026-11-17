@@ -33,26 +33,42 @@ type describeShareRow struct {
 func describeShareRows() []describeShareRow {
 	return []describeShareRow{
 		{
-			name: "global describe map writes persist in the VM",
-			source: `Schema.getGlobalDescribe().put('zzshare', Account.SObjectType);
-System.debug('P1a:' + Schema.getGlobalDescribe().containsKey('zzshare') + ':' + Schema.getGlobalDescribe().size());
-Schema.getGlobalDescribe().remove('account');
-System.debug('P1b:' + Schema.getGlobalDescribe().containsKey('account') + ':' + Schema.getGlobalDescribe().get('account') + ':' + Schema.getGlobalDescribe().size());
-Schema.getGlobalDescribe().clear();
-System.debug('P1c:' + Schema.getGlobalDescribe().size() + ':' + Schema.getGlobalDescribe().keySet().size() + ':' + Schema.getGlobalDescribe().get('widget__c'));`,
-			debug: "P1a:true:172 | P1b:true:Account:171 | P1c:0:0:Widget__c",
+			// NATIVE review_round11 gw_chained_put and gw_chained_remove: put and
+			// remove on the global describe raise the uncatchable FinalException.
+			name:   "global describe chained put is read-only",
+			source: `Schema.getGlobalDescribe().put('zzshare', Account.SObjectType);`,
+			err:    "System.FinalException: Collection is read-only",
 		},
 		{
+			name:   "global describe chained remove is read-only",
+			source: `Schema.getGlobalDescribe().remove('account');`,
+			err:    "System.FinalException: Collection is read-only",
+		},
+		{
+			// NATIVE review_round11 gw_chained_clear: a chained clear leaves a
+			// fresh getGlobalDescribe() whole.
+			name: "global describe chained clear stays local",
+			source: `Integer n = Schema.getGlobalDescribe().size();
+Schema.getGlobalDescribe().clear();
+System.debug('P1c:' + (Schema.getGlobalDescribe().size() - n) + ':' + Schema.getGlobalDescribe().get('widget__c'));`,
+			debug: "P1c:0:Widget__c",
+		},
+		{
+			// NATIVE review_round11 gk_p2a: put on a typed holder is read-only.
+			name: "typed global describe put is read-only",
+			source: `Map<String, Schema.SObjectType> gd = Schema.getGlobalDescribe();
+gd.put('zzshare', Account.SObjectType);`,
+			err: "System.FinalException: Collection is read-only",
+		},
+		{
+			// NATIVE review_round11 gw_clear: clear empties that holder only.
 			name: "typed global describe variable is a private copy",
 			source: `Map<String, Schema.SObjectType> gd = Schema.getGlobalDescribe();
 Integer n = gd.size();
-gd.put('zzshare', Account.SObjectType);
-gd.remove('account');
-System.debug('P2a:' + gd.containsKey('zzshare') + ':' + (gd.size() - n) + ':' + gd.get('account'));
-System.debug('P2b:' + Schema.getGlobalDescribe().containsKey('zzshare') + ':' + (Schema.getGlobalDescribe().size() - n));`,
-			// A direct remove drops the key from this holder at least as the
-			// key-set remove does (native review_round10 g_gd_remove).
-			debug: "P2a:true:0:null | P2b:false:0",
+gd.clear();
+System.debug('P2a:' + gd.size() + ':' + gd.containsKey('account') + ':' + gd.get('account') + ':' + gd.keySet().size());
+System.debug('P2b:' + (Schema.getGlobalDescribe().size() - n) + ':' + Schema.getGlobalDescribe().containsKey('account'));`,
+			debug: "P2a:0:false:null:0 | P2b:0:true",
 		},
 		{
 			name: "fields.getMap put is read-only",

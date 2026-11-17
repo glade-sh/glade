@@ -1062,6 +1062,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 	receiver = receiver.currentMapKeySet()
 	normalizeFieldMapHolderArgs(args)
 	if receiver.Kind == ValueMap && (receiver.mapBackingShared || receiver.mapEntriesShared || isGlobalDescribeMap(receiver)) && mapMutatingMemberName(method) {
+		if globalDescribeMapReadOnly(receiver, method) {
+			return Null, true, errors.New(readOnlyCollectionFault)
+		}
 		vm.prepareSharedMapMutation(&receiver)
 	}
 	if isIteratorValue(receiver) && (strings.EqualFold(method, "hasNext") || strings.EqualFold(method, "next")) {
@@ -4102,6 +4105,15 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			cloned.Fields = maps.Clone(cloned.Fields)
 			delete(cloned.Fields, "__collection_readonly")
 		}
+		if isGlobalDescribeMap(cloned) {
+			// A clone of the global describe is writable (review_round11
+			// gw_clone_remove, review_round10 g_gd_clone_add).
+			cloned.Fields = maps.Clone(cloned.Fields)
+			if cloned.Fields == nil {
+				cloned.Fields = map[string]Value{}
+			}
+			cloned.Fields[globalDescribeWritableField] = Bool(true)
+		}
 		if cloned.Runtime == "pagereference-headers" {
 			// Captured clones are ordinary detached maps: null entries are
 			// accepted and neither equal nor changed values write a response.
@@ -4202,4 +4214,27 @@ func (vm *VM) globalDescribeViewLacksKey(receiver Value, key string) bool {
 		}
 	}
 	return true
+}
+
+// globalDescribeWritableField marks a clone of the global describe map, which
+// takes put, putAll and remove like any map.
+const globalDescribeWritableField = "__global_describe_writable"
+
+// globalDescribeMapReadOnly reports a put, putAll or remove on the global
+// describe map, typed or chained, which natively raises the uncatchable
+// FinalException whatever the key (review_round11 gw_put, gw_put_existing,
+// gw_putall, gw_remove_missing, gw_chained_put, gw_chained_remove,
+// gw_remove_catch, gk_direct; APIs 62.0 and 67.0). clear stays writable
+// (gw_clear), and so does a clone (gw_clone_remove).
+func globalDescribeMapReadOnly(receiver Value, method string) bool {
+	if !isGlobalDescribeMap(receiver) {
+		return false
+	}
+	switch canonicalCollectionMemberName("Map", method) {
+	case "put", "putAll", "remove":
+	default:
+		return false
+	}
+	flag := receiver.Fields[globalDescribeWritableField]
+	return flag.Kind != ValueBool || !flag.Bool
 }

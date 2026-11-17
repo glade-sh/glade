@@ -13,9 +13,10 @@ func TestGlobalDescribeViewsIsolateMutations(t *testing.T) {
 	for _, namespaced := range []bool{false, true} {
 		for _, api := range []string{"62.0", "67.0"} {
 			for _, mutation := range []string{
-				"holder.put('private', Account.SObjectType);",
-				"holder.putAll(new Map<String,Schema.SObjectType>{'private' => Account.SObjectType});",
-				"holder.remove('account');",
+				// put, putAll and remove are read-only (review_round11 gw_put,
+				// gw_putall, gk_direct); these are the writes that succeed.
+				"holder.keySet().remove('account');",
+				"holder.keySet().retainAll(new Set<String>{'user'});",
 				"holder.clear();",
 			} {
 				t.Run(fmt.Sprintf("namespace=%v/api=%s/%s", namespaced, api, mutation), func(t *testing.T) {
@@ -64,14 +65,14 @@ func TestGlobalDescribeViewKeepsCanonicalStorageUntilWrite(t *testing.T) {
 	order := append([]string(nil), orderedValueMapKeys(raw)...)
 	machine.Globals["holder"] = view
 	machine.VarTypes["holder"] = view.Type
-	if _, _, err := machine.callValueMember("holder", view, "put", []Value{String("private"), sObjectTypeToken("Account")}, &Result{}); err != nil {
+	if _, _, err := machine.callValueMember("holder", view, "clear", nil, &Result{}); err != nil {
 		t.Fatal(err)
 	}
 	updated := machine.Globals["holder"]
 	if sameMapBacking(updated.Map, raw.Map) || updated.Ref != view.Ref {
 		t.Fatal("write did not detach the view while preserving its identity")
 	}
-	if _, ok := raw.Map[mapKey(String("private"))]; ok || !reflect.DeepEqual(order, orderedValueMapKeys(raw)) {
+	if _, ok := raw.Map[mapKey(String("account"))]; !ok || !reflect.DeepEqual(order, orderedValueMapKeys(raw)) {
 		t.Fatal("write changed canonical entries or order")
 	}
 }
@@ -115,7 +116,8 @@ func TestGlobalDescribeWrittenEntriesStillValidateOnTypedBinding(t *testing.T) {
 		{Bool(true), sObjectTypeToken("Account")},
 	} {
 		machine := describeShareUnprimed()
-		raw := machine.globalDescribeMapValue()
+		// The raw app/module cache stays writable; the global view is not.
+		raw := machine.schemaGlobalDescribe()
 		if _, _, err := machine.callValueMember("", raw, "put", []Value{entry.key, entry.value}, &Result{}); err != nil {
 			t.Fatal(err)
 		}
@@ -135,8 +137,10 @@ func TestGlobalDescribeWritesPreserveRawAppAndModuleViews(t *testing.T) {
 		{"remove", []Value{String("missing")}},
 	} {
 		machine := describeShareUnprimed()
-		if _, _, err := machine.callValueMember("", machine.globalDescribeMapValue(), mutation.method, mutation.args, &Result{}); err != nil {
-			t.Fatal(err)
+		// NATIVE review_round11 gw_put, gw_putall, gw_remove_missing: the
+		// global view refuses the write and leaves the raw cache alone.
+		if _, _, err := machine.callValueMember("", machine.globalDescribeMapValue(), mutation.method, mutation.args, &Result{}); err == nil || err.Error() != readOnlyCollectionFault {
+			t.Fatalf("%s: err=%v, want the read-only fault", mutation.method, err)
 		}
 		if isGlobalDescribeMap(machine.schemaGlobalDescribe()) {
 			t.Fatalf("%s published the global-only marker into the raw cache", mutation.method)

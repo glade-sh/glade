@@ -104,6 +104,19 @@ func mapIdentity(value Value) uintptr {
 	return reflect.ValueOf(value.Map).Pointer()
 }
 
+// describeShareRunApexReadOnly runs source and requires the uncatchable
+// read-only fault of a global describe put, putAll or remove (review_round11).
+func describeShareRunApexReadOnly(t *testing.T, machine *VM, source string) {
+	t.Helper()
+	program, err := CompileAnonymous(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Collection is read-only") {
+		t.Fatalf("err=%v, want the read-only fault", err)
+	}
+}
+
 func describeShareRunApex(t *testing.T, machine *VM, source string) {
 	t.Helper()
 	program, err := CompileAnonymous(source)

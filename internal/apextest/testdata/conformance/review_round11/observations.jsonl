@@ -1,0 +1,40 @@
+{"api": "62.0", "debug": ["OBS|gk_get|null|null|false|1|Account|true|0|false|Account"], "error": "", "id": "gk_get", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gk_get|null|null|false|1|Account|true|0|false|Account"], "error": "", "id": "gk_get", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gk_direct", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gk_direct", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gk_p2a", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gk_p2a", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gk_direct_upper", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gk_direct_upper", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gk_removeall|true|1|false|null|true|0"], "error": "", "id": "gk_removeall", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gk_removeall|true|1|false|null|true|0"], "error": "", "id": "gk_removeall", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gk_retainall|true|1|true|User|false|null|{user}|0"], "error": "", "id": "gk_retainall", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gk_retainall|true|1|true|User|false|null|{user}|0"], "error": "", "id": "gk_retainall", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gk_saved|1|false|false|1|1|false|0|0|0|0"], "error": "", "id": "gk_saved", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gk_saved|1|false|false|1|1|false|0|0|0|0"], "error": "", "id": "gk_saved", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gk_alias|1|false|1|false|1|false|false|2|false|false|false|false|false|5|true|0"], "error": "", "id": "gk_alias", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gk_alias|1|false|1|false|1|false|false|2|false|false|false|false|false|5|true|0"], "error": "", "id": "gk_alias", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gk_class|gk_get=null|null|false|1|Account|true|0|false|Account~gk_removeall=true|1|false|null|true|0~gk_retainall=true|1|true|User|false|null|{user}|0~gk_saved=1|false|false|1|1|false|0|0|0|0~gk_alias=1|false|1|false|1|false|false|2|false|false|false|false|false|5|true|0"], "error": "", "id": "gk_class", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gk_class|gk_get=null|null|false|1|Account|true|0|false|Account~gk_removeall=true|1|false|null|true|0~gk_retainall=true|1|true|User|false|null|{user}|0~gk_saved=1|false|false|1|1|false|0|0|0|0~gk_alias=1|false|1|false|1|false|false|2|false|false|false|false|false|5|true|0"], "error": "", "id": "gk_class", "route": "anonymous"}
+{"api": "62.0", "id": "gk_test", "route": "istest", "tests": [["viaClass", "Fail", "System.AssertException: Assertion Failed: Expected: CAPTURE, Actual: gk_get=null|null|false|1|Account|true|0|false|Account~gk_removeall=true|1|false|null|true|0~gk_retainall=true|1|true|User|false|null|{user}|0~gk_saved=1|false|false|1|1|false|0|0|0|0~gk_alias=1|false|1|false|1|false|false|2|false|false|false|false|false|5|true|0"]]}
+{"api": "67.0", "id": "gk_test", "route": "istest", "tests": [["viaClass", "Fail", "System.AssertException: Assertion Failed: Expected: CAPTURE, Actual: gk_get=null|null|false|1|Account|true|0|false|Account~gk_removeall=true|1|false|null|true|0~gk_retainall=true|1|true|User|false|null|{user}|0~gk_saved=1|false|false|1|1|false|0|0|0|0~gk_alias=1|false|1|false|1|false|false|2|false|false|false|false|false|5|true|0"]]}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_put", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_put", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_put_existing", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_put_existing", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_putall", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_putall", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gw_clear|0|false|null|0|0"], "error": "", "id": "gw_clear", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gw_clear|0|false|null|0|0"], "error": "", "id": "gw_clear", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_remove_missing", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_remove_missing", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_chained_put", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_chained_put", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_chained_remove", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_chained_remove", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gw_chained_clear|0|Account"], "error": "", "id": "gw_chained_clear", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gw_chained_clear|0|Account"], "error": "", "id": "gw_chained_clear", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_remove_catch", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_remove_catch", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gw_clone_remove|1|false|null|true"], "error": "", "id": "gw_clone_remove", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gw_clone_remove|1|false|null|true"], "error": "", "id": "gw_clone_remove", "route": "anonymous"}

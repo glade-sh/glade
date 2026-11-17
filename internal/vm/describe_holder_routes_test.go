@@ -12,7 +12,10 @@ import (
 // run by actual project and host routes; it never infers native writable maps.
 // Key-set remove and clear write through to the holder and its aliases, never
 // to a sibling or a fresh getGlobalDescribe() (native review_round10
-// g_gd_remove, g_gd_clear); removeAll and retainAll take the same key-set path.
+// g_gd_remove, g_gd_clear; review_round11 gk_removeall, gk_retainall, gk_saved,
+// gk_alias, gk_class). put, putAll and remove are read-only on every holder
+// (review_round11 gw_put, gw_putall, gk_direct): see
+// TestDescribeHolderDirectWritesAreReadOnly.
 func TestDescribeHolderPublicationRoutes(t *testing.T) {
 	raw, err := os.ReadFile("testdata/describe_ownership/holder.apex")
 	if err != nil {
@@ -32,10 +35,7 @@ func TestDescribeHolderPublicationRoutes(t *testing.T) {
 						}
 						machine := makeVM()
 						for _, write := range []struct{ mutation, size string }{
-							{"put('private', Account.SObjectType)", "beforeSize + 1"},
-							{"put('account', User.SObjectType)", "beforeSize"},
-							{"putAll(new Map<String,Schema.SObjectType>{'private'=>Account.SObjectType})", "beforeSize + 1"},
-							{"remove('account')", "beforeSize - 1"}, {"clear()", "0"},
+							{"clear()", "0"},
 							{"keySet().remove('account')", "beforeSize - 1"},
 							{"keySet().clear()", "0"},
 							{"keySet().removeAll(new Set<String>{'account'})", "beforeSize - 1"},
@@ -71,6 +71,52 @@ func TestDescribeHolderPublicationRoutes(t *testing.T) {
 							}
 						}
 					})
+				}
+			}
+		}
+	}
+}
+
+// NATIVE review_round11 gw_put, gw_put_existing, gw_putall, gk_direct and
+// gw_remove_missing (62.0, 67.0): put, putAll and remove on the global
+// describe raise the uncatchable FinalException. gk_alias shows the local,
+// static, field and parameter aliases name the same map.
+func TestDescribeHolderDirectWritesAreReadOnly(t *testing.T) {
+	for _, namespaced := range []bool{false, true} {
+		for _, mutation := range []string{
+			"put('private', Account.SObjectType)", "put('account', User.SObjectType)",
+			"putAll(new Map<String,Schema.SObjectType>{'private'=>Account.SObjectType})",
+			"remove('account')", "remove('zzz_missing')",
+		} {
+			for _, target := range []string{"holder", "alias", "DescribeOwner.stored", "instance.member", "parameter"} {
+				machine := describeShareUnprimedFor(namespaced)
+				program, err := CompileAnonymousWithOptions("m."+mutation+";", CompileOptions{APIVersion: "67.0"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := machine.RegisterClass(Class{Name: "DescribeOwner",
+					Fields:       map[string]Field{"member": {Name: "member", Type: "Map<String,Schema.SObjectType>"}},
+					StaticFields: map[string]Field{"stored": {Name: "stored", Type: "Map<String,Schema.SObjectType>", Static: true}},
+					Methods:      map[string]Method{"mutate": {Name: "DescribeOwner.mutate", ClassName: "DescribeOwner", IsStatic: true, ReturnType: "void", Params: []Param{{Name: "m", Type: "Map<String,Schema.SObjectType>"}}, Program: program}},
+				}); err != nil {
+					t.Fatal(err)
+				}
+				action := target + "." + mutation + ";"
+				if target == "parameter" {
+					action = "DescribeOwner.mutate(holder);"
+				}
+				source := `Map<String,Schema.SObjectType> holder = Schema.getGlobalDescribe();
+Map<String,Schema.SObjectType> alias = holder;
+DescribeOwner.stored = holder;
+DescribeOwner instance = new DescribeOwner(); instance.member = holder;
+try { ` + action + ` } catch (Exception e) { System.debug('caught'); }`
+				compiled, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "67.0"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = machine.ExecuteInClass(compiled, "DescribeOwner")
+				if err == nil || !strings.Contains(err.Error(), "Collection is read-only") {
+					t.Fatalf("namespaced=%v %s.%s: err=%v, want the uncatchable read-only fault", namespaced, target, mutation, err)
 				}
 			}
 		}
