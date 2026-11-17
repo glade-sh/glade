@@ -28,16 +28,17 @@ func TestHiddenRecordUpdateNativeConformance(t *testing.T) {
 	gapFamily{dir: "testdata/conformance/hidden_record_update", adminFrom: []string{"HidAccess"}, residual: hiddenRecordResiduals, apis: []string{"62.0", "66.0", "67.0"}}.replay(t)
 }
 
-// GROUP BY group order repeats across orgs, APIs and runs (Bravo, Delta,
-// Charlie, Alpha for Alpha..Delta) but the capture holds one four-value
-// sample, so no rule is fitted: Glade returns ascending group values. Hash
-// orders of the group strings and first-appearance orders were tried and do
-// not produce it. The Account and global describe key sets differ in
-// membership (59 and 1312 native keys at 62.0; 1425 at 67.0), which this
-// project cannot reproduce.
+// GROUP BY without ORDER BY: the SF-4 samples (4 to 8 text values, several
+// insertion orders, APIs 62.0 and 67.0, two repeats) show an order that is neither
+// insertion nor alphabetical and that differs between anonymous Apex and the
+// @IsTest route on the same API, so no portable rule exists and Glade keeps
+// ascending values. The Account field map follows the captured platform order
+// for the 59 captured keys, but the native org holds 59 fields (60 in the test
+// route, which adds tier) where Glade's schema holds 66. The global describe key
+// set differs in membership (1450 native keys, 5712 in Glade).
 var defaultOrderResiduals = func() map[string]string {
-	const group = "native GROUP BY order is stable but its rule is not derivable from one four-value sample"
-	const members = "native key set membership differs from Glade's schema"
+	const group = "native GROUP BY order depends on the route (anonymous vs @IsTest) and is not a portable rule (SF-4 samples)"
+	const members = "native key set membership differs from Glade's schema (order of the shared Account keys is fitted)"
 	residual := map[string]string{}
 	for _, api := range []string{"62", "67"} {
 		for _, id := range []string{"group_agg", "group_plain", "group_sum", "group_filtered"} {
@@ -52,17 +53,14 @@ var defaultOrderResiduals = func() map[string]string {
 
 // The native rows read a record that already existed in the org
 // (SeeAllData=true) and report INSUFFICIENT_ACCESS_OR_READONLY for default-mode
-// update, as a DmlException or a failed SaveResult, at 62.0, 66.0 and 67.0,
-// in a default-sharing and in a without-sharing class. Glade's existing
-// sharing_access_modes d2_upd rows (the record is created inside the test, same
-// object shape and user) report INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY,
-// and Glade raises a SecurityException at 67.0. The two native shapes differ by
-// SeeAllData and by when the record was created; the local @IsTest route has
-// no way to hold a pre-existing record, so the replay runs the in-test shape
-// and stays unmatched. Not fixed: it needs a native row with the record created
-// in the test and SeeAllData=false to tell the two causes apart.
+// update. The SF-4 hidden_record_grid rows settle the cause: records created in
+// the test method or in @TestSetup report INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY
+// in every sharing declaration at 62.0, 66.0 and 67.0 (Glade matches), and records
+// that already exist under SeeAllData=true report INSUFFICIENT_ACCESS_OR_READONLY.
+// The local @IsTest route holds no pre-existing record, so the replay runs the
+// in-test shape and these rows stay unmatched.
 var hiddenRecordResiduals = func() map[string]string {
-	const reason = "native SeeAllData row (record exists before the test) vs existing in-test-created rows; see the ledger comment"
+	const reason = "native row reads a record that already exists in the org (SeeAllData); the local replay creates it in the test"
 	residual := map[string]string{}
 	for _, api := range []string{"62", "66", "67"} {
 		residual["h4t"+api+"_share/*"] = reason

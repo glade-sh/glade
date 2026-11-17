@@ -296,6 +296,8 @@ type VM struct {
 	toolingExecuteAnonymous bool
 	triggerDepth            int
 	triggerActivations      []triggerActivation
+	// runAsFrameDepths holds the call depth of each active runAs(User) block.
+	runAsFrameDepths []int
 	// outerTriggerLimits are the governor counters when the outermost trigger
 	// activation began; a depth failure restores the DML and query counters.
 	outerTriggerLimits Limits

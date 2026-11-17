@@ -1811,6 +1811,9 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		defer vm.beginRunAsPermissionFrame(runnerBefore)()
 	}
 	vm.testContext.RunAsDepth++
+	if changesUser {
+		vm.runAsFrameDepths = append(vm.runAsFrameDepths, len(vm.callStack))
+	}
 	if packageVersion.Kind != "" {
 		vm.testContext.CurrentPackageVersion = packageVersion
 		vm.testContext.PackageRunAsDepth++
@@ -1828,6 +1831,7 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		}
 		vm.testContext.RunAsDepth--
 		if changesUser {
+			vm.runAsFrameDepths = vm.runAsFrameDepths[:len(vm.runAsFrameDepths)-1]
 			if isRunAsDescribe != nil {
 				for key := range vm.describeCache {
 					if isRunAsDescribe(key) {

@@ -1409,6 +1409,12 @@ func (vm *VM) enforceDMLRecordAccess(op string, value Value, externalIDField str
 			if strings.EqualFold(record.Object, "User") && (op == "update" || op == "upsert") {
 				continue
 			}
+			// Native hidden_record_grid rows (APIs 62.0-67.0, every sharing
+			// declaration): a default-mode update of a hidden custom-object
+			// record under runAs is a DML row failure, not a SecurityException.
+			if op == "update" && hasSuffixFold(record.Object, "__c") && vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 62) {
+				continue
+			}
 			return newExceptionError("SecurityException", fmt.Sprintf("Access to record '%s' denied", stored.ID))
 		}
 	}

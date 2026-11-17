@@ -186,7 +186,8 @@ func TestGapDescribeAndGroupNeighbors(t *testing.T) {
     rs = [SELECT Ck__c k, COUNT(Id) c FROM GdO__c GROUP BY Ck__c];
     System.assertEquals(1, rs.size());
     List<String> keys = new List<String>(Account.SObjectType.getDescribe().fields.getMap().keySet());
-    System.assertEquals('accountnumber', keys[0], 'standard objects keep the sorted order');
+    System.assertEquals('id', keys[0], 'Account follows the captured platform order');
+    System.assertEquals('isdeleted', keys[1]);
     List<String> own = new List<String>(GdO__c.SObjectType.getDescribe().fields.getMap().keySet());
     System.assertEquals('id', own[0]);
     System.assertEquals('systemmodstamp', own[8]);

@@ -10,7 +10,7 @@ import (
 func (vm *VM) sortDescribeFieldNames(objectName string, definition storage.ObjectDefinition, names []string) {
 	defer prioritizeAccountCompoundName(objectName, definition, names)
 	sort.Strings(names)
-	if vm.sortCapturedTaskDescribeFieldNames(objectName, names) || vm.sortCapturedCustomDescribeFieldNames(objectName, names) {
+	if vm.sortCapturedTaskDescribeFieldNames(objectName, names) || vm.sortCapturedCustomDescribeFieldNames(objectName, names) || vm.sortCapturedAccountDescribeFieldNames(objectName, names) {
 		return
 	}
 	if vm == nil || vm.Org == nil || vm.Org.Namespace == "" || !strings.EqualFold(objectName, "Account") {
