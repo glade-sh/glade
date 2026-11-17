@@ -1,6 +1,8 @@
 package dml
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -111,5 +113,51 @@ func TestFuzzyConfidenceDump(t *testing.T) {
 	}
 	if err := os.WriteFile(path, []byte(strings.Join(out, "\n")+"\n"), 0o644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// The flat-keyboard trail, the surname keyboard fit and the phone share each
+// multiply a count by a constant and add it to a running total. They convert
+// the product with float64(...) so arm64 does not fuse it. The digest covers
+// raw bits of every score over a generated grid and comes from amd64.
+const keyboardSurnameFitDigest = "84c956752b744b70184d4ad0644b04d3bc9fddf7c98c55cb776fbbbfae5455d2"
+
+func keyboardSurnameFitLines() []string {
+	names := []string{"smith", "morrison", "anderson", "kowalczyk", "tarvelon", "johnson", "martinez", "nguyen", "oconnor", "hartwell", "pqzxcv", "wertyu"}
+	var variants [][2]string
+	for _, name := range names {
+		for i := 0; i <= len(name); i++ {
+			for _, ch := range []string{"a", "p", "z", "m"} {
+				variants = append(variants, [2]string{name, name[:i] + ch + name[i:]})
+			}
+		}
+		for i := 0; i < len(name); i++ {
+			variants = append(variants, [2]string{name, name[:i] + name[i+1:]})
+			for _, ch := range []string{"q", "p", "z", "m", "g"} {
+				variants = append(variants, [2]string{name, name[:i] + ch + name[i+1:]})
+			}
+		}
+		variants = append(variants, [2]string{name, name + "ab"}, [2]string{name, name + "xyz"})
+	}
+	var lines []string
+	for _, v := range variants {
+		flat, flatOK, flatHandled := keyboardFlatASCII(v[0], v[1])
+		keyboard, keyboardOK := standardSurnameKeyboard(v[0], v[1])
+		inserted := standardSurnameInserted(v[0], v[1])
+		lines = append(lines, fmt.Sprintf("%s %s %016x %v %v %016x %v %016x", v[0], v[1], math.Float64bits(flat), flatOK, flatHandled, math.Float64bits(keyboard), keyboardOK, math.Float64bits(inserted)))
+	}
+	for items := 0; items <= 6; items++ {
+		for _, phone := range []float64{0, 33.3, 66.6, 100, 87.5} {
+			lines = append(lines, fmt.Sprintf("phone %d %v %016x", items, phone, math.Float64bits(standardPhoneShare(phone, items))))
+		}
+	}
+	return lines
+}
+
+func TestKeyboardSurnameFitBitsAreArchitectureIndependent(t *testing.T) {
+	lines := keyboardSurnameFitLines()
+	sum := sha256.Sum256([]byte(strings.Join(lines, "\n")))
+	if got := hex.EncodeToString(sum[:]); got != keyboardSurnameFitDigest {
+		t.Fatalf("keyboard and surname fit bits differ from the amd64 reference: sha256 %s, want %s (%d rows)", got, keyboardSurnameFitDigest, len(lines))
 	}
 }

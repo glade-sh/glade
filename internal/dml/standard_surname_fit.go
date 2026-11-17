@@ -78,7 +78,7 @@ func standardSurnameInserted(a, b string) float64 {
 		aligned := append(append(buffer[:0], b[:skip]...), b[skip+1:]...)
 		if score, ok := standardSurnameKeyboard(a, string(aligned)); ok {
 			// The extra letter costs 0.25 of the longer length.
-			score = 100 * (1 - ((100-score)/100*float64(len(a))+0.25)/float64(len(b)))
+			score = 100 * (1 - (float64((100-score)/100*float64(len(a)))+0.25)/float64(len(b)))
 			best = max(best, score)
 		}
 	}
@@ -116,9 +116,9 @@ func standardSurnameKeyboard(a, b string) (float64, bool) {
 		if steps <= 1 {
 			cost += 0.05
 		} else {
-			cost += 0.08 * float64(steps-1)
+			cost += float64(0.08 * float64(steps-1))
 		}
 	}
-	cost += 0.25 * float64(len(b)-len(a))
+	cost += float64(0.25 * float64(len(b)-len(a)))
 	return 100 * (1 - cost/float64(len(b))), true
 }

@@ -127,6 +127,6 @@ func keyboardFlatASCII(a, b string) (score float64, ok, handled bool) {
 			cost += keyboardFlatCost(int(a[i]-'a'), int(b[i]-'a'))
 		}
 	}
-	cost += keyboardFlatTrail * float64(n-len(a))
+	cost += float64(keyboardFlatTrail * float64(n-len(a)))
 	return 100 * (1 - cost/float64(n)), true, true
 }

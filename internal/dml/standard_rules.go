@@ -273,7 +273,7 @@ const (
 // Lead whose company differs from the other's, which score as two exact
 // items; a Lead pair with the same company scores as three.
 func standardPhoneShare(phone float64, exactItems int) float64 {
-	return (100*float64(exactItems) + phone) / float64(exactItems+1)
+	return (float64(100*float64(exactItems)) + phone) / float64(exactItems+1)
 }
 
 // standardPhoneNativeNames are first names that no dictionary entry of
