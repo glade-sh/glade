@@ -5253,10 +5253,23 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 	}
 	values := make([][]storage.Value, len(order))
 	keys := make([][][]byte, len(order))
+	prefixes := make([][]uint64, len(order))
+	commons := make([]int, len(order))
 	for column, spec := range order {
-		values[column] = make([]storage.Value, len(records))
 		ranks := picklistRanks[column]
 		plain, isPlain := plainStoredStringOrderField(org, definition, spec.Field)
+		if isPlain && ranks == nil && len(records) > 1 {
+			// Key-only column: skip the value matrix when every row holds
+			// non-null ASCII text.
+			if texts, ok := storedTexts(org, records, plain); ok {
+				if columnKeys := asciiTextSortKeys(texts, spec.textComparator); columnKeys != nil {
+					keys[column] = columnKeys
+					commons[column], prefixes[column] = keyPrefixes(columnKeys)
+					continue
+				}
+			}
+		}
+		values[column] = make([]storage.Value, len(records))
 		for i := range records {
 			var value storage.Value
 			var ok bool
@@ -5281,13 +5294,34 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 			values[column][i] = value
 		}
 		if ranks == nil && len(records) > 1 {
-			keys[column] = asciiTextSortKeys(values[column], spec.textComparator)
+			texts := make([]string, len(records))
+			textual := true
+			for i, value := range values[column] {
+				if value.Kind != storage.ValueString {
+					textual = false
+					break
+				}
+				texts[i] = value.String
+			}
+			if textual {
+				if keys[column] = asciiTextSortKeys(texts, spec.textComparator); keys[column] != nil {
+					commons[column], prefixes[column] = keyPrefixes(keys[column])
+				}
+			}
 		}
 	}
 	compare := func(i, j int) int {
 		for column := range specs {
 			if columnKeys := keys[column]; columnKeys != nil {
-				cmp := bytes.Compare(columnKeys[i], columnKeys[j])
+				var cmp int
+				if pre := prefixes[column]; pre[i] != pre[j] {
+					cmp = 1
+					if pre[i] < pre[j] {
+						cmp = -1
+					}
+				} else {
+					cmp = bytes.Compare(columnKeys[i][commons[column]:], columnKeys[j][commons[column]:])
+				}
 				if cmp != 0 {
 					if specs[column].Desc {
 						return -cmp
@@ -5333,11 +5367,26 @@ func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefini
 		}
 		return a - b
 	})
-	ordered := make([]storage.Record, len(records))
-	for i, from := range index {
-		ordered[i] = records[from]
+	// Apply the permutation in place, one cycle at a time: records[i] becomes
+	// the old records[index[i]].
+	done := make([]bool, len(records))
+	for start := range records {
+		if done[start] || index[start] == start {
+			continue
+		}
+		held := records[start]
+		at := start
+		for {
+			done[at] = true
+			from := index[at]
+			if from == start {
+				records[at] = held
+				break
+			}
+			records[at] = records[from]
+			at = from
+		}
 	}
-	copy(records, ordered)
 }
 
 // moveSmallestFirst puts the k smallest records under less (a total order on
@@ -5429,31 +5478,72 @@ func plainStoredStringOrderField(org storage.OrgState, definition storage.Object
 	return canonical, true
 }
 
-// asciiTextSortKeys returns one byte key per value whose bytes.Compare order is
-// the order orderCompare gives. It returns nil unless every value is non-null
-// ASCII text and the comparator is the folded or en_* one. Keys share one
-// backing array.
-func asciiTextSortKeys(values []storage.Value, comparator *textComparator) [][]byte {
+// keyPrefixes returns the length of the byte prefix shared by every key and,
+// per key, the next eight bytes as a big-endian number padded with zeros.
+// Unequal numbers order the keys as bytes.Compare does; equal numbers need the
+// full comparison of the bytes after the shared prefix.
+func keyPrefixes(keys [][]byte) (int, []uint64) {
+	common := len(keys[0])
+	for _, key := range keys[1:] {
+		n := min(common, len(key))
+		i := 0
+		for i < n && key[i] == keys[0][i] {
+			i++
+		}
+		common = i
+	}
+	prefixes := make([]uint64, len(keys))
+	for i, key := range keys {
+		var word uint64
+		rest := key[common:]
+		for b := 0; b < 8; b++ {
+			word <<= 8
+			if b < len(rest) {
+				word |= uint64(rest[b])
+			}
+		}
+		prefixes[i] = word
+	}
+	return common, prefixes
+}
+
+// storedTexts returns the stored non-null text of one plain field for every
+// record, or false when any row is null, missing or not text.
+func storedTexts(org storage.OrgState, records []storage.Record, field string) ([]string, bool) {
+	texts := make([]string, len(records))
+	for i := range records {
+		if records[i].HasExplicitNull(field) {
+			return nil, false
+		}
+		value, found := recordFieldValue(org, records[i], field)
+		if !found || value.Kind != storage.ValueString {
+			return nil, false
+		}
+		texts[i] = value.String
+	}
+	return texts, true
+}
+
+// asciiTextSortKeys returns one byte key per text whose bytes.Compare order is
+// the order orderCompare gives. It returns nil unless every text is ASCII and
+// the comparator is the folded or en_* one. Keys share one backing array.
+func asciiTextSortKeys(texts []string, comparator *textComparator) [][]byte {
 	if comparator != nil && !comparator.english {
 		return nil
 	}
 	total := 0
-	for _, value := range values {
-		if value.Kind != storage.ValueString {
-			return nil
-		}
-		for i := 0; i < len(value.String); i++ {
-			if value.String[i] >= utf8.RuneSelf {
+	for _, text := range texts {
+		for i := 0; i < len(text); i++ {
+			if text[i] >= utf8.RuneSelf {
 				return nil
 			}
 		}
-		total += len(value.String)
+		total += len(text)
 	}
 	backing := make([]byte, total)
-	keys := make([][]byte, len(values))
+	keys := make([][]byte, len(texts))
 	at := 0
-	for i, value := range values {
-		text := value.String
+	for i, text := range texts {
 		key := backing[at : at+len(text) : at+len(text)]
 		at += len(text)
 		if comparator != nil {
