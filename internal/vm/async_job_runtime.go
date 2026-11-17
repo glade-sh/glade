@@ -129,7 +129,14 @@ func (vm *VM) DrainTestSetupAsync() error {
 		if iteration == 0 {
 			vm.prepareTestStopAsyncJobs()
 		}
+		vm.setupDrainPasses = iteration + 1
+		processed := vm.asyncJobsProcessed
 		if err = vm.drainTestAsync(&Result{}); err != nil {
+			break
+		}
+		if vm.asyncJobsProcessed == processed {
+			// Nothing ran: what is left never comes due here (an aborted or
+			// future-dated schedule). Stop, as drainTestWork does.
 			break
 		}
 	}
@@ -1218,6 +1225,7 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		job := (*jobs)[jobIndex]
 		*jobs = append((*jobs)[:jobIndex], (*jobs)[jobIndex+1:]...)
 		processed++
+		vm.asyncJobsProcessed++
 		var asyncStaticSnapshot map[string]map[string]Value
 		var asyncStaticInitSnapshot map[string]staticInitState
 		// stopTest runs collected work with the caller's static state, including

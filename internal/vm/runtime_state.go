@@ -380,12 +380,16 @@ type VM struct {
 	coverage         CoverageSink
 	coverageLastName string
 	coverageLastSkip bool
-	ctx              context.Context
-	contextPollCount uint8
-	activeGetters    map[string]int
-	activeSetters    map[string]int
-	triggerGlobals   map[string]Value
-	cryptoRandomSeq  uint64
+	// asyncJobsProcessed counts async jobs a drain took off the queue;
+	// setupDrainPasses is the pass count of the last @TestSetup drain.
+	asyncJobsProcessed int
+	setupDrainPasses   int
+	ctx                context.Context
+	contextPollCount   uint8
+	activeGetters      map[string]int
+	activeSetters      map[string]int
+	triggerGlobals     map[string]Value
+	cryptoRandomSeq    uint64
 	// uuidRandomReader is a per-VM test seam; nil selects crypto/rand.Reader.
 	uuidRandomReader   io.Reader
 	staticInitState    map[string]staticInitState

@@ -208,6 +208,9 @@ func parseCoverageRunClasses(t *testing.T, row coverageNativeRow, list string) [
 // reports one run against a fresh org; the replay feeds its per-test rows
 // into apexcov.Store in the native step order.
 func TestCodeCoverageNativeConformance(t *testing.T) {
+	if testing.Short() {
+		t.Skip("replays the native coverage timeline step by step (about 3-5 s)")
+	}
 	rows := readCoverageNativeRows(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, capture := range coverageNativeCaptures {
@@ -714,6 +717,9 @@ func writeCoverageCarryProject(t *testing.T, api, set string) string {
 // test_runner_coverage_carry/org.tsv per and test rows, API 62.0 and 67.0,
 // repeats r1 and r2. Each native step is one glade run of the same selection.
 func TestCodeCoverageCarryNative(t *testing.T) {
+	if testing.Short() {
+		t.Skip("replays the native coverage timeline step by step (about 3-5 s)")
+	}
 	f, err := os.Open(filepath.Join(coverageCarryDir, "org.tsv"))
 	if err != nil {
 		t.Fatal(err)

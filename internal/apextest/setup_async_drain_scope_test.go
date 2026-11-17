@@ -43,3 +43,22 @@ func TestSetupAsyncDrainMatchesNativeKinds(t *testing.T) {
 		t.Fatalf("ran %d cases, want 3", seen)
 	}
 }
+
+// A schedule aborted in setup, and a nested Schedulable scheduled in setup,
+// leave nothing the drain can run; the class still runs and passes (the drain
+// pass bound is pinned in vm TestSetupDrainStopsWithoutProgress).
+func TestSetupAsyncDrainLeavesIdleSchedules(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"sourceApiVersion":"67.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	for name, body := range map[string]string{
+		"IdleSched":      "public class IdleSched implements Schedulable {\n    public void execute(SchedulableContext ctx) { insert new Account(Name = 'IDLE-RAN'); }\n    public class Nested implements Schedulable {\n        public void execute(SchedulableContext ctx) { insert new Account(Name = 'IDLE-NESTED'); }\n    }\n}",
+		"IdleAbortTest":  "@IsTest private class IdleAbortTest {\n    @TestSetup static void seed() { System.abortJob(System.schedule('idle-abort', '0 0 0 1 1 ? 2099', new IdleSched())); }\n    @IsTest static void check() { System.assertEquals(0, [SELECT count() FROM Account WHERE Name = 'IDLE-RAN']); }\n}",
+		"IdleNestedTest": "@IsTest private class IdleNestedTest {\n    @TestSetup static void seed() { System.schedule('idle-nested', '0 0 0 1 1 ? 2099', new IdleSched.Nested()); }\n    @IsTest static void check() { System.assertEquals(1, [SELECT count() FROM CronTrigger]); }\n}",
+	} {
+		writeFile(t, filepath.Join(root, "force-app/classes", name+".cls"), body)
+	}
+	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true, Parallelism: 1})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary=%#v problem=%q", got, firstRunProblem(run))
+	}
+}
