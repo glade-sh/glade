@@ -645,14 +645,14 @@ func decimalDivideBigDecimal(left, right Value, leftRat, rightRat *big.Rat) (Val
 	b, okB := unscaled(rightRat, s2)
 	if okA && okB && b.Sign() != 0 {
 		ten := big.NewInt(10)
-		for k := 0; k <= 33; k++ {
+		// The smallest k with a*10^k divisible by b, found from the divisor's
+		// prime factors instead of trying each k; no k when it is over 33 or
+		// the quotient does not terminate.
+		if k, ok := decimalTerminatingShift(a, b); ok && k <= 33 {
 			num := new(big.Int).Mul(a, new(big.Int).Exp(ten, big.NewInt(int64(k)), nil))
-			quotient, remainder := new(big.Int).QuoRem(num, b, new(big.Int))
-			if remainder.Sign() != 0 {
-				continue
-			}
+			quotient := new(big.Int).Quo(num, b)
 			if len(new(big.Int).Abs(quotient).String()) > 33 {
-				break
+				return decimalRound33(new(big.Rat).Quo(leftRat, rightRat))
 			}
 			exponent := s2 - s1 - k
 			value := new(big.Rat).SetInt(quotient)
@@ -670,6 +670,33 @@ func decimalDivideBigDecimal(left, right Value, leftRat, rightRat *big.Rat) (Val
 		}
 	}
 	return decimalRound33(new(big.Rat).Quo(leftRat, rightRat))
+}
+
+// decimalTerminatingShift returns the smallest k >= 0 for which a*10^k is a
+// multiple of b (b != 0), and false when there is none. With g = gcd(a, b),
+// a*10^k is a multiple of b exactly when b/g divides 10^k, which needs b/g to
+// be 2^p * 5^q; the smallest such k is max(p, q).
+func decimalTerminatingShift(a, b *big.Int) (int, bool) {
+	if new(big.Int).Rem(a, b).Sign() == 0 {
+		return 0, true
+	}
+	divisor := new(big.Int).Abs(b)
+	g := new(big.Int).GCD(nil, nil, new(big.Int).Abs(a), divisor)
+	divisor.Quo(divisor, g)
+	twos := int(divisor.TrailingZeroBits())
+	divisor.Rsh(divisor, uint(twos))
+	fives := 0
+	five := big.NewInt(5)
+	quotient, remainder := new(big.Int), new(big.Int)
+	for divisor.BitLen() > 1 {
+		quotient.QuoRem(divisor, five, remainder)
+		if remainder.Sign() != 0 {
+			return 0, false
+		}
+		divisor, quotient = quotient, divisor
+		fives++
+	}
+	return max(twos, fives), true
 }
 
 // decimalRound33 rounds rat to 33 significant digits and keeps all of
