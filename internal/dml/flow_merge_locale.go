@@ -31,41 +31,64 @@ func (p *formulaParser) flowMergeLocale() string {
 	return "en_US"
 }
 
-// flowNumberSeparators holds the group and decimal marks captured for a Number
-// merged into flow text under each user locale (de_DE, fr_FR, en_GB, ja_JP, en_US, es_ES, pt_BR).
-// Other locales keep the plain text they had before the capture.
-var flowNumberSeparators = map[string][2]string{
-	"de_DE": {".", ","},
-	"fr_FR": {" ", ","},
-	"en_GB": {",", "."},
-	"ja_JP": {",", "."},
-	"en_US": {",", "."},
-	"es_ES": {".", ","},
-	"pt_BR": {".", ","},
+// flowLocaleRule holds what a captured user locale does to a Number and a Date
+// merged into flow text: the group and decimal marks and the Go layout of the
+// long date.
+type flowLocaleRule struct {
+	group, decimal, date string
+	// minus is the sign of a negative Number; empty reads as "-".
+	minus string
+}
+
+// flowMergeLocales lists the locales captured natively (surf_collections_strings
+// FlowLocale runs, rows dth_r4_flowlocale*). A locale not listed here keeps the unrewritten merge text.
+var flowMergeLocales = map[string]flowLocaleRule{
+	"en_US": {group: ",", decimal: ".", date: "January 2, 2006"},
+	"de_DE": {group: ".", decimal: ",", date: "2. January 2006"},
+	"fr_FR": {group: "\u202f", decimal: ",", date: "2 January 2006"},
+	"en_GB": {group: ",", decimal: ".", date: "2 January 2006"},
+	"ja_JP": {group: ",", decimal: ".", date: "2006年1月2日"},
+	"es_ES": {group: ".", decimal: ",", date: "2 de January de 2006"},
+	"pt_BR": {group: ".", decimal: ",", date: "2 de January de 2006"},
+	"it_IT": {group: ".", decimal: ",", date: "2 January 2006"},
+	"nl_NL": {group: ".", decimal: ",", date: "2 January 2006"},
+	"en_CA": {group: ",", decimal: ".", date: "January 2, 2006"},
+	"en_AU": {group: ",", decimal: ".", date: "2 January 2006"},
+	"fr_CA": {group: "\u00a0", decimal: ",", date: "2 January 2006"},
+	"de_AT": {group: "\u00a0", decimal: ",", date: "2. January 2006"},
+	"de_CH": {group: "\u2019", decimal: ".", date: "2. January 2006"},
+	"es_MX": {group: ",", decimal: ".", date: "2 de January de 2006"},
+	"zh_CN": {group: ",", decimal: ".", date: "2006年1月2日"},
+	"ko_KR": {group: ",", decimal: ".", date: "2006년 1월 2일"},
+	"sv_SE": {group: "\u00a0", decimal: ",", date: "2 January 2006", minus: "\u2212"},
+	"pl_PL": {group: "\u00a0", decimal: ",", date: "2 January 2006"},
 }
 
 // flowNumberText applies the locale marks to a plain decimal text such as
 // -1234567.891.
 func flowNumberText(plain, locale string) string {
-	marks, ok := flowNumberSeparators[locale]
+	rule, ok := flowMergeLocales[locale]
 	if !ok {
 		return plain
 	}
 	sign := ""
 	if strings.HasPrefix(plain, "-") {
 		sign, plain = "-", plain[1:]
+		if rule.minus != "" {
+			sign = rule.minus
+		}
 	}
 	whole, fraction, hasFraction := strings.Cut(plain, ".")
 	var grouped strings.Builder
 	for i, digit := range whole {
 		if i > 0 && (len(whole)-i)%3 == 0 {
-			grouped.WriteString(marks[0])
+			grouped.WriteString(rule.group)
 		}
 		grouped.WriteRune(digit)
 	}
 	text := sign + grouped.String()
 	if hasFraction {
-		text += marks[1] + fraction
+		text += rule.decimal + fraction
 	}
 	return text
 }
@@ -73,15 +96,8 @@ func flowNumberText(plain, locale string) string {
 // flowDateText reads a Date merged into flow text. The month name stays in the
 // language of the user; only the captured locales change the order.
 func flowDateText(value time.Time, locale string) string {
-	switch locale {
-	case "de_DE":
-		return value.Format("2. January 2006")
-	case "fr_FR", "en_GB":
-		return value.Format("2 January 2006")
-	case "es_ES", "pt_BR":
-		return value.Format("2 de January de 2006")
-	case "ja_JP":
-		return value.Format("2006年1月2日")
+	if rule, ok := flowMergeLocales[locale]; ok {
+		return value.Format(rule.date)
 	}
 	return value.Format("January 2, 2006")
 }

@@ -4865,7 +4865,16 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 			}
 			counter++
 			name := fmt.Sprintf("GladeMerge%d", counter)
-			raw.Formulas = append(raw.Formulas, flowFormulaXML{Name: name, DataType: "String", Expression: strings.Join(pieces, " & ")})
+			expression := strings.Join(pieces, " & ")
+			for _, m := range matches {
+				if dataType := known[strings.ToLower(text[m[2]:m[3]])].dataType; dataType == "number" || dataType == "date" {
+					// The rendering of these two follows the user's locale; the
+					// original text stays for a locale that was not captured.
+					expression = "GLADELOCALEMERGE(" + strconv.Quote(text) + ", " + expression + ")"
+					break
+				}
+			}
+			raw.Formulas = append(raw.Formulas, flowFormulaXML{Name: name, DataType: "String", Expression: expression})
 			value.StringValue, value.ElementReference = "", name
 		}
 	}

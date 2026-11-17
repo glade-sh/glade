@@ -1754,6 +1754,16 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaString, text: flowNumberText(number.FloatString(scale), p.flowMergeLocale())}, true
+	case "GLADELOCALEMERGE":
+		// A merge of a Number or Date reads in the running user's locale for the
+		// captured locales; any other locale keeps the original merge text.
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		if _, captured := flowMergeLocales[p.flowMergeLocale()]; captured {
+			return args[1], true
+		}
+		return args[0], true
 	case "GLADEDATETEXT":
 		// A Date merged into flow text reads as the en_US long date.
 		if len(args) != 1 {

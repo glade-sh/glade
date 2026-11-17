@@ -240,3 +240,5 @@ dth_r3_flowtyped	istest	FlowTyped.t
 dth_r3_fmtjulian	istest	FmtJulian.t
 dth_r4_flowlocale	istest	FlowLocale.t
 dth_r4_flowlocale2	istest	FlowLocale2.t
+dth_r4_flowlocale3	istest	FlowLocale3.t
+dth_r4_flowlocale4	istest	FlowLocale4.t
