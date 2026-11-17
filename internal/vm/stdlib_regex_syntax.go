@@ -191,7 +191,7 @@ func rewriteJavaNumericEscapesForRegexp2(source string) string {
 		case next == 'c' && i+2 < len(source):
 			// Pattern.c: the control character is the next code point XOR 64.
 			r, size := utf8.DecodeRuneInString(source[i+2:])
-			fmt.Fprintf(&out, `\u%04X`, r^64)
+			out.WriteString(fmtRuneEscape(r ^ 64))
 			i += 1 + size
 			changed = true
 		case next == 'N' && i+2 < len(source) && source[i+2] == '{':

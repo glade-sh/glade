@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"golang.org/x/text/unicode/runenames"
 	"strings"
 	"sync"
 	"testing"
@@ -466,4 +467,25 @@ func BenchmarkJavaCharacterNamesFirstUse(b *testing.B) {
 		javaNameToRune = nil
 		javaCharacterByName("GREEK SMALL LETTER ALPHA")
 	}
+}
+
+// The age exclusion table was generated from the x/text 15.0.0 and 17.0.0 name
+// tables. A different table version means the generator must run again.
+func TestJavaNameTableVersionIsKnown(t *testing.T) {
+	switch runenames.UnicodeVersion {
+	case "15.0.0", "17.0.0":
+	default:
+		t.Fatalf("x/text runenames carries Unicode %s: run go generate ./internal/vm and extend this test", runenames.UnicodeVersion)
+	}
+}
+
+// \c takes the next code point, so \c followed by an astral character is an
+// astral character (native row d24_ctrl_astral).
+func TestRegexControlEscapeAstral(t *testing.T) {
+	runRegexApex(t, `
+Matcher m = Pattern.compile('\\c\uD83D\uDE00').matcher('x\uD83D\uDE40y');
+System.assertEquals(true, m.find());
+System.assertEquals(1, m.start());
+System.assertEquals(true, Pattern.compile('\\cA').matcher('x\u0001y').find());
+`)
 }

@@ -1119,3 +1119,5 @@ d22_name_bell_bel	solo	"Matcher m = Pattern.compile('\\\\N{BELL}').matcher(Strin
 d22_name_shaking	solo	"Pattern p = Pattern.compile('\\\\N{SHAKING FACE}'); observation = 'ok';"
 d22_name_bell_emoji	solo	"Matcher m = Pattern.compile('\\\\N{BELL}').matcher('\\uD83D\\uDD14'); observation = 'find ' + m.find();"
 d22_name_bell_emoji_len	solo	"Matcher m = Pattern.compile('\\\\N{BELL}').matcher('x\\uD83D\\uDD14y'); Boolean f = m.find(); observation = 'find ' + f + ' start ' + (f ? String.valueOf(m.start()) : '-') + ' len ' + '\\uD83D\\uDD14'.length();"
+d24_ctrl_astral	solo	"Matcher m = Pattern.compile('\\\\c\\uD83D\\uDE00').matcher('x\\uD83D\\uDE40y'); Boolean f = m.find(); observation = 'find ' + f + ' start ' + (f ? String.valueOf(m.start()) : '-');"
+d24_ctrl_ascii	solo	"Matcher m = Pattern.compile('\\\\cA').matcher('x\\u0001y'); Boolean f = m.find(); observation = 'find ' + f + ' start ' + (f ? String.valueOf(m.start()) : '-');"

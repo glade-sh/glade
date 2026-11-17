@@ -44,3 +44,4 @@ hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repea
   resolve, BASIC LATIN 41 and LATIN 1 SUPPLEMENT 80 do not. U+1F600 via String.fromCharArray did not match natively, so GRINNING FACE is kept only as a compile row (d21_name_grinning_trim).
 \N{name} rows d22 (62.0 and 67.0, anonymous and @IsTest, two repeats): FACE WITH BAGS UNDER EYES (Unicode 16) is an Unknown character name [..] at the closing brace, SHAKING FACE (15.0) compiles,
   and \N{BELL} is U+1F514 (it matches the bell emoji, not U+0007): the formal name table wins over the Unicode 1.0 control names. The first BELL emoji row in the batch used a doubly escaped subject and was recaptured as d22_name_bell_emoji.
+\c rows d24 (62.0 and 67.0, anonymous and @IsTest, two repeats): \c takes the next code point, so \c followed by U+1F600 matches U+1F640 (start 1), and \cA matches U+0001.
