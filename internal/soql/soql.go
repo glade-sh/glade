@@ -363,9 +363,7 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 	defaultOrder := defaultParentOrder(query, objectName)
 	var likeTexts []string
 	predicateScratch.captureLike = len(query.Order) == 0 && len(defaultOrder) == 1
-	if predicateScratch.captureLike {
-		likeTexts = make([]string, 0, len(ids))
-	}
+	likeTextsValid := predicateScratch.captureLike
 	for _, idText := range ids {
 		record := object.Records[storage.ID(idText)]
 		if recordHiddenFromSOQL(object.Definition, record) {
@@ -399,10 +397,10 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 			}
 			matchedRecords = append(matchedRecords, record)
 			if predicateScratch.captureLike {
-				if predicateScratch.like.Kind == storage.ValueString && likeTexts != nil {
+				if likeTextsValid && predicateScratch.like.Kind == storage.ValueString {
 					likeTexts = append(likeTexts, predicateScratch.like.String)
 				} else {
-					likeTexts = nil
+					likeTextsValid, likeTexts = false, nil
 				}
 			}
 		}

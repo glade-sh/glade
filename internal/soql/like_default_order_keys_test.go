@@ -218,3 +218,80 @@ func TestDefaultOrderLimitOffsetWindows(t *testing.T) {
 		}
 	}
 }
+
+// TestDefaultOrderCapturedTextsMatchStoredTexts pins the text the LIKE case
+// hands back to the text the sort would read itself, and the Execute output
+// to a reference stable sort. Names start with upper-case letters, and one
+// set has non-ASCII names, which must fall back to the comparator.
+func TestDefaultOrderCapturedTextsMatchStoredTexts(t *testing.T) {
+	sets := map[string][]string{
+		"ascii":     {"Nacme", "NACME", "Nzed", "nzed", "Nbolt", "N", "Nacme x", "NB"},
+		"non-ascii": {"Nacme", "Née", "NACME", "Nzed", "Nézé", "Nbolt", "Nñu", "nzed"},
+	}
+	for setName, names := range sets {
+		org := likeBenchOrg(0)
+		state := org.Objects["Account"]
+		var ids []storage.ID
+		for i := 0; i < 60; i++ {
+			id := storage.ID(fmt.Sprintf("001%012d", i+1))
+			state.Records[id] = storage.Record{ID: id, Object: "Account", Fields: map[string]storage.Value{
+				"Name": storage.StringValue(names[(i*3)%len(names)]), "BillingCity": storage.StringValue("x"),
+			}}
+			ids = append(ids, id)
+		}
+		query, err := Parse("SELECT Id, Name FROM Account WHERE Name LIKE 'n%'")
+		if err != nil {
+			t.Fatal(err)
+		}
+		scratch := &predicateScratch{captureLike: true}
+		var matched []storage.Record
+		var captured []string
+		for _, id := range ids {
+			scratch.like = storage.Value{}
+			record := state.Records[id]
+			if matchesWithScratch(org, state.Definition, record, query.Where, ExecutionContext{}, scratch) {
+				matched = append(matched, record)
+				captured = append(captured, scratch.like.String)
+			}
+		}
+		stored, ok := storedTexts(org, matched, "Name")
+		if !ok || len(stored) != len(captured) {
+			t.Fatalf("%s: storedTexts ok=%v len %d, captured %d", setName, ok, len(stored), len(captured))
+		}
+		for i := range stored {
+			if stored[i] != captured[i] {
+				t.Fatalf("%s row %d: captured %q, stored %q", setName, i, captured[i], stored[i])
+			}
+		}
+		keys := asciiTextSortKeys(captured, nil)
+		if (keys != nil) != (setName == "ascii") {
+			t.Fatalf("%s: keys built = %v", setName, keys != nil)
+		}
+		for _, locale := range []string{"", "en_US"} {
+			for _, limit := range []string{"", " LIMIT 5", " LIMIT 9 OFFSET 4"} {
+				parsed, err := Parse("SELECT Id, Name FROM Account WHERE Name LIKE 'n%'" + limit)
+				if err != nil {
+					t.Fatal(err)
+				}
+				result, err := ExecuteWithCacheAndContext(org, parsed, nil, ExecutionContext{Locale: locale})
+				if err != nil {
+					t.Fatal(err)
+				}
+				order := collateOrder([]OrderSpec{{Field: "Name"}}, newTextComparator(locale))
+				want := append([]storage.Record(nil), matched...)
+				sort.SliceStable(want, func(i, j int) bool {
+					return orderCompare(want[i].Fields["Name"], want[j].Fields["Name"], order[0]) < 0
+				})
+				want = applyWindow(want, parsed.Offset, parsed.Limit, parsed.HasLimit)
+				if len(result.Records) != len(want) {
+					t.Fatalf("%s %q%s: %d rows, want %d", setName, locale, limit, len(result.Records), len(want))
+				}
+				for i := range want {
+					if result.Records[i].ID != want[i].ID {
+						t.Fatalf("%s %q%s row %d: got %s want %s", setName, locale, limit, i, result.Records[i].ID, want[i].ID)
+					}
+				}
+			}
+		}
+	}
+}
