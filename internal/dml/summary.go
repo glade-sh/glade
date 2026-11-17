@@ -90,6 +90,89 @@ func (e *Engine) BeginSummaryHold(records []storage.Record) {
 	}
 }
 
+// SuspendSummaryHold takes the hold out of effect without ending it, and
+// ResumeSummaryHold puts it back.
+func (e *Engine) SuspendSummaryHold() {
+	if e == nil || e.summaryHold == nil || e.summaryHoldSuspended || e.Org == nil {
+		return
+	}
+	for i, hold := range e.Org.SummaryHolds {
+		if hold == e.summaryHold {
+			e.Org.SummaryHolds = append(e.Org.SummaryHolds[:i:i], e.Org.SummaryHolds[i+1:]...)
+			e.summaryHoldSuspended = true
+			return
+		}
+	}
+}
+
+func (e *Engine) ResumeSummaryHold() {
+	if e == nil || e.summaryHold == nil || !e.summaryHoldSuspended || e.Org == nil {
+		return
+	}
+	e.Org.SummaryHolds = append(e.Org.SummaryHolds, e.summaryHold)
+	e.summaryHoldSuspended = false
+}
+
+// LandSummaryHold adds the stored children's own contribution to the held COUNT
+// and SUM values, for a group of an upsert whose change has landed before the
+// next group's triggers run. A MIN or MAX hold drops to the live value.
+func (e *Engine) LandSummaryHold(records []storage.Record) {
+	if e == nil || e.Org == nil || e.summaryHold == nil {
+		return
+	}
+	for _, record := range records {
+		child, ok := storage.ResolveObjectName(*e.Org, record.Object)
+		if !ok {
+			child = record.Object
+		}
+		state := e.Org.Objects[child]
+		_, stored, found := storage.LookupRecordByID(state.Records, record.ID)
+		if !found || stored.System.IsDeleted {
+			continue
+		}
+		for _, relation := range e.summaryRelationsForChild(child) {
+			parentIDs := canonicalSummaryParentIDs(e.Org.Objects[relation.parentObject].Records, summaryParentIDs([]storage.Record{stored}, relation.fkFieldName))
+			if !summaryFiltersMatch(e.Org, state.Definition, stored, relation.field.SummaryFilterItems) {
+				continue
+			}
+			op := strings.ToLower(strings.TrimSpace(relation.field.SummaryOperation))
+			var contribution storage.Value
+			switch op {
+			case "count":
+				contribution = storage.IntegerValue(1)
+			case "sum":
+				_, fieldName := splitSummaryQualifiedField(relation.field.SummarizedField)
+				resolved, ok := storage.ResolveFieldName(state.Definition, e.Org.Namespace, fieldName)
+				if !ok {
+					continue
+				}
+				value, ok := summaryRecordFieldValue(e.Org, state.Definition, stored, resolved)
+				if !ok {
+					continue
+				}
+				contribution = value
+			default:
+				for id := range parentIDs {
+					e.summaryHold.Drop(summaryHoldKey(relation.parentObject, id, relation.parentField))
+				}
+				continue
+			}
+			for id := range parentIDs {
+				key := summaryHoldKey(relation.parentObject, id, relation.parentField)
+				current, in := e.summaryHold.Values[key]
+				if !in {
+					continue
+				}
+				if next, good := addSummaryDelta(current, storage.IntegerValue(0), contribution); good {
+					e.summaryHold.Values[key] = next
+				} else {
+					e.summaryHold.Drop(key)
+				}
+			}
+		}
+	}
+}
+
 // ReleaseSummaryHold ends the hold BeginSummaryHold started. It is safe to call
 // again, and after a rollback replaced the org.
 func (e *Engine) ReleaseSummaryHold() {
@@ -107,6 +190,7 @@ func (e *Engine) ReleaseSummaryHold() {
 	}
 	e.summaryHold = nil
 	e.summaryHoldRelations = nil
+	e.summaryHoldSuspended = false
 }
 
 type heldSummaryRelation struct {

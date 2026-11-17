@@ -84,7 +84,10 @@ func TestReviewRound2NativeConformance(t *testing.T) {
 // The 67.0 istest row updates an inserted record that carries a
 // non-reparentable master-detail value and succeeds natively. The review3 grid
 // shows the same update failing in a plain 67.0 test class with and without a
-// roll-up, so the difference is not explained by it; Glade keeps the failure
+// roll-up (review_round4 also with an after-trigger, with both, and plain), so
+// neither explains it. Still untested hypotheses: the child's before-update
+// trigger (RtChildTrg has one; the captures have after-triggers only), the
+// extra checkbox field, or the static reset before the update. Glade keeps the failure
 // (apex_release_gates RM1 and RM15 require it). Anonymous rows match.
 var rollupResiduals = map[string]string{
 	"r1t_route/67.0": "updFull: 67.0 test-class update of an inserted record with a master-detail value (see above)",
@@ -100,3 +103,15 @@ func TestReviewRound3NativeConformance(t *testing.T) {
 // These rows ran before the permission set was assigned: the custom field did
 // not exist for the administrator. The replay always grants the Admin profile.
 const beforeGrant = "native row ran before the permission set; the replay grants the Admin profile throughout"
+
+// SF-4 rows: a mixed upsert with a child after-trigger reading the parent
+// roll-up directly and through Parent__r.
+func TestSF4MixedUpsertNativeConformance(t *testing.T) {
+	gapFamily{dir: "testdata/conformance/sf4_mixed_upsert", adminFrom: []string{"GapAccess"}}.replay(t)
+}
+
+// Test-class update of an inserted record with its master-detail value: with an
+// after-trigger, with a roll-up, with both, and plain.
+func TestReviewRound4NativeConformance(t *testing.T) {
+	gapFamily{dir: "testdata/conformance/review_round4", adminFrom: []string{"GapAccess"}}.replay(t)
+}

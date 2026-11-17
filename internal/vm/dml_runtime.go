@@ -4022,8 +4022,8 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		ensurePartialAfterTriggerBackup()
 	}
 	if hasAfterTrigger && vm.installContextDepth == 0 {
-		// The hold covers the insert group's after-triggers only; an upsert of
-		// both kinds is not captured.
+		// The hold spans both groups: each group's triggers see the roll-up
+		// with the earlier group landed.
 		engine.BeginSummaryHold(records)
 		defer engine.ReleaseSummaryHold()
 	}
@@ -4104,7 +4104,15 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			vm.rollbackAfterTriggerFailures(kind, afterRecords, afterFailures, partialAfterTriggerBackup)
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
-		engine.ReleaseSummaryHold()
+		if kind == "update" {
+			engine.ReleaseSummaryHold()
+		} else {
+			// The insert group has landed when the update group's triggers run;
+			// the update has not (sf4_mixed_upsert). The parent's own triggers
+			// and automation run without the hold.
+			engine.LandSummaryHold(afterRecords)
+			engine.SuspendSummaryHold()
+		}
 		if _, err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, "", "", nil, nil); err != nil {
 			return results, err
 		}
@@ -4131,6 +4139,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			}
 			return results, err
 		}
+		engine.ResumeSummaryHold()
 	}
 	if hasDMLSuccess(results) {
 		if len(records) == 1 && !engine.Options.PreserveCustomKeyUpsertList && externalIDField != "" && !strings.EqualFold(externalIDField, "Id") {

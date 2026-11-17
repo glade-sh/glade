@@ -1,0 +1,9 @@
+family=review_round4
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=the test assertion message of each method; Salesforce ids masked
+repeats=two clean runs; rows identical
+shapes=update, in a test class, of an inserted record that carries its non-reparentable master-detail value: plain child (tr), child with an after-insert/after-update trigger and no roll-up (also tr), parent with a COUNT roll-up (ru), both (bo)
+notes=tr, ru and bo all succeed at 62.0 and fail with a DmlException at 67.0, so neither an after-trigger nor a roll-up explains why the rollup_trigger_timing updFull row succeeds at 67.0
+raw_runs=review4/out/20261117T025750Z and 20261117T025941Z (capture cache, not committed)
