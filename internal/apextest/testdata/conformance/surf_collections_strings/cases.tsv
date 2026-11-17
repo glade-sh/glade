@@ -236,3 +236,5 @@ dth_r3_calarith	istest	CalArith.t
 dth_r3_caldate	istest	CalDate.t
 dth_r3_callocal2	istest	CalLocal2.t
 dth_r3_calparse	istest	CalParse.t
+dth_r3_flowtyped	istest	FlowTyped.t
+dth_r3_fmtjulian	istest	FmtJulian.t

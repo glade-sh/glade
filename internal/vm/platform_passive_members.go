@@ -2701,21 +2701,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			} else {
 				t = t.UTC()
 			}
-			julianLeapYear := 0
+			pattern := args[0].Text
 			if rawInstant.Before(hybridYearEnd) {
-				if y, ok := julianOnlyLeapDay(rawInstant, offset); ok && simpleDatePattern.MatchString(args[0].Text) {
-					// 1500-02-29 has no Gregorian twin: format 2000-02-29 and
-					// restore the year.
-					julianLeapYear = y
+				seconds := rawInstant.UTC().Unix() + int64(offset/time.Second)
+				localDays := seconds / 86400
+				if seconds%86400 < 0 {
+					localDays--
+				}
+				pattern = hybridPatternLiterals(pattern, localDays, vm.currentUserInfoField("LocaleSidKey", "en_US"))
+				if _, ok := julianOnlyLeapDay(rawInstant, offset); ok {
+					// 1500-02-29 has no Gregorian twin: month and day read 2000-02-29.
 					t = time.Date(2000, time.February, 29, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
 				}
 			}
-			formatted, err := formatApexDatetimePattern(t, args[0].Text, tzID, zoneLabel, offset, vm.currentUserInfoField("LocaleSidKey", "en_US"))
+			formatted, err := formatApexDatetimePattern(t, pattern, tzID, zoneLabel, offset, vm.currentUserInfoField("LocaleSidKey", "en_US"))
 			if err != nil {
 				return Null, receiver, false, true, newExceptionError("System.StringException", err.Error())
-			}
-			if julianLeapYear != 0 {
-				formatted = strings.ReplaceAll(formatted, "2000", fmt.Sprintf("%04d", julianLeapYear))
 			}
 			return String(formatted), receiver, false, true, nil
 		case "date", "dateGmt":
@@ -2903,10 +2904,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				_, seconds := local.Zone()
 				label = formatGMTOffsetLabel(time.Duration(seconds) * time.Second)
 			}
-			if text, shaped := datetimeFormatLongForLocale(local, vm.currentUserInfoField("LocaleSidKey", "en_US")); shaped {
-				return String(text), receiver, false, true, nil
+			julianLeapYear := 0
+			if _, seconds := local.Zone(); rawInstant.Before(hybridYearEnd) {
+				if year, ok := julianOnlyLeapDay(rawInstant, time.Duration(seconds)*time.Second); ok {
+					// 1500-02-29 has no Gregorian twin: read 2000-02-29, restore the year.
+					julianLeapYear = year
+					local = time.Date(2000, time.February, 29, local.Hour(), local.Minute(), local.Second(), local.Nanosecond(), local.Location())
+				}
 			}
-			return String(local.Format("1/2/2006, 3:04:05 PM") + " " + label), receiver, false, true, nil
+			restore := func(text string) string {
+				if julianLeapYear != 0 {
+					return strings.Replace(text, "2000", fmt.Sprintf("%04d", julianLeapYear), 1)
+				}
+				return text
+			}
+			if text, shaped := datetimeFormatLongForLocale(local, vm.currentUserInfoField("LocaleSidKey", "en_US")); shaped {
+				return String(restore(text)), receiver, false, true, nil
+			}
+			return String(restore(local.Format("1/2/2006, 3:04:05 PM") + " " + label)), receiver, false, true, nil
 		case "isSameDay":
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.isSameDay expects Datetime")

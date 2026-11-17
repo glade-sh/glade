@@ -229,10 +229,6 @@ func (vm *VM) dateHybridMember(receiver Value, method string, args []Value) (Val
 // Gregorian reading of their instant (year 1582 holds the cutover).
 var hybridYearEnd = time.Date(1583, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-// simpleDatePattern admits the format patterns whose output the Julian leap day
-// substitution can restore: numeric date and clock tokens and literals.
-var simpleDatePattern = regexp.MustCompile(`^[yMdHhmsSa:\-/ ,.T]+$`)
-
 // julianOnlyLeapDay reports a Julian February 29 that the Gregorian calendar
 // does not have (1500, 1400, 1300 ...) and its year, for an instant read at the
 // given zone offset.
@@ -281,4 +277,100 @@ func dateLabelFromGregorian(value time.Time) string {
 		return hybridLabelText(time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC).Unix() / 86400)
 	}
 	return value.Format("2006-01-02")
+}
+
+var englishWeekdays = [...]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+
+// hybridPatternLiterals rewrites the calendar tokens of a format pattern (year,
+// day of year, week of year and of month, day of week in month, weekday name and
+// number) into quoted literals computed from the hybrid calendar for a date
+// before 1583, because the Gregorian time the formatter reads is a label shifted
+// from the real day (native FmtJulian rows: 1500-02-29 is a Saturday, day 60,
+// week 9). Sunday-first weeks with one minimal day (en_US). The other tokens
+// keep reading the label.
+func hybridPatternLiterals(pattern string, localDays int64, locale string) string {
+	year, month, _ := hybridCivil(localDays)
+	if year < 1 {
+		return pattern
+	}
+	english := strings.HasPrefix(strings.ToLower(locale), "en")
+	weekday := int(((localDays+4)%7 + 7) % 7) // Sunday = 0
+	firstOfMonth := hybridDays(year, month, 1)
+	monthDow := int(((firstOfMonth+4)%7 + 7) % 7)
+	index := int(localDays-firstOfMonth) + 1 // the day's place in its month, counting the days the cutover skipped as absent
+	jan1 := hybridDays(year, 1, 1)
+	jan1Dow := int(((jan1+4)%7 + 7) % 7)
+	doy := int(localDays-jan1) + 1
+	week := (doy-1+jan1Dow)/7 + 1
+	if nextJan1 := hybridDays(year+1, 1, 1); nextJan1-localDays <= int64(6-weekday) {
+		week = 1
+	}
+	pad := func(n, width int) string { return fmt.Sprintf("%0*d", width, n) }
+	var out strings.Builder
+	for i := 0; i < len(pattern); {
+		ch := pattern[i]
+		if ch == '\'' {
+			j := i + 1
+			for j < len(pattern) {
+				if pattern[j] == '\'' {
+					if j+1 < len(pattern) && pattern[j+1] == '\'' {
+						j += 2
+						continue
+					}
+					break
+				}
+				j++
+			}
+			if j >= len(pattern) {
+				j = len(pattern) - 1
+			}
+			out.WriteString(pattern[i : j+1])
+			i = j + 1
+			continue
+		}
+		j := i + 1
+		for j < len(pattern) && pattern[j] == ch {
+			j++
+		}
+		count := j - i
+		literal := ""
+		switch ch {
+		case 'y':
+			if count == 2 {
+				literal = pad(year%100, 2)
+			} else {
+				literal = pad(year, count)
+			}
+		case 'D':
+			literal = pad(doy, count)
+		case 'w':
+			literal = pad(week, count)
+		case 'W':
+			literal = pad((index-1+monthDow)/7+1, count)
+		case 'F':
+			literal = pad((index-1)/7+1, count)
+		case 'E':
+			if english {
+				literal = englishWeekdays[weekday]
+				if count < 4 {
+					literal = literal[:3]
+				}
+			}
+		case 'u':
+			if english {
+				n := weekday
+				if n == 0 {
+					n = 7
+				}
+				literal = pad(n, count)
+			}
+		}
+		if literal == "" {
+			out.WriteString(pattern[i:j])
+		} else {
+			out.WriteString("'" + literal + "'")
+		}
+		i = j
+	}
+	return out.String()
 }

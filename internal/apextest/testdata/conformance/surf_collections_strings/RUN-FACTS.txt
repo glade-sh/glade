@@ -90,11 +90,13 @@ first recorded transition (Los Angeles before 1883) the offset is the standard o
 it GMT-8. pgctor: new PageReference() fails to compile natively; pgctor_ok: System.debug of a
 PageReference prints System.PageReference[url]. JSON.deserialize of a Date reads the Gregorian date and
 keeps it as the Julian label of the same instant, so its JSON text round-trips.
-Native answers not modeled, kept out of the harness: the typed flow merges (FlowTyped in cap5: a Number
-variable merges as 2.50, a Number formula as 7.00, a Boolean as true, a Date as January 2, 2026) and the
-deploy-time rejection of a String merge into a Number, Boolean or Date flow variable (flow-target-reject).
-The flow merge change is gated to String variables and formulas and String targets.
-Gap: the readers show a Julian leap day that the Gregorian calendar lacks (1500-02-29) for the text
-forms, the day/month/year/dayOfYear/date readers and the numeric-token formats of format and
-formatGmt; other format tokens (weekday names, day of year, week fields) of such a date still read the
-next day.
+Typed flow merges (FlowTyped, cap5): a String assignment that merges a Number variable or formula renders
+the declared scale (2.50, 7.00), a Date renders as January 2, 2026, a Boolean as true, and a String as is,
+alone or inside text; native rejects such a merge into a Number, Boolean or Date variable at deploy time
+(flow-target-reject raw; an automation test pins the message). Glade matches all of that. Uncaptured, so on
+the earlier behavior: Currency, DateTime and other resource types, and a Number without a declared scale.
+The flow change is gated to autolaunched flows and a String target.
+dth_r3_fmtjulian (cap7): format() on Julian dates. The weekday, day of year, week of year, week of month,
+day of week in month and year tokens, and formatLong, follow the hybrid calendar (1500-02-29 is a Saturday,
+day 60, week 9). The weekday-name and weekday-number tokens read English only; other locales keep the label
+shifted reading for those two tokens.

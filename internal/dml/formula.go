@@ -1742,6 +1742,28 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: args[0].asString() == args[1].asString()}, true
+	case "GLADENUMBERTEXT":
+		// A Number merged into flow text keeps its declared scale (native
+		// FlowTyped: scale 2 renders 2.50 and 7.00).
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		scale, err := strconv.Atoi(strings.TrimSpace(args[1].asString()))
+		number, ok := new(big.Rat).SetString(strings.TrimSpace(args[0].asString()))
+		if err != nil || !ok || scale < 0 {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaString, text: number.FloatString(scale)}, true
+	case "GLADEDATETEXT":
+		// A Date merged into flow text reads as the en_US long date.
+		if len(args) != 1 {
+			return formulaValue{}, false
+		}
+		value, err := time.Parse("2006-01-02", strings.TrimSpace(args[0].asString()))
+		if err != nil {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaString, text: value.Format("January 2, 2006")}, true
 	case "TEXT":
 		if len(args) != 1 {
 			return formulaValue{}, false
