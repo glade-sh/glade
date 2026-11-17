@@ -415,16 +415,54 @@ func escapeEncodedLoneSurrogates(source string) string {
 	}
 	var b strings.Builder
 	for i := 0; i < len(source); {
-		if isLoneSurrogateAt(source, i) {
-			r, size := decodeApexRune(source[i:])
+		start := i
+		if source[i] == '\\' && i+1 < len(source) {
+			// Java reads a backslash before a non-alphabetic character as that
+			// character; the escape replaces both.
+			if isLoneSurrogateAt(source, i+1) {
+				start = i + 1
+			} else {
+				b.WriteByte(source[i])
+				b.WriteByte(source[i+1])
+				i += 2
+				continue
+			}
+		}
+		if isLoneSurrogateAt(source, start) {
+			r, size := decodeApexRune(source[start:])
 			fmt.Fprintf(&b, `\u%04X`, r)
-			i += size
+			i = start + size
 			continue
 		}
 		b.WriteByte(source[i])
 		i++
 	}
 	return b.String()
+}
+
+// operationHitEndRunes is operationHitEnd over decoded code units. The plans
+// that take this path have no linear program, so only the observer decides.
+func (p *regexp2Plan) operationHitEndRunes(runes []rune, anchored, full bool) (bool, error) {
+	source, slot := regexp2EndObserverSource(escapeEncodedLoneSurrogates(p.matchSource), p.re)
+	if anchored {
+		source = `\G(?:` + source + ")"
+	}
+	if full {
+		source += `(?=\z)`
+	}
+	re, err := regexp2.Compile(source, regexp2.None)
+	if err != nil {
+		return false, err
+	}
+	re.MatchTimeout = regexp2MatchTimeout
+	match, err := searchRegexp2(re, "", func() (*regexp2.Match, error) {
+		return re.FindRunesMatchStartingAt(runes, 0)
+	})
+	if err != nil || match == nil {
+		return false, err
+	}
+	group := match.GroupByNumber(slot)
+	return group != nil && len(group.Captures) > 0, nil
 }
 
 // loneSurrogateMatch matches text that holds a lone surrogate, which Java reads
@@ -434,11 +472,11 @@ func escapeEncodedLoneSurrogates(source string) string {
 // byte offset of every rune. It is taken only for such text and plans that need
 // neither the linear engine nor grapheme clusters; ok is false otherwise and the
 // string path decides.
-func (p *regexp2Plan) loneSurrogateMatch(input string, full bool) (match *regexp2.Match, offsets []int, runeCount int, ok bool, err error) {
+func (p *regexp2Plan) loneSurrogateMatch(input string, full bool) (match *regexp2.Match, offsets []int, runes []rune, ok bool, err error) {
 	if !mayHoldLoneSurrogate(input) || !hasLoneSurrogate(input) || p.linear != nil || p.grapheme != nil {
-		return nil, nil, 0, false, nil
+		return nil, nil, nil, false, nil
 	}
-	runes := make([]rune, 0, len(input))
+	runes = make([]rune, 0, len(input))
 	offsets = make([]int, 0, len(input)+1)
 	for i := 0; i < len(input); {
 		r, size := decodeApexRune(input[i:])
@@ -453,25 +491,25 @@ func (p *regexp2Plan) loneSurrogateMatch(input string, full bool) (match *regexp
 	}
 	re, cerr := regexp2.Compile(source, regexp2.None)
 	if cerr != nil {
-		return nil, nil, 0, true, cerr
+		return nil, nil, nil, true, cerr
 	}
 	re.MatchTimeout = regexp2MatchTimeout
 	match, merr := searchRegexp2(re, "", func() (*regexp2.Match, error) {
 		return re.FindRunesMatchStartingAt(runes, 0)
 	})
 	if merr != nil {
-		return nil, nil, 0, true, merr
+		return nil, nil, nil, true, merr
 	}
-	return match, offsets, len(runes), true, nil
+	return match, offsets, runes, true, nil
 }
 
 // matchesLoneSurrogateInput is Pattern.matches over such text.
 func (p *regexp2Plan) matchesLoneSurrogateInput(input string) (matched, ok bool, err error) {
-	match, _, count, ok, err := p.loneSurrogateMatch(input, true)
+	match, _, runes, ok, err := p.loneSurrogateMatch(input, true)
 	if !ok || err != nil {
 		return false, ok, err
 	}
-	return match != nil && match.Index == 0 && match.Length == count, true, nil
+	return match != nil && match.Index == 0 && match.Length == len(runes), true, nil
 }
 
 // loneSurrogateIndices is the byte-offset group list of a loneSurrogateMatch.

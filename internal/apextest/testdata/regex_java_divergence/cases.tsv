@@ -1142,3 +1142,5 @@ d10_m_matcher_group_lone_hi	d10_00	"Matcher m = Pattern.compile('(.)').matcher('
 d14x_usepattern_refind	d14x_00	"Matcher m = Pattern.compile('a\\\\B').matcher('a'); m.find(); m.usePattern(Pattern.compile('q')); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
 d14x_usepattern_rematch	d14x_00	"Matcher m = Pattern.compile('a\\\\B').matcher('a'); m.find(); m.usePattern(Pattern.compile('a')); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
 d14x_caret_third_find	d14x_00	"Matcher m = Pattern.compile('^').matcher('ab'); m.find(); m.find(); observation = String.valueOf(m.find());"
+d10_m_lookingat_lone_dollar	d10_00	"Matcher m = Pattern.compile('.$').matcher('\\uD83D'); Boolean f = m.lookingAt(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
+d10_m_backslash_lone_hi	d10_00	"observation = String.valueOf(Pattern.matches('\\\\\\uD83D', '\\uD83D'));"

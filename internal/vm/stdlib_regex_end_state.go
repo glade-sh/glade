@@ -217,6 +217,25 @@ func (p *regexp2Plan) matchRequiresEnd(input string, match *regexp2.Match) bool 
 			terminatorStart = end - 1
 		}
 	}
+	return p.requiresEndAt(end, terminatorStart, match)
+}
+
+// matchRequiresEndRunes is matchRequiresEnd over decoded code units.
+func (p *regexp2Plan) matchRequiresEndRunes(runes []rune, match *regexp2.Match) bool {
+	end := len(runes)
+	terminatorStart := -1
+	if end >= 2 && runes[end-2] == '\r' && runes[end-1] == '\n' {
+		terminatorStart = end - 2
+	} else if end >= 1 {
+		switch runes[end-1] {
+		case '\n', '\r', '\u0085', '\u2028', '\u2029':
+			terminatorStart = end - 1
+		}
+	}
+	return p.requiresEndAt(end, terminatorStart, match)
+}
+
+func (p *regexp2Plan) requiresEndAt(end, terminatorStart int, match *regexp2.Match) bool {
 	for _, assertion := range p.endAssertionGroups {
 		group := match.GroupByNumber(assertion.group)
 		if group == nil {

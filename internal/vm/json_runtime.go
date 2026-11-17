@@ -261,7 +261,7 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 
 func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNulls bool, state *jsonSerializationState) any {
 	value = value.currentMapKeySet()
-	if value.Kind == ValueObject && value.Fields != nil {
+	if value.Kind == ValueObject && value.Type == "Matcher" && value.Fields != nil {
 		// A Matcher may hold a deferred requireEnd; settle it so the serialized
 		// fields agree with requireEnd().
 		matcherResolveRequireEnd(value)

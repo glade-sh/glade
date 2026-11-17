@@ -58,3 +58,5 @@ Lone surrogate and find-again rows (d10_m_lit_lone_hi, d10_m_matcher_*, d14x_use
   a literal lone surrogate in the pattern matches the same code unit through Pattern.matches and Pattern.compile(..).matcher(..).matches() (and so does (.), with end(1) 1).
   After a failed find Java keeps last: usePattern(q) then find() searches q again (false hitEnd=true requireEnd=false), usePattern(a) then find() on the same text finds a (true hitEnd=false requireEnd=false),
   and ^ on ab gives find true, false, true.
+Lone surrogate end state and escape rows (d10_m_lookingat_lone_dollar, d10_m_backslash_lone_hi; 62.0 and 67.0, anonymous and @IsTest, two repeats in two scratch orgs, deleted and verified gone):
+  .$ lookingAt over one lone high surrogate is true hitEnd=true requireEnd=true; a backslash before a lone surrogate in the pattern quotes it, so Pattern.matches('\\\uD83D', '\uD83D') is true.

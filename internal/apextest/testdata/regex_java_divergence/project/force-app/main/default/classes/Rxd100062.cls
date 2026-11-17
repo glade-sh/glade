@@ -145,4 +145,14 @@ private class Rxd100062 {
         try { Matcher m = Pattern.compile('(.)').matcher('\uD83D'); Boolean f = m.matches(); observation = f + ' ' + m.end(1); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
         System.assertEquals('ROW', observation);
     }
+    @IsTest static void d10_m_lookingat_lone_dollar() {
+        String observation;
+        try { Matcher m = Pattern.compile('.$').matcher('\uD83D'); Boolean f = m.lookingAt(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d10_m_backslash_lone_hi() {
+        String observation;
+        try { observation = String.valueOf(Pattern.matches('\\\uD83D', '\uD83D')); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
 }

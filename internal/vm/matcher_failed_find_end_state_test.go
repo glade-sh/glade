@@ -113,3 +113,34 @@ System.assertEquals(true, Pattern.compile('a').matcher('a\uD83Db').lookingAt());
 		t.Fatal(err)
 	}
 }
+
+// The deferred requireEnd settles only on a Matcher; a plain object that happens
+// to carry a field of that name serializes untouched.
+func TestJSONSerializeKeepsPlainObjectWithMatcherFieldName(t *testing.T) {
+	vm := New(nil)
+	plain := Object("Widget")
+	plain.Fields["requireEndText"] = String("keep")
+	got := vm.jsonFromValueForJSONSerialize(plain, false)
+	object, _ := got.(orderedJSONObject)
+	if len(object) != 1 || object[0].name != "requireEndText" || object[0].value != "keep" {
+		t.Fatalf("plain object field changed: %#v", got)
+	}
+}
+
+// d10_m_lookingat_lone_dollar and d10_m_backslash_lone_hi.
+func TestExecMatcherLoneSurrogateEndStateAndEscape(t *testing.T) {
+	source := `Matcher m = Pattern.compile('.$').matcher('\uD83D');
+System.assertEquals(true, m.lookingAt());
+System.assertEquals(true, m.hitEnd());
+System.assertEquals(true, m.requireEnd());
+System.assertEquals(true, Pattern.matches('\\\uD83D', '\uD83D'));
+System.assertEquals(false, Pattern.matches('\\\\uD83D', '\uD83D'));
+`
+	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
