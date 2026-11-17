@@ -105,9 +105,9 @@ func TestGapRollupHoldScopeNeighbors(t *testing.T) {
 	}
 }
 
-// A trigger whose nested DML inserts another child of the same parent reads the
-// roll-up with that inner change (the earlier behavior); only parents no inner
-// statement changed keep the frozen value. Not captured natively.
+// A trigger whose nested DML inserts another child of the same parent sees the
+// inner statement's change land and not its own (native x_nested rows: 0,1
+// then 2 after the statement).
 func TestGapRollupHoldDroppedByInnerStatement(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {

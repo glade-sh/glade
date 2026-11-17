@@ -118,6 +118,9 @@ type heldSummaryRelation struct {
 // else the live value.
 func (e *Engine) outerHeldValue(key string, live storage.Value) storage.Value {
 	for i := len(e.Org.SummaryHolds) - 1; i >= 0; i-- {
+		if e.Org.SummaryHolds[i].Dropped[key] {
+			return live
+		}
 		if value, ok := e.Org.SummaryHolds[i].Values[key]; ok {
 			return value
 		}
@@ -130,29 +133,42 @@ func (e *Engine) outerHeldValue(key string, live storage.Value) storage.Value {
 // statement's change lands, the enclosing statement's has not yet). A roll-up
 // that is not a COUNT or SUM drops its held value instead.
 func (e *Engine) carrySummaryDeltaOut() {
+	own := -1
+	for i, hold := range e.Org.SummaryHolds {
+		if hold == e.summaryHold {
+			own = i
+		}
+	}
+	if own <= 0 {
+		return
+	}
 	for _, held := range e.summaryHoldRelations {
 		now, ok := e.evaluateSummaryFieldBatch(held.relation, held.parentIDs)
 		for id := range held.parentIDs {
 			key := summaryHoldKey(held.relation.parentObject, id, held.relation.parentField)
 			before, had := e.summaryHold.Live[key]
-			for _, outer := range e.Org.SummaryHolds {
-				if outer == e.summaryHold {
-					continue
-				}
+			// Only the nearest enclosing hold that keeps this roll-up takes the
+			// change; that statement's own release carries it further out.
+			for i := own - 1; i >= 0; i-- {
+				outer := e.Org.SummaryHolds[i]
 				current, in := outer.Values[key]
-				if !in {
+				if !in || outer.Dropped[key] {
 					continue
 				}
 				op := strings.ToLower(strings.TrimSpace(held.relation.field.SummaryOperation))
+				// MIN and MAX read the live value after a nested statement
+				// (review_round3 n_sib*, n_del): the hold forgets the key and
+				// stops outer holds from answering for it.
 				if !ok || !had || (op != "count" && op != "sum") {
-					delete(outer.Values, key)
-					continue
+					outer.Drop(key)
+					break
 				}
 				if next, good := addSummaryDelta(current, before, now[id]); good {
 					outer.Values[key] = next
 				} else {
-					delete(outer.Values, key)
+					outer.Drop(key)
 				}
+				break
 			}
 		}
 	}
@@ -195,6 +211,9 @@ func (e *Engine) heldSummary(parent storage.Record, field storage.Field) (storag
 	}
 	key := summaryHoldKey(object, id, field.APIName)
 	for i := len(e.Org.SummaryHolds) - 1; i >= 0; i-- {
+		if e.Org.SummaryHolds[i].Dropped[key] {
+			return storage.Value{}, false
+		}
 		if value, ok := e.Org.SummaryHolds[i].Values[key]; ok {
 			return value, true
 		}
@@ -683,6 +702,24 @@ func summaryFilterMatches(value storage.Value, filter storage.SummaryFilterItem)
 		return summaryValueMatchesText(value, filter.Value)
 	case "notequal":
 		return !summaryValueMatchesText(value, filter.Value)
+	case "greaterthan", "lessthan", "greaterorequal", "lessorequal":
+		// review_round3 Fc__c: a Number filter compares as numbers.
+		left, ok := summaryNumericRat(value)
+		right, ok2 := new(big.Rat).SetString(strings.TrimSpace(filter.Value))
+		if !ok || !ok2 {
+			return false
+		}
+		c := left.Cmp(right)
+		switch strings.ToLower(strings.TrimSpace(filter.Operation)) {
+		case "greaterthan":
+			return c > 0
+		case "lessthan":
+			return c < 0
+		case "greaterorequal":
+			return c >= 0
+		default:
+			return c <= 0
+		}
 	default:
 		return false
 	}

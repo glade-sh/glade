@@ -78,6 +78,16 @@ type SummaryHold struct {
 	// Live holds each parent's value when the statement began, for the delta
 	// the statement adds to an enclosing statement's hold.
 	Live map[string]Value
+	// Dropped keys read the live value; enclosing holds do not answer for them.
+	Dropped map[string]bool
+}
+
+func (h *SummaryHold) Drop(key string) {
+	delete(h.Values, key)
+	if h.Dropped == nil {
+		h.Dropped = make(map[string]bool)
+	}
+	h.Dropped[key] = true
 }
 
 type OrgState struct {

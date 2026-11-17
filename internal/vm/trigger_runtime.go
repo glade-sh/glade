@@ -747,9 +747,11 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 				// statements and queries are not counted, the outermost trigger's own
 				// up to that statement are (native review1 hd_swallow rows).
 				vm.restoreDepthCounters(vm.innerTriggerLimits)
+				vm.depthFailureSurfaced = true
 				return nil, unwind.failure
 			}
-			if vm.triggerDepth == 1 && strings.Contains(err.Error(), ": maximum trigger depth exceeded\n") {
+			if vm.triggerDepth == 1 && vm.depthFailureSurfaced {
+				vm.depthFailureSurfaced = false
 				// Uncaught in the outermost trigger: its own work goes too
 				// (d2_limits: the caller sees only its own statements).
 				vm.restoreDepthCounters(vm.outerTriggerLimits)
@@ -757,6 +759,9 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 			return nil, err
 		}
 		mergeDMLFailuresInPlace(failures, triggerFailures)
+	}
+	if vm.triggerDepth == 1 {
+		vm.depthFailureSurfaced = false
 	}
 	if hasDMLFailures(failures) {
 		return failures, nil

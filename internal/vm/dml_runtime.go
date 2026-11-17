@@ -2168,9 +2168,6 @@ func (vm *VM) populateDMLResultFields(value *Value, results []dml.Result, operat
 		if !ok {
 			return
 		}
-		if operation == "insert" {
-			markSavedMasterFields(value, vm.Org.Objects[objectName].Definition)
-		}
 		record, ok := vm.Org.Objects[objectName].Records[id]
 		if !ok {
 			return
@@ -3239,9 +3236,11 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if !allOrNone && hasAfterTrigger {
 		ensurePartialAfterTriggerBackup()
 	}
-	if hasAfterTrigger && vm.installContextDepth == 0 {
+	if (hasAfterTrigger || len(vm.Org.SummaryHolds) > 0) && vm.installContextDepth == 0 {
 		// Native after-triggers read the parent roll-ups as they stood before
-		// the statement (rollup_trigger_timing).
+		// the statement (rollup_trigger_timing). A statement nested in an
+		// enclosing hold joins it even without a trigger of its own, so its
+		// change reaches the enclosing statement.
 		engine.BeginSummaryHold(records)
 		defer engine.ReleaseSummaryHold()
 	}

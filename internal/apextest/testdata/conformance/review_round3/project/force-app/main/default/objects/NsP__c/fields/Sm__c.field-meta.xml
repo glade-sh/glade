@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Sm__c</fullName><label>Sm__c</label><summarizedField>NsC__c.Amt__c</summarizedField><summaryForeignKey>NsC__c.P__c</summaryForeignKey><summaryOperation>sum</summaryOperation><type>Summary</type></CustomField>

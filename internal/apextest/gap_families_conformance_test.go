@@ -4,7 +4,7 @@ import "testing"
 
 // Rollup values read by a child trigger, per statement kind.
 func TestRollupTriggerTimingNativeConformance(t *testing.T) {
-	gapFamily{dir: "testdata/conformance/rollup_trigger_timing", adminFrom: []string{"GapAccess"}}.replay(t)
+	gapFamily{dir: "testdata/conformance/rollup_trigger_timing", adminFrom: []string{"GapAccess"}, residual: rollupResiduals}.replay(t)
 }
 
 // Depth-16 trigger recursion: where the failure surfaces and who can catch it.
@@ -82,3 +82,23 @@ func TestReviewRound1NativeConformance(t *testing.T) {
 func TestReviewRound2NativeConformance(t *testing.T) {
 	gapFamily{dir: "testdata/conformance/review_round2", adminFrom: []string{"GapAccess"}}.replay(t)
 }
+
+// The 67.0 istest row updates an inserted record that carries a
+// non-reparentable master-detail value and succeeds natively. The review3 grid
+// shows the same update failing in a plain 67.0 test class with and without a
+// roll-up, so the difference is not explained by it; Glade keeps the failure
+// (apex_release_gates RM1 and RM15 require it). Anonymous rows match.
+var rollupResiduals = map[string]string{
+	"r1t_route/67.0": "updFull: 67.0 test-class update of an inserted record with a master-detail value (see above)",
+}
+
+// Nested roll-up statements and the master-detail update grid.
+func TestReviewRound3NativeConformance(t *testing.T) {
+	gapFamily{dir: "testdata/conformance/review_round3", adminFrom: []string{"GapAccess"}, residual: map[string]string{
+		"g_amt_a/62.0": beforeGrant, "g_name_a/62.0": beforeGrant, "g_sys_a/62.0": beforeGrant, "g_usr_a/62.0": beforeGrant,
+	}}.replay(t)
+}
+
+// These rows ran before the permission set was assigned: the custom field did
+// not exist for the administrator. The replay always grants the Admin profile.
+const beforeGrant = "native row ran before the permission set; the replay grants the Admin profile throughout"

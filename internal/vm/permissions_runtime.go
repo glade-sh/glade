@@ -844,7 +844,7 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		if strings.EqualFold(canonicalField, "Id") || vm.sobjectFormulaField(objectName, canonicalField) {
 			continue
 		}
-		if op == "update" && savedMasterFieldUnchanged(record, canonicalField) {
+		if vm.anonymousMasterDetailUpdate(op) && vm.lockedMasterDetailField(objectName, canonicalField) {
 			continue
 		}
 		// A queried null User field that no assignment or constructor argument
@@ -2653,4 +2653,9 @@ func (vm *VM) adminLegacyExplicitUserModeFieldDenied(op, objectName, fieldName, 
 		return false
 	}
 	return !vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), objectName, fieldName, method)
+}
+
+func (vm *VM) lockedMasterDetailField(objectName, fieldName string) bool {
+	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
+	return ok && field.MasterDetail && !field.ReparentableMasterDetail
 }

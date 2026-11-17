@@ -301,6 +301,9 @@ type VM struct {
 	outerTriggerLimits Limits
 	// innerTriggerLimits are the counters when the second activation began.
 	innerTriggerLimits Limits
+	// depthFailureSurfaced marks a depth failure that reached the outermost
+	// trigger's DML statement, so only that failure restores the counters.
+	depthFailureSurfaced bool
 	// inFinalizer is set while a Queueable finalizer runs: it keeps the
 	// synchronous query, CPU and relationship-subquery caps.
 	inFinalizer             bool

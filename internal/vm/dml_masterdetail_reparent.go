@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"slices"
 	"sort"
-	"strings"
 
 	"github.com/glade-sh/glade/internal/apexversion"
 	"github.com/glade-sh/glade/internal/dml"
@@ -59,9 +58,6 @@ func (vm *VM) masterDetailReparentFailures(op string, records []storage.Record, 
 		var locked []string
 		for name := range record.Fields {
 			if field, known := object.Definition.Fields[name]; known && field.MasterDetail && !field.ReparentableMasterDetail {
-				if op == "update" && i < len(targets) && targets[i] != nil && savedMasterFieldUnchanged(*targets[i], name) {
-					continue
-				}
 				locked = append(locked, name)
 			}
 		}
@@ -73,15 +69,12 @@ func (vm *VM) masterDetailReparentFailures(op string, records []storage.Record, 
 				locked = append(locked, name)
 			}
 		}
-		userMode := op == "update" && resolvedMode == "USER_MODE"
+		userMode := op == "update" && resolvedMode == "USER_MODE" && !vm.anonymousMasterDetailUpdate(op)
 		if userMode && i < len(targets) && targets[i] != nil {
 			// The record handed to DML keeps only changed fields. A queried
 			// master that was not touched still counts under user mode.
 			for _, name := range masters {
 				if slices.Contains(locked, name) {
-					continue
-				}
-				if savedMasterFieldUnchanged(*targets[i], name) {
 					continue
 				}
 				if _, _, present := objectFieldValue(*targets[i], name); present {
@@ -161,38 +154,11 @@ func (vm *VM) recordValueForMessage(record storage.Record, targets []*Value, i i
 	return value
 }
 
-// Natively an SObject that an insert just saved does not send its master-detail
-// value again on the next update (rollup_trigger_timing r1_upd_* rows at 67.0:
-// insert, change another field, update succeeds). A queried or put value still
-// counts (apex_release_gates RP rows). The saved value is recorded in the
-// defaulted-field marker under a key that carries the value, so it stands only
-// while the value is unchanged.
-func savedMasterMarker(value Value, name string) (string, bool) {
-	_, current, present := objectFieldValue(value, name)
-	if !present {
-		return "", false
-	}
-	text, _ := idValueText(current)
-	return "saved-master:" + strings.ToLower(name) + ":" + text, true
-}
-
-func markSavedMasterFields(value *Value, definition storage.ObjectDefinition) {
-	if value == nil || value.Kind != ValueObject {
-		return
-	}
-	for name, field := range definition.Fields {
-		if !field.MasterDetail || field.ReparentableMasterDetail {
-			continue
-		}
-		if key, ok := savedMasterMarker(*value, name); ok {
-			markDefaultedSObjectField(value, key)
-		}
-	}
-}
-
-// savedMasterFieldUnchanged reports a master-detail value the object's insert
-// saved and nothing has changed since.
-func savedMasterFieldUnchanged(value Value, name string) bool {
-	key, ok := savedMasterMarker(value, name)
-	return ok && isDefaultedSObjectField(value, key)
+// An anonymous block that updates a record carrying its unchanged
+// non-reparentable master-detail value is not rejected at 67.0: the review3
+// grid (anonymous rows pass at 62.0 and 67.0 with and without custom fields,
+// administrator with a permission set) against the class and test rows
+// (apex_release_gates RM1 and RM15, review3 g_route), which fail at 67.0.
+func (vm *VM) anonymousMasterDetailUpdate(op string) bool {
+	return op == "update" && !vm.runAsRecordAccessCaptured && vm.currentClass == "" && len(vm.callStack) == 0 && !vm.currentTrigger && vm.testContext == nil
 }
