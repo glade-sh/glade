@@ -57,6 +57,9 @@ type gapFamily struct {
 	// Admin profile carries. The native @IsTest rows run as the capture user,
 	// who held the same permission set (the rows' fls case assigns it).
 	adminFrom []string
+	// classAPI maps an API under test to the apiVersion written into the class
+	// metadata, for rows whose capture did not prove the class API.
+	classAPI map[string]string
 }
 
 var gapIDPattern = regexp.MustCompile(`\b(?:001|003|005|006|00D|00G|00Q|00e|01p|01q|0Hp|0HM|707|a0[0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
@@ -138,7 +141,11 @@ func (f gapFamily) writeProject(t *testing.T, api string) string {
 		}
 		text := string(body)
 		if strings.HasSuffix(path, "-meta.xml") && strings.Contains(text, "<apiVersion>") {
-			text = gapAPIVersionPattern.ReplaceAllString(text, "<apiVersion>"+api+"</apiVersion>")
+			version := api
+			if override, ok := f.classAPI[api]; ok && strings.Contains(filepath.ToSlash(rel), "/classes/") {
+				version = override
+			}
+			text = gapAPIVersionPattern.ReplaceAllString(text, "<apiVersion>"+version+"</apiVersion>")
 		}
 		writeFile(t, filepath.Join(root, "force-app", rel), text)
 		return nil

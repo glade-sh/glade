@@ -4,7 +4,7 @@ import "testing"
 
 // Rollup values read by a child trigger, per statement kind.
 func TestRollupTriggerTimingNativeConformance(t *testing.T) {
-	gapFamily{dir: "testdata/conformance/rollup_trigger_timing", adminFrom: []string{"GapAccess"}, residual: rollupResiduals}.replay(t)
+	gapFamily{dir: "testdata/conformance/rollup_trigger_timing", adminFrom: []string{"GapAccess"}, classAPI: map[string]string{"67.0": "62.0"}}.replay(t)
 }
 
 // Depth-16 trigger recursion: where the failure surfaces and who can catch it.
@@ -81,18 +81,6 @@ func TestReviewRound2NativeConformance(t *testing.T) {
 	gapFamily{dir: "testdata/conformance/review_round2", adminFrom: []string{"GapAccess"}}.replay(t)
 }
 
-// The 67.0 istest row updates an inserted record that carries a
-// non-reparentable master-detail value and succeeds natively. The review3 grid
-// shows the same update failing in a plain 67.0 test class with and without a
-// roll-up (review_round4 also with an after-trigger, with both, and plain), so
-// neither explains it. Still untested hypotheses: the child's before-update
-// trigger (RtChildTrg has one; the captures have after-triggers only), the
-// extra checkbox field, or the static reset before the update. Glade keeps the failure
-// (apex_release_gates RM1 and RM15 require it). Anonymous rows match.
-var rollupResiduals = map[string]string{
-	"r1t_route/67.0": "updFull: 67.0 test-class update of an inserted record with a master-detail value (see above)",
-}
-
 // Nested roll-up statements and the master-detail update grid.
 func TestReviewRound3NativeConformance(t *testing.T) {
 	gapFamily{dir: "testdata/conformance/review_round3", adminFrom: []string{"GapAccess"}, residual: map[string]string{
@@ -114,4 +102,10 @@ func TestSF4MixedUpsertNativeConformance(t *testing.T) {
 // after-trigger, with a roll-up, with both, and plain.
 func TestReviewRound4NativeConformance(t *testing.T) {
 	gapFamily{dir: "testdata/conformance/review_round4", adminFrom: []string{"GapAccess"}}.replay(t)
+}
+
+// Master-detail update factors in a test class, and the in-memory Parent__r
+// roll-up read.
+func TestReviewRound5NativeConformance(t *testing.T) {
+	gapFamily{dir: "testdata/conformance/review_round5", adminFrom: []string{"GapAccess"}}.replay(t)
 }
