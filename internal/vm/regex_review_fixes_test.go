@@ -2,6 +2,7 @@ package vm
 
 import (
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -410,4 +411,42 @@ System.assertEquals(true, Pattern.compile('(?x)[a b]\\N{LATIN SMALL LETTER A}').
 try { Pattern.compile('\\N{FOO BAR}'); System.assert(false, 'compiled'); }
 catch (StringException e) { System.assert(e.getMessage().contains('Unknown character name [FOO BAR]'), e.getMessage()); }
 `)
+}
+
+// Character.codePointOf rules, from the native d20_* and d21_* rows.
+func TestJavaCharacterByNameFollowsCodePointOf(t *testing.T) {
+	for name, want := range map[string]rune{
+		"GREEK SMALL LETTER ALPHA": 0x3B1, "greek small letter alpha": 0x3B1, "  LATIN SMALL LETTER A  ": 'a',
+		"LATIN SMALL LETTER A WITH GRAVE": 0xE0, "NO-BREAK SPACE": 0xA0, "GRINNING FACE": 0x1F600,
+		"NULL": 0, "DELETE": 0x7F, "LINE FEED (LF)": 10, "NEXT LINE (NEL)": 0x85, "APPLICATION PROGRAM COMMAND": 0x9F,
+		"CJK UNIFIED IDEOGRAPHS 4E00": 0x4E00, "cjk unified ideographs 4e00": 0x4E00, "HANGUL SYLLABLES AC00": 0xAC00,
+		"CJK UNIFIED IDEOGRAPHS EXTENSION B 20000": 0x20000, "PRIVATE USE AREA E000": 0xE000, "TANGUT 17000": 0x17000,
+	} {
+		if got, ok := javaCharacterByName(name); !ok || got != want {
+			t.Errorf("javaCharacterByName(%q) = %U, %v; want %U", name, got, ok, want)
+		}
+	}
+	for _, name := range []string{"LATIN_SMALL_LETTER_A", "LATIN-SMALL-LETTER-A", "LATIN SMALL LETTER  A", "LINE FEED", "FOO BAR",
+		"CJK UNIFIED IDEOGRAPH-4E00", "CJK UNIFIED IDEOGRAPH 4E00", "HANGUL SYLLABLE GA", "BASIC LATIN 41", "BASIC LATIN 0041",
+		"CJK UNIFIED IDEOGRAPHS 04E00", "CJK UNIFIED IDEOGRAPHS +4E00", "CJK UNIFIED IDEOGRAPHS A000", "LATIN 1 SUPPLEMENT 80", "EMOTICONS 1F600"} {
+		if got, ok := javaCharacterByName(name); ok {
+			t.Errorf("javaCharacterByName(%q) = %U, want unknown", name, got)
+		}
+	}
+	runRegexApex(t, `
+System.assertEquals(true, Pattern.compile('\\N{GREEK SMALL LETTER ALPHA}').matcher('α').find());
+System.assertEquals(true, Pattern.compile('\\N{greek small letter alpha}').matcher('α').find());
+System.assertEquals(true, Pattern.compile('[\\N{GREEK SMALL LETTER ALPHA}x]').matcher('α').find());
+System.assertEquals(true, Pattern.compile('(?x)\\N{GREEK SMALL LETTER ALPHA}').matcher('α').find());
+try { Pattern.compile('\\N{LATIN_SMALL_LETTER_A}'); System.assert(false, 'compiled'); }
+catch (StringException e) { System.assert(e.getMessage().contains('Unknown character name [LATIN_SMALL_LETTER_A]'), e.getMessage()); }
+`)
+}
+
+func BenchmarkJavaCharacterNamesFirstUse(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		javaNamesOnce = sync.Once{}
+		javaNameToRune = nil
+		javaCharacterByName("GREEK SMALL LETTER ALPHA")
+	}
 }

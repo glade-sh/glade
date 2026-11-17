@@ -38,3 +38,7 @@ hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repea
 \N{name} rows d19 (62.0 and 67.0, anonymous and @IsTest, two repeats): the name body is read raw, so (?x)\N{LATIN SMALL LETTER A} matches a;
   an unknown name is Invalid regex: Unknown character name [FOO BAR] near the closing brace. Glade resolves only the names in javaCharacterByName;
   other valid Unicode names are reported as unknown.
+\N{name} lookup rows d20 and d21 (62.0 and 67.0, anonymous and @IsTest, two repeats; all runs agree): Character.codePointOf trims, upper-cases and looks the
+  name up in the Unicode name table (controls use their Unicode 1.0 names, e.g. LINE FEED (LF)); underscores, hyphens for spaces and double spaces are unknown.
+  Failing that, the text after the last space is a hex code point and the whole text must equal Character.getName: so CJK UNIFIED IDEOGRAPHS 4E00 and HANGUL SYLLABLES AC00
+  resolve, BASIC LATIN 41 and LATIN 1 SUPPLEMENT 80 do not. U+1F600 via String.fromCharArray did not match natively, so GRINNING FACE is kept only as a compile row (d21_name_grinning_trim).

@@ -1089,38 +1089,6 @@ func (p *javaRegexParser) rangeItem() {
 	}
 }
 
-// javaCharacterByName resolves the \N{name} forms that follow a fixed pattern.
-func javaCharacterByName(name string) (rune, bool) {
-	upper := strings.ToUpper(name)
-	switch {
-	case strings.HasPrefix(upper, "LATIN SMALL LETTER ") && len(upper) == len("LATIN SMALL LETTER ")+1:
-		return rune(upper[len(upper)-1]) + ('a' - 'A'), upper[len(upper)-1] >= 'A' && upper[len(upper)-1] <= 'Z'
-	case strings.HasPrefix(upper, "LATIN CAPITAL LETTER ") && len(upper) == len("LATIN CAPITAL LETTER ")+1:
-		return rune(upper[len(upper)-1]), upper[len(upper)-1] >= 'A' && upper[len(upper)-1] <= 'Z'
-	}
-	digits := []string{"ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE"}
-	if strings.HasPrefix(upper, "DIGIT ") {
-		for i, d := range digits {
-			if upper == "DIGIT "+d {
-				return rune('0' + i), true
-			}
-		}
-	}
-	switch upper {
-	case "SPACE":
-		return ' ', true
-	case "HYPHEN-MINUS":
-		return '-', true
-	case "LOW LINE":
-		return '_', true
-	case "FULL STOP":
-		return '.', true
-	case "COMMA":
-		return ',', true
-	}
-	return 0, false
-}
-
 // javaRegexNestsUnboundedRepeats reports an unbounded repeat of a group that
 // itself holds an unbounded repeat, such as (a+)+. Backtracking engines take
 // exponential time to fail on these.
