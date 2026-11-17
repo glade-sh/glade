@@ -2397,6 +2397,24 @@ func (vm *VM) collectAdditionalStaticFieldValueRefsInField(value Value, location
 func (vm *VM) collectAdditionalStaticFieldValueRefsInFieldWithChildHints(value Value, location staticFieldRef) {
 	vm.ensureStaticValueRefsOwned()
 	index := vm.staticRefIndex()
+	if scalars, ok := scalarOnlyCollectionChildren(value); ok {
+		// No child can carry a ref: the walk below would only index the
+		// collection itself and visit each child once without effect.
+		root := value
+		root.List, root.Set = nil, nil
+		seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+		seen := *seenPtr
+		clear(seen)
+		defer aliasRefSetPool.Put(seenPtr)
+		if vm.perfRecorder != nil {
+			visits := uint64(scalars)
+			collectAdditionalStaticFieldValueRefsWithVisits(root, &index, location, seen, true, &visits, nil)
+			vm.perfRecorder.recordStaticAliasRefScanVisits(visits)
+		} else {
+			collectAdditionalStaticFieldValueRefsWithVisits(root, &index, location, seen, true, nil, nil)
+		}
+		return
+	}
 	known := func(ref uint64) bool {
 		return ref != 0 && index.known(ref) && index.locations(ref).contains(location)
 	}
@@ -2458,6 +2476,33 @@ func (vm *VM) collectAdditionalStaticFieldValueRefsInFieldWithChildHints(value V
 		collectAdditionalStaticFieldValueRefsWithVisits(value, &index, location, seen, true, nil, record)
 	}
 }
+
+// scalarOnlyCollectionChildren reports a List or Set none of whose elements
+// can carry an alias ref (no identity and not a collection or object), with
+// the element count.
+func scalarOnlyCollectionChildren(value Value) (int, bool) {
+	var children []Value
+	switch value.Kind {
+	case ValueList:
+		children = value.List
+	case ValueSet:
+		children = value.Set
+	default:
+		return 0, false
+	}
+	for i := range children {
+		child := &children[i]
+		if child.Ref != 0 {
+			return 0, false
+		}
+		switch child.Kind {
+		case ValueList, ValueSet, ValueMap, ValueObject:
+			return 0, false
+		}
+	}
+	return len(children), true
+}
+
 func (vm *VM) collectStaticFieldValueRefsInField(value Value, location staticFieldRef) {
 	vm.ensureStaticValueRefsOwned()
 	index := vm.staticRefIndex()
