@@ -198,7 +198,12 @@ func rewriteJavaNumericEscapesForRegexp2(source string) string {
 			end := strings.IndexByte(source[i+3:], '}')
 			if end >= 0 {
 				if r, ok := javaCharacterByName(source[i+3 : i+3+end]); ok {
-					fmt.Fprintf(&out, `\u%04X`, r)
+					if r > 0xFFFF {
+						// \u takes four digits; write the character itself.
+						out.WriteRune(r)
+					} else {
+						fmt.Fprintf(&out, `\u%04X`, r)
+					}
 					i += 3 + end
 					changed = true
 					continue

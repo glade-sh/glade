@@ -452,6 +452,9 @@ System.assertEquals(true, Pattern.compile('\\N{GREEK SMALL LETTER ALPHA}').match
 System.assertEquals(true, Pattern.compile('\\N{greek small letter alpha}').matcher('α').find());
 System.assertEquals(true, Pattern.compile('[\\N{GREEK SMALL LETTER ALPHA}x]').matcher('α').find());
 System.assertEquals(true, Pattern.compile('(?x)\\N{GREEK SMALL LETTER ALPHA}').matcher('α').find());
+System.assertEquals(true, Pattern.compile('\\N{BELL}').matcher('x\uD83D\uDD14y').find());
+System.assertEquals(false, Pattern.compile('\\N{BELL}').matcher('\u0007').find());
+System.assertEquals(true, Pattern.compile('[\\N{BELL}]').matcher('\uD83D\uDD14').find());
 try { Pattern.compile('\\N{LATIN_SMALL_LETTER_A}'); System.assert(false, 'compiled'); }
 catch (StringException e) { System.assert(e.getMessage().contains('Unknown character name [LATIN_SMALL_LETTER_A]'), e.getMessage()); }
 `)
