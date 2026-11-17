@@ -38,6 +38,8 @@ No changes yet.
 
 - **`@TestSetup` failures.** An exception in a `@TestSetup` method fails every test method of the class with the setup exception, as native test runs report it.
 
+- **API 68 LWC base components.** The local LWC shell follows captured API 68 behavior: toasts from `ShowToastEvent` and `lightning/toast` carry the captured roles, live regions and Close buttons, and dismiss after the measured durations; `lightning-input` date, time and datetime read typed times, report invalid input on the time half, label the date and time parts and link help text through `aria-describedby`; the date picker button carries its assistive text; and `lightning-tabset` moves tabs that do not fit into the More menu as captured. The time format message follows release 68 text at saved API 67.0 and later.
+
 ### Performance
 
 - **Custom duplicate matching.** A custom matching rule reads its candidate side once per scan and scores an item only while the filter can still change, so bulk inserts under fuzzy rules run faster. Match outcomes are unchanged.
