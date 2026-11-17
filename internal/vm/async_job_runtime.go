@@ -83,22 +83,59 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 // the end of setup and its lines count as covered
 // (test_runner_coverage/org.tsv cvasync-setup, API 62.0 and 67.0).
 func (vm *VM) DrainTestSetupAsync() error {
-	if vm == nil || vm.testContext == nil || !vm.HasPendingAsyncWork() {
+	if vm == nil || vm.testContext == nil {
 		return nil
 	}
-	// The end of setup drains like stopTest: a Queueable that chains another
-	// fails with the stopTest AsyncException (native SetupChainTest rows).
-	previousStopped := vm.testContext.Stopped
-	vm.testContext.Stopped = true
+	// Only the job kinds native rows cover drain here: Queueable, @future and
+	// Batch Apex queued by setup code. Platform events, EventBus deliveries,
+	// scheduled Apex, change data capture and jobs those jobs queue (a batch
+	// finish() that enqueues a Queueable) keep their earlier behavior: they
+	// do not run before the test methods.
+	allowed := map[string]bool{}
 	var futures []storage.ID
 	for _, job := range vm.testContext.AsyncJobs {
+		if !setupDrainedJobKind(job.Kind) {
+			continue
+		}
+		allowed[job.ID] = true
 		if job.Kind == "Future" {
 			futures = append(futures, storage.ID(job.ID))
 		}
 	}
-	vm.prepareTestStopAsyncJobs()
-	err := vm.drainTestWork(&Result{})
-	vm.testContext.Stopped = previousStopped
+	if len(allowed) == 0 {
+		return nil
+	}
+	// The end of setup drains like stopTest: a Queueable that chains another
+	// fails with the stopTest AsyncException (native SetupChainTest rows).
+	previousStopped, previousPreserve, previousStopDraining := vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining
+	previousStart := vm.testContext.AsyncStartIndex
+	vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining = true, true, true
+	var kept []AsyncJob
+	var err error
+	for iteration := 0; iteration < maxLoopIterations; iteration++ {
+		var run []AsyncJob
+		for _, job := range vm.testContext.AsyncJobs {
+			if allowed[job.ID] {
+				run = append(run, job)
+			} else {
+				kept = append(kept, job)
+			}
+		}
+		if len(run) == 0 {
+			break
+		}
+		vm.testContext.AsyncJobs, vm.testContext.AsyncStartIndex = run, 0
+		if iteration == 0 {
+			vm.prepareTestStopAsyncJobs()
+		}
+		// A batch phase requeues its own job; anything else queued here stays.
+		if err = vm.drainTestAsync(&Result{}); err != nil {
+			break
+		}
+	}
+	vm.testContext.AsyncJobs = append(kept, vm.testContext.AsyncJobs...)
+	vm.testContext.AsyncStartIndex = min(previousStart, len(vm.testContext.AsyncJobs))
+	vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining = previousStopped, previousPreserve, previousStopDraining
 	// A test method sees no AsyncApexJob row for an @future call its setup
 	// queued, while Queueable and batch rows stay (native SetupFutureTest
 	// and SetupQTest rows, test_runner_coverage_carry).
@@ -122,6 +159,14 @@ func (vm *VM) DrainTestSetupAsync() error {
 		return runtimeError(thrown.value, thrown.stack)
 	}
 	return err
+}
+
+func setupDrainedJobKind(kind string) bool {
+	switch kind {
+	case "Queueable", "Future", "BatchApex":
+		return true
+	}
+	return false
 }
 
 // Queueables, futures and scheduled Apex submitted before startTest execute at

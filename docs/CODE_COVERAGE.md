@@ -30,6 +30,8 @@ glade test --coverage-gate RunSpecifiedTests --class-file tests.txt
   rows, empty when no test fired it. Without it the report follows the default
   asynchronous `sf apex run test`, which lists only what the tests reached.
   `testRunCoverage` differs between the two by the uncalled triggers' lines.
+  The flag does not change how tests run, and it needs `--code-coverage` or
+  `--coverage-gate`.
 
 Both flags work on every `glade test` route: a local run, `--daemon`, and a
 running test server (`--connect` or auto-connect). The routes return the same
@@ -100,7 +102,10 @@ ternary does not take stays uncovered.
   no per-test rows. A setup's `@future` call leaves no `AsyncApexJob` row for
   the tests; Queueable and batch rows stay. A setup that calls
   `Test.startTest`/`stopTest` itself runs its work there and passes zero
-  counts to the tests.
+  counts to the tests. Other work queued in setup has no native row yet and
+  keeps its earlier behavior, not running before the tests: platform events
+  and `Test.getEventBus().deliver()`, `System.schedule`, change data capture
+  from setup DML, and a Queueable that a batch `finish()` enqueues.
 
 Per-test rows carry declaration lines, as Salesforce stores them. Within a
 test class, in method name order by code point (`Alpha`, `Gamma`, `Zeta`,
@@ -245,6 +250,10 @@ These shapes are not captured yet, or Glade does not match them:
   **CV7** package selection and package denominators, and **CV9** unit versus
   integration-test coverage are not captured. Managed package classes are
   excluded from every figure.
+- **Other async work in `@TestSetup`.** Platform events, EventBus
+  deliveries, scheduled Apex, change data capture and work queued by a
+  batch `finish()` do not run before the tests; a capture (cov-r3) is
+  pending.
 - **Synchronous or asynchronous.** Salesforce picks the shape from the API
   the run used; Glade picks it from `--synchronous`. Other differences
   between the two APIs (such as the setup rows `testsRan` counts) are not

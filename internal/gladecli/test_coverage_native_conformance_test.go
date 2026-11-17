@@ -802,8 +802,12 @@ func TestCodeCoverageCarryNative(t *testing.T) {
 					}
 				}
 				checked := 0
+				// The first step of a fresh org is a fresh-org run: its sf
+				// summary (from stored aggregates) is this run's coverage.
+				firstStep := step.name == "f7a-ab-async" || step.name == "f7b-a-sync"
 				for _, repeat := range []string{"r1", "r2"} {
 					wantRows := map[string]bool{}
+					testRows := 0
 					for _, r := range rows {
 						if r.api != api || r.repeat != repeat || r.step != step.name {
 							continue
@@ -815,7 +819,21 @@ func TestCodeCoverageCarryNative(t *testing.T) {
 							if have, ok := got[key]; !ok || have != r.cover {
 								t.Errorf("org.tsv:%d %s covered got %q (listed %v) want %q", r.line, key, have, ok, r.cover)
 							}
+						case "run":
+							if !firstStep {
+								continue
+							}
+							var parts []string
+							for _, c := range run.Coverage.Components {
+								parts = append(parts, fmt.Sprintf("%s:%d/%d", c.Name, c.TotalCovered, c.TotalLines))
+							}
+							sort.Strings(parts)
+							have := fmt.Sprintf("testRunCoverage=%d%% classes=%s", run.Coverage.Summary.TestRunCoverage, strings.Join(parts, ";"))
+							if have != r.detail {
+								t.Errorf("org.tsv:%d %s run got %q want %q", r.line, step.name, have, r.detail)
+							}
 						case "test":
+							testRows++
 							key := r.class + "." + r.method + "#test"
 							want, have := r.detail, got[key]
 							if m := facts.FindString(want); m != "" {
@@ -833,9 +851,11 @@ func TestCodeCoverageCarryNative(t *testing.T) {
 						}
 						checked++
 					}
-					if len(wantRows) == 0 {
+					if testRows == 0 {
 						continue
 					}
+					// A step with test rows and no per rows (a failed setup)
+					// must have no Glade rows either.
 					for key := range got {
 						if strings.Contains(key, "/") && !wantRows[key] {
 							t.Errorf("%s %s: glade row %s has no native row", step.name, repeat, key)
@@ -847,5 +867,18 @@ func TestCodeCoverageCarryNative(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// --synchronous shapes only the coverage report, so it needs coverage on.
+func TestSynchronousRequiresCodeCoverage(t *testing.T) {
+	root := writeCoverageNativeProject(t, "67.0", coverageNativeCaptures[0])
+	var stdout, stderr bytes.Buffer
+	exit := Run(context.Background(), []string{"test", "--project", root, "--no-serve", "--no-progress", "--synchronous", "--class", "CvUnionTest"}, &stdout, &stderr)
+	if exit == 0 || !strings.Contains(stdout.String()+stderr.String(), "--synchronous requires --code-coverage") {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", exit, stdout.String(), stderr.String())
+	}
+	if run, _, exit := runCoverageCLI(t, root, "--synchronous", "--coverage-gate", "RunSpecifiedTests", "--class", "CvUnionTest"); run.Coverage == nil || !run.Coverage.Synchronous {
+		t.Fatalf("--synchronous with --coverage-gate: exit=%d coverage=%+v", exit, run.Coverage)
 	}
 }

@@ -354,6 +354,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return testreport.Run{}, err
 	}
 	codeCoverage := parsed.Bool("code-coverage") || coverageGate != ""
+	if parsed.Bool("synchronous") && !codeCoverage {
+		// The flag shapes only the coverage report; without coverage it would
+		// do nothing and still ask a test server for a field it may not know.
+		return testreport.Run{}, errors.New("--synchronous requires --code-coverage or --coverage-gate; it shapes the coverage report and does not change how tests run")
+	}
 	progressMode = progressModeFromArgs(args, progressMode)
 	if servicesPath != "" {
 		if err := enterprise.ValidateServiceConfig(servicesPath); err != nil {
