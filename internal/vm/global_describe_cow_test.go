@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -199,5 +200,34 @@ System.assertEquals(mapSize, Schema.getGlobalDescribe().size());
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+// NATIVE review_round11 dc_typed_self, dc_chained_self, dc_int, dc_object and
+// dc_list_value (62.0, 67.0): Map.deepClone is refused unless the map's values
+// are SObjects; dc_sobject and dc_account run.
+func TestMapDeepCloneNeedsSObjectValues(t *testing.T) {
+	for _, row := range []struct{ source, err string }{
+		{"Map<String,Schema.SObjectType> gd = Schema.getGlobalDescribe(); Map<String,Schema.SObjectType> d = gd.deepClone();", "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>"},
+		{"Map<String,Schema.SObjectType> d = Schema.getGlobalDescribe().deepClone();", "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>"},
+		{"Map<String,Integer> m = new Map<String,Integer>{'a' => 1}; Map<String,Integer> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Integer>"},
+		{"Map<String,Object> m = new Map<String,Object>{'a' => 1}; Map<String,Object> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Object>"},
+		{"Map<String,SObject> m = new Map<String,SObject>{'a' => new Account(Name = 'x')}; Map<String,SObject> d = m.deepClone(); System.assertEquals('x', d.get('a').get('Name'));", ""},
+		{"Map<Id,Account> m = new Map<Id,Account>(); Map<Id,Account> d = m.deepClone(); System.assertEquals(0, d.size());", ""},
+	} {
+		for _, namespaced := range []bool{false, true} {
+			machine := describeShareUnprimedFor(namespaced)
+			program, err := CompileAnonymousWithOptions(row.source, CompileOptions{APIVersion: "67.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = machine.Execute(program)
+			switch {
+			case row.err == "" && err != nil:
+				t.Fatalf("%s: %v", row.source, err)
+			case row.err != "" && (err == nil || !strings.Contains(err.Error(), row.err)):
+				t.Fatalf("%s: err=%v, want %q", row.source, err, row.err)
+			}
+		}
 	}
 }

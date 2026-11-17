@@ -4137,6 +4137,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if len(args) != 0 {
 			return Null, true, unsupportedCallError("Map.deepClone with preserve options")
 		}
+		if err := vm.mapDeepCloneValueTypeError(receiver); err != nil {
+			return Null, true, err
+		}
 		cloned := cloneValue(receiver)
 		for _, value := range cloned.Map {
 			if value.Kind == ValueObject && vm.isSObjectLikeType(runtimeObjectType(value)) {
@@ -4237,4 +4240,37 @@ func globalDescribeMapReadOnly(receiver Value, method string) bool {
 	}
 	flag := receiver.Fields[globalDescribeWritableField]
 	return flag.Kind != ValueBool || !flag.Bool
+}
+
+// mapDeepCloneValueTypeError is the compile refusal of Map.deepClone on a map
+// whose values are not SObjects, raised when the call runs, as List.deepClone
+// does (review_round11 dc_typed_self, dc_chained_self, dc_int, dc_object,
+// dc_list_value; dc_sobject and dc_account compile; APIs 62.0 and 67.0).
+func (vm *VM) mapDeepCloneValueTypeError(receiver Value) error {
+	typeName := receiver.Type
+	if isGlobalDescribeMap(receiver) || typeName == globalDescribeMapType {
+		typeName = "Map<String,Schema.SObjectType>"
+	}
+	_, valueType, ok := mapTypeArgs(typeName)
+	if !ok {
+		return nil
+	}
+	valueType = strings.TrimSpace(valueType)
+	if hasPrefixFold(valueType, "Schema.") {
+		valueType = valueType[len("Schema."):]
+	}
+	if vm.isSObjectLikeType(valueType) {
+		return nil
+	}
+	if vm.Org != nil {
+		if _, ok := vm.Org.Objects[valueType]; ok {
+			return nil
+		}
+		for name := range vm.Org.Objects {
+			if strings.EqualFold(name, valueType) {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("Operation only applies to SObject value map types: %s", strings.ReplaceAll(typeName, " ", ""))
 }

@@ -32,6 +32,10 @@ type gapObservation struct {
 	Debug []string    `json:"debug"`
 	Error string      `json:"error"`
 	Tests [][3]string `json:"tests"`
+	// Compiled false marks a row whose anonymous block native refused to
+	// compile; Error is the compile message. Glade may refuse it in sema or
+	// raise the same message when the call runs.
+	Compiled *bool `json:"compiled,omitempty"`
 	Alt   []struct {
 		Debug []string `json:"debug"`
 	} `json:"alt"`
@@ -291,8 +295,20 @@ func (f gapFamily) replay(t *testing.T) {
 							t.Fatal(err)
 						}
 						src := string(body)
+						nativeRejected := false
+						if want := rows[c.id+"/"+api]; want.Compiled != nil && !*want.Compiled {
+							nativeRejected = true
+						}
 						if analysis := sema.AnalyzeAnonymous(index, src, api); analysis.HasErrors() {
-							t.Fatalf("native accepted anonymous: %v", analysis.Diagnostics)
+							if !nativeRejected {
+								t.Fatalf("native accepted anonymous: %v", analysis.Diagnostics)
+							}
+							var messages []string
+							for _, diagnostic := range analysis.Diagnostics {
+								messages = append(messages, diagnostic.Message)
+							}
+							check(t, c, nil, strings.Join(messages, "; "))
+							return
 						}
 						program, err := vm.CompileAnonymousWithOptions(src, vm.CompileOptions{APIVersion: api, ApprovedPrefixStatements: sema.ApprovedAnonymousPrefixStatements(index, src, api)})
 						if err != nil {
@@ -310,8 +326,9 @@ func (f gapFamily) replay(t *testing.T) {
 							var runtimeErr *vm.RuntimeError
 							if errors.As(err, &runtimeErr) {
 								gotErr = runtimeErr.Type + ": " + runtimeErr.ExceptionMessage()
-							} else if strings.HasPrefix(err.Error(), "System.") {
-								// An uncatchable platform fault carries its native text.
+							} else if strings.HasPrefix(err.Error(), "System.") || nativeRejected {
+								// An uncatchable platform fault carries its native text, and
+								// so does a compile refusal Glade raises at the call.
 								gotErr = err.Error()
 							} else {
 								t.Fatal(err)

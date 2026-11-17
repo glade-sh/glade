@@ -19,3 +19,16 @@ gw_chained_remove	anonymous	gw_chained_remove.apex
 gw_chained_clear	anonymous	gw_chained_clear.apex
 gw_remove_catch	anonymous	gw_remove_catch.apex
 gw_clone_remove	anonymous	gw_clone_remove.apex
+dc_typed_self	anonymous	dc_typed_self.apex
+dc_typed_put	anonymous	dc_typed_put.apex
+dc_typed_remove	anonymous	dc_typed_remove.apex
+dc_typed_clear	anonymous	dc_typed_clear.apex
+dc_chained_self	anonymous	dc_chained_self.apex
+dc_chained_put	anonymous	dc_chained_put.apex
+dc_chained_remove	anonymous	dc_chained_remove.apex
+dc_chained_clear	anonymous	dc_chained_clear.apex
+dc_int	anonymous	dc_int.apex
+dc_object	anonymous	dc_object.apex
+dc_list_value	anonymous	dc_list_value.apex
+dc_sobject	anonymous	dc_sobject.apex
+dc_account	anonymous	dc_account.apex

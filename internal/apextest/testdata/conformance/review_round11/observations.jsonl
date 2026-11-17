@@ -38,3 +38,29 @@
 {"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "gw_remove_catch", "route": "anonymous"}
 {"api": "62.0", "debug": ["OBS|gw_clone_remove|1|false|null|true"], "error": "", "id": "gw_clone_remove", "route": "anonymous"}
 {"api": "67.0", "debug": ["OBS|gw_clone_remove|1|false|null|true"], "error": "", "id": "gw_clone_remove", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_typed_self", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_typed_self", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_typed_put", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_typed_put", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_typed_remove", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_typed_remove", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_typed_clear", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_typed_clear", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_chained_self", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_chained_self", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_chained_put", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_chained_put", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_chained_remove", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_chained_remove", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_chained_clear", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>", "id": "dc_chained_clear", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Integer>", "id": "dc_int", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Integer>", "id": "dc_int", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Object>", "id": "dc_object", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Object>", "id": "dc_object", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,List<Account>>", "id": "dc_list_value", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,List<Account>>", "id": "dc_list_value", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|dc_sobject|x"], "error": "", "id": "dc_sobject", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|dc_sobject|x"], "error": "", "id": "dc_sobject", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|dc_account|0"], "error": "", "id": "dc_account", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|dc_account|0"], "error": "", "id": "dc_account", "route": "anonymous"}
