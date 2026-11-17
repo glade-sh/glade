@@ -530,10 +530,12 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			}
 			// Linked platform stubs can lack the generated-constructor marker.
 			// Native Cache exception captures confirm String message initialization;
-			// preserve source constructors, executable bodies and other signatures.
+			// every platform exception constructor shape ((), (String), (Exception),
+			// (String, Exception)) mirrors the generated-platform path. Source
+			// constructors and executable bodies are preserved.
 			if class.PlatformType && ctor.IsConstructor && len(ctor.Program.Instructions) == 0 &&
-				isExceptionType(typeName) && len(ctorArgs) == 1 && ctorArgs[0].Kind == ValueString &&
-				len(ctor.Params) == 1 && strings.EqualFold(canonicalRuntimePlatformType(ctor.Params[0].Type), "String") {
+				isExceptionType(typeName) && len(ctor.Params) == len(ctorArgs) &&
+				exceptionConstructorArgsCanApply(typeName, ctorArgs) {
 				if _, err := applyExceptionConstructorArgs(&object, ctorArgs); err != nil {
 					return Null, err
 				}
