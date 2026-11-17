@@ -258,6 +258,10 @@ type Options struct {
 	AllowApexIDLookupUpsert bool
 	// Test-context emptyRecycleBin releases membership while retaining deleted rows.
 	RetainEmptiedRecycleBinRecords bool
+	// ScaledNumberOverflow selects the Apex insert rejection of an integer
+	// part too large for a Percent or Number field with a scale: 0 off, 1 the
+	// API 62-66 wording, 2 the API 67+ wording.
+	ScaledNumberOverflow int
 }
 
 type SummaryUpdate struct {
@@ -1092,6 +1096,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 		originalFields = capturedInsert[0]
 	}
 	if err := validateFieldsForOperation(object.Definition, e.Org.Namespace, record, nil, originalFields); err != nil {
+		return "", err
+	}
+	if err := e.validateScaledNumberOverflow(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
 	e.applyQuoteLineItemDerivedFields(&record)

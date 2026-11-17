@@ -3229,6 +3229,13 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
 	engine.Options.EnforceDuplicateRules = op == "insert" || op == "update" || op == "upsert"
+	if op == "insert" {
+		// dec_DecHashProbe_F17/F20: the insert rejection wording follows the API.
+		engine.Options.ScaledNumberOverflow = 1
+		if apexversion.AtLeast(vm.currentMethod.APIVersion, 67) {
+			engine.Options.ScaledNumberOverflow = 2
+		}
+	}
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if op == "update" && vm.inAfterUndeleteTrigger() {
 		engine.Options.AllowUpdateDeleted = true

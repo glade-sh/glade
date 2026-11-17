@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -1145,6 +1146,41 @@ func parsePlatformDatetime(value Value) (time.Time, error) {
 	return parsed.UTC(), nil
 }
 
+// julianWallClock returns the wall clock of a civil date and time as a UTC
+// instant on the calendar the native Datetime builders use: java.util's
+// GregorianCalendar, which reads a civil date before 1582-10-15 as Julian.
+// Native dth_DthHash_T_i27 (surf_collections_strings): newInstanceGmt(Date,
+// Time) and valueOfGmt for 1582-10-14 23:59:59.999 land ten days after the
+// proleptic Gregorian instant of the same civil date. Dates from the cutover
+// on use the Gregorian calendar, so the helper changes nothing there.
+func julianWallClock(year, month, day, hour, minute, second, millisecond int) time.Time {
+	wall := time.Date(year, time.Month(month), day, hour, minute, second, millisecond*int(time.Millisecond), time.UTC)
+	y, m, d := wall.Date()
+	if y > 1582 || y == 1582 && (m > time.October || m == time.October && d >= 15) {
+		return wall
+	}
+	// The day number of 1970-01-01 is 2440588.
+	jdn := julianDayNumber(y, int(m), d)
+	days := int64(jdn) - 2440588
+	clock := int64(wall.Hour())*3600000 + int64(wall.Minute())*60000 + int64(wall.Second())*1000 + int64(wall.Nanosecond()/int(time.Millisecond))
+	return time.UnixMilli(days*86400000 + clock).UTC()
+}
+
+// julianDayNumber is the Julian-calendar civil date to day number conversion.
+func julianDayNumber(year, month, day int) int {
+	a := (14 - month) / 12
+	y := year + 4800 - a
+	m := month + 12*a - 3
+	return day + (153*m+2)/5 + 365*y + y/4 - 32083
+}
+
+// datetimeFromCapturedLocalParts builds a Datetime from civil parts the way the
+// native builders do, with the Julian reading of pre-cutover dates.
+func datetimeFromCapturedLocalParts(year, month, day, hour, minute, second, millisecond int, zoneID string) (time.Time, error) {
+	wall := julianWallClock(year, month, day, hour, minute, second, millisecond)
+	return datetimeFromLocalParts(wall.Year(), int(wall.Month()), wall.Day(), wall.Hour(), wall.Minute(), wall.Second(), wall.Nanosecond()/int(time.Millisecond), zoneID)
+}
+
 func datetimeFromLocalParts(year, month, day, hour, minute, second, millisecond int, zoneID string) (time.Time, error) {
 	canonical, offset, ok := parseFixedTimeZoneID(zoneID)
 	if ok {
@@ -2040,6 +2076,12 @@ type modeledTimeZone struct {
 	standardDisplayName string
 	daylightDisplayName string
 	daylightRule        string
+	// historicBeforeYear, when set, reads the zone's real offset history for
+	// instants before that UTC year, as the native TimeZone does (native
+	// dth_DthTz_T_tz_*, surf_collections_strings: Kolkata 1900 is +05:21:10,
+	// Los Angeles June 1905 is PST, Adelaide January 1970 is +09:30). Before
+	// the first recorded transition the zone keeps its standard offset.
+	historicBeforeYear int
 }
 
 var supportedNamedTimeZones = map[string]modeledTimeZone{
@@ -2049,7 +2091,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	// display name was not observable at capture and mirrors Europe/Berlin.
 	"Africa/Johannesburg": {id: "Africa/Johannesburg", standardOffset: 2 * time.Hour, standardLabel: "SAST", standardDisplayName: "South Africa Standard Time"},
 	"Australia/Brisbane":  {id: "Australia/Brisbane", standardOffset: 10 * time.Hour, standardLabel: "AEST", standardDisplayName: "Australian Eastern Standard Time"},
-	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", standardDisplayName: "Pacific Standard Time", daylightDisplayName: "Pacific Daylight Time", daylightRule: "us"},
+	"America/Los_Angeles": {id: "America/Los_Angeles", historicBeforeYear: 2008, standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", standardDisplayName: "Pacific Standard Time", daylightDisplayName: "Pacific Daylight Time", daylightRule: "us"},
 	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", standardDisplayName: "Eastern Standard Time", daylightDisplayName: "Eastern Daylight Time", daylightRule: "us"},
 	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", standardDisplayName: "Central Standard Time", daylightDisplayName: "Central Daylight Time", daylightRule: "us"},
 	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", standardDisplayName: "Mountain Standard Time", daylightDisplayName: "Mountain Daylight Time", daylightRule: "us"},
@@ -2061,7 +2103,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"Europe/Paris":        {id: "Europe/Paris", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Europe/Oslo":         {id: "Europe/Oslo", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", standardDisplayName: "Central European Standard Time", daylightDisplayName: "Central European Summer Time", daylightRule: "europe"},
 	"Asia/Ho_Chi_Minh":    {id: "Asia/Ho_Chi_Minh", standardOffset: 7 * time.Hour, standardLabel: "ICT", standardDisplayName: "Indochina Time"},
-	"Asia/Kolkata":        {id: "Asia/Kolkata", standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
+	"Asia/Kolkata":        {id: "Asia/Kolkata", historicBeforeYear: 2008, standardOffset: 5*time.Hour + 30*time.Minute, standardLabel: "IST", standardDisplayName: "India Standard Time"},
 	// Asia/Singapore: stdlib_core_c14 String (API 62.0, 67.0) observed the +0800 offset; label and display name captured 2026-11-06 (scratch org, API 68.0 anonymous).
 	"Asia/Singapore":    {id: "Asia/Singapore", standardOffset: 8 * time.Hour, standardLabel: "SGT", standardDisplayName: "Singapore Time"},
 	"Asia/Tokyo":        {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST", standardDisplayName: "Japan Standard Time"},
@@ -2071,7 +2113,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	// the ambiguous and skipped civil times. Display names were not captured, so
 	// getDisplayName and the long zone pattern stay unsupported for these three.
 	"Asia/Kathmandu":     {id: "Asia/Kathmandu", standardOffset: 5*time.Hour + 45*time.Minute, standardLabel: "NPT"},
-	"Australia/Adelaide": {id: "Australia/Adelaide", standardOffset: 9*time.Hour + 30*time.Minute, daylightOffset: 10*time.Hour + 30*time.Minute, standardLabel: "ACST", daylightLabel: "ACDT", daylightRule: "sydney"},
+	"Australia/Adelaide": {id: "Australia/Adelaide", historicBeforeYear: 2008, standardOffset: 9*time.Hour + 30*time.Minute, daylightOffset: 10*time.Hour + 30*time.Minute, standardLabel: "ACST", daylightLabel: "ACDT", daylightRule: "sydney"},
 	"Pacific/Auckland":   {id: "Pacific/Auckland", standardOffset: 12 * time.Hour, daylightOffset: 13 * time.Hour, standardLabel: "NZST", daylightLabel: "NZDT", daylightRule: "auckland"},
 	"Australia/Sydney":   {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", standardDisplayName: "Australian Eastern Standard Time", daylightDisplayName: "Australian Eastern Daylight Time", daylightRule: "sydney"},
 }
@@ -2156,10 +2198,85 @@ func formatTimeZoneDisplayOffset(offset time.Duration) string {
 }
 
 func (zone modeledTimeZone) offsetAt(instant time.Time) (time.Duration, string) {
+	if offset, label, ok := zone.historicOffsetAt(instant); ok {
+		return offset, label
+	}
 	if zone.daylightRule == "" || !zone.isDaylight(instant.UTC()) {
 		return zone.standardOffset, zone.standardLabel
 	}
 	return zone.daylightOffset, zone.daylightLabel
+}
+
+// historicLocation is the real zone data behind a zone that reads its history.
+func (zone modeledTimeZone) historicLocation() *time.Location {
+	if zone.historicBeforeYear == 0 {
+		return nil
+	}
+	if cached, ok := historicLocations.Load(zone.id); ok {
+		return cached.(*time.Location)
+	}
+	location, err := time.LoadLocation(zone.id)
+	if err != nil {
+		return nil
+	}
+	historicLocations.Store(zone.id, location)
+	return location
+}
+
+var historicLocations sync.Map
+
+func (zone modeledTimeZone) historicOffsetAt(instant time.Time) (time.Duration, string, bool) {
+	if zone.historicBeforeYear == 0 || instant.UTC().Year() >= zone.historicBeforeYear {
+		return 0, "", false
+	}
+	location := zone.historicLocation()
+	if location == nil {
+		return 0, "", false
+	}
+	local := instant.In(location)
+	start, _ := local.ZoneBounds()
+	name, seconds := local.Zone()
+	offset := time.Duration(seconds) * time.Second
+	if start.IsZero() {
+		// Before the first recorded transition (local mean time) the native
+		// zone keeps its standard offset.
+		return zone.standardOffset, zone.standardLabel, true
+	}
+	switch {
+	case offset == zone.standardOffset:
+		return offset, zone.standardLabel, true
+	case zone.daylightRule != "" && offset == zone.daylightOffset:
+		return offset, zone.daylightLabel, true
+	}
+	return offset, name, true
+}
+
+// historicOffsetsNear lists the distinct offsets the zone had within two days
+// of a wall-clock time, so a local time resolves against the real transitions.
+func (zone modeledTimeZone) historicOffsetsNear(wall time.Time) []time.Duration {
+	if zone.historicBeforeYear == 0 || wall.Year() >= zone.historicBeforeYear {
+		return nil
+	}
+	location := zone.historicLocation()
+	if location == nil {
+		return nil
+	}
+	var offsets []time.Duration
+	seen := map[time.Duration]bool{}
+	end := wall.Add(48 * time.Hour)
+	for at := wall.Add(-48 * time.Hour); !at.After(end); {
+		offset, _, _ := zone.historicOffsetAt(at)
+		if !seen[offset] {
+			seen[offset] = true
+			offsets = append(offsets, offset)
+		}
+		_, boundary := at.In(location).ZoneBounds()
+		if boundary.IsZero() {
+			break
+		}
+		at = boundary
+	}
+	return offsets
 }
 
 func (zone modeledTimeZone) displayNameAt(instant time.Time) (time.Duration, string) {
@@ -2175,6 +2292,11 @@ func (zone modeledTimeZone) instantFromLocal(year int, month time.Month, day, ho
 	offsets := []time.Duration{zone.standardOffset}
 	if zone.daylightRule != "" && zone.daylightOffset != zone.standardOffset {
 		offsets = append(offsets, zone.daylightOffset)
+	}
+	for _, offset := range zone.historicOffsetsNear(local) {
+		if offset != zone.standardOffset && offset != zone.daylightOffset {
+			offsets = append(offsets, offset)
+		}
 	}
 	var matches []time.Time
 	for _, offset := range offsets {

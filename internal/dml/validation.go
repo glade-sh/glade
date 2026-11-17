@@ -212,6 +212,12 @@ func validateFieldsForOperation(definition storage.ObjectDefinition, namespace s
 		if err := validateScaleZeroNumberField(canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 			return err
 		}
+		// Only the insert route is captured (dth_DthField_T_i09, T_i27-T_i29).
+		if len(existing) == 0 {
+			if err := validateDateTimeFieldRange(canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
+				return err
+			}
+		}
 		if strings.EqualFold(definition.Fields[canonical].DisplayType, "EMAIL") && capturedInvalidEmailShape(record.Fields[field]) && originalEmailValueUnchanged(definition, namespace, canonical, record.Fields[field], originalFields) {
 			if err := validateInsertEmailField(record.Object, canonical, definition.Fields[canonical], record.Fields[field]); err != nil {
 				return err

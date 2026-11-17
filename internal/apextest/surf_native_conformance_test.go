@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -159,6 +160,13 @@ func runSurfFamily(t *testing.T, family string) {
 				key := family + "/" + c.id + "/" + api
 				want := native[c.id+"/"+api]
 				got = maskSurfGeneratedIDs(got)
+				if strings.HasPrefix(c.id, "dth_") || strings.HasPrefix(c.id, "dec_") {
+					// The test-result message drops trailing whitespace.
+					want, got = strings.TrimRight(want, " \t\r\n"), strings.TrimRight(got, " \t\r\n")
+				}
+				if strings.HasPrefix(c.id, "dth_") {
+					want, got = maskSurfNowTail(want), maskSurfNowTail(got)
+				}
 				if reason, parked := parkedSurfRows[key]; parked {
 					if got == want {
 						t.Errorf("stale parked row (%s); Glade now matches", reason)
@@ -176,11 +184,18 @@ func runSurfFamily(t *testing.T, family string) {
 				}
 				return &o
 			}()})
+			// An istest case file is a class, or Class.method when a class holds
+			// several captured methods (the hash families).
 			var tests []string
+			seenClass := map[string]bool{}
 			byClass := map[string]surfCase{}
 			for _, c := range cases {
 				if c.route == "istest" {
-					tests = append(tests, c.file)
+					class, _, _ := strings.Cut(c.file, ".")
+					if !seenClass[class] {
+						seenClass[class] = true
+						tests = append(tests, class)
+					}
 					byClass[c.file] = c
 				}
 			}
@@ -216,17 +231,24 @@ func runSurfFamily(t *testing.T, family string) {
 				for _, c := range suite.Cases {
 					if c.Problem == nil {
 						observed[c.ClassName] = "Pass|"
+						observed[c.ClassName+"."+c.MethodName] = "Pass|"
 						continue
 					}
 					observed[c.ClassName] = "Fail|" + c.Problem.Type + ": " + c.Problem.Message
+					observed[c.ClassName+"."+c.MethodName] = observed[c.ClassName]
 				}
 			}
-			for _, class := range tests {
-				c := byClass[class]
+			var files []string
+			for file := range byClass {
+				files = append(files, file)
+			}
+			sort.Strings(files)
+			for _, file := range files {
+				c := byClass[file]
 				t.Run(c.id, func(t *testing.T) {
-					got, ok := observed[class]
+					got, ok := observed[file]
 					if !ok {
-						t.Fatalf("%s did not run", class)
+						t.Fatalf("%s did not run", file)
 					}
 					check(t, c, got)
 				})
@@ -258,4 +280,48 @@ func runSurfAnonymous(t *testing.T, runner *conformanceRunner, index typesys.Ind
 	// The native debug log carries a carriage return in a message as a line
 	// feed (cs06 csvCr), so compare on that footing.
 	return strings.ReplaceAll(strings.Join(lines, "\n"), "\r", "\n")
+}
+
+// surfNowTailMarkers start the part of a Datetime hash payload that holds a
+// value built from the clock (an inserted record's CreatedDate and its fields).
+// The instant differs on every run, so the tail is compared by its identity:
+// each hash that precedes a millisecond value must be Long.hashCode(ms) XOR
+// 577755. A tail that holds the identity compares as masked text.
+var surfNowTailMarkers = []string{"|S=", "|SOQL="}
+
+var surfNumberToken = regexp.MustCompile(`-?\d+`)
+
+func maskSurfNowTail(text string) string {
+	for _, marker := range surfNowTailMarkers {
+		at := strings.LastIndex(text, marker)
+		if at < 0 {
+			continue
+		}
+		head, tail := text[:at], text[at:]
+		prev := int64(0)
+		havePrev := false
+		ok := true
+		masked := surfNumberToken.ReplaceAllStringFunc(tail, func(token string) string {
+			n, err := strconv.ParseInt(token, 10, 64)
+			if err != nil {
+				ok = false
+				return token
+			}
+			digits := strings.TrimPrefix(token, "-")
+			if len(digits) >= 12 {
+				// A millisecond value: the number before it is its hash.
+				hash := int32(n^int64(uint64(n)>>32)) ^ 577755
+				if !havePrev || int64(int32(prev)) != int64(hash) {
+					ok = false
+				}
+			}
+			prev, havePrev = n, true
+			return "#"
+		})
+		if !ok {
+			return text
+		}
+		return head + masked
+	}
+	return text
 }

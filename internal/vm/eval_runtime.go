@@ -715,6 +715,9 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 			return false, nil
 		}
 		for i := range left.List {
+			if decimalScalesDiffer(left.List[i], right.List[i]) {
+				return false, nil
+			}
 			if listElementValuesEqual(left.List[i], right.List[i], make(map[[2]uint64]bool)) {
 				continue
 			}

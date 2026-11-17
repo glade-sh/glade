@@ -179,7 +179,8 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 		return method == "getmimetype"
 	case "date":
 		// Native C006 (API62/67) rejects Date.toEndOfMonth.
-		return method == "toendofmonth"
+		// dth_date_gettime (API 62 and 67): Date has no getTime either.
+		return method == "toendofmonth" || method == "gettime"
 	case "id":
 		return method == "to18"
 	case "integer":
@@ -207,6 +208,9 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 	case "datetime":
 		// Native surf_datetime_locale dt10 (API 62 and 67).
 		return method == "monthsbetween"
+	case "time":
+		// Native dth_time_gettime (API 62 and 67): Time has no getTime.
+		return method == "gettime"
 	case "database":
 		return method == "lock" || method == "unlock"
 	case "quickaction":

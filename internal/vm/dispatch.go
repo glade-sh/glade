@@ -1538,7 +1538,7 @@ platformStaticCall:
 			if callee == "Datetime.newInstance" {
 				zoneID = vm.currentUserTimeZoneID()
 			}
-			value, err := datetimeFromLocalParts(date.Year(), int(date.Month()), date.Day(), hour, minute, second, millisecond, zoneID)
+			value, err := datetimeFromCapturedLocalParts(date.Year(), int(date.Month()), date.Day(), hour, minute, second, millisecond, zoneID)
 			if err != nil {
 				return Null, err
 			}
@@ -1569,7 +1569,7 @@ platformStaticCall:
 		if callee == "Datetime.newInstance" {
 			zoneID = vm.currentUserTimeZoneID()
 		}
-		value, err := datetimeFromLocalParts(year, month, day, hour, minute, second, 0, zoneID)
+		value, err := datetimeFromCapturedLocalParts(year, month, day, hour, minute, second, 0, zoneID)
 		if err != nil {
 			return Null, err
 		}
@@ -1614,6 +1614,11 @@ platformStaticCall:
 			value, err = datetimeValueOfLocalClock(value, vm.currentUserTimeZoneID())
 			if err != nil {
 				return Null, err
+			}
+		} else {
+			// Native dth_DthHash_T_i27: a pre-cutover civil date reads as Julian.
+			if wall := value.UTC(); wall.Before(time.Date(1582, time.October, 15, 0, 0, 0, 0, time.UTC)) {
+				value = julianWallClock(wall.Year(), int(wall.Month()), wall.Day(), wall.Hour(), wall.Minute(), wall.Second(), wall.Nanosecond()/int(time.Millisecond))
 			}
 		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
