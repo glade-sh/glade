@@ -1,7 +1,9 @@
 package automation
 
 import (
+	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -134,11 +136,12 @@ func TestFlowTargetRejectUncoveredShapesKeepEarlierText(t *testing.T) {
 }
 
 func targetFlow(source, target string) string {
-	targetType := map[string]string{"BoolOut": "Boolean", "DateOut": "Date", "NumOut": "Number"}[target]
+	targetType := map[string]string{"BoolOut": "Boolean", "DateOut": "Date", "NumOut": "Number", "NumColl": "Number", "StrOutColl": "String"}[target]
 	scale := ""
 	if targetType == "Number" {
 		scale = "<scale>2</scale>"
 	}
+	collection := strings.HasSuffix(target, "Coll")
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
 <apiVersion>67.0</apiVersion>
@@ -155,7 +158,7 @@ func targetFlow(source, target string) string {
 <variables><name>BoolVar</name><dataType>Boolean</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><booleanValue>true</booleanValue></value></variables>
 <variables><name>DateVar</name><dataType>Date</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><dateValue>2026-01-02</dateValue></value></variables>
 <variables><name>StrVar</name><dataType>String</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><stringValue>abc</stringValue></value></variables>
-<variables><name>` + target + `</name><dataType>` + targetType + `</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput>` + scale + `</variables>
+<variables><name>` + target + `</name><dataType>` + targetType + `</dataType><isCollection>` + fmt.Sprint(collection) + `</isCollection><isInput>false</isInput><isOutput>true</isOutput>` + scale + `</variables>
 </Flow>`
 }
 
@@ -175,4 +178,49 @@ func mergeTargetDiagnostic(t *testing.T, flow string) string {
 		}
 	}
 	return ""
+}
+
+// A compile differential against d5ae42fedb^ (the logic before typed merges):
+// every shape outside the native rows keeps the compiled assignment it had
+// there. The expected assignments below are the d5ae42fedb^ output for the same
+// flows. The two native deltas are the four rejections above and the typed
+// merges into a scalar String variable with Assign.
+func TestFlowMergeOutsideNativeRowsCompilesAsBefore(t *testing.T) {
+	for _, test := range []struct {
+		name, target, operator, source, text, want string
+	}{
+		{"String variable into Number", "NumOut", "Assign", "StrVar", "{!StrVar}", `{"name":"SetOut","target":"NumOut","operator":"Assign","literalValue":"abc","sourceField":"StrVar"}`},
+		{"String variable text into Number", "NumOut", "Assign", "StrVar", "x={!StrVar}", `{"name":"SetOut","target":"NumOut","operator":"Assign","formula":"\"x=\" \u0026 StrVar"}`},
+		{"String formula into Boolean", "BoolOut", "Assign", "StrF", "{!StrF}", `{"name":"SetOut","target":"BoolOut","operator":"Assign","formula":"\"ab\" \u0026 \"cd\""}`},
+		{"String formula text into Boolean", "BoolOut", "Assign", "StrF", "x={!StrF}", `{"name":"SetOut","target":"BoolOut","operator":"Assign","formula":"\"x=\" \u0026 (\"ab\" \u0026 \"cd\")"}`},
+		{"Add of a same-type Number merge", "NumOut", "Add", "NumVar", "{!NumVar}", `{"name":"SetOut","target":"NumOut","operator":"Add","literalValue":"{!NumVar}"}`},
+		{"Add of a same-type Boolean merge", "BoolOut", "Add", "BoolVar", "{!BoolVar}", `{"name":"SetOut","target":"BoolOut","operator":"Add","literalValue":"{!BoolVar}"}`},
+		{"Add of a same-type Date merge", "DateOut", "Add", "DateVar", "{!DateVar}", `{"name":"SetOut","target":"DateOut","operator":"Add","literalValue":"{!DateVar}"}`},
+		{"Number collection target", "NumColl", "Assign", "NumVar", "{!NumVar}", `{"name":"SetOut","target":"NumColl","operator":"Assign","literalValue":"{!NumVar}"}`},
+		{"String collection target", "StrOutColl", "Assign", "StrVar", "{!StrVar}", `{"name":"SetOut","target":"StrOutColl","operator":"Assign","literalValue":"abc","sourceField":"StrVar"}`},
+		{"String collection Add text", "StrOutColl", "Add", "StrVar", "x={!StrVar}", `{"name":"SetOut","target":"StrOutColl","operator":"Add","formula":"\"x=\" \u0026 StrVar"}`},
+	} {
+		flow := strings.Replace(targetFlow(test.source, test.target), "{!"+test.source+"}", test.text, 1)
+		flow = strings.Replace(flow, "<operator>Assign</operator>", "<operator>"+test.operator+"</operator>", 1)
+		path := filepath.Join(t.TempDir(), "F.flow-meta.xml")
+		if err := os.WriteFile(path, []byte(flow), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		compiled, diagnostics, err := loadFlow(path)
+		if err != nil || len(diagnostics) != 0 {
+			t.Fatalf("%s: err=%v diagnostics=%v", test.name, err, diagnostics)
+		}
+		encoded, err := json.Marshal(compiled)
+		if err != nil {
+			t.Fatal(err)
+		}
+		start := strings.Index(string(encoded), `"assignment":`)
+		if start < 0 {
+			t.Fatalf("%s: no assignment in %s", test.name, encoded)
+		}
+		rest := string(encoded)[start+len(`"assignment":`):]
+		if got := rest[:strings.Index(rest, `"}`)+2]; got != test.want {
+			t.Fatalf("%s:\n got %s\nwant %s", test.name, got, test.want)
+		}
+	}
 }
