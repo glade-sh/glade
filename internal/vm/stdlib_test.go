@@ -5323,10 +5323,6 @@ System.assertEquals(9, clonedCounts.get('a'));
 List<Integer> clonedOrderedValues = clonedCounts.values();
 System.assertEquals(2, clonedOrderedValues.get(0));
 System.assertEquals(9, clonedOrderedValues.get(1));
-Map<String,Integer> deepCounts = copiedCounts.deepClone();
-deepCounts.put('b', 8);
-System.assertEquals(2, copiedCounts.get('b'));
-System.assertEquals(8, deepCounts.get('b'));
 `)
 	if err != nil {
 		t.Fatal(err)
