@@ -224,3 +224,65 @@ func TestFlowMergeOutsideNativeRowsCompilesAsBefore(t *testing.T) {
 		}
 	}
 }
+
+// Native rejection of a Number merge does not depend on the scales (flow-target-reject
+// scale captures, two repeats on API 62.0 and 67.0, four identical result files; copied
+// to testdata/flow_target_reject/deploy-fails-scale.tsv). Row names are Fs_v_<source
+// scale>_<target scale> for a Number variable and Fs_f_<formula scale>_<target scale>
+// for a Number formula. Every pair from 0 to 17 fails with the merge message. The
+// (18, 18) row fails with the scale limit message instead, so Glade does not claim the
+// merge message for it and keeps the earlier compile.
+func TestFlowTargetRejectNumberScalesAreRejected(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "flow_target_reject", "deploy-fails-scale.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := 0
+	for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n") {
+		id, message, _ := strings.Cut(line, "\t")
+		parts := strings.Split(id, "_")
+		if len(parts) != 4 {
+			t.Fatalf("row %q", id)
+		}
+		rows++
+		flow := scaleFlow(parts[1] == "f", parts[2], parts[3])
+		got := mergeTargetDiagnostic(t, flow)
+		if strings.Contains(message, "scale can't be greater than 17") {
+			if got != "" {
+				t.Fatalf("%s: native reports the scale limit, Glade claims %q", id, got)
+			}
+			continue
+		}
+		if got != message {
+			t.Fatalf("%s: got %q, want native %q", id, got, message)
+		}
+	}
+	if rows != 10 {
+		t.Fatalf("rows %d, want 10", rows)
+	}
+}
+
+func scaleFlow(formula bool, sourceScale, targetScale string) string {
+	source, resource := "NumVar", `<variables><name>NumVar</name><dataType>Number</dataType><scale>`+sourceScale+`</scale><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><numberValue>2</numberValue></value></variables>`
+	if formula {
+		source, resource = "NumF", `<formulas><name>NumF</name><dataType>Number</dataType><scale>`+sourceScale+`</scale><expression>7</expression></formulas>`
+	}
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<apiVersion>67.0</apiVersion>
+<assignments><name>SetOut</name><label>SetOut</label><locationX>1</locationX><locationY>1</locationY>
+<assignmentItems><assignToReference>NumOut</assignToReference><operator>Assign</operator><value><stringValue>{!` + source + `}</stringValue></value></assignmentItems></assignments>` + resource + `
+<processType>AutoLaunchedFlow</processType><label>F</label>
+<start><locationX>0</locationX><locationY>0</locationY><connector><targetReference>SetOut</targetReference></connector></start>
+<status>Active</status>
+<variables><name>NumOut</name><dataType>Number</dataType><scale>` + targetScale + `</scale><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput></variables>
+</Flow>`
+}
+
+// A Number target without a declared scale has no native row, so it keeps the earlier compile.
+func TestFlowTargetRejectNumberWithoutTargetScaleKeepsEarlierText(t *testing.T) {
+	flow := strings.Replace(scaleFlow(false, "2", "2"), "<scale>2</scale><isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput>", "<isCollection>false</isCollection><isInput>false</isInput><isOutput>true</isOutput>", 1)
+	if got := mergeTargetDiagnostic(t, flow); got != "" {
+		t.Fatalf("rejected without a native row: %q", got)
+	}
+}

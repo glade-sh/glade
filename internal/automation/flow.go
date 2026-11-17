@@ -4825,11 +4825,12 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 	type target struct {
 		dataType   string
 		collection bool
+		scale      string
 	}
 	targets := map[string]target{}
 	for _, variable := range raw.Variables {
 		key := strings.ToLower(strings.TrimSpace(variable.Name))
-		targets[key] = target{strings.ToLower(strings.TrimSpace(variable.DataType)), variable.IsCollection}
+		targets[key] = target{strings.ToLower(strings.TrimSpace(variable.DataType)), variable.IsCollection, strings.TrimSpace(variable.Scale)}
 		r := resource{false, strings.ToLower(strings.TrimSpace(variable.DataType)), strings.TrimSpace(variable.Scale), ""}
 		if r.dataType == "string" {
 			// The earlier logic reads any String variable, collections included.
@@ -4859,6 +4860,14 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 			// (a) The captured rejections.
 			if exact && assign && scalar && dest.dataType != "string" {
 				source, ok := typed[strings.ToLower(text[matches[0][2]:matches[0][3]])]
+				// Native rejects every same-type Number pair whatever the two scales
+				// (flow-target-reject scale captures: 0 to 17 on both sides). A scale
+				// above 17 fails with a different native message, so it stays on the
+				// earlier behavior, as does a target without a declared scale.
+				scaleOK := func(scale string) bool { n, err := strconv.Atoi(scale); return err == nil && n >= 0 && n <= 17 }
+				if dest.dataType == "number" && !(scaleOK(dest.scale) && scaleOK(source.scale)) {
+					ok = false
+				}
 				if ok && source.dataType == dest.dataType && (!source.formula || dest.dataType == "number") && raw.mergeProblem == "" {
 					raw.mergeProblem = fmt.Sprintf("field integrity exception: unknown (In an Assignment element, \u201c%s\u201d isn\u2019t a valid value when the \u201c%s\u201d variable is set with the Equals operator.)", text, strings.TrimSpace(item.AssignToReference))
 				}
