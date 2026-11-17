@@ -1474,13 +1474,12 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	return job.QueueableDepth > 0 && job.QueueableDepth <= job.QueueableMaxDepth
 }
 func (vm *VM) runAsyncJob(job AsyncJob, result *Result, batchProjection ...*bool) error {
-	// The job is its own transaction. A permission set the test assigned to the
-	// running user does not apply in it, whatever blocks ran before (native
-	// permset_in_test/residuals.tsv PsrAsyncTest: Queueable, future and Batch
-	// read the custom permission as false).
-	previousPermVisible := vm.permAssignVisible
-	vm.permAssignVisible = map[storage.ID]struct{}{}
-	defer func() { vm.permAssignVisible = previousPermVisible }()
+	// The job is its own transaction: it sees every permission set assignment,
+	// except that a job running as the user who ran the test does not see the
+	// assignments the test made (runAsyncJobInTransaction).
+	previousPermAssignAll := vm.permAssignAll
+	vm.permAssignAll = true
+	defer func() { vm.permAssignAll = previousPermAssignAll }()
 	defer vm.BeginReportTransaction()()
 	restoreMixedDML := vm.beginMixedDMLTransaction()
 	defer restoreMixedDML()
@@ -1500,6 +1499,16 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		previousExecutionUser, previousTestUser := vm.executionUser, vm.testContext.CurrentUser
 		vm.executionUser, vm.testContext.CurrentUser = job.RunAsUser, job.RunAsUser
 		defer func() { vm.executionUser, vm.testContext.CurrentUser = previousExecutionUser, previousTestUser }()
+	}
+	// A permission set the test assigned to the user who ran the test does not
+	// apply in a job that user's code started, whatever blocks ran before
+	// (native permset_in_test/residuals.tsv PsrAsyncTest: Queueable, future and
+	// Batch read the custom permission as false). A job of another user keeps
+	// the immediate grant.
+	if vm.testContext != nil && (vm.permRunnerUserID == "" || storage.IDsEqual(storage.ID(vm.permRunnerUserID), storage.ID(vm.currentUserID()))) {
+		previousAll, previousVisible := vm.permAssignAll, vm.permAssignVisible
+		vm.permAssignAll, vm.permAssignVisible = false, map[storage.ID]struct{}{}
+		defer func() { vm.permAssignAll, vm.permAssignVisible = previousAll, previousVisible }()
 	}
 	switch job.Kind {
 	case "FlowAsyncPath":
