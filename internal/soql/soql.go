@@ -1,6 +1,7 @@
 package soql
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -418,7 +419,13 @@ func ExecuteWithCacheAndContext(org storage.OrgState, query Query, cache *Execut
 		}, nil
 	}
 	if order := defaultParentOrder(query, objectName); len(order) > 0 {
-		sortRecordsByOrder(org, object.Definition, matchedRecords, collateOrder(order, query.textComparator), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, context.formulaActor())
+		// The default (index) order feeds only the LIMIT window, so rank just
+		// the rows the window keeps. An explicit ORDER BY keeps the full sort.
+		top := 0
+		if len(query.Order) == 0 && query.HasLimit && query.Limit > 0 {
+			top = query.Offset + query.Limit
+		}
+		sortRecordsByOrderTop(org, object.Definition, matchedRecords, collateOrder(order, query.textComparator), query.LegacyPicklistNullOrder, query.LegacyRestrictedPicklistNullOrder, top, context.formulaActor())
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	if query.ForUpdate {
@@ -5176,6 +5183,14 @@ func compareSOQLTextFolded(left, right string) int {
 }
 
 func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder bool, userIDs ...storage.ID) {
+	sortRecordsByOrderTop(org, definition, records, order, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder, 0, userIDs...)
+}
+
+// sortRecordsByOrderTop is sortRecordsByOrder for a caller that reads only the
+// first top rows (top > 0). Those rows are exactly the first top rows of the
+// full stable sort, in the same order. The remaining rows follow them in no
+// promised order.
+func sortRecordsByOrderTop(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, order []OrderSpec, legacyPicklistNullOrder, legacyRestrictedPicklistNullOrder bool, top int, userIDs ...storage.ID) {
 	// picklist_order_native.json observes setup order and one unlisted value
 	// after configured values. Keep unobserved incomplete shapes on their
 	// existing whole-column fallback so comparisons retain a total order.
@@ -5237,12 +5252,26 @@ func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinitio
 		}
 	}
 	values := make([][]storage.Value, len(order))
+	keys := make([][][]byte, len(order))
 	for column, spec := range order {
-		column := column
 		values[column] = make([]storage.Value, len(records))
 		ranks := picklistRanks[column]
+		plain, isPlain := plainStoredStringOrderField(org, definition, spec.Field)
 		for i := range records {
-			value, ok := recordValue(org, definition, records[i], spec.Field, userIDs...)
+			var value storage.Value
+			var ok bool
+			if isPlain {
+				// The value recordValue returns for a stored text field.
+				if records[i].HasExplicitNull(plain) {
+					value, ok = storage.NullValue(), true
+				} else if stored, found := recordFieldValue(org, records[i], plain); found {
+					value, ok = stored, true
+				} else {
+					value, ok = recordValue(org, definition, records[i], spec.Field, userIDs...)
+				}
+			} else {
+				value, ok = recordValue(org, definition, records[i], spec.Field, userIDs...)
+			}
 			if !ok {
 				value = storage.NullValue()
 			}
@@ -5251,9 +5280,22 @@ func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinitio
 			}
 			values[column][i] = value
 		}
+		if ranks == nil && len(records) > 1 {
+			keys[column] = asciiTextSortKeys(values[column], spec.textComparator)
+		}
 	}
 	compare := func(i, j int) int {
 		for column := range specs {
+			if columnKeys := keys[column]; columnKeys != nil {
+				cmp := bytes.Compare(columnKeys[i], columnKeys[j])
+				if cmp != 0 {
+					if specs[column].Desc {
+						return -cmp
+					}
+					return cmp
+				}
+				continue
+			}
 			if cmp := orderCompare(values[column][i], values[column][j], specs[column]); cmp != 0 {
 				return cmp
 			}
@@ -5268,6 +5310,15 @@ func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinitio
 		}
 	}
 	if sorted {
+		return
+	}
+	if top > 0 && top < len(records)/2 {
+		moveSmallestFirst(records, top, func(a, b int) bool {
+			if cmp := compare(a, b); cmp != 0 {
+				return cmp < 0
+			}
+			return a < b
+		})
 		return
 	}
 	index := make([]int, len(records))
@@ -5287,6 +5338,140 @@ func sortRecordsByOrder(org storage.OrgState, definition storage.ObjectDefinitio
 		ordered[i] = records[from]
 	}
 	copy(records, ordered)
+}
+
+// moveSmallestFirst puts the k smallest records under less (a total order on
+// the original positions) into records[:k], sorted. The other records fill the
+// remaining positions in no promised order. It moves at most 2k records.
+func moveSmallestFirst(records []storage.Record, k int, less func(a, b int) bool) {
+	n := len(records)
+	heap := make([]int, k)
+	for i := range heap {
+		heap[i] = i
+	}
+	// Max-heap by less: heap[0] is the largest kept index.
+	down := func(root int) {
+		for {
+			child := 2*root + 1
+			if child >= k {
+				return
+			}
+			if child+1 < k && less(heap[child], heap[child+1]) {
+				child++
+			}
+			if !less(heap[root], heap[child]) {
+				return
+			}
+			heap[root], heap[child] = heap[child], heap[root]
+			root = child
+		}
+	}
+	for root := k/2 - 1; root >= 0; root-- {
+		down(root)
+	}
+	for i := k; i < n; i++ {
+		if less(i, heap[0]) {
+			heap[0] = i
+			down(0)
+		}
+	}
+	slices.SortFunc(heap, func(a, b int) int {
+		if less(a, b) {
+			return -1
+		}
+		return 1
+	})
+	kept := make([]bool, k)
+	var vacated []int
+	for _, i := range heap {
+		if i < k {
+			kept[i] = true
+		} else {
+			vacated = append(vacated, i)
+		}
+	}
+	chosen := make([]storage.Record, k)
+	for rank, i := range heap {
+		chosen[rank] = records[i]
+	}
+	next := 0
+	for i := 0; i < k; i++ {
+		if !kept[i] {
+			records[vacated[next]] = records[i]
+			next++
+		}
+	}
+	copy(records, chosen)
+}
+
+// plainStoredStringOrderField returns the canonical name of a stored text
+// field that recordValue reads straight from the record: no expression, path,
+// system-field override, formula, summary or custom metadata handling.
+func plainStoredStringOrderField(org storage.OrgState, definition storage.ObjectDefinition, field string) (string, bool) {
+	if strings.ContainsAny(field, "(.") {
+		return "", false
+	}
+	if _, system := canonicalSystemFieldName(field); system {
+		return "", false
+	}
+	canonical, ok := resolveSOQLFieldName(definition, org.Namespace, field)
+	if !ok || canonical == "Id" || canonicalSystemFieldNameIs(canonical) ||
+		strings.EqualFold(canonical, "NamespacePrefix") || strings.EqualFold(canonical, "QualifiedApiName") {
+		return "", false
+	}
+	fieldDef, ok := definition.Fields[canonical]
+	if !ok || strings.TrimSpace(fieldDef.Formula) != "" || fieldDef.Type != storage.FieldString {
+		return "", false
+	}
+	if storage.IsCustomMetadataDefinition(definition) || strings.EqualFold(definition.APIName, "Organization") {
+		return "", false
+	}
+	return canonical, true
+}
+
+// asciiTextSortKeys returns one byte key per value whose bytes.Compare order is
+// the order orderCompare gives. It returns nil unless every value is non-null
+// ASCII text and the comparator is the folded or en_* one. Keys share one
+// backing array.
+func asciiTextSortKeys(values []storage.Value, comparator *textComparator) [][]byte {
+	if comparator != nil && !comparator.english {
+		return nil
+	}
+	total := 0
+	for _, value := range values {
+		if value.Kind != storage.ValueString {
+			return nil
+		}
+		for i := 0; i < len(value.String); i++ {
+			if value.String[i] >= utf8.RuneSelf {
+				return nil
+			}
+		}
+		total += len(value.String)
+	}
+	backing := make([]byte, total)
+	keys := make([][]byte, len(values))
+	at := 0
+	for i, value := range values {
+		text := value.String
+		key := backing[at : at+len(text) : at+len(text)]
+		at += len(text)
+		if comparator != nil {
+			for j := 0; j < len(text); j++ {
+				key[j] = asciiCollationWeight[text[j]]
+			}
+		} else {
+			for j := 0; j < len(text); j++ {
+				c := text[j]
+				if 'A' <= c && c <= 'Z' {
+					c += 'a' - 'A'
+				}
+				key[j] = c
+			}
+		}
+		keys[i] = key
+	}
+	return keys
 }
 
 func aggregateOrderedBefore(leftRecord, rightRecord storage.Record, order []OrderSpec) bool {
