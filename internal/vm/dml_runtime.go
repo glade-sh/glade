@@ -4066,7 +4066,6 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			vm.propagateAliasSnapshotToStatics(previous, *targets[i])
 		}
 	}
-	var insertGroupParents []dml.SummaryUpdate
 	for _, kind := range []string{"insert", "update"} {
 		groupRecords, groupBefore, groupResults, indices := successfulGroupedDMLInputs(records, before, engineResults, kinds, kind)
 		afterRecords, err := vm.afterRecords(kind, groupRecords, groupResults)
@@ -4108,22 +4107,23 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
 		if kind == "update" {
-			// A parent whose roll-up the update group changes after its
-			// own triggers ran for the insert group fires again
-			// (review_round6 m_none: P=2/17/10 then P=2/27/20).
-			if len(insertGroupParents) > 0 && engine.HeldSummaryDiffersFromLive() {
-				engine.RequeueSummaryUpdates(insertGroupParents)
-			}
+			// A parent that the insert group already fired for fires again
+			// when this group's children belong to it and still change its
+			// roll-up (review_round7 b_single: PA twice; b_same, b_two: once).
+			engine.RequeueRenderedSummaryUpdates(afterRecords)
 			engine.ReleaseSummaryHold()
 		} else {
-			insertGroupParents = engine.PeekSummaryUpdates()
 			// The insert group has landed when the update group's triggers run;
-			// the update has not (sf4_mixed_upsert). The parent's own triggers
-			// read the same landed values (review_round6 m_none).
+			// the update has not (sf4_mixed_upsert). Only the parents of the
+			// inserted children fire now, reading the same landed values
+			// (review_round6 m_none, review_round7 b_two).
 			engine.LandSummaryHold(afterRecords)
+			engine.SetSummaryTakeScope(afterRecords)
 		}
-		if _, err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, "", "", nil, nil); err != nil {
-			return results, err
+		_, summaryErr := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, "", "", nil, nil)
+		engine.ClearSummaryTakeScope()
+		if summaryErr != nil {
+			return results, summaryErr
 		}
 		if err := vm.applyDeferredAutomation(&engine, afterRecords, groupBefore, allOrNone, rollback, result); err != nil {
 			if failures, ok := flowActionInputDMLResults("upsert", results, err); ok {

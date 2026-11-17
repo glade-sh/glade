@@ -42,6 +42,9 @@ type Value struct {
 	// A report service dimension can expose an empty getter while retaining a
 	// null raw groupings field for JSON serialization.
 	reportEmptyDimension bool
+	// The key set of a field map lists in platform order but renders its text
+	// alphabetically (record_type_shape list_forms, default_order_rest d3).
+	describeKeySetText bool
 
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`
@@ -1948,10 +1951,8 @@ func sObjectProjectedMapKey(v Value, seen map[uint64]bool) string {
 // List conversion follow the platform field order (default_order_rest d3), but
 // the set's text is alphabetical (record_type_shape list_forms keySetDebug and
 // keySetConcat, both APIs): the two row sets differ in how the set is read.
-const describeKeySetRuntime = "sobject-field-map:keyset"
-
 func describeKeySetTextOrder(set Value) []Value {
-	if set.Runtime != describeKeySetRuntime {
+	if !set.describeKeySetText {
 		return set.Set
 	}
 	items := append([]Value(nil), set.Set...)

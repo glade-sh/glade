@@ -3456,6 +3456,14 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			return []diagnostic.Diagnostic{nativeSourceOverloadDiagnostic(ambiguousCallDiagnostic(typ, member, expr.Callee, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source), receiverType, method, sourceArgTypes, candidates, model, typ)}
 		}
 	}
+	// A query literal passed where one SObject is expected is the single-row
+	// conversion native accepts (review_round7: MxLog.fmt([SELECT ...]) after a
+	// string concatenation reached this path).
+	for _, candidate := range candidates {
+		if memberApplicableWithIRSOQLSingletonArgs(candidate.member, argTypes, expr.Args, model) {
+			return nil
+		}
+	}
 	d := diagnostic.Diagnostic{
 		Severity:      diagnostic.Error,
 		Code:          "GLADESEMA009",

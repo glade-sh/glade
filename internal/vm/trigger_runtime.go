@@ -348,6 +348,7 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollb
 				update.After.Object = objectName
 			}
 		}
+		engine.OverlayHeldSummary(&update)
 		byObject[objectName] = append(byObject[objectName], update)
 	}
 	clonedResults := false

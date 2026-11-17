@@ -5482,6 +5482,29 @@ public class UsesSOQLReturn {
 	}
 }
 
+func TestAnalyzeSOQLSingletonAcceptsStaticMethodArgumentInConcatenation(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSOQLArg.cls"), `
+public class UsesSOQLArg {
+  public static String seen = '';
+  public static String fmt(Account a) { return a.Name; }
+  public void run() {
+    System.debug('x' + UsesSOQLArg.seen + 'y' + UsesSOQLArg.fmt([SELECT Id, Name FROM Account WHERE Id = :UserInfo.getUserId()]) + ';');
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSOQLArg.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	for _, diag := range Analyze(index).Diagnostics {
+		if diag.Code == "GLADESEMA009" {
+			t.Fatalf("a SOQL singleton should satisfy the static method argument: %#v", diag)
+		}
+	}
+}
+
 func TestAnalyzeStaticMethodNamedMatches(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

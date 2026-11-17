@@ -212,6 +212,7 @@ func (e *Engine) ReleaseSummaryHold() {
 			}
 		}
 	}
+	e.summaryRendered = nil
 	e.summaryHold = nil
 	e.summaryHoldRelations = nil
 	e.summaryHoldSuspended = false
@@ -1173,4 +1174,124 @@ func (e *Engine) MarkSummaryHoldUpsert() {
 	if e != nil && e.summaryHold != nil {
 		e.summaryHold.Upsert = true
 	}
+}
+
+// summaryParentKeys names the pending-update keys of the parents these child
+// records belong to.
+func (e *Engine) summaryParentKeys(records []storage.Record) map[string]bool {
+	keys := make(map[string]bool)
+	if e == nil || e.Org == nil {
+		return keys
+	}
+	for _, record := range records {
+		child, ok := storage.ResolveObjectName(*e.Org, record.Object)
+		if !ok {
+			child = record.Object
+		}
+		candidates := []storage.Record{record}
+		if _, stored, found := storage.LookupRecordByID(e.Org.Objects[child].Records, record.ID); found {
+			candidates = append(candidates, stored)
+		}
+		for _, relation := range e.summaryRelationsForChild(child) {
+			parentIDs := canonicalSummaryParentIDs(e.Org.Objects[relation.parentObject].Records, summaryParentIDs(candidates, relation.fkFieldName))
+			for id := range parentIDs {
+				keys[strings.ToLower(relation.parentObject)+"\x00"+strings.ToLower(string(id))] = true
+			}
+		}
+	}
+	return keys
+}
+
+// SetSummaryTakeScope limits TakeSummaryUpdates to the parents of these child
+// records; the others stay pending.
+func (e *Engine) SetSummaryTakeScope(records []storage.Record) {
+	if e == nil {
+		return
+	}
+	e.summaryTakeScope = e.summaryParentKeys(records)
+}
+
+// ClearSummaryTakeScope makes TakeSummaryUpdates take every parent again.
+func (e *Engine) ClearSummaryTakeScope() {
+	if e != nil {
+		e.summaryTakeScope = nil
+	}
+}
+
+// OverlayHeldSummary gives a parent update the roll-up values its triggers read
+// while a hold is in effect: the old record carries the values from before the
+// statement, the new record the held (landed) values. Later groups of the same
+// upsert start from what this one rendered (review_round7 b_single, b_two).
+func (e *Engine) OverlayHeldSummary(update *SummaryUpdate) {
+	if e == nil || update == nil || e.Org == nil || e.summaryHold == nil || e.summaryHoldSuspended {
+		return
+	}
+	changed := false
+	for _, held := range e.summaryHoldRelations {
+		if !strings.EqualFold(held.relation.parentObject, update.Object) || !held.parentIDs[update.After.ID] {
+			continue
+		}
+		key := summaryHoldKey(held.relation.parentObject, update.After.ID, held.relation.parentField)
+		if live, ok := e.summaryHold.Live[key]; ok && update.Before.Fields != nil {
+			if rendered, had := e.summaryRendered[strings.ToLower(update.Object)+"\x00"+strings.ToLower(string(update.After.ID))]; had {
+				if value, ok := rendered.Fields[held.relation.parentField]; ok {
+					live = value
+				}
+			}
+			update.Before.Fields[held.relation.parentField] = live
+			changed = true
+		}
+		if value, ok := e.summaryHold.Values[key]; ok && !e.summaryHold.Dropped[key] && update.After.Fields != nil {
+			update.After.Fields[held.relation.parentField] = value
+			changed = true
+		}
+	}
+	if changed {
+		if e.summaryRendered == nil {
+			e.summaryRendered = make(map[string]storage.Record)
+		}
+		e.summaryRendered[strings.ToLower(update.Object)+"\x00"+strings.ToLower(string(update.After.ID))] = update.After.Clone()
+	}
+}
+
+// RequeueRenderedSummaryUpdates fires a parent again for a later group when
+// that group's children belong to it and its held roll-up still differs from
+// the stored one.
+func (e *Engine) RequeueRenderedSummaryUpdates(records []storage.Record) {
+	if e == nil || e.Org == nil || e.summaryHold == nil || len(e.summaryRendered) == 0 {
+		return
+	}
+	scope := e.summaryParentKeys(records)
+	for key, rendered := range e.summaryRendered {
+		if !scope[key] || !e.heldSummaryDiffersForParent(rendered.Object, rendered.ID) {
+			continue
+		}
+		objectName := rendered.Object
+		_, stored, ok := storage.LookupRecordByID(e.Org.Objects[objectName].Records, rendered.ID)
+		if !ok {
+			continue
+		}
+		e.RequeueSummaryUpdates([]SummaryUpdate{{Object: objectName, Before: rendered.Clone(), After: stored.Clone()}})
+	}
+}
+
+func (e *Engine) heldSummaryDiffersForParent(object string, id storage.ID) bool {
+	for _, held := range e.summaryHoldRelations {
+		if !strings.EqualFold(held.relation.parentObject, object) || !held.parentIDs[id] {
+			continue
+		}
+		now, ok := e.evaluateSummaryFieldBatch(held.relation, map[storage.ID]bool{id: true})
+		if !ok {
+			continue
+		}
+		key := summaryHoldKey(held.relation.parentObject, id, held.relation.parentField)
+		value, in := e.summaryHold.Values[key]
+		if !in || e.summaryHold.Dropped[key] {
+			continue
+		}
+		if !summaryValuesEqual(value, now[id]) {
+			return true
+		}
+	}
+	return false
 }

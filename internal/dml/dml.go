@@ -114,6 +114,8 @@ type Engine struct {
 	summaryHold               *storage.SummaryHold
 	summaryHoldRelations      []heldSummaryRelation
 	summaryHoldSuspended      bool
+	summaryTakeScope          map[string]bool
+	summaryRendered           map[string]storage.Record
 	automationRoll            map[string]bool
 	uniqueBatch               *uniqueBatchContext
 	activityRefresh           *activityRefreshBatch
@@ -988,15 +990,23 @@ func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
 		return nil
 	}
 	updates := make([]SummaryUpdate, 0, len(e.summaryOrder))
+	var kept []string
 	for _, key := range e.summaryOrder {
+		if e.summaryTakeScope != nil && !e.summaryTakeScope[key] {
+			kept = append(kept, key)
+			continue
+		}
 		update, ok := e.summaryUpdates[key]
+		delete(e.summaryUpdates, key)
 		if !ok || update.Object == "" || update.Before.ID == "" || update.After.ID == "" {
 			continue
 		}
 		updates = append(updates, update)
 	}
-	e.summaryOrder = nil
-	e.summaryUpdates = nil
+	e.summaryOrder = kept
+	if len(kept) == 0 {
+		e.summaryUpdates = nil
+	}
 	return updates
 }
 

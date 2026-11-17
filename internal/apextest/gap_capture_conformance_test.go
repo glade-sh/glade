@@ -58,7 +58,7 @@ type gapFamily struct {
 	// who held the same permission set (the rows' fls case assigns it).
 	adminFrom []string
 	// classAPI maps an API under test to the apiVersion written into the class
-	// metadata, for rows whose capture did not prove the class API.
+	// and trigger metadata, for rows whose capture did not prove the class API.
 	classAPI map[string]string
 	// cleanBetween empties the custom objects after each anonymous case, as
 	// the capture's per-case residue cleanup did.
@@ -145,7 +145,7 @@ func (f gapFamily) writeProject(t *testing.T, api string) string {
 		text := string(body)
 		if strings.HasSuffix(path, "-meta.xml") && strings.Contains(text, "<apiVersion>") {
 			version := api
-			if override, ok := f.classAPI[api]; ok && strings.Contains(filepath.ToSlash(rel), "/classes/") {
+			if override, ok := f.classAPI[api]; ok && (strings.Contains(filepath.ToSlash(rel), "/classes/") || strings.Contains(filepath.ToSlash(rel), "/triggers/")) {
 				version = override
 			}
 			text = gapAPIVersionPattern.ReplaceAllString(text, "<apiVersion>"+version+"</apiVersion>")

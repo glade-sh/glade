@@ -225,7 +225,7 @@ func (vm *VM) sObjectFieldMapCanonicalKeySet(value Value) (Value, bool) {
 	}
 	out := Set()
 	out.Type = "Set<String>"
-	out.Runtime = describeKeySetRuntime
+	out.describeKeySetText = true
 	seen := map[string]bool{}
 	for _, rawKey := range orderedValueMapKeys(value) {
 		fieldName, ok := sObjectFieldMapCanonicalFieldName(value.Map[rawKey])
