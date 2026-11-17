@@ -151,10 +151,9 @@ System.assert(Schema.getModuleDescribe('module').keySet().contains('Widget__c'))
 // keySet on the global describe map returns a fresh Set whose contents match
 // the lower-cased unique keys; mutating a copy of it must not touch the map.
 // NATIVE review_round10 g_gd_add: add on the key set itself raises the
-// uncatchable FinalException, and g_gd_clone_add: a clone is writable. Native
-// remove and clear on the key set itself write through to that map and not to
-// a fresh getGlobalDescribe() (g_gd_remove, g_gd_clear); Glade does not model
-// that write-through, so this test mutates the clone only.
+// uncatchable FinalException, and g_gd_clone_add: a clone is writable. remove
+// and clear on the key set itself write through to that map and not to a fresh
+// getGlobalDescribe() (g_gd_remove N to N-1, g_gd_clear 0|0|N; APIs 62.0, 67.0).
 func TestGlobalDescribeKeySetIsFreshAndComplete(t *testing.T) {
 	for _, namespaced := range []bool{false, true} {
 		t.Run(fmt.Sprintf("namespace=%v", namespaced), func(t *testing.T) {
@@ -175,6 +174,19 @@ System.assertEquals(mapSize, g.size());
 for (String k : again) {
     System.assertEquals(k, k.toLowerCase());
 }
+Set<String> live = g.keySet();
+live.remove('account');
+System.assertEquals(n - 1, live.size());
+System.assert(!live.contains('account'));
+System.assertEquals(mapSize - 1, g.size());
+System.assert(!g.containsKey('account'));
+System.assertEquals(null, g.get('account'));
+System.assertEquals(mapSize, Schema.getGlobalDescribe().size());
+System.assert(Schema.getGlobalDescribe().containsKey('account'));
+live.clear();
+System.assertEquals(0, live.size());
+System.assertEquals(0, g.size());
+System.assertEquals(mapSize, Schema.getGlobalDescribe().size());
 `, CompileOptions{APIVersion: "67.0"})
 			if err != nil {
 				t.Fatal(err)

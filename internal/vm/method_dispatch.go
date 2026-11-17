@@ -2078,6 +2078,9 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		return Null, false
 	}
 	if isGlobalDescribeMap(receiver) {
+		if vm != nil && vm.globalDescribeViewLacksKey(receiver, key.Text) {
+			return Null, false
+		}
 		if vm != nil {
 			if resolved, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok && vm.globalDescribeContainsKeyNamesObject(key.Text, resolved) {
 				return sObjectTypeToken(resolved), true
@@ -2131,6 +2134,9 @@ func (vm *VM) specialMapContainsKey(receiver, key Value) bool {
 		return false
 	}
 	if isGlobalDescribeMap(receiver) {
+		if vm != nil && vm.globalDescribeViewLacksKey(receiver, key.Text) {
+			return false
+		}
 		if vm != nil {
 			if resolved, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok && vm.ownedGlobalDescribeLocalKey(key.Text, resolved) {
 				return false
@@ -3963,11 +3969,11 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 				}
 			}
 			out.Type = "Set<String>"
-			// add and addAll are refused (review_round10 g_gd_add). Native also
-			// writes remove and clear through to this map and not to a fresh
-			// getGlobalDescribe() (g_gd_remove, g_gd_clear); Glade keeps the
-			// local-only behavior its describe pins expect.
+			// add and addAll are refused (review_round10 g_gd_add). remove and
+			// clear write through to this map and not to a fresh
+			// getGlobalDescribe() (g_gd_remove, g_gd_clear).
 			out.describeKeySetReadOnly = true
+			vm.bindMapKeySet(receiver, &out)
 			return out, true, nil
 		}
 		if out, ok := vm.sObjectFieldMapCanonicalKeySet(receiver); ok {
@@ -4174,3 +4180,21 @@ func describeKeySetReadOnlyMethod(method string) bool {
 // readOnlyCollectionFault is the uncatchable FinalException that add and
 // addAll raise on a Map's key set and that R076 raises on a field map.
 const readOnlyCollectionFault = "System.FinalException: Collection is read-only"
+
+// globalDescribeViewLacksKey reports that a private global describe view (not
+// the shared cache) lost this key through its own write (review_round10
+// g_gd_remove, g_gd_clear): the key set or a direct remove deleted every alias.
+func (vm *VM) globalDescribeViewLacksKey(receiver Value, key string) bool {
+	if receiver.globalDescribeEntriesCanonical || receiver.mapBackingShared || receiver.mapEntriesShared {
+		return false
+	}
+	if _, cached := vm.globalDescribeCacheEntry(receiver.Ref); cached {
+		return false
+	}
+	for _, alias := range vm.schemaDescribeLookupAliases(key) {
+		if _, ok := receiver.Map[mapKey(String(alias))]; ok {
+			return false
+		}
+	}
+	return true
+}

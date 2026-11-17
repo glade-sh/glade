@@ -133,17 +133,22 @@ func TestReviewRound9NativeConformance(t *testing.T) {
 func TestReviewRound10NativeConformance(t *testing.T) {
 	gapFamily{
 		dir: "testdata/conformance/review_round10", adminFrom: []string{"GapAccess"}, cleanBetween: true,
-		residual: map[string]string{
-			"g_gd_remove/*": "remove on getGlobalDescribe().keySet() writes through to that map natively; Glade keeps it local to the Set",
-			"g_gd_clear/*":  "clear on getGlobalDescribe().keySet() writes through to that map natively; Glade keeps it local to the Set",
-		},
 		normalize: func(id, line string) string {
 			if id != "g_gd_remove" && id != "g_gd_clear" {
 				return line
 			}
-			// The global describe counts are environment values: mask them
-			// relative to the first one.
+			// The global describe counts are environment values. g_gd_remove
+			// masks them relative to the first one; g_gd_clear masks the fresh
+			// getGlobalDescribe().size() after the two cleared counts.
 			parts := strings.Split(line, "|")
+			if id == "g_gd_clear" {
+				if len(parts) == 5 {
+					if _, err := strconv.Atoi(parts[4]); err == nil {
+						parts[4] = "N"
+					}
+				}
+				return strings.Join(parts, "|")
+			}
 			if len(parts) < 3 {
 				return line
 			}

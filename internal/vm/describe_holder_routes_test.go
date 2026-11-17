@@ -10,6 +10,9 @@ import (
 // Baseline local mutation controls; native read/alias rows remain
 // testdata/describe_read_workload/org.tsv:7-10,16-19. The shared fixture is also
 // run by actual project and host routes; it never infers native writable maps.
+// Key-set remove and clear write through to the holder and its aliases, never
+// to a sibling or a fresh getGlobalDescribe() (native review_round10
+// g_gd_remove, g_gd_clear); removeAll and retainAll take the same key-set path.
 func TestDescribeHolderPublicationRoutes(t *testing.T) {
 	raw, err := os.ReadFile("testdata/describe_ownership/holder.apex")
 	if err != nil {
@@ -33,10 +36,10 @@ func TestDescribeHolderPublicationRoutes(t *testing.T) {
 							{"put('account', User.SObjectType)", "beforeSize"},
 							{"putAll(new Map<String,Schema.SObjectType>{'private'=>Account.SObjectType})", "beforeSize + 1"},
 							{"remove('account')", "beforeSize - 1"}, {"clear()", "0"},
-							{"keySet().remove('account')", "beforeSize"},
-							{"keySet().clear()", "beforeSize"},
-							{"keySet().removeAll(new Set<String>{'account'})", "beforeSize"},
-							{"keySet().retainAll(new Set<String>{'user'})", "beforeSize"},
+							{"keySet().remove('account')", "beforeSize - 1"},
+							{"keySet().clear()", "0"},
+							{"keySet().removeAll(new Set<String>{'account'})", "beforeSize - 1"},
+							{"keySet().retainAll(new Set<String>{'user'})", "1"},
 						} {
 							mutation, err := CompileAnonymousWithOptions("m."+write.mutation+";", CompileOptions{APIVersion: api})
 							if err != nil {

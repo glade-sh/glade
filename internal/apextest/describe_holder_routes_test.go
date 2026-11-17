@@ -35,9 +35,9 @@ func TestDescribeHolderProjectConcurrentRoutes(t *testing.T) {
 					{"put('account',User.SObjectType)", "beforeSize"},
 					{"putAll(new Map<String,Schema.SObjectType>{'private'=>Account.SObjectType})", "beforeSize+1"},
 					{"remove('account')", "beforeSize-1"}, {"clear()", "0"},
-					{"keySet().remove('account')", "beforeSize"}, {"keySet().clear()", "beforeSize"},
-					{"keySet().removeAll(new Set<String>{'account'})", "beforeSize"},
-					{"keySet().retainAll(new Set<String>{'user'})", "beforeSize"},
+					{"keySet().remove('account')", "beforeSize-1"}, {"keySet().clear()", "0"},
+					{"keySet().removeAll(new Set<String>{'account'})", "beforeSize-1"},
+					{"keySet().retainAll(new Set<String>{'user'})", "1"},
 				} {
 					fmt.Fprintf(&methods, "public static void mutate%d(Map<String,Schema.SObjectType> m) {m.%s;}\n", id, write.mutation)
 					for _, target := range []string{"holder", "alias", "DescribeOwner.stored", "instance.member", "parameter"} {

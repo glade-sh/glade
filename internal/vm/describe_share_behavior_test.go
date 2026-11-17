@@ -50,7 +50,9 @@ gd.put('zzshare', Account.SObjectType);
 gd.remove('account');
 System.debug('P2a:' + gd.containsKey('zzshare') + ':' + (gd.size() - n) + ':' + gd.get('account'));
 System.debug('P2b:' + Schema.getGlobalDescribe().containsKey('zzshare') + ':' + (Schema.getGlobalDescribe().size() - n));`,
-			debug: "P2a:true:0:Account | P2b:false:0",
+			// A direct remove drops the key from this holder at least as the
+			// key-set remove does (native review_round10 g_gd_remove).
+			debug: "P2a:true:0:null | P2b:false:0",
 		},
 		{
 			name: "fields.getMap put is read-only",
