@@ -169,6 +169,13 @@ func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, 
 		suite := &run.Suites[si]
 		for ci := range suite.Cases {
 			testCase := &suite.Cases[ci]
+			if !coverageCaseRan(*testCase) {
+				// A method that never ran has no coverage rows natively; it
+				// also takes no part in the per-test carry.
+				testCase.Coverage = nil
+				testCase.CoverageNotRun = true
+				continue
+			}
 			recorder := apexcov.NewRecorder()
 			s.mu.Lock()
 			recorder.Merge(s.setups[coverageSetupKey(testCase.ClassName, testCase.SelectedSourceFile)])
@@ -197,6 +204,7 @@ func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, 
 				rows = append(rows, testreport.TestCoverage{
 					Name:              c.Name,
 					Type:              c.Kind,
+					File:              c.File,
 					NumLinesCovered:   len(covered),
 					NumLinesUncovered: len(c.Plan.Lines) - len(covered),
 					CoveredLines:      nonNilLines(covered),
@@ -246,6 +254,17 @@ func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, 
 		out.Gate = coverageGate(gate, project, counts, orgParts)
 	}
 	run.Coverage = out
+}
+
+// coverageCaseRan reports a test whose method body ran: it passed or failed
+// on its own. Compile errors, skipped and unsupported cases, and methods a
+// failed @TestSetup kept from running did not.
+func coverageCaseRan(c testreport.Case) bool {
+	switch c.Status {
+	case testreport.StatusPass, testreport.StatusFail, "":
+		return !c.EntryNotRun
+	}
+	return false
 }
 
 func coverageGate(level string, project *apexcov.Project, counts map[*apexcov.Component]apexcov.Counts, orgParts []apexcov.Counts) *testreport.CoverageGate {

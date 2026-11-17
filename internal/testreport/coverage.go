@@ -51,8 +51,11 @@ type ComponentCoverage struct {
 // component's uncovered lines for this test are its executable lines in
 // Run.Coverage.Components less CoveredLines.
 type TestCoverage struct {
-	Name              string `json:"name"`
-	Type              string `json:"type"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+	// File identifies the component when two source units declare the same
+	// name.
+	File              string `json:"file,omitempty"`
 	NumLinesCovered   int    `json:"numLinesCovered"`
 	NumLinesUncovered int    `json:"numLinesUncovered"`
 	CoveredLines      []int  `json:"coveredLines"`
@@ -171,9 +174,20 @@ func NativePerTestRows(run Run) Run {
 			decl[i][line] = true
 		}
 	}
-	byName := map[string]int{}
+	byFile, byName := map[string]int{}, map[string]int{}
 	for i, c := range components {
+		if c.File != "" {
+			byFile[c.File] = i
+		}
 		byName[c.Type+"\x00"+c.Name] = i
+	}
+	component := func(row TestCoverage) (int, bool) {
+		if row.File != "" {
+			i, ok := byFile[row.File]
+			return i, ok
+		}
+		i, ok := byName[row.Type+"\x00"+row.Name]
+		return i, ok
 	}
 	suites := make([]Suite, len(run.Suites))
 	for si, suite := range run.Suites {
@@ -185,15 +199,31 @@ func NativePerTestRows(run Run) Run {
 		sort.SliceStable(order, func(a, b int) bool {
 			return lessTestMethodName(cases[order[a]].MethodName, cases[order[b]].MethodName)
 		})
-		reached := make([]bool, len(components))
-		carried := make([]map[int]bool, len(components))
-		for i := range carried {
-			carried[i] = map[int]bool{}
+		// One carry per test class file: same-named test classes from two
+		// source units share a suite name but not a carry.
+		type carryState struct {
+			reached []bool
+			carried []map[int]bool
 		}
+		states := map[string]*carryState{}
 		for _, ci := range order {
+			if cases[ci].CoverageNotRun {
+				cases[ci].Coverage = nil
+				cases[ci].CoverageNotRun = false
+				continue
+			}
+			state := states[cases[ci].SelectedSourceFile]
+			if state == nil {
+				state = &carryState{reached: make([]bool, len(components)), carried: make([]map[int]bool, len(components))}
+				for i := range state.carried {
+					state.carried[i] = map[int]bool{}
+				}
+				states[cases[ci].SelectedSourceFile] = state
+			}
+			reached, carried := state.reached, state.carried
 			own := map[int][]int{}
 			for _, row := range cases[ci].Coverage {
-				if i, ok := byName[row.Type+"\x00"+row.Name]; ok {
+				if i, ok := component(row); ok {
 					own[i] = row.CoveredLines
 				}
 			}
@@ -218,6 +248,7 @@ func NativePerTestRows(run Run) Run {
 				rows = append(rows, TestCoverage{
 					Name:              c.Name,
 					Type:              c.Type,
+					File:              c.File,
 					NumLinesCovered:   len(merged),
 					NumLinesUncovered: c.TotalLines - len(merged),
 					CoveredLines:      merged,

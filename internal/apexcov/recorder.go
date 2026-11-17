@@ -118,6 +118,9 @@ type Project struct {
 	// lower-case simple name when it is unique, to its component and the
 	// dotted name the component's plan uses.
 	byClass map[string]classRef
+	// sameNamed lists every component of a dotted class name that two source
+	// units declare.
+	sameNamed map[string][]classRef
 }
 
 type classRef struct {
@@ -127,7 +130,7 @@ type classRef struct {
 
 // NewProject indexes components. Components keep their order.
 func NewProject(components []*Component) *Project {
-	p := &Project{Components: components, byFile: map[string]*Component{}, byClass: map[string]classRef{}}
+	p := &Project{Components: components, byFile: map[string]*Component{}, byClass: map[string]classRef{}, sameNamed: map[string][]classRef{}}
 	simple := map[string][]classRef{}
 	for _, c := range components {
 		p.byFile[c.File] = c
@@ -135,6 +138,12 @@ func NewProject(components []*Component) *Project {
 			continue
 		}
 		for _, dotted := range c.Plan.classes {
+			if prior, taken := p.byClass[dotted]; taken {
+				if len(p.sameNamed[dotted]) == 0 {
+					p.sameNamed[dotted] = []classRef{prior}
+				}
+				p.sameNamed[dotted] = append(p.sameNamed[dotted], classRef{c, dotted})
+			}
 			p.byClass[dotted] = classRef{c, dotted}
 			if i := strings.LastIndexByte(dotted, '.'); i >= 0 {
 				simple[dotted[i+1:]] = append(simple[dotted[i+1:]], classRef{c, dotted})
@@ -149,7 +158,22 @@ func NewProject(components []*Component) *Project {
 	return p
 }
 
-func (p *Project) class(name string) (classRef, bool) {
+// class resolves a class-init or property event by name. When two source
+// units declare the name, the event belongs to the one whose code this test
+// ran; with no such evidence it is dropped rather than guessed.
+func (p *Project) class(name string, r *Recorder) (classRef, bool) {
+	if refs := p.sameNamed[name]; len(refs) > 0 {
+		var match []classRef
+		for _, ref := range refs {
+			if _, ran := r.files[ref.component.File]; ran {
+				match = append(match, ref)
+			}
+		}
+		if len(match) == 1 {
+			return match[0], true
+		}
+		return classRef{}, false
+	}
 	ref, ok := p.byClass[name]
 	if ok {
 		return ref, true
@@ -201,7 +225,7 @@ func (p *Project) Resolve(r *Recorder) map[*Component][]int {
 			}
 		}
 		for key := range r.inits {
-			ref, ok := p.class(key.class)
+			ref, ok := p.class(key.class, r)
 			if !ok {
 				continue
 			}
@@ -214,7 +238,7 @@ func (p *Project) Resolve(r *Recorder) map[*Component][]int {
 		}
 		for key := range r.props {
 			class, prop, _ := strings.Cut(key, "#")
-			ref, ok := p.class(class)
+			ref, ok := p.class(class, r)
 			if !ok {
 				continue
 			}

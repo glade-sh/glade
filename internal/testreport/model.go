@@ -92,6 +92,10 @@ type Case struct {
 	// Coverage is this test's per-class and per-trigger coverage, set only
 	// when the run recorded code coverage.
 	Coverage []TestCoverage `json:"coverage,omitempty"`
+	// CoverageNotRun marks, in a coverage run, a case whose method never ran.
+	// It travels on the test daemon wire so NativePerTestRows gives the case
+	// no rows; the report writers clear it.
+	CoverageNotRun bool `json:"coverageNotRun,omitempty"`
 	// EntryNotRun marks a Fail row whose test body never ran because its
 	// @TestSetup method threw. It is runner bookkeeping, not report output.
 	EntryNotRun bool `json:"-"`
@@ -263,6 +267,7 @@ func (c Case) MarshalJSON() ([]byte, error) {
 		Trace              []trace.Event   `json:"trace,omitempty"`
 		Profile            *profile.Report `json:"profile,omitempty"`
 		Coverage           []TestCoverage  `json:"coverage,omitempty"`
+		CoverageNotRun     bool            `json:"coverageNotRun,omitempty"`
 	}
 	problem := c.Problem
 	if problem != nil {
@@ -283,6 +288,7 @@ func (c Case) MarshalJSON() ([]byte, error) {
 		Trace:              c.Trace,
 		Profile:            c.Profile,
 		Coverage:           c.Coverage,
+		CoverageNotRun:     c.CoverageNotRun,
 	})
 }
 

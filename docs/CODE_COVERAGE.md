@@ -75,7 +75,9 @@ ternary does not take stays uncovered.
 
 - A test's coverage includes its `@TestSetup` method's. A helper called only
   from `@TestSetup` is covered, and a trigger fired by a setup insert counts.
-- A failed or throwing test keeps the lines it ran.
+- A failed or throwing test keeps the lines it ran. A method that never ran
+  (a compile error, a skipped case, or a method a failed `@TestSetup` kept
+  from running) has no per-test rows and adds no lines.
 - Class and run coverage is the union of distinct lines. A line two tests run
   is one covered line.
 - Every trigger in the project is listed in the run, and in every test's

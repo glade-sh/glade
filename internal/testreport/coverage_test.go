@@ -136,16 +136,69 @@ func TestNativePerTestRowsCarriesDeclarationLines(t *testing.T) {
 	for _, c := range got.Suites[0].Cases {
 		rows[c.MethodName] = c.Coverage
 	}
-	if fmt.Sprint(rows["Alpha"]) != "[{C class 2 2 [2 3]} {Trg trigger 0 2 []}]" {
+	if fmt.Sprint(rows["Alpha"]) != "[{C class  2 2 [2 3]} {Trg trigger  0 2 []}]" {
 		t.Fatalf("Alpha rows %v", rows["Alpha"])
 	}
-	if fmt.Sprint(rows["beta"]) != "[{C class 3 1 [2 5 6]} {Trg trigger 0 2 []}]" {
+	if fmt.Sprint(rows["beta"]) != "[{C class  3 1 [2 5 6]} {Trg trigger  0 2 []}]" {
 		t.Fatalf("beta rows %v", rows["beta"])
 	}
-	if fmt.Sprint(rows["gamma"]) != "[{C class 2 2 [2 5]} {Trg trigger 0 2 []}]" {
+	if fmt.Sprint(rows["gamma"]) != "[{C class  2 2 [2 5]} {Trg trigger  0 2 []}]" {
 		t.Fatalf("gamma rows %v", rows["gamma"])
 	}
 	if len(run.Suites[0].Cases[0].Coverage) != 1 {
 		t.Fatal("NativePerTestRows changed its input")
+	}
+}
+
+// A case whose method never ran (compile error, skipped, or kept from running
+// by a failed @TestSetup) has no per-test rows and does not feed the carry.
+func TestNativePerTestRowsSkipsCasesThatNeverRan(t *testing.T) {
+	run := Run{
+		Suites: []Suite{{Name: "T", Cases: []Case{
+			{ClassName: "T", MethodName: "alpha", Status: StatusCompileError, CoverageNotRun: true},
+			{ClassName: "T", MethodName: "beta", Coverage: []TestCoverage{{Name: "C", Type: "class", CoveredLines: []int{5}}}},
+			{ClassName: "T", MethodName: "gamma", Status: StatusFail, CoverageNotRun: true},
+		}}},
+		Coverage: &Coverage{Components: []ComponentCoverage{
+			{Name: "C", Type: "class", TotalLines: 2, CoveredLines: []int{5}, UncoveredLines: []int{2}, Declaration: []int{2, 5}},
+			{Name: "Trg", Type: "trigger", TotalLines: 1, UncoveredLines: []int{2}},
+		}},
+	}
+	got := NativePerTestRows(run)
+	for _, c := range got.Suites[0].Cases {
+		switch c.MethodName {
+		case "alpha", "gamma":
+			if c.Coverage != nil || c.CoverageNotRun {
+				t.Fatalf("%s: rows %v notRun %v", c.MethodName, c.Coverage, c.CoverageNotRun)
+			}
+		case "beta":
+			if fmt.Sprint(c.Coverage) != "[{C class  1 1 [5]} {Trg trigger  0 1 []}]" {
+				t.Fatalf("beta rows %v", c.Coverage)
+			}
+		}
+	}
+}
+
+// Same-named classes from two source units are matched by file: a row maps
+// onto its own component, and two same-named test classes in one suite keep
+// separate carries.
+func TestNativePerTestRowsMatchesComponentsByFile(t *testing.T) {
+	run := Run{
+		Suites: []Suite{{Name: "T", Cases: []Case{
+			{ClassName: "T", MethodName: "a", SelectedSourceFile: "1/T.cls", Coverage: []TestCoverage{{Name: "C", Type: "class", File: "1/C.cls", CoveredLines: []int{2}}}},
+			{ClassName: "T", MethodName: "b", SelectedSourceFile: "2/T.cls", Coverage: []TestCoverage{{Name: "C", Type: "class", File: "2/C.cls", CoveredLines: []int{3}}}},
+		}}},
+		Coverage: &Coverage{Components: []ComponentCoverage{
+			{Name: "C", Type: "class", File: "1/C.cls", TotalLines: 2, CoveredLines: []int{2}, UncoveredLines: []int{3}, Declaration: []int{2}},
+			{Name: "C", Type: "class", File: "2/C.cls", TotalLines: 2, CoveredLines: []int{3}, UncoveredLines: []int{2}, Declaration: []int{3}},
+		}},
+	}
+	got := NativePerTestRows(run)
+	rows := map[string]string{}
+	for _, c := range got.Suites[0].Cases {
+		rows[c.MethodName] = fmt.Sprint(c.Coverage)
+	}
+	if rows["a"] != "[{C class 1/C.cls 1 1 [2]}]" || rows["b"] != "[{C class 2/C.cls 1 1 [3]}]" {
+		t.Fatalf("rows %v", rows)
 	}
 }
