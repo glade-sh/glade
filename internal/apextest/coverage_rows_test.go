@@ -26,7 +26,7 @@ func TestCoverageRowsOnlyForMethodsThatRan(t *testing.T) {
 		writeFile(t, filepath.Join(root, "force-app/classes", name+".cls"), body)
 	}
 	writeFile(t, filepath.Join(root, "force-app/triggers/AccountMark.trigger"), "trigger AccountMark on Account (before insert) {\n    Integer n = 1;\n}")
-	run := testreport.NativePerTestRows(Run(loadTestIndex(t, root), Options{NoDiskCache: true, Parallelism: 1, CodeCoverage: true}))
+	run := testreport.NativePerTestRows(Run(loadTestIndex(t, root), Options{NoDiskCache: true, Parallelism: 1, CodeCoverage: true, CoverageSynchronous: true}))
 	seen := 0
 	for _, suite := range run.Suites {
 		for _, c := range suite.Cases {

@@ -343,6 +343,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--json", Description: "Write JSON test results."},
 			{Name: "--junit", Value: "<path>", Description: "Write JUnit XML results."},
 			{Name: "--code-coverage", Description: "Record Apex code coverage per test, class and trigger."},
+			{Name: "--synchronous", Description: "Report coverage as a synchronous sf run does: every trigger in every test's rows."},
 			{Name: "--coverage-gate", Value: "<level>", Description: "Apply the RunLocalTests or RunSpecifiedTests deployment coverage rule; implies --code-coverage."},
 			{Name: "--cpu-profile", Value: "<path>", Description: "Profile the local command lifetime, finalized on exit; incompatible with --connect."},
 			{Name: "--mem-profile", Value: "<path>", Description: "Write a heap profile on local command exit; incompatible with --connect."},
@@ -1195,6 +1196,8 @@ Common flags:
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
   --code-coverage           Record Apex code coverage per test, class and trigger.
+  --synchronous             Report coverage as sf apex run test --synchronous does:
+                           every trigger is listed in the run and in each test's rows.
   --coverage-gate <level>   Apply the RunLocalTests or RunSpecifiedTests deployment
                            coverage rule; implies --code-coverage. A failed gate fails the run.
   --cpu-profile <path>      Profile the local command lifetime (including watch/daemon); finalized on exit.

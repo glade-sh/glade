@@ -90,8 +90,9 @@ type RunRequestV1 struct {
 	// CodeCoverage and CoverageGate are sent only when set, so a run without
 	// coverage keeps the version 3 frame and an older strict daemon rejects
 	// a coverage run instead of answering it without coverage.
-	CodeCoverage bool   `json:"codeCoverage,omitempty"`
-	CoverageGate string `json:"coverageGate,omitempty"`
+	CodeCoverage        bool   `json:"codeCoverage,omitempty"`
+	CoverageGate        string `json:"coverageGate,omitempty"`
+	CoverageSynchronous bool   `json:"coverageSynchronous,omitempty"`
 }
 
 type LimitCapsV1 struct {

@@ -15,12 +15,12 @@ import (
 // Without coverage the request frame is unchanged, so an older daemon still
 // serves plain runs and rejects a coverage run rather than dropping coverage.
 func TestProtocolV1CarriesCodeCoverage(t *testing.T) {
-	options := apextest.Options{Parallelism: 1, CodeCoverage: true, CoverageGate: testreport.CoverageGateRunLocalTests}
+	options := apextest.Options{Parallelism: 1, CodeCoverage: true, CoverageGate: testreport.CoverageGateRunLocalTests, CoverageSynchronous: true}
 	request := NewRunRequestV1(options, "", 0, 0, false)
-	if !request.CodeCoverage || request.CoverageGate != testreport.CoverageGateRunLocalTests {
+	if !request.CodeCoverage || request.CoverageGate != testreport.CoverageGateRunLocalTests || !request.CoverageSynchronous {
 		t.Fatalf("request = %+v", request)
 	}
-	if mapped := apexOptionsFromRunRequestV1(request); !mapped.CodeCoverage || mapped.CoverageGate != testreport.CoverageGateRunLocalTests {
+	if mapped := apexOptionsFromRunRequestV1(request); !mapped.CodeCoverage || mapped.CoverageGate != testreport.CoverageGateRunLocalTests || !mapped.CoverageSynchronous {
 		t.Fatalf("options from request = %+v", mapped)
 	}
 	if err := validateRunRequestV1(request); err != nil {

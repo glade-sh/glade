@@ -11,9 +11,12 @@ import (
 // Components lists each class and trigger the run's tests reached, and every
 // trigger; Summary weights by lines. See docs/CODE_COVERAGE.md.
 type Coverage struct {
-	Summary    CoverageSummary     `json:"summary"`
-	Components []ComponentCoverage `json:"components"`
-	Gate       *CoverageGate       `json:"gate,omitempty"`
+	// Synchronous marks a run reported as a synchronous Salesforce run:
+	// every trigger has a row in every test.
+	Synchronous bool                `json:"synchronous,omitempty"`
+	Summary     CoverageSummary     `json:"summary"`
+	Components  []ComponentCoverage `json:"components"`
+	Gate        *CoverageGate       `json:"gate,omitempty"`
 }
 
 // CoverageSummary holds the run totals. TestRunCoverage is the covered share
@@ -153,8 +156,8 @@ func formatLineList(lines []int, limit int) string {
 // components it reached; the report writers expand them here, after the test
 // daemon wire, so the wire stays small. Within each test class, in method
 // name order:
-//   - a test has a row for every component it or an earlier test reached, and
-//     for every trigger, empty when no test fired it;
+//   - a test has a row for every component it or an earlier test reached; in a
+//     synchronous run also for every trigger, empty when no test fired it;
 //   - a row holds the test's own lines plus the declaration lines (method,
 //     constructor and property) that earlier tests covered.
 //
@@ -230,7 +233,7 @@ func NativePerTestRows(run Run) Run {
 			var rows []TestCoverage
 			for i, c := range components {
 				lines, ownRow := own[i]
-				if !ownRow && !reached[i] && c.Type != "trigger" {
+				if !ownRow && !reached[i] && !(run.Coverage.Synchronous && c.Type == "trigger") {
 					continue
 				}
 				set := map[int]bool{}
@@ -274,11 +277,9 @@ func NativePerTestRows(run Run) Run {
 }
 
 // lessTestMethodName orders test methods the way the native carry follows
-// them: by name, ignoring case, then by the exact name.
+// them: by name.
 func lessTestMethodName(a, b string) bool {
-	la, lb := strings.ToLower(a), strings.ToLower(b)
-	if la != lb {
-		return la < lb
-	}
+	// Native order is by code point: Alpha, Gamma, Zeta, apple, beta, delta
+	// (cov-r2 CarryMixTest rows, API 62.0 and 67.0).
 	return a < b
 }

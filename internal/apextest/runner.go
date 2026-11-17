@@ -94,6 +94,10 @@ type Options struct {
 	// CoverageGate applies a deployment coverage rule, RunLocalTests or
 	// RunSpecifiedTests, to the run's coverage. It implies CodeCoverage.
 	CoverageGate string
+	// CoverageSynchronous reports coverage as a synchronous Salesforce run
+	// does (sf apex run test --synchronous): every trigger is listed in the
+	// run and in every test's rows. The default follows an asynchronous run.
+	CoverageSynchronous bool
 
 	// coverage collects one run's coverage events; set by runCasesGated.
 	coverage *coverageSession
@@ -670,7 +674,7 @@ assemble:
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
 	}
 	if opts.coverage != nil {
-		opts.coverage.attach(&run, coverageProject(index, sources), opts.CoverageGate)
+		opts.coverage.attach(&run, coverageProject(index, sources), opts.CoverageGate, opts.CoverageSynchronous)
 	}
 	if runState.counters.enabled {
 		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.reportAssemblyNS, time.Since(reportStarted))

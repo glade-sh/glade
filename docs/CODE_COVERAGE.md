@@ -25,6 +25,11 @@ glade test --coverage-gate RunSpecifiedTests --class-file tests.txt
 - `--coverage-gate <RunLocalTests|RunSpecifiedTests>` implies
   `--code-coverage` and applies that test level's deployment rule. A failed
   gate fails the run (exit code `1`, JSON status `failed`), like a failed test.
+- `--synchronous` reports coverage the way `sf apex run test --synchronous`
+  does: every trigger in the project is listed in the run and in every test's
+  rows, empty when no test fired it. Without it the report follows the default
+  asynchronous `sf apex run test`, which lists only what the tests reached.
+  `testRunCoverage` differs between the two by the uncalled triggers' lines.
 
 Both flags work on every `glade test` route: a local run, `--daemon`, and a
 running test server (`--connect` or auto-connect). The routes return the same
@@ -73,23 +78,33 @@ ternary does not take stays uncovered.
 
 ## How tests add up
 
-- A test's coverage includes its `@TestSetup` method's. A helper called only
-  from `@TestSetup` is covered, and a trigger fired by a setup insert counts.
+- `@TestSetup` coverage goes to the first test of the class in method name
+  order that ran. A helper called only from `@TestSetup` is covered, and a
+  trigger fired by a setup insert counts. Later tests of the class see only the
+  setup's carried declaration lines.
 - A failed or throwing test keeps the lines it ran. A method that never ran
   (a compile error, a skipped case, or a method a failed `@TestSetup` kept
   from running) has no per-test rows and adds no lines.
 - Class and run coverage is the union of distinct lines. A line two tests run
   is one covered line.
-- Every trigger in the project is listed in the run, and in every test's
-  rows, with zero lines covered when no test fired it. It counts toward
-  `testRunCoverage`.
+- With `--synchronous`, every trigger in the project is listed in the run and
+  in every test's rows, with zero lines covered when no test fired it. In the
+  default (asynchronous) report a trigger is listed only once a test reached it.
 - Async work a `@TestSetup` method enqueues (Queueable, `@future`, batch)
   runs at the end of setup, the way `Test.stopTest` runs it. Its data is in
-  every test method's org and its lines count. A job that throws fails setup,
-  and every test method fails with the job's exception.
+  every test method's org, its lines count, and the test method's
+  `Limits.getQueueableJobs()`, `getFutureCalls()` and `getAsyncCalls()` start
+  from the setup's counts. A job that throws, or a Queueable that chains
+  another (`System.AsyncException: Maximum stack depth has been reached.`),
+  fails setup: every test method fails with that exception and the class has
+  no per-test rows. A setup's `@future` call leaves no `AsyncApexJob` row for
+  the tests; Queueable and batch rows stay. A setup that calls
+  `Test.startTest`/`stopTest` itself runs its work there and passes zero
+  counts to the tests.
 
 Per-test rows carry declaration lines, as Salesforce stores them. Within a
-test class, in method name order (ignoring case):
+test class, in method name order by code point (`Alpha`, `Gamma`, `Zeta`,
+`apple`, `beta`, `delta`):
 
 - a test has a row for every class an earlier test reached, even when it did
   not reach that class itself;
@@ -97,9 +112,11 @@ test class, in method name order (ignoring case):
   declaration lines that earlier tests covered. Statement lines are never
   carried.
 
-So a test's row can show a method name line covered that the test never
-called. The run totals are unaffected: they are the union of lines, and every
-carried line was covered by an earlier test.
+Carry stays inside one test class, also when one asynchronous run holds
+several test classes, with parallel testing on or off. A rerun of one method
+starts a new carry. So a test's row can show a method name line covered that
+the test never called. The run totals are unaffected: they are the union of
+lines, and every carried line was covered by an earlier test.
 
 ## Percentages
 
@@ -228,18 +245,10 @@ These shapes are not captured yet, or Glade does not match them:
   **CV7** package selection and package denominators, and **CV9** unit versus
   integration-test coverage are not captured. Managed package classes are
   excluded from every figure.
-- **Async work in `@TestSetup`, beyond one Queueable.** The Queueable row is
-  captured. `@future`, batch, chained jobs, a throwing job, limits after setup
-  and a setup that calls `Test.stopTest` itself follow the `Test.stopTest`
-  rules and are not captured yet. A chained job stays queued, as it does at
-  `stopTest`.
-- **Carry-over edges.** The rule is captured for one test class run alone, with
-  method names that start in lower case. Mixed-case name order, carry across
-  two test classes in one asynchronous run, `@TestSetup` lines, and a rerun of
-  a subset are not captured yet.
-- **One run listing.** One native two-method run listed no uncalled trigger;
-  every other captured run lists them. Glade always lists every trigger. A
-  fresh-org recapture of that run is pending.
+- **Synchronous or asynchronous.** Salesforce picks the shape from the API
+  the run used; Glade picks it from `--synchronous`. Other differences
+  between the two APIs (such as the setup rows `testsRan` counts) are not
+  modeled.
 - **Empty classes.** An untouched class with no executable lines is not
   listed; the Tooling `ApexCodeCoverageAggregate` lists every deployed class
   with a row, including 0/0, and none for interfaces. A class with no lines
@@ -257,7 +266,8 @@ These shapes are not captured yet, or Glade does not match them:
 
 The conformance tests are `internal/gladecli/test_coverage_native_conformance_test.go`
 (the step-by-step replay, the 14-method carry-over run in
-`test_runner_coverage_suite`, fresh-org run summaries and daemon
+`test_runner_coverage_suite`, the carry, setup and trigger-listing rows in
+`test_runner_coverage_carry`, fresh-org run summaries and daemon
 equivalence) and
 `internal/apexcov/native_conformance_test.go` (line maps, unions, percentages
 and the nine deployment gates).

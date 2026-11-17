@@ -206,6 +206,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		String("services", "").
 		String("junit", "").
 		Bool("code-coverage", "").
+		Bool("synchronous", "").
 		String("coverage-gate", "").
 		String("limit-mode", "").
 		String("limit-profile", "").
@@ -692,6 +693,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		PerfCounters:          perfEnabled,
 		CodeCoverage:          codeCoverage,
 		CoverageGate:          coverageGate,
+		CoverageSynchronous:   parsed.Bool("synchronous"),
 	}
 	durationHistory, err := loadCLIDurationHistory(durationHistoryPath)
 	if err != nil {

@@ -92,11 +92,9 @@ var coverageNativeCaptures = []coverageNativeCapture{
 
 // coverageNativeKnownGaps lists native rows Glade does not reproduce, with
 // the reason. docs/CODE_COVERAGE.md lists the same gaps.
-var coverageNativeKnownGaps = map[string]string{
-	// Native listed only CvUnion for this two-method run, without the
-	// uncalled trigger every other run lists; no captured fact explains it.
-	"1:cv2-ab/run": "native run omitted the uncalled trigger once",
-}
+// cv2-ab, once listed here, is an asynchronous run: those list no uncalled
+// trigger (test_runner_coverage_carry f7 rows).
+var coverageNativeKnownGaps = map[string]string{}
 
 func (c coverageNativeCapture) stepClass(tag string) (string, bool) {
 	if class, ok := c.steps[tag]; ok {
@@ -262,6 +260,7 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 					}
 					var runRow *coverageNativeRow
 					var methods []string
+					async := false
 					for i := range rows {
 						r := rows[i]
 						if r.api != api || r.subject != tag {
@@ -272,6 +271,11 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 							runRow = &rows[i]
 						case "test":
 							methods = append(methods, strings.SplitN(r.detail, "|", 2)[0])
+							// An asynchronous run's rows read None for an empty
+							// message; a synchronous run's read "".
+							if strings.HasSuffix(r.detail, "|None|None") {
+								async = true
+							}
 						}
 					}
 					if runRow == nil || len(methods) == 0 {
@@ -291,6 +295,9 @@ func TestCodeCoverageNativeConformance(t *testing.T) {
 					// per-test rows carry declaration lines between the run's
 					// tests, as the native rows of that step do.
 					args := []string{"--code-coverage", "--class", testClass}
+					if !async {
+						args = append(args, "--synchronous")
+					}
 					if len(methods) == 1 {
 						args = append(args, "--method", methods[0])
 					} else {
@@ -441,7 +448,7 @@ func TestCodeCoverageRunSummaryNative(t *testing.T) {
 					t.Fatalf("no native run row %s", tc.tag)
 				}
 				m := coverageRunDetail.FindStringSubmatch(native.detail)
-				run, _, exit := runCoverageCLI(t, root, append([]string{"--code-coverage"}, tc.args...)...)
+				run, _, exit := runCoverageCLI(t, root, append([]string{"--code-coverage", "--synchronous"}, tc.args...)...)
 				if exit != 0 || run.Coverage == nil {
 					t.Fatalf("exit=%d coverage=%v", exit, run.Coverage)
 				}
@@ -599,7 +606,7 @@ func TestCodeCoverageSuiteNative(t *testing.T) {
 				writeDaemonEquivalenceFile(t, path, string(source))
 				writeDaemonEquivalenceFile(t, path+"-meta.xml", meta)
 			}
-			run, _, _ := runCoverageCLI(t, root, "--code-coverage", "--class", "CovSuiteTest")
+			run, _, _ := runCoverageCLI(t, root, "--code-coverage", "--synchronous", "--class", "CovSuiteTest")
 			if run.Coverage == nil {
 				t.Fatal("no coverage")
 			}
@@ -688,5 +695,157 @@ func TestCoverageGateRunLocalTestsRejectsPartialSelections(t *testing.T) {
 	run, _, _ := runCoverageCLI(t, root, "--coverage-gate", "RunSpecifiedTests", "--class", "CvUnionTest")
 	if run.Coverage == nil || run.Coverage.Gate == nil || run.Coverage.Gate.TestLevel != "RunSpecifiedTests" {
 		t.Fatalf("RunSpecifiedTests with a selector: %+v", run.Coverage)
+	}
+}
+
+const coverageCarryDir = "../apextest/testdata/native_conformance/test_runner_coverage_carry"
+
+func writeCoverageCarryProject(t *testing.T, api, set string) string {
+	t.Helper()
+	root := t.TempDir()
+	writeDaemonEquivalenceFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"sourceApiVersion":%q,"packageDirectories":[{"path":"force-app","default":true}]}`, api))
+	entries, err := os.ReadDir(filepath.Join(coverageCarryDir, "fixtures", set))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		source, err := os.ReadFile(filepath.Join(coverageCarryDir, "fixtures", set, e.Name()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		dir, meta := "classes", "<ApexClass><apiVersion>"+api+"</apiVersion><status>Active</status></ApexClass>"
+		if strings.HasSuffix(e.Name(), ".trigger") {
+			dir, meta = "triggers", "<ApexTrigger><apiVersion>"+api+"</apiVersion><status>Active</status></ApexTrigger>"
+		}
+		path := filepath.Join(root, "force-app/main/default", dir, e.Name())
+		writeDaemonEquivalenceFile(t, path, string(source))
+		writeDaemonEquivalenceFile(t, path+"-meta.xml", meta)
+	}
+	return root
+}
+
+// NATIVE per-test carry order and scope, @TestSetup coverage, async work
+// queued in @TestSetup, and trigger rows in synchronous and asynchronous runs,
+// test_runner_coverage_carry/org.tsv per and test rows, API 62.0 and 67.0,
+// repeats r1 and r2. Each native step is one glade run of the same selection.
+func TestCodeCoverageCarryNative(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runs glade test over the native coverage fixtures")
+	}
+	f, err := os.Open(filepath.Join(coverageCarryDir, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	type row struct {
+		line                                                     int
+		api, repeat, step, kind, class, method, component, cover string
+		detail                                                   string
+	}
+	var rows []row
+	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, 1<<20), 1<<20)
+	n := 0
+	for scanner.Scan() {
+		n++
+		if n == 1 {
+			continue
+		}
+		c := strings.Split(scanner.Text(), "\t")
+		if len(c) != 9 {
+			t.Fatalf("org.tsv:%d has %d columns", n, len(c))
+		}
+		rows = append(rows, row{n, c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8]})
+	}
+	setupClasses := []string{"SetupQTest", "SetupTwoQTest", "SetupChainTest", "SetupFutureTest", "SetupBatchTest", "SetupThrowTest", "SetupStopTest", "SetupNoneTest"}
+	steps := []struct {
+		name, set string
+		args      []string
+	}{
+		{"mix-full", "main", []string{"--class", "CarryMixTest", "--synchronous"}},
+		{"mix-gamma", "main", []string{"--class", "CarryMixTest", "--method", "Gamma", "--synchronous"}},
+		{"mix-full-async", "main", []string{"--class", "CarryMixTest"}},
+		{"setup", "main", []string{"--class", "CarrySetupTest", "--synchronous"}},
+		{"x12-par-on", "main", []string{"--filter", "CarryX1Test,CarryX2Test"}},
+		{"x12-par-off", "main", []string{"--filter", "CarryX1Test,CarryX2Test"}},
+		{"setup-all-async", "main", []string{"--filter", strings.Join(setupClasses, ",")}},
+		{"f7a-ab-async", "f7", []string{"--filter", "CvUnionTest.aLeft,CvUnionTest.bRight"}},
+		{"f7a-ab-sync", "f7", []string{"--filter", "CvUnionTest.aLeft,CvUnionTest.bRight", "--synchronous"}},
+		{"f7b-a-sync", "f7", []string{"--class", "CvUnionTest", "--method", "aLeft", "--synchronous"}},
+		{"f7b-ab-async", "f7", []string{"--filter", "CvUnionTest.aLeft,CvUnionTest.bRight"}},
+	}
+	for _, class := range setupClasses {
+		steps = append(steps, struct {
+			name, set string
+			args      []string
+		}{class, "main", []string{"--class", class, "--synchronous"}})
+	}
+	facts := regexp.MustCompile(`FACTS .*`)
+	for _, api := range []string{"62.0", "67.0"} {
+		roots := map[string]string{"main": writeCoverageCarryProject(t, api, "main"), "f7": writeCoverageCarryProject(t, api, "f7")}
+		for _, step := range steps {
+			t.Run(api+"/"+step.name, func(t *testing.T) {
+				run, _, _ := runCoverageCLI(t, roots[step.set], append([]string{"--code-coverage"}, step.args...)...)
+				got := map[string]string{}
+				for _, suite := range run.Suites {
+					for _, c := range suite.Cases {
+						for _, r := range c.Coverage {
+							got[c.ClassName+"."+c.MethodName+"/"+r.Name] = coverageLinesText(r.CoveredLines)
+						}
+						status := "Pass"
+						message := ""
+						if c.Problem != nil {
+							status = "Fail"
+							message = c.Problem.Type + ": " + c.Problem.ResultMessage()
+						}
+						got[c.ClassName+"."+c.MethodName+"#test"] = status + "|" + message
+					}
+				}
+				checked := 0
+				for _, repeat := range []string{"r1", "r2"} {
+					wantRows := map[string]bool{}
+					for _, r := range rows {
+						if r.api != api || r.repeat != repeat || r.step != step.name {
+							continue
+						}
+						switch r.kind {
+						case "per":
+							key := r.class + "." + r.method + "/" + r.component
+							wantRows[key] = true
+							if have, ok := got[key]; !ok || have != r.cover {
+								t.Errorf("org.tsv:%d %s covered got %q (listed %v) want %q", r.line, key, have, ok, r.cover)
+							}
+						case "test":
+							key := r.class + "." + r.method + "#test"
+							want, have := r.detail, got[key]
+							if m := facts.FindString(want); m != "" {
+								want, have = m, facts.FindString(have)
+							}
+							if !strings.HasPrefix(want, "Pass|") && strings.Contains(want, "|") {
+								want = strings.SplitN(want, "|", 2)[1]
+								have = strings.TrimPrefix(strings.TrimPrefix(have, "Fail|"), "Pass|")
+							}
+							if have != want && !strings.HasSuffix(have, want) {
+								t.Errorf("org.tsv:%d %s outcome got %q want %q", r.line, key, have, want)
+							}
+						default:
+							continue
+						}
+						checked++
+					}
+					if len(wantRows) == 0 {
+						continue
+					}
+					for key := range got {
+						if strings.Contains(key, "/") && !wantRows[key] {
+							t.Errorf("%s %s: glade row %s has no native row", step.name, repeat, key)
+						}
+					}
+				}
+				if checked == 0 && !(api == "62.0" && step.name == "f7a-ab-async") {
+					t.Fatalf("no native rows checked for %s", step.name)
+				}
+			})
+		}
 	}
 }

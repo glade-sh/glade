@@ -153,16 +153,36 @@ func coverageProject(index typesys.Index, sources *sourceCache) *apexcov.Project
 
 // attach resolves the session's events and writes per-test, per-component,
 // run and org-wide coverage, and the requested deployment gate, into run.
-func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, gate string) {
+func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, gate string, synchronous bool) {
 	if s == nil || project == nil {
 		return
 	}
 	runCovered := map[*apexcov.Component]map[int]struct{}{}
 	listed := map[*apexcov.Component]bool{}
-	for _, c := range project.Components {
-		if c.Kind == apexcov.KindTrigger {
-			// Every trigger appears in every test's coverage, called or not.
-			listed[c] = true
+	if synchronous {
+		// A synchronous run lists every trigger, called or not; an
+		// asynchronous run lists only what its tests reached (native cv2-ab
+		// and cov-r2 async rows).
+		for _, c := range project.Components {
+			if c.Kind == apexcov.KindTrigger {
+				listed[c] = true
+			}
+		}
+	}
+	// @TestSetup coverage belongs to the first test of its class that ran,
+	// in method name order; later tests see only its carried declaration
+	// lines (native CarrySetupTest and Setup*Test rows).
+	setupOwner := map[string]*testreport.Case{}
+	for si := range run.Suites {
+		for ci := range run.Suites[si].Cases {
+			c := &run.Suites[si].Cases[ci]
+			if !coverageCaseRan(*c) {
+				continue
+			}
+			key := coverageSetupKey(c.ClassName, c.SelectedSourceFile)
+			if owner := setupOwner[key]; owner == nil || c.MethodName < owner.MethodName {
+				setupOwner[key] = c
+			}
 		}
 	}
 	for si := range run.Suites {
@@ -178,7 +198,9 @@ func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, 
 			}
 			recorder := apexcov.NewRecorder()
 			s.mu.Lock()
-			recorder.Merge(s.setups[coverageSetupKey(testCase.ClassName, testCase.SelectedSourceFile)])
+			if setupKey := coverageSetupKey(testCase.ClassName, testCase.SelectedSourceFile); setupOwner[setupKey] == testCase {
+				recorder.Merge(s.setups[setupKey])
+			}
 			recorder.Merge(s.cases[coverageCaseKey(testCase.ClassName, testCase.MethodName, testCase.SelectedSourceFile)])
 			s.mu.Unlock()
 			resolved := project.Resolve(recorder)
@@ -253,6 +275,7 @@ func (s *coverageSession) attach(run *testreport.Run, project *apexcov.Project, 
 	if gate != "" {
 		out.Gate = coverageGate(gate, project, counts, orgParts)
 	}
+	out.Synchronous = synchronous
 	run.Coverage = out
 }
 

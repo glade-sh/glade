@@ -126,7 +126,7 @@ func TestNativePerTestRowsCarriesDeclarationLines(t *testing.T) {
 			{ClassName: "T", MethodName: "Alpha", Coverage: []TestCoverage{{Name: "C", Type: "class", CoveredLines: []int{2, 3}}}},
 			{ClassName: "T", MethodName: "gamma"},
 		}}},
-		Coverage: &Coverage{Components: []ComponentCoverage{
+		Coverage: &Coverage{Synchronous: true, Components: []ComponentCoverage{
 			{Name: "C", Type: "class", TotalLines: 4, CoveredLines: []int{2, 3, 5, 6}, Declaration: []int{2, 5}},
 			{Name: "Trg", Type: "trigger", TotalLines: 2, UncoveredLines: []int{2, 3}},
 		}},
@@ -159,7 +159,7 @@ func TestNativePerTestRowsSkipsCasesThatNeverRan(t *testing.T) {
 			{ClassName: "T", MethodName: "beta", Coverage: []TestCoverage{{Name: "C", Type: "class", CoveredLines: []int{5}}}},
 			{ClassName: "T", MethodName: "gamma", Status: StatusFail, CoverageNotRun: true},
 		}}},
-		Coverage: &Coverage{Components: []ComponentCoverage{
+		Coverage: &Coverage{Synchronous: true, Components: []ComponentCoverage{
 			{Name: "C", Type: "class", TotalLines: 2, CoveredLines: []int{5}, UncoveredLines: []int{2}, Declaration: []int{2, 5}},
 			{Name: "Trg", Type: "trigger", TotalLines: 1, UncoveredLines: []int{2}},
 		}},
@@ -188,7 +188,7 @@ func TestNativePerTestRowsMatchesComponentsByFile(t *testing.T) {
 			{ClassName: "T", MethodName: "a", SelectedSourceFile: "1/T.cls", Coverage: []TestCoverage{{Name: "C", Type: "class", File: "1/C.cls", CoveredLines: []int{2}}}},
 			{ClassName: "T", MethodName: "b", SelectedSourceFile: "2/T.cls", Coverage: []TestCoverage{{Name: "C", Type: "class", File: "2/C.cls", CoveredLines: []int{3}}}},
 		}}},
-		Coverage: &Coverage{Components: []ComponentCoverage{
+		Coverage: &Coverage{Synchronous: true, Components: []ComponentCoverage{
 			{Name: "C", Type: "class", File: "1/C.cls", TotalLines: 2, CoveredLines: []int{2}, UncoveredLines: []int{3}, Declaration: []int{2}},
 			{Name: "C", Type: "class", File: "2/C.cls", TotalLines: 2, CoveredLines: []int{3}, UncoveredLines: []int{2}, Declaration: []int{3}},
 		}},
@@ -200,5 +200,25 @@ func TestNativePerTestRowsMatchesComponentsByFile(t *testing.T) {
 	}
 	if rows["a"] != "[{C class 1/C.cls 1 1 [2]}]" || rows["b"] != "[{C class 2/C.cls 1 1 [3]}]" {
 		t.Fatalf("rows %v", rows)
+	}
+}
+
+// NATIVE an asynchronous run lists no uncalled trigger; a trigger a test
+// reached keeps a row in later tests (test_runner_coverage_carry
+// setup-all-async and f7 rows).
+func TestNativePerTestRowsAsynchronousRunListsReachedTriggersOnly(t *testing.T) {
+	run := Run{
+		Suites: []Suite{{Name: "T", Cases: []Case{
+			{ClassName: "T", MethodName: "a", Coverage: []TestCoverage{{Name: "Fired", Type: "trigger", CoveredLines: []int{2}}}},
+			{ClassName: "T", MethodName: "b"},
+		}}},
+		Coverage: &Coverage{Components: []ComponentCoverage{
+			{Name: "Fired", Type: "trigger", TotalLines: 2, CoveredLines: []int{2}, UncoveredLines: []int{3}},
+			{Name: "Idle", Type: "trigger", TotalLines: 1, UncoveredLines: []int{2}},
+		}},
+	}
+	got := NativePerTestRows(run)
+	if a, b := fmt.Sprint(got.Suites[0].Cases[0].Coverage), fmt.Sprint(got.Suites[0].Cases[1].Coverage); a != "[{Fired trigger  1 1 [2]}]" || b != "[{Fired trigger  0 2 []}]" {
+		t.Fatalf("rows a=%s b=%s", a, b)
 	}
 }

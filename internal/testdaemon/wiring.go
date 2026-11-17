@@ -58,6 +58,7 @@ func runRequestV1FromOptions(
 		ReturnClassShards:     returnClassShards,
 		CodeCoverage:          options.CodeCoverage,
 		CoverageGate:          options.CoverageGate,
+		CoverageSynchronous:   options.CoverageSynchronous,
 	}
 }
 
@@ -83,6 +84,7 @@ func apexOptionsFromRunRequestV1(request RunRequestV1) apextest.Options {
 		PerfCounters:          request.PerfCounters,
 		CodeCoverage:          request.CodeCoverage,
 		CoverageGate:          request.CoverageGate,
+		CoverageSynchronous:   request.CoverageSynchronous,
 	}
 }
 
