@@ -47,7 +47,7 @@ func (vm *VM) displayStringValue(value Value, result *Result) (Value, error) {
 		text, err := vm.displayList(value.List, result)
 		return String(text), err
 	case ValueSet:
-		text, err := vm.displaySet(value.Set, result)
+		text, err := vm.displaySet(describeKeySetTextOrder(value), result)
 		return String(text), err
 	case ValueMap:
 		// Direct ordinary class values use native

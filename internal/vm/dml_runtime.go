@@ -4026,6 +4026,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		// The hold spans both groups: each group's triggers see the roll-up
 		// with the earlier group landed.
 		engine.BeginSummaryHold(records)
+		engine.MarkSummaryHoldUpsert()
 		defer engine.ReleaseSummaryHold()
 	}
 	var engineResults []dml.Result

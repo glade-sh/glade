@@ -80,6 +80,8 @@ type SummaryHold struct {
 	Live map[string]Value
 	// Dropped keys read the live value; enclosing holds do not answer for them.
 	Dropped map[string]bool
+	// Upsert marks a hold that spans both groups of an upsert.
+	Upsert bool
 }
 
 func (h *SummaryHold) Drop(key string) {

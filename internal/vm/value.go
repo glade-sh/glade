@@ -1789,7 +1789,7 @@ func writeApexCollectionText(w *textWriter, value Value, limit int) {
 		opening, closing := "(", ")"
 		var idSet bool
 		if value.Kind == ValueSet {
-			items = value.Set
+			items = describeKeySetTextOrder(value)
 			opening, closing = "{", "}"
 			elementType, typed := collectionElementType(value.Type)
 			idSet = typed && strings.EqualFold(canonicalApexScalarType(elementType), "Id")
@@ -1942,4 +1942,19 @@ func sObjectProjectedMapKey(v Value, seen map[uint64]bool) string {
 		b.WriteString(parts[name])
 	}
 	return b.String()
+}
+
+// describeKeySetTextOrder lists a field map's key set for text. Iteration and
+// List conversion follow the platform field order (default_order_rest d3), but
+// the set's text is alphabetical (record_type_shape list_forms keySetDebug and
+// keySetConcat, both APIs): the two row sets differ in how the set is read.
+const describeKeySetRuntime = "sobject-field-map:keyset"
+
+func describeKeySetTextOrder(set Value) []Value {
+	if set.Runtime != describeKeySetRuntime {
+		return set.Set
+	}
+	items := append([]Value(nil), set.Set...)
+	sort.SliceStable(items, func(i, j int) bool { return items[i].Text < items[j].Text })
+	return items
 }

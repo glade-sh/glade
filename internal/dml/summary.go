@@ -267,7 +267,7 @@ func (e *Engine) carrySummaryDeltaOut() {
 				// MIN and MAX read the live value after a nested statement
 				// (review_round3 n_sib*, n_del): the hold forgets the key and
 				// stops outer holds from answering for it.
-				if ok && had && (op == "max" || op == "min") && summaryValuesEqual(before, now[id]) {
+				if ok && had && outer.Upsert && (op == "max" || op == "min") && summaryValuesEqual(before, now[id]) {
 					// This statement left the extreme alone: the enclosing
 					// statement's held value stands (review_round6 m_nested).
 					break
@@ -1166,4 +1166,11 @@ func (e *Engine) HeldSummaryDiffersFromLive() bool {
 		}
 	}
 	return false
+}
+
+// MarkSummaryHoldUpsert marks the hold as spanning an upsert's groups.
+func (e *Engine) MarkSummaryHoldUpsert() {
+	if e != nil && e.summaryHold != nil {
+		e.summaryHold.Upsert = true
+	}
 }
