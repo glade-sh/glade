@@ -92,9 +92,14 @@ PageReference prints System.PageReference[url]. JSON.deserialize of a Date reads
 keeps it as the Julian label of the same instant, so its JSON text round-trips.
 Typed flow merges (FlowTyped, cap5): a String assignment that merges a Number variable or formula renders
 the declared scale (2.50, 7.00), a Date renders as January 2, 2026, a Boolean as true, and a String as is,
-alone or inside text; native rejects such a merge into a Number, Boolean or Date variable at deploy time
-(flow-target-reject raw; an automation test pins the message). Glade matches all of that. Uncaptured, so on
-the earlier behavior: Currency, DateTime and other resource types, and a Number without a declared scale.
+alone or inside text. Native rejects at deploy time (two repeats identical, parallel/batch2-20261117/flow-target-reject
+r1 and r2, raw/deploy-fails-1.txt, copied to internal/automation/testdata/flow_target_reject/deploy-fails.tsv; no
+org.tsv rows, the deploy fails) exactly four shapes: an assignment whose string value is one merge of a Number, Boolean
+or Date variable into a variable of the same type (Ft_num_target, Ft_bool_target, Ft_date_target) and of a Number
+formula into a Number variable (Ft_num_target_text). Every other merge into a non-String variable (other type
+pairings, Boolean or Date formulas, String sources, merges inside text) is uncaptured and keeps the text it had before
+typed merges, pinned in internal/automation/flow_merge_target_test.go. Also uncaptured, so on the earlier
+behavior: Currency, DateTime and other resource types, and a Number without a declared scale.
 The flow change is gated to autolaunched flows and a String target.
 dth_r3_fmtjulian (cap7): format() on Julian dates. The weekday, day of year, week of year, week of month,
 day of week in month and year tokens, and formatLong, follow the hybrid calendar (1500-02-29 is a Saturday,

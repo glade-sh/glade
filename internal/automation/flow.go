@@ -4786,9 +4786,10 @@ func capturedCaseAfterSave(rules []storage.FlowRule, def storage.ObjectDefinitio
 // original text. Native FlowShapes and FlowTyped rows (API 62.0 and 67.0). A resource of any other type
 // (Currency, DateTime ...), a Number without a declared scale, a merge of
 // globals ($Record, $Permission ...) and unknown names keep their earlier
-// handling. The target of the assignment must be a String variable: native
-// rejects the exact merge into any other variable at deploy time
-// (flow-target-reject raw), which the problem string reports.
+// handling. Native rejects, at deploy time, only the exact merges captured in
+// flow-target-reject (a Number, Boolean or Date variable into a variable of the
+// same type, a Number formula into a Number variable), which the problem string
+// reports; every other merge into a non-String variable keeps its earlier text.
 func flowMergeFormulaStringAssignments(raw *flowXML) {
 	type resource struct {
 		formula    bool
@@ -4844,7 +4845,14 @@ func flowMergeFormulaStringAssignments(raw *flowXML) {
 			}
 			target := strings.ToLower(strings.TrimSpace(item.AssignToReference))
 			if dataType, declared := targets[target]; declared && dataType != "string" {
-				if len(matches) == 1 && matches[0][0] == 0 && matches[0][1] == len(text) && raw.mergeProblem == "" {
+				// Native rejects only the shapes captured in flow-target-reject: an exact
+				// merge of a Number, Boolean or Date variable into a variable of the same
+				// type, and of a Number formula into a Number variable. Every other shape
+				// keeps the text it had before typed merges.
+				exact := len(matches) == 1 && matches[0][0] == 0 && matches[0][1] == len(text)
+				source := known[strings.ToLower(text[matches[0][2]:matches[0][3]])]
+				covered := exact && source.dataType == dataType && (!source.formula || dataType == "number") && (dataType == "number" || dataType == "boolean" || dataType == "date")
+				if covered && raw.mergeProblem == "" {
 					raw.mergeProblem = fmt.Sprintf("field integrity exception: unknown (In an Assignment element, \u201c%s\u201d isn\u2019t a valid value when the \u201c%s\u201d variable is set with the Equals operator.)", text, strings.TrimSpace(item.AssignToReference))
 				}
 				continue
