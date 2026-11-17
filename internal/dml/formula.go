@@ -1753,7 +1753,7 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if err != nil || !ok || scale < 0 {
 			return formulaValue{}, false
 		}
-		return formulaValue{kind: formulaString, text: number.FloatString(scale)}, true
+		return formulaValue{kind: formulaString, text: flowNumberText(number.FloatString(scale), p.flowMergeLocale())}, true
 	case "GLADEDATETEXT":
 		// A Date merged into flow text reads as the en_US long date.
 		if len(args) != 1 {
@@ -1763,7 +1763,7 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if err != nil {
 			return formulaValue{}, false
 		}
-		return formulaValue{kind: formulaString, text: value.Format("January 2, 2006")}, true
+		return formulaValue{kind: formulaString, text: flowDateText(value, p.flowMergeLocale())}, true
 	case "TEXT":
 		if len(args) != 1 {
 			return formulaValue{}, false

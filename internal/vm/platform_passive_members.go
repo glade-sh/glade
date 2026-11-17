@@ -2697,7 +2697,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				tzID = canonical
 				offset = parsedOffset
 				zoneLabel = label
-				t = local
+				t = hybridLocal(rawInstant, local)
 			} else {
 				t = t.UTC()
 			}
@@ -2898,6 +2898,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !ok {
 				return Null, receiver, false, true, unsupportedCallError("Datetime.formatLong timezone " + vm.currentUserTimeZoneID())
 			}
+			local = hybridLocal(rawInstant, local)
 			if zone, modeled := supportedNamedTimeZone(vm.currentUserTimeZoneID()); modeled && zone.beforeFirstTransition(rawInstant) {
 				// Before the zone's first recorded transition the long form names
 				// the offset (native CalLocal2: 1500 in Los Angeles is GMT-8).

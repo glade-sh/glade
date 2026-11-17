@@ -1695,8 +1695,11 @@ platformStaticCall:
 		if zoneID := vm.currentUserTimeZoneID(); value.Year() < 1950 {
 			// Before the zone's first recorded transition the native zone keeps
 			// its standard offset (parse of 1/1/1700 in Los Angeles is -08:00),
-			// so rebuild the parsed civil time through the zone builder.
-			if _, modeled := supportedNamedTimeZone(zoneID); modeled {
+			// so rebuild the parsed civil time through the zone builder. Only a
+			// zone that reads its history (Los Angeles, Kolkata, Adelaide) and
+			// only before that first transition: a zone without history, such as
+			// New York, parses 3/20/1920 as it always did.
+			if zone, modeled := supportedNamedTimeZone(zoneID); modeled && zone.historicBeforeYear > 0 && zone.beforeFirstTransition(value) {
 				if location, err := time.LoadLocation(zoneID); err == nil {
 					civil := value.In(location)
 					if adjusted, err := datetimeFromCapturedLocalParts(civil.Year(), int(civil.Month()), civil.Day(), civil.Hour(), civil.Minute(), civil.Second(), civil.Nanosecond()/int(time.Millisecond), zoneID); err == nil {

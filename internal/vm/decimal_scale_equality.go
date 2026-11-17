@@ -40,39 +40,7 @@ func valueScaleDiffers(left, right Value) bool {
 			}
 		}
 	case ValueSet:
-		// O(n): bucket the right side's Decimals by value and keep their scales; a
-		// Set without a Decimal (Integer, String, Id ...) answers at once.
-		var scales map[float64]map[int]bool
-		for _, r := range right.Set {
-			if r.Kind == ValueDecimal && !isFloatBackedDecimal(r) {
-				if scales == nil {
-					scales = make(map[float64]map[int]bool)
-				}
-				if scales[r.Decimal] == nil {
-					scales[r.Decimal] = make(map[int]bool)
-				}
-				// An empty Text matches any scale, as decimalScalesDiffer treats it.
-				if r.Text == "" {
-					scales[r.Decimal][-1] = true
-				} else {
-					scales[r.Decimal][decimalTextScale(r.Text)] = true
-				}
-			}
-		}
-		if scales == nil {
-			return false
-		}
-		for _, l := range left.Set {
-			if l.Kind != ValueDecimal || isFloatBackedDecimal(l) {
-				continue
-			}
-			if l.Text == "" {
-				continue
-			}
-			if bucket, ok := scales[l.Decimal]; ok && !bucket[-1] && !bucket[decimalTextScale(l.Text)] {
-				return true
-			}
-		}
+		return setDecimalScalesDiffer(left.Set, right.Set)
 	case ValueMap:
 		for key, l := range left.Map {
 			if r, ok := right.Map[key]; ok && valueScaleDiffers(l, r) {
@@ -92,6 +60,46 @@ func valueScaleDiffers(left, right Value) bool {
 			if r, ok := right.Fields[key]; ok && valueScaleDiffers(l, r) {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// setDecimalScalesDiffer is the Set case of valueScaleDiffers: some left text
+// Decimal has right text Decimals of the same value and none of the same
+// scale. The right Decimals are grouped by value (map keys compare as ==, so
+// +0 and -0 share a group and NaN matches nothing, as in the pairwise loop),
+// and a Set without text Decimals on the right returns at once.
+func setDecimalScalesDiffer(left, right []Value) bool {
+	var byValue map[float64][]Value
+	for _, r := range right {
+		if r.Kind == ValueDecimal && !isFloatBackedDecimal(r) {
+			if byValue == nil {
+				byValue = make(map[float64][]Value)
+			}
+			byValue[r.Decimal] = append(byValue[r.Decimal], r)
+		}
+	}
+	if byValue == nil {
+		return false
+	}
+	for _, l := range left {
+		if l.Kind != ValueDecimal || isFloatBackedDecimal(l) {
+			continue
+		}
+		candidates := byValue[l.Decimal]
+		if len(candidates) == 0 {
+			continue
+		}
+		matched := false
+		for _, r := range candidates {
+			if !decimalScalesDiffer(l, r) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return true
 		}
 	}
 	return false

@@ -238,3 +238,5 @@ dth_r3_callocal2	istest	CalLocal2.t
 dth_r3_calparse	istest	CalParse.t
 dth_r3_flowtyped	istest	FlowTyped.t
 dth_r3_fmtjulian	istest	FmtJulian.t
+dth_r4_flowlocale	istest	FlowLocale.t
+dth_r4_flowlocale2	istest	FlowLocale2.t

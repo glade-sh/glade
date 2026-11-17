@@ -374,3 +374,16 @@ func hybridPatternLiterals(pattern string, localDays int64, locale string) strin
 	}
 	return out.String()
 }
+
+// hybridLocal returns the civil wall clock of a zone-local time in the hybrid
+// calendar: the shift is decided by the local day, not the UTC day, so an
+// instant just after the cutover that is still before it in a negative-offset
+// zone reads the Julian date (1582-10-15 04:00Z in Los Angeles is 1582-10-04).
+func hybridLocal(raw, local time.Time) time.Time {
+	if !raw.Before(hybridYearEnd.Add(48 * time.Hour)) {
+		return local
+	}
+	_, offset := local.Zone()
+	wall := julianReadInstant(raw.UTC().Add(time.Duration(offset) * time.Second))
+	return time.Date(wall.Year(), wall.Month(), wall.Day(), wall.Hour(), wall.Minute(), wall.Second(), wall.Nanosecond(), local.Location())
+}

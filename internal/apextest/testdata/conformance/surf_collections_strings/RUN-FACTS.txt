@@ -100,3 +100,11 @@ dth_r3_fmtjulian (cap7): format() on Julian dates. The weekday, day of year, wee
 day of week in month and year tokens, and formatLong, follow the hybrid calendar (1500-02-29 is a Saturday,
 day 60, week 9). The weekday-name and weekday-number tokens read English only; other locales keep the label
 shifted reading for those two tokens.
+Flow merges by user locale (FlowLocale and FlowLocale2, two repeats, API 62.0 and 67.0 identical): a Number
+variable or formula merged into flow text takes the user's group and decimal marks (de_DE 1.234.567,891,
+fr_FR 1 234 567,891 with U+202F, en_GB, ja_JP and en_US 1,234,567.891, es_ES and pt_BR 1.234.567,891; the
+declared scale stays, negatives lead with the minus). A Date keeps the English month name and takes the
+locale order (de_DE 2. January 2026, fr_FR and en_GB 2 January 2026, es_ES and pt_BR 2 de January de 2026,
+ja_JP 2026年1月2日). The classes ran as FlowLocale in the capture; the second set ships as FlowLocale2.
+Unobserved: other locales, Number text without grouping digits for es_ES four-digit values (the captured
+-1.234,50 groups), and Time or Datetime variables.

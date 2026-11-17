@@ -18,6 +18,16 @@ import (
 // 2008, a Decimal list ==, an insert past a Percent or Number integer limit,
 // and an insert of a DateTime outside 1700-01-01..4000-12-31. Each neighbor
 // below stays on the base side of its gate.
+// neighborZones names the cases that run in a zone other than Los Angeles.
+var neighborZones = map[string]string{"a zone without history parses 1920 as before": "America/New_York"}
+
+func zoneOf(zone string) string {
+	if zone == "" {
+		return "America/Los_Angeles"
+	}
+	return zone
+}
+
 func TestHashParallelNeighborsKeepBase(t *testing.T) {
 	family := filepath.Join("testdata", "conformance", "surf_collections_strings", "project")
 	root := t.TempDir()
@@ -85,6 +95,14 @@ System.debug(a.contains(new NbW(1.50)));
 System.debug(a.indexOf(new NbW(1.50)));
 System.debug(new Set<NbW>{new NbW(1.5)} == new Set<NbW>{new NbW(1.50)});`,
 			"true\ntrue\ntrue\n0\ntrue"},
+		{"a zone without history parses 1920 as before", `
+System.debug(Datetime.parse('3/20/1920, 12:00 PM').getTime());`,
+			"-1571036400000"},
+		{"the cutover instant reads in Julian labels in a negative offset zone", `
+Datetime d = Datetime.newInstanceGmt(1582, 10, 15, 4, 0, 0);
+System.debug(d.format('yyyy-MM-dd HH:mm'));
+System.debug(d.day() + ' ' + d.year());`,
+			"1582-10-04 20:00\n4 1582"},
 		{"list equality neighbors", `
 System.debug(new List<Double>{1.5} == new List<Double>{1.50});
 System.debug(new List<Decimal>{1.5} == new List<Decimal>{1.5});
@@ -115,7 +133,7 @@ System.debug('datetime update at the bound');`,
 				t.Fatalf("compile: %v", analysis.Diagnostics)
 			}
 			configure := func(machine *vm.VM) {
-				if err := machine.ConfigureTestEnvironment(config.TestConfig{User: config.TestUserConfig{Locale: "en_US", TimeZone: "America/Los_Angeles", Language: "en_US"}}); err != nil {
+				if err := machine.ConfigureTestEnvironment(config.TestConfig{User: config.TestUserConfig{Locale: "en_US", TimeZone: zoneOf(neighborZones[test.name]), Language: "en_US"}}); err != nil {
 					t.Fatal(err)
 				}
 			}
