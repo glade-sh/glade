@@ -16,7 +16,7 @@ func TestSetupDrainStopsWithoutProgress(t *testing.T) {
 				t.Fatal(err)
 			}
 			for _, class := range []string{"SpinSched", "SpinSched.Nested"} {
-				if err := machine.RegisterClass(Class{Name: class, Interfaces: []string{"Schedulable"}, Methods: map[string]Method{"execute": {Name: class + ".execute", ClassName: class, ReturnType: "void", Params: []Param{{Name: "context", Type: "SchedulableContext"}}, Program: body}}}); err != nil {
+				if err := machine.RegisterClass(Class{Name: class, Nested: class == "SpinSched.Nested", Interfaces: []string{"Schedulable"}, Methods: map[string]Method{"execute": {Name: class + ".execute", ClassName: class, ReturnType: "void", Params: []Param{{Name: "context", Type: "SchedulableContext"}}, Program: body}}}); err != nil {
 					t.Fatal(err)
 				}
 			}
