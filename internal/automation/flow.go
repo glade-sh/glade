@@ -469,6 +469,9 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 	}
 	name := flowFileName(path)
 	objectName := strings.TrimSpace(raw.Start.Object)
+	if objectName == "" {
+		flowMergeFormulaStringAssignments(&raw)
+	}
 	flow := Flow{ObjectName: objectName, File: path}
 	if declaration, ok := screenFlowDeclaration(raw, path); ok {
 		flow.Declaration = &declaration
@@ -4748,4 +4751,29 @@ func flowIsActiveProcess(flow Flow) bool {
 func capturedCaseAfterSave(rules []storage.FlowRule, def storage.ObjectDefinition) bool {
 	_, ok := storage.CapturedCaseAfterSavePlan(rules, def)
 	return ok
+}
+
+// flowMergeFormulaStringAssignments reads an assignment value of exactly
+// "{!Formula}" as a reference to that formula resource, in an autolaunched flow
+// (native PsrFlowTest, permset_in_test residuals, API 62.0 and 67.0: a String
+// variable assigned "{!PermText}" holds the formula's text). Other merge text
+// keeps its earlier handling.
+func flowMergeFormulaStringAssignments(raw *flowXML) {
+	formulas := map[string]bool{}
+	for _, formula := range raw.Formulas {
+		formulas[strings.ToLower(strings.TrimSpace(formula.Name))] = true
+	}
+	for i := range raw.Assignments {
+		for j := range raw.Assignments[i].Items {
+			value := &raw.Assignments[i].Items[j].Value
+			text := strings.TrimSpace(value.StringValue)
+			if !strings.HasPrefix(text, "{!") || !strings.HasSuffix(text, "}") {
+				continue
+			}
+			name := strings.TrimSuffix(strings.TrimPrefix(text, "{!"), "}")
+			if formulas[strings.ToLower(name)] && value.ElementReference == "" {
+				value.StringValue, value.ElementReference = "", name
+			}
+		}
+	}
 }

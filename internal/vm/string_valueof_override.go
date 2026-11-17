@@ -12,6 +12,14 @@ func (vm *VM) stringValueOfOverride(value Value, result *Result) (Value, bool, e
 	if text, ok := originalIDDisplayText(value); ok {
 		return String(text), true, nil
 	}
+	// Native PsrVfTest.visualforcePermission (permset_in_test residuals, API 62.0
+	// and 67.0): String.valueOf of a PageReference is System.PageReference[url].
+	// Concatenation and format keep their earlier text.
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "PageReference") && !value.projectClass {
+		if rawURL, ok := value.Fields["url"]; ok && rawURL.Kind == ValueString {
+			return String("System.PageReference[" + rawURL.Text + "]"), true, nil
+		}
+	}
 	if value.Kind != ValueObject || isStubProxy(value) || vm.isSubclass(value.Type, "Exception") {
 		return Null, false, nil
 	}

@@ -2577,21 +2577,41 @@ func (vm *VM) permissionAssignmentNotYetApplied(assignment storage.Record, userI
 		return false
 	}
 	runner := vm.permRunnerUserID
-	if vm.testContext.RunAsDepth == 0 {
+	if vm.userRunAsDepth() == 0 {
 		runner = principal
 	}
 	if runner == "" || !storage.IDsEqual(storage.ID(runner), storage.ID(principal)) {
-		return false
+		// Inside the block of a user other than the test runner, only an
+		// assignment that block made for itself is hidden from it (native
+		// PsrUraTest.userRecordAccessInsideBlock, API 62.0: permAfter=false).
+		if vm.userRunAsDepth() == 0 || vm.permAssignVisible == nil {
+			return false
+		}
+		_, seen := vm.permAssignVisible[assignment.ID]
+		return !seen
 	}
 	_, seen := vm.permAssignVisible[assignment.ID]
 	return !seen
+}
+
+// userRunAsDepth counts the runAs blocks that run as a user. A System.runAs of a
+// Version does not change the user, so it does not count (native
+// permset_in_test/residuals.tsv PsrVersionTest: a Version block, plain or
+// holding a runAs of the running user, does not see an assignment the test made
+// and does not unlock it).
+func (vm *VM) userRunAsDepth() int {
+	depth := vm.testContext.RunAsDepth - vm.testContext.PackageRunAsDepth
+	if depth < 0 {
+		return 0
+	}
+	return depth
 }
 
 // beginRunAsPermissionFrame records which test-made assignments a runAs block
 // sees at its start and returns the function that restores the outer frame.
 func (vm *VM) beginRunAsPermissionFrame(userBefore string) func() {
 	previousVisible, previousRunner := vm.permAssignVisible, vm.permRunnerUserID
-	if vm.testContext != nil && vm.testContext.RunAsDepth == 0 {
+	if vm.testContext != nil && vm.userRunAsDepth() == 0 {
 		vm.permRunnerUserID = userBefore
 	}
 	visible := map[storage.ID]struct{}{}

@@ -290,10 +290,12 @@ func runPermissionSetInTestFamily(t *testing.T, name string, count int) {
 	}
 }
 
-// Shapes next to the permset_in_test rows keep their earlier behavior: an
-// asynchronous job and a Version runAs still see the assignment at
-// once, and the administrator's update, list insert and default-mode insert
-// below API 62.0 still pass without a field grant. They have no native rows.
+// Shapes next to the permset_in_test rows keep their earlier behavior: another
+// user's runAs still sees the assignment at once, and the administrator's
+// update, list insert and default-mode insert below API 62.0 still pass without
+// a field grant. They have no native rows. An asynchronous job and a Version
+// runAs read through the same lookup as the captured custom-permission and field
+// reads (residuals.tsv), so their describe reads here are hidden too.
 // expected.tsv records the base results.
 func TestPermissionSetAssignedInTestUncapturedNeighborsKeepBase(t *testing.T) {
 	neighbors := "testdata/permset_in_test_neighbors"
@@ -310,7 +312,7 @@ func TestPermissionSetAssignedInTestUncapturedNeighborsKeepBase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 7 || strings.Join(rows[0], ",") != "api,method,observation" {
+	if len(rows) != 9 || strings.Join(rows[0], ",") != "api,method,observation" {
 		t.Fatalf("incomplete neighbor rows: %d", len(rows))
 	}
 	root := t.TempDir()

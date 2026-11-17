@@ -1,0 +1,51 @@
+api	method	observation
+62.0	PsrAsyncTest.batchJob	job=batch;insert=ok;runs=1;perm=false
+62.0	PsrAsyncTest.futureJob	job=future;insert=ok;runs=1;perm=false
+62.0	PsrAsyncTest.queueableJob	job=queueable;insert=ok;runs=1;perm=false;fls=strip=stripped,um=ex:System.QueryException
+62.0	PsrFinishLockTest.lockAfterAssignment	after=success:false:MIXED_DML_OPERATION;later=locked:false;perm:true
+62.0	PsrFinishLockTest.lockInLaterRunAs	laterPerm=true;lock=success:true;locked=true
+62.0	PsrFinishMixedTest.setupObjectsAssignmentLast	insert=ok;immediate=false;later=true
+62.0	PsrFinishPerfTest.timing	users=100;sets=50;rows=5000;ok=5000;ms=<ms>;err=
+62.0	PsrFlowTest.afterAssignment	phase=after;insert=ok;flow=ok:false;runAsSelf_flow=ok:true
+62.0	PsrFlowTest.beforeAssignment	phase=before;flow=ok:false
+62.0	PsrMixedTest.assignmentFirst	variant=assignmentFirst;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=1;saveResults=n/a;ex=System.DmlException:Insert failed. First exception on row 1; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): PsrObj__c, original object: PermissionSetAssignment: []
+62.0	PsrMixedTest.assignmentLast	variant=assignmentLast;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=1;saveResults=n/a;ex=System.DmlException:Insert failed. First exception on row 2; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): PermissionSetAssignment, original object: PsrObj__c: []
+62.0	PsrMixedTest.mixedDatabaseInsertLast	variant=mixedDatabaseInsertLast;perm=false;fls=strip=stripped,um=ex:System.QueryException;runAsSelf_perm=false;runAsSelf_fls=strip=stripped,um=ex:System.QueryException;psaRows=1;saveResults=ok|err:MIXED_DML_OPERATION:DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): PermissionSetAssignment, original object: PsrObj__c|;ex=
+62.0	PsrMixedTest.separateAssignThenRecord	ok|variant=separateAssignThenRecord;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=2;saveResults=n/a;ex=System.DmlException:Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): PsrObj__c, original object: PermissionSetAssignment: []
+62.0	PsrMixedTest.separateRecordThenAssign	ex:System.DmlException|variant=separateRecordThenAssign;perm=false;fls=strip=stripped,um=ex:System.QueryException;runAsSelf_perm=false;runAsSelf_fls=strip=stripped,um=ex:System.QueryException;psaRows=1;saveResults=n/a;ex=
+62.0	PsrMixedTest.twoAssignments	variant=twoAssignments;perm=false;fls=noRec;runAsSelf_perm=false;runAsSelf_fls=;psaRows=1;saveResults=n/a;ex=System.DmlException:Insert failed. First exception on row 1; first error: MIXED_DML_OPERATION, DML operation on setup object is not permitted after you have updated a non-setup object (or vice versa): PermissionSetAssignment, original object: PsrObj__c: []
+62.0	PsrUpsertTest.insertDatabase	op=Database.insert;perm=false;fls=strip=stripped,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+62.0	PsrUpsertTest.insertPlain	op=insert;perm=false;fls=strip=stripped,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+62.0	PsrUpsertTest.upsertDatabase	op=Database.upsert;perm=false;fls=strip=stripped,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+62.0	PsrUpsertTest.upsertPlain	op=upsert;perm=false;fls=strip=stripped,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+62.0	PsrUpsertTest.upsertWithId	op=upsertExistingId;perm=false;fls=strip=stripped,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+62.0	PsrUraTest.userRecordAccessAdminInsert	before=r=false,e=false,d=false;insert=ok;afterAsAdmin=r=true,e=true,d=false;afterRunAsU=r=true,e=true,d=false;permInU=true
+62.0	PsrUraTest.userRecordAccessInsideBlock	before=r=false,e=false,d=false;insert=ok;after=r=true,e=true,d=false;permAfter=false;afterOuter=r=true,e=true,d=false;permOuter=true
+62.0	PsrVersionTest.innerOnly	shape=innerOnlySelfRunAs;innerVal=false
+62.0	PsrVersionTest.nestedVersionThenSelf	shape=nestedVersionThenSelf;version=40.0;outerRead=false;innerVal=false;ex=
+62.0	PsrVersionTest.plainVersionAssign	shape=plainVersionAssignInside;version=40.0;inside=false;ex=
+62.0	PsrVersionTest.plainVersionRead	shape=plainVersionReadAfterAssign;version=40.0;insert=ok;inside=false;ex=
+62.0	PsrVersionTest.requestVersionProbe	System.ProcedureException: Method is not supported from an unmanaged namespace
+62.0	PsrVfTest.visualforcePermission	insert=ok;setCurrentPage=ok;page=System.PageReference[/apex/psrpage];render=ex:System.VisualforceException:Methods defined as TestMethod do not support getContent call
+67.0	PsrAsyncTest.batchJob	job=batch;insert=ok;runs=1;perm=false
+67.0	PsrAsyncTest.futureJob	job=future;insert=ok;runs=1;perm=false
+67.0	PsrAsyncTest.queueableJob	job=queueable;insert=ok;runs=1;perm=false;fls=strip=ex:System.QueryException,um=ex:System.QueryException
+67.0	PsrFinishLockTest.lockAfterAssignment	after=success:false:MIXED_DML_OPERATION;later=locked:false;perm:true
+67.0	PsrFinishLockTest.lockInLaterRunAs	laterPerm=true;lock=success:true;locked=true
+67.0	PsrFinishMixedTest.setupObjectsAssignmentLast	insert=ok;immediate=false;later=true
+67.0	PsrFinishPerfTest.timing	users=100;sets=50;rows=5000;ok=5000;ms=<ms>;err=
+67.0	PsrFlowTest.afterAssignment	phase=after;insert=ok;flow=ok:false;runAsSelf_flow=ok:true
+67.0	PsrFlowTest.beforeAssignment	phase=before;flow=ok:false
+67.0	PsrUpsertTest.insertDatabase	op=Database.insert;perm=false;fls=strip=ex:System.QueryException,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+67.0	PsrUpsertTest.insertPlain	op=insert;perm=false;fls=strip=ex:System.QueryException,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+67.0	PsrUpsertTest.upsertDatabase	op=Database.upsert;perm=false;fls=strip=ex:System.QueryException,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+67.0	PsrUpsertTest.upsertPlain	op=upsert;perm=false;fls=strip=ex:System.QueryException,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+67.0	PsrUpsertTest.upsertWithId	op=upsertExistingId;perm=false;fls=strip=ex:System.QueryException,um=ex:System.QueryException;runAsSelf_perm=true;runAsSelf_fls=strip=ok:v,um=ok:v;ex=
+67.0	PsrUraTest.userRecordAccessAdminInsert	before=r=false,e=false,d=false;insert=ok;afterAsAdmin=r=true,e=true,d=false;afterRunAsU=r=true,e=true,d=false;permInU=true
+67.0	PsrUraTest.userRecordAccessInsideBlock	before=r=false,e=false,d=false;insert=ex:System.SecurityException:Access to entity 'PermissionSetAssignment' denied;after=r=false,e=false,d=false;permAfter=false;afterOuter=r=false,e=false,d=false;permOuter=false
+67.0	PsrVersionTest.innerOnly	shape=innerOnlySelfRunAs;innerVal=false
+67.0	PsrVersionTest.nestedVersionThenSelf	shape=nestedVersionThenSelf;version=40.0;outerRead=false;innerVal=false;ex=
+67.0	PsrVersionTest.plainVersionAssign	shape=plainVersionAssignInside;version=40.0;inside=false;ex=
+67.0	PsrVersionTest.plainVersionRead	shape=plainVersionReadAfterAssign;version=40.0;insert=ok;inside=false;ex=
+67.0	PsrVersionTest.requestVersionProbe	System.ProcedureException: Method is not supported from an unmanaged namespace
+67.0	PsrVfTest.visualforcePermission	insert=ok;setCurrentPage=ok;page=System.PageReference[/apex/psrpage];render=ex:System.VisualforceException:Methods defined as TestMethod do not support getContent call

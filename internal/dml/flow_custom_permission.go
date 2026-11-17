@@ -22,6 +22,11 @@ func (e *Engine) flowCustomPermission(name string) (bool, bool) {
 		if assignment.System.IsDeleted || !storage.IDsEqual(idFromStorageValue(assignment.Fields["AssigneeId"]), userID) {
 			continue
 		}
+		// A set the test assigned to the running user applies only in a later
+		// runAs block (native PsrFlowTest, permset_in_test residuals).
+		if e.PermissionAssignmentHidden != nil && e.PermissionAssignmentHidden(assignment) {
+			continue
+		}
 		if group := idFromStorageValue(assignment.Fields["PermissionSetGroupId"]); group != "" {
 			unknown = true
 			continue

@@ -160,6 +160,9 @@ type FormulaEvaluationOptions struct {
 	Template             bool
 	UserID               storage.ID
 	PermissionUserFields map[string]storage.Value
+	// AssignmentActive, when set, drops the assignments it rejects from a
+	// $Permission lookup (a test-made assignment the context does not apply yet).
+	AssignmentActive func(storage.Record) bool
 	// SetupUserID selects hierarchy settings without changing other global variables.
 	SetupUserID storage.ID
 	// FormulaSurface selects FormulaEval/recalculateFormulas result semantics.
@@ -248,6 +251,7 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 		storedFormula:                 options.FormulaSurface && field.Type == storage.FieldCalculated,
 		userID:                        options.UserID,
 		permissionUserFields:          options.PermissionUserFields,
+		assignmentActive:              options.AssignmentActive,
 		setupUserID:                   options.SetupUserID,
 	}
 	if options.FormulaSurface {
@@ -665,6 +669,7 @@ type formulaParser struct {
 	flowReference                 func(string) (formulaValue, bool, bool)
 	userID                        storage.ID
 	permissionUserFields          map[string]storage.Value
+	assignmentActive              func(storage.Record) bool
 	setupUserID                   storage.ID
 }
 
@@ -2684,7 +2689,11 @@ func (e *Engine) formulaEvaluationOptions() FormulaEvaluationOptions {
 	if userID == "" {
 		userID = storage.DefaultUserID
 	}
-	return FormulaEvaluationOptions{UserID: userID, PermissionUserFields: fields}
+	options := FormulaEvaluationOptions{UserID: userID, PermissionUserFields: fields}
+	if e.PermissionAssignmentHidden != nil {
+		options.AssignmentActive = func(assignment storage.Record) bool { return !e.PermissionAssignmentHidden(assignment) }
+	}
+	return options
 }
 
 // setupFormulaEvaluationOptions adds the system setup actor (small-clusters

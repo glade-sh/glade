@@ -18,6 +18,9 @@ type Engine struct {
 	PermissionUserFields map[string]storage.Value
 	// UserHasCustomPermission consults the host's current execution-user context.
 	UserHasCustomPermission func(string) bool
+	// PermissionAssignmentHidden reports a test-made assignment the host's
+	// current context does not apply yet.
+	PermissionAssignmentHidden func(storage.Record) bool
 	// DuplicateMatcher lets Apex apply its current sharing and field access
 	// through the common duplicate evaluator. Non-Apex callers use the evaluator directly.
 	DuplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (DuplicateResult, bool)

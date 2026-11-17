@@ -1474,10 +1474,13 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	return job.QueueableDepth > 0 && job.QueueableDepth <= job.QueueableMaxDepth
 }
 func (vm *VM) runAsyncJob(job AsyncJob, result *Result, batchProjection ...*bool) error {
-	// The job is its own transaction: it sees every permission set assignment.
-	previousPermAssignAll := vm.permAssignAll
-	vm.permAssignAll = true
-	defer func() { vm.permAssignAll = previousPermAssignAll }()
+	// The job is its own transaction. A permission set the test assigned to the
+	// running user does not apply in it, whatever blocks ran before (native
+	// permset_in_test/residuals.tsv PsrAsyncTest: Queueable, future and Batch
+	// read the custom permission as false).
+	previousPermVisible := vm.permAssignVisible
+	vm.permAssignVisible = map[storage.ID]struct{}{}
+	defer func() { vm.permAssignVisible = previousPermVisible }()
 	defer vm.BeginReportTransaction()()
 	restoreMixedDML := vm.beginMixedDMLTransaction()
 	defer restoreMixedDML()

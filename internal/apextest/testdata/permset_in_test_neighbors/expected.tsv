@@ -1,7 +1,9 @@
 api	method	observation
-67.0	n1_queueable	cr=true
-67.0	n2_runas_version	cr=true
+67.0	n1_queueable	cr=false
+67.0	n2_runas_version	cr=false
 67.0	n3_runas_user_assign_other	cr=true
 58.0	n4_update_as_user	ok
 58.0	n5_list_insert_as_user	ok
 58.0	n6_default_insert	ok
+67.0	n7_lock_all_or_none	System.DmlException
+67.0	n9_page_reference_concat	/apex/pfx

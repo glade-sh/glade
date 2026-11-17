@@ -1645,6 +1645,17 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 		return nil, err
 	}
 	if err := vm.checkMixedDML(op, records); err != nil {
+		if op == "lock" && !allOrNone {
+			// Native PsrFinishLockTest.lockAfterAssignment (permset_in_test
+			// residuals, API 62.0 and 67.0): a partial Approval.lock after a
+			// setup-object insert reports MIXED_DML_OPERATION in its LockResult
+			// instead of throwing.
+			failures := make([]dml.Result, len(records))
+			for i, record := range records {
+				failures[i] = mixedDMLRowFailure(record, err)
+			}
+			return failures, nil
+		}
 		return nil, err
 	}
 	appendTraceLazy(result, "apex.dml."+op, "apex.dml", func() map[string]any {
@@ -2541,7 +2552,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if len(records) == 0 {
 		return nil, nil
 	}
-	if op == "insert" && strings.EqualFold(records[0].Object, "PermissionSetAssignment") {
+	if (op == "insert" || op == "upsert") && recordsIncludeObject(records, "PermissionSetAssignment") {
 		defer func() {
 			if outErr == nil {
 				vm.markTestAssignedPermissionSets(out)
@@ -2645,6 +2656,16 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 					message := failures[i].Error
 					prefix := "Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, "
 					if strings.HasPrefix(message, prefix) && strings.HasSuffix(message, ": []") {
+						failures[i].Error = strings.TrimSuffix(strings.TrimPrefix(message, prefix), ": []")
+					}
+				}
+				// Native PsrMixedTest.mixedDatabaseInsertLast (permset_in_test
+				// residuals, API 62.0): a partial list insert whose assignment row
+				// follows a non-setup row reports the row error without the
+				// exception wrapper, as the scalar case above does.
+				if op == "insert" && value.Kind == ValueList && len(records) > 1 && i > 0 && strings.EqualFold(record.Object, "PermissionSetAssignment") && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.currentSourceExecutionPolicy().APIVersion == "62.0" {
+					prefix := "Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, "
+					if message := failures[i].Error; strings.HasPrefix(message, prefix) && strings.HasSuffix(message, ": []") {
 						failures[i].Error = strings.TrimSuffix(strings.TrimPrefix(message, prefix), ": []")
 					}
 				}
@@ -7565,4 +7586,16 @@ func preserveMissingSystemFields(record *storage.Record, original storage.System
 	if record.System.SystemModstamp == "" {
 		record.System.SystemModstamp = original.SystemModstamp
 	}
+}
+
+// recordsIncludeObject reports whether any record in a DML list is of the
+// object. A list insert whose assignment is not the first element (native
+// PsrFinishMixedTest.setupObjectsAssignmentLast) hides its grant the same way.
+func recordsIncludeObject(records []storage.Record, object string) bool {
+	for _, record := range records {
+		if strings.EqualFold(record.Object, object) {
+			return true
+		}
+	}
+	return false
 }

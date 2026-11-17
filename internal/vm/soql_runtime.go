@@ -332,7 +332,24 @@ func (vm *VM) executeSOQLRowsWithSecurityDetails(raw string, execResult *Result,
 	}
 	if strings.EqualFold(executeQuery.Object, "UserRecordAccess") {
 		directUserMode := strings.EqualFold(query.SecurityMode, "USER_MODE") || strings.TrimSpace(query.SecurityMode) == "" && strings.EqualFold(accessLevelMode, "USER_MODE")
-		syntheticOrg := vm.orgWithSyntheticUserRecordAccess(directUserMode, queryText)
+		// A bound user Id names the queried user as a literal does (native
+		// PsrUraTest, permset_in_test residuals: UserId = :userId).
+		namedText := queryText
+		if binds.Kind == ValueMap {
+			for _, bound := range binds.Map {
+				if bound.Kind == ValueString || bound.Kind == ValueObject {
+					namedText += " " + bound.Text
+				}
+			}
+		}
+		// A direct UserRecordAccess row counts the assignments a test made at
+		// once: native PsrUraTest (permset_in_test residuals, API 62.0 and 67.0)
+		// reads read and edit true right after the insert while the custom
+		// permission still reads false.
+		previousAssignAll := vm.permAssignAll
+		vm.permAssignAll = true
+		syntheticOrg := vm.orgWithSyntheticUserRecordAccess(directUserMode, namedText)
+		vm.permAssignAll = previousAssignAll
 		executeOrg = &syntheticOrg
 	} else if strings.EqualFold(executeQuery.Object, "RecentlyViewed") {
 		syntheticOrg := vm.orgWithSyntheticRecentlyViewed()
@@ -1951,7 +1968,7 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 	for _, raw := range userRecordAccessQueriedUserID.FindAllString(queryText, -1) {
 		_, user, ok := storage.LookupRecordByID(vm.Org.Objects["User"].Records, storage.ID(raw))
 		portal := portalUserTypeRecord(user)
-		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) {
+		if !ok || storage.IDsEqual(user.ID, storage.ID(current)) || seen[string(user.ID)] || !portal && !vm.namedUserIsCapturedStandard(user) && !vm.namedUserIsCapturedGuest(user) && !(vm.testContext != nil && vm.customObjectsOnly(objectNames) && vm.namedUserIsStandardType(user)) {
 			continue
 		}
 		if vm.testContext == nil && !vm.namedUserIsCapturedStandard(user) {
@@ -1963,7 +1980,10 @@ func (vm *VM) appendOtherUserRecordAccess(accessObject *storage.ObjectState, obj
 			if vm.testContext == nil && (!strings.EqualFold(objectName, "Case") || !strings.EqualFold(strings.TrimSpace(vm.Org.Objects[objectName].Definition.SharingModel), "Private")) {
 				continue
 			}
-			if !portal && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
+			// Native PsrUraTest (permset_in_test residuals, API 62.0 and 67.0): a
+			// test reads a named limited user's rows on a custom object too, so
+			// a Standard User's rows include the project's custom objects.
+			if !portal && !(vm.testContext != nil && vm.customObject(objectName)) && (!capturedStandardNamedObject(objectName) || !storage.StandardObjectShapeDeclared(vm.Org.Objects[objectName].Definition)) {
 				continue
 			}
 			object := vm.Org.Objects[objectName]
@@ -6137,4 +6157,27 @@ func (vm *VM) soqlFormatDatetime(text string) (string, bool) {
 		return "", false
 	}
 	return formatApexDatetimeForLocale(local, vm.currentUserInfoField("LocaleSidKey", "en_US")), true
+}
+
+// namedUserIsStandardType reports a stored user of the Standard user type on any
+// profile. Native PsrUraTest (permset_in_test residuals) reads a limited
+// profile user's rows on a custom object.
+func (vm *VM) namedUserIsStandardType(user storage.Record) bool {
+	for name, value := range user.Fields {
+		if strings.EqualFold(name, "UserType") {
+			userType := strings.TrimSpace(value.String)
+			return userType == "" || strings.EqualFold(userType, "Standard")
+		}
+	}
+	return true
+}
+
+// customObjectsOnly reports a project with at least one custom object in the list.
+func (vm *VM) customObjectsOnly(objectNames []string) bool {
+	for _, name := range objectNames {
+		if vm.customObject(name) {
+			return true
+		}
+	}
+	return false
 }

@@ -1679,7 +1679,7 @@ func (e *Engine) flowFrameFormulaValue(expression string, frame *flowFrame, capt
 	if captured {
 		record = flowFrameCapturedFormulaRecord(frame, expression)
 	}
-	value, _, ok := evaluateFlowFormulaParser(formulaParser{tokens: tokenizeFormula(html.UnescapeString(expression)), record: record, org: e.Org, userID: e.systemUserID(), permissionUserFields: e.PermissionUserFields})
+	value, _, ok := evaluateFlowFormulaParser(formulaParser{tokens: tokenizeFormula(html.UnescapeString(expression)), record: record, org: e.Org, userID: e.systemUserID(), permissionUserFields: e.PermissionUserFields, assignmentActive: e.formulaEvaluationOptions().AssignmentActive})
 	return value, ok
 }
 
@@ -2746,7 +2746,7 @@ func flowSetupFieldValue(org *storage.OrgState, reference string, options ...For
 		return storage.Value{}, false
 	}
 	opts := firstFormulaOptions(options)
-	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(reference)), org: org, userID: opts.UserID, permissionUserFields: opts.PermissionUserFields, setupUserID: opts.SetupUserID}
+	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(reference)), org: org, userID: opts.UserID, permissionUserFields: opts.PermissionUserFields, assignmentActive: opts.AssignmentActive, setupUserID: opts.SetupUserID}
 	value, _, ok := evaluateFlowFormulaParser(parser)
 	return value, ok
 }

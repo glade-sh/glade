@@ -2462,6 +2462,9 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine := dml.NewEngine(vm.Org)
 	engine.DuplicateMatcher, engine.DuplicatePeerMatcher = vm.newDuplicateMatchers()
 	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
+	engine.PermissionAssignmentHidden = func(assignment storage.Record) bool {
+		return vm.permissionAssignmentNotYetApplied(assignment, vm.currentUserID())
+	}
 	if vm.work.tracking {
 		engine.FlowMatchObserver = func() { vm.work.flowRuns++ }
 	}
