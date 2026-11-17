@@ -66,6 +66,9 @@ type VM struct {
 	// runAsRecordAccessCaptured marks a DML call shape whose hidden-record
 	// failure the sharing_access_modes d2 rows capture as a DML row failure.
 	runAsRecordAccessCaptured bool
+	// explicitUserModeDML marks a statement written as user mode (`as user` or
+	// an explicit USER_MODE access level), not the 67.0 default.
+	explicitUserModeDML bool
 	// staticSOQLQuery is set while a static [SELECT ...] expression runs.
 	staticSOQLQuery bool
 	// userModeSingleRecord marks the field check of single-record user-mode DML.

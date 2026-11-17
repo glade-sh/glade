@@ -151,6 +151,30 @@ func (e *Engine) LandSummaryHold(records []storage.Record) {
 					continue
 				}
 				contribution = value
+			case "max", "min":
+				// A landed insert can only raise a MAX or lower a MIN
+				// (review_round6 m_none: the held MAX stays 10 when the
+				// inserted 7 lands).
+				_, fieldName := splitSummaryQualifiedField(relation.field.SummarizedField)
+				resolved, ok := storage.ResolveFieldName(state.Definition, e.Org.Namespace, fieldName)
+				value, vok := summaryRecordFieldValue(e.Org, state.Definition, stored, resolved)
+				for id := range parentIDs {
+					key := summaryHoldKey(relation.parentObject, id, relation.parentField)
+					current, in := e.summaryHold.Values[key]
+					if !in {
+						continue
+					}
+					c, ok1 := summaryNumericRat(current)
+					v, ok2 := summaryNumericRat(value)
+					if !ok || !vok || !ok1 || !ok2 || current.Kind == storage.ValueNull {
+						e.summaryHold.Drop(key)
+						continue
+					}
+					if (op == "max" && v.Cmp(c) > 0) || (op == "min" && v.Cmp(c) < 0) {
+						e.summaryHold.Values[key] = value
+					}
+				}
+				continue
 			default:
 				for id := range parentIDs {
 					e.summaryHold.Drop(summaryHoldKey(relation.parentObject, id, relation.parentField))
@@ -243,6 +267,11 @@ func (e *Engine) carrySummaryDeltaOut() {
 				// MIN and MAX read the live value after a nested statement
 				// (review_round3 n_sib*, n_del): the hold forgets the key and
 				// stops outer holds from answering for it.
+				if ok && had && (op == "max" || op == "min") && summaryValuesEqual(before, now[id]) {
+					// This statement left the extreme alone: the enclosing
+					// statement's held value stands (review_round6 m_nested).
+					break
+				}
 				if !ok || !had || (op != "count" && op != "sum") {
 					outer.Drop(key)
 					break
@@ -1072,4 +1101,69 @@ func (e *Engine) SummaryValidationRelation(childObject string) (parent, foreignK
 		}
 	}
 	return "", ""
+}
+
+func summaryValuesEqual(a, b storage.Value) bool {
+	x, ok1 := summaryNumericRat(a)
+	y, ok2 := summaryNumericRat(b)
+	return ok1 && ok2 && x.Cmp(y) == 0
+}
+
+// PeekSummaryUpdates returns the pending parent roll-up updates without
+// taking them.
+func (e *Engine) PeekSummaryUpdates() []SummaryUpdate {
+	if e == nil || len(e.summaryOrder) == 0 {
+		return nil
+	}
+	updates := make([]SummaryUpdate, 0, len(e.summaryOrder))
+	for _, key := range e.summaryOrder {
+		if update, ok := e.summaryUpdates[key]; ok {
+			updates = append(updates, update)
+		}
+	}
+	return updates
+}
+
+// RequeueSummaryUpdates puts parent updates back so the parent's triggers run
+// again for a later group of the same statement.
+func (e *Engine) RequeueSummaryUpdates(updates []SummaryUpdate) {
+	if e == nil {
+		return
+	}
+	for _, update := range updates {
+		key := strings.ToLower(update.Object) + "\x00" + strings.ToLower(string(update.After.ID))
+		if e.summaryUpdates == nil {
+			e.summaryUpdates = make(map[string]SummaryUpdate)
+		}
+		if _, exists := e.summaryUpdates[key]; !exists {
+			e.summaryOrder = append(e.summaryOrder, key)
+		}
+		e.summaryUpdates[key] = update
+	}
+}
+
+// HeldSummaryDiffersFromLive reports whether the hold's values for any held
+// roll-up differ from the stored value, that is, whether the statement still
+// has a change to land.
+func (e *Engine) HeldSummaryDiffersFromLive() bool {
+	if e == nil || e.Org == nil || e.summaryHold == nil {
+		return false
+	}
+	for _, held := range e.summaryHoldRelations {
+		now, ok := e.evaluateSummaryFieldBatch(held.relation, held.parentIDs)
+		if !ok {
+			continue
+		}
+		for id := range held.parentIDs {
+			key := summaryHoldKey(held.relation.parentObject, id, held.relation.parentField)
+			value, in := e.summaryHold.Values[key]
+			if !in || e.summaryHold.Dropped[key] {
+				continue
+			}
+			if !summaryValuesEqual(value, now[id]) {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -60,6 +60,9 @@ type gapFamily struct {
 	// classAPI maps an API under test to the apiVersion written into the class
 	// metadata, for rows whose capture did not prove the class API.
 	classAPI map[string]string
+	// cleanBetween empties the custom objects after each anonymous case, as
+	// the capture's per-case residue cleanup did.
+	cleanBetween bool
 }
 
 var gapIDPattern = regexp.MustCompile(`\b(?:001|003|005|006|00D|00G|00Q|00e|01p|01q|0Hp|0HM|707|a0[0-9A-Za-z])[0-9A-Za-z]{12}(?:[0-9A-Za-z]{3})?\b`)
@@ -315,6 +318,14 @@ func (f gapFamily) replay(t *testing.T) {
 							}
 						}
 						check(t, c, got, maskGapIDs(gotErr))
+						if f.cleanBetween {
+							for name, state := range machine.Org.Objects {
+								if strings.HasSuffix(strings.ToLower(name), "__c") {
+									state.Records = nil
+									machine.Org.Objects[name] = state
+								}
+							}
+						}
 					})
 				}
 			})

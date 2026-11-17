@@ -229,6 +229,10 @@ func sharingUpdateObservationMachine(cell sharingUpdateObservation) (*VM, storag
 }
 
 // These are local scope controls for paths not established by the capture.
+// Two gaps: they run at TransportAPI 68.0, which the capture grid (62.0, 66.0,
+// 67.0) does not cover, and they call Database.update(row) with allOrNone=true,
+// where a DmlException is the expected consequence of a denied row rather than
+// a per-row failure.
 func TestDefaultRunAsPrivateTextUpdateScope(t *testing.T) {
 	for _, variant := range []string{"captured", "hydrated caller", "explicit system field", "older source", "outside runAs", "package runAs", "trigger", "list", "other operation", "public model", "owner", "standard object", "numeric field", "unknown field", "other lookup", "no text", "null text", "numeric text", "other owner lookup", "owner transfer", "group owner"} {
 		t.Run(variant, func(t *testing.T) {

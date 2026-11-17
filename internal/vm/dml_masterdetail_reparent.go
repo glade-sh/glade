@@ -155,10 +155,13 @@ func (vm *VM) recordValueForMessage(record storage.Record, targets []*Value, i i
 }
 
 // An anonymous block that updates a record carrying its unchanged
-// non-reparentable master-detail value is not rejected at 67.0: the review3
+// non-reparentable master-detail value, in default mode, is not rejected at 67.0
+// (review_round6: top-level Database.update(c,false), a queried record and the
+// plain update all succeed; explicit user mode fails). Class, trigger and test
+// context keep the denial (RM rows; a class called from anonymous Apex too): the review3
 // grid (anonymous rows pass at 62.0 and 67.0 with and without custom fields,
 // administrator with a permission set) against the class and test rows
 // (apex_release_gates RM1 and RM15, review3 g_route), which fail at 67.0.
 func (vm *VM) anonymousMasterDetailUpdate(op string) bool {
-	return op == "update" && !vm.runAsRecordAccessCaptured && vm.currentClass == "" && len(vm.callStack) == 0 && !vm.currentTrigger && vm.testContext == nil
+	return op == "update" && !vm.explicitUserModeDML && vm.currentClass == "" && len(vm.callStack) == 0 && !vm.currentTrigger && vm.testContext == nil
 }

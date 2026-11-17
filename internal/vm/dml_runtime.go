@@ -432,10 +432,11 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
 	dmlOptions.ExplicitUserMode = isUserModeAccessLevel(accessLevel)
 	dmlOptions.ExplicitUserModePartialRecord = dmlOptions.ExplicitUserMode && !allOrNone && args[0].Kind == ValueObject
-	savedCaptured := vm.runAsRecordAccessCaptured
+	savedCaptured, savedExplicit := vm.runAsRecordAccessCaptured, vm.explicitUserModeDML
 	vm.runAsRecordAccessCaptured = isUserModeAccessLevel(accessLevel) || !allOrNone && op == "update" && args[0].Kind == ValueList
+	vm.explicitUserModeDML = isUserModeAccessLevel(accessLevel)
 	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode, accessLevelPermissionSetID(accessLevel))
-	vm.runAsRecordAccessCaptured = savedCaptured
+	vm.runAsRecordAccessCaptured, vm.explicitUserModeDML = savedCaptured, savedExplicit
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
@@ -4064,6 +4065,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			vm.propagateAliasSnapshotToStatics(previous, *targets[i])
 		}
 	}
+	var insertGroupParents []dml.SummaryUpdate
 	for _, kind := range []string{"insert", "update"} {
 		groupRecords, groupBefore, groupResults, indices := successfulGroupedDMLInputs(records, before, engineResults, kinds, kind)
 		afterRecords, err := vm.afterRecords(kind, groupRecords, groupResults)
@@ -4105,13 +4107,19 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
 		if kind == "update" {
+			// A parent whose roll-up the update group changes after its
+			// own triggers ran for the insert group fires again
+			// (review_round6 m_none: P=2/17/10 then P=2/27/20).
+			if len(insertGroupParents) > 0 && engine.HeldSummaryDiffersFromLive() {
+				engine.RequeueSummaryUpdates(insertGroupParents)
+			}
 			engine.ReleaseSummaryHold()
 		} else {
+			insertGroupParents = engine.PeekSummaryUpdates()
 			// The insert group has landed when the update group's triggers run;
 			// the update has not (sf4_mixed_upsert). The parent's own triggers
-			// and automation run without the hold.
+			// read the same landed values (review_round6 m_none).
 			engine.LandSummaryHold(afterRecords)
-			engine.SuspendSummaryHold()
 		}
 		if _, err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, "", "", nil, nil); err != nil {
 			return results, err
@@ -4139,7 +4147,6 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			}
 			return results, err
 		}
-		engine.ResumeSummaryHold()
 	}
 	if hasDMLSuccess(results) {
 		if len(records) == 1 && !engine.Options.PreserveCustomKeyUpsertList && externalIDField != "" && !strings.EqualFold(externalIDField, "Id") {
@@ -7155,10 +7162,11 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		vm.testContext != nil && vm.testContext.RunAsDepth > 0 && !vm.runAsSecureDefaults() && vm.objectPermissionsDeleteInput(value) {
 		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, false, true, dmlMode)
 	} else {
-		savedCaptured := vm.runAsRecordAccessCaptured
+		savedCaptured, savedExplicit := vm.runAsRecordAccessCaptured, vm.explicitUserModeDML
 		vm.runAsRecordAccessCaptured = mode == ir.DMLModeUser || op == "delete" && value.Kind == ValueObject
+		vm.explicitUserModeDML = mode == ir.DMLModeUser
 		results, err = vm.applyDMLWithRecordAccess(op, value, true, externalIDField, dmlOptions, result, dmlMode)
-		vm.runAsRecordAccessCaptured = savedCaptured
+		vm.runAsRecordAccessCaptured, vm.explicitUserModeDML = savedCaptured, savedExplicit
 	}
 	if err != nil {
 		return vm.flowCoreStatementInsertError(op, value, err)

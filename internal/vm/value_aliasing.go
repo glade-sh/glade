@@ -4603,10 +4603,15 @@ func (vm *VM) refreshCallerEscapedCollectionAliases(caller map[string]Value, sin
 // place; the container keeps its own identity.
 func (vm *VM) refreshEscapedNestedCollections(container Value, since uint64, budget *int) {
 	refresh := func(item *Value) {
-		if *budget <= 0 || !mutableCollectionKind(item.Kind) {
+		// Every visited item spends budget, scalars and records included, so a
+		// large caller collection costs a bounded amount per call.
+		if *budget <= 0 {
 			return
 		}
 		*budget--
+		if !mutableCollectionKind(item.Kind) {
+			return
+		}
 		if item.Ref != 0 {
 			if latest, ok := vm.escapedCollectionLatest[item.Ref]; ok && latest.seq > since && latest.value.Kind == item.Kind {
 				*item = latest.value
@@ -4618,6 +4623,9 @@ func (vm *VM) refreshEscapedNestedCollections(container Value, since uint64, bud
 	switch container.Kind {
 	case ValueMap:
 		for key, item := range container.Map {
+			if *budget <= 0 {
+				return
+			}
 			before := item
 			refresh(&item)
 			if item.Ref != before.Ref || item.Kind != before.Kind || len(item.List) != len(before.List) || len(item.Map) != len(before.Map) {
@@ -4626,6 +4634,9 @@ func (vm *VM) refreshEscapedNestedCollections(container Value, since uint64, bud
 		}
 	case ValueList:
 		for i := range container.List {
+			if *budget <= 0 {
+				return
+			}
 			refresh(&container.List[i])
 		}
 	}
