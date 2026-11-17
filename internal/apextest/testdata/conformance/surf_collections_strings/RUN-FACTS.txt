@@ -103,8 +103,11 @@ a scale capture (two repeats on API 62.0 and 67.0, four identical result files, 
 internal/automation/testdata/flow_target_reject/deploy-fails-scale.tsv) rejects every same-type Number pair from scale
 0 to 17 on both sides, for a variable and for a formula source ((0,0), (2,3), (3,2), (0,2), (2,0); formula 0 or 3 into
 target 2 or 3), with the same message. A scale of 18 fails with "The scale can't be greater than 17." instead, so
-Glade keeps the earlier compile for it, and for a Number target without a declared scale (no row). Hub active-org
-queries after the runs showed no scratch org left. Also uncaptured, so on the earlier
+Glade keeps the earlier compile for it, and for a Number target without a declared scale (no row). A second scale
+capture (same method, internal/automation/testdata/flow_target_reject/deploy-fails-scale2.tsv, four identical result
+files) measured the endpoints and the interior: variable pairs (17,17), (17,0), (0,17), (1,16), (16,1), (5,10), (10,5),
+(1,1) and formula pairs (17,17), (17,0), (0,17), (1,1) are all rejected with the merge message. Together the two
+captures are the basis for the 0 to 17 range rule. Also uncaptured, so on the earlier
 behavior: Currency, DateTime and other resource types, and a Number without a declared scale.
 The flow change is gated to autolaunched flows and a String target.
 dth_r3_fmtjulian (cap7): format() on Julian dates. The weekday, day of year, week of year, week of month,

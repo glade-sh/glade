@@ -233,12 +233,19 @@ func TestFlowMergeOutsideNativeRowsCompilesAsBefore(t *testing.T) {
 // (18, 18) row fails with the scale limit message instead, so Glade does not claim the
 // merge message for it and keeps the earlier compile.
 func TestFlowTargetRejectNumberScalesAreRejected(t *testing.T) {
-	body, err := os.ReadFile(filepath.Join("testdata", "flow_target_reject", "deploy-fails-scale.tsv"))
-	if err != nil {
-		t.Fatal(err)
-	}
 	rows := 0
-	for _, line := range strings.Split(strings.TrimSpace(string(body)), "\n") {
+	// Two captures: the first covers 0 to 3 and 18, the second the endpoints and the
+	// interior of the 0 to 17 range (variable (17,17), (17,0), (0,17), (1,16), (16,1),
+	// (5,10), (10,5), (1,1); formula (17,17), (17,0), (0,17), (1,1)).
+	var lines []string
+	for _, name := range []string{"deploy-fails-scale.tsv", "deploy-fails-scale2.tsv"} {
+		body, err := os.ReadFile(filepath.Join("testdata", "flow_target_reject", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		lines = append(lines, strings.Split(strings.TrimSpace(string(body)), "\n")...)
+	}
+	for _, line := range lines {
 		id, message, _ := strings.Cut(line, "\t")
 		parts := strings.Split(id, "_")
 		if len(parts) != 4 {
@@ -257,8 +264,8 @@ func TestFlowTargetRejectNumberScalesAreRejected(t *testing.T) {
 			t.Fatalf("%s: got %q, want native %q", id, got, message)
 		}
 	}
-	if rows != 10 {
-		t.Fatalf("rows %d, want 10", rows)
+	if rows != 22 {
+		t.Fatalf("rows %d, want 22", rows)
 	}
 }
 
