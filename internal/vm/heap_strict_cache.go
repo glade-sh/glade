@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"slices"
 	"strings"
 	"unsafe"
 
@@ -58,6 +59,12 @@ type heapCheckCache struct {
 	itemSeen map[approxVisitKey]bool
 	// priced counts checks priced from the cache, for tests.
 	priced int
+	// loopVars maps an enhanced for variable to the identity of the element
+	// it is bound to, when that element is reachable through a list or set
+	// local whose root the cache holds unchanged (noteHeapLoopBinding).
+	loopVars map[string]uint64
+	// walked counts checks that walked the heap in full, for tests.
+	walked int
 }
 
 // heapStatementPlansOff makes every strict check walk the heap. Tests compare
@@ -121,6 +128,8 @@ const (
 	heapPlanScalar
 	// heapPlanAppend: the statement appends one value to a local list.
 	heapPlanAppend
+	// heapPlanPut: the statement puts one new key into a local Map.
+	heapPlanPut
 	// heapPlanBind: the statement binds a local to a new record.
 	heapPlanBind
 	// heapPlanField: the statement writes a scalar field of a record local.
@@ -139,6 +148,11 @@ type heapStatementPlan struct {
 	target string
 	ref    uint64
 	oldLen int
+	// oldOrder is the key order length of a Map before a put.
+	oldOrder int
+	// shared holds the identities of Id values the statement reads from
+	// record locals; the heap already counts them.
+	shared []uint64
 	// item names the record local an append adds, if any.
 	item string
 	// before is the written record's size before a field write.
@@ -213,6 +227,13 @@ func (vm *VM) planHeapStatement(inst ir.Instruction) heapStatementPlan {
 	case ir.OpExpr:
 		if vm.heapIncrementExpr(inst.Expr) {
 			plan.kind = heapPlanScalar
+		} else if target, item, ok := vm.heapPutTarget(inst.Expr); ok {
+			m := vm.Globals[target]
+			plan.kind = heapPlanPut
+			plan.target, plan.item = target, item
+			plan.ref = m.Ref
+			plan.oldLen = len(m.Map)
+			plan.oldOrder = len(m.MapOrder)
 		} else if target, item, ok := vm.heapAppendTarget(inst.Expr); ok {
 			list := vm.Globals[target]
 			plan.kind = heapPlanAppend
@@ -220,6 +241,9 @@ func (vm *VM) planHeapStatement(inst ir.Instruction) heapStatementPlan {
 			plan.ref = list.Ref
 			plan.oldLen = len(list.List)
 		}
+	}
+	if plan.kind == heapPlanAppend || plan.kind == heapPlanPut || plan.kind == heapPlanBind {
+		plan.shared = vm.heapSharedRefs(inst.Expr, nil)
 	}
 	return plan
 }
@@ -230,7 +254,7 @@ func (vm *VM) planHeapStatement(inst ir.Instruction) heapStatementPlan {
 // prices or refuses.
 func heapControlOp(op ir.Op) bool {
 	switch op {
-	case ir.OpFor, ir.OpWhile, ir.OpDoWhile, ir.OpIf, ir.OpBlock, ir.OpDeclGroup, ir.OpBreak, ir.OpContinue:
+	case ir.OpFor, ir.OpForEach, ir.OpWhile, ir.OpDoWhile, ir.OpIf, ir.OpBlock, ir.OpDeclGroup, ir.OpBreak, ir.OpContinue:
 		return true
 	}
 	return false
@@ -267,8 +291,8 @@ var heapPureBinaryOperators = map[string]bool{
 	"<<": true, ">>": true, ">>>": true,
 }
 
-// heapPureExpr reports whether expr only reads literals and scalar locals
-// through operators. Such an expression cannot run Apex code (no call, and
+// heapPureExpr reports whether expr only reads literals, scalar locals and
+// scalar fields of record locals (heapRecordFieldRead) through operators. Such an expression cannot run Apex code (no call, and
 // scalar operands never reach equals, compareTo or toString) and writes
 // nothing.
 func (vm *VM) heapPureExpr(expr ir.Expr) bool {
@@ -276,7 +300,7 @@ func (vm *VM) heapPureExpr(expr ir.Expr) bool {
 	case ir.ExprLiteral:
 		return true
 	case ir.ExprVariable:
-		return vm.heapScalarLocal(expr.Name)
+		return vm.heapScalarLocal(expr.Name) || vm.heapRecordFieldRead(expr.Name)
 	case ir.ExprUnary:
 		switch expr.Operator {
 		case "-", "!", "~":
@@ -293,6 +317,89 @@ func (vm *VM) heapPureExpr(expr ir.Expr) bool {
 		return vm.heapPureCall(expr)
 	}
 	return false
+}
+
+// heapRecordFieldRead matches root.Field on a record local whose field map
+// already holds a scalar under that exact, canonical name. The read then
+// returns the stored value: it takes none of the lazy paths that can fill the
+// map (missing, unqueried or relationship fields), so it writes nothing and
+// runs no Apex code.
+func (vm *VM) heapRecordFieldRead(name string) bool {
+	root, field, ok := strings.Cut(name, ".")
+	if !ok || !heapLocalName(root) || !heapLocalName(field) {
+		return false
+	}
+	record, ok := vm.heapRecordLocal(root)
+	if !ok {
+		return false
+	}
+	value, present := record.Fields[field]
+	if !present || !heapScalarKind(value.Kind) {
+		return false
+	}
+	return vm.resolveSObjectFieldName(record.Type, field) == field
+}
+
+// heapSharedIDRead matches root.Field on a record local whose field holds an
+// Id value, which the walk counts as a container with its own identity. Such
+// a read returns the stored object, which stays reachable through the record,
+// so a value that holds it adds nothing for it. It returns the identity.
+func (vm *VM) heapSharedIDRead(expr ir.Expr) (uint64, bool) {
+	if expr.Kind != ir.ExprVariable {
+		return 0, false
+	}
+	root, field, ok := strings.Cut(expr.Name, ".")
+	if !ok || !heapLocalName(root) || !heapLocalName(field) {
+		return 0, false
+	}
+	record, ok := vm.heapRecordLocal(root)
+	if !ok {
+		return 0, false
+	}
+	value, present := record.Fields[field]
+	if !present || value.Kind != ValueObject || value.Type != "Id" || value.Ref == 0 || value.classInstance ||
+		value.fieldsShared || len(value.Fields) != 1 {
+		return 0, false
+	}
+	for _, text := range value.Fields {
+		if text.Kind != ValueString {
+			return 0, false
+		}
+	}
+	if vm.resolveSObjectFieldName(record.Type, field) != field {
+		return 0, false
+	}
+	return value.Ref, true
+}
+
+// heapArgExpr is a pure scalar expression or a shared Id read.
+func (vm *VM) heapArgExpr(expr ir.Expr) bool {
+	if vm.heapPureExpr(expr) {
+		return true
+	}
+	_, ok := vm.heapSharedIDRead(expr)
+	return ok
+}
+
+// heapSharedRefs collects the identities of the shared Id reads in the direct
+// operands of a planned statement's expression.
+func (vm *VM) heapSharedRefs(expr ir.Expr, out []uint64) []uint64 {
+	if ref, ok := vm.heapSharedIDRead(expr); ok {
+		return append(out, ref)
+	}
+	if expr.Kind == ir.ExprCall {
+		for _, arg := range expr.Args {
+			if ref, ok := vm.heapSharedIDRead(arg); ok {
+				out = append(out, ref)
+			}
+		}
+		for _, named := range expr.NamedArgs {
+			if ref, ok := vm.heapSharedIDRead(named.Expr); ok {
+				out = append(out, ref)
+			}
+		}
+	}
+	return out
 }
 
 // heapPureStaticCalls are builtin static calls with a scalar result that run
@@ -368,7 +475,7 @@ func (vm *VM) heapNewRecordExpr(expr ir.Expr) bool {
 		return false
 	}
 	for _, named := range expr.NamedArgs {
-		if !vm.heapPureExpr(named.Expr) {
+		if !vm.heapArgExpr(named.Expr) {
 			return false
 		}
 	}
@@ -417,7 +524,55 @@ func (vm *VM) heapAppendTarget(expr ir.Expr) (string, string, bool) {
 		return "", "", false
 	}
 	arg := expr.Args[0]
-	if vm.heapPureExpr(arg) || vm.heapNewRecordExpr(arg) {
+	if vm.heapArgExpr(arg) || vm.heapNewRecordExpr(arg) {
+		return receiverName, "", true
+	}
+	if arg.Kind == ir.ExprVariable && arg.Name != receiverName {
+		if _, ok := vm.heapRecordLocal(arg.Name); ok {
+			return receiverName, arg.Name, true
+		}
+	}
+	return "", "", false
+}
+
+// heapPutTarget matches name.put(key, value) on a local Map with an identity
+// and its own key storage, where key is a pure scalar expression and value is
+// a pure scalar expression, a new record expression or a record local. It
+// returns the map local and the record local, if any.
+func (vm *VM) heapPutTarget(expr ir.Expr) (string, string, bool) {
+	if expr.Kind != ir.ExprCall || len(expr.Args) != 2 || len(expr.NamedArgs) != 0 || len(vm.currentMethod.triggerLocalMethods) != 0 {
+		return "", "", false
+	}
+	receiverName, method := "", expr.Callee
+	if expr.Left != nil {
+		if expr.Left.Kind != ir.ExprVariable {
+			return "", "", false
+		}
+		receiverName = expr.Left.Name
+	} else {
+		var qualified bool
+		receiverName, method, qualified = strings.Cut(expr.Callee, ".")
+		if !qualified {
+			return "", "", false
+		}
+		if _, builtin := canonicalBuiltinStaticCall(expr.Callee); builtin {
+			return "", "", false
+		}
+	}
+	if !strings.EqualFold(method, "put") || !heapLocalName(receiverName) {
+		return "", "", false
+	}
+	receiver, ok := vm.Globals[receiverName]
+	if !ok || receiver.Kind != ValueMap || receiver.Ref == 0 || receiver.classInstance || receiver.Map == nil ||
+		receiver.mapKeySetSource != nil || receiver.mapEntriesShared || receiver.mapBackingShared ||
+		len(receiver.MapOrder) != len(receiver.Map) || len(receiver.Fields) != 0 {
+		return "", "", false
+	}
+	if !vm.heapArgExpr(expr.Args[0]) {
+		return "", "", false
+	}
+	arg := expr.Args[1]
+	if vm.heapArgExpr(arg) || vm.heapNewRecordExpr(arg) {
 		return receiverName, "", true
 	}
 	if arg.Kind == ir.ExprVariable && arg.Name != receiverName {
@@ -469,6 +624,61 @@ func (vm *VM) evalHeapNeutral(expr ir.Expr, result *Result) (Value, error) {
 	return value, err
 }
 
+// evalHeapNeutralCollection evaluates the iterable of an enhanced for. A
+// local List or Set read writes nothing and runs no Apex code, so it keeps the
+// strict heap cache current like a pure condition.
+func (vm *VM) evalHeapNeutralCollection(expr ir.Expr, result *Result) (Value, error) {
+	if vm.limitMode != LimitModeStrict || expr.Kind != ir.ExprVariable || !heapLocalName(expr.Name) || !vm.heapCheckCurrent(vm.work.instructions) {
+		return vm.eval(expr, result)
+	}
+	local, ok := vm.Globals[expr.Name]
+	if !ok || (local.Kind != ValueList && local.Kind != ValueSet) || local.Ref == 0 || local.classInstance {
+		return vm.eval(expr, result)
+	}
+	instructions := vm.work.instructions
+	value, err := vm.eval(expr, result)
+	if err == nil && vm.work.instructions == instructions && vm.heapCheck.valid {
+		vm.heapCheck.evalSeq = vm.heapEvalSeq
+	}
+	return value, err
+}
+
+// noteHeapLoopBinding records that an enhanced for bound name to element,
+// taken one by one from the list or set local source. The element is then
+// reachable through source, which the cache holds unchanged, so the loop
+// variable adds its name and nothing else to the heap, and loses nothing when
+// it moves to the next element or leaves. Any other binding is left to the
+// root comparison, which walks.
+func (vm *VM) noteHeapLoopBinding(name string, source ir.Expr, iterable, element Value) {
+	c := &vm.heapCheck
+	delete(c.loopVars, name)
+	if vm.limitMode != LimitModeStrict || heapStatementPlansOff || source.Kind != ir.ExprVariable || !heapLocalName(source.Name) ||
+		!heapContainerKind(element.Kind) || element.Ref == 0 || element.mapKeySetSource != nil || !vm.heapCheckCurrent(vm.work.instructions) {
+		return
+	}
+	local, ok := vm.Globals[source.Name]
+	root, had := c.roots[source.Name]
+	if !ok || !had || local.Ref != iterable.Ref || root.sig != heapRootSigOf(local) || root.sig.kind == "" {
+		return
+	}
+	if c.loopVars == nil {
+		c.loopVars = make(map[string]uint64)
+	}
+	if c.appended == nil {
+		c.appended = make(map[uint64]struct{})
+	}
+	c.loopVars[name] = element.Ref
+	// Dropping the variable's value, or rebinding the name, loses nothing.
+	c.appended[element.Ref] = struct{}{}
+}
+
+// heapLoopBound reports whether value is the element the enhanced for
+// variable name is bound to.
+func (vm *VM) heapLoopBound(name string, value Value) bool {
+	ref, ok := vm.heapCheck.loopVars[name]
+	return ok && value.Ref != 0 && value.Ref == ref
+}
+
 // heapSizeFromPlan prices the heap after a planned statement from the cache.
 // It returns false, leaving the cache as it was, when any condition of the
 // plan does not hold.
@@ -492,6 +702,7 @@ func (vm *VM) heapSizeFromPlan(plan heapStatementPlan) (int, bool) {
 	delta := 0
 	var targetSig, targetOld heapRootSig
 	var appendedRef uint64
+	added := 0
 	switch plan.kind {
 	case heapPlanAppend:
 		target, ok := vm.Globals[plan.target]
@@ -505,12 +716,40 @@ func (vm *VM) heapSizeFromPlan(plan heapStatementPlan) (int, bool) {
 			// The record is already counted through its local, which the
 			// root comparison below requires unchanged.
 			local, ok := c.roots[plan.item]
-			if !ok || item.Kind != ValueObject || item.Ref != local.value.Ref {
+			if item.Kind != ValueObject || !((ok && item.Ref == local.value.Ref) || vm.heapLoopBound(plan.item, item)) {
 				return 0, false
 			}
 			appendedRef = item.Ref
 		} else {
-			size, ok := vm.heapFreshItemSize(item, plan.refMark)
+			size, ok := vm.heapFreshItemSize(item, plan.refMark, plan.shared)
+			if !ok {
+				return 0, false
+			}
+			delta += size
+		}
+		targetSig, targetOld = heapRootSigOf(target), old.sig
+	case heapPlanPut:
+		target, ok := vm.Globals[plan.target]
+		old, had := c.roots[plan.target]
+		if !ok || !had || target.Kind != ValueMap || target.Ref != plan.ref || old.sig.ref != plan.ref ||
+			old.sig.n != plan.oldLen || len(target.Map) != plan.oldLen+1 || len(target.MapOrder) != plan.oldOrder+1 ||
+			heapRootSigOf(target).ptr != old.sig.ptr {
+			return 0, false
+		}
+		key := target.MapOrder[plan.oldOrder]
+		item, present := target.Map[key]
+		if !present {
+			return 0, false
+		}
+		delta += len(key)
+		if plan.item != "" {
+			local, ok := c.roots[plan.item]
+			if item.Kind != ValueObject || !((ok && item.Ref == local.value.Ref) || vm.heapLoopBound(plan.item, item)) {
+				return 0, false
+			}
+			appendedRef = item.Ref
+		} else {
+			size, ok := vm.heapFreshItemSize(item, plan.refMark, plan.shared)
 			if !ok {
 				return 0, false
 			}
@@ -522,7 +761,7 @@ func (vm *VM) heapSizeFromPlan(plan heapStatementPlan) (int, bool) {
 		if !ok || bound.Kind != ValueObject {
 			return 0, false
 		}
-		size, ok := vm.heapFreshItemSize(bound, plan.refMark)
+		size, ok := vm.heapFreshItemSize(bound, plan.refMark, plan.shared)
 		if !ok {
 			return 0, false
 		}
@@ -564,13 +803,23 @@ func (vm *VM) heapSizeFromPlan(plan heapStatementPlan) (int, bool) {
 		switch {
 		case plan.kind == heapPlanBind && name == plan.target:
 			// Priced above.
+		case !(plan.kind == heapPlanField && name == plan.target) && vm.heapLoopBound(name, value):
+			// An enhanced for variable: its element is counted through the
+			// iterable, so only a new name adds to the heap.
+			if had && sig == old.sig {
+				continue
+			}
+			if !had {
+				delta += len(name)
+				added++
+			}
 		case !had:
 			return 0, false
 		case sig == old.sig && !(plan.kind == heapPlanField && name == plan.target):
 			continue
 		case sig == old.sig:
 			// A field write in place.
-		case plan.kind == heapPlanAppend && value.Ref == plan.ref && sig == targetSig && old.sig == targetOld:
+		case (plan.kind == heapPlanAppend || plan.kind == heapPlanPut) && value.Ref == plan.ref && sig == targetSig && old.sig == targetOld:
 			// An alias of the appended list shares its new storage.
 		case plan.kind == heapPlanField && name == plan.target && value.Ref == old.value.Ref:
 			// Priced above; the write may give the record new storage.
@@ -579,7 +828,7 @@ func (vm *VM) heapSizeFromPlan(plan heapStatementPlan) (int, bool) {
 		}
 		changes = append(changes, name)
 	}
-	expected := len(c.roots)
+	expected := len(c.roots) + added
 	if plan.kind == heapPlanBind {
 		if _, had := c.roots[plan.target]; !had {
 			expected++
@@ -647,20 +896,46 @@ func (vm *VM) heapDroppedSize(value Value) (int, bool) {
 // of it was reachable before the statement and the full walk counts all of
 // it. Records of a loaded schema hold their own bookkeeping maps, which
 // qualify the same way.
-func (vm *VM) heapFreshItemSize(item Value, refMark uint64) (int, bool) {
+func (vm *VM) heapFreshItemSize(item Value, refMark uint64, shared []uint64) (int, bool) {
 	if heapScalarKind(item.Kind) {
 		return approxValueSizeSeen(item, nil), true
 	}
-	if item.Kind != ValueObject || item.classInstance || !vm.isSObjectLikeType(item.Type) || !heapFreshTree(item, refMark, 0) {
+	if item.Kind == ValueObject && item.Type == "Id" && item.Ref != 0 && slices.Contains(shared, item.Ref) {
+		// An Id read from a record local, already counted through it.
+		return 0, true
+	}
+	if item.Kind != ValueObject || item.classInstance || !vm.isSObjectLikeType(item.Type) || !heapFreshTreeShared(item, refMark, 0, shared) {
 		return 0, false
 	}
-	return vm.heapTreeSize(item), true
+	c := &vm.heapCheck
+	if c.itemSeen == nil {
+		c.itemSeen = make(map[approxVisitKey]bool, 8)
+	}
+	for _, ref := range shared {
+		c.itemSeen[approxVisitKey{kind: ValueObject, ref: ref}] = true
+	}
+	size := approxValueSizeSeen(item, c.itemSeen)
+	if len(c.itemSeen) > 64 {
+		c.itemSeen = nil
+	} else {
+		clear(c.itemSeen)
+	}
+	return size, true
 }
 
 // heapFreshTree reports whether every container under value has an identity
 // newer than refMark and holds no shared or derived storage.
 func heapFreshTree(value Value, refMark uint64, depth int) bool {
+	return heapFreshTreeShared(value, refMark, depth, nil)
+}
+
+// heapFreshTreeShared is heapFreshTree where an Id value named in shared
+// also qualifies: it is already counted and the new tree adds nothing for it.
+func heapFreshTreeShared(value Value, refMark uint64, depth int, shared []uint64) bool {
 	if heapScalarKind(value.Kind) {
+		return true
+	}
+	if value.Kind == ValueObject && value.Type == "Id" && value.Ref != 0 && slices.Contains(shared, value.Ref) {
 		return true
 	}
 	if !heapContainerKind(value.Kind) || depth > 4 || value.Ref <= refMark ||
@@ -670,25 +945,25 @@ func heapFreshTree(value Value, refMark uint64, depth int) bool {
 	switch value.Kind {
 	case ValueObject:
 		for _, child := range value.Fields {
-			if !heapFreshTree(child, refMark, depth+1) {
+			if !heapFreshTreeShared(child, refMark, depth+1, shared) {
 				return false
 			}
 		}
 	case ValueList:
 		for _, child := range value.List {
-			if !heapFreshTree(child, refMark, depth+1) {
+			if !heapFreshTreeShared(child, refMark, depth+1, shared) {
 				return false
 			}
 		}
 	case ValueSet:
 		for _, child := range value.Set {
-			if !heapFreshTree(child, refMark, depth+1) {
+			if !heapFreshTreeShared(child, refMark, depth+1, shared) {
 				return false
 			}
 		}
 	case ValueMap:
 		for _, child := range value.Map {
-			if !heapFreshTree(child, refMark, depth+1) {
+			if !heapFreshTreeShared(child, refMark, depth+1, shared) {
 				return false
 			}
 		}
@@ -700,6 +975,7 @@ func heapFreshTree(value Value, refMark uint64, depth int) bool {
 // split the cache prices later statements from and opens a new window.
 func (vm *VM) heapSizeAndArm() int {
 	c := &vm.heapCheck
+	c.walked++
 	c.valid = false
 	if c.roots == nil {
 		c.roots = make(map[string]heapRoot)

@@ -1306,7 +1306,7 @@ func (vm *VM) rejectActiveCollectionAdd(collection Value) error {
 }
 
 func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
-	iterable, err := vm.eval(inst.Expr, result)
+	iterable, err := vm.evalHeapNeutralCollection(inst.Expr, result)
 	if err != nil {
 		return execOutcome{}, dynamicSOQLForLoopError(inst.Expr, err)
 	}
@@ -1332,7 +1332,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	releaseTraversal := vm.beginCollectionTraversal(iterable, true)
 	defer releaseTraversal()
 	removalEpoch := vm.collectionTraversalMutationEpochs[iterable.Ref]
+	chunked := false
 	if vm.shouldChunkEnhancedForList(inst.Type, iterable) {
+		chunked = true
 		if len(values) == 0 && inst.Expr.Kind == ir.ExprSOQL {
 			// SF191: a SOQL list-loop enters once with an empty batch.
 			values = []Value{typedList(inst.Type)}
@@ -1345,6 +1347,7 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	previousType, hadType := vm.VarTypes[inst.Name]
 	iterated := false
 	defer func() {
+		delete(vm.heapCheck.loopVars, inst.Name)
 		// After the loop a String loop variable binds in dynamic SOQL as
 		// null (see soql_bind_scope.go).
 		if iterated && isStringBindType(inst.Type) {
@@ -1381,6 +1384,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		iterated = true
 		if vm.coverage != nil && inst.Expr.Kind == ir.ExprSOQL {
 			vm.coverIteration(source, inst.Pos)
+		}
+		if !chunked && !existed && coerced.Ref == value.Ref {
+			vm.noteHeapLoopBinding(inst.Name, inst.Expr, iterable, coerced)
 		}
 		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
