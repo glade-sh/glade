@@ -8,14 +8,17 @@ import (
 )
 
 // flowMergeLocale returns the LocaleSidKey of the user the flow runs as. A
-// missing user or locale reads as en_US.
+// missing user, a missing field or a blank value returns "", which is not a
+// captured locale, so the merge keeps its original text. The default running
+// user stores LocaleSidKey en_US explicitly (storage fixture), so a blank means
+// the field was cleared and nothing native was captured for it.
 func (p *formulaParser) flowMergeLocale() string {
 	if p == nil || p.org == nil {
-		return "en_US"
+		return ""
 	}
 	users, ok := p.org.Objects["User"]
 	if !ok {
-		return "en_US"
+		return ""
 	}
 	userID := p.setupActor()
 	if userID == "" {
@@ -23,12 +26,12 @@ func (p *formulaParser) flowMergeLocale() string {
 	}
 	_, user, found := storage.LookupRecordByID(users.Records, userID)
 	if !found {
-		return "en_US"
+		return ""
 	}
-	if value, ok := formulaRecordField(user, "LocaleSidKey"); ok && value.Kind == storage.ValueString && value.String != "" {
+	if value, ok := formulaRecordField(user, "LocaleSidKey"); ok && value.Kind == storage.ValueString {
 		return value.String
 	}
-	return "en_US"
+	return ""
 }
 
 // flowLocaleRule holds what a captured user locale does to a Number and a Date

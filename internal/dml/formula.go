@@ -1015,6 +1015,9 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 			if strings.EqualFold(token.text, "IF") {
 				return p.parseIfFunction()
 			}
+			if strings.EqualFold(token.text, "GLADELOCALEMERGE") {
+				return p.parseLocaleMergeFunction()
+			}
 			if strings.EqualFold(token.text, "PRIORVALUE") {
 				return p.parsePriorValueFunction()
 			}
@@ -1101,6 +1104,29 @@ func (p *formulaParser) parseIfFunction() (formulaValue, bool) {
 		return formulaValue{}, false
 	}
 	return value, true
+}
+
+// parseLocaleMergeFunction reads GLADELOCALEMERGE(original, rendered). A merge of
+// a Number or Date reads in the running user's locale for the captured locales;
+// any other locale keeps the original merge text. Only the chosen argument is
+// evaluated, so a rendering that cannot evaluate on an uncaptured locale does
+// not change what the original text did.
+func (p *formulaParser) parseLocaleMergeFunction() (formulaValue, bool) {
+	original, ok := p.parseExpression()
+	if !ok || !p.matchSymbol(",") {
+		return formulaValue{}, false
+	}
+	if _, captured := flowMergeLocales[p.flowMergeLocale()]; captured {
+		rendered, ok := p.parseExpression()
+		if !ok || !p.matchSymbol(")") {
+			return formulaValue{}, false
+		}
+		return rendered, true
+	}
+	if !p.skipFormulaArgument() || !p.matchSymbol(")") {
+		return formulaValue{}, false
+	}
+	return original, true
 }
 
 func (p *formulaParser) parsePriorValueFunction() (formulaValue, bool) {
@@ -1754,16 +1780,6 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaString, text: flowNumberText(number.FloatString(scale), p.flowMergeLocale())}, true
-	case "GLADELOCALEMERGE":
-		// A merge of a Number or Date reads in the running user's locale for the
-		// captured locales; any other locale keeps the original merge text.
-		if len(args) != 2 {
-			return formulaValue{}, false
-		}
-		if _, captured := flowMergeLocales[p.flowMergeLocale()]; captured {
-			return args[1], true
-		}
-		return args[0], true
 	case "GLADEDATETEXT":
 		// A Date merged into flow text reads as the en_US long date.
 		if len(args) != 1 {
