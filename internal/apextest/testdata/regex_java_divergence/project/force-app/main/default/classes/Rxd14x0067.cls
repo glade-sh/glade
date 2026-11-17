@@ -45,4 +45,29 @@ private class Rxd14x0067 {
         try { Matcher m = Pattern.compile('a(?=b$)c').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
         System.assertEquals('ROW', observation);
     }
+    @IsTest static void d14x_empty_end_refind() {
+        String observation;
+        try { Matcher m = Pattern.compile('$').matcher('a'); m.find(); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d14x_third_find() {
+        String observation;
+        try { Matcher m = Pattern.compile('a\\B').matcher('aXa'); m.find(); m.find(); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d14x_neg_body_dollar() {
+        String observation;
+        try { Matcher m = Pattern.compile('a(?!b$)c').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d14x_neg_body_first() {
+        String observation;
+        try { Matcher m = Pattern.compile('a(?!b|b$)').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d14x_neg_body_dollar_first() {
+        String observation;
+        try { Matcher m = Pattern.compile('a(?!b$|b)').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
 }

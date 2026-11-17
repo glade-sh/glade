@@ -37,6 +37,8 @@ type regexp2Plan struct {
 	linearProg         *syntax.Prog   // the same pattern as a program, for the hitEnd simulation
 	linearMu           sync.Mutex
 	linearHit          string
+	requireEndOnce     sync.Once
+	requireEndObs      *requireEndObserver
 }
 
 func buildGraphemeBoundaryTable(input string) *graphemeBoundaryTable {

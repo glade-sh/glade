@@ -826,6 +826,12 @@ func patternMatches(args []Value) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
+	if matched, ok, err := plan.matchesLoneSurrogateInput(input); ok {
+		if err != nil {
+			return Null, newRegexSyntaxError("StringException", pattern, err)
+		}
+		return Bool(matched), nil
+	}
 	match, err := plan.matchStartingAt(input, 0, utf8.RuneCountInString(input), true)
 	if err != nil {
 		return Null, newRegexSyntaxError("StringException", pattern, err)

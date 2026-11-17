@@ -659,7 +659,23 @@ func matcherRegexp2MatchIndices(matcher Value, input string, region matcherRegio
 	return indices, hitEnd || requiresEnd, requiresEnd, err
 }
 
-func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegionBounds, startByte int) ([]int, bool, bool, error) {
+// requireEndProbe returns what a failed find keeps so requireEnd can be
+// computed when it is read; nil when the pattern has no end-sensitive node.
+func (p *regexp2Plan) requireEndProbe(text string, start, endRune int) *requireEndProbe {
+	if len(p.endAssertionGroups) == 0 {
+		return nil
+	}
+	return &requireEndProbe{text: text, start: start, endRune: endRune}
+}
+
+// requireEndProbe is what a failed find keeps so requireEnd can be computed
+// when (and if) it is read.
+type requireEndProbe struct {
+	text           string
+	start, endRune int
+}
+
+func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegionBounds, startByte int) ([]int, bool, bool, *requireEndProbe, error) {
 	if !matcherUsesFullInputBounds(matcher) {
 		if startByte < region.startByte {
 			startByte = region.startByte
@@ -667,31 +683,30 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 		text := input[region.startByte:region.endByte]
 		plan, err := matcherRegexp2PlanForInput(matcher, text)
 		if err != nil {
-			return nil, false, false, err
+			return nil, false, false, nil, err
 		}
 		match, err := plan.findValidStartingAt(text, startByte-region.startByte)
 		if err != nil {
-			return nil, false, false, err
+			return nil, false, false, nil, err
 		}
 		hitEnd, err := plan.operationHitEnd(text, startByte-region.startByte, region.endRune-region.startRune, false, false)
 		if err != nil {
-			return nil, hitEnd, false, err
+			return nil, hitEnd, false, nil, err
 		}
 		if match == nil {
-			requiresEnd, err := plan.failedFindRequiresEnd(text, startByte-region.startByte, region.endRune-region.startRune)
-			return nil, plan.failedFindHitEnd(hitEnd), requiresEnd, err
+			return nil, plan.failedFindHitEnd(hitEnd), false, plan.requireEndProbe(text, startByte-region.startByte, region.endRune-region.startRune), nil
 		}
 		indices, err := plan.matchByteIndices(input, match, region.startRune)
 		requiresEnd := plan.matchRequiresEnd(text, match)
-		return indices, hitEnd || requiresEnd, requiresEnd, err
+		return indices, hitEnd || requiresEnd, requiresEnd, nil, err
 	}
 	plan, err := matcherRegexp2PlanForInput(matcher, input)
 	if err != nil {
-		return nil, false, false, err
+		return nil, false, false, nil, err
 	}
 	hitEnd, err := plan.operationHitEnd(input, startByte, region.endRune, false, false)
 	if err != nil {
-		return nil, false, false, err
+		return nil, false, false, nil, err
 	}
 	match, err := plan.findValidStartingAt(input, startByte)
 	for match != nil && err == nil {
@@ -702,21 +717,19 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 			continue
 		}
 		if start > region.endRune {
-			requiresEnd, err := plan.failedFindRequiresEnd(input, startByte, region.endRune)
-			return nil, plan.failedFindHitEnd(hitEnd), requiresEnd, err
+			return nil, plan.failedFindHitEnd(hitEnd), false, plan.requireEndProbe(input, startByte, region.endRune), nil
 		}
 		if end <= region.endRune {
 			indices, err := plan.matchByteIndices(input, match, 0)
 			requiresEnd := plan.matchRequiresEnd(input, match)
-			return indices, hitEnd || requiresEnd, requiresEnd, err
+			return indices, hitEnd || requiresEnd, requiresEnd, nil, err
 		}
 		match, err = plan.findNextValid(input, match)
 	}
 	if err != nil {
-		return nil, hitEnd, false, err
+		return nil, hitEnd, false, nil, err
 	}
-	requiresEnd, err := plan.failedFindRequiresEnd(input, startByte, region.endRune)
-	return nil, plan.failedFindHitEnd(hitEnd), requiresEnd, err
+	return nil, plan.failedFindHitEnd(hitEnd), false, plan.requireEndProbe(input, startByte, region.endRune), nil
 }
 
 func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error) {

@@ -51,3 +51,6 @@ requireEnd after a failed find (d14x rows, 62.0 and 67.0, anonymous and @IsTest,
   a(?!b)x on ab is false, a(?=b$)c on ab is true, and a second failed find after a match keeps the end read made at the last start (a\B on aXa).
 Matcher.toMatchResult rows (u6, named @IsTest route, 62.0 and 67.0, two repeats): the deploy fails on line 4 of the class with "Method does not exist or incorrect signature: void toMatchResult() from the type System.Matcher"
   (column of the method name) and "Invalid type: MatchResult" (column of the type). The anonymous rows u6_toMatchResult and u6_matchResultType are in org.tsv; the named rows are asserted in internal/sema/matcher_to_match_result_test.go.
+requireEnd follow-ups (d14x, 62.0 and 67.0, anonymous and @IsTest, two repeats in two scratch orgs run at the same time, deleted and verified gone): find() after a find that failed past the region end does not change
+  hitEnd or requireEnd ($ on a: find true, find false gives hitEnd=true requireEnd=true; a\B on aXa with three finds gives false hitEnd=true requireEnd=true). A negative lookahead whose body reads the end counts even though the
+  lookahead then fails, and the body stops at its first success: a(?!b$)c on ab is requireEnd=true, a(?!b|b$) is false, a(?!b$|b) is true.

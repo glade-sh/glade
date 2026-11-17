@@ -58,234 +58,245 @@ func regexp2ObserverSource(source string, re *regexp2.Regexp, endGroups map[int]
 		}
 		return "(?(" + name + ")|" + atom + ")"
 	}
-	closerAt := map[int]string{}
-	var out strings.Builder
-	// Anchor-only expressions still need a declared slot for the conditions.
-	// This definition cannot capture or change the observation result.
-	out.WriteString("(?:(?<" + name + ">(?!))|)")
-	extended := false
-	var stack []bool
-	for i := 0; i < len(source); {
-		start, ch := i, source[i]
-		if extended && ch == '#' {
-			end := strings.IndexByte(source[i:], '\n')
-			if end < 0 {
-				out.WriteString(source[i:])
-				break
-			}
-			out.WriteString(source[i : i+end+1])
-			i += end + 1
-			continue
-		}
-		if extended && strings.ContainsRune(" \t\r\n\f", rune(ch)) {
-			out.WriteByte(ch)
-			i++
-			continue
-		}
-		switch ch {
-		case '(':
-			if strings.HasPrefix(source[i:], "(?#") {
-				if end := strings.IndexByte(source[i+3:], ')'); end >= 0 {
-					i += end + 4
-					out.WriteString(source[start:i])
-					continue
-				}
-			}
-			if requireEnd {
-				if group, header, ok := regexp2InstrumentedGroupAt(source, i); ok {
-					if multiline, tracked := endGroups[group]; tracked {
-						end := regexp2GroupEnd(source, i)
-						if end > 0 {
-							body := source[i+header : end]
-							markCond := body
-							if multiline {
-								markCond = `\z`
-							}
-							out.WriteString("(?(" + name + ")|(?:(?<" + name + ">" + markCond + ")|" + source[i:end+1] + "))")
-							i = end + 1
-							continue
-						}
-					}
-				}
-			}
-			if strings.HasPrefix(source[i:], "(?!") && requireEnd {
-				out.WriteString("(?(" + name + ")|(?!")
-				i += 3
-				stack = append(stack, extended)
-				closerAt[len(stack)] = "))"
-				continue
-			}
-			if strings.HasPrefix(source[i:], "(?!") {
-				// A negative lookahead drops captures made inside it, which would
-				// hide reads at the end of the input. Observe its body through a
-				// positive lookahead that the path may skip.
-				out.WriteString("(?:(?=")
-				i += 3
-				stack = append(stack, extended)
-				closerAt[len(stack)] = ")|)"
-				continue
-			}
-			if strings.HasPrefix(source[i:], "(?") {
-				j, scoped, enabled, sawFlag := i+2, extended, true, false
-				for j < len(source) && strings.ContainsRune("imnsxIMNSX-+", rune(source[j])) {
-					if source[j] == '-' {
-						enabled = false
-					} else if source[j] == '+' {
-						enabled = true
-					} else {
-						sawFlag = true
-						if source[j] == 'x' || source[j] == 'X' {
-							scoped = enabled
-						}
-					}
-					j++
-				}
-				if sawFlag && j < len(source) && (source[j] == ':' || source[j] == ')') {
-					if source[j] == ':' {
-						stack = append(stack, extended)
-					}
-					extended = scoped
-					i = j + 1
-					out.WriteString(source[start:i])
-					continue
-				}
-				if i+3 < len(source) && source[i+2] == '<' && source[i+3] != '=' && source[i+3] != '!' {
-					if end := strings.IndexByte(source[i+3:], '>'); end >= 0 {
-						i += end + 4
-					} else {
-						i += 2
-					}
-				} else if i+3 < len(source) && source[i+2] == '<' {
-					i += 4
-				} else {
-					i += 3
-				}
-			} else {
-				i++
-			}
-			stack = append(stack, extended)
-			out.WriteString(source[start:i])
-		case ')':
-			depth := len(stack)
-			if depth > 0 {
-				extended = stack[depth-1]
-				stack = stack[:depth-1]
-			}
-			if closer, ok := closerAt[depth]; ok && depth > 0 {
-				delete(closerAt, depth)
-				out.WriteString(closer)
-			} else {
-				out.WriteByte(ch)
-			}
-			i++
-		case '|', '*', '+', '?':
-			out.WriteByte(ch)
-			i++
-		case '{':
-			if end := strings.IndexByte(source[i:], '}'); end >= 0 && isRegexCountQuantifier(source[i+1:i+end]) {
-				i += end + 1
-				out.WriteString(source[start:i])
-			} else {
-				out.WriteString(wrap(`\{`, true))
-				i++
-			}
-		case '[':
-			i++
-			if i < len(source) && source[i] == '^' {
-				i++
-			}
-			if i < len(source) && source[i] == ']' {
-				i++
-			}
-			for i < len(source) {
-				if source[i] == '\\' && i+1 < len(source) {
-					control := source[i+1] == 'c'
-					i += 2
-					if control && i < len(source) {
-						i++
-					}
-					continue
-				}
-				i++
-				if source[i-1] == ']' {
+	var rewrite func(source string, extended bool) string
+	rewrite = func(source string, extended bool) string {
+		closerAt := map[int]string{}
+		var out strings.Builder
+		var stack []bool
+		for i := 0; i < len(source); {
+			start, ch := i, source[i]
+			if extended && ch == '#' {
+				end := strings.IndexByte(source[i:], '\n')
+				if end < 0 {
+					out.WriteString(source[i:])
 					break
 				}
+				out.WriteString(source[i : i+end+1])
+				i += end + 1
+				continue
 			}
-			out.WriteString(wrap(source[start:i], true))
-		case '\\':
-			i += 2
-			if i > len(source) {
-				i = len(source)
+			if extended && strings.ContainsRune(" \t\r\n\f", rune(ch)) {
+				out.WriteByte(ch)
+				i++
+				continue
 			}
-			if i < len(source) {
-				switch source[start+1] {
-				case 'p', 'P':
-					if source[i] == '{' {
-						if end := strings.IndexByte(source[i:], '}'); end >= 0 {
-							i += end + 1
+			switch ch {
+			case '(':
+				if strings.HasPrefix(source[i:], "(?#") {
+					if end := strings.IndexByte(source[i+3:], ')'); end >= 0 {
+						i += end + 4
+						out.WriteString(source[start:i])
+						continue
+					}
+				}
+				if requireEnd {
+					if group, header, ok := regexp2InstrumentedGroupAt(source, i); ok {
+						if multiline, tracked := endGroups[group]; tracked {
+							end := regexp2GroupEnd(source, i)
+							if end > 0 {
+								body := source[i+header : end]
+								markCond := body
+								if multiline {
+									markCond = `\z`
+								}
+								out.WriteString("(?(" + name + ")|(?:(?<" + name + ">" + markCond + ")|" + source[i:end+1] + "))")
+								i = end + 1
+								continue
+							}
 						}
 					}
-				case 'k':
-					if source[i] == '<' {
-						if end := strings.IndexByte(source[i:], '>'); end >= 0 {
-							i += end + 1
+				}
+				if strings.HasPrefix(source[i:], "(?!") && requireEnd {
+					// Java evaluates the condition, so an end read inside it counts
+					// even though the lookahead then fails. Try the observed body in a
+					// positive lookahead first (it stops at the first success, as Java
+					// does); it only keeps the path when it set the slot. Otherwise the
+					// real negative lookahead decides.
+					if end := regexp2GroupEnd(source, i); end > 0 {
+						inner := source[i+3 : end]
+						out.WriteString("(?(" + name + ")|(?:(?=" + rewrite(inner, extended) + ")(?(" + name + ")|(?!))|" + source[i:end+1] + "))")
+						i = end + 1
+						continue
+					}
+					out.WriteString("(?(" + name + ")|(?!")
+					i += 3
+					stack = append(stack, extended)
+					closerAt[len(stack)] = "))"
+					continue
+				}
+				if strings.HasPrefix(source[i:], "(?!") {
+					// A negative lookahead drops captures made inside it, which would
+					// hide reads at the end of the input. Observe its body through a
+					// positive lookahead that the path may skip.
+					out.WriteString("(?:(?=")
+					i += 3
+					stack = append(stack, extended)
+					closerAt[len(stack)] = ")|)"
+					continue
+				}
+				if strings.HasPrefix(source[i:], "(?") {
+					j, scoped, enabled, sawFlag := i+2, extended, true, false
+					for j < len(source) && strings.ContainsRune("imnsxIMNSX-+", rune(source[j])) {
+						if source[j] == '-' {
+							enabled = false
+						} else if source[j] == '+' {
+							enabled = true
+						} else {
+							sawFlag = true
+							if source[j] == 'x' || source[j] == 'X' {
+								scoped = enabled
+							}
 						}
+						j++
 					}
-				case 'u', 'x':
-					if source[start+1] == 'x' && source[i] == '{' {
-						// \x{H...} is one atom.
-						if end := strings.IndexByte(source[i:], '}'); end >= 0 {
-							i += end + 1
-							break
+					if sawFlag && j < len(source) && (source[j] == ':' || source[j] == ')') {
+						if source[j] == ':' {
+							stack = append(stack, extended)
 						}
+						extended = scoped
+						i = j + 1
+						out.WriteString(source[start:i])
+						continue
 					}
-					count := 2
-					if source[start+1] == 'u' {
-						count = 4
+					if i+3 < len(source) && source[i+2] == '<' && source[i+3] != '=' && source[i+3] != '!' {
+						if end := strings.IndexByte(source[i+3:], '>'); end >= 0 {
+							i += end + 4
+						} else {
+							i += 2
+						}
+					} else if i+3 < len(source) && source[i+2] == '<' {
+						i += 4
+					} else {
+						i += 3
 					}
-					for count > 0 && i < len(source) {
-						i++
-						count--
-					}
-				case 'c':
+				} else {
 					i++
-				default:
-					if source[start+1] >= '0' && source[start+1] <= '9' {
-						for i < len(source) && source[i] >= '0' && source[i] <= '9' {
+				}
+				stack = append(stack, extended)
+				out.WriteString(source[start:i])
+			case ')':
+				depth := len(stack)
+				if depth > 0 {
+					extended = stack[depth-1]
+					stack = stack[:depth-1]
+				}
+				if closer, ok := closerAt[depth]; ok && depth > 0 {
+					delete(closerAt, depth)
+					out.WriteString(closer)
+				} else {
+					out.WriteByte(ch)
+				}
+				i++
+			case '|', '*', '+', '?':
+				out.WriteByte(ch)
+				i++
+			case '{':
+				if end := strings.IndexByte(source[i:], '}'); end >= 0 && isRegexCountQuantifier(source[i+1:i+end]) {
+					i += end + 1
+					out.WriteString(source[start:i])
+				} else {
+					out.WriteString(wrap(`\{`, true))
+					i++
+				}
+			case '[':
+				i++
+				if i < len(source) && source[i] == '^' {
+					i++
+				}
+				if i < len(source) && source[i] == ']' {
+					i++
+				}
+				for i < len(source) {
+					if source[i] == '\\' && i+1 < len(source) {
+						control := source[i+1] == 'c'
+						i += 2
+						if control && i < len(source) {
 							i++
 						}
+						continue
+					}
+					i++
+					if source[i-1] == ']' {
+						break
 					}
 				}
-			}
-			atom := source[start:i]
-			switch atom {
-			case `\A`, `\G`:
-				out.WriteString(wrap(atom, false))
-			case `\z`:
-				if requireEnd {
-					out.WriteString(wrap(atom, false))
-				} else {
-					out.WriteString(wrap(mark, false))
+				out.WriteString(wrap(source[start:i], true))
+			case '\\':
+				i += 2
+				if i > len(source) {
+					i = len(source)
 				}
-			case `\b`, `\B`:
-				if requireEnd {
-					out.WriteString(wrap(atom, false))
-					break
+				if i < len(source) {
+					switch source[start+1] {
+					case 'p', 'P':
+						if source[i] == '{' {
+							if end := strings.IndexByte(source[i:], '}'); end >= 0 {
+								i += end + 1
+							}
+						}
+					case 'k':
+						if source[i] == '<' {
+							if end := strings.IndexByte(source[i:], '>'); end >= 0 {
+								i += end + 1
+							}
+						}
+					case 'u', 'x':
+						if source[start+1] == 'x' && source[i] == '{' {
+							// \x{H...} is one atom.
+							if end := strings.IndexByte(source[i:], '}'); end >= 0 {
+								i += end + 1
+								break
+							}
+						}
+						count := 2
+						if source[start+1] == 'u' {
+							count = 4
+						}
+						for count > 0 && i < len(source) {
+							i++
+							count--
+						}
+					case 'c':
+						i++
+					default:
+						if source[start+1] >= '0' && source[start+1] <= '9' {
+							for i < len(source) && source[i] >= '0' && source[i] <= '9' {
+								i++
+							}
+						}
+					}
 				}
-				out.WriteString(wrap(atom+"(?:"+mark+")?", true))
+				atom := source[start:i]
+				switch atom {
+				case `\A`, `\G`:
+					out.WriteString(wrap(atom, false))
+				case `\z`:
+					if requireEnd {
+						out.WriteString(wrap(atom, false))
+					} else {
+						out.WriteString(wrap(mark, false))
+					}
+				case `\b`, `\B`:
+					if requireEnd {
+						out.WriteString(wrap(atom, false))
+						break
+					}
+					out.WriteString(wrap(atom+"(?:"+mark+")?", true))
+				default:
+					out.WriteString(wrap(atom, true))
+				}
+			case '^':
+				out.WriteString(wrap("^", false))
+				i++
 			default:
-				out.WriteString(wrap(atom, true))
+				_, size := utf8.DecodeRuneInString(source[i:])
+				i += size
+				out.WriteString(wrap(source[start:i], true))
 			}
-		case '^':
-			out.WriteString(wrap("^", false))
-			i++
-		default:
-			_, size := utf8.DecodeRuneInString(source[i:])
-			i += size
-			out.WriteString(wrap(source[start:i], true))
 		}
+		return out.String()
 	}
-	return out.String(), slot
+	return "(?:(?<" + name + ">(?!))|)" + rewrite(source, false), slot
 }
 
 // regexp2InstrumentedGroupAt reads a "(?<digits>" header at source[at:].
@@ -337,32 +348,53 @@ func regexp2GroupEnd(source string, at int) int {
 	return -1
 }
 
+// requireEndObserver is the compiled observer of a plan, built once.
+type requireEndObserver struct {
+	re     *regexp2.Regexp
+	slot   int
+	minLen int
+}
+
+func (p *regexp2Plan) requireEndObserver() *requireEndObserver {
+	p.requireEndOnce.Do(func() {
+		source, slot := regexp2RequireEndObserverSource(p.matchSource, p.re, p.endAssertionGroups)
+		minLen := 0
+		// Java's Start node tries only the starts that leave room for the
+		// pattern's minimum length; an assertion at the end of the input is read
+		// by an attempt that started earlier.
+		if parsed, perr := javaRegexParse(regexNormalizeExtended(javaRegexRemoveQuoting(p.originalSource))); perr == nil && parsed != nil && parsed.root.minLen > 0 {
+			minLen = int(parsed.root.minLen)
+			source = fmt.Sprintf(`(?=(?s:.{%d}))`, minLen) + source
+		}
+		re, err := regexp2.Compile(source, regexp2.None)
+		if err != nil {
+			return
+		}
+		re.MatchTimeout = regexp2MatchTimeout
+		p.requireEndObs = &requireEndObserver{re: re, slot: slot, minLen: minLen}
+	})
+	return p.requireEndObs
+}
+
 // failedFindRequiresEnd reports Java's requireEnd after a find that failed
-// (see regexp2RequireEndObserverSource).
-func (p *regexp2Plan) failedFindRequiresEnd(input string, startByte, endRune int) (bool, error) {
+// (see regexp2RequireEndObserverSource). The observer only reports a flag, so
+// any failure of its own reads as false and never reaches the caller.
+func (p *regexp2Plan) failedFindRequiresEnd(input string, startByte, endRune int) bool {
 	if len(p.endAssertionGroups) == 0 || endRune != utf8.RuneCountInString(input) {
-		return false, nil
+		return false
 	}
-	source, slot := regexp2RequireEndObserverSource(p.matchSource, p.re, p.endAssertionGroups)
-	// Java's Start node tries only the starts that leave room for the pattern's
-	// minimum length; an assertion at the end of the input is read by an attempt
-	// that started earlier.
-	if parsed, perr := javaRegexParse(regexNormalizeExtended(javaRegexRemoveQuoting(p.originalSource))); perr == nil && parsed != nil && parsed.root.minLen > 0 {
-		source = fmt.Sprintf(`(?=(?s:.{%d}))`, parsed.root.minLen) + source
+	obs := p.requireEndObserver()
+	if obs == nil {
+		return false
 	}
-	re, err := regexp2.Compile(source, regexp2.None)
-	if err != nil {
-		return false, nil
-	}
-	re.MatchTimeout = regexp2MatchTimeout
-	match, err := searchRegexp2(re, input, func() (*regexp2.Match, error) {
-		return re.FindStringMatchStartingAt(input, startByte)
+	match, err := searchRegexp2(obs.re, input, func() (*regexp2.Match, error) {
+		return obs.re.FindStringMatchStartingAt(input, startByte)
 	})
 	if err != nil || match == nil {
-		return false, err
+		return false
 	}
-	group := match.GroupByNumber(slot)
-	return group != nil && len(group.Captures) > 0, nil
+	group := match.GroupByNumber(obs.slot)
+	return group != nil && len(group.Captures) > 0
 }
 
 // failedFindHitEnd: a failed unanchored find ends in Java's Start node, which
@@ -372,6 +404,32 @@ func (p *regexp2Plan) failedFindHitEnd(observed bool) bool {
 		return true
 	}
 	return observed
+}
+
+// matchesLoneSurrogateInput is Pattern.matches over text that holds a lone
+// surrogate, which Java matches as a code unit of its own (d10_m_lone_hi,
+// d10_m_lone_lo, d10_m_prop_Cs). It reads the decoded code units through
+// regexp2's rune API and is taken only for such text and plans that need
+// neither the linear engine nor grapheme clusters; ok is false otherwise and
+// the string path decides.
+func (p *regexp2Plan) matchesLoneSurrogateInput(input string) (matched, ok bool, err error) {
+	if !mayHoldLoneSurrogate(input) || !hasLoneSurrogate(input) || p.linear != nil || p.grapheme != nil {
+		return false, false, nil
+	}
+	runes := apexCodeUnitRunes(input)
+	source := `\G(?:` + p.matchSource + ")" + `(?=\z)`
+	re, cerr := regexp2.Compile(source, regexp2.None)
+	if cerr != nil {
+		return false, true, cerr
+	}
+	re.MatchTimeout = regexp2MatchTimeout
+	match, merr := searchRegexp2(re, "", func() (*regexp2.Match, error) {
+		return re.FindRunesMatchStartingAt(runes, 0)
+	})
+	if merr != nil {
+		return false, true, merr
+	}
+	return match != nil && match.Index == 0 && match.Length == len(runes), true, nil
 }
 
 func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full bool) (*regexp2.Match, error) {
@@ -519,7 +577,8 @@ func linearAttemptReachesEnd(prog *syntax.Prog, input string, endRune int) bool 
 // groups, is a bare ^. A group around the ^ keeps Java's Start wrapper.
 func regexRootIsBareCaret(source string) bool {
 	source = regexNormalizeExtended(javaRegexRemoveQuoting(source))
-	if !strings.HasPrefix(regexStripLeadingFlags(source), "^") {
+	// Java compiles \A to the same Begin node as a non-multiline ^.
+	if stripped := regexStripLeadingFlags(source); !strings.HasPrefix(stripped, "^") && !strings.HasPrefix(stripped, `\A`) {
 		return false
 	}
 	depth := 0

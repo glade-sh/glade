@@ -1130,3 +1130,8 @@ d14x_bigZ_nl_x	d14x_00	"Matcher m = Pattern.compile('b\\\\Zx').matcher('ab\\n');
 d14x_neg_mid	d14x_00	"Matcher m = Pattern.compile('a(?!b)x').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
 d14x_second_find	d14x_00	"Matcher m = Pattern.compile('a\\\\B').matcher('aXa'); m.find(); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
 d14x_lookahead_dollar	d14x_00	"Matcher m = Pattern.compile('a(?=b$)c').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
+d14x_empty_end_refind	d14x_00	"Matcher m = Pattern.compile('$').matcher('a'); m.find(); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
+d14x_third_find	d14x_00	"Matcher m = Pattern.compile('a\\\\B').matcher('aXa'); m.find(); m.find(); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
+d14x_neg_body_dollar	d14x_00	"Matcher m = Pattern.compile('a(?!b$)c').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
+d14x_neg_body_first	d14x_00	"Matcher m = Pattern.compile('a(?!b|b$)').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"
+d14x_neg_body_dollar_first	d14x_00	"Matcher m = Pattern.compile('a(?!b$|b)').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd();"

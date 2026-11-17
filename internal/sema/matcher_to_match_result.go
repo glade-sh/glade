@@ -1,12 +1,15 @@
 package sema
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/typesys"
 )
+
+var matcherToMatchResultCall = regexp.MustCompile(`(?i)\.\s*(toMatchResult)\s*\(`)
 
 // semaMatcherToMatchResultDiagnostic reports Matcher.toMatchResult(). Apex has
 // no MatchResult type, so native rejects the call at compile time at API 62.0
@@ -17,7 +20,12 @@ func semaMatcherToMatchResultDiagnostic(typ typesys.TypeSymbol, member typesys.M
 	if receiverMode != "instance" || len(args) != 0 || !strings.EqualFold(platformType, "Matcher") || !strings.EqualFold(method, "toMatchResult") {
 		return diagnostic.Diagnostic{}, false
 	}
-	d := unknownCallDiagnostic(typ, member, platformType+"."+method, pos, pos+max(1, len(method)), source)
+	// pos is the start of the statement; native reports the method name.
+	start := pos
+	if loc := matcherToMatchResultCall.FindStringSubmatchIndex(source[min(pos, len(source)):]); loc != nil {
+		start = pos + loc[2]
+	}
+	d := unknownCallDiagnostic(typ, member, platformType+"."+method, start, start+max(1, len(method)), source)
 	d.NativeMessage = "Method does not exist or incorrect signature: void toMatchResult() from the type System.Matcher"
 	d.Message = d.NativeMessage
 	return d, true

@@ -37,14 +37,14 @@ func TestMatcherToMatchResultNativeCompileRejection(t *testing.T) {
 }
 
 // Native named @IsTest route (regex_java_divergence RUN-FACTS, u6 named rows):
-// deploy errors at 62.0 and 67.0, line 4 (columns 81 and 68 are not modelled).
+// deploy errors at 62.0 and 67.0, line 4, column 81 (the method name) and column 68 (the type).
 func TestMatcherToMatchResultNativeNamedRoute(t *testing.T) {
 	cases := []struct {
 		name, body, want string
-		line             int
+		line, column     int
 	}{
-		{"Ru6tmr", "Object r = m.toMatchResult();", "Method does not exist or incorrect signature: void toMatchResult() from the type System.Matcher", 4},
-		{"Ru6type", "MatchResult r = m.toMatchResult();", "Invalid type: MatchResult", 4},
+		{"Ru6tmr", "Object r = m.toMatchResult();", "Method does not exist or incorrect signature: void toMatchResult() from the type System.Matcher", 4, 81},
+		{"Ru6type", "MatchResult r = m.toMatchResult();", "Invalid type: MatchResult", 4, 68},
 	}
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, c := range cases {
@@ -64,8 +64,8 @@ func TestMatcherToMatchResultNativeNamedRoute(t *testing.T) {
 			if msg == "" {
 				msg = got.Message
 			}
-			if msg != c.want || got.Range == nil || got.Range.Start.Line != c.line {
-				t.Fatalf("%s %s: %q at %+v, want %q on line %d", api, c.name, msg, got.Range, c.want, c.line)
+			if msg != c.want || got.Range == nil || got.Range.Start.Line != c.line || got.Range.Start.Column != c.column {
+				t.Fatalf("%s %s: %q at %+v, want %q at %d:%d", api, c.name, msg, got.Range, c.want, c.line, c.column)
 			}
 		}
 	}
