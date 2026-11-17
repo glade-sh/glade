@@ -125,4 +125,24 @@ private class Rxd100062 {
         try { observation = 'a\uD83D\uDE00b'.replaceAll('','-').replace('\uD83D','H').replace('\uDE00','L'); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
         System.assertEquals('ROW', observation);
     }
+    @IsTest static void d10_m_lit_lone_hi() {
+        String observation;
+        try { observation = String.valueOf(Pattern.matches('\uD83D', '\uD83D')); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d10_m_matcher_lone_hi() {
+        String observation;
+        try { observation = String.valueOf(Pattern.compile('\\uD83D').matcher('\uD83D').matches()); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d10_m_matcher_lit_lone_hi() {
+        String observation;
+        try { observation = String.valueOf(Pattern.compile('\uD83D').matcher('\uD83D').matches()); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d10_m_matcher_group_lone_hi() {
+        String observation;
+        try { Matcher m = Pattern.compile('(.)').matcher('\uD83D'); Boolean f = m.matches(); observation = f + ' ' + m.end(1); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
 }

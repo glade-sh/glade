@@ -63,3 +63,53 @@ System.assertEquals(false, Pattern.matches('b', 'a\uD83Db'));
 		t.Fatal(err)
 	}
 }
+
+// Java keeps `last` after a failed search, so the next find() searches again
+// from it with the current pattern (d14x_usepattern_*, d14x_caret_third_find).
+func TestExecMatcherFindAfterFailureSearchesAgain(t *testing.T) {
+	source := `Matcher m = Pattern.compile('a\\B').matcher('a'); m.find();
+m.usePattern(Pattern.compile('q'));
+System.assertEquals(false, m.find());
+System.assertEquals(true, m.hitEnd());
+System.assertEquals(false, m.requireEnd());
+Matcher n = Pattern.compile('a\\B').matcher('a'); n.find();
+n.usePattern(Pattern.compile('a'));
+System.assertEquals(true, n.find());
+Matcher c = Pattern.compile('^').matcher('ab'); c.find(); c.find();
+System.assertEquals(true, c.find());
+Matcher j = Pattern.compile('a\\B').matcher('a'); j.find();
+String json = JSON.serialize(j);
+System.assertEquals(false, json.contains('requireEndText'));
+System.assertEquals(true, j.requireEnd());
+`
+	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// d10_m_lit_lone_hi and the Matcher route over a lone surrogate.
+func TestExecMatcherMatchesLoneSurrogateInput(t *testing.T) {
+	source := `System.assertEquals(true, Pattern.matches('\uD83D', '\uD83D'));
+System.assertEquals(true, Pattern.compile('\\uD83D').matcher('\uD83D').matches());
+System.assertEquals(true, Pattern.compile('\uD83D').matcher('\uD83D').matches());
+Matcher g = Pattern.compile('(.)').matcher('\uD83D');
+System.assertEquals(true, g.matches());
+System.assertEquals(1, g.end(1));
+Matcher k = Pattern.compile('(a)(\uD83D)').matcher('a\uD83D');
+System.assertEquals(true, k.matches());
+System.assertEquals(2, k.end(2));
+System.assertEquals(false, Pattern.compile('b').matcher('a\uD83Db').matches());
+System.assertEquals(true, Pattern.compile('a').matcher('a\uD83Db').lookingAt());
+`
+	program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: "67.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}

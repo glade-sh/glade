@@ -70,4 +70,19 @@ private class Rxd14x0067 {
         try { Matcher m = Pattern.compile('a(?!b$|b)').matcher('ab'); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
         System.assertEquals('ROW', observation);
     }
+    @IsTest static void d14x_usepattern_refind() {
+        String observation;
+        try { Matcher m = Pattern.compile('a\\B').matcher('a'); m.find(); m.usePattern(Pattern.compile('q')); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d14x_usepattern_rematch() {
+        String observation;
+        try { Matcher m = Pattern.compile('a\\B').matcher('a'); m.find(); m.usePattern(Pattern.compile('a')); Boolean f = m.find(); observation = f+' hitEnd='+m.hitEnd()+' requireEnd='+m.requireEnd(); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
+    @IsTest static void d14x_caret_third_find() {
+        String observation;
+        try { Matcher m = Pattern.compile('^').matcher('ab'); m.find(); m.find(); observation = String.valueOf(m.find()); } catch (Exception e) { observation = 'EXC ' + e.getTypeName() + '|' + (e instanceof StringException) + '|' + String.valueOf(e.getMessage()).replace('\n','\\n'); }
+        System.assertEquals('ROW', observation);
+    }
 }

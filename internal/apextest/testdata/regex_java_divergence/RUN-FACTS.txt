@@ -54,3 +54,7 @@ Matcher.toMatchResult rows (u6, named @IsTest route, 62.0 and 67.0, two repeats)
 requireEnd follow-ups (d14x, 62.0 and 67.0, anonymous and @IsTest, two repeats in two scratch orgs run at the same time, deleted and verified gone): find() after a find that failed past the region end does not change
   hitEnd or requireEnd ($ on a: find true, find false gives hitEnd=true requireEnd=true; a\B on aXa with three finds gives false hitEnd=true requireEnd=true). A negative lookahead whose body reads the end counts even though the
   lookahead then fails, and the body stops at its first success: a(?!b$)c on ab is requireEnd=true, a(?!b|b$) is false, a(?!b$|b) is true.
+Lone surrogate and find-again rows (d10_m_lit_lone_hi, d10_m_matcher_*, d14x_usepattern_*, d14x_caret_third_find; 62.0 and 67.0, anonymous and @IsTest, two repeats in two scratch orgs run at the same time, deleted and verified gone):
+  a literal lone surrogate in the pattern matches the same code unit through Pattern.matches and Pattern.compile(..).matcher(..).matches() (and so does (.), with end(1) 1).
+  After a failed find Java keeps last: usePattern(q) then find() searches q again (false hitEnd=true requireEnd=false), usePattern(a) then find() on the same text finds a (true hitEnd=false requireEnd=false),
+  and ^ on ab gives find true, false, true.

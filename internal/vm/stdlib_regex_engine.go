@@ -624,6 +624,20 @@ func regexp2MatchByteIndices(input string, match *regexp2.Match, runeOffset int)
 }
 
 func matcherRegexp2MatchIndices(matcher Value, input string, region matcherRegionBounds, op matcherOp) ([]int, bool, bool, error) {
+	indices, hitEnd, requiresEnd, err := matcherRegexp2MatchIndicesByString(matcher, input, region, op)
+	if err != nil {
+		return indices, hitEnd, requiresEnd, err
+	}
+	if loneIndices, matched, handled, loneErr := matcherLoneSurrogateIndices(matcher, input, region, op); handled && loneErr == nil {
+		if !matched {
+			return nil, hitEnd, false, nil
+		}
+		return loneIndices, hitEnd, requiresEnd, nil
+	}
+	return indices, hitEnd, requiresEnd, nil
+}
+
+func matcherRegexp2MatchIndicesByString(matcher Value, input string, region matcherRegionBounds, op matcherOp) ([]int, bool, bool, error) {
 	text := input
 	runeOffset := 0
 	startAt := region.startByte
@@ -657,6 +671,27 @@ func matcherRegexp2MatchIndices(matcher Value, input string, region matcherRegio
 	indices, err := plan.matchByteIndices(input, match, runeOffset)
 	requiresEnd := plan.matchRequiresEnd(text, match)
 	return indices, hitEnd || requiresEnd, requiresEnd, err
+}
+
+// matcherLoneSurrogateIndices decides matches() and lookingAt() over the whole
+// of a text that holds a lone surrogate by its code units. handled is false for
+// every other text, region or plan, and the string path decides.
+func matcherLoneSurrogateIndices(matcher Value, input string, region matcherRegionBounds, op matcherOp) (indices []int, matched, handled bool, err error) {
+	if region.startByte != 0 || region.endByte != len(input) || !mayHoldLoneSurrogate(input) {
+		return nil, false, false, nil
+	}
+	plan, err := matcherRegexp2PlanForInput(matcher, input)
+	if err != nil {
+		return nil, false, false, err
+	}
+	match, offsets, count, ok, err := plan.loneSurrogateMatch(input, op == matcherOpMatches)
+	if !ok || err != nil {
+		return nil, false, false, err
+	}
+	if match == nil || match.Index != 0 || (op == matcherOpMatches && match.Length != count) {
+		return nil, false, true, nil
+	}
+	return plan.loneSurrogateIndices(match, offsets), true, true, nil
 }
 
 // requireEndProbe returns what a failed find keeps so requireEnd can be

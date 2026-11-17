@@ -406,30 +406,86 @@ func (p *regexp2Plan) failedFindHitEnd(observed bool) bool {
 	return observed
 }
 
-// matchesLoneSurrogateInput is Pattern.matches over text that holds a lone
-// surrogate, which Java matches as a code unit of its own (d10_m_lone_hi,
-// d10_m_lone_lo, d10_m_prop_Cs). It reads the decoded code units through
-// regexp2's rune API and is taken only for such text and plans that need
-// neither the linear engine nor grapheme clusters; ok is false otherwise and
-// the string path decides.
-func (p *regexp2Plan) matchesLoneSurrogateInput(input string) (matched, ok bool, err error) {
-	if !mayHoldLoneSurrogate(input) || !hasLoneSurrogate(input) || p.linear != nil || p.grapheme != nil {
-		return false, false, nil
+// escapeEncodedLoneSurrogates writes each encoded lone surrogate of source as
+// a \uDxxx escape, which regexp2 reads as that code unit; as bytes they would
+// read as three U+FFFD characters.
+func escapeEncodedLoneSurrogates(source string) string {
+	if !hasLoneSurrogate(source) {
+		return source
 	}
-	runes := apexCodeUnitRunes(input)
-	source := `\G(?:` + p.matchSource + ")" + `(?=\z)`
+	var b strings.Builder
+	for i := 0; i < len(source); {
+		if isLoneSurrogateAt(source, i) {
+			r, size := decodeApexRune(source[i:])
+			fmt.Fprintf(&b, `\u%04X`, r)
+			i += size
+			continue
+		}
+		b.WriteByte(source[i])
+		i++
+	}
+	return b.String()
+}
+
+// loneSurrogateMatch matches text that holds a lone surrogate, which Java reads
+// as a code unit of its own (d10_m_lone_hi, d10_m_lone_lo, d10_m_prop_Cs,
+// d10_m_lit_lone_hi). It anchors at the start (and the end when full) over the
+// decoded code units through regexp2's rune API and returns the match with the
+// byte offset of every rune. It is taken only for such text and plans that need
+// neither the linear engine nor grapheme clusters; ok is false otherwise and the
+// string path decides.
+func (p *regexp2Plan) loneSurrogateMatch(input string, full bool) (match *regexp2.Match, offsets []int, runeCount int, ok bool, err error) {
+	if !mayHoldLoneSurrogate(input) || !hasLoneSurrogate(input) || p.linear != nil || p.grapheme != nil {
+		return nil, nil, 0, false, nil
+	}
+	runes := make([]rune, 0, len(input))
+	offsets = make([]int, 0, len(input)+1)
+	for i := 0; i < len(input); {
+		r, size := decodeApexRune(input[i:])
+		runes = append(runes, r)
+		offsets = append(offsets, i)
+		i += size
+	}
+	offsets = append(offsets, len(input))
+	source := `\G(?:` + escapeEncodedLoneSurrogates(p.matchSource) + ")"
+	if full {
+		source += `(?=\z)`
+	}
 	re, cerr := regexp2.Compile(source, regexp2.None)
 	if cerr != nil {
-		return false, true, cerr
+		return nil, nil, 0, true, cerr
 	}
 	re.MatchTimeout = regexp2MatchTimeout
 	match, merr := searchRegexp2(re, "", func() (*regexp2.Match, error) {
 		return re.FindRunesMatchStartingAt(runes, 0)
 	})
 	if merr != nil {
-		return false, true, merr
+		return nil, nil, 0, true, merr
 	}
-	return match != nil && match.Index == 0 && match.Length == len(runes), true, nil
+	return match, offsets, len(runes), true, nil
+}
+
+// matchesLoneSurrogateInput is Pattern.matches over such text.
+func (p *regexp2Plan) matchesLoneSurrogateInput(input string) (matched, ok bool, err error) {
+	match, _, count, ok, err := p.loneSurrogateMatch(input, true)
+	if !ok || err != nil {
+		return false, ok, err
+	}
+	return match != nil && match.Index == 0 && match.Length == count, true, nil
+}
+
+// loneSurrogateIndices is the byte-offset group list of a loneSurrogateMatch.
+func (p *regexp2Plan) loneSurrogateIndices(match *regexp2.Match, offsets []int) []int {
+	indices := make([]int, 0, len(p.publicGroupNumbers)*2)
+	for _, number := range p.publicGroupNumbers {
+		group := match.GroupByNumber(number)
+		if group == nil || len(group.Captures) == 0 {
+			indices = append(indices, -1, -1)
+			continue
+		}
+		indices = append(indices, offsets[group.Index], offsets[group.Index+group.Length])
+	}
+	return indices
 }
 
 func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full bool) (*regexp2.Match, error) {

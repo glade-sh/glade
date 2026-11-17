@@ -155,6 +155,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			// K002: find(start) resets the region before starting its search.
 			receiver.Fields["regionStart"] = Int(0)
 			receiver.Fields["regionEnd"] = Int(int64(apexStringLength(input)))
+			receiver.Fields["index"] = Int(0)
 			region, err = matcherRegion(receiver, input)
 			if err != nil {
 				return Null, receiver, false, true, err
@@ -182,8 +183,13 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		if indices == nil {
+			// Java keeps `last` (the end of the previous match) after a failed
+			// search and searches again from it, with whatever pattern is then
+			// current; only `first` is cleared.
+			if groups, ok := receiver.Fields["groups"]; ok && groups.Kind == ValueList && len(groups.List) >= 2 && groups.List[1].Kind == ValueInt && groups.List[1].Int >= 0 {
+				receiver.Fields["index"] = groups.List[1]
+			}
 			matcherClearMatch(receiver)
-			receiver.Fields["index"] = Int(int64(region.endByte + 1))
 			receiver.Fields["hitEnd"] = Bool(hitEnd)
 			matcherSetRequireEnd(receiver, false)
 			if probe != nil {
