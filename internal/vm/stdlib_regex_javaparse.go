@@ -212,6 +212,16 @@ func (p *javaRegexParser) skipChar(i int) {
 	}
 }
 
+// keepRaw clears the skip marks over t[from:to]: Java reads a \N{name} or
+// \p{name} body raw, so its spaces belong to the pattern.
+func (p *javaRegexParser) keepRaw(from, to int) {
+	for i := from; i < to && i < len(p.skipped); i++ {
+		if i >= 0 {
+			p.skipped[i] = false
+		}
+	}
+}
+
 // pastWhitespace is Java's peekPastWhitespace: the cursor ends on the first
 // character that is neither whitespace nor part of a comment, and ch is it.
 func (p *javaRegexParser) pastWhitespace(ch rune) rune {
@@ -807,11 +817,12 @@ func (p *javaRegexParser) namedChar() rune {
 				p.fail("Unclosed character name escape sequence")
 			}
 		}
+		p.keepRaw(start, p.cursor-1)
 		name := string(p.t[start : p.cursor-1])
 		if r, ok := javaCharacterByName(name); ok {
 			return r
 		}
-		return 0xFFFD
+		p.fail("Unknown character name [" + name + "]")
 	}
 	p.fail("Illegal character name escape sequence")
 	return 0
@@ -859,6 +870,7 @@ func (p *javaRegexParser) family(singleLetter bool) {
 		if i+1 >= j {
 			p.fail("Empty character family")
 		}
+		p.keepRaw(i, j-1)
 		name = string(p.t[i : j-1])
 	}
 	if javaNativeCategoryNames[name] {

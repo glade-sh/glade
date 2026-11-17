@@ -387,3 +387,27 @@ System.assertEquals(true, Pattern.compile('a\\p{L}').matcher('ab').find());
 System.assertEquals('b', 'ab'.replaceAll('a\\p{L}', 'b'));
 `)
 }
+
+// \N{name} and \p{name} bodies are read raw under (?x) (R1), and an unknown
+// character name is Java's syntax error at the closing brace (R2).
+func TestRegexExtendedNamedCharacters(t *testing.T) {
+	for source, want := range map[string]string{
+		`(?x)\N{LATIN SMALL LETTER A}`:      `\N{LATIN SMALL LETTER A}`,
+		`(?x)[a b]\N{LATIN SMALL LETTER A}`: `[ab]\N{LATIN SMALL LETTER A}`,
+		`(?x) \N{LATIN SMALL LETTER A} b`:   `\N{LATIN SMALL LETTER A}b`,
+	} {
+		if got, ok := javaRegexExtendedNormalize(source); !ok || got != want {
+			t.Errorf("javaRegexExtendedNormalize(%q) = %q, %v; want %q", source, got, ok, want)
+		}
+	}
+	err := javaRegexSyntaxCheck(`\N{FOO BAR}`)
+	if err == nil || err.description != "Unknown character name [FOO BAR]" || err.index != 10 {
+		t.Errorf("\\N{FOO BAR}: %+v", err)
+	}
+	runRegexApex(t, `
+System.assertEquals(true, Pattern.compile('(?x)\\N{LATIN SMALL LETTER A}').matcher('a').find());
+System.assertEquals(true, Pattern.compile('(?x)[a b]\\N{LATIN SMALL LETTER A}').matcher('ba').find());
+try { Pattern.compile('\\N{FOO BAR}'); System.assert(false, 'compiled'); }
+catch (StringException e) { System.assert(e.getMessage().contains('Unknown character name [FOO BAR]'), e.getMessage()); }
+`)
+}

@@ -1069,3 +1069,7 @@ d18_x_class_oct	solo	"Matcher m = Pattern.compile('(?x)[a b]\\\\0 4 3').matcher(
 d18_x_class_uni	solo	"Matcher m = Pattern.compile('(?x)[a b]\\\\u0 0 2 3').matcher('a#aa'); Boolean f = m.find(); observation = 'find ' + f + ' end ' + (f ? String.valueOf(m.end()) : '-');"
 d18_x_class_poss	solo	"Matcher m = Pattern.compile('(?x)[a b]a* +a').matcher('baaa'); Boolean f = m.find(); observation = 'find ' + f + ' end ' + (f ? String.valueOf(m.end()) : '-');"
 d18_x_brace_hex	solo	"Matcher m = Pattern.compile('(?x)\\\\x{4 1}').matcher('A'); Boolean f = m.find(); observation = 'find ' + f + ' end ' + (f ? String.valueOf(m.end()) : '-');"
+d19_x_named	solo	"Matcher m = Pattern.compile('(?x)\\\\N{LATIN SMALL LETTER A}').matcher('a'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
+d19_x_class_named	solo	"Matcher m = Pattern.compile('(?x)[a b]\\\\N{LATIN SMALL LETTER A}').matcher('ba'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
+d19_named_unknown	solo	"Matcher m = Pattern.compile('\\\\N{FOO BAR}').matcher('a'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
+d19_x_named_unknown	solo	"Matcher m = Pattern.compile('(?x)\\\\N{FOO BAR}').matcher('a'); Boolean f = m.find(); observation = 'find ' + f + ' groups ' + m.groupCount();"
