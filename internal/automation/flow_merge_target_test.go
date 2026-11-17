@@ -79,7 +79,7 @@ func TestFlowMergeLeavesUncapturedResourceTypes(t *testing.T) {
 }
 
 // The native deploy failures of flow-target-reject, two repeats identical
-// (parallel/batch2-20261117/flow-target-reject r1 and r2, raw/deploy-fails-1.txt;
+// (flow-target-reject r1 and r2, raw/deploy-fails-1.txt;
 // copied to testdata/flow_target_reject/deploy-fails.tsv, id then message). Each
 // flow is an Assignment of a string value that is exactly one merge into a
 // variable of the same type: a Number, Boolean or Date variable, and a Number

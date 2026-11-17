@@ -92,7 +92,7 @@ PageReference prints System.PageReference[url]. JSON.deserialize of a Date reads
 keeps it as the Julian label of the same instant, so its JSON text round-trips.
 Typed flow merges (FlowTyped, cap5): a String assignment that merges a Number variable or formula renders
 the declared scale (2.50, 7.00), a Date renders as January 2, 2026, a Boolean as true, and a String as is,
-alone or inside text. Native rejects at deploy time (two repeats identical, parallel/batch2-20261117/flow-target-reject
+alone or inside text. Native rejects at deploy time (two repeats identical, campaign capture flow-target-reject
 r1 and r2, raw/deploy-fails-1.txt, copied to internal/automation/testdata/flow_target_reject/deploy-fails.tsv; no
 org.tsv rows, the deploy fails) exactly four shapes: an assignment whose string value is one merge of a Number, Boolean
 or Date variable into a variable of the same type (Ft_num_target, Ft_bool_target, Ft_date_target) and of a Number
