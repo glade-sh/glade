@@ -4191,6 +4191,11 @@ func (vm *VM) globalDescribeViewLacksKey(receiver Value, key string) bool {
 	if _, cached := vm.globalDescribeCacheEntry(receiver.Ref); cached {
 		return false
 	}
+	// Most keys are present under their lower-case spelling; skip building
+	// the alias list for them.
+	if _, ok := receiver.Map[mapKey(String(strings.ToLower(strings.TrimSpace(key))))]; ok {
+		return false
+	}
 	for _, alias := range vm.schemaDescribeLookupAliases(key) {
 		if _, ok := receiver.Map[mapKey(String(alias))]; ok {
 			return false
