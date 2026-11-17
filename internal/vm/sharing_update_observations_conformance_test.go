@@ -331,13 +331,13 @@ func TestDefaultPrivateTextUpdatePreservesExplicitAccessPaths(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = machine.ExecuteTestInClass(invoke, "UpdateScope")
-			want := "System.SecurityException"
 			// NATIVE hidden-update-user-DmlException sharing_access_modes/org.tsv:346 istest 67.0:
 			// an explicit "update as user" of a hidden record from a without-sharing
-			// class fails as a DML row.
-			if strings.Contains(body, "update as user") {
-				want = "System.DmlException"
-			}
+			// class fails as a DML row. NATIVE hidden_record_grid/rows.tsv HidWithoutShare
+			// aBoth and bBoth, 62.0, 66.0 and 67.0: so does the default-mode update and
+			// Database.update of a hidden record created in the test or in @TestSetup
+			// (INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY), not a SecurityException.
+			want := "System.DmlException"
 			var runtimeErr *RuntimeError
 			if !errors.As(err, &runtimeErr) || exceptionQualifiedTypeName(runtimeErr.Type) != want {
 				t.Fatalf("existing access path exception=%v", err)

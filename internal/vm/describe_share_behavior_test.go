@@ -159,7 +159,7 @@ System.debug('S2:' + describeShareDigest(String.valueOf(Schema.describeSObjects(
 System.debug('S3:' + describeShareDigest(String.valueOf(Schema.SObjectType.Account.fields)));
 System.debug('S4:' + describeShareDigest(String.valueOf(Schema.SObjectType.Account.fields.getMap())));
 System.debug('S5:' + describeShareDigest(JSON.serialize(Schema.SObjectType.Account.fields.getMap().keySet())));`,
-			debug: "S1:9698/efca687ded35 | S2:34894/0e56d86445ef | S3:33316/7c307881fd53 | S4:7552/1f383175d47a | S5:914/9c0c26ea89c4",
+			debug: "S1:9698/efca687ded35 | S2:34894/0e56d86445ef | S3:33316/7c307881fd53 | S4:7552/1f383175d47a | S5:914/eea6e7a71333",
 		},
 		{
 			name: "heap size with describe roots and field maps",
