@@ -463,13 +463,15 @@ type VM struct {
 	localOnlyObjectRefs       map[uint64]bool
 	// Exceptions to the ordinary SObject field graph are append-only. Unlike
 	// local-only provenance, they must survive runtime/static cloning.
-	sObjectCollectionAliasRefs  map[uint64]bool
-	sObjectAliasTypes           map[string]sObjectAliasTypeVerdict
-	sObjectAliasTypeOrg         *storage.OrgState
-	collectionMutationRefSeq    map[uint64]uint64
-	collectionMutationRefFloor  uint64
-	collectionMutationSeq       uint64
-	escapedCollectionLatest     map[uint64]escapedCollectionMutation
+	sObjectCollectionAliasRefs map[uint64]bool
+	sObjectAliasTypes          map[string]sObjectAliasTypeVerdict
+	sObjectAliasTypeOrg        *storage.OrgState
+	collectionMutationRefSeq   map[uint64]uint64
+	collectionMutationRefFloor uint64
+	collectionMutationSeq      uint64
+	escapedCollectionLatest    map[uint64]escapedCollectionMutation
+	// escapedCollectionLatestSeq is the newest sequence in escapedCollectionLatest.
+	escapedCollectionLatestSeq  uint64
 	nestedReceiverCache         map[uint64]nestedReceiverGraph
 	nestedReceiverMapRoots      map[uintptr]map[uint64]struct{}
 	nestedReceiverCacheRefs     int

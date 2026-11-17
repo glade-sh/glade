@@ -4571,6 +4571,7 @@ func (vm *VM) rememberEscapedCollectionMutation(updated Value) {
 		clear(vm.escapedCollectionLatest)
 	}
 	vm.escapedCollectionLatest[updated.Ref] = escapedCollectionMutation{seq: vm.collectionMutationSeq, value: updated}
+	vm.escapedCollectionLatestSeq = vm.collectionMutationSeq
 }
 
 // refreshCallerEscapedCollectionAliases gives a caller's local the in-place
@@ -4578,7 +4579,8 @@ func (vm *VM) rememberEscapedCollectionMutation(updated Value) {
 // Parameters and the receiver reach the caller through the argument path; a
 // collection reached only through shared state needs this identity refresh.
 func (vm *VM) refreshCallerEscapedCollectionAliases(caller map[string]Value, since uint64) {
-	if vm == nil || len(vm.escapedCollectionLatest) == 0 || len(caller) == 0 || vm.collectionMutationSeq == since {
+	if vm == nil || len(vm.escapedCollectionLatest) == 0 || len(caller) == 0 || vm.collectionMutationSeq == since || vm.escapedCollectionLatestSeq <= since {
+		// No escaped collection was mutated during the call.
 		return
 	}
 	budget := 4096
@@ -4591,6 +4593,9 @@ func (vm *VM) refreshCallerEscapedCollectionAliases(caller map[string]Value, sin
 				caller[name] = latest.value
 				continue
 			}
+		}
+		if !collectionTypeMayHoldCollections(local.Type) {
+			continue
 		}
 		// A nested slot can only be stale if a collection inside this local was
 		// mutated during the call; the cached receiver graph answers that
@@ -4646,4 +4651,30 @@ func (vm *VM) refreshEscapedNestedCollections(container Value, since uint64, bud
 			refresh(&container.List[i])
 		}
 	}
+}
+
+// collectionTypeMayHoldCollections reports whether a List, Set or Map of this
+// declared type can hold a collection element. Only collection-typed, Object
+// and untyped elements can; scalar, SObject and class elements are never
+// replaced by the nested refresh.
+func collectionTypeMayHoldCollections(typeName string) bool {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return true
+	}
+	var element string
+	if strings.HasSuffix(typeName, "[]") {
+		element = strings.TrimSpace(strings.TrimSuffix(typeName, "[]"))
+	} else if _, value, ok := mapTypeArgs(typeName); ok {
+		element = value
+	} else if only, ok := collectionElementType(typeName); ok {
+		element = only
+	} else {
+		return true
+	}
+	element = strings.ToLower(strings.TrimSpace(element))
+	if element == "" || element == "object" || strings.HasSuffix(element, "[]") {
+		return true
+	}
+	return strings.Contains(element, "<") || strings.HasPrefix(element, "list") || strings.HasPrefix(element, "set") || strings.HasPrefix(element, "map") || strings.HasPrefix(element, "iterable")
 }
