@@ -4666,6 +4666,9 @@ func platformTemporalHashCode(env hashEnv, value Value) (int32, bool) {
 		if err != nil {
 			return 0, false
 		}
+		if value.hasWeekTerm {
+			return long(instant.UnixMilli()) ^ value.weekTerm, true
+		}
 		return long(instant.UnixMilli()) ^ env.calendarTerm(), true
 	case strings.EqualFold(value.Type, "Time"):
 		clock, err := parsePlatformTime(value)

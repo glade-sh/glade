@@ -27,11 +27,29 @@ range on insert; List<Decimal> == by scale; Percent and Number integer-part
 overflow on insert with the API 62 and API 67 wording; Time.getTime and
 Date.getTime as compile errors. hashCode itself already matched.
 
-Not observed, so base behavior: Datetime hash under another user locale
-(runAs with a different locale, region-less locales, IS, MV, IR, IL, NL, TR,
-MX), and Date and Time hashes under de_DE. The capture used en_US users in
-four time zones only. The cross-type direct hash grid for Double, Long and
+Not observed, so base behavior: the cross-type direct hash grid and the rest below.
+The cross-type direct hash grid for Double, Long and
 Integer covers 1.5d, 1 and 1 only. DecHashWrap did not compile natively and
 has no row. Currency overflow, rounding-edge overflow, Julian readers
 (yearGmt and formatGmt of a pre-cutover instant), valueOf(String) local and
 other zones' history are unobserved.
+
+dth_loc_* rows (SF-1b, 2026-11-16): the locale capture, API 62.0 and 67.0, test
+and anonymous, repeats agree (test r1 and r3 compared). A Datetime keeps the
+hash of its construction: built under en_US and hashed in a de runAs it stays
+577755, and the reverse stays 577677. Language-only de and fr hash as Mon/4
+(577677). is_IS, nl_NL and de_DE are Mon/4, fa_IR Sat/1 (577751), iw_IL and es_MX
+Sun/1 (577755), tr_TR Mon/1 (577757). dv_MV and he_IL are rejected by the
+LocaleSidKey picklist. Date and Time hashes carry no week term; List, Set and Map
+follow the element hashes. The anonymous rows run as a user of that locale
+(cases.tsv column 4).
+
+Fixes: a Datetime value stamps the user's week term the first time an expression
+yields it; its hash uses the stamp. A Datetime produced from a stamped one
+(addDays and the like) keeps the source's term; no native row covers arithmetic,
+so that is a choice. A Datetime read from an SObject field, a SOQL row or JSON is
+stamped when an expression first yields it, not when the query ran; SObject
+field hashes still read the locale at hash time. A language-only locale maps to
+its CLDR likely region (table in platform_sobject_members.go); only de and fr are
+captured. de, fr and fa_IR are accepted as test locale keys. The Maldives
+(MV) term is still unobserved, because dv_MV is rejected.

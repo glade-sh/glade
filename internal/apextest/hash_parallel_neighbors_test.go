@@ -60,6 +60,11 @@ System.debug(Datetime.newInstanceGmt(Date.newInstance(1900, 1, 1), Time.newInsta
 System.debug(Datetime.newInstance(Date.newInstance(2012, 7, 1), Time.newInstance(12, 0, 0, 0)).getTime());
 System.debug(Datetime.newInstance(Date.newInstance(2012, 1, 1), Time.newInstance(12, 0, 0, 0)).getTime());`,
 			"1341169200000\n1325448000000"},
+		{"datetime arithmetic and other builders keep the en_US term", `
+System.debug(Datetime.newInstance(0L).addDays(1).hashCode());
+System.debug(Datetime.valueOfGmt('1970-01-01 00:00:00').hashCode());
+System.debug(Date.newInstance(1970, 1, 2).hashCode() + ' ' + Time.newInstance(0, 0, 1, 0).hashCode());`,
+			"86936795\n577755\n86400000 1000"},
 		{"list equality neighbors", `
 System.debug(new List<Double>{1.5} == new List<Double>{1.50});
 System.debug(new List<Decimal>{1.5} == new List<Decimal>{1.5});

@@ -23,9 +23,27 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		vm.callPos = expr.Pos
 		value, err := vm.evalExpr(expr, result)
 		vm.callPos = previous
+		if value.Kind == ValueObject && !value.hasWeekTerm {
+			value = vm.stampDatetimeWeekTerm(value)
+		}
 		return value, err
 	}
-	return vm.evalExpr(expr, result)
+	value, err := vm.evalExpr(expr, result)
+	if value.Kind == ValueObject && !value.hasWeekTerm {
+		value = vm.stampDatetimeWeekTerm(value)
+	}
+	return value, err
+}
+
+// stampDatetimeWeekTerm records the construction-time locale term in a Datetime
+// the first time an expression yields it.
+func (vm *VM) stampDatetimeWeekTerm(value Value) Value {
+	if value.Type != "Datetime" || value.projectClass || value.classInstance {
+		return value
+	}
+	value.weekTerm = vm.hashEnv().localeCalendarTerm()
+	value.hasWeekTerm = true
+	return value
 }
 
 func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {

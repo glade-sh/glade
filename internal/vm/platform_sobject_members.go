@@ -3421,6 +3421,12 @@ func (env hashEnv) readField(owner Value, field string, child Value) Value {
 // (surf_collections_strings cs28-cs44). KNOWN GAP: a locale without a region
 // uses the en_US term, and region data outside the captured set is unverified.
 func (env hashEnv) calendarTerm() int32 {
+	return env.localeCalendarTerm()
+}
+
+// localeCalendarTerm is the term of the user running now. A Datetime carries the
+// term of its construction instead (Value.weekTerm).
+func (env hashEnv) localeCalendarTerm() int32 {
 	const base = 577755 ^ 18
 	locale := "en_US"
 	if env.vm != nil {
@@ -3438,7 +3444,14 @@ func (env hashEnv) calendarTerm() int32 {
 func calendarWeekTerm(locale string) int32 {
 	parts := strings.Split(locale, "_")
 	if len(parts) < 2 || parts[1] == "" {
-		return 1<<1 ^ 1<<4
+		// A language-only locale takes its CLDR likely region (native dth_loc_a_de
+		// and dth_loc_b_fr: de and fr hash as Monday with four days). A language
+		// outside the table keeps the earlier en_US term.
+		region, ok := likelyLocaleRegion[strings.ToLower(parts[0])]
+		if !ok {
+			return 1<<1 ^ 1<<4
+		}
+		parts = []string{parts[0], region}
 	}
 	region := strings.ToUpper(parts[1])
 	has := func(set string) bool { return strings.Contains(" "+set+" ", " "+region+" ") }
@@ -3456,4 +3469,17 @@ func calendarWeekTerm(locale string) int32 {
 		min = 4
 	}
 	return first<<1 ^ min<<4
+}
+
+// likelyLocaleRegion maps a language to its CLDR likely-subtags region (the
+// public supplemental likelySubtags data). Only de and fr are captured.
+var likelyLocaleRegion = map[string]string{
+	"af": "ZA", "am": "ET", "ar": "EG", "az": "AZ", "be": "BY", "bg": "BG", "bn": "BD", "bs": "BA", "ca": "ES", "cs": "CZ",
+	"cy": "GB", "da": "DK", "de": "DE", "el": "GR", "en": "US", "es": "ES", "et": "EE", "eu": "ES", "fa": "IR", "fi": "FI",
+	"fr": "FR", "ga": "IE", "gl": "ES", "gu": "IN", "he": "IL", "iw": "IL", "hi": "IN", "hr": "HR", "hu": "HU", "hy": "AM",
+	"id": "ID", "in": "ID", "is": "IS", "it": "IT", "ja": "JP", "ka": "GE", "kk": "KZ", "km": "KH", "kn": "IN", "ko": "KR",
+	"lt": "LT", "lv": "LV", "mk": "MK", "ml": "IN", "mn": "MN", "mr": "IN", "ms": "MY", "mt": "MT", "my": "MM", "nb": "NO",
+	"ne": "NP", "nl": "NL", "no": "NO", "pa": "IN", "pl": "PL", "pt": "BR", "ro": "RO", "ru": "RU", "sk": "SK", "sl": "SI",
+	"sq": "AL", "sr": "RS", "sv": "SE", "sw": "TZ", "ta": "IN", "te": "IN", "th": "TH", "tl": "PH", "tr": "TR", "uk": "UA",
+	"ur": "PK", "uz": "UZ", "vi": "VN", "zh": "CN", "zu": "ZA",
 }

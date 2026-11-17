@@ -203,3 +203,23 @@ dec_a01	anonymous	dec_a01.apex
 dec_a02	anonymous	dec_a02.apex
 dec_a03	anonymous	dec_a03.apex
 dec_a04	anonymous	dec_a04.apex
+dth_loc_a_de	istest	DthLocale.a_de
+dth_loc_anon_de	anonymous	dth_locale_value.apex	de|GMT
+dth_loc_b_fr	istest	DthLocale.b_fr
+dth_loc_anon_fr	anonymous	dth_locale_value.apex	fr|GMT
+dth_loc_c_is	istest	DthLocale.c_is
+dth_loc_anon_is_IS	anonymous	dth_locale_value.apex	is_IS|GMT
+dth_loc_d_mv	istest	DthLocale.d_mv
+dth_loc_e_ir	istest	DthLocale.e_ir
+dth_loc_anon_fa_IR	anonymous	dth_locale_value.apex	fa_IR|GMT
+dth_loc_f_il	istest	DthLocale.f_il
+dth_loc_anon_iw_IL	anonymous	dth_locale_value.apex	iw_IL|GMT
+dth_loc_g_he	istest	DthLocale.g_he
+dth_loc_h_nl	istest	DthLocale.h_nl
+dth_loc_anon_nl_NL	anonymous	dth_locale_value.apex	nl_NL|GMT
+dth_loc_i_tr	istest	DthLocale.i_tr
+dth_loc_anon_tr_TR	anonymous	dth_locale_value.apex	tr_TR|GMT
+dth_loc_j_mx	istest	DthLocale.j_mx
+dth_loc_anon_es_MX	anonymous	dth_locale_value.apex	es_MX|GMT
+dth_loc_k_de	istest	DthLocale.k_de
+dth_loc_anon_de_DE	anonymous	dth_locale_value.apex	de_DE|GMT

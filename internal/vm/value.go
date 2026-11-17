@@ -46,6 +46,12 @@ type Value struct {
 	// alphabetically (record_type_shape list_forms, default_order_rest d3).
 	describeKeySetText bool
 
+	// A Datetime keeps the calendar week term of the locale it was built under
+	// (native dth_loc_*: the hash follows the construction-time user, across a
+	// runAs boundary in both directions).
+	weekTerm    int32
+	hasWeekTerm bool
+
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`
 	Decimal       float64   `json:"decimal,omitempty"`
