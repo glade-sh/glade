@@ -49,5 +49,5 @@ requireEnd after a failed find (d14x rows, 62.0 and 67.0, anonymous and @IsTest,
   An attempt that evaluates $, \Z, \b, \B or a negative lookahead at the end of the input leaves it true (a(?!) and a\B on a: true). Start tries only the starts that leave room for the pattern's
   minimum length, so \bz on ab, \b\w+ on two spaces and b$x on ab stay false. b$x and b\Zx on ab+LF are true, (?m)b$x on ab+LF is false (a multiline $ before a terminator does not read the end),
   a(?!b)x on ab is false, a(?=b$)c on ab is true, and a second failed find after a match keeps the end read made at the last start (a\B on aXa).
-\Matcher.toMatchResult rows (u6, named @IsTest route, 62.0 and 67.0, two repeats): the deploy fails on line 4 of the class with "Method does not exist or incorrect signature: void toMatchResult() from the type System.Matcher"
+Matcher.toMatchResult rows (u6, named @IsTest route, 62.0 and 67.0, two repeats): the deploy fails on line 4 of the class with "Method does not exist or incorrect signature: void toMatchResult() from the type System.Matcher"
   (column of the method name) and "Invalid type: MatchResult" (column of the type). The anonymous rows u6_toMatchResult and u6_matchResultType are in org.tsv; the named rows are asserted in internal/sema/matcher_to_match_result_test.go.
