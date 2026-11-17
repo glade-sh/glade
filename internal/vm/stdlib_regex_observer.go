@@ -16,6 +16,30 @@ import (
 // This includes reads on abandoned alternatives (R049-R051), greedy repetition
 // (R019-R048), and failed possessive matching (R031/R033).
 func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
+	return regexp2ObserverSource(source, re, nil)
+}
+
+// regexp2RequireEndObserverSource observes Java's requireEnd across every
+// attempt of a failed find. Java never clears requireEnd when a search fails,
+// so any attempt that evaluates a $, \Z, \b, \B or (?! at the end of the
+// input leaves it set. The instrumented end assertions in source (groups listed
+// in assertions) record a private capture at that point and finish the path;
+// every other atom only consumes. Negative lookaheads keep their meaning.
+func regexp2RequireEndObserverSource(source string, re *regexp2.Regexp, assertions []regexp2EndAssertion) (string, int) {
+	if len(assertions) == 0 {
+		return regexp2ObserverSource(source, re, map[int]bool{})
+	}
+	groups := map[int]bool{}
+	for _, assertion := range assertions {
+		groups[assertion.group] = assertion.multiline
+	}
+	return regexp2ObserverSource(source, re, groups)
+}
+
+// regexp2ObserverSource builds the hitEnd observer when endGroups is nil and the
+// requireEnd observer otherwise (group number -> whether it matches only at \z).
+func regexp2ObserverSource(source string, re *regexp2.Regexp, endGroups map[int]bool) (string, int) {
+	requireEnd := endGroups != nil
 	slot := 1
 	for _, number := range re.GetGroupNumbers() {
 		if number >= slot {
@@ -29,7 +53,7 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 	name := strconv.Itoa(slot)
 	mark := "(?<" + name + `>\z)`
 	wrap := func(atom string, readsEnd bool) string {
-		if readsEnd {
+		if readsEnd && !requireEnd {
 			return "(?(" + name + ")|(?:" + atom + "|" + mark + "))"
 		}
 		return "(?(" + name + ")|" + atom + ")"
@@ -66,6 +90,30 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 					out.WriteString(source[start:i])
 					continue
 				}
+			}
+			if requireEnd {
+				if group, header, ok := regexp2InstrumentedGroupAt(source, i); ok {
+					if multiline, tracked := endGroups[group]; tracked {
+						end := regexp2GroupEnd(source, i)
+						if end > 0 {
+							body := source[i+header : end]
+							markCond := body
+							if multiline {
+								markCond = `\z`
+							}
+							out.WriteString("(?(" + name + ")|(?:(?<" + name + ">" + markCond + ")|" + source[i:end+1] + "))")
+							i = end + 1
+							continue
+						}
+					}
+				}
+			}
+			if strings.HasPrefix(source[i:], "(?!") && requireEnd {
+				out.WriteString("(?(" + name + ")|(?!")
+				i += 3
+				stack = append(stack, extended)
+				closerAt[len(stack)] = "))"
+				continue
 			}
 			if strings.HasPrefix(source[i:], "(?!") {
 				// A negative lookahead drops captures made inside it, which would
@@ -214,8 +262,16 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 			case `\A`, `\G`:
 				out.WriteString(wrap(atom, false))
 			case `\z`:
-				out.WriteString(wrap(mark, false))
+				if requireEnd {
+					out.WriteString(wrap(atom, false))
+				} else {
+					out.WriteString(wrap(mark, false))
+				}
 			case `\b`, `\B`:
+				if requireEnd {
+					out.WriteString(wrap(atom, false))
+					break
+				}
 				out.WriteString(wrap(atom+"(?:"+mark+")?", true))
 			default:
 				out.WriteString(wrap(atom, true))
@@ -230,6 +286,92 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 		}
 	}
 	return out.String(), slot
+}
+
+// regexp2InstrumentedGroupAt reads a "(?<digits>" header at source[at:].
+func regexp2InstrumentedGroupAt(source string, at int) (group, header int, ok bool) {
+	if !strings.HasPrefix(source[at:], "(?<") {
+		return 0, 0, false
+	}
+	end := strings.IndexByte(source[at:], '>')
+	if end < 4 {
+		return 0, 0, false
+	}
+	number, err := strconv.Atoi(source[at+3 : at+end])
+	if err != nil || number <= 0 {
+		return 0, 0, false
+	}
+	return number, end + 1, true
+}
+
+// regexp2GroupEnd returns the index of the parenthesis closing the group that
+// opens at source[at], or -1. It skips escapes and character classes.
+func regexp2GroupEnd(source string, at int) int {
+	depth := 0
+	for i := at; i < len(source); i++ {
+		switch source[i] {
+		case '\\':
+			i++
+		case '[':
+			i++
+			if i < len(source) && source[i] == '^' {
+				i++
+			}
+			if i < len(source) && source[i] == ']' {
+				i++
+			}
+			for ; i < len(source) && source[i] != ']'; i++ {
+				if source[i] == '\\' {
+					i++
+				}
+			}
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// failedFindRequiresEnd reports Java's requireEnd after a find that failed
+// (see regexp2RequireEndObserverSource).
+func (p *regexp2Plan) failedFindRequiresEnd(input string, startByte, endRune int) (bool, error) {
+	if len(p.endAssertionGroups) == 0 || endRune != utf8.RuneCountInString(input) {
+		return false, nil
+	}
+	source, slot := regexp2RequireEndObserverSource(p.matchSource, p.re, p.endAssertionGroups)
+	// Java's Start node tries only the starts that leave room for the pattern's
+	// minimum length; an assertion at the end of the input is read by an attempt
+	// that started earlier.
+	if parsed, perr := javaRegexParse(regexNormalizeExtended(javaRegexRemoveQuoting(p.originalSource))); perr == nil && parsed != nil && parsed.root.minLen > 0 {
+		source = fmt.Sprintf(`(?=(?s:.{%d}))`, parsed.root.minLen) + source
+	}
+	re, err := regexp2.Compile(source, regexp2.None)
+	if err != nil {
+		return false, nil
+	}
+	re.MatchTimeout = regexp2MatchTimeout
+	match, err := searchRegexp2(re, input, func() (*regexp2.Match, error) {
+		return re.FindStringMatchStartingAt(input, startByte)
+	})
+	if err != nil || match == nil {
+		return false, err
+	}
+	group := match.GroupByNumber(slot)
+	return group != nil && len(group.Captures) > 0, nil
+}
+
+// failedFindHitEnd: a failed unanchored find ends in Java's Start node, which
+// sets hitEnd (see operationHitEnd). A root that is a bare ^ has no Start node.
+func (p *regexp2Plan) failedFindHitEnd(observed bool) bool {
+	if !regexRootIsBareCaret(p.originalSource) {
+		return true
+	}
+	return observed
 }
 
 func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full bool) (*regexp2.Match, error) {

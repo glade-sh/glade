@@ -184,7 +184,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			matcherClearMatch(receiver)
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
 			receiver.Fields["hitEnd"] = Bool(hitEnd)
-			receiver.Fields["requireEnd"] = Bool(false)
+			receiver.Fields["requireEnd"] = Bool(requiresEnd)
 			return Bool(false), receiver, true, true, nil
 		}
 		matcherSaveMatch(receiver, indices)

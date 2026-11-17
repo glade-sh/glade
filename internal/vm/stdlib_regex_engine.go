@@ -674,8 +674,12 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 			return nil, false, false, err
 		}
 		hitEnd, err := plan.operationHitEnd(text, startByte-region.startByte, region.endRune-region.startRune, false, false)
-		if err != nil || match == nil {
+		if err != nil {
 			return nil, hitEnd, false, err
+		}
+		if match == nil {
+			requiresEnd, err := plan.failedFindRequiresEnd(text, startByte-region.startByte, region.endRune-region.startRune)
+			return nil, plan.failedFindHitEnd(hitEnd), requiresEnd, err
 		}
 		indices, err := plan.matchByteIndices(input, match, region.startRune)
 		requiresEnd := plan.matchRequiresEnd(text, match)
@@ -698,7 +702,8 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 			continue
 		}
 		if start > region.endRune {
-			return nil, hitEnd, false, nil
+			requiresEnd, err := plan.failedFindRequiresEnd(input, startByte, region.endRune)
+			return nil, plan.failedFindHitEnd(hitEnd), requiresEnd, err
 		}
 		if end <= region.endRune {
 			indices, err := plan.matchByteIndices(input, match, 0)
@@ -707,7 +712,11 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 		}
 		match, err = plan.findNextValid(input, match)
 	}
-	return nil, hitEnd, false, err
+	if err != nil {
+		return nil, hitEnd, false, err
+	}
+	requiresEnd, err := plan.failedFindRequiresEnd(input, startByte, region.endRune)
+	return nil, plan.failedFindHitEnd(hitEnd), requiresEnd, err
 }
 
 func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error) {

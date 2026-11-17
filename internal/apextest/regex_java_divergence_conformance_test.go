@@ -9,6 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -141,7 +146,7 @@ func TestRegexJavaDivergenceNativeAnonymousRows(t *testing.T) {
 				return
 			}
 			body := "String observation;\n" + fmt.Sprintf(regexJavaDivergenceWrap, snippet)
-			observed := runRegexDivergenceAnonymous(t, body, row.api)
+			observed := runRegexDivergenceAnonymous(t, body, row.api, strings.HasPrefix(row.values[0], "COMPILE "))
 			checkRegexDivergenceRow(t, row, observed, carried, fmt.Sprintf("NATIVE %s %s/org.tsv anonymous %s", row.id, regexJavaDivergenceFixture, row.api))
 		})
 	}
@@ -153,11 +158,26 @@ func TestRegexJavaDivergenceNativeAnonymousRows(t *testing.T) {
 // runRegexDivergenceAnonymous runs one anonymous block and returns what it
 // stored in observation. A compile or runtime failure reads as the native
 // COMPILE or FAIL text.
-func runRegexDivergenceAnonymous(t *testing.T, body, api string) string {
+//
+// A row whose native answer is a compile error also goes through the semantic
+// checker, which owns the rejections the VM parser does not make (u6 rows).
+func runRegexDivergenceAnonymous(t *testing.T, body, api string, semanticCompile bool) string {
 	t.Helper()
 	program, err := vm.CompileAnonymousWithOptions(body, vm.CompileOptions{APIVersion: api})
 	if err != nil {
 		return "COMPILE " + err.Error()
+	}
+	if semanticCompile {
+		index := typesys.Build(project.Project{Root: t.TempDir(), SourceAPIVersion: api}, schema.Schema{})
+		for _, d := range sema.AnalyzeAnonymous(index, body, api).Diagnostics {
+			if d.Severity != diagnostic.Error {
+				continue
+			}
+			if d.NativeMessage != "" {
+				return "COMPILE " + d.NativeMessage
+			}
+			return "COMPILE " + d.Message
+		}
 	}
 	machine := vm.New(nil)
 	if _, err := machine.Execute(program); err != nil {

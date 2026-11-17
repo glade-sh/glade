@@ -45,3 +45,9 @@ hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repea
 \N{name} rows d22 (62.0 and 67.0, anonymous and @IsTest, two repeats): FACE WITH BAGS UNDER EYES (Unicode 16) is an Unknown character name [..] at the closing brace, SHAKING FACE (15.0) compiles,
   and \N{BELL} is U+1F514 (it matches the bell emoji, not U+0007): the formal name table wins over the Unicode 1.0 control names. The first BELL emoji row in the batch used a doubly escaped subject and was recaptured as d22_name_bell_emoji.
 \c rows d24 (62.0 and 67.0, anonymous and @IsTest, two repeats): \c takes the next code point, so \c followed by U+1F600 matches U+1F640 (start 1), and \cA matches U+0001.
+requireEnd after a failed find (d14x rows, 62.0 and 67.0, anonymous and @IsTest, two repeats, 2026-11-16 UTC, scratch org deleted and verified gone after each run): Java never clears requireEnd when a search fails.
+  An attempt that evaluates $, \Z, \b, \B or a negative lookahead at the end of the input leaves it true (a(?!) and a\B on a: true). Start tries only the starts that leave room for the pattern's
+  minimum length, so \bz on ab, \b\w+ on two spaces and b$x on ab stay false. b$x and b\Zx on ab+LF are true, (?m)b$x on ab+LF is false (a multiline $ before a terminator does not read the end),
+  a(?!b)x on ab is false, a(?=b$)c on ab is true, and a second failed find after a match keeps the end read made at the last start (a\B on aXa).
+\Matcher.toMatchResult rows (u6, named @IsTest route, 62.0 and 67.0, two repeats): the deploy fails on line 4 of the class with "Method does not exist or incorrect signature: void toMatchResult() from the type System.Matcher"
+  (column of the method name) and "Invalid type: MatchResult" (column of the type). The anonymous rows u6_toMatchResult and u6_matchResultType are in org.tsv; the named rows are asserted in internal/sema/matcher_to_match_result_test.go.

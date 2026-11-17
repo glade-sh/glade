@@ -3845,6 +3845,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 		// Lowered increment operators keep the existing increment checks and
 		// must not be diagnosed as missing source methods.
 		increment := semaIRIncrementCall(ir.Expr{Kind: ir.ExprCall, Callee: method})
+		if d, ok := semaMatcherToMatchResultDiagnostic(typ, member, platformType, receiverMode, method, args, bodyOffset+pos, source); ok {
+			return []diagnostic.Diagnostic{d}, true
+		}
 		if strings.EqualFold(platformType, "String") ||
 			(receiverMode == "instance" && len(args) == 0 && strings.EqualFold(platformType, "Integer") && !increment) {
 			return []diagnostic.Diagnostic{valueCollectionCallDiagnostic(unknownCallDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source), receiverType, method, irCallArgTypes(a, args, scope, model, typ.Name), model)}, true

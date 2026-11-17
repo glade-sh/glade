@@ -40,6 +40,7 @@ type javaRegexParser struct {
 	names     map[string]bool
 
 	escapeInfo javaTreeInfo
+	root       javaTreeInfo // study info of the whole pattern; root.minLen is Java's Start guard
 
 	loops    []javaLoopGroup
 	nested   bool            // an unbounded repeat of a group that holds an unbounded repeat
@@ -101,7 +102,7 @@ func javaRegexParse(pattern string) (parser *javaRegexParser, err *javaSyntaxErr
 			panic(r)
 		}
 	}()
-	p.expr()
+	p.root = p.expr()
 	if p.cursor != p.n {
 		if p.peek() == ')' {
 			p.fail("Unmatched closing ')'")
