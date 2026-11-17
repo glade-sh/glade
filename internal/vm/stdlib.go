@@ -4098,6 +4098,13 @@ func valueHashCodeEnv(env hashEnv, value Value) int32 {
 		}
 		return int32(value.Int ^ (value.Int >> 32))
 	case ValueDecimal:
+		// A Double hashes as Java Double.hashCode, which keeps +0.0 and -0.0
+		// apart (signed_double_zero_operations c02-c04). Only a real Decimal
+		// takes the BigDecimal path below.
+		if isFloatBackedDecimal(value) {
+			bits := math.Float64bits(value.Decimal)
+			return int32(bits ^ bits>>32)
+		}
 		// Native hs rows (surf_collections_strings cs13-cs14): a Decimal inside a
 		// List, Set or SObject field hashes as java.math.BigDecimal, so 1.5 and
 		// 1.50 differ.
