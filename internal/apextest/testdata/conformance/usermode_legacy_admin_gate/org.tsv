@@ -1,0 +1,65 @@
+org	grant	test_api	class_api	repeat	observation
+nsp	nogrant	62.0	61.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	nogrant	62.0	61.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	nogrant	62.0	62.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	nogrant	62.0	62.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	nogrant	67.0	61.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	nogrant	67.0	61.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	nogrant	67.0	62.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	nogrant	67.0	62.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	preassigned-permset	62.0	61.0	1	SR ok=true | rows=1
+nsp	preassigned-permset	62.0	61.0	2	SR ok=true | rows=1
+nsp	preassigned-permset	62.0	62.0	1	SR ok=true | rows=1
+nsp	preassigned-permset	62.0	62.0	2	SR ok=true | rows=1
+nsp	preassigned-permset	67.0	61.0	1	SR ok=true | rows=1
+nsp	preassigned-permset	67.0	61.0	2	SR ok=true | rows=1
+nsp	preassigned-permset	67.0	62.0	1	SR ok=true | rows=1
+nsp	preassigned-permset	67.0	62.0	2	SR ok=true | rows=1
+nsp	profile	62.0	61.0	1	SR ok=true | rows=1
+nsp	profile	62.0	61.0	2	SR ok=true | rows=1
+nsp	profile	62.0	62.0	1	SR ok=true | rows=1
+nsp	profile	62.0	62.0	2	SR ok=true | rows=1
+nsp	profile	67.0	61.0	1	SR ok=true | rows=1
+nsp	profile	67.0	61.0	2	SR ok=true | rows=1
+nsp	profile	67.0	62.0	1	SR ok=true | rows=1
+nsp	profile	67.0	62.0	2	SR ok=true | rows=1
+nsp	testsetup-permset	62.0	61.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	testsetup-permset	62.0	61.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	testsetup-permset	62.0	62.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	testsetup-permset	62.0	62.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	testsetup-permset	67.0	61.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	testsetup-permset	67.0	61.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	testsetup-permset	67.0	62.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+nsp	testsetup-permset	67.0	62.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject gladetest1__Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(gladetest1__Msg__c) | rows=0
+plain	nogrant	62.0	61.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	nogrant	62.0	61.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	nogrant	62.0	62.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	nogrant	62.0	62.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	nogrant	67.0	61.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	nogrant	67.0	61.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	nogrant	67.0	62.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	nogrant	67.0	62.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	preassigned-permset	62.0	61.0	1	SR ok=true | rows=1
+plain	preassigned-permset	62.0	61.0	2	SR ok=true | rows=1
+plain	preassigned-permset	62.0	62.0	1	SR ok=true | rows=1
+plain	preassigned-permset	62.0	62.0	2	SR ok=true | rows=1
+plain	preassigned-permset	67.0	61.0	1	SR ok=true | rows=1
+plain	preassigned-permset	67.0	61.0	2	SR ok=true | rows=1
+plain	preassigned-permset	67.0	62.0	1	SR ok=true | rows=1
+plain	preassigned-permset	67.0	62.0	2	SR ok=true | rows=1
+plain	profile	62.0	61.0	1	SR ok=true | rows=1
+plain	profile	62.0	61.0	2	SR ok=true | rows=1
+plain	profile	62.0	62.0	1	SR ok=true | rows=1
+plain	profile	62.0	62.0	2	SR ok=true | rows=1
+plain	profile	67.0	61.0	1	SR ok=true | rows=1
+plain	profile	67.0	61.0	2	SR ok=true | rows=1
+plain	profile	67.0	62.0	1	SR ok=true | rows=1
+plain	profile	67.0	62.0	2	SR ok=true | rows=1
+plain	testsetup-permset	62.0	61.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	testsetup-permset	62.0	61.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	testsetup-permset	62.0	62.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	testsetup-permset	62.0	62.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	testsetup-permset	67.0	61.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	testsetup-permset	67.0	61.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	testsetup-permset	67.0	62.0	1	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
+plain	testsetup-permset	67.0	62.0	2	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Cx__c, check errors on Exception or Result!  | st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Msg__c) | rows=0
