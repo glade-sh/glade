@@ -228,8 +228,8 @@ func TestRegexExtendedPatternsGetLinearPrecheck(t *testing.T) {
 		if !plan.noLinearMatch(miss) {
 			t.Errorf("%q: precheck should report no match", tc.pattern)
 		}
-		if _, ok := regexStripExtended(tc.pattern); !ok {
-			t.Errorf("%q: regexStripExtended refused", tc.pattern)
+		if regexNormalizeExtended(tc.pattern) == tc.pattern {
+			t.Errorf("%q: not normalized", tc.pattern)
 		}
 	}
 	runRegexApex(t, `
@@ -265,22 +265,59 @@ System.assertEquals(true, Pattern.compile('(?x)\\x2 3').matcher('#').find());
 `)
 }
 
-func TestRegexStripExtended(t *testing.T) {
+func TestRegexNormalizeExtended(t *testing.T) {
 	for source, want := range map[string]string{
-		"(?x) ^(a+)+b # c\n": "^(a+)+b",
-		"(?ix) a\\ b":        "(?i)a[ ]b",
-		"(?x)(a+)+(?i:b)":    "(a+)+(?i:b)",
+		"(?x) ^(a+)+b # c\n":    "^(a+)+b",
+		"(?ix) a\\ b":           "(?i)a\\ b",
+		"(?x)(a+)+(?i:b)":       "(a+)+(?i:b)",
+		"(?x:a b) c":            "(?:ab) c",
+		"(?x)a (?-x) b #":       "a(?-x) b #",
+		"(?x)[a - c]":           "[a-c]",
+		"(?x)[a b]{1, 2}":       "[ab]{1,2}",
+		"(?x)[a b]\\x2 3":       "[ab]\\x23",
+		"(?x)\\x{4 1}":          "\\x{41}",
+		"(?x)[a b]\\0 4 3":      "[ab]\\043",
+		"(?x)[a b]\\u0 0 2 3":   "[ab]\\u0023",
+		"(?x)[a b]a* +a":        "[ab]a*+a",
+		"(?x)a#c\u0085b":        "a\\x{85}b",
+		"(?dx)a#c\x00b":         "(?d)a\\x00b",
+		"(?x)(? :a)":            "(?:a)",
+		"(?x)caf\u00e9 \\p {L}": "caf\u00e9\\p{L}",
 	} {
-		got, ok := regexStripExtended(source)
+		got, ok := javaRegexExtendedNormalize(source)
 		if !ok || got != want {
-			t.Errorf("regexStripExtended(%q) = %q, %v; want %q", source, got, ok, want)
+			t.Errorf("javaRegexExtendedNormalize(%q) = %q, %v; want %q", source, got, ok, want)
 		}
 	}
-	for _, source := range []string{"(?x)[a ]+", "(?x)a(?-x:b )", "a(?x) b", "(?x)caf\u00e9", "(?x)a\r#c\n", "(?x)(a+)+#c\r|b\n", "(?x)a#c\u00e9\n", "(?dx)a#c\x00b", "(?x)\\1 0", "(?x)\\p {L}"} {
-		if got, ok := regexStripExtended(source); ok {
-			t.Errorf("regexStripExtended(%q) = %q, want refusal", source, got)
+	for _, source := range []string{"(?x)(? =a)a", "(?x)(?-x )a", "(?x)a{ 1,2}", "a b"} {
+		if got, ok := javaRegexExtendedNormalize(source); ok {
+			t.Errorf("javaRegexExtendedNormalize(%q) = %q, want no normalization", source, got)
 		}
 	}
+}
+
+// Probes that regexp2's own x mode got wrong (X1).
+func TestRegexExtendedClassAndEscapeProbes(t *testing.T) {
+	runRegexApex(t, `
+Matcher a = Pattern.compile('(?x)[a b]{1, 2}').matcher('ab');
+System.assertEquals(true, a.find());
+System.assertEquals(2, a.end());
+System.assertEquals(true, Pattern.compile('(?x)[a b] x{2 ,3}').matcher('axxx').find());
+System.assertEquals(true, Pattern.compile('(?x)[a b]a{1 0}').matcher('b' + 'a'.repeat(10)).find());
+Matcher h = Pattern.compile('(?x)[a b]\\x2 3').matcher('a#aa');
+System.assertEquals(true, h.find());
+System.assertEquals('a#', h.group());
+System.assertEquals(true, Pattern.compile('(?x)[a b]\\0 4 3').matcher('a#aa').find());
+System.assertEquals(true, Pattern.compile('(?x)[a b]\\u0 0 2 3').matcher('a#aa').find());
+Matcher p = Pattern.compile('(?x)[a b]a* +a').matcher('baaa');
+System.assertEquals(false, p.find());
+Matcher x = Pattern.compile('(?x)\\x{4 1}').matcher('A');
+System.assertEquals(true, x.find());
+System.assertEquals(true, Pattern.matches('(?x)\\x{4 1}', 'A'));
+Matcher range = Pattern.compile('(?x)[a - c]').matcher('b-');
+System.assertEquals(true, range.find());
+System.assertEquals('b', range.group());
+`)
 }
 
 // Under (?x) Java skips whitespace and comments on ordinary reads, but reads
@@ -327,5 +364,26 @@ String z = String.fromCharArray(new List<Integer>{0});
 System.assertEquals(true, Pattern.matches('(?dx)a#c' + z + 'b', 'a' + z + 'b'));
 try { Pattern.compile('(?x)(?-x )a'); System.assert(false, 'compiled'); }
 catch (StringException e) { System.assert(e.getMessage().contains('Unknown inline modifier'), e.getMessage()); }
+`)
+}
+
+// A literal run followed by \p used to leave the parser's cursor behind the
+// backslash and loop forever.
+func TestRegexSyntaxCheckLiteralRunBeforeProperty(t *testing.T) {
+	for _, source := range []string{`a\p{L}`, "\u00e9\\p{L}", `a\pL`, `x\p{Lu}b`, `ab\P{L}cd`} {
+		done := make(chan *javaSyntaxError, 1)
+		go func() { done <- javaRegexSyntaxCheck(source) }()
+		select {
+		case err := <-done:
+			if err != nil {
+				t.Errorf("%q: %s", source, err.description)
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatalf("%q: parser loops", source)
+		}
+	}
+	runRegexApex(t, `
+System.assertEquals(true, Pattern.compile('a\\p{L}').matcher('ab').find());
+System.assertEquals('b', 'ab'.replaceAll('a\\p{L}', 'b'));
 `)
 }

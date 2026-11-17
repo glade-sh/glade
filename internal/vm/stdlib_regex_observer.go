@@ -184,6 +184,13 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 						}
 					}
 				case 'u', 'x':
+					if source[start+1] == 'x' && source[i] == '{' {
+						// \x{H...} is one atom.
+						if end := strings.IndexByte(source[i:], '}'); end >= 0 {
+							i += end + 1
+							break
+						}
+					}
 					count := 2
 					if source[start+1] == 'u' {
 						count = 4
@@ -369,14 +376,7 @@ func linearAttemptReachesEnd(prog *syntax.Prog, input string, endRune int) bool 
 // node: no top-level alternation, and the first element, after any flag-only
 // groups, is a bare ^. A group around the ^ keeps Java's Start wrapper.
 func regexRootIsBareCaret(source string) bool {
-	source = javaRegexRemoveQuoting(source)
-	if regexSourceHasInlineFlag(source, 'x') {
-		stripped, ok := regexStripExtended(source)
-		if !ok {
-			return false
-		}
-		source = stripped
-	}
+	source = regexNormalizeExtended(javaRegexRemoveQuoting(source))
 	if !strings.HasPrefix(regexStripLeadingFlags(source), "^") {
 		return false
 	}
@@ -419,141 +419,16 @@ func regexRootIsBareCaret(source string) bool {
 	return true
 }
 
-// regexStripExtended rewrites a (?x) pattern into the equivalent plain
-// pattern, so RE2 can read it. It accepts only the exact, simple shape: x set
-// by leading flag groups and never changed, only flat classes without
-// whitespace or comments, ASCII text without NUL, and no carriage returns.
-func regexStripExtended(src string) (string, bool) {
-	var out strings.Builder
-	leading := true
-	for i := 0; i < len(src); i++ {
-		c := src[i]
-		switch {
-		case c >= 0x80, c == '\r', c == 0:
-			return "", false
-		case c == '[':
-			// A flat class holding no whitespace or comment is copied as it is.
-			end := regexPlainClassEnd(src, i)
-			if end < 0 {
-				return "", false
-			}
-			out.WriteString(src[i : end+1])
-			i = end
-			leading = false
-		case c == '\\':
-			if i+1 >= len(src) {
-				return "", false
-			}
-			n := src[i+1]
-			switch {
-			case n == ' ':
-				out.WriteString("[ ]")
-			case n >= '1' && n <= '9' || strings.IndexByte("QEpPcN", n) >= 0 || n == '\t' || n == '\n' || n == '\v' || n == '\f' || n >= 0x80:
-				return "", false
-			case n == 'k':
-				// \k<name> reads its name raw; accept only a plain name.
-				end := strings.IndexByte(src[i:], '>')
-				if i+2 >= len(src) || src[i+2] != '<' || end < 0 {
-					return "", false
-				}
-				for _, nc := range src[i+3 : i+end] {
-					if !(nc >= 'a' && nc <= 'z' || nc >= 'A' && nc <= 'Z' || nc >= '0' && nc <= '9') {
-						return "", false
-					}
-				}
-				out.WriteString(src[i : i+end+1])
-				i += end
-				leading = false
-				continue
-			default:
-				out.WriteByte(c)
-				out.WriteByte(n)
-			}
-			i++
-			leading = false
-		case c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f':
-		case c == '#':
-			for i < len(src) && src[i] != '\n' {
-				if src[i] == '\r' || src[i] == 0 || src[i] >= 0x80 {
-					return "", false
-				}
-				i++
-			}
-		case c == '(' && i+1 < len(src) && src[i+1] == '?':
-			if i+2 < len(src) && src[i+2] == '#' {
-				return "", false
-			}
-			j := i + 2
-			for j < len(src) && strings.IndexByte("idmsuxU-", src[j]) >= 0 {
-				j++
-			}
-			if j >= len(src) || (src[j] != ')' && src[j] != ':') {
-				out.WriteString("(?")
-				i++
-				leading = false
-				continue
-			}
-			flags := src[i+2 : j]
-			if strings.Contains(flags, "x") {
-				if !leading || src[j] != ')' || strings.Contains(flags, "-") {
-					return "", false
-				}
-				flags = strings.ReplaceAll(flags, "x", "")
-				if flags == "" {
-					i = j
-					continue
-				}
-			}
-			out.WriteString("(?" + flags + string(src[j]))
-			i = j
-			if src[j] == ':' {
-				leading = false
-			}
-		default:
-			out.WriteByte(c)
-			leading = false
-		}
-	}
-	return out.String(), true
-}
-
-// regexNormalizeExtended returns the plain form of a simple (?x) pattern, or
-// source itself when the pattern is not simple or the plain form is invalid.
+// regexNormalizeExtended returns the pattern Java compiles from a COMMENTS-mode
+// pattern (whitespace and comments gone, x removed), or source itself when x is
+// never enabled or the pattern is invalid. Validation and error text keep using
+// the original source.
 func regexNormalizeExtended(source string) string {
 	if !regexSourceHasInlineFlag(source, 'x') {
 		return source
 	}
-	stripped, ok := regexStripExtended(javaRegexRemoveQuoting(source))
-	if !ok || javaRegexSyntaxCheck(stripped) != nil {
-		return source
+	if normalized, ok := javaRegexExtendedNormalize(source); ok {
+		return normalized
 	}
-	return stripped
-}
-
-// regexPlainClassEnd returns the index of the ] that closes the class opened
-// at start, or -1 unless the class is flat (no nesting, no &&, no leading ])
-// and holds no whitespace, # or non-ASCII byte, so x mode changes nothing in it.
-func regexPlainClassEnd(src string, start int) int {
-	i := start + 1
-	if i < len(src) && src[i] == '^' {
-		i++
-	}
-	if i < len(src) && src[i] == ']' {
-		return -1
-	}
-	for ; i < len(src); i++ {
-		c := src[i]
-		switch {
-		case c == '\\':
-			i++
-			if i >= len(src) || src[i] == ' ' || src[i] < 0x20 || src[i] >= 0x80 || src[i] == 'Q' {
-				return -1
-			}
-		case c == ']':
-			return i
-		case c == '[', c == '#', c == ' ', c < 0x20, c >= 0x80, c == '&' && i+1 < len(src) && src[i+1] == '&':
-			return -1
-		}
-	}
-	return -1
+	return source
 }

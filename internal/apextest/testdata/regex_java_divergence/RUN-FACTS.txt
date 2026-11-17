@@ -33,3 +33,5 @@ hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repea
   are the research packet's RegexXTest with @IsTest added to the class and the reserved word end renamed. They show:
   the six whitespace characters skip; a comment ends at \n, \r (not under d), U+0085, U+2028 and U+2029, but Java returns U+0085, U+2028, U+2029
   and NUL as pattern characters; whitespace splits \0 \x \u payloads and counted repeats after the first digit; (? x) and (?-x ) are errors.
+(?x) rows d18 (62.0 and 67.0, anonymous and @IsTest, two repeats): whitespace inside counted repeats, hex, octal and unicode payloads that follow a class;
+  [a b]a* +a is a possessive a*+ (no match on baaa); \x{4 1} reads \x{41}.

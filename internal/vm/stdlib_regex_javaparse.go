@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"math"
 	"strings"
 	"unicode/utf16"
@@ -33,6 +34,8 @@ type javaRegexParser struct {
 	cursor    int
 	comments  bool
 	unixLines bool
+	skipped   []bool // characters a (?x) read skipped, by index in t
+	sawX      bool
 	groups    int
 	names     map[string]bool
 
@@ -198,18 +201,32 @@ func (p *javaRegexParser) lineSeparator(ch rune) bool {
 	return ch == '\n' || ch == '\r' || ch == 0x85 || ch == 0x2028 || ch == 0x2029
 }
 
+// skip records that the character at i is whitespace or comment text that a
+// (?x) read stepped over; it is not part of the pattern Java compiles.
+func (p *javaRegexParser) skipChar(i int) {
+	if i >= 0 && i < p.n {
+		if p.skipped == nil {
+			p.skipped = make([]bool, p.n)
+		}
+		p.skipped[i] = true
+	}
+}
+
 // pastWhitespace is Java's peekPastWhitespace: the cursor ends on the first
 // character that is neither whitespace nor part of a comment, and ch is it.
 func (p *javaRegexParser) pastWhitespace(ch rune) rune {
 	for javaASCIISpace(ch) || ch == '#' {
 		for javaASCIISpace(ch) {
+			p.skipChar(p.cursor)
 			p.cursor++
 			ch = p.at(p.cursor)
 		}
 		if ch == '#' {
+			p.skipChar(p.cursor)
 			p.cursor++
 			ch = p.at(p.cursor)
 			for ch != 0 && !p.lineSeparator(ch) {
+				p.skipChar(p.cursor)
 				p.cursor++
 				ch = p.at(p.cursor)
 			}
@@ -223,13 +240,16 @@ func (p *javaRegexParser) pastWhitespace(ch rune) rune {
 func (p *javaRegexParser) parsePastWhitespace(ch rune) rune {
 	for javaASCIISpace(ch) || ch == '#' {
 		for javaASCIISpace(ch) {
+			p.skipChar(p.cursor - 1)
 			ch = p.at(p.cursor)
 			p.cursor++
 		}
 		if ch == '#' {
+			p.skipChar(p.cursor - 1)
 			ch = p.at(p.cursor)
 			p.cursor++
 			for ch != 0 && !p.lineSeparator(ch) {
+				p.skipChar(p.cursor - 1)
 				ch = p.at(p.cursor)
 				p.cursor++
 			}
@@ -514,8 +534,7 @@ func (p *javaRegexParser) atom() javaTreeInfo {
 			ch = p.nextEscaped()
 			if ch == 'p' || ch == 'P' {
 				if first > 0 {
-					p.unread()
-					prev = p.cursor
+					// A literal run is waiting: leave the cursor on the backslash.
 					p.unread()
 					stop = true
 					break
@@ -859,6 +878,7 @@ func (p *javaRegexParser) addFlag() {
 			p.unixLines = true
 		case 'x':
 			p.comments = true
+			p.sawX = true
 		case '-':
 			ch = p.next()
 			for {
@@ -1095,4 +1115,107 @@ func javaCharacterByName(name string) (rune, bool) {
 func javaRegexNestsUnboundedRepeats(normalized string) bool {
 	p, err := javaRegexParse(normalized)
 	return err == nil && p != nil && p.nested
+}
+
+// javaRegexExtendedNormalize returns the pattern Java compiles from a
+// COMMENTS-mode pattern: the characters its reads kept, with the x flag
+// removed. It follows Java's own cursor, so it is total for valid patterns.
+// ok is false when x is never enabled or the pattern is invalid.
+func javaRegexExtendedNormalize(pattern string) (string, bool) {
+	p, err := javaRegexParse(pattern)
+	if err != nil || p == nil || !p.sawX {
+		return pattern, false
+	}
+	var kept strings.Builder
+	for i, r := range p.t[:p.n] {
+		if p.skipped != nil && p.skipped[i] {
+			continue
+		}
+		switch r {
+		case 0:
+			kept.WriteString(`\x00`)
+		case 0x85, 0x2028, 0x2029:
+			kept.WriteString(fmt.Sprintf(`\x{%X}`, r))
+		default:
+			kept.WriteRune(r)
+		}
+	}
+	out := javaDropExtendedFlag(kept.String())
+	if javaRegexSyntaxCheck(out) != nil {
+		return pattern, false
+	}
+	return out, true
+}
+
+// javaDropExtendedFlag removes x from the enabling part of every flag group:
+// (?x) goes, (?ix) becomes (?i) and (?x: becomes (?: . (?-x) is left alone.
+func javaDropExtendedFlag(src string) string {
+	var out strings.Builder
+	for i := 0; i < len(src); i++ {
+		c := src[i]
+		switch {
+		case c == '\\' && i+1 < len(src):
+			out.WriteByte(c)
+			i++
+			out.WriteByte(src[i])
+		case c == '[':
+			end := javaClassEndIndex(src, i)
+			out.WriteString(src[i : end+1])
+			i = end
+		case c == '(' && i+1 < len(src) && src[i+1] == '?':
+			j := i + 2
+			for j < len(src) && strings.IndexByte("idmsuxU-", src[j]) >= 0 {
+				j++
+			}
+			if j < len(src) && (src[j] == ')' || src[j] == ':') {
+				flags := src[i+2 : j]
+				on, off, hasOff := flags, "", false
+				if k := strings.IndexByte(flags, '-'); k >= 0 {
+					on, off, hasOff = flags[:k], flags[k:], true
+				}
+				_ = hasOff
+				on = strings.ReplaceAll(on, "x", "")
+				if on == "" && off == "" && src[j] == ')' {
+					i = j
+					continue
+				}
+				out.WriteString("(?" + on + off + string(src[j]))
+				i = j
+				continue
+			}
+			out.WriteString("(?")
+			i++
+		default:
+			out.WriteByte(c)
+		}
+	}
+	return out.String()
+}
+
+// javaClassEndIndex returns the index of the ] that closes the class opened at
+// start (nested classes count; a ] right after [ or [^ is a literal), or the
+// last index when the class never closes.
+func javaClassEndIndex(src string, start int) int {
+	depth := 1
+	i := start + 1
+	if i < len(src) && src[i] == '^' {
+		i++
+	}
+	if i < len(src) && src[i] == ']' {
+		i++
+	}
+	for ; i < len(src); i++ {
+		switch src[i] {
+		case '\\':
+			i++
+		case '[':
+			depth++
+		case ']':
+			depth--
+			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return len(src) - 1
 }
