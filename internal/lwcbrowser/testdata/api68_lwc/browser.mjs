@@ -18,6 +18,53 @@ try {
       errors.push(item + ' not ready: ' + e.message.split('\n')[0] + ' | ' + errors.slice(-3).join(' ; '));
       continue;
     }
+    if (item.startsWith('b25_') && /_menu\d+$/.test(item)) {
+      // Select a tab from the More Tabs menu after the first render, through
+      // the menu item's own click, as the capture did.
+      const names = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth', 'Eleventh', 'Twelfth'];
+      const target = names[Number(item.match(/_menu(\d+)$/)[1]) - 1] + ' long tab';
+      const deepFind = (root, test) => {
+        for (const el of root.querySelectorAll('*')) {
+          if (test(el)) return el;
+          if (el.shadowRoot) { const hit = deepFind(el.shadowRoot, test); if (hit) return hit; }
+        }
+        return null;
+      };
+      await page.evaluate(() => {
+        function find(root) {
+          for (const el of root.querySelectorAll('*')) {
+            if (el.nodeName.toLowerCase() === 'button' && el.getAttribute('title') === 'More Tabs') return el;
+            if (el.shadowRoot) { const hit = find(el.shadowRoot); if (hit) return hit; }
+          }
+          return null;
+        }
+        find(document).click();
+      });
+      try {
+        await page.waitForFunction(label => {
+          function find(root) {
+            for (const el of root.querySelectorAll('lightning-menu-item')) if ((el.shadowRoot || el).textContent.trim() === label) return el;
+            for (const el of root.querySelectorAll('*')) if (el.shadowRoot) { const hit = find(el.shadowRoot); if (hit) return hit; }
+            return null;
+          }
+          const hit = find(document);
+          if (!hit) return false;
+          (hit.shadowRoot && hit.shadowRoot.querySelector('a, [role="menuitem"]') || hit).click();
+          window.__menuClicked = true;
+          return true;
+        }, target, {timeout: 5000});
+        await page.waitForFunction(label => {
+          function tabs(root, out = []) {
+            for (const el of root.querySelectorAll('a[role="tab"]')) out.push(el);
+            for (const el of root.querySelectorAll('*')) if (el.shadowRoot) tabs(el.shadowRoot, out);
+            return out;
+          }
+          return tabs(document).some(a => a.getAttribute('aria-selected') === 'true' && a.textContent.trim() === label);
+        }, target, {timeout: 5000});
+      } catch (e) {
+        errors.push(item + ' menu selection failed: ' + e.message.split('\n')[0]);
+      }
+    }
     if (item === 'b25' || item.startsWith('b25_')) {
       // Open the overflow menu, as the capture does, before reading it.
       await page.evaluate(() => {
@@ -101,7 +148,12 @@ try {
           return target ? {live: target.getAttribute('aria-live'), hasText: text(target) !== ''} : {missing: id};
         });
       });
-      return {lines, attrs, errorButtons, tabs, menu, fieldInput, ariaInvalid, describedBy, ...(window.__observation || {})};
+      // Natural widths of the bar items, for derived expectations: the tab items
+      // in the bar and the More Tabs item.
+      const tabWidths = deepAll(document, 'a[role="tab"]').map(a => a.parentElement.getBoundingClientRect().width);
+      const more = deepAll(document, 'li.slds-tabs_default__overflow-button')[0];
+      const moreWidth = more ? more.getBoundingClientRect().width : null;
+      return {lines, attrs, errorButtons, tabs, menu, fieldInput, ariaInvalid, describedBy, tabWidths, moreWidth, ...(window.__observation || {})};
     });
   }
   out.errors = errors;
