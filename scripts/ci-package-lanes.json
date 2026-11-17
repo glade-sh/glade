@@ -107,7 +107,7 @@
     "./internal/pluginhost": 5,
     "./internal/project": 1,
     "./internal/repoguard": 2,
-    "./internal/sema": 659,
+    "./internal/sema": 660,
     "./internal/semanticcache": 6,
     "./internal/server": 13,
     "./internal/soql": 5,
