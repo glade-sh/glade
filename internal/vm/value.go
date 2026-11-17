@@ -16,6 +16,12 @@ type Value struct {
 	// C10: a recovered Number(18,0) Double token read rejects boxed Long casts.
 	// Keep this authority local to that captured read, not arbitrary Doubles.
 	scaleZeroNumberTokenDouble bool
+	// A Datetime keeps the calendar week term of the locale it was built under
+	// (native dth_loc_*: the hash follows the construction-time user, across a
+	// runAs boundary in both directions). The term is (firstDay<<1)^(minDays<<4),
+	// never zero, so zero means unset. It sits in the padding after the bool
+	// above; TestValueSizeGuard keeps Value from growing.
+	datetimeWeekTerm uint8
 
 	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
 	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
@@ -45,12 +51,6 @@ type Value struct {
 	// The key set of a field map lists in platform order but renders its text
 	// alphabetically (record_type_shape list_forms, default_order_rest d3).
 	describeKeySetText bool
-
-	// A Datetime keeps the calendar week term of the locale it was built under
-	// (native dth_loc_*: the hash follows the construction-time user, across a
-	// runAs boundary in both directions).
-	weekTerm    int32
-	hasWeekTerm bool
 
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`

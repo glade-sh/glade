@@ -502,12 +502,12 @@ func (vm *VM) flowInterviewOutputValue(output dml.FlowInterviewOutput) Value {
 }
 
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (value Value, updated Value, mutated bool, handled bool, err error) {
-	if receiver.hasWeekTerm && receiver.Kind == ValueObject {
+	if receiver.datetimeWeekTerm != 0 && receiver.Kind == ValueObject {
 		// A Datetime produced from a Datetime (addDays and the like) keeps the
 		// source's term. No native row covers arithmetic; this is the choice.
 		defer func() {
-			if handled && value.Kind == ValueObject && value.Type == "Datetime" && !value.hasWeekTerm {
-				value.weekTerm, value.hasWeekTerm = receiver.weekTerm, true
+			if handled && value.Kind == ValueObject && value.Type == "Datetime" && value.datetimeWeekTerm == 0 {
+				value.datetimeWeekTerm = receiver.datetimeWeekTerm
 			}
 		}()
 	}

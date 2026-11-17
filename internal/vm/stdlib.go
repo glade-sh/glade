@@ -4666,8 +4666,8 @@ func platformTemporalHashCode(env hashEnv, value Value) (int32, bool) {
 		if err != nil {
 			return 0, false
 		}
-		if value.hasWeekTerm {
-			return long(instant.UnixMilli()) ^ value.weekTerm, true
+		if value.datetimeWeekTerm != 0 {
+			return long(instant.UnixMilli()) ^ calendarHashBase ^ int32(value.datetimeWeekTerm), true
 		}
 		return long(instant.UnixMilli()) ^ env.calendarTerm(), true
 	case strings.EqualFold(value.Type, "Time"):

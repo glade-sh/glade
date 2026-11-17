@@ -3424,10 +3424,13 @@ func (env hashEnv) calendarTerm() int32 {
 	return env.localeCalendarTerm()
 }
 
+// calendarHashBase is the fitted base of the Datetime hash term (see calendarTerm).
+const calendarHashBase = 577755 ^ 18
+
 // localeCalendarTerm is the term of the user running now. A Datetime carries the
-// term of its construction instead (Value.weekTerm).
+// term of its construction instead (Value.datetimeWeekTerm).
 func (env hashEnv) localeCalendarTerm() int32 {
-	const base = 577755 ^ 18
+	const base = calendarHashBase
 	locale := "en_US"
 	if env.vm != nil {
 		locale = env.vm.currentUserInfoField("LocaleSidKey", "en_US")

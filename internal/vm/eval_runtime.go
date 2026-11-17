@@ -23,13 +23,13 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		vm.callPos = expr.Pos
 		value, err := vm.evalExpr(expr, result)
 		vm.callPos = previous
-		if value.Kind == ValueObject && !value.hasWeekTerm {
+		if value.Kind == ValueObject && value.datetimeWeekTerm == 0 {
 			value = vm.stampDatetimeWeekTerm(value)
 		}
 		return value, err
 	}
 	value, err := vm.evalExpr(expr, result)
-	if value.Kind == ValueObject && !value.hasWeekTerm {
+	if value.Kind == ValueObject && value.datetimeWeekTerm == 0 {
 		value = vm.stampDatetimeWeekTerm(value)
 	}
 	return value, err
@@ -41,8 +41,7 @@ func (vm *VM) stampDatetimeWeekTerm(value Value) Value {
 	if value.Type != "Datetime" || value.projectClass || value.classInstance {
 		return value
 	}
-	value.weekTerm = vm.hashEnv().localeCalendarTerm()
-	value.hasWeekTerm = true
+	value.datetimeWeekTerm = uint8(calendarWeekTerm(vm.currentUserInfoField("LocaleSidKey", "en_US")))
 	return value
 }
 
