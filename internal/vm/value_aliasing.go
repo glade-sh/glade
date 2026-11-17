@@ -881,6 +881,7 @@ func valueSameHeaderAndBacking(before, after Value) bool {
 		before.idOriginalDisplay == after.idOriginalDisplay &&
 		before.reportEmptyDimension == after.reportEmptyDimension &&
 		before.describeKeySetText == after.describeKeySetText &&
+		before.describeKeySetReadOnly == after.describeKeySetReadOnly &&
 		before.Kind == after.Kind &&
 		before.Int == after.Int &&
 		before.Decimal == after.Decimal &&

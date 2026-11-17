@@ -161,6 +161,12 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		}
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			v, err := vm.constructTrackedSet(typeName, collectionMembers(args[0]), false, &Result{})
+			// A Set built from a field map's key set renders like it
+			// (review_round8 ks_copy); only the text order carries over, and
+			// the copy stays writable.
+			if args[0].Kind == ValueSet && args[0].describeKeySetText && err == nil {
+				v.describeKeySetText = true
+			}
 			vm.markCollectionRefsEscaped(v)
 			vm.rememberLocalOnlyCollection(v)
 			return v, true, err

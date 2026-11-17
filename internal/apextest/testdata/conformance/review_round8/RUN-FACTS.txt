@@ -1,0 +1,10 @@
+family=review_round8
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=OBS lines from the USER_DEBUG log (anonymous) or the uncaught exception (the row's error column); Salesforce ids masked
+repeats=two clean runs per request; rows identical
+raw_runs=review9/out/20261117T093226Z and 20261117T093227Z; review10/out/20261117T093806Z and 20261117T094036Z; review8/out/20261117T092711Z and 20261117T092930Z for ks_add_custom and ks_add_account (capture cache, not committed)
+shapes=ks_a and ks_b: the text of the field map key set of a custom object whose custom fields include lower-case, upper-case, underscore and Owner__c names next to OwnerId; ks_copy and ks_copy_add: a Set built from the key set, without and with added names; ks_iter: List conversion order; ks_add_custom, ks_add_account, ks_addall, ks_set_ops: add and addAll on the key set; ks_remove, ks_clear, ks_retain, ks_removeall: the other writes
+notes=the key set text is alphabetical by lower-case name (a_b__c, ab__c, alpha__c before createdbyid; owner__c before ownerid), while List conversion keeps the platform order (id, ownerid, isdeleted, name, ...). A Set built from the key set is writable and renders the same way with the added names in place (aaa_added after a_b__c). add and addAll on the key set raise an uncatchable System.FinalException: Collection is read-only; remove, clear, retainAll and removeAll succeed. Custom fields are in the describe map only for a user with field access: the first capture, without a permission set, listed the system fields only, so those rows are not used.
+limits=no namespaced-field row: the namespaced key-set text in describe_share_behavior_test stays an unbacked Glade pin (it follows the lower-case order).

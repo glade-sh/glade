@@ -150,7 +150,10 @@ System.debug('P10b:' + fs.size() + ':' + Schema.SObjectType.Widget__c.fieldSets.
 			name: "pristine reads",
 			source: `Schema.SObjectField t = Schema.SObjectType.Account.fields.getMap().get('name');
 System.debug('R1:' + t + ':' + t.label + ':' + t.getDescribe().getName() + ':' + Schema.SObjectType.Account.fields.Name + ':' + Schema.getGlobalDescribe().get('account') + ':' + Schema.getGlobalDescribe().size() + ':' + Schema.SObjectType.Account.fields.getMap().size() + ':' + Widget__c.SObjectType.getDescribe().getSObjectType() + ':' + Widget__c.SObjectType.getDescribe().fields.getMap().keySet());`,
-			debug: "R1:Name:Account Name:Name:Name:Account:171:62:Widget__c:{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ownerid, owner__c, recordtypeid, ...}",
+			// NATIVE review_round8 ks_b (62.0, 67.0): a custom field Owner__c sorts
+			// before OwnerId in the key set text. The namespaced row below (N1)
+			// is an unbacked Glade pin: no namespaced org was captured.
+			debug: "R1:Name:Account Name:Name:Name:Account:171:62:Widget__c:{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, owner__c, ownerid, recordtypeid, ...}",
 		},
 		{
 			name: "describe renderings",
@@ -184,7 +187,7 @@ Map<String, Schema.SObjectField> fm = d.fields.getMap();
 System.debug('N1:' + fm.keySet() + ':' + fm.get('plain__c') + ':' + fm.get('size__c') + ':' + fm.get('zzns__plain__c') + ':' + fm.get('parent__r'));
 System.debug('S2:' + describeShareDigest(String.valueOf(d)));
 System.debug('N3:' + Schema.SObjectType.zzns__Gadget__c.fields.Plain__c + ':' + Schema.SObjectType.zzns__Gadget__c.fields.zzns__Size__c.getDescribe().getName() + ':' + Limits.getHeapSize());`,
-			debug: "N1:{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ownerid, zzns__plain__c, systemmodstamp, ...}:zzns__Plain__c:zzns__Size__c:zzns__Plain__c:zzns__Parent__c | S2:15389/62cbf55a9093 | N3:zzns__Plain__c:zzns__Size__c:8095",
+			debug: "N1:{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ownerid, systemmodstamp, zzns__parent__c, ...}:zzns__Plain__c:zzns__Size__c:zzns__Plain__c:zzns__Parent__c | S2:15389/62cbf55a9093 | N3:zzns__Plain__c:zzns__Size__c:8095",
 		},
 		{
 			name:       "namespaced field token write",

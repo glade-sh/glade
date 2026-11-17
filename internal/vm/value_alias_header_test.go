@@ -59,7 +59,7 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 }
 
 func TestValueSameHeaderAndBackingGuardsValueFieldCount(t *testing.T) {
-	if got, want := reflect.TypeOf(Value{}).NumField(), 42; got != want {
+	if got, want := reflect.TypeOf(Value{}).NumField(), 43; got != want {
 		t.Fatalf("valueSameHeaderAndBacking must be updated for Value fields: got %d, want %d", got, want)
 	}
 }

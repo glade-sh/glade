@@ -117,3 +117,7 @@ func TestReviewRound6NativeConformance(t *testing.T) {
 func TestReviewRound7NativeConformance(t *testing.T) {
 	gapFamily{dir: "testdata/conformance/review_round7", adminFrom: []string{"GapAccess"}, cleanBetween: true}.replay(t)
 }
+
+func TestReviewRound8NativeConformance(t *testing.T) {
+	gapFamily{dir: "testdata/conformance/review_round8", adminFrom: []string{"GapAccess"}, cleanBetween: true}.replay(t)
+}

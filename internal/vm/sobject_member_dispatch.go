@@ -3,7 +3,6 @@ package vm
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -227,7 +226,7 @@ func (vm *VM) sObjectFieldMapCanonicalKeySet(value Value) (Value, bool) {
 	out := Set()
 	out.Type = "Set<String>"
 	out.describeKeySetText = true
-	var originals []string
+	out.describeKeySetReadOnly = true
 	seen := map[string]bool{}
 	for _, rawKey := range orderedValueMapKeys(value) {
 		fieldName, ok := sObjectFieldMapCanonicalFieldName(value.Map[rawKey])
@@ -243,17 +242,6 @@ func (vm *VM) sObjectFieldMapCanonicalKeySet(value Value) (Value, bool) {
 			fieldName = vm.describeFieldName(fieldName)
 		}
 		out.Set = append(out.Set, String(strings.ToLower(fieldName)))
-		originals = append(originals, rawKey)
-	}
-	// Each name carries its rank in the case-sensitive order of the API names;
-	// the set's text follows it (describeKeySetTextOrder).
-	ranks := make([]int, len(originals))
-	for i := range ranks {
-		ranks[i] = i
-	}
-	sort.SliceStable(ranks, func(i, j int) bool { return originals[ranks[i]] < originals[ranks[j]] })
-	for rank, index := range ranks {
-		out.Set[index].Int = int64(rank)
 	}
 	return out, true
 }

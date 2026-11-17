@@ -3334,6 +3334,10 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 	switch method {
 	case "add", "addAll", "remove", "removeAll", "retainAll", "clear", "put":
 		vm.mapPutParentContainment = nil
+		if receiver.describeKeySetReadOnly && describeKeySetReadOnlyMethod(method) {
+			// Uncatchable natively: ks_set_ops try/catch (Exception) does not catch it.
+			return Null, true, fmt.Errorf("System.FinalException: Collection is read-only")
+		}
 	}
 	switch method {
 	case "get":
@@ -4129,4 +4133,12 @@ func hasUpperCaseLetter(text string) bool {
 		}
 	}
 	return false
+}
+
+// describeKeySetReadOnlyMethod lists the writes a field map's key set refuses:
+// add and addAll raise the FinalException, while remove, clear, retainAll and
+// removeAll succeed natively (review_round8 ks_add_*, ks_addall, ks_remove,
+// ks_clear, ks_retain, ks_removeall, both APIs).
+func describeKeySetReadOnlyMethod(method string) bool {
+	return method == "add" || method == "addAll"
 }

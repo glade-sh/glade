@@ -308,10 +308,14 @@ func (f gapFamily) replay(t *testing.T) {
 						gotErr := ""
 						if err != nil {
 							var runtimeErr *vm.RuntimeError
-							if !errors.As(err, &runtimeErr) {
+							if errors.As(err, &runtimeErr) {
+								gotErr = runtimeErr.Type + ": " + runtimeErr.ExceptionMessage()
+							} else if strings.HasPrefix(err.Error(), "System.") {
+								// An uncatchable platform fault carries its native text.
+								gotErr = err.Error()
+							} else {
 								t.Fatal(err)
 							}
-							gotErr = runtimeErr.Type + ": " + runtimeErr.ExceptionMessage()
 						}
 						var got []string
 						for _, line := range result.Debug {

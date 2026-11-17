@@ -53,6 +53,9 @@ type Value struct {
 	// The key set of a field map lists in platform order but renders its text
 	// alphabetically (record_type_shape list_forms, default_order_rest d3).
 	describeKeySetText bool
+	// The field map's own key set is read-only; a Set built from it is not
+	// (review_round8 ks_add_*, ks_set_ops).
+	describeKeySetReadOnly bool
 
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`
@@ -2230,16 +2233,17 @@ func sObjectProjectedMapKey(v Value, seen map[uint64]bool) string {
 	return b.String()
 }
 
-// describeKeySetTextOrder lists a field map's key set for text. Iteration and
-// List conversion follow the platform field order (default_order_rest d3), but
-// the set's text is alphabetical by the API names' own case (each element's Int
-// holds its rank; describe_share_behavior_test keeps `ownerid, owner__c`) (record_type_shape list_forms keySetDebug and
-// keySetConcat, both APIs): the two row sets differ in how the set is read.
+// describeKeySetTextOrder lists a field map's key set, or a Set built from it,
+// for text. Iteration and List conversion follow the platform field order
+// (default_order_rest d3, review_round8 ks_iter), but the text is alphabetical
+// by the lower-case names: record_type_shape list_forms keySetDebug and
+// keySetConcat, and review_round8 ks_a (a_b__c, ab__c, alpha__c before
+// createdbyid) and ks_b (owner__c before ownerid), both APIs.
 func describeKeySetTextOrder(set Value) []Value {
 	if !set.describeKeySetText {
 		return set.Set
 	}
 	items := append([]Value(nil), set.Set...)
-	sort.SliceStable(items, func(i, j int) bool { return items[i].Int < items[j].Int })
+	sort.SliceStable(items, func(i, j int) bool { return items[i].Text < items[j].Text })
 	return items
 }
