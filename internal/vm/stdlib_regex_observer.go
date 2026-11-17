@@ -421,17 +421,25 @@ func regexRootIsBareCaret(source string) bool {
 
 // regexStripExtended rewrites a (?x) pattern into the equivalent plain
 // pattern, so RE2 can read it. It accepts only the exact, simple shape: x set
-// by leading flag groups and never changed, no character classes or counted
-// repeats (Java also ignores whitespace there), ASCII text, and no carriage
-// returns (Java ends a comment at \r, regexp2 does not).
+// by leading flag groups and never changed, only flat classes without
+// whitespace or comments, ASCII text without NUL, and no carriage returns.
 func regexStripExtended(src string) (string, bool) {
 	var out strings.Builder
 	leading := true
 	for i := 0; i < len(src); i++ {
 		c := src[i]
 		switch {
-		case c >= 0x80, c == '\r', c == '[', c == '{':
+		case c >= 0x80, c == '\r', c == 0:
 			return "", false
+		case c == '[':
+			// A flat class holding no whitespace or comment is copied as it is.
+			end := regexPlainClassEnd(src, i)
+			if end < 0 {
+				return "", false
+			}
+			out.WriteString(src[i : end+1])
+			i = end
+			leading = false
 		case c == '\\':
 			if i+1 >= len(src) {
 				return "", false
@@ -466,7 +474,7 @@ func regexStripExtended(src string) (string, bool) {
 		case c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f':
 		case c == '#':
 			for i < len(src) && src[i] != '\n' {
-				if src[i] == '\r' || src[i] >= 0x80 {
+				if src[i] == '\r' || src[i] == 0 || src[i] >= 0x80 {
 					return "", false
 				}
 				i++
@@ -520,4 +528,32 @@ func regexNormalizeExtended(source string) string {
 		return source
 	}
 	return stripped
+}
+
+// regexPlainClassEnd returns the index of the ] that closes the class opened
+// at start, or -1 unless the class is flat (no nesting, no &&, no leading ])
+// and holds no whitespace, # or non-ASCII byte, so x mode changes nothing in it.
+func regexPlainClassEnd(src string, start int) int {
+	i := start + 1
+	if i < len(src) && src[i] == '^' {
+		i++
+	}
+	if i < len(src) && src[i] == ']' {
+		return -1
+	}
+	for ; i < len(src); i++ {
+		c := src[i]
+		switch {
+		case c == '\\':
+			i++
+			if i >= len(src) || src[i] == ' ' || src[i] < 0x20 || src[i] >= 0x80 || src[i] == 'Q' {
+				return -1
+			}
+		case c == ']':
+			return i
+		case c == '[', c == '#', c == ' ', c < 0x20, c >= 0x80, c == '&' && i+1 < len(src) && src[i+1] == '&':
+			return -1
+		}
+	}
+	return -1
 }

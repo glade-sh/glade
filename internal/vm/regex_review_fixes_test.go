@@ -276,7 +276,7 @@ func TestRegexStripExtended(t *testing.T) {
 			t.Errorf("regexStripExtended(%q) = %q, %v; want %q", source, got, ok, want)
 		}
 	}
-	for _, source := range []string{"(?x)[a ]+", "(?x)a{1, 2}", "(?x)a(?-x:b )", "a(?x) b", "(?x)caf\u00e9", "(?x)a\r#c\n", "(?x)(a+)+#c\r|b\n", "(?x)a#c\u00e9\n", "(?x)\\1 0", "(?x)\\p {L}"} {
+	for _, source := range []string{"(?x)[a ]+", "(?x)a(?-x:b )", "a(?x) b", "(?x)caf\u00e9", "(?x)a\r#c\n", "(?x)(a+)+#c\r|b\n", "(?x)a#c\u00e9\n", "(?dx)a#c\x00b", "(?x)\\1 0", "(?x)\\p {L}"} {
 		if got, ok := regexStripExtended(source); ok {
 			t.Errorf("regexStripExtended(%q) = %q, want refusal", source, got)
 		}
@@ -311,5 +311,21 @@ Matcher n = Pattern.compile('(?x)( ?<n>a)\\k<n>').matcher('aa');
 System.assertEquals(true, n.find());
 System.assertEquals(1, n.groupCount());
 System.assertEquals(true, Pattern.compile('(?x)[a#c\r' + 'b]').matcher('b').find());
+`)
+}
+
+// Java COMMENTS-mode rows C11, C13, C22, C23 and C32 (native d17x_*).
+func TestRegexExtendedCountedRepeatsAndTerminatorChars(t *testing.T) {
+	runRegexApex(t, `
+Matcher a = Pattern.compile('(?x)a{2, 3}').matcher('aaaa');
+System.assertEquals(true, a.find());
+System.assertEquals(3, a.end());
+System.assertEquals(true, Pattern.matches('(?x)a{1 2}', 'a'.repeat(12)));
+System.assertEquals(false, Pattern.compile('(?x)a#c\u0085b').matcher('ab').find());
+System.assertEquals(true, Pattern.compile('(?x)a#c\u0085b').matcher('a\u0085b').find());
+String z = String.fromCharArray(new List<Integer>{0});
+System.assertEquals(true, Pattern.matches('(?dx)a#c' + z + 'b', 'a' + z + 'b'));
+try { Pattern.compile('(?x)(?-x )a'); System.assert(false, 'compiled'); }
+catch (StringException e) { System.assert(e.getMessage().contains('Unknown inline modifier'), e.getMessage()); }
 `)
 }

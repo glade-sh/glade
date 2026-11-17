@@ -29,3 +29,7 @@ hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repea
   whitespace splits tokens: (?x)( ?:a) is a non-capturing group, (?x)\0 1 4 2 reads octal 142 and (?x)\x2 3 reads hex 23.
 (?x) rows d17 (62.0 and 67.0, anonymous and @IsTest, two repeats): the character after (? is read raw, so (?x)(? =a)a is an Unknown inline modifier
   while (?x)(? :a) is a non-capturing group; ( ?<n>a)\k<n> compiles with 1 group; a comment inside a class ends at \r.
+(?x) rows d17x_C01..C32 (62.0 and 67.0, @IsTest, two repeats; all four runs agree and equal the Java 21 predictions): classes Rxd17x0062 and Rxd17x0067
+  are the research packet's RegexXTest with @IsTest added to the class and the reserved word end renamed. They show:
+  the six whitespace characters skip; a comment ends at \n, \r (not under d), U+0085, U+2028 and U+2029, but Java returns U+0085, U+2028, U+2029
+  and NUL as pattern characters; whitespace splits \0 \x \u payloads and counted repeats after the first digit; (? x) and (?-x ) are errors.

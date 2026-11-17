@@ -280,12 +280,17 @@ func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeC
 			continue
 		}
 		if options.extended && !classes.inside() && ch == '#' {
-			// A comment ends at any Java line terminator (only \n under d);
-			// regexp2 ends it at \n, so the text is dropped and \n written.
+			// A comment ends at any Java line terminator (only \n under d) or at
+			// a NUL. Java skips \n and \r, which are whitespace, but returns U+0085,
+			// U+2028, U+2029 and NUL as pattern characters (native rows C20-C23).
+			// regexp2 ends a comment at \n, so the text is dropped and \n written.
 			end, size := javaCommentEnd(source, i, options.unixLines)
 			out.WriteByte('\n')
 			if end < 0 {
 				break
+			}
+			if term, _ := utf8.DecodeRuneInString(source[end:]); term != '\n' && term != '\r' {
+				out.WriteString(fmtRuneEscape(term))
 			}
 			i = end + size - 1
 			continue
@@ -307,6 +312,9 @@ func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeC
 				}
 				if ch == '#' {
 					if end, size := javaCommentEnd(source, i, options.unixLines); end >= 0 {
+						if term, _ := utf8.DecodeRuneInString(source[end:]); term != '\n' && term != '\r' {
+							out.WriteString(fmtRuneEscape(term))
+						}
 						i = end + size - 1
 						continue
 					}
@@ -424,12 +432,13 @@ func rewriteJavaRegexFlagsForRegexp2(source string, traits regexTraits, unicodeC
 }
 
 // javaCommentEnd finds the line terminator that ends a (?x) comment starting
-// at from: \n, \r, U+0085, U+2028 or U+2029, and only \n under (?d). It
+// at from: \n, \r, U+0085, U+2028 or U+2029, and only \n under (?d); a NUL
+// always stops the scan. It
 // returns the terminator's index and byte length, or -1.
 func javaCommentEnd(source string, from int, unixLines bool) (int, int) {
 	for i := from; i < len(source); i++ {
 		switch {
-		case source[i] == '\n':
+		case source[i] == '\n', source[i] == 0:
 			return i, 1
 		case unixLines:
 		case source[i] == '\r':
