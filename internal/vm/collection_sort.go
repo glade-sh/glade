@@ -314,39 +314,53 @@ func collectionMembers(value Value) []Value {
 	}
 }
 
-// scalarMembership answers collectionContainsValue for a keyed needle when
-// every value has a Set-equality key (setEqualityBucketKey). For those pairs apexCollectionElementEquals is Value
-// Equal, which holds exactly when the keys match, and runs no Apex code, so
-// skipping the scan changes no result and no side effect. It is nil below
-// setEqualityIndexMin values or when any value has no key.
-type scalarMembership map[string]struct{}
+// scalarMembership answers collectionContainsValue for a needle with a scalar
+// key (setEqualityKeyer.scalarKey, with the keyer built from the values and the
+// needles) when every value is a scalar without a ref. For those pairs
+// apexCollectionElementEquals is Value Equal and runs no Apex code, so the
+// order and number of comparisons are not observable. A keyed value equals the
+// needle exactly when the keys match; the unkeyed values (zero and very large
+// Doubles, Ids, text Decimals next to Doubles) are compared as before. It is
+// unusable below setEqualityIndexMin values or when any value is not a scalar.
+type scalarMembership struct {
+	keyer   setEqualityKeyer
+	keys    map[string]struct{}
+	unkeyed []Value
+}
 
-func newScalarMembership(values []Value) scalarMembership {
+func newScalarMembership(values, needles []Value) scalarMembership {
 	if len(values) < setEqualityIndexMin {
-		return nil
+		return scalarMembership{}
 	}
-	keys := make(scalarMembership, len(values))
+	keyer := newSetEqualityKeyer(values, needles)
+	index := scalarMembership{keyer: keyer, keys: make(map[string]struct{}, len(values))}
 	for _, value := range values {
-		key, ok := setEqualityBucketKey(value)
-		if !ok {
-			return nil
+		if value.Ref != 0 || value.mapKeySetSource != nil || !equalScalarKind(value.Kind) {
+			return scalarMembership{}
 		}
-		keys[key] = struct{}{}
+		if key, ok := keyer.scalarKey(value); ok {
+			index.keys[key] = struct{}{}
+		} else {
+			index.unkeyed = append(index.unkeyed, value)
+		}
 	}
-	return keys
+	return index
 }
 
 // contains reports membership when the index can decide it.
-func (keys scalarMembership) contains(needle Value) (bool, bool) {
-	if keys == nil {
-		return false, false
+func (index scalarMembership) contains(vm *VM, needle Value, result *Result) (bool, bool, error) {
+	if index.keys == nil {
+		return false, false, nil
 	}
-	key, ok := setEqualityBucketKey(needle)
+	key, ok := index.keyer.scalarKey(needle)
 	if !ok {
-		return false, false
+		return false, false, nil
 	}
-	_, found := keys[key]
-	return found, true
+	if _, found := index.keys[key]; found {
+		return true, true, nil
+	}
+	found, err := vm.collectionContainsValue(index.unkeyed, needle, result)
+	return found, true, err
 }
 
 func (vm *VM) collectionContainsValue(values []Value, needle Value, result *Result) (bool, error) {

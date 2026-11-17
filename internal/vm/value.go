@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type Value struct {
@@ -971,22 +973,158 @@ func setEqualityBucketKey(value Value) (string, bool) {
 	return "", false
 }
 
+// setEqualityKeyer extends setEqualityBucketKey to Doubles and SObjects for
+// one comparison. Doubles get a key only when neither side holds a text-backed
+// Decimal: numericDecimalValuesEqual compares a Double with a text Decimal by
+// the text Decimal's float value, which no rational key can follow.
+type setEqualityKeyer struct {
+	doubles bool
+}
+
+func newSetEqualityKeyer(sides ...[]Value) setEqualityKeyer {
+	for _, side := range sides {
+		for _, value := range side {
+			if value.Kind == ValueDecimal && !isFloatBackedDecimal(value) {
+				return setEqualityKeyer{}
+			}
+		}
+	}
+	return setEqualityKeyer{doubles: true}
+}
+
+// scalarKey is a key that two elements share exactly when one Equals the
+// other: setEqualityBucketKey, plus Doubles when the keyer admits them.
+func (k setEqualityKeyer) scalarKey(value Value) (string, bool) {
+	if value.Kind == ValueDecimal && isFloatBackedDecimal(value) {
+		if !k.doubles || value.Ref != 0 || value.mapKeySetSource != nil {
+			return "", false
+		}
+		return doubleEqualityKey(value.Decimal)
+	}
+	return setEqualityBucketKey(value)
+}
+
+// doubleEqualityKey keys a Double by exact value. Two Doubles are equal when
+// both are NaN or their float64 values are equal, except that +0.0 and -0.0
+// differ (signedDoubleZeroEqual); an Integer equals a Double when
+// float64(Integer) equals it. Zeros (equal to Integer 0 but not to each other)
+// and integral values at or beyond 2^53 (where float64 rounds Integers) stay
+// unkeyed. Integral Doubles below 2^53 share the Integer's rational key.
+func doubleEqualityKey(d float64) (string, bool) {
+	switch {
+	case math.IsNaN(d):
+		return "nan", true
+	case d == 0:
+		return "", false
+	case d == math.Trunc(d):
+		if math.Abs(d) >= 1<<53 {
+			return "", false
+		}
+		return "r" + strconv.FormatInt(int64(d), 10), true
+	}
+	return "d" + strconv.FormatUint(math.Float64bits(d), 16), true
+}
+
+// groupKey is the bucket key for Set equality. Scalars use scalarKey; an
+// SObject uses sObjectEqualityGroupKey, which equal records share but unequal
+// records may share too, so the exact compare still runs inside each group.
+func (k setEqualityKeyer) groupKey(value Value) (string, bool) {
+	if value.Kind == ValueObject {
+		return sObjectEqualityGroupKey(value)
+	}
+	return k.scalarKey(value)
+}
+
+// sObjectEqualityGroupKey keys an SObject by its included equality fields
+// (sObjectEqualityFieldIncluded) and their value keys. It applies only where
+// objectFieldValue reduces to a case-insensitive name match: no namespace
+// tokens, no record type fields and no two field names that differ only in
+// case, so neither the explicit-field alias nor the null-value fallback can
+// pick another field. Every included value must have an sObjectFieldValueKey.
+// Two records Equal under sObjectValuesEqual then have the same included names
+// and pairwise equal values, so the same key.
+func sObjectEqualityGroupKey(value Value) (string, bool) {
+	if value.classInstance || value.projectClass || value.Text != "" || !sObjectValueType(value.Type) {
+		return "", false
+	}
+	names := make(map[string]struct{}, len(value.Fields))
+	parts := make([]string, 0, len(value.Fields))
+	for name, field := range value.Fields {
+		if isInternalSObjectField(name) {
+			// Bookkeeping fields never take part in equality.
+			continue
+		}
+		lower := strings.ToLower(name)
+		if _, duplicate := names[lower]; duplicate || storage.StripAnyNamespaceToken(name) != name || strings.Contains(lower, "recordtype") {
+			return "", false
+		}
+		names[lower] = struct{}{}
+		if !sObjectEqualityFieldIncluded(value, name, field) {
+			continue
+		}
+		key, ok := sObjectFieldValueKey(field)
+		if !ok {
+			return "", false
+		}
+		parts = append(parts, lower+"="+key)
+	}
+	sort.Strings(parts)
+	return "o" + strings.Join(parts, "\x00"), true
+}
+
+// sObjectFieldValueKey keys a field value so that sObjectFieldValuesEqual
+// pairs share it: any value with an Id text (every non-empty String, every Id)
+// compares by apexIDTextEqual, so it keys by canonicalIDMapKey; a plain null
+// and the scalars setEqualityBucketKey covers key as there. Relationship
+// nulls, objects, collections and Doubles have no key.
+func sObjectFieldValueKey(value Value) (string, bool) {
+	if value.Ref != 0 || value.mapKeySetSource != nil {
+		return "", false
+	}
+	if id, ok := sObjectIDFromValue(value); ok {
+		return "I" + canonicalIDMapKey(string(id)), true
+	}
+	switch value.Kind {
+	case ValueObject, ValueList, ValueSet, ValueMap:
+		return "", false
+	case ValueNull:
+		if isRelationshipNull(value) {
+			return "", false
+		}
+	}
+	key, ok := setEqualityBucketKey(value)
+	if !ok {
+		return "", false
+	}
+	return "K" + key, true
+}
+
 // setMembersContained reports whether every left element Equals some right
-// element (right.Equal(left), as containsValue compares). It compares a keyed
-// left element only with the right elements of the same key and the right
-// elements without a key; equal is pure, so the result is the scan's.
+// element (right.Equal(left), as containsValue compares). A keyed left element
+// is compared only with the right elements of its group, the right objects
+// that share its ref (equal treats those as equal at once) and the unkeyed
+// right elements; an unkeyed left element scans as before. equal is pure, so
+// the result is the scan's.
 func setMembersContained(left, right []Value) bool {
+	keyer := newSetEqualityKeyer(left, right)
 	buckets := make(map[string][]int, len(right))
 	var unkeyed []int
+	var byRef map[uint64][]int
 	for i, value := range right {
-		if key, ok := setEqualityBucketKey(value); ok {
+		if key, ok := keyer.groupKey(value); ok {
 			buckets[key] = append(buckets[key], i)
 		} else {
 			unkeyed = append(unkeyed, i)
 		}
+		if value.Kind == ValueObject && value.Ref != 0 {
+			if byRef == nil {
+				byRef = make(map[uint64][]int)
+			}
+			byRef[value.Ref] = append(byRef[value.Ref], i)
+		}
 	}
 	for _, value := range left {
-		key, ok := setEqualityBucketKey(value)
+		key, ok := keyer.groupKey(value)
 		if !ok {
 			if !containsValue(right, value) {
 				return false
@@ -998,6 +1136,14 @@ func setMembersContained(left, right []Value) bool {
 			if right[i].Equal(value) {
 				found = true
 				break
+			}
+		}
+		if !found && value.Kind == ValueObject && value.Ref != 0 {
+			for _, i := range byRef[value.Ref] {
+				if right[i].Equal(value) {
+					found = true
+					break
+				}
 			}
 		}
 		for j := 0; !found && j < len(unkeyed); j++ {
