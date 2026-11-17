@@ -62,6 +62,10 @@ List<Id> ids = new List<Id>();
 List<Contact> alias = rows;
 Map<Id, Account> byId = new Map<Id, Account>();
 Map<String, Contact> byKey = new Map<String, Contact>();
+Map<Id, Integer> idKeys = new Map<Id, Integer>();
+Map<String, Integer> plainMap = new Map<String, Integer>();
+Map<String, Integer> mapAlias = plainMap;
+Map<Account, Integer> objKeys = new Map<Account, Integer>();
 Integer hits = 0;
 String tag = 'tg';
 `)
@@ -90,6 +94,33 @@ String tag = 'tg';
 		func() string { return "byId.put(a.Id, new Account(Name = a.Name));" },
 		func() string { return "Account tmp = new Account(Name = 'tmp' + hits); tmp = null;" },
 		func() string { return "if (hits > 40 && Math.mod(hits, 5) == 0) { continue; }" },
+		func() string { return "a = new Account(Name = 'rebound-padding-' + hits);" },
+		func() string { return "a = new Account(Name = 'rb' + hits); byId.put('001000000000001AAA', a);" },
+		func() string {
+			return "Contact f = new Contact(LastName = 'f', AccountId = '001000000000001AAA'); ids.add(f.AccountId); f = new Contact(LastName = 'g');"
+		},
+		func() string {
+			return "Contact f = new Contact(LastName = 'f'); f.AccountId = '001000000000002AAA'; ids.add(f.AccountId); f.AccountId = null;"
+		},
+		func() string {
+			return "Contact f = new Contact(LastName = 'f', AccountId = '001000000000003AAA'); rows.add(new Contact(LastName = 'r', AccountId = f.AccountId));"
+		},
+		func() string {
+			return "Account g = new Account(Name = 'g', Id = '001000000000004AAA'); ids.add(g.Id); g = null;"
+		},
+		func() string { return "idKeys.put('001000000000001', hits); idKeys.put('001000000000001AAA', hits);" },
+		func() string {
+			return "idKeys.put('001000000000' + String.valueOf(Math.mod(hits, 7)) + '00AAA', hits);"
+		},
+		func() string {
+			return "if (hits == 25) { accs[Math.mod(hits, 5)] = new Account(Name = 'idx' + hits); }"
+		},
+		func() string { return "mapAlias.put('al' + hits, hits);" },
+		func() string { return "if (hits > 55) { break; }" },
+		func() string {
+			return "try { if (Math.mod(hits, 11) == 10) { Integer z = hits / (hits - hits); } } catch (MathException e) { hits++; }"
+		},
+		func() string { return "objKeys.put(a, hits);" },
 	}
 	body := func(depth int) string {
 		var sb strings.Builder
@@ -103,6 +134,9 @@ String tag = 'tg';
 	if rng.Intn(2) == 0 {
 		b.WriteString("for (Integer r = 0; r < 2; r++) {\n  for (Account a : accs) {\n" + body(1) + "  }\n}\n")
 	}
+	if rng.Intn(2) == 0 {
+		b.WriteString("Set<Account> accSet = new Set<Account>(accs);\nfor (Account a : accSet) {\n" + body(2) + "}\n")
+	}
 	b.WriteString("System.debug('end ' + hits + ' ' + Limits.getHeapSize() + ' ' + rows.size() + ' ' + byId.size());\n")
 	return b.String()
 }
@@ -111,7 +145,7 @@ String tag = 'tg';
 // outcome of the run that walks the heap on every statement, with and without
 // a heap cap that stops it at many different statements.
 func TestStrictHeapShapesMatchFullWalk(t *testing.T) {
-	seeds := 10
+	seeds := 16
 	if testing.Short() {
 		seeds = 3
 	}

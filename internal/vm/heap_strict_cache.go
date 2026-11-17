@@ -361,6 +361,11 @@ func (vm *VM) heapSharedIDRead(expr ir.Expr) (uint64, bool) {
 		value.fieldsShared || len(value.Fields) != 1 {
 		return 0, false
 	}
+	if value.Ref > vm.heapCheck.windowMark {
+		// An Id made since the last walk is reachable only through its
+		// record, whose drop or rewrite is priced as taking it along.
+		return 0, false
+	}
 	for _, text := range value.Fields {
 		if text.Kind != ValueString {
 			return 0, false
@@ -812,6 +817,15 @@ func (vm *VM) heapSizeFromPlan(plan heapStatementPlan) (int, bool) {
 			if !had {
 				delta += len(name)
 				added++
+			} else {
+				// The root held another value: the previous element, which
+				// the iterable still holds, or a value the body bound to the
+				// variable, which leaves the heap with it.
+				dropped, ok := vm.heapDroppedSize(old.value)
+				if !ok {
+					return 0, false
+				}
+				delta -= dropped
 			}
 		case !had:
 			return 0, false
