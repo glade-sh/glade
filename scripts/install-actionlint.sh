@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Linux amd64 CI archive. Update the version and digest together; see
-# docs/WORKFLOW_VALIDATION.md. Never execute a download before verification.
+# docs/AI_SETUP.md#workflow-lint. Never execute a download before verification.
 version=1.7.12
 sha256=8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
 if [[ $# -ne 1 || -z $1 ]]; then

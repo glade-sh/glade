@@ -1,0 +1,9 @@
+capture: chainrecv-statement
+started: 2026-11-13T23:36:50Z
+finished: 2026-11-13T23:38:20Z
+apis: 62.0 67.0
+routes: anonymous
+cases: 3
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+mode: live

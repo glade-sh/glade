@@ -1,0 +1,7 @@
+source_api	route	observation
+62.0	anonymous	"pop=IsDeleted,OwnerId|blank=|removed=IsDeleted"
+62.0	isTest	"pop=IsDeleted,OwnerId|blank=|removed=IsDeleted"
+62.0	rest	"pop=IsDeleted,OwnerId|blank=|removed=IsDeleted"
+67.0	anonymous	"pop=IsDeleted,OwnerId|blank=|removed=IsDeleted"
+67.0	isTest	"pop=IsDeleted,OwnerId|blank=|removed=IsDeleted"
+67.0	rest	"pop=IsDeleted,OwnerId|blank=|removed=IsDeleted"

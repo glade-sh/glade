@@ -3,8 +3,6 @@ package vm
 import (
 	"fmt"
 	"strings"
-
-	"github.com/glade-sh/glade/internal/apexversion"
 )
 
 type LimitMode string
@@ -166,6 +164,19 @@ func (vm *VM) heapLimitError(used, cap int) error {
 	return &RuntimeError{Type: "System.LimitException", Message: fmt.Sprintf("Apex heap size too large: %d", used), Stack: vm.stackFrames()}
 }
 
+// aggregateQueryCap is the relationship-subquery cap: 300 synchronously and in
+// a finalizer, 600 inside a Queueable, future or Batch execute (async_limit_messages
+// a_agg*, APIs 62 and 67).
+func (vm *VM) aggregateQueryCap() int {
+	if vm.limitCaps.nativeDefaults && !vm.inFinalizer {
+		switch vm.currentAsyncKind {
+		case "Queueable", "Future", "BatchApex":
+			return batchAggregateQueryLimit
+		}
+	}
+	return syncAggregateQueryLimit
+}
+
 func (vm *VM) SetLimitMode(mode LimitMode) {
 	vm.limitMode = mode
 }
@@ -181,6 +192,8 @@ func (vm *VM) ResetLimits() {
 	vm.limits = Limits{}
 	vm.limitViolations = nil
 	vm.cpuBudgetUsed = 0
+	vm.work.reset()
+	vm.invalidateHeapCheckCache()
 }
 
 func (vm *VM) incrementLimit(name string, delta int) error {
@@ -192,6 +205,9 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		vm.limits.AggregateQueries += delta
 		if vm.currentAsyncKind == "" {
 			return vm.checkLimit(name, vm.limits.AggregateQueries, syncAggregateQueryLimit)
+		}
+		if cap := vm.aggregateQueryCap(); cap != syncAggregateQueryLimit {
+			return vm.checkLimit(name, vm.limits.AggregateQueries, cap)
 		}
 		return nil
 	case "queryRows":
@@ -225,6 +241,10 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		return vm.checkLimit(name, vm.limits.QueueableJobs, vm.limitCaps.QueueableJobs)
 	case "batchJobs":
 		vm.limits.BatchJobs += delta
+		if vm.testContext != nil && vm.limitCaps.nativeDefaults {
+			// A test method may submit six or more batches (test_boundary_edges bt_loop6).
+			return nil
+		}
 		return vm.checkLimit(name, vm.limits.BatchJobs, vm.limitCaps.BatchJobs)
 	case "scheduledJobs":
 		vm.limits.ScheduledJobs += delta
@@ -255,12 +275,23 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		return vm.checkLimit(name, vm.limits.FetchCallsOnApexCursor, apexCursorFetchCallLimit)
 	case "runAs":
 		vm.limits.RunAs += delta
+		if vm.limitCaps.nativeDefaults {
+			// Native runAs, setSavepoint and rollback calls only charge DML
+			// statements; Limits.getRunAs and the savepoint getters alias them.
+			return nil
+		}
 		return vm.checkLimit(name, vm.limits.RunAs, vm.limitCaps.RunAs)
 	case "savepoints":
 		vm.limits.Savepoints += delta
+		if vm.limitCaps.nativeDefaults {
+			return nil
+		}
 		return vm.checkLimit(name, vm.limits.Savepoints, vm.limitCaps.Savepoints)
 	case "savepointRollbacks":
 		vm.limits.SavepointRollbacks += delta
+		if vm.limitCaps.nativeDefaults {
+			return nil
+		}
 		return vm.checkLimit(name, vm.limits.SavepointRollbacks, vm.limitCaps.SavepointRollbacks)
 	case "publishImmediateDml":
 		vm.limits.PublishImmediateDML += delta
@@ -318,10 +349,10 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 		message := fmt.Sprintf("Too many %s: %d out of %d", name, used, cap)
 		// API 62/67 synchronous exhaustion reports a fixed message. Explicit
 		// local caps use the same synchronous error contract.
-		if name == "cpuTime" && vm.currentAsyncKind == "" {
+		if name == "cpuTime" && (vm.currentAsyncKind == "" || vm.limitCaps.nativeDefaults && (vm.currentAsyncKind == "Queueable" || vm.currentAsyncKind == "Future")) {
 			message = "Apex CPU time limit exceeded"
 		}
-		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "" {
+		if vm.limitCaps.nativeDefaults {
 			switch name {
 			case "queries":
 				message = fmt.Sprintf("Too many SOQL queries: %d", used)
@@ -329,6 +360,15 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 				message = fmt.Sprintf("Too many SOQL aggregate queries: %d", used)
 			case "dmlStatements":
 				message = fmt.Sprintf("Too many DML statements: %d", used)
+			default:
+				if vm.currentAsyncKind != "" {
+					break
+				}
+				if name == "soslQueries" {
+					message = fmt.Sprintf("Too many SOSL queries: %d", used)
+				} else if native, ok := nativeCounterMessage(name, used, cap); ok {
+					message = native
+				}
 			}
 		}
 		return &RuntimeError{
@@ -338,6 +378,31 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 		}
 	}
 	return nil
+}
+
+// nativeCounterMessage is the LimitException text Salesforce reports when a
+// counter first passes its synchronous cap (limits_counter_edges org.tsv).
+// Row counters stop at the first row over the cap, so the count is cap+1.
+func nativeCounterMessage(name string, used, cap int) (string, bool) {
+	switch name {
+	case "queryRows":
+		return fmt.Sprintf("Too many query rows: %d", min(used, cap+1)), true
+	case "dmlRows":
+		return fmt.Sprintf("Too many DML rows: %d", min(used, cap+1)), true
+	case "queryLocatorRows":
+		return fmt.Sprintf("Too many query locator rows: %d", min(used, cap+1)), true
+	case "callouts":
+		return fmt.Sprintf("Too many callouts: %d", used), true
+	case "emailInvocations":
+		return fmt.Sprintf("Too many Email Invocations: %d", used), true
+	case "publishImmediateDml":
+		return fmt.Sprintf("Too many Publish Immediate DML: %d", used), true
+	case "queueableJobs":
+		return fmt.Sprintf("Too many queueable jobs added to the queue: %d", used), true
+	case "futureCalls":
+		return fmt.Sprintf("Too many future calls: %d", used), true
+	}
+	return "", false
 }
 
 func (vm *VM) incrementQueryLocatorRows(value Value) error {
@@ -394,9 +459,9 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getQueueableJobs":
 		return Int(int64(vm.limits.QueueableJobs)), true
 	case "getLimitQueueableJobs":
-		// batch_limit_c09 (API 62/67): batch start, execute and finish report
-		// the same single-job cap as a Queueable body.
-		if vm.limitCaps.nativeDefaults && (vm.currentAsyncKind == "Queueable" || vm.currentAsyncKind == "BatchApex") {
+		// Native test callbacks for Queueable, Batch Apex and Future report
+		// a single queueable job limit. Explicit local caps remain unchanged.
+		if vm.limitCaps.nativeDefaults && (vm.currentAsyncKind == "Queueable" || vm.currentAsyncKind == "BatchApex" || (vm.currentAsyncKind == "Future" && vm.testContext != nil && vm.testContext.StopDraining)) {
 			return Int(1), true
 		}
 		return Int(int64(vm.limitCaps.QueueableJobs)), true
@@ -405,6 +470,10 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitFutureCalls":
 		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "BatchApex" {
 			return Int(0), true
+		}
+		if vm.limitCaps.nativeDefaults && vm.inFinalizer {
+			// A finalizer reports one future call (async_limit_messages a_fgetters_fin).
+			return Int(1), true
 		}
 		return Int(int64(vm.limitCaps.FutureCalls)), true
 	case "getBatchJobs":
@@ -419,7 +488,8 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.EmailInvokes)), true
 	case "getLimitEmailInvocations":
 		return Int(int64(vm.limitCaps.EmailInvokes)), true
-	case "getSoslQueries":
+	case "getSoslQueries", "getFindSimilarCalls":
+		// Native getFindSimilarCalls is the SOSL query counter (limits_counter_edges).
 		return Int(int64(vm.limits.SOSLQueries)), true
 	case "getPublishImmediateDML":
 		return Int(int64(vm.limits.PublishImmediateDML)), true
@@ -433,9 +503,20 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.AggregateQueries)), true
 	case "getDatabaseTime",
 		"getFieldSetsDescribes", "getFieldsDescribes",
-		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
+		"getMobilePushApexCalls", "getPicklistDescribes",
 		"getRecordTypesDescribes", "getScriptStatements":
 		return Int(0), true
+	// api68_native limits/LIMITS-DC-* and LIMITS-FLEX-* (67.0, 68.0): a
+	// Developer scratch org without Data Cloud reports no Data Cloud cursor
+	// usage, the shared cursor caps and an Integer.MAX flex-credit cap.
+	case "getDataCloudCursors", "getDataCloudCursorRows", "getDataCloudFlexCredits":
+		return Int(0), true
+	case "getLimitDataCloudCursors":
+		return Int(50), true
+	case "getLimitDataCloudCursorRows":
+		return Int(apexCursorRowLimit), true
+	case "getLimitDataCloudFlexCredits":
+		return Int(2147483647), true
 	case "getApexCursorRows":
 		return Int(int64(vm.limits.ApexCursorRows)), true
 	case "getApexCursors":
@@ -443,10 +524,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getFetchCallsOnApexCursor":
 		return Int(int64(vm.limits.FetchCallsOnApexCursor)), true
 	case "getLimitAggregateQueries":
-		if vm.limitCaps.nativeDefaults && vm.currentAsyncKind == "BatchApex" {
-			return Int(batchAggregateQueryLimit), true
-		}
-		return Int(syncAggregateQueryLimit), true
+		return Int(int64(vm.aggregateQueryCap())), true
 	case "getLimitApexCursorRows":
 		return Int(apexCursorRowLimit), true
 	case "getLimitApexPaginationCursorRows":
@@ -461,7 +539,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitFetchCallsOnApexCursor":
 		return Int(apexCursorFetchCallLimit), true
 	case "getLimitFindSimilarCalls":
-		return Int(20), true
+		return Int(int64(vm.limitCaps.SOSLQueries)), true
 	case "getLimitMobilePushApexCalls":
 		return Int(10), true
 	case "getLimitQueryLocatorRows":
@@ -515,12 +593,10 @@ func (vm *VM) orgLimitValues() []Value {
 		{name: "MassEmail", used: vm.limits.EmailInvokes, limit: vm.limitCaps.EmailInvokes},
 		{name: "SingleEmail", used: vm.limits.EmailInvokes, limit: vm.limitCaps.EmailInvokes},
 	}
-	if vm != nil && apexversion.AtLeast(vm.currentMethod.APIVersion, 67) {
-		specs = append(specs,
-			orgLimitSpec{name: "DailyAsyncApexElasticExecutions", used: vm.limits.AsyncJobs, limit: 2 * vm.limitCaps.AsyncJobs},
-			orgLimitSpec{name: "DailyAsyncApexProcessed", used: vm.limits.AsyncJobs, limit: vm.limitCaps.AsyncJobs},
-		)
-	}
+	// The elastic async entries (DailyAsyncApexElasticExecutions and
+	// DailyAsyncApexProcessed) belong to orgs that enable elastic limits. A
+	// default scratch Developer org lists neither at any API version.
+	// NATIVE OrgLimits elastic keys absent apex_release_gates/org.tsv OlProbe66/OL1 OlProbe67/OL1 OlProbe67/OL2 anonymous istest 66.0 67.0
 	values := make([]Value, 0, len(specs))
 	for _, spec := range specs {
 		values = append(values, orgLimitValue(spec.name, spec.used, spec.limit))
@@ -592,5 +668,11 @@ func canonicalLimitGetterName(name string) string {
 		"getLimitSavepointRollbacks",
 		"getSoslQueries",
 		"getLimitSoslQueries",
+		"getDataCloudCursors",
+		"getLimitDataCloudCursors",
+		"getDataCloudCursorRows",
+		"getLimitDataCloudCursorRows",
+		"getDataCloudFlexCredits",
+		"getLimitDataCloudFlexCredits",
 	)
 }

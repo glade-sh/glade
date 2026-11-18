@@ -93,7 +93,8 @@ func TestCompileMultilineStringLiteral(t *testing.T) {
 		{name: "same line opening is rejected", src: "String value = '''hello''';", wantErr: true},
 		{name: "empty opening is rejected", src: "String value = '''''';", wantErr: true},
 		{name: "empty after opening newline", src: "String value = '''\n''';", want: ""},
-		{name: "quotes and backslash are preserved", src: "String value = '''\n'quote' \\n\n''';", want: "'quote' \\n\n"},
+		// NATIVE multiline string escapes apex_release_gates/org.tsv Ml2Probe67/MLm anonymous 62.0 67.0
+		{name: "quotes are preserved and escapes are read", src: "String value = '''\n'quote' \\n\n''';", want: "'quote' \n\n"},
 		{name: "quote runs are preserved", src: "String value = '''\none ' quote\ntwo '' quotes\n''';", want: "one ' quote\ntwo '' quotes\n"},
 	} {
 		t.Run(test.name, func(t *testing.T) {

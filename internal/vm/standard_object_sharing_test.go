@@ -10,7 +10,7 @@ import (
 // Read models in its query matrix must override the same fallback.
 func TestStandardObjectSharingDefaults(t *testing.T) {
 	org := testDataOrg()
-	for _, object := range []string{"Account", "Opportunity", "Case", "Contact"} {
+	for _, object := range []string{"Account", "Opportunity", "Case", "Contact", "Lead"} {
 		storage.EnsureStandardObject(&org, object)
 	}
 	machine := New(nil)
@@ -21,6 +21,7 @@ func TestStandardObjectSharingDefaults(t *testing.T) {
 	}{
 		{"Account", "", true}, {"Opportunity", "", true}, {"Case", "", true},
 		{"Contact", "", false}, // ControlledByParent is not a blanket grant.
+		{"Lead", "ReadWriteTransfer", true}, {"Lead", "Private", false},
 		{"Account", "Private", false}, {"Opportunity", "Private", false},
 		{"Case", "Private", false}, {"Account", "Read", true},
 	} {

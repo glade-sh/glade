@@ -1,0 +1,1 @@
+<apex:page controller="RepeatCapture" showHeader="false" sidebar="false"><apex:form><apex:repeat value="{!setRows}" var="c"><apex:inputCheckbox value="{!c.DoNotCall}"/></apex:repeat></apex:form></apex:page>

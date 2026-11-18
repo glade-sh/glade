@@ -1,0 +1,7 @@
+id	api	route	phase	variant	source
+PDF-DEPLOY-68	68.0	deploy	case	v68	-
+PDF-DEPLOY-67	67.0	deploy	case	v67	-
+PDF-TAGGED-68	68.0	anonymous	case	v68	snippets/pdf68.apex
+PDF-TAGGED-67	67.0	anonymous	case	v67	snippets/pdf67.apex
+PDF-MARKERS-68	68.0	post	post	-	contentversion:cap68-pdf
+PDF-MARKERS-67	67.0	post	post	-	contentversion:cap67-pdf

@@ -1,0 +1,1 @@
+trigger RollupParent on Probe_Parent__c (before update, after update) { for (Probe_Parent__c p : Trigger.new) RollupTrace.events += (Trigger.isBefore ? 'before:' : 'after:') + p.Name + ':' + p.Child_Count__c + ';'; }

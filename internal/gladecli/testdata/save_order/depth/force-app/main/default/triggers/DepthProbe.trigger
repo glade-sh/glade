@@ -1,0 +1,1 @@
+trigger DepthProbe on Account (after insert) { DepthTrace.entries++; DepthTrace.trace += String.valueOf(DepthTrace.entries)+','; if (DepthTrace.entries < DepthTrace.target) insert new Account(Name='depth-probe'); }

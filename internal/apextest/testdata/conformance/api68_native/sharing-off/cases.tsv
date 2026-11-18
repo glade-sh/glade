@@ -1,0 +1,8 @@
+id	api	route	phase	variant	source
+SHARE-DEPLOY-68	68.0	deploy	case	vbase68	-
+SHARE-DEPLOY-67	67.0	deploy	case	vbase67	-
+SHARE-SETTING-OFF	68.0	deploy	case	vsetoff	-
+SHARE-REASON-DEPLOY	68.0	deploy	case	vreason	-
+SHARE-OFF-68	68.0	test	case	vbase68	CapShare68Test
+SHARE-OFF-67	67.0	test	case	vbase67	CapShare67Test
+SHARE-SETTING-ON	68.0	deploy	after	vseton	-

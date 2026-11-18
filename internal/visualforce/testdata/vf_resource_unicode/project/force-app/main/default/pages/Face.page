@@ -1,0 +1,1 @@
+<apex:page showHeader="false"><apex:outputLink value="{!URLFOR($Resource.TestRes, '🙂.png')}">x</apex:outputLink></apex:page>

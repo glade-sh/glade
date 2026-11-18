@@ -1,0 +1,12 @@
+capture: chain-recv follow-up call rules with a platform method (UserInfo.getName() in place of CrProbe.value())
+started: 2026-11-16T00:26:05Z
+finished: 2026-11-16T00:27:32Z
+apis: 62.0 67.0
+sf: @salesforce/cli/2.156.8
+org: fresh Developer-edition scratch org (30 days) on a campaign Dev Hub; deleted and verified gone after the run
+cases: 12 anonymous + 6 class + 1 trigger = 19, x2 APIs = 38 rows (org.tsv:470-507)
+method: anonymous cases via sf apex run --api-version; the first compile error is recorded with Ln/Col. Class and trigger cases are one deploy each with apiVersion in the meta XML, every componentFailure recorded in returned order as line:col message. No support class is deployed: the cases call UserInfo.getName() only.
+preflight: before the org existed, the branch build reported the predicted primary diagnostic for every anonymous case at both APIs; the prediction was frozen before the run and every row agrees with it.
+result: each of the 16 call rules has its unit captured with the platform method; the primary diagnostic, its position and the class cascades equal the CrProbe.value() rows (org.tsv:310-469) with getName as the reported name. platform_foreach_same, platform_dowhile_same and platform_method_foreach_same are accept controls without the line break.
+no 62.0 vs 67.0 difference in any case.
+ids masked: none present in output.

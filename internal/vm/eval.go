@@ -614,24 +614,121 @@ func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
 		if rightRat.Sign() == 0 {
 			return Null, false
 		}
-		result.Quo(leftRat, rightRat)
-		out, ok := decimalRatToPrecision(result, 33)
-		if ok {
-			minimumScale := max(decimalScale(left)-decimalScale(right), 0)
-			if decimalScale(out) < minimumScale {
-				rounded, _ := valueDecimalRat(out)
-				padded := decimalFromRat(rounded, int64(minimumScale))
-				if decimalPrecision(padded) <= 33 {
-					out = padded
-				}
-			}
-		}
-		return out, ok
+		return decimalDivideBigDecimal(left, right, leftRat, rightRat)
 	default:
 		return Null, false
 	}
 	out := decimalFromRat(result, int64(scale))
 	if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
+		return Null, false
+	}
+	return out, true
+}
+
+// decimalDivideBigDecimal follows the numfmt capture: a quotient that
+// terminates within 33 digits is the scaled-integer quotient (scale is the
+// dividend scale minus the divisor scale plus the digits added); any other
+// quotient is rounded to 33 significant digits (ties to even, per the native gap rows) and keeps every digit.
+func decimalDivideBigDecimal(left, right Value, leftRat, rightRat *big.Rat) (Value, bool) {
+	s1, s2 := decimalScale(left), decimalScale(right)
+	unscaled := func(rat *big.Rat, scale int) (*big.Int, bool) {
+		scaled := new(big.Rat).Set(rat)
+		factor := new(big.Rat).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(absInt(scale))), nil))
+		if scale >= 0 {
+			scaled.Mul(scaled, factor)
+		} else {
+			scaled.Quo(scaled, factor)
+		}
+		return scaled.Num(), scaled.IsInt()
+	}
+	a, okA := unscaled(leftRat, s1)
+	b, okB := unscaled(rightRat, s2)
+	if okA && okB && b.Sign() != 0 {
+		ten := big.NewInt(10)
+		// The smallest k with a*10^k divisible by b, found from the divisor's
+		// prime factors instead of trying each k; no k when it is over 33 or
+		// the quotient does not terminate.
+		if k, ok := decimalTerminatingShift(a, b); ok && k <= 33 {
+			num := new(big.Int).Mul(a, new(big.Int).Exp(ten, big.NewInt(int64(k)), nil))
+			quotient := new(big.Int).Quo(num, b)
+			if len(new(big.Int).Abs(quotient).String()) > 33 {
+				return decimalRound33(new(big.Rat).Quo(leftRat, rightRat))
+			}
+			exponent := s2 - s1 - k
+			value := new(big.Rat).SetInt(quotient)
+			factor := new(big.Rat).SetInt(new(big.Int).Exp(ten, big.NewInt(int64(absInt(exponent))), nil))
+			if exponent >= 0 {
+				value.Mul(value, factor)
+			} else {
+				value.Quo(value, factor)
+			}
+			out := decimalFromRat(value, int64(s1-s2+k))
+			if math.IsInf(out.Decimal, 0) || math.IsNaN(out.Decimal) {
+				return Null, false
+			}
+			return out, true
+		}
+	}
+	return decimalRound33(new(big.Rat).Quo(leftRat, rightRat))
+}
+
+// decimalTerminatingShift returns the smallest k >= 0 for which a*10^k is a
+// multiple of b (b != 0), and false when there is none. With g = gcd(a, b),
+// a*10^k is a multiple of b exactly when b/g divides 10^k, which needs b/g to
+// be 2^p * 5^q; the smallest such k is max(p, q).
+func decimalTerminatingShift(a, b *big.Int) (int, bool) {
+	if new(big.Int).Rem(a, b).Sign() == 0 {
+		return 0, true
+	}
+	divisor := new(big.Int).Abs(b)
+	g := new(big.Int).GCD(nil, nil, new(big.Int).Abs(a), divisor)
+	divisor.Quo(divisor, g)
+	twos := int(divisor.TrailingZeroBits())
+	divisor.Rsh(divisor, uint(twos))
+	fives := 0
+	five := big.NewInt(5)
+	quotient, remainder := new(big.Int), new(big.Int)
+	for divisor.BitLen() > 1 {
+		quotient.QuoRem(divisor, five, remainder)
+		if remainder.Sign() != 0 {
+			return 0, false
+		}
+		divisor, quotient = quotient, divisor
+		fives++
+	}
+	return max(twos, fives), true
+}
+
+// decimalRound33 rounds rat to 33 significant digits and keeps all of
+// them. A carry into a 34th digit drops the last (zero) digit and one scale.
+func decimalRound33(rat *big.Rat) (Value, bool) {
+	return decimalRound33Wide(rat, false)
+}
+
+// decimalRound33Wide is decimalRound33 with an option to keep results beyond
+// the Double range: the exact text carries the value and Decimal may be Inf,
+// for the caller to clamp.
+func decimalRound33Wide(rat *big.Rat, allowInf bool) (Value, bool) {
+	if rat.Sign() == 0 {
+		return decimalFromRat(rat, 0), true
+	}
+	scale := 33 - 1 - decimalRatExponent(new(big.Rat).Abs(rat))
+	rounded, err := roundRatToScaleUnchecked("Decimal", rat, scale, "HALF_EVEN")
+	if err != nil {
+		return Null, false
+	}
+	units := new(big.Rat).Set(rounded)
+	factor := new(big.Rat).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(absInt(int(scale)))), nil))
+	if scale >= 0 {
+		units.Mul(units, factor)
+	} else {
+		units.Quo(units, factor)
+	}
+	if len(new(big.Int).Abs(units.Num()).String()) > 33 {
+		scale--
+	}
+	out := decimalFromRat(rounded, scale)
+	if math.IsNaN(out.Decimal) || (!allowInf && math.IsInf(out.Decimal, 0)) {
 		return Null, false
 	}
 	return out, true

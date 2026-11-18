@@ -159,6 +159,7 @@ func ensureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		ensureStandardRelationship(definition, definition.Fields[name])
 	}
 	RemoveCustomSettingUnsupportedFields(definition)
+	applyStandardRelationshipOrder(definition)
 	markStandardFieldsOverlay(definition, featureSignature)
 }
 
@@ -172,7 +173,7 @@ func standardObjectFieldsNeedWrite(definition ObjectDefinition, featureSignature
 	if accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) {
 		return true
 	}
-	if masterDetailOwnerFieldsNeedRepair(definition) {
+	if masterDetailOwnerFieldsNeedRepair(definition) || standardRelationshipOrderNeedsRepair(definition) {
 		return true
 	}
 	plan := standardOverlayCheckPlanFor(definition.APIName)
@@ -213,7 +214,7 @@ func standardNativeIDLabel(object string) string {
 		!strings.EqualFold(object, "Lead") && !strings.EqualFold(object, "Order") {
 		return ""
 	}
-	if describe, found, err := lookupStandardDescribeCatalogV2(object); err == nil && found {
+	if describe, found, err := lookupStandardDescribeFieldsV2(object); err == nil && found {
 		for _, field := range describe.Fields {
 			if strings.EqualFold(field.Name, "Id") {
 				return field.Label
@@ -234,7 +235,7 @@ func standardFieldsOverlayNeedsRefresh(definition ObjectDefinition, featureSigna
 	if messagingCampaignFieldNeedsRepair(definition) {
 		return true
 	}
-	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
+	return accountTeamReferencesNeedRepair(definition) || organizationFeatureFlagsNeedRepair(definition) || standardOptionalFieldsNeedRepair(definition, featureSignature) || userLicenseStatusDescribeNeedsRepair(definition) || permissionSetCheckboxSchemaNeedsRepair(definition) || objectPermissionCheckboxSchemaNeedsRepair(definition) || knowledgeLanguageCreationNeedsRepair(definition) || knowledgeCategorySelectionCreationNeedsRepair(definition) || apexClassLengthNillabilityNeedsRepair(definition) || platformChildEdgeFieldsNeedRepair(definition) || standardRelationshipOrderNeedsRepair(definition) || standardOverlayCheckPlanFor(definition.APIName).needsRefresh(definition, featureSignature)
 }
 
 func messagingCampaignFieldNeedsRepair(definition ObjectDefinition) bool {
@@ -823,8 +824,19 @@ func ensureStandardObjectWithProfile(org *OrgState, objectName string, profile [
 	if canonical, ok := ResolveKnownStandardObjectName(objectName); ok {
 		objectName = canonical
 	}
+	ensureCanonicalStandardObjectWithProfile(org, objectName, profile)
+}
+
+// ensureCanonicalStandardObjectWithProfile accepts a name already resolved
+// against the immutable standard catalog.
+func ensureCanonicalStandardObjectWithProfile(org *OrgState, objectName string, profile []string) {
 	if org.Objects == nil {
 		org.Objects = make(map[string]ObjectState)
+	}
+	if org.StandardSpread != "" {
+		// An object the lazy spread owes starts from what the eager spread
+		// holds, then this call refreshes it as it would an existing object.
+		installSpreadObject(org, objectName)
 	}
 	state, existed := org.Objects[objectName]
 	features := strings.Split(state.Definition.Metadata[standardFieldsOverlayMarker], ",")
@@ -832,8 +844,11 @@ func ensureStandardObjectWithProfile(org *OrgState, objectName string, profile [
 		features = profile
 	}
 	featureSignature := canonicalFeatureSignature(features)
-	fieldsNeedWrite := standardObjectFieldsNeedWrite(state.Definition, featureSignature)
-	definitionNeedsWrite := standardObjectDefinitionNeedsWrite(state.Definition, objectName, featureSignature)
+	var fieldsNeedWrite, definitionNeedsWrite bool
+	if existed {
+		fieldsNeedWrite = standardObjectFieldsNeedWrite(state.Definition, featureSignature)
+		definitionNeedsWrite = standardObjectDefinitionNeedsWrite(state.Definition, objectName, featureSignature)
+	}
 	// A prepared definition and complete record-type seed need no schema writes.
 	// Keep their shared generation and avoid replacing its proof with a private
 	// clone's field map. Unprepared or changed seeds take the repair path below.
@@ -856,7 +871,7 @@ func ensureStandardObjectWithProfile(org *OrgState, objectName string, profile [
 		state.Definition.KeyPrefix = StandardKeyPrefix(objectName)
 	}
 	if state.Records == nil {
-		state.Records = make(map[ID]Record)
+		state.SetRecords(make(map[ID]Record))
 	}
 	if state.Indexes == nil {
 		state.Indexes = make(map[string]IndexSet)
@@ -1317,11 +1332,11 @@ func enrichStandardDescribeMetadataFromV2(definition *ObjectDefinition) {
 	if !ok {
 		return
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(canonical)
+	describe, ok, err := lookupStandardDescribeNarrowV2(canonical)
 	if err != nil || !ok {
 		return
 	}
-	enrichStandardDescribeMetadata(definition, describe)
+	enrichStandardDescribeMetadata(definition, standardDescribeObject{Mergeable: describe.mergeable})
 }
 
 // The AccountBrand describe candidate supplies the two non-nillable input
@@ -1331,7 +1346,7 @@ func enrichRequiredStandardStubFieldsFromV2Describe(definition *ObjectDefinition
 	if definition == nil || !stringsEqualFold(definition.APIName, "AccountBrand") {
 		return
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeFieldsV2(definition.APIName)
 	if err != nil || !ok {
 		return
 	}
@@ -1353,7 +1368,7 @@ func enrichRequiredStandardStubFieldsFromV2Describe(definition *ObjectDefinition
 }
 
 func enrichStandardFieldsFromV2Describe(definition *ObjectDefinition) {
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeFieldsV2(definition.APIName)
 	if err != nil || !ok {
 		return
 	}
@@ -1403,6 +1418,7 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 	// Preserve explicit field overrides while filling captured calculated and
 	// currency facets, repairing scalar Time references, and filling write flags.
 	enrichStandardStubWriteFlagsFromV2Describe(definition)
+	applyStandardStubRestrictedPicklists(definition)
 	applyStandardSObjectStubReadOnlyFields(definition)
 }
 
@@ -1415,12 +1431,12 @@ func standardStubScaleFromDescribe(objectName string) bool {
 }
 
 func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
-	describe, ok, err := lookupStandardDescribeCatalogV2(definition.APIName)
+	describe, ok, err := lookupStandardDescribeNarrowV2(definition.APIName)
 	if err != nil || !ok {
 		return
 	}
 	stubFields, _ := standardSObjectStubFieldsFor(definition.APIName)
-	for _, captured := range describe.Fields {
+	for _, captured := range describe.fields {
 		name, exists := ResolveFieldName(*definition, "", captured.Name)
 		if !exists {
 			continue
@@ -1434,7 +1450,7 @@ func enrichStandardStubWriteFlagsFromV2Describe(definition *ObjectDefinition) {
 			field.DisplayType = describeDisplayType(captured.Type)
 		}
 		if strings.EqualFold(captured.Type, "time") && standardStubTimeReference(field) {
-			field.Type = describeFieldType(captured)
+			field.Type = describeFieldType(standardDescribeField{Type: captured.Type, Calculated: captured.Calculated})
 			field.DisplayType = describeDisplayType(captured.Type)
 			field.ReferenceTo = append([]string(nil), captured.ReferenceTo...)
 			field.RelationshipName = captured.RelationshipName
@@ -1518,25 +1534,11 @@ func standardStubReferenceFieldsFromV2Describe(objectName string) []Field {
 	if _, hasStub := standardSObjectStubFieldsFor(objectName); !hasStub {
 		return nil
 	}
-	describe, ok, err := lookupStandardDescribeCatalogV2(objectName)
+	narrow, ok, err := lookupStandardDescribeNarrowV2(objectName)
 	if err != nil || !ok {
 		return nil
 	}
-	var fields []Field
-	for _, captured := range describe.Fields {
-		if !strings.EqualFold(captured.Type, "reference") || (captured.DeprecatedAndHidden != nil && *captured.DeprecatedAndHidden) {
-			continue
-		}
-		if !standardStubReferenceTargetsAvailable(captured.ReferenceTo) {
-			continue
-		}
-		field := describeField(captured)
-		// Non-nillability alone does not establish an omitted-field DML error.
-		// Existing explicit requirements remain intact when this field merges.
-		field.Required = false
-		fields = append(fields, field)
-	}
-	return fields
+	return narrow.references
 }
 
 // Incremental projection must not require optional objects absent from the
@@ -1934,6 +1936,14 @@ func standardObjectCompatibilitySupplementFields(objectName string) []Field {
 	case stringsEqualFold(objectName, "Contact"):
 		// P0 describes (API 62.0/67.0) report Contact.CleanStatus restricted.
 		fields = []Field{{APIName: "CleanStatus", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 40, RestrictedPicklist: true, RestrictedPicklistFromCatalog: true}}
+	case stringsEqualFold(objectName, "Case"):
+		// Native case_standard_field_fls named describe and REST describe (API
+		// 62.0 and 67.0): both are 18-character createable, updateable,
+		// filterable references the generated catalog lacks.
+		fields = []Field{
+			{APIName: "ServiceContractId", Label: "Service Contract ID", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"ServiceContract"}, RelationshipName: "ServiceContract", Filterable: BoolFlag(true)},
+			{APIName: "AssetWarrantyId", Label: "Asset Warranty ID", Type: FieldReference, DisplayType: "REFERENCE", Length: 18, ReferenceTo: []string{"AssetWarranty"}, RelationshipName: "AssetWarranty", Filterable: BoolFlag(true)},
+		}
 	case stringsEqualFold(objectName, "Order"):
 		fields = []Field{
 			{APIName: "PoNumber", Type: FieldString, DisplayType: "STRING", Length: 80},
@@ -2147,6 +2157,7 @@ func ensureFieldDefault(definition *ObjectDefinition, fieldName string, defaultV
 	field := definition.Fields[resolved]
 	if field.DefaultValue == "" {
 		field.DefaultValue = defaultValue
+		field.DefaultValueFromMetadata = false
 		definition.Fields[resolved] = field
 	}
 }
@@ -2158,6 +2169,7 @@ func setFieldDefault(definition *ObjectDefinition, fieldName string, defaultValu
 	}
 	field := definition.Fields[resolved]
 	field.DefaultValue = defaultValue
+	field.DefaultValueFromMetadata = false
 	definition.Fields[resolved] = field
 }
 
@@ -2195,22 +2207,94 @@ func appendUniqueStringsFold(values []string, additions ...string) []string {
 		}
 		return values
 	}
-	seen := make(map[string]struct{}, len(values)+len(additions))
+	seen := foldSeenPool.Get().(*foldSeen)
+	defer seen.release()
 	for _, value := range values {
-		seen[asciiFoldKey(value)] = struct{}{}
+		seen.add(value)
 	}
 	for _, addition := range additions {
 		if addition == "" {
 			continue
 		}
-		key := asciiFoldKey(addition)
-		if _, ok := seen[key]; ok {
+		if !seen.add(addition) {
 			continue
 		}
-		seen[key] = struct{}{}
 		values = append(values, addition)
 	}
 	return values
+}
+
+// foldSeen is a reusable ASCII case-insensitive string set. Reusing the map
+// avoids building and growing one per call; lookups of mixed-case strings use
+// a scratch buffer, so only inserted mixed-case keys allocate.
+type foldSeen struct {
+	m   map[string]struct{}
+	buf []byte
+}
+
+var foldSeenPool = sync.Pool{New: func() any {
+	return &foldSeen{m: make(map[string]struct{}, 512)}
+}}
+
+// maxPooledFoldSeen bounds the map size kept in the pool.
+const maxPooledFoldSeen = 8192
+
+// add inserts s and reports whether it was absent.
+func (f *foldSeen) add(s string) bool {
+	key := s
+	upper := false
+	for i := 0; i < len(s); i++ {
+		if c := s[i]; c >= 'A' && c <= 'Z' {
+			upper = true
+			break
+		}
+	}
+	if upper {
+		f.buf = append(f.buf[:0], s...)
+		for i, c := range f.buf {
+			if c >= 'A' && c <= 'Z' {
+				f.buf[i] = c + 'a' - 'A'
+			}
+		}
+		if _, ok := f.m[string(f.buf)]; ok {
+			return false
+		}
+		key = string(f.buf)
+	} else if _, ok := f.m[key]; ok {
+		return false
+	}
+	f.m[key] = struct{}{}
+	return true
+}
+
+func (f *foldSeen) release() {
+	if len(f.m) > maxPooledFoldSeen {
+		return
+	}
+	clear(f.m)
+	foldSeenPool.Put(f)
+}
+
+// asciiFoldEqual reports asciiFoldKey(a) == asciiFoldKey(b) without
+// allocating. It compares every byte, unlike stringsEqualFold, which steps
+// through the string by rune.
+func asciiFoldEqual(a, b string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		l, r := a[i], b[i]
+		if l >= 'A' && l <= 'Z' {
+			l += 'a' - 'A'
+		}
+		if r >= 'A' && r <= 'Z' {
+			r += 'a' - 'A'
+		}
+		if l != r {
+			return false
+		}
+	}
+	return true
 }
 
 // asciiFoldKey returns a lowercase ASCII fold of s without allocating when
@@ -2287,6 +2371,7 @@ func enrichStandardField(existing *Field, field Field) {
 	}
 	if existing.DefaultValue == "" {
 		existing.DefaultValue = field.DefaultValue
+		existing.DefaultValueFromMetadata = field.DefaultValueFromMetadata
 	}
 	if existing.CompoundFieldName == "" {
 		existing.CompoundFieldName = field.CompoundFieldName
@@ -2386,9 +2471,76 @@ func enrichStandardField(existing *Field, field Field) {
 	}
 }
 
+// mergeStandardReferenceTargets returns a fresh slice holding standard followed
+// by every non-empty element of existing that is not fold-equal to an element
+// already present (first occurrence wins). The result never aliases either
+// input.
+//
+// Callers repeat this merge for the same object with existing already equal to
+// (or a subset of) standard. That case is decided by comparing in place,
+// without the per-call map appendUniqueStringsFold builds for long lists.
 func mergeStandardReferenceTargets(existing, standard []string) []string {
-	merged := append([]string(nil), standard...)
-	return appendUniqueStringsFold(merged, existing...)
+	if len(existing) == 0 {
+		return append([]string(nil), standard...)
+	}
+	// Room for every existing element avoids regrowing when the merge adds
+	// most of them.
+	merged := append(make([]string, 0, len(standard)+len(existing)), standard...)
+	if len(standard)+len(existing) <= 8 {
+		// appendUniqueStringsFold compares with stringsEqualFold on this
+		// path and allocates nothing beyond the appended elements.
+		return appendUniqueStringsFold(merged, existing...)
+	}
+	const maxSlowLookups = 16
+	var extras []string
+	slow := 0
+	hint := 0
+	for _, value := range existing {
+		if value == "" {
+			continue
+		}
+		at := -1
+		// In-order input hits at the hint.
+		for i := hint; i < len(standard); i++ {
+			if asciiFoldEqual(standard[i], value) {
+				at = i
+				break
+			}
+		}
+		if at < 0 {
+			for i := 0; i < hint; i++ {
+				if asciiFoldEqual(standard[i], value) {
+					at = i
+					break
+				}
+			}
+		}
+		if at >= 0 {
+			if at != hint {
+				slow++
+			}
+			hint = at + 1
+			if slow > maxSlowLookups {
+				return appendUniqueStringsFold(merged, existing...)
+			}
+			continue
+		}
+		slow++
+		if slow > maxSlowLookups {
+			return appendUniqueStringsFold(merged, existing...)
+		}
+		duplicate := false
+		for _, extra := range extras {
+			if asciiFoldEqual(extra, value) {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			extras = append(extras, value)
+		}
+	}
+	return append(merged, extras...)
 }
 
 func mergeStandardRelationships(definition *ObjectDefinition, relationships []Relationship) {
@@ -2581,7 +2733,7 @@ func canonicalFeatureName(feature string) string {
 		return "AddCustomApps"
 	case stringsEqualFold(feature, "AnalyticsAdminPerms"):
 		return "AnalyticsAdminPerms"
-	case strings.HasPrefix(strings.ToLower(feature), "healthcloud"):
+	case hasPrefixFoldASCII(feature, "healthcloud"):
 		return "HealthCloud"
 	case stringsEqualFold(feature, "LightningExperience"):
 		return "LightningExperience"
@@ -2598,6 +2750,14 @@ func canonicalFeatureName(feature string) string {
 	default:
 		return feature
 	}
+}
+
+// hasPrefixFoldASCII reports whether value starts with the ASCII prefix under
+// ASCII case folding, without lower-casing the whole value. No rune outside
+// ASCII lower-cases to a letter of the prefixes used here, so the answer
+// matches strings.HasPrefix(strings.ToLower(value), prefix).
+func hasPrefixFoldASCII(value, prefix string) bool {
+	return len(value) >= len(prefix) && stringsEqualFold(value[:len(prefix)], prefix)
 }
 
 func hasCanonicalFeature(features []string, want string) bool {

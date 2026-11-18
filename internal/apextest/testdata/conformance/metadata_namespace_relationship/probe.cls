@@ -1,4 +1,4 @@
-global class Road215NamespaceProbe {
+global class Case215NamespaceProbe {
  global static Map<String,Object> observe() {
   String objectName = MeadowEntry__c.SObjectType.getDescribe().getName();
   String fieldName = MeadowEntry__c.State__c.getDescribe().getName();

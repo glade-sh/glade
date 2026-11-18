@@ -46,7 +46,7 @@ func (s *Server) handlePartnerDescribeSObjects(w http.ResponseWriter, payload so
 	results := make([]partnerDescribeSObjectResult, 0, len(names))
 	for _, nameNode := range names {
 		rawName := strings.TrimSpace(nameNode.Text)
-		objectName, ok := storage.ResolveObjectName(*s.Org, rawName)
+		objectName, ok := storage.ResolveVisibleObjectName(*s.Org, rawName)
 		if !ok {
 			writeSOAPFault(w, http.StatusInternalServerError, "sf:INVALID_TYPE", "unknown object: "+rawName)
 			return
@@ -87,7 +87,7 @@ func (s *Server) handlePartnerUpsert(w http.ResponseWriter, r *http.Request, pay
 
 	var engineResults []dml.Result
 	if len(records) > 0 {
-		next := s.Org.Clone()
+		next := s.Org.CloneCopyOnWrite()
 		engine := s.newDMLEngine(r, &next)
 		engineResults = engine.UpsertWithExternalID(records, externalField)
 		commit := false
@@ -198,14 +198,14 @@ func (s *Server) partnerRecordFromSOAPNode(node soapPartnerNode) (storage.Record
 	}
 	if objectName == "" {
 		for _, child := range node.Children {
-			if resolved, ok := storage.ResolveObjectName(*s.Org, child.Name.Local); ok {
+			if resolved, ok := storage.ResolveVisibleObjectName(*s.Org, child.Name.Local); ok {
 				objectName = resolved
 				source = child
 				break
 			}
 		}
 	}
-	objectName, ok := storage.ResolveObjectName(*s.Org, objectName)
+	objectName, ok := storage.ResolveVisibleObjectName(*s.Org, objectName)
 	if !ok {
 		result := partnerFailedDMLResult("", "unknown object: "+objectName, "INVALID_TYPE", nil)
 		return storage.Record{}, &result
@@ -269,7 +269,7 @@ func (s *Server) partnerResolveRelationshipReference(field storage.Field, node s
 	if targetName == "" && len(field.ReferenceTo) > 0 {
 		targetName = field.ReferenceTo[0]
 	}
-	targetName, ok := storage.ResolveObjectName(*s.Org, targetName)
+	targetName, ok := storage.ResolveVisibleObjectName(*s.Org, targetName)
 	if !ok {
 		result := partnerFailedDMLResult("", "unknown relationship target: "+targetName, "INVALID_FIELD", []string{field.APIName})
 		return "", &result

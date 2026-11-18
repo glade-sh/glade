@@ -1,0 +1,5 @@
+id	api	route	compiled	transport	observation
+mixed	62.0	anonymous	true	intentional exception	test:false|results:ok,FIELD_CUSTOM_VALIDATION_EXCEPTION|trace:before:ok:1;before:reject:1;after:ok:1;before:ok:1;after:ok:1;before:ok:1;after:ok:1;|counts:1,0|children:1|logs:1
+mixed	62.0	istest	true	intentional assertion	test:true|results:ok,FIELD_CUSTOM_VALIDATION_EXCEPTION|trace:before:ok:1;before:reject:1;after:ok:1;before:ok:1;after:ok:1;before:ok:1;after:ok:1;|counts:1,0|children:1|logs:1
+mixed	67.0	anonymous	true	intentional exception	test:false|results:ok,FIELD_CUSTOM_VALIDATION_EXCEPTION|trace:before:ok:1;before:reject:1;after:ok:1;before:ok:1;after:ok:1;before:ok:1;after:ok:1;|counts:1,0|children:1|logs:1
+mixed	67.0	istest	true	intentional assertion	test:true|results:ok,FIELD_CUSTOM_VALIDATION_EXCEPTION|trace:before:ok:1;before:reject:1;after:ok:1;before:ok:1;after:ok:1;before:ok:1;after:ok:1;|counts:1,0|children:1|logs:1

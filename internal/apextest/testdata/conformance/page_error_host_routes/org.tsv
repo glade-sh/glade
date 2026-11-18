@@ -1,0 +1,13 @@
+source_api	route	case_id	observation
+62.0	anonymous	html	{"outcome":"returned","value":"caught|System.VisualforceException|Page MissingHostPage does not exist"}
+62.0	rest	html	{"body":"caught|System.VisualforceException|Page MissingHostPage does not exist","http":200}
+62.0	anonymous	pdf	{"message":"Page MissingHostPage does not exist","outcome":"uncaught"}
+62.0	rest	pdf	{"body":[{"errorCode":"UNKNOWN_EXCEPTION","message":"Page MissingHostPage does not exist"}],"http":500}
+62.0	isTest	html	{"outcome":"returned","value":"caught|System.VisualforceException|Methods defined as TestMethod do not support getContent call"}
+62.0	isTest	pdf	{"outcome":"returned","value":"caught|System.VisualforceException|Methods defined as TestMethod do not support getContent call"}
+67.0	anonymous	html	{"outcome":"returned","value":"caught|System.VisualforceException|Page MissingHostPage does not exist"}
+67.0	rest	html	{"body":"caught|System.VisualforceException|Page MissingHostPage does not exist","http":200}
+67.0	anonymous	pdf	{"message":"Page MissingHostPage does not exist","outcome":"uncaught"}
+67.0	rest	pdf	{"body":[{"errorCode":"UNKNOWN_EXCEPTION","message":"Page MissingHostPage does not exist"}],"http":500}
+67.0	isTest	html	{"outcome":"returned","value":"caught|System.VisualforceException|Methods defined as TestMethod do not support getContent call"}
+67.0	isTest	pdf	{"outcome":"returned","value":"caught|System.VisualforceException|Methods defined as TestMethod do not support getContent call"}

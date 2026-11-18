@@ -2,7 +2,6 @@ package schema
 
 import (
 	"encoding/xml"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -12,7 +11,7 @@ import (
 // Custom object tabs expose recent-access timestamps independently of search.
 func addCustomTabAccessFields(p project.Project, objects map[string]*Object) error {
 	for _, path := range p.TabFiles {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}

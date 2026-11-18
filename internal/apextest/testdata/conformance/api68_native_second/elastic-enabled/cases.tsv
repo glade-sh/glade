@@ -1,0 +1,8 @@
+id	api	route	phase	variant	source
+ELASTIC-ENABLED-SETTING	68.0	deploy	case	-	settings/Apex.settings-meta.xml
+ELASTIC-ENABLED-LIMITS	68.0	anonymous	case	-	snippets/limits.apex
+ELASTIC-ENABLED-ENQ	68.0	anonymous	case	-	snippets/run.apex
+ELASTIC-ENABLED-READ	68.0	anonymous	case	-	snippets/read.apex
+ELASTIC-OVERRIDE250-SETTING	68.0	deploy	case	-	settings/Apex.settings-meta.xml
+ELASTIC-OVERRIDE250-LIMITS	68.0	anonymous	case	-	snippets/limits.apex
+ELASTIC-RESTORE	68.0	deploy	case	-	settings/Apex.settings-meta.xml

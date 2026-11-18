@@ -61,7 +61,7 @@ clean candidate tree:
 scripts/ci-local-all
 ```
 
-Use Go 1.26.10 with CGO, Node 22 and npm, `actionlint`, the CodeQL CLI and Go
+Use Go 1.26.11 with CGO, Node 22 and npm, `actionlint`, the CodeQL CLI and Go
 query packs, and Playwright Chromium for the site and LWC runtime. The runner
 installs lockfile-pinned npm dependencies with `npm ci`; install the matching
 Playwright Chromium beforehand using the repository's
@@ -87,7 +87,7 @@ the release evidence.
 Before tagging, also read the operator checks for the same commit: the
 `Browser`, `Race` and `Security` workflows. Record a failure or a known issue
 in [RELEASE_NOTES.md](RELEASE_NOTES.md). Review the CodeQL waivers in
-[CODEQL_BUDGET.md](CODEQL_BUDGET.md#waiver-review-2026-10-22) and record the
+[CODEQL.md](CODEQL.md#waiver-review-2026-10-22) and record the
 date. Both CodeQL profiles succeed with a warning when their analysis budget
 expires. The release workflow runs the full scan on the tagged SHA and fails
 only on findings or errors, so state an incomplete scan in the release notes.
@@ -189,8 +189,71 @@ them back in the publish job, and assembles these product download files:
 `site/install.sh` checks the product download host first and falls back to the
 GitHub release API while the static host is being filled.
 
-Publish the product download files to the static host after downloading and
-unpacking the `glade-release-artifacts-vX.Y.Z.tar.gz` GitHub Release asset:
+### Static publication in the Release workflow
+
+The Release workflow publishes the static download host itself. Its
+`distribute` job runs after `publish`, so the GitHub Release is published
+first and the static host second. The job:
+
+1. stops with an error naming the repository secret if `CLOUDFLARE_API_TOKEN`
+   is not set (the account comes from the `CLOUDFLARE_ACCOUNT_ID` variable);
+2. requires the annotated tag, its commit, and a published (not draft) GitHub
+   Release;
+3. downloads `glade-release-artifacts-vX.Y.Z.tar.gz` and the top-level release
+   assets with `gh release download`, unpacks the bundle into `dist`, compares
+   the bundled manifest, checksums, index and approvals with the release
+   assets, checks every archive with `sha256sum --check`, and verifies each
+   archive's attestation for the release workflow, tag and product SHA;
+4. installs the lockfile-pinned Wrangler in `scripts/package.json` with
+   `npm ci --prefix scripts --ignore-scripts`;
+5. runs `node scripts/release-publish.mjs dist "$VERSION" "$GLADE_SHA"`; the
+   publisher repeats its own authority and attestation checks before any write;
+6. reads the public objects back: `latest/release-manifest.json` must name the
+   version and match the bundle, `vX.Y.Z/release-manifest.json` must match the
+   bundle bytes, `index.json` must list the version as latest, and every
+   archive URL must answer;
+7. POSTs to the `glade-site` Cloudflare Pages deploy hook in the
+   `CF_PAGES_DEPLOY_HOOK` secret, so Pages rebuilds `main` against the moved
+   channel. The hook URL is never printed. If the secret is missing, this step
+   fails with an error naming it; the downloads are already published by then;
+8. polls `https://glade.sh/site-build.json` every 20 seconds for up to
+   15 minutes until `releaseVersion` equals the version, then reads
+   `siteCommit` and requires it to be reachable from `main`;
+9. checks out that deployed commit, runs `npm ci --ignore-scripts` for its
+   `site/` and installs Chromium, then runs
+   `npm run smoke:postdeploy -- --base-url https://glade.sh --expected-commit <siteCommit>`.
+
+The Pages Git integration also rebuilds the site when a release merge lands,
+but that build runs before the tag moves `latest`, so it shows the previous
+version. The deploy hook rebuild after publication corrects it. The expected
+commit is the `main` commit Pages built, not the tag commit.
+
+The job never changes the GitHub Release. Its token has only `actions`,
+`attestations`, `checks` and `contents` read access.
+
+To publish only the static host for a tag whose GitHub Release is already
+published, dispatch the workflow from `main` in distribute-only mode. Pass the
+tag's `Glade-Tools-SHA` trailer as `glade_tools_sha`; the job checks it against
+the tag. No archive is rebuilt and no other release job runs. A dispatch runs
+the dispatched ref's own workflow and publisher, so distribute-only mode runs
+only from `refs/heads/main`: from any other ref the `distribute-ref` job fails
+and `distribute`, which holds the Cloudflare secret, does not start.
+
+```bash
+tools_sha="$(scripts/verify-salesforce-check.sh --tag-tools-sha vX.Y.Z)"
+gh workflow run release.yml --repo glade-sh/glade --ref main \
+  -f distribute_only=true -f version=vX.Y.Z -f glade_tools_sha="$tools_sha"
+```
+
+Use the same dispatch to retry a failed `distribute` job after fixing its
+cause, for example after adding the missing secret. Rerunning the failed job
+from the tag's own run also works. Already published versioned objects with
+identical bytes are skipped; different bytes stop publication.
+
+### Manual fallback
+
+Use the manual command only when the workflow cannot run. Download and unpack
+the `glade-release-artifacts-vX.Y.Z.tar.gz` GitHub Release asset:
 
 ```bash
 tmp="$(mktemp -d)"
@@ -208,8 +271,9 @@ published bytes.
 The checked publisher uses Wrangler's authenticated, temporary remote preview R2 binding, atomic
 `onlyIf` writes, SHA-256 validation, and complete readback. It does not deploy a
 persistent Worker or install product dependencies. Point `WRANGLER_MODULE` to an
-existing Wrangler package (4.37 or newer), and authenticate with `wrangler login`
-if its existing session cannot refresh. Supply the approved product commit, not
+existing Wrangler package (4.37 or newer; `npm ci --prefix scripts --ignore-scripts`
+installs the pinned one at `scripts/node_modules/wrangler`), and authenticate with
+`wrangler login` if its existing session cannot refresh. Supply the approved product commit, not
 the current working branch's HEAD.
 
 ```bash
@@ -250,9 +314,14 @@ as immutable GitHub assets; do not add assets to an already immutable release.
 For an older release, recover its original approval JSON from the successful
 Release workflow and retain it as create-only static companion evidence.
 
-After channel publication, sync `site/release-manifest.json` using
-`npm run release:sync --prefix site`, publish the site, and complete the default
-and pinned install checks above. Both must report the intended version and a
+After channel publication, publish the site. Its build writes
+`site/release-manifest.json` from the live
+`https://downloads.glade.sh/latest/release-manifest.json`; the file is not
+checked in. The `distribute` job redeploys the site through the Pages deploy
+hook and runs the postdeploy smoke. Only if that step cannot run, retry the
+Cloudflare Pages deployment of `main` by hand, or use the manual
+`wrangler pages deploy` in `site/README.md`, then run the postdeploy smoke
+yourself. Then complete the default and pinned install checks above. Both must report the intended version and a
 working parser. The completion check below must also report ready projects
 before announcing distribution complete.
 

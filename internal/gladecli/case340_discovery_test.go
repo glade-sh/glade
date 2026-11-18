@@ -13,6 +13,9 @@ import (
 )
 
 func TestCase340DiscoveryCallersRejectReplaceableDirectory(t *testing.T) {
+	cache := t.TempDir()
+	t.Setenv("HOME", cache)
+	t.Setenv("XDG_CACHE_HOME", cache)
 	root, err := os.MkdirTemp(os.TempDir(), "r340-")
 	if err != nil {
 		t.Fatal(err)
@@ -36,7 +39,13 @@ func TestCase340DiscoveryCallersRejectReplaceableDirectory(t *testing.T) {
 		"wizard": func() error { return writeTestWizard(context.Background(), root, io.Discard) },
 	} {
 		t.Run(name, func(t *testing.T) {
-			if err := call(); err == nil || !strings.Contains(err.Error(), "insecure") {
+			// The replaceable directory is refused and never
+			// consulted; discovery moves to the per-user cache directory.
+			userCache, _ := os.UserCacheDir()
+			if moved := testdaemon.ServeSocketPath(root); !strings.HasPrefix(moved, filepath.Join(userCache, "glade")+string(filepath.Separator)) {
+				t.Fatalf("discovery did not fall back to the user cache directory: %s", moved)
+			}
+			if err := call(); err != nil {
 				t.Fatalf("error = %v", err)
 			}
 		})
@@ -44,6 +53,9 @@ func TestCase340DiscoveryCallersRejectReplaceableDirectory(t *testing.T) {
 }
 
 func TestCase340MissingDiscoverySocketFallsBack(t *testing.T) {
+	cache := t.TempDir()
+	t.Setenv("HOME", cache)
+	t.Setenv("XDG_CACHE_HOME", cache)
 	root, err := os.MkdirTemp(os.TempDir(), "r340-")
 	if err != nil {
 		t.Fatal(err)
@@ -56,8 +68,8 @@ func TestCase340MissingDiscoverySocketFallsBack(t *testing.T) {
 	if err := os.Chmod(dir, 0775); err != nil {
 		t.Fatal(err)
 	}
-	if err := writeTestDaemonStatus(context.Background(), root, io.Discard); err == nil || !strings.Contains(err.Error(), "insecure") {
-		t.Fatalf("unsafe missing-socket directory: %v", err)
+	if err := writeTestDaemonStatus(context.Background(), root, io.Discard); err != nil {
+		t.Fatalf("unsafe missing-socket directory should fall back to the user cache: %v", err)
 	}
 	if err := os.Chmod(dir, 0700); err != nil {
 		t.Fatal(err)

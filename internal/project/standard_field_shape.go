@@ -2,10 +2,10 @@ package project
 
 import (
 	"encoding/json"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/config"
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 // UnspecifiedStandardFieldShape is an internal overlay-policy token, not an org
@@ -26,18 +26,24 @@ const (
 // Only then does the native plain object inventory establish object absence.
 const PlainDeveloperObjectShape = "__glade_plain_developer_objects"
 
+// PlainDeveloperDescribeShape identifies the narrower definition captured for field describes.
+const PlainDeveloperDescribeShape = "__glade_plain_developer_describe"
+
 // StandardFieldPolicyFeatures augments the effective project's positive feature
 // evidence with its field-policy certainty. Only the consuming project's own
 // declaration establishes its target shape. Dependency development definitions
 // supply positive capabilities, never proof that the consumer lacks a field.
 func StandardFieldPolicyFeatures(p Project) []string {
 	features := EffectiveOrgShapeFeatures(p)
-	if edition := standardFieldRootEdition(p.Root); edition != "" {
+	if edition := standardFieldRootEdition(p.inputs, p.Root); edition != "" {
 		features = append(features, edition)
 	}
-	if p.Root == "" || declaresStandardFieldShape(p.Root) {
+	if p.Root == "" || declaresStandardFieldShape(p.inputs, p.Root) {
 		if plainDeveloperObjectShape(p, features) {
 			features = append(features, PlainDeveloperObjectShape)
+			if plainDeveloperDescribeShape(p.inputs, p.Root) {
+				features = append(features, PlainDeveloperDescribeShape)
+			}
 		}
 		return features
 	}
@@ -46,13 +52,13 @@ func StandardFieldPolicyFeatures(p Project) []string {
 
 // Only the consuming project's declaration can identify its edition. If the
 // root contains conflicting declarations, preserve uncertainty.
-func standardFieldRootEdition(root string) string {
+func standardFieldRootEdition(v *inputview.View, root string) string {
 	if root == "" {
 		return ""
 	}
 	edition := ""
-	for _, path := range scratchOrgConfigFiles(root) {
-		data, err := os.ReadFile(path)
+	for _, path := range scratchOrgConfigFiles(v, root) {
+		data, err := v.ReadFile(path)
 		if err != nil {
 			continue
 		}
@@ -77,12 +83,12 @@ func standardFieldRootEdition(root string) string {
 	return edition
 }
 
-func declaresStandardFieldShape(root string) bool {
-	if cfg, _, err := config.LoadNearest(root); err == nil && cfg.Org.Features != nil {
+func declaresStandardFieldShape(v *inputview.View, root string) bool {
+	if cfg, _, err := config.LoadNearestWithInputs(root, v); err == nil && cfg.Org.Features != nil {
 		return true
 	}
-	for _, path := range scratchOrgConfigFiles(root) {
-		data, err := os.ReadFile(path)
+	for _, path := range scratchOrgConfigFiles(v, root) {
+		data, err := v.ReadFile(path)
 		if err != nil {
 			continue
 		}
@@ -105,7 +111,7 @@ func declaresStandardFieldShape(root string) bool {
 // feature, setting, deployed settings file, dependency or org config keeps the
 // catalog fallback, because Glade cannot tell which objects it adds.
 func plainDeveloperObjectShape(p Project, features []string) bool {
-	if standardFieldRootEdition(p.Root) != StandardFieldEditionDeveloper {
+	if standardFieldRootEdition(p.inputs, p.Root) != StandardFieldEditionDeveloper {
 		return false
 	}
 	for _, feature := range features {
@@ -122,15 +128,15 @@ func plainDeveloperObjectShape(p Project, features []string) bool {
 	if roots := effectiveOrgShapeRoots(p); len(roots) != 1 {
 		return false
 	}
-	if cfg, _, err := config.LoadNearest(p.Root); err == nil && len(cfg.Org.Features) > 0 {
+	if cfg, _, err := config.LoadNearestWithInputs(p.Root, p.inputs); err == nil && len(cfg.Org.Features) > 0 {
 		return false
 	}
-	if _, ok := sourceSettingsDefinition(p.Root); ok {
+	if _, ok := sourceSettingsDefinition(p.inputs, p.Root); ok {
 		return false
 	}
 	found := false
-	for _, path := range scratchOrgConfigFiles(p.Root) {
-		data, err := os.ReadFile(path)
+	for _, path := range scratchOrgConfigFiles(p.inputs, p.Root) {
+		data, err := p.ReadFile(path)
 		if err != nil {
 			continue
 		}
@@ -177,6 +183,44 @@ func plainDeveloperDefinition(data []byte) bool {
 			}
 		default:
 			return false
+		}
+	}
+	return true
+}
+
+// The field capture used the default Developer definition, without feature,
+// setting, country or language overrides. Object inventory evidence is broader.
+func plainDeveloperDescribeShape(v *inputview.View, root string) bool {
+	for _, path := range scratchOrgConfigFiles(v, root) {
+		data, err := v.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var definition map[string]json.RawMessage
+		if json.Unmarshal(data, &definition) != nil {
+			return false
+		}
+		featuresRaw, hasFeatures := definition["features"]
+		settingsRaw, hasSettings := definition["settings"]
+		if !hasFeatures || !hasSettings || string(featuresRaw) == "null" || string(settingsRaw) == "null" {
+			return false
+		}
+		for key, raw := range definition {
+			switch key {
+			case "orgName", "description", "edition":
+			case "features":
+				var features scratchFeatureNames
+				if json.Unmarshal(raw, &features) != nil || len(features) != 0 {
+					return false
+				}
+			case "settings":
+				var settings map[string]any
+				if json.Unmarshal(raw, &settings) != nil || len(settings) != 0 {
+					return false
+				}
+			default:
+				return false
+			}
 		}
 	}
 	return true

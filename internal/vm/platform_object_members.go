@@ -651,7 +651,7 @@ func connectAPIReadOnlyHarnessReturn(returnType string) bool {
 }
 
 func (vm *VM) generatedPlatformStaticMethodByNameArity(className, methodName string, arity int) (Method, bool) {
-	methodsByName := generatedPlatformMethods()[strings.ToLower(className)]
+	methodsByName := lookupGeneratedPlatformMethods(strings.ToLower(className))
 	if len(methodsByName) == 0 {
 		return Method{}, false
 	}
@@ -733,7 +733,7 @@ func (vm *VM) callCartExtensionCartTestUtilStaticDefault(methodName string, args
 }
 
 func (vm *VM) newGeneratedOptionalWrapper(typeName string, present bool, value Value) Value {
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 		object := vm.newGeneratedPlatformObject(generated)
 		object.Fields["__optional_present"] = Bool(present)
 		object.Fields["__optional_value"] = value
@@ -1201,6 +1201,11 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 		if len(args) != 0 {
 			return Null, false
 		}
+		// A standard action has a type and no name; a custom action has a name.
+		// NATIVE Invocable.Action getName and getVersion apex_release_gates/org.tsv IaProbe66/IA1 anonymous 66.0 67.0
+		if standard, ok := receiver.Fields["standard"]; ok && standard.Kind == ValueBool && standard.Bool {
+			return typedNull("String"), true
+		}
 		return String(invocableActionDisplayName(receiver)), true
 	case strings.EqualFold(methodName, "getNamespace"):
 		if len(args) != 0 {
@@ -1215,6 +1220,9 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 	case strings.EqualFold(methodName, "getVersion"):
 		if len(args) != 0 {
 			return Null, false
+		}
+		if value, ok := receiver.Fields["version"]; !ok || value.Kind != ValueString {
+			return typedNull("String"), true
 		}
 		return String(invocableActionStringField(receiver, "version")), true
 	case strings.EqualFold(methodName, "isStandard"):
@@ -1890,7 +1898,7 @@ func (vm *VM) generatedPlatformReceiverTypes(receiverName string, receiver Value
 }
 
 func (vm *VM) generatedPlatformMethodForArgs(className, methodName string, args []Value, static bool) (Method, bool) {
-	methodsByName := generatedPlatformMethods()[strings.ToLower(className)]
+	methodsByName := lookupGeneratedPlatformMethods(strings.ToLower(className))
 	if len(methodsByName) == 0 {
 		return Method{}, false
 	}
@@ -1989,7 +1997,7 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 		return value
 	case strings.EqualFold(method.ClassName, "CartExtension.CheckoutPlaceOrder") &&
 		commerceLocalHarnessRuntimeMethod(method.ClassName, apexMethodMemberName(method.Name)):
-		if generated, ok := generatedPlatformTypes()[strings.ToLower(returnType)]; ok &&
+		if generated, ok := lookupGeneratedPlatformType(strings.ToLower(returnType)); ok &&
 			generated.Kind == apexast.DeclarationClass {
 			return vm.newGeneratedPlatformObject(generated)
 		}

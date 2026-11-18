@@ -1,0 +1,5 @@
+case	api	anonymous_observation
+single-ok	62.0	test:false|success:true|error:none|trace:before:ok:1;after:ok:1;|counts:0,1|children:1
+single-ok	67.0	test:false|success:true|error:none|trace:before:ok:1;after:ok:1;|counts:0,1|children:1
+single-reject	62.0	test:false|success:false|error:FIELD_CUSTOM_VALIDATION_EXCEPTION:parent rejects children|trace:before:reject:1;|counts:0,0|children:0
+single-reject	67.0	test:false|success:false|error:FIELD_CUSTOM_VALIDATION_EXCEPTION:parent rejects children|trace:before:reject:1;|counts:0,0|children:0

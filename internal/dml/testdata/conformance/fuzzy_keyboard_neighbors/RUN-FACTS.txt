@@ -1,0 +1,13 @@
+Native keyboard-distance neighbor capture (panels kn1, kn2)
+Date: 2026-11-16 UTC. Salesforce CLI 2.156.8.
+Orgs: two captures, each in its own fresh 30-day Developer Edition scratch org (no features) on an authorized campaign Dev Hub. Each org was deleted after its run; deletion verified (active hub record 1 -> 0, the local target no longer resolves). No record, org or user id, username, alias or host is stored.
+Preflight (before each org existed): every generated source was written as deployed at API 62.0 and 67.0; glade parse and glade check reported 0 diagnostics, the reserved-identifier lint was clean, and glade test and glade exec returned a framed observation for every case. The prediction was frozen before each native run.
+APIs: 62.0 and 67.0. Classes redeployed for each API and ApexClass.ApiVersion read back. Routes: anonymous Apex and deployed @IsTest; two repeats. Eight observations per case; every case has eight identical observations.
+Rules: the standard duplicate rules deactivated and custom N1Last (Contact, one LastName item with the LastName method, NullNotAllowed, Alert) active together with N1First, N1Title and N1Phone; rule state read back by SOQL after each deploy.
+Probe: one record per value is inserted (DMLOptions allowSave), then Datacloud.FindDuplicates runs on an unsaved copy of every value; only matches of the named rule are reported. Observation: <value count>:<pairs>; a pair is <candidate index><existing index><confidence>, indexes in 0-9a-z, a missing confidence is 100.
+Canary: a three-value panel (exact twin plus an unrelated value) ran before and after the cases, per API, route and repeat: 16 observations per capture, 0 failed.
+Purpose: these rows were not used to fit the keyboard costs or the shape gate (keyboardPanelCells). kn1 holds neighbors of the captured five-substitution pair with another first letter, a trailing letter on both names or on one, and a shorter stem. kn2 holds two stems with two or three substitutions on key pairs chosen without regard to the fitted rows.
+Values: synthetic test-data shapes.
+Leak scan: org.tsv and cases.json were grepped for 00D, 005 and 003 ids, Salesforce hosts, aliases and hub names: no hit.
+org.tsv sha256: d6489cade529f23472a1c17fa61a57f1da27fb2e2a279fb1f502756dbb0db6eb
+cases.json sha256: d221ecc13adbc891d3959d7d5c5368675f0381ab87a1b6be4f644110183e77e3

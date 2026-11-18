@@ -52,36 +52,79 @@ const (
 // markers below flag the start of a contiguous group. When adding state,
 // place it in the matching group and update New.
 type VM struct {
+	// adminStandardFLSRoute marks the routes where the default administrator's
+	// standard-field grant rule applies (anonymous_field_policy.go).
+	adminStandardFLSRoute bool
+	// explicitUserModePartialRecord marks the field check of a partial
+	// single-record Database DML call with an explicit AccessLevel.USER_MODE
+	// (adminStandardCustomFieldDMLDenied).
+	explicitUserModePartialRecord bool
+	// explicitUserModeAccess marks the field check of DML with an explicit
+	// USER_MODE (an AccessLevel argument, or a statement "as user" while
+	// explicitUserModeStatement is set).
+	explicitUserModeAccess, explicitUserModeStatement bool
+	// runAsRecordAccessCaptured marks a DML call shape whose hidden-record
+	// failure the sharing_access_modes d2 rows capture as a DML row failure.
+	runAsRecordAccessCaptured bool
+	// explicitUserModeDML marks a statement written as user mode (`as user` or
+	// an explicit USER_MODE access level), not the 67.0 default.
+	explicitUserModeDML bool
+	// staticSOQLQuery is set while a static [SELECT ...] expression runs.
+	staticSOQLQuery bool
+	// userModeSingleRecord marks the field check of single-record user-mode DML.
+	userModeSingleRecord   bool
 	knowledgeIssuedParents map[storage.ID]bool
-	road174WarmOrderAccess map[string]bool
-	road174PermissionStamp map[string]string
-	// road174WarmDirectAccess holds actor:record keys whose direct
+	case174WarmOrderAccess map[string]bool
+	case174PermissionStamp map[string]string
+	// case174WarmDirectAccess holds actor:record keys whose direct
 	// UserRecordAccess row was warmed by a system-mode relationship query
 	// (ura_direct_carry). It lives for one System.runAs block.
-	road174WarmDirectAccess map[string]bool
+	case174WarmDirectAccess map[string]bool
 	stringASCII             []stringASCIIEntry
 	stringASCIIBytes        int
 	// --- Class/method/type registries and lookup caches ---
-	Globals                  map[string]Value
-	VarTypes                 map[string]string
-	expressionTypeResolver   ExpressionTypeResolver
-	Methods                  map[string]Method
-	MethodOverloads          map[string][]Method
-	MethodFolded             map[string][]Method
-	methodCandidates         map[string][]Method
-	methodResolveCache       map[string]methodResolution
-	Classes                  map[string]Class
-	classLookup              map[string]Class
-	frozenClassLookup        *frozenClassLookup
-	sharedClassCopyPlan      *classCopyPlan
-	classLookupGeneration    uint64
-	classLookupNameCache     map[string]classLookupNameResult
-	classLookupNameOrder     []string
-	classLookupNameBytes     int
-	classLookupNameStats     classLookupNameCacheStats
-	namespaceClassLookup     map[string]map[string]namespaceClassLookup
-	classNamespaceCache      map[string]string
-	classForAccessCache      map[classForAccessKey]classForAccessLookup
+	Globals                map[string]Value
+	VarTypes               map[string]string
+	expressionTypeResolver ExpressionTypeResolver
+	Methods                map[string]Method
+	MethodOverloads        map[string][]Method
+	MethodFolded           map[string][]Method
+	methodCandidates       map[string][]Method
+	methodResolveCache     map[string]methodResolution
+	Classes                map[string]Class
+	classLookup            map[string]Class
+	frozenClassLookup      *frozenClassLookup
+	sharedClassCopyPlan    *classCopyPlan
+	classLookupGeneration  uint64
+	classLookupNameCache   map[string]classLookupNameResult
+	classLookupNameOrder   []string
+	classLookupNameBytes   int
+	classLookupNameStats   classLookupNameCacheStats
+	namespaceClassLookup   map[string]map[string]namespaceClassLookup
+	// namespaceClassRawLookup memoizes lookupClassInNamespace by its raw
+	// arguments so steady-state lookups skip the two case folds that build the
+	// namespaceClassLookup keys. It is reset with the access caches.
+	namespaceClassRawLookup map[namespaceClassRawKey]namespaceClassLookup
+	classNamespaceCache     map[string]string
+	// execNamespaceMemo remembers the namespace of the current class for one
+	// class lookup generation so hot call paths skip the class read.
+	execNamespaceMemo   execNamespaceMemo
+	classForAccessCache map[classForAccessKey]classForAccessLookup
+	// accessScopeCache memoizes sameAccessScope. Its inputs are the two names
+	// plus the current class and namespace that classForAccess reads, so the
+	// key carries all four. It is reset with the access caches.
+	accessScopeCache map[accessScopeKey]bool
+	// frameSymbolCache memoizes apexMethodFrameSymbol for setCurrentStatement,
+	// which runs once per executed instruction. The symbol depends on the
+	// method identity, the execution namespace and the class registry, so the
+	// key carries the first two and the class lookup generation.
+	frameSymbolFirstKey   frameSymbolKey
+	frameSymbolFirstValue string
+	frameSymbolFirstValid bool
+	frameSymbolCache      map[frameSymbolKey]string
+	// sourceLineTables caches newline offsets per executed program source for
+	// setCurrentStatement's line and column (see sourceLineColumnCached).
+	sourceLineTables         map[int][]*sourceLineTable
 	nestedTypeHierarchyCache map[nestedTypeKey]nestedTypeResult
 	enumLookup               map[string]enumClassLookup
 	enumSuffixLookup         map[string]enumClassLookup
@@ -112,6 +155,17 @@ type VM struct {
 	heapStaticRoots    []map[string]Field
 	heapStaticRootsLen int
 	heapStaticRootsOK  bool
+	// heapStaticScalarTotal and heapStaticContainers split those roots' static
+	// fields: scalar-valued fields are summed once, container-valued ones are
+	// listed for the per-check walk. Every class store clears heapStaticFlatOK.
+	heapStaticScalarTotal int
+	heapStaticContainers  []heapStaticContainerRef
+	heapStaticFlatOK      bool
+	heapSeen              map[approxVisitKey]bool
+	// heapEvalSeq counts expression evaluations; heapCheck prices strict
+	// heap checks after simple statements (see heap_strict_cache.go).
+	heapEvalSeq uint64
+	heapCheck   heapCheckCache
 	// classOverlay holds registrations made on top of a frozen generation
 	// until the next FreezeClassLookup (see class_lookup_overlay.go).
 	classOverlay *classLookupOverlay
@@ -130,8 +184,11 @@ type VM struct {
 	scopeStack            []map[string]Value
 	finalLocals           map[string]bool // active frame; bool records initialization
 	closedSOQLLocals      map[string]Value
+	bindFrame             bindFrameState
+	bindBodySiteCache     map[*ir.Instruction]map[int]struct{}
 	dynamicSOQLBindRoute  string
 	currentClass          string
+	forBodyReusable       map[*ir.Instruction]bool
 	// anonymousLocal is the running anonymous block's method table and its
 	// top-level frame (anonymous_local_methods_c4), nil outside such a block.
 	anonymousLocal   *anonymousLocalScope
@@ -151,17 +208,31 @@ type VM struct {
 	testContext                  *TestContext
 	uiExceptionContext           bool
 	mixedDML                     mixedDMLState
-	localAsyncJobs               []AsyncJob
-	localAsyncSeq                int
-	flowAsyncSeq                 uint64
-	flowPathSavepoints           map[string]uint64
-	runningProcessRecords        map[storage.ID]int
-	processErrorSequence         int
-	localAsyncDrain              bool
-	localAsyncChain              bool
-	rejectAsyncActions           bool
-	asyncActionViolation         bool
-	executionUser                Value
+	// permAssignVisible holds the test-made permission set assignments that
+	// the innermost System.runAs block saw when it started; permAssignAll
+	// lifts the rule inside an asynchronous job (its own transaction), and
+	// permRunnerUserID is the user that ran the test outside every block.
+	permAssignVisible map[storage.ID]struct{}
+	permAssignAll     bool
+	// approvalLockCall marks a running Approval.lock call.
+	approvalLockCall bool
+	permRunnerUserID string
+	// permAssignmentsPreexisting stops flagging assignments as test-made: the
+	// project's configured assignments stand for sets the org already had.
+	permAssignmentsPreexisting bool
+	localAsyncJobs             []AsyncJob
+	localAsyncSeq              int
+	flowAsyncSeq               uint64
+	flowPathSavepoints         map[string]uint64
+	runningProcessRecords      map[storage.ID]int
+	processErrorSequence       int
+	localAsyncDrain            bool
+	localAsyncChain            bool
+	rejectAsyncActions         bool
+	isolateAsyncJobFailures    bool
+	actionAsyncSavepoints      map[string]int
+	asyncActionViolation       bool
+	executionUser              Value
 	// Captured once from the runner's initial org, before test setup inserts.
 	// Clones share this immutable ID set; EnableTestContext must not recapture it.
 	testDocumentBaseline          map[storage.ID]struct{}
@@ -184,6 +255,7 @@ type VM struct {
 	limitMode       LimitMode
 	limitViolations []LimitViolation
 	cpuBudgetUsed   int
+	work            workState
 	fakeNow         time.Time
 	lastNow         time.Time
 	hasLastNow      bool
@@ -209,6 +281,9 @@ type VM struct {
 	currentQueueableDelaySet     bool
 	queueableDuplicateSignatures map[string]string
 	currentFinalizer             Value
+	// queueableBodyFailureRetained marks a Queueable body error with no
+	// finalizer, for the native post-stopTest status projection.
+	queueableBodyFailureRetained bool
 	// success callbacks expose SYSTEM_MODE reads as their captured user.
 	// The dispatch scope restores this ID; nested runAs users do not inherit it.
 	eventPublishReadUserID string
@@ -217,10 +292,28 @@ type VM struct {
 	eventSubscriberTriggerDepth int
 	activeExceptions            []activeException
 	// --- Exception / statement / trigger-depth tracking ---
-	currentStatement        callFrame
+	currentStatement callFrame
+	// currentSource is the source text currentStatement's offsets index;
+	// callPos is the pending call token offset in that source.
+	currentSource           string
+	callPos                 int
 	hasStatement            bool
 	toolingExecuteAnonymous bool
 	triggerDepth            int
+	triggerActivations      []triggerActivation
+	// runAsFrameDepths holds the call depth of each active runAs(User) block.
+	runAsFrameDepths []int
+	// outerTriggerLimits are the governor counters when the outermost trigger
+	// activation began; a depth failure restores the DML and query counters.
+	outerTriggerLimits Limits
+	// innerTriggerLimits are the counters when the second activation began.
+	innerTriggerLimits Limits
+	// depthFailureSurfaced marks a depth failure that reached the outermost
+	// trigger's DML statement, so only that failure restores the counters.
+	depthFailureSurfaced bool
+	// inFinalizer is set while a Queueable finalizer runs: it keeps the
+	// synchronous query, CPU and relationship-subquery caps.
+	inFinalizer             bool
 	activeTriggerNamespaces []string
 	installContextDepth     int
 	// --- Transaction state (savepoints) ---
@@ -229,11 +322,13 @@ type VM struct {
 	savepointMarks     map[string]storage.IsolationMark
 	emailSavepoints    map[string][]CapturedEmail
 	savepointOrder     map[string]int
-	nextSavepoint      int
-	recordCreations    *dml.RecordCreations
-	lookupHistoryScope *storage.LookupHistoryScope
-	duplicateReports   []dml.DuplicateReport
-	creationSavepoints map[string]recordCreationCheckpoint
+	// boundaryReleasedSavepoints records savepoints ended at startTest or stopTest.
+	boundaryReleasedSavepoints map[string]bool
+	nextSavepoint              int
+	recordCreations            *dml.RecordCreations
+	lookupHistoryScope         *storage.LookupHistoryScope
+	duplicateReports           []dml.DuplicateReport
+	creationSavepoints         map[string]recordCreationCheckpoint
 	// --- Visualforce / page context ---
 	pageMessages              []Value
 	currentPage               Value
@@ -249,9 +344,12 @@ type VM struct {
 	// cloneRuntime starts with a fresh registry through newVM.
 	queryCursors map[string]Value
 	// Alternate query sources belong to this VM, including cursor JSON copies.
-	queryHandleSources        map[string]*storage.OrgState
-	fixedSearchResults        []Value
-	fixedSearchResultsSet     bool
+	queryHandleSources    map[string]*storage.OrgState
+	fixedSearchResults    []Value
+	fixedSearchResultsSet bool
+	// The caller's list keeps feeding later searches: in-place changes to it
+	// after Test.setFixedSearchResults reach fixedSearchResults.
+	fixedSearchResultsRef     uint64
 	sfsqlqueryRows            []Value
 	sfsqlqueryMetadata        []Value
 	platformCache             map[string]map[string]cacheEntry
@@ -278,12 +376,20 @@ type VM struct {
 	debugOutputLimit int
 	traceOutputLimit int
 	traceEnabled     bool
-	ctx              context.Context
-	contextPollCount uint8
-	activeGetters    map[string]int
-	activeSetters    map[string]int
-	triggerGlobals   map[string]Value
-	cryptoRandomSeq  uint64
+	// coverage receives code coverage events; nil leaves collection off.
+	coverage         CoverageSink
+	coverageLastName string
+	coverageLastSkip bool
+	// asyncJobsProcessed counts async jobs a drain took off the queue;
+	// setupDrainPasses is the pass count of the last @TestSetup drain.
+	asyncJobsProcessed int
+	setupDrainPasses   int
+	ctx                context.Context
+	contextPollCount   uint8
+	activeGetters      map[string]int
+	activeSetters      map[string]int
+	triggerGlobals     map[string]Value
+	cryptoRandomSeq    uint64
 	// uuidRandomReader is a per-VM test seam; nil selects crypto/rand.Reader.
 	uuidRandomReader   io.Reader
 	staticInitState    map[string]staticInitState
@@ -299,11 +405,17 @@ type VM struct {
 	standardAPI68Memo           *standardAPI68ProfileMemo
 	globalDescribeCache         *Value
 	globalDescribeVersionCaches map[string]*Value
-	namedGlobalDescribe         *namedGlobalDescribeExtension
-	changeEventGlobal           *changeEventGlobalExtension
+	// eagerGlobalDescribe completes a lazy spread before the global describe
+	// build, as before the names-only build. Tests set it to compare routes.
+	eagerGlobalDescribe bool
+	lazySingleInstalls  int
+	namedGlobalDescribe *namedGlobalDescribeExtension
+	changeEventGlobal   *changeEventGlobalExtension
 	// Private immutable key preparation after leaving a frozen generation.
 	// Never cloned; exact key equality is rechecked before each reuse.
 	globalDescribeProjectionKeys map[string]globalDescribeKeyMetadata
+	// Last shared-backing map whose keys were verified; see fillGlobalDescribeProjectionKeys.
+	globalDescribeKeysVerified   globalDescribeKeysVerifiedMemo
 	describeTabsCache            *Value
 	describeDefCache             map[string]storage.ObjectDefinition
 	customDataCache              map[string]Value
@@ -334,11 +446,17 @@ type VM struct {
 	// Field-map owners outlive invalidation: earlier roots can still be in use.
 	describeShare            *describeShareCache
 	describeShareDefinitions []*describeShareDefinition
-	sharedDescribeFieldMaps  map[uintptr]*describeShareFieldMap
+	// describeTokenShares lists the shares whose global describe tokens this VM holds.
+	describeTokenShares     []*describeShareCache
+	sharedDescribeFieldMaps map[uintptr]*describeShareFieldMap
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs       map[uint64]bool
 	staticValueRefFields  map[uint64]staticFieldRefSet
 	staticValueRefsShared bool
+	// staticRefBase* hold the frozen shared index when staticValueRefs and
+	// staticValueRefFields are this VM's private overlay (see staticRefIdx).
+	staticRefBaseRefs   map[uint64]bool
+	staticRefBaseFields map[uint64]staticFieldRefSet
 	// Serializes lazy collection/publication by concurrent template clones.
 	// Executing a VM concurrently with cloning it is still unsupported.
 	staticValueRefsMu     sync.Mutex
@@ -351,13 +469,15 @@ type VM struct {
 	localOnlyObjectRefs       map[uint64]bool
 	// Exceptions to the ordinary SObject field graph are append-only. Unlike
 	// local-only provenance, they must survive runtime/static cloning.
-	sObjectCollectionAliasRefs  map[uint64]bool
-	sObjectAliasTypes           map[string]sObjectAliasTypeVerdict
-	sObjectAliasTypeOrg         *storage.OrgState
-	collectionMutationRefSeq    map[uint64]uint64
-	collectionMutationRefFloor  uint64
-	collectionMutationSeq       uint64
-	escapedCollectionLatest     map[uint64]escapedCollectionMutation
+	sObjectCollectionAliasRefs map[uint64]bool
+	sObjectAliasTypes          map[string]sObjectAliasTypeVerdict
+	sObjectAliasTypeOrg        *storage.OrgState
+	collectionMutationRefSeq   map[uint64]uint64
+	collectionMutationRefFloor uint64
+	collectionMutationSeq      uint64
+	escapedCollectionLatest    map[uint64]escapedCollectionMutation
+	// escapedCollectionLatestSeq is the newest sequence in escapedCollectionLatest.
+	escapedCollectionLatestSeq  uint64
 	nestedReceiverCache         map[uint64]nestedReceiverGraph
 	nestedReceiverMapRoots      map[uintptr]map[uint64]struct{}
 	nestedReceiverCacheRefs     int
@@ -368,6 +488,10 @@ type VM struct {
 	mapKeySetBackings           map[uint64]mapKeySetSourceRef
 	mapKeySetBinds              uint64
 	aliasContainmentMutationSeq uint64
+	aliasContainmentLog         [aliasContainmentMutationLogSize]aliasContainmentMutation
+	// disableAliasMissCarry turns off carrying cached misses across logged
+	// List bumps. Tests use it to compare results with the carry on and off.
+	disableAliasMissCarry       bool
 	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
 	mapPutParentContainment     *mapPutParentContainmentCache
 	perfRecorder                *PerfRecorder
@@ -375,6 +499,21 @@ type VM struct {
 	scopeAliasTraversalObserver scopeAliasTraversalObserver
 	runtimeArtifactsShared      atomic.Bool
 	methodOverlay               *methodTableOverlay
+	// lazySet is the set whose shells this VM's Classes hold, shared by every
+	// clone; see LazyClassSet.
+	lazySet *LazyClassSet
+	// gatedPlatformLateBind marks a VM that registered passive platform
+	// classes; it binds left-out gated stub classes on demand
+	// (gated_platform_class.go). bindingGatedPlatformClass guards the bind.
+	gatedPlatformLateBind     bool
+	bindingGatedPlatformClass bool
+	gatedPlatformBoundNames   map[string]struct{}
+	// enumSuffixBuilt reports that enumSuffixLookup was built from the class
+	// entries, not the empty map a new VM starts with (gated_platform_class.go).
+	enumSuffixBuilt bool
+	// inlineQueryLocatorCall marks the Database.getQueryLocator call whose query
+	// argument is an inline [SELECT ...]; databaseQueryHandle reads and clears it.
+	inlineQueryLocatorCall bool
 	// String == support: the Turkish-dotting decision for the running user and
 	// the full case transformers, created once per machine.
 	localeCase localeCaseCache
@@ -468,6 +607,33 @@ type classForAccessKey struct {
 	ClassName        string
 	CurrentClass     string
 	CurrentNamespace string
+}
+
+// namespaceClassRawKey is the lookupClassInNamespace memo key: the untrimmed,
+// unfolded arguments. Case and whitespace variants get distinct entries that
+// each hold the folded lookup's result.
+type namespaceClassRawKey struct {
+	Namespace string
+	ClassName string
+}
+
+// accessScopeKey is the sameAccessScope memo key. fillAccessScopeNames reads
+// vm.currentClass and vm.currentNamespace through classForAccess, so both are
+// part of the key.
+type accessScopeKey struct {
+	Left             string
+	Right            string
+	CurrentClass     string
+	CurrentNamespace string
+}
+
+// frameSymbolKey is the setCurrentStatement frame-symbol memo key.
+type frameSymbolKey struct {
+	MethodName         string
+	MethodClassName    string
+	ExecutionNamespace string
+	OrgNamespace       string
+	Generation         uint64
 }
 
 // nestedTypeKey memoizes resolveNestedTypeInClassHierarchy. The resolution is a
@@ -606,6 +772,10 @@ type RuntimeError struct {
 	Type    string
 	Message string
 	Stack   []StackFrame
+	// PlatformFault marks an uncatchable platform failure whose native REST
+	// transport is UNKNOWN_EXCEPTION rather than an Apex exception.
+	PlatformFault  bool `json:"-"`
+	callStackLimit bool
 	// Preserve the Apex message before adding local diagnostic context.
 	exceptionMessage *string
 	// An assertion records its Apex frames where it fails; a trigger boundary
@@ -664,16 +834,21 @@ type callFrame struct {
 }
 
 type TestContext struct {
-	Started                  bool
-	Stopped                  bool
-	CurrentUser              Value
-	SeeAllData               bool
-	SeeAllDataSet            bool
-	AsyncJobs                []AsyncJob
-	AsyncStartIndex          int
-	FlexQueueJobs            []Value
-	EventPublishes           []eventPublishCallback
-	PlatformEvents           []storage.Record
+	Started         bool
+	Stopped         bool
+	CurrentUser     Value
+	SeeAllData      bool
+	SeeAllDataSet   bool
+	AsyncJobs       []AsyncJob
+	AsyncStartIndex int
+	FlexQueueJobs   []Value
+	EventPublishes  []eventPublishCallback
+	PlatformEvents  []storage.Record
+	// FlowPublishedEvents holds events that event-triggered Flow interviews
+	// created. The next explicit Test.getEventBus().deliver() delivers them;
+	// the delivery that ran the interview and stopTest do not (native
+	// platform_event_flow_elements/extended PE09A to PE09D).
+	FlowPublishedEvents      []storage.Record
 	PlatformEventRetries     map[string]int
 	PlatformEventPublishes   int
 	PlatformEventStartIndex  int
@@ -681,6 +856,7 @@ type TestContext struct {
 	changeJournal            []changeDataCaptureEntry
 	changeSavepoints         map[string][]changeDataCaptureEntry
 	changeSequence           int64
+	changeMerging            bool
 	changeTransaction        string
 	ReadOnlyApplication      bool
 	Draining                 bool
@@ -732,11 +908,17 @@ type AsyncJob struct {
 	LastProcessed       string
 	LastProcessedOffset int
 	Deferred            bool
+	// EventSeq orders a publish-after-commit event Flow job against savepoints.
+	// A rollback discards the job. Zero means the job is not rolled back.
+	EventSeq uint64
 	// Finish-created schedules remain eligible between stopTest drain passes.
 	RunAtTestStop bool
 
 	// Direct submissions retain the observed phase state at a batch fault.
 	DirectBatchSubmission bool
+	// QueueableBatchSubmission marks a batch submitted by a Queueable body that
+	// a test runs (native async-ordering ao01 at 62.0 and 67.0).
+	QueueableBatchSubmission bool
 
 	// Scheduled test payloads outlive cancellation but require an active replacement to run.
 	ScheduledAborted            bool
@@ -748,6 +930,16 @@ type AsyncJob struct {
 	QueueableDelaySet           bool
 	QueueableDuplicateSignature string
 	NotBefore                   time.Time
+	// batchResume marks a stopTest batch whose start (and, with finishOnly,
+	// execute) already ran; the remaining phase runs from the queue tail.
+	batchResume *batchResumeState
+}
+
+type batchResumeState struct {
+	scope          []Value
+	locatorStart   bool
+	statefulObject Value
+	finishOnly     bool
 }
 
 type cacheEntry struct {
@@ -891,6 +1083,8 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	// via ensureRuntimeArtifactsOwned, so the source VM (and any cached runtime
 	// template) is never corrupted. The shared maps stay read-only across
 	// parallel workers, which is safe for concurrent map reads.
+	clone.lazySet = vm.lazySet
+	clone.gatedPlatformLateBind = vm.gatedPlatformLateBind
 	clone.Methods = vm.Methods
 	clone.MethodOverloads = vm.MethodOverloads
 	clone.MethodFolded = vm.MethodFolded
@@ -951,8 +1145,9 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		vm.staticValueRefsMu.Lock()
 		if shareStaticValueRefs {
 			if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
-				vm.staticValueRefs, vm.staticValueRefFields = vm.collectStaticValueRefs()
+				vm.buildStaticValueRefs()
 			}
+			vm.flattenStaticValueRefs()
 			clone.staticValueRefs = vm.staticValueRefs
 			clone.staticValueRefFields = vm.staticValueRefFields
 			clone.staticValueRefsShared = true
@@ -1002,6 +1197,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
 		clone.describeShare = vm.describeShare
+		clone.describeTokenShares = append([]*describeShareCache(nil), vm.describeTokenShares...)
 	} else {
 		clone.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		clone.childRelCache = newChildRelationshipCache()
@@ -1020,6 +1216,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone.traceOutputLimit = vm.traceOutputLimit
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
 	clone.rejectAsyncActions = vm.rejectAsyncActions
+	clone.isolateAsyncJobFailures = vm.isolateAsyncJobFailures
 	clone.asyncActionViolation = vm.asyncActionViolation
 	clone.staticInitState = nil
 	clone.pageReferences = copyStringMap(vm.pageReferences)
@@ -1041,7 +1238,7 @@ func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 		// their types against the source schema during this private scan;
 		// callers still install their own org on the returned runtime.
 		clone.Org = vm.Org
-		for _, class := range clone.ClassEntries() {
+		for _, class := range clone.classEntriesNoLazy() {
 			for _, field := range class.StaticFields {
 				clone.registerSObjectAliasRecord(field.Value)
 				clone.registerSObjectAliasRecord(field.InitialValue)
@@ -1125,6 +1322,10 @@ func (vm *VM) classMapCopy() map[string]Class {
 // map shared with another VM is not written; the value goes to this VM's
 // overlay, so a first static write no longer copies every class entry.
 func (vm *VM) writeExistingClassEntry(name string, class Class) {
+	vm.heapStaticFlatOK = false
+	if previous, exists := vm.classEntryRaw(name); exists && previous.lazy != nil {
+		vm.releaseReplacedLazy(previous, exists, class)
+	}
 	if vm.heapStaticRootsOK {
 		previous, exists := vm.classEntry(name)
 		vm.noteClassStaticRootsWrite(previous, exists, class)
@@ -1140,8 +1341,20 @@ func (vm *VM) writeExistingClassEntry(name string, class Class) {
 }
 
 // classEntry reads one vm.Classes key: the value this VM wrote while sharing
-// the map, else the map's value. Read Classes entries through it.
+// the map, else the map's value. Read Classes entries through it. A lazy shell
+// is returned with its members built; classEntryRaw leaves it unbuilt.
 func (vm *VM) classEntry(name string) (class Class, ok bool) {
+	class, ok = vm.classEntryRaw(name)
+	if ok && class.lazy != nil {
+		class = class.lazy.materialized()
+	}
+	return class, ok
+}
+
+// classEntryRaw is classEntry without building a lazy shell. A shell holds
+// the name, namespace and flags of its class and nothing else, so callers that
+// read only those may use it.
+func (vm *VM) classEntryRaw(name string) (class Class, ok bool) {
 	if vm.classValueOverlay != nil {
 		if class, ok = vm.classValueOverlay[name]; ok {
 			return class, ok
@@ -1156,28 +1369,9 @@ func (vm *VM) classEntry(name string) (class Class, ok bool) {
 // that map is shared, values the loop body writes are not seen, as when a first
 // write copied the map. A range that starts with overlay values reads each
 // key's current value when the loop reaches it, as a range over a private map
-// does.
+// does. Lazy shells are built as the loop reaches them.
 func (vm *VM) ClassEntries() iter.Seq2[string, Class] {
-	return func(yield func(string, Class) bool) {
-		classes := vm.Classes
-		if vm.classValueOverlay == nil {
-			for name, class := range classes {
-				if !yield(name, class) {
-					return
-				}
-			}
-			return
-		}
-		for name := range classes {
-			class, ok := vm.classEntry(name)
-			if !ok {
-				continue
-			}
-			if !yield(name, class) {
-				return
-			}
-		}
-	}
+	return vm.rangeClassEntries(true, false)
 }
 
 func (vm *VM) SetIsolationJournal(journal *storage.IsolationJournal) {
@@ -1425,6 +1619,7 @@ func sameClassValue(a, b Class) bool {
 		a.IsTest == b.IsTest &&
 		a.Nested == b.Nested &&
 		a.Dependency == b.Dependency &&
+		a.lazy == b.lazy &&
 		sameMap(a.Fields, b.Fields) &&
 		sameMap(a.StaticFields, b.StaticFields) &&
 		sameMap(a.Methods, b.Methods) &&
@@ -1767,6 +1962,7 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
+	vm.lazySingleInstalls = 0
 	vm.knowledgeIssuedParents = nil
 	vm.localeCase = localeCaseCache{}
 	vm.ensureChangeEventObjects(org)
@@ -1800,7 +1996,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	for _, value := range vm.Globals {
 		vm.registerSObjectAliasRecord(value)
 	}
-	for _, class := range vm.ClassEntries() {
+	for _, class := range vm.classEntriesNoLazy() {
 		for _, field := range class.StaticFields {
 			vm.registerSObjectAliasRecord(field.Value)
 			vm.registerSObjectAliasRecord(field.InitialValue)
@@ -1823,6 +2019,7 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 // this VM was cloned from. Matching stamp text alone never proves that
 // provenance; an unrelated generation uses SetOrg and discards every cache.
 func (vm *VM) SetRuntimeTemplateOrg(org *storage.OrgState) {
+	vm.lazySingleInstalls = 0
 	vm.ensureChangeEventObjects(org)
 	vm.knowledgeIssuedParents = nil
 	vm.localeCase = localeCaseCache{}
@@ -2269,7 +2466,14 @@ func (vm *VM) SetContext(ctx context.Context) {
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	vm.ensureMetadataCacheGeneration()
 	engine := dml.NewEngine(vm.Org)
+	engine.DuplicateMatcher, engine.DuplicatePeerMatcher = vm.newDuplicateMatchers()
 	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
+	engine.PermissionAssignmentHidden = func(assignment storage.Record) bool {
+		return vm.permissionAssignmentNotYetApplied(assignment, vm.currentUserID())
+	}
+	if vm.work.tracking {
+		engine.FlowMatchObserver = func() { vm.work.flowRuns++ }
+	}
 	engine.PermissionUserFields = vm.currentUserPermissionFields()
 	if vm.dmlSummaryByChild == nil {
 		vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
@@ -2293,6 +2497,15 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	}
 	engine.FlowActionInvoker = func(action storage.FlowAction, record storage.Record) error {
 		return vm.invokeFlowAction(action, record, result)
+	}
+	engine.FlowFaultDetail = vm.flowApexFaultDetail
+	engine.FlowFaultInTest = func() bool { return vm.testContext != nil }
+	engine.BeginPlatformEventInterview = vm.beginPlatformEventInterview
+	engine.PlatformEventPublisher = func(records []storage.Record) error {
+		return vm.publishFlowEvents(records, result)
+	}
+	engine.PlatformEventDirectPublisher = func(records []storage.Record) error {
+		return vm.publishFlowCreatedEvents(records, result)
 	}
 	engine.FlowActionInvokerWithContext = func(action storage.FlowAction, record storage.Record, context dml.FlowActionContext) error {
 		return vm.invokeFlowActionWithContext(action, record, context, result)
@@ -2751,7 +2964,7 @@ func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, boo
 // own-namespace invocable resolves as both gladens004__Q3Act and Q3Act at APIs
 // 62.0 and 67.0 (flow_action_namespace rows).
 func (vm *VM) flowActionClassKey(className string) string {
-	if _, ok := vm.classEntry(className); ok {
+	if _, ok := vm.classEntryRaw(className); ok {
 		return className
 	}
 	idx := strings.Index(className, "__")
@@ -2759,11 +2972,11 @@ func (vm *VM) flowActionClassKey(className string) string {
 		return className
 	}
 	namespace, local := className[:idx], className[idx+2:]
-	if _, ok := vm.classEntry(namespace + "." + local); ok {
+	if _, ok := vm.classEntryRaw(namespace + "." + local); ok {
 		return namespace + "." + local
 	}
 	if vm.Org != nil && strings.EqualFold(strings.TrimSpace(vm.Org.Namespace), namespace) {
-		if _, ok := vm.classEntry(local); ok {
+		if _, ok := vm.classEntryRaw(local); ok {
 			return local
 		}
 	}
@@ -2789,7 +3002,11 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 	// The native bulk capture uses atomic inserts. Partial-save scheduling
 	// retains its existing per-record path.
 	if allOrNone {
-		if handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
+		// flow_batch_refire/org.tsv: every interview's Flow writes finish before
+		// the after-update triggers run, and the triggers see one batch.
+		var refireIDs []storage.ID
+		var refireOld []storage.Record
+		handled, err := engine.ApplyFlowActionBatch(records, func(i int, outcome dml.AutomationResult) error {
 			record := records[i]
 			appendTrace(result, "apex.automation.apply", "apex.automation", map[string]any{
 				"object": record.Object,
@@ -2802,8 +3019,14 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 			if i < len(oldRecords) {
 				oldRecord = oldRecords[i]
 			}
-			return vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result)
-		}); handled {
+			refireIDs = append(refireIDs, record.ID)
+			refireOld = append(refireOld, oldRecord)
+			return nil
+		})
+		if handled && err == nil && len(refireIDs) > 0 {
+			err = vm.refireAutomationUpdateTriggersFor(records[0].Object, refireIDs, refireOld, allOrNone, rollback, result)
+		}
+		if handled {
 			if err != nil && allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 					return rollbackErr
@@ -3165,7 +3388,7 @@ func (vm *VM) defaultOrgUserRecord() (storage.Record, bool) {
 }
 
 func (vm *VM) ResetStatics() error {
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
@@ -3184,7 +3407,7 @@ func (vm *VM) ResetStatics() error {
 
 func (vm *VM) ResetTestAsyncStaticCollections() error {
 	resetClasses := make(map[string]Class)
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
@@ -3306,6 +3529,17 @@ func (vm *VM) ExecuteInClass(program ir.Program, className string) (result Resul
 }
 
 // ExecuteTestInClass scopes the sharing entry to an actual test invocation.
+// ExecuteTestInClassFromSourceUnit is ExecuteTestInClass with the entry
+// bound to one source unit: a call the program makes to a name that two
+// source units declare resolves to that unit's declaration, as a call from
+// that unit's own code does.
+func (vm *VM) ExecuteTestInClassFromSourceUnit(program ir.Program, className, sourceUnit string) (Result, error) {
+	previous := vm.currentMethod.SourceUnit
+	vm.currentMethod.SourceUnit = sourceUnit
+	defer func() { vm.currentMethod.SourceUnit = previous }()
+	return vm.ExecuteTestInClass(program, className)
+}
+
 func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, error) {
 	previousEntry, previousTest := vm.entrySharingMode, vm.testExecutionEntry
 	if vm.entrySharingMode == "" {
@@ -3317,21 +3551,22 @@ func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, 
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	vm.invalidateHeapCheckCache()
 	defer vm.BeginReportTransaction()()
 	// String == reads the running user's locale once, at transaction start:
 	// a DML update of the user's own LocaleSidKey before the first comparison
 	// must not move it (string_equality_locale_change_c14).
 	vm.snapshotLocaleCase()
-	previousRoad174WarmOrderAccess := vm.road174WarmOrderAccess
-	previousRoad174PermissionStamp := vm.road174PermissionStamp
-	previousRoad174WarmDirectAccess := vm.road174WarmDirectAccess
-	vm.road174WarmOrderAccess = nil
-	vm.road174PermissionStamp = nil
-	vm.road174WarmDirectAccess = nil
+	previousCase174WarmOrderAccess := vm.case174WarmOrderAccess
+	previousCase174PermissionStamp := vm.case174PermissionStamp
+	previousCase174WarmDirectAccess := vm.case174WarmDirectAccess
+	vm.case174WarmOrderAccess = nil
+	vm.case174PermissionStamp = nil
+	vm.case174WarmDirectAccess = nil
 	defer func() {
-		vm.road174WarmOrderAccess = previousRoad174WarmOrderAccess
-		vm.road174PermissionStamp = previousRoad174PermissionStamp
-		vm.road174WarmDirectAccess = previousRoad174WarmDirectAccess
+		vm.case174WarmOrderAccess = previousCase174WarmOrderAccess
+		vm.case174PermissionStamp = previousCase174PermissionStamp
+		vm.case174WarmDirectAccess = previousCase174WarmDirectAccess
 	}()
 	vm.ensureMetadataCacheGeneration()
 	if vm.testContext == nil {
@@ -3345,10 +3580,13 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 	defer restoreCreations()
 	finishDuplicateReports := vm.beginDuplicateReportTransaction()
 	defer func() { finishDuplicateReports(err == nil) }()
-	callerClosedLocals, callerBindRoute := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute
-	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = nil, ""
+	callerClosedLocals, callerBindRoute, callerBindFrame := vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame
+	vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = nil, "", bindFrameState{}
+	if className == "" {
+		vm.bindFrame.anonymous, vm.bindFrame.anonymousBody = true, program.Instructions
+	}
 	defer func() {
-		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute = callerClosedLocals, callerBindRoute
+		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
 	}()
 	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled, traceOutputLimit: vm.traceOutputLimit}
 	if vm.traceEnabled {
@@ -3415,12 +3653,16 @@ func (vm *VM) AdvanceDeterministicTime(delta time.Duration) {
 	vm.fakeNow = vm.fakeNow.Add(delta)
 }
 
-// SetSynchronousActionBoundary makes framework actions fail closed when they
-// attempt to cross an asynchronous delivery boundary that the caller cannot
-// drain and commit as part of the same request.
+// SetSynchronousActionBoundary configures a Lightning action transaction.
+// Queueable, future and platform-event work enqueued by the action is drained
+// by DrainAsync after the action succeeds, and each drained job is its own
+// transaction: a failing job rolls back only its own changes and does not
+// change the action's result (lightning_action_async_drain captures).
+// Database.*Async DML has no capture for this boundary and still fails closed.
 func (vm *VM) SetSynchronousActionBoundary(enabled bool) {
 	if vm != nil {
 		vm.rejectAsyncActions = enabled
+		vm.isolateAsyncJobFailures = enabled
 		if !enabled {
 			vm.asyncActionViolation = false
 		}
@@ -3468,3 +3710,11 @@ func (vm *VM) DrainAsync(result *Result) (err error) {
 }
 
 type controlSignal string
+
+// execNamespaceMemo holds the last class-derived execution namespace.
+type execNamespaceMemo struct {
+	class      string
+	generation uint64
+	namespace  string
+	valid      bool
+}

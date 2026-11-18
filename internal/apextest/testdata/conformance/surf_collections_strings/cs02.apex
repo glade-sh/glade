@@ -1,0 +1,17 @@
+List<String> rows = new List<String>();
+List<String> a = new List<String>{'x', 'y'};
+List<String> b = new List<String>{'x', 'y'};
+List<String> r = new List<String>{'y', 'x'};
+List<Object> o = new List<Object>{'x', 'y'};
+rows.add('eq=' + a.equals(b) + '|hash=' + (a.hashCode() == b.hashCode()) + '|hashv=' + a.hashCode());
+rows.add('order=' + a.equals(r) + '|orderHash=' + (a.hashCode() == r.hashCode()));
+rows.add('obj=' + a.equals(o) + '|nullarg=' + a.equals(null) + '|self=' + a.equals(a));
+List<Account> concrete = new List<Account>{ new Account(Name='Synthetic'), new Account(Name='Two') };
+List<SObject> view = concrete;
+rows.add('view=' + concrete.equals(view) + '|viewHash=' + (concrete.hashCode() == view.hashCode()));
+List<Account> equalFields = new List<Account>{ new Account(Name='Synthetic'), new Account(Name='Two') };
+rows.add('sobjEq=' + concrete.equals(equalFields) + '|sobjHash=' + (concrete.hashCode() == equalFields.hashCode()));
+List<Object> nulls1 = new List<Object>{'x', null, 1};
+List<Object> nulls2 = new List<Object>{'x', null, 1};
+rows.add('nulls=' + nulls1.equals(nulls2) + '|nullsHash=' + (nulls1.hashCode() == nulls2.hashCode()));
+System.debug('OBS|' + String.join(rows, ';'));

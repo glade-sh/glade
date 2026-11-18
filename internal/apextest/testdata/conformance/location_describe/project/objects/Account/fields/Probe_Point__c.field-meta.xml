@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Probe_Point__c</fullName><label>Probe Point</label><type>Location</type><displayLocationInDecimal>true</displayLocationInDecimal><scale>6</scale></CustomField>

@@ -1,0 +1,8 @@
+family=review_round2
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=OBS lines from the USER_DEBUG log (anonymous); an uncaught exception is the row's error; Salesforce ids masked as <id>
+repeats=two clean runs; rows identical across runs and both APIs
+raw_runs=review2/out/20261116T230756Z and 20261116T230222Z (capture cache, not committed)
+shapes=GROUP BY on Checkbox, Currency, Percent, scaled Number and Text; whether the non-groupable exception is catchable by catch (Exception) and catch (System.UnexpectedException) (it is not: the code after the try never runs); a static List put into a Map before later adds

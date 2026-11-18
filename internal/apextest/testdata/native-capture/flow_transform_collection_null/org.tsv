@@ -1,0 +1,7 @@
+api	route	case	result
+62.0	anonymous	collection_null_update	{"titleAfter":null,"populatedNull":true,"size":1}
+62.0	metadata_deploy	DuplicateNullFirst	rejected: field integrity exception: unknown (The flow metadata specifies the “Title” outputFieldApiName, which isn’t available on the “Contact” flow resource. )
+62.0	metadata_deploy	DuplicateNullLast	rejected: field integrity exception: unknown (The flow metadata specifies the “Title” outputFieldApiName, which isn’t available on the “Contact” flow resource. )
+67.0	anonymous	collection_null_update	{"titleAfter":null,"populatedNull":true,"size":1}
+67.0	metadata_deploy	DuplicateNullFirst	rejected: field integrity exception: unknown (The flow metadata specifies the “Title” outputFieldApiName, which isn’t available on the “Contact” flow resource. )
+67.0	metadata_deploy	DuplicateNullLast	rejected: field integrity exception: unknown (The flow metadata specifies the “Title” outputFieldApiName, which isn’t available on the “Contact” flow resource. )

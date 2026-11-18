@@ -1,0 +1,5 @@
+id	api	route	phase	variant	source
+INTEGRATION-DEPLOY-68	68.0	deploy	case	v68	-
+INTEGRATION-DEPLOY-67	67.0	deploy	case	v67	-
+INTEGRATION-RUN-68	68.0	testasync	case	v68	CapIntegration68
+INTEGRATION-RUN-67	67.0	testasync	case	v67	CapIntegration67

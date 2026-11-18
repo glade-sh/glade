@@ -788,7 +788,9 @@ func (vm *VM) localHTTPMockResponse(mock Value, request Value) (Value, error) {
 		}
 		resources, ok := mock.Fields["staticResources"]
 		if !ok || resources.Kind != ValueMap {
-			return Null, fmt.Errorf("MultiStaticResourceCalloutMock has no static resource for endpoint %s", endpoint.Text)
+			// Native callout-mocks cm03 (62.0 and 67.0): an unmapped endpoint
+			// throws a catchable NullPointerException.
+			return Null, newExceptionError("System.NullPointerException", "Static Resource not found: <null>")
 		}
 		resource, ok := resources.Map[mapKey(endpoint)]
 		if !ok {
@@ -797,7 +799,9 @@ func (vm *VM) localHTTPMockResponse(mock Value, request Value) (Value, error) {
 			}
 		}
 		if !ok || resource.Kind != ValueString || strings.TrimSpace(resource.Text) == "" {
-			return Null, fmt.Errorf("MultiStaticResourceCalloutMock has no static resource for endpoint %s", endpoint.Text)
+			// Native callout-mocks cm03 (62.0 and 67.0): an unmapped endpoint
+			// throws a catchable NullPointerException.
+			return Null, newExceptionError("System.NullPointerException", "Static Resource not found: <null>")
 		}
 		return vm.staticResourceMockResponse(mock, resource.Text), nil
 	default:
@@ -1483,6 +1487,10 @@ func (vm *VM) staticResourceMockResponse(mock Value, resourceName string) Value 
 	}
 	if status, ok := mock.Fields["status"]; ok {
 		response.Fields["status"] = status
+	} else if code, hasCode := mock.Fields["statusCode"]; (!hasCode || (code.Kind == ValueInt && code.Int == 200)) && mock.Type == "StaticResourceCalloutMock" {
+		// Native callout-mocks cm06 (62.0 and 67.0): an unconfigured
+		// StaticResourceCalloutMock answers 200 with status "OK".
+		response.Fields["status"] = String("OK")
 	}
 	if headers, ok := mock.Fields["headers"]; ok {
 		response.Fields["headers"] = headers
@@ -1541,12 +1549,16 @@ func (vm *VM) lookupLabel(name string) (Value, bool) {
 	}
 	if vm.Org != nil {
 		registry := labelRegistryForNamespace(vm.Org.Metadata, namespace)
+		registry, master, affected := localLabelTranslationScope(registry, vm.Org.Namespace, namespace, label)
 		if language := strings.TrimSpace(vm.currentUserInfoField("LanguageLocaleKey", "")); language != "" {
 			filtered := registry
 			filtered.Labels = labelsForLanguage(filtered.Labels, language)
 			if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 				return String(value), true
 			}
+		}
+		if affected {
+			return String(master), true
 		}
 		if value, status := resource.ResolveLabel(registry, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 			return String(value), true

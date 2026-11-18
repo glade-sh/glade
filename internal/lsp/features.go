@@ -73,7 +73,7 @@ func encodeSemanticTokens(tokens []semanticToken) []int {
 	return data
 }
 
-func (h *Handler) definitionForName(name string) (Location, bool) {
+func (h *requestHandler) definitionForName(name string) (Location, bool) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return Location{}, false
@@ -106,13 +106,13 @@ func (h *Handler) definitionForName(name string) (Location, bool) {
 	return Location{}, false
 }
 
-func (h *Handler) referenceLocations(name string) []Location {
+func (h *requestHandler) referenceLocations(name string) []Location {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil
 	}
 	var locations []Location
-	for _, file := range h.sourceFiles() {
+	for _, file := range h.referenceCandidates(name) {
 		text, ok := h.documentText(file)
 		if !ok {
 			continue
@@ -133,7 +133,7 @@ func (h *Handler) referenceLocations(name string) []Location {
 	return locations
 }
 
-func (h *Handler) sourceFiles() []string {
+func (h *requestHandler) sourceFiles() []string {
 	seen := make(map[string]bool)
 	var files []string
 	add := func(file string) {
@@ -149,19 +149,23 @@ func (h *Handler) sourceFiles() []string {
 	for _, trigger := range h.index.Triggers {
 		add(trigger.File)
 	}
+	h.docMu.RLock()
 	for _, doc := range h.documents {
 		add(doc.Path)
 	}
+	h.docMu.RUnlock()
 	sort.Strings(files)
 	return files
 }
 
 func (h *Handler) documentText(path string) (string, bool) {
-	for _, doc := range h.documents {
-		if sameDocument(doc.Path, path) {
-			return doc.Text, true
-		}
+	h.docMu.RLock()
+	if uri, ok := h.documentPaths[canonicalDocumentPath(path)]; ok {
+		text := h.documents[uri].Text
+		h.docMu.RUnlock()
+		return text, true
 	}
+	h.docMu.RUnlock()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", false
@@ -169,7 +173,7 @@ func (h *Handler) documentText(path string) (string, bool) {
 	return string(data), true
 }
 
-func (h *Handler) wordAt(uri DocumentURI, position Position) string {
+func (h *requestHandler) wordAt(uri DocumentURI, position Position) string {
 	text, ok := h.documentText(pathFromURI(uri))
 	if !ok {
 		return h.symbolNameAt(uri, position)
@@ -185,7 +189,7 @@ func (h *Handler) wordAt(uri DocumentURI, position Position) string {
 	return text[start:end]
 }
 
-func (h *Handler) wordRangeAt(uri DocumentURI, position Position) (Range, bool) {
+func (h *requestHandler) wordRangeAt(uri DocumentURI, position Position) (Range, bool) {
 	text, ok := h.documentText(pathFromURI(uri))
 	if !ok {
 		name := h.symbolNameAt(uri, position)
@@ -208,7 +212,7 @@ func (h *Handler) wordRangeAt(uri DocumentURI, position Position) (Range, bool) 
 	return rangeForOffsets(text, start, end), true
 }
 
-func (h *Handler) symbolNameAt(uri DocumentURI, position Position) string {
+func (h *requestHandler) symbolNameAt(uri DocumentURI, position Position) string {
 	path := pathFromURI(uri)
 	for _, typ := range h.index.Types {
 		if !sameDocument(path, typ.File) && !sameDocument(string(uri), typ.File) {
@@ -235,6 +239,7 @@ func wordRanges(text, word string) []Range {
 	var ranges []Range
 	lowerText := strings.ToLower(text)
 	lowerWord := strings.ToLower(word)
+	cursor := positionCursor{text: text}
 	for offset := 0; offset < len(text); {
 		next := strings.Index(lowerText[offset:], lowerWord)
 		if next < 0 {
@@ -243,7 +248,7 @@ func wordRanges(text, word string) []Range {
 		start := offset + next
 		end := start + len(lowerWord)
 		if isIdentifierBoundary(text, start-1) && isIdentifierBoundary(text, end) {
-			ranges = append(ranges, rangeForOffsets(text, start, end))
+			ranges = append(ranges, Range{Start: cursor.positionAt(start), End: cursor.positionAt(end)})
 		}
 		offset = end
 	}
@@ -281,6 +286,55 @@ func isIdentifierByte(b byte) bool {
 
 func rangeForOffsets(text string, start, end int) Range {
 	return Range{Start: positionForOffset(text, start), End: positionForOffset(text, end)}
+}
+
+// positionCursor converts ascending byte offsets of one text to positions in a
+// single pass. positionAt gives the same answer as positionForOffset; an offset
+// before the previous one restarts from the beginning.
+type positionCursor struct {
+	text      string
+	offset    int
+	line      int
+	character int
+	// lastStart is where the last consumed character began, or -1.
+	lastStart int
+	started   bool
+}
+
+func (c *positionCursor) positionAt(target int) Position {
+	if c.started && target <= c.lastStart {
+		*c = positionCursor{text: c.text}
+	}
+	c.started = true
+	text := c.text
+	offset, line, character := c.offset, c.line, c.character
+	lastStart := c.lastStart
+	if offset == 0 {
+		lastStart = -1
+	}
+	for offset < len(text) && offset < target {
+		lastStart = offset
+		b := text[offset]
+		if b < utf8.RuneSelf && b != '\r' && b != '\n' {
+			character++
+			offset++
+			continue
+		}
+		r, size := utf8.DecodeRuneInString(text[offset:])
+		if r == '\r' || r == '\n' {
+			line++
+			character = 0
+			offset += size
+			if r == '\r' && offset < len(text) && text[offset] == '\n' {
+				offset++
+			}
+			continue
+		}
+		character += utf16Len(string(r))
+		offset += size
+	}
+	c.offset, c.line, c.character, c.lastStart = offset, line, character, lastStart
+	return Position{Line: line, Character: character}
 }
 
 func positionForOffset(text string, target int) Position {

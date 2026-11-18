@@ -128,7 +128,7 @@ func (e *Engine) setPermissionSetGroupStatus(id storage.ID, status string) {
 		record.Fields = make(map[string]storage.Value)
 	}
 	record.Fields["Status"] = storage.StringValue(status)
-	object.Records[storedID] = record
+	object.PutRecord(storedID, record)
 	e.Org.Objects["PermissionSetGroup"] = object
 }
 

@@ -1,0 +1,8 @@
+id	api	route	compiled	success	outcome
+SHARE-DEPLOY-68	68.0	deploy	true	true	deployed
+SHARE-DEPLOY-67	67.0	deploy	true	true	deployed
+SHARE-SETTING-OFF	68.0	deploy	true	true	deployed
+SHARE-REASON-DEPLOY	68.0	deploy	false	false	SharingReason Account.Capture: 'Capture' does not resolve to a valid sObject type, fullName must end with: __as, __b, __c, __e, __kav, __mdt, __x
+SHARE-OFF-68	68.0	test	true	true	CUSTOM_ERR=System.DmlException: Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Row Cause: bad value for restricted picklist field: Capture__c: [RowCause];MANUAL_SHARES=0;MODE=USER_MODE;COUNT=38;OWN=00DREDACTED;MODE=SYSTEM_MODE;COUNT=38;OWN=00DREDACTED [LIMITS soql=1/100,dml=4/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50,soql=3/100,dml=5/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50,soql=3/100,dml=1/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+SHARE-OFF-67	67.0	test	true	true	CUSTOM_ERR=System.DmlException: Insert failed. First exception on row 0; first error: INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST, Row Cause: bad value for restricted picklist field: Capture__c: [RowCause];MANUAL_SHARES=0;MODE=USER_MODE;COUNT=38;OWN=00DREDACTED;MODE=SYSTEM_MODE;COUNT=38;OWN=00DREDACTED [LIMITS soql=1/100,dml=4/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50,soql=3/100,dml=5/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50,soql=3/100,dml=1/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+SHARE-SETTING-ON	68.0	deploy	true	true	deployed

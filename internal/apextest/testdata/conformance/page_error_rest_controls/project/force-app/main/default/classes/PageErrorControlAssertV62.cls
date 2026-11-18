@@ -1,0 +1,1 @@
+@RestResource(urlMapping='/page-control-assert-62/*') global with sharing class PageErrorControlAssertV62 { @HttpGet global static String get() { System.assert(false,'synthetic failure'); return 'unreachable'; } }

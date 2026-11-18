@@ -11,6 +11,7 @@ import (
 )
 
 func TestBuildManifestTracksDisjointDependencyPackageViews(t *testing.T) {
+	t.Setenv(project.SiblingDependencyScanEnvVar, "1")
 	workspace := t.TempDir()
 	root := filepath.Join(workspace, "application")
 	supplier := filepath.Join(workspace, "supplier")

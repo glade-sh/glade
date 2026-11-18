@@ -1,0 +1,13 @@
+api	case	route	exists	value
+67.0	Figure	IsTest	true	"\u2007"
+67.0	Narrow	IsTest	true	"\u202f"
+67.0	Nbsp	IsTest	true	"\u00a0"
+67.0	Nel	IsTest	true	"\u0085"
+67.0	PaddedNbsp	IsTest	true	" \u00a0 "
+67.0	PaddedText	IsTest	true	" text "
+62.0	Figure	IsTest	true	"\u2007"
+62.0	Narrow	IsTest	true	"\u202f"
+62.0	Nbsp	IsTest	true	"\u00a0"
+62.0	Nel	IsTest	true	"\u0085"
+62.0	PaddedNbsp	IsTest	true	" \u00a0 "
+62.0	PaddedText	IsTest	true	" text "

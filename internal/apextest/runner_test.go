@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -1807,8 +1808,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v33" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v33", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v44" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v44", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -3321,8 +3322,10 @@ private class ParallelJournalTest {
 		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
 	}
 	stats := SnapshotPerfCounters()
-	if stats.CloneRuntimeOrgCalls != 2 {
-		t.Fatalf("cloneRuntimeOrg calls = %d, want one journal org per worker", stats.CloneRuntimeOrgCalls)
+	// Workers are capped at GOMAXPROCS, and the pool clones a journal org only
+	// when a worker starts, so a fast first worker may run every method alone.
+	if limit := uint64(min(2, runtime.GOMAXPROCS(0))); stats.CloneRuntimeOrgCalls < 1 || stats.CloneRuntimeOrgCalls > limit {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want 1..%d (at most one journal org per worker)", stats.CloneRuntimeOrgCalls, limit)
 	}
 	if stats.CloneFallbacks != 0 {
 		t.Fatalf("clone fallbacks = %d, want worker journal path", stats.CloneFallbacks)
@@ -7995,6 +7998,8 @@ private class SetupRandomTest {
 }
 
 func TestRunUpsertUsesNamespacedExternalIDFromSiblingDependency(t *testing.T) {
+	// The dependency lives in a sibling directory of the consumer; it loads only with the sibling scan.
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	root := t.TempDir()
 	workspaceRoot := filepath.Join(root, "workspace")
 	depRoot := filepath.Join(workspaceRoot, "dep-package")
@@ -11867,7 +11872,7 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	org := orgFromIndex(loadTestIndex(t, root))
 	profiles := org.Objects["Profile"].Records
 	foundProfile := false
-	foundGuestProfile := false
+	foundSeededProfile := false
 	foundCustomerCommunityProfile := false
 	foundCommunityLoginProfile := false
 	communityLicenseID, ok := recordFieldID(org.Objects["UserLicense"], "LicenseDefinitionKey", "PID_Customer_Community_Login")
@@ -11879,8 +11884,8 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 		if record.Fields["Name"].String == "Managed App Standard" {
 			foundProfile = true
 		}
-		if record.Fields["Name"].String == "Customer Community Guest User" {
-			foundGuestProfile = true
+		if record.Fields["Name"].String == "Chatter External User" {
+			foundSeededProfile = true
 		}
 		if record.Fields["Name"].String == "Customer Community User" {
 			foundCustomerCommunityProfile = true
@@ -11896,8 +11901,8 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	if !foundProfile {
 		t.Fatalf("project profile row was not created; records=%#v", profiles)
 	}
-	if !foundGuestProfile {
-		t.Fatalf("guest profile row was overwritten; records=%#v", profiles)
+	if !foundSeededProfile {
+		t.Fatalf("seeded profile row was overwritten; records=%#v", profiles)
 	}
 	if !foundCustomerCommunityProfile {
 		t.Fatalf("customer community profile row was not created; records=%#v", profiles)

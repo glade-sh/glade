@@ -166,10 +166,33 @@ func generatedPlatformSurfaceUnavailable(id, owner, member, version string) bool
 	if id == "apex:system.crypto.encryptwithmanagediv(string,blob,blob,blob)" {
 		return !semaVersionAllows(version, apexversion.Range{Since: 62})
 	}
+	// apex_release_gates/compile.tsv and org.tsv compile and run these calls at
+	// source APIs 62 through 67, ahead of the release-note introduction dates.
+	switch id {
+	case "apex:system.eventbus.publishwithaccesslevel(list<sobject>,accesslevel)",
+		"apex:system.eventbus.publishwithaccesslevel(sobject,accesslevel)",
+		"apex:system.system.purgeoldasyncjobs(date,integer)",
+		"apex:invocable.action.createcustomaction(string,string,string,string)",
+		"apex:invocable.action.getversion()",
+		"apex:invocable.action.getdescribe()",
+		"apex:system.system.pausejobbyid(string)",
+		"apex:system.system.pausejobbyname(string)",
+		"apex:system.system.resumejobbyid(string)",
+		"apex:system.system.resumejobbyname(string)":
+		return !semaVersionAllows(version, apexversion.Range{Since: 62})
+	}
 	// A29 R040-R042 supersede the generated introduction date for these
 	// counter getters, independently of the cursor construction surface.
 	if owner == "system.limits" && (member == "getapexcursors" || member == "getlimitapexcursors") {
 		return !semaVersionAllows(version, apexversion.Range{Since: 62})
+	}
+	// apextest api68_native limits LIMITS-DEPLOY-62/LIMITS-CURSOR-62 compile
+	// and run the pagination cursor counters at API 62.0.
+	switch member {
+	case "getapexpaginationcursors", "getlimitapexpaginationcursors", "getapexpaginationcursorrows", "getlimitapexpaginationcursorrows":
+		if owner == "system.limits" {
+			return !semaVersionAllows(version, apexversion.Range{Since: 62})
+		}
 	}
 	if member == "" {
 		// C032/N003: the native source type is already accepted at the API floor.

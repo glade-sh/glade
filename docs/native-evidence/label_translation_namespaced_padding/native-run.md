@@ -1,0 +1,4 @@
+Namespaced package development org; capture date 2026-11-09.
+Each uniquely owned synthetic label had a French master value. Tooling REST JSON insertion attempted English localizations with leading and trailing ASCII spaces around text and around U+00A0. Salesforce accepted both and its Tooling query returned values without the ASCII padding, as recorded in org.tsv. Anonymous Apex used the package namespace and an empty namespace at API 62.0 and 67.0. Result values are UTF-8 hex followed by translationExists. No global org settings were changed. All created synthetic records were deleted and their absence verified. Empty Translation metadata was not deployed: the language-wide component could include unrelated shared metadata and safe isolation was not established.
+
+The source fixture substitutes a neutral namespace for the package org namespace; observed result rows are unchanged.

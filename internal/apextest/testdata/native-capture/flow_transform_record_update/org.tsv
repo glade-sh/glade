@@ -1,0 +1,5 @@
+api	route	case	result
+62.0	isTest	map_and_null	pass
+67.0	isTest	map_and_null	pass
+62.0	anonymous	null_update	{"titleAfter":null,"populatedNull":true}
+67.0	anonymous	null_update	{"titleAfter":null,"populatedNull":true}

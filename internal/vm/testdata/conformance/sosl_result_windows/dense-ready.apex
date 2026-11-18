@@ -1,0 +1,3 @@
+String value='';List<List<SObject>> a=Search.query('FIND {Opalwindow} RETURNING Account(Id,Name ORDER BY Name)');value+='['+a[0].size()+']';
+List<List<SObject>> c=Search.query('FIND {Opalwindow} RETURNING Contact(Id,LastName ORDER BY LastName)');value+='['+c[0].size()+']';
+List<List<SObject>> l=Search.query('FIND {Opalwindow} RETURNING Lead(Id,LastName ORDER BY LastName)');value+='['+l[0].size()+']';System.debug('READY|'+value+'|END');

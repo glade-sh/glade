@@ -1,0 +1,25 @@
+@IsTest private class ProbeLabelUnicode62 { @IsTest static void observe() { Map<String,Object> data=new Map<String,Object>();
+data.put('9',System.Label.translationExists('', 'ProbeW00009', 'fr'));
+data.put('10',System.Label.translationExists('', 'ProbeW00010', 'fr'));
+data.put('13',System.Label.translationExists('', 'ProbeW00013', 'fr'));
+data.put('32',System.Label.translationExists('', 'ProbeW00032', 'fr'));
+data.put('133',System.Label.translationExists('', 'ProbeW00133', 'fr'));
+data.put('160',System.Label.translationExists('', 'ProbeW00160', 'fr'));
+data.put('5760',System.Label.translationExists('', 'ProbeW05760', 'fr'));
+data.put('8192',System.Label.translationExists('', 'ProbeW08192', 'fr'));
+data.put('8193',System.Label.translationExists('', 'ProbeW08193', 'fr'));
+data.put('8194',System.Label.translationExists('', 'ProbeW08194', 'fr'));
+data.put('8195',System.Label.translationExists('', 'ProbeW08195', 'fr'));
+data.put('8196',System.Label.translationExists('', 'ProbeW08196', 'fr'));
+data.put('8197',System.Label.translationExists('', 'ProbeW08197', 'fr'));
+data.put('8198',System.Label.translationExists('', 'ProbeW08198', 'fr'));
+data.put('8199',System.Label.translationExists('', 'ProbeW08199', 'fr'));
+data.put('8200',System.Label.translationExists('', 'ProbeW08200', 'fr'));
+data.put('8201',System.Label.translationExists('', 'ProbeW08201', 'fr'));
+data.put('8202',System.Label.translationExists('', 'ProbeW08202', 'fr'));
+data.put('8232',System.Label.translationExists('', 'ProbeW08232', 'fr'));
+data.put('8233',System.Label.translationExists('', 'ProbeW08233', 'fr'));
+data.put('8239',System.Label.translationExists('', 'ProbeW08239', 'fr'));
+data.put('8287',System.Label.translationExists('', 'ProbeW08287', 'fr'));
+data.put('12288',System.Label.translationExists('', 'ProbeW12288', 'fr'));
+System.assert(false,'CAPTURE|'+JSON.serialize(data)); } }

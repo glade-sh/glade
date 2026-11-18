@@ -1,0 +1,5 @@
+API versions: 62.0 and 67.0. Route: executeAnonymous through the Tooling API against the hosted search index. Queries use Search.query. Fresh 30-day Developer scratch org, synthetic data, deleted after capture and verified gone.
+Population: 321 records each of Account (Name), Contact (LastName), Lead (LastName), Opportunity (Name), Case (Subject), Campaign (Name), Product2 (Name), Solution (SolutionName), Asset (Name) and Task (Subject). Every text is 'Quartzwindow NNN', NNN 000-320. Each object was seeded in its own committed transaction.
+Readiness: the ordered single-object control for each of the ten objects returned 321 in two consecutive independent transactions at each API before collection.
+Every query ran twice per API in independent transactions. All 78 queries gave the same cell in all four columns.
+Cells: one bucket per RETURNING group. [count] for unordered groups, [count:first:last] for ordered groups, [count:label,label] when the total LIMIT is at most 11. The ordered endpoints are those the index returned and are not always the lowest labels; the test asserts counts only.

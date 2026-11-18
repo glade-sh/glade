@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestLoadManifestFromFile(t *testing.T) {
@@ -152,8 +154,10 @@ wait "$child"
 	if err := <-errCh; !errors.Is(err, context.Canceled) {
 		t.Fatalf("error = %v, want context canceled", err)
 	}
-	if elapsed := time.Since(started); elapsed >= time.Second {
-		t.Fatalf("cancellation cleanup took %s, want <1s", elapsed)
+	if elapsed := time.Since(started); elapsed >= testutil.Deadline(5*time.Second) {
+		// The descendant sleeps 30s; any bound far below that proves the
+		// cleanup did not wait for it. The slack absorbs loaded runners.
+		t.Fatalf("cancellation cleanup took %s, want <%s", elapsed, testutil.Deadline(5*time.Second))
 	}
 
 	waitForProcessAbsent(t, pid, time.Second)
@@ -251,6 +255,7 @@ func readRecordedPID(t *testing.T, path string) int {
 
 func waitForProcessAbsent(t *testing.T, pid int, timeout time.Duration) {
 	t.Helper()
+	timeout = testutil.Deadline(timeout)
 	deadline := time.Now().Add(timeout)
 	for {
 		err := exec.Command("kill", "-0", strconv.Itoa(pid)).Run()

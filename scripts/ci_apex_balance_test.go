@@ -46,6 +46,7 @@ func assertApexProjectHistoryRebalances(t *testing.T, planner, output string, di
 		}
 	}
 	t.Setenv("GITHUB_EVENT_NAME", "push")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	// The same skew under a history-driven plan is a planner failure.
 	setPlanHistoryUsed(t, dirs, true)
 	if out, err := runNShardHistory(t, "cli", output, dirs); err == nil || !strings.Contains(out, "exceeds 1.5x") {
@@ -58,6 +59,7 @@ func assertApexProjectHistoryRebalances(t *testing.T, planner, output string, di
 		t.Fatalf("main must retain measured fallback-planned project durations: %v\n%s", err, out)
 	}
 	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	if out, err := runNShardHistory(t, "cli", output, dirs); err != nil || !strings.Contains(out, "timing advisory:") {
 		t.Fatalf("PR must retain measured project durations: %v\n%s", err, out)
 	}
@@ -92,15 +94,23 @@ func assertApexProjectHistoryRebalances(t *testing.T, planner, output string, di
 	}
 }
 
+// nShardHistoryFixture gives every shard balanceFixtureTests equal tests, so no
+// test is large enough to trigger the one-dominant-test tolerance.
+const balanceFixtureTests = 20
+
 func nShardHistoryFixture(t *testing.T, elapsed []float64) (string, []string) {
 	t.Helper()
 	root := t.TempDir()
-	names := make([]string, len(elapsed))
+	var all []string
+	names := make([][]string, len(elapsed))
 	shards := make([]map[string]any, len(elapsed))
 	for i := range names {
-		names[i] = fmt.Sprintf("TestBalance%02d", i)
-		shards[i] = map[string]any{"index": i, "tests": []string{names[i]},
-			"estimatedDurationMillis": 0, "regex": "^(?:" + names[i] + ")$"}
+		for j := 0; j < balanceFixtureTests; j++ {
+			names[i] = append(names[i], fmt.Sprintf("TestBalance%02dx%02d", i, j))
+		}
+		all = append(all, names[i]...)
+		shards[i] = map[string]any{"index": i, "tests": names[i],
+			"estimatedDurationMillis": 0, "regex": "^(?:" + strings.Join(names[i], "|") + ")$"}
 	}
 	plan := map[string]any{"version": 1, "package": fixturePackage, "historyUsed": false, "shards": shards}
 	dirs := make([]string, len(elapsed))
@@ -112,12 +122,16 @@ func nShardHistoryFixture(t *testing.T, elapsed []float64) (string, []string) {
 		writeJSONFixture(t, filepath.Join(dirs[i], "plan.json"), plan)
 		writeJSONFixture(t, filepath.Join(dirs[i], "selected-shard.json"), shards[i])
 		writeJSONFixture(t, filepath.Join(dirs[i], "validation-summary.json"), map[string]any{
-			"valid": true, "expected": []string{names[i]}, "passed": []string{names[i]}, "errors": []string{},
+			"valid": true, "expected": names[i], "passed": names[i], "errors": []string{},
 		})
+		var events strings.Builder
+		for _, name := range names[i] {
+			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%g}\n",
+				fixturePackage, name, elapsed[i]/balanceFixtureTests)
+		}
 		for file, data := range map[string]string{
-			"discovery.txt": strings.Join(names, "\n") + "\n",
-			"events.json": fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%g}\n",
-				fixturePackage, names[i], elapsed[i]),
+			"discovery.txt": strings.Join(all, "\n") + "\n",
+			"events.json":   events.String(),
 		} {
 			if err := os.WriteFile(filepath.Join(dirs[i], file), []byte(data), 0600); err != nil {
 				t.Fatal(err)
@@ -158,6 +172,7 @@ func TestCIApexNShardBalanceTimingRoutes(t *testing.T) {
 							timing = "above"
 						}
 						t.Setenv("GITHUB_EVENT_NAME", event)
+						t.Setenv("GITHUB_HEAD_REF", "")
 						elapsed := make([]float64, count)
 						for i := range elapsed {
 							if timing != "zero" {
@@ -170,7 +185,11 @@ func TestCIApexNShardBalanceTimingRoutes(t *testing.T) {
 								elapsed[0] = 3 // Median is the mean for two shards.
 							}
 							if timing == "above" {
-								elapsed[0] += 0.001
+								// Above the ratio by more than the shard's largest test.
+								elapsed[0] = 1.6
+								if count == 2 {
+									elapsed[0] = 4
+								}
 							}
 						}
 						output, dirs := nShardHistoryFixture(t, elapsed)
@@ -203,6 +222,7 @@ func TestCIApexNShardBalanceTimingRoutes(t *testing.T) {
 
 func TestCIApexSixShardBalanceAdvisoryPreservesUnionGuard(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "pull_request")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	for _, entry := range []string{"cli", "sourced"} {
 		for _, mutation := range []string{"missing", "duplicate", "extra"} {
 			t.Run(entry+"/"+mutation, func(t *testing.T) {
@@ -232,5 +252,38 @@ func TestCIApexSixShardBalanceAdvisoryPreservesUnionGuard(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+// The 1.5x balance check is advisory on ordinary pull requests and enforced
+// on train and release pull requests, on push and on every other event.
+func TestCIApexBalanceEnforcedOnTrainAndReleasePullRequests(t *testing.T) {
+	cases := []struct {
+		name, event, headRef string
+		wantErr              bool
+	}{
+		{"push", "push", "", true},
+		{"push with stray head ref", "push", "feature/x", true},
+		{"ordinary PR", "pull_request", "feature/balance", false},
+		{"PR without head ref", "pull_request", "", false},
+		{"train PR", "pull_request", "train/v038-e", true},
+		{"release PR", "pull_request", "release/v0.3.8", true},
+		{"look-alike prefix", "pull_request", "trains/x", false},
+		{"look-alike nested", "pull_request", "feature/train/x", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("GITHUB_EVENT_NAME", tc.event)
+			t.Setenv("GITHUB_HEAD_REF", tc.headRef)
+			output, dirs := nShardHistoryFixture(t, []float64{3, 1, 1, 1})
+			setPlanHistoryUsed(t, dirs, true)
+			out, err := runNShardHistory(t, "generic", output, dirs)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("refresh error = %v, wantErr %v\n%s", err, tc.wantErr, out)
+			}
+			if strings.Contains(out, "timing advisory:") == tc.wantErr {
+				t.Fatalf("incorrect timing advisory\n%s", out)
+			}
+		})
 	}
 }

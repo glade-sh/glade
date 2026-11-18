@@ -15,14 +15,15 @@ import (
 const regexp2MatchTimeout = 2 * time.Second
 
 func compileRegexp2Pattern(callee, source string) (string, *regexp2.Regexp, error) {
-	return compileRegexp2PatternWithException(callee, source, "PatternSyntaxException")
+	return compileRegexp2PatternWithException(callee, source, "StringException")
 }
 
 func compileRegexp2PatternWithException(callee, source, exceptionType string) (string, *regexp2.Regexp, error) {
-	if err := validateJavaRegexGroups(source, exceptionType); err != nil {
+	if err := validateJavaRegexSource(source, exceptionType); err != nil {
 		return "", nil, err
 	}
-	regexp2Source, err := compileRegexp2Source(callee, source)
+	effective := regexNormalizeExtended(source)
+	regexp2Source, err := compileRegexp2Source(callee, effective)
 	if err != nil {
 		return "", nil, err
 	}
@@ -36,26 +37,39 @@ func compileRegexp2PatternWithException(callee, source, exceptionType string) (s
 }
 
 func compileRegexp2Source(callee, source string) (string, error) {
-	converted, err := javaRegexQuoteEscapesToGo(source)
-	if err != nil {
-		return "", unsupportedCallError(callee + " " + err.Error())
+	return compileRegexp2SourceFor(callee, source, regexTraitsAll)
+}
+
+func compileRegexp2SourceFor(callee, source string, traits regexTraits) (string, error) {
+	translated, _, err := compileRegexp2SourceLoops(callee, source, traits)
+	return translated, err
+}
+
+// compileRegexp2SourceLoops also returns the private captures that count the
+// iterations of recursive loop groups when the subject text is long.
+func compileRegexp2SourceLoops(callee, source string, traits regexTraits) (string, []string, error) {
+	converted := javaRegexRemoveQuoting(source)
+	var loopNames []string
+	if traits.longText {
+		converted, loopNames = instrumentJavaLoopGroups(converted)
 	}
-	regexp2Source := converted
+	converted = normalizeJavaRegexEscapesForGo(converted)
+	regexp2Source := rewriteJavaStackedQuantifiersForRegexp2(rewriteJavaNumericEscapesForRegexp2(converted))
 	unicodeCharacterClass := false
 	regexp2Source, unicodeCharacterClass = rewriteInlineUnicodeCharacterClassFlagForRegexp2(regexp2Source, unicodeCharacterClass)
-	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source)
+	regexp2Source = rewriteJavaRegexFlagsForRegexp2(regexp2Source, traits, unicodeCharacterClass)
 	regexp2Source = rewriteJavaRegexEscapesForRegexp2(regexp2Source)
-	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source)
+	regexp2Source = rewriteJavaUnicodeClassesForRegexp2(regexp2Source, unicodeCharacterClass, regexSourceHasInlineFlag(source, 'i'))
 	regexp2Source = rewriteJavaShorthandClassesForRegexp2(regexp2Source, unicodeCharacterClass)
-	regexp2Source, err = rewriteJavaClassAlgebraForRegexp2(regexp2Source)
+	regexp2Source, err := rewriteJavaClassAlgebraForRegexp2(regexp2Source)
 	if err != nil {
-		return "", unsupportedCallError(callee + " " + err.Error())
+		return "", nil, unsupportedCallError(callee + " " + err.Error())
 	}
 	regexp2Source = rewriteSimplePossessiveQuantifiersForRegexp2(regexp2Source)
 	if feature := unsupportedRegexp2JavaRegexFeature(regexp2Source); feature != "" {
-		return "", unsupportedCallError(callee + " " + feature)
+		return "", nil, unsupportedCallError(callee + " " + feature)
 	}
-	return regexp2Source, nil
+	return regexp2Source, loopNames, nil
 }
 
 func unsupportedRegexp2JavaRegexFeature(source string) string {
@@ -219,11 +233,15 @@ func rewriteInlineUnicodeCharacterClassFlagForRegexp2(source string, enabled boo
 	return out.String(), enabled
 }
 
-func rewriteJavaUnicodeClassesForRegexp2(source string) string {
+func rewriteJavaUnicodeClassesForRegexp2(source string, unicodeCharacterClass, caseInsensitive bool) string {
 	var out strings.Builder
 	for i := 0; i < len(source); i++ {
 		if source[i] != '\\' || i+2 >= len(source) || (source[i+1] != 'p' && source[i+1] != 'P') || source[i+2] != '{' {
 			out.WriteByte(source[i])
+			if source[i] == '\\' && i+1 < len(source) {
+				i++
+				out.WriteByte(source[i])
+			}
 			continue
 		}
 		end := strings.IndexByte(source[i+3:], '}')
@@ -232,7 +250,7 @@ func rewriteJavaUnicodeClassesForRegexp2(source string) string {
 			continue
 		}
 		name := source[i+3 : i+3+end]
-		if rewritten, ok := javaUnicodeClassEscapeForRegexp2(name, source[i+1] == 'p'); ok {
+		if rewritten, ok := javaUnicodeClassEscapeForRegexp2(name, source[i+1] == 'p', unicodeCharacterClass, caseInsensitive); ok {
 			out.WriteString(rewritten)
 			i += 3 + end
 			continue
@@ -243,40 +261,29 @@ func rewriteJavaUnicodeClassesForRegexp2(source string) string {
 	return out.String()
 }
 
-func javaUnicodeClassEscapeForRegexp2(name string, positive bool) (string, bool) {
-	if strings.EqualFold(name, "javaWhitespace") {
-		if positive {
-			return `[\p{Zs}\t\n\x0B\f\r\x1C-\x1F]`, true
-		}
-		return `[^\p{Zs}\t\n\x0B\f\r\x1C-\x1F]`, true
-	}
-	if rewritten, ok := javaUnicodeClassForRegexp2(name); ok {
+func javaUnicodeClassEscapeForRegexp2(name string, positive bool, unicodeCharacterClass, caseInsensitive bool) (string, bool) {
+	if javaNativeCategoryNames[name] {
 		prefix := `\p`
 		if !positive {
 			prefix = `\P`
 		}
-		return prefix + "{" + rewritten + "}", true
+		return prefix + "{" + name + "}", true
 	}
-	return "", false
+	set, perr := javaPropertySet(name, unicodeCharacterClass, caseInsensitive)
+	if perr != nil {
+		return "", false
+	}
+	if !positive {
+		set = set.complement()
+	}
+	return runeSetClass(set), true
 }
 
-func javaUnicodeClassForRegexp2(name string) (string, bool) {
-	switch strings.ToLower(name) {
-	case "javalowercase":
-		return "Ll", true
-	case "javauppercase":
-		return "Lu", true
-	case "javadigit":
-		return "Nd", true
-	case "javaletter", "isalphabetic":
-		return "L", true
-	case "javacurrency":
-		return "Sc", true
-	}
-	if strings.HasPrefix(name, "Is") && len(name) > 2 {
-		return name[2:], true
-	}
-	return "", false
+var javaNativeCategoryNames = map[string]bool{
+	"L": true, "Lu": true, "Ll": true, "Lt": true, "Lm": true, "Lo": true, "M": true, "Mn": true, "Mc": true, "Me": true,
+	"N": true, "Nd": true, "Nl": true, "No": true, "P": true, "Pc": true, "Pd": true, "Ps": true, "Pe": true, "Pi": true,
+	"Pf": true, "Po": true, "S": true, "Sm": true, "Sc": true, "Sk": true, "So": true, "Z": true, "Zs": true, "Zl": true,
+	"Zp": true, "C": true, "Cc": true, "Cf": true, "Cs": true, "Co": true, "Cn": true,
 }
 
 func rewriteJavaShorthandClassesForRegexp2(source string, unicodeCharacterClass bool) string {
@@ -617,6 +624,17 @@ func regexp2MatchByteIndices(input string, match *regexp2.Match, runeOffset int)
 }
 
 func matcherRegexp2MatchIndices(matcher Value, input string, region matcherRegionBounds, op matcherOp) ([]int, bool, bool, error) {
+	indices, hitEnd, requiresEnd, err := matcherRegexp2MatchIndicesByString(matcher, input, region, op)
+	if err != nil {
+		return indices, hitEnd, requiresEnd, err
+	}
+	if loneIndices, loneHit, loneRequire, handled, loneErr := matcherLoneSurrogateIndices(matcher, input, region, op); handled && loneErr == nil {
+		return loneIndices, loneHit, loneRequire, nil
+	}
+	return indices, hitEnd, requiresEnd, nil
+}
+
+func matcherRegexp2MatchIndicesByString(matcher Value, input string, region matcherRegionBounds, op matcherOp) ([]int, bool, bool, error) {
 	text := input
 	runeOffset := 0
 	startAt := region.startByte
@@ -652,7 +670,50 @@ func matcherRegexp2MatchIndices(matcher Value, input string, region matcherRegio
 	return indices, hitEnd || requiresEnd, requiresEnd, err
 }
 
-func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegionBounds, startByte int) ([]int, bool, bool, error) {
+// matcherLoneSurrogateIndices decides matches() and lookingAt() over the whole
+// of a text that holds a lone surrogate by its code units, with the end state
+// read from the same view. handled is false for every other text, region or
+// plan, and the string path decides.
+func matcherLoneSurrogateIndices(matcher Value, input string, region matcherRegionBounds, op matcherOp) (indices []int, hitEnd, requiresEnd, handled bool, err error) {
+	if region.startByte != 0 || region.endByte != len(input) || !mayHoldLoneSurrogate(input) {
+		return nil, false, false, false, nil
+	}
+	plan, err := matcherRegexp2PlanForInput(matcher, input)
+	if err != nil {
+		return nil, false, false, false, err
+	}
+	match, offsets, runes, ok, err := plan.loneSurrogateMatch(input, op == matcherOpMatches)
+	if !ok || err != nil {
+		return nil, false, false, false, err
+	}
+	observed, err := plan.operationHitEndRunes(runes, true, op == matcherOpMatches)
+	if err != nil {
+		return nil, false, false, false, err
+	}
+	if match == nil || match.Index != 0 || (op == matcherOpMatches && match.Length != len(runes)) {
+		return nil, observed, false, true, nil
+	}
+	requiresEnd = plan.matchRequiresEndRunes(runes, match)
+	return plan.loneSurrogateIndices(match, offsets), observed || requiresEnd, requiresEnd, true, nil
+}
+
+// requireEndProbe returns what a failed find keeps so requireEnd can be
+// computed when it is read; nil when the pattern has no end-sensitive node.
+func (p *regexp2Plan) requireEndProbe(text string, start, endRune int) *requireEndProbe {
+	if len(p.endAssertionGroups) == 0 {
+		return nil
+	}
+	return &requireEndProbe{text: text, start: start, endRune: endRune}
+}
+
+// requireEndProbe is what a failed find keeps so requireEnd can be computed
+// when (and if) it is read.
+type requireEndProbe struct {
+	text           string
+	start, endRune int
+}
+
+func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegionBounds, startByte int) ([]int, bool, bool, *requireEndProbe, error) {
 	if !matcherUsesFullInputBounds(matcher) {
 		if startByte < region.startByte {
 			startByte = region.startByte
@@ -660,27 +721,30 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 		text := input[region.startByte:region.endByte]
 		plan, err := matcherRegexp2PlanForInput(matcher, text)
 		if err != nil {
-			return nil, false, false, err
+			return nil, false, false, nil, err
 		}
 		match, err := plan.findValidStartingAt(text, startByte-region.startByte)
 		if err != nil {
-			return nil, false, false, err
+			return nil, false, false, nil, err
 		}
 		hitEnd, err := plan.operationHitEnd(text, startByte-region.startByte, region.endRune-region.startRune, false, false)
-		if err != nil || match == nil {
-			return nil, hitEnd, false, err
+		if err != nil {
+			return nil, hitEnd, false, nil, err
+		}
+		if match == nil {
+			return nil, plan.failedFindHitEnd(hitEnd), false, plan.requireEndProbe(text, startByte-region.startByte, region.endRune-region.startRune), nil
 		}
 		indices, err := plan.matchByteIndices(input, match, region.startRune)
 		requiresEnd := plan.matchRequiresEnd(text, match)
-		return indices, hitEnd || requiresEnd, requiresEnd, err
+		return indices, hitEnd || requiresEnd, requiresEnd, nil, err
 	}
 	plan, err := matcherRegexp2PlanForInput(matcher, input)
 	if err != nil {
-		return nil, false, false, err
+		return nil, false, false, nil, err
 	}
 	hitEnd, err := plan.operationHitEnd(input, startByte, region.endRune, false, false)
 	if err != nil {
-		return nil, false, false, err
+		return nil, false, false, nil, err
 	}
 	match, err := plan.findValidStartingAt(input, startByte)
 	for match != nil && err == nil {
@@ -691,16 +755,19 @@ func matcherRegexp2FindIndices(matcher Value, input string, region matcherRegion
 			continue
 		}
 		if start > region.endRune {
-			return nil, hitEnd, false, nil
+			return nil, plan.failedFindHitEnd(hitEnd), false, plan.requireEndProbe(input, startByte, region.endRune), nil
 		}
 		if end <= region.endRune {
 			indices, err := plan.matchByteIndices(input, match, 0)
 			requiresEnd := plan.matchRequiresEnd(input, match)
-			return indices, hitEnd || requiresEnd, requiresEnd, err
+			return indices, hitEnd || requiresEnd, requiresEnd, nil, err
 		}
 		match, err = plan.findNextValid(input, match)
 	}
-	return nil, hitEnd, false, err
+	if err != nil {
+		return nil, hitEnd, false, nil, err
+	}
+	return nil, plan.failedFindHitEnd(hitEnd), false, plan.requireEndProbe(input, startByte, region.endRune), nil
 }
 
 func splitRegexRegexp2(name, pattern, text string, limit int64) ([]string, error) {

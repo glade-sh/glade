@@ -1,0 +1,23 @@
+Capture date 2026-11-10. Two fresh 30-day Developer scratch orgs on campaign Dev Hubs, one org per arm (c1, c2), each deleted after capture (the delete command returned success for both).
+
+Question: how does Salesforce convert the JSON arguments of an `@AuraEnabled` call into Apex parameters, for each parameter type, and does the conversion depend on the Apex class API, the caller component API or the route?
+
+Synthetic project: static single-parameter methods `tString`, `tInteger`, `tLong`, `tDecimal`, `tDouble`, `tBoolean`, `tDate`, `tDatetime`, `tId`, `tList<String>` (`tListString`), `tObject`, `tAccount` and `tSObject`, each returning the parameter type and the value the method received. Classes at Apex API 54.0, 62.0 and 67.0 (`Cv54`, `Cv62`, `Cv67`); `Cv67` also declares cacheable twins `w<Type>`. An Aura controller class at API 67.0 declares the same `t<Type>` methods. Lightning web components at API 59.0, 62.0 and 67.0 called every method through a Visualforce-hosted Lightning Out application, and Aura components at 59.0 and 67.0 called the controller methods. Each call used one of 35 argument shapes: missing, null, `'x'`, 42, 0, 1, 4.5, 3000000000, -7, true, false, the strings `'true'`, `'false'`, `'TRUE'`, `''`, `'42'`, `'4.5'`, a date string, three Datetime strings (UTC, no zone, numeric offset), an epoch number, 15- and 18-character Id strings (synthetic), `{}`, `{Name:'n'}`, `{sobjectType:'Account',Name:'n'}`, `{sobjectType:'Contact',LastName:'n'}`, `[]`, `['a','b']`, `[1,2]`, `[true]`, `['a',1]`, `['a',null]` and the string `'["a"]'`. Each component saved its results into synthetic records that were read through the API. The controls are the cells where the argument has the parameter's own type (accept) and the cells that fail with the standard parameter error (reject).
+
+Result: 6,370 rows per org (imperative 4,095, cacheable imperative 1,365, Aura 910). No cell varied across Apex API 54.0, 62.0 and 67.0, across component API 59.0, 62.0 and 67.0, or between the imperative, cacheable imperative and Aura routes. The two orgs agreed everywhere except:
+- 30 Aura rows in the second org (List<String> parameters) failed with `aura:systemError` for a whole batch of calls; the first org answered all of them. These are transport failures, not conversion answers, and Glade's test skips them.
+- String arguments for SObject parameters: the error text and the empty-string answer differ between the orgs (parser messages versus the parameter error; `''` gave null in one org and the parameter error in the other). For Account the answers agreed.
+
+Conversion observed (non-null argument; missing and null give a null parameter for every type except List<String>, where they give an empty list):
+- String: accepts strings, numbers (rendered as plain decimal text) and booleans; rejects arrays and objects.
+- Integer: accepts integral numbers within 32 bits and integer strings; rejects fractions, 3000000000, non-numeric strings, `''`, booleans, and `'001000000000000'` (out of range).
+- Long: integral numbers and integer strings (leading zeros allowed); rejects fractions and the rest.
+- Decimal and Double: numbers and numeric strings; reject `''`, `'x'`, booleans, dates.
+- Boolean: accepts booleans and every string (true only for a case-insensitive `true`); rejects numbers, arrays and objects.
+- Date: a `YYYY-MM-DD` string, or a UTC Datetime string (which keeps its time of day); rejects the rest. Datetime: a UTC Datetime string or a `YYYY-MM-DD` string (midnight); rejects no-zone and offset strings.
+- Id: 15- or 18-character Id strings (both give the 18-character form).
+- List<String>: an array (numbers and booleans become their text, null stays null); a string becomes a one-element list, or the parsed array when it is a JSON array; numbers, booleans and objects become an empty list.
+- Object: strings stay strings, numbers arrive as numbers that are `instanceof Double` and not `Integer` or `Long`, arrays are `List<Object>`, objects are not `Map<String,Object>`.
+- Account: an object (a `sobjectType` key is not a field), `''` gives null; other scalars are rejected. SObject: an object with `sobjectType` becomes that record type; an object without it fails with `Unable to read SObject`.
+
+Wire route: the components `ovWire59` and `ovWire67` declared `@wire` adapters for ten arguments on every type. In Lightning Out every adapter, including the controls whose argument has the parameter's own type, failed with `aura:systemError`, so those rows are not native answers and are not in org.tsv. The cacheable imperative rows cover the same actions.

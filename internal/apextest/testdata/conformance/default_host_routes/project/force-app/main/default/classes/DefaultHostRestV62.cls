@@ -1,0 +1,1 @@
+@RestResource(urlMapping='/default-host-62/*') global with sharing class DefaultHostRestV62 { @HttpGet global static String get() { return DefaultHostV62.observe(); } }

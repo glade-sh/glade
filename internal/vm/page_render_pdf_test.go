@@ -37,17 +37,42 @@ System.assert(body.toString().contains('Invoice Total'));
 
 func TestPageReferenceGetContentSurfacesVisualforceRenderFailureAsExecutionException(t *testing.T) {
 	root := makePageReferenceContentProject(t, `<apex:page><h1>Invoice Total</h1></apex:page>`)
+	writePageRenderTestFile(t, filepath.Join(root, "force-app/main/default/pages/Broken.page"), `<apex:page><apex:outputText value="{!1/0}"/></apex:page>`)
 	machine := compileContentProject(t, root)
 	visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
 
 	program, err := vm.CompileAnonymous(`
 Boolean caught = false;
 try {
-    new PageReference('/apex/Missing').getContent();
+    new PageReference('/apex/Broken').getContent();
 } catch (ExecutionException e) {
     caught = true;
 }
 System.assertEquals(true, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// missing_page_content/org.tsv:4 and :7 (MissingGamma, API 62.0 and 67.0)
+// capture a catchable System.VisualforceException for a missing page.
+func TestPageReferenceGetContentMissingPageIsCatchableVisualforceException(t *testing.T) {
+	root := makePageReferenceContentProject(t, `<apex:page><h1>Invoice Total</h1></apex:page>`)
+	machine := compileContentProject(t, root)
+	visualforce.SetVMRenderEnvironment(machine, mustLoadProject(t, root))
+
+	program, err := vm.CompileAnonymous(`
+String kind = '';
+try {
+    new PageReference('/apex/Missing').getContent();
+} catch (VisualforceException e) {
+    kind = e.getMessage();
+}
+System.assertEquals('Page Missing does not exist', kind);
 `)
 	if err != nil {
 		t.Fatal(err)

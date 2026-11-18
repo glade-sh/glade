@@ -1200,6 +1200,8 @@ func TestDescribeChildRelationshipCacheReturnsIsolatedValues(t *testing.T) {
 	if len(first) != 1 {
 		t.Fatalf("child relationships = %d, want 1", len(first))
 	}
+	// Cached values are shared until a write; a write privatizes first, as assignPath does.
+	machine.privatizeSharedDescribeToken(&first[0])
 	first[0].Fields["childSObject"] = sObjectTypeToken("Wrong__c")
 
 	second := machine.describeChildRelationships("Parent__c")
@@ -1804,7 +1806,8 @@ func TestExecMapConstructorAcceptsDynamicQueryResultRecords(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account acme = new Account(Name = 'Acme');
 insert acme;
-Map<Id, Account> byId = new Map<Id, Account>(Database.query('SELECT Id, Name FROM Account WHERE Id = :acme.Id'));
+Id acmeId = acme.Id;
+Map<Id, Account> byId = new Map<Id, Account>(Database.query('SELECT Id, Name FROM Account WHERE Id = :acmeId'));
 System.assertEquals('Acme', byId.get(acme.Id).Name);
 `)
 	if err != nil {
@@ -6221,7 +6224,8 @@ func TestExecDescribeFieldResultStubBackedAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult describe = Account.SObjectType.getDescribe().fields.getMap().get('Defaulted__c').getDescribe();
 System.assertEquals('Defaulted__c', describe.getLocalName());
-System.assertEquals('Fallback', describe.getDefaultValue());
+// Native metadata default matrix: describe_default_value/org.tsv:8-9.
+System.assertEquals(null, describe.getDefaultValue());
 System.assertEquals('\'Fallback\'', describe.getDefaultValueFormula());
 System.assertEquals(true, describe.isDefaultedOnCreate());
 System.assertEquals(true, describe.isFilterable());
@@ -6235,7 +6239,7 @@ System.assertEquals(false, describe.isDeprecatedAndHidden());
 	machine := New(nil)
 	org := testDataOrg()
 	account := org.Objects["Account"]
-	account.Definition.Fields["Defaulted__c"] = storage.Field{APIName: "Defaulted__c", Type: storage.FieldString, DefaultValue: "'Fallback'"}
+	account.Definition.Fields["Defaulted__c"] = storage.Field{APIName: "Defaulted__c", Type: storage.FieldString, DefaultValue: "'Fallback'", DefaultValueFromMetadata: true}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -10437,7 +10441,8 @@ System.runAs(u) {
 	);
 	System.assert(result.isSuccess());
 
-	List<Account> queried = Database.query('SELECT Id, Phone FROM Account WHERE Id = :created.Id WITH USER_MODE');
+	Id createdId = created.Id;
+	List<Account> queried = Database.query('SELECT Id, Phone FROM Account WHERE Id = :createdId WITH USER_MODE');
 	System.assertEquals(1, queried.size());
 	System.assertEquals('415-555-0100', queried[0].Phone);
 
@@ -12063,10 +12068,11 @@ func TestExecDescribeFieldSetsFromMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object accountDescribe = Account.SObjectType.getDescribe();
 Map<String,Object> fieldSets = accountDescribe.fieldSets.getMap();
-System.assert(fieldSets.containsKey('Summary'));
+System.assertEquals(false, fieldSets.containsKey('Summary'));
 System.assert(fieldSets.containsKey('pkg__Summary'));
-System.assertEquals(fieldSets.get('Summary'), fieldSets.get('pkg__Summary'));
-Object summary = fieldSets.get('Summary');
+System.assertEquals(null, fieldSets.get('Summary'));
+Object summary = fieldSets.get('pkg__Summary');
+System.assertNotEquals(null, summary);
 System.assertEquals('Account Summary', summary.getLabel());
 System.assertEquals('Summary', summary.getName());
 System.assertEquals('pkg', summary.getNamespace());
@@ -12820,8 +12826,17 @@ System.assertEquals(2, rows.size());
 rows = Database.query('SELECT Id FROM Account WHERE Name = :names ORDER BY Name');
 System.assertEquals(2, rows.size());
 Account probe = new Account(Name = 'Beta');
-rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+// NATIVE a dotted dynamic bind is not a variable
+// internal/apextest/testdata/conformance/dynamic_bind_scope_paths/org.tsv anonymous 62.0 67.0
+String probeName = probe.Name;
+rows = Database.query('SELECT Id FROM Account WHERE Name = :probeName');
 System.assertEquals(1, rows.size());
+try {
+    Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+    System.assert(false, 'expected QueryException');
+} catch (QueryException dotted) {
+    System.assertEquals('Variable does not exist: probe.Name', dotted.getMessage());
+}
 List<Account> betaRows = rows;
 rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name + \' Test\'');
 System.assertEquals(0, rows.size());

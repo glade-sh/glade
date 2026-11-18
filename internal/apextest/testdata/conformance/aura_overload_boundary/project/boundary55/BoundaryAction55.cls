@@ -1,0 +1,1 @@
+public class BoundaryAction55 { @AuraEnabled public static String load(String first) { return 'one:' + String.valueOf(first); } @AuraEnabled public static String load(String first, String second) { return 'two:' + String.valueOf(first) + ':' + String.valueOf(second); } @AuraEnabled public static String control(String value) { return 'control:' + value; } }

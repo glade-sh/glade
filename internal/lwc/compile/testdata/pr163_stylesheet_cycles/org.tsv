@@ -1,0 +1,11 @@
+case	api	route	result	outcome
+acyclic	59.0	deploy	accepted	deployed
+cycle	59.0	deploy	accepted	deployed
+missing	59.0	deploy	rejected	No MODULE named
+acyclic	67.0	deploy	accepted	deployed
+cycle	67.0	deploy	accepted	deployed
+missing	67.0	deploy	rejected	No MODULE named
+acyclic	59.0	browser	accepted	rgb(17, 34, 51)
+cycle	59.0	browser	accepted	rgb(17, 34, 51)
+acyclic	67.0	browser	accepted	rgb(17, 34, 51)
+cycle	67.0	browser	accepted	rgb(17, 34, 51)

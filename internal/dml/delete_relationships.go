@@ -7,8 +7,18 @@ import (
 )
 
 func (e *Engine) validateDeleteReferences(objectName string, id storage.ID, ctx *deleteContext) error {
+	account := strings.EqualFold(objectName, "Account")
+	if account {
+		if err := e.validateAccountDeleteChildren(id); err != nil {
+			return err
+		}
+	}
 	relations := e.restrictedDeleteRelations(objectName, ctx)
 	for _, relation := range relations {
+		if account && strings.EqualFold(relation.childObject, "Case") && strings.EqualFold(relation.field, "AccountId") {
+			// validateAccountDeleteChildren holds the native Case rule.
+			continue
+		}
 		childrenByParent := e.referenceIndexForRelation(relation.childObject, relation.field, ctx)
 		for _, childID := range childrenByParent[id] {
 			childObject := e.Org.Objects[relation.childObject]
@@ -17,6 +27,9 @@ func (e *Engine) validateDeleteReferences(objectName string, id storage.ID, ctx 
 				continue
 			}
 			value, ok := childRecord.Fields[relation.field]
+			if account && accountDeleteCascades(relation.childObject, relation.field, childRecord) {
+				continue
+			}
 			if ok && idFromStorageValue(value) == id {
 				return dmlErrorf("DELETE_FAILED", []string{relation.field}, "dml: cannot delete %s %s because %s records reference it", objectName, id, relation.childObject)
 			}
@@ -82,7 +95,7 @@ func (e *Engine) restoreCascadeDeletedChildren(objectName string, id storage.ID,
 			child.System.LastModifiedDate = stamp
 			child.System.SystemModstamp = stamp
 			child.System.LastModifiedByID = e.systemUserID()
-			childObject.Records[childID] = child
+			childObject.PutRecord(childID, child)
 			e.Org.Objects[relation.childObject] = childObject
 			e.addUniqueIndexRecord(relation.childObject, childObject.Definition, child)
 			e.recalculateSummaryFieldsForChildren(relation.childObject, before, child)
@@ -327,7 +340,7 @@ func (e *Engine) clearDeletedParentReferences(objectName string, id storage.ID, 
 			}
 			updated.ExplicitNulls[field] = true
 			e.removeUniqueIndexRecord(relation.childObject, childObject.Definition, child)
-			childObject.Records[childID] = updated
+			childObject.PutRecord(childID, updated)
 			// Parent DML does not rebuild this indirectly changed child object.
 			// Drop its candidate indexes so queries scan the updated records.
 			childObject.Indexes = nil
@@ -393,7 +406,7 @@ func (e *Engine) restoreDeletedParentReferences(objectName string, id storage.ID
 				deleteExplicitNull(updated.ExplicitNulls, field)
 			}
 			e.removeUniqueIndexRecord(relation.childObject, childObject.Definition, child)
-			childObject.Records[childID] = updated
+			childObject.PutRecord(childID, updated)
 			childObject.Indexes = nil
 			e.Org.Objects[relation.childObject] = childObject
 			e.addUniqueIndexRecord(relation.childObject, childObject.Definition, updated)

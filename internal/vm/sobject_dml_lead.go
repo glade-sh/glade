@@ -120,7 +120,7 @@ func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
 		}
 		updatedLead.Fields["Status"] = storage.StringValue(status)
 	}
-	updatedLeadState.Records[storedLeadID] = updatedLead
+	updatedLeadState.PutRecord(storedLeadID, updatedLead)
 	vm.Org.Objects["Lead"] = updatedLeadState
 	if triggerBackup != nil {
 		failures, triggerErr := vm.runTriggers(triggerTimingAfter, "update", []storage.Record{updatedLead}, []storage.Record{oldLead}, result)

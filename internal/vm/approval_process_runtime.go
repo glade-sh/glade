@@ -563,10 +563,10 @@ func (vm *VM) approvalStoreRecord(record storage.Record) {
 	storage.EnsureStandardObject(vm.Org, record.Object)
 	object := vm.Org.Objects[record.Object]
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	vm.recordIsolationJournalMutation(record.Object, record.ID, storage.Record{}, false)
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	vm.Org.Objects[record.Object] = object
 }
 
@@ -587,7 +587,7 @@ func (vm *VM) approvalSetRecordLocked(objectName string, id storage.ID, locked b
 	}
 	vm.recordIsolationJournalMutation(objectName, storedID, record, true)
 	record.System.Locked = locked
-	object.Records[storedID] = record
+	object.PutRecord(storedID, record)
 	vm.Org.Objects[objectName] = object
 }
 
@@ -598,10 +598,10 @@ func (vm *VM) approvalUpdateRecord(record storage.Record, before storage.Record)
 	storage.EnsureStandardObject(vm.Org, record.Object)
 	object := vm.Org.Objects[record.Object]
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	vm.recordIsolationJournalMutation(record.Object, record.ID, before, true)
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	vm.Org.Objects[record.Object] = object
 }
 

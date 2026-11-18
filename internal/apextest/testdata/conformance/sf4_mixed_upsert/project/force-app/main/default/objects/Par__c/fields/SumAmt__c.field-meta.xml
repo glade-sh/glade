@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SumAmt__c</fullName>
+    <label>Sum Amt</label>
+    <summarizedField>Chi__c.Amount__c</summarizedField>
+    <summaryForeignKey>Chi__c.Parent__c</summaryForeignKey>
+    <summaryOperation>sum</summaryOperation>
+    <type>Summary</type>
+</CustomField>

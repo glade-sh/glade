@@ -1,0 +1,1 @@
+Exact copy of the RepTextMode and RepTextModeId rows from ../vf_render_markup/postback.tsv. Source capture details are recorded alongside the original vf_render_markup fixtures; source cases and postback capture script are in that directory.
