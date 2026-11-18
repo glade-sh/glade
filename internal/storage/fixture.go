@@ -1988,6 +1988,11 @@ func replaceStaleOrganizationRecords(org *OrgState, orgID ID) {
 	if !ok || len(object.Records) == 0 {
 		return
 	}
+	// Seed updates must not mutate records shared with runtime snapshots.
+	if object.RecordsShared || object.IndexesShared {
+		EnsureMutableObjectRecords(org, "Organization")
+		object = org.Objects["Organization"]
+	}
 	_, current := object.Records[orgID]
 	changed := false
 	for id, record := range object.Records {
@@ -1997,10 +2002,10 @@ func replaceStaleOrganizationRecords(org *OrgState, orgID ID) {
 		if !current {
 			moved := record.Clone()
 			moved.ID = orgID
-			object.Records[orgID] = moved
+			object.PutRecord(orgID, moved)
 			current = true
 		}
-		delete(object.Records, id)
+		object.DeleteRecord(id)
 		changed = true
 	}
 	if changed {
