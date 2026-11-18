@@ -18,6 +18,7 @@ type releaseWorkflowStep struct {
 	Uses  string            `yaml:"uses"`
 	Run   string            `yaml:"run"`
 	Shell string            `yaml:"shell"`
+	Dir   string            `yaml:"working-directory"`
 	Env   map[string]string `yaml:"env"`
 	With  map[string]string `yaml:"with"`
 }
@@ -105,6 +106,11 @@ func TestReleaseWorkflowDistributesStaticDownloadsAfterGitHubPublish(t *testing.
 		"Install pinned static publisher",
 		"Publish static downloads",
 		"Verify public downloads",
+		"Redeploy site",
+		"Wait for site release version",
+		"Install site smoke dependencies",
+		"Install Playwright Chromium",
+		"Smoke-test the deployed site",
 	}
 	previous := -1
 	for _, name := range order {
@@ -333,5 +339,139 @@ func TestReleaseStaticPublisherIsLockfilePinned(t *testing.T) {
 	}
 	if major < 4 || major == 4 && minor < 37 {
 		t.Fatalf("wrangler %s is older than the publisher's 4.37 floor", version)
+	}
+}
+
+func releaseDistributeStep(t *testing.T, name string) releaseWorkflowStep {
+	t.Helper()
+	document, _ := readReleaseWorkflowDocument(t)
+	distribute := document.Jobs["distribute"]
+	return distribute.Steps[releaseWorkflowStepIndex(t, distribute, name)]
+}
+
+// fakeReleaseTools puts recording stand-ins for curl and git first on PATH.
+func fakeReleaseTools(t *testing.T, curl string) (string, string) {
+	t.Helper()
+	dir := t.TempDir()
+	log := filepath.Join(dir, "calls.log")
+	writeExecutable(t, filepath.Join(dir, "curl"), "#!/usr/bin/env bash\nprintf 'curl %s\\n' \"$*\" >> \"$FAKE_LOG\"\n"+curl)
+	writeExecutable(t, filepath.Join(dir, "git"), "#!/usr/bin/env bash\nprintf 'git %s\\n' \"$*\" >> \"$FAKE_LOG\"\n[[ \"$1\" == merge-base ]] && exit \"${FAKE_GIT_STATUS:-0}\"\nexit 0\n")
+	writeExecutable(t, filepath.Join(dir, "sleep"), "#!/usr/bin/env bash\nprintf 'sleep %s\\n' \"$*\" >> \"$FAKE_LOG\"\n")
+	return dir, log
+}
+
+func runReleaseStep(t *testing.T, script, bin string, env ...string) (string, error) {
+	t.Helper()
+	command := exec.Command("bash", "-e", "-o", "pipefail", "-c", script)
+	command.Env = append(os.Environ(), append([]string{"PATH=" + bin + string(os.PathListSeparator) + os.Getenv("PATH")}, env...)...)
+	out, err := command.CombinedOutput()
+	return string(out), err
+}
+
+func TestReleaseWorkflowRedeploysSiteWithoutEchoingHook(t *testing.T) {
+	step := releaseDistributeStep(t, "Redeploy site")
+	if step.Env["CF_PAGES_DEPLOY_HOOK"] != "${{ secrets.CF_PAGES_DEPLOY_HOOK }}" || len(step.Env) != 1 {
+		t.Fatalf("redeploy env = %#v", step.Env)
+	}
+	for _, want := range []string{"curl --proto '=https' --fail --silent --show-error --output /dev/null", `--request POST "$CF_PAGES_DEPLOY_HOOK"`} {
+		if !strings.Contains(step.Run, want) {
+			t.Fatalf("redeploy step lacks %q", want)
+		}
+	}
+	for _, forbidden := range []string{"echo \"$CF_PAGES_DEPLOY_HOOK", "set -x", "--verbose", "-v "} {
+		if strings.Contains(step.Run, forbidden) {
+			t.Fatalf("redeploy step can print the hook: %q", forbidden)
+		}
+	}
+	bin, log := fakeReleaseTools(t, "")
+	if out, err := runReleaseStep(t, step.Run, bin, "FAKE_LOG="+log, "VERSION=v1.2.3", "CF_PAGES_DEPLOY_HOOK="); err == nil || !strings.Contains(out, "::error::Repository secret CF_PAGES_DEPLOY_HOOK is not set") {
+		t.Fatalf("missing hook accepted or unnamed: err=%v\n%s", err, out)
+	}
+	if calls, _ := os.ReadFile(log); len(calls) != 0 {
+		t.Fatalf("missing hook still called out: %s", calls)
+	}
+	hook := "https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/hook-fixture-secret"
+	out, err := runReleaseStep(t, step.Run, bin, "FAKE_LOG="+log, "VERSION=v1.2.3", "CF_PAGES_DEPLOY_HOOK="+hook)
+	if err != nil || strings.Contains(out, "hook-fixture-secret") {
+		t.Fatalf("configured hook failed or was printed: err=%v\n%s", err, out)
+	}
+	calls := string(mustReadFile(t, log))
+	if strings.Count(calls, "curl ") != 1 || !strings.Contains(calls, "--fail") || !strings.Contains(calls, "--request POST "+hook) {
+		t.Fatalf("deploy hook call = %q", calls)
+	}
+}
+
+func TestReleaseWorkflowWaitsForSiteReleaseWithinBound(t *testing.T) {
+	step := releaseDistributeStep(t, "Wait for site release version")
+	for _, want := range []string{
+		"wait_seconds=900",
+		"poll_seconds=20",
+		"deadline=$((SECONDS + wait_seconds))",
+		"--max-time 30",
+		"https://glade.sh/site-build.json",
+		`[[ "$(jq -r '.releaseVersion // empty' "$site_build")" == "$VERSION" ]]`,
+		"git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main",
+		`git merge-base --is-ancestor "$site_commit" refs/remotes/origin/main`,
+		`echo "SITE_COMMIT=$site_commit" >> "$GITHUB_ENV"`,
+	} {
+		if !strings.Contains(step.Run, want) {
+			t.Fatalf("site wait lacks %q", want)
+		}
+	}
+	if _, err := exec.LookPath("jq"); err != nil {
+		t.Skip("jq unavailable")
+	}
+	sha := strings.Repeat("a", 40)
+	// The fake curl serves the old release twice, then the new one.
+	curl := `count_file="$FAKE_LOG.count"; count=$(( $(cat "$count_file" 2>/dev/null || echo 0) + 1 )); echo "$count" > "$count_file"
+out=""; while [[ $# -gt 0 ]]; do [[ "$1" == --output ]] && out="$2"; shift; done
+version="$FAKE_OLD"; (( count > 2 )) && version="$FAKE_NEW"
+printf '{"siteCommit":"%s","releaseVersion":"%s"}\n' "$FAKE_SHA" "$version" > "$out"
+`
+	run := func(script string, gitStatus string) (string, string, string, error) {
+		bin, log := fakeReleaseTools(t, curl)
+		env := filepath.Join(t.TempDir(), "github_env")
+		out, err := runReleaseStep(t, script, bin, "FAKE_LOG="+log, "FAKE_SHA="+sha, "FAKE_OLD=v1.2.2", "FAKE_NEW=v1.2.3",
+			"FAKE_GIT_STATUS="+gitStatus, "VERSION=v1.2.3", "RUNNER_TEMP="+t.TempDir(), "GITHUB_ENV="+env)
+		calls, _ := os.ReadFile(log)
+		written, _ := os.ReadFile(env)
+		return out, string(calls), string(written), err
+	}
+	out, calls, written, err := run(step.Run, "0")
+	if err != nil || written != "SITE_COMMIT="+sha+"\n" {
+		t.Fatalf("site wait did not resolve the deployed commit: err=%v env=%q\n%s", err, written, out)
+	}
+	if strings.Count(calls, "curl ") != 3 || strings.Count(calls, "sleep 20") != 2 || !strings.Contains(calls, "git worktree add --detach") {
+		t.Fatalf("site wait calls = %q", calls)
+	}
+	if out, _, written, err := run(step.Run, "1"); err == nil || written != "" || !strings.Contains(out, "is not reachable from main") {
+		t.Fatalf("unreachable site commit accepted: err=%v env=%q\n%s", err, written, out)
+	}
+	expired := strings.Replace(step.Run, "wait_seconds=900", "wait_seconds=0", 1)
+	if out, calls, written, err := run(expired, "0"); err == nil || written != "" || strings.Count(calls, "curl ") != 1 || !strings.Contains(out, "did not report v1.2.3 within 0 seconds") {
+		t.Fatalf("expired wait did not stop: err=%v env=%q calls=%q\n%s", err, written, calls, out)
+	}
+}
+
+func TestReleaseWorkflowSmokesDeployedSiteCommit(t *testing.T) {
+	install := releaseDistributeStep(t, "Install site smoke dependencies")
+	if install.Run != `npm ci --prefix "$RUNNER_TEMP/deployed-site/site" --ignore-scripts` {
+		t.Fatalf("site smoke install = %q", install.Run)
+	}
+	browser := releaseDistributeStep(t, "Install Playwright Chromium")
+	smoke := releaseDistributeStep(t, "Smoke-test the deployed site")
+	for _, step := range []releaseWorkflowStep{browser, smoke} {
+		if step.Dir != "${{ runner.temp }}/deployed-site/site" {
+			t.Fatalf("%s runs in %q, not the deployed commit checkout", step.Name, step.Dir)
+		}
+	}
+	if browser.Run != "../scripts/ci-install-playwright.sh npx playwright install chromium" {
+		t.Fatalf("playwright install = %q", browser.Run)
+	}
+	if smoke.Run != `npm run smoke:postdeploy -- --base-url https://glade.sh --expected-commit "$SITE_COMMIT"` {
+		t.Fatalf("site smoke = %q", smoke.Run)
+	}
+	if len(smoke.Env) != 0 || len(browser.Env) != 0 || len(install.Env) != 0 {
+		t.Fatal("site smoke steps must not receive secrets")
 	}
 }

@@ -211,7 +211,22 @@ first and the static host second. The job:
 6. reads the public objects back: `latest/release-manifest.json` must name the
    version and match the bundle, `vX.Y.Z/release-manifest.json` must match the
    bundle bytes, `index.json` must list the version as latest, and every
-   archive URL must answer.
+   archive URL must answer;
+7. POSTs to the `glade-site` Cloudflare Pages deploy hook in the
+   `CF_PAGES_DEPLOY_HOOK` secret, so Pages rebuilds `main` against the moved
+   channel. The hook URL is never printed. If the secret is missing, this step
+   fails with an error naming it; the downloads are already published by then;
+8. polls `https://glade.sh/site-build.json` every 20 seconds for up to
+   15 minutes until `releaseVersion` equals the version, then reads
+   `siteCommit` and requires it to be reachable from `main`;
+9. checks out that deployed commit, runs `npm ci --ignore-scripts` for its
+   `site/` and installs Chromium, then runs
+   `npm run smoke:postdeploy -- --base-url https://glade.sh --expected-commit <siteCommit>`.
+
+The Pages Git integration also rebuilds the site when a release merge lands,
+but that build runs before the tag moves `latest`, so it shows the previous
+version. The deploy hook rebuild after publication corrects it. The expected
+commit is the `main` commit Pages built, not the tag commit.
 
 The job never changes the GitHub Release. Its token has only `actions`,
 `attestations`, `checks` and `contents` read access.
@@ -302,9 +317,11 @@ Release workflow and retain it as create-only static companion evidence.
 After channel publication, publish the site. Its build writes
 `site/release-manifest.json` from the live
 `https://downloads.glade.sh/latest/release-manifest.json`; the file is not
-checked in. Retry the Cloudflare Pages deployment of `main` if no merge has
-rebuilt the site since the channel moved. Then complete the default and pinned
-install checks above. Both must report the intended version and a
+checked in. The `distribute` job redeploys the site through the Pages deploy
+hook and runs the postdeploy smoke. Only if that step cannot run, retry the
+Cloudflare Pages deployment of `main` by hand, or use the manual
+`wrangler pages deploy` in `site/README.md`, then run the postdeploy smoke
+yourself. Then complete the default and pinned install checks above. Both must report the intended version and a
 working parser. The completion check below must also report ready projects
 before announcing distribution complete.
 

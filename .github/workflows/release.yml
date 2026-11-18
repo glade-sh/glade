@@ -639,3 +639,57 @@ jobs:
             curl --proto '=https' --fail --silent --show-error --head --location \
               --retry 5 --retry-all-errors --retry-delay 2 "$url" >/dev/null
           done
+      - name: Redeploy site
+        shell: bash
+        env:
+          CF_PAGES_DEPLOY_HOOK: ${{ secrets.CF_PAGES_DEPLOY_HOOK }}
+        run: |
+          if [[ -z "$CF_PAGES_DEPLOY_HOOK" ]]; then
+            echo "::error::Repository secret CF_PAGES_DEPLOY_HOOK is not set; add the glade-site Pages deploy hook, then rerun this job or dispatch distribute_only for $VERSION"
+            exit 1
+          fi
+          curl --proto '=https' --fail --silent --show-error --output /dev/null \
+            --max-time 60 --retry 5 --retry-all-errors --retry-delay 5 \
+            --request POST "$CF_PAGES_DEPLOY_HOOK"
+          echo "Requested a glade-site Pages deployment of main"
+      - name: Wait for site release version
+        shell: bash
+        run: |
+          site_build="$RUNNER_TEMP/site-build.json"
+          wait_seconds=900
+          poll_seconds=20
+          deadline=$((SECONDS + wait_seconds))
+          while :; do
+            if curl --proto '=https' --fail --silent --show-error --max-time 30 \
+                --retry 3 --retry-all-errors --retry-delay 5 \
+                https://glade.sh/site-build.json --output "$site_build" &&
+              [[ "$(jq -r '.releaseVersion // empty' "$site_build")" == "$VERSION" ]]; then
+              break
+            fi
+            if (( SECONDS >= deadline )); then
+              echo "::error::glade.sh/site-build.json did not report $VERSION within $wait_seconds seconds"
+              exit 1
+            fi
+            sleep "$poll_seconds"
+          done
+          site_commit="$(jq -er .siteCommit "$site_build")"
+          if [[ ! "$site_commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::glade.sh/site-build.json siteCommit is not a full commit SHA: $site_commit"
+            exit 1
+          fi
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$site_commit" refs/remotes/origin/main; then
+            echo "::error::deployed site commit $site_commit is not reachable from main"
+            exit 1
+          fi
+          # The smoke checks the deployed routes, so run it from the deployed commit.
+          git worktree add --detach "$RUNNER_TEMP/deployed-site" "$site_commit"
+          echo "SITE_COMMIT=$site_commit" >> "$GITHUB_ENV"
+      - name: Install site smoke dependencies
+        run: npm ci --prefix "$RUNNER_TEMP/deployed-site/site" --ignore-scripts
+      - name: Install Playwright Chromium
+        working-directory: ${{ runner.temp }}/deployed-site/site
+        run: ../scripts/ci-install-playwright.sh npx playwright install chromium
+      - name: Smoke-test the deployed site
+        working-directory: ${{ runner.temp }}/deployed-site/site
+        run: npm run smoke:postdeploy -- --base-url https://glade.sh --expected-commit "$SITE_COMMIT"
