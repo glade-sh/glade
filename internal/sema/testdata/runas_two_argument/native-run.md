@@ -1,0 +1,1 @@
+Synthetic two-argument System.runAs named test source deployed at API 62.0 and 67.0 in a fresh 30-day Developer scratch org from a campaign Dev Hub. Both deployments rejected the two-argument call with the recorded diagnostic. The org was deleted and its unique description matched exactly one Dev Hub ScratchOrgInfo record with Status Deleted.
