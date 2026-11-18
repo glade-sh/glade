@@ -4,6 +4,10 @@
 
 - Sharing behavior now matches captured Salesforce results for entity sharing models, Lead and Case public sharing, private queue member access, and without-sharing direct record access.
 
+### Apex
+
+- System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
+
 ### CI
 
 - **Leak-scan hardening.** `scripts/leak-scan.sh` now fails when `LEAK_SCAN_DENYLIST` has no entries, so a missing secret cannot silently disable the private-name check; only fork pull requests, which cannot see repository secrets, pass `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skip the denylist with a warning while the path checks still run. The new `scripts/leak-scan-commits.sh A..B` scans every commit of a range on its own and names the commit with a finding, for release checks.

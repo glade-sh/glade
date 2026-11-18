@@ -1,0 +1,3 @@
+api	route	result	observation
+62.0	deploy	rejected	runAs requires a single argument of type 'User' or 'Version'
+67.0	deploy	rejected	runAs requires a single argument of type 'User' or 'Version'
