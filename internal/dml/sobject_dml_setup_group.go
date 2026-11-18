@@ -159,7 +159,7 @@ func (e *Engine) projectCapturedGroupUserPermissions(groupID storage.ID) {
 	for _, field := range fields {
 		aggregate.Fields[field] = storage.BooleanValue(values[field])
 	}
-	sets.Records[aggregateID] = aggregate
+	sets.PutRecord(aggregateID, aggregate)
 	e.Org.Objects["PermissionSet"] = sets
 }
 
