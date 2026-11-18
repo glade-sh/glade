@@ -9,6 +9,10 @@ import (
 )
 
 func (s *Server) handleObjectBreadth(w http.ResponseWriter, r *http.Request, version string, parts []string) {
+	if s.Org.SuppressesSpreadObject(parts[0]) {
+		writeSalesforceError(w, errUnknownObject)
+		return
+	}
 	if len(parts) >= 2 && isDefaultValuesRoute(parts) {
 		s.handleObjectDefaultValues(w, r, version, parts[0])
 		return

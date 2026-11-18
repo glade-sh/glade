@@ -136,22 +136,6 @@ func runConservativeSplitNativeProjectRoutes(t *testing.T, warm bool) {
 					if len(want) != 9 {
 						t.Fatalf("native route count=%d", len(want))
 					}
-					if row[2] == "octal_class_400" || row[2] == "octal_class_777" {
-						// Salesforce rejects these classes; the existing local
-						// matcher accepts them. Pin split/matcher equivalence.
-						if got["Matcher.find"] != false {
-							t.Fatalf("full-engine control=%v", got["Matcher.find"])
-						}
-						text := "L" + input[1] + "R" + input[1] + "T"
-						for key := range want {
-							if key == "Matcher.find" {
-								want[key] = false
-							} else {
-								want[key] = []any{text}
-							}
-						}
-						t.Log("carried native syntax gap; asserting full-engine route equivalence (CARRIED.txt)")
-					}
 					for route, expected := range want {
 						t.Run(route, func(t *testing.T) {
 							if !reflect.DeepEqual(got[route], expected) {

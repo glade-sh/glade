@@ -97,7 +97,7 @@ func (s *Server) listDeleteData(config map[string]any) *lwcbrowser.WireError {
 	}
 	s.Source.Components = components
 	if tooling, ok := s.Source.ToolingOrg.Objects["ListView"]; ok {
-		delete(tooling.Records, storage.ID(view.ID))
+		tooling.DeleteRecord(storage.ID(view.ID))
 	}
 	s.Source.sortAndIndexComponents()
 	return nil
@@ -960,10 +960,10 @@ func (s *Server) relatedListRecordsData(config map[string]any) (map[string]any, 
 		return nil, err
 	}
 	selected := child
-	selected.Records = make(map[storage.ID]storage.Record)
+	selected.SetRecords(make(map[storage.ID]storage.Record))
 	for id, record := range child.Records {
 		if value, ok := record.Fields[relation.Field]; ok && storage.IDsEqual(storage.ID(fmt.Sprint(storageValueJSON(value))), parent.ID) {
-			selected.Records[id] = record
+			selected.PutRecord(id, record)
 		}
 	}
 	data, err := s.listRecordPageData(selected, config, nil)

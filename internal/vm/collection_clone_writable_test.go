@@ -80,7 +80,9 @@ func TestMapDeepClonePreservesNonRecordValueRoutes(t *testing.T) {
 	payload.Fields[sobjectReadOnlyField] = String("payload state")
 	payload.Fields[sobjectErrorsField] = List(String("payload errors"))
 	original := Map()
-	original.Type = "Map<String,Object>"
+	// Map.deepClone compiles only on SObject value maps (review_round11
+	// dc_object); a non-record payload can still sit in one at run time.
+	original.Type = "Map<String,SObject>"
 	original.Map["payload"] = payload
 	original.Map["absent"] = Null
 	original.Map["scalar"] = String("Unchanged")

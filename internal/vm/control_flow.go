@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -73,6 +75,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		}()
 	}
 	for seq, inst := range program.Instructions {
+		vm.work.instructions++
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
@@ -95,6 +98,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		if err := vm.maybePauseForDebug(inst); err != nil {
 			return execOutcome{}, err
 		}
+		heapPlan := vm.planHeapStatement(inst)
 		switch inst.Op {
 		case ir.OpDeclare:
 			if err := vm.finalCollectionIncrementResultError(inst, result); err != nil {
@@ -116,6 +120,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 			value.Static = inst.Type
 			vm.Globals[inst.Name] = value
 			vm.VarTypes[inst.Name] = inst.Type
+			if vm.bindFrame.declWatch != nil {
+				vm.bindFrame.noteDeclared(inst.Name)
+			}
 			if inst.Final {
 				if vm.finalLocals == nil {
 					vm.finalLocals = make(map[string]bool)
@@ -164,7 +171,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 				return out, err
 			}
 		case ir.OpIf:
-			condition, err := vm.eval(inst.Expr, result)
+			condition, err := vm.evalHeapNeutral(inst.Expr, result)
 			if err != nil {
 				return execOutcome{}, err
 			}
@@ -251,7 +258,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		default:
 			return execOutcome{}, fmt.Errorf("unsupported instruction %q", inst.Op)
 		}
-		if err := vm.updateHeapLimit(); err != nil {
+		if err := vm.updateHeapLimitAfter(heapPlan); err != nil {
 			return execOutcome{}, err
 		}
 	}
@@ -259,16 +266,128 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 }
 
 func (vm *VM) updateHeapLimit() error {
+	return vm.updateHeapLimitAfter(heapStatementPlan{})
+}
+
+// updateHeapLimitAfter is the strict per-statement heap check. A statement
+// planned by planHeapStatement is priced from the previous exact check when
+// the plan still holds; every other check walks the heap.
+func (vm *VM) updateHeapLimitAfter(plan heapStatementPlan) error {
 	if vm.limitMode != LimitModeStrict {
 		return nil
 	}
-	total := vm.currentHeapSize()
+	total, ok := vm.heapSizeFromPlan(plan)
+	if ok {
+		if heapVerifyAgainstFullWalk {
+			vm.verifyHeapSize(total)
+		}
+		vm.armHeapCheck()
+	} else {
+		total = vm.heapSizeAndArm()
+	}
 	vm.limits.HeapSize = total
 	return vm.checkLimit("heapSize", vm.limits.HeapSize, vm.limitCaps.HeapSize)
 }
 
+func (vm *VM) verifyHeapSize(total int) {
+	if want := vm.currentHeapSizeFullWalk(); want != total {
+		panic(fmt.Sprintf("incremental heap size %d != full walk %d", total, want))
+	}
+}
+
 func (vm *VM) currentHeapSize() int {
-	return vm.heapSizeOver(vm.heapStaticRootMaps())
+	seen := vm.heapSeenScratch()
+	total := 0
+	for name, value := range vm.Globals {
+		total += len(name) + approxValueSizeSeen(value, seen)
+	}
+	statics, ok := vm.staticHeapSize(seen)
+	vm.releaseHeapSeen(seen)
+	if !ok {
+		return vm.heapSizeOver(vm.heapStaticRootMaps())
+	}
+	total += statics
+	if heapVerifyAgainstFullWalk {
+		if want := vm.currentHeapSizeFullWalk(); want != total {
+			panic(fmt.Sprintf("incremental heap size %d != full walk %d", total, want))
+		}
+	}
+	return total
+}
+
+// heapVerifyAgainstFullWalk makes every currentHeapSize compare itself with the
+// uncached walk. Tests turn it on.
+var heapVerifyAgainstFullWalk bool
+
+// heapSeenScratch returns the empty visited set the heap walk reuses, so the
+// per-statement strict check does not allocate one. A set that grew large is
+// dropped rather than cleared, since clearing costs its capacity.
+func (vm *VM) heapSeenScratch() map[approxVisitKey]bool {
+	if vm.heapSeen == nil {
+		vm.heapSeen = make(map[approxVisitKey]bool)
+	}
+	seen := vm.heapSeen
+	vm.heapSeen = nil
+	return seen
+}
+
+func (vm *VM) releaseHeapSeen(seen map[approxVisitKey]bool) {
+	if len(seen) > 256 {
+		return
+	}
+	clear(seen)
+	vm.heapSeen = seen
+}
+
+// heapContainerKind reports the value kinds whose size can change without the
+// field being rewritten: their backing storage is shared and mutated in place.
+func heapContainerKind(kind ValueKind) bool {
+	switch kind {
+	case ValueList, ValueSet, ValueMap, ValueObject:
+		return true
+	}
+	return false
+}
+
+// staticHeapSize is the static-field part of the heap. A field holding a
+// scalar changes size only when its map entry is rewritten, and every class
+// static write ends in a class store that clears heapStaticFlatOK. The scalar
+// total is therefore cached; container-valued statics are still walked, in the
+// same shared visited set as the frame. It returns false when the cached field
+// list no longer matches the live maps, and the caller recomputes in full.
+func (vm *VM) staticHeapSize(seen map[approxVisitKey]bool) (int, bool) {
+	if !vm.heapStaticFlatOK || !vm.heapStaticRootsOK || vm.heapStaticRootsLen != len(vm.Classes) {
+		vm.buildStaticHeapFlat()
+	}
+	total := vm.heapStaticScalarTotal
+	for _, ref := range vm.heapStaticContainers {
+		field, ok := ref.fields[ref.name]
+		if !ok || !field.Static || !heapContainerKind(field.Value.Kind) {
+			vm.heapStaticFlatOK = false
+			return 0, false
+		}
+		total += len(ref.name) + approxValueSizeSeen(field.Value, seen)
+	}
+	return total, true
+}
+
+func (vm *VM) buildStaticHeapFlat() {
+	roots := vm.heapStaticRootMaps()
+	vm.heapStaticScalarTotal = 0
+	vm.heapStaticContainers = vm.heapStaticContainers[:0]
+	for _, statics := range roots {
+		for fieldName, field := range statics {
+			if !field.Static {
+				continue
+			}
+			if heapContainerKind(field.Value.Kind) {
+				vm.heapStaticContainers = append(vm.heapStaticContainers, heapStaticContainerRef{fields: statics, name: fieldName})
+				continue
+			}
+			vm.heapStaticScalarTotal += len(fieldName) + approxValueSizeSeen(field.Value, nil)
+		}
+	}
+	vm.heapStaticFlatOK = true
 }
 
 // currentHeapSizeFullWalk is the uncached reference for currentHeapSize. It
@@ -300,6 +419,7 @@ func (vm *VM) heapStaticRootMaps() []map[string]Field {
 	vm.heapStaticRoots = vm.buildHeapStaticRootMaps()
 	vm.heapStaticRootsLen = len(vm.Classes)
 	vm.heapStaticRootsOK = true
+	vm.heapStaticFlatOK = false
 	return vm.heapStaticRoots
 }
 
@@ -308,7 +428,7 @@ func (vm *VM) heapStaticRootMaps() []map[string]Field {
 func (vm *VM) buildHeapStaticRootMaps() []map[string]Field {
 	var roots []map[string]Field
 	seenClasses := make(map[string]bool)
-	for name, class := range vm.ClassEntries() {
+	for name, class := range vm.classEntriesNoLazy() {
 		if class.PlatformType {
 			continue
 		}
@@ -594,11 +714,38 @@ func childProgram(parent ir.Program, instructions []ir.Instruction) ir.Program {
 // source syntax and version rules F03/F04 also capture if-block shadowing and restoration at API62/68.
 // Try bodies use the same lexical cleanup for their final-local bindings.
 func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result *Result) (execOutcome, error) {
+	return vm.executeBlockScopeKeeping(program, inst, result, nil)
+}
+
+// executeBlockScopeKeeping is executeBlockScope for a loop body. When kept is
+// non-nil, body bindings that did not exist outside the block stay in the
+// binding maps after the block and are recorded in kept; the loop removes them
+// once it exits. Re-inserting a deleted Globals key allocates a new Value
+// (the map stores 312-byte elements indirectly), so this avoids that per
+// iteration.
+func (vm *VM) executeBlockScopeKeeping(program ir.Program, inst ir.Instruction, result *Result, kept *[]string) (execOutcome, error) {
+	declares := false
+	for i := range inst.Then {
+		if op := inst.Then[i].Op; op == ir.OpDeclare || op == ir.OpDeclGroup {
+			declares = true
+			break
+		}
+	}
+	if !declares {
+		// No local of its own to snapshot or restore.
+		if len(vm.bindFrame.slots) != 0 {
+			vm.enterBindBlock(inst.Then, func(func(string, bool)) {})
+		}
+		return vm.executeProgram(childProgram(program, inst.Then), result)
+	}
 	type outerBinding struct {
 		value            Value
 		name, typ        string
 		existed, hadType bool
 		final, hadFinal  bool
+		// site is the declaration's Pos. declStart counts earlier runs of a
+		// declaration of a name that was already live (anonymous shadowing).
+		site, declStart int
 	}
 	// Most blocks declare only a handful of names. Keep their snapshots in a
 	// bounded local buffer, growing only for larger scopes.
@@ -640,7 +787,13 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 					value, existed := vm.Globals[name]
 					typ, hadType := vm.VarTypes[name]
 					final, hadFinal := vm.finalLocals[name]
-					binding := outerBinding{name: name, value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal}
+					if kept != nil && slices.Contains(*kept, name) {
+						value, existed, typ, hadType, final, hadFinal = Value{}, false, "", false, false, false
+					}
+					binding := outerBinding{name: name, value: value, typ: typ, existed: existed, hadType: hadType, final: final, hadFinal: hadFinal, site: child.Pos}
+					if existed {
+						binding.declStart = vm.bindFrame.watchDecl(name)
+					}
 					if useMap {
 						large[name] = binding
 					} else {
@@ -653,14 +806,35 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 		}
 	}
 	collect(inst.Then)
+	if len(vm.bindFrame.slots) != 0 {
+		vm.enterBindBlock(inst.Then, func(visit func(string, bool)) {
+			if large != nil {
+				for name, binding := range large {
+					visit(name, binding.existed)
+				}
+				return
+			}
+			for _, binding := range outer {
+				visit(binding.name, binding.existed)
+			}
+		})
+	}
 	completed := false
 	defer func() {
 		restore := func(name string, binding outerBinding) {
-			// Closed for-body String binds remain available to dynamic SOQL
-			// without keeping the declaration in lexical lookup.
-			closedStringLoop := inst.Op == ir.OpFor && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "String")
-			if completed && (inst.Op == ir.OpIf || closedStringLoop) && !binding.existed {
-				if value, ok := vm.Globals[name]; ok {
+			// A String local of a block that ended stays visible to dynamic
+			// SOQL (see soql_bind_scope.go) without staying in lexical lookup.
+			// A name that was already live counts only if this block's own
+			// declaration ran.
+			if value, ok := vm.Globals[name]; ok {
+				isString := isStringBindType(vm.VarTypes[name])
+				if isString && (!binding.existed || vm.bindFrame.declaredSince(name, binding.declStart)) {
+					vm.rememberDepartedString(name, binding.site, value)
+				}
+				// The other dynamic routes keep the earlier rule: completed
+				// if-blocks and for bodies only.
+				closedStringLoop := inst.Op == ir.OpFor && isString
+				if completed && (inst.Op == ir.OpIf || closedStringLoop) && !binding.existed {
 					vm.rememberClosedSOQLLocal(name, vm.VarTypes[name], value)
 				}
 			}
@@ -668,6 +842,12 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 				if value, ok := vm.Globals[name]; ok && value.Kind == ValueInt && strings.EqualFold(canonicalRuntimePlatformType(vm.VarTypes[name]), "Integer") {
 					vm.rememberClosedSOQLInteger(name, value)
 				}
+			}
+			if kept != nil && !binding.existed && !binding.hadType && !binding.hadFinal {
+				if !slices.Contains(*kept, name) {
+					*kept = append(*kept, name)
+				}
+				return
 			}
 			if binding.existed {
 				vm.Globals[name] = binding.value
@@ -700,6 +880,68 @@ func (vm *VM) executeBlockScope(program ir.Program, inst ir.Instruction, result 
 	return out, err
 }
 
+// sourceLineTable holds the newline offsets of one program source so that
+// line and column lookups are a binary search instead of a scan from the
+// start of the source, which setCurrentStatement otherwise repeats for every
+// executed instruction.
+type sourceLineTable struct {
+	source   string
+	newlines []int
+}
+
+func newSourceLineTable(source string) *sourceLineTable {
+	table := &sourceLineTable{source: source}
+	for i := 0; i < len(source); i++ {
+		if source[i] == '\n' {
+			table.newlines = append(table.newlines, i)
+		}
+	}
+	return table
+}
+
+// lineColumn matches sourceLineColumn: the line is one more than the number of
+// newlines before offset, and the column counts bytes since the last of them.
+func (t *sourceLineTable) lineColumn(offset int) (int, int) {
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > len(t.source) {
+		offset = len(t.source)
+	}
+	before := sort.SearchInts(t.newlines, offset)
+	if before == 0 {
+		return 1, offset + 1
+	}
+	return before + 1, offset - t.newlines[before-1]
+}
+
+// sourceLineColumnCached is sourceLineColumn through a per-VM table of the
+// sources this VM has executed. Entries are keyed by source length and
+// compared by content; a repeated source compares by pointer first.
+func (vm *VM) sourceLineColumnCached(source string, offset int) (int, int) {
+	if strings.IndexByte(source, '\n') < 0 {
+		// A single-line source needs no table: every offset is on line one.
+		if offset < 0 {
+			offset = 0
+		}
+		if offset > len(source) {
+			offset = len(source)
+		}
+		return 1, offset + 1
+	}
+	for _, table := range vm.sourceLineTables[len(source)] {
+		if table.source == source {
+			return table.lineColumn(offset)
+		}
+	}
+	table := newSourceLineTable(source)
+	if vm.sourceLineTables == nil {
+		vm.sourceLineTables = make(map[int][]*sourceLineTable)
+	}
+	vm.sourceLineTables[len(source)] = append(vm.sourceLineTables[len(source)], table)
+	return table.lineColumn(offset)
+}
+
 func sourceLineColumn(source string, offset int) (int, int) {
 	if offset < 0 {
 		offset = 0
@@ -724,15 +966,49 @@ func (vm *VM) setCurrentStatement(inst ir.Instruction, source string) {
 		vm.hasStatement = false
 		return
 	}
-	line, column := sourceLineColumn(source, inst.Pos)
+	line, column := vm.sourceLineColumnCached(source, inst.Pos)
 	symbol := string(inst.Op)
 	file := ""
 	if vm.currentMethod.Name != "" {
-		symbol = vm.apexMethodFrameSymbol(vm.currentMethod)
+		symbol = vm.cachedApexMethodFrameSymbol(vm.currentMethod)
 		file = vm.currentMethod.File
 	}
 	vm.currentStatement = callFrame{Symbol: symbol, File: file, Line: line, Column: column, statement: true}
+	vm.currentSource = source
 	vm.hasStatement = true
+	if vm.coverage != nil {
+		vm.coverStatement(line, column)
+	}
+}
+
+// cachedApexMethodFrameSymbol memoizes apexMethodFrameSymbol per method and
+// execution namespace. The uncached form folds and concatenates class names
+// on every executed instruction. The class registry it reads through
+// lookupClass follows classLookupGeneration, which a freeze advances without
+// the access-cache reset, so the generation is part of the key.
+func (vm *VM) cachedApexMethodFrameSymbol(method Method) string {
+	key := frameSymbolKey{MethodName: method.Name, MethodClassName: method.ClassName, ExecutionNamespace: vm.currentExecutionNamespace(), Generation: vm.classLookupGeneration}
+	if vm.Org != nil {
+		key.OrgNamespace = vm.Org.Namespace
+	}
+	if vm.frameSymbolFirstValid && vm.frameSymbolFirstKey == key {
+		return vm.frameSymbolFirstValue
+	}
+	if cached, ok := vm.frameSymbolCache[key]; ok {
+		return cached
+	}
+	symbol := vm.apexMethodFrameSymbol(method)
+	if !vm.frameSymbolFirstValid {
+		vm.frameSymbolFirstKey = key
+		vm.frameSymbolFirstValue = symbol
+		vm.frameSymbolFirstValid = true
+		return symbol
+	}
+	if vm.frameSymbolCache == nil {
+		vm.frameSymbolCache = make(map[frameSymbolKey]string)
+	}
+	vm.frameSymbolCache[key] = symbol
+	return symbol
 }
 
 func (vm *VM) apexMethodFrameSymbol(method Method) string {
@@ -798,10 +1074,11 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if err := vm.ctx.Err(); err != nil {
 			return execOutcome{}, err
 		}
+		vm.work.loopIterations++
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -812,7 +1089,8 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if !conditionValue {
 			return execOutcome{}, nil
 		}
-		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		// The body is its own scope: its locals end with each pass.
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -833,7 +1111,7 @@ func (vm *VM) executeDoWhile(source string, inst ir.Instruction, result *Result)
 		if err := vm.chargeLoopIteration("do/while", iteration); err != nil {
 			return execOutcome{}, err
 		}
-		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -844,7 +1122,7 @@ func (vm *VM) executeDoWhile(source string, inst ir.Instruction, result *Result)
 		default:
 			return out, nil
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -869,10 +1147,20 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if initializer.Op != ir.OpDeclare {
 			continue
 		}
-		name := initializer.Name
+		name, site := initializer.Name, initializer.Pos
 		previous, existed := vm.Globals[name]
 		previousType, hadType := vm.VarTypes[name]
+		declStart := 0
+		if existed {
+			declStart = vm.bindFrame.watchDecl(name)
+		}
 		defer func() {
+			// The loop variable of a finished for statement still binds in
+			// dynamic SOQL (see soql_bind_scope.go).
+			if value, ok := vm.Globals[name]; ok && isStringBindType(vm.VarTypes[name]) &&
+				(!existed || vm.bindFrame.declaredSince(name, declStart)) {
+				vm.rememberDepartedString(name, site, value)
+			}
 			if existed {
 				vm.Globals[name] = previous
 			} else {
@@ -891,11 +1179,25 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 			return out, err
 		}
 	}
+	// Anonymous code has no fields or trigger globals a stale body binding
+	// could shadow in the loop condition or update, so body locals can stay
+	// bound between iterations and be removed once when the loop exits.
+	var kept *[]string
+	if vm.currentClass == "" && !vm.currentTrigger && vm.forBodyBindingsReusable(inst) {
+		kept = new([]string)
+		defer func() {
+			for _, name := range *kept {
+				delete(vm.Globals, name)
+				delete(vm.VarTypes, name)
+				delete(vm.finalLocals, name)
+			}
+		}()
+	}
 	for iteration := 0; ; iteration++ {
 		if err := vm.chargeLoopIteration("for", iteration); err != nil {
 			return execOutcome{}, err
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -906,7 +1208,7 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if !conditionValue {
 			return execOutcome{}, nil
 		}
-		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
+		out, err := vm.executeBlockScopeKeeping(ir.Program{Source: source}, inst, result, kept)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1004,7 +1306,7 @@ func (vm *VM) rejectActiveCollectionAdd(collection Value) error {
 }
 
 func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
-	iterable, err := vm.eval(inst.Expr, result)
+	iterable, err := vm.evalHeapNeutralCollection(inst.Expr, result)
 	if err != nil {
 		return execOutcome{}, dynamicSOQLForLoopError(inst.Expr, err)
 	}
@@ -1030,7 +1332,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	releaseTraversal := vm.beginCollectionTraversal(iterable, true)
 	defer releaseTraversal()
 	removalEpoch := vm.collectionTraversalMutationEpochs[iterable.Ref]
+	chunked := false
 	if vm.shouldChunkEnhancedForList(inst.Type, iterable) {
+		chunked = true
 		if len(values) == 0 && inst.Expr.Kind == ir.ExprSOQL {
 			// SF191: a SOQL list-loop enters once with an empty batch.
 			values = []Value{typedList(inst.Type)}
@@ -1041,7 +1345,18 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	_, existed := vm.Globals[inst.Name]
 	previous := vm.Globals[inst.Name]
 	previousType, hadType := vm.VarTypes[inst.Name]
+	iterated := false
 	defer func() {
+		delete(vm.heapCheck.loopVars, inst.Name)
+		// After the loop a String loop variable binds in dynamic SOQL as
+		// null (see soql_bind_scope.go).
+		if iterated && isStringBindType(inst.Type) {
+			vm.rememberDepartedString(inst.Name, inst.Pos, Null)
+		} else if !iterated && !existed {
+			// A loop that never ran still leaves its variable bindable, as
+			// null and of any type (dynamic_bind_scope_paths D23, E10-E12).
+			vm.rememberEndedBindValue(inst.Name, inst.Pos, Null)
+		}
 		if existed {
 			vm.Globals[inst.Name] = previous
 		} else {
@@ -1066,6 +1381,13 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		}
 		vm.Globals[inst.Name] = coerced
 		vm.VarTypes[inst.Name] = inst.Type
+		iterated = true
+		if vm.coverage != nil && inst.Expr.Kind == ir.ExprSOQL {
+			vm.coverIteration(source, inst.Pos)
+		}
+		if !chunked && !existed && coerced.Ref == value.Ref {
+			vm.noteHeapLoopBinding(inst.Name, inst.Expr, iterable, coerced)
+		}
 		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
@@ -1093,6 +1415,7 @@ func (vm *VM) chargeLoopIteration(kind string, iteration int) error {
 	if iteration >= maxLoopIterations && (vm.limitMode != LimitModeStrict || vm.limitCaps.CPUTimeMS < 0) {
 		return fmt.Errorf("%s loop exceeded %d iterations", kind, maxLoopIterations)
 	}
+	vm.work.loopIterations++
 	return vm.incrementCPUBudget(1)
 }
 
@@ -1135,7 +1458,36 @@ func chunkValuesForEnhancedFor(loopType string, values []Value, size int) []Valu
 	return chunks
 }
 
+// endedCatch is the catch clause that ran in a try statement, if any.
+type endedCatch struct {
+	clause ir.CatchClause
+	value  Value
+	ran    bool
+}
+
 func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
+	var ended endedCatch
+	out, err := vm.executeTryScoped(source, inst, result, &ended)
+	// Catch variables stay bindable in dynamic SOQL after the statement:
+	// the thrown value where the clause ran, null for the others
+	// (dynamic_bind_scope_paths D37, E14-E17).
+	for _, clause := range vmCatchClauses(inst) {
+		if clause.Name == "" {
+			continue
+		}
+		if _, live := vm.Globals[clause.Name]; live {
+			continue
+		}
+		if ended.ran && clause.Pos == ended.clause.Pos && clause.Name == ended.clause.Name {
+			vm.rememberEndedBindValue(clause.Name, clause.Pos, ended.value)
+		} else {
+			vm.rememberEndedBindValue(clause.Name, clause.Pos, Null)
+		}
+	}
+	return out, err
+}
+
+func (vm *VM) executeTryScoped(source string, inst ir.Instruction, result *Result, ended *endedCatch) (execOutcome, error) {
 	out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 	if err != nil {
 		var thrown *apexThrowError
@@ -1153,6 +1505,9 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 			if !vm.exceptionMatchesAny(catchClause.Types, out.thrown) {
 				continue
 			}
+			if vm.coverage != nil {
+				vm.coverSourcePos(source, catchClause.Pos)
+			}
 			previous, existed := vm.Globals[catchClause.Name]
 			previousType, typeExisted := vm.VarTypes[catchClause.Name]
 			caught := out.thrown
@@ -1162,6 +1517,9 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 				vm.VarTypes[catchClause.Name] = catchType
 			}
 			vm.Globals[catchClause.Name] = caught
+			if len(vm.bindFrame.slots) != 0 {
+				vm.dropEndedBindSite(catchClause.Name, catchClause.Pos)
+			}
 			vm.activeExceptions = append(vm.activeExceptions, activeException{value: out.thrown, stack: out.thrownStack})
 			out, err = vm.executeProgram(ir.Program{Instructions: catchClause.Body, Source: source}, result)
 			vm.activeExceptions = vm.activeExceptions[:len(vm.activeExceptions)-1]
@@ -1175,6 +1533,7 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 			} else {
 				delete(vm.VarTypes, catchClause.Name)
 			}
+			ended.clause, ended.value, ended.ran = catchClause, caught, true
 			if err != nil {
 				return execOutcome{}, err
 			}
@@ -1211,6 +1570,9 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 		if c.Else {
 			elseCase = c
 			continue
+		}
+		if vm.coverage != nil {
+			vm.coverSourcePos(source, c.Pos)
 		}
 		for _, expr := range c.Exprs {
 			if caseType, binding, ok := switchTypeCase(expr); ok {
@@ -1416,10 +1778,23 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 			return execOutcome{}, err
 		}
 	}
+	// runAs with a User charges a DML statement; Limits.getRunAs is that
+	// counter (limits_counter_edges runas101, runas151). The Package.Version
+	// form has no row and charges nothing. Native sharing_access_modes d4 rows
+	// (APIs 62.0-68.0) agree: one DML statement per runAs(User) on entry,
+	// nested blocks included, the 151st raises the DML LimitException,
+	// runAs(Version) counts none (u2_04), and the count does not mark
+	// callout-pending work.
+	if changesUser {
+		if err := vm.incrementSavepointStatement(); err != nil {
+			return execOutcome{}, err
+		}
+	}
 	if err := vm.incrementLimit("runAs", 1); err != nil {
 		return execOutcome{}, err
 	}
 	previous := vm.testContext.CurrentUser
+	runnerBefore := vm.currentUserID()
 	previousPackageVersion := vm.testContext.CurrentPackageVersion
 	var priorDescribes map[describeCacheKey]Value
 	var runAsUserID string
@@ -1447,7 +1822,16 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		previousLocaleCase = vm.localeCase
 		vm.snapshotLocaleCase()
 	}
+	// The administrator capture has no runAs boundary. Stop using its
+	// transaction-local assignment marker after entering one.
+	vm.mixedDML.newAdminPermissionSetID = ""
+	if changesUser {
+		defer vm.beginRunAsPermissionFrame(runnerBefore)()
+	}
 	vm.testContext.RunAsDepth++
+	if changesUser {
+		vm.runAsFrameDepths = append(vm.runAsFrameDepths, len(vm.callStack))
+	}
 	if packageVersion.Kind != "" {
 		vm.testContext.CurrentPackageVersion = packageVersion
 		vm.testContext.PackageRunAsDepth++
@@ -1455,16 +1839,17 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 	// A direct UserRecordAccess row warmed inside a runAs block does not
 	// survive the block, and an outer warm row does not reach into it
 	// (ura_direct_carry e10).
-	previousWarmDirectAccess := vm.road174WarmDirectAccess
-	vm.road174WarmDirectAccess = nil
+	previousWarmDirectAccess := vm.case174WarmDirectAccess
+	vm.case174WarmDirectAccess = nil
 	defer func() {
-		vm.road174WarmDirectAccess = previousWarmDirectAccess
+		vm.case174WarmDirectAccess = previousWarmDirectAccess
 		if packageVersion.Kind != "" {
 			vm.testContext.PackageRunAsDepth--
 			vm.testContext.CurrentPackageVersion = previousPackageVersion
 		}
 		vm.testContext.RunAsDepth--
 		if changesUser {
+			vm.runAsFrameDepths = vm.runAsFrameDepths[:len(vm.runAsFrameDepths)-1]
 			if isRunAsDescribe != nil {
 				for key := range vm.describeCache {
 					if isRunAsDescribe(key) {
@@ -1525,7 +1910,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 		}
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	id := sObjectIDFromFields(user.Fields)
 	if id == "" {
@@ -1617,7 +2002,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 			}
 		}
 		vm.recordIsolationJournalMutation(objectName, id, storage.Record{}, false)
-		object.Records[id] = record
+		object.PutRecord(id, record)
 	}
 	vm.Org.Objects[objectName] = object
 	vm.ensureUserProfilePermissionSetAssignment(record)
@@ -1647,4 +2032,140 @@ func dynamicSOQLForLoopError(expr ir.Expr, err error) error {
 		return err
 	}
 	return newExceptionError("QueryException", runtimeErr.Message)
+}
+
+type heapStaticContainerRef struct {
+	fields map[string]Field
+	name   string
+}
+
+// forBodyBindingsReusable reports whether the body locals of a for loop can
+// stay bound between iterations. A stale local would be visible to name
+// resolution that is case-insensitive (a type or class named like the local),
+// so every spelling of each body-declared name in the loop must be the
+// declaration's own spelling. The answer depends only on the loop's IR.
+func (vm *VM) forBodyBindingsReusable(inst ir.Instruction) bool {
+	if len(inst.Then) == 0 {
+		return false
+	}
+	key := &inst.Then[0]
+	if cached, ok := vm.forBodyReusable[key]; ok {
+		return cached
+	}
+	declared := make(map[string]string)
+	var collect func([]ir.Instruction)
+	collect = func(list []ir.Instruction) {
+		for _, child := range list {
+			switch child.Op {
+			case ir.OpDeclare:
+				if child.Name != "" {
+					declared[child.Name] = child.Name
+				}
+			case ir.OpDeclGroup:
+				collect(child.Then)
+			}
+		}
+	}
+	collect(inst.Then)
+	spellings := make(map[string]map[string]bool)
+	scan := func(text string) {
+		for i := 0; i < len(text); {
+			c := text[i]
+			if !(c == '_' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
+				i++
+				continue
+			}
+			start := i
+			for i < len(text) && (text[i] == '_' || text[i] >= '0' && text[i] <= '9' || text[i] >= 'a' && text[i] <= 'z' || text[i] >= 'A' && text[i] <= 'Z') {
+				i++
+			}
+			word := text[start:i]
+			lower := strings.ToLower(word)
+			if spellings[lower] == nil {
+				spellings[lower] = make(map[string]bool)
+			}
+			spellings[lower][word] = true
+		}
+	}
+	// Dynamic SOQL, SOSL and cursor APIs resolve bind names from a query
+	// string built at run time, which can name a body local before this
+	// iteration declares it. Loops that reach them keep per-iteration scopes.
+	runtimeBinds := false
+	var scanExpr func(ir.Expr)
+	scanExpr = func(e ir.Expr) {
+		if callee := strings.ToLower(e.Callee + " " + e.Name); strings.Contains(callee, "query") || strings.Contains(callee, "search") || strings.Contains(callee, "cursor") || strings.Contains(callee, "locator") {
+			runtimeBinds = true
+		}
+		scan(e.Value)
+		scan(e.Name)
+		scan(e.Callee)
+		for _, arg := range e.Args {
+			scanExpr(arg)
+		}
+		for _, named := range e.NamedArgs {
+			scan(named.Name)
+			scanExpr(named.Expr)
+		}
+		if e.Left != nil {
+			scanExpr(*e.Left)
+		}
+		if e.Right != nil {
+			scanExpr(*e.Right)
+		}
+	}
+	var scanList func([]ir.Instruction)
+	var scanInst func(ir.Instruction)
+	scanList = func(list []ir.Instruction) {
+		for _, child := range list {
+			scanInst(child)
+		}
+	}
+	scanInst = func(in ir.Instruction) {
+		scan(in.Type)
+		scan(in.Name)
+		scan(in.Field)
+		for _, t := range in.CatchTypes {
+			scan(t)
+		}
+		scanExpr(in.Expr)
+		if in.Init != nil {
+			scanInst(*in.Init)
+		}
+		scanList(in.Inits)
+		if in.Update != nil {
+			scanInst(*in.Update)
+		}
+		scanList(in.Updates)
+		scanList(in.Then)
+		scanList(in.Else)
+		scanList(in.Catch)
+		for _, c := range in.Catches {
+			for _, t := range c.Types {
+				scan(t)
+			}
+			scan(c.Name)
+			scanList(c.Body)
+		}
+		scanList(in.Finally)
+		for _, c := range in.Cases {
+			for _, e := range c.Exprs {
+				scanExpr(e)
+			}
+			scanList(c.Body)
+		}
+	}
+	scanInst(inst)
+	reusable := !runtimeBinds
+	for name := range declared {
+		forms := spellings[strings.ToLower(name)]
+		if len(forms) != 1 || !forms[name] {
+			reusable = false
+			break
+		}
+	}
+	if vm.forBodyReusable == nil {
+		vm.forBodyReusable = make(map[*ir.Instruction]bool)
+	}
+	vm.forBodyReusable[key] = reusable
+	return reusable
 }

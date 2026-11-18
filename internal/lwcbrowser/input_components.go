@@ -28,6 +28,8 @@ const isTextarea = __IS_TEXTAREA__;
 const colorPattern = "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$";
 const validityFlags = ["badInput", "customError", "patternMismatch", "rangeOverflow", "rangeUnderflow", "stepMismatch", "tooLong", "tooShort", "typeMismatch", "valueMissing"];
 function createBaseComponent() {}
+// Help elements carry ids so the inputs can name them in aria-describedby.
+let helpCounter = 0;
 function booleanValue(value) {
   return typeof value === "string" || Boolean(value);
 }
@@ -47,16 +49,45 @@ function timeText(value) {
   return new Intl.DateTimeFormat(locale, { timeZone: "UTC", hour: "numeric", minute: "2-digit" }).format(date).replace(/\u202f/g, " ");
 }
 function dateFormatExample() { return dateText("2024-12-31"); }
+// Native API 68 captures (en_US and fr_FR): format messages and hints carry a
+// concrete example, "11:30 AM" for a time, and read in the user's language.
+// Only these two languages were captured; other locales keep the English text.
+const isFrench = /^fr(?:[-_]|$)/i.test(String(locale));
+// Release 68 captures (saved API 67.0 and 68.0) show the concrete example for a
+// time too. The older "h:mm a" text, captured in a release 67 org, is kept as
+// history in l18_salesforce.json (r_input_time_conversion). The text follows
+// the org release, not the saved version.
+function badInputMessage(isTime) {
+  const example = isTime ? timeText("11:30") : dateFormatExample();
+  return (isFrench ? "Votre entr\u00e9e ne correspond pas au format autoris\u00e9 " : "Your entry does not match the allowed format ") + example + ".";
+}
+// Dates are read the way dateText reads them: the native date input accepts
+// values such as "42" (year 2042) that a detached date control would reject.
+function unreadableDate(value) { return Number.isNaN(new Date(String(value)).getTime()); }
+// Native API 68 captures (en_US and fr_FR): a date has a picker button whose
+// assistive text names the field; a datetime shows Date and Time sub-labels
+// ("Heure" in French) and a required datetime marks both with an asterisk.
+function pickerText(label) { return (isFrench ? "S\u00e9lectionner une date pour " : "Select a date for ") + label; }
+function timeLabelText() { return isFrench ? "Heure" : "Time"; }
+// Native API 68 captures (b11, b15): a date, time or datetime input names its
+// help elements in aria-describedby. The element holding the format hint has no
+// live region; the element that carries a validation message, or can, has
+// aria-live "polite". A datetime also shares one empty live help element
+// between its date and time inputs.
+function helpIds(uid) { return { date: "help-message-" + uid + "-1", time: "help-message-" + uid + "-2", group: "help-message-" + uid + "-3" }; }
+function formatHint() { return "Format" + (isFrench ? "\u00a0: " : ": ") + dateFormatExample(); }
 function tmpl($api, $cmp) {
   const { h: element, t: text, b: bind, f: flatten } = $api;
   const checkbox = $cmp.isCheckbox;
+  const requiredMark = key => $cmp.required ? [element("abbr", { classMap: { "slds-required": true }, attrs: { "aria-hidden": "true", title: "required" }, key }, [text("*")])] : [];
   const children = [element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [text($cmp.label || "")])];
   {
     const attrs = {
       name: $cmp.name,
       placeholder: $cmp.placeholder,
       "aria-label": $cmp.label,
-      "aria-invalid": $cmp.ariaInvalid,
+      "aria-invalid": $cmp.type === "datetime-local" ? $cmp.dateAriaInvalid : $cmp.ariaInvalid,
+      "aria-describedby": $cmp.dateDescribedBy,
       style: checkbox && $cmp.type === "checkbox" && $cmp.readOnly ? "display:none" : null,
       minlength: $cmp.minLength == null ? null : String($cmp.minLength),
       maxlength: $cmp.maxLength == null ? null : String($cmp.maxLength)
@@ -76,33 +107,56 @@ function tmpl($api, $cmp) {
       required: $cmp.type === "color" ? false : $cmp.required
     };
     if (!isTextarea) props.checked = $cmp.checked;
+    if ($cmp.type === "datetime-local") {
+      children.push(element("span", { classMap: { "slds-form-element__label": true }, key: 14 }, flatten([requiredMark(15), text("Date")])));
+    }
     children.push(element(isTextarea ? "textarea" : "input", {
       classMap: { "slds-input": !isTextarea, "slds-textarea": isTextarea },
       attrs, props, key: 2,
       on: { input: bind($cmp.handleInput), change: bind($cmp.handleChange), focus: bind($cmp.handleFocus), blur: bind($cmp.handleBlur), invalid: bind($cmp.handleInvalid) }
     }));
-    if ($cmp.type === "datetime-local") {
-      children.push(element("input", {
-        classMap: { "slds-input": true },
-        attrs: { type: "text", "aria-label": $cmp.label, "aria-expanded": "false", "aria-invalid": $cmp.ariaInvalid },
-        props: { value: $cmp.displayTime, checked: false, disabled: $cmp.disabled, readOnly: $cmp.readOnly, required: $cmp.required }, key: 7,
-        on: { focus: bind($cmp.handleFocus), blur: bind($cmp.handleBlur), invalid: bind($cmp.handleInvalid) }
-      }));
+    if (["date", "datetime-local"].includes($cmp.type)) {
+      const picker = pickerText($cmp.type === "datetime-local" ? "Date" : ($cmp.label || ""));
+      children.push(element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", title: picker }, key: 12 },
+        [element("span", { classMap: { "slds-assistive-text": true }, key: 13 }, [text(picker)])]));
     }
   }
-  if (["date", "datetime-local"].includes($cmp.type) && !$cmp._message) {
-    children.push(element("div", { classMap: { "slds-form-element__help": true }, key: 8 }, [text("Format: " + dateFormatExample())]));
+  const datetime = $cmp.type === "datetime-local";
+  if ($cmp.type === "date" && !$cmp._message) {
+    children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { id: helpIds($cmp.uid).date }, key: 8 }, [text(formatHint())]));
   }
-  if ($cmp.type === "datetime-local") {
-    for (const key of [9, 10]) children.push(element("div", { attrs: { role: "alert" }, key }, []));
+  if (datetime) {
+    // The hint stays (assistive) unless the date half reports; then the date
+    // half's message takes its place, ahead of the Time sub-label.
+    if ($cmp._message && $cmp.dateHalfBad) {
+      children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { id: helpIds($cmp.uid).date, "aria-live": "polite" }, key: 8 }, [element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [text("Date")]), text($cmp._message)]));
+    } else if (!$cmp._message || $cmp.badHalf === "time") {
+      // Captured: the hint stays for a time-half error; an accepted release 67
+      // row (required and empty) shows no hint beside its missing-value message.
+      children.push(element("div", { classMap: { "slds-form-element__help": true, "slds-assistive-text": true }, attrs: { id: helpIds($cmp.uid).date }, key: 8 }, [text(formatHint())]));
+    }
+    children.push(element("span", { classMap: { "slds-form-element__label": true }, key: 16 }, flatten([requiredMark(17), text(timeLabelText())])));
+    children.push(element("input", {
+      classMap: { "slds-input": true },
+      attrs: { type: "text", "aria-label": $cmp.label, "aria-expanded": "false", "aria-invalid": $cmp.timeAriaInvalid, "aria-describedby": $cmp.timeDescribedBy },
+      props: { value: $cmp.displayTime, checked: false, disabled: $cmp.disabled, readOnly: $cmp.readOnly, required: $cmp.required }, key: 7,
+      on: { input: bind($cmp.handleTimeInput), focus: bind($cmp.handleFocus), blur: bind($cmp.handleBlur), invalid: bind($cmp.handleInvalid) }
+    }));
+    children.push(element("div", { attrs: { role: "alert" }, key: 9 }, []));
+    children.push(element("div", { attrs: { role: "alert", id: helpIds($cmp.uid).group, "aria-live": "polite" }, key: 10 }, []));
   }
   if (!isTextarea || $cmp._message) {
     const help = [];
-    if ($cmp._message) {
+    if ($cmp._message && !(datetime && $cmp.dateHalfBad)) {
       if (!$cmp.isTemporal || $cmp.type === "date") help.push(element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [text($cmp.label || "")]));
       help.push(text($cmp._message));
     }
-    children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: { role: "alert" }, key: 3 }, help));
+    const helpAttrs = { role: "alert" };
+    if ($cmp.isTemporal) {
+      helpAttrs.id = helpIds($cmp.uid).time;
+      helpAttrs["aria-live"] = "polite";
+    }
+    children.push(element("div", { classMap: { "slds-form-element__help": true }, attrs: helpAttrs, key: 3 }, help));
   }
   return [element("label", { classMap: { "slds-form-element": true, "slds-has-error": Boolean($cmp._message) }, key: 0 }, flatten(children))];
 }
@@ -123,9 +177,11 @@ class __INPUT_CLASS__ extends LightningElement {
     this._pattern = undefined;
     this._customValidity = "";
     this._message = "";
+    this.uid = ++helpCounter;
     this._reported = false;
     this._files = null;
     this._committedValue = undefined;
+    this._typedTime = undefined;
   }
   get type() { return this._type; }
   set type(value) {
@@ -146,6 +202,7 @@ class __INPUT_CLASS__ extends LightningElement {
       normalized = input.value;
     }
     this._value = normalized;
+    this._typedTime = undefined;
   }
   get checked() { return this._checked; }
   set checked(value) { this._checked = booleanValue(value); }
@@ -163,7 +220,51 @@ class __INPUT_CLASS__ extends LightningElement {
   set step(value) { this._step = value == null ? undefined : String(value); }
   get pattern() { return this._pattern ?? (this.type === "color" ? colorPattern : undefined); }
   set pattern(value) { this._pattern = value; }
+  // A date or time input names the element that holds its hint or message (the
+  // trailing help element), and a datetime adds the shared live element.
+  get dateDescribedBy() {
+    if (isTextarea || !this.isTemporal) return null;
+    const ids = helpIds(this.uid);
+    if (this.type === "time") return ids.time;
+    if (this.type === "date") return this._message ? ids.time : ids.date;
+    const hasDateHelp = !this._message || this.dateHalfBad || this.badHalf === "time";
+    return (hasDateHelp ? ids.date + " " : "") + ids.group;
+  }
+  get timeDescribedBy() {
+    const ids = helpIds(this.uid);
+    return ids.time + " " + ids.group;
+  }
   get isCheckbox() { return ["checkbox", "checkbox-button", "toggle"].includes(this.type); }
+  // Native API 68 captures: a datetime whose date half cannot be read reports
+  // on the date; the time half stays silent. A bad time half reports its own.
+  get dateHalfBad() {
+    if (this.type !== "datetime-local" || !this.value) return false;
+    return unreadableDate(String(this.value).split("T")[0]);
+  }
+  // Native API 68 capture: a time typed into the datetime time input that
+  // cannot be read reports on the time half.
+  get timeHalfBad() {
+    return this.type === "datetime-local" && this._typedTime !== undefined && this._typedTime !== "" &&
+      Number.isNaN(new Date("1970-01-01 " + this._typedTime).getTime());
+  }
+  // Which half a bad-input report belongs to: "date", "time", or null when
+  // the report is not tied to one half (both inputs then show invalid).
+  get badHalf() {
+    if (!this._reported || this.validity.valid || !this.validity.badInput) return null;
+    return this.dateHalfBad ? "date" : "time";
+  }
+  get dateAriaInvalid() {
+    if (!this._reported || this.validity.valid) return null;
+    return this.badHalf === "time" ? null : "true";
+  }
+  get timeAriaInvalid() {
+    if (!this._reported || this.validity.valid) return null;
+    return this.badHalf === "date" ? null : "true";
+  }
+  handleTimeInput(event) {
+    event.stopPropagation();
+    this._typedTime = event.target.value;
+  }
   get isTemporal() { return ["date", "time", "datetime-local"].includes(this.type); }
   get controlType() {
     if (this.isCheckbox) return "checkbox";
@@ -177,6 +278,7 @@ class __INPUT_CLASS__ extends LightningElement {
     return String(this.value ?? "");
   }
   get displayTime() {
+    if (this._typedTime !== undefined) return this._typedTime;
     if (!this.value || !String(this.value).includes("T")) return "";
     const date = new Date(this.value);
     if (Number.isNaN(date.getTime())) return "";
@@ -207,7 +309,14 @@ class __INPUT_CLASS__ extends LightningElement {
     if (this.type === "email") result.typeMismatch = false;
     result.customError = this._customValidity !== "";
     result.valid = native.valid && !result.customError;
-    if (this.type === "time" && this.value && !input.value) {
+    // Native API 68 captures: an unreadable date or time value is bad input; an
+    // unreadable datetime value is ignored unless the field is required.
+    const unreadable = this.type === "time" ? !input.value : unreadableDate(this.value);
+    if (this.timeHalfBad) {
+      result.badInput = true;
+      result.valid = false;
+    }
+    if (this.isTemporal && this.value && unreadable && (this.type !== "datetime-local" || this.required)) {
       result.badInput = true;
       result.valueMissing = false;
       result.valid = false;
@@ -243,8 +352,8 @@ class __INPUT_CLASS__ extends LightningElement {
       stepMismatch: "Your entry isn't a valid increment."
     };
     if (this.isTemporal) {
-      if (this.type === "time") defaults.badInput = "Your entry does not match the allowed format h:mm a.";
-      else defaults.valueMissing = "Complete this field with format " + dateFormatExample() + ".";
+      defaults.badInput = badInputMessage(this.type === "time" || (this.type === "datetime-local" && !this.dateHalfBad));
+      if (this.type !== "time") defaults.valueMissing = "Complete this field with format " + dateFormatExample() + ".";
       for (const [flag, property, direction] of [["rangeUnderflow", "min", "later"], ["rangeOverflow", "max", "earlier"]]) {
         const bound = this.type === "date" ? dateText(this[property]) : this[property];
         defaults[flag] = "Value must be " + bound + " or " + direction + ".";
@@ -320,7 +429,7 @@ if (!isTextarea) {
 registerDecorators(__INPUT_CLASS__, {
   publicProps,
   publicMethods: ["setCustomValidity", "checkValidity", "reportValidity", "focus", "blur"],
-  fields: ["_type", "_value", "_checked", "_required", "_disabled", "_readOnly", "_step", "_pattern", "_customValidity", "_message", "_reported", "_files"]
+  fields: ["_type", "_value", "_checked", "_required", "_disabled", "_readOnly", "_step", "_pattern", "_customValidity", "_message", "_reported", "_files", "_typedTime"]
 });
 export default registerComponent(__INPUT_CLASS__, { tmpl: template, sel: "__INPUT_TAG__" });
 `

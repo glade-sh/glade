@@ -23,6 +23,8 @@ func TestMetadataInstallationDiscardsOwnedDescribeValues(t *testing.T) {
 					if token.Fields == nil {
 						t.Fatal("missing control token")
 					}
+					// Shared tokens are privatized by the first write, as assignPath does.
+					machine.privatizeSharedDescribeToken(&token)
 					token.Fields["object"] = String("Contact")
 					object := machine.Org.Objects["Account"].Definition
 					desc := machine.describeSObjectValue("Account", object)

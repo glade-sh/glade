@@ -26,7 +26,7 @@ func (vm *VM) generatedRuntimeDisposition(method Method, receiver Value) generat
 		return generatedRuntimeConcrete
 	}
 	className := generatedMethodClassName(method, receiver)
-	if _, generated := generatedPlatformTypes()[strings.ToLower(className)]; !generated {
+	if _, generated := lookupGeneratedPlatformType(strings.ToLower(className)); !generated {
 		if _, local := vm.lookupClass(className); local {
 			return generatedRuntimeConcrete
 		}
@@ -415,7 +415,7 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 	}
 }
 func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, namedArgs map[string]Value) (Value, bool, error) {
-	generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]
+	generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName))
 	if !ok || generated.Kind == apexast.DeclarationInterface || generated.Kind == apexast.DeclarationEnum || vm.isSObjectLikeType(generated.Name) {
 		return Null, false, nil
 	}
@@ -596,7 +596,7 @@ func (vm *VM) newGeneratedPlatformObjectSeen(generated generatedPlatformType, se
 	}
 	seen[key] = true
 	if generated.SuperClass != "" {
-		if parent, ok := generatedPlatformTypes()[strings.ToLower(generated.SuperClass)]; ok {
+		if parent, ok := lookupGeneratedPlatformType(strings.ToLower(generated.SuperClass)); ok {
 			for name, field := range parent.Fields {
 				if metadataCapturedDTOType(generated.Name) {
 					object.Fields[name] = metadataDTOFieldDefault(field.Type)
@@ -736,7 +736,7 @@ func (vm *VM) generatedPlatformStaticFieldValue(typeName, fieldName string) (Val
 }
 func (vm *VM) generatedPlatformField(typeName, fieldName string, static bool) (Field, generatedPlatformType, bool) {
 	for search := typeName; search != ""; {
-		generated, ok := generatedPlatformTypes()[strings.ToLower(search)]
+		generated, ok := lookupGeneratedPlatformType(strings.ToLower(search))
 		if !ok {
 			break
 		}
@@ -768,7 +768,7 @@ func (vm *VM) generatedPlatformDefaultValue(typeName string, explicit Value) Val
 }
 func (vm *VM) generatedPlatformDefaultValueSeen(typeName string, explicit Value, seen map[string]bool) Value {
 	typeName = vm.resolveTypeNameInClass(vm.currentClass, typeName)
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok &&
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok &&
 		generated.Kind == apexast.DeclarationClass &&
 		vm.isPassivePlatformDTOType(generated.Name) {
 		if seen[strings.ToLower(generated.Name)] {

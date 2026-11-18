@@ -1,0 +1,11 @@
+family=review_round6
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=OBS lines from the USER_DEBUG log (anonymous) or the test assertion message (isTest); Salesforce ids masked
+repeats=two clean runs; rows identical
+raw_runs=review6/out/20261117T035722Z and 20261117T040758Z (capture cache, not committed)
+class_api_proof=every row reports the deployed class and trigger API equal to the API under test
+shapes=q_*: anonymous-block updates of an inserted master-detail child (Database.update allOrNone=false, queried record, default mode, explicit user mode through update as user, Database.update with AccessLevel.USER_MODE, queried record in user mode); m_none and m_nested: a mixed upsert (one update, one insert) of parents with COUNT, SUM and MAX roll-ups, a parent trigger logging the roll-up, and, for m_nested, a parent trigger inserting one child during the suspension; mx_route: the same two shapes in a test class
+notes=q_dbf, q_queried, q_queried_nomd and q_default succeed at 62.0 and 67.0; the three explicit user-mode rows raise a DmlException at both. The mixed upsert reads COUNT/SUM/MAX 1/10/10 for the insert group, then 2/17/10 for the update group (MAX still the pre-statement value), and ends 2/27/20; with a nested insert from the parent trigger the inner child trigger reads 2/17/10, the next parent trigger reads 3/18/10 and the end is 3/28/20
+limits=flow and process DML (no class, stack or trigger) satisfies the anonymous predicate with no captured row

@@ -77,7 +77,11 @@ System.debug(a.size()+' '+b.size()+' '+keys.size());
 Map<String,Schema.SObjectField> cp = a.clone(); System.debug(cp === a); System.debug(cp.size());
 System.debug(a.containsKey('Name')+' '+b.containsKey('name')+' '+a.containsKey('Account.Name'));
 for (String k : new List<String>(b.keySet())) { if (k == 'name') System.debug('found'); }`,
-		debug: []string{"62 62 0", "false", "62", "true true false", "found"},
+		// NATIVE review_round9 ks_remove_effect and ks_clear_effect (62.0, 67.0):
+		// writes through the key set reach the map it came from, so a is
+		// emptied. That a second getMap() (b) keeps its fields is an unbacked
+		// Glade pin: no row reads a sibling holder.
+		debug: []string{"0 62 0", "false", "0", "false true false", "found"},
 	},
 }
 

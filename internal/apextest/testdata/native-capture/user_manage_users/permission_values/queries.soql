@@ -1,0 +1,2 @@
+SELECT Name, UserType, PermissionsManageUsers, PermissionsManageInternalUsers FROM Profile ORDER BY Name
+SELECT IsOwnedByProfile, Profile.Name, Profile.UserType, PermissionsManageUsers, PermissionsManageInternalUsers FROM PermissionSet WHERE IsOwnedByProfile = true ORDER BY Profile.Name

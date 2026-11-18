@@ -1,0 +1,1 @@
+<apex:page controller="TableCapture" showHeader="false" sidebar="false"><apex:dataTable id="probe" value="{!emptyRows}" var="row"><apex:column value="{!row}"/><apex:column value="{!row}"/></apex:dataTable></apex:page>

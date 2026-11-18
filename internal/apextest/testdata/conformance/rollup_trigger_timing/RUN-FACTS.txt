@@ -1,0 +1,10 @@
+family=rollup_trigger_timing
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=OBS lines from the USER_DEBUG log (anonymous) or the test assertion message (isTest); Salesforce ids masked as <id>
+repeats=two clean runs per family; rows identical across both runs and both APIs
+notes=the caller-side T= value is the last RtLog.add entry only (the capture's add keeps the separator but drops the earlier text); read the trigger-side EV lines for the roll-up values
+local_replay=gap_capture_conformance_test.go; the local Admin profile carries the permission set the native user held
+raw_runs=rollup-trigger-timing/out/20261116T143235Z and 20261116T142910Z (capture cache, not committed)
+class_api_note=this capture predates the class API proof columns; its saved project metadata reports apiVersion 62.0 for every class and the trigger (confirmed from the two raw runs' single deploy.json), and review_round4 and review_round5 show a 67.0 test class failing the same update in every variant. The replay compiles this family's classes and triggers at 62.0 for the 67.0 rows (gapFamily.classAPI).

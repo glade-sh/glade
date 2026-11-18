@@ -1,0 +1,25 @@
+object	column	api	route	result	outcome
+Account	CREATED_DATE	59.0	deploy	accepted	deployed
+Account	FULL_NAME	59.0	deploy	rejected	Could not resolve list view column
+Account	LAST_MODIFIED_DATE	59.0	deploy	rejected	Could not resolve list view column
+Account	NOT_A_REAL_COLUMN	59.0	deploy	rejected	Could not resolve list view column
+Contact	CREATED_DATE	59.0	deploy	accepted	deployed
+Contact	FULL_NAME	59.0	deploy	accepted	deployed
+Contact	LAST_MODIFIED_DATE	59.0	deploy	rejected	Could not resolve list view column
+Contact	NOT_A_REAL_COLUMN	59.0	deploy	rejected	Could not resolve list view column
+ProbeItem__c	CREATED_DATE	59.0	deploy	accepted	deployed
+ProbeItem__c	FULL_NAME	59.0	deploy	rejected	Could not resolve list view column
+ProbeItem__c	LAST_MODIFIED_DATE	59.0	deploy	rejected	Could not resolve list view column
+ProbeItem__c	NOT_A_REAL_COLUMN	59.0	deploy	rejected	Could not resolve list view column
+Account	CREATED_DATE	67.0	deploy	accepted	deployed
+Account	FULL_NAME	67.0	deploy	rejected	Could not resolve list view column
+Account	LAST_MODIFIED_DATE	67.0	deploy	rejected	Could not resolve list view column
+Account	NOT_A_REAL_COLUMN	67.0	deploy	rejected	Could not resolve list view column
+Contact	CREATED_DATE	67.0	deploy	accepted	deployed
+Contact	FULL_NAME	67.0	deploy	accepted	deployed
+Contact	LAST_MODIFIED_DATE	67.0	deploy	rejected	Could not resolve list view column
+Contact	NOT_A_REAL_COLUMN	67.0	deploy	rejected	Could not resolve list view column
+ProbeItem__c	CREATED_DATE	67.0	deploy	accepted	deployed
+ProbeItem__c	FULL_NAME	67.0	deploy	rejected	Could not resolve list view column
+ProbeItem__c	LAST_MODIFIED_DATE	67.0	deploy	rejected	Could not resolve list view column
+ProbeItem__c	NOT_A_REAL_COLUMN	67.0	deploy	rejected	Could not resolve list view column

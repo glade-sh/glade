@@ -1,0 +1,4 @@
+{"api": "62.0", "id": "md_variants", "route": "istest", "tests": [["bo", "Fail", "System.AssertException: Assertion Failed: Bo|ok"], ["ru", "Fail", "System.AssertException: Assertion Failed: Ru|ok"], ["tr", "Fail", "System.AssertException: Assertion Failed: Tr|ok"]]}
+{"api": "67.0", "id": "md_variants", "route": "istest", "tests": [["bo", "Fail", "System.AssertException: Assertion Failed: Bo|System.DmlException"], ["ru", "Fail", "System.AssertException: Assertion Failed: Ru|System.DmlException"], ["tr", "Fail", "System.AssertException: Assertion Failed: Tr|System.DmlException"]]}
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}

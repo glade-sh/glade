@@ -8,8 +8,11 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-// Local ownership controls through actual test and request compilers. Native
-// reads remain pinned by ../vm/testdata/describe_sharing/org.tsv:2,4,5,7;
+// Local ownership controls through actual test and request compilers. A write
+// through a key set reaches the map it came from and every alias of it (NATIVE
+// review_round9 ks_remove_effect and ks_clear_effect, 62.0 and 67.0); that a
+// second getMap() holder and an earlier clone keep their fields is an unbacked
+// Glade pin, since no row reads them. Native reads remain pinned by ../vm/testdata/describe_sharing/org.tsv:2,4,5,7;
 // getMap clear and its empty-copy boundary match schema_field_map_copy/org.tsv C54–C60.
 func TestFieldMapReadProjectAndRequestRoutes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
@@ -34,14 +37,14 @@ global static void observe() {
     Set<String> otherKeys = first.keySet(); otherKeys.removeAll(new Set<String>{'name'});
     Set<String> retainedKeys = first.keySet(); retainedKeys.retainAll(new Set<String>{'id'});
     Set<String> emptyKeys = first.keySet(); emptyKeys.clear();
-    System.assertEquals(beforeSize, first.size());
+    System.assertEquals(0, first.size());
+    System.assertEquals(0, alias.size());
+    System.assertEquals(0, FieldMapOwner.stored.size());
+    System.assertEquals(0, instance.member.size());
     System.assertEquals(beforeSize, second.size());
-    System.assertEquals(beforeSize, alias.size());
     System.assertEquals(beforeSize, copied.size());
-    System.assertEquals(beforeSize, FieldMapOwner.stored.size());
-    System.assertEquals(beforeSize, instance.member.size());
-    System.assertEquals('Name', first.get('Name').getDescribe().getName());
-    Schema.SObjectField scalar = first.get('Name');
+    System.assertEquals('Name', second.get('Name').getDescribe().getName());
+    Schema.SObjectField scalar = second.get('Name');
     System.assertEquals('Name', scalar.getDescribe().getName());
     System.assertEquals(true, scalar.getDescribe().isNameField());
     calls = 0;
@@ -105,4 +108,30 @@ global static void clearMap() {
 			})
 		}
 	}
+}
+
+// A test that hits the read-only key set fault reports the native type and
+// message in its result; the fault stays uncatchable (review_round10 g_test).
+func TestReadOnlyKeySetFaultReportsFinalExceptionInTestResult(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"62.0"}`)
+	classes := filepath.Join(root, "force-app/main/default/classes")
+	writeFile(t, filepath.Join(classes, "KeyFault.cls"), `@IsTest private class KeyFault {
+@IsTest static void run() {
+    Map<String,Integer> m = new Map<String,Integer>{'a' => 1};
+    try { m.keySet().add('b'); } catch (Exception e) { System.assert(false, 'caught ' + e.getTypeName()); }
+}
+}`)
+	writeFile(t, filepath.Join(classes, "KeyFault.cls-meta.xml"), "<ApexClass><apiVersion>62.0</apiVersion><status>Active</status></ApexClass>")
+	index := loadTestIndex(t, root)
+	run := Run(index, Options{Parallelism: 1, NoDiskCache: true})
+	for _, suite := range run.Suites {
+		for _, test := range suite.Cases {
+			if test.Problem == nil || test.Problem.Type != "System.FinalException" || test.Problem.Message != "Collection is read-only" {
+				t.Fatalf("problem = %+v", test.Problem)
+			}
+			return
+		}
+	}
+	t.Fatal("no test case ran")
 }

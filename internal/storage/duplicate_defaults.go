@@ -53,7 +53,7 @@ func standardDuplicateRule(seed standardDuplicateRuleSeed, active bool) Duplicat
 		Object: seed.object, Name: seed.name, Active: active,
 		ActionOnInsert: "Allow", ActionOnUpdate: "Allow",
 		OperationsOnInsert: []string{"Alert", "Report"}, OperationsOnUpdate: []string{"Report"},
-		AlertText: seed.alert, SecurityOption: "EnforceSharingRules", SortOrder: seed.order,
+		Seeded: true, AlertText: seed.alert, SecurityOption: "EnforceSharingRules", SortOrder: seed.order,
 		MatchRules: []MatchingRule{{Object: seed.matchObject, Name: seed.match, Status: "Active"}},
 	}
 }

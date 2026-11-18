@@ -308,7 +308,7 @@ func TestChildRelationshipScanCandidateAllocationBound(t *testing.T) {
 			}
 			// The name set can allocate map groups; it must not allocate an
 			// ObjectState value for every candidate as the former map did.
-			if limit := float64(len(want))/4 + 16; allocations > limit {
+			if limit := float64(float64(len(want))/4) + 16; allocations > limit {
 				t.Fatalf("%d candidates allocated %.0f times, limit %.0f", len(want), allocations, limit)
 			}
 		})

@@ -1,0 +1,5 @@
+capture=Test.stopTest asynchronous neighbor ordering
+route=istest
+apis=62.0 67.0 68.0
+observation=assertion message after Test.stopTest
+org=fresh scratch org, deleted after capture

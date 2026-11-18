@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestCase339ServerBoundsSlowRequestBody(t *testing.T) {
@@ -28,7 +30,7 @@ func TestCase339ServerBoundsSlowRequestBody(t *testing.T) {
 	}()
 	defer func() { cancel(); <-done }()
 	var conn net.Conn
-	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); {
+	for deadline := time.Now().Add(testutil.Deadline(5 * time.Second)); time.Now().Before(deadline); {
 		conn, err = net.DialTimeout("tcp", addr, time.Second)
 		if err == nil {
 			break

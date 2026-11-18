@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -147,11 +148,33 @@ func upsertHostServer(t *testing.T, api string) *Server {
 	}
 	srv := newLightningTestServer(t, &org, source)
 	configureVisualforceTestPrincipal(t, srv)
+	grantUpsertHostRouteKey(srv)
 	srv.SetProjectIndex(typesys.Build(p, schema))
 	if srv.runtimeErr != nil {
 		t.Fatalf("compile: %v", srv.runtimeErr)
 	}
 	return srv
+}
+
+// grantUpsertHostRouteKey assigns the principal a permission set granting
+// Contact.RouteKey__c, matching the native twin's setup: the
+// standard_ext_upsert_lightning rows (permset grant) succeed at 67.0, while
+// the ungranted administrator is denied on the external key.
+func grantUpsertHostRouteKey(srv *Server) {
+	const set = storage.ID("0PS000000000179")
+	for _, object := range []string{"PermissionSet", "PermissionSetAssignment", "FieldPermissions"} {
+		storage.EnsureStandardObject(srv.Org, object)
+	}
+	srv.Org.Objects["PermissionSet"].Records[set] = storage.Record{ID: set, Object: "PermissionSet", Fields: map[string]storage.Value{}}
+	// Lightning routes run as the org's default user, Visualforce as the test
+	// principal; the native twin assigns the set to the running admin.
+	n := 0
+	for id := range srv.Org.Objects["User"].Records {
+		n++
+		aid := storage.ID(fmt.Sprintf("0Pa00000000%04d", n))
+		srv.Org.Objects["PermissionSetAssignment"].Records[aid] = storage.Record{ID: aid, Object: "PermissionSetAssignment", Fields: map[string]storage.Value{"AssigneeId": storage.IDValue(id), "PermissionSetId": storage.IDValue(set)}}
+	}
+	srv.Org.Objects["FieldPermissions"].Records["0FP000000000179"] = storage.Record{ID: "0FP000000000179", Object: "FieldPermissions", Fields: map[string]storage.Value{"ParentId": storage.IDValue(set), "SObjectType": storage.StringValue("Contact"), "Field": storage.StringValue("Contact.RouteKey__c"), "PermissionsRead": storage.BooleanValue(true), "PermissionsEdit": storage.BooleanValue(true)}}
 }
 
 func upsertHostNativeExpected(t *testing.T, api, label, shape string) string {
@@ -470,8 +493,11 @@ func TestUpsertDuplicateUncapturedScopeLightningAndVisualforce(t *testing.T) {
 	}
 }
 
-// Missing and null prior keys are uncaptured local preservation controls.
-func TestUpsertDuplicateUncapturedBlankPriorLightningAndVisualforce(t *testing.T) {
+// Host twins of the null-to-matching edit and external-key update rows:
+// ../apextest/testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:26 anonymous 62.0
+// ../apextest/testdata/conformance/duplicate_rule_evaluation/edit_gate/org.tsv:30 anonymous 67.0
+// E4b and E11existing supersede the earlier uncaptured blank-prior control.
+func TestUpsertDuplicateBlankPriorLightningAndVisualforce(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, prior := range []string{"false", "true"} {
 			for _, route := range []string{"lightning", "visualforce"} {
@@ -486,12 +512,12 @@ func TestUpsertDuplicateUncapturedBlankPriorLightningAndVisualforce(t *testing.T
 						if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
 							t.Fatal(err)
 						}
-						if rec.Code != http.StatusOK || out.Error != nil || out.Data != "ok" {
+						if rec.Code != http.StatusOK || out.Error != nil || out.Data != "DUPLICATES_DETECTED" {
 							t.Fatalf("status %d response %+v", rec.Code, out)
 						}
 					} else {
 						result := postVisualforceRemotingWithViewState(t, srv, `[{"action":"AjaxController","method":"remoteBlankPrior","data":[`+prior+`],"type":"rpc","tid":1}]`)
-						if len(result) != 1 || !result[0].Status || result[0].Result != "ok" {
+						if len(result) != 1 || !result[0].Status || result[0].Result != "DUPLICATES_DETECTED" {
 							t.Fatalf("response %+v", result)
 						}
 					}

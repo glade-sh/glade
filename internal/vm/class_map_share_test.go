@@ -7,6 +7,7 @@ import (
 	"sort"
 	"sync"
 	"testing"
+	"unsafe"
 )
 
 func classMapPointer(classes map[string]Class) uintptr {
@@ -348,6 +349,9 @@ func TestSameClassValueDetectsEveryClassField(t *testing.T) {
 			field.Set(reflect.AppendSlice(reflect.MakeSlice(field.Type(), 0, field.Len()), field))
 		case reflect.Map:
 			field.Set(reflect.MakeMap(field.Type()))
+		case reflect.Pointer:
+			// Class.lazy is unexported; reflect cannot set it directly.
+			reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Set(reflect.New(field.Type().Elem()))
 		default:
 			t.Fatalf("Class.%s has kind %s; teach sameClassValue to compare it", classType.Field(i).Name, field.Kind())
 		}

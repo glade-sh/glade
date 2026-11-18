@@ -656,5 +656,915 @@
     "field": "Contact.Title",
     "read": true,
     "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.ActualCost",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.AmountAllOpportunities",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.AmountWonOpportunities",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.BudgetedCost",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.EndDate",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.ExpectedResponse",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.ExpectedRevenue",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.IsActive",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfContacts",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfConvertedLeads",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfLeads",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfOpportunities",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfResponses",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfWonOpportunities",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.NumberSent",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.ParentId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.StartDate",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.Status",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Campaign",
+    "field": "Campaign.Type",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.AccountId",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.AssetId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.ClosedDate",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.ContactId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.IsEscalated",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.Origin",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.ParentId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.Priority",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.Reason",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.Subject",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.SuppliedCompany",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.SuppliedEmail",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.SuppliedName",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.SuppliedPhone",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Case",
+    "field": "Case.Type",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Address",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.AnnualRevenue",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.CleanStatus",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.CompanyDunsNumber",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.DandbCompanyId",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Email",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Fax",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Industry",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Jigsaw",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.LeadSource",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.MobilePhone",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.NumberOfEmployees",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Phone",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Rating",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Title",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Lead",
+    "field": "Lead.Website",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Product2",
+    "field": "Product2.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Product2",
+    "field": "Product2.DisplayUrl",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Product2",
+    "field": "Product2.ExternalDataSourceId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Product2",
+    "field": "Product2.ExternalId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Product2",
+    "field": "Product2.Family",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Product2",
+    "field": "Product2.ProductCode",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Product2",
+    "field": "Product2.QuantityUnitOfMeasure",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Product2",
+    "field": "Product2.StockKeepingUnit",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Task",
+    "field": "Task.ActivityDate",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Task",
+    "field": "Task.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Task",
+    "field": "Task.WhatId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "Standard User",
+    "object": "Task",
+    "field": "Task.WhoId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.ActualCost",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.AmountAllOpportunities",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.AmountWonOpportunities",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.BudgetedCost",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.EndDate",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.ExpectedResponse",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.ExpectedRevenue",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.IsActive",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfContacts",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfConvertedLeads",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfLeads",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfOpportunities",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfResponses",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.NumberOfWonOpportunities",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.NumberSent",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.ParentId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.StartDate",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.Status",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Campaign",
+    "field": "Campaign.Type",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.AccountId",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.AssetId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.ClosedDate",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.ContactId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.IsEscalated",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.Origin",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.ParentId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.Priority",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.Reason",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.Subject",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.SuppliedCompany",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.SuppliedEmail",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.SuppliedName",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.SuppliedPhone",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Case",
+    "field": "Case.Type",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Address",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.AnnualRevenue",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.CleanStatus",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.CompanyDunsNumber",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.DandbCompanyId",
+    "read": true,
+    "edit": false
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Email",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Fax",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Industry",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Jigsaw",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.LeadSource",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.MobilePhone",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.NumberOfEmployees",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Phone",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Rating",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Title",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Lead",
+    "field": "Lead.Website",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Product2",
+    "field": "Product2.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Product2",
+    "field": "Product2.DisplayUrl",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Product2",
+    "field": "Product2.ExternalDataSourceId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Product2",
+    "field": "Product2.ExternalId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Product2",
+    "field": "Product2.Family",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Product2",
+    "field": "Product2.ProductCode",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Product2",
+    "field": "Product2.QuantityUnitOfMeasure",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Product2",
+    "field": "Product2.StockKeepingUnit",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Task",
+    "field": "Task.ActivityDate",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Task",
+    "field": "Task.Description",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Task",
+    "field": "Task.WhatId",
+    "read": true,
+    "edit": true
+  },
+  {
+    "profile": "System Administrator",
+    "object": "Task",
+    "field": "Task.WhoId",
+    "read": true,
+    "edit": true
   }
 ]

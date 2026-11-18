@@ -70,7 +70,7 @@ func TestSchemaFieldMapOriginalMutationConformance(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		re := regexp.MustCompile(`System\.debug\('ROAD123\|(C[0-9]+)\|'\+(.+)\);`)
+		re := regexp.MustCompile(`System\.debug\('CASE123\|(C[0-9]+)\|'\+(.+)\);`)
 		source := re.ReplaceAllStringFunc(string(raw), func(line string) string {
 			p := re.FindStringSubmatch(line)
 			if expected[api+"/anonymous/"+p[1]] != "true" || expected[api+"/isTest/"+p[1]] != "true" {
@@ -109,7 +109,7 @@ func TestSchemaFieldMapOriginalMutationConformance(t *testing.T) {
 					if result.Status != testreport.StatusPass {
 						t.Errorf("%s %s %v", api, result.MethodName, result.Problem)
 					}
-				} else if result.Status == testreport.StatusPass || result.Problem == nil || !strings.Contains(result.Problem.Message, "FinalException") {
+				} else if result.Status == testreport.StatusPass || result.Problem == nil || !strings.Contains(result.Problem.Type+": "+result.Problem.Message, "System.FinalException: Collection is read-only") {
 					t.Errorf("%s %s expected FinalException: %v", api, result.MethodName, result.Problem)
 				}
 			}

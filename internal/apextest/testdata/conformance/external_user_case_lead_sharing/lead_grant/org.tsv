@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome
+PclLeadCcTest	62.0	istest	true	Failed	run=Fail System.DmlException: Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, The user license doesn't allow the permission: Read Lead: []
+PclLeadCcTest	67.0	istest	true	Failed	run=Fail System.DmlException: Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, The user license doesn't allow the permission: Read Lead: []
+PclLeadCcpTest	62.0	istest	true	Failed	run=Fail System.DmlException: Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, The user license doesn't allow the permission: Read Lead: []
+PclLeadCcpTest	67.0	istest	true	Failed	run=Fail System.DmlException: Insert failed. First exception on row 0; first error: FIELD_INTEGRITY_EXCEPTION, The user license doesn't allow the permission: Read Lead: []

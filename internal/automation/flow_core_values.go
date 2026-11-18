@@ -43,6 +43,11 @@ func flowCoreScalarDefault(variable flowVariableXML) *storage.Value {
 		default:
 			return nil
 		}
+	case "date":
+		if strings.TrimSpace(variable.Value.DateValue) == "" {
+			return nil
+		}
+		value = storage.DateValue(strings.TrimSpace(variable.Value.DateValue))
 	default:
 		return nil
 	}

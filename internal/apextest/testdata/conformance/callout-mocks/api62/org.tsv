@@ -1,0 +1,9 @@
+id	api	route	compiled	success	outcome
+cm01	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"req":{"xreq":"asked","body":"payload","endpoint":"https://mock.invalid/
+cm02	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"delta":1,"header":"on","body":"sr-body\n","status":"Accepted","code":20
+cm03	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"missing":"System.NullPointerException|Static Resource not found: <null>
+cm04	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"last":{"requestClass":"EchoRequest","stubClass":"MockSoapService","resp
+cm05	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"delta":0,"error":"System.TypeException|Methods defined as TestMethod do
+cm06	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"limit":100,"delta":1,"headerNull":true,"body":"sr-body\n","status":"OK"
+cm07	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"secondCalls":1,"firstCalls":0,"body":"second-body"}
+cm08	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"error":"System.TypeException|Mock object doesn't implement the supplied

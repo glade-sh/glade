@@ -1,0 +1,3 @@
+public class NsCtl { public static Integer level = 0; public static Integer maxLevel = 1; public static String mode = ''; public static String log = ''; public static List<Integer> amts = new List<Integer>();
+  public static String fmt(NsP__c p) { return p.Cnt__c + '/' + p.Sm__c + '/' + p.Mn__c + '/' + p.Mx__c + '/' + p.Fc__c; }
+  public static void reset(String m, Integer mx, List<Integer> a) { level = 0; mode = m; maxLevel = mx; log = ''; amts = a; } }

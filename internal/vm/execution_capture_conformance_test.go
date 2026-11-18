@@ -283,10 +283,8 @@ func runExecutionCaptureFixture(t *testing.T, family string, count int, fixture 
 					routes = []string{"direct_test", "project_test"}
 				}
 				for _, route := range routes {
-					// Cases stay serial: project_test routes run the semantic gate on
-					// the api subtest's shared index, which is not safe to analyze
-					// concurrently.
 					t.Run(route+"/"+tc.id, func(t *testing.T) {
+						t.Parallel()
 						read := func(name string) string {
 							t.Helper()
 							return executionCaptureReadFile(t, fixture, name)

@@ -15,6 +15,9 @@ func TestCase349CapturedReviewNamedProjectRoutes(t *testing.T) {
 			writeFile(t, filepath.Join(root, "sfdx-project.json"), fmt.Sprintf(`{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":%q}`, api))
 			writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{"edition":"Developer","features":["PersonAccounts"]}`)
 			writeFile(t, filepath.Join(base, "objects/Account/fields/ProbeKey__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ProbeKey__c</fullName><label>Probe Key</label><length>80</length><type>Text</type><externalId>true</externalId><unique>true</unique></CustomField>`)
+			// The upserts run in default mode; an ungranted custom key is not visible to the
+			// administrator (standard_ext_upsert rows), so the profile grants it.
+			writeFile(t, filepath.Join(base, "profiles/Admin.profile-meta.xml"), `<?xml version="1.0" encoding="UTF-8"?><Profile xmlns="http://soap.sforce.com/2006/04/metadata"><custom>false</custom><fieldPermissions><editable>true</editable><field>Account.ProbeKey__c</field><readable>true</readable></fieldPermissions></Profile>`)
 			meta := fmt.Sprintf(`<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexClass>`, api)
 			writeFile(t, filepath.Join(base, "triggers/CaptureObserver.trigger"), `trigger CaptureObserver on Account (before update) { for(Account a:Trigger.new) a.Name=a.Name; }`)
 			writeFile(t, filepath.Join(base, "triggers/CaptureObserver.trigger-meta.xml"), fmt.Sprintf(`<ApexTrigger xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>%s</apiVersion><status>Active</status></ApexTrigger>`, api))

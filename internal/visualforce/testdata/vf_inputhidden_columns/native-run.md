@@ -1,0 +1,1 @@
+Fresh 30-day Developer scratch org, synthetic page deployments at API 59.0 and 67.0. Five rejection cases vary entity references in the inputHidden tag, preceding markup on the same line and preceding markup on a prior line. Each row records the full deploy rejection. Scratch deleted and unique-description ScratchOrgInfo verified Deleted.

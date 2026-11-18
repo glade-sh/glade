@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -249,6 +250,22 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 		if token, ok := vm.lookupSObjectTypeToken(parts); ok {
 			return token, nil
+		}
+		// A field directly after <Object>.SObjectType is a field token,
+		// even when its name is also an object-describe property. Keep the
+		// captured SObjectType-field collision and reserved holders intact.
+		if len(parts) == 3 && strings.EqualFold(parts[1], "SObjectType") && !strings.EqualFold(parts[2], "fields") && !strings.EqualFold(parts[2], "fieldSets") {
+			if _, fieldCollision := vm.sObjectTypeFieldToken(parts[:2]); !fieldCollision {
+				if objectName, definition, ok := vm.describeObjectDefinition(parts[0]); ok {
+					namespace := ""
+					if vm.Org != nil {
+						namespace = vm.Org.Namespace
+					}
+					if field, found := vm.resolveDeclaredSObjectTokenField(objectName, definition, namespace, parts[2]); found {
+						return vm.sObjectFieldTokenFromField(objectName, field), nil
+					}
+				}
+			}
 		}
 		if len(parts) > 2 {
 			if token, ok := vm.lookupSObjectTypeToken(parts[:2]); ok {
@@ -832,6 +849,7 @@ func (vm *VM) setGraphFieldValue(object *Value, name string, value Value) {
 	if object.Fields == nil {
 		object.Fields = make(map[string]Value)
 	}
+	object.detachSharedFields()
 	object.Fields[name] = value
 	vm.registerSObjectAliasField(*object, name, value)
 }
@@ -895,7 +913,15 @@ func (vm *VM) setExplicitSObjectFieldValue(object *Value, name string, value Val
 		vm.markCollectionRefsEscaped(value)
 		vm.registerSObjectAliasField(*object, name, value)
 	}
-	vm.advanceAliasContainmentMutation()
+	// Storing a reference-free scalar can only remove containment, never add
+	// it, so cached containment misses stay valid. Only the receiver cache is
+	// cleared.
+	if value.Ref == 0 && (value.Kind == ValueNull || value.Kind == ValueInt || value.Kind == ValueDecimal ||
+		value.Kind == ValueBool || value.Kind == ValueString) {
+		vm.clearNestedReceiverCache()
+	} else {
+		vm.advanceAliasContainmentMutation()
+	}
 	setExplicitSObjectField(object, name, value)
 }
 
@@ -1094,22 +1120,20 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		}
 	}
 	if value, ok := vm.activeSetterStoredValue(owner, fieldName, field, receiver); ok {
-		if vm.isCurrentGetter(field.Getter) {
+		// Source-backed setters use the property's own storage for a direct
+		// read. Unlocated, hand-registered instance accessors retain the VM's
+		// earlier explicit-getter behavior.
+		if vm.isCurrentGetter(field.Getter) || (vm.isCurrentGetter(field.Setter) && (field.Static || field.Setter.File != "")) {
 			return value, nil
 		}
 	}
 	key := getterCallKey(owner, storageName, receiver)
-	// Owned observations execute finite instance Set and static Map getters
-	// again when a declaring-class helper reads them behind a recursion guard.
-	// Preserve backing-storage fallback for direct self-access and deeper
-	// recursion; only one helper-mediated reentry is observed.
-	allowHelperReentry := vm.activeGetters[key] == 1 &&
-		len(field.Getter.Program.Instructions) > 0 &&
-		strings.EqualFold(vm.currentMethod.ClassName, field.Getter.ClassName) &&
-		!propertyAccessorMethod(vm.currentMethod) &&
-		((receiver.projectClass && collectionBase(field.Type) == "Set" && field.Setter != nil &&
-			len(field.Setter.Program.Instructions) > 0) ||
-			(receiver.Kind == ValueNull && field.Static && isMapType(field.Type) && field.HasSetter))
+	// Helper-mediated reads re-enter the getter; direct accessor reads
+	// continue to use backing storage.
+	allowHelperReentry := len(field.Getter.Program.Instructions) > 0 &&
+		((receiver.Kind == ValueNull && field.Static && !vm.currentMethod.IsConstructor && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
+			(receiver.Kind == ValueObject && propertyAccessorMethod(vm.currentMethod) && !vm.isCurrentGetter(field.Getter) && !vm.isCurrentGetter(field.Setter)) ||
+			(receiver.Kind == ValueObject && receiver.projectClass && !propertyAccessorMethod(vm.currentMethod) && strings.EqualFold(vm.currentMethod.ClassName, field.Getter.ClassName)))
 	if vm.activeGetters[key] > 0 && !allowHelperReentry {
 		if _, value, ok := objectFieldValue(receiver, storageName); ok {
 			return vm.currentGetterStoredValue(owner, field, value), nil
@@ -1125,6 +1149,11 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 	}()
 	value, err := vm.callMethodWithReceiver(*field.Getter, receiver, nil, resultForLookup())
 	if err != nil {
+		var fault *RuntimeError
+		if vm.activeGetters[key] > 1 &&
+			errors.As(err, &fault) && fault.callStackLimit {
+			return Null, &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack, callStackLimit: true}
+		}
 		return value, err
 	}
 	fieldType := vm.resolveTypeNameInClass(owner, field.Type)
@@ -1168,6 +1197,14 @@ func (vm *VM) activeSetterStoredValue(owner, fieldName string, field Field, rece
 		return defaultValue(field.Type, field.InitialValue), true
 	}
 	return Null, false
+}
+
+func (vm *VM) staticSetterReentryError(key string, err error) error {
+	var fault *RuntimeError
+	if vm.activeSetters[key] > 1 && errors.As(err, &fault) && fault.callStackLimit {
+		return &RuntimeError{Type: "System.LimitException", Message: "Maximum stack depth reached: 1001", Stack: fault.Stack, callStackLimit: true}
+	}
+	return err
 }
 
 func propertyAccessorMethod(method Method) bool {
@@ -1646,6 +1683,12 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	if field.APIName == "" {
 		field.APIName = canonical
 	}
+	// Anonymous Apex cannot name a standard field the default administrator has
+	// no grant on (native case_standard_field_fls E01, E06-E08: the token does not
+	// resolve).
+	if adminFLSStandardField(objectName, canonical) && vm.anonymousPolicyHiddenField(objectName, canonical) {
+		return Null, false
+	}
 	return vm.sObjectFieldTokenFromField(objectName, field), true
 }
 
@@ -1732,9 +1775,10 @@ func (vm *VM) lookupSObjectSharingReasonToken(parts []string) (Value, bool) {
 	if !ok {
 		return Null, false
 	}
-	if field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist {
-		// Standard share field stubs expose RowCause as String even when the
-		// describe catalog carries the platform's sharing reason values.
+	if (field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist) || len(field.PicklistValues) == 0 {
+		// Standard share field stubs expose RowCause as String, or as a
+		// picklist without values (restricted-picklist stub typing), even when
+		// the describe catalog carries the platform's sharing reason values.
 		if storage.CapturedStandardSharingReasonObject(definition.APIName) {
 			if reason, found := storage.StandardPicklistValue(definition.APIName, fieldName, reasonName); found {
 				return String(reason), true
@@ -2482,9 +2526,10 @@ func (vm *VM) lookupPathFromHop(root Value, parts []string, hops int) (Value, er
 			if definition, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists {
 				value = coerceReadSchemaFieldIdentity(current, value, fieldDef)
 				value = coerceDottedSObjectBooleanNull(current, value, canonicalPart, definition, fieldDef)
-				// Preserve the supplied COUNT snapshot on trigger records. Other
-				// rollup operations retain their existing read path until captured.
-				triggerCountSnapshot := isTriggerSObject(current) && strings.EqualFold(fieldDef.SummaryOperation, "count")
+				// Preserve the supplied COUNT and SUM snapshot on trigger records
+				// (review_round7: a mixed upsert's parent trigger reads the held
+				// values in memory). MIN and MAX never had a live read path.
+				triggerCountSnapshot := isTriggerSObject(current) && (strings.EqualFold(fieldDef.SummaryOperation, "count") || strings.EqualFold(fieldDef.SummaryOperation, "sum"))
 				if fieldDef.Type == storage.FieldSummary && !triggerCountSnapshot && !isExplicitSObjectField(current, canonicalPart) && !vm.queriedSObjectFieldsIncludes(current, canonicalPart) {
 					if summaryValue, hasSummary := vm.evaluateSummaryField(current, fieldDef); hasSummary {
 						value = vmValueFromStorage(summaryValue)
@@ -2703,6 +2748,9 @@ func (vm *VM) isCurrentGetter(getter *Method) bool {
 	if getter == nil || vm.currentMethod.Name == "" {
 		return false
 	}
+	if getter.ClassName != "" && vm.currentMethod.ClassName != "" && !strings.EqualFold(getter.ClassName, vm.currentMethod.ClassName) {
+		return false
+	}
 	if strings.EqualFold(getter.Name, vm.currentMethod.Name) {
 		return true
 	}
@@ -2883,7 +2931,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 				if field.Setter != nil {
 					storageName := staticFieldStorageName(memberName, field)
 					key := owner + "." + storageName
-					if vm.activeSetters[key] > 0 {
+					if vm.activeSetters[key] > 0 && vm.isCurrentGetter(field.Setter) {
 						class, _ := vm.classEntry(owner)
 						vm.writeStaticFieldValue(owner, memberName, class, field, value)
 						return nil
@@ -2897,7 +2945,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 					}()
 					_, err := vm.callMethod(*field.Setter, []Value{value}, resultForLookup())
 					if err != nil {
-						return err
+						return vm.staticSetterReentryError(key, err)
 					}
 					if vm.isCurrentGetter(field.Getter) {
 						class, _ := vm.classEntry(owner)
@@ -3045,7 +3093,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 			if field.Setter != nil {
 				storageName := staticFieldStorageName(name, field)
 				key := owner + "." + storageName
-				if vm.activeSetters[key] > 0 {
+				if vm.activeSetters[key] > 0 && vm.isCurrentGetter(field.Setter) {
 					class, _ := vm.classEntry(owner)
 					vm.writeStaticFieldValue(owner, name, class, field, value)
 					return nil
@@ -3059,7 +3107,7 @@ func (vm *VM) assignValue(name string, value Value, rebind bool) error {
 				}()
 				_, err := vm.callMethod(*field.Setter, []Value{value}, resultForLookup())
 				if err != nil {
-					return err
+					return vm.staticSetterReentryError(key, err)
 				}
 				if vm.isCurrentGetter(field.Getter) {
 					class, _ := vm.classEntry(owner)
@@ -3146,6 +3194,7 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 		if current.Kind == ValueNull {
 			return newNullDereferenceError("while assigning " + strings.Join(parts[:i+1], "."))
 		}
+		vm.privatizeSharedDescribeToken(&current)
 		if current.Kind != ValueObject {
 			return fmt.Errorf("cannot assign field %s on %s", part, current.Kind)
 		}
@@ -3246,7 +3295,10 @@ func (vm *VM) assignPathWithStaticIndexDelta(root Value, parts []string, value V
 			}
 		}
 	}
+	// The pre-write value stays the elision baseline: a privatized token must
+	// still be propagated to its other holders.
 	previousLeafValue = current
+	vm.privatizeSharedDescribeToken(&current)
 	previousLeaf = snapshotAlias(current)
 	if reason, ok := sobjectReadOnlyReason(current); ok {
 		if isTriggerSObject(current) {

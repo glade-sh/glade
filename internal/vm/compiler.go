@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"unicode"
@@ -194,8 +195,8 @@ func lex(source string) ([]token, error) {
 	return lexWithAnnotations(source, false)
 }
 
-func lexWithAnnotations(source string, annotations bool) ([]token, error) {
-	var tokens []token
+// lexScan appends to tokens, which the caller owns and may reuse.
+func lexScan(source string, annotations bool, tokens []token) ([]token, error) {
 	bracketDepth, queryDepth := 0, 0
 	for i := 0; i < len(source); {
 		r := rune(source[i])
@@ -387,7 +388,7 @@ func lexMultilineString(source string, start int) (token, int, error) {
 	}
 	for i < len(source) {
 		if i+len(delimiter) <= len(source) && source[i:i+len(delimiter)] == delimiter {
-			return token{kind: tokenString, text: text.String(), pos: start}, i + len(delimiter), nil
+			return token{kind: tokenString, text: multilineStringValue(text.String()), pos: start}, i + len(delimiter), nil
 		}
 		if source[i] == '\r' && i+1 < len(source) && source[i+1] == '\n' {
 			text.WriteByte('\n')
@@ -398,6 +399,82 @@ func lexMultilineString(source string, start int) (token, int, error) {
 		i++
 	}
 	return token{}, start, fmt.Errorf("unterminated multiline string literal at byte %d", start)
+}
+
+// multilineStringValue turns the raw body of a multiline string into its
+// value. Salesforce strips the common indentation, trailing whitespace on each
+// line, and then reads escapes; the delimiter line counts toward the common
+// indentation even when it holds only whitespace.
+// NATIVE multiline string indentation apex_release_gates/org.tsv anonymous 62.0 67.0
+func multilineStringValue(raw string) string {
+	lines := strings.Split(raw, "\n")
+	isBlank := func(line string) bool { return strings.TrimSpace(line) == "" }
+	indent := -1
+	for i, line := range lines {
+		if isBlank(line) && i != len(lines)-1 {
+			continue
+		}
+		width := len(line) - len(strings.TrimLeft(line, " \t\f\v"))
+		if indent < 0 || width < indent {
+			indent = width
+		}
+	}
+	if indent < 0 {
+		indent = 0
+	}
+	stripped := make([]string, len(lines))
+	for i, line := range lines {
+		if isBlank(line) {
+			continue
+		}
+		stripped[i] = strings.TrimRight(line[indent:], " \t\f\v")
+	}
+	return multilineStringEscapes(strings.Join(stripped, "\n"))
+}
+
+func multilineStringEscapes(text string) string {
+	if !strings.Contains(text, "\\") {
+		return text
+	}
+	var out strings.Builder
+	for i := 0; i < len(text); i++ {
+		if text[i] != '\\' || i+1 >= len(text) {
+			out.WriteByte(text[i])
+			continue
+		}
+		i++
+		switch text[i] {
+		case 'n':
+			out.WriteByte('\n')
+		case 'r':
+			out.WriteByte('\r')
+		case 't':
+			out.WriteByte('\t')
+		case 'b':
+			out.WriteByte('\b')
+		case 'f':
+			out.WriteByte('\f')
+		case 's':
+			out.WriteByte(' ')
+		case '\'', '"', '\\':
+			out.WriteByte(text[i])
+		case '\n':
+			// A backslash before a line break joins the two lines.
+		case 'u':
+			if end := apexUnicodeEscapeEnd(text, i-1); end > i-1 {
+				if decoded, err := unescapeJavaLike("Apex string literal", text[i-1:end]); err == nil {
+					out.WriteString(decoded)
+					i = end - 1
+					continue
+				}
+			}
+			out.WriteString("\\u")
+		default:
+			out.WriteByte('\\')
+			out.WriteByte(text[i])
+		}
+	}
+	return out.String()
 }
 
 func lexSingleString(source string, start int) (token, int, error) {
@@ -1399,17 +1476,21 @@ func (p *parser) parseTernary() (ir.Expr, error) {
 	if !p.match(tokenSymbol, "?") {
 		return condition, nil
 	}
+	whenTrueStart := p.operandStart()
 	whenTrue, err := p.parseExpression()
 	if err != nil {
 		return ir.Expr{}, err
 	}
+	whenTrue.StartPos = whenTrueStart
 	if _, err := p.expect(tokenSymbol, ":"); err != nil {
 		return ir.Expr{}, err
 	}
+	whenFalseStart := p.operandStart()
 	whenFalse, err := p.parseExpression()
 	if err != nil {
 		return ir.Expr{}, err
 	}
+	whenFalse.StartPos = whenFalseStart
 	return ir.Expr{Kind: ir.ExprCall, Callee: "__ternary", Args: []ir.Expr{condition, whenTrue, whenFalse}}, nil
 }
 
@@ -1419,10 +1500,12 @@ func (p *parser) parseNullCoalesce() (ir.Expr, error) {
 		return ir.Expr{}, err
 	}
 	for p.match(tokenSymbol, "??") {
+		rightStart := p.operandStart()
 		right, err := p.parseOr()
 		if err != nil {
 			return ir.Expr{}, err
 		}
+		right.StartPos = rightStart
 		left = ir.Expr{Kind: ir.ExprCall, Callee: "__coalesce", Args: []ir.Expr{left, right}}
 	}
 	return left, nil
@@ -1434,10 +1517,12 @@ func (p *parser) parseOr() (ir.Expr, error) {
 		return ir.Expr{}, err
 	}
 	for p.match(tokenSymbol, "||") {
+		rightStart := p.operandStart()
 		right, err := p.parseAnd()
 		if err != nil {
 			return ir.Expr{}, err
 		}
+		right.StartPos = rightStart
 		left = binary("||", left, right)
 	}
 	return left, nil
@@ -1449,10 +1534,12 @@ func (p *parser) parseAnd() (ir.Expr, error) {
 		return ir.Expr{}, err
 	}
 	for p.match(tokenSymbol, "&&") {
+		rightStart := p.operandStart()
 		right, err := p.parseBitwiseOr()
 		if err != nil {
 			return ir.Expr{}, err
 		}
+		right.StartPos = rightStart
 		left = binary("&&", left, right)
 	}
 	return left, nil
@@ -1744,7 +1831,7 @@ func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
 			if safe {
 				callee = "__safe_call:" + callee
 			}
-			expr = ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, Left: &receiver}
+			expr = ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, Left: &receiver, Pos: member.pos}
 			continue
 		}
 		if p.match(tokenSymbol, "++") || p.match(tokenSymbol, "--") {
@@ -1789,19 +1876,21 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 			if literalArgs {
 				callee = "newlit:" + typeName
 			}
-			return ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, NamedArgs: namedArgs}, nil
+			return ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, NamedArgs: namedArgs, Pos: tok.pos}, nil
 		}
 		switch strings.ToLower(tok.text) {
 		case "true", "false", "null":
 			return ir.Expr{Kind: ir.ExprLiteral, Value: strings.ToLower(tok.text)}, nil
 		}
 		name := tok.text
+		namePos := tok.pos
 		for p.match(tokenSymbol, ".") {
 			next, err := p.expect(tokenIdent, "")
 			if err != nil {
 				return ir.Expr{}, err
 			}
 			name += "." + next.text
+			namePos = next.pos
 		}
 		if classLiteral, ok, err := p.parseClassLiteralSuffix(name); ok || err != nil {
 			return classLiteral, err
@@ -1811,7 +1900,7 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 			if err != nil {
 				return ir.Expr{}, err
 			}
-			return ir.Expr{Kind: ir.ExprCall, Callee: name, Args: args}, nil
+			return ir.Expr{Kind: ir.ExprCall, Callee: name, Args: args, Pos: namePos}, nil
 		}
 		return ir.Expr{Kind: ir.ExprVariable, Name: name}, nil
 	case tokenSymbol:
@@ -2211,6 +2300,20 @@ func (p *parser) parseArguments() ([]ir.Expr, error) {
 			return nil, err
 		}
 	}
+}
+
+// operandStart is the source offset of the next token, recorded on a
+// conditionally evaluated operand for code coverage. It returns zero when the
+// offset does not fit.
+func (p *parser) operandStart() int32 {
+	if p.pos >= len(p.tokens) {
+		return 0
+	}
+	pos := p.tokens[p.pos].pos
+	if pos <= 0 || pos > math.MaxInt32 {
+		return 0
+	}
+	return int32(pos)
 }
 
 func binary(op string, left, right ir.Expr) ir.Expr {

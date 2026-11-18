@@ -940,8 +940,32 @@
    "durationMillis": 116460
   },
   {
-   "name": "TestV09SalesforceConformance",
-   "durationMillis": 828500
+   "name": "TestV09SalesforceConformancePart1of4",
+   "durationMillis": 31000
+  },
+  {
+   "name": "TestV09SalesforceConformancePart2of4",
+   "durationMillis": 25500
+  },
+  {
+   "name": "TestV09SalesforceConformancePart3of4",
+   "durationMillis": 33000
+  },
+  {
+   "name": "TestV09SalesforceConformancePart4of4",
+   "durationMillis": 37500
+  },
+  {
+   "name": "TestV09SalesforceControlsDenied",
+   "durationMillis": 86500
+  },
+  {
+   "name": "TestV09SalesforceControlsReview",
+   "durationMillis": 176500
+  },
+  {
+   "name": "TestV09SalesforceControlsWidget",
+   "durationMillis": 63000
   },
   {
    "name": "TestV10SalesforceConformance",
@@ -956,8 +980,12 @@
    "durationMillis": 0
   },
   {
-   "name": "TestV12SalesforceConformance",
-   "durationMillis": 625680
+   "name": "TestV12SalesforceConformancePart1of2",
+   "durationMillis": 312840
+  },
+  {
+   "name": "TestV12SalesforceConformancePart2of2",
+   "durationMillis": 312840
   },
   {
    "name": "TestV13OnDemandRemotingRender",
@@ -968,8 +996,12 @@
    "durationMillis": 457460
   },
   {
-   "name": "TestV14SalesforceConformance",
-   "durationMillis": 520580
+   "name": "TestV14SalesforceConformancePart1of2",
+   "durationMillis": 260290
+  },
+  {
+   "name": "TestV14SalesforceConformancePart2of2",
+   "durationMillis": 260290
   },
   {
    "name": "TestV15CartesianLayoutTolerance",

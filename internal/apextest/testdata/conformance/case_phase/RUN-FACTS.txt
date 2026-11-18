@@ -1,0 +1,10 @@
+capture: save-order-phases-202611
+started: 2026-11-13T01:08:59Z
+finished: 2026-11-13T01:11:34Z
+apis: 62.0 67.0
+routes: anonymous istest
+cases: 5
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 9cf465e22dd84ab5
+mode: live

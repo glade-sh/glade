@@ -1,0 +1,3 @@
+object	column	api	route	result
+Account	CREATED_DATE	67.0	ui-list-info	no display columns
+Contact	FULL_NAME	67.0	ui-list-info	Name

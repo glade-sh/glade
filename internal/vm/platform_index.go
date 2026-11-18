@@ -18,8 +18,8 @@ var (
 	commonSObjectTypeNameSetOnce      sync.Once
 	commonSObjectTypeNameFoldOnce     sync.Once
 	commonSObjectTypeNameFoldSet      map[string]struct{}
-	generatedPlatformTypeIndexCache   typesys.PlatformViewCache[map[string]generatedPlatformType]
-	generatedPlatformMethodIndexCache typesys.PlatformViewCache[map[string]map[string][]Method]
+	generatedPlatformTypeIndexCache   typesys.PlatformViewCache[*generatedPlatformTypeIndex]
+	generatedPlatformMethodIndexCache typesys.PlatformViewCache[*generatedPlatformMethodIndex]
 	// generatedPlatformMethodIndexOverride replaces the method index in tests.
 	generatedPlatformMethodIndexOverride map[string]map[string][]Method
 )
@@ -81,21 +81,91 @@ func commonSObjectTypeNameLookup() map[string]bool {
 	return commonSObjectTypeNameSet
 }
 
-func generatedPlatformTypes() map[string]generatedPlatformType {
-	return generatedPlatformTypeIndexCache.Get(buildGeneratedPlatformTypeIndex)
+// generatedPlatformTypeIndex maps a lower-cased runtime name to the position
+// of its symbol in the standard platform view. A type's fields and
+// constructors are built on the first lookup, so a process holds only the
+// platform types it touches. Positions follow the eager build: a later symbol
+// with the same runtime name replaces an earlier one.
+type generatedPlatformTypeIndex struct {
+	view  []typesys.TypeSymbol
+	slots map[string]*generatedPlatformTypeSlot
 }
 
-func generatedPlatformMethods() map[string]map[string][]Method {
-	if override := generatedPlatformMethodIndexOverride; override != nil {
-		return override
+type generatedPlatformTypeSlot struct {
+	position int
+	once     sync.Once
+	value    generatedPlatformType
+}
+
+// lookupGeneratedPlatformType returns the generated platform type for a
+// lower-cased runtime name. The result is shared and must not be mutated.
+func lookupGeneratedPlatformType(key string) (generatedPlatformType, bool) {
+	index := generatedPlatformTypeIndexCache.Get(buildGeneratedPlatformTypeIndex)
+	slot, ok := index.slots[key]
+	if !ok {
+		return generatedPlatformType{}, false
 	}
-	return generatedPlatformMethodIndexCache.Get(buildGeneratedPlatformMethodIndex)
+	slot.once.Do(func() {
+		typ := index.view[slot.position]
+		slot.value = buildGeneratedPlatformType(typ, generatedPlatformRuntimeName(typ))
+	})
+	return slot.value, true
+}
+
+// generatedPlatformMethodIndex maps a lower-cased runtime class name to the
+// positions of every symbol that declares it. Methods are built per class on
+// first lookup.
+type generatedPlatformMethodIndex struct {
+	view    []typesys.TypeSymbol
+	classes map[string]*generatedPlatformMethodSlot
+}
+
+type generatedPlatformMethodSlot struct {
+	positions []int
+	once      sync.Once
+	methods   map[string][]Method
+}
+
+// lookupGeneratedPlatformMethods returns the generated platform methods of a
+// class by lower-cased method name, or nil when the class has none.
+func lookupGeneratedPlatformMethods(classKey string) map[string][]Method {
+	if override := generatedPlatformMethodIndexOverride; override != nil {
+		return override[classKey]
+	}
+	index := generatedPlatformMethodIndexCache.Get(buildGeneratedPlatformMethodIndex)
+	slot, ok := index.classes[classKey]
+	if !ok {
+		return nil
+	}
+	slot.once.Do(func() {
+		var out map[string][]Method
+		for _, position := range slot.positions {
+			typ := index.view[position]
+			className := generatedPlatformRuntimeName(typ)
+			for _, member := range typ.Members {
+				if member.Kind != apexast.DeclarationMethod {
+					continue
+				}
+				method := generatedPlatformRuntimeMethod(className, member)
+				if method.Name == "" {
+					continue
+				}
+				if out == nil {
+					out = make(map[string][]Method)
+				}
+				methodKey := strings.ToLower(member.Name)
+				out[methodKey] = append(out[methodKey], method)
+			}
+		}
+		slot.methods = out
+	})
+	return slot.methods
 }
 
 func warmGeneratedPlatformRuntimeIndexes() {
 	_ = CommonSObjectTypeNames()
-	_ = generatedPlatformTypes()
-	_ = generatedPlatformMethods()
+	_ = generatedPlatformTypeIndexCache.Get(buildGeneratedPlatformTypeIndex)
+	_ = generatedPlatformMethodIndexCache.Get(buildGeneratedPlatformMethodIndex)
 }
 
 // PrewarmPlatformIndexes builds the shared platform indexes. The type and method
@@ -108,82 +178,84 @@ func PrewarmPlatformIndexes() {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		_ = generatedPlatformMethods()
+		_ = generatedPlatformMethodIndexCache.Get(buildGeneratedPlatformMethodIndex)
 	}()
 	go func() {
 		defer wg.Done()
 		_ = CommonSObjectTypeNames()
 	}()
-	_ = generatedPlatformTypes()
+	_ = generatedPlatformTypeIndexCache.Get(buildGeneratedPlatformTypeIndex)
 	wg.Wait()
 }
 
-func buildGeneratedPlatformTypeIndex(view []typesys.TypeSymbol) map[string]generatedPlatformType {
-	out := make(map[string]generatedPlatformType)
-	for _, typ := range view {
+func buildGeneratedPlatformTypeIndex(view []typesys.TypeSymbol) *generatedPlatformTypeIndex {
+	index := &generatedPlatformTypeIndex{view: view, slots: make(map[string]*generatedPlatformTypeSlot)}
+	for position, typ := range view {
 		name := generatedPlatformRuntimeName(typ)
 		if name == "" {
 			continue
 		}
-		generated := generatedPlatformType{
-			Name:         name,
-			Kind:         typ.Kind,
-			SuperClass:   typ.SuperClass,
-			IsAbstract:   methodHasModifier(typ.Modifiers, "abstract"),
-			EnumHashBase: typ.EnumHashBase,
-			Fields:       make(map[string]Field),
-			StaticFields: make(map[string]Field),
+		key := strings.ToLower(name)
+		if slot, ok := index.slots[key]; ok {
+			slot.position = position
+			continue
 		}
-		for _, member := range typ.Members {
-			switch member.Kind {
-			case apexast.DeclarationField, apexast.DeclarationProperty:
-				field := Field{
-					Name:      member.Name,
-					Type:      member.Type,
-					Static:    methodHasModifier(member.Modifiers, "static"),
-					Access:    "global",
-					Modifiers: append([]string(nil), member.Modifiers...),
-					Property:  member.Kind == apexast.DeclarationProperty,
-				}
-				if field.Static {
-					generated.StaticFields[field.Name] = field
-					generated.StaticFieldOrder = append(generated.StaticFieldOrder, field.Name)
-				} else {
-					generated.Fields[field.Name] = field
-					generated.FieldOrder = append(generated.FieldOrder, field.Name)
-				}
-			case apexast.DeclarationConstructor:
-				generated.Constructors = append(generated.Constructors, generatedPlatformRuntimeConstructor(name, member))
-			}
-		}
-		out[strings.ToLower(name)] = generated
+		index.slots[key] = &generatedPlatformTypeSlot{position: position}
 	}
-	return out
+	return index
 }
-func buildGeneratedPlatformMethodIndex(view []typesys.TypeSymbol) map[string]map[string][]Method {
-	out := make(map[string]map[string][]Method)
-	for _, typ := range view {
+
+func buildGeneratedPlatformType(typ typesys.TypeSymbol, name string) generatedPlatformType {
+	generated := generatedPlatformType{
+		Name:         name,
+		Kind:         typ.Kind,
+		SuperClass:   typ.SuperClass,
+		IsAbstract:   methodHasModifier(typ.Modifiers, "abstract"),
+		EnumHashBase: typ.EnumHashBase,
+		Fields:       make(map[string]Field),
+		StaticFields: make(map[string]Field),
+	}
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationField, apexast.DeclarationProperty:
+			field := Field{
+				Name:      member.Name,
+				Type:      member.Type,
+				Static:    methodHasModifier(member.Modifiers, "static"),
+				Access:    "global",
+				Modifiers: append([]string(nil), member.Modifiers...),
+				Property:  member.Kind == apexast.DeclarationProperty,
+			}
+			if field.Static {
+				generated.StaticFields[field.Name] = field
+				generated.StaticFieldOrder = append(generated.StaticFieldOrder, field.Name)
+			} else {
+				generated.Fields[field.Name] = field
+				generated.FieldOrder = append(generated.FieldOrder, field.Name)
+			}
+		case apexast.DeclarationConstructor:
+			generated.Constructors = append(generated.Constructors, generatedPlatformRuntimeConstructor(name, member))
+		}
+	}
+	return generated
+}
+
+func buildGeneratedPlatformMethodIndex(view []typesys.TypeSymbol) *generatedPlatformMethodIndex {
+	index := &generatedPlatformMethodIndex{view: view, classes: make(map[string]*generatedPlatformMethodSlot)}
+	for position, typ := range view {
 		className := generatedPlatformRuntimeName(typ)
 		if className == "" {
 			continue
 		}
 		classKey := strings.ToLower(className)
-		for _, member := range typ.Members {
-			if member.Kind != apexast.DeclarationMethod {
-				continue
-			}
-			method := generatedPlatformRuntimeMethod(className, member)
-			if method.Name == "" {
-				continue
-			}
-			methodKey := strings.ToLower(member.Name)
-			if out[classKey] == nil {
-				out[classKey] = make(map[string][]Method)
-			}
-			out[classKey][methodKey] = append(out[classKey][methodKey], method)
+		slot := index.classes[classKey]
+		if slot == nil {
+			slot = &generatedPlatformMethodSlot{}
+			index.classes[classKey] = slot
 		}
+		slot.positions = append(slot.positions, position)
 	}
-	return out
+	return index
 }
 func generatedPlatformRuntimeConstructor(className string, member typesys.MemberSymbol) Method {
 	params := make([]Param, 0, len(member.Parameters))

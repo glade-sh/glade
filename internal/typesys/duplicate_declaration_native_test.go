@@ -12,7 +12,7 @@ import (
 )
 
 func TestNativeDuplicateDeclarations(t *testing.T) {
-	f, err := os.Open(filepath.Join("testdata", "road255", "org.tsv"))
+	f, err := os.Open(filepath.Join("testdata", "case255", "org.tsv"))
 	if err != nil {
 		t.Fatal(err)
 	}

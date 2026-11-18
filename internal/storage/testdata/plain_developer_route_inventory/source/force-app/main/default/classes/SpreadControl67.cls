@@ -1,0 +1,2 @@
+@IsTest private class SpreadControl67 { @IsTest static void batch214() {List<String> ns=new List<String>{'Account','GladeMissingProbe__c','AIFeatureExtractor','AIResearchPromptResult','AIScoringStatusEvent'}; List<String> result=new List<String>(); for (String n:ns) { String t='false'; try { t=String.valueOf(Type.forName(n)!=null); } catch (Exception e) { t=e.getTypeName(); } String q='ok'; try { Database.query('SELECT Id FROM '+n+' LIMIT 1'); } catch (Exception e) { q=e.getTypeName(); } result.add(n+'='+t+','+q); } System.assert(false,'OBS|'+String.join(result,';'));
+} }

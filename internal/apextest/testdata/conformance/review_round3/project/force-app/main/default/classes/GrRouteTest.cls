@@ -1,0 +1,5 @@
+@IsTest private class GrRouteTest {
+  @IsTest static void noext() { RcP__c p = new RcP__c(Name='rp'); insert p; String r; try { RcB__c x = new RcB__c(Name='n', P__c=p.Id); insert x; x.Name='n2'; update x; r='ok'; } catch (Exception e) { r=e.getTypeName(); } System.assert(false, 'noext|' + r); }
+  @IsTest static void amt() { RcP__c p = new RcP__c(Name='rp'); insert p; String r; try { RcA__c x = new RcA__c(Name='n', P__c=p.Id, Amt__c=1); insert x; x.Amt__c=2; update x; r='ok'; } catch (Exception e) { r=e.getTypeName(); } System.assert(false, 'amt|' + r); }
+  @IsTest static void sys() { RcP__c p = new RcP__c(Name='rp'); insert p; String r; try { RcA__c x = new RcA__c(Name='n', P__c=p.Id, Amt__c=1); insert x; x.Amt__c=2; update as system x; r='ok'; } catch (Exception e) { r=e.getTypeName(); } System.assert(false, 'sys|' + r); }
+}

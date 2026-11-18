@@ -114,6 +114,9 @@ func semaAPI67RejectedPlatformType(typeName string) bool {
 	// generated provider shapes are not visible to user Apex in the captured cases.
 	case "commercetax.taxenginecontext", "functions.function":
 		return true
+	// api68_native sf-archive ARCHIVE-DEPLOY-67/68 (see semaHTTPInvisibleType).
+	case "sf_archive.archiveraccessorresponse":
+		return true
 	case "messaging.sendemailoptions",
 		"system.messaging.sendemailoptions",
 		"system.messaging.singleemailmessage",
@@ -176,7 +179,8 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 		return method == "getmimetype"
 	case "date":
 		// Native C006 (API62/67) rejects Date.toEndOfMonth.
-		return method == "toendofmonth"
+		// dth_date_gettime (API 62 and 67): Date has no getTime either.
+		return method == "toendofmonth" || method == "gettime"
 	case "id":
 		return method == "to18"
 	case "integer":
@@ -195,6 +199,18 @@ func semaAPI67RejectedPlatformCallAtVersion(version, receiverType, method, recei
 		return method == "appendreplacement" || method == "appendtail"
 	case "asyncoptions":
 		return method == "getminimumqueueabledelayinminutes"
+	case "asyncinfo", "system.asyncinfo":
+		// Native surf_async_options as10-as12 (API 62 and 67).
+		return method == "getqueueablesignature" || method == "getparentjobid" || method == "gettriggertype"
+	case "jsonparser", "system.jsonparser":
+		// Native surf_json jn08 (API 62 and 67).
+		return method == "getposition"
+	case "datetime":
+		// Native surf_datetime_locale dt10 (API 62 and 67).
+		return method == "monthsbetween"
+	case "time":
+		// Native dth_time_gettime (API 62 and 67): Time has no getTime.
+		return method == "gettime"
 	case "database":
 		return method == "lock" || method == "unlock"
 	case "quickaction":
@@ -396,5 +412,5 @@ func semaStandardFieldAssignmentReadOnly(model *semaTypeMemberView, receiver, fi
 			}
 		}
 	}
-	return storage.StandardFieldAssignmentReadOnly(receiver, field) || anonymous && storage.StandardFieldAssignmentRequiresNamedCode(receiver, field)
+	return storage.StandardFieldAssignmentReadOnly(receiver, field) || storage.StandardFeatureEnabledFieldAssignmentReadOnly(receiver, field, model.state.base.orgShapeFeatures) || anonymous && storage.StandardFieldAssignmentRequiresNamedCode(receiver, field)
 }

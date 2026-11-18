@@ -1,0 +1,13 @@
+started: 2026-11-12T23:48:11Z
+finished: 2026-11-12T23:52:44Z
+apis: 62.0 67.0
+routes: anonymous istest
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+mode: live
+capture: separate metadata-versioned named classes; bare anonymous Apex at the request API.
+fixture: one synthetic Account with known Name and Phone. Named test methods seed their own transaction; fixed candidate, explicit empty, and never-set controls differ by case.
+index readiness: sole Account seeded in a separate committed request. Two consecutive polls found exactly one matching Account at each API. See readiness.tsv.
+observations: named methods deliberately assert OBS|value|END; bare anonymous echoes decoded USER_DEBUG events. UNCATCHED marks an actual platform exception that escaped the Apex catch block. Both routes measure SOSL governor deltas around each case except where the transaction terminated.
+cleanup: scratch deletion succeeded and the owned alias no longer resolved.
+case table sha256: 443f5955487a81027e37e88db0a50ddefa7b5eed8ef1fd744fbc999e05713cca

@@ -16,6 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestGracefulStopJSONRetainsCompletedTests(t *testing.T) {
@@ -91,13 +92,13 @@ func TestGracefulStopProjectRoutes(t *testing.T) {
 					go func() {
 						select {
 						case <-firstDone:
-						case <-time.After(2 * time.Minute):
+						case <-time.After(testutil.Deadline(2 * time.Minute)):
 							stopped <- fmt.Errorf("no completed test progress before stop")
 							stopNow()
 							return
 						}
 						if cause == "daemon-stop" {
-							stopCtx, stopCancel := context.WithTimeout(context.Background(), 3*time.Second)
+							stopCtx, stopCancel := context.WithTimeout(context.Background(), testutil.Deadline(3*time.Second))
 							defer stopCancel()
 							_, err := testdaemon.ShutdownV1(stopCtx, testdaemon.ServeSocketPath(root))
 							stopped <- err

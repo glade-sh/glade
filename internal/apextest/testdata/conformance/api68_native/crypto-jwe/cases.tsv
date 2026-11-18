@@ -1,0 +1,11 @@
+id	api	route	phase	variant	source
+JWE-DEPLOY-68	68.0	deploy	case	v68	-
+JWE-PARSE-68	68.0	anonymous	case	v68	snippets/parse68.apex
+JWE-CONTAINER-68	68.0	anonymous	case	v68	snippets/container68.apex
+JWE-ENCRYPT-68	68.0	anonymous	case	v68	snippets/encrypt68.apex
+JWE-DECRYPT-68	68.0	anonymous	case	v68	snippets/decrypt68.apex
+JWE-DEPLOY-67	67.0	deploy	case	v67	-
+JWE-PARSE-67	67.0	anonymous	case	v67	snippets/parse67.apex
+JWE-CONTAINER-67	67.0	anonymous	case	v67	snippets/container67.apex
+JWE-ENCRYPT-67	67.0	anonymous	case	v67	snippets/encrypt67.apex
+JWE-DECRYPT-67	67.0	anonymous	case	v67	snippets/decrypt67.apex

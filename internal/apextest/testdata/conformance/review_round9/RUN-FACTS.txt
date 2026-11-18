@@ -1,0 +1,10 @@
+family=review_round9
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=OBS lines from the USER_DEBUG log or the uncaught exception (the row's error column); Salesforce ids masked
+repeats=two clean runs; rows identical
+raw_runs=review11/out/20261117T101744Z and 20261117T102136Z (capture cache, not committed)
+shapes=the key set of a custom object's field map (the objects and the permission set that grants their fields come from review_round8): clone().add and clone().addAll, the text of a clone, a Set filled by addAll(keySet), a Set built from a List built from the key set, the key set of a copied and of a cloned field map, remove and clear on the key set and what the field map and a fresh keySet() then hold, and add on the key set of a plain Map<String,Integer>
+notes=a clone of the key set is writable and renders alphabetically with added names in place; a Set filled by addAll(keySet) or built from new List<String>(keySet) renders alphabetically, with List order kept on iteration (id first); the key set of a copied or cloned field map renders alphabetically and iterates in platform order; remove and clear on the key set write through to the field map: after remove('id') the key set, the field map and a fresh keySet() all lack id (13 to 12), after clear all three are empty; add on a plain Map's key set raises the same uncatchable System.FinalException: Collection is read-only.
+limits=the read-only gate covers a Map's key set generically; the key set of getGlobalDescribe() has no row and stays writable.

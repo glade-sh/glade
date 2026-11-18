@@ -1,0 +1,5 @@
+source_api	route	id	observation
+62.0	istest	2	{"inserted":2,"sizes":[2],"success":true}
+62.0	istest	200	{"inserted":200,"sizes":[200],"success":true}
+67.0	istest	2	{"inserted":2,"sizes":[2],"success":true}
+67.0	istest	200	{"inserted":200,"sizes":[200],"success":true}

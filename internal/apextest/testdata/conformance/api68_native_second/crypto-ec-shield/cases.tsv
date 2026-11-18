@@ -1,0 +1,13 @@
+id	api	route	phase	variant	source
+CRYPTO-DEPLOY-68	68.0	deploy	case	v68	-
+EC-KEYS-68	68.0	anonymous	case	v68	snippets/keys68.apex
+EC-ERRORS-68	68.0	anonymous	case	v68	snippets/errors68.apex
+EC-RSA-68	68.0	anonymous	case	v68	snippets/rsa68.apex
+CR-SIZE-68	68.0	anonymous	case	v68	snippets/size68.apex
+CRYPTO-DEPLOY-67	67.0	deploy	case	v67	-
+EC-KEYS-67	67.0	anonymous	case	v67	snippets/keys67.apex
+EC-ERRORS-67	67.0	anonymous	case	v67	snippets/errors67.apex
+EC-RSA-67	67.0	anonymous	case	v67	snippets/rsa67.apex
+CR-SIZE-67	67.0	anonymous	case	v67	snippets/size67.apex
+CRYPTO-DEPLOY-62	62.0	deploy	case	v62	-
+EC-KEYS-62	62.0	anonymous	case	v62	snippets/keys62.apex

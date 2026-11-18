@@ -14,7 +14,7 @@ func applyApexTriggerRecords(org *storage.OrgState, index typesys.Index, caches 
 	storage.EnsureStandardObject(org, "ApexTrigger")
 	state := org.Objects["ApexTrigger"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	generator := storage.NewIDGenerator(map[string]string{"ApexTrigger": "01q"})
 	sources := sourceCacheFor(caches)
@@ -58,12 +58,12 @@ func applyApexTriggerRecords(org *storage.OrgState, index typesys.Index, caches 
 		if version == "" {
 			version = "65.0"
 		}
-		state.Records[id] = storage.Record{ID: id, Object: "ApexTrigger", Fields: map[string]storage.Value{
+		state.PutRecord(id, storage.Record{ID: id, Object: "ApexTrigger", Fields: map[string]storage.Value{
 			"Name": storage.StringValue(trigger.Name), "NamespacePrefix": storage.StringValue(trigger.Namespace),
 			"Body": storage.StringValue(source), "ApiVersion": storage.DecimalValue(version),
 			"TableEnumOrId": storage.StringValue(trigger.ObjectName), "Status": storage.StringValue("Active"),
 			"IsValid": storage.BooleanValue(true), "LengthWithoutComments": storage.IntegerValue(int64(len(source))),
-		}}
+		}})
 	}
 	org.Objects["ApexTrigger"] = state
 }

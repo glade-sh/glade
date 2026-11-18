@@ -389,28 +389,15 @@ try {
 }
 
 func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
-	tests := []struct {
-		name    string
-		source  string
-		message string
-	}{
-		{name: "pythonNamedGroup", source: `Pattern.compile('(?P<word>a)');`, message: "Java regex named groups"},
+	// Java has no (?P<name>) group: the native runtime reports an unknown inline
+	// modifier at the P (regex_java_divergence d8_P_name).
+	program, err := CompileAnonymous(`Pattern.compile('(?P<word>a)');`)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			program, err := CompileAnonymous(tc.source)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = Execute(program, nil)
-			if err == nil || !strings.Contains(err.Error(), tc.message) {
-				t.Fatalf("expected %q error, got %v", tc.message, err)
-			}
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
-				t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
-			}
-		})
+	_, err = Execute(program, nil)
+	if err == nil || !strings.Contains(err.Error(), "Unknown inline modifier near index 2") {
+		t.Fatalf("expected an unknown inline modifier error, got %v", err)
 	}
 }
 
@@ -1186,10 +1173,10 @@ func TestJavaReplacementRejectsUnsupportedReferences(t *testing.T) {
 		want        string
 		unsupported bool
 	}{
-		{name: "missingDollarTarget", replacement: `$`, want: "missing group reference"},
-		{name: "badDollarTarget", replacement: `$x`, want: "invalid group reference"},
+		{name: "missingDollarTarget", replacement: `$`, want: "Illegal group reference: group index is missing"},
+		{name: "badDollarTarget", replacement: `$x`, want: "Illegal group reference"},
 		{name: "groupOutOfRange", replacement: `$2`, want: "groupIndex out of range"},
-		{name: "trailingEscape", replacement: `abc\`, want: "trailing escape"},
+		{name: "trailingEscape", replacement: `abc\`, want: "character to be escaped is missing"},
 		{name: "namedGroup", replacement: `${word}`, want: "named group references", unsupported: true},
 	}
 	for _, tc := range tests {
@@ -1253,8 +1240,10 @@ func TestRegexDanglingQuantifierUsesOriginalSourcePosition(t *testing.T) {
 		{"*", "Invalid regex: Dangling meta character '*' near index 0"},
 		{"abc|+", "Invalid regex: Dangling meta character '+' near index 4"},
 		{"(?i)*", "Invalid regex: Dangling meta character '*' near index 4"},
-		{`\Q+\E|?`, "Invalid regex: Dangling meta character '?' near index 6"},
-		{"😀|*", "Invalid regex: Dangling meta character '*' near index 3"},
+		// Java parses after \Q...\E becomes escaped literals, and counts code
+		// points (regex_java_divergence d8x_qplus_alt_q, d8x_emoji_alt_star).
+		{`\Q+\E|?`, "Invalid regex: Dangling meta character '?' near index 3"},
+		{"😀|*", "Invalid regex: Dangling meta character '*' near index 2"},
 	} {
 		_, err := patternCompile([]Value{String(tc.pattern)})
 		if err == nil || !strings.Contains(err.Error(), tc.message) {

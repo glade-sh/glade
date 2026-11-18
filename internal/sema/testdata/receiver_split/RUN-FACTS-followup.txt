@@ -1,0 +1,13 @@
+capture: chain-recv follow-up (depth-2 inner-class signatures and uncaptured block contexts)
+started: 2026-11-14T13:35:56Z
+finished: 2026-11-14T13:43:17Z
+apis: 62.0 67.0
+sf: @salesforce/cli/2.157.8
+org: fresh Developer-edition scratch org (30 days) on a campaign Dev Hub; deleted and verified gone after the run
+cases: 40 anonymous + 33 class + 7 trigger = 80, x2 APIs = 160 rows (org.tsv:310-469)
+method: CrProbe deployed at each API with apiVersion in the meta XML. Anonymous cases via sf apex run --api-version; the first compile error is recorded with Ln/Col. Class and trigger cases are one deploy each, every componentFailure recorded in returned order as line:col message.
+no 62.0 vs 67.0 difference in any case.
+two earlier runs of this table were discarded before import: the inner class was first named with a reserved word (In, then Inner), which added an unrelated reserved-name error to every inner case.
+unary_bound and array_size_bound call CrProbe members that do not exist (flag, n); the parse error is reported first and alone.
+inner_sig_ok and local_sig_ok are not accept controls: System.String is not a valid type name natively (Invalid type: System.String). They record that fact.
+ids masked: none present in output.

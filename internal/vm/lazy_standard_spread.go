@@ -3,6 +3,7 @@ package vm
 import (
 	"errors"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
@@ -17,6 +18,9 @@ import (
 // spread still owes it, and reports its canonical name.
 func (vm *VM) lazyStandardObject(name string) (string, bool) {
 	if vm == nil || vm.Org == nil || !vm.Org.LazyStandardSpreadEnabled() {
+		return "", false
+	}
+	if vm.Org.SuppressesSpreadObject(name) {
 		return "", false
 	}
 	return storage.EnsureLazyStandardObject(vm.Org, name)
@@ -35,6 +39,46 @@ func (vm *VM) materializeLazyStandardSpread() bool {
 	return true
 }
 
+// installPresenceReadSpreadObjects installs the owed catalog objects whose
+// global describe answer depends on whether the org holds them: the names
+// with a namespace prefix (ns__Name__c). The alias rule for an installed
+// package object (subscriberNamespacedCustomMetadataDescribe) and the owner
+// side rules (ownedNamespacedCustomGlobalDescribeForCaller) read the org for
+// such a name. Every other catalog name is answered from names alone.
+func (vm *VM) installPresenceReadSpreadObjects() {
+	if vm == nil || vm.Org == nil || !vm.Org.LazyStandardSpreadEnabled() {
+		return
+	}
+	for _, name := range namespacedCatalogObjectNames() {
+		if _, held := vm.Org.Objects[name]; !held {
+			_, installed := vm.lazyStandardObject(name)
+			if !installed && !vm.Org.StandardSpreadSourceBacked() && (vm.Org.Namespace != "" || vm.currentCallerNamespace() != "") {
+				// The legacy completed spread also installs disallowed catalog
+				// entries. Namespaced callers can resolve their bare aliases.
+				storage.EnsureStandardObject(vm.Org, name)
+			}
+		}
+	}
+}
+
+var namespacedCatalogObjects struct {
+	once  sync.Once
+	names []string
+}
+
+// namespacedCatalogObjectNames lists the catalog objects whose name carries a
+// namespace prefix.
+func namespacedCatalogObjectNames() []string {
+	namespacedCatalogObjects.once.Do(func() {
+		for _, name := range storage.KnownStandardObjectNames() {
+			if _, qualified := namespaceTokenPrefix(name); qualified {
+				namespacedCatalogObjects.names = append(namespacedCatalogObjects.names, name)
+			}
+		}
+	})
+	return namespacedCatalogObjects.names
+}
+
 // lazyResolveQueryObjects installs every catalog object a parsed query names
 // before the executor sees it: the FROM object, child and semi-join subquery
 // objects at any depth, and TYPEOF WHEN types. The soql package receives the
@@ -48,6 +92,11 @@ func (vm *VM) lazyResolveQueryObjects(query soql.Query) {
 
 func (vm *VM) lazyResolveQueryObjectsRecursive(query *soql.Query, depth int) {
 	if query == nil || depth > 8 || !vm.Org.LazyStandardSpreadEnabled() {
+		return
+	}
+	if lazyVirtualSchemaObject(query.Object) {
+		// The virtual schema rows are built from every object the org holds.
+		vm.materializeLazyStandardSpread()
 		return
 	}
 	vm.resolveObjectName(query.Object)
@@ -92,5 +141,18 @@ func (vm *VM) lazySpreadCompletesMissingObject(err error) bool {
 	if !strings.Contains(queryErr.Message, "is not supported") && !strings.Contains(err.Error(), "unknown object") {
 		return false
 	}
+	if name, ok := missingObjectName(queryErr.Message); ok && vm.lazyMissingObjectIsFinal(name) {
+		return false
+	}
 	return vm.materializeLazyStandardSpread()
+}
+
+// lazyVirtualSchemaObject reports whether name is a virtual schema object whose
+// rows derive from every object definition in the org.
+func lazyVirtualSchemaObject(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "entitydefinition", "entityparticle", "fielddefinition", "relationshipdomain", "userentityaccess", "userfieldaccess":
+		return true
+	}
+	return false
 }

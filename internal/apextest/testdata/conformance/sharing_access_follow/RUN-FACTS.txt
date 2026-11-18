@@ -1,0 +1,6 @@
+Follow-up controls for sharing_access_modes: mode conflicts with accessible and inaccessible fields, null access levels, user-mode queries with system-mode setup, stripInaccessible relationship rows, in-test administrator permission-set assignment, Search.suggest in a test, and user-mode undelete.
+org: fresh scratch org from a campaign Dev Hub, Developer Edition, deleted after the run (delete verified). Org id, usernames, alias and host are not recorded.
+capture date: 2026-11-16 (UTC). sf 2.157.8. Class source API 62.0, 66.0, 67.0 and 68.0 (SamFollow<N>), deployed at 68.0.
+metadata: as sharing_access_modes. Setup records are inserted "as system".
+route: named @IsTest methods, one transaction each, one run of each class.
+observation: as sharing_access_modes. f_adm_* rows append fls=<Sam_Obj__c.Secret__c isCreateable()> for the administrator.

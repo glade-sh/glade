@@ -27,7 +27,7 @@ func initializeKnowledgeArticleVersion(vm *VM, record *storage.Record) error {
 	vm.knowledgeIssuedParents[parent.ID] = true
 	state, _ := storage.EnsureMutableObjectRecords(vm.Org, parent.Object)
 	vm.recordIsolationJournalMutation(parent.Object, parent.ID, storage.Record{}, false)
-	state.Records[parent.ID] = parent
+	state.PutRecord(parent.ID, parent)
 	state.Indexes = nil
 	vm.Org.Objects[parent.Object] = *state
 	if record.Fields == nil {
@@ -100,7 +100,7 @@ func (vm *VM) publishKnowledgeArticle(args []Value) (Value, error) {
 			} else {
 				record.System.IsDeleted = true
 			}
-			versions.Records[recordID] = record
+			versions.PutRecord(recordID, record)
 		}
 	}
 	if args[1].Bool || latestVersion == 0 {
@@ -115,7 +115,7 @@ func (vm *VM) publishKnowledgeArticle(args []Value) (Value, error) {
 		record = cloneRuntimeSnapshotRecord(record)
 		record.Fields["PublishStatus"] = storage.StringValue("Online")
 		record.Fields["VersionNumber"] = storage.IntegerValue(latestVersion)
-		versions.Records[recordID] = record
+		versions.PutRecord(recordID, record)
 	}
 	versions.Indexes = nil
 	vm.Org.Objects["Knowledge__kav"] = versions
@@ -195,7 +195,7 @@ func (vm *VM) transitionKnowledgeOnline(args []Value, edit bool) (Value, error) 
 		if edit {
 			archived.Fields["IsLatestVersion"] = storage.BooleanValue(false)
 		}
-		versions.Records[onlineID] = archived
+		versions.PutRecord(onlineID, archived)
 	}
 	if !edit {
 		versions.Indexes = nil
@@ -212,7 +212,7 @@ func (vm *VM) transitionKnowledgeOnline(args []Value, edit bool) (Value, error) 
 		return Null, err
 	}
 	vm.recordIsolationJournalMutation("Knowledge__kav", copy.ID, storage.Record{}, false)
-	versions.Records[copy.ID] = copy
+	versions.PutRecord(copy.ID, copy)
 	versions.Indexes = nil
 	vm.Org.Objects["Knowledge__kav"] = versions
 	return String(string(copy.ID)), nil
@@ -248,7 +248,7 @@ func (vm *VM) assignKnowledgeDraft(args []Value) (Value, error) {
 			row.Fields["AssignmentDate"] = storage.DateTimeValue(formatPlatformDatetime(vm.fakeNow.Truncate(time.Second)))
 			row.Fields["AssignmentDueDate"] = due
 			row.Fields["AssignmentNote"] = storage.StringValue(args[2].Text)
-			mutable.Records[recordID] = row
+			mutable.PutRecord(recordID, row)
 			mutable.Indexes = nil
 			vm.Org.Objects["Knowledge__kav"] = *mutable
 			return Null, nil

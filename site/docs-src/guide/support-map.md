@@ -86,6 +86,15 @@ runtime-support credit and local test execution reports `UnsupportedFeature`.
 
 ## Release evidence and scope
 
+The rows below are historical evidence for the releases they name; the v0.2.15
+counts do not describe later releases. For the current release and every
+release after v0.2.15, use that release's own evidence: its
+[GitHub Release](https://github.com/glade-sh/glade/releases) assets
+(`SHA256SUMS.txt`, per-archive SBOMs, `required-ci-attestation.json` and
+`salesforce-release-authority.json`), the same files under
+`https://downloads.glade.sh/vX.Y.Z/`, and its archive attestations, checked
+with `scripts/verify-release-download.sh` or `gh attestation verify`.
+
 | Release / source | Evidence | Denominator and boundary | Receipt |
 | --- | --- | --- | --- |
 | v0.2.15 — `82b8495972715a27aec8f864bc4ab39e7fa03974` | Historical distribution evidence; clean embedded VCS metadata; exact Required CI and Salesforce correctness authority | 475/475 required checks; per-archive checksums, 128–129-component SBOMs, and attestations; not blanket parity | [Release assets](https://github.com/glade-sh/glade/releases/tag/v0.2.15) |

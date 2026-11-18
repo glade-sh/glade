@@ -1,0 +1,10 @@
+capture: api67
+started: 2026-11-16T03:58:43Z
+finished: 2026-11-16T04:00:07Z
+apis: 67.0
+routes: istest 
+cases: 12
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: b691fa0c59616b80
+mode: live

@@ -1,9 +1,12 @@
 package compile
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,6 +25,9 @@ type Options struct {
 	// LightningModules is the host module registry. Nil leaves external module
 	// resolution to callers that do not supply a browser host.
 	LightningModules map[string]string
+	// CompleteLocalModuleInventory declares that the project source includes all
+	// local modules in the target org. Without it, external resolution is deferred.
+	CompleteLocalModuleInventory bool
 }
 
 type ModuleEntry struct {
@@ -54,21 +60,23 @@ type BundleResult struct {
 }
 
 type compileConfig struct {
-	Batch                   bool                         `json:"batch,omitempty"`
-	BundleOutDirs           map[string]string            `json:"bundleOutDirs,omitempty"`
-	ProjectRoot             string                       `json:"projectRoot"`
-	OutDir                  string                       `json:"outDir"`
-	Namespace               string                       `json:"namespace"`
-	LWCFiles                []string                     `json:"lwcFiles"`
-	LWCHTMLFiles            []string                     `json:"lwcHtmlFiles"`
-	LWCMetaFiles            []string                     `json:"lwcMetaFiles"`
-	LWCAPIVersions          map[string]int               `json:"lwcApiVersions"`
-	LWCModuleAvailability   map[string]apexversion.Range `json:"lwcModuleAvailability"`
-	LWCConfiguredProperties map[string][]string          `json:"lwcConfiguredProperties"`
-	LWCCapabilities         map[string][]string          `json:"lwcCapabilities"`
-	LWCCapabilityErrors     map[string]string            `json:"lwcCapabilityErrors"`
-	LightningModules        map[string]string            `json:"lightningModules"`
-	SalesforceImports       *salesforceImportConfig      `json:"salesforceImports,omitempty"`
+	CompleteLocalModuleInventory bool                         `json:"completeLocalModuleInventory,omitempty"`
+	Batch                        bool                         `json:"batch,omitempty"`
+	BundleOutDirs                map[string]string            `json:"bundleOutDirs,omitempty"`
+	ProjectRoot                  string                       `json:"projectRoot"`
+	OutDir                       string                       `json:"outDir"`
+	Namespace                    string                       `json:"namespace"`
+	LWCFiles                     []string                     `json:"lwcFiles"`
+	LWCHTMLFiles                 []string                     `json:"lwcHtmlFiles"`
+	LWCMetaFiles                 []string                     `json:"lwcMetaFiles"`
+	LWCAPIVersions               map[string]int               `json:"lwcApiVersions"`
+	LWCConsumerOwned             map[string]bool              `json:"lwcConsumerOwned"`
+	LWCModuleAvailability        map[string]apexversion.Range `json:"lwcModuleAvailability"`
+	LWCConfiguredProperties      map[string][]string          `json:"lwcConfiguredProperties"`
+	LWCCapabilities              map[string][]string          `json:"lwcCapabilities"`
+	LWCCapabilityErrors          map[string]string            `json:"lwcCapabilityErrors"`
+	LightningModules             map[string]string            `json:"lightningModules"`
+	SalesforceImports            *salesforceImportConfig      `json:"salesforceImports,omitempty"`
 }
 
 type bundleCompileResult struct {
@@ -140,6 +148,7 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 		return Manifest{}, err
 	}
 	cfg.LightningModules = opts.LightningModules
+	cfg.CompleteLocalModuleInventory = opts.CompleteLocalModuleInventory
 	result, err := runCompiler(p, cfg, roots)
 	if err != nil {
 		return Manifest{}, err
@@ -191,8 +200,8 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 	if namespace == "" {
 		namespace = "c"
 	}
-	cfg := compileConfig{Batch: true, ProjectRoot: projectRoot, OutDir: outDir, Namespace: namespace,
-		BundleOutDirs: map[string]string{}, LWCAPIVersions: map[string]int{},
+	cfg := compileConfig{CompleteLocalModuleInventory: opts.CompleteLocalModuleInventory, Batch: true, ProjectRoot: projectRoot, OutDir: outDir, Namespace: namespace,
+		BundleOutDirs: map[string]string{}, LWCAPIVersions: map[string]int{}, LWCConsumerOwned: map[string]bool{},
 		LWCCapabilities: map[string][]string{}, LWCCapabilityErrors: map[string]string{},
 		LWCConfiguredProperties: map[string][]string{}, LWCModuleAvailability: generatedLWCModuleAvailability, LightningModules: opts.LightningModules}
 	results := map[string]BundleResult{}
@@ -212,25 +221,17 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 		}
 		bundles[key] = append(bundles[key], meta)
 	}
-	// Do not silently discard sources without metadata or ambiguously nested
-	// bundles. These project-level errors have the same text as Compile.
-	for _, source := range append(append([]string{}, p.LWCFiles...), p.LWCHTMLFiles...) {
-		matches := 0
-		for _, key := range order {
-			if len(filesInBundle(filepath.Join(projectRoot, filepath.FromSlash(key)), []string{source})) != 0 {
-				matches++
-			}
-		}
-		if matches != 1 {
-			return nil, fmt.Errorf("LWC source %s belongs to %d metadata bundles", filepath.ToSlash(source), matches)
-		}
+	// Preserve the original missing/ambiguous-owner errors while partitioning
+	// each source once for the subsequent per-bundle configuration.
+	javascript, templates, err := partitionBundleSources(projectRoot, order, p.LWCFiles, p.LWCHTMLFiles)
+	if err != nil {
+		return nil, err
 	}
 	for _, key := range order {
-		dir := filepath.Join(projectRoot, filepath.FromSlash(key))
 		bundleProject := p
 		bundleProject.LWCMetaFiles = bundles[key]
-		bundleProject.LWCFiles = filesInBundle(dir, p.LWCFiles)
-		bundleProject.LWCHTMLFiles = filesInBundle(dir, p.LWCHTMLFiles)
+		bundleProject.LWCFiles = javascript[key]
+		bundleProject.LWCHTMLFiles = templates[key]
 		bundleOut := filepath.Join(outDir, filepath.FromSlash(key))
 		result := BundleResult{Manifest: Manifest{Modules: map[string]ModuleEntry{}, OutDir: bundleOut}, Diagnostics: []Diagnostic{}, ReportedDiagnostics: []string{}}
 		bundleConfig, err := buildCompileConfig(bundleProject, projectRoot, bundleOut, namespace)
@@ -255,6 +256,7 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 			cfg.LWCFiles = append(cfg.LWCFiles, bundleConfig.LWCFiles...)
 			cfg.LWCHTMLFiles = append(cfg.LWCHTMLFiles, bundleConfig.LWCHTMLFiles...)
 			cfg.LWCAPIVersions[key] = bundleConfig.LWCAPIVersions[key]
+			cfg.LWCConsumerOwned[key] = bundleConfig.LWCConsumerOwned[key]
 			cfg.LWCConfiguredProperties[key] = bundleConfig.LWCConfiguredProperties[key]
 			cfg.LWCCapabilities[key] = bundleConfig.LWCCapabilities[key]
 			cfg.LWCCapabilityErrors[key] = bundleConfig.LWCCapabilityErrors[key]
@@ -293,6 +295,59 @@ func CompileBatch(p project.Project, opts Options) (map[string]BundleResult, err
 	return results, nil
 }
 
+// partitionBundleSources preserves filesInBundle's lexical ownership rules,
+// including all ancestor matches and duplicate roots. On Windows retain the
+// original filepath.Rel path so volume and case-folding semantics stay exact.
+func partitionBundleSources(projectRoot string, order, javascript, templates []string) (map[string][]string, map[string][]string, error) {
+	jsByKey := make(map[string][]string, len(order))
+	htmlByKey := make(map[string][]string, len(order))
+	roots := make(map[string][]string, len(order))
+	for _, key := range order {
+		jsByKey[key] = nil
+		htmlByKey[key] = nil
+		dir := filepath.Clean(filepath.Join(projectRoot, filepath.FromSlash(key)))
+		roots[dir] = append(roots[dir], key)
+	}
+	assign := func(paths []string, out map[string][]string) error {
+		for _, source := range paths {
+			matches := 0
+			var owner string
+			if filepath.Separator == '\\' {
+				for _, key := range order {
+					if len(filesInBundle(filepath.Join(projectRoot, filepath.FromSlash(key)), []string{source})) != 0 {
+						matches++
+						owner = key
+					}
+				}
+			} else {
+				for ancestor := filepath.Clean(source); ; {
+					for _, key := range roots[ancestor] {
+						matches++
+						owner = key
+					}
+					parent := filepath.Dir(ancestor)
+					if parent == ancestor {
+						break
+					}
+					ancestor = parent
+				}
+			}
+			if matches != 1 {
+				return fmt.Errorf("LWC source %s belongs to %d metadata bundles", filepath.ToSlash(source), matches)
+			}
+			out[owner] = append(out[owner], source)
+		}
+		return nil
+	}
+	if err := assign(javascript, jsByKey); err != nil {
+		return nil, nil, err
+	}
+	if err := assign(templates, htmlByKey); err != nil {
+		return nil, nil, err
+	}
+	return jsByKey, htmlByKey, nil
+}
+
 func filesInBundle(root string, paths []string) []string {
 	var files []string
 	for _, file := range paths {
@@ -305,29 +360,125 @@ func filesInBundle(root string, paths []string) []string {
 }
 
 func runCompiler(p project.Project, cfg compileConfig, roots compileRoots) (compileResult, error) {
-	// Both invocation shapes hydrate the same decoded import references before
-	// entering the shared bundle compiler and its unchanged diagnostic path.
-	references, err := collectSalesforceImportReferences(cfg, roots)
-	if err != nil {
-		return compileResult{}, err
-	}
-	cfg.SalesforceImports, err = loadSalesforceImports(p, references)
-	if err != nil {
-		return compileResult{}, err
+	// Managed installations can contain the previous compiler script. Only use
+	// the streaming protocol when that exact script advertises support for it.
+	script, err := os.ReadFile(filepath.Join(roots.ScriptRoot, "third_party", "lwc", "compile.mjs"))
+	if err != nil || !bytes.Contains(script, []byte("// glade-compiler-protocol: two-phase-v1")) {
+		return runLegacyCompiler(p, cfg, roots)
 	}
 	payload, err := json.Marshal(cfg)
 	if err != nil {
 		return compileResult{}, err
 	}
 	cmd := lwcCompilerCommand(roots)
-	cmd.Stdin = strings.NewReader(string(payload))
-	out, err := cmd.CombinedOutput()
+	cmd.Args = append(cmd.Args, "--two-phase")
+	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return compileResult{}, fmt.Errorf("lwc compile: %w\n%s", err, string(out))
+		return compileResult{}, err
+	}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return compileResult{}, err
+	}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Start(); err != nil {
+		return compileResult{}, fmt.Errorf("lwc compile: %w", err)
+	}
+	reader := bufio.NewReader(stdout)
+	finish := func() ([]byte, error) {
+		_ = stdin.Close()
+		out, readErr := io.ReadAll(reader)
+		waitErr := cmd.Wait()
+		out = append(out, stderr.Bytes()...)
+		if waitErr != nil {
+			return out, waitErr
+		}
+		return out, readErr
+	}
+	if _, err = stdin.Write(append(payload, '\n')); err != nil {
+		out, waitErr := finish()
+		if waitErr != nil {
+			err = waitErr
+		}
+		return compileResult{}, fmt.Errorf("lwc compile: %w\n%s", err, out)
+	}
+	line, err := reader.ReadBytes('\n')
+	if err != nil {
+		out, waitErr := finish()
+		if waitErr != nil {
+			return compileResult{}, fmt.Errorf("lwc compile: %w\n%s%s", waitErr, line, out)
+		}
+		return compileResult{}, fmt.Errorf("decode Salesforce import references: %w\n%s%s", err, line, out)
+	}
+	var references []string
+	if err = json.Unmarshal(line, &references); err != nil {
+		_, _ = finish()
+		return compileResult{}, fmt.Errorf("decode Salesforce import references: %w\n%s", err, line)
+	}
+	imports, err := loadSalesforceImports(p, references)
+	if err != nil {
+		_, _ = finish()
+		return compileResult{}, err
+	}
+	payload, err = json.Marshal(imports)
+	if err != nil {
+		_, _ = finish()
+		return compileResult{}, err
+	}
+	if _, err = stdin.Write(append(payload, '\n')); err != nil {
+		out, waitErr := finish()
+		if waitErr != nil {
+			err = waitErr
+		}
+		return compileResult{}, fmt.Errorf("lwc compile: %w\n%s", err, out)
+	}
+	out, err := finish()
+	if err != nil {
+		return compileResult{}, fmt.Errorf("lwc compile: %w\n%s", err, out)
 	}
 	var result compileResult
 	if err := json.Unmarshal(out, &result); err != nil {
-		return compileResult{}, fmt.Errorf("decode compile result: %w\n%s", err, string(out))
+		return compileResult{}, fmt.Errorf("decode compile result: %w\n%s", err, out)
+	}
+	return result, nil
+}
+
+// runLegacyCompiler preserves compatibility with installed scripts predating
+// the streaming protocol. New scripts advertise their protocol in the source.
+func runLegacyCompiler(p project.Project, cfg compileConfig, roots compileRoots) (compileResult, error) {
+	payload, err := json.Marshal(cfg)
+	if err != nil {
+		return compileResult{}, err
+	}
+	cmd := lwcCompilerCommand(roots)
+	cmd.Args = append(cmd.Args, "--salesforce-import-references")
+	cmd.Stdin = bytes.NewReader(payload)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return compileResult{}, fmt.Errorf("lwc compile: %w\n%s", err, out)
+	}
+	var references []string
+	if err := json.Unmarshal(out, &references); err != nil {
+		return compileResult{}, fmt.Errorf("decode Salesforce import references: %w\n%s", err, out)
+	}
+	cfg.SalesforceImports, err = loadSalesforceImports(p, references)
+	if err != nil {
+		return compileResult{}, err
+	}
+	payload, err = json.Marshal(cfg)
+	if err != nil {
+		return compileResult{}, err
+	}
+	cmd = lwcCompilerCommand(roots)
+	cmd.Stdin = bytes.NewReader(payload)
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return compileResult{}, fmt.Errorf("lwc compile: %w\n%s", err, out)
+	}
+	var result compileResult
+	if err := json.Unmarshal(out, &result); err != nil {
+		return compileResult{}, fmt.Errorf("decode compile result: %w\n%s", err, out)
 	}
 	return result, nil
 }
@@ -336,6 +487,9 @@ func lwcCompilerCommand(roots compileRoots) *exec.Cmd {
 	script := filepath.Join(roots.ScriptRoot, "third_party", "lwc", "compile.mjs")
 	cmd := exec.Command("node", script)
 	toolchainDir := filepath.Join(roots.DependencyRoot, "third_party", "lwc")
+	if shared := strings.TrimSpace(os.Getenv("GLADE_LWC_DEPS_DIR")); shared != "" {
+		toolchainDir = shared
+	}
 	cmd.Dir = toolchainDir
 	cmd.Env = append(os.Environ(), "GLADE_LWC_TOOLCHAIN_DIR="+toolchainDir)
 	return cmd
@@ -343,6 +497,7 @@ func lwcCompilerCommand(roots compileRoots) *exec.Cmd {
 
 func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string) (compileConfig, error) {
 	versions := make(map[string]int, len(p.LWCMetaFiles))
+	consumerOwned := make(map[string]bool, len(p.LWCMetaFiles))
 	properties := make(map[string][]string, len(p.LWCMetaFiles))
 	capabilities := make(map[string][]string, len(p.LWCMetaFiles))
 	capabilityErrors := make(map[string]string, len(p.LWCMetaFiles))
@@ -354,6 +509,7 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 			return compileConfig{}, fmt.Errorf("LWC metadata escapes project root: %s", metaPath)
 		}
 		key := filepath.ToSlash(relative)
+		consumerOwned[key] = p.SourceNamespaceForFile(metaPath, p.Namespace) == p.Namespace
 		if _, exists := versions[key]; exists {
 			return compileConfig{}, fmt.Errorf("multiple LWC metadata files for bundle %s", key)
 		}
@@ -411,6 +567,7 @@ func buildCompileConfig(p project.Project, projectRoot, outDir, namespace string
 		LWCHTMLFiles:            relativize(projectRoot, p.LWCHTMLFiles),
 		LWCMetaFiles:            relativize(projectRoot, p.LWCMetaFiles),
 		LWCAPIVersions:          versions,
+		LWCConsumerOwned:        consumerOwned,
 		LWCModuleAvailability:   generatedLWCModuleAvailability,
 		LWCConfiguredProperties: properties,
 		LWCCapabilities:         capabilities,
@@ -432,6 +589,13 @@ func resolveLWCSourceAPIVersion(raw string) (int, error) {
 
 // FindRepoRoot returns the glade source checkout (for testdata and development files).
 func FindRepoRoot() (string, error) {
+	if strings.TrimSpace(os.Getenv("GLADE_LWC_DEPS_DIR")) != "" {
+		if root, err := gladehome.CompilerSourceRoot(); err == nil {
+			if _, err := os.Stat(filepath.Join(root, "third_party", "lwc", "compile.mjs")); err == nil {
+				return root, nil
+			}
+		}
+	}
 	return gladehome.RepoRoot()
 }
 

@@ -1,0 +1,20 @@
+{"api": "62.0", "debug": ["OBS|alias|{\"x\":[\"one\",\"two\",\"three\"]}{\"x\":[\"one\",\"two\",\"three\"]}{\"x\":[\"a\"]}"], "error": "", "id": "x_alias", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|alias|{\"x\":[\"one\",\"two\",\"three\"]}{\"x\":[\"one\",\"two\",\"three\"]}{\"x\":[\"a\"]}"], "error": "", "id": "x_alias", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gb_Ck|ok1"], "error": "", "id": "x_gb_Ck", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gb_Ck|ok1"], "error": "", "id": "x_gb_Ck", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.UnexpectedException: field 'Cu__c' can not be grouped in a query call", "id": "x_gb_Cu", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.UnexpectedException: field 'Cu__c' can not be grouped in a query call", "id": "x_gb_Cu", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.UnexpectedException: field 'Nm__c' can not be grouped in a query call", "id": "x_gb_Nm", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.UnexpectedException: field 'Nm__c' can not be grouped in a query call", "id": "x_gb_Nm", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.UnexpectedException: field 'Pc__c' can not be grouped in a query call", "id": "x_gb_Pc", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.UnexpectedException: field 'Pc__c' can not be grouped in a query call", "id": "x_gb_Pc", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|gb_Tx|ok1"], "error": "", "id": "x_gb_Tx", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|gb_Tx|ok1"], "error": "", "id": "x_gb_Tx", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.UnexpectedException: field 'Nm__c' can not be grouped in a query call", "id": "x_gb_catch", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.UnexpectedException: field 'Nm__c' can not be grouped in a query call", "id": "x_gb_catch", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.UnexpectedException: field 'Nm__c' can not be grouped in a query call", "id": "x_gb_catch2", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.UnexpectedException: field 'Nm__c' can not be grouped in a query call", "id": "x_gb_catch2", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.UnexpectedException: field 'Nm__c' can not be grouped in a query call", "id": "x_gb_static", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.UnexpectedException: field 'Nm__c' can not be grouped in a query call", "id": "x_gb_static", "route": "anonymous"}

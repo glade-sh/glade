@@ -1,0 +1,1 @@
+try { for (String s : new List<String>()) { } Database.QueryLocator ql = Database.getQueryLocator('SELECT Id FROM Account WHERE Name = :s'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

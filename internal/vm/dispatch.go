@@ -63,7 +63,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		// Native rows call.CredentialPrincipalType.valueOf.null (APIs 62/67).
 		if className, methodName, ok := vm.splitClassMember(strings.TrimPrefix(callee, "System.")); ok && strings.EqualFold(methodName, "valueOf") &&
 			len(args) == 1 && args[0].Kind == ValueNull {
-			if generated, found := generatedPlatformTypes()[strings.ToLower(className)]; found && generated.Kind == apexast.DeclarationEnum {
+			if generated, found := lookupGeneratedPlatformType(strings.ToLower(className)); found && generated.Kind == apexast.DeclarationEnum {
 				return Null, newExceptionError("System.NoSuchElementException", "No enum value found called null")
 			}
 		}
@@ -572,9 +572,13 @@ platformStaticCall:
 			return Null, fmt.Errorf("Database.query expects query String")
 		}
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			// Native sharing_access_modes u3_04 rows (APIs 62.0-68.0).
+			if args[1].Kind == ValueNull {
+				return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
+			}
 			return Null, fmt.Errorf("Database.query expects AccessLevel")
 		}
-		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, false); err != nil {
+		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, false, true); err != nil {
 			return Null, err
 		}
 		if err := vm.validateDynamicSOQLBinds(args[0].Text, Null); err != nil {
@@ -585,6 +589,9 @@ platformStaticCall:
 			return Null, vm.scalarCountRouteError(args[0].Text, vm.expandSOQLBinds)
 		}
 		if len(args) == 2 {
+			if err, handled := vm.runAsAccessLevelClauseConflict("Database.query", args[0].Text, args[1]); handled && err != nil {
+				return Null, err
+			}
 			return vm.namedApexReferenceDynamicQueryFault(vm.executeSOQLWithAccessLevel(args[0].Text, args[1], result))
 		}
 		if err := vm.userModeInaccessibleAnonymousSystemQuery(args[0].Text); err != nil {
@@ -610,6 +617,9 @@ platformStaticCall:
 			}
 			return Null, fmt.Errorf("Database.queryWithBinds expects AccessLevel")
 		}
+		if err, handled := vm.runAsAccessLevelClauseConflict("Database.queryWithBinds", args[0].Text, args[2]); handled && err != nil {
+			return Null, err
+		}
 		if err := vm.validateDynamicQueryAccessLevel(args[0].Text, args[2]); err != nil {
 			return Null, err
 		}
@@ -633,12 +643,24 @@ platformStaticCall:
 			return Null, fmt.Errorf("Database.countQuery expects query String")
 		}
 		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			// Native sharing_access_follow f_u3_04c rows (APIs 62.0-68.0).
+			if args[1].Kind == ValueNull {
+				return Null, newExceptionError("NullPointerException", "Argument 2 cannot be null")
+			}
 			return Null, fmt.Errorf("Database.countQuery expects AccessLevel")
 		}
-		if err := vm.validateDynamicSOQLBindSyntax(args[0].Text, true); err != nil {
+		if len(args) == 2 {
+			if err, handled := vm.runAsAccessLevelClauseConflict("Database.countQuery", args[0].Text, args[1]); handled && err != nil {
+				return Null, err
+			}
+		}
+		if err := vm.validateDynamicSOQLBindSyntaxMode(args[0].Text, true, true); err != nil {
 			return Null, err
 		}
 		if err := vm.validateDynamicSOQLCountHavingNames(args[0].Text); err != nil {
+			return Null, err
+		}
+		if err := vm.validateDynamicSOQLExceptionBinds(args[0].Text); err != nil {
 			return Null, err
 		}
 		// COUNT(field) and ordinary selections use query().
@@ -885,6 +907,14 @@ platformStaticCall:
 			vm.savepoints[id] = snapshotRuntimeOrgState(vm.Org)
 		}
 		vm.emailSavepoints[id] = append([]CapturedEmail(nil), vm.capturedEmails...)
+		if vm.isolateAsyncJobFailures {
+			// Lightning action: work enqueued after the savepoint is discarded by
+			// Database.rollback (lightning_action_async_drain enqSavepoint).
+			if vm.actionAsyncSavepoints == nil {
+				vm.actionAsyncSavepoints = make(map[string]int)
+			}
+			vm.actionAsyncSavepoints[id] = len(vm.localAsyncJobs)
+		}
 		if vm.creationSavepoints == nil {
 			vm.creationSavepoints = make(map[string]recordCreationCheckpoint)
 		}
@@ -912,6 +942,13 @@ platformStaticCall:
 		}
 		targetOrder, ok := vm.savepointOrder[idValue.Text]
 		if !ok {
+			if vm.boundaryReleasedSavepoints[idValue.Text] {
+				// The refused rollback still charges its DML statement (test_boundary_edges sb2).
+				if err := vm.incrementSavepointStatement(); err != nil {
+					return Null, err
+				}
+				return Null, newExceptionError("System.TypeException", "Savepoint does not exist in this context")
+			}
 			return Null, newExceptionError("System.TypeException", "Database.rollback received invalid Savepoint")
 		}
 		if targetOrder <= vm.reportInvalidSavepointOrder {
@@ -938,7 +975,14 @@ platformStaticCall:
 			restored.IDSequences = maxOrgIDSequences(restored.IDSequences, currentSequences)
 			*vm.Org = restored
 		}
+		// A rollback leaves the captured first-assignment sequence. Re-evaluate
+		// later grants instead of retaining its transaction-local marker.
+		vm.mixedDML.newAdminPermissionSetID = ""
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
+		if kept, ok := vm.actionAsyncSavepoints[idValue.Text]; ok && kept <= len(vm.localAsyncJobs) {
+			clear(vm.localAsyncJobs[kept:])
+			vm.localAsyncJobs = vm.localAsyncJobs[:kept]
+		}
 		vm.creationSavepoints[idValue.Text].restore()
 		vm.rollbackFlowPathSavepoint(idValue.Text)
 		vm.calloutPendingWork.pending = vm.calloutPendingWork.savepoints[idValue.Text]
@@ -1154,6 +1198,10 @@ platformStaticCall:
 			if !ok {
 				return Null, unsupportedCallError("String.valueOf timezone " + vm.currentUserTimeZoneID())
 			}
+			if datetimeValue.Before(hybridYearEnd) {
+				_, offset := local.Zone()
+				return String(apexDatetimeDisplayText(datetimeValue.Add(time.Duration(offset) * time.Second))), nil
+			}
 			return String(local.Format("2006-01-02 15:04:05")), nil
 		}
 		if value, handled, err := vm.stringValueOfOverride(args[0], result); handled {
@@ -1283,6 +1331,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("Date.newInstance expects year, month, day integers")
 		}
 		year, month, day := int(args[0].Int), int(args[1].Int), int(args[2].Int)
+		if hybridJulian(year, 1, 1) && year <= 1582 {
+			// Native CalDate: a date in the Julian years is lenient in that
+			// calendar (1500-02-29 exists; 1582-10-10 is 1582-10-20).
+			return hybridDateValue(hybridDays(year, month, day)), nil
+		}
 		value, err := dateFromNewInstanceParts(year, month, day)
 		if err != nil {
 			return Null, err
@@ -1297,6 +1350,9 @@ platformStaticCall:
 		if year == 0 {
 			year = 1
 		}
+		if year >= 1 && year <= 1582 && month >= 1 && month <= 12 {
+			return Int(int64(hybridMonthLength(year, int(month)))), nil
+		}
 		return Int(int64(daysInMonth(year, month))), nil
 	case "Date.isLeapYear":
 		if len(args) != 1 || args[0].Kind != ValueInt {
@@ -1307,6 +1363,9 @@ platformStaticCall:
 			year = 1
 		}
 		leap := year%4 == 0 && (year%100 != 0 || year%400 == 0)
+		if year >= 1 && year < 1582 {
+			leap = year%4 == 0 // the Julian rule (native CalDate: 1500 is a leap year)
+		}
 		return Bool(leap), nil
 	case "Date.valueOf":
 		if len(args) != 1 {
@@ -1330,6 +1389,9 @@ platformStaticCall:
 		if args[0].Kind == ValueString && strings.EqualFold(args[0].Static, "Object") {
 			parse = parseDateObjectText
 		}
+		if y, m, dd, ok := dateLabelParts(text); ok && len(strings.TrimSpace(text)) == 10 && y >= 1 && y <= 1582 && m >= 1 && m <= 12 && dd >= 1 && dd <= hybridMonthLength(y, m) {
+			return platformScalar("Date", strings.TrimSpace(text)), nil // a Julian civil date such as 1500-02-29
+		}
 		date, err := parse(text)
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date: "+text)
@@ -1347,6 +1409,9 @@ platformStaticCall:
 		}
 		date, err := parseDateParseTextForLocale(args[0].Text, vm.currentUserInfoField("LocaleSidKey", "en_US"))
 		if err != nil {
+			return Null, newExceptionError("System.TypeException", "Invalid date: "+args[0].Text)
+		}
+		if date.Year() < 1700 && date.Year() >= 1 {
 			return Null, newExceptionError("System.TypeException", "Invalid date: "+args[0].Text)
 		}
 		return platformScalar("Date", date.Format("2006-01-02")), nil
@@ -1454,7 +1519,9 @@ platformStaticCall:
 		if vm.currentQueueableMaxDepth > 0 {
 			return Int(int64(vm.currentQueueableMaxDepth)), nil
 		}
-		return Int(0), nil
+		// Native as02 (surf_async_options): a job submitted without options
+		// reports a null maximum.
+		return typedNull("Integer"), nil
 	case "AsyncInfo.getMinimumQueueableDelayInMinutes", "System.AsyncInfo.getMinimumQueueableDelayInMinutes":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("AsyncInfo.getMinimumQueueableDelayInMinutes expects 0 arguments")
@@ -1479,6 +1546,14 @@ platformStaticCall:
 				return Null, fmt.Errorf("%s expects Date and Time", callee)
 			}
 			date, err := parsePlatformDate(args[0])
+			labelYear, labelMonth, labelDay, julianLabel := 0, 0, 0, false
+			if label, labelErr := platformScalarText(args[0], "Date"); labelErr == nil {
+				// A Julian label such as 1500-02-29 is not a Gregorian date.
+				if y, m, dd, ok := dateLabelParts(label); ok && y >= 1 && y <= 1582 && m >= 1 && m <= 12 && dd >= 1 && dd <= hybridMonthLength(y, m) {
+					labelYear, labelMonth, labelDay, julianLabel = y, m, dd, true
+					date, err = time.Date(y, time.Month(m), 1, 0, 0, 0, 0, time.UTC), nil
+				}
+			}
 			if err != nil {
 				return Null, err
 			}
@@ -1497,7 +1572,11 @@ platformStaticCall:
 			if callee == "Datetime.newInstance" {
 				zoneID = vm.currentUserTimeZoneID()
 			}
-			value, err := datetimeFromLocalParts(date.Year(), int(date.Month()), date.Day(), hour, minute, second, millisecond, zoneID)
+			buildYear, buildMonth, buildDay := date.Year(), int(date.Month()), date.Day()
+			if julianLabel {
+				buildYear, buildMonth, buildDay = labelYear, labelMonth, labelDay
+			}
+			value, err := datetimeFromCapturedLocalParts(buildYear, buildMonth, buildDay, hour, minute, second, millisecond, zoneID)
 			if err != nil {
 				return Null, err
 			}
@@ -1513,11 +1592,15 @@ platformStaticCall:
 		}
 		year, month, day := int(args[0].Int), int(args[1].Int), int(args[2].Int)
 		// Native control K007: constructors carry calendar overflow too.
-		date, err := dateFromNewInstanceParts(year, month, day)
-		if err != nil {
-			return Null, err
+		if year >= 1 && year <= 1582 {
+			// The Julian years keep their own month lengths (1500-02-29 exists).
+		} else {
+			date, err := dateFromNewInstanceParts(year, month, day)
+			if err != nil {
+				return Null, err
+			}
+			year, month, day = date.Year(), int(date.Month()), date.Day()
 		}
-		year, month, day = date.Year(), int(date.Month()), date.Day()
 		hour, minute, second := 0, 0, 0
 		if len(args) == 6 {
 			hour, minute, second = int(args[3].Int), int(args[4].Int), int(args[5].Int)
@@ -1528,7 +1611,7 @@ platformStaticCall:
 		if callee == "Datetime.newInstance" {
 			zoneID = vm.currentUserTimeZoneID()
 		}
-		value, err := datetimeFromLocalParts(year, month, day, hour, minute, second, 0, zoneID)
+		value, err := datetimeFromCapturedLocalParts(year, month, day, hour, minute, second, 0, zoneID)
 		if err != nil {
 			return Null, err
 		}
@@ -1563,7 +1646,20 @@ platformStaticCall:
 		} else {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s expects String", callee))
 		}
-		value, err := parseDatetimeValueOfText(text)
+		var value time.Time
+		var err error
+		if y, mo, dd, hh, mi, ss, ok := julianDatetimeText(text); ok {
+			// A Julian civil date such as 1500-02-29 (native CalShapes v1500_229).
+			if callee == "Datetime.valueOf" {
+				value, err = datetimeFromCapturedLocalParts(y, mo, dd, hh, mi, ss, 0, vm.currentUserTimeZoneID())
+				if err != nil {
+					return Null, err
+				}
+				return platformScalar("Datetime", formatPlatformDatetime(value)), nil
+			}
+			return platformScalar("Datetime", formatPlatformDatetime(julianWallClock(y, mo, dd, hh, mi, ss, 0))), nil
+		}
+		value, err = parseDatetimeValueOfText(text)
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+text)
 		}
@@ -1573,6 +1669,11 @@ platformStaticCall:
 			value, err = datetimeValueOfLocalClock(value, vm.currentUserTimeZoneID())
 			if err != nil {
 				return Null, err
+			}
+		} else {
+			// Native dth_DthHash_T_i27: a pre-cutover civil date reads as Julian.
+			if wall := value.UTC(); wall.Before(time.Date(1582, time.October, 15, 0, 0, 0, 0, time.UTC)) {
+				value = julianWallClock(wall.Year(), int(wall.Month()), wall.Day(), wall.Hour(), wall.Minute(), wall.Second(), wall.Nanosecond()/int(time.Millisecond))
 			}
 		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
@@ -1589,6 +1690,28 @@ platformStaticCall:
 		value, err := parseDatetimeParseTextForLocale(args[0].Text, vm.currentUserTimeZoneID(), vm.currentUserInfoField("LocaleSidKey", "en_US"))
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+args[0].Text)
+		}
+		// Native CalParse (API 62.0 and 67.0): parse reads no date before 1700.
+		if value.Year() < 1700 && value.Year() >= 1 {
+			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+args[0].Text)
+		}
+		// A pre-cutover civil date reads as Julian and resolves in the user's
+		// zone as the builders do, so one civil input gives one instant.
+		if zoneID := vm.currentUserTimeZoneID(); value.Year() < 1950 {
+			// Before the zone's first recorded transition the native zone keeps
+			// its standard offset (parse of 1/1/1700 in Los Angeles is -08:00),
+			// so rebuild the parsed civil time through the zone builder. Only a
+			// zone that reads its history (Los Angeles, Kolkata, Adelaide) and
+			// only before that first transition: a zone without history, such as
+			// New York, parses 3/20/1920 as it always did.
+			if zone, modeled := supportedNamedTimeZone(zoneID); modeled && zone.historicBeforeYear > 0 && zone.beforeFirstTransition(value) {
+				if location, err := time.LoadLocation(zoneID); err == nil {
+					civil := value.In(location)
+					if adjusted, err := datetimeFromCapturedLocalParts(civil.Year(), int(civil.Month()), civil.Day(), civil.Hour(), civil.Minute(), civil.Second(), civil.Nanosecond()/int(time.Millisecond), zoneID); err == nil {
+						value = adjusted
+					}
+				}
+			}
 		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "String.valueOfGmt":
@@ -1868,7 +1991,23 @@ platformStaticCall:
 			return Null, newExceptionError("System.SecurityException", err.Error())
 		}
 		return Bool(hmac.Equal(actual, []byte(expected))), nil
+	case "Database.QueryOptions.builder":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.QueryOptions.builder expects 0 arguments")
+		}
+		return newQueryOptionsBuilder(), nil
+	case "Crypto.generateKeyPair", "Crypto.getPrivateKey", "Crypto.parseJwe":
+		return vm.cryptoKeyServiceGate(callee, args)
+	case "Crypto.getPublicKey":
+		// Only the enabled service is captured; the feature-off shape keeps the base.
+		if !vm.cryptoEncryptionEnabled() {
+			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
+		}
+		return vm.cryptoKeyServiceGate(callee, args)
 	case "Crypto.encrypt":
+		if len(args) == 9 {
+			return vm.cryptoKeyServiceGate(callee, args)
+		}
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Crypto.encrypt expects algorithm, privateKey Blob, initializationVector Blob, and clearText Blob")
 		}
@@ -1903,6 +2042,9 @@ platformStaticCall:
 		}
 		return platformScalar("Blob", string(cipherText)), nil
 	case "Crypto.decrypt":
+		if len(args) == 9 {
+			return vm.cryptoKeyServiceGate(callee, args)
+		}
 		if len(args) != 4 {
 			return Null, fmt.Errorf("Crypto.decrypt expects algorithm, privateKey Blob, initializationVector Blob, and cipherText Blob")
 		}
@@ -2079,6 +2221,17 @@ platformStaticCall:
 			}
 			return platformScalar("Blob", string(signature)), nil
 		}
+		if _, _, ok := ecSignatureAlgorithm(args[0].Text); ok && callee == "Crypto.sign" && vm.cryptoEncryptionEnabled() {
+			key, err := blobStringArg(callee+" privateKey", args[2:3])
+			if err != nil {
+				return Null, err
+			}
+			signature, err := signES(args[0].Text, []byte(input), []byte(key))
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Blob", string(signature)), nil
+		}
 		if hash, ok := ecdsaSignatureHash(args[0].Text); ok && callee == "Crypto.sign" {
 			key, err := blobStringArg(callee+" privateKey", args[2:3])
 			if err != nil {
@@ -2127,6 +2280,17 @@ platformStaticCall:
 				return Null, err
 			}
 			valid, err := verifyRSA(hash, []byte(input), []byte(signature), []byte(key))
+			if err != nil {
+				return Null, err
+			}
+			return Bool(valid), nil
+		}
+		if _, _, ok := ecSignatureAlgorithm(args[0].Text); ok && callee == "Crypto.verify" && vm.cryptoEncryptionEnabled() && args[3].Kind == ValueObject && args[3].Type == "Blob" {
+			key, err := blobStringArg(callee+" publicKey", args[3:4])
+			if err != nil {
+				return Null, err
+			}
+			valid, err := verifyES(args[0].Text, []byte(input), []byte(signature), []byte(key))
 			if err != nil {
 				return Null, err
 			}
@@ -2248,6 +2412,10 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("JSON.deserializeUntyped expects String")
 		}
+		// Native jn04 (surf_json): empty or blank input, lower-case "no content".
+		if strings.TrimSpace(args[0].Text) == "" {
+			return Null, jsonDeserializeException("%s", "no content to map to Object due to end of input")
+		}
 		decoded, err := decodeJSONUntypedValue(args[0].Text)
 		if err != nil {
 			return Null, jsonDeserializeException("JSON.deserializeUntyped invalid JSON input: %v", err)
@@ -2267,15 +2435,23 @@ platformStaticCall:
 		}
 		strict := callee == "JSON.deserializeStrict"
 		reportColumn := !strict && args[1].Kind == ValueObject && args[1].Type == "Type" && strings.EqualFold(jsonDeserializeTypeName(args[1]), "reports.ReportTypeColumn")
+		// Native jn04 (surf_json): empty input, capital "No content".
+		if args[0].Text == "" {
+			return Null, jsonDeserializeException("%s", "No content to map to Object due to end of input")
+		}
 		decoded, err := decodeJSONValueForDeserialize(args[0].Text, strict, reportColumn)
 		if err != nil {
 			return Null, jsonDeserializeException("%s", err.Error())
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
 			typeName := jsonDeserializeTypeName(args[1])
-			if hasPrefixFold(typeName, "ConnectApi.") {
-				typesys.RequestConnectAPIShape()
+			// From API 63 an Exception type is not a JSON target.
+			// NATIVE JSON.deserialize into an Exception apex_release_gates/org.tsv JxProbe63/JX11 anonymous 62.0 63.0 67.0
+			if isExceptionType(typeName) && apexversion.AtLeast(vm.jsonCallerAPIVersion(), 63) && vm.typeMatches(typeName, "Exception", make(map[string]bool)) {
+				return Null, newExceptionError("System.JSONException", "Type unsupported in JSON: "+shortTypeName(exceptionTypeName(typeName)))
 			}
+			// A gated platform namespace (ConnectApi, Slack) joins the view.
+			typesys.RequestGatedPlatformNamespaceFor(typeName)
 			_, recordType := vm.explicitSchemaRecordType(typeValueIdentityName(args[1]))
 			if !strict {
 				decoded = vm.jsonRootSObjectPayload(typeValueIdentityName(args[1]), decoded)
@@ -3170,13 +3346,26 @@ platformStaticCall:
 	case "FlexQueue.moveJobToEnd", "FlexQueue.moveJobToFront":
 		return vm.moveFlexQueueJob(callee, args)
 	case "System.pauseJobById", "System.pauseJobByName", "System.resumeJobById", "System.resumeJobByName":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("%s expects job identifier String", callee)
-		}
-		return Null, nil
+		return vm.pauseResumeJob(callee, args)
 	case "System.purgeOldAsyncJobs":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("System.purgeOldAsyncJobs expects Date and optional limit")
+		}
+		// NATIVE purgeOldAsyncJobs argument checks apex_release_gates/org.tsv anonymous 62.0 67.0
+		for i, arg := range args {
+			if arg.Kind == ValueNull {
+				return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("Argument %d cannot be null", i+1))
+			}
+		}
+		if len(args) == 2 && args[1].Kind == ValueInt && args[1].Int <= 0 {
+			return Null, newExceptionError("System.IllegalArgumentException", "The max number of records to be deleted must be a valid number greater than zero.")
+		}
+		// A purge that runs counts one DML statement and one DML row.
+		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+			return Null, err
+		}
+		if err := vm.incrementLimit("dmlRows", 1); err != nil {
+			return Null, err
 		}
 		return Int(0), nil
 	case "Test.enqueueBatchJobs":
@@ -4109,6 +4298,14 @@ func labelRegistryForNamespace(registry storage.MetadataRegistry, namespace stri
 	return registry
 }
 
+// Only source-backed labels belonging to this org use the captured local scope.
+func localLabelTranslationScope(registry storage.MetadataRegistry, orgNamespace, namespace, name string) (storage.MetadataRegistry, string, bool) {
+	if namespace != "" && !strings.EqualFold(namespace, orgNamespace) {
+		return registry, "", false
+	}
+	return resource.LocalLabelTranslationScope(registry, orgNamespace, name)
+}
+
 func (vm *VM) resolveLabelMethodValue(namespace, name, language string) (string, bool) {
 	namespace = strings.TrimSpace(namespace)
 	name = strings.TrimSpace(name)
@@ -4118,6 +4315,7 @@ func (vm *VM) resolveLabelMethodValue(namespace, name, language string) (string,
 	}
 	if language != "" && vm != nil && vm.Org != nil {
 		filtered := labelRegistryForNamespace(vm.Org.Metadata, namespace)
+		filtered, _, _ = localLabelTranslationScope(filtered, vm.Org.Namespace, namespace, name)
 		filtered.Labels = labelsForLanguage(filtered.Labels, language)
 		if value, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name); status != resource.LabelLookupMissing {
 			return value, true
@@ -4149,6 +4347,7 @@ func (vm *VM) labelTranslationExists(namespace, name, language string) bool {
 		language = vm.currentUserInfoField("LanguageLocaleKey", "en_US")
 	}
 	filtered := labelRegistryForNamespace(vm.Org.Metadata, namespace)
+	filtered, _, _ = localLabelTranslationScope(filtered, vm.Org.Namespace, namespace, name)
 	filtered.Labels = labelsForLanguage(filtered.Labels, language)
 	_, status := resource.ResolveLabel(filtered, vm.Org.Namespace, namespace, name)
 	return status == resource.LabelLookupResolved

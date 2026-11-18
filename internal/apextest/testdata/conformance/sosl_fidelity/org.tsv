@@ -1,0 +1,149 @@
+id	api	route	observation
+groups	62.0	anonymous	[C,B,A]/[M,K]
+groups	62.0	istest	[C,B,A]/[M,K]
+groups	67.0	anonymous	[C,B,A]/[M,K]
+groups	67.0	istest	[C,B,A]/[M,K]
+swap	62.0	anonymous	[M,K]/[C,B,A]
+swap	62.0	istest	[M,K]/[C,B,A]
+swap	67.0	anonymous	[M,K]/[C,B,A]
+swap	67.0	istest	[M,K]/[C,B,A]
+globalOne	62.0	anonymous	[C]/[]
+globalOne	62.0	istest	[C]/[]
+globalOne	67.0	anonymous	[C]/[]
+globalOne	67.0	istest	[C]/[]
+globalThree	62.0	anonymous	[C,B]/[M]
+globalThree	62.0	istest	[C,B]/[M]
+globalThree	67.0	anonymous	[C,B]/[M]
+globalThree	67.0	istest	[C,B]/[M]
+window	62.0	anonymous	System.SearchException|SOSL only supports OFFSET clause for single entity search
+window	62.0	istest	System.SearchException|SOSL only supports OFFSET clause for single entity search
+window	67.0	anonymous	System.SearchException|SOSL only supports OFFSET clause for single entity search
+window	67.0	istest	System.SearchException|SOSL only supports OFFSET clause for single entity search
+reversed	62.0	anonymous	[C,B,A]/[M,K]
+reversed	62.0	istest	[A,B,C]/[K,M]
+reversed	67.0	anonymous	[C,B,A]/[M,K]
+reversed	67.0	istest	[A,B,C]/[K,M]
+bypass	62.0	anonymous	[]/[]
+bypass	62.0	istest	[C,B,A]/[M,K]
+bypass	67.0	anonymous	[]/[]
+bypass	67.0	istest	[C,B,A]/[M,K]
+empty	62.0	anonymous	[C,B,A]/[M,K]
+empty	62.0	istest	[]/[]
+empty	67.0	anonymous	[C,B,A]/[M,K]
+empty	67.0	istest	[]/[]
+cleared	62.0	anonymous	System.StringException|Test.setFixedSearchResults() can only be called from testMethods
+cleared	62.0	istest	[]/[]
+cleared	67.0	anonymous	System.StringException|Test.setFixedSearchResults() can only be called from testMethods
+cleared	67.0	istest	[]/[]
+inlineRows	62.0	anonymous	2/1|A|B|K
+inlineRows	62.0	istest	2/1|A|B|K
+inlineRows	67.0	anonymous	2/1|A|B|K
+inlineRows	67.0	istest	2/1|A|B|K
+findRows	62.0	anonymous	C,B
+findRows	62.0	istest	C,B
+findRows	67.0	anonymous	C,B
+findRows	67.0	istest	C,B
+bareField	62.0	anonymous	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+bareField	62.0	istest	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+bareField	67.0	anonymous	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+bareField	67.0	istest	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+idField	62.0	anonymous	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+idField	62.0	istest	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+idField	67.0	anonymous	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+idField	67.0	istest	System.SObjectException|SObject row was retrieved via SOQL without querying the requested field: Account.Phone
+nameField	62.0	anonymous	true|Amberquartz Alpha
+nameField	62.0	istest	true|Amberquartz Alpha
+nameField	67.0	anonymous	true|Amberquartz Alpha
+nameField	67.0	istest	true|Amberquartz Alpha
+nullEntry	62.0	anonymous	System.StringException|Test.setFixedSearchResults() can only be called from testMethods
+nullEntry	62.0	istest	[A]/[]
+nullEntry	67.0	anonymous	System.StringException|Test.setFixedSearchResults() can only be called from testMethods
+nullEntry	67.0	istest	[A]/[]
+nullList	62.0	anonymous	System.StringException|Test.setFixedSearchResults() can only be called from testMethods
+nullList	62.0	istest	[]/[]
+nullList	67.0	anonymous	System.StringException|Test.setFixedSearchResults() can only be called from testMethods
+nullList	67.0	istest	[]/[]
+deleted	62.0	anonymous	System.StringException|Test.setFixedSearchResults() can only be called from testMethods
+deleted	62.0	istest	[C]/[]
+deleted	67.0	anonymous	System.StringException|Test.setFixedSearchResults() can only be called from testMethods
+deleted	67.0	istest	[C]/[]
+dateNull	62.0	anonymous	[]
+dateNull	62.0	istest	[]
+dateNull	67.0	anonymous	[]
+dateNull	67.0	istest	[]
+dateNullGt	62.0	anonymous	[C,B,A]
+dateNullGt	62.0	istest	[C,B,A]
+dateNullGt	67.0	anonymous	[C,B,A]
+dateNullGt	67.0	istest	[C,B,A]
+wordTwo	62.0	anonymous	[A]
+wordTwo	62.0	istest	[C,B,A]
+wordTwo	67.0	anonymous	[A]
+wordTwo	67.0	istest	[C,B,A]
+questionMark	62.0	anonymous	[B]
+questionMark	62.0	istest	[C,B,A]
+questionMark	67.0	anonymous	[B]
+questionMark	67.0	istest	[C,B,A]
+internalStar	62.0	anonymous	[B]
+internalStar	62.0	istest	[C,B,A]
+internalStar	67.0	anonymous	[B]
+internalStar	67.0	istest	[C,B,A]
+countOk	62.0	anonymous	3|1|0
+countOk	62.0	istest	3|1|0
+countOk	67.0	anonymous	3|1|0
+countOk	67.0	istest	3|1|0
+countFind	62.0	anonymous	3|1|0
+countFind	62.0	istest	3|1|0
+countFind	67.0	anonymous	3|1|0
+countFind	67.0	istest	3|1|0
+termError	62.0	anonymous	System.SearchException|search term must be longer than one character: x|1
+termError	62.0	istest	ok|1
+termError	67.0	anonymous	System.SearchException|search term must be longer than one character: x|1
+termError	67.0	istest	ok|1
+syntaxError	62.0	anonymous	System.QueryException|unexpected token: WRONG|0
+syntaxError	62.0	istest	System.QueryException|unexpected token: WRONG|0
+syntaxError	67.0	anonymous	System.QueryException|unexpected token: WRONG|0
+syntaxError	67.0	istest	System.QueryException|unexpected token: WRONG|0
+unknownField	62.0	anonymous	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+unknownField	62.0	istest	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+unknownField	67.0	anonymous	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+unknownField	67.0	istest	System.QueryException|No such column 'NotAColumn' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.|0
+queryUser	62.0	anonymous	ok
+queryUser	62.0	istest	ok
+queryUser	67.0	anonymous	ok
+queryUser	67.0	istest	ok
+queryUserArg	62.0	anonymous	ok
+queryUserArg	62.0	istest	ok
+queryUserArg	67.0	anonymous	ok
+queryUserArg	67.0	istest	ok
+findUser	62.0	anonymous	ok
+findUser	62.0	istest	ok
+findUser	67.0	anonymous	ok
+findUser	67.0	istest	ok
+findUserArg	62.0	anonymous	ok
+findUserArg	62.0	istest	ok
+findUserArg	67.0	anonymous	ok
+findUserArg	67.0	istest	ok
+inlineUser	62.0	anonymous	ok
+inlineUser	62.0	istest	ok
+inlineUser	67.0	anonymous	ok
+inlineUser	67.0	istest	ok
+querySystem	62.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+querySystem	62.0	istest	ok
+querySystem	67.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+querySystem	67.0	istest	ok
+querySystemArg	62.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+querySystemArg	62.0	istest	ok
+querySystemArg	67.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+querySystemArg	67.0	istest	ok
+findSystem	62.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+findSystem	62.0	istest	ok
+findSystem	67.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+findSystem	67.0	istest	ok
+findSystemArg	62.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+findSystemArg	62.0	istest	ok
+findSystemArg	67.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+findSystemArg	67.0	istest	ok
+inlineSystem	62.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+inlineSystem	62.0	istest	ok
+inlineSystem	67.0	anonymous	System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex.
+inlineSystem	67.0	istest	ok

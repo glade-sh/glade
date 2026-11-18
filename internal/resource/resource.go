@@ -211,28 +211,28 @@ type visualforcePageXML struct {
 }
 
 func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
-	return loadProject(p, os.ReadFile)
+	return loadProject(p, p.ReadFile)
 }
 
 func loadProject(p project.Project, readMetadata func(string) ([]byte, error)) (storage.MetadataRegistry, error) {
 	if readMetadata == nil {
-		readMetadata = os.ReadFile
+		readMetadata = p.ReadFile
 	}
 	var registry storage.MetadataRegistry
-	scripts, err := loadDataWeaveResources(p.DataWeaveFiles, p.DataWeaveMetas, p.Namespace, p.SourceAPIVersion)
+	scripts, err := loadDataWeaveResources(p, p.DataWeaveFiles, p.DataWeaveMetas, p.Namespace, p.SourceAPIVersion)
 	if err != nil {
 		return storage.MetadataRegistry{}, err
 	}
 	registry.DataWeaveResources = scripts
 	for _, path := range p.LabelFiles {
-		labels, err := loadLabels(path, p.Namespace)
+		labels, err := loadLabels(p, path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.Labels = append(registry.Labels, labels...)
 	}
 	for _, path := range p.TranslationFiles {
-		labels, err := loadTranslations(path, p.Namespace)
+		labels, err := loadTranslations(p, path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
@@ -268,66 +268,69 @@ func loadProject(p project.Project, readMetadata func(string) ([]byte, error)) (
 			})
 		}
 	}
-	resources, err := loadStaticResources(p.StaticResourceFiles, p.StaticResourceMetas, p.Namespace)
+	resources, err := loadStaticResources(p, p.StaticResourceFiles, p.StaticResourceMetas, p.Namespace)
 	if err != nil {
 		return storage.MetadataRegistry{}, err
 	}
 	registry.StaticResources = resources
-	assets, err := loadContentAssets(p.ContentAssetFiles, p.ContentAssetMetas)
+	assets, err := loadContentAssets(p, p.ContentAssetFiles, p.ContentAssetMetas)
 	if err != nil {
 		return storage.MetadataRegistry{}, err
 	}
 	registry.ContentAssets = assets
-	templates, err := loadEmailTemplates(p.EmailTemplateFiles, p.Namespace)
+	templates, err := loadEmailTemplates(p, p.EmailTemplateFiles, p.Namespace)
 	if err != nil {
 		return storage.MetadataRegistry{}, err
 	}
 	registry.EmailTemplates = templates
 	for _, path := range p.MessageChannelFiles {
-		channel, err := loadMessageChannel(path, p.Namespace)
+		channel, err := loadMessageChannel(p, path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.MessageChannels = append(registry.MessageChannels, channel)
 	}
 	registry.ManagedLabelNamespaces = managedLabelNamespaces(p)
+	binding := p.PackageNamespaceBinding()
+	registry.PackageFieldsNarrow = binding.Narrow
+	registry.SourcelessPackageNamespaces = binding.Sourceless
 	for _, path := range p.TabFiles {
-		tab, err := loadTab(path, p.Namespace)
+		tab, err := loadTab(p, path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.Tabs = append(registry.Tabs, tab)
 	}
 	for _, path := range p.ApplicationFiles {
-		app, err := loadApplication(path, p.Namespace)
+		app, err := loadApplication(p, path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.Applications = append(registry.Applications, app)
 	}
 	for _, path := range p.QuickActionFiles {
-		action, err := loadQuickAction(path)
+		action, err := loadQuickAction(p, path)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.QuickActions = append(registry.QuickActions, action)
 	}
 	for _, path := range p.DataCategoryGroupFiles {
-		groups, err := loadDataCategoryGroup(path)
+		groups, err := loadDataCategoryGroup(p, path)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.DataCategoryGroups = append(registry.DataCategoryGroups, groups...)
 	}
 	for _, path := range p.FieldSetFiles {
-		fieldSet, err := loadFieldSet(path, p.Namespace)
+		fieldSet, err := loadFieldSet(p, path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.FieldSets = append(registry.FieldSets, fieldSet)
 	}
 	for _, path := range p.ObjectFiles {
-		fieldSets, err := loadObjectFieldSets(path, p.Namespace)
+		fieldSets, err := loadObjectFieldSets(p, path, p.Namespace)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
@@ -341,7 +344,7 @@ func loadProject(p project.Project, readMetadata func(string) ([]byte, error)) (
 		registry.Endpoints = append(registry.Endpoints, endpoint)
 	}
 	for _, path := range p.RemoteSiteFiles {
-		endpoint, err := loadRemoteSite(path)
+		endpoint, err := loadRemoteSite(p, path)
 		if err != nil {
 			return storage.MetadataRegistry{}, err
 		}
@@ -369,7 +372,7 @@ func ApplyProjectTolerant(org *storage.OrgState, p project.Project, metadataRead
 }
 
 func applyProject(org *storage.OrgState, p project.Project, tolerant bool, metadataReaders []func(string) ([]byte, error)) ([]project.EmailServiceRejection, error) {
-	readMetadata := os.ReadFile
+	readMetadata := p.ReadFile
 	if len(metadataReaders) > 0 && metadataReaders[0] != nil {
 		readMetadata = metadataReaders[0]
 	}
@@ -386,7 +389,7 @@ func applyProject(org *storage.OrgState, p project.Project, tolerant bool, metad
 	if err := applyPlatformCachePartitions(org, p); err != nil {
 		return nil, err
 	}
-	if err := ensureFolderObject(org, projectFolderFilesWithDependencies(p), p.Namespace, readMetadata); err != nil {
+	if err := ensureFolderObject(p, org, projectFolderFilesWithDependencies(p), p.Namespace, readMetadata); err != nil {
 		return nil, err
 	}
 	// Email template FolderId must reference the loaded folder record so
@@ -394,13 +397,13 @@ func applyProject(org *storage.OrgState, p project.Project, tolerant bool, metad
 	if len(org.Metadata.EmailTemplates) > 0 {
 		ensureEmailTemplateObject(org)
 	}
-	if err := ensureDocumentAndReportObjects(org, projectFolderFilesWithDependencies(p), p.Namespace, len(metadataReaders) == 0 && len(p.ReportFiles) == 0 && len(p.DashboardFiles) == 0); err != nil {
+	if err := ensureDocumentAndReportObjects(p, org, projectFolderFilesWithDependencies(p), p.Namespace, len(metadataReaders) == 0 && len(p.ReportFiles) == 0 && len(p.DashboardFiles) == 0); err != nil {
 		return nil, err
 	}
 	if err := applyProjectFolderItems(org, p, readMetadata); err != nil {
 		return nil, err
 	}
-	if err := ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace, p.SourceAPIVersion); err != nil {
+	if err := ensureApexPageObject(p, org, p.VisualforcePageFiles, p.Namespace, p.SourceAPIVersion); err != nil {
 		return nil, err
 	}
 	if err := LoadLayoutMetadata(org, LayoutMetadataFiles(p), readMetadata); err != nil {
@@ -504,7 +507,7 @@ func projectFolderFilesWithDependencies(p project.Project) []string {
 }
 
 func LoadProjectWithDependencies(p project.Project) (storage.MetadataRegistry, error) {
-	return loadProjectWithDependencies(p, os.ReadFile)
+	return loadProjectWithDependencies(p, p.ReadFile)
 }
 
 func loadProjectWithDependencies(p project.Project, readMetadata func(string) ([]byte, error)) (storage.MetadataRegistry, error) {
@@ -664,8 +667,8 @@ func URLForStaticResource(registry storage.MetadataRegistry, name, path string) 
 	return "", false
 }
 
-func loadTab(path string, namespace ...string) (storage.TabMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadTab(in inputs, path string, namespace ...string) (storage.TabMetadata, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return storage.TabMetadata{}, err
 	}
@@ -713,8 +716,8 @@ func localComponentBundleID(prefix, namespace, target string) string {
 	return fmt.Sprintf("%s%x", prefix, sum[:6])
 }
 
-func loadApplication(path, namespace string) (storage.ApplicationMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadApplication(in inputs, path, namespace string) (storage.ApplicationMetadata, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return storage.ApplicationMetadata{}, err
 	}
@@ -732,8 +735,8 @@ func loadApplication(path, namespace string) (storage.ApplicationMetadata, error
 	}, nil
 }
 
-func loadQuickAction(path string) (storage.QuickActionMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadQuickAction(in inputs, path string) (storage.QuickActionMetadata, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return storage.QuickActionMetadata{}, err
 	}
@@ -775,8 +778,8 @@ func loadQuickAction(path string) (storage.QuickActionMetadata, error) {
 	}, nil
 }
 
-func loadDataCategoryGroup(path string) ([]storage.DataCategoryGroup, error) {
-	data, err := os.ReadFile(path)
+func loadDataCategoryGroup(in inputs, path string) ([]storage.DataCategoryGroup, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -828,8 +831,8 @@ func dataCategoriesFromXML(raw []dataCategoryXML) []storage.DataCategory {
 	return out
 }
 
-func loadFieldSet(path, namespace string) (storage.FieldSetMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadFieldSet(in inputs, path, namespace string) (storage.FieldSetMetadata, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return storage.FieldSetMetadata{}, err
 	}
@@ -842,8 +845,8 @@ func loadFieldSet(path, namespace string) (storage.FieldSetMetadata, error) {
 	return fieldSetFromXML(raw, objectNameFromFieldSetPath(path), metadataNameFromPath(path, ".fieldSet-meta.xml", ".fieldSet"), namespace, path), nil
 }
 
-func loadObjectFieldSets(path, namespace string) ([]storage.FieldSetMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadObjectFieldSets(in inputs, path, namespace string) ([]storage.FieldSetMetadata, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -1106,8 +1109,8 @@ func metadataNameMatches(candidate, requested string) bool {
 	return strippedCandidate != candidate && strings.EqualFold(strippedCandidate, requested)
 }
 
-func loadLabels(path, namespace string) ([]storage.LabelMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadLabels(in inputs, path, namespace string) ([]storage.LabelMetadata, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -1135,8 +1138,8 @@ func loadLabels(path, namespace string) ([]storage.LabelMetadata, error) {
 	return labels, nil
 }
 
-func loadTranslations(path, namespace string) ([]storage.LabelMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadTranslations(in inputs, path, namespace string) ([]storage.LabelMetadata, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -1152,12 +1155,15 @@ func loadTranslations(path, namespace string) ([]storage.LabelMetadata, error) {
 		if name == "" {
 			continue
 		}
-		labels = append(labels, storage.LabelMetadata{Name: name, Namespace: namespace, Language: language, Value: strings.TrimSpace(label.Label), File: path})
+		entry := storage.LabelMetadata{Name: name, Namespace: namespace, Language: language, Value: strings.TrimSpace(label.Label), File: path}
+		raw := label.Label
+		entry.TranslationSourceRaw = &raw
+		labels = append(labels, entry)
 	}
 	return labels, nil
 }
 
-func loadStaticResources(contentFiles, metaFiles []string, namespace string) ([]storage.StaticResourceMetadata, error) {
+func loadStaticResources(in inputs, contentFiles, metaFiles []string, namespace string) ([]storage.StaticResourceMetadata, error) {
 	byName := make(map[string]*storage.StaticResourceMetadata)
 	namespace = strings.TrimSpace(namespace)
 	for _, path := range contentFiles {
@@ -1181,7 +1187,7 @@ func loadStaticResources(contentFiles, metaFiles []string, namespace string) ([]
 			}
 			continue
 		}
-		content, err := os.ReadFile(path)
+		content, err := in.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -1189,7 +1195,7 @@ func loadStaticResources(contentFiles, metaFiles []string, namespace string) ([]
 		resource.Content = string(content)
 	}
 	for _, path := range metaFiles {
-		meta, err := loadResourceMeta(path)
+		meta, err := loadResourceMeta(in, path)
 		if err != nil {
 			return nil, err
 		}
@@ -1243,18 +1249,18 @@ func staticResourceContentRoot(file, subpath string) string {
 	return root
 }
 
-func loadContentAssets(contentFiles, metaFiles []string) ([]storage.ContentAssetMetadata, error) {
+func loadContentAssets(in inputs, contentFiles, metaFiles []string) ([]storage.ContentAssetMetadata, error) {
 	byName := make(map[string]*storage.ContentAssetMetadata)
 	for _, path := range contentFiles {
 		name := trimKnownSuffix(filepath.Base(path), ".asset")
-		content, err := os.ReadFile(path)
+		content, err := in.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
 		byName[lookupKey(name)] = &storage.ContentAssetMetadata{Name: name, ContentPath: path, Content: string(content), URL: ContentAssetURL(name)}
 	}
 	for _, path := range metaFiles {
-		meta, err := loadResourceMeta(path)
+		meta, err := loadResourceMeta(in, path)
 		if err != nil {
 			return nil, err
 		}
@@ -1275,7 +1281,7 @@ func loadContentAssets(contentFiles, metaFiles []string) ([]storage.ContentAsset
 	return out, nil
 }
 
-func loadEmailTemplates(paths []string, namespace string) ([]storage.EmailTemplateMetadata, error) {
+func loadEmailTemplates(in inputs, paths []string, namespace string) ([]storage.EmailTemplateMetadata, error) {
 	byName := make(map[string]*storage.EmailTemplateMetadata)
 	for _, path := range paths {
 		name := emailTemplateNameFromPath(path)
@@ -1293,7 +1299,7 @@ func loadEmailTemplates(paths []string, namespace string) ([]storage.EmailTempla
 		}
 		lower := strings.ToLower(path)
 		if strings.HasSuffix(lower, ".email-meta.xml") {
-			meta, err := loadEmailTemplateMeta(path)
+			meta, err := loadEmailTemplateMeta(in, path)
 			if err != nil {
 				return nil, err
 			}
@@ -1322,7 +1328,7 @@ func loadEmailTemplates(paths []string, namespace string) ([]storage.EmailTempla
 			template.Active = meta.Active == nil || *meta.Active
 			continue
 		}
-		content, err := os.ReadFile(path)
+		content, err := in.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -1342,8 +1348,8 @@ func loadEmailTemplates(paths []string, namespace string) ([]storage.EmailTempla
 	return out, nil
 }
 
-func loadEmailTemplateMeta(path string) (emailTemplateXML, error) {
-	data, err := os.ReadFile(path)
+func loadEmailTemplateMeta(in inputs, path string) (emailTemplateXML, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return emailTemplateXML{}, err
 	}
@@ -1354,8 +1360,8 @@ func loadEmailTemplateMeta(path string) (emailTemplateXML, error) {
 	return raw, nil
 }
 
-func loadResourceMeta(path string) (staticResourceXML, error) {
-	data, err := os.ReadFile(path)
+func loadResourceMeta(in inputs, path string) (staticResourceXML, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return staticResourceXML{}, err
 	}
@@ -1382,8 +1388,8 @@ func loadNamedCredential(path string, readMetadata func(string) ([]byte, error))
 	return storage.EndpointMetadata{Kind: "NamedCredential", Name: name, URL: strings.TrimSpace(raw.Endpoint), Protocol: strings.TrimSpace(raw.Protocol), PrincipalType: strings.TrimSpace(raw.PrincipalType), Active: true, File: path}, nil
 }
 
-func loadRemoteSite(path string) (storage.EndpointMetadata, error) {
-	data, err := os.ReadFile(path)
+func loadRemoteSite(in inputs, path string) (storage.EndpointMetadata, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return storage.EndpointMetadata{}, err
 	}
@@ -1416,7 +1422,7 @@ func ensureMetadataObjects(org *storage.OrgState, p project.Project, readMetadat
 	}
 }
 
-func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace, projectAPIVersion string) error {
+func ensureApexPageObject(in inputs, org *storage.OrgState, pageFiles []string, namespace, projectAPIVersion string) error {
 	if org == nil || len(pageFiles) == 0 {
 		return nil
 	}
@@ -1448,23 +1454,23 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace, 
 		if name == "" {
 			continue
 		}
-		meta, err := loadVisualforcePageMeta(visualforcePageMetaPath(path))
+		meta, err := loadVisualforcePageMeta(in, visualforcePageMetaPath(path))
 		if err != nil {
 			return err
 		}
-		apiVersion, err := EffectiveVisualforceAPIVersion(path, projectAPIVersion)
+		apiVersion, err := effectiveVisualforceAPIVersion(in, path, projectAPIVersion)
 		if err != nil {
 			return err
 		}
 		markup := ""
 		if !hasSuffixFold(path, ".page-meta.xml") {
-			data, err := os.ReadFile(path)
+			data, err := in.ReadFile(path)
 			if err == nil {
 				markup = string(data)
 			}
 		}
 		id := storage.ID("066" + leftPad(i+1, 12))
-		object.Records[id] = storage.Record{ID: id, Object: "ApexPage", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "ApexPage", Fields: map[string]storage.Value{
 			"Id":                          storage.IDValue(id),
 			"Name":                        storage.StringValue(name),
 			"NamespacePrefix":             storage.StringValue(namespace),
@@ -1476,7 +1482,7 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace, 
 			"IsConfirmationTokenRequired": storage.BooleanValue(meta.ConfirmationTokenRequired != nil && *meta.ConfirmationTokenRequired),
 			"Markup":                      storage.StringValue(markup),
 			"MasterLabel":                 storage.StringValue(firstNonEmpty(meta.Label, name)),
-		}}
+		}})
 	}
 	org.Objects["ApexPage"] = object
 	return nil
@@ -1487,13 +1493,22 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace, 
 // when the sidecar is absent or does not declare one. Versions are normalized
 // and validated without deriving them from the resource name.
 func EffectiveVisualforceAPIVersion(path, fallback string) (string, error) {
+	return effectiveVisualforceAPIVersion(project.Project{}, path, fallback)
+}
+
+// EffectiveVisualforceAPIVersionForProject reads the sidecar through p.
+func EffectiveVisualforceAPIVersionForProject(p project.Project, path, fallback string) (string, error) {
+	return effectiveVisualforceAPIVersion(p, path, fallback)
+}
+
+func effectiveVisualforceAPIVersion(in inputs, path, fallback string) (string, error) {
 	projectVersion, err := apexversion.PreserveSource(fallback)
 	if err != nil {
 		return "", fmt.Errorf("invalid project source API version %q: %w", strings.TrimSpace(fallback), err)
 	}
 
 	metaPath := visualforceMetadataPath(path)
-	data, err := os.ReadFile(metaPath)
+	data, err := in.ReadFile(metaPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return projectVersion, nil
@@ -1537,7 +1552,7 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 	}
 	for i, resource := range org.Metadata.StaticResources {
 		id := storage.ID("081" + leftPad(i+1, 12))
-		object.Records[id] = storage.Record{ID: id, Object: "StaticResource", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "StaticResource", Fields: map[string]storage.Value{
 			"Name":            storage.StringValue(resource.Name),
 			"Body":            storage.BlobValue(resource.Content),
 			"BodyLength":      storage.IntegerValue(int64(len(resource.Content))),
@@ -1546,7 +1561,7 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 			"NamespacePrefix": staticResourceNamespaceValue(resource.NamespacePrefix),
 			"SystemModStamp":  storage.DateTimeValue("2026-01-01T00:00:00Z"),
 			"URL":             storage.StringValue(resourceURL(resource)),
-		}}
+		}})
 	}
 	org.Objects["StaticResource"] = object
 }
@@ -1568,7 +1583,7 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 			folder = storage.IDValue(folderID)
 		}
 		id := storage.ID("00X" + leftPad(i+100001, 12))
-		object.Records[id] = storage.Record{ID: id, Object: "EmailTemplate", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "EmailTemplate", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"Name":            storage.StringValue(firstNonEmpty(template.Name, template.DeveloperName)),
 			"DeveloperName":   storage.StringValue(firstNonEmpty(template.DeveloperName, developerNameFromFullName(template.Name))),
@@ -1583,12 +1598,12 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 			"TemplateStyle":   storage.StringValue(template.TemplateStyle),
 			"FolderId":        folder,
 			"IsActive":        storage.BooleanValue(template.Active),
-		}}
+		}})
 	}
 	org.Objects["EmailTemplate"] = object
 }
 
-func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace string, readers ...func(string) ([]byte, error)) error {
+func ensureFolderObject(in inputs, org *storage.OrgState, folderFiles []string, namespace string, readers ...func(string) ([]byte, error)) error {
 	if org == nil || len(folderFiles) == 0 {
 		return nil
 	}
@@ -1610,14 +1625,14 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 		object.Definition.KeyPrefix = "00l"
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	ensureFolderFields(&object.Definition)
 
 	paths := append([]string(nil), folderFiles...)
 	sort.Strings(paths)
 	for _, path := range paths {
-		meta, err := loadFolderMeta(path, readers...)
+		meta, err := loadFolderMeta(in, path, readers...)
 		if err != nil {
 			return err
 		}
@@ -1639,7 +1654,7 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 				org.Metadata.ReportFolderShares = append(org.Metadata.ReportFolderShares, storage.ProjectReportFolderShare{FolderID: id, AccessLevel: strings.TrimSpace(share.AccessLevel), SharedTo: strings.TrimSpace(share.SharedTo), SharedToType: strings.TrimSpace(share.SharedToType)})
 			}
 		}
-		object.Records[id] = storage.Record{ID: id, Object: "Folder", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "Folder", Fields: map[string]storage.Value{
 			"Id":                 storage.IDValue(id),
 			"Name":               storage.StringValue(name),
 			"DeveloperName":      storage.StringValue(developerName),
@@ -1647,13 +1662,13 @@ func ensureFolderObject(org *storage.OrgState, folderFiles []string, namespace s
 			"NamespacePrefix":    namespaceValue,
 			"AccessType":         storage.StringValue(strings.TrimSpace(meta.AccessType)),
 			"PublicFolderAccess": storage.StringValue(strings.TrimSpace(meta.PublicFolderAccess)),
-		}}
+		}})
 	}
 	org.Objects["Folder"] = object
 	return nil
 }
 
-func ensureDocumentAndReportObjects(org *storage.OrgState, folderFiles []string, namespace string, scanFolderItems bool) error {
+func ensureDocumentAndReportObjects(in inputs, org *storage.OrgState, folderFiles []string, namespace string, scanFolderItems bool) error {
 	if org == nil || len(folderFiles) == 0 {
 		return nil
 	}
@@ -1662,21 +1677,21 @@ func ensureDocumentAndReportObjects(org *storage.OrgState, folderFiles []string,
 	for _, path := range paths {
 		switch folderTypeFromPath(path) {
 		case "Document":
-			if err := loadFolderDocuments(org, path, namespace); err != nil {
+			if err := loadFolderDocuments(in, org, path, namespace); err != nil {
 				return err
 			}
 		case "Report":
 			if !scanFolderItems {
 				continue
 			}
-			if err := loadFolderReports(org, path, namespace); err != nil {
+			if err := loadFolderReports(in, org, path, namespace); err != nil {
 				return err
 			}
 		case "Dashboard":
 			if !scanFolderItems {
 				continue
 			}
-			if err := loadFolderDashboards(org, path, namespace); err != nil {
+			if err := loadFolderDashboards(in, org, path, namespace); err != nil {
 				return err
 			}
 		}
@@ -1684,9 +1699,9 @@ func ensureDocumentAndReportObjects(org *storage.OrgState, folderFiles []string,
 	return nil
 }
 
-func loadFolderDocuments(org *storage.OrgState, folderPath, namespace string) error {
+func loadFolderDocuments(in inputs, org *storage.OrgState, folderPath, namespace string) error {
 	directory := filepath.Join(filepath.Dir(folderPath), folderDeveloperName(folderPath))
-	entries, err := os.ReadDir(directory)
+	entries, err := in.ReadDir(directory)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -1709,11 +1724,11 @@ func loadFolderDocuments(org *storage.OrgState, folderPath, namespace string) er
 		if err != nil {
 			return err
 		}
-		content, err := os.ReadFile(contentPath)
+		content, err := in.ReadFile(contentPath)
 		if err != nil {
 			return fmt.Errorf("load document body %s: %w", contentPath, err)
 		}
-		meta, err := loadDocumentMeta(metaPath)
+		meta, err := loadDocumentMeta(in, metaPath)
 		if err != nil {
 			return err
 		}
@@ -1723,7 +1738,7 @@ func loadFolderDocuments(org *storage.OrgState, folderPath, namespace string) er
 		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
 			return record.Fields["FolderId"].ID == folderID && strings.EqualFold(record.Fields["DeveloperName"].String, developerName)
 		})
-		object.Records[id] = storage.Record{ID: id, Object: "Document", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "Document", Fields: map[string]storage.Value{
 			"Id":                storage.IDValue(id),
 			"Name":              storage.StringValue(documentName),
 			"DeveloperName":     storage.StringValue(developerName),
@@ -1734,7 +1749,7 @@ func loadFolderDocuments(org *storage.OrgState, folderPath, namespace string) er
 			"IsPublic":          storage.BooleanValue(meta.Public != nil && *meta.Public),
 			"NamespacePrefix":   nullableNamespace(namespace),
 			"Type":              storage.StringValue(strings.TrimPrefix(filepath.Ext(fileName), ".")),
-		}}
+		}})
 	}
 	org.Objects["Document"] = object
 	return nil
@@ -1764,9 +1779,9 @@ func documentContentPath(metaPath string, entries []os.DirEntry) (string, error)
 	return contentPath, nil
 }
 
-func loadFolderReports(org *storage.OrgState, folderPath, namespace string) error {
+func loadFolderReports(in inputs, org *storage.OrgState, folderPath, namespace string) error {
 	directory := filepath.Join(filepath.Dir(folderPath), folderDeveloperName(folderPath))
-	entries, err := os.ReadDir(directory)
+	entries, err := in.ReadDir(directory)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -1776,7 +1791,7 @@ func loadFolderReports(org *storage.OrgState, folderPath, namespace string) erro
 	storage.EnsureStandardObject(org, "Report")
 	object := org.Objects["Report"]
 	folderName := folderDeveloperName(folderPath)
-	folderMeta, err := loadFolderMeta(folderPath)
+	folderMeta, err := loadFolderMeta(in, folderPath)
 	if err != nil {
 		return err
 	}
@@ -1787,7 +1802,7 @@ func loadFolderReports(org *storage.OrgState, folderPath, namespace string) erro
 			continue
 		}
 		metaPath := filepath.Join(directory, name)
-		meta, err := loadReportMeta(metaPath)
+		meta, err := loadReportMeta(in, metaPath)
 		if err != nil {
 			return err
 		}
@@ -1795,32 +1810,32 @@ func loadFolderReports(org *storage.OrgState, folderPath, namespace string) erro
 		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
 			return strings.EqualFold(record.Fields["DeveloperName"].String, developerName) && strings.EqualFold(record.Fields["NamespacePrefix"].String, strings.TrimSpace(namespace))
 		})
-		object.Records[id] = storage.Record{ID: id, Object: "Report", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "Report", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"Name":            storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Name), developerName)),
 			"DeveloperName":   storage.StringValue(developerName),
 			"FolderName":      storage.StringValue(folderLabel),
 			"Format":          storage.StringValue(strings.TrimSpace(meta.Format)),
 			"NamespacePrefix": nullableNamespace(namespace),
-		}}
+		}})
 	}
 	org.Objects["Report"] = object
 	return nil
 }
 
-func loadFolderDashboards(org *storage.OrgState, folderPath, namespace string) error {
+func loadFolderDashboards(in inputs, org *storage.OrgState, folderPath, namespace string) error {
 	folderDeveloperName := folderDeveloperName(folderPath)
 	folderID, ok := projectFolderID(org, "Dashboard", folderDeveloperName)
 	if !ok {
 		return fmt.Errorf("dashboard folder %q not found", folderDeveloperName)
 	}
-	folderMeta, err := loadFolderMeta(folderPath)
+	folderMeta, err := loadFolderMeta(in, folderPath)
 	if err != nil {
 		return err
 	}
 	folderLabel := firstNonEmpty(strings.TrimSpace(folderMeta.Name), folderDeveloperName)
 	directory := filepath.Join(filepath.Dir(folderPath), folderDeveloperName)
-	entries, err := os.ReadDir(directory)
+	entries, err := in.ReadDir(directory)
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -1835,7 +1850,7 @@ func loadFolderDashboards(org *storage.OrgState, folderPath, namespace string) e
 			continue
 		}
 		path := filepath.Join(directory, name)
-		data, err := os.ReadFile(path)
+		data, err := in.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -1847,7 +1862,7 @@ func loadFolderDashboards(org *storage.OrgState, folderPath, namespace string) e
 		id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
 			return strings.EqualFold(record.Fields["DeveloperName"].String, developerName) && strings.EqualFold(record.Fields["NamespacePrefix"].String, strings.TrimSpace(namespace))
 		})
-		object.Records[id] = storage.Record{ID: id, Object: "Dashboard", Fields: map[string]storage.Value{
+		object.PutRecord(id, storage.Record{ID: id, Object: "Dashboard", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"DeveloperName":   storage.StringValue(developerName),
 			"Title":           storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Title), developerName)),
@@ -1855,7 +1870,7 @@ func loadFolderDashboards(org *storage.OrgState, folderPath, namespace string) e
 			"FolderName":      storage.StringValue(folderLabel),
 			"Type":            storage.StringValue(strings.TrimSpace(meta.Type)),
 			"NamespacePrefix": nullableNamespace(namespace),
-		}}
+		}})
 	}
 	org.Objects["Dashboard"] = object
 	return nil
@@ -1906,8 +1921,8 @@ func nullableNamespace(namespace string) storage.Value {
 	return storage.StringValue(namespace)
 }
 
-func loadDocumentMeta(path string) (documentXML, error) {
-	data, err := os.ReadFile(path)
+func loadDocumentMeta(in inputs, path string) (documentXML, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return documentXML{}, err
 	}
@@ -1918,8 +1933,8 @@ func loadDocumentMeta(path string) (documentXML, error) {
 	return raw, nil
 }
 
-func loadReportMeta(path string) (reportXML, error) {
-	data, err := os.ReadFile(path)
+func loadReportMeta(in inputs, path string) (reportXML, error) {
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return reportXML{}, err
 	}
@@ -1949,8 +1964,8 @@ func ensureFolderFields(definition *storage.ObjectDefinition) {
 	}
 }
 
-func loadFolderMeta(path string, readers ...func(string) ([]byte, error)) (folderXML, error) {
-	read := os.ReadFile
+func loadFolderMeta(in inputs, path string, readers ...func(string) ([]byte, error)) (folderXML, error) {
+	read := in.ReadFile
 	if len(readers) > 0 && readers[0] != nil {
 		read = readers[0]
 	}
@@ -2037,9 +2052,9 @@ func visualforceMetadataPath(path string) string {
 	return path + "-meta.xml"
 }
 
-func loadVisualforcePageMeta(path string) (visualforcePageXML, error) {
+func loadVisualforcePageMeta(in inputs, path string) (visualforcePageXML, error) {
 	var page visualforcePageXML
-	data, err := os.ReadFile(path)
+	data, err := in.ReadFile(path)
 	if err != nil {
 		return page, nil
 	}
@@ -2228,4 +2243,11 @@ func leftPad(value, width int) string {
 		text = "0" + text
 	}
 	return text
+}
+
+// inputs is the file access a loader needs. A project.Project satisfies it and
+// routes reads through the project's input view when it has one.
+type inputs interface {
+	ReadFile(path string) ([]byte, error)
+	ReadDir(path string) ([]os.DirEntry, error)
 }

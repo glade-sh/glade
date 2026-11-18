@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Logical__c</fullName><label>Logical</label><type>Checkbox</type><formula>AND(Holder__r.Flag__c, TRUE)</formula><formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs></CustomField>

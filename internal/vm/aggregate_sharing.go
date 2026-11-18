@@ -36,7 +36,7 @@ func (vm *VM) orgWithVisibleAggregateInputs(org *storage.OrgState, query soql.Qu
 	}
 	filtered := *org
 	filtered.Objects = maps.Clone(org.Objects)
-	state.Records = visible
+	state.SetRecords(visible)
 	filtered.Objects[objectName] = state
 	return &filtered
 }

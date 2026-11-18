@@ -31,13 +31,12 @@ func TestDescribeHolderProjectConcurrentRoutes(t *testing.T) {
 				methods.WriteString(`public static Map<String,Schema.SObjectType> stored; public Map<String,Schema.SObjectType> member;`)
 				id := 0
 				for _, write := range []struct{ mutation, size string }{
-					{"put('private',Account.SObjectType)", "beforeSize+1"},
-					{"put('account',User.SObjectType)", "beforeSize"},
-					{"putAll(new Map<String,Schema.SObjectType>{'private'=>Account.SObjectType})", "beforeSize+1"},
-					{"remove('account')", "beforeSize-1"}, {"clear()", "0"},
-					{"keySet().remove('account')", "beforeSize"}, {"keySet().clear()", "beforeSize"},
-					{"keySet().removeAll(new Set<String>{'account'})", "beforeSize"},
-					{"keySet().retainAll(new Set<String>{'user'})", "beforeSize"},
+					// put, putAll and remove are read-only (review_round11 gw_put,
+					// gw_putall, gk_direct); vm TestDescribeHolderDirectWritesAreReadOnly.
+					{"clear()", "0"},
+					{"keySet().remove('account')", "beforeSize-1"}, {"keySet().clear()", "0"},
+					{"keySet().removeAll(new Set<String>{'account'})", "beforeSize-1"},
+					{"keySet().retainAll(new Set<String>{'user'})", "1"},
 				} {
 					fmt.Fprintf(&methods, "public static void mutate%d(Map<String,Schema.SObjectType> m) {m.%s;}\n", id, write.mutation)
 					for _, target := range []string{"holder", "alias", "DescribeOwner.stored", "instance.member", "parameter"} {

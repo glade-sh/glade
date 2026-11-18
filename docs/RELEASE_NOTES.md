@@ -4,6 +4,359 @@
 
 - Authentication flow default objects now follow the captured API version, field access and query clause boundaries for static and dynamic access.
 
+### CI
+
+- **Leak-scan hardening.** `scripts/leak-scan.sh` now fails when `LEAK_SCAN_DENYLIST` has no entries, so a missing secret cannot silently disable the private-name check; only fork pull requests, which cannot see repository secrets, pass `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skip the denylist with a warning while the path checks still run. The new `scripts/leak-scan-commits.sh A..B` scans every commit of a range on its own and names the commit with a finding, for release checks.
+
+## v0.3.12
+
+v0.3.12 adds captured behavior for feature-enabled scratch orgs, API 68.0 (Winter '27) Apex and the local LWC shell, test-runner surfaces, code coverage, `hashCode`, dates before 1583, typed flow merges, default query order, regular expressions, and standard and custom duplicate matching. Permission sets assigned to the running user inside a test now behave as in Salesforce, `@TestSetup` runs the async work it enqueues, and numeric results match on macOS arm64 and Linux amd64.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v94`, `salesforce-platform-v74`, `apextest-runtime-v44`), and the debugger's project cache moves to version 22. The first run after upgrading rebuilds them.
+- **Permission sets assigned in a test.** A permission set that a test assigns to the running user now grants nothing outside `System.runAs`. Wrap the code that needs the grant in `System.runAs(new User(Id = UserInfo.getUserId()))`, or deploy a profile grant. See the permission set entries below.
+- **Global describe is read-only.** `put`, `putAll` and `remove` directly on `Schema.getGlobalDescribe()` now throw an uncatchable `System.FinalException: Collection is read-only`, as in Salesforce. Code that edited the map in place must copy it first (`new Map<String, Schema.SObjectType>(Schema.getGlobalDescribe())`, or `clone()`). See the key set entry below.
+- **Typed flow merges follow the locale.** A flow String assignment that merges a Number, Date or Boolean resource now renders it by the running user's locale for the 19 captured locales. Flow text built from such merges can change for those users. See the typed flow merge entry below.
+- **Default order and text writes.** An Account query filtered only by `Name LIKE 'prefix%'` returns ascending Name order without ORDER BY, and plain Text writes trim tabs. See the default order entry below.
+- **`@TestSetup` work and failures.** A Queueable, `@future` call, batch or scheduled job enqueued in `@TestSetup` now runs at the end of setup, so tests that relied on the work never running may fail. An exception in `@TestSetup` fails every test method of the class.
+
+### Changes
+
+- **Feature-enabled orgs.** A project whose scratch definition lists `PlatformEncryption` runs the EC key pair, `ES256`, `ES384` and `ES512` sign and verify, `Crypto.parseJwe` and the nine-argument JWE `Crypto.encrypt` and `Crypto.decrypt` as captured (key sizes, token sizes and error text). A project that lists `ApexIntegrationTests` deploys `@IntegrationTest`, `@BeforeClass` and `@TearDown`; `glade test` runs each `@IntegrationTest` method with the `@BeforeClass` data visible and `@TearDown` after each passing method (a product-path test covers this; `@BeforeClass` is setup only in an `@IntegrationTest` class). Of 41 second-pass rows, 34 are replayed (2 partial) and 7 elastic rows are inventory only. The 2 partial rows, `INTEGRATION-RUN-67` and `-68`, match only with the `COUNT` and `STATIC` values masked: the fixture `COUNT` is org history, and native shares the `@BeforeClass` static with the first method only. Known gap: glade runs `@TearDown` inside the test's transaction, while native gives it its own limits. Orgs without those features keep the feature-off behavior below. Elastic Apex executions and managed-package namespace collisions are not modeled, and Data Cloud cursor execution is not modeled (the `Limits` Data Cloud getters return the captured values, see the API 68.0 entry).
+
+- **Test-runner surfaces.** Captured rows at API 62.0 and 67.0: `EventBus.fail()` discards the platform events pending at the call; an unmapped `MultiStaticResourceCalloutMock` endpoint throws a catchable `NullPointerException`, an unconfigured `StaticResourceCalloutMock` answers 200 with status `OK`, and `Test.setMock(HttpCalloutMock.class, ...)` refuses a source class that does not implement `HttpCalloutMock`; `Test.loadData` raises a `StringException` for a bad number, keeps a space-only cell distinct from a blank and takes Ids in an Id column; a custom setting instance with no row applies no field defaults and a scale-zero Number setting field keeps its stored text; a sum, minimum or maximum roll-up over a Number field carries its scale (`60.00`); `Test.createStub` refuses a `Database.Batchable` class; and a batch `finish` that calls an `@future` method in a test fails with an uncatchable limit exception. `WebServiceMock` mismatches and Currency or Percent roll-ups keep earlier behavior.
+
+- **Default order and text writes.** An Account query whose whole WHERE clause is a `Name LIKE 'prefix%'` filter returns rows in ascending Name order without ORDER BY, and an Account-to-Contacts child subquery whose whole WHERE clause is a `LastName LIKE 'prefix%'` filter returns descending LastName, as captured. Other shapes keep Id order. Plain Text writes trim tabs as well as spaces, and a tab-only value becomes null. A zero Decimal with scale 7 or more prints in exponent form (`0E-7`), and captured `Double.format`, Decimal division and long `Decimal.valueOf` rows match. `ORDER BY` resolves each sort value once per record. On 10,000 Account rows, sort time fell from 128 ms to 20 ms for `ORDER BY Name`, from 150 ms to 33 ms for `ORDER BY Active, Name`, from 117 ms to 11 ms for `ORDER BY Name LIMIT 50` and from 26.5 ms to 19.9 ms for `ORDER BY Name DESC`. See [KNOWN_GAPS.md](KNOWN_GAPS.md) for the unfitted shapes.
+
+- **Roll-up timing, trigger depth, describe order and GROUP BY.** A child after-trigger reads the parent roll-up (COUNT, SUM, MIN, MAX, filtered) as it stood before the statement, on insert, update, delete and undelete, single and bulk; the recalculated value is visible once the statement returns. The depth-16 trigger failure unwinds every nested activation: no Apex catch in an inner trigger sees it, the DML statement in the outermost trigger raises the catchable `DmlException` (or the failed `SaveResult` for a partial call) at its own line, and the caller's `Limits` DML and query counters drop the aborted chain. A roll-up change lands when its statement finishes, so a nested statement's trigger reads the value without the enclosing statement's change, then the enclosing trigger reads it with the inner change. After an insert, updating the same record with its unchanged non-reparentable master-detail value no longer fails at 67.0. `GROUP BY` on a custom Number, Currency or Percent field raises `System.UnexpectedException: field '<name>' can not be grouped in a query call`. A custom object's `fields.getMap().keySet()` lists the nine system fields in platform order and then the custom fields. `ORDER BY` over 600 punctuation, digit and letter names already matched the captured permutation. Without `ORDER BY`, rows inserted in separate transactions come back in an order that differs between orgs, so Glade keeps Id order there. The `GROUP BY` group order, the Account field map order and the global describe order repeat natively but are not fitted; a default-mode update of a record hidden by sharing keeps its earlier status codes where the native rows and Glade's existing rows disagree on the record's origin. A mixed upsert fires each parent's after-update trigger once per group whose children it owns and whose roll-up the group changes, with the new record holding the landed COUNT, SUM, MAX and MIN values and the old record the values before; Trigger.new and Trigger.old read the held COUNT and SUM. A SOQL query passed as a single-row argument to a static method inside a concatenation no longer fails the native overload check. Known limits: the anonymous-block master-detail exemption also matches record-triggered flow and process DML, which has no class, stack or trigger and has no captured row; the `runAs` sharing rule is captured at 62.0, 66.0 and 67.0 only, and that code called from the block keeps its own sharing declaration is inferred. Whether record-triggered flows and workflow read the frozen or the fresh roll-up is not captured.
+
+- **Map key sets and the global describe.** Captured rows at API 62.0 and 67.0. `remove`, `clear`, `removeAll` and `retainAll` on a map's key set write through to that map and its local, static, field and parameter aliases, and a saved key set sees the change; a second holder and a fresh `Schema.getGlobalDescribe()` are unchanged. `put`, `putAll` and `remove` directly on `Schema.getGlobalDescribe()`, typed or chained, now throw an uncatchable `System.FinalException: Collection is read-only` for any key, as on Salesforce. Code that edited the map in place must copy it first (`clone()` or `new Map<String, Schema.SObjectType>(...)`). `clear()` empties only that holder, and a `clone()` stays writable. `Map.deepClone()` runs only on a map whose values are SObjects; on any other map, the global describe included, Glade raises the native compile message `Operation only applies to SObject value map types` when the call runs.
+
+- **Company Name duplicate matching.** Two parenthesis forms on one two-word base whose one-word suffixes start with a vowel and differ only in that letter (`(East)`/`(Oast)`) now report match confidence 100, as captured for E, O and U; the match verdict is unchanged.
+
+- **ConnectApi `setTest` test doubles.** ConnectApi stays unsupported. Only the documented `setTest*` test doubles are recorded locally for `@IsTest` code: a registered `ConnectApi.ChatterFeeds.getFeedElementsFromFeed` result is matched by exact overload and argument values, now also in `@IsTest(SeeAllData=true)` classes. The getter validates `subjectId` first (`Parameter required` for null, `Illegal value` for a malformed id; `'me'` stays distinct from the user id). No ConnectApi service runs in glade; creating a favorite and moderation reads are not covered.
+
+- **API 68.0 (Winter '27) captured behavior.** `Database.QueryOptions` and its builder, and SOQL `SET OPTIONS :bind` (null bind and wrong bind type errors; only `withDataspace('default')` and `withHonorEmptyStrings(true)` on Account run, and other options, including `explicitNamespace`, stay unsupported). `Limits` Data Cloud cursor, cursor-row and flex-credit getters at 67.0 and later return the captured values for an org without Data Cloud (usage 0, 50 cursors, 50,000,000 cursor rows, flex-credit cap 2147483647), and the pagination cursor counters at 62.0. Data Cloud cursors themselves are not modeled. In an org without the `PlatformEncryption` scratch feature, the EC key and JWE `Crypto` methods raise the captured `SecurityException`; `System.JweToken` constructs and prints as captured. A UserMode Flow saved below API 68 is a deploy error, and a UserMode Flow started from Apex skips records the running user cannot see. With `enableKeepManualSharesOnTransfer` off, an Account owner change removes its manual shares. `@IntegrationTest` without the `ApexIntegrationTests` feature, `SF_Archive.ArchiverAccessorResponse` and an inline Account sharing reason report the captured deploy problems, and a class saved at API 19.0 gets the retirement warning.
+
+- **Standard and custom duplicate matching, residual fits.** The standard Contact and Lead rules score a phone line difference at item 91 (country digit `1` on both numbers) or 88 and report the mean with the rule's exact items, one of which is a first name the name dictionary lists: 96 and 97, one point more with such a first name or with the country digit. The standard surname item finds `Kovalski`/`Kowalski`, `Smyth`/`Smiht`, `Smth`/`Smiht`, `Garsia`/`Gracia` and `Kowalsky`/`Kowalczyk` through the Metaphone 3 key and a raw keyboard score with floors of 93 (one length) and 91 with 93 at the best position of the extra letter (one letter apart). A custom Title item matches a single-letter title such as `A B C` to a title with a word starting with one of its letters, the article `A` aside, at 93, 89 or 88 by word count. Company Name matching no longer matches 33 captured non-matches: long glued-digit runs against short ones, a base that extends the other with another qualifier, the same unlisted qualifier across a dash and a parenthesis, a spaced slash against a parenthesis on a base under 12 letters, and a plain `West`/`East` pair on a two-letter first word. New native panels (`fuzzy_residual_panels`) pin the pairs Glade still misses.
+
+- **Permission sets assigned to the running user in a test.** A permission set that a test, a `@TestSetup` method or code they call assigns to the running user grants nothing outside `System.runAs`, as in Salesforce (APIs 62.0 and 67.0, field and custom permissions). A `runAs` block entered after the assignment applies it until the block ends; the block that makes the assignment does not see it. Another user's `runAs` block, asynchronous jobs another user started and `glade.yml` `test.permissionSets` keep the immediate grant. Test classes that relied on the earlier behavior now need `System.runAs(new User(Id = UserInfo.getUserId()))` around the code that uses the grant, or a deployed profile grant. Explicit `insert as user` by the administrator below API 62.0 now needs a field grant, and a user-mode field-denial exception reports `System.DmlException` when uncaught. An upsert, a list insert with the assignment last, and Queueable, `@future` and Batch jobs the test starts run as the test user, and `Version` runAs hide a test-made self assignment like an insert. A Flow `$Permission` formula, a partial `Approval.lock` (`MIXED_DML_OPERATION`) and `UserRecordAccess` follow the captured rows.
+
+- **Apex surface rows.** Captured rows at API 62.0 and 67.0 now drive `String.format` with an unmatched brace, `String.join` with a null separator, `Time` text, `formatLong` in more locales and half-hour offsets, the Adelaide, Auckland and Kathmandu time zones and the DST overlap choice, `Date.parse` for `en_GB` and the captured `ja_JP` shape, several `JSON` edge cases, `AsyncInfo` diagnostics, and callouts from a Queueable or a Finalizer. Rows outside these shapes keep their earlier behavior.
+
+- **`hashCode` values.** Captured rows at API 62.0 and 67.0 drive `hashCode` for an SObject (the sum of each assigned field name's hash XOR its value's hash), Decimal (as a Double alone, and with its scale inside a List, Set or SObject field, using a queried field's declared scale), Id (its 18-character text), Date, Datetime (including the term that depends on the user locale's first day of week and minimal days, which a Datetime keeps from the locale it was built under, so its hash survives a `runAs` boundary), Time, Integer, and child and parent relationship values on an SObject. An empty child list hashes the same as an absent one, so such records also compare equal and dedupe together in a Set or Map. Double `+0.0` and `-0.0` hash differently, alone and inside a List, Set or Map.
+
+- **Dates before 1583.** Date and Datetime follow the Julian and Gregorian hybrid calendar in builders, readers, text, `format()`, `formatLong`, hashes, `addMonths` and `addYears`, with the captured zone offsets before 2008. `Date.parse` and `Datetime.parse` read no date before 1700. Insert enforces the DateTime field range and Percent and Number integer overflow, and `List<Decimal>` equality compares scale, as captured.
+
+- **Typed flow merges.** A flow String assignment that merges a Number, Date or Boolean resource renders it as native does by the running user's locale, for 19 captured locales (a blank or uncaptured locale keeps the earlier text). Merges into a non-String variable are compile errors only for the captured shapes: a Number, Boolean or Date resource into a variable of the same type, and a Number formula into a Number variable, for every captured Number scale pair from 0 to 17. A target with scale above 17 or no declared scale, and other pairings, compile as before.
+
+- **Numeric results match across architectures.** Floating-point products in Apex math, SOQL and duplicate-matching scores are no longer fused into one multiply-add on arm64, so macOS arm64 and Linux amd64 return the same bits. Duplicate match results with equal shown confidence sort by creation order, as captured natively at API 62.0 and 67.0.
+
+- **Street duplicate matching.** Street names with a spelled hundred follow a single-digit multiplier, and ordinal-first and hundred shapes outside the captured rows keep their earlier scores.
+
+- **API 68 LWC base components.** The local LWC shell follows captured API 68 behavior: toasts from `ShowToastEvent` and `lightning/toast` carry the captured roles, live regions and Close buttons, and dismiss after the measured durations; `lightning-input` date, time and datetime read typed times, report invalid input on the time half, label the date and time parts and link help text through `aria-describedby`; the date picker button carries its assistive text; and `lightning-tabset` moves tabs that do not fit into the More menu as captured. The time format message follows release 68 text at saved API 67.0 and later.
+
+- **Exception constructors on platform stubs.** Exception constructors on project-linked platform stubs keep their message and cause for every constructor shape.
+
+- **Apex code coverage.** `glade test --code-coverage` records which lines of each class and trigger the tests ran, per test and for the run, with the executable lines, carried per-test rows, unions and percentages Salesforce reports (`sf apex run test --code-coverage` at APIs 62.0 and 67.0). `--coverage-gate RunLocalTests|RunSpecifiedTests` applies the deployment coverage rule and fails the run when it is not met; RunLocalTests needs every local test and refuses selectors and shards. `--synchronous` lists every trigger in every test's rows, as a synchronous sf run does; the default follows an asynchronous run. JSON, the console summary and JUnit properties carry the result, from the local route, the daemon and a test server alike. Runs without the flag are unchanged. See `docs/CODE_COVERAGE.md` for the rules and known gaps.
+
+- **Async work enqueued in `@TestSetup` runs.** A Queueable, `@future` call, batch or scheduled job enqueued in `@TestSetup` now runs at the end of setup, as Salesforce runs it, so its records are in every test method's data, and the test methods' Queueable, future and async-call limits start from the setup's counts. A setup whose job throws, or whose Queueable chains another (`Maximum stack depth has been reached.`), fails every test method with that exception. Scheduled Apex queued in setup and a Queueable that a setup batch's `finish()` enqueues run too; a platform event published in setup and change data capture from setup DML are not delivered before the tests, as in Salesforce. Tests that relied on the work never running may now fail.
+
+- **`@TestSetup` failures.** An exception in a `@TestSetup` method fails every test method of the class with the setup exception, as native test runs report it.
+
+- **Every selected test method runs in long-lived processes.** In the test daemon, the test server and watch loops, a whole-class run after a single-method run of the same class reported its other methods as passed without running them. Those methods now run and may fail. One-shot `glade test` runs, the usual CI shape, were not affected. A test whose invocation is missing now fails as a runner error instead of passing.
+
+- **Same-named test classes from two package directories.** Each runs in its own group with its own custom metadata and only its own `@TestSetup`; before, the second class used the first class's org and ran both setups.
+
+- **Apex regular expressions follow Java.** `Pattern` and `Matcher` validate patterns with Java's syntax rules and error text, read numeric escapes, `\p{...}` property names, `\N{name}` (Unicode 15.0 names), `(?x)` comments and whitespace, extended-flag classes, Java case folding, line terminators and the ASCII word boundary as Java does, and report `hitEnd`, `requireEnd` and stack overflow like the platform. Replacement strings and null arguments follow Java. Captured native rows at API 62.0 and 67.0 back each rule.
+
+### Performance
+
+- **Custom duplicate matching.** A custom matching rule reads its candidate side once per scan and scores an item only while the filter can still change, so bulk inserts under fuzzy rules run faster. Match outcomes are unchanged.
+
+- **Growing Sets and static collections.** Adding to a Set of numbers, SObjects or other non-String, non-Id elements no longer copies the whole Set on each add, and a static List or Set of scalars no longer rescans every element after each change. 6,000 adds to a Set<Integer> took about 2.3 s and now take about 50 ms; a test whose helper grows a static Set and List once per call, 6,000 times, used 79% fewer instructions. Results are unchanged.
+
+- **Strict-mode heap checks.** With `--limit-mode strict`, `Math.mod`, `abs`, `min`, `max`, `floor`, `ceil`, `round` and `signum`, `size()` and `isEmpty()` on a local collection, `String` length and blank checks, field reads, local Map puts, enhanced-for variables and loop-variable rebinds no longer force a full heap walk. Heap counts and limit errors are unchanged.
+
+- **Default Name LIKE order and Decimal division.** The default-order Account `Name LIKE` query reads each value once and skips the extra record copy, and a terminating Decimal quotient finds its scale from the divisor's factors. Results are unchanged.
+
+- **Set equality and `retainAll`/`removeAll`.** Set equality, `retainAll` and `removeAll` bucket scalar, Double and SObject elements by key instead of comparing every pair, and the Set Decimal scale check runs in linear time. Results are unchanged.
+
+## v0.3.11
+
+v0.3.11 brings user-mode DML and field access under `System.runAs` closer to Salesforce, extends custom duplicate matching for street, title, company and name rules, and matches more captured governor-limit, SOSL and Apex release-note behavior. The debugger starts from a consistent set of project files, and test runs reuse unchanged Visualforce input digests.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v93`, `salesforce-platform-v73`, `apextest-runtime-v43`). The first run after upgrading rebuilds them.
+- **Master-detail updates at API 67.0.** Under the default user mode, `update` now fails for a record that carries a non-reparentable master-detail field, even when the value is unchanged. `update as system` is not affected. See the Apex release-note gates entry below.
+
+### Changes
+
+- **Access modes under `System.runAs`.** Captured explicit `USER_MODE` DML on a readable object without the operation's permission now raises `DML operation <OP> not allowed` (or the field-access `DmlException` for upsert) and returns failed rows for partial Database calls. User-mode DML on a record hidden by sharing reports the platform's row error instead of a `SecurityException`. Each `runAs(User)` block counts one DML statement. Captured `COUNT()` queries on unreadable objects, clause and `AccessLevel` conflicts, `stripInaccessible` root and relationship results, user-mode undelete without the delete permission, inherited sharing in Batchable, `@future` and finalizer callbacks, and `Search.suggest` in tests follow native rows. User-mode DML on an inaccessible custom field raises `DmlException` from source API 55.0.
+
+- **User-mode field access.** Test-runner DML reports inaccessible custom fields on standard objects as captured, including partial inserts with scoped permission sets. API 67 default-mode administrator DML and dynamic queries honor captured access to newly deployed Account Text fields.
+
+- Default Developer eager orgs omit three standard objects whose absence was observed in native lookup and query results.
+
+- **Debugger startup checks a consistent set of project inputs.** A cold `glade dap` start now builds its org, runtime and startup cache entry from one set of observed project files, including optional files found absent and directory listings. If a file changes while the debugger starts, Glade rebuilds, up to three times. When the project is still changing after the third build, the debugger stops with a message naming the file instead of starting from a mix of old and new files. Finder files and common editor temporary files do not trigger rebuilds where they are not project inputs. Startup cache entries from earlier releases are rebuilt once.
+
+- **Visualforce test startup.** Test runs keep the digests of unchanged Visualforce input files in the project's test cache and reuse them on the next run. A missing, damaged or untrusted cache file is ignored and rebuilt, and the disk cache setting that turns off the runtime cache also turns this one off.
+
+- **Custom duplicate matching.** Fuzzy street and title matching covers additional captured cases at APIs 62.0 and 67.0. Some variants and confidence scores remain unmatched; see the duplicate matching guide for the measured limits.
+
+- **Line-break errors.** Apex reports the captured line-break errors beside a receiver dot in more places: loop, do-while, else-if and switch headers, member headers of nested classes, local methods in anonymous code, and trigger loops. Only the captured forms change; other code keeps its earlier diagnostics.
+
+- **Duplicate rule match keys.** Match keys follow the matching rule. A custom rule that pairs a fuzzy First Name with a fuzzy Last Name keys the first name on its initial, and the standard Contact and Lead rules score both names without a key when the email addresses agree, so initials, phonetic first names and spaced surnames such as `Mc Allen` now match as they do in Salesforce.
+
+- **Custom First Name initials.** A custom First Name fuzzy rule no longer matches a single initial against a short one-word name (for example T and Ty) where Salesforce does not; the alias key follows the first word of a longer name, and a lone initial finds a longer name as captured. This fixes the v0.3.10 known issue.
+
+- **Duplicate matching, Title and First Name.** Fuzzy Title matching covers word order, stop words, punctuation and word subsets from native panels, and the First Name Name Variant table gains the pairs those panels confirm (`docs/DUPLICATE_FUZZY_MATCHING.md`).
+
+- **Company duplicate matching.** Custom Company Name rules score numbered names and glued digit runs, first words that differ past the match key, selected legal suffixes, hyphen joins and trailing qualifiers with captured directional confidences.
+
+- **Custom street matching.** Fuzzy Street rules follow four native captures at APIs 62.0 and 67.0: the match key (number and name, street words such as Park or Plaza left out), a match at edit similarity 87 whatever the section score, line breaks, number signs, hyphens, letters and directionals after the number, PO boxes, leading suites and number words. Standard rules are unchanged.
+
+- **Duplicate matching.** Between two plain ASCII values, City rules count inner spaces as typed. Custom ZIP rules also split the code at a period or slash. The standard Account rule accepts the captured ZIP extension shapes, and its ZIP item matches a value that is not a ZIP code only as typed.
+
+- Custom Last Name duplicate matching recognizes more names with multiple keyboard substitutions or trailing characters, based on native captures.
+
+- **Governor limits and SOSL match more captured behavior.** Limit exhaustion text, `Limits.getFindSimilarCalls`, the savepoint and `System.runAs` counters, test-boundary savepoints, the trigger depth failure, async aggregate and finalizer caps, SOSL wildcard, escape and `NAME FIELDS` matching, and the `WITH SPELL_CORRECTION`, `WITH SNIPPET(target_length)` and `WITH METADATA` clauses follow native rows at APIs 62.0 and 67.0. Other wildcard shapes and `WITH NETWORK` still report that they are unsupported, and a nested subquery in a SOSL `WHERE` clause is still rejected.
+
+- **Duplicate rule behavior.** `Datacloud.MatchRecord.getFieldDiffs()` lists the compared fields as Same, Different or Null for the builtin Account, Contact and Lead rules and for custom rules of Exact items. `FindDuplicates` and `FindDuplicatesByIds` throw a `HandledException` for a custom object with no active duplicate rule, and for Opportunity by id. Exact items compare the first 99 characters. A custom rule's `objectMapping` matches another object's fields. An Exact MatchBlanks item gates updates when its value changes. Allow+Report commits one record set for records that match each other and records an update into a match for such a rule. Within a set, Glade lists the matches enforcement found first and then the records inserted earlier by the same statement; this order is a design choice, because no native row pins the order inside a set. A record inserted as an allowed duplicate is compared with its insert-time values when it is updated again in the same transaction, so moving back to them saves, as it does natively. Other records keep the stored-value comparison, which no native row covers. An empty custom-object result reports a stable 01I id as its entity type, as the platform reports the object's definition id. The fuzzy confidence scores behind some field differences are not modeled yet.
+
+- **Apex release-note gates.** Captured rows now drive several API 62 to 67 behaviors: exception JSON stops at API 63, scheduled jobs pause and resume, multiline strings strip common indentation and read escapes, `String.template` follows the platform messages, Shift-JIS and Windows-31J are separate charsets, `getRelationshipOrder` answers for standard master-detail fields, updates that carry a non-reparentable master follow the API 63 and user-mode rules, nested child subqueries count at every depth, exception classes may override `equals` and `hashCode`, and `OrgLimits` no longer lists the elastic async entries that a default org does not have. At API 67.0 this includes a user-visible change: under the default user mode, `update` fails for a record that carries a non-reparentable master-detail field, even when the value is unchanged (for example a queried record that selected the field, or a record updated right after its insert); `update as system` is not affected. Some rows stay unmatched; see `internal/apextest/apex_release_gates_native_conformance_test.go`.
+
+### Performance
+
+- **Strict-mode list building runs in linear time.** With `--limit-mode strict`, a loop that adds records or scalars to a local list no longer re-measures the whole heap after every statement, so building 10,000 records takes about as long as in permissive mode instead of growing with the square of the list size. The heap count, the statement where a heap LimitException is thrown and its message are unchanged. A loop whose body calls methods or reads fields still takes the full heap walk.
+
+### Release validation
+
+- The release candidate passed real-project comparison gates with no new outcomes against v0.3.10, and all eight paired shards passed with no additions.
+- Captured behavior is covered by the access-mode, duplicate matching, governor-limit, SOSL and Apex release-gate conformance tests in `internal/apextest`, `internal/dml`, `internal/sema` and `internal/vm`.
+- Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
+
+## v0.3.10
+
+v0.3.10 improves Apex compatibility, language server diagnostics, debugger responsiveness, and test startup and memory use.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v90`, `salesforce-platform-v71`, `apextest-runtime-v40`). The first run after upgrading rebuilds them.
+
+### Changes
+
+- Apex reports captured receiver and type-name trivia errors in anonymous code, classes, and triggers at API versions 62 through 67. It also rejects vertical tabs beside dots in the captured anonymous call forms.
+
+- **Debugger responsiveness.** Large variable previews now limit rendering work, and a test launch can reuse the project index immediately after the first debug launch.
+
+- **Async test ordering.** Eligible Future, Queueable, Batch Apex and scheduled work follows the captured stopTest ordering.
+
+- **Language server refresh.** Diagnostics follow unsaved edits and retry after project refreshes. Deleted files leave the index, hover starts analysis when needed, and closed files with syntax errors publish parse diagnostics while other files retain the last good semantic view. External changes refresh through watched files or on save. Reference searches detect edits with unchanged metadata, and stale semantic diagnostics are not republished. Client responses no longer receive a second response.
+
+- **Standard object startup memory.** Test runs retain a smaller projection of standard-object describe data while preparing stub fields.
+
+- **Unresolved assignments.** Parallel semantic analysis avoids repeating method-body checks when an unknown assignment target cannot be affected by another type. Diagnostics stay unchanged.
+
+- **Lower retained memory after a completed schema spread.** The CLI now frees the decoded describe catalog after completing the standard object spread and periodically frees decoded entries while a lazy org grows.
+- **Bounded schema template memory.** Long-lived processes evict least recently used standard object template groups above a field budget; evicted templates rebuild on demand.
+- **Test startup.** Building the child relationship lookup avoids installing
+  standard objects solely to resolve parent names, reducing startup work. A
+  source reference to a child relationship of a standard object the test org
+  has not loaded yet is no longer inferred as a field, matching a fully loaded
+  org.
+
+- **Faster global describe.** Object names are listed without loading every standard object definition.
+
+- Email fields reject captured malformed addresses on inserts, including trailing or consecutive domain dots and quoted local parts containing spaces.
+
+- **Duplicate matching.** Custom phone rules recognize captured seven-letter vanity numbers via [ITU-T E.161](https://www.itu.int/rec/T-REC-E.161/en) keypad digits. Custom name rules use captured first and last name keys.
+
+### Performance
+
+- **Full schema describe walks.** Describing every token from global describe completes the standard object spread in bulk after repeated individual lookups.
+
+- **Unknown object names keep the lazy schema lazy.** Unanswerable SOQL object names return the same error without building every standard object.
+
+- **Cheaper per-test org copies.** A test class's org copy now shares the rows of read-only setup objects (type implementors, licenses, stage and status values, duplicate and matching rules) with the base org until a test writes them, and a cloned runtime shares its method-table overlay until it registers a method.
+
+- **Smaller platform tables.** `glade test`, `exec`, `check` and `server` load the unsupported ConnectApi and Slack stub types only when a project names those namespaces or looks one of their types up dynamically. Results and errors are unchanged.
+
+### Known issues
+
+- Custom First Name fuzzy rules can match a single initial against a short one-word name (for example T and Ty) where Salesforce does not; fixed in v0.3.11.
+
+### Release validation
+
+- The release candidate passed real-project comparison gates with no new outcomes, and all eight paired shards passed with no additions.
+- Captured behavior is covered by the receiver-trivia, async ordering, email validation and fuzzy-name conformance tests in `internal/sema`, `internal/apextest` and `internal/dml`.
+- Archives support macOS and Linux on amd64 and arm64. See [installation and checksum verification](INSTALL.md#manual-install) for the archive and `SHA256SUMS.txt` instructions.
+
+## v0.3.9
+
+v0.3.9 adds opt-in standard duplicate rules, locale-aware SOQL ordering, criteria-based Case sharing and more native-matched Apex, SOQL and SOSL behavior. It lowers memory and startup cost for tests, and `glade doctor` no longer hangs on a busy toolchain.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v87`, `salesforce-platform-v68`, `apextest-runtime-v36`). The first run after upgrading rebuilds them.
+- **Standard duplicate rules are opt-in.** The standard Account, Contact and Lead duplicate rules run only with `duplicateRules.standard: on` in `glade.yml` (or `GLADE_STANDARD_DUPLICATE_RULES=on`). A project's `duplicateRules` metadata for a standard rule is honored whatever the setting says. Custom duplicate rules stay always on. With the setting on, large Account scans with many same-city, similar-name records cost more per insert.
+- **Garbage collection floor for standalone test runs.** A `glade test` run that executes tests in its own process no longer collects garbage while its heap is under a floor of up to 256 MiB. Peak memory can rise up to about 10% on small runs. Test servers, daemons, watch and debug runs, an explicit `GOGC` and `--gc-aggressive` keep the default.
+- **Binary size.** Locale-aware SOQL ordering adds approximately 2.9 MiB to the binary.
+
+### Duplicate rules
+
+- **Standard rules.** With `duplicateRules.standard` on, an Account matches on its name and a city or ZIP code, or its website, a city or ZIP code and a street or phone number. A Contact or Lead matches on last and first name with an email address, a phone number, or the same company (or email domain) with a title or street. The cross-object Contact and Lead rules and Person Account rules are enforced when active. Match confidences, surname substitution and far-key boundaries follow native captures at APIs 62.0 and 67.0.
+- **Matching and limits.** Every matching rule caps results at the earliest 100 created members and orders them by confidence, then creation. `FindDuplicates` by Id rejects batches larger than 50. Changed matching fields on edits and upserts, Person Account rules and Account street and local-phone matches follow captures. A custom rule with OR groups reports the mean over its filter, as Salesforce does.
+- **Access.** Duplicate scans check record access only after matching, and Contact record sharing applies. At API 67, a single Contact insert returns `CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY` when a retrieved profile marks a custom Contact field used by its duplicate rule as `readable=false` and no effective grant permits it.
+- **Settings survive reloads.** Saved orgs and warm test runtimes honor the current standard-rule setting, including after upgrading an older saved org.
+
+### SOQL, SOSL and sharing
+
+- **Locale-aware SOQL ordering.** Captured locale tables support locale-aware ordering and grouping, ranges, and MIN/MAX. HAVING text ranges use the execution locale, consistent with WHERE, and REST and Bulk queries pass the selected user's locale. The English GROUP BY representative rule remains provisional outside the captured case pairs.
+- **Restricted picklist ordering.** Source APIs 62-65 apply the legacy picklist null-order policy to restricted picklists with configured values. API 66.0 and later honor explicit NULLS clauses.
+- **Queried formula fields.** SOQL preserves blank operands in calculated Number and Currency fields marked `BlankAsBlank`. Number formulas preserve blank results through `ROUND` and return their declared scale.
+- **SOSL.** SOSL distinguishes invalid queries from counted searches, rejects anonymous `WITH SYSTEM_MODE`, divides the result limit among `RETURNING` objects, caps multi-object searches at 250 rows per object outside tests, and rejects a positive `OFFSET` in multi-object searches. Name searches match word prefixes and the interior `?`, `??` and `*` forms. A user-mode search reports an unreadable field used to sort a `RETURNING` group.
+- **Criteria-based Case sharing.** Matching Case sharing rules grant access at commit. Reconciliation preserves unrelated Rule shares, applies to persisted anonymous debug sessions, and ignores unsupported criteria rules while retaining supported rules.
+
+### Apex
+
+- **French numeric formatting.** `Decimal.format()`, `Integer.format()` and `Long.format()` use narrow no-break spaces for grouping and a decimal comma for the `fr_FR` user locale.
+- **Double signed zero.** Equality and typed List membership distinguish positive and negative Double zero in the captured cases. Sorting Double and Object lists places negative Double zero first.
+- **User-mode DML and secure queries.** For named runAs Standard User tests at source APIs 62 and 67, denied object access in explicit partial `USER_MODE` inserts returns failed `SaveResult` rows, and explicit all-or-none inserts return the captured exception and DML counters. At API 67, the omitted-mode partial insert returns native `SaveResult` failures. These results apply to the captured Text Name object and record shapes. Captured API 62 dynamic `SECURITY_ENFORCED` projections report the native inaccessible-permission message.
+- **Test and async boundaries.** `Test.stopTest()` outside a test reports the native `System.FinalException`. Future callbacks drained by `Test.stopTest()` report the native default queueable-job limit, and failed Queueable callbacks retain their test-visible Processing status.
+- **Exception stacks.** Exception stacks keep the caller frames and lines the captures show: trigger getter call sites, property getters, setters and field initializers, and anonymous Apex helper chains including constructed causes.
+- **Roll-up validation.** Inserting child records for a single unfiltered COUNT roll-up rechecks parent validation after before-update triggers. A parent failure reaches the contributing child rows, and database writes from failed attempts roll back.
+- **Standard describes.** The captured default Developer configuration exposes the observed Account field map and standard picklist values at APIs 62 and 67.
+
+### Performance
+
+- **Memory and startup.** Reading an unset field no longer builds every standard object (peak memory on a save-and-read test project fell from about 560 MiB to about 340 MiB, instructions about 45 percent). The standard platform type table is smaller (about 35 MB allocated instead of 65 MB). Method bodies are lexed once per process (about 6 percent less allocation on a 500-class project). Source-digest hashing uses pooled buffers, and the static reference index is shared between tests (about 8 percent less peak memory on a 500-class project). Results are identical.
+- **Fewer collections at startup.** See the garbage collection floor under Upgrade notes. Instructions fell about 18% on a small project and 1% to 2% on larger ones.
+
+### Doctor
+
+- A busy toolchain installation no longer blocks `glade doctor` indefinitely. The toolchain check reports that it was skipped and advises retrying. Discovered toolchains are checked under their own install lock.
+
+## v0.3.8
+
+v0.3.8 turns more Salesforce compile and runtime differences into matching errors, enforces fuzzy duplicate rules, makes dependency resolution deterministic, and cuts test startup time, memory and check time.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v86`, `salesforce-platform-v67`, `apextest-runtime-v35`). The first run after upgrading rebuilds them.
+- **Sibling-directory dependency scanning is now opt-in.** Dependency resolution is deterministic: a project resolves the same alone and beside other checkouts. Glade no longer looks in the parent and grandparent directories, or in sibling project directories, for declared SFDX package dependencies unless you ask. Turn it on with `project.siblingDependencyScan: true` in `glade.yml`, the `--sibling-dependencies` flag, or `GLADE_SIBLING_DEPENDENCIES=1`. Without it, a dependency that only a neighboring directory would supply reports `dependency_missing`. The test daemon is keyed on the mode. See `docs/CONFIG.md`.
+- **Unknown custom fields are compile errors.** A field that does not exist on an object with a captured full field list (including `Case`, `User` and the captured `WebStore` rows) now fails at compile time with the Salesforce message, where it used to compile. `Case.SourceId` is accepted when Social Customer Service is enabled.
+- **Daemon directory checks.** An unsafe daemon directory is refused and replaced with a per-user cache directory (see Test daemon).
+
+### Apex
+
+- **Unknown fields and namespaced fields.** Compile-time field errors match Salesforce for unknown fields on objects with a captured field list. An undefined namespaced field on a standard object is accepted only for a declared package namespace that has no source, and only when the project declares dependencies.
+- **Local scope.** Variables declared in a `while` or `do`-`while` body are scoped to that body.
+- **Dynamic SOQL binds.** `Database.query` binds to String locals whose block has ended follow the captured visibility rules.
+- **Case field access.** Standard-field access on `Case` for the default administrator follows captured rows, and two Case reference fields were added to the catalog.
+- **Describe and relationships.** `getChildRelationships()` and `Schema.getGlobalDescribe()` results are shared across tests of one schema and copied only when a test writes them (see Performance).
+
+### Automation
+
+- **Flow fault paths.** `$Flow.FaultMessage` carries the native text for more DML error codes and for Update, Delete and Get Records. Record-triggered and autolaunched flows raise on an unhandled fault. Flows that are not event-triggered publish the platform events they create.
+- **Platform-event-triggered flows.** Faults in an event-triggered flow are swallowed and roll the interview back. Rollback, publish timing and chained events follow captured rows.
+- **Flow batches.** Action batches keep per-interview fault indexes, run the after-update trigger once per batch, handle filtered self-updates, and give `ReadWriteTransfer` records public read, as captured for Lead sharing.
+- **Duplicate rules with fuzzy matching items.** A custom matching rule whose items use the fuzzy methods for first name, last name, company name, phone, city, street, ZIP or title is now enforced by duplicate rules on insert and update, and returned by `Datacloud.FindDuplicates`. The scorers follow captured Salesforce verdicts and match confidences. Last Name uses a Metaphone 3 encoder (`github.com/dlclark/metaphone3`, BSD 3-Clause) for the sounds-alike score, so dropped vowels, silent letters and name-specific spellings match as natively (unbiased holdout 99.0% recall, no false matches). Name-variant and acronym dictionaries cover only the pairs the captures prove. Fuzzy input is length-capped and blank input is rejected. Standard-rule fuzzy equations, cross-object rules and Person Account rules are still not enforced; `docs/DUPLICATE_FUZZY_MATCHING.md` lists the formulas and the gaps.
+
+### LWC and Visualforce
+
+- **Aura and LWC action parameters.** Parameter conversion for `@AuraEnabled` calls follows captured behavior.
+- **LWC dynamic imports.** The compile preflight validates dynamic imports in utility modules and sibling modules, not only in the component entry.
+- **Visualforce.** Behaviors ported from captured Visualforce rows. The controller gate is also computed once per project state (see Performance).
+- **Shared LWC compiler dependencies.** `GLADE_LWC_DEPS_DIR` selects one prepared `node_modules` tree for both compiler passes.
+
+### Performance
+
+- **Lower memory.** Platform type and method indexes load lazily, stub overlay members are released, standard objects spread lazily from source, and class templates are built on first use. Retained heap and peak RSS fell about 7% from lazy class templates alone, with 1.5% fewer instructions on a warm run. Results are unchanged.
+- **Faster semantic checks on large projects.** Declaration checks no longer rebuild the type-member model once per overriding class, and method bodies are checked on up to `GOMAXPROCS` workers (at most 8). `glade check`, test startup, the language server and the Tooling API `executeAnonymous` route skip the repeated work. Diagnostics keep their order and content.
+- **Fewer source re-reads and a cached binary digest.** A warm test daemon request no longer reads and hashes every source and `-meta.xml` file at each stage. A file that has not changed since it was last hashed, and was already two seconds old then, is trusted by device, inode, size, mtime and ctime, on file systems with a real ctime. Each process also remembers the SHA-256 of its own executable, which removes about 0.7 s from every cached `check` and `test`. Edited and recently written files are always hashed again.
+- **Visualforce controller gate computed once per project state.** A Visualforce page request, `glade exec` with a project and each warm one-class `glade test` no longer compile the whole project again to decide which controllers a page may use. The result is keyed by the project value and the content of every file it names, so any edit recomputes it.
+- **One-shot test runs.** A single `glade test` process no longer encodes every object definition to fingerprint the org for a runtime patch it cannot make. This saves about 0.1 s per cold process.
+- **Id lookups.** `SObjectType.newSObject(id)`, `Id.getSObjectType()`, delete by Id and other lookups from an Id to its object no longer sort every object name on each call. One lookup takes about a sixth of the time and allocates nothing.
+- **Collection mutation in rollup loops.** `List.add` no longer rescans every unchanged list and map in scope after each add. A rollup loop over 400 SObjects that groups records into a `Map<String, List<SObject>>` runs about 35% faster in the vm benchmark.
+- **Global describe maps.** `Schema.getGlobalDescribe()` no longer copies the 5,400-entry map three times for every test. Tests of one schema share the map until one writes it. On a project whose tests call it, instructions fell about 3%.
+- **Child relationship describes.** `getChildRelationships()` no longer clones every relationship value for each test. On a describe-heavy suite, instructions fell about 7% and peak memory about 8%.
+
+Results are unchanged by every item in this section.
+
+### Editor
+
+- **Language server.** `initialize` no longer waits for the index to load, so the editor connects at once and features fill in as the index completes. The server honors `$/cancelRequest` and debounces `didChange` diagnostics by 250 ms.
+- **Debug adapter.** A launch can be cancelled while it starts.
+
+### Test daemon
+
+- **Unsafe daemon directories.** `glade test serve` and the commands that find it now check owner and mode of the daemon directory on every use. A directory that is not yours or is group- or world-writable (for example a group-writable volume root) is refused with one warning line, and Glade uses the per-user cache directory instead.
+- **File stamps.** The daemon skips re-hashing unchanged files, as described under Performance.
+
+### CI
+
+- **Shared inputs.** Duration-history, npm, Playwright and test binaries are produced or restored once and shared across shards, and Apex shards plan from one shared history.
+- **Train and release checks.** Train and release pull requests run the full suite and enforce an Apex and semantic shard-balance check. The concurrency inventory also catches helper-backed test re-execution.
+- **Conformance split.** The Visualforce conformance test is split into row-range parts.
+
+### Toolchain
+
+- Build with Go 1.26.11 (net/http fix GO-2026-6859).
+
+## v0.3.7
+
+v0.3.7 fixes more differences from Salesforce found with captured org behavior, runs Lightning action async work, and shortens test and CI time.
+
+### Upgrade notes
+
+- **Caches.** The semantic, platform and test-runtime caches carry new versions (`sema-v85`, `salesforce-platform-v66`, `apextest-runtime-v34`). The first run after upgrading rebuilds them.
+
+### Apex
+
+- **Advisory CPU risk report.** `glade test --cpu-risk` prints, and `--cpu-risk-json <path>` writes, an estimate of how close each test and Apex method comes to the 10 s synchronous and 60 s async CPU limits. It counts DML rows, SOQL rows, loop iterations, triggers, flows and callouts and weights them with approximate Salesforce costs (only the row weights come from captured rows). Glade does not emulate Salesforce CPU time; the report never changes a test result and is off by default.
+- **Account deletion and restricted picklists.** Deleting an account with child records and writing restricted picklist values follow captured behavior at API 62.0 and 67.0.
+- **Schema describe and field sets.** Schema shorthand, describe default values and field set lookups follow captured behavior. Field sets with the same name in different namespaces no longer collide.
+- **External ID upsert.** Upserts by external ID on standard objects, and their access checks, follow captured behavior at API 62.0 and 67.0.
+- **Seeded profiles and licenses.** Seeded profiles link to the user licenses and management permissions seen in captured rows. Customized profiles from older saved orgs are preserved, and license ID collisions are resolved.
+- **Accessors and labels.** Property getters and setters, including recursive and cyclic ones, run as Salesforce runs them. Custom label translation, whitespace and missing translations match captured results.
+- **Formula and checkbox fields.** Checkbox fields in formulas, grouped queries, inserts and updates follow captured behavior.
+- **Standard controllers.** Standard controller and record page ID handling follows captured behavior.
+- **`ObjectPermissions.PermissionsViewAllFields` at API 62.0.** The field is rejected at compile time when it is named through `Schema.ObjectPermissions`, through a chained `getDescribe()` or `getSObjectField()`, or through an `SObjectType.fields` member, as for the plain token. API 63.0 and later still accept it.
+- **Guest user access.** Guest-type profiles read, create and update `User` records as captured at API 62.0 and 67.0.
+- **Describe names and standard-field access.** Licensed describe names, namespaced custom fields on standard objects in SOQL, and field-level security for Case entitlement fields follow captured behavior.
+
+### Flow and Process Builder
+
+- **Flow record mapping and collection filters.** Autolaunched flows can map references and string literals into single records, keep mapped nulls in returned records, and use In and Not In filters with collection inputs in Get Records. This is captured at API 62.0 and 67.0.
+- **Custom Error merge fields.** Merge fields for `$Record` Number, Currency, Percent, DateTime and Time values in Flow Custom Error messages follow captured formatting at API 62.0 and 67.0.
+
+### LWC and Lightning
+
+- **Lightning action async work (API 62.0 and 67.0).** Queueable, `@future` and platform-event work enqueued by an `@AuraEnabled` method called from an LWC or Aura component now runs after the action commits and sees its changes. The work is discarded if the action throws or rolls back to an earlier savepoint. A failing job rolls back only itself and does not change the action's result. Under strict limit mode the 50-job caps apply to the action. This replaces the previous unsupported-feature rejection. `Database.*Async` DML in an action is still rejected.
+- **Historical overloaded Apex actions.** A component call to an `@AuraEnabled` method whose single-parameter overloads still compile (Apex API before 55) now runs the overload Salesforce selects, instead of reporting the overload as unsupported. Other overload shapes keep the unsupported result.
+- **Action overloads and arity.** Lightning method selection by argument count and type follows captured behavior.
+- **Action argument conversion.** Arguments of `@AuraEnabled` calls from Lightning web components convert as Salesforce does for Boolean (any string), `List<String>` (a string becomes one element or the parsed JSON array; numbers, booleans and objects become an empty list), Decimal, Double, Integer, Datetime, Object, Account and SObject parameters. A `Date` parameter that receives a UTC Datetime string is still rejected.
+- **Component imports and styles.** Currency, dynamic and namespaced imports, and shared and cyclic stylesheets follow captured platform behavior.
+- **Components and navigation.** Navigation, list views, modals, buttons and icons render as captured.
+
+### Performance
+
+- **Faster loops in anonymous Apex.** `for` loops in anonymous code keep loop-body variables bound between iterations instead of re-creating them, which cut instructions about 7% and peak memory about 11% on a loop benchmark. Results are identical.
+- **Faster test runs on large projects.** Results are identical. A describe-heavy library ran in 48 s instead of 158 s, and a large trigger framework in 20 min instead of 42 min. The gains come from fewer repeated lookups, shared schema views, cheaper SOQL filters and one dependency-error parse per run. Strict-mode heap accounting also sums static fields once per check.
+
+### CLI and CI
+
+- **Faster Process Builder host tests.** The tests share one project load per API version, and review scenarios run in parallel. Test time is about half.
+- **Pull request lane.** Pull requests run a fast lane that includes the delegated CLI tests. The full suite runs in the merge queue.
+- **LWC conformance test split.** The L07 LWC conformance test runs once per API version, plus a prerequisites test. Each writes its own report.
+- **Wider Apex shards.** Main-branch CI runs Apex tests in 16 shards, within a 58-job budget that a test enforces.
+- **Public corpus check in CI.** Required CI runs a tier of pinned public Salesforce projects and compares the results with stored expectations.
+- **Shorter CI graph.** The apextest binary is built in its own job and the Go test matrix is split so shards start sooner. Every test still runs once.
+- **Test robustness.** Timing-sensitive test bounds scale with the test deadline, and the race workflow runs nightly.
+
 ## v0.3.6
 
 v0.3.6 fixes more differences from Salesforce found with captured org behavior, and makes pull request CI faster.
@@ -31,6 +384,11 @@ v0.3.6 fixes more differences from Salesforce found with captured org behavior, 
 ### CLI and CI
 
 - **Faster pull request CI.** Pull requests reuse the build caches saved from the main branch, and the LWC conformance test is split by API version (59, 67 and 68). No test or budget was removed.
+
+- **Flow record mapping and collection filters (62.0 and 67.0).** Autolaunched flows can map references and string literals into single records, retain mapped nulls in returned records, and use In and Not In filters with collection inputs in Get Records.
+
+- **Lightning action async work (Apex API 62.0 and 67.0).** Queueable, `@future` and platform-event work enqueued by an `@AuraEnabled` method called from an LWC or Aura component now runs after the action commits, sees the action's changes, and is discarded if the action throws or rolls back to an earlier savepoint. A failing job rolls back only itself and does not change the action's result. Under strict limit mode the 50-job caps apply to the action. This replaces the previous `UnsupportedFeature` rejection. `Database.*Async` DML, `Database.executeBatch` and `System.schedule` in an action are still rejected. Captured at 62.0 and 67.0.
+- **REST composite responses.** Missing-field errors and collection or tree rollback responses now follow the captured Salesforce status codes, error messages, and result shapes.
 
 ## v0.3.5
 
@@ -1162,7 +1520,7 @@ in [release policy](RELEASE_POLICY.md#salesforce-api-versions).
 - **Impact reports (all source API versions).** `glade test --impact-json`
   writes optional per-test execution summaries. The input inventory remains
   incomplete, so these artifacts cannot authorize skipping tests. See
-  [impact trace limits](test-impact.md).
+  [impact trace limits](LOCAL_TESTING.md#per-test-impact-traces).
 
 ### Performance
 

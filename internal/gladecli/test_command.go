@@ -1,6 +1,7 @@
 package gladecli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/cliui"
+	"github.com/glade-sh/glade/internal/cpurisk"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/enterprise"
 	"github.com/glade-sh/glade/internal/flagparse"
@@ -163,6 +165,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	memProfilePath := ""
 	perfJSONPath := ""
 	impactJSONPath := ""
+	cpuRisk := false
+	cpuRiskJSONPath := ""
 	tracePath := ""
 	servicesPath := ""
 	debounce := watch.DefaultDebounce
@@ -196,9 +200,14 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		String("mem-profile", "").
 		String("perf-json", "").
 		String("impact-json", "").
+		Bool("cpu-risk", "").
+		String("cpu-risk-json", "").
 		String("trace", "").
 		String("services", "").
 		String("junit", "").
+		Bool("code-coverage", "").
+		Bool("synchronous", "").
+		String("coverage-gate", "").
 		String("limit-mode", "").
 		String("limit-profile", "").
 		String("limit-queries", "").
@@ -335,9 +344,21 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	memProfilePath = parsed.String("mem-profile")
 	perfJSONPath = parsed.String("perf-json")
 	impactJSONPath = strings.TrimSpace(parsed.String("impact-json"))
+	cpuRisk = parsed.Bool("cpu-risk")
+	cpuRiskJSONPath = strings.TrimSpace(parsed.String("cpu-risk-json"))
 	tracePath = strings.TrimSpace(parsed.String("trace"))
 	servicesPath = strings.TrimSpace(parsed.String("services"))
 	junitPath = parsed.String("junit")
+	coverageGate, err := testreport.ParseCoverageGate(parsed.String("coverage-gate"))
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	codeCoverage := parsed.Bool("code-coverage") || coverageGate != ""
+	if parsed.Bool("synchronous") && !codeCoverage {
+		// The flag shapes only the coverage report; without coverage it would
+		// do nothing and still ask a test server for a field it may not know.
+		return testreport.Run{}, errors.New("--synchronous requires --code-coverage or --coverage-gate; it shapes the coverage report and does not change how tests run")
+	}
 	progressMode = progressModeFromArgs(args, progressMode)
 	if servicesPath != "" {
 		if err := enterprise.ValidateServiceConfig(servicesPath); err != nil {
@@ -378,6 +399,22 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	lastFailed = parsed.Bool("last-failed")
 	wizard = parsed.Bool("wizard")
 	debug = parsed.Bool("debug")
+	if coverageGate == testreport.CoverageGateRunLocalTests {
+		// The RunLocalTests rule is org-wide: it needs every local test's
+		// coverage, so a partial selection would fail a passing project.
+		for _, partial := range []struct {
+			set  bool
+			name string
+		}{
+			{strings.TrimSpace(filter) != "", "--filter"}, {className != "", "--class"}, {methodName != "", "--method"},
+			{classFile != "", "--class-file"}, {shardCount > 0, "--shard-count"}, {strings.TrimSpace(changedSince) != "", "--changed-since"},
+			{lastFailed, "--last-failed"}, {watchMode, "--watch"}, {writeClassShardsDir != "", "--write-class-shards"},
+		} {
+			if partial.set {
+				return testreport.Run{}, fmt.Errorf("--coverage-gate RunLocalTests needs every local test; it cannot be combined with %s (use RunSpecifiedTests for a selection)", partial.name)
+			}
+		}
+	}
 	if parsed.String("debounce") != "" {
 		parsedDebounce, err := time.ParseDuration(parsed.String("debounce"))
 		if err != nil {
@@ -481,6 +518,24 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 		}
 		noServe = true
+	}
+	var riskCollector *cpurisk.Collector
+	if cpuRisk || cpuRiskJSONPath != "" {
+		for _, mode := range []struct {
+			enabled bool
+			name    string
+		}{
+			{connectMode, "--connect"}, {daemonMode, "--daemon"},
+			{watchOnce, "--watch-once"}, {watchMode, "--watch"},
+			{wizard, "--wizard"}, {debug, "--debug"},
+			{lastFailed, "--last-failed"}, {writeClassShardsDir != "", "--write-class-shards"},
+		} {
+			if mode.enabled {
+				return testreport.Run{}, fmt.Errorf("--cpu-risk cannot be combined with %s", mode.name)
+			}
+		}
+		noServe = true
+		riskCollector = cpurisk.NewCollector()
 	}
 	perfEnabled := strings.TrimSpace(perfJSONPath) != ""
 	if perfEnabled {
@@ -635,11 +690,15 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		TraceBlocked:          traceBlocked,
 		TraceAll:              tracePath != "",
 		SlowTestThresholdMS:   slowTestThresholdMS,
+		WorkSink:              riskWorkSink(riskCollector),
 		ParallelMethods:       parallelMethods,
 		TimeoutMS:             timeoutOpts.TimeoutMS,
 		TimeoutSource:         timeoutOpts.TimeoutSource,
 		NoDiskCache:           noCache,
 		PerfCounters:          perfEnabled,
+		CodeCoverage:          codeCoverage,
+		CoverageGate:          coverageGate,
+		CoverageSynchronous:   parsed.Bool("synchronous"),
 	}
 	durationHistory, err := loadCLIDurationHistory(durationHistoryPath)
 	if err != nil {
@@ -755,6 +814,10 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 
+	if gcFloorRouteEligible(daemonMode, watchMode, debug, connectMode) {
+		startTestGCFloorIfEnabled()
+	}
+
 	if daemonMode {
 		perfExecution.ExecutionMode = "daemon"
 		daemon, err := testdaemon.New(root)
@@ -856,6 +919,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		outputHandled = true
 		return runWatchTests(ctx, root, loadedProject, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
+	// The watch and daemon routes returned above. This process runs once and
+	// no runtime transition can follow, so skip the ambient org fingerprint.
+	testOpts.OneShotProcess = true
 	var result testreport.Run
 	var impactReport apextest.ImpactReport
 	if strings.TrimSpace(changedSince) != "" {
@@ -957,6 +1023,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			impactReport = apextest.ImpactReport{Version: 1, SharedInputs: []string{}, Tests: []apextest.TestImpact{}}
 		}
 		if err := writeTestImpactJSON(impactJSONPath, impactReport); err != nil {
+			return result, err
+		}
+	}
+	if riskCollector != nil {
+		if err := writeCPURisk(riskCollector.Report(), cpuRisk, cpuRiskJSONPath, progressW); err != nil {
 			return result, err
 		}
 	}
@@ -1406,7 +1477,7 @@ func writeTestJSONEnvelopeWithStop(w io.Writer, result testreport.Run, junitPath
 		Tests:       flattenTestCases(result),
 		Artifacts:   artifacts,
 		Suggestions: testreport.NextCommands(summary),
-		Data:        result,
+		Data:        testreport.NativePerTestRows(result),
 	})
 }
 
@@ -2471,6 +2542,35 @@ func applyTestMemoryLimits(aggressive bool) {
 // declare. The failure messages for missing setup are often indirect (for
 // example a required-field error), so the hint is tied to source evidence,
 // not to message text. It stays on stderr so structured stdout is unchanged.
+func riskWorkSink(c *cpurisk.Collector) func(string, string, vm.WorkCounts, []vm.MethodWork) {
+	if c == nil {
+		return nil
+	}
+	return c.Record
+}
+
+// writeCPURisk prints the advisory report to stderr and optionally writes JSON.
+// It never affects the test result.
+func writeCPURisk(report cpurisk.Report, text bool, jsonPath string, errW io.Writer) error {
+	if text && errW != nil {
+		fmt.Fprintln(errW)
+		if err := cpurisk.WriteText(errW, report, 10); err != nil {
+			return err
+		}
+	}
+	if jsonPath == "" {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(jsonPath), 0o700); err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := cpurisk.WriteJSON(&buf, report); err != nil {
+		return err
+	}
+	return os.WriteFile(jsonPath, buf.Bytes(), 0o600)
+}
+
 func writeTestOrgSetupHint(w io.Writer, args []string, result testreport.Run) {
 	if result.Summary().OK() {
 		return

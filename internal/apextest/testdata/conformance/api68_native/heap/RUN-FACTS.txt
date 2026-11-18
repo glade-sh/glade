@@ -1,0 +1,11 @@
+capture: heap
+started: 2026-11-16T03:26:31Z
+finished: 2026-11-16T03:28:01Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+gate: org-wide heap change; saved class version does not gate the limit

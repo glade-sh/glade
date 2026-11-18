@@ -67,6 +67,8 @@ func TestStandardFieldSupplementNativePicklistsSurviveRepair(t *testing.T) {
 
 // Every field governed by the picklist repair policy is compared with its
 // owned native describe, including fields added to the policy in the future.
+// Product2.TransferRecordMode is the ninth policy picklist; its values come
+// from the owned native describe compared below.
 func TestStandardPolicyPicklistsRepairAllNativeFields(t *testing.T) {
 	f, err := os.Open("../apextest/testdata/conformance/standard_describe_profiles/P0/api62/granted/describes.json.gz")
 	if err != nil {
@@ -130,7 +132,7 @@ func TestStandardPolicyPicklistsRepairAllNativeFields(t *testing.T) {
 			count++
 		}
 	}
-	if count != 8 {
-		t.Fatalf("review policy coverage when field count changes: got %d, want 8", count)
+	if count != 9 {
+		t.Fatalf("review policy coverage when field count changes: got %d, want 9", count)
 	}
 }
