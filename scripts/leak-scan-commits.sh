@@ -51,7 +51,9 @@ while read -r c; do
   fi
   bad=$((bad + 1))
   printf 'leak-scan-commits: commit %s\n%s\n' "$short" "$out"
-  if printf '%s\n' "$out" | grep -q 'LEAK_SCAN_DENYLIST is empty'; then
+  # The skip WARNING names the empty denylist too; only the FAIL line means
+  # the environment itself must be fixed before scanning can continue.
+  if printf '%s\n' "$out" | grep -q '^leak-scan: FAIL LEAK_SCAN_DENYLIST is empty'; then
     # The empty denylist fails every remaining commit identically.
     printf 'leak-scan-commits: LEAK_SCAN_DENYLIST is empty for every commit; fix the environment and rerun\n'
     exit 1

@@ -121,14 +121,15 @@ in_hunk {
 }
 END {
   nfiles = 0; for (f in files) nfiles++
+  # The skip warning must also be disclosed when findings end the scan with
+  # exit 1, so it prints before the findings exit, not only on a clean scan.
+  if (nd == 0 && allowempty) {
+    printf "leak-scan: WARNING denylist check skipped: LEAK_SCAN_DENYLIST is empty (LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1); the pattern checks still ran\n"
+  }
   if (findings > 0) { printf "leak-scan: %d finding(s) in %d file(s)\n", findings, nfiles; exit 1 }
-  if (nd == 0) {
-    if (allowempty) {
-      printf "leak-scan: WARNING denylist check skipped: LEAK_SCAN_DENYLIST is empty (LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1); the pattern checks still ran\n"
-    } else {
-      printf "leak-scan: FAIL LEAK_SCAN_DENYLIST is empty; the private-name check cannot run. Set the secret, or pass LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1 to skip it deliberately.\n"
-      exit 1
-    }
+  if (nd == 0 && !allowempty) {
+    printf "leak-scan: FAIL LEAK_SCAN_DENYLIST is empty; the private-name check cannot run. Set the secret, or pass LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1 to skip it deliberately.\n"
+    exit 1
   }
   printf "leak-scan: clean (%d added lines scanned, %d denylist entries)\n", added, nd
 }
