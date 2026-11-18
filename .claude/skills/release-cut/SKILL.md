@@ -40,7 +40,9 @@ reports which bumps the touched paths require.
    exact candidate and check the separate Browser, Race and Security workflows.
 7. Tag and publish per `docs/DISTRIBUTION_WORKFLOW.md`. The Release workflow
    publishes the GitHub Release, then its `distribute` job publishes
-   `downloads.glade.sh` (needs the `CLOUDFLARE_API_TOKEN` secret). If that job
+   `downloads.glade.sh` (needs the `CLOUDFLARE_API_TOKEN` secret), redeploys
+   glade.sh through the Pages deploy hook (`CF_PAGES_DEPLOY_HOOK`), waits for
+   `site-build.json` to report the version and runs the postdeploy smoke. If that job
    fails, fix the cause and dispatch `release.yml` from `main` with
    `distribute_only=true`, `version` and the tag's `glade_tools_sha`. Check
    `https://downloads.glade.sh/latest/release-manifest.json` names the version.
