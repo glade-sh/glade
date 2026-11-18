@@ -1081,7 +1081,7 @@ func syncVirtualEntitySharingModels(org *storage.OrgState) {
 			delete(record.Fields, "InternalSharingModel")
 			delete(entities.Definition.Metadata, key)
 		}
-		entities.Records[id] = record
+		entities.PutRecord(id, record)
 	}
 	if dirty {
 		org.Objects["EntityDefinition"] = entities
