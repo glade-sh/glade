@@ -12,6 +12,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func unsetTestTimeoutEnv(t *testing.T) {
@@ -151,7 +152,7 @@ func TestTestTimeoutDevWatch(t *testing.T) {
 			args := []string{"--project", root, "--out", t.TempDir(), "--watch-once", "--no-progress"}
 			args = append(args, tc.flag...)
 			var stdout, stderr bytes.Buffer
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), testutil.Deadline(30*time.Second))
 			defer cancel()
 			run, err := runDevTest(ctx, args, &stdout, &stderr)
 			if err != nil {

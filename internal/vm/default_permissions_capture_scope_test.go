@@ -59,6 +59,11 @@ System.assertEquals('First',d.getRecords()[0].get('RequiredChoice__c'));
 					if api == "67.0" || route.name == "dynamicQueryCount" {
 						want = "System.QueryException"
 					}
+					// NATIVE static-count-entity-denial sharing_access_modes/org.tsv:392 istest 67.0:
+					// an unfiltered static COUNT() on an unreadable custom object in runAs.
+					if api == "67.0" && route.name == "staticCount" {
+						want = "System.SecurityException"
+					}
 					if err != nil || got.String() != want {
 						t.Fatalf("release control=%s; got=%s error=%v", want, got.String(), err)
 					}

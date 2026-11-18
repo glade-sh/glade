@@ -1,0 +1,12 @@
+Map<String,Schema.SObjectType> gd = Schema.getGlobalDescribe(); Map<String,Schema.SObjectType> alias = gd; GdHolder.stored = gd; GdHolder h = new GdHolder(); h.member = gd; Integer n = gd.size();
+gd.keySet().remove('account');
+String o = '' + (n - alias.size()) + '|' + alias.containsKey('account') + '|' + (n - GdHolder.stored.size()) + '|' + GdHolder.stored.containsKey('account') + '|' + (n - h.member.size()) + '|' + h.member.containsKey('account');
+alias.keySet().remove('user');
+o += '|' + gd.containsKey('user') + '|' + (n - gd.size());
+GdHolder.stored.keySet().remove('contact');
+o += '|' + gd.containsKey('contact') + '|' + h.member.containsKey('contact');
+h.member.keySet().removeAll(new Set<String>{'lead'});
+o += '|' + gd.containsKey('lead') + '|' + alias.containsKey('lead');
+GdHolder.mutate(gd);
+o += '|' + gd.containsKey('opportunity') + '|' + (n - gd.size()) + '|' + Schema.getGlobalDescribe().containsKey('account') + '|' + (Schema.getGlobalDescribe().size() - n);
+System.debug('OBS|gk_alias|' + o);

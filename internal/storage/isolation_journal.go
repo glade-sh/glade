@@ -121,12 +121,12 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 			return fmt.Errorf("isolation journal rollback missing object %s", before.object)
 		}
 		if object.Records == nil {
-			object.Records = make(map[ID]Record)
+			object.SetRecords(make(map[ID]Record))
 		}
 		if before.exists {
-			object.Records[before.id] = before.record.Clone()
+			object.PutRecord(before.id, before.record.Clone())
 		} else {
-			delete(object.Records, before.id)
+			object.DeleteRecord(before.id)
 		}
 		j.org.Objects[before.object] = object
 	}
@@ -136,7 +136,7 @@ func (j *IsolationJournal) Rollback(mark IsolationMark) error {
 		touchedObjects[key.object] = true
 		object := j.org.Objects[key.object]
 		if object.Records != nil {
-			delete(object.Records, key.id)
+			object.DeleteRecord(key.id)
 			j.org.Objects[key.object] = object
 		}
 	}

@@ -19,6 +19,9 @@ type LiveSession struct {
 	pauseRequested bool
 	disconnect     bool
 	stepDepth      int
+	// prechecked means the VM asked precheck before each pause, so onPause
+	// only sees points that already need a stop.
+	prechecked bool
 }
 
 type liveMode string
@@ -60,6 +63,9 @@ func (h *Handler) StartLiveSessionInClassWithDone(machine *vm.VM, program ir.Pro
 	h.setLiveSession(session)
 	hooks := h.DebugHooks(session.onPause)
 	hooks.Step = true
+	// Decide on the cheap probe so ordinary statements copy no variables.
+	hooks.Precheck = session.precheck
+	session.prechecked = true
 	machine.SetDebugHooks(hooks)
 	machine.SetDebugOutputSink(func(event vm.DebugEvent) {
 		session.handler.PublishEvent(session.handler.EventMessage("output", map[string]any{
@@ -131,7 +137,7 @@ func (s *LiveSession) onPause(pause vm.DebugPause) vm.DebugAction {
 	if s.shouldDisconnect() {
 		return vm.DebugActionStop
 	}
-	if !s.shouldStop(pause) {
+	if !s.prechecked && !s.shouldStop(pause.Reason, len(pause.Stack)) {
 		return vm.DebugActionContinue
 	}
 	s.handler.PublishEvent(s.handler.ApplyPause(pause))
@@ -171,8 +177,17 @@ func (s *LiveSession) shouldDisconnect() bool {
 	return s.disconnect
 }
 
-func (s *LiveSession) shouldStop(pause vm.DebugPause) bool {
-	if pause.Reason == vm.DebugPauseBreakpoint {
+// precheck answers the VM's probe. A disconnect always reaches onPause so it
+// can stop the run. Otherwise it consumes the same step state shouldStop does.
+func (s *LiveSession) precheck(probe vm.DebugProbe) bool {
+	if s.shouldDisconnect() {
+		return true
+	}
+	return s.shouldStop(probe.Reason, probe.StackDepth)
+}
+
+func (s *LiveSession) shouldStop(reason vm.DebugPauseReason, stackDepth int) bool {
+	if reason == vm.DebugPauseBreakpoint {
 		return true
 	}
 	s.mu.Lock()
@@ -186,7 +201,7 @@ func (s *LiveSession) shouldStop(pause vm.DebugPause) bool {
 		s.mode = liveModeContinue
 		return true
 	case liveModeStepOver, liveModeStepOut:
-		if len(pause.Stack) <= s.stepDepth {
+		if stackDepth <= s.stepDepth {
 			s.mode = liveModeContinue
 			return true
 		}

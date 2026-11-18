@@ -1,0 +1,3 @@
+source_api	route	observation
+62.0	committed_cdc_async	{"dynamicUserModeQuery":"ok","systemInsert":"ok","userModeAccountQuery":"ok","userModeDelete":"ok","userModeInsert":"System.DmlException|Operation failed due to fields being inaccessible on Sobject Probe__c, check errors on Exception or Result! ","userModeInsertAccount":"ok","userModeQuery":"ok","userModeUpdate":"System.DmlException|Operation failed due to fields being inaccessible on Sobject Probe__c, check errors on Exception or Result! ","userType":"AutomatedProcess"}
+67.0	committed_cdc_async	{"dynamicUserModeQuery":"ok","systemInsert":"ok","userModeAccountQuery":"ok","userModeDelete":"ok","userModeInsert":"ok","userModeInsertAccount":"ok","userModeQuery":"ok","userModeUpdate":"ok","userType":"AutomatedProcess"}

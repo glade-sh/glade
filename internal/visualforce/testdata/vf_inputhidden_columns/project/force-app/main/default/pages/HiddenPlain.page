@@ -1,0 +1,2 @@
+<apex:page showHeader="false">
+<apex:form><apex:inputHidden value="abc" id="lit1"/></apex:form></apex:page>

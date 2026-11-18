@@ -1,0 +1,8 @@
+id	api	route	compiled	success	outcome
+ELASTIC-DEPLOY-68	68.0	deploy	true	true	deployed
+ELASTIC-DEPLOY-67	67.0	deploy	true	true	deployed
+ELASTIC-ENQ-68	68.0	anonymous	true	true	BEFORE;DailyAsyncApexExecutions=8/250000;BEFORE;DailyAsyncApexElasticExecutions=ABSENT;JOB=<id> [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+ELASTIC-ENQ-67	67.0	anonymous	true	true	BEFORE;DailyAsyncApexExecutions=8/250000;BEFORE;DailyAsyncApexElasticExecutions=ABSENT;JOB=<id> [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+ELASTIC-OVERRIDE-SETTING	68.0	deploy	true	true	deployed
+ELASTIC-ENQ-OVERRIDE-68	68.0	anonymous	true	true	BEFORE;DailyAsyncApexExecutions=8/250000;BEFORE;DailyAsyncApexElasticExecutions=ABSENT;JOB=<id> [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+ELASTIC-READ	68.0	anonymous	true	true	JOBROW=Completed;2/2;JOBROW=Completed;2/2;JOBROW=Completed;2/2;ROW|finish|BATCH_FINISHED=true;ROW|scope|BATCH_SCOPE=1;ROW|scope|BATCH_SCOPE=1;ROW|scope|BATCH_SCOPE=1;ROW|scope|BATCH_SCOPE=1;ROW|finish|BATCH_FINISHED=true;ROW|scope|BATCH_SCOPE=1;ROW|scope|BATCH_SCOPE=1;ROW|finish|BATCH_FINISHED=true [LIMITS soql=2/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]

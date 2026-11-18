@@ -1,0 +1,5 @@
+api	route	case	actual
+62.0	istest	observe	api=62.0|present=null|absent=null|insertPresent=false|presentStatus=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|insertDisabled=true|hits=0|insertAbsent=false|status=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+62.0	anonymous	observe	api=62.0|present=null|absent=null|insertPresent=false|presentStatus=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|insertDisabled=true|hits=0|insertAbsent=false|status=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+67.0	istest	observe	api=67.0|present=null|absent=null|insertPresent=false|presentStatus=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|insertDisabled=true|hits=0|insertAbsent=false|status=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY
+67.0	anonymous	observe	api=67.0|present=null|absent=null|insertPresent=false|presentStatus=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|insertDisabled=true|hits=0|insertAbsent=false|status=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY

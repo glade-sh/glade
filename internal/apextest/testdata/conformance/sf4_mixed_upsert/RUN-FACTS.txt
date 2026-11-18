@@ -1,0 +1,9 @@
+family=sf4_mixed_upsert
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, deleted after the run (SF-4 capture, advisor/parallel/gap-residuals)
+repeats=two runs per API and route; rows identical
+shapes=a mixed upsert (one update, one insert) with a child after-trigger reading the parent roll-up directly and through Parent__r; a plain child insert read the same two ways
+notes=the insert group reads the roll-up before the statement (1,10.00); the update group reads it with the insert landed and the update not (2,17.00); the parent ends at 2,27.00
+raw_runs=parallel/gap-residuals/raw (capture cache, not committed)
+retry_files=the anonymous 67.0 mixed row comes from mixed-retry-anonymous-67-r1 and -r2. The first mixed-anonymous-67 attempts failed with the class-context "fields being inaccessible on Sobject Chi__c" before the permission-set step, so they carry no row.

@@ -28,6 +28,10 @@ func TestCase349ProfileBoundaryExternalTrigger(t *testing.T) {
 					account.Definition.Fields["ProbeKey__c"] = storage.Field{APIName: "ProbeKey__c", Type: storage.FieldString, ExternalID: true, Unique: true}
 					account.Definition.RecordTypes = []storage.RecordTypeInfo{{ID: "012000000000001", DeveloperName: "Business", Active: true, Available: true, Default: true}, {ID: "012000000000002", DeveloperName: "Individual", Active: true, Available: true, Default: true, PersonAccount: true}}
 					org.Objects["Account"] = account
+					// The native twin's key is visible to the administrator; an
+					// ungranted custom key is not (standard_ext_upsert rows).
+					storage.EnsureStandardObject(&org, "FieldPermissions")
+					org.Objects["FieldPermissions"].Records["0FP000000000349"] = storage.Record{ID: "0FP000000000349", Object: "FieldPermissions", Fields: map[string]storage.Value{"ParentId": storage.IDValue(storage.DefaultProfileID), "SObjectType": storage.StringValue("Account"), "Field": storage.StringValue("Account.ProbeKey__c"), "PermissionsRead": storage.BooleanValue(true), "PermissionsEdit": storage.BooleanValue(true)}}
 					if profile == "person" {
 						org.Metadata.AccountRecordTypeDefaults = []storage.AccountRecordTypeDefault{{ProfileID: storage.DefaultProfileID, DeveloperName: "Individual", PersonAccount: true}}
 					}

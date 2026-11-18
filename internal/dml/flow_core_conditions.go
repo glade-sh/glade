@@ -68,3 +68,41 @@ func evaluateFlowCoreLookupCriteria(item storage.WorkflowCriteriaItem, record st
 	}
 	return evaluateWorkflowCriteria(item, record, definition, namespace)
 }
+
+// evaluateCapturedAfterSaveChangedCriterion is used only for the separately
+// gated heterogeneous after-save plan in the native afteraccept rows.
+func evaluateCapturedAfterSaveChangedCriterion(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition, namespace string, prior *storage.Record, rule storage.FlowRule, created bool) (bool, bool) {
+	if !created && strings.EqualFold(strings.TrimSpace(item.Operation), "isChanged") {
+		changed, ok := evaluateWorkflowCriteriaWithPrior(item, record, definition, namespace, prior)
+		if !ok {
+			return false, false
+		}
+		switch strings.ToLower(trimFormulaLiteral(item.Value)) {
+		case "true":
+			return changed, true
+		case "false":
+			return !changed, true
+		default:
+			return false, false
+		}
+	}
+	return evaluateFlowCoreEntryCriteria(item, record, definition, namespace, prior, rule, created)
+}
+
+// evaluateCapturedCaseAfterSaveCriterion retains checkbox literal behavior for
+// the captured Case after-save group before applying the shared change checks.
+func evaluateCapturedCaseAfterSaveCriterion(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition, namespace string, prior *storage.Record, rule storage.FlowRule, created bool) (bool, bool) {
+	if strings.EqualFold(strings.TrimSpace(item.Operation), "equals") && item.SourceField == "" {
+		name, ok := storage.ResolveFieldName(definition, namespace, strings.TrimSpace(item.Field))
+		want := strings.ToLower(trimFormulaLiteral(item.Value))
+		if ok && definition.Fields[name].Type == storage.FieldBoolean && (want == "true" || want == "false") {
+			value, present := record.Fields[name]
+			return present && value.Kind == storage.ValueBoolean && value.Boolean == (want == "true"), true
+		}
+		if ok && definition.Fields[name].Type == storage.FieldCalculated && strings.EqualFold(definition.Fields[name].DisplayType, string(storage.FieldString)) && strings.EqualFold(strings.TrimSpace(definition.Fields[name].Formula), "RecordType.DeveloperName") {
+			value := formulaRecordTypeValue(definition, record, "$RecordType.DeveloperName")
+			return compareFormulaValues(formulaValue{kind: formulaString, text: value}, formulaValue{kind: formulaString, text: trimFormulaLiteral(item.Value)}, "="), true
+		}
+	}
+	return evaluateCapturedAfterSaveChangedCriterion(item, record, definition, namespace, prior, rule, created)
+}

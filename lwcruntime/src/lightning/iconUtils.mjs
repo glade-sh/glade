@@ -15,5 +15,16 @@ export const getIconPath = (iconName) => {
   return `${spriteMap[category] || spriteMap.utility}#${name}`;
 };
 export const computeSldsClass = (iconName) => `slds-icon-${getCategory(iconName) || "utility"}-${(getName(iconName) || "placeholder").replace(/_/g, "-")}`;
+// The size and variant modify the SVG rather than the component host.
+export function computeSvgClass(iconName, size, variant) {
+  const classes = ["slds-icon"];
+  if (iconName && getCategory(iconName) === "utility") {
+    const normalized = typeof variant === "string" ? variant.trim().toLowerCase() : "";
+    if (!["inverse", "bare"].includes(normalized)) classes.push(`slds-icon-text-${["success", "warning", "error"].includes(normalized) ? normalized : "default"}`);
+  }
+  const normalizedSize = typeof size === "string" ? size.trim().toLowerCase() : "";
+  if (["xx-small", "x-small", "small", "large"].includes(normalizedSize)) classes.push(`slds-icon_${normalizedSize}`);
+  return classes.join(" ");
+}
 export const getIconColor = () => null;
 export const polyfill = () => {};

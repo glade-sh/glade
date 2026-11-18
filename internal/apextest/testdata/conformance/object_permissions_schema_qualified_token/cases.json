@@ -1,0 +1,16 @@
+{
+ "P01_schema_token": "Schema.SObjectField f=Schema.ObjectPermissions.PermissionsViewAllFields;",
+ "P02_schema_token_getDescribe": "Schema.DescribeFieldResult d=Schema.ObjectPermissions.PermissionsViewAllFields.getDescribe();",
+ "P03_bare_token_getDescribe": "Schema.DescribeFieldResult d=ObjectPermissions.PermissionsViewAllFields.getDescribe();",
+ "P04_fields_member_getSObjectField": "Schema.SObjectField f=Schema.SObjectType.ObjectPermissions.fields.PermissionsViewAllFields.getSObjectField();",
+ "P05_sobjecttype_fields_member": "Schema.DescribeFieldResult d=ObjectPermissions.SObjectType.fields.PermissionsViewAllFields.getDescribe();",
+ "P06_schema_token_lowercase": "Schema.SObjectField f=Schema.ObjectPermissions.permissionsviewallfields;",
+ "P07_bare_token_control": "Schema.SObjectField f=ObjectPermissions.PermissionsViewAllFields;",
+ "P08_schema_token_PermissionsEdit_control": "Schema.SObjectField f=Schema.ObjectPermissions.PermissionsEdit;",
+ "P09_schema_token_NoSuch_control": "Schema.SObjectField f=Schema.ObjectPermissions.PermissionsNoSuchField;",
+ "P10_bare_token_PermissionsEdit_control": "Schema.SObjectField f=ObjectPermissions.PermissionsEdit;",
+ "P11_schema_typed_read": "Schema.ObjectPermissions g=new Schema.ObjectPermissions(); Boolean b=g.PermissionsViewAllFields;",
+ "P12_new_schema_read": "Boolean b=new Schema.ObjectPermissions().PermissionsViewAllFields;",
+ "P13_new_bare_read": "Boolean b=new ObjectPermissions().PermissionsViewAllFields;",
+ "P14_schema_token_in_map": "Map<Schema.SObjectField,Boolean> m=new Map<Schema.SObjectField,Boolean>{Schema.ObjectPermissions.PermissionsViewAllFields=>true};"
+}

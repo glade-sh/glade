@@ -359,3 +359,15 @@ func TestParseYAMLSubsetRejectsInvalidOrgDomainURL(t *testing.T) {
 		})
 	}
 }
+
+func TestDuplicateRulesStandardSetting(t *testing.T) {
+	for src, want := range map[string]bool{"": false, "duplicateRules:\n  standard: on\n": true, "duplicateRules:\n  standard: off\n": false, "duplicateRules:\n  standard: true\n": true} {
+		cfg, err := parseYAMLSubset(src)
+		if err != nil || cfg.DuplicateRules.Standard != want {
+			t.Errorf("%q: standard=%v err=%v; want %v", src, cfg.DuplicateRules.Standard, err, want)
+		}
+	}
+	if _, err := parseYAMLSubset("duplicateRules:\n  standard: maybe\n"); err == nil {
+		t.Error("an unknown value must be rejected")
+	}
+}

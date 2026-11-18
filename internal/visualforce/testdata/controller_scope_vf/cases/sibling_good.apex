@@ -1,0 +1,1 @@
+public class CaseController { public String getObserved() { List<Map<String,Object>> rows = new List<Map<String,Object>>{new Map<String,Object>()}; Map<String,Object> best = new Map<String,Object>(); for (Map<String,Object> line : rows) { best = line; } if (rows.size() > 1) { Integer line = 5; } return 'VF_NATIVE_OK'; } }

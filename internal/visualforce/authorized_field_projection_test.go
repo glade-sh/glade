@@ -254,7 +254,7 @@ func TestVisualforceAuthorizedRelationshipNameProjectionAPI67(t *testing.T) {
 	const targetName = "VF Authorized Target Name"
 	// Account.OwnerId is non-permissionable in the native describe catalog;
 	// a synthetic FLS denial cannot represent a native source-field state.
-	// Captured custom lookup denials are covered by TestV09SalesforceConformance.
+	// Captured custom lookup denials are covered by the TestV09SalesforceConformance parts.
 	for _, test := range []struct {
 		name                                           string
 		denyTarget, unsharedSource, wrongCatalogTarget bool

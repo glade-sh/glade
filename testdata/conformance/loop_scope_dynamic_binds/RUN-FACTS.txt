@@ -1,0 +1,7 @@
+capture: loop_scope_dynamic_binds
+date: 2026-11-11
+sf: @salesforce/cli/2.156.8
+org: Developer Edition scratch org, 1 day, created on a campaign Dev Hub and deleted after the run
+apis: 62.0 67.0
+routes: anonymous named_class
+cases: 76 anonymous, 51 named_class (254 org.tsv rows)

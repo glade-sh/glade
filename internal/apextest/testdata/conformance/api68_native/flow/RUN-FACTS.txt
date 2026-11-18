@@ -1,0 +1,12 @@
+capture: flow
+started: 2026-11-16T03:25:55Z
+finished: 2026-11-16T03:26:28Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+gate: the Flow saved API version and runInMode, not the caller Apex version
+the low-privilege user is a Standard User created for this capture

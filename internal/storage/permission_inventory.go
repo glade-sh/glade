@@ -79,6 +79,7 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 	}
 	profileSets := map[string]ID{}
 	usedProfiles := map[ID]bool{}
+	profileRecordsChanged := false
 	for i, seed := range inventory.PermissionSets {
 		id := ID(seededInventoryID("0PS", i+1))
 		fields := map[string]Value{
@@ -115,11 +116,26 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 			if profileID == "" {
 				profileID = ID(seededInventoryID("00e", i+1))
 				putSeedRecord(org, "Profile", Record{ID: profileID, Object: "Profile", Fields: map[string]Value{"Name": StringValue(seed.Profile), "UserLicenseId": IDValue(licenseIDs[seed.License])}})
+				profileRecordsChanged = true
+			} else if capturedProfileInventoryShape(org.Features) {
+				profile := profiles[profileID]
+				if untouchedBootstrapProfile(profileID, profile) && !IDsEqual(profile.Fields["UserLicenseId"].ID, licenseIDs[seed.License]) {
+					// Repair only an untouched reserved bootstrap profile. User edits
+					// and profiles outside the captured shapes keep their license.
+					mutable, _ := EnsureMutableObjectRecords(org, "Profile")
+					profile = mutable.Records[profileID].Clone()
+					profile.Fields["UserLicenseId"] = IDValue(licenseIDs[seed.License])
+					mutable.PutRecord(profileID, profile)
+					profileRecordsChanged = true
+				}
 			}
 			// Profile.UserType from the fresh-org capture (profile_usertype).
 			// putSeedRecord fills absent fields only, so a profile seeded or
 			// imported with its own UserType keeps it.
 			if seed.UserType != "" {
+				if _, exists := org.Objects["Profile"].Records[profileID].Fields["UserType"]; !exists {
+					profileRecordsChanged = true
+				}
 				putSeedRecord(org, "Profile", Record{ID: profileID, Object: "Profile", Fields: map[string]Value{"UserType": StringValue(seed.UserType)}})
 			}
 			usedProfiles[profileID] = true
@@ -134,6 +150,10 @@ func seedStandardPermissionInventory(org *OrgState) map[string]ID {
 			profileSets[seed.Profile] = id
 		}
 		putSeedRecord(org, "PermissionSet", Record{ID: id, Object: "PermissionSet", Fields: fields})
+	}
+	pruneUncapturedBootstrapProfiles(org)
+	if profileRecordsChanged && len(org.Objects["Profile"].Definition.Indexes) != 0 {
+		RebuildObjectIndexes(org, "Profile")
 	}
 	return profileSets
 }
@@ -187,7 +207,8 @@ func findNamedPermissionSet(org *OrgState, name, namespace string) (ID, bool) {
 // equivalent: they are dropped when nothing references them and kept otherwise,
 // so assignments and setup-entity grants a user created on them survive.
 func migrateLegacyPermissionInventory(org *OrgState, profileSets map[string]ID) {
-	sets := org.Objects["PermissionSet"].Records
+	permissionSets := org.Objects["PermissionSet"]
+	sets := permissionSets.Records
 	remap := map[ID]ID{}
 	synthetic := map[ID]bool{}
 	for i := 1; i <= 11; i++ {
@@ -223,16 +244,29 @@ func migrateLegacyPermissionInventory(org *OrgState, profileSets map[string]ID) 
 			}
 		}
 	}
+	permissionSets = mutableSeedObject(org, "PermissionSet")
 	for legacy := range synthetic {
 		if !referenced[legacy] {
-			delete(sets, legacy)
+			permissionSets.DeleteRecord(legacy)
 		}
 	}
 	for legacy := range remap {
-		delete(sets, legacy)
+		permissionSets.DeleteRecord(legacy)
 	}
 	for _, reference := range references {
 		state := org.Objects[reference.object]
+		touched := false
+		for _, record := range state.Records {
+			if _, ok := legacyPermissionSetID(record.Fields[reference.field], remap); ok {
+				touched = true
+				break
+			}
+		}
+		if !touched {
+			continue
+		}
+		// Runtime clones share these rows; copy them before the rewrite.
+		state = mutableSeedObject(org, reference.object)
 		assigned := map[string]bool{}
 		if reference.object == "PermissionSetAssignment" {
 			for _, record := range state.Records {
@@ -246,11 +280,11 @@ func migrateLegacyPermissionInventory(org *OrgState, profileSets map[string]ID) 
 			}
 			target := remap[legacy]
 			if reference.object == "PermissionSetAssignment" && assigned[string(record.Fields["AssigneeId"].ID)+"/"+string(target)] {
-				delete(state.Records, id)
+				state.DeleteRecord(id)
 				continue
 			}
 			record.Fields[reference.field] = IDValue(target)
-			state.Records[id] = record
+			state.PutRecord(id, record)
 		}
 	}
 	// The former seed gave the Marketing User Account row PermissionsDelete
@@ -259,8 +293,10 @@ func migrateLegacyPermissionInventory(org *OrgState, profileSets map[string]ID) 
 		marketing, seeded := profileSets["Marketing User"]
 		if seeded && IDsEqual(record.Fields["ParentId"].ID, marketing) && strings.EqualFold(record.Fields["SobjectType"].String, "Account") {
 			if value, ok := record.Fields["PermissionsDelete"]; ok && value.Kind == ValueBoolean && !value.Boolean {
+				objectPermissions := mutableSeedObject(org, "ObjectPermissions")
+				record = objectPermissions.Records["110000000000006"]
 				record.Fields["PermissionsDelete"] = BooleanValue(true)
-				org.Objects["ObjectPermissions"].Records["110000000000006"] = record
+				objectPermissions.PutRecord("110000000000006", record)
 			}
 		}
 	}
@@ -317,6 +353,34 @@ func legacyPermissionSetID[T any](value Value, legacy map[ID]T) (ID, bool) {
 
 //go:embed seeddata/profile_object_permissions.json
 var standardProfileObjectPermissionsJSON []byte
+
+//go:embed seeddata/object_permission_requirements.json
+var objectPermissionRequirementsJSON []byte
+
+type capturedObjectPermissionRequirement struct {
+	Object    string
+	Method    string
+	UserField string
+}
+
+var loadObjectPermissionRequirements = sync.OnceValue(func() []capturedObjectPermissionRequirement {
+	var rows []capturedObjectPermissionRequirement
+	if err := json.Unmarshal(objectPermissionRequirementsJSON, &rows); err != nil {
+		panic("invalid embedded object permission requirements: " + err.Error())
+	}
+	return rows
+})
+
+// ObjectPermissionUserField returns a captured user-field prerequisite for an
+// object operation, or an empty string when no prerequisite was captured.
+func ObjectPermissionUserField(object, method string) string {
+	for _, row := range loadObjectPermissionRequirements() {
+		if strings.EqualFold(row.Object, object) && strings.EqualFold(row.Method, method) {
+			return row.UserField
+		}
+	}
+	return ""
+}
 
 type capturedProfileObjectPermission struct {
 	Profile, Object string
@@ -425,4 +489,137 @@ func SeededProfilePermissions(profileName string) (ProfilePermissionSeed, bool) 
 		}
 	}
 	return seed, true
+}
+
+// inventoryUserLicenseSeedID is the ID ensureInventoryUserLicense gives the
+// captured UserLicense with this key when no persisted record occupies it.
+func inventoryUserLicenseSeedID(key string) ID {
+	for i, license := range loadStandardPermissionInventory().Licenses {
+		if license.Kind == "UserLicense" && strings.EqualFold(license.Key, key) {
+			return seededInventoryID("100", i+1)
+		}
+	}
+	panic("captured permission inventory has no UserLicense " + key)
+}
+
+// ensureInventoryUserLicense returns the UserLicense with the given key,
+// seeding it at the ID the captured inventory assigns to that key, so the
+// inventory pass reuses the same row.
+func ensureInventoryUserLicense(org *OrgState, name, key string) ID {
+	EnsureStandardObject(org, "UserLicense")
+	ids := make([]ID, 0, len(org.Objects["UserLicense"].Records))
+	for id := range org.Objects["UserLicense"].Records {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	for _, id := range ids {
+		if strings.EqualFold(org.Objects["UserLicense"].Records[id].Fields["LicenseDefinitionKey"].String, key) {
+			return id
+		}
+	}
+	id := inventoryUserLicenseSeedID(key)
+	// A persisted license with another key may occupy the inventory ID; take
+	// the next free one. The inventory pass finds the license by key.
+	for n := 1; ; n++ {
+		if _, taken := org.Objects["UserLicense"].Records[id]; !taken {
+			break
+		}
+		id = seededInventoryID("100", 50000+n)
+	}
+	putSeedRecord(org, "UserLicense", Record{ID: id, Object: "UserLicense", Fields: map[string]Value{
+		"Name": StringValue(name), "LicenseDefinitionKey": StringValue(key),
+	}})
+	return id
+}
+
+// migrateLegacyLicenseSeeds repairs orgs persisted by builds that named the
+// PID_Customer_Community_Login license "Chatter External", linked Chatter
+// External User and Standard Platform User to the wrong license, and seeded a
+// "Customer Community Guest User" profile the fresh org does not have
+// (profile_usertype). Only rows that still carry the former seed are changed;
+// the guest profile is kept while a User references it.
+func migrateLegacyLicenseSeeds(org *OrgState, salesforceLicenseID, communityLoginLicenseID, chatterExternalLicenseID, platformLicenseID ID) {
+	licenses := org.Objects["UserLicense"]
+	if license, ok := licenses.Records[communityLoginLicenseID]; ok &&
+		license.Fields["Name"].String == "Chatter External" && license.Fields["LicenseDefinitionKey"].String == "PID_Customer_Community_Login" {
+		if licenses.RecordsShared || licenses.IndexesShared {
+			mutable, _ := EnsureMutableObjectRecords(org, "UserLicense")
+			licenses = *mutable
+			license = licenses.Records[communityLoginLicenseID]
+		}
+		license.Fields["Name"] = StringValue("Customer Community Login")
+		licenses.PutRecord(communityLoginLicenseID, license)
+	}
+	profiles := org.Objects["Profile"]
+	for _, legacy := range []struct {
+		id         ID
+		name       string
+		from, into ID
+	}{
+		{ID("00e000000000003"), "Chatter External User", communityLoginLicenseID, chatterExternalLicenseID},
+		{ID("00e000000000004"), "Standard Platform User", salesforceLicenseID, platformLicenseID},
+	} {
+		if profile, ok := profiles.Records[legacy.id]; ok && profile.Fields["Name"].String == legacy.name && IDsEqual(profile.Fields["UserLicenseId"].ID, legacy.from) {
+			profiles = mutableSeedObject(org, "Profile")
+			profile = profiles.Records[legacy.id]
+			profile.Fields["UserLicenseId"] = IDValue(legacy.into)
+			profiles.PutRecord(legacy.id, profile)
+		}
+	}
+	guestID := ID("00e000000000007")
+	if profile, ok := profiles.Records[guestID]; ok && legacyGuestProfileUntouched(org, profile, communityLoginLicenseID) {
+		permissionSets := mutableSeedObject(org, "PermissionSet")
+		for id, set := range permissionSets.Records {
+			if IDsEqual(set.Fields["ProfileId"].ID, guestID) {
+				permissionSets.DeleteRecord(id)
+			}
+		}
+		profiles = mutableSeedObject(org, "Profile")
+		profiles.DeleteRecord(guestID)
+	}
+}
+
+// legacyGuestProfileUntouched reports whether the former seeded guest profile
+// still holds exactly its seeded data and nothing else refers to it. A changed
+// license or permission field, or a reference from any record other than its
+// own profile-owned permission set, keeps the profile.
+func legacyGuestProfileUntouched(org *OrgState, profile Record, seededLicenseID ID) bool {
+	if profile.Fields["Name"].String != "Customer Community Guest User" ||
+		profile.Fields["UserType"].String != "Guest" ||
+		!IDsEqual(profile.Fields["UserLicenseId"].ID, seededLicenseID) {
+		return false
+	}
+	for field, value := range profile.Fields {
+		if strings.HasPrefix(field, "Permissions") && value.Boolean {
+			return false
+		}
+	}
+	for objectName, object := range org.Objects {
+		for id, record := range object.Records {
+			if objectName == "Profile" && IDsEqual(id, profile.ID) {
+				continue
+			}
+			owned := objectName == "PermissionSet" && IDsEqual(record.Fields["ProfileId"].ID, profile.ID) && record.Fields["IsOwnedByProfile"].Boolean
+			for field, value := range record.Fields {
+				if owned && strings.HasPrefix(field, "Permissions") && value.Boolean {
+					return false
+				}
+				if IDsEqual(value.ID, profile.ID) && !(owned && field == "ProfileId") {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+// mutableSeedObject returns the named object with rows and indexes owned by
+// org. Runtime clones share the rows of metadata and setup objects with their
+// template, so a seed or migration write goes through
+// EnsureMutableObjectRecords first.
+func mutableSeedObject(org *OrgState, objectName string) ObjectState {
+	if object := org.Objects[objectName]; object.RecordsShared || object.IndexesShared {
+		EnsureMutableObjectRecords(org, objectName)
+	}
+	return org.Objects[objectName]
 }

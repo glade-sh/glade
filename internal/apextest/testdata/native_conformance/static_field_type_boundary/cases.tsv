@@ -1,0 +1,7 @@
+case	api	route	source_file
+field_missing	62.0	metadata-validation	cases/field_missing.json
+field_missing	67.0	metadata-validation	cases/field_missing.json
+type_control	62.0	metadata-validation	cases/type_control.json
+type_control	67.0	metadata-validation	cases/type_control.json
+field_control	62.0	metadata-validation	cases/field_control.json
+field_control	67.0	metadata-validation	cases/field_control.json

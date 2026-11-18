@@ -1,0 +1,1 @@
+public class FernCaseTwo { public class Input { @InvocableVariable public String caseStatus; @InvocableVariable public Id recordId; } @InvocableMethod(label='Two') public static void run(List<Input> rows) { FernCaseLog.events.add('two:'+rows.size()); } }

@@ -116,7 +116,7 @@ func (s *Server) createBulkV1Job(w http.ResponseWriter, r *http.Request) {
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v1 ingest supports CSV contentType only")
 		return
 	}
-	objectName, ok := storage.ResolveObjectName(*s.Org, strings.TrimSpace(info.Object))
+	objectName, ok := storage.ResolveVisibleObjectName(*s.Org, strings.TrimSpace(info.Object))
 	if !ok {
 		writeSalesforceError(w, errUnknownObject, "unknown object "+strings.TrimSpace(info.Object))
 		return
@@ -243,7 +243,7 @@ func (s *Server) runBulkV1CSVBatch(w http.ResponseWriter, r *http.Request, job b
 	if len(records) == 0 {
 		return results, true
 	}
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	var dmlResults []dml.Result
 	switch job.Operation {
@@ -321,7 +321,7 @@ func (s *Server) applyBulkV1RelationshipCSVField(record *storage.Record, definit
 	if len(lookupField.ReferenceTo) == 0 {
 		return fmt.Errorf("relationship field %s has no reference target", header)
 	}
-	parentObjectName, ok := storage.ResolveObjectName(*s.Org, lookupField.ReferenceTo[0])
+	parentObjectName, ok := storage.ResolveVisibleObjectName(*s.Org, lookupField.ReferenceTo[0])
 	if !ok {
 		return fmt.Errorf("unknown relationship target %s", lookupField.ReferenceTo[0])
 	}

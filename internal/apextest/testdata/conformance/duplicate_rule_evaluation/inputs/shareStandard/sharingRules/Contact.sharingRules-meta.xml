@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SharingRules xmlns="http://soap.sforce.com/2006/04/metadata"><sharingCriteriaRules><fullName>ShareCrit</fullName><accessLevel>Read</accessLevel><label>ShareCrit</label><sharedTo><group>ShareProbeGroup</group></sharedTo><criteriaItems><field>Title</field><operation>equals</operation><value>crit</value></criteriaItems><includeRecordsOwnedByAll>true</includeRecordsOwnedByAll></sharingCriteriaRules></SharingRules>

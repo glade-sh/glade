@@ -1,0 +1,1 @@
+Search.SearchResults sr = Search.find('FIND {copper} RETURNING Contact(Name, AssistantName) WITH SNIPPET'); String r = ''; for (Search.SearchResult x : sr.get('Contact')) { r += x.getSObject().get('Name') + '=' + x.getSnippet() + '/' + x.getSnippet('AssistantName') + ';'; } obs = r;

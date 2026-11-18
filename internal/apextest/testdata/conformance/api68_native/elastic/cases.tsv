@@ -1,0 +1,8 @@
+id	api	route	phase	variant	source
+ELASTIC-DEPLOY-68	68.0	deploy	case	v68	-
+ELASTIC-DEPLOY-67	67.0	deploy	case	v67	-
+ELASTIC-ENQ-68	68.0	anonymous	case	v68	snippets/elastic68.apex
+ELASTIC-ENQ-67	67.0	anonymous	case	v67	snippets/elastic67.apex
+ELASTIC-OVERRIDE-SETTING	68.0	deploy	case	velastic	-
+ELASTIC-ENQ-OVERRIDE-68	68.0	anonymous	case	velastic	snippets/elastic68.apex
+ELASTIC-READ	68.0	anonymous	case	v68	snippets/jobs.apex

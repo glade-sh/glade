@@ -1,0 +1,5 @@
+api	route	case	actual
+62.0	istest	userwrapped	api=62.0 | match=true;clock=true;control=true
+62.0	anonymous	userwrapped	api=62.0 | match=true;clock=true;control=true
+67.0	istest	userwrapped	api=67.0 | match=true;clock=true;control=true
+67.0	anonymous	userwrapped	api=67.0 | match=true;clock=true;control=true

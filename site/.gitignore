@@ -3,3 +3,5 @@ node_modules/
 .vitepress/dist/
 .vitepress/release-check.json
 docs-dist/
+# Generated from https://downloads.glade.sh/latest/release-manifest.json by build:site and dev.
+release-manifest.json

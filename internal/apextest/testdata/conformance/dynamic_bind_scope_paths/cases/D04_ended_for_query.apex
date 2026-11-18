@@ -1,0 +1,1 @@
+try { for (Integer i=0;i<1;i++) { String v='x'; } List<Account> l = Database.query('SELECT Id FROM Account WHERE Name = :v'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

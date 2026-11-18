@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -14,9 +15,10 @@ import (
 )
 
 // Synthetic: ../../testdata/conformance/undeclared_namespace_types/cases.md.
-// Offline analysis cannot see installed packages or the deploying org's
-// namespace, so a qualifier the project does not declare cannot prove a type
-// absent. Glade a recorded revision accepted every case in cases.tsv marked accepted.
+// Glade in a previous release accepted every case in cases.tsv marked accepted. Ruling 49
+// reverses that deferral: an org without the package rejects an undeclared
+// namespace in every position (namespace_external_positions/org.tsv), and a
+// dependency declared without source keeps the namespace open.
 const undeclaredNamespaceFixture = "../../testdata/conformance/undeclared_namespace_types"
 
 func undeclaredNamespaceIndex(t *testing.T, api, namespace string, extra map[string]string) typesys.Index {
@@ -54,6 +56,46 @@ func undeclaredNamespaceIndex(t *testing.T, api, namespace string, extra map[str
 	return index
 }
 
+// Check the shared fixture as well as the class under test. Its rejections
+// are native-backed by namespace_external_positions/org.tsv at APIs 62/67.
+func assertUndeclaredSharedFixtureDiagnostics(t *testing.T, ds []diagnostic.Diagnostic, target, namespace string) {
+	t.Helper()
+	want := map[string]int{}
+	add := func(file, code, ref string, n int) { want[file+"|"+code+"|Invalid type: "+ref] = n }
+	add("BarExtension.cls", "GLADESEMA006", "bar.BaseHandler", 1)
+	add("BarExtension.cls", "GLADESEMA006", "bar.Callback", 1)
+	add("BarExtension.cls", "GLADESEMA004", "fooNs.Unknown", 1)
+	add("BarSignatures.cls", "GLADESEMA002", "bar.Wrapper", 2)
+	add("BarSignatures.cls", "GLADESEMA002", "bar.OtherWrapper", 2)
+	add("BarSignatures.cls", "GLADESEMA002", "fooNs.Unknown", 1)
+	add("BarSignatures.cls", "GLADESEMA004", "bar.Wrapper", 2)
+	add("BarSignatures.cls", "GLADESEMA004", "bar.OtherWrapper", 1)
+	add("BarSignatures.cls", "GLADESEMA004", "fooNs.Unknown", 1)
+	add("BarConstructions.cls", "GLADESEMA006", "bar.Wrapper", 5)
+	add("BarConstructions.cls", "GLADESEMA006", "bar.OtherWrapper", 2)
+	add("BarConstructions.cls", "GLADESEMA006", "bar.LogBuilder", 1)
+	add("BarConstructions.cls", "GLADESEMA006", "fooNs.Unknown", 1)
+	add("BarConsumerTest.cls", "GLADESEMA006", "bar.Wrapper", 1)
+	if namespace == "" {
+		add("BarExtension.cls", "GLADESEMA004", "fooNs.LocalThing", 1)
+		add("BarSignatures.cls", "GLADESEMA002", "fooNs.LocalThing", 1)
+		add("BarConstructions.cls", "GLADESEMA006", "fooNs.LocalThing", 1)
+	}
+	got := map[string]int{}
+	for _, d := range ds {
+		if filepath.Base(d.File) == target {
+			continue
+		}
+		if d.Severity != diagnostic.Error || d.Message != d.NativeMessage {
+			t.Errorf("unexpected shared fixture diagnostic: %+v", d)
+		}
+		got[filepath.Base(d.File)+"|"+d.Code+"|"+d.NativeMessage]++
+	}
+	if !maps.Equal(got, want) {
+		t.Errorf("shared fixture diagnostics=%v, want %v", got, want)
+	}
+}
+
 func TestUndeclaredNamespaceCaseTableNamesFixtureReferences(t *testing.T) {
 	rows := readQualifiedReceiverTSV(t, filepath.Join(undeclaredNamespaceFixture, "cases.tsv"), 6)
 	if len(rows) != 8 {
@@ -85,8 +127,30 @@ func TestUndeclaredNamespaceCaseTableNamesFixtureReferences(t *testing.T) {
 	}
 }
 
+// undeclaredNamespaceErrorsInFile requires every error in file (all files when
+// file is empty) to be Invalid type for an undeclared bar or fooNs type, and at
+// least one.
+func undeclaredNamespaceErrorsInFile(t *testing.T, route, namespace, file string, ds []diagnostic.Diagnostic) {
+	t.Helper()
+	count := 0
+	for _, d := range ds {
+		if d.Severity != diagnostic.Error || file != "" && filepath.Base(d.File) != file {
+			continue
+		}
+		count++
+		ref, ok := strings.CutPrefix(d.NativeMessage, "Invalid type: ")
+		if !ok || !strings.HasPrefix(ref, "bar.") && ref != "fooNs.Unknown" && !(namespace == "" && ref == "fooNs.LocalThing") {
+			t.Errorf("%s: unexpected error %s %q | %q", route, d.Code, d.NativeMessage, d.Message)
+		}
+	}
+	if count == 0 {
+		t.Errorf("%s: undeclared namespaces accepted", route)
+	}
+}
+
 // own_type_qualified, absent_type_qualified and the managed_* rows: a project
 // with "namespace": "" (and the same source under its own declared namespace).
+// Undeclared, they reject; declared without source, they compile.
 func TestUndeclaredNamespaceTypesDeferredInProjectAndAnonymous(t *testing.T) {
 	anonymous, err := os.ReadFile(filepath.Join(undeclaredNamespaceFixture, "anonymous.apex"))
 	if err != nil {
@@ -96,11 +160,17 @@ func TestUndeclaredNamespaceTypesDeferredInProjectAndAnonymous(t *testing.T) {
 		for _, namespace := range []string{"", "fooNs"} {
 			t.Run(api+"/namespace="+namespace, func(t *testing.T) {
 				index := undeclaredNamespaceIndex(t, api, namespace, nil)
+				undeclaredNamespaceErrorsInFile(t, "project", namespace, "", Analyze(index).Diagnostics)
+				undeclaredNamespaceErrorsInFile(t, "anonymous", namespace, "", AnalyzeAnonymous(index, string(anonymous), api).Diagnostics)
+				if namespace != "" {
+					return
+				}
+				index.Dependencies = []typesys.DependencyInfo{{Namespace: "bar", Status: "missing"}, {Namespace: "fooNs", Status: "missing"}}
 				if result := Analyze(index); result.HasErrors() {
-					t.Fatalf("project check: %+v", result.Diagnostics)
+					t.Fatalf("declared project check: %+v", result.Diagnostics)
 				}
 				if result := AnalyzeAnonymous(index, string(anonymous), api); result.HasErrors() {
-					t.Fatalf("anonymous: %+v", result.Diagnostics)
+					t.Fatalf("declared anonymous: %+v", result.Diagnostics)
 				}
 			})
 		}
@@ -118,9 +188,13 @@ func TestDeclaredProjectNamespaceQualifiedTypeResolvesToProjectClass(t *testing.
 					"    public static String mismatch() { fooNs.LocalThing owned = new fooNs.LocalThing(); String s = owned.size(); return s; }\n" +
 					"}\n",
 			})
+			diagnostics := Analyze(index).Diagnostics
+			assertUndeclaredSharedFixtureDiagnostics(t, diagnostics, "OwnedProbe.cls", "fooNs")
 			var got []string
-			for _, d := range Analyze(index).Diagnostics {
-				got = append(got, d.Message)
+			for _, d := range diagnostics {
+				if filepath.Base(d.File) == "OwnedProbe.cls" {
+					got = append(got, d.Message)
+				}
 			}
 			want := `method "mismatch" initializes String local "s" with Integer`
 			if len(got) != 1 || got[0] != want {
@@ -143,9 +217,11 @@ func TestUndeclaredNamespaceBaseBoundaryDeferred(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			index := undeclaredNamespaceIndex(t, api, "", map[string]string{"BarLocals": string(source)})
+			diagnostics := Analyze(index).Diagnostics
+			assertUndeclaredSharedFixtureDiagnostics(t, diagnostics, "BarLocals.cls", "")
 			var errors []string
-			for _, d := range Analyze(index).Diagnostics {
-				if d.Severity == diagnostic.Error {
+			for _, d := range diagnostics {
+				if d.Severity == diagnostic.Error && filepath.Base(d.File) == "BarLocals.cls" {
 					errors = append(errors, d.Code+" "+d.Message+" | "+d.NativeMessage)
 				}
 			}

@@ -77,3 +77,24 @@ func TestStandardFieldEvidenceLiveAgentStorageRoutes(t *testing.T) {
 		})
 	}
 }
+
+// standard_case_source_social/org.tsv:2-3 captures Case.SourceId compiling in
+// an org whose only feature is SocialCustomerService (anonymous, 62.0 and
+// 67.0). The LiveAgent gate stays as captured.
+func TestStandardFieldEvidenceSocialCustomerServiceSourceId(t *testing.T) {
+	for _, features := range [][]string{{"SocialCustomerService"}, {"SocialCustomerService", "Communities"}} {
+		definition := ObjectDefinition{APIName: "Case"}
+		EnsureStandardObjectFieldsForFeatures(&definition, features)
+		if _, ok := ResolveFieldName(definition, "", "SourceId"); !ok {
+			t.Errorf("SourceId absent with %v", features)
+		}
+		if _, ok := ResolveFieldName(definition, "", "IsVisibleInSelfService"); ok {
+			t.Errorf("IsVisibleInSelfService present with %v", features)
+		}
+	}
+	definition := ObjectDefinition{APIName: "Case"}
+	EnsureStandardObjectFieldsForFeatures(&definition, []string{"Communities"})
+	if _, ok := ResolveFieldName(definition, "", "SourceId"); ok {
+		t.Error("SourceId present without a supplying feature")
+	}
+}

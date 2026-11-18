@@ -1,0 +1,16 @@
+id	route	file
+r1_setup	anonymous	r1_setup.apex
+r1_statics	anonymous	r1_statics.apex
+r1_ins_one	anonymous	r1_ins_one.apex
+r1_ins_bulk	anonymous	r1_ins_bulk.apex
+r1_upd_one	anonymous	r1_upd_one.apex
+r1_upd_bulk	anonymous	r1_upd_bulk.apex
+r1_del_one	anonymous	r1_del_one.apex
+r1_del_bulk	anonymous	r1_del_bulk.apex
+r1_del_each	anonymous	r1_del_each.apex
+r1_und_one	anonymous	r1_und_one.apex
+r1_und_bulk	anonymous	r1_und_bulk.apex
+r1_del_events	anonymous	r1_del_events.apex
+r1_del_one_event	anonymous	r1_del_one_event.apex
+r1_del_database	anonymous	r1_del_database.apex
+r1t_route	istest	RtRouteTest

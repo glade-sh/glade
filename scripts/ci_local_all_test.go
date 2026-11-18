@@ -106,13 +106,15 @@ func TestCILocalAllShardInventory(t *testing.T) {
 			} `yaml:"matrix"`
 		} `yaml:"strategy"`
 	}
-	node := workflow.Jobs["test"]
-	if err := node.Decode(&job); err != nil {
-		t.Fatal(err)
-	}
 	lanes := map[string]bool{}
-	for _, entry := range job.Strategy.Matrix.Include {
-		lanes[entry.Lane] = true
+	for _, jobName := range []string{"test", "lwc-vf"} {
+		node := workflow.Jobs[jobName]
+		if err := node.Decode(&job); err != nil {
+			t.Fatal(err)
+		}
+		for _, entry := range job.Strategy.Matrix.Include {
+			lanes[entry.Lane] = true
+		}
 	}
 	for _, prefix := range []string{"lwc-compile", "visualforce"} {
 		for i := 0; i < got[prefix]; i++ {

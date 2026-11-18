@@ -128,6 +128,21 @@ func standardSObjectStubObjectInfoFor(objectName string) (standardSObjectStubObj
 	return member.ObjectInfo, true
 }
 
+// standardSObjectStubHasFields reports whether standardSObjectStubFieldsFor
+// would find a field overlay, from the generated index and without decoding
+// the member.
+func standardSObjectStubHasFields(objectName string) bool {
+	entry, ok := standardSObjectStubPackIndexEntryForName(objectName)
+	return ok && entry.HasFields
+}
+
+// releaseStandardSObjectStubMembers drops the decoded stub overlay members.
+// The next lookup decodes the member again from the embedded pack with the
+// same result. Callers that already hold a member keep it.
+func releaseStandardSObjectStubMembers() {
+	standardSObjectStubPackMembers.Clear()
+}
+
 func standardSObjectStubFieldsFor(objectName string) (map[string]Field, bool) {
 	member, ok := standardSObjectStubPackMemberForName(objectName)
 	if !ok || !member.hasFields {

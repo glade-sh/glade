@@ -1,0 +1,14 @@
+capture: duplicate-public-default
+started: 2026-11-13T14:42:25Z
+finished: 2026-11-13T14:43:01Z
+apis: 62.0 67.0
+routes: istest
+cases: 2
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+cases.tsv sha256: 058d38aec3ff54dc
+mode: live
+Setup: fresh Developer scratch org with no object sharing metadata. Lead query visibility under Standard User runAs was asserted before duplicate insertion. Only the custom exact Email rule was active; both default Lead duplicate rules were inactive (sort orders 1 and 2; custom rule at 3). Each deployed class pins its own API, and each test command also used --api-version.
+Assertions at each API: another owner's Lead is readable; a unique email saves; the matching email fails with DUPLICATES_DETECTED for Database.insert(row,false) and an insert statement; a blank email saves. All assertions passed.
+The replay covers duplicate outcomes. Undeclared-shape SOQL visibility is a separate existing gap and is not changed here.
+Scratch deletion: CLI deletion succeeded, subsequent org display failed; org deleted and verified gone. Four preceding metadata-deployment attempts were also deleted and verified gone; they produced no behavior rows.

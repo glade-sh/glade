@@ -1,0 +1,58 @@
+A permission set that a test assigns to the running user: grant timing by place of read. Field permission (Pf_Fld__c.Secret__c), object permission (Pf_Obj__c) and custom permission (Pf_Cust), each from its own permission set.
+org: fresh scratch org from a campaign Dev Hub, Developer Edition, deleted after the run (delete verified). Org id, usernames, alias and host are not recorded.
+capture date: 2026-11-16 (UTC), two repeats with identical rows. sf 2.157.8. Class source API 62.0 and 67.0 (PfA, PfS, PfT <N>), deployed at 67.0.
+route: named @IsTest methods, one transaction each, one run of each class. Each method ends in System.assert(false, 'RESULT => ...') so the observation is the assertion text.
+PfA: the test assigns in the method (v01 directly, v02 inside runAs(self), v03 before startTest, v04 inside startTest, v05 nested runAs, v06 unassign, v07 to another user inside runAs(self), v08 to another user directly, v09 two runAs blocks, v10 both users).
+PfS: @TestSetup assigns directly. PfT: @TestSetup assigns inside runAs(self). Both run s01 to s04 (plain, with DML readers, startTest, unassign).
+observation: A, D = outside any runAs (before, after); B = inside runAs(running user); C = inside runAs(other Standard User with the set assigned); X = inside the runAs block that made the assignment; E = after stopTest inside runAs. cr/rd = describe isCreateable/isAccessible, q = user-mode query, ins = insert as user, perm = FeatureManagement.checkPermission.
+The administrator already holds object access on custom objects, so the object-permission rows read true in every place; they show no grant timing.
+
+residuals.tsv (SF-5, 2026-11-16): the shapes beyond the direct reads above.
+Capture: two scratch orgs, API 62.0 and 67.0, @IsTest, two repeats each; the
+repeats agree. Each row is the assertion text of one method (class and method in
+column 2), with its source under residuals/api62 and residuals/api67 (the
+capture's own classes; the scrub's placeholder emails and defanged namespace
+domains are restored). Shapes: upsert and insert of a new self assignment read
+by FeatureManagement.checkPermission, a stripInaccessible read and a user-mode
+query; plain and nested System.runAs(Version); Queueable, future and Batch jobs
+started after the assignment; a Flow $Permission formula; Approval.lock; a mixed
+List insert with the assignment last; UserRecordAccess for an assigned user;
+and a 5000-row assignment insert.
+
+Native answers these rows added (Glade now matches them): an upsert of a new
+assignment is hidden like an insert; a Queueable, future or Batch job does not
+see the assignment; a Version block, plain or holding a runAs of the running
+user, neither sees it nor unlocks it; a Flow formula reads false until a later
+runAs; a list insert with the assignment last is hidden; a partial Approval.lock
+after the insert returns a failed LockResult (MIXED_DML_OPERATION); at API 62.0
+a partial list insert reports the mixed-DML row error without the exception
+wrapper; a UserRecordAccess read counts the assignment at once and returns rows
+for a named limited user on a custom object; String.valueOf of a PageReference
+is System.PageReference[url]. At API 62.0 a user's own assignment inside its
+runAs block is hidden from that block; at 67.0 that insert is denied.
+
+Not observed, so base behavior: the rendered Visualforce $Permission value
+(getContent is forbidden in a test, native "Methods defined as TestMethod do not
+support getContent call"); RequestVersion (not supported from an unmanaged
+namespace); any approval-process behavior beyond the lock rows; update and
+delete of an assignment; groups; the timing value (the row masks milliseconds;
+native took 31 to 67 seconds, a measurement, not a contract).
+Glade note: the timing row runs without the strict heap walk, which costs
+minutes over its 5000-row nested loop.
+
+Second batch (2026-11-17, API 62.0 and 67.0, two repeats, one scratch org per
+repeat, deleted and verified): PsrMixedTest at 67.0 (Mx_*; the assignment count
+is the org's own baseline, two higher than at 62.0, so the harness masks it; the
+67.0 inserts fail on field access before the mixed-DML rule); async drain shapes
+A1-A9 (an assignment for the running user is hidden in a job drained outside a
+runAs block and visible in a job drained inside a block entered after it; a job
+of another user sees it); FlowShapes (a String assignment resolves {!Formula},
+{!Variable} and text around them in an autolaunched flow); UserRecordAccess on
+Private, Public Read Only and Public Read/Write custom objects for a named
+limited user (Private: no access; Read Only: read; Read/Write: edit; the user's
+own records: All level).
+
+Raw for the second batch rows (Mx_* at 67.0, Asy_A1-A9, FlowShapes, UraProbe):
+the campaign evidence directory parallel/batch2-20261117 (README.txt names the run directories). Note: the
+Mx_* rows at 67.0 all fail on field access before the mixed-DML rule, so the mixed-DML behavior at 67.0
+is unobserved; the 62.0-only gate on the partial list insert message stands.

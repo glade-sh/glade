@@ -1,0 +1,4 @@
+Ft_bool_target	field integrity exception: unknown (In an Assignment element, “{!BoolVar}” isn’t a valid value when the “BoolOut” variable is set with the Equals operator.)
+Ft_date_target	field integrity exception: unknown (In an Assignment element, “{!DateVar}” isn’t a valid value when the “DateOut” variable is set with the Equals operator.)
+Ft_num_target	field integrity exception: unknown (In an Assignment element, “{!NumVar}” isn’t a valid value when the “NumOut” variable is set with the Equals operator.)
+Ft_num_target_text	field integrity exception: unknown (In an Assignment element, “{!NumF}” isn’t a valid value when the “NumOut” variable is set with the Equals operator.)

@@ -1,0 +1,4 @@
+{
+  "NqCheckd1c280bf.cls": "@IsTest private class NqCheckd1c280bf { @IsTest static void verify() { System.assertEquals('ab', NqParceld1c280bf.Builder.build('b').value()); } }\n",
+  "NqParceld1c280bf.cls": "public class NqParceld1c280bf {\n public interface Builder { Builder build(String v); String value(); }\n public static Builder Builder = new Worker('a');\n public static Builder build(String v){return new Worker(v);}\n private class Worker implements Builder {\n  private String s; public Worker(String v){s=v;}\n  public Builder build(String v){s+=v; return this;}\n  public String value(){return s;}\n }\n}\n"
+}

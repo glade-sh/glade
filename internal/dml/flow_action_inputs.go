@@ -10,6 +10,20 @@ func (e *FlowActionInputError) Error() string { return e.Cause.Error() }
 func (e *FlowActionInputError) Unwrap() error { return e.Cause }
 
 func flowActionFailure(name string, err error) error {
+	return flowActionFailureWithDetail(name, err, "")
+}
+
+// flowActionFailureWithDetail keeps the $Flow.FaultMessage text of an Apex
+// action that threw (empty when the failure did not come from Apex).
+func flowActionFailureWithDetail(name string, err error, detail string) error {
+	failure := flowActionFailureError(name, err)
+	if detail == "" {
+		return failure
+	}
+	return &flowElementFault{err: failure, message: detail}
+}
+
+func flowActionFailureError(name string, err error) error {
 	var input *FlowActionInputError
 	if errors.As(err, &input) {
 		return &FlowActionInputError{Cause: dmlErrorf("CANNOT_EXECUTE_FLOW_TRIGGER", nil, "dml: flow action %s failed: %v", name, err)}

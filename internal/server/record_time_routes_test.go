@@ -108,7 +108,7 @@ func TestRecordTimeLocationResolutionPerPage(t *testing.T) {
 					})
 				}
 				utc, named := measure("UTC"), measure(zone)
-				if extra, limit := named-utc, 3*loadCost+5; extra > limit {
+				if extra, limit := named-utc, float64(3*loadCost)+5; extra > limit {
 					t.Errorf("related=%v: named-zone page adds %.0f allocations; want <= %.0f (one load costs %.0f)", related, extra, limit, loadCost)
 				}
 			}

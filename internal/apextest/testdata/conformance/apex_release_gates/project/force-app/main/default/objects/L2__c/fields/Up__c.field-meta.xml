@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Up__c</fullName><label>Up__c</label><type>MasterDetail</type><referenceTo>L1__c</referenceTo><relationshipName>Down2</relationshipName><relationshipLabel>Down2</relationshipLabel><relationshipOrder>0</relationshipOrder><reparentableMasterDetail>false</reparentableMasterDetail><writeRequiresMasterRead>false</writeRequiresMasterRead></CustomField>

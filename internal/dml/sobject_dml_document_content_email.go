@@ -87,7 +87,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 			stored.Fields = make(map[string]storage.Value)
 		}
 		stored.Fields["ContentDocumentId"] = storage.IDValue(contentDocumentID)
-		contentVersionObject.Records[version.ID] = stored
+		contentVersionObject.PutRecord(version.ID, stored)
 		e.Org.Objects["ContentVersion"] = contentVersionObject
 	} else {
 		storage.EnsureMutableObjectRecords(e.Org, "ContentDocument")
@@ -117,7 +117,7 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 				document.Fields["FileType"] = storage.StringValue(fileType)
 			}
 		}
-		contentDocumentObject.Records[contentDocumentID] = document
+		contentDocumentObject.PutRecord(contentDocumentID, document)
 		e.Org.Objects["ContentDocument"] = contentDocumentObject
 	}
 	e.updateContentVersionDerivedFields(version)
@@ -173,7 +173,7 @@ func (e *Engine) updateContentVersionDerivedFields(version storage.Record) {
 		stored.Fields["ContentSize"] = storage.IntegerValue(size)
 		stored.Fields["ContentSizeLong"] = storage.IntegerValue(size)
 	}
-	object.Records[version.ID] = stored
+	object.PutRecord(version.ID, stored)
 	e.Org.Objects["ContentVersion"] = object
 }
 
@@ -197,7 +197,7 @@ func (e *Engine) afterInsertContentDistribution(id storage.ID) {
 	if _, ok := record.Fields["DistributionPublicUrl"]; !ok {
 		record.Fields["DistributionPublicUrl"] = storage.StringValue(base)
 	}
-	object.Records[id] = record
+	object.PutRecord(id, record)
 	e.Org.Objects["ContentDistribution"] = object
 }
 
@@ -312,7 +312,7 @@ func (e *Engine) markLatestContentVersion(contentDocumentID storage.ID, latestVe
 		if id == latestVersionID {
 			stored.Fields["VersionNumber"] = storage.StringValue(strconv.Itoa(nextNumber))
 		}
-		contentVersionObject.Records[id] = stored
+		contentVersionObject.PutRecord(id, stored)
 		changed = true
 	}
 	if changed {

@@ -1,0 +1,10 @@
+Savepoint sp = Database.setSavepoint();
+String a = '' + Limits.getDmlStatements();
+Test.startTest();
+String b = '' + Limits.getDmlStatements();
+Savepoint sp2 = Database.setSavepoint();
+String c = '' + Limits.getDmlStatements();
+Database.rollback(sp2);
+String d = '' + Limits.getDmlStatements();
+Test.stopTest();
+obs = a + '>' + b + '>' + c + '>' + d + '>' + Limits.getDmlStatements();

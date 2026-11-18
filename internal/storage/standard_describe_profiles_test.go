@@ -2,7 +2,6 @@ package storage
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/csv"
 	"encoding/json"
 	"os"
@@ -14,13 +13,8 @@ import (
 // The runtime decoder must retain every captured profile and API, including
 // edition removals and the Commerce profile's Communities baseline.
 func TestStandardDescribeProfileCatalogNativeDeltas(t *testing.T) {
-	stream, err := gzip.NewReader(bytes.NewReader(standardFieldPolicyData))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer stream.Close()
 	var bundle standardFieldPolicyBundle
-	if err := json.NewDecoder(stream).Decode(&bundle); err != nil {
+	if err := json.Unmarshal(standardFieldPolicyData, &bundle); err != nil {
 		t.Fatal(err)
 	}
 	encoded, err := json.Marshal(bundle)
@@ -122,17 +116,12 @@ func readDescribeProfileDeltaRows(t *testing.T, path string) []map[string]string
 }
 
 func TestStandardDescribeProfileCatalogLookupRoutes(t *testing.T) {
-	stream, err := gzip.NewReader(bytes.NewReader(standardFieldPolicyData))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer stream.Close()
 	var captured struct {
 		Evidence struct {
 			Profiles map[string]map[string]StandardDescribeCatalogDelta
 		}
 	}
-	if err := json.NewDecoder(stream).Decode(&captured); err != nil {
+	if err := json.Unmarshal(standardFieldPolicyData, &captured); err != nil {
 		t.Fatal(err)
 	}
 	for profile, apis := range captured.Evidence.Profiles {

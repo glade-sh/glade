@@ -1059,7 +1059,7 @@ func waitForWatchChange(t *testing.T, watcher watch.BackendWatcher, path string,
 // the change is observed, so the file is stable once it returns.
 func writeUntilWatchChange(t *testing.T, watcher watch.BackendWatcher, path string, op watch.ChangeOp, write func(attempt int)) []watch.Change {
 	t.Helper()
-	deadline := time.NewTimer(30 * time.Second)
+	deadline := time.NewTimer(testutil.Deadline(30 * time.Second))
 	defer deadline.Stop()
 	retry := time.NewTicker(time.Second)
 	defer retry.Stop()

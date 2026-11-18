@@ -1,0 +1,7 @@
+api	case	route	outcome
+62.0	collision_repeat_1	anonymous	{"firstMixedCase":true,"firstQualified":true,"keys":["firstpkg__collisionprobe171","secondpkg__collisionprobe171"],"labels":["Collision Local","Collision Probe 171"],"localLookup":false,"missingLocal":false,"missingQualified":false,"secondMixedCase":true,"secondQualified":true,"size":2,"valuesSize":2}
+62.0	collision_repeat_2	anonymous	{"firstMixedCase":true,"firstQualified":true,"keys":["firstpkg__collisionprobe171","secondpkg__collisionprobe171"],"labels":["Collision Local","Collision Probe 171"],"localLookup":false,"missingLocal":false,"missingQualified":false,"secondMixedCase":true,"secondQualified":true,"size":2,"valuesSize":2}
+67.0	collision_repeat_1	anonymous	{"firstMixedCase":true,"firstQualified":true,"keys":["firstpkg__collisionprobe171","secondpkg__collisionprobe171"],"labels":["Collision Local","Collision Probe 171"],"localLookup":false,"missingLocal":false,"missingQualified":false,"secondMixedCase":true,"secondQualified":true,"size":2,"valuesSize":2}
+67.0	collision_repeat_2	anonymous	{"firstMixedCase":true,"firstQualified":true,"keys":["firstpkg__collisionprobe171","secondpkg__collisionprobe171"],"labels":["Collision Local","Collision Probe 171"],"localLookup":false,"missingLocal":false,"missingQualified":false,"secondMixedCase":true,"secondQualified":true,"size":2,"valuesSize":2}
+62.0	post_cleanup_empty	anonymous	{"keys":[],"size":0,"valuesSize":0}
+67.0	post_cleanup_empty	anonymous	{"keys":[],"size":0,"valuesSize":0}

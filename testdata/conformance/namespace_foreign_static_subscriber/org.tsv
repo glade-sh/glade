@@ -1,0 +1,9 @@
+case_id	api_version	route	compile_outcome	runtime_outcome	observed_diagnostic	source
+qualified_static	62.0	anonymous	COMPILED	SUCCESS		qualified_static.apex
+qualified_static	67.0	anonymous	COMPILED	SUCCESS		qualified_static.apex
+unqualified_static	62.0	anonymous	COMPILE_ERROR	NOT_REACHED	Variable does not exist: V035Provider	unqualified_static.apex
+unqualified_static	67.0	anonymous	COMPILE_ERROR	NOT_REACHED	Variable does not exist: V035Provider	unqualified_static.apex
+unqualified_nested_static	62.0	anonymous	COMPILE_ERROR	NOT_REACHED	Variable does not exist: V035Provider.GlobalInner	unqualified_nested_static.apex
+unqualified_nested_static	67.0	anonymous	COMPILE_ERROR	NOT_REACHED	Variable does not exist: V035Provider.GlobalInner	unqualified_nested_static.apex
+qualified_nested_static	62.0	anonymous	COMPILED	SUCCESS		qualified_nested_static.apex
+qualified_nested_static	67.0	anonymous	COMPILED	SUCCESS		qualified_nested_static.apex

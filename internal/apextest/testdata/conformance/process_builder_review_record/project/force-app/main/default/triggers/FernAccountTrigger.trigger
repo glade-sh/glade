@@ -1,0 +1,1 @@
+trigger FernAccountTrigger on Account (before insert, after insert, before update, after update) { String phase=(Trigger.isBefore?'B':'A')+(Trigger.isInsert?'I':'U'); FernLog.events.add('Acc.'+phase+Trigger.size+':'+Trigger.new[0].Description); }

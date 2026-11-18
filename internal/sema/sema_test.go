@@ -5482,6 +5482,29 @@ public class UsesSOQLReturn {
 	}
 }
 
+func TestAnalyzeSOQLSingletonAcceptsStaticMethodArgumentInConcatenation(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSOQLArg.cls"), `
+public class UsesSOQLArg {
+  public static String seen = '';
+  public static String fmt(Account a) { return a.Name; }
+  public void run() {
+    System.debug('x' + UsesSOQLArg.seen + 'y' + UsesSOQLArg.fmt([SELECT Id, Name FROM Account WHERE Id = :UserInfo.getUserId()]) + ';');
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSOQLArg.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	for _, diag := range Analyze(index).Diagnostics {
+		if diag.Code == "GLADESEMA009" {
+			t.Fatalf("a SOQL singleton should satisfy the static method argument: %#v", diag)
+		}
+	}
+}
+
 func TestAnalyzeStaticMethodNamedMatches(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -11464,6 +11487,10 @@ public class ProductRoute extends RestRoute {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA010", "resourceId")
 }
 
+// Ruling 49 (native namespace_external_positions ExtParamOnlyV035,
+// ExtReturnOnlyV035): an undeclared lowercase namespace is Invalid type with
+// the spelling as written. Declaring it as a dependency without source keeps
+// it open (the test name predates ruling 49 and stays for the shard table).
 func TestAnalyzeAcceptsLowercaseExternalManagedPackageApexNamespace(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -11482,6 +11509,17 @@ public class UsesVendor {
 	}, schema.Schema{})
 
 	result := Analyze(index)
+	got := map[string]bool{}
+	for _, d := range result.Diagnostics {
+		if d.Severity == diagnostic.Error {
+			got[d.NativeMessage] = true
+		}
+	}
+	if len(got) != 2 || !got["Invalid type: vendor.PaymentGatewayResponse"] || !got["Invalid type: vendor.PaymentGatewayRequest"] {
+		t.Fatalf("undeclared lowercase namespace: %#v", result.Diagnostics)
+	}
+	index.Dependencies = []typesys.DependencyInfo{{Namespace: "vendor", Status: "missing"}}
+	result = Analyze(index)
 	assertNoDiagnosticContaining(t, result, "GLADESEMA002", "vendor.PaymentGatewayResponse")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA004", "vendor.PaymentGatewayRequest")
 }

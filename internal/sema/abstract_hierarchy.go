@@ -14,13 +14,12 @@ import (
 // zero-argument void redeclarations. AB_INNER_PARAM and AB_INNER_PARAM_PLAIN
 // capture Object methods with one enclosing sibling-class parameter. Both
 // routes agree at APIs 62/67/68; other declaration shapes keep their checks.
-func capturedAbstractHierarchyDiagnostics(index typesys.Index, typ typesys.TypeSymbol, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+func capturedAbstractHierarchyDiagnostics(views *semaLazyView, typ typesys.TypeSymbol, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
 	if typ.Dependency || typ.Namespace != "" || typ.Kind != apexast.DeclarationClass || typ.SuperClass == "" ||
 		hasModifier(typ.Modifiers, vm.AnonymousClassModifier) ||
 		!typeUsesAPIVersionAtLeast(typ, 62) || typeUsesAPIVersionAtLeast(typ, 69) {
 		return diagnostics
 	}
-	var model *semaTypeMemberView
 	for _, member := range typ.Members {
 		if member.Kind != apexast.DeclarationMethod || !hasModifier(member.Modifiers, "override") ||
 			hasModifier(member.Modifiers, "static") || member.HasBody && hasModifier(member.Modifiers, "abstract") ||
@@ -35,9 +34,7 @@ func capturedAbstractHierarchyDiagnostics(index typesys.Index, typ typesys.TypeS
 		if !zeroArgument && !innerParameter {
 			continue
 		}
-		if model == nil {
-			model = buildSemaTypeMemberView(index)
-		}
+		model := views.get()
 		parentName := resolveNestedTypeName(model, typ.Name, typ.SuperClass)
 		parent, _, ok := semaLookupTypeMembers(model, parentName)
 		if !ok || parent.dependency || parent.platform || parent.namespace != "" {

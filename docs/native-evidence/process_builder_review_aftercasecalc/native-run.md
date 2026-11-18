@@ -1,0 +1,3 @@
+# Native run
+
+A fresh 30-day Developer scratch org used synthetic Case metadata. A synthetic Case business process and record type were deployed, followed by a text formula field reading RecordType.DeveloperName, the three-flow graph, and Case field and record-type permissions. Named tests and anonymous executions at API 62.0 and 67.0 captured queue-owner assignment, record-type formula matches, status-transition boundary, and two custom-error rejections. Sentinel assertions carry observations and roll back the transactions. ScratchOrgInfo was verified Deleted and no ActiveScratchOrg row remained. Org IDs and aliases are not recorded.

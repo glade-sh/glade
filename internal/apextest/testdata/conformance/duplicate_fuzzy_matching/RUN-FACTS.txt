@@ -1,0 +1,10 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for custom fuzzy matching rules
+orgs: six fresh 30-day Developer Edition scratch orgs on campaign Dev Hubs, each deleted after its run
+route: anonymous Apex (insert up to 50 records, then findDuplicates on every value as an unsaved candidate)
+apis: 67.0 for every row; 62.0 for the first run, Probe.* (six rows), Probe3.*.1 (eight rows), and P4.FN.A, P4.FN.B, P4.LN.KB1, P4.LN.KB2, P4.CO.Amp, Holdout5.Account.Name.CompanyName.NullNotAllowed.3
+result: every 62.0 row equals its 67.0 row, pair for pair and confidence for confidence
+row value: {"object","field","method","blank","const","values","matches"}; matches are [candidate index, existing index, confidence]
+ids: records are tagged by index; no record, org or user id, username or alias is stored
+indexing: a value whose record does not match itself was not indexed when the row was read; rows with such values among first or last names were captured again
+fourth run: P4.* designed probes, N4.FN.Typo.* and N4.FN.Family.* first-name dictionary rows, N4.LN.Var.* surname respelling rows, Holdout4.*, Holdout5.*, Holdout6.* held-out rows
+two-item rule: P4.MULTI.NameCity uses one matching rule with a CompanyName item on Name and a City item on BillingCity; its values are "name|city"

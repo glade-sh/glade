@@ -23,18 +23,21 @@ import (
 // SemanticABI identifies the behavior of semantic diagnostics, inference,
 // visibility, and exported types. Any change to those behaviors must bump this
 // value so persisted semantic results fail closed.
-const SemanticABI = "sema-v83"
+const SemanticABI = "sema-v94"
 
 // PlatformABI identifies the built-in Salesforce platform model consumed by
 // semantic analysis. Changes to built-in signatures, aliases, or visibility
 // must bump this value so persisted semantic results fail closed.
-const PlatformABI = "salesforce-platform-v64"
+const PlatformABI = "salesforce-platform-v74"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
 	Summary     Summary                  `json:"summary"`
 	Diagnostics []diagnostic.Diagnostic  `json:"diagnostics,omitempty"`
 	Types       map[string]TypeReference `json:"types,omitempty"`
+	// ReceiverTriviaDiagnostic identifies the captured anonymous parser error
+	// whose source position is available to the Tooling and SOAP routes.
+	ReceiverTriviaDiagnostic bool `json:"-"`
 }
 
 type Summary struct {
@@ -73,6 +76,10 @@ type Analyzer struct {
 	visualforcePageNames          map[string]bool
 	visualforcePagesKnown         bool
 	sources                       *semaSources
+	// typeMemberState is the member model the last diagnostic analysis built.
+	// A caller that runs a later pass over the same index reads it instead of
+	// building another.
+	typeMemberState *semaTypeMemberState
 }
 
 type AnalyzeOptions struct {
@@ -186,11 +193,20 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 }
 
 func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, recorder *perfRecorder) (result Result) {
+	return a.analyzeWithOptionsIncremental(index, opts, recorder, nil)
+}
+
+// analyzeWithOptionsIncremental is analyzeWithOptions with an optional
+// incremental run. A nil run is the plain analysis.
+func (a *Analyzer) analyzeWithOptionsIncremental(index typesys.Index, opts AnalyzeOptions, recorder *perfRecorder, incr *incrementalRun) (result Result) {
 	a.prepareAnalysisContext(index, opts, recorder)
 	enrichmentStarted := recorder.beginPhase()
 	index = prepareAnalysisIndexWithSources(index, a.sources)
 	if recorder != nil {
 		recorder.endPhase(&recorder.counters.SourceSchemaEnrichment, enrichmentStarted)
+	}
+	if incr != nil {
+		incr.begin(index, opts)
 	}
 	result = Result{
 		Project: index.Project,
@@ -218,8 +234,9 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 	if opts.Diagnostics {
 		result.Diagnostics = append(result.Diagnostics, sourceAPIVersionDiagnostics(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
+		a.typeMemberState = typeMemberState
+		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index, typeMemberState)...)
 		typeMemberView := typeMemberState.view()
 		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index, typeMemberView)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkSourceTypeContracts(index)...)
@@ -229,7 +246,12 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, checkAnnotationCatalog(index)...)
 		result.Diagnostics = append(result.Diagnostics, checkAnnotationContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, checkWebExposureContracts(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithView(index, typeMemberView, recorder)...)
+		if incr != nil {
+			result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesIncremental(index, typeMemberView, recorder, incr)...)
+			incr.armLaterPasses(typeMemberState)
+		} else {
+			result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithView(index, typeMemberView, recorder)...)
+		}
 		result.Diagnostics = append(result.Diagnostics, a.checkImplicitDefaultConstructors(index, typeMemberView)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggerBodiesWithView(index, typeMemberView, recorder)...)
 		if !opts.SuppressPerformanceDiagnostics {
@@ -244,7 +266,8 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		if recorder != nil {
 			recorder.endPhase(&recorder.counters.QuerySemantics, queryStarted)
 		}
-		result.Diagnostics = NativeLifecycleDiagnostics(index, result.Diagnostics)
+		result.Diagnostics = mergeReceiverNamedDiagnostics(result.Diagnostics, a.receiverNamedDiagnostics(index, typeMemberView))
+		result.Diagnostics = nativeLifecycleDiagnostics(index, result.Diagnostics, typeMemberState, a.sources)
 		if indexHasSourceBackedDependency(index) {
 			result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(index, result.Diagnostics, a, typeMemberView)
 		}
@@ -255,6 +278,9 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		Triggers:    len(index.Triggers),
 		Objects:     len(index.Objects),
 		Diagnostics: len(result.Diagnostics),
+	}
+	if incr != nil {
+		incr.finish()
 	}
 	if opts.ExportTypes {
 		exportStarted := recorder.beginPhase()
@@ -288,6 +314,7 @@ func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptio
 		perf = recorder[0]
 	}
 	a.sources = newSemaSourcesWithCaptured(opts.BuildArtifacts, opts.CapturedSource, perf)
+	a.typeMemberState = nil
 	if perf != nil && opts.BuildArtifacts != nil && opts.BuildArtifacts.Sources != nil {
 		stats := opts.BuildArtifacts.Sources.Stats()
 		perf.counters.WorkspacePhysicalReads = stats.PhysicalReadAttempts
@@ -319,11 +346,17 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 		if strings.TrimSpace(dep.Namespace) == "" {
 			continue
 		}
-		// Declaration establishes namespace openness even when its symbol
-		// index is unavailable. Loading symbols is a separate operation.
-		a.deps[normalizeName(dep.Namespace)] = true
-		if dep.Status != "loaded" {
-			a.opaqueDeps[normalizeName(dep.Namespace)] = true
+		// An unresolved sfdx alias is a package identifier, not evidence that
+		// it is an Apex namespace or that it owns any unqualified type.
+		// Loader-produced unresolved aliases carry a dependency diagnostic.
+		// Legacy callers can also provide a namespace-only DependencyInfo with
+		// status missing and no diagnostic; that is an explicit opaque namespace.
+		unresolvedAlias := dep.SourceRoot == "" && (dep.Status == "ambiguous" || (dep.Status == "missing" && len(dep.Diagnostics) != 0))
+		if !unresolvedAlias {
+			a.deps[normalizeName(dep.Namespace)] = true
+			if dep.Status != "loaded" {
+				a.opaqueDeps[normalizeName(dep.Namespace)] = true
+			}
 		}
 		if dep.Status == "loaded" {
 			a.addKnown(dep.Namespace, TypePlatform, dep.SourceRoot)
@@ -348,7 +381,7 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 			!strings.EqualFold(namespace, a.namespace) && namespace != "system" && namespace != "schema" {
 			a.deps[namespace] = true
 		}
-		if !typ.Dependency {
+		if !typ.Dependency || semaSameNamespaceSourceDependency(index, typ) {
 			addWorkspace(typ.Name, TypeApex, typ.File)
 		} else if typ.Namespace == "" {
 			addWorkspace(typ.Name, TypePlatform, typ.File)
@@ -364,6 +397,8 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 			if member.Kind == apexast.DeclarationClass || member.Kind == apexast.DeclarationInterface || member.Kind == apexast.DeclarationEnum {
 				if !typ.Dependency {
 					addWorkspace(member.Name, TypeApex, typ.File)
+				}
+				if !typ.Dependency || semaSameNamespaceSourceDependency(index, typ) {
 					addWorkspace(typ.Name+"."+member.Name, TypeApex, typ.File)
 				}
 				if typ.Namespace != "" {
@@ -382,7 +417,16 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 			a.known[key] = ref
 		}
 	}
-	for _, typ := range typesys.StandardPlatformSymbolView() {
+	view, excluded := typesys.StandardPlatformSymbolViewWithExcluded()
+	// Gated stub types the view leaves out stay known by qualified name.
+	// Their keys are distinct from every view key, so the order is free.
+	excluded.Each(func(_ int, namespace, name string, _ apexast.DeclarationKind) {
+		if namespace != "" {
+			name = namespace + "." + name
+		}
+		a.addKnown(name, TypePlatform, "<standard-platform>")
+	})
+	for _, typ := range view {
 		name := typ.Name
 		if typ.Namespace != "" {
 			name = typ.Namespace + "." + typ.Name
@@ -447,11 +491,105 @@ func downgradeSourceDependencySemanticDiagnostics(index typesys.Index, diagnosti
 		if dependencySourceTypeDiagnosticAuthoritative(index, out[i]) {
 			continue
 		}
+		// A complete source-backed package inventory in the local namespace proves its
+		// absent nested types, even when other dependency diagnostics are soft.
+		if ref, ok := strings.CutPrefix(out[i].NativeMessage, "Invalid type: "); ok &&
+			(out[i].Code == "GLADESEMA002" || out[i].Code == "GLADESEMA004" || out[i].Code == "GLADESEMA006") &&
+			(semaCompleteDependencyNestedMiss(a, model, ref) || semaBareSameNamespaceDependencyNestedMiss(index, a, model, ref)) {
+			continue
+		}
+		if ref, ok := strings.CutPrefix(out[i].NativeMessage, "Invalid type: "); ok && !index.Subset &&
+			(out[i].Code == "GLADESEMA002" || out[i].Code == "GLADESEMA004") {
+			closed := false
+			for _, typ := range index.Types {
+				if !typ.Dependency && typ.File == out[i].File && semaClosedSourceTypeMiss(a, model, typ.Name, ref) {
+					closed = true
+					break
+				}
+			}
+			if closed {
+				continue
+			}
+		}
+		if ref, ok := strings.CutPrefix(out[i].NativeMessage, "Variable does not exist: "); ok &&
+			out[i].Code == "GLADESEMA013" && (semaCompleteDependencyNestedMiss(a, model, ref) || semaForeignDependencyReceiverMiss(index, model, out[i], ref)) {
+			continue
+		}
+		// A loaded source dependency does not make unrelated, closed static
+		// receiver inventories incomplete. Named native controls reject both a
+		// missing outer and a missing member in this context at APIs 62 and 67.
+		if ref, ok := strings.CutPrefix(out[i].NativeMessage, "Variable does not exist: "); ok &&
+			semaClosedSourceStaticReceiverMiss(index, a, model, out[i], ref) {
+			continue
+		}
 		if strings.HasPrefix(out[i].Code, "GLADESEMA") || strings.HasPrefix(out[i].Code, "dependency_") {
 			out[i].Severity = diagnostic.Warning
 		}
 	}
 	return out
+}
+
+func semaClosedSourceStaticReceiverMiss(index typesys.Index, a *Analyzer, model *semaTypeMemberView, d diagnostic.Diagnostic, reference string) bool {
+	if index.Subset || (d.Code != "GLADESEMA013" && d.Code != "GLADESEMA021") {
+		return false
+	}
+	root, member, qualified := strings.Cut(reference, ".")
+	if !qualified || root == "" || member == "" || strings.Contains(member, ".") {
+		return false
+	}
+	for _, typ := range index.Types {
+		if typ.Dependency || typ.File != d.File {
+			continue
+		}
+		if d.Code == "GLADESEMA013" && a.qualifiedTypeMissRejected(typ.Name, reference, model, false) {
+			return true
+		}
+		if d.Code != "GLADESEMA021" || d.NativeMessage == d.Message {
+			continue
+		}
+		owner, known := model.lookupName(root)
+		if !known || owner.platform || owner.dependency || !model.state.base.completeSourceNestedTypes[normalizeName(owner.name)] || !semaSourceTypeInCallingScope(model, typ.Name, owner) {
+			continue
+		}
+		_, nested := model.lookupName(reference)
+		_, field := semaResolveFieldPath(model, owner.name, member)
+		if !nested && !field {
+			return true
+		}
+	}
+	return false
+}
+
+func semaForeignDependencyReceiverMiss(index typesys.Index, model *semaTypeMemberView, d diagnostic.Diagnostic, reference string) bool {
+	root, _, _ := strings.Cut(reference, ".")
+	members, known := model.lookupName(root)
+	if !known || !members.dependency || !members.receiverDependencySource {
+		return false
+	}
+	for _, typ := range index.Types {
+		if !typ.Dependency && typ.File == d.File && !semaDependencyAliasVisible(model, typ.Name, reference, members) {
+			return true
+		}
+	}
+	return false
+}
+
+// A nested declaration does not create a bare top-level type in a sibling
+// class. Only a complete index and a same-namespace source declaration prove
+// this local spelling boundary (namespace_same_dependency_visibility 12,15).
+func semaBareSameNamespaceDependencyNestedMiss(index typesys.Index, a *Analyzer, model *semaTypeMemberView, reference string) bool {
+	if index.Subset || reference == "" || strings.Contains(reference, ".") || a.hasKnown(reference) {
+		return false
+	}
+	if _, known := model.lookupName(reference); known {
+		return false
+	}
+	for _, typ := range index.Types {
+		if typ.NestingDepth > 0 && semaSameNamespaceSourceDependency(index, typ) && strings.EqualFold(shortNestedTypeName(typ.Name), reference) {
+			return true
+		}
+	}
+	return false
 }
 
 // A closed source namespace cannot borrow another namespace's type suffix.
@@ -1380,6 +1518,21 @@ func (s semaScopeModel) localInBlock(name string, start, end int) (semaLocal, bo
 }
 
 func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
+	known := semaAnyKnownFieldInView(model, name, false)
+	if model != nil && model.state != nil && model.state.unknownHistory != nil && !known {
+		model.state.unknownHistory.missing(name)
+	}
+	if model != nil && model.state != nil && model.state.historyProbe != nil {
+		if !known {
+			model.state.historyProbe.Store(true)
+		} else if model.state.historyUsed != nil && !semaAnyKnownFieldInView(model, name, true) {
+			model.state.historyUsed.Store(true)
+		}
+	}
+	return known
+}
+
+func semaAnyKnownFieldInView(model *semaTypeMemberView, name string, ignoreHydrated bool) bool {
 	key := normalizeName(name)
 	if model == nil || key == "" || strings.Contains(key, ".") {
 		return false
@@ -1392,9 +1545,11 @@ func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
 	if model.state == nil {
 		return false
 	}
-	for _, members := range model.hydrated {
-		if _, ok := members.fields[key]; ok {
-			return true
+	if !ignoreHydrated {
+		for _, members := range model.hydrated {
+			if _, ok := members.fields[key]; ok {
+				return true
+			}
 		}
 	}
 	if model.state.base == nil {
@@ -1510,8 +1665,32 @@ func newSemaBodyExpressionScan(body string) *semaBodyExpressionScan {
 	}
 }
 
+// semaAssignmentValueSpans identifies assignment right-hand sides without
+// confusing comparison operators or text inside comments and literals.
+func semaAssignmentValueSpans(body string, ignored *semaIgnoredText) []semaTextSpan {
+	var spans []semaTextSpan
+	for i := 0; i < len(body); i++ {
+		if body[i] != '=' || ignored.contains(i) || ignored.inParenGroup(i) {
+			continue
+		}
+		if i+1 < len(body) && (body[i+1] == '=' || body[i+1] == '>') {
+			continue
+		}
+		if i > 0 && strings.ContainsRune("=!<>", rune(body[i-1])) {
+			continue
+		}
+		end := semaStatementEnd(body, i+1)
+		spans = append(spans, semaTextSpan{lo: i + 1, hi: end})
+		i = end - 1
+	}
+	return spans
+}
+
 func findSemaLocalDeclMatches(body string) [][]int {
 	var matches [][]int
+	ignored := newSemaIgnoredText(body)
+	values := semaAssignmentValueSpans(body, ignored)
+	valueIndex := 0
 	for searchStart := 0; searchStart <= len(body); {
 		relative := localDeclPattern.FindStringSubmatchIndex(body[searchStart:])
 		if relative == nil {
@@ -1525,8 +1704,30 @@ func findSemaLocalDeclMatches(body string) [][]int {
 				match[i] = -1
 			}
 		}
+		for valueIndex < len(values) && match[2] >= values[valueIndex].hi {
+			valueIndex++
+		}
+		if valueIndex < len(values) && match[2] >= values[valueIndex].lo {
+			searchStart = values[valueIndex].hi
+			continue
+		}
+		if semaLocalDeclMatchInIgnoredText(ignored, match) {
+			// Do not let a declaration-shaped comment or literal consume a
+			// later real statement when seeking its initializer boundary.
+			next := match[1]
+			if next <= searchStart {
+				next = searchStart + 1
+			}
+			searchStart = next
+			continue
+		}
 		matches = append(matches, match)
 		next := match[1]
+		if last := match[1] - 1; last >= match[0] && body[last] == '=' {
+			// Initializers may span lines, comments, quoted text and nested
+			// expressions. Resume only at the statement boundary.
+			next = semaStatementEnd(body, match[1])
+		}
 		if last := match[1] - 1; last >= match[0] && (body[last] == ';' || body[last] == '\n') {
 			next = last
 		}
@@ -1654,10 +1855,10 @@ func (a *Analyzer) expressionTypeReferenceDiagnostics(typ typesys.TypeSymbol, me
 			continue
 		}
 		seen[key] = true
-		if !semaTypeReferenceKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
+		if !semaTypePositionKnownAtVersion(a, model, typ.Name, ref, typ.EffectiveAPIVersion) {
 			nativeMessage := ""
 			message := fmt.Sprintf("%s %q references unknown expression type %q", member.Kind, member.Name, ref)
-			if semaCrossNamespaceSourceMismatch(a, model, typ.Name, ref) || a.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref) {
+			if semaCrossNamespaceSourceMismatch(a, model, typ.Name, ref) || a.standardObjectAbsentFromDeclaredShape(model, typ.Name, ref) || a.qualifiedTypeMissRejected(typ.Name, ref, model, false) {
 				nativeMessage = "Invalid type: " + ref
 				message = nativeMessage
 			}
@@ -1764,19 +1965,25 @@ func semaExplicitPlatformStaticFieldPathMember(root, fieldPath string) (resolved
 		return resolvedMember{}, false
 	}
 	canonical := semaCanonicalPlatformAlias(root)
-	for _, symbol := range typesys.StandardPlatformSymbolView() {
+	var found resolvedMember
+	ok := false
+	typesys.VisitStandardPlatformSymbols(func(_, name string, _ apexast.DeclarationKind) bool {
+		return strings.EqualFold(name, canonical)
+	}, func(symbol *typesys.TypeSymbol) bool {
 		if !strings.EqualFold(symbol.Name, canonical) {
-			continue
+			return true
 		}
 		for _, member := range symbol.Members {
 			if member.Kind == apexast.DeclarationMethod || !hasModifier(member.Modifiers, "static") || !strings.EqualFold(member.Name, fieldPath) {
 				continue
 			}
 			member.Type = semaCanonicalPlatformAlias(member.Type)
-			return resolvedMember{owner: symbol.Name, member: member}, true
+			found, ok = resolvedMember{owner: symbol.Name, member: member}, true
+			return false
 		}
-	}
-	return resolvedMember{}, false
+		return true
+	})
+	return found, ok
 }
 
 func semaModelHasType(model *semaTypeMemberView, typeName string) bool {
@@ -1866,11 +2073,16 @@ func semaStandardPlatformEnumValue(typeName, valueName string) bool {
 }
 
 func semaStandardPlatformEnums() *semaStandardPlatformEnumIndex {
-	return semaStandardPlatformEnumCache.Get(func(view []typesys.TypeSymbol) *semaStandardPlatformEnumIndex {
+	return semaStandardPlatformEnumCache.GetWithExcluded(func(view []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) *semaStandardPlatformEnumIndex {
 		index := &semaStandardPlatformEnumIndex{types: map[string]string{}, values: map[string]map[string]bool{}}
-		for _, symbol := range view {
-			if symbol.Kind != apexast.DeclarationEnum {
-				continue
+		// Gated stub enums the view leaves out take their ungated place: a
+		// later enum of the same simple name still replaces an earlier one.
+		typesys.EachPlatformTypeName(view, excluded, func(_, _ string, kind apexast.DeclarationKind, symbol *typesys.TypeSymbol, excludedIndex int) {
+			if kind != apexast.DeclarationEnum {
+				return
+			}
+			if symbol == nil {
+				symbol = excluded.Symbol(excludedIndex)
 			}
 			typeKey := normalizeName(symbol.Name)
 			index.types[typeKey] = symbol.Name
@@ -1882,7 +2094,7 @@ func semaStandardPlatformEnums() *semaStandardPlatformEnumIndex {
 				values[normalizeName(member.Name)] = true
 			}
 			index.values[typeKey] = values
-		}
+		})
 		return index
 	})
 }
@@ -2537,7 +2749,7 @@ func semaGeneratedPlatformMethodSignature(model *semaTypeMemberView, receiverTyp
 	}
 	candidates := resolveMemberMethods(model, receiverType, method)
 	if semaKnownPlatformTypeReceiver(receiverType) && model != nil && model.state != nil && model.state.platform != nil && model.state.platform.platform != nil {
-		if platformSymbol, ok := model.state.platform.platform.symbolsByKey[normalizeName(receiverType)]; ok {
+		if platformSymbol, ok := model.state.platform.platform.symbolForKey(normalizeName(receiverType)); ok {
 			methodKey := normalizeName(method)
 			owner := semaTypeMembersName(*platformSymbol)
 			var platformCandidates []resolvedMember
@@ -3681,10 +3893,10 @@ func (a *Analyzer) exportKnownTypes() map[string]TypeReference {
 var (
 	typeIdentifierPattern          = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*`)
 	typeReferencePattern           = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*$`)
-	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:(?:final|transient)\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
-	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>|(?:\s*\[\s*\])+))([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
-	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:(?:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	lineLocalDeclPattern           = regexp.MustCompile(`(?m)^\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	wrappedLocalDeclPattern        = regexp.MustCompile(`(?m)^\s*(?:(?i:final|transient)\s+)?([A-Za-z_][^\n;=(){}]+)[ \t]*\r?\n\s+([A-Za-z_][A-Za-z0-9_]*)\s*=`)
+	noSpaceGenericLocalDeclPattern = regexp.MustCompile(`(?m)(?:^|[;\n])\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>|(?:\s*\[\s*\])+))([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
+	localDeclPattern               = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*(?:(?i:final|transient)\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:,|=|;)`)
 	enhancedForLocalPattern        = regexp.MustCompile(`(?im)\bfor\s*\(\s*(?:final\s+)?([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
 	forHeaderPattern               = regexp.MustCompile(`(?i)\bfor\s*\(`)
 	catchLocalPattern              = regexp.MustCompile(`(?im)\bcatch\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*\|\s*[A-Za-z_][A-Za-z0-9_.]*)*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)`)

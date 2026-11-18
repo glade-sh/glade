@@ -3,7 +3,6 @@ package visualforce
 import (
 	"errors"
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -53,15 +52,20 @@ func validateCustomComponentProject(p project.Project) error {
 
 func validateCustomComponentProjectWith(p project.Project, cache *loadCache) error {
 	v := customComponentValidation{definitions: map[string]customComponentDefinition{}, knownTypes: map[string]bool{}, namespace: p.Namespace}
-	for _, typ := range typesys.StandardPlatformSymbolView() {
+	view, excluded := typesys.StandardPlatformSymbolViewWithExcluded()
+	for _, typ := range view {
 		v.knownTypes[strings.ToLower(typ.Name)] = true
 	}
+	// Gated stub types the view leaves out keep their simple names.
+	excluded.Each(func(_ int, _, name string, _ apexast.DeclarationKind) {
+		v.knownTypes[strings.ToLower(name)] = true
+	})
 	// Native rows (vf_corpus_shapes) accept ApexPages.Action as an attribute type;
 	// the platform symbol view carries it only as a stub.
 	v.knownTypes["apexpages.action"] = true
 	for _, path := range p.VisualforceComponentFiles {
 		name := nameFromPath(path, ".component")
-		source, err := os.ReadFile(path)
+		source, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}
@@ -86,7 +90,7 @@ func validateCustomComponentProjectWith(p project.Project, cache *loadCache) err
 		add(path, "ApexComponent", v.definitionError(def, def.name, map[string]bool{}))
 	}
 	for _, path := range p.VisualforcePageFiles {
-		source, err := os.ReadFile(path)
+		source, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}

@@ -1,0 +1,521 @@
+api	repeat	source	class_or_trigger	test_method	num_lines_covered	num_lines_uncovered	covered_lines	uncovered_lines
+62.0	r1	aggregate	CovProps		13	1	2,6,8,11,15,17,21,23,30,31,32,33,34	26
+62.0	r1	aggregate	CovTernary		12	1	2,3,4,5,6,9,10,11,14,15,17,18	16
+62.0	r1	aggregate	CovFailingPath		3	0	2,3,4	
+62.0	r1	aggregate	CovStaticInit		5	0	2,7,8,11,12	
+62.0	r1	aggregate	CovEmpty		0	0		
+62.0	r1	aggregate	CovEarlyReturn		3	2	2,3,4	6,7
+62.0	r1	aggregate	CovTriggerHandler		6	0	2,4,5,6,7,8	
+62.0	r1	aggregate	CovTestVisible		6	0	3,4,8,9,12,13	
+62.0	r1	aggregate	CovSwitchEnum		9	0	4,5,6,7,8,10,11,14,17	
+62.0	r1	aggregate	CovMultiLine		13	0	2,3,4,5,6,7,10,11,12,13,14,15,16	
+62.0	r1	aggregate	CovShapes		7	6	22,23,26,27,35,36,37	10,11,14,15,30,31
+62.0	r1	aggregate	CovInner		14	0	5,6,9,10,17,18,21,22,26,27,28,31,32,33	
+62.0	r1	aggregate	CovTryCatch		6	2	2,3,4,5,9,11	6,7
+62.0	r1	aggregate	CovSwitchSObject		9	0	2,3,4,5,6,8,9,12,15	
+62.0	r1	aggregate	CovAccountTrigger		1	0	2	
+62.0	r1	per-test	CovStaticInit	switchEnumAll	1	4	11	2,7,8,12
+62.0	r1	per-test	CovEarlyReturn	earlyReturnOnly	3	2	2,3,4	6,7
+62.0	r1	per-test	CovEarlyReturn	staticInit	1	4	2	3,4,6,7
+62.0	r1	per-test	CovInner	staticInit	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovFailingPath	switchSObjectAll	1	2	2	3,4
+62.0	r1	per-test	CovSwitchEnum	ternaryBothBranches	1	8	4	5,6,7,8,10,11,14,17
+62.0	r1	per-test	CovFailingPath	tryCatchNoCatch	1	2	2	3,4
+62.0	r1	per-test	CovAccountTrigger	staticInit	0	1		2
+62.0	r1	per-test	CovTryCatch	tryCatchNoCatch	6	2	2,3,4,5,9,11	6,7
+62.0	r1	per-test	CovTernary	triggerHandler	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+62.0	r1	per-test	CovSwitchSObject	triggerHandler	1	8	2	3,4,5,6,8,9,12,15
+62.0	r1	per-test	CovAccountTrigger	ternaryMissOnly	0	1		2
+62.0	r1	per-test	CovSwitchEnum	switchSObjectAll	1	8	4	5,6,7,8,10,11,14,17
+62.0	r1	per-test	CovInner	properties	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovEarlyReturn	switchEnumAll	1	4	2	3,4,6,7
+62.0	r1	per-test	CovInner	switchSObjectAll	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovProps	triggerHandler	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovMultiLine	staticInit	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovProps	staticInit	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovEarlyReturn	innerClasses	1	4	2	3,4,6,7
+62.0	r1	per-test	CovMultiLine	switchEnumAll	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovTernary	tryCatchNoCatch	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+62.0	r1	per-test	CovSwitchEnum	triggerHandler	1	8	4	5,6,7,8,10,11,14,17
+62.0	r1	per-test	CovStaticInit	tryCatchNoCatch	1	4	11	2,7,8,12
+62.0	r1	per-test	CovProps	testVisibleMembers	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovMultiLine	triggerHandler	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovProps	shapes	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovMultiLine	testVisibleMembers	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovMultiLine	switchSObjectAll	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovAccountTrigger	switchEnumAll	0	1		2
+62.0	r1	per-test	CovTernary	ternaryMissOnly	6	7	2,9,14,15,17,18	3,4,5,6,10,11,16
+62.0	r1	per-test	CovSwitchEnum	ternaryMissOnly	1	8	4	5,6,7,8,10,11,14,17
+62.0	r1	per-test	CovFailingPath	staticInit	1	2	2	3,4
+62.0	r1	per-test	CovFailingPath	testVisibleMembers	1	2	2	3,4
+62.0	r1	per-test	CovInner	triggerHandler	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovEarlyReturn	switchSObjectAll	1	4	2	3,4,6,7
+62.0	r1	per-test	CovProps	ternaryMissOnly	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovFailingPath	triggerHandler	1	2	2	3,4
+62.0	r1	per-test	CovProps	tryCatchNoCatch	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovTernary	ternaryBothBranches	8	5	2,3,4,5,6,9,10,11	14,15,16,17,18
+62.0	r1	per-test	CovShapes	switchSObjectAll	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r1	per-test	CovFailingPath	innerClasses	1	2	2	3,4
+62.0	r1	per-test	CovEarlyReturn	failingPath	1	4	2	3,4,6,7
+62.0	r1	per-test	CovStaticInit	switchSObjectAll	1	4	11	2,7,8,12
+62.0	r1	per-test	CovSwitchSObject	ternaryMissOnly	1	8	2	3,4,5,6,8,9,12,15
+62.0	r1	per-test	CovAccountTrigger	properties	0	1		2
+62.0	r1	per-test	CovFailingPath	switchEnumAll	1	2	2	3,4
+62.0	r1	per-test	CovAccountTrigger	innerClasses	0	1		2
+62.0	r1	per-test	CovAccountTrigger	tryCatchNoCatch	0	1		2
+62.0	r1	per-test	CovEarlyReturn	ternaryMissOnly	1	4	2	3,4,6,7
+62.0	r1	per-test	CovInner	shapes	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovShapes	tryCatchNoCatch	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r1	per-test	CovShapes	ternaryBothBranches	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r1	per-test	CovInner	testVisibleMembers	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovEarlyReturn	triggerHandler	1	4	2	3,4,6,7
+62.0	r1	per-test	CovProps	ternaryBothBranches	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovEarlyReturn	testVisibleMembers	1	4	2	3,4,6,7
+62.0	r1	per-test	CovFailingPath	properties	1	2	2	3,4
+62.0	r1	per-test	CovStaticInit	testVisibleMembers	1	4	11	2,7,8,12
+62.0	r1	per-test	CovEarlyReturn	ternaryBothBranches	1	4	2	3,4,6,7
+62.0	r1	per-test	CovStaticInit	ternaryMissOnly	1	4	11	2,7,8,12
+62.0	r1	per-test	CovShapes	testVisibleMembers	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r1	per-test	CovFailingPath	shapes	1	2	2	3,4
+62.0	r1	per-test	CovStaticInit	triggerHandler	1	4	11	2,7,8,12
+62.0	r1	per-test	CovSwitchEnum	testVisibleMembers	1	8	4	5,6,7,8,10,11,14,17
+62.0	r1	per-test	CovShapes	switchEnumAll	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r1	per-test	CovSwitchEnum	tryCatchNoCatch	1	8	4	5,6,7,8,10,11,14,17
+62.0	r1	per-test	CovMultiLine	ternaryMissOnly	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovMultiLine	multiLine	13	0	2,3,4,5,6,7,10,11,12,13,14,15,16	
+62.0	r1	per-test	CovMultiLine	tryCatchNoCatch	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovEarlyReturn	multiLine	1	4	2	3,4,6,7
+62.0	r1	per-test	CovAccountTrigger	shapes	0	1		2
+62.0	r1	per-test	CovInner	switchEnumAll	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovShapes	ternaryMissOnly	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r1	per-test	CovAccountTrigger	earlyReturnOnly	0	1		2
+62.0	r1	per-test	CovTestVisible	testVisibleMembers	6	0	3,4,8,9,12,13	
+62.0	r1	per-test	CovFailingPath	ternaryMissOnly	1	2	2	3,4
+62.0	r1	per-test	CovInner	innerClasses	14	0	5,6,9,10,17,18,21,22,26,27,28,31,32,33	
+62.0	r1	per-test	CovShapes	triggerHandler	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r1	per-test	CovShapes	staticInit	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r1	per-test	CovMultiLine	shapes	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovInner	tryCatchNoCatch	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovFailingPath	multiLine	1	2	2	3,4
+62.0	r1	per-test	CovInner	ternaryBothBranches	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovAccountTrigger	failingPath	0	1		2
+62.0	r1	per-test	CovAccountTrigger	switchSObjectAll	0	1		2
+62.0	r1	per-test	CovStaticInit	ternaryBothBranches	1	4	11	2,7,8,12
+62.0	r1	per-test	CovMultiLine	properties	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovFailingPath	failingPath	3	0	2,3,4	
+62.0	r1	per-test	CovEarlyReturn	properties	1	4	2	3,4,6,7
+62.0	r1	per-test	CovInner	ternaryMissOnly	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r1	per-test	CovEarlyReturn	shapes	1	4	2	3,4,6,7
+62.0	r1	per-test	CovAccountTrigger	ternaryBothBranches	0	1		2
+62.0	r1	per-test	CovTestVisible	triggerHandler	3	3	3,8,12	4,9,13
+62.0	r1	per-test	CovTestVisible	tryCatchNoCatch	3	3	3,8,12	4,9,13
+62.0	r1	per-test	CovSwitchSObject	switchSObjectAll	9	0	2,3,4,5,6,8,9,12,15	
+62.0	r1	per-test	CovFailingPath	ternaryBothBranches	1	2	2	3,4
+62.0	r1	per-test	CovSwitchSObject	tryCatchNoCatch	1	8	2	3,4,5,6,8,9,12,15
+62.0	r1	per-test	CovProps	properties	13	1	2,6,8,11,15,17,21,23,30,31,32,33,34	26
+62.0	r1	per-test	CovSwitchSObject	testVisibleMembers	1	8	2	3,4,5,6,8,9,12,15
+62.0	r1	per-test	CovEarlyReturn	tryCatchNoCatch	1	4	2	3,4,6,7
+62.0	r1	per-test	CovAccountTrigger	triggerHandler	1	0	2	
+62.0	r1	per-test	CovTriggerHandler	triggerHandler	6	0	2,4,5,6,7,8	
+62.0	r1	per-test	CovAccountTrigger	testVisibleMembers	0	1		2
+62.0	r1	per-test	CovSwitchEnum	switchEnumAll	9	0	4,5,6,7,8,10,11,14,17	
+62.0	r1	per-test	CovProps	switchSObjectAll	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovTernary	testVisibleMembers	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+62.0	r1	per-test	CovTriggerHandler	tryCatchNoCatch	1	5	4	2,5,6,7,8
+62.0	r1	per-test	CovMultiLine	ternaryBothBranches	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r1	per-test	CovSwitchSObject	ternaryBothBranches	1	8	2	3,4,5,6,8,9,12,15
+62.0	r1	per-test	CovProps	switchEnumAll	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r1	per-test	CovShapes	shapes	7	6	22,23,26,27,35,36,37	10,11,14,15,30,31
+62.0	r1	per-test	CovStaticInit	staticInit	5	0	2,7,8,11,12	
+62.0	r1	per-test	CovAccountTrigger	multiLine	0	1		2
+62.0	r1	per-test	CovInner	multiLine	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	aggregate	CovProps		13	1	2,6,8,11,15,17,21,23,30,31,32,33,34	26
+62.0	r2	aggregate	CovTernary		12	1	2,3,4,5,6,9,10,11,14,15,17,18	16
+62.0	r2	aggregate	CovFailingPath		3	0	2,3,4	
+62.0	r2	aggregate	CovStaticInit		5	0	2,7,8,11,12	
+62.0	r2	aggregate	CovEmpty		0	0		
+62.0	r2	aggregate	CovEarlyReturn		3	2	2,3,4	6,7
+62.0	r2	aggregate	CovTriggerHandler		6	0	2,4,5,6,7,8	
+62.0	r2	aggregate	CovTestVisible		6	0	3,4,8,9,12,13	
+62.0	r2	aggregate	CovSwitchEnum		9	0	4,5,6,7,8,10,11,14,17	
+62.0	r2	aggregate	CovMultiLine		13	0	2,3,4,5,6,7,10,11,12,13,14,15,16	
+62.0	r2	aggregate	CovShapes		7	6	22,23,26,27,35,36,37	10,11,14,15,30,31
+62.0	r2	aggregate	CovInner		14	0	5,6,9,10,17,18,21,22,26,27,28,31,32,33	
+62.0	r2	aggregate	CovTryCatch		6	2	2,3,4,5,9,11	6,7
+62.0	r2	aggregate	CovSwitchSObject		9	0	2,3,4,5,6,8,9,12,15	
+62.0	r2	aggregate	CovAccountTrigger		1	0	2	
+62.0	r2	per-test	CovAccountTrigger	switchEnumAll	0	1		2
+62.0	r2	per-test	CovFailingPath	ternaryBothBranches	1	2	2	3,4
+62.0	r2	per-test	CovFailingPath	switchEnumAll	1	2	2	3,4
+62.0	r2	per-test	CovInner	ternaryMissOnly	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovInner	triggerHandler	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovInner	switchSObjectAll	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovMultiLine	switchSObjectAll	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovShapes	switchSObjectAll	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r2	per-test	CovTestVisible	triggerHandler	3	3	3,8,12	4,9,13
+62.0	r2	per-test	CovEarlyReturn	staticInit	1	4	2	3,4,6,7
+62.0	r2	per-test	CovFailingPath	failingPath	3	0	2,3,4	
+62.0	r2	per-test	CovProps	triggerHandler	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovEarlyReturn	triggerHandler	1	4	2	3,4,6,7
+62.0	r2	per-test	CovMultiLine	testVisibleMembers	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovTryCatch	tryCatchNoCatch	6	2	2,3,4,5,9,11	6,7
+62.0	r2	per-test	CovStaticInit	staticInit	5	0	2,7,8,11,12	
+62.0	r2	per-test	CovProps	properties	13	1	2,6,8,11,15,17,21,23,30,31,32,33,34	26
+62.0	r2	per-test	CovInner	ternaryBothBranches	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovAccountTrigger	failingPath	0	1		2
+62.0	r2	per-test	CovAccountTrigger	shapes	0	1		2
+62.0	r2	per-test	CovFailingPath	shapes	1	2	2	3,4
+62.0	r2	per-test	CovMultiLine	switchEnumAll	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovStaticInit	tryCatchNoCatch	1	4	11	2,7,8,12
+62.0	r2	per-test	CovAccountTrigger	properties	0	1		2
+62.0	r2	per-test	CovMultiLine	triggerHandler	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovShapes	tryCatchNoCatch	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r2	per-test	CovTestVisible	tryCatchNoCatch	3	3	3,8,12	4,9,13
+62.0	r2	per-test	CovShapes	staticInit	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r2	per-test	CovInner	switchEnumAll	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovTernary	triggerHandler	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+62.0	r2	per-test	CovProps	staticInit	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovTestVisible	testVisibleMembers	6	0	3,4,8,9,12,13	
+62.0	r2	per-test	CovSwitchEnum	ternaryMissOnly	1	8	4	5,6,7,8,10,11,14,17
+62.0	r2	per-test	CovInner	multiLine	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovMultiLine	properties	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovSwitchSObject	testVisibleMembers	1	8	2	3,4,5,6,8,9,12,15
+62.0	r2	per-test	CovInner	testVisibleMembers	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovMultiLine	shapes	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovInner	innerClasses	14	0	5,6,9,10,17,18,21,22,26,27,28,31,32,33	
+62.0	r2	per-test	CovFailingPath	properties	1	2	2	3,4
+62.0	r2	per-test	CovEarlyReturn	switchSObjectAll	1	4	2	3,4,6,7
+62.0	r2	per-test	CovEarlyReturn	multiLine	1	4	2	3,4,6,7
+62.0	r2	per-test	CovTernary	testVisibleMembers	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+62.0	r2	per-test	CovFailingPath	testVisibleMembers	1	2	2	3,4
+62.0	r2	per-test	CovAccountTrigger	testVisibleMembers	0	1		2
+62.0	r2	per-test	CovStaticInit	triggerHandler	1	4	11	2,7,8,12
+62.0	r2	per-test	CovTriggerHandler	tryCatchNoCatch	1	5	4	2,5,6,7,8
+62.0	r2	per-test	CovMultiLine	staticInit	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovProps	ternaryBothBranches	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovAccountTrigger	ternaryBothBranches	0	1		2
+62.0	r2	per-test	CovSwitchSObject	switchSObjectAll	9	0	2,3,4,5,6,8,9,12,15	
+62.0	r2	per-test	CovProps	shapes	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovShapes	ternaryBothBranches	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r2	per-test	CovMultiLine	ternaryBothBranches	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovEarlyReturn	switchEnumAll	1	4	2	3,4,6,7
+62.0	r2	per-test	CovShapes	ternaryMissOnly	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r2	per-test	CovTriggerHandler	triggerHandler	6	0	2,4,5,6,7,8	
+62.0	r2	per-test	CovFailingPath	switchSObjectAll	1	2	2	3,4
+62.0	r2	per-test	CovEarlyReturn	testVisibleMembers	1	4	2	3,4,6,7
+62.0	r2	per-test	CovAccountTrigger	ternaryMissOnly	0	1		2
+62.0	r2	per-test	CovProps	testVisibleMembers	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovFailingPath	tryCatchNoCatch	1	2	2	3,4
+62.0	r2	per-test	CovInner	tryCatchNoCatch	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovEarlyReturn	innerClasses	1	4	2	3,4,6,7
+62.0	r2	per-test	CovSwitchSObject	ternaryBothBranches	1	8	2	3,4,5,6,8,9,12,15
+62.0	r2	per-test	CovFailingPath	multiLine	1	2	2	3,4
+62.0	r2	per-test	CovStaticInit	testVisibleMembers	1	4	11	2,7,8,12
+62.0	r2	per-test	CovFailingPath	staticInit	1	2	2	3,4
+62.0	r2	per-test	CovTernary	tryCatchNoCatch	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+62.0	r2	per-test	CovShapes	switchEnumAll	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r2	per-test	CovFailingPath	innerClasses	1	2	2	3,4
+62.0	r2	per-test	CovEarlyReturn	earlyReturnOnly	3	2	2,3,4	6,7
+62.0	r2	per-test	CovSwitchSObject	ternaryMissOnly	1	8	2	3,4,5,6,8,9,12,15
+62.0	r2	per-test	CovMultiLine	ternaryMissOnly	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovStaticInit	switchSObjectAll	1	4	11	2,7,8,12
+62.0	r2	per-test	CovSwitchSObject	tryCatchNoCatch	1	8	2	3,4,5,6,8,9,12,15
+62.0	r2	per-test	CovSwitchEnum	switchSObjectAll	1	8	4	5,6,7,8,10,11,14,17
+62.0	r2	per-test	CovInner	shapes	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovStaticInit	ternaryBothBranches	1	4	11	2,7,8,12
+62.0	r2	per-test	CovSwitchEnum	ternaryBothBranches	1	8	4	5,6,7,8,10,11,14,17
+62.0	r2	per-test	CovEarlyReturn	failingPath	1	4	2	3,4,6,7
+62.0	r2	per-test	CovSwitchEnum	testVisibleMembers	1	8	4	5,6,7,8,10,11,14,17
+62.0	r2	per-test	CovShapes	triggerHandler	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r2	per-test	CovProps	tryCatchNoCatch	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovProps	switchSObjectAll	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovProps	ternaryMissOnly	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovAccountTrigger	multiLine	0	1		2
+62.0	r2	per-test	CovShapes	testVisibleMembers	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+62.0	r2	per-test	CovEarlyReturn	tryCatchNoCatch	1	4	2	3,4,6,7
+62.0	r2	per-test	CovMultiLine	tryCatchNoCatch	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+62.0	r2	per-test	CovAccountTrigger	earlyReturnOnly	0	1		2
+62.0	r2	per-test	CovSwitchEnum	triggerHandler	1	8	4	5,6,7,8,10,11,14,17
+62.0	r2	per-test	CovFailingPath	triggerHandler	1	2	2	3,4
+62.0	r2	per-test	CovInner	properties	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovAccountTrigger	triggerHandler	1	0	2	
+62.0	r2	per-test	CovEarlyReturn	properties	1	4	2	3,4,6,7
+62.0	r2	per-test	CovEarlyReturn	ternaryBothBranches	1	4	2	3,4,6,7
+62.0	r2	per-test	CovTernary	ternaryMissOnly	6	7	2,9,14,15,17,18	3,4,5,6,10,11,16
+62.0	r2	per-test	CovSwitchSObject	triggerHandler	1	8	2	3,4,5,6,8,9,12,15
+62.0	r2	per-test	CovProps	switchEnumAll	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+62.0	r2	per-test	CovInner	staticInit	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+62.0	r2	per-test	CovStaticInit	switchEnumAll	1	4	11	2,7,8,12
+62.0	r2	per-test	CovShapes	shapes	7	6	22,23,26,27,35,36,37	10,11,14,15,30,31
+62.0	r2	per-test	CovEarlyReturn	ternaryMissOnly	1	4	2	3,4,6,7
+62.0	r2	per-test	CovAccountTrigger	tryCatchNoCatch	0	1		2
+62.0	r2	per-test	CovMultiLine	multiLine	13	0	2,3,4,5,6,7,10,11,12,13,14,15,16	
+62.0	r2	per-test	CovSwitchEnum	tryCatchNoCatch	1	8	4	5,6,7,8,10,11,14,17
+62.0	r2	per-test	CovStaticInit	ternaryMissOnly	1	4	11	2,7,8,12
+62.0	r2	per-test	CovTernary	ternaryBothBranches	8	5	2,3,4,5,6,9,10,11	14,15,16,17,18
+62.0	r2	per-test	CovSwitchEnum	switchEnumAll	9	0	4,5,6,7,8,10,11,14,17	
+62.0	r2	per-test	CovAccountTrigger	switchSObjectAll	0	1		2
+62.0	r2	per-test	CovFailingPath	ternaryMissOnly	1	2	2	3,4
+62.0	r2	per-test	CovAccountTrigger	staticInit	0	1		2
+62.0	r2	per-test	CovEarlyReturn	shapes	1	4	2	3,4,6,7
+62.0	r2	per-test	CovAccountTrigger	innerClasses	0	1		2
+67.0	r1	aggregate	CovTryCatch		6	2	2,3,4,5,9,11	6,7
+67.0	r1	aggregate	CovTestVisible		6	0	3,4,8,9,12,13	
+67.0	r1	aggregate	CovFailingPath		3	0	2,3,4	
+67.0	r1	aggregate	CovEmpty		0	0		
+67.0	r1	aggregate	CovSwitchSObject		9	0	2,3,4,5,6,8,9,12,15	
+67.0	r1	aggregate	CovTriggerHandler		6	0	2,4,5,6,7,8	
+67.0	r1	aggregate	CovSwitchEnum		9	0	4,5,6,7,8,10,11,14,17	
+67.0	r1	aggregate	CovEarlyReturn		3	2	2,3,4	6,7
+67.0	r1	aggregate	CovTernary		12	1	2,3,4,5,6,9,10,11,14,15,17,18	16
+67.0	r1	aggregate	CovStaticInit		5	0	2,7,8,11,12	
+67.0	r1	aggregate	CovInner		14	0	5,6,9,10,17,18,21,22,26,27,28,31,32,33	
+67.0	r1	aggregate	CovMultiLine		13	0	2,3,4,5,6,7,10,11,12,13,14,15,16	
+67.0	r1	aggregate	CovProps		13	1	2,6,8,11,15,17,21,23,30,31,32,33,34	26
+67.0	r1	aggregate	CovShapes		7	6	22,23,26,27,35,36,37	10,11,14,15,30,31
+67.0	r1	aggregate	CovAccountTrigger		1	0	2	
+67.0	r1	per-test	CovShapes	testVisibleMembers	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r1	per-test	CovFailingPath	triggerHandler	1	2	2	3,4
+67.0	r1	per-test	CovEarlyReturn	testVisibleMembers	1	4	2	3,4,6,7
+67.0	r1	per-test	CovMultiLine	triggerHandler	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovShapes	staticInit	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r1	per-test	CovSwitchEnum	triggerHandler	1	8	4	5,6,7,8,10,11,14,17
+67.0	r1	per-test	CovStaticInit	triggerHandler	1	4	11	2,7,8,12
+67.0	r1	per-test	CovProps	tryCatchNoCatch	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r1	per-test	CovProps	shapes	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r1	per-test	CovSwitchEnum	switchSObjectAll	1	8	4	5,6,7,8,10,11,14,17
+67.0	r1	per-test	CovInner	ternaryBothBranches	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovFailingPath	staticInit	1	2	2	3,4
+67.0	r1	per-test	CovTernary	testVisibleMembers	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+67.0	r1	per-test	CovAccountTrigger	staticInit	0	1		2
+67.0	r1	per-test	CovAccountTrigger	earlyReturnOnly	0	1		2
+67.0	r1	per-test	CovEarlyReturn	failingPath	1	4	2	3,4,6,7
+67.0	r1	per-test	CovProps	properties	13	1	2,6,8,11,15,17,21,23,30,31,32,33,34	26
+67.0	r1	per-test	CovEarlyReturn	staticInit	1	4	2	3,4,6,7
+67.0	r1	per-test	CovProps	switchSObjectAll	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r1	per-test	CovSwitchEnum	ternaryBothBranches	1	8	4	5,6,7,8,10,11,14,17
+67.0	r1	per-test	CovMultiLine	ternaryMissOnly	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovAccountTrigger	properties	0	1		2
+67.0	r1	per-test	CovShapes	ternaryBothBranches	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r1	per-test	CovInner	shapes	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovInner	staticInit	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovFailingPath	innerClasses	1	2	2	3,4
+67.0	r1	per-test	CovShapes	switchEnumAll	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r1	per-test	CovEarlyReturn	earlyReturnOnly	3	2	2,3,4	6,7
+67.0	r1	per-test	CovSwitchEnum	ternaryMissOnly	1	8	4	5,6,7,8,10,11,14,17
+67.0	r1	per-test	CovTestVisible	triggerHandler	3	3	3,8,12	4,9,13
+67.0	r1	per-test	CovMultiLine	tryCatchNoCatch	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovInner	switchSObjectAll	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovEarlyReturn	ternaryMissOnly	1	4	2	3,4,6,7
+67.0	r1	per-test	CovTriggerHandler	tryCatchNoCatch	1	5	4	2,5,6,7,8
+67.0	r1	per-test	CovStaticInit	switchSObjectAll	1	4	11	2,7,8,12
+67.0	r1	per-test	CovSwitchEnum	tryCatchNoCatch	1	8	4	5,6,7,8,10,11,14,17
+67.0	r1	per-test	CovStaticInit	tryCatchNoCatch	1	4	11	2,7,8,12
+67.0	r1	per-test	CovAccountTrigger	ternaryBothBranches	0	1		2
+67.0	r1	per-test	CovEarlyReturn	innerClasses	1	4	2	3,4,6,7
+67.0	r1	per-test	CovInner	switchEnumAll	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovAccountTrigger	ternaryMissOnly	0	1		2
+67.0	r1	per-test	CovTryCatch	tryCatchNoCatch	6	2	2,3,4,5,9,11	6,7
+67.0	r1	per-test	CovFailingPath	failingPath	3	0	2,3,4	
+67.0	r1	per-test	CovInner	tryCatchNoCatch	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovShapes	triggerHandler	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r1	per-test	CovEarlyReturn	properties	1	4	2	3,4,6,7
+67.0	r1	per-test	CovShapes	ternaryMissOnly	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r1	per-test	CovFailingPath	switchSObjectAll	1	2	2	3,4
+67.0	r1	per-test	CovSwitchEnum	testVisibleMembers	1	8	4	5,6,7,8,10,11,14,17
+67.0	r1	per-test	CovMultiLine	properties	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovStaticInit	ternaryBothBranches	1	4	11	2,7,8,12
+67.0	r1	per-test	CovAccountTrigger	tryCatchNoCatch	0	1		2
+67.0	r1	per-test	CovShapes	tryCatchNoCatch	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r1	per-test	CovMultiLine	multiLine	13	0	2,3,4,5,6,7,10,11,12,13,14,15,16	
+67.0	r1	per-test	CovSwitchSObject	ternaryBothBranches	1	8	2	3,4,5,6,8,9,12,15
+67.0	r1	per-test	CovAccountTrigger	failingPath	0	1		2
+67.0	r1	per-test	CovAccountTrigger	multiLine	0	1		2
+67.0	r1	per-test	CovShapes	switchSObjectAll	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r1	per-test	CovEarlyReturn	shapes	1	4	2	3,4,6,7
+67.0	r1	per-test	CovAccountTrigger	innerClasses	0	1		2
+67.0	r1	per-test	CovMultiLine	testVisibleMembers	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovTernary	triggerHandler	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+67.0	r1	per-test	CovMultiLine	switchEnumAll	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovEarlyReturn	multiLine	1	4	2	3,4,6,7
+67.0	r1	per-test	CovEarlyReturn	switchSObjectAll	1	4	2	3,4,6,7
+67.0	r1	per-test	CovSwitchSObject	switchSObjectAll	9	0	2,3,4,5,6,8,9,12,15	
+67.0	r1	per-test	CovFailingPath	tryCatchNoCatch	1	2	2	3,4
+67.0	r1	per-test	CovEarlyReturn	switchEnumAll	1	4	2	3,4,6,7
+67.0	r1	per-test	CovEarlyReturn	ternaryBothBranches	1	4	2	3,4,6,7
+67.0	r1	per-test	CovAccountTrigger	switchSObjectAll	0	1		2
+67.0	r1	per-test	CovStaticInit	ternaryMissOnly	1	4	11	2,7,8,12
+67.0	r1	per-test	CovStaticInit	testVisibleMembers	1	4	11	2,7,8,12
+67.0	r1	per-test	CovFailingPath	multiLine	1	2	2	3,4
+67.0	r1	per-test	CovSwitchSObject	testVisibleMembers	1	8	2	3,4,5,6,8,9,12,15
+67.0	r1	per-test	CovFailingPath	testVisibleMembers	1	2	2	3,4
+67.0	r1	per-test	CovStaticInit	switchEnumAll	1	4	11	2,7,8,12
+67.0	r1	per-test	CovAccountTrigger	testVisibleMembers	0	1		2
+67.0	r1	per-test	CovFailingPath	properties	1	2	2	3,4
+67.0	r1	per-test	CovFailingPath	ternaryMissOnly	1	2	2	3,4
+67.0	r1	per-test	CovProps	ternaryMissOnly	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r1	per-test	CovMultiLine	ternaryBothBranches	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovProps	triggerHandler	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r1	per-test	CovMultiLine	shapes	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovTestVisible	testVisibleMembers	6	0	3,4,8,9,12,13	
+67.0	r1	per-test	CovTernary	ternaryMissOnly	6	7	2,9,14,15,17,18	3,4,5,6,10,11,16
+67.0	r1	per-test	CovFailingPath	ternaryBothBranches	1	2	2	3,4
+67.0	r1	per-test	CovSwitchSObject	ternaryMissOnly	1	8	2	3,4,5,6,8,9,12,15
+67.0	r1	per-test	CovAccountTrigger	switchEnumAll	0	1		2
+67.0	r1	per-test	CovShapes	shapes	7	6	22,23,26,27,35,36,37	10,11,14,15,30,31
+67.0	r1	per-test	CovEarlyReturn	tryCatchNoCatch	1	4	2	3,4,6,7
+67.0	r1	per-test	CovMultiLine	staticInit	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovProps	testVisibleMembers	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r1	per-test	CovInner	multiLine	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovInner	triggerHandler	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovInner	properties	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovAccountTrigger	triggerHandler	1	0	2	
+67.0	r1	per-test	CovFailingPath	switchEnumAll	1	2	2	3,4
+67.0	r1	per-test	CovProps	staticInit	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r1	per-test	CovInner	ternaryMissOnly	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovSwitchSObject	triggerHandler	1	8	2	3,4,5,6,8,9,12,15
+67.0	r1	per-test	CovTestVisible	tryCatchNoCatch	3	3	3,8,12	4,9,13
+67.0	r1	per-test	CovAccountTrigger	shapes	0	1		2
+67.0	r1	per-test	CovInner	testVisibleMembers	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r1	per-test	CovTernary	tryCatchNoCatch	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+67.0	r1	per-test	CovFailingPath	shapes	1	2	2	3,4
+67.0	r1	per-test	CovProps	ternaryBothBranches	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r1	per-test	CovTriggerHandler	triggerHandler	6	0	2,4,5,6,7,8	
+67.0	r1	per-test	CovMultiLine	switchSObjectAll	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r1	per-test	CovSwitchSObject	tryCatchNoCatch	1	8	2	3,4,5,6,8,9,12,15
+67.0	r1	per-test	CovSwitchEnum	switchEnumAll	9	0	4,5,6,7,8,10,11,14,17	
+67.0	r1	per-test	CovEarlyReturn	triggerHandler	1	4	2	3,4,6,7
+67.0	r1	per-test	CovStaticInit	staticInit	5	0	2,7,8,11,12	
+67.0	r1	per-test	CovTernary	ternaryBothBranches	8	5	2,3,4,5,6,9,10,11	14,15,16,17,18
+67.0	r1	per-test	CovInner	innerClasses	14	0	5,6,9,10,17,18,21,22,26,27,28,31,32,33	
+67.0	r1	per-test	CovProps	switchEnumAll	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	aggregate	CovTryCatch		6	2	2,3,4,5,9,11	6,7
+67.0	r2	aggregate	CovTestVisible		6	0	3,4,8,9,12,13	
+67.0	r2	aggregate	CovFailingPath		3	0	2,3,4	
+67.0	r2	aggregate	CovEmpty		0	0		
+67.0	r2	aggregate	CovSwitchSObject		9	0	2,3,4,5,6,8,9,12,15	
+67.0	r2	aggregate	CovTriggerHandler		6	0	2,4,5,6,7,8	
+67.0	r2	aggregate	CovSwitchEnum		9	0	4,5,6,7,8,10,11,14,17	
+67.0	r2	aggregate	CovEarlyReturn		3	2	2,3,4	6,7
+67.0	r2	aggregate	CovTernary		12	1	2,3,4,5,6,9,10,11,14,15,17,18	16
+67.0	r2	aggregate	CovStaticInit		5	0	2,7,8,11,12	
+67.0	r2	aggregate	CovInner		14	0	5,6,9,10,17,18,21,22,26,27,28,31,32,33	
+67.0	r2	aggregate	CovMultiLine		13	0	2,3,4,5,6,7,10,11,12,13,14,15,16	
+67.0	r2	aggregate	CovProps		13	1	2,6,8,11,15,17,21,23,30,31,32,33,34	26
+67.0	r2	aggregate	CovShapes		7	6	22,23,26,27,35,36,37	10,11,14,15,30,31
+67.0	r2	aggregate	CovAccountTrigger		1	0	2	
+67.0	r2	per-test	CovMultiLine	switchEnumAll	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovEarlyReturn	innerClasses	1	4	2	3,4,6,7
+67.0	r2	per-test	CovSwitchEnum	switchSObjectAll	1	8	4	5,6,7,8,10,11,14,17
+67.0	r2	per-test	CovMultiLine	properties	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovSwitchEnum	testVisibleMembers	1	8	4	5,6,7,8,10,11,14,17
+67.0	r2	per-test	CovFailingPath	switchSObjectAll	1	2	2	3,4
+67.0	r2	per-test	CovProps	testVisibleMembers	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovAccountTrigger	switchSObjectAll	0	1		2
+67.0	r2	per-test	CovFailingPath	ternaryBothBranches	1	2	2	3,4
+67.0	r2	per-test	CovMultiLine	testVisibleMembers	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovAccountTrigger	ternaryBothBranches	0	1		2
+67.0	r2	per-test	CovShapes	triggerHandler	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r2	per-test	CovShapes	shapes	7	6	22,23,26,27,35,36,37	10,11,14,15,30,31
+67.0	r2	per-test	CovShapes	staticInit	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r2	per-test	CovSwitchEnum	triggerHandler	1	8	4	5,6,7,8,10,11,14,17
+67.0	r2	per-test	CovFailingPath	innerClasses	1	2	2	3,4
+67.0	r2	per-test	CovMultiLine	shapes	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovProps	switchEnumAll	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovTestVisible	triggerHandler	3	3	3,8,12	4,9,13
+67.0	r2	per-test	CovMultiLine	ternaryBothBranches	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovInner	triggerHandler	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovProps	shapes	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovTernary	ternaryMissOnly	6	7	2,9,14,15,17,18	3,4,5,6,10,11,16
+67.0	r2	per-test	CovSwitchSObject	testVisibleMembers	1	8	2	3,4,5,6,8,9,12,15
+67.0	r2	per-test	CovStaticInit	tryCatchNoCatch	1	4	11	2,7,8,12
+67.0	r2	per-test	CovMultiLine	tryCatchNoCatch	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovAccountTrigger	failingPath	0	1		2
+67.0	r2	per-test	CovShapes	testVisibleMembers	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r2	per-test	CovAccountTrigger	shapes	0	1		2
+67.0	r2	per-test	CovSwitchSObject	tryCatchNoCatch	1	8	2	3,4,5,6,8,9,12,15
+67.0	r2	per-test	CovInner	staticInit	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovAccountTrigger	triggerHandler	1	0	2	
+67.0	r2	per-test	CovAccountTrigger	tryCatchNoCatch	0	1		2
+67.0	r2	per-test	CovSwitchEnum	tryCatchNoCatch	1	8	4	5,6,7,8,10,11,14,17
+67.0	r2	per-test	CovEarlyReturn	tryCatchNoCatch	1	4	2	3,4,6,7
+67.0	r2	per-test	CovEarlyReturn	switchEnumAll	1	4	2	3,4,6,7
+67.0	r2	per-test	CovAccountTrigger	testVisibleMembers	0	1		2
+67.0	r2	per-test	CovFailingPath	multiLine	1	2	2	3,4
+67.0	r2	per-test	CovShapes	tryCatchNoCatch	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r2	per-test	CovTernary	triggerHandler	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+67.0	r2	per-test	CovTryCatch	tryCatchNoCatch	6	2	2,3,4,5,9,11	6,7
+67.0	r2	per-test	CovInner	tryCatchNoCatch	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovStaticInit	switchEnumAll	1	4	11	2,7,8,12
+67.0	r2	per-test	CovSwitchEnum	ternaryBothBranches	1	8	4	5,6,7,8,10,11,14,17
+67.0	r2	per-test	CovShapes	ternaryMissOnly	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r2	per-test	CovEarlyReturn	multiLine	1	4	2	3,4,6,7
+67.0	r2	per-test	CovMultiLine	triggerHandler	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovFailingPath	tryCatchNoCatch	1	2	2	3,4
+67.0	r2	per-test	CovEarlyReturn	earlyReturnOnly	3	2	2,3,4	6,7
+67.0	r2	per-test	CovEarlyReturn	shapes	1	4	2	3,4,6,7
+67.0	r2	per-test	CovAccountTrigger	ternaryMissOnly	0	1		2
+67.0	r2	per-test	CovTestVisible	testVisibleMembers	6	0	3,4,8,9,12,13	
+67.0	r2	per-test	CovAccountTrigger	switchEnumAll	0	1		2
+67.0	r2	per-test	CovTestVisible	tryCatchNoCatch	3	3	3,8,12	4,9,13
+67.0	r2	per-test	CovStaticInit	staticInit	5	0	2,7,8,11,12	
+67.0	r2	per-test	CovInner	ternaryBothBranches	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovStaticInit	triggerHandler	1	4	11	2,7,8,12
+67.0	r2	per-test	CovTernary	tryCatchNoCatch	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18
+67.0	r2	per-test	CovEarlyReturn	switchSObjectAll	1	4	2	3,4,6,7
+67.0	r2	per-test	CovSwitchSObject	ternaryBothBranches	1	8	2	3,4,5,6,8,9,12,15
+67.0	r2	per-test	CovProps	properties	13	1	2,6,8,11,15,17,21,23,30,31,32,33,34	26
+67.0	r2	per-test	CovFailingPath	triggerHandler	1	2	2	3,4
+67.0	r2	per-test	CovAccountTrigger	earlyReturnOnly	0	1		2
+67.0	r2	per-test	CovStaticInit	ternaryBothBranches	1	4	11	2,7,8,12
+67.0	r2	per-test	CovSwitchSObject	switchSObjectAll	9	0	2,3,4,5,6,8,9,12,15	
+67.0	r2	per-test	CovTriggerHandler	triggerHandler	6	0	2,4,5,6,7,8	
+67.0	r2	per-test	CovMultiLine	ternaryMissOnly	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovFailingPath	switchEnumAll	1	2	2	3,4
+67.0	r2	per-test	CovProps	ternaryBothBranches	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovEarlyReturn	ternaryBothBranches	1	4	2	3,4,6,7
+67.0	r2	per-test	CovInner	properties	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovFailingPath	staticInit	1	2	2	3,4
+67.0	r2	per-test	CovEarlyReturn	testVisibleMembers	1	4	2	3,4,6,7
+67.0	r2	per-test	CovShapes	switchSObjectAll	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r2	per-test	CovFailingPath	shapes	1	2	2	3,4
+67.0	r2	per-test	CovInner	switchEnumAll	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovSwitchEnum	ternaryMissOnly	1	8	4	5,6,7,8,10,11,14,17
+67.0	r2	per-test	CovMultiLine	switchSObjectAll	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovInner	shapes	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovFailingPath	ternaryMissOnly	1	2	2	3,4
+67.0	r2	per-test	CovEarlyReturn	failingPath	1	4	2	3,4,6,7
+67.0	r2	per-test	CovProps	triggerHandler	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovTriggerHandler	tryCatchNoCatch	1	5	4	2,5,6,7,8
+67.0	r2	per-test	CovAccountTrigger	innerClasses	0	1		2
+67.0	r2	per-test	CovInner	switchSObjectAll	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovProps	staticInit	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovFailingPath	properties	1	2	2	3,4
+67.0	r2	per-test	CovAccountTrigger	multiLine	0	1		2
+67.0	r2	per-test	CovSwitchSObject	ternaryMissOnly	1	8	2	3,4,5,6,8,9,12,15
+67.0	r2	per-test	CovFailingPath	failingPath	3	0	2,3,4	
+67.0	r2	per-test	CovEarlyReturn	triggerHandler	1	4	2	3,4,6,7
+67.0	r2	per-test	CovShapes	switchEnumAll	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r2	per-test	CovStaticInit	testVisibleMembers	1	4	11	2,7,8,12
+67.0	r2	per-test	CovEarlyReturn	properties	1	4	2	3,4,6,7
+67.0	r2	per-test	CovMultiLine	multiLine	13	0	2,3,4,5,6,7,10,11,12,13,14,15,16	
+67.0	r2	per-test	CovEarlyReturn	ternaryMissOnly	1	4	2	3,4,6,7
+67.0	r2	per-test	CovTernary	ternaryBothBranches	8	5	2,3,4,5,6,9,10,11	14,15,16,17,18
+67.0	r2	per-test	CovMultiLine	staticInit	2	11	2,10	3,4,5,6,7,11,12,13,14,15,16
+67.0	r2	per-test	CovFailingPath	testVisibleMembers	1	2	2	3,4
+67.0	r2	per-test	CovStaticInit	switchSObjectAll	1	4	11	2,7,8,12
+67.0	r2	per-test	CovSwitchEnum	switchEnumAll	9	0	4,5,6,7,8,10,11,14,17	
+67.0	r2	per-test	CovEarlyReturn	staticInit	1	4	2	3,4,6,7
+67.0	r2	per-test	CovInner	innerClasses	14	0	5,6,9,10,17,18,21,22,26,27,28,31,32,33	
+67.0	r2	per-test	CovProps	ternaryMissOnly	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovProps	switchSObjectAll	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovShapes	ternaryBothBranches	3	10	22,26,35	10,11,14,15,23,27,30,31,36,37
+67.0	r2	per-test	CovInner	testVisibleMembers	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovProps	tryCatchNoCatch	5	9	2,6,15,21,30	8,11,17,23,26,31,32,33,34
+67.0	r2	per-test	CovStaticInit	ternaryMissOnly	1	4	11	2,7,8,12
+67.0	r2	per-test	CovSwitchSObject	triggerHandler	1	8	2	3,4,5,6,8,9,12,15
+67.0	r2	per-test	CovAccountTrigger	staticInit	0	1		2
+67.0	r2	per-test	CovInner	ternaryMissOnly	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovInner	multiLine	6	8	5,9,17,21,26,31	6,10,18,22,27,28,32,33
+67.0	r2	per-test	CovAccountTrigger	properties	0	1		2
+67.0	r2	per-test	CovTernary	testVisibleMembers	3	10	2,9,14	3,4,5,6,10,11,15,16,17,18

@@ -1,0 +1,23 @@
+api	method	observation
+62.0	NpA.n01_tab	ok n=0
+62.0	NpA.n02_class	ok n=0
+62.0	NpA.n03_user	ok n=0
+62.0	NpA.n04_object	ok n=0
+62.0	NpA.n05_double	ok n=0
+62.0	NpA.n06_access	ok n=0
+62.0	NpA.n07_runas	ok n=0
+62.0	NpA.n08_setup	ok n=0
+62.0	NpA.n09_rollback	ok n=0
+62.0	NpA.n10_other_query	ok n=0
+62.0	NpA.n11_inside_runas	inside=ok n=0
+67.0	NpA.n01_tab	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n02_class	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n03_user	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n04_object	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n05_double	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n06_access	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n07_runas	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n08_setup	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n09_rollback	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n10_other_query	System.QueryException No such column 'Probe_A__c' on entity 'A
+67.0	NpA.n11_inside_runas	inside=ok n=0

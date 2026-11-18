@@ -13,11 +13,12 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-// profileUserTypeProbe returns the Profile rows (P1) and the profile-owned
-// permission set rows (P2) of the native capture as Name|UserType pairs.
+// profileUserTypeProbe returns the Profile rows (P1) of the native capture as
+// Name|UserType|UserLicense.Name|UserLicense.LicenseDefinitionKey and the
+// profile-owned permission set rows (P2) as Profile.UserType.
 const profileUserTypeProbe = `List<String> p1 = new List<String>();
 for (Profile p : [SELECT Id, Name, UserType, UserLicenseId, UserLicense.Name, UserLicense.LicenseDefinitionKey FROM Profile ORDER BY Name]) {
-    p1.add(p.Name + '|' + p.UserType);
+    p1.add(p.Name + '|' + p.UserType + '|' + p.UserLicense.Name + '|' + p.UserLicense.LicenseDefinitionKey);
 }
 List<String> p2 = new List<String>();
 for (PermissionSet s : [SELECT Id, Name, ProfileId, Profile.UserType, IsOwnedByProfile FROM PermissionSet WHERE IsOwnedByProfile = true ORDER BY Name]) {
@@ -25,10 +26,10 @@ for (PermissionSet s : [SELECT Id, Name, ProfileId, Profile.UserType, IsOwnedByP
 }
 System.assert(false, 'OBS|' + JSON.serialize(new Map<String, Object>{'P1' => p1, 'P2' => p2}));`
 
-// TestProfileUserTypeNativeConformance compares Profile.UserType of the seeded
-// standard profiles with the fresh-org capture (Dot k2f6c90a3d18), anonymous and
-// @isTest at API 62.0 and 67.0. Glade also seeds a guest profile the fresh org
-// does not list; P1 compares the native profile names only.
+// TestProfileUserTypeNativeConformance compares the seeded standard profiles,
+// their UserType and their linked license (name and key), with the fresh-org
+// capture, anonymous and @isTest at API 62.0 and 67.0. The
+// profile inventory must match exactly: no profile the fresh org lacks.
 func TestProfileUserTypeNativeConformance(t *testing.T) {
 	f, err := os.Open(filepath.Join("testdata", "conformance", "profile_usertype", "org.tsv"))
 	if err != nil {
@@ -54,9 +55,10 @@ func TestProfileUserTypeNativeConformance(t *testing.T) {
 			continue
 		}
 		var record struct {
-			Name     string
-			UserType *string
-			Profile  *struct{ UserType *string }
+			Name        string
+			UserType    *string
+			UserLicense *struct{ Name, LicenseDefinitionKey string }
+			Profile     *struct{ UserType *string }
 		}
 		if err := json.Unmarshal([]byte(row[header["native_row_json"]]), &record); err != nil {
 			t.Fatal(err)
@@ -64,7 +66,7 @@ func TestProfileUserTypeNativeConformance(t *testing.T) {
 		k := key{row[header["api"]], row[header["route"]]}
 		switch row[header["probe"]] {
 		case "P1":
-			p1[k] = append(p1[k], record.Name+"|"+*record.UserType)
+			p1[k] = append(p1[k], record.Name+"|"+*record.UserType+"|"+record.UserLicense.Name+"|"+record.UserLicense.LicenseDefinitionKey)
 		case "P2":
 			p2[k] = append(p2[k], *record.Profile.UserType)
 		}
@@ -104,19 +106,24 @@ func TestProfileUserTypeNativeConformance(t *testing.T) {
 			if err := json.Unmarshal([]byte(payload), &got); err != nil {
 				t.Fatalf("invalid observation %q", message)
 			}
-			native := map[string]bool{}
-			for _, pair := range want {
-				name, _, _ := strings.Cut(pair, "|")
-				native[name] = true
-			}
-			var p1Got []string
-			for _, pair := range got.P1 {
-				if name, _, _ := strings.Cut(pair, "|"); native[name] {
-					p1Got = append(p1Got, pair)
+			// ORDER BY Name leaves same-name profiles (the two Authenticated
+			// Website rows) in an Id order Glade does not reproduce, so the
+			// name order is compared as listed and the rows as a set.
+			names := func(rows []string) []string {
+				out := make([]string, len(rows))
+				for i, row := range rows {
+					out[i], _, _ = strings.Cut(row, "|")
 				}
+				return out
 			}
-			if !reflect.DeepEqual(p1Got, want) {
-				t.Fatalf("P1 native=%q\nGlade=%q", want, p1Got)
+			if !reflect.DeepEqual(names(got.P1), names(want)) {
+				t.Fatalf("P1 names native=%q\nGlade=%q", names(want), names(got.P1))
+			}
+			p1Want := append([]string(nil), want...)
+			sort.Strings(p1Want)
+			sort.Strings(got.P1)
+			if !reflect.DeepEqual(got.P1, p1Want) {
+				t.Fatalf("P1 native=%q\nGlade=%q", p1Want, got.P1)
 			}
 			p2Want := append([]string(nil), p2[k]...)
 			sort.Strings(p2Want)

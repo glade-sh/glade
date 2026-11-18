@@ -14,24 +14,30 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-// assertOnlyLocalNamespaceRejections requires every error to be a local
+// assertOnlyLocalNamespaceRejections requires every error to be an
 // "Invalid type" rejection of one of want, and every one of want to reject.
+// Ruling 49: the rejection applies in every type position, not only locals.
 func assertOnlyLocalNamespaceRejections(t *testing.T, route string, ds []diagnostic.Diagnostic, want []string) {
 	t.Helper()
-	got := map[string]bool{}
+	got := map[string]map[string]bool{}
 	for _, d := range ds {
 		if d.Severity != diagnostic.Error {
 			continue
 		}
 		ref, ok := strings.CutPrefix(d.NativeMessage, "Invalid type: ")
-		if d.Code != "GLADESEMA006" || !ok || !slices.Contains(want, ref) {
+		if !ok || !slices.Contains(want, ref) || (d.Code != "GLADESEMA002" && d.Code != "GLADESEMA004" && d.Code != "GLADESEMA006") {
 			t.Errorf("%s: unexpected error %s %q | %q", route, d.Code, d.NativeMessage, d.Message)
 			continue
 		}
-		got[ref] = true
+		if got[ref] == nil {
+			got[ref] = map[string]bool{}
+		}
+		got[ref][d.Code] = true
 	}
-	if len(got) != len(want) {
-		t.Errorf("%s: rejected=%v, want %v", route, got, want)
+	for _, ref := range want {
+		if !got[ref]["GLADESEMA006"] {
+			t.Errorf("%s: %s missing GLADESEMA006: %v", route, ref, got[ref])
+		}
 	}
 }
 
@@ -64,15 +70,22 @@ func TestNamespaceAbsenceProofRoutes(t *testing.T) {
 				if index.HasErrors() {
 					t.Fatal(index.Diagnostics)
 				}
-				// v0.3.1 local-declaration rule (A04 C055/N010/N011): only local
-				// declarations of unresolved namespace types reject; the other
-				// positions in the fixture stay open. With fooNs declared,
-				// fooNs.X names the project class X.
+				// Ruling 49 (native namespace_external_positions): undeclared
+				// and own-namespace misses are Invalid type in every type
+				// position, including the extends and implements fixture
+				// classes. With fooNs declared, fooNs.X names the project class X.
 				want := []string{"bar.Wrapper", "bar.wrapper", "baz.Type", "fooNs.Unknown", "q.Type"}
 				if namespace != "fooNs" {
 					want = append(want, "fooNs.X")
 				}
-				assertOnlyLocalNamespaceRejections(t, "project", Analyze(index).Diagnostics, want)
+				projectWant := append([]string(nil), want...)
+				if namespace != "fooNs" {
+					projectWant = append(projectWant, "fooNs.X.Callback")
+				}
+				if namespace == "Account" {
+					projectWant = append(projectWant, "Account.Uncatalogued")
+				}
+				assertOnlyLocalNamespaceRejections(t, "project", Analyze(index).Diagnostics, projectWant)
 				source, err := os.ReadFile(filepath.Join(fixture, "anonymous.apex"))
 				if err != nil {
 					t.Fatal(err)
@@ -242,12 +255,9 @@ func TestNamespaceAbsenceProofTextExpressionFallback(t *testing.T) {
 		model := buildSemaTypeMemberView(index)
 		typ := typesys.TypeSymbol{Name: "Probe", EffectiveAPIVersion: api}
 		member := typesys.MemberSymbol{Name: "observe"}
-		for _, expr := range []string{"(q.Type) null", "null instanceof bar.wrapper", "true ? (q.Type) null : (bar.wrapper) null"} {
-			if ds := a.checkSemaExpressionTypeReferences(typ, member, expr, 0, expr, map[string]bool{}, model); len(ds) != 0 {
-				t.Errorf("fallback %s: %+v", expr, ds)
-			}
-		}
-		for _, expr := range []string{"(System.NotAType) null", "null instanceof Schema.Account.NotAThing"} {
+		// Ruling 49 (native namespace_external_positions A03/A04): a cast or
+		// instanceof of an undeclared namespace type is Invalid type too.
+		for _, expr := range []string{"(System.NotAType) null", "null instanceof Schema.Account.NotAThing", "(q.Type) null", "null instanceof bar.wrapper", "true ? (q.Type) null : (bar.wrapper) null"} {
 			if ds := a.checkSemaExpressionTypeReferences(typ, member, expr, 0, expr, map[string]bool{}, model); len(ds) == 0 {
 				t.Errorf("fallback closed control accepted: %s", expr)
 			}
@@ -534,8 +544,14 @@ func TestNamespaceAbsenceProofPartialFormulaCatalog(t *testing.T) {
                     }
                 }`,
 			})
-			if result := Analyze(index); result.HasErrors() {
-				t.Errorf("partial FormulaEval catalog proved absence: %+v", result.Diagnostics)
+			// The shared fixture's undeclared bar/fooNs references reject
+			// (ruling 49); only FormulaCatalogConsumer is under test here.
+			diagnostics := Analyze(index).Diagnostics
+			assertUndeclaredSharedFixtureDiagnostics(t, diagnostics, "FormulaCatalogConsumer.cls", "")
+			for _, d := range diagnostics {
+				if d.Severity == diagnostic.Error && filepath.Base(d.File) == "FormulaCatalogConsumer.cls" {
+					t.Errorf("partial FormulaEval catalog proved absence: %+v", d)
+				}
 			}
 			for _, reference := range []string{"FormulaEval.Uncatalogued", "FormulaEval.OtherUncatalogued", "FormulaEval.UncataloguedException"} {
 				if result := AnalyzeAnonymous(index, reference+" local = null;", api); result.HasErrors() {

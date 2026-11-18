@@ -1,0 +1,25 @@
+source_api	case	observation
+62.0	stmt_ctl	ok id=base
+62.0	stmt_ctl.state	n=1 name=changed text=null | newExt n=0
+62.0	dbDefault_ctl	ok created=false id=base
+62.0	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0
+62.0	dbFalse_ctl	ok created=false id=base
+62.0	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0
+62.0	dbUser_ctl	ok created=false id=base
+62.0	dbUser_ctl.state	n=1 name=changed text=null | newExt n=0
+62.0	dbFalseUser_ctl	ok created=false id=base
+62.0	dbFalseUser_ctl.state	n=1 name=changed text=null | newExt n=0
+62.0	stmtUser_ctl	ok id=base
+62.0	stmtUser_ctl.state	n=1 name=changed text=null | newExt n=0
+67.0	stmt_ctl	ok id=base
+67.0	stmt_ctl.state	n=1 name=changed text=null | newExt n=0
+67.0	dbDefault_ctl	ok created=false id=base
+67.0	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0
+67.0	dbFalse_ctl	ok created=false id=base
+67.0	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0
+67.0	dbUser_ctl	ok created=false id=base
+67.0	dbUser_ctl.state	n=1 name=changed text=null | newExt n=0
+67.0	dbFalseUser_ctl	ok created=false id=base
+67.0	dbFalseUser_ctl.state	n=1 name=changed text=null | newExt n=0
+67.0	stmtUser_ctl	ok id=base
+67.0	stmtUser_ctl.state	n=1 name=changed text=null | newExt n=0

@@ -20,7 +20,8 @@ func TestZeroFieldFlagsCoverEveryPointerScalar(t *testing.T) {
 		switch rt.Kind() {
 		case reflect.Pointer:
 			if elem := rt.Elem(); elem.Kind() <= reflect.Complex128 || elem.Kind() == reflect.String {
-				if !onStack[fieldType] {
+				// Label sources are restored by EmptyLabelSources.
+				if !onStack[fieldType] && path != "payload.Org.Metadata.Labels[].TranslationSourceRaw" {
 					outside = append(outside, path)
 				}
 				return

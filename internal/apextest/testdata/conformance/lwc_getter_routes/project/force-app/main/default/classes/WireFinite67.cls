@@ -1,0 +1,1 @@
+public class WireFinite67 { @AuraEnabled public Integer visits=0; @AuraEnabled public String value { get {visits++; if(visits==1){String ignored=helper();} return 'finite';} set; } public String helper(){return value;} }

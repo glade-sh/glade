@@ -1,0 +1,11 @@
+@IsTest
+public class Sp_l03_WhileLocalReadAfter {
+  static String outBuf = '';
+  
+  @IsTest static void t() {
+    Boolean c = true;
+    while (c) { Integer abc = 1; c = false; }
+    outBuf += 'OUT:' + String.valueOf(abc) + ';';
+    System.assert(false, outBuf);
+  }
+}

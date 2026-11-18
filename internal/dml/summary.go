@@ -11,6 +11,331 @@ import (
 
 var summaryCandidateBuilds atomic.Uint64
 
+// BeginSummaryHold freezes the roll-up values of the parents these child
+// records belong to, before the statement changes any child. Reads of those
+// roll-ups return the frozen values until ReleaseSummaryHold. Records may lack
+// the foreign key (a delete names only an Id), so the stored copies count too.
+func (e *Engine) BeginSummaryHold(records []storage.Record) {
+	if e == nil || e.Org == nil || e.summaryHold != nil || len(records) == 0 {
+		return
+	}
+	// Most statements touch an object with no roll-up over it. Decide that per
+	// object name, once, before collecting any records.
+	var relationsByObject map[string][]summaryRelation
+	last, lastRelations := "", []summaryRelation(nil)
+	for i, record := range records {
+		if i == 0 || record.Object != last {
+			canonical, ok := storage.ResolveObjectName(*e.Org, record.Object)
+			if !ok {
+				canonical = record.Object
+			}
+			last, lastRelations = record.Object, e.summaryRelationsForChild(canonical)
+			if len(lastRelations) > 0 {
+				if relationsByObject == nil {
+					relationsByObject = make(map[string][]summaryRelation)
+				}
+				relationsByObject[canonical] = lastRelations
+			}
+		}
+	}
+	if len(relationsByObject) == 0 {
+		return
+	}
+	var hold *storage.SummaryHold
+	var held []heldSummaryRelation
+	for child, relations := range relationsByObject {
+		var childRecords []storage.Record
+		for _, record := range records {
+			canonical, ok := storage.ResolveObjectName(*e.Org, record.Object)
+			if !ok {
+				canonical = record.Object
+			}
+			if canonical != child {
+				continue
+			}
+			childRecords = append(childRecords, record)
+			if record.ID != "" {
+				if _, stored, ok := storage.LookupRecordByID(e.Org.Objects[child].Records, record.ID); ok {
+					childRecords = append(childRecords, stored)
+				}
+			}
+		}
+		for _, relation := range relations {
+			parentObject, ok := e.Org.Objects[relation.parentObject]
+			if !ok {
+				continue
+			}
+			parentIDs := canonicalSummaryParentIDs(parentObject.Records, summaryParentIDs(childRecords, relation.fkFieldName))
+			values, ok := e.evaluateSummaryFieldBatch(relation, parentIDs)
+			if !ok {
+				continue
+			}
+			if hold == nil {
+				hold = &storage.SummaryHold{Values: make(map[string]storage.Value), Live: make(map[string]storage.Value)}
+			}
+			held = append(held, heldSummaryRelation{relation: relation, parentIDs: parentIDs})
+			for id, value := range values {
+				key := summaryHoldKey(relation.parentObject, id, relation.parentField)
+				hold.Live[key] = value
+				// An enclosing statement's contribution has not landed yet:
+				// this statement starts from the enclosing statement's value.
+				hold.Values[key] = e.outerHeldValue(key, value)
+			}
+		}
+	}
+	if hold != nil {
+		e.summaryHold = hold
+		e.summaryHoldRelations = held
+		e.Org.SummaryHolds = append(e.Org.SummaryHolds, hold)
+	}
+}
+
+// SuspendSummaryHold takes the hold out of effect without ending it, and
+// ResumeSummaryHold puts it back.
+func (e *Engine) SuspendSummaryHold() {
+	if e == nil || e.summaryHold == nil || e.summaryHoldSuspended || e.Org == nil {
+		return
+	}
+	for i, hold := range e.Org.SummaryHolds {
+		if hold == e.summaryHold {
+			e.Org.SummaryHolds = append(e.Org.SummaryHolds[:i:i], e.Org.SummaryHolds[i+1:]...)
+			e.summaryHoldSuspended = true
+			return
+		}
+	}
+}
+
+func (e *Engine) ResumeSummaryHold() {
+	if e == nil || e.summaryHold == nil || !e.summaryHoldSuspended || e.Org == nil {
+		return
+	}
+	e.Org.SummaryHolds = append(e.Org.SummaryHolds, e.summaryHold)
+	e.summaryHoldSuspended = false
+}
+
+// LandSummaryHold adds the stored children's own contribution to the held COUNT
+// and SUM values, for a group of an upsert whose change has landed before the
+// next group's triggers run. A MIN or MAX hold drops to the live value.
+func (e *Engine) LandSummaryHold(records []storage.Record) {
+	if e == nil || e.Org == nil || e.summaryHold == nil {
+		return
+	}
+	for _, record := range records {
+		child, ok := storage.ResolveObjectName(*e.Org, record.Object)
+		if !ok {
+			child = record.Object
+		}
+		state := e.Org.Objects[child]
+		_, stored, found := storage.LookupRecordByID(state.Records, record.ID)
+		if !found || stored.System.IsDeleted {
+			continue
+		}
+		for _, relation := range e.summaryRelationsForChild(child) {
+			parentIDs := canonicalSummaryParentIDs(e.Org.Objects[relation.parentObject].Records, summaryParentIDs([]storage.Record{stored}, relation.fkFieldName))
+			if !summaryFiltersMatch(e.Org, state.Definition, stored, relation.field.SummaryFilterItems) {
+				continue
+			}
+			op := strings.ToLower(strings.TrimSpace(relation.field.SummaryOperation))
+			var contribution storage.Value
+			switch op {
+			case "count":
+				contribution = storage.IntegerValue(1)
+			case "sum":
+				_, fieldName := splitSummaryQualifiedField(relation.field.SummarizedField)
+				resolved, ok := storage.ResolveFieldName(state.Definition, e.Org.Namespace, fieldName)
+				if !ok {
+					continue
+				}
+				value, ok := summaryRecordFieldValue(e.Org, state.Definition, stored, resolved)
+				if !ok {
+					continue
+				}
+				contribution = value
+			case "max", "min":
+				// A landed insert can only raise a MAX or lower a MIN
+				// (review_round6 m_none: the held MAX stays 10 when the
+				// inserted 7 lands).
+				_, fieldName := splitSummaryQualifiedField(relation.field.SummarizedField)
+				resolved, ok := storage.ResolveFieldName(state.Definition, e.Org.Namespace, fieldName)
+				value, vok := summaryRecordFieldValue(e.Org, state.Definition, stored, resolved)
+				for id := range parentIDs {
+					key := summaryHoldKey(relation.parentObject, id, relation.parentField)
+					current, in := e.summaryHold.Values[key]
+					if !in {
+						continue
+					}
+					c, ok1 := summaryNumericRat(current)
+					v, ok2 := summaryNumericRat(value)
+					if !ok || !vok || !ok1 || !ok2 || current.Kind == storage.ValueNull {
+						e.summaryHold.Drop(key)
+						continue
+					}
+					if (op == "max" && v.Cmp(c) > 0) || (op == "min" && v.Cmp(c) < 0) {
+						e.summaryHold.Values[key] = value
+					}
+				}
+				continue
+			default:
+				for id := range parentIDs {
+					e.summaryHold.Drop(summaryHoldKey(relation.parentObject, id, relation.parentField))
+				}
+				continue
+			}
+			for id := range parentIDs {
+				key := summaryHoldKey(relation.parentObject, id, relation.parentField)
+				current, in := e.summaryHold.Values[key]
+				if !in {
+					continue
+				}
+				if next, good := addSummaryDelta(current, storage.IntegerValue(0), contribution); good {
+					e.summaryHold.Values[key] = next
+				} else {
+					e.summaryHold.Drop(key)
+				}
+			}
+		}
+	}
+}
+
+// ReleaseSummaryHold ends the hold BeginSummaryHold started. It is safe to call
+// again, and after a rollback replaced the org.
+func (e *Engine) ReleaseSummaryHold() {
+	if e == nil || e.summaryHold == nil {
+		return
+	}
+	if e.Org != nil {
+		e.carrySummaryDeltaOut()
+		for i, hold := range e.Org.SummaryHolds {
+			if hold == e.summaryHold {
+				e.Org.SummaryHolds = append(e.Org.SummaryHolds[:i:i], e.Org.SummaryHolds[i+1:]...)
+				break
+			}
+		}
+	}
+	e.summaryRendered = nil
+	e.summaryRenderedOrder = nil
+	e.summaryHold = nil
+	e.summaryHoldRelations = nil
+	e.summaryHoldSuspended = false
+}
+
+type heldSummaryRelation struct {
+	relation  summaryRelation
+	parentIDs map[storage.ID]bool
+}
+
+// outerHeldValue is the value an enclosing statement's hold keeps for the key,
+// else the live value.
+func (e *Engine) outerHeldValue(key string, live storage.Value) storage.Value {
+	for i := len(e.Org.SummaryHolds) - 1; i >= 0; i-- {
+		if e.Org.SummaryHolds[i].Dropped[key] {
+			return live
+		}
+		if value, ok := e.Org.SummaryHolds[i].Values[key]; ok {
+			return value
+		}
+	}
+	return live
+}
+
+// carrySummaryDeltaOut adds what this statement changed in a roll-up to the
+// enclosing statements' held values (native rollup nested rows: the inner
+// statement's change lands, the enclosing statement's has not yet). A roll-up
+// that is not a COUNT or SUM drops its held value instead.
+func (e *Engine) carrySummaryDeltaOut() {
+	own := -1
+	for i, hold := range e.Org.SummaryHolds {
+		if hold == e.summaryHold {
+			own = i
+		}
+	}
+	if own <= 0 {
+		return
+	}
+	for _, held := range e.summaryHoldRelations {
+		now, ok := e.evaluateSummaryFieldBatch(held.relation, held.parentIDs)
+		for id := range held.parentIDs {
+			key := summaryHoldKey(held.relation.parentObject, id, held.relation.parentField)
+			before, had := e.summaryHold.Live[key]
+			// Only the nearest enclosing hold that keeps this roll-up takes the
+			// change; that statement's own release carries it further out.
+			for i := own - 1; i >= 0; i-- {
+				outer := e.Org.SummaryHolds[i]
+				current, in := outer.Values[key]
+				if !in || outer.Dropped[key] {
+					continue
+				}
+				op := strings.ToLower(strings.TrimSpace(held.relation.field.SummaryOperation))
+				// MIN and MAX read the live value after a nested statement
+				// (review_round3 n_sib*, n_del): the hold forgets the key and
+				// stops outer holds from answering for it.
+				if ok && had && outer.Upsert && (op == "max" || op == "min") && summaryValuesEqual(before, now[id]) {
+					// This statement left the extreme alone: the enclosing
+					// statement's held value stands (review_round6 m_nested).
+					break
+				}
+				if !ok || !had || (op != "count" && op != "sum") {
+					outer.Drop(key)
+					break
+				}
+				if next, good := addSummaryDelta(current, before, now[id]); good {
+					outer.Values[key] = next
+				} else {
+					outer.Drop(key)
+				}
+				break
+			}
+		}
+	}
+}
+
+func addSummaryDelta(current, before, now storage.Value) (storage.Value, bool) {
+	c, ok1 := summaryNumericRat(current)
+	b, ok2 := summaryNumericRat(before)
+	n, ok3 := summaryNumericRat(now)
+	if !ok1 || !ok2 || !ok3 || current.Kind == storage.ValueNull {
+		return storage.Value{}, false
+	}
+	sum := new(big.Rat).Add(c, new(big.Rat).Sub(n, b))
+	if current.Kind == storage.ValueInteger && sum.IsInt() {
+		return storage.IntegerValue(sum.Num().Int64()), true
+	}
+	scale := 0
+	if current.Kind == storage.ValueDecimal {
+		if point := strings.IndexByte(current.Decimal, '.'); point >= 0 {
+			scale = len(current.Decimal) - point - 1
+		}
+	}
+	return summaryValueAtScale(storage.DecimalValue(summaryDecimalString(sum)), scale), true
+}
+
+func summaryHoldKey(object string, id storage.ID, field string) string {
+	return strings.ToLower(object) + "\x00" + strings.ToLower(string(id)) + "\x00" + strings.ToLower(field)
+}
+
+// heldSummary returns the frozen value of a parent's roll-up, innermost
+// statement first.
+func (e *Engine) heldSummary(parent storage.Record, field storage.Field) (storage.Value, bool) {
+	object, ok := storage.ResolveObjectName(*e.Org, parent.Object)
+	if !ok {
+		object = parent.Object
+	}
+	id := parent.ID
+	if storedID, _, ok := storage.LookupRecordByID(e.Org.Objects[object].Records, id); ok {
+		id = storedID
+	}
+	key := summaryHoldKey(object, id, field.APIName)
+	for i := len(e.Org.SummaryHolds) - 1; i >= 0; i-- {
+		if e.Org.SummaryHolds[i].Dropped[key] {
+			return storage.Value{}, false
+		}
+		if value, ok := e.Org.SummaryHolds[i].Values[key]; ok {
+			return value, true
+		}
+	}
+	return storage.Value{}, false
+}
+
 func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, childRecords ...storage.Record) {
 	if e == nil || e.Org == nil || len(childRecords) == 0 {
 		return
@@ -60,7 +385,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			}
 			parentRecord.Fields[relation.parentField] = value
 			e.applyQuoteDerivedFields(&parentRecord)
-			parentObject.Records[storedParentID] = parentRecord
+			parentObject.PutRecord(storedParentID, parentRecord)
 			e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
 			updatedParents[parentObjectName] = append(updatedParents[parentObjectName], parentRecord)
 			changed = true
@@ -276,12 +601,13 @@ func (e *Engine) evaluateSummaryFieldBatch(relation summaryRelation, parentIDs m
 	}
 
 	values := make(map[storage.ID]storage.Value, len(parentIDs))
+	scale := summaryScale(operation, relation.field, childState.Definition, childFieldName)
 	for parentID := range parentIDs {
 		value, ok := acc[parentID].value(operation)
 		if !ok {
 			return nil, false
 		}
-		values[parentID] = value
+		values[parentID] = summaryValueAtScale(value, scale)
 	}
 	return values, true
 }
@@ -345,6 +671,11 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 	if e == nil || e.Org == nil || parent.ID == "" || childObject == "" || fkObject == "" || fkField == "" || !strings.EqualFold(childObject, fkObject) {
 		return storage.Value{}, false
 	}
+	if len(e.Org.SummaryHolds) > 0 {
+		if value, ok := e.heldSummary(parent, field); ok {
+			return value, true
+		}
+	}
 	canonicalChild, ok := storage.ResolveObjectName(*e.Org, childObject)
 	if !ok {
 		return storage.Value{}, false
@@ -380,7 +711,48 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 		}
 		acc.add(operation, value)
 	}
-	return acc.value(operation)
+	value, ok := acc.value(operation)
+	if !ok {
+		return value, ok
+	}
+	return summaryValueAtScale(value, summaryScale(operation, field, childState.Definition, childFieldName)), true
+}
+
+// summaryScale is the scale a sum, minimum or maximum roll-up carries: the
+// roll-up field's own declared scale, else the scale of the summarized Number
+// field. Native rollup-summary rolltest and rollanon (62.0 and 67.0): a
+// roll-up with no declared scale over a Number(10,2) rolls up as 60.00, 100.00
+// and 0.00 for an empty sum. Only Number is captured; Currency, Percent, counts
+// and other shapes keep their value (scale 0 here).
+func summaryScale(operation string, rollup storage.Field, definition storage.ObjectDefinition, fieldName string) int {
+	switch operation {
+	case "", "sum", "min", "max":
+	default:
+		return 0
+	}
+	if rollup.ScaleSpecified && rollup.Scale > 0 {
+		return rollup.Scale
+	}
+	field, ok := definition.Fields[fieldName]
+	if !ok || field.Type != storage.FieldDecimal || field.Scale <= 0 || !field.ScaleSpecified || !strings.EqualFold(strings.TrimSpace(field.DisplayType), "DOUBLE") {
+		return 0
+	}
+	return field.Scale
+}
+
+func summaryValueAtScale(value storage.Value, scale int) storage.Value {
+	if scale <= 0 {
+		return value
+	}
+	number, ok := summaryNumericRat(value)
+	if !ok {
+		return value
+	}
+	text := summaryDecimalString(number)
+	if point := strings.IndexByte(text, '.'); point >= 0 && len(text)-point-1 >= scale {
+		return value
+	}
+	return storage.DecimalValue(number.FloatString(scale))
 }
 
 func EvaluateRecordSummaryValueInOrg(field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (storage.Value, bool) {
@@ -445,6 +817,24 @@ func summaryFilterMatches(value storage.Value, filter storage.SummaryFilterItem)
 		return summaryValueMatchesText(value, filter.Value)
 	case "notequal":
 		return !summaryValueMatchesText(value, filter.Value)
+	case "greaterthan", "lessthan", "greaterorequal", "lessorequal":
+		// review_round3 Fc__c: a Number filter compares as numbers.
+		left, ok := summaryNumericRat(value)
+		right, ok2 := new(big.Rat).SetString(strings.TrimSpace(filter.Value))
+		if !ok || !ok2 {
+			return false
+		}
+		c := left.Cmp(right)
+		switch strings.ToLower(strings.TrimSpace(filter.Operation)) {
+		case "greaterthan":
+			return c > 0
+		case "lessthan":
+			return c < 0
+		case "greaterorequal":
+			return c >= 0
+		default:
+			return c <= 0
+		}
 	default:
 		return false
 	}
@@ -676,4 +1066,239 @@ func summaryNumericValue(value storage.Value) (float64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+// ValidateSummaryUpdate evaluates parent validation rules after its before trigger.
+func (e *Engine) ValidateSummaryUpdate(update SummaryUpdate, record storage.Record) Result {
+	object, ok := e.Org.Objects[update.Object]
+	if !ok {
+		return Result{Success: true}
+	}
+	if err := e.validateValidationRules(update.Object, object.Definition, record, &update.Before, false); err != nil {
+		return resultFromError("", err)
+	}
+	return Result{Success: true}
+}
+
+// SummaryValidationRelation returns the parent and foreign key for a direct,
+// unfiltered COUNT whose parent has an active validation rule. Other summary
+// shapes need their own evidence for attributing parent errors to child rows.
+func (e *Engine) SummaryValidationRelation(childObject string) (parent, foreignKey string) {
+	relations := e.summaryRelationsForChild(childObject)
+	if len(relations) != 1 {
+		return "", ""
+	}
+	relation := relations[0]
+	if relation.field.Type != storage.FieldSummary || !strings.EqualFold(relation.field.SummaryOperation, "count") || len(relation.field.SummaryFilterItems) != 0 {
+		return "", ""
+	}
+	// A parent that is itself rolled up queues grandparent updates; those
+	// chains have no native evidence.
+	if len(e.summaryRelationsForChild(relation.parentObject)) != 0 {
+		return "", ""
+	}
+	for _, rule := range e.Org.Objects[relation.parentObject].Definition.ValidationRules {
+		if rule.Active {
+			return relation.parentObject, relation.fkFieldName
+		}
+	}
+	return "", ""
+}
+
+func summaryValuesEqual(a, b storage.Value) bool {
+	x, ok1 := summaryNumericRat(a)
+	y, ok2 := summaryNumericRat(b)
+	return ok1 && ok2 && x.Cmp(y) == 0
+}
+
+// PeekSummaryUpdates returns the pending parent roll-up updates without
+// taking them.
+func (e *Engine) PeekSummaryUpdates() []SummaryUpdate {
+	if e == nil || len(e.summaryOrder) == 0 {
+		return nil
+	}
+	updates := make([]SummaryUpdate, 0, len(e.summaryOrder))
+	for _, key := range e.summaryOrder {
+		if update, ok := e.summaryUpdates[key]; ok {
+			updates = append(updates, update)
+		}
+	}
+	return updates
+}
+
+// RequeueSummaryUpdates puts parent updates back so the parent's triggers run
+// again for a later group of the same statement.
+func (e *Engine) RequeueSummaryUpdates(updates []SummaryUpdate) {
+	if e == nil {
+		return
+	}
+	for _, update := range updates {
+		key := strings.ToLower(update.Object) + "\x00" + strings.ToLower(string(update.After.ID))
+		if e.summaryUpdates == nil {
+			e.summaryUpdates = make(map[string]SummaryUpdate)
+		}
+		if _, exists := e.summaryUpdates[key]; !exists {
+			e.summaryOrder = append(e.summaryOrder, key)
+		}
+		e.summaryUpdates[key] = update
+	}
+}
+
+// HeldSummaryDiffersFromLive reports whether the hold's values for any held
+// roll-up differ from the stored value, that is, whether the statement still
+// has a change to land.
+func (e *Engine) HeldSummaryDiffersFromLive() bool {
+	if e == nil || e.Org == nil || e.summaryHold == nil {
+		return false
+	}
+	for _, held := range e.summaryHoldRelations {
+		now, ok := e.evaluateSummaryFieldBatch(held.relation, held.parentIDs)
+		if !ok {
+			continue
+		}
+		for id := range held.parentIDs {
+			key := summaryHoldKey(held.relation.parentObject, id, held.relation.parentField)
+			value, in := e.summaryHold.Values[key]
+			if !in || e.summaryHold.Dropped[key] {
+				continue
+			}
+			if !summaryValuesEqual(value, now[id]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// MarkSummaryHoldUpsert marks the hold as spanning an upsert's groups.
+func (e *Engine) MarkSummaryHoldUpsert() {
+	if e != nil && e.summaryHold != nil {
+		e.summaryHold.Upsert = true
+	}
+}
+
+// summaryParentKeys names the pending-update keys of the parents these child
+// records belong to.
+func (e *Engine) summaryParentKeys(records []storage.Record) map[string]bool {
+	keys := make(map[string]bool)
+	if e == nil || e.Org == nil {
+		return keys
+	}
+	for _, record := range records {
+		child, ok := storage.ResolveObjectName(*e.Org, record.Object)
+		if !ok {
+			child = record.Object
+		}
+		candidates := []storage.Record{record}
+		if _, stored, found := storage.LookupRecordByID(e.Org.Objects[child].Records, record.ID); found {
+			candidates = append(candidates, stored)
+		}
+		for _, relation := range e.summaryRelationsForChild(child) {
+			parentIDs := canonicalSummaryParentIDs(e.Org.Objects[relation.parentObject].Records, summaryParentIDs(candidates, relation.fkFieldName))
+			for id := range parentIDs {
+				keys[strings.ToLower(relation.parentObject)+"\x00"+strings.ToLower(string(id))] = true
+			}
+		}
+	}
+	return keys
+}
+
+// SetSummaryTakeScope limits TakeSummaryUpdates to the parents of these child
+// records; the others stay pending.
+func (e *Engine) SetSummaryTakeScope(records []storage.Record) {
+	if e == nil {
+		return
+	}
+	e.summaryTakeScope = e.summaryParentKeys(records)
+}
+
+// ClearSummaryTakeScope makes TakeSummaryUpdates take every parent again.
+func (e *Engine) ClearSummaryTakeScope() {
+	if e != nil {
+		e.summaryTakeScope = nil
+	}
+}
+
+// OverlayHeldSummary gives a parent update the roll-up values its triggers read
+// while a hold is in effect: the old record carries the values from before the
+// statement, the new record the held (landed) values. Later groups of the same
+// upsert start from what this one rendered (review_round7 b_single, b_two).
+func (e *Engine) OverlayHeldSummary(update *SummaryUpdate) {
+	if e == nil || update == nil || e.Org == nil || e.summaryHold == nil || e.summaryHoldSuspended {
+		return
+	}
+	changed := false
+	for _, held := range e.summaryHoldRelations {
+		if !strings.EqualFold(held.relation.parentObject, update.Object) || !held.parentIDs[update.After.ID] {
+			continue
+		}
+		key := summaryHoldKey(held.relation.parentObject, update.After.ID, held.relation.parentField)
+		if live, ok := e.summaryHold.Live[key]; ok && update.Before.Fields != nil {
+			if rendered, had := e.summaryRendered[strings.ToLower(update.Object)+"\x00"+strings.ToLower(string(update.After.ID))]; had {
+				if value, ok := rendered.Fields[held.relation.parentField]; ok {
+					live = value
+				}
+			}
+			update.Before.Fields[held.relation.parentField] = live
+			changed = true
+		}
+		if value, ok := e.summaryHold.Values[key]; ok && !e.summaryHold.Dropped[key] && update.After.Fields != nil {
+			update.After.Fields[held.relation.parentField] = value
+			changed = true
+		}
+	}
+	if changed {
+		if e.summaryRendered == nil {
+			e.summaryRendered = make(map[string]storage.Record)
+		}
+		renderedKey := strings.ToLower(update.Object) + "\x00" + strings.ToLower(string(update.After.ID))
+		if _, seen := e.summaryRendered[renderedKey]; !seen {
+			e.summaryRenderedOrder = append(e.summaryRenderedOrder, renderedKey)
+		}
+		e.summaryRendered[renderedKey] = update.After.Clone()
+	}
+}
+
+// RequeueRenderedSummaryUpdates fires a parent again for a later group when
+// that group's children belong to it and its held roll-up still differs from
+// the stored one.
+func (e *Engine) RequeueRenderedSummaryUpdates(records []storage.Record) {
+	if e == nil || e.Org == nil || e.summaryHold == nil || len(e.summaryRendered) == 0 {
+		return
+	}
+	scope := e.summaryParentKeys(records)
+	// Refire in the order the insert pass fired, not in map order.
+	for _, key := range e.summaryRenderedOrder {
+		rendered := e.summaryRendered[key]
+		if !scope[key] || !e.heldSummaryDiffersForParent(rendered.Object, rendered.ID) {
+			continue
+		}
+		objectName := rendered.Object
+		_, stored, ok := storage.LookupRecordByID(e.Org.Objects[objectName].Records, rendered.ID)
+		if !ok {
+			continue
+		}
+		e.RequeueSummaryUpdates([]SummaryUpdate{{Object: objectName, Before: rendered.Clone(), After: stored.Clone()}})
+	}
+}
+
+func (e *Engine) heldSummaryDiffersForParent(object string, id storage.ID) bool {
+	for _, held := range e.summaryHoldRelations {
+		if !strings.EqualFold(held.relation.parentObject, object) || !held.parentIDs[id] {
+			continue
+		}
+		now, ok := e.evaluateSummaryFieldBatch(held.relation, map[storage.ID]bool{id: true})
+		if !ok {
+			continue
+		}
+		key := summaryHoldKey(held.relation.parentObject, id, held.relation.parentField)
+		value, in := e.summaryHold.Values[key]
+		if !in || e.summaryHold.Dropped[key] {
+			continue
+		}
+		if !summaryValuesEqual(value, now[id]) {
+			return true
+		}
+	}
+	return false
 }

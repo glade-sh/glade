@@ -1,0 +1,69 @@
+api	phase	probe	observation
+62.0	noProfileDefault	rest.post.unset	{"body": {"errors": [], "id": "<ID>", "success": true}, "recordType": "null", "status": 201}
+62.0	noProfileDefault	ui.post.unset	{"bodyRecordTypeId": "<SET>", "error": null, "recordType": "null", "recordTypeInfoName": null, "status": 201}
+62.0	noProfileDefault	rest.post.null	{"body": {"errors": [], "id": "<ID>", "success": true}, "recordType": "null", "status": 201}
+62.0	noProfileDefault	ui.post.null	{"bodyRecordTypeId": "<SET>", "error": null, "recordType": "null", "recordTypeInfoName": null, "status": 201}
+62.0	noProfileDefault	rest.post.alpha	{"body": [{"errorCode": "INVALID_CROSS_REFERENCE_KEY", "fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: <ALPHA>"}], "recordType": null, "status": 400}
+62.0	noProfileDefault	ui.post.alpha	{"bodyRecordTypeId": null, "error": {"enhancedErrorType": "RecordError", "message": "An error occurred while trying to update the record. Please try again.", "output": {"errors": [], "fieldErrors": {"RecordTypeId": [{"constituentField": null, "duplicateRecordError": null, "errorCode": "INVALID_CROSS_REFERENCE_KEY", "field": "RecordTypeId", "fieldLabel": "Record Type ID", "message": "Record Type ID: this ID value isn&#39;t valid for the user: <ALPHA>"}]}}}, "recordType": null, "recordTypeInfoName": null, "status": 400}
+62.0	noProfileDefault	rest.patch.null	{"body": {}, "recordType": "null", "status": 204}
+62.0	noProfileDefault	rest.patch.other	{"body": {}, "recordType": "null", "status": 204}
+62.0	noProfileDefault	ui.patch.null	{"error": null, "recordType": "null", "status": 200}
+62.0	noProfileDefault	collections.post.null.allOrNone=True	{"body": [{"errors": [], "id": "<ID>", "success": true}], "recordType": "null", "status": 200}
+62.0	noProfileDefault	collections.post.null.allOrNone=False	{"body": [{"errors": [], "id": "<ID>", "success": true}], "recordType": "null", "status": 200}
+62.0	noProfileDefault	collections.patch.null	{"body": [{"errors": [], "id": "<ID>", "success": true}], "recordType": "null", "status": 200}
+62.0	noProfileDefault	composite.post.null	{"body": {"compositeResponse": [{"body": {"errors": [], "id": "<ID>", "success": true}, "httpHeaders": {"Location": "/services/data/v62.0/sobjects/V35Rt__c/<ID>"}, "httpStatusCode": 201, "referenceId": "a"}]}, "recordType": null, "status": 200}
+62.0	noProfileDefault	rest.post.null.V35NoRt__c	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type V35NoRt__c"}], "recordType": null, "status": 400}
+62.0	noProfileDefault	ui.post.null.V35NoRt__c	{"error": [{"errorCode": "POST_BODY_PARSE_ERROR", "message": "Field RecordTypeId does not exist."}], "status": 400}
+62.0	noProfileDefault	rest.post.null.Account	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type Account"}], "recordType": null, "status": 400}
+62.0	noProfileDefault	ui.post.null.Account	{"error": [{"errorCode": "POST_BODY_PARSE_ERROR", "message": "Field RecordTypeId does not exist."}], "status": 400}
+67.0	noProfileDefault	rest.post.unset	{"body": {"errors": [], "id": "<ID>", "success": true}, "recordType": "null", "status": 201}
+67.0	noProfileDefault	ui.post.unset	{"bodyRecordTypeId": "<SET>", "error": null, "recordType": "null", "recordTypeInfoName": null, "status": 201}
+67.0	noProfileDefault	rest.post.null	{"body": {"errors": [], "id": "<ID>", "success": true}, "recordType": "null", "status": 201}
+67.0	noProfileDefault	ui.post.null	{"bodyRecordTypeId": "<SET>", "error": null, "recordType": "null", "recordTypeInfoName": null, "status": 201}
+67.0	noProfileDefault	rest.post.alpha	{"body": [{"errorCode": "INVALID_CROSS_REFERENCE_KEY", "fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: <ALPHA>"}], "recordType": null, "status": 400}
+67.0	noProfileDefault	ui.post.alpha	{"bodyRecordTypeId": null, "error": {"enhancedErrorType": "RecordError", "message": "An error occurred while trying to update the record. Please try again.", "output": {"errors": [], "fieldErrors": {"RecordTypeId": [{"constituentField": null, "duplicateRecordError": null, "errorCode": "INVALID_CROSS_REFERENCE_KEY", "field": "RecordTypeId", "fieldLabel": "Record Type ID", "message": "Record Type ID: this ID value isn&#39;t valid for the user: <ALPHA>"}]}}}, "recordType": null, "recordTypeInfoName": null, "status": 400}
+67.0	noProfileDefault	rest.patch.null	{"body": {}, "recordType": "null", "status": 204}
+67.0	noProfileDefault	rest.patch.other	{"body": {}, "recordType": "null", "status": 204}
+67.0	noProfileDefault	ui.patch.null	{"error": null, "recordType": "null", "status": 200}
+67.0	noProfileDefault	collections.post.null.allOrNone=True	{"body": [{"errors": [], "id": "<ID>", "success": true}], "recordType": "null", "status": 200}
+67.0	noProfileDefault	collections.post.null.allOrNone=False	{"body": [{"errors": [], "id": "<ID>", "success": true}], "recordType": "null", "status": 200}
+67.0	noProfileDefault	collections.patch.null	{"body": [{"errors": [], "id": "<ID>", "success": true}], "recordType": "null", "status": 200}
+67.0	noProfileDefault	composite.post.null	{"body": {"compositeResponse": [{"body": {"errors": [], "id": "<ID>", "success": true}, "httpHeaders": {"Location": "/services/data/v67.0/sobjects/V35Rt__c/<ID>"}, "httpStatusCode": 201, "referenceId": "a"}]}, "recordType": null, "status": 200}
+67.0	noProfileDefault	rest.post.null.V35NoRt__c	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type V35NoRt__c"}], "recordType": null, "status": 400}
+67.0	noProfileDefault	ui.post.null.V35NoRt__c	{"error": [{"errorCode": "POST_BODY_PARSE_ERROR", "message": "Field RecordTypeId does not exist."}], "status": 400}
+67.0	noProfileDefault	rest.post.null.Account	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type Account"}], "recordType": null, "status": 400}
+67.0	noProfileDefault	ui.post.null.Account	{"error": [{"errorCode": "POST_BODY_PARSE_ERROR", "message": "Field RecordTypeId does not exist."}], "status": 400}
+62.0	profileDefault	rest.post.unset	{"body": {"errors": [], "id": "<ID>", "success": true}, "recordType": "Alpha", "status": 201}
+62.0	profileDefault	ui.post.unset	{"bodyRecordTypeId": "<SET>", "error": null, "recordType": "Alpha", "recordTypeInfoName": "Alpha", "status": 201}
+62.0	profileDefault	rest.post.null	{"body": [{"errorCode": "INVALID_CROSS_REFERENCE_KEY", "fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: "}], "recordType": null, "status": 400}
+62.0	profileDefault	ui.post.null	{"bodyRecordTypeId": null, "error": {"enhancedErrorType": "RecordError", "message": "An error occurred while trying to update the record. Please try again.", "output": {"errors": [], "fieldErrors": {"RecordTypeId": [{"constituentField": null, "duplicateRecordError": null, "errorCode": "INVALID_CROSS_REFERENCE_KEY", "field": "RecordTypeId", "fieldLabel": "Record Type ID", "message": "Record Type ID: this ID value isn&#39;t valid for the user: "}]}}}, "recordType": null, "recordTypeInfoName": null, "status": 400}
+62.0	profileDefault	rest.post.alpha	{"body": {"errors": [], "id": "<ID>", "success": true}, "recordType": "Alpha", "status": 201}
+62.0	profileDefault	ui.post.alpha	{"bodyRecordTypeId": "<SET>", "error": null, "recordType": "Alpha", "recordTypeInfoName": "Alpha", "status": 201}
+62.0	profileDefault	rest.patch.null	{"body": {}, "recordType": "Alpha", "status": 204}
+62.0	profileDefault	rest.patch.other	{"body": {}, "recordType": "Alpha", "status": 204}
+62.0	profileDefault	ui.patch.null	{"error": null, "recordType": "Alpha", "status": 200}
+62.0	profileDefault	collections.post.null.allOrNone=True	{"body": [{"errors": [{"fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: ", "statusCode": "INVALID_CROSS_REFERENCE_KEY"}], "success": false}], "recordType": null, "status": 200}
+62.0	profileDefault	collections.post.null.allOrNone=False	{"body": [{"errors": [{"fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: ", "statusCode": "INVALID_CROSS_REFERENCE_KEY"}], "success": false}], "recordType": null, "status": 200}
+62.0	profileDefault	collections.patch.null	{"body": [{"errors": [], "id": "<ID>", "success": true}], "recordType": "Alpha", "status": 200}
+62.0	profileDefault	composite.post.null	{"body": {"compositeResponse": [{"body": [{"errorCode": "INVALID_CROSS_REFERENCE_KEY", "fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: "}], "httpHeaders": {}, "httpStatusCode": 400, "referenceId": "a"}]}, "recordType": null, "status": 200}
+62.0	profileDefault	rest.post.null.V35NoRt__c	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type V35NoRt__c"}], "recordType": null, "status": 400}
+62.0	profileDefault	ui.post.null.V35NoRt__c	{"error": [{"errorCode": "POST_BODY_PARSE_ERROR", "message": "Field RecordTypeId does not exist."}], "status": 400}
+62.0	profileDefault	rest.post.null.Account	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type Account"}], "recordType": null, "status": 400}
+62.0	profileDefault	ui.post.null.Account	{"error": [{"errorCode": "POST_BODY_PARSE_ERROR", "message": "Field RecordTypeId does not exist."}], "status": 400}
+67.0	profileDefault	rest.post.unset	{"body": {"errors": [], "id": "<ID>", "success": true}, "recordType": "Alpha", "status": 201}
+67.0	profileDefault	ui.post.unset	{"bodyRecordTypeId": "<SET>", "error": null, "recordType": "Alpha", "recordTypeInfoName": "Alpha", "status": 201}
+67.0	profileDefault	rest.post.null	{"body": [{"errorCode": "INVALID_CROSS_REFERENCE_KEY", "fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: "}], "recordType": null, "status": 400}
+67.0	profileDefault	ui.post.null	{"bodyRecordTypeId": null, "error": {"enhancedErrorType": "RecordError", "message": "An error occurred while trying to update the record. Please try again.", "output": {"errors": [], "fieldErrors": {"RecordTypeId": [{"constituentField": null, "duplicateRecordError": null, "errorCode": "INVALID_CROSS_REFERENCE_KEY", "field": "RecordTypeId", "fieldLabel": "Record Type ID", "message": "Record Type ID: this ID value isn&#39;t valid for the user: "}]}}}, "recordType": null, "recordTypeInfoName": null, "status": 400}
+67.0	profileDefault	rest.post.alpha	{"body": {"errors": [], "id": "<ID>", "success": true}, "recordType": "Alpha", "status": 201}
+67.0	profileDefault	ui.post.alpha	{"bodyRecordTypeId": "<SET>", "error": null, "recordType": "Alpha", "recordTypeInfoName": "Alpha", "status": 201}
+67.0	profileDefault	rest.patch.null	{"body": {}, "recordType": "Alpha", "status": 204}
+67.0	profileDefault	rest.patch.other	{"body": {}, "recordType": "Alpha", "status": 204}
+67.0	profileDefault	ui.patch.null	{"error": null, "recordType": "Alpha", "status": 200}
+67.0	profileDefault	collections.post.null.allOrNone=True	{"body": [{"errors": [{"fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: ", "statusCode": "INVALID_CROSS_REFERENCE_KEY"}], "success": false}], "recordType": null, "status": 200}
+67.0	profileDefault	collections.post.null.allOrNone=False	{"body": [{"errors": [{"fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: ", "statusCode": "INVALID_CROSS_REFERENCE_KEY"}], "success": false}], "recordType": null, "status": 200}
+67.0	profileDefault	collections.patch.null	{"body": [{"errors": [], "id": "<ID>", "success": true}], "recordType": "Alpha", "status": 200}
+67.0	profileDefault	composite.post.null	{"body": {"compositeResponse": [{"body": [{"errorCode": "INVALID_CROSS_REFERENCE_KEY", "fields": ["RecordTypeId"], "message": "Record Type ID: this ID value isn't valid for the user: "}], "httpHeaders": {}, "httpStatusCode": 400, "referenceId": "a"}]}, "recordType": null, "status": 200}
+67.0	profileDefault	rest.post.null.V35NoRt__c	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type V35NoRt__c"}], "recordType": null, "status": 400}
+67.0	profileDefault	ui.post.null.V35NoRt__c	{"error": [{"errorCode": "POST_BODY_PARSE_ERROR", "message": "Field RecordTypeId does not exist."}], "status": 400}
+67.0	profileDefault	rest.post.null.Account	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type Account"}], "recordType": null, "status": 400}
+67.0	profileDefault	ui.post.null.Account	{"error": [{"errorCode": "POST_BODY_PARSE_ERROR", "message": "Field RecordTypeId does not exist."}], "status": 400}

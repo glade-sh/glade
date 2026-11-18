@@ -1,0 +1,3 @@
+# Native run
+
+A fresh 30-day Developer scratch org used synthetic Case metadata. Metadata was deployed at API 67.0 and the Case field permission set assigned. The sorted queue lookup was configured with a nonmatching developer name, followed by an OwnerId assignment and a triggering-record update; a separate case did not meet the flow entry criteria. Named tests and anonymous executions at API 62.0 and 67.0 captured the missing-owner rejection and the nonmatching success. Sentinel assertions carry observations and roll back their transactions. ScratchOrgInfo was verified Deleted and no ActiveScratchOrg row remained. IDs and aliases are not recorded.

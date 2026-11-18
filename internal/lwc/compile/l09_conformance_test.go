@@ -66,11 +66,22 @@ type l09PayloadProbe struct {
 // The same-source isolated schema rejection supersedes its batch acceptance.
 // GLADE_L09_CAPTURE=1 records mismatches without failing; GLADE_L09_REPORT
 // selects the per-row TSV. The fixture and oracle are credential-free exports.
-func TestL09SalesforceConformance(t *testing.T) {
-	t.Run("BrowserRuntime", l09SalesforceConformance)
+//
+// The 368 rows are split into l09PartCount interleaved parts, one top-level
+// test each, so the CI shard planner can spread them. The parts cover every row
+// exactly once per API. GLADE_L09_ROW_RANGE selects a zero-based, half-open
+// start:end range of rows that each part intersects with its own;
+// GLADE_L09_REPORT gets ".partNofM" inserted before its extension.
+const l09PartCount = 2
+
+func TestL09SalesforceConformancePart1of2(t *testing.T) { l09RunPart(t, 0) }
+func TestL09SalesforceConformancePart2of2(t *testing.T) { l09RunPart(t, 1) }
+
+func l09RunPart(t *testing.T, part int) {
+	t.Run("BrowserRuntime", func(t *testing.T) { l09SalesforceConformance(t, part) })
 }
 
-func l09SalesforceConformance(t *testing.T) {
+func l09SalesforceConformance(t *testing.T, part int) {
 	capture := os.Getenv("GLADE_L09_CAPTURE") == "1"
 	data, err := os.ReadFile("testdata/l09_salesforce.json")
 	if err != nil {
@@ -151,6 +162,55 @@ func l09SalesforceConformance(t *testing.T) {
 			t.Fatalf("missing L09 group %s", group)
 		}
 	}
+	selectedRows, err := selectedPartRows(part, l09PartCount, len(cases), os.Getenv("GLADE_L09_ROW_RANGE"))
+	if err != nil {
+		t.Fatalf("invalid GLADE_L09_ROW_RANGE: %v", err)
+	}
+	if len(selectedRows) == 0 {
+		t.Skipf("GLADE_L09_ROW_RANGE selects no row of part %d", part+1)
+	}
+	// Everything above validated the whole fixture. From here the part replays
+	// only its own rows. The payload row stays in payloadCases for every part,
+	// because the runtime rows take their time zone from it; it is compared only
+	// by the part whose range holds it.
+	// Compile rows keep their place in the whole table: native diagnostics name
+	// the bundle by that index. Every runtime row also reads the execution user
+	// from one control row, so the browser pass keeps the full runtime list.
+	compileIndex := make(map[string]int, len(compileCases))
+	for index, c := range compileCases {
+		compileIndex[c.ID] = index
+	}
+	allRuntimeCases := runtimeCases
+	var partCases []l09Case
+	for _, index := range selectedRows {
+		partCases = append(partCases, cases[index])
+	}
+	cases = partCases
+	partRows := map[string]bool{}
+	for _, c := range cases {
+		partRows[c.ID] = true
+	}
+	filterRows := func(rows []l09Case) []l09Case {
+		var kept []l09Case
+		for _, c := range rows {
+			if partRows[c.ID] {
+				kept = append(kept, c)
+			}
+		}
+		return kept
+	}
+	compileCases, runtimeCases = filterRows(compileCases), filterRows(runtimeCases)
+	originalRows, controlRows, partPayloadRows := 0, 0, 0
+	for _, c := range cases {
+		if c.Kind == "payload" {
+			partPayloadRows++
+		}
+		if c.Control {
+			controlRows++
+		} else {
+			originalRows++
+		}
+	}
 	dependencyRoot, err := gladehome.Root()
 	if err != nil {
 		t.Fatal(err)
@@ -176,7 +236,7 @@ func l09SalesforceConformance(t *testing.T) {
 	}
 	observeAPI := browserapi.Prepare(t, versions, func(t *testing.T, api string) apiObservation {
 
-		dom, domErrors, runtimeCompileErr, browserErr := l09ObserveDOM(t, api, runtimeCases, dependencyRoot, l09PayloadUserTimeZone(t, api, payloadCases[0].Payload))
+		dom, domErrors, runtimeCompileErr, browserErr := l09ObserveDOM(t, api, runtimeCases, allRuntimeCases, dependencyRoot, l09PayloadUserTimeZone(t, api, payloadCases[0].Payload))
 		return apiObservation{dom, domErrors, runtimeCompileErr, browserErr}
 	})
 	var report strings.Builder
@@ -187,11 +247,14 @@ func l09SalesforceConformance(t *testing.T) {
 	carriedRows, diagnosticCarries, volatileIDCarries := 0, 0, 0
 	originalMatches, controlMatches := 0, 0
 	bundleNames := map[string]string{}
-	for index, c := range compileCases {
-		bundleNames[c.ID] = fmt.Sprintf("familyL09Compile%03d", index)
+	for _, c := range compileCases {
+		bundleNames[c.ID] = fmt.Sprintf("familyL09Compile%03d", compileIndex[c.ID])
 	}
 	for _, api := range versions {
-		compiled := l09CompileCases(t, api, compileCases)
+		compiled := map[string]compile.BundleResult{}
+		if len(compileCases) != 0 {
+			compiled = l09CompileCases(t, api, compileCases, compileIndex)
+		}
 		result := observeAPI(api)
 		dom, domErrors, runtimeCompileErr, browserErr := result.dom, result.domErrors, result.runtimeCompileErr, result.browserErr
 		if browserErr != nil {
@@ -329,19 +392,19 @@ func l09SalesforceConformance(t *testing.T) {
 		}
 		fmt.Fprintf(&report, "API_TOTAL\t%s\t%d exact + %d volatile-id carries / %d\nLOCAL_DOM_ROWS\t%s\t%d/%d\n", api, apiMatches, apiVolatileIDCarries, len(cases), api, apiDOMRows, len(runtimeCases))
 		t.Logf("L09 API %s: %d exact + %d volatile-id carries / %d; observed local DOM %d/%d", api, apiMatches, apiVolatileIDCarries, len(cases), apiDOMRows, len(runtimeCases))
-		fmt.Fprintf(&report, "ORIGINAL_API_TOTAL\t%s\t%d/248\nCONTROL_API_TOTAL\t%s\t%d/120\n", api, originalAPIMatches, api, controlAPIMatches)
-		t.Logf("L09 API %s original rows %d/248; native controls %d/120", api, originalAPIMatches, controlAPIMatches)
+		fmt.Fprintf(&report, "ORIGINAL_API_TOTAL\t%s\t%d/%d\nCONTROL_API_TOTAL\t%s\t%d/%d\n", api, originalAPIMatches, originalRows, api, controlAPIMatches, controlRows)
+		t.Logf("L09 API %s original rows %d/%d; native controls %d/%d", api, originalAPIMatches, originalRows, controlAPIMatches, controlRows)
 		originalMatches += originalAPIMatches
 		controlMatches += controlAPIMatches
 	}
 	fmt.Fprintf(&report, "TOTAL\t%d exact + %d volatile-id carries / %d\nCOMPILE_TOTAL\t%d/%d\nDOM_TOTAL\t%d/%d\nDIAGNOSTIC_TOTAL\t%d/%d\n", matches, volatileIDCarries, total, compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), diagnosticMatches, diagnosticTotal)
-	fmt.Fprintf(&report, "PAYLOAD_TOTAL\t%d/%d\n", payloadMatches, len(payloadCases)*len(versions))
+	fmt.Fprintf(&report, "PAYLOAD_TOTAL\t%d/%d\n", payloadMatches, partPayloadRows*len(versions))
 	fmt.Fprintf(&report, "CARRIED_ROWS\t%d\nCARRIED_DIAGNOSTICS\t%d\n", carriedRows, diagnosticCarries)
-	fmt.Fprintf(&report, "ORIGINAL_TOTAL\t%d/%d\nCONTROL_TOTAL\t%d/%d\n", originalMatches, 248*len(versions), controlMatches, 120*len(versions))
+	fmt.Fprintf(&report, "ORIGINAL_TOTAL\t%d/%d\nCONTROL_TOTAL\t%d/%d\n", originalMatches, originalRows*len(versions), controlMatches, controlRows*len(versions))
 	t.Logf("L09 %d exact + %d volatile-id carries / %d; compile %d/%d; DOM %d/%d; observed local DOM %d/%d; diagnostics %d/%d", matches, volatileIDCarries, total, compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), localDOMRows, len(runtimeCases)*len(versions), diagnosticMatches, diagnosticTotal)
-	t.Logf("L09 native payload matches %d/%d", payloadMatches, len(payloadCases)*len(versions))
+	t.Logf("L09 native payload matches %d/%d", payloadMatches, partPayloadRows*len(versions))
 	if path := os.Getenv("GLADE_L09_REPORT"); path != "" {
-		l07Write(t, path, []byte(report.String()))
+		l07Write(t, rowPartReportPath(path, part, l09PartCount), []byte(report.String()))
 	}
 }
 
@@ -533,11 +596,12 @@ func l09ObservePayload(t *testing.T, api string, cases []l09Case) map[string]jso
 	return observed
 }
 
-func l09CompileCases(t *testing.T, api string, cases []l09Case) map[string]compile.BundleResult {
+func l09CompileCases(t *testing.T, api string, cases []l09Case, compileIndex map[string]int) map[string]compile.BundleResult {
 	t.Helper()
 	root := t.TempDir()
 	keys := map[string]string{}
-	for index, c := range cases {
+	for _, c := range cases {
+		index := compileIndex[c.ID]
 		name := fmt.Sprintf("familyL09Compile%03d", index)
 		rel := filepath.Join("cases", fmt.Sprintf("%04d", index), "force-app", "main", "default", "lwc", name)
 		keys[c.ID] = filepath.ToSlash(rel)
@@ -587,7 +651,7 @@ func l09PayloadUserTimeZone(t *testing.T, api string, fixture *l09PayloadProbe) 
 	return ""
 }
 
-func l09ObserveDOM(t *testing.T, api string, cases []l09Case, dependencyRoot, userTimeZone string) (map[string]json.RawMessage, map[string]string, error, error) {
+func l09ObserveDOM(t *testing.T, api string, cases, contextCases []l09Case, dependencyRoot, userTimeZone string) (map[string]json.RawMessage, map[string]string, error, error) {
 	t.Helper()
 	root := t.TempDir()
 	l07Copy(t, filepath.Join("testdata", "l09_runtime", "api"+api[:2]), root)
@@ -627,7 +691,7 @@ func l09ObserveDOM(t *testing.T, api string, cases []l09Case, dependencyRoot, us
 	}
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
-	l09SeedNativeModifier(t, &org, api, cases)
+	l09SeedNativeModifier(t, &org, api, contextCases)
 	users := org.Objects["User"]
 	user := users.Records[storage.ID(storage.DefaultUserID)]
 	user.Fields["TimeZoneSidKey"] = storage.StringValue(userTimeZone)

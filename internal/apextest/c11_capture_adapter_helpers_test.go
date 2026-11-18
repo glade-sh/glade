@@ -47,7 +47,8 @@ func c11ActorGateCarry(t *testing.T, result testreport.Case, class, method, arm 
 	}
 	status, message := testreport.StatusFail, "Assertion Failed: gate actor ViewAllData: Expected: false, Actual: null"
 	if arm == "admin" {
-		status = testreport.StatusRuntimeError
+		// The admin gate runs in @TestSetup; a setup exception fails the method (org.tsv ic04-sync).
+		status = testreport.StatusFail
 		message = "Assertion Failed: gate admin profile ViewAllData: Expected: true, Actual: false"
 	} else if arm != "restricted" {
 		return false

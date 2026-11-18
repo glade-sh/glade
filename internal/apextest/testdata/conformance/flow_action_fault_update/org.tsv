@@ -1,0 +1,7 @@
+source_api	route	id	observation
+62.0	istest	allfault	{"rows":[{"date":null,"name":"Synthetic 0","unit":"faulted"},{"date":null,"name":"Synthetic 1","unit":"faulted"}],"sizes":[2],"success":true}
+62.0	istest	middle	{"rows":[{"date":null,"name":"Synthetic 0","unit":"faulted"},{"date":null,"name":"Synthetic 1","unit":"faulted"},{"date":null,"name":"Synthetic 2","unit":"faulted"}],"sizes":[3],"success":true}
+62.0	istest	nofault	{"rows":[{"date":null,"name":"Synthetic 0","unit":"updated"},{"date":null,"name":"Synthetic 1","unit":"updated"}],"sizes":[2],"success":true}
+67.0	istest	allfault	{"rows":[{"date":null,"name":"Synthetic 0","unit":"faulted"},{"date":null,"name":"Synthetic 1","unit":"faulted"}],"sizes":[2],"success":true}
+67.0	istest	middle	{"rows":[{"date":null,"name":"Synthetic 0","unit":"faulted"},{"date":null,"name":"Synthetic 1","unit":"faulted"},{"date":null,"name":"Synthetic 2","unit":"faulted"}],"sizes":[3],"success":true}
+67.0	istest	nofault	{"rows":[{"date":null,"name":"Synthetic 0","unit":"updated"},{"date":null,"name":"Synthetic 1","unit":"updated"}],"sizes":[2],"success":true}

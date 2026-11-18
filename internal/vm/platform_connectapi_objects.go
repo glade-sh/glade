@@ -29,7 +29,7 @@ func connectAPIObjectType(typeName string) bool {
 	if !hasTypePrefixFold(typeName, "ConnectApi") || !typesys.ConnectAPICapturedType(typeName) {
 		return false
 	}
-	generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]
+	generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName))
 	if !ok || generated.Kind != apexast.DeclarationClass {
 		return false
 	}
@@ -62,7 +62,7 @@ func connectAPITypeChain(typeName string) []generatedPlatformType {
 			break
 		}
 		seen[key] = true
-		generated, ok := generatedPlatformTypes()[key]
+		generated, ok := lookupGeneratedPlatformType(key)
 		if !ok || !hasTypePrefixFold(generated.Name, "ConnectApi") {
 			break
 		}

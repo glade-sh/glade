@@ -147,6 +147,12 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				value.nativeListMembership = args[0].nativeListMembership
 			}
 			v, err := vm.coerceAssignable(typeName, value)
+			// A List built from a field map's key set remembers where the names
+			// came from, so a Set built from it renders like the key set
+			// (review_round9 ks_list_set). Iteration keeps the platform order.
+			if err == nil && args[0].describeKeySetText {
+				v.describeKeySetText = true
+			}
 			vm.markCollectionRefsEscaped(v)
 			vm.rememberLocalOnlyCollection(v)
 			return v, true, err
@@ -161,6 +167,12 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		}
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			v, err := vm.constructTrackedSet(typeName, collectionMembers(args[0]), false, &Result{})
+			// A Set built from a field map's key set renders like it
+			// (review_round8 ks_copy); only the text order carries over, and
+			// the copy stays writable.
+			if args[0].describeKeySetText && err == nil {
+				v.describeKeySetText = true
+			}
 			vm.markCollectionRefsEscaped(v)
 			vm.rememberLocalOnlyCollection(v)
 			return v, true, err
@@ -299,7 +311,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		isCanonicalRuntimeTypeName(typeName[len("System."):])
 	typeName = vm.resolveConstructorTypeName(typeName, args, namedArgs)
 	if hasTypePrefixFold(typeName, "ConnectApi") {
-		if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+		if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 			if class, registered := vm.classEntry(generated.Name); !registered || class.PlatformType {
 				if value, handled, err := vm.constructConnectAPIValue(generated, args, namedArgs); handled || err != nil {
 					return value, err
@@ -379,6 +391,11 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 	if strings.EqualFold(typeName, "Auth.VerificationResult") {
 		return constructAuthVerificationResult(args, namedArgs)
 	}
+	if isJweTokenType(typeName) {
+		if class, registered := vm.lookupClass(typeName); !registered || class.PlatformType {
+			return constructJweToken(args, namedArgs)
+		}
+	}
 	if strings.EqualFold(typeName, "Auth.TokenValidationResult") {
 		if len(namedArgs) != 0 || len(args) != 1 || (args[0].Kind != ValueBool && args[0].Kind != ValueNull) {
 			return Null, fmt.Errorf("Auth.TokenValidationResult constructor expects Boolean")
@@ -428,7 +445,7 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 	if value, handled, err := constructProcessPluginDescribeResultParameter(typeName, args, namedArgs); handled || err != nil {
 		return value, err
 	}
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 		if value, handled, err := vm.constructGeneratedMetadataDTO(generated, args, namedArgs); handled || err != nil {
 			return value, err
 		}
@@ -468,7 +485,11 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 		vm.rememberLocalOnlyObject(object)
 		// R202/X010: source-defined exceptions carry their construction
 		// location, just like exceptions constructed by the platform path.
-		object = annotateConstructedException(object, vm.rawStackFrames())
+		// Only an exception reads the frames; capturing them qualifies every
+		// frame's symbol, which every other `new` would pay for nothing.
+		if isExceptionType(typeName) {
+			object = annotateConstructedException(object, vm.rawStackFrames())
+		}
 		if !passiveDTO {
 			for field, value := range namedArgs {
 				object.Fields[field] = value
@@ -521,10 +542,12 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			}
 			// Linked platform stubs can lack the generated-constructor marker.
 			// Native Cache exception captures confirm String message initialization;
-			// preserve source constructors, executable bodies and other signatures.
+			// every platform exception constructor shape ((), (String), (Exception),
+			// (String, Exception)) mirrors the generated-platform path. Source
+			// constructors and executable bodies are preserved.
 			if class.PlatformType && ctor.IsConstructor && len(ctor.Program.Instructions) == 0 &&
-				isExceptionType(typeName) && len(ctorArgs) == 1 && ctorArgs[0].Kind == ValueString &&
-				len(ctor.Params) == 1 && strings.EqualFold(canonicalRuntimePlatformType(ctor.Params[0].Type), "String") {
+				isExceptionType(typeName) && len(ctor.Params) == len(ctorArgs) &&
+				exceptionConstructorArgsCanApply(typeName, ctorArgs) {
 				if _, err := applyExceptionConstructorArgs(&object, ctorArgs); err != nil {
 					return Null, err
 				}
@@ -1692,6 +1715,9 @@ func urlHostValue(parsed *url.URL) string {
 }
 
 func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
+	if vm.coverage != nil {
+		vm.coverage.CoverClassInit(runtimeClassName(class), false)
+	}
 	// Derived fields run
 	// before base fields; inherited fields still have their null defaults.
 	// As with method selection, prefer the caller's source unit among
@@ -2965,10 +2991,16 @@ func (vm *VM) resolveInterfaceMethodForArgsSeen(typeName, method string, args []
 }
 
 func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) (Method, bool, bool) {
+	target, ok, ambiguous, _ := vm.resolveStaticMethodForArgsWithOrigin(typeName, method, args)
+	return target, ok, ambiguous
+}
+
+// resolveStaticMethodForArgsWithOrigin records whether resolution used the lexical enclosing-class fallback.
+func (vm *VM) resolveStaticMethodForArgsWithOrigin(typeName, method string, args []Value) (Method, bool, bool, bool) {
 	candidates := vm.staticTypeNameCandidates(typeName)
 	cacheKey := vm.methodResolveCacheKey("s", strings.Join(candidates, "|"), method, args)
 	if cached, ok := vm.methodResolveCache[cacheKey]; ok {
-		return cached.Method, cached.OK, false
+		return cached.Method, cached.OK, false, cached.Enclosing
 	}
 	// A project caller resolves an unqualified static call against the local
 	// (non-dependency) class chain first, so a managed dependency class of the
@@ -2985,21 +3017,21 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 				}
 				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: ok}
 			}
-			return target, ok, ambiguous
+			return target, ok, ambiguous, false
 		}
 	}
 	for _, candidateType := range candidates {
 		for searchType := candidateType; searchType != ""; {
 			target, ok, ambiguous := vm.matchRegisteredStaticMethod(searchType+"."+method, args)
 			if ambiguous {
-				return Method{}, false, true
+				return Method{}, false, true, false
 			}
 			if ok {
 				if vm.methodResolveCache == nil {
 					vm.methodResolveCache = make(map[string]methodResolution)
 				}
 				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true}
-				return target, true, false
+				return target, true, false, false
 			}
 			class, ok := vm.lookupClass(searchType)
 			if !ok {
@@ -3008,11 +3040,42 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 			searchType = vm.resolvedSuperClassName(class)
 		}
 	}
+	// Only a registered nested class has a lexical enclosing class. A dot in
+	// a namespace-qualified top-level name does not create one.
+	for _, candidateType := range candidates {
+		class, ok := vm.lookupClass(candidateType)
+		if !ok || !class.Nested {
+			continue
+		}
+		qualified := runtimeClassName(class)
+		dot := strings.LastIndexByte(qualified, '.')
+		if dot <= 0 {
+			continue
+		}
+		for owner := qualified[:dot]; owner != ""; {
+			target, ok, ambiguous := vm.matchRegisteredStaticMethod(owner+"."+method, args)
+			if ambiguous {
+				return Method{}, false, true, true
+			}
+			if ok {
+				if vm.methodResolveCache == nil {
+					vm.methodResolveCache = make(map[string]methodResolution)
+				}
+				vm.methodResolveCache[cacheKey] = methodResolution{Method: target, OK: true, Enclosing: true}
+				return target, true, false, true
+			}
+			ownerClass, ok := vm.lookupClass(owner)
+			if !ok {
+				break
+			}
+			owner = vm.resolvedSuperClassName(ownerClass)
+		}
+	}
 	if vm.methodResolveCache == nil {
 		vm.methodResolveCache = make(map[string]methodResolution)
 	}
 	vm.methodResolveCache[cacheKey] = methodResolution{}
-	return Method{}, false, false
+	return Method{}, false, false, false
 }
 
 // resolveLocalStaticMethodForArgs walks only the local (non-dependency) class
@@ -3073,8 +3136,14 @@ func (vm *VM) currentExecutionNamespace() string {
 	if strings.TrimSpace(vm.currentClass) == "" {
 		return ""
 	}
-	if class, ok := vm.classEntry(vm.currentClass); ok {
-		return strings.TrimSpace(class.Namespace)
+	if memo := &vm.execNamespaceMemo; memo.valid && memo.generation == vm.classLookupGeneration && memo.class == vm.currentClass {
+		return memo.namespace
+	}
+	// The namespace sits on the lazy shell, so the unbuilt entry is enough.
+	if class, ok := vm.classEntryRaw(vm.currentClass); ok {
+		namespace := strings.TrimSpace(class.Namespace)
+		vm.execNamespaceMemo = execNamespaceMemo{class: vm.currentClass, generation: vm.classLookupGeneration, namespace: namespace, valid: true}
+		return namespace
 	}
 	for _, triggers := range vm.Triggers {
 		for _, trigger := range triggers {
@@ -4008,9 +4077,19 @@ func annotateExceptionContext(value Value, stack []callFrame) Value {
 	}
 	value.Fields["__lineNumber"] = Int(int64(stack[len(stack)-1].Line))
 	value.Fields["__stackTrace"] = String(stackTraceString(stack))
-	if len(stack) == 2 && stack[0].anonymousCallerLine > 0 && stack[1].statement &&
-		stack[0].Symbol == stack[1].Symbol {
-		value.exceptionAnonymousCallerLine = stack[0].anonymousCallerLine
+	// An exception raised below an anonymous caller carries that caller's
+	// line. How many AnonymousBlock frames follow depends on the type.
+	if len(stack) >= 2 && stack[0].anonymousCallerLine > 0 && stack[len(stack)-1].statement {
+		triggerBoundary := false
+		for _, frame := range stack {
+			if hasSuffixFold(frame.File, ".trigger") {
+				triggerBoundary = true
+				break
+			}
+		}
+		if !triggerBoundary {
+			value.exceptionAnonymousCallerLine = stack[0].anonymousCallerLine
+		}
 	}
 	return value
 }

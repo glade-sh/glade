@@ -1,0 +1,26 @@
+Id rt=Schema.SObjectType.Probe__c.getRecordTypeInfosByDeveloperName().get('Matched').getRecordTypeId();
+Probe__c original=new Probe__c(Name='exact',RecordTypeId=rt,Status__c='Additional Information Required');
+original.Status__c='In Progress'; original.Handler__c='In Progress'; original.Requested__c=true;
+Request__c request=new Request__c(Name='request'); upsert request; original.Request__c=request.Id;
+Probe__c clean=new Probe__c();
+Map<String,Schema.SObjectField> fields=Schema.SObjectType.Probe__c.fields.getMap();
+for(String key:original.getPopulatedFieldsAsMap().keySet()) if(fields.get(key).getDescribe().isCreateable()) clean.put(key,original.get(key));
+System.debug('OBSERVED|exact_pre|'+clean.Status__c+'|'+clean.Handler__c+'|'+(clean.Request__c!=null));
+upsert clean;
+clean=[SELECT Status__c,Handler__c,Marker__c,Request__c,Requested__c,EmailSent__c,Notified__c FROM Probe__c WHERE Id=:clean.Id];
+request=[SELECT Marker__c FROM Request__c WHERE Id=:request.Id];
+Integer exactMessages=[SELECT count() FROM Message__c WHERE Probe__c=:clean.Id];
+System.debug('OBSERVED|exact_insert|'+clean.Status__c+'|'+clean.Handler__c+'|'+clean.Marker__c+'|'+request.Marker__c+'|'+clean.Requested__c+'|'+clean.EmailSent__c+'|'+clean.Notified__c+'|'+exactMessages);
+Probe__c positive=new Probe__c(Name='before',RecordTypeId=rt,Status__c='New',Handler__c='Additional Information Required',Request__c=request.Id); insert positive;
+positive=[SELECT Status__c,Handler__c FROM Probe__c WHERE Id=:positive.Id]; System.debug('OBSERVED|before_positive|'+positive.Status__c+'|'+positive.Handler__c);
+clean.Handler__c='Additional Information Required'; update clean; clean=[SELECT Status__c,Handler__c FROM Probe__c WHERE Id=:clean.Id]; System.debug('OBSERVED|update_additional|'+clean.Status__c+'|'+clean.Handler__c);
+clean.Handler__c='In Progress'; update clean; clean=[SELECT Status__c,Handler__c FROM Probe__c WHERE Id=:clean.Id]; System.debug('OBSERVED|update_progress|'+clean.Status__c+'|'+clean.Handler__c);
+
+Probe__c confirmProbe=new Probe__c(Name='confirm',RecordTypeId=rt,Status__c='In Progress',Handler__c='In Progress',Request__c=request.Id); insert confirmProbe;
+confirmProbe.Handler__c='New'; update confirmProbe;
+Integer messages=[SELECT count() FROM Message__c WHERE Probe__c=:confirmProbe.Id];
+System.debug('OBSERVED|confirmation_control|'+messages);
+Message__c externalMessage=new Message__c(Name='external', Probe__c=confirmProbe.Id, FromContact__c='sender'); insert externalMessage;
+externalMessage=[SELECT External__c FROM Message__c WHERE Id=:externalMessage.Id];
+confirmProbe=[SELECT Status__c,Handler__c,Notified__c FROM Probe__c WHERE Id=:confirmProbe.Id];
+System.debug('OBSERVED|external_control|'+externalMessage.External__c+'|'+confirmProbe.Status__c+'|'+confirmProbe.Handler__c+'|'+confirmProbe.Notified__c);
