@@ -19,6 +19,9 @@ func lightningChoiceComponentModuleJS(def baseComponentDefinition) (string, bool
 // Native choice components retain assigned values and accept custom errors only
 // as strings. Unlike input/textarea, null and numeric custom messages clear the
 // error. Their rendered controls and public change event contracts also differ.
+// No captured row covers lightning-select's classes, so select keeps the earlier
+// rendering (slds-has-error always applied; slds-combobox and slds-is-open on
+// the control div); combobox and radio group follow their captured rows.
 const lightningChoiceComponentJS = `import { LightningElement, registerDecorators, registerTemplate, freezeTemplate, registerComponent } from "lwc";
 const kind = "__CHOICE_KIND__";
 function createBaseComponent() {}
@@ -61,9 +64,9 @@ function tmpl($api, $cmp) {
   const help = $cmp._message ? [
     element("span", { classMap: { "slds-assistive-text": true }, key: 6 }, [text($cmp.label || "")]), text($cmp._message)
   ] : [];
-  return [element(kind === "radiogroup" ? "fieldset" : "div", { className: $cmp._message ? "slds-form-element slds-has-error" : "slds-form-element", key: 0 }, [
+  return [element(kind === "radiogroup" ? "fieldset" : "div", { className: kind === "select" || $cmp._message ? "slds-form-element slds-has-error" : "slds-form-element", key: 0 }, [
     label,
-    element("div", { className: Object.entries({ "slds-form-element__control": true, "slds-combobox": kind === "combobox", "slds-is-open": Boolean($cmp._open) }).filter(([, on]) => on).map(([name]) => name).join(" "), key: 4 }, flatten(controls)),
+    element("div", { className: Object.entries({ "slds-form-element__control": true, "slds-combobox": kind === "combobox" || kind === "select", "slds-is-open": kind === "select" || Boolean($cmp._open) }).filter(([, on]) => on).map(([name]) => name).join(" "), key: 4 }, flatten(controls)),
     element("div", { classMap: { "slds-form-element__help": true }, attrs: { role: "alert" }, key: 5 }, help)
   ])];
 }
