@@ -4,6 +4,10 @@
 
 - **Imported record identity (Apex API 62.0, 67.0, 68.0).** Records imported with their source-org Ids (`glade db import sf`, fixtures with explicit `id`) keep resolving to their own object: a custom object whose local key prefix differs from its imported records' prefix adopts that prefix, so `Id.getSObjectType()` and describe `getKeyPrefix()` agree with the Id, as in Salesforce. A prefix shared by records of two objects is left alone. A fixture `orgId` replaces the seeded Organization row instead of adding a second one, so `[SELECT Id FROM Organization]` returns one row whose Id is `UserInfo.getOrganizationId()`. `glade db` schema refresh keeps the adopted prefixes. The test runtime cache moves to `apextest-runtime-v45`. Captured at 62.0, 67.0 and 68.0.
 
+### Apex
+
+- System.runAs argument errors now report the captured Salesforce diagnostics without hiding unrelated syntax errors.
+
 ### CI
 
 - **Leak-scan hardening.** `scripts/leak-scan.sh` now fails when `LEAK_SCAN_DENYLIST` has no entries, so a missing secret cannot silently disable the private-name check; only fork pull requests, which cannot see repository secrets, pass `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skip the denylist with a warning while the path checks still run. The new `scripts/leak-scan-commits.sh A..B` scans every commit of a range on its own and names the commit with a finding, for release checks.
