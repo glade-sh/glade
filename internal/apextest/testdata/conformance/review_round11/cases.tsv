@@ -32,3 +32,6 @@ dc_object	anonymous	dc_object.apex
 dc_list_value	anonymous	dc_list_value.apex
 dc_sobject	anonymous	dc_sobject.apex
 dc_account	anonymous	dc_account.apex
+dc_nested_map	anonymous	dc_nested_map.apex
+dc_nested_sobject_list_map	anonymous	dc_nested_sobject_list_map.apex
+dc_fieldmap	anonymous	dc_fieldmap.apex

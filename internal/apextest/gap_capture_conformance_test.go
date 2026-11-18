@@ -36,7 +36,7 @@ type gapObservation struct {
 	// compile; Error is the compile message. Glade may refuse it in sema or
 	// raise the same message when the call runs.
 	Compiled *bool `json:"compiled,omitempty"`
-	Alt   []struct {
+	Alt      []struct {
 		Debug []string `json:"debug"`
 	} `json:"alt"`
 }

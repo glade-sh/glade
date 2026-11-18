@@ -64,3 +64,9 @@
 {"api": "67.0", "debug": ["OBS|dc_sobject|x"], "error": "", "id": "dc_sobject", "route": "anonymous"}
 {"api": "62.0", "debug": ["OBS|dc_account|0"], "error": "", "id": "dc_account", "route": "anonymous"}
 {"api": "67.0", "debug": ["OBS|dc_account|0"], "error": "", "id": "dc_account", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Map<String,Account>>", "id": "dc_nested_map", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Map<String,Account>>", "id": "dc_nested_map", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Map<Id,SObject>>", "id": "dc_nested_sobject_list_map", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Map<Id,SObject>>", "id": "dc_nested_sobject_list_map", "route": "anonymous"}
+{"api": "62.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectField>", "id": "dc_fieldmap", "route": "anonymous"}
+{"api": "67.0", "compiled": false, "debug": [], "error": "Operation only applies to SObject value map types: Map<String,Schema.SObjectField>", "id": "dc_fieldmap", "route": "anonymous"}

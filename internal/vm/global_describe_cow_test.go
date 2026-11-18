@@ -203,8 +203,8 @@ System.assertEquals(mapSize, Schema.getGlobalDescribe().size());
 	}
 }
 
-// NATIVE review_round11 dc_typed_self, dc_chained_self, dc_int, dc_object and
-// dc_list_value (62.0, 67.0): Map.deepClone is refused unless the map's values
+// NATIVE review_round11 dc_typed_self, dc_chained_self, dc_int, dc_object,
+// dc_list_value, dc_nested_map, dc_nested_sobject_list_map and dc_fieldmap (62.0, 67.0): Map.deepClone is refused unless the map's values
 // are SObjects; dc_sobject and dc_account run.
 func TestMapDeepCloneNeedsSObjectValues(t *testing.T) {
 	for _, row := range []struct{ source, err string }{
@@ -212,6 +212,9 @@ func TestMapDeepCloneNeedsSObjectValues(t *testing.T) {
 		{"Map<String,Schema.SObjectType> d = Schema.getGlobalDescribe().deepClone();", "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>"},
 		{"Map<String,Integer> m = new Map<String,Integer>{'a' => 1}; Map<String,Integer> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Integer>"},
 		{"Map<String,Object> m = new Map<String,Object>{'a' => 1}; Map<String,Object> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Object>"},
+		{"Map<String,Map<String,Account>> m = new Map<String,Map<String,Account>>{'a' => new Map<String,Account>()}; Map<String,Map<String,Account>> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Map<String,Account>>"},
+		{"Map<String,Map<Id,SObject>> m = new Map<String,Map<Id,SObject>>(); Map<String,Map<Id,SObject>> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Map<Id,SObject>>"},
+		{"Map<String,Schema.SObjectField> m = Schema.SObjectType.Account.fields.getMap(); Map<String,Schema.SObjectField> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Schema.SObjectField>"},
 		{"Map<String,SObject> m = new Map<String,SObject>{'a' => new Account(Name = 'x')}; Map<String,SObject> d = m.deepClone(); System.assertEquals('x', d.get('a').get('Name'));", ""},
 		{"Map<Id,Account> m = new Map<Id,Account>(); Map<Id,Account> d = m.deepClone(); System.assertEquals(0, d.size());", ""},
 	} {
