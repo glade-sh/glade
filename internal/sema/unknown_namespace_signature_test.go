@@ -11,9 +11,9 @@ import (
 )
 
 // Synthetic shapes for installed managed-package namespaces with no source in
-// the project. v0.3.1 (a recorded revision) compiles them outside local declarations;
-// native A04 C055/N010/N011 reject only the local-declaration shape, which
-// TestQualifiedLocalTypeNativeRejectionTwins keeps.
+// the project. Ruling 49 (native namespace_external_positions): undeclared,
+// they are Invalid type in every position; declared as dependencies without
+// source, they stay open and compile.
 const unknownNamespaceSignatureClass = `public with sharing class SignatureTwin {
     public vendorTwin.CoreThing current;
     public static vendorTwin.CoreThing relay(vendorTwin.CoreThing request) { return request; }
@@ -57,6 +57,20 @@ func TestUnknownNamespaceSignatureTypesCompile(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
 			index := unknownNamespaceSignatureIndex(t, api)
+			rejected := 0
+			for _, d := range Analyze(index).Diagnostics {
+				if d.Severity != diagnostic.Error {
+					continue
+				}
+				rejected++
+				if d.NativeMessage != "Invalid type: vendorTwin.CoreThing" && d.NativeMessage != "Invalid type: TriggersTwin.Context" {
+					t.Errorf("undeclared: %s %q | %q", d.Code, d.NativeMessage, d.Message)
+				}
+			}
+			if rejected == 0 {
+				t.Error("undeclared signature namespaces accepted")
+			}
+			index.Dependencies = []typesys.DependencyInfo{{Namespace: "vendorTwin", Status: "missing"}, {Namespace: "TriggersTwin", Status: "missing"}}
 			for route, ds := range map[string][]diagnostic.Diagnostic{
 				"named/@IsTest": Analyze(index).Diagnostics,
 				"anonymous":     AnalyzeAnonymous(index, unknownNamespaceSignatureAnonymous, api).Diagnostics,

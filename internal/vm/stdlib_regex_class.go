@@ -75,11 +75,21 @@ func parseJavaClassExpr(body string) (javaClassExpr, error) {
 	}
 	operands := make([]javaClassExpr, 0, len(parts))
 	for _, part := range parts {
+		if part == "" {
+			// Java drops an empty side of &&: [&&a] and [a&&] are [a].
+			continue
+		}
 		expr, err := javaClassIntersectionOperand(part)
 		if err != nil {
 			return nil, err
 		}
 		operands = append(operands, expr)
+	}
+	if len(operands) == 0 {
+		return nil, fmt.Errorf("Java regex character-class intersections")
+	}
+	if len(operands) == 1 {
+		return operands[0], nil
 	}
 	return javaClassIntersection{operands: operands}, nil
 }

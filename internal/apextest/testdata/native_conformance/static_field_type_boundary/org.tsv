@@ -1,0 +1,7 @@
+case	api	route	outcome
+field_missing	62.0	metadata-validation	Static method cannot be referenced from a non static context: String gladetest2.NqBound1d4f56d8.choose(String)
+field_missing	67.0	metadata-validation	Static method cannot be referenced from a non static context: String gladetest2.NqBound1d4f56d8.choose(String)
+type_control	62.0	metadata-validation	accepted
+type_control	67.0	metadata-validation	accepted
+field_control	62.0	metadata-validation	accepted
+field_control	67.0	metadata-validation	accepted

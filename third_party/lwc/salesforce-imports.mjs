@@ -57,6 +57,10 @@ export function validateSalesforceImport(node, specifier, filename, metadata) {
   switch (provider) {
     case "schema": {
       const path = resource.split(".");
+      const ownPrefix = metadata.ownNamespace ? `${metadata.ownNamespace}__` : "";
+      if (ownPrefix && metadata.ownSchemaObjects?.[path[0]] && (path[0].startsWith(ownPrefix) || path.at(-1).startsWith(ownPrefix))) {
+        throw new Error(`LWC1504: Invalid module id "${resource}" for type "schema". Explicit use of namespace "${metadata.ownNamespace}" in file "${file}" is prohibited. Use default namespace "c" instead.`);
+      }
       const objectFor = name => Object.hasOwn(metadata.schema, name) ? metadata.schema[name] : undefined;
       let objects = [objectFor(path[0])].filter(Boolean);
       if (!objects.length) invalid(path.length === 1 ? "sobjectClass" : "sobjectField");

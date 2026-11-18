@@ -1,0 +1,1 @@
+try { String Nope='x'; List<Account> l = Database.query('SELECT Id FROM Account WHERE Name = :NOPE'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

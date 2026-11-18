@@ -38,7 +38,7 @@ func (ctx *expressionValidationContext) customTabURLTarget(target, objectType Ex
 		}
 		// Load only the referenced tab. Unrelated malformed tab metadata must
 		// not become a prerequisite for this expression or for page indexing.
-		registry, err := resource.LoadProject(project.Project{TabFiles: []string{path}})
+		registry, err := resource.LoadProject((project.Project{TabFiles: []string{path}}).WithInputs(ctx.inputs))
 		if err != nil {
 			return false, err
 		}

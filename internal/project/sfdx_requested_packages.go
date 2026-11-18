@@ -43,7 +43,8 @@ func requestedDependencyPackageDirectories(dirs []PackageDirectory, requested []
 // Revisiting another package in a supplier is not a dependency cycle. Compare
 // the selected source roots so request ordering does not change cycle identity.
 func dependencyPackageViewKey(root string, dirs []PackageDirectory) string {
-	paths := packageRoots(root, dirs, false)
+	// Without conventional roots packageRoots reads nothing.
+	paths := packageRoots(nil, root, dirs, false)
 	sort.Strings(paths)
 	return "view\x00" + root + "\x00" + strings.Join(paths, "\x00")
 }

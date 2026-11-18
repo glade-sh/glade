@@ -1,0 +1,145 @@
+set	source_api	case	observation
+ungranted	62.0	stmt_upd	ok id=base
+ungranted	62.0	stmt_upd.state	n=1 name=changed text=y | newExt n=0
+ungranted	62.0	dbDefault_upd	ok created=false id=base
+ungranted	62.0	dbDefault_upd.state	n=1 name=changed text=y | newExt n=0
+ungranted	62.0	dbFalse_upd	ok created=false id=base
+ungranted	62.0	dbFalse_upd.state	n=1 name=changed text=y | newExt n=0
+ungranted	62.0	dbUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	dbUser_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	62.0	dbFalseUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	62.0	stmtUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	stmtUser_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	62.0	stmt_ins	ok id=new
+ungranted	62.0	stmt_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+ungranted	62.0	dbDefault_ins	ok created=true id=new
+ungranted	62.0	dbDefault_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+ungranted	62.0	dbFalse_ins	ok created=true id=new
+ungranted	62.0	dbFalse_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+ungranted	62.0	dbUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	dbUser_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	62.0	dbFalseUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	62.0	stmtUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	stmtUser_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	62.0	stmt_ctl	ok id=base
+ungranted	62.0	stmt_ctl.state	n=1 name=changed text=null | newExt n=0
+ungranted	62.0	dbDefault_ctl	ok created=false id=base
+ungranted	62.0	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0
+ungranted	62.0	dbFalse_ctl	ok created=false id=base
+ungranted	62.0	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0
+ungranted	62.0	dbUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	dbUser_ctl.state	n=1 name=base text=null | newExt n=0
+ungranted	62.0	dbFalseUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0
+ungranted	62.0	stmtUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	62.0	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	stmt_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	stmt_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbDefault_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbDefault_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbFalse_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbFalse_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbUser_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbFalseUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	stmtUser_upd	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	stmtUser_upd.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	stmt_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	stmt_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbDefault_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbDefault_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbFalse_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbFalse_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbUser_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbFalseUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	stmtUser_ins	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	stmtUser_ins.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	stmt_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	stmt_ctl.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbDefault_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbDefault_ctl.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbFalse_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbFalse_ctl.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbUser_ctl.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	dbFalseUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	dbFalseUser_ctl.state	n=1 name=base text=null | newExt n=0
+ungranted	67.0	stmtUser_ctl	EX System.SObjectException|Field Account.Ext__c is inaccessible in this context
+ungranted	67.0	stmtUser_ctl.state	n=1 name=base text=null | newExt n=0
+granted	62.0	stmt_upd	ok id=base
+granted	62.0	stmt_upd.state	n=1 name=changed text=y | newExt n=0
+granted	62.0	dbDefault_upd	ok created=false id=base
+granted	62.0	dbDefault_upd.state	n=1 name=changed text=y | newExt n=0
+granted	62.0	dbFalse_upd	ok created=false id=base
+granted	62.0	dbFalse_upd.state	n=1 name=changed text=y | newExt n=0
+granted	62.0	dbUser_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	62.0	dbUser_upd.state	n=1 name=base text=null | newExt n=0
+granted	62.0	dbFalseUser_upd	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)
+granted	62.0	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0
+granted	62.0	stmtUser_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	62.0	stmtUser_upd.state	n=1 name=base text=null | newExt n=0
+granted	62.0	stmt_ins	ok id=new
+granted	62.0	stmt_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+granted	62.0	dbDefault_ins	ok created=true id=new
+granted	62.0	dbDefault_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+granted	62.0	dbFalse_ins	ok created=true id=new
+granted	62.0	dbFalse_ins.state	n=1 name=base text=null | newExt n=1 name=fresh text=y
+granted	62.0	dbUser_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	62.0	dbUser_ins.state	n=1 name=base text=null | newExt n=0
+granted	62.0	dbFalseUser_ins	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)
+granted	62.0	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0
+granted	62.0	stmtUser_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	62.0	stmtUser_ins.state	n=1 name=base text=null | newExt n=0
+granted	62.0	stmt_ctl	ok id=base
+granted	62.0	stmt_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	62.0	dbDefault_ctl	ok created=false id=base
+granted	62.0	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	62.0	dbFalse_ctl	ok created=false id=base
+granted	62.0	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	62.0	dbUser_ctl	ok created=false id=base
+granted	62.0	dbUser_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	62.0	dbFalseUser_ctl	ok created=false id=base
+granted	62.0	dbFalseUser_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	62.0	stmtUser_ctl	ok id=base
+granted	62.0	stmtUser_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	67.0	stmt_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	67.0	stmt_upd.state	n=1 name=base text=null | newExt n=0
+granted	67.0	dbDefault_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	67.0	dbDefault_upd.state	n=1 name=base text=null | newExt n=0
+granted	67.0	dbFalse_upd	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)
+granted	67.0	dbFalse_upd.state	n=1 name=base text=null | newExt n=0
+granted	67.0	dbUser_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	67.0	dbUser_upd.state	n=1 name=base text=null | newExt n=0
+granted	67.0	dbFalseUser_upd	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)
+granted	67.0	dbFalseUser_upd.state	n=1 name=base text=null | newExt n=0
+granted	67.0	stmtUser_upd	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	67.0	stmtUser_upd.state	n=1 name=base text=null | newExt n=0
+granted	67.0	stmt_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	67.0	stmt_ins.state	n=1 name=base text=null | newExt n=0
+granted	67.0	dbDefault_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	67.0	dbDefault_ins.state	n=1 name=base text=null | newExt n=0
+granted	67.0	dbFalse_ins	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)
+granted	67.0	dbFalse_ins.state	n=1 name=base text=null | newExt n=0
+granted	67.0	dbUser_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	67.0	dbUser_ins.state	n=1 name=base text=null | newExt n=0
+granted	67.0	dbFalseUser_ins	rowErr CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result!  fieldNames: Text__c|(Text__c)
+granted	67.0	dbFalseUser_ins.state	n=1 name=base text=null | newExt n=0
+granted	67.0	stmtUser_ins	EX System.DmlException|Operation failed due to fields being inaccessible on Sobject Account, check errors on Exception or Result! 
+granted	67.0	stmtUser_ins.state	n=1 name=base text=null | newExt n=0
+granted	67.0	stmt_ctl	ok id=base
+granted	67.0	stmt_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	67.0	dbDefault_ctl	ok created=false id=base
+granted	67.0	dbDefault_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	67.0	dbFalse_ctl	ok created=false id=base
+granted	67.0	dbFalse_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	67.0	dbUser_ctl	ok created=false id=base
+granted	67.0	dbUser_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	67.0	dbFalseUser_ctl	ok created=false id=base
+granted	67.0	dbFalseUser_ctl.state	n=1 name=changed text=null | newExt n=0
+granted	67.0	stmtUser_ctl	ok id=base
+granted	67.0	stmtUser_ctl.state	n=1 name=changed text=null | newExt n=0

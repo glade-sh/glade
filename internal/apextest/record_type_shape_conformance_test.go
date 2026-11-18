@@ -25,7 +25,9 @@ import (
 //     WhatId targets at 67.0; the tiebreak orgs (whatid_targets_tiebreak) and
 //     org D list 93, adding the eight objects that join the global describe by
 //     67.0. Glade follows the majority (TestWhatIDTargetsTiebreakNativeConformance,
-//     TestWhatIDTargetsDriftRows). At 62.0 every org gives the 85 targets.
+//     TestWhatIDTargetsDriftRows, TestWhatIDTargetsFreshNativeConformance). At
+//     62.0 these orgs give 85 targets; the plain_global_describe 62.0 isTest row
+//     gives 93 and stays the minority.
 //   - list_forms refs: polymorphic target catalogs (Attachment, Note,
 //     ContentDocumentLink, EntitySubscription, FeedItem, Event.WhatId) and
 //     NetworkId fields the plain shape lacks; keySetSize: Account catalog.

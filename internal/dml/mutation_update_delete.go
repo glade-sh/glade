@@ -22,6 +22,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err != nil {
 		return err
 	}
+	normalizeTextWrites(object.Definition, e.Org.Namespace, &record)
 	normalizeNameFields(objectName, object.Definition, &record)
 	if record.ID == "" {
 		return errUpdateRequiresID
@@ -123,6 +124,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	e.applyTaskPriorityFlag(&finalRecord)
 	e.applyActivityAccountFromWhat(&finalRecord)
+	e.applyContractStatusCode(&finalRecord)
 	e.applyOrderItemDerivedFields(&finalRecord)
 	e.applyRegulatoryCodeActive(&finalRecord)
 	e.applyOpportunityLineItemDerivedFields(&finalRecord, record, existing)
@@ -172,6 +174,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	e.applyTaskPriorityFlag(&existing)
 	e.applyActivityAccountFromWhat(&existing)
+	e.applyContractStatusCode(&existing)
 	stripStoredCalculatedFields(object.Definition, &existing)
 	e.applyOrderItemDerivedFields(&existing)
 	e.applyOpportunityLineItemDerivedFields(&existing, record, oldRecord)
@@ -185,13 +188,14 @@ func (e *Engine) updateOne(record storage.Record) error {
 		e.IsolationJournal.RecordUpdate(objectName, storedID, oldRecord)
 	}
 	existing.ClearDMLNameUnassigned()
-	object.Records[storedID] = existing
+	object.PutRecord(storedID, existing)
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, oldRecord)
 	e.addUniqueIndexRecord(objectName, object.Definition, existing)
 	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
 	e.refreshActivityAccounts(objectName, object.Definition, storedID, oldRecord, existing)
 	if !storage.IDsEqual(oldRecord.System.OwnerID, existing.System.OwnerID) {
+		e.removeManualAccountSharesOnTransfer(objectName, storedID)
 		if err := e.reconcilePrivateOwnerShares(objectName, storedID); err != nil {
 			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
 				return rollbackErr
@@ -353,7 +357,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	stored.System.LastModifiedDate = stamp
 	stored.System.SystemModstamp = stamp
 	stored.System.LastModifiedByID = e.systemUserID()
-	object.Records[storedID] = stored
+	object.PutRecord(storedID, stored)
 	e.Org.Objects[objectName] = object
 	e.removeUniqueIndexRecord(objectName, object.Definition, stored)
 	e.recalculateSummaryFieldsForChildren(objectName, stored)

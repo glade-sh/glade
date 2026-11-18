@@ -1,0 +1,13 @@
+api	case	outcome	value
+59.0	HtmlInput	render	"<input type=""text"" />"
+59.0	HtmlSpan	render	<span>SYNID</span>
+59.0	HtmlAnchor	render	"<a href=""/x"">SYNID</a>"
+59.0	HtmlForm	render	<form>SYNID</form>
+59.0	HtmlValid	render	"<div id=""valid"">SYNID</div>"
+59.0	HtmlEmpty	render	<div>SYNID</div>
+67.0	HtmlInput	render	"<input type=""text"" />"
+67.0	HtmlSpan	render	<span>SYNID</span>
+67.0	HtmlAnchor	render	"<a href=""/x"">SYNID</a>"
+67.0	HtmlForm	render	<form>SYNID</form>
+67.0	HtmlValid	render	"<div id=""valid"">SYNID</div>"
+67.0	HtmlEmpty	render	<div>SYNID</div>

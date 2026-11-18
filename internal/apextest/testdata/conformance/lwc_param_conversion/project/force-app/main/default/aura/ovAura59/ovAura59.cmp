@@ -1,0 +1,1 @@
+<aura:component controller="CvAura" access="GLOBAL"><aura:handler name="init" value="{!this}" action="{!c.doInit}"/><pre>aura</pre></aura:component>

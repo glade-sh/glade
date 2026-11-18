@@ -1,0 +1,5 @@
+case	source_api	route	result
+qualified	62.0	istest-deploy-check	Succeeded
+unqualified	62.0	istest-deploy-check	Invalid type: V035Provider.GlobalInner; Variable does not exist: value
+qualified	67.0	istest-deploy-check	Succeeded
+unqualified	67.0	istest-deploy-check	Invalid type: V035Provider.GlobalInner; Variable does not exist: value

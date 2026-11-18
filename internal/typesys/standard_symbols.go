@@ -24,6 +24,7 @@ type StandardSymbolSpec struct {
 	ReplaceConstructors bool
 	Methods             []StandardMethodSpec
 	Properties          []StandardPropertySpec
+	Fields              []StandardFieldSpec
 }
 
 type StandardConstructorSpec struct {
@@ -52,6 +53,10 @@ type StandardPropertySpec struct {
 	Force  bool
 }
 
+// StandardFieldSpec describes a source-visible platform field. It shares the
+// name and type metadata used by properties while retaining field semantics.
+type StandardFieldSpec = StandardPropertySpec
+
 func standardEnumProperties(typeName string, names ...string) []StandardPropertySpec {
 	props := make([]StandardPropertySpec, 0, len(names))
 	for _, name := range names {
@@ -65,14 +70,18 @@ func standardEnumHashBase(value int64) *int64 {
 }
 
 // platformSymbolSnapshot is one immutable build of the standard platform
-// symbols. A process holds at most two over its life: the stub-only view, and
-// the view with the org-captured ConnectApi shape once a source names that
-// namespace (RequestConnectAPIShape). generation increases with each build so
-// PlatformViewCache holders can tell a stale derivation from a current one.
+// symbols. connectAPI records whether the org-captured ConnectApi shape is in
+// the view; included records which gated namespaces (platform_gate.go) the
+// view carries in full. A process holds few builds over its life, because both
+// inputs only grow: a request is sticky. generation increases with each build
+// so PlatformViewCache holders can tell a stale derivation from a current one.
 type platformSymbolSnapshot struct {
 	view       []TypeSymbol
 	connectAPI bool
+	included   uint8
 	generation uint64
+	// excluded lists the gated stub types the view leaves out.
+	excluded ExcludedPlatformTypes
 }
 
 var platformSymbols struct {
@@ -82,30 +91,50 @@ var platformSymbols struct {
 }
 
 // currentPlatformSymbolSnapshot returns the snapshot matching the ConnectApi
-// request state, building it on first use or when the request arrived after
-// the stub-only view was built.
+// request and gate state, building it on first use or when a request arrived
+// after the current view was built.
 func currentPlatformSymbolSnapshot() *platformSymbolSnapshot {
-	want := connectAPIShapeRequested.Load()
-	if snapshot := platformSymbols.current.Load(); snapshot != nil && (snapshot.connectAPI || !want) {
+	connectAPI := connectAPIShapeRequested.Load()
+	included := includedGatedPlatformNamespaces()
+	if snapshot := platformSymbols.current.Load(); snapshot != nil && snapshot.connectAPI == connectAPI && snapshot.included == included {
 		return snapshot
 	}
 	platformSymbols.mu.Lock()
 	defer platformSymbols.mu.Unlock()
-	if snapshot := platformSymbols.current.Load(); snapshot != nil && (snapshot.connectAPI || !want) {
+	connectAPI = connectAPIShapeRequested.Load()
+	included = includedGatedPlatformNamespaces()
+	if snapshot := platformSymbols.current.Load(); snapshot != nil && snapshot.connectAPI == connectAPI && snapshot.included == included {
 		return snapshot
 	}
 	platformSymbols.builds++
+	view, excluded := buildGatedStandardPlatformSymbols(connectAPI, included)
 	snapshot := &platformSymbolSnapshot{
-		view:       buildStandardPlatformSymbols(want),
-		connectAPI: want,
+		view:       view,
+		connectAPI: connectAPI,
+		included:   included,
 		generation: platformSymbols.builds,
+		excluded:   excluded,
 	}
 	platformSymbols.current.Store(snapshot)
 	return snapshot
 }
 
+// StandardPlatformSymbols returns a private copy of the whole platform table:
+// the view plus every gated stub type it leaves out, in view order, as the
+// table was before the namespace gate.
 func StandardPlatformSymbols() []TypeSymbol {
-	return cloneTypeSymbols(currentPlatformSymbolSnapshot().view)
+	snapshot := currentPlatformSymbolSnapshot()
+	if snapshot.excluded.Len() == 0 {
+		return cloneTypeSymbols(snapshot.view)
+	}
+	all := make([]TypeSymbol, 0, len(snapshot.view)+snapshot.excluded.Len())
+	EachPlatformTypeName(snapshot.view, snapshot.excluded, func(_, _ string, _ apexast.DeclarationKind, symbol *TypeSymbol, excludedIndex int) {
+		if symbol == nil {
+			symbol = snapshot.excluded.Symbol(excludedIndex)
+		}
+		all = append(all, *symbol)
+	})
+	return cloneTypeSymbols(all)
 }
 
 // StandardPlatformSymbolView returns cached platform symbols for read-only walkers.
@@ -147,6 +176,24 @@ func (c *PlatformViewCache[T]) Get(build func(view []TypeSymbol) T) T {
 		return entry.value
 	}
 	entry := &platformViewCacheEntry[T]{generation: snapshot.generation, value: build(snapshot.view)}
+	c.current.Store(entry)
+	return entry.value
+}
+
+// GetWithExcluded is Get for a derivation that must also see the gated stub
+// types the view leaves out (see ExcludedPlatformTypes). Both arguments come
+// from the same snapshot.
+func (c *PlatformViewCache[T]) GetWithExcluded(build func(view []TypeSymbol, excluded ExcludedPlatformTypes) T) T {
+	snapshot := currentPlatformSymbolSnapshot()
+	if entry := c.current.Load(); entry != nil && entry.generation == snapshot.generation {
+		return entry.value
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if entry := c.current.Load(); entry != nil && entry.generation == snapshot.generation {
+		return entry.value
+	}
+	entry := &platformViewCacheEntry[T]{generation: snapshot.generation, value: build(snapshot.view, snapshot.excluded)}
 	c.current.Store(entry)
 	return entry.value
 }
@@ -246,11 +293,19 @@ func sortedNamespaceNames(names map[string]string) []string {
 	return out
 }
 
-// buildStandardPlatformSymbols assembles the platform symbol table. With
-// connectAPI, the org-captured ConnectApi shape joins as the last overlay and
-// its captured superclasses apply; without it the table is the stub-only
-// table, byte for byte what a project that never names ConnectApi used before.
+// buildStandardPlatformSymbols assembles the ungated platform symbol table.
+// With connectAPI, the org-captured ConnectApi shape joins as the last overlay
+// and its captured superclasses apply; without it the table is the stub-only
+// table, byte for byte what a project that never names ConnectApi used before
+// the namespace gate.
 func buildStandardPlatformSymbols(connectAPI bool) []TypeSymbol {
+	return standardSymbolsFromSpecs(standardPlatformSymbolSpecList(connectAPI), newStandardSymbolLists())
+}
+
+// standardPlatformSymbolSpecList is every spec of the platform table, in
+// overlay order, with the shared exception hierarchy and, with connectAPI,
+// the captured ConnectApi superclasses applied.
+func standardPlatformSymbolSpecList(connectAPI bool) []StandardSymbolSpec {
 	specs := append([]StandardSymbolSpec(nil), standardPlatformSymbolSpecs...)
 	specs = append(specs, productNamespaceSymbolSpecs...)
 	specs = append(specs, systemStubSymbolSpecs...)
@@ -261,6 +316,7 @@ func buildStandardPlatformSymbols(connectAPI bool) []TypeSymbol {
 	specs = append(specs, cartHierarchyOverlays()...)
 	specs = append(specs, commerceServiceOverlays()...)
 	specs = append(specs, paymentPlatformSymbolOverlays...)
+	specs = append(specs, api68PlatformSymbolOverlays...)
 	// The org-captured ConnectApi shape is authoritative over the stub corpus.
 	var captured *connectAPIShape
 	if connectAPI {
@@ -291,7 +347,7 @@ func buildStandardPlatformSymbols(connectAPI bool) []TypeSymbol {
 			}
 		}
 	}
-	return StandardSymbolsFromSpecs(specs)
+	return specs
 }
 
 func cloneTypeSymbols(symbols []TypeSymbol) []TypeSymbol {
@@ -361,9 +417,108 @@ func StandardTypeNameSymbols(names []string) []TypeSymbol {
 }
 
 func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
+	return standardSymbolsFromSpecs(specs, nil)
+}
+
+// standardSymbolLists shares identical member modifier and parameter lists
+// across the platform table. The table is read-only; StandardPlatformSymbols
+// clones every list before it leaves the package. Each shared list has its
+// capacity clamped to its length, so an append by a consumer copies.
+type standardSymbolLists struct {
+	modifiers map[string][]string
+	params    map[string][]apexast.Parameter
+	key       []byte
+	scratch   []apexast.Parameter
+}
+
+func newStandardSymbolLists() *standardSymbolLists {
+	return &standardSymbolLists{
+		modifiers: make(map[string][]string, 16),
+		params:    make(map[string][]apexast.Parameter, 256),
+	}
+}
+
+func (l *standardSymbolLists) modifierList(values ...string) []string {
+	if l.modifiers == nil {
+		return append([]string(nil), values...)
+	}
+	l.key = l.key[:0]
+	for _, value := range values {
+		l.key = append(l.key, value...)
+		l.key = append(l.key, 0)
+	}
+	if list, ok := l.modifiers[string(l.key)]; ok {
+		return list
+	}
+	list := append(make([]string, 0, len(values)), values...)
+	l.modifiers[string(l.key)] = list
+	return list
+}
+
+func (l *standardSymbolLists) parameterList(params []apexast.Parameter) []apexast.Parameter {
+	if len(params) == 0 {
+		return []apexast.Parameter{}
+	}
+	if l.params == nil {
+		return append(make([]apexast.Parameter, 0, len(params)), params...)
+	}
+	l.key = l.key[:0]
+	for _, param := range params {
+		l.key = append(l.key, param.Name...)
+		l.key = append(l.key, 0)
+		l.key = append(l.key, param.Type...)
+		l.key = append(l.key, 1)
+	}
+	if list, ok := l.params[string(l.key)]; ok {
+		return list
+	}
+	list := append(make([]apexast.Parameter, 0, len(params)), params...)
+	l.params[string(l.key)] = list
+	return list
+}
+
+// specParameters is standardSpecParameters through the shared lists.
+func (l *standardSymbolLists) specParameters(specs []StandardParameterSpec) []apexast.Parameter {
+	l.scratch = l.scratch[:0]
+	for i, spec := range specs {
+		name := spec.Name
+		if name == "" {
+			name = standardParameterName(i)
+		}
+		l.scratch = append(l.scratch, apexast.Parameter{Name: name, Type: spec.Type})
+	}
+	return l.parameterList(l.scratch)
+}
+
+// typeParameters is standardParameters through the shared lists.
+func (l *standardSymbolLists) typeParameters(types []string) []apexast.Parameter {
+	l.scratch = l.scratch[:0]
+	for i, typ := range types {
+		l.scratch = append(l.scratch, apexast.Parameter{Name: standardParameterName(i), Type: typ})
+	}
+	return l.parameterList(l.scratch)
+}
+
+func (l *standardSymbolLists) methodParameters(typeName string, method StandardMethodSpec) []apexast.Parameter {
+	if len(method.ParameterSpecs) != 0 {
+		return l.specParameters(normalizeStandardMethodParameterSpecs(typeName, method))
+	}
+	return l.typeParameters(method.Parameters)
+}
+
+// standardSymbolsFromSpecs builds the sorted symbol table. Members are sized
+// exactly. A nil lists value gives every symbol private modifier and
+// parameter lists; the platform table passes shared lists.
+func standardSymbolsFromSpecs(specs []StandardSymbolSpec, lists *standardSymbolLists) []TypeSymbol {
 	specs = mergeStandardSymbolSpecs(specs)
 	out := make([]TypeSymbol, 0, len(specs))
 	seen := make(map[string]bool, len(specs))
+	// A zero-value lists struct hands out private copies, so the member loops
+	// below read the same either way.
+	shared := lists
+	if shared == nil {
+		shared = &standardSymbolLists{}
+	}
 	for _, spec := range specs {
 		if spec.Name == "" {
 			continue
@@ -396,20 +551,25 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 			sym.Namespace = namespace
 			sym.Name = localName
 		}
+		var ctors []StandardConstructorSpec
 		if kind == apexast.DeclarationClass {
-			for _, ctor := range standardConstructorSpecs(spec) {
-				sym.Members = append(sym.Members, MemberSymbol{
-					Kind:       apexast.DeclarationConstructor,
-					Name:       localStandardSymbolName(spec.Name),
-					Modifiers:  []string{"public", "passive-generated"},
-					Parameters: standardSpecParameters(ctor.Parameters),
-				})
-			}
+			ctors = standardConstructorSpecs(spec)
+		}
+		if n := len(ctors) + len(spec.Properties) + len(spec.Fields) + len(spec.Methods); n > 0 {
+			sym.Members = make([]MemberSymbol, 0, n)
+		}
+		for _, ctor := range ctors {
+			sym.Members = append(sym.Members, MemberSymbol{
+				Kind:       apexast.DeclarationConstructor,
+				Name:       localStandardSymbolName(spec.Name),
+				Modifiers:  shared.modifierList("public", "passive-generated"),
+				Parameters: shared.specParameters(ctor.Parameters),
+			})
 		}
 		for _, prop := range spec.Properties {
-			modifiers := []string{"public"}
+			modifiers := shared.modifierList("public")
 			if prop.Static {
-				modifiers = append(modifiers, "static")
+				modifiers = shared.modifierList("public", "static")
 			}
 			sym.Members = append(sym.Members, MemberSymbol{
 				Kind:      apexast.DeclarationProperty,
@@ -418,20 +578,25 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 				Modifiers: modifiers,
 			})
 		}
+		for _, field := range spec.Fields {
+			modifiers := shared.modifierList("public")
+			if field.Static {
+				modifiers = shared.modifierList("public", "static")
+			}
+			sym.Members = append(sym.Members, MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      field.Name,
+				Type:      field.Type,
+				Modifiers: modifiers,
+			})
+		}
 		for _, method := range spec.Methods {
-			modifiers := append([]string(nil), method.Modifiers...)
-			if !standardModifierContains(modifiers, "private") && !standardModifierContains(modifiers, "protected") && !standardModifierContains(modifiers, "public") && !standardModifierContains(modifiers, "global") {
-				modifiers = append([]string{"public"}, modifiers...)
-			}
-			if method.Static {
-				modifiers = append(modifiers, "static")
-			}
 			sym.Members = append(sym.Members, MemberSymbol{
 				Kind:       apexast.DeclarationMethod,
 				Name:       method.Name,
 				Type:       method.ReturnType,
-				Modifiers:  modifiers,
-				Parameters: standardMethodParameters(spec.Name, method),
+				Modifiers:  shared.methodModifiers(method),
+				Parameters: shared.methodParameters(spec.Name, method),
 			})
 		}
 		out = append(out, sym)
@@ -445,6 +610,32 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 	return out
 }
 
+// methodModifiers lists a method's modifiers: its own, with public ahead when
+// none of the access modifiers is present, and static last.
+func (l *standardSymbolLists) methodModifiers(method StandardMethodSpec) []string {
+	explicit := method.Modifiers
+	access := standardModifierContains(explicit, "private") || standardModifierContains(explicit, "protected") || standardModifierContains(explicit, "public") || standardModifierContains(explicit, "global")
+	n := len(explicit)
+	if !access {
+		n++
+	}
+	if method.Static {
+		n++
+	}
+	if n == 0 {
+		return nil
+	}
+	values := make([]string, 0, n)
+	if !access {
+		values = append(values, "public")
+	}
+	values = append(values, explicit...)
+	if method.Static {
+		values = append(values, "static")
+	}
+	return l.modifierList(values...)
+}
+
 func standardConstructorSpecs(spec StandardSymbolSpec) []StandardConstructorSpec {
 	out := append([]StandardConstructorSpec(nil), spec.ConstructorSpecs...)
 	for _, ctor := range spec.Constructors {
@@ -456,6 +647,12 @@ func standardConstructorSpecs(spec StandardSymbolSpec) []StandardConstructorSpec
 func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 	out := make([]StandardSymbolSpec, 0, len(specs))
 	byName := make(map[string]int, len(specs))
+	// owned marks an entry whose slices are private copies. A spec's slices
+	// alias the package-level spec tables; the merge below replaces elements
+	// in place, which must never write through to those tables, or a later
+	// build (the stub-only view after the captured ConnectApi shape) would
+	// read another build's result.
+	owned := make(map[int]bool)
 	for _, spec := range specs {
 		if spec.Name == "" {
 			continue
@@ -468,6 +665,16 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 			continue
 		}
 		existing := &out[existingIndex]
+		if !owned[existingIndex] {
+			owned[existingIndex] = true
+			existing.Modifiers = append([]string(nil), existing.Modifiers...)
+			existing.Interfaces = append([]string(nil), existing.Interfaces...)
+			existing.Constructors = append([][]string(nil), existing.Constructors...)
+			existing.ConstructorSpecs = append([]StandardConstructorSpec(nil), existing.ConstructorSpecs...)
+			existing.Methods = append([]StandardMethodSpec(nil), existing.Methods...)
+			existing.Properties = append([]StandardPropertySpec(nil), existing.Properties...)
+			existing.Fields = append([]StandardFieldSpec(nil), existing.Fields...)
+		}
 		if spec.Kind != "" {
 			existing.Kind = spec.Kind
 		}
@@ -489,6 +696,7 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 		}
 		existing.Methods = appendUniqueStandardMethods(existing.Methods, spec.Methods)
 		existing.Properties = appendUniqueStandardProperties(existing.Properties, spec.Properties)
+		existing.Fields = appendUniqueStandardProperties(existing.Fields, spec.Fields)
 	}
 	return out
 }
@@ -1340,7 +1548,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 		{Name: "renderStoredEmailTemplate", ReturnType: "Messaging.SingleEmailMessage", Parameters: []string{"String", "String", "String", "Messaging.AttachmentRetrievalOption"}, Static: true},
 		{Name: "renderStoredEmailTemplate", ReturnType: "Messaging.SingleEmailMessage", Parameters: []string{"String", "String", "String", "Messaging.AttachmentRetrievalOption", "Boolean"}, Static: true},
 	}},
-	{Name: "SObject", Methods: []StandardMethodSpec{{Name: "setOptions", ReturnType: "void", Parameters: []string{"Database.DMLOptions"}}, {Name: "getOptions", ReturnType: "Database.DMLOptions"}}},
+	{Name: "SObject", Fields: []StandardFieldSpec{{Name: "Id", Type: "Id"}}, Methods: []StandardMethodSpec{{Name: "setOptions", ReturnType: "void", Parameters: []string{"Database.DMLOptions"}}, {Name: "getOptions", ReturnType: "Database.DMLOptions"}}},
 	{Name: "ConnectApi.Organization", Methods: []StandardMethodSpec{{Name: "getSettings", ReturnType: "ConnectApi.OrganizationSettings", Static: true}}},
 	{Name: "ConnectApi.ChatterFeeds", Methods: []StandardMethodSpec{{Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "ConnectApi.FeedElementInput"}, Static: true}, {Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "String", "ConnectApi.FeedElementType", "String"}, Static: true}, {Name: "postCommentToFeedElement", ReturnType: "ConnectApi.Comment", Parameters: []string{"String", "String", "ConnectApi.CommentInput", "ConnectApi.BinaryInput"}, Static: true}, {Name: "postCommentToFeedElement", ReturnType: "ConnectApi.Comment", Parameters: []string{"String", "String", "String"}, Static: true}}},
 	{Name: "ConnectApi.UserProfiles", Methods: []StandardMethodSpec{{Name: "getUserProfile", ReturnType: "ConnectApi.UserProfile", Parameters: []string{"String", "String"}, Static: true}}},

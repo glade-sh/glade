@@ -1,0 +1,483 @@
+api	route	case	result
+62.0	deploy	F62InTextString	accepted
+62.0	anonymous	F62InTextString value	Flow Type Probe B
+62.0	anonymous	F62InTextString empty	null
+62.0	deploy	F62NotInTextString	accepted
+62.0	anonymous	F62NotInTextString value	Flow Type Probe A
+62.0	anonymous	F62NotInTextString empty	Flow Type Probe A
+62.0	deploy	F62InTextNumber	accepted
+62.0	anonymous	F62InTextNumber value	null
+62.0	anonymous	F62InTextNumber empty	null
+62.0	deploy	F62NotInTextNumber	accepted
+62.0	anonymous	F62NotInTextNumber value	Flow Type Probe A
+62.0	anonymous	F62NotInTextNumber empty	Flow Type Probe A
+62.0	deploy	F62InTextBoolean	accepted
+62.0	anonymous	F62InTextBoolean value	null
+62.0	anonymous	F62InTextBoolean empty	null
+62.0	deploy	F62NotInTextBoolean	accepted
+62.0	anonymous	F62NotInTextBoolean value	Flow Type Probe A
+62.0	anonymous	F62NotInTextBoolean empty	Flow Type Probe A
+62.0	deploy	F62InTextDate	accepted
+62.0	anonymous	F62InTextDate value	ERROR:System.FlowException
+62.0	anonymous	F62InTextDate empty	null
+62.0	deploy	F62NotInTextDate	accepted
+62.0	anonymous	F62NotInTextDate value	ERROR:System.FlowException
+62.0	anonymous	F62NotInTextDate empty	Flow Type Probe A
+62.0	deploy	F62InTextDateTime	accepted
+62.0	anonymous	F62InTextDateTime value	ERROR:System.FlowException
+62.0	anonymous	F62InTextDateTime empty	null
+62.0	deploy	F62NotInTextDateTime	accepted
+62.0	anonymous	F62NotInTextDateTime value	ERROR:System.FlowException
+62.0	anonymous	F62NotInTextDateTime empty	Flow Type Probe A
+62.0	deploy	F62InNumberString	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62NotInNumberString	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62InNumberNumber	accepted
+62.0	anonymous	F62InNumberNumber value	Flow Type Probe B
+62.0	anonymous	F62InNumberNumber empty	null
+62.0	deploy	F62NotInNumberNumber	accepted
+62.0	anonymous	F62NotInNumberNumber value	Flow Type Probe A
+62.0	anonymous	F62NotInNumberNumber empty	Flow Type Probe A
+62.0	deploy	F62InNumberBoolean	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the In operator with the Boolean element "values". "values" can't be a Boolean.)
+62.0	deploy	F62NotInNumberBoolean	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the Not In operator with the Boolean element "values". "values" can't be a Boolean.)
+62.0	deploy	F62InNumberDate	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the In operator with the Date element "values". "values" can't be a Date.)
+62.0	deploy	F62NotInNumberDate	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the Not In operator with the Date element "values". "values" can't be a Date.)
+62.0	deploy	F62InNumberDateTime	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+62.0	deploy	F62NotInNumberDateTime	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the Not In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+62.0	deploy	F62InCurrencyString	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62NotInCurrencyString	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62InCurrencyNumber	accepted
+62.0	anonymous	F62InCurrencyNumber value	Flow Type Probe B
+62.0	anonymous	F62InCurrencyNumber empty	null
+62.0	deploy	F62NotInCurrencyNumber	accepted
+62.0	anonymous	F62NotInCurrencyNumber value	Flow Type Probe A
+62.0	anonymous	F62NotInCurrencyNumber empty	Flow Type Probe A
+62.0	deploy	F62InCurrencyBoolean	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the In operator with the Boolean element "values". "values" can't be a Boolean.)
+62.0	deploy	F62NotInCurrencyBoolean	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the Not In operator with the Boolean element "values". "values" can't be a Boolean.)
+62.0	deploy	F62InCurrencyDate	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the In operator with the Date element "values". "values" can't be a Date.)
+62.0	deploy	F62NotInCurrencyDate	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the Not In operator with the Date element "values". "values" can't be a Date.)
+62.0	deploy	F62InCurrencyDateTime	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+62.0	deploy	F62NotInCurrencyDateTime	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the Not In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+62.0	deploy	F62InReferenceString	accepted
+62.0	anonymous	F62InReferenceString value	Flow Type Probe A
+62.0	anonymous	F62InReferenceString empty	null
+62.0	deploy	F62NotInReferenceString	accepted
+62.0	anonymous	F62NotInReferenceString value	null
+62.0	anonymous	F62NotInReferenceString empty	Flow Type Probe A
+62.0	deploy	F62InReferenceNumber	accepted
+62.0	anonymous	F62InReferenceNumber value	ERROR:System.FlowException
+62.0	anonymous	F62InReferenceNumber empty	null
+62.0	deploy	F62NotInReferenceNumber	accepted
+62.0	anonymous	F62NotInReferenceNumber value	ERROR:System.FlowException
+62.0	anonymous	F62NotInReferenceNumber empty	Flow Type Probe A
+62.0	deploy	F62InReferenceBoolean	accepted
+62.0	anonymous	F62InReferenceBoolean value	ERROR:System.FlowException
+62.0	anonymous	F62InReferenceBoolean empty	null
+62.0	deploy	F62NotInReferenceBoolean	accepted
+62.0	anonymous	F62NotInReferenceBoolean value	ERROR:System.FlowException
+62.0	anonymous	F62NotInReferenceBoolean empty	Flow Type Probe A
+62.0	deploy	F62InReferenceDate	accepted
+62.0	anonymous	F62InReferenceDate value	ERROR:System.FlowException
+62.0	anonymous	F62InReferenceDate empty	null
+62.0	deploy	F62NotInReferenceDate	accepted
+62.0	anonymous	F62NotInReferenceDate value	ERROR:System.FlowException
+62.0	anonymous	F62NotInReferenceDate empty	Flow Type Probe A
+62.0	deploy	F62InReferenceDateTime	accepted
+62.0	anonymous	F62InReferenceDateTime value	ERROR:System.FlowException
+62.0	anonymous	F62InReferenceDateTime empty	null
+62.0	deploy	F62NotInReferenceDateTime	accepted
+62.0	anonymous	F62NotInReferenceDateTime value	ERROR:System.FlowException
+62.0	anonymous	F62NotInReferenceDateTime empty	Flow Type Probe A
+62.0	deploy	F62InPicklistString	accepted
+62.0	anonymous	F62InPicklistString value	Flow Type Probe B
+62.0	anonymous	F62InPicklistString empty	null
+62.0	deploy	F62NotInPicklistString	accepted
+62.0	anonymous	F62NotInPicklistString value	Flow Type Probe A
+62.0	anonymous	F62NotInPicklistString empty	Flow Type Probe A
+62.0	deploy	F62InPicklistNumber	accepted
+62.0	anonymous	F62InPicklistNumber value	null
+62.0	anonymous	F62InPicklistNumber empty	null
+62.0	deploy	F62NotInPicklistNumber	accepted
+62.0	anonymous	F62NotInPicklistNumber value	Flow Type Probe A
+62.0	anonymous	F62NotInPicklistNumber empty	Flow Type Probe A
+62.0	deploy	F62InPicklistBoolean	accepted
+62.0	anonymous	F62InPicklistBoolean value	null
+62.0	anonymous	F62InPicklistBoolean empty	null
+62.0	deploy	F62NotInPicklistBoolean	accepted
+62.0	anonymous	F62NotInPicklistBoolean value	Flow Type Probe A
+62.0	anonymous	F62NotInPicklistBoolean empty	Flow Type Probe A
+62.0	deploy	F62InPicklistDate	accepted
+62.0	anonymous	F62InPicklistDate value	ERROR:System.FlowException
+62.0	anonymous	F62InPicklistDate empty	null
+62.0	deploy	F62NotInPicklistDate	accepted
+62.0	anonymous	F62NotInPicklistDate value	ERROR:System.FlowException
+62.0	anonymous	F62NotInPicklistDate empty	Flow Type Probe A
+62.0	deploy	F62InPicklistDateTime	accepted
+62.0	anonymous	F62InPicklistDateTime value	ERROR:System.FlowException
+62.0	anonymous	F62InPicklistDateTime empty	null
+62.0	deploy	F62NotInPicklistDateTime	accepted
+62.0	anonymous	F62NotInPicklistDateTime value	ERROR:System.FlowException
+62.0	anonymous	F62NotInPicklistDateTime empty	Flow Type Probe A
+62.0	deploy	F62InDateString	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62NotInDateString	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62InDateNumber	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the In operator with the Number element "values". "values" can't be a Number.)
+62.0	deploy	F62NotInDateNumber	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the Not In operator with the Number element "values". "values" can't be a Number.)
+62.0	deploy	F62InDateBoolean	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the In operator with the Boolean element "values". "values" can't be a Boolean.)
+62.0	deploy	F62NotInDateBoolean	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the Not In operator with the Boolean element "values". "values" can't be a Boolean.)
+62.0	deploy	F62InDateDate	accepted
+62.0	anonymous	F62InDateDate value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+62.0	anonymous	F62InDateDate empty	null
+62.0	deploy	F62NotInDateDate	accepted
+62.0	anonymous	F62NotInDateDate value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+62.0	anonymous	F62NotInDateDate empty	Flow Type Probe A
+62.0	deploy	F62InDateDateTime	accepted
+62.0	anonymous	F62InDateDateTime value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+62.0	anonymous	F62InDateDateTime empty	null
+62.0	deploy	F62NotInDateDateTime	accepted
+62.0	anonymous	F62NotInDateDateTime value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+62.0	anonymous	F62NotInDateDateTime empty	Flow Type Probe A
+62.0	deploy	F62InBooleanString	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62NotInBooleanString	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62InBooleanNumber	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the In operator with the Number element "values". "values" can't be a Number.)
+62.0	deploy	F62NotInBooleanNumber	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the Not In operator with the Number element "values". "values" can't be a Number.)
+62.0	deploy	F62InBooleanBoolean	accepted
+62.0	anonymous	F62InBooleanBoolean value	null
+62.0	anonymous	F62InBooleanBoolean empty	null
+62.0	deploy	F62NotInBooleanBoolean	accepted
+62.0	anonymous	F62NotInBooleanBoolean value	Flow Type Probe A
+62.0	anonymous	F62NotInBooleanBoolean empty	Flow Type Probe A
+62.0	deploy	F62InBooleanDate	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the In operator with the Date element "values". "values" can't be a Date.)
+62.0	deploy	F62NotInBooleanDate	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the Not In operator with the Date element "values". "values" can't be a Date.)
+62.0	deploy	F62InBooleanDateTime	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+62.0	deploy	F62NotInBooleanDateTime	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the Not In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+62.0	deploy	F62InDateTimeString	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62NotInDateTimeString	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+62.0	deploy	F62InDateTimeNumber	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the In operator with the Number element "values". "values" can't be a Number.)
+62.0	deploy	F62NotInDateTimeNumber	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the Not In operator with the Number element "values". "values" can't be a Number.)
+62.0	deploy	F62InDateTimeBoolean	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the In operator with the Boolean element "values". "values" can't be a Boolean.)
+62.0	deploy	F62NotInDateTimeBoolean	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the Not In operator with the Boolean element "values". "values" can't be a Boolean.)
+62.0	deploy	F62InDateTimeDate	accepted
+62.0	anonymous	F62InDateTimeDate value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+62.0	anonymous	F62InDateTimeDate empty	null
+62.0	deploy	F62NotInDateTimeDate	accepted
+62.0	anonymous	F62NotInDateTimeDate value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+62.0	anonymous	F62NotInDateTimeDate empty	Flow Type Probe A
+62.0	deploy	F62InDateTimeDateTime	accepted
+62.0	anonymous	F62InDateTimeDateTime value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+62.0	anonymous	F62InDateTimeDateTime empty	null
+62.0	deploy	F62NotInDateTimeDateTime	accepted
+62.0	anonymous	F62NotInDateTimeDateTime value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+62.0	anonymous	F62NotInDateTimeDateTime empty	Flow Type Probe A
+62.0	deploy	T62TextString	accepted
+62.0	anonymous	T62TextString value	42
+62.0	deploy	T62TextNumber	accepted
+62.0	anonymous	T62TextNumber value	42
+62.0	deploy	T62TextBoolean	accepted
+62.0	anonymous	T62TextBoolean value	true
+62.0	deploy	T62TextDate	accepted
+62.0	anonymous	T62TextDate value	February 3, 2001
+62.0	deploy	T62TextDateTime	accepted
+62.0	anonymous	T62TextDateTime value	2/2/2001, 8:05 PM
+62.0	deploy	T62TextLiteral	accepted
+62.0	anonymous	T62TextLiteral value	42
+62.0	deploy	T62NumberString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "NumberOfEmployees" target data field.)
+62.0	deploy	T62NumberNumber	accepted
+62.0	anonymous	T62NumberNumber value	42
+62.0	deploy	T62NumberBoolean	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "NumberOfEmployees" target data field.)
+62.0	deploy	T62NumberDate	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "NumberOfEmployees" target data field.)
+62.0	deploy	T62NumberDateTime	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "NumberOfEmployees" target data field.)
+62.0	deploy	T62NumberLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+62.0	deploy	T62CurrencyString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "AnnualRevenue" target data field.)
+62.0	deploy	T62CurrencyNumber	accepted
+62.0	anonymous	T62CurrencyNumber value	42
+62.0	deploy	T62CurrencyBoolean	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "AnnualRevenue" target data field.)
+62.0	deploy	T62CurrencyDate	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "AnnualRevenue" target data field.)
+62.0	deploy	T62CurrencyDateTime	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "AnnualRevenue" target data field.)
+62.0	deploy	T62CurrencyLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+62.0	deploy	T62ReferenceString	accepted
+62.0	anonymous	T62ReferenceString value	NONNULL
+62.0	deploy	T62ReferenceNumber	accepted
+62.0	anonymous	T62ReferenceNumber value	NONNULL
+62.0	deploy	T62ReferenceBoolean	accepted
+62.0	anonymous	T62ReferenceBoolean value	NONNULL
+62.0	deploy	T62ReferenceDate	accepted
+62.0	anonymous	T62ReferenceDate value	NONNULL
+62.0	deploy	T62ReferenceDateTime	accepted
+62.0	anonymous	T62ReferenceDateTime value	NONNULL
+62.0	deploy	T62ReferenceLiteral	accepted
+62.0	anonymous	T62ReferenceLiteral value	NONNULL
+62.0	deploy	T62PicklistString	accepted
+62.0	anonymous	T62PicklistString value	42
+62.0	deploy	T62PicklistNumber	accepted
+62.0	anonymous	T62PicklistNumber value	42
+62.0	deploy	T62PicklistBoolean	accepted
+62.0	anonymous	T62PicklistBoolean value	true
+62.0	deploy	T62PicklistDate	accepted
+62.0	anonymous	T62PicklistDate value	2001-02-03
+62.0	deploy	T62PicklistDateTime	accepted
+62.0	anonymous	T62PicklistDateTime value	2001-02-03T04:05:06Z
+62.0	deploy	T62PicklistLiteral	accepted
+62.0	anonymous	T62PicklistLiteral value	42
+62.0	deploy	T62DateString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "Birthdate" target data field.)
+62.0	deploy	T62DateNumber	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "Birthdate" target data field.)
+62.0	deploy	T62DateBoolean	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "Birthdate" target data field.)
+62.0	deploy	T62DateDate	accepted
+62.0	anonymous	T62DateDate value	2001-02-03 00:00:00
+62.0	deploy	T62DateDateTime	accepted
+62.0	anonymous	T62DateDateTime value	2001-02-03 00:00:00
+62.0	deploy	T62DateLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+62.0	deploy	T62BooleanString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "IsEmailBounced" target data field.)
+62.0	deploy	T62BooleanNumber	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "IsEmailBounced" target data field.)
+62.0	deploy	T62BooleanBoolean	accepted
+62.0	anonymous	T62BooleanBoolean value	true
+62.0	deploy	T62BooleanDate	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "IsEmailBounced" target data field.)
+62.0	deploy	T62BooleanDateTime	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "IsEmailBounced" target data field.)
+62.0	deploy	T62BooleanLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+62.0	deploy	T62DateTimeString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "CreatedDate" target data field.)
+62.0	deploy	T62DateTimeNumber	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "CreatedDate" target data field.)
+62.0	deploy	T62DateTimeBoolean	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "CreatedDate" target data field.)
+62.0	deploy	T62DateTimeDate	accepted
+62.0	anonymous	T62DateTimeDate value	2001-02-03 00:00:00
+62.0	deploy	T62DateTimeDateTime	accepted
+62.0	anonymous	T62DateTimeDateTime value	2001-02-03 04:05:06
+62.0	deploy	T62DateTimeLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+67.0	deploy	F67InTextString	accepted
+67.0	anonymous	F67InTextString value	Flow Type Probe B
+67.0	anonymous	F67InTextString empty	null
+67.0	deploy	F67NotInTextString	accepted
+67.0	anonymous	F67NotInTextString value	Flow Type Probe A
+67.0	anonymous	F67NotInTextString empty	Flow Type Probe A
+67.0	deploy	F67InTextNumber	accepted
+67.0	anonymous	F67InTextNumber value	null
+67.0	anonymous	F67InTextNumber empty	null
+67.0	deploy	F67NotInTextNumber	accepted
+67.0	anonymous	F67NotInTextNumber value	Flow Type Probe A
+67.0	anonymous	F67NotInTextNumber empty	Flow Type Probe A
+67.0	deploy	F67InTextBoolean	accepted
+67.0	anonymous	F67InTextBoolean value	null
+67.0	anonymous	F67InTextBoolean empty	null
+67.0	deploy	F67NotInTextBoolean	accepted
+67.0	anonymous	F67NotInTextBoolean value	Flow Type Probe A
+67.0	anonymous	F67NotInTextBoolean empty	Flow Type Probe A
+67.0	deploy	F67InTextDate	accepted
+67.0	anonymous	F67InTextDate value	ERROR:System.FlowException
+67.0	anonymous	F67InTextDate empty	null
+67.0	deploy	F67NotInTextDate	accepted
+67.0	anonymous	F67NotInTextDate value	ERROR:System.FlowException
+67.0	anonymous	F67NotInTextDate empty	Flow Type Probe A
+67.0	deploy	F67InTextDateTime	accepted
+67.0	anonymous	F67InTextDateTime value	ERROR:System.FlowException
+67.0	anonymous	F67InTextDateTime empty	null
+67.0	deploy	F67NotInTextDateTime	accepted
+67.0	anonymous	F67NotInTextDateTime value	ERROR:System.FlowException
+67.0	anonymous	F67NotInTextDateTime empty	Flow Type Probe A
+67.0	deploy	F67InNumberString	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67NotInNumberString	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67InNumberNumber	accepted
+67.0	anonymous	F67InNumberNumber value	Flow Type Probe B
+67.0	anonymous	F67InNumberNumber empty	null
+67.0	deploy	F67NotInNumberNumber	accepted
+67.0	anonymous	F67NotInNumberNumber value	Flow Type Probe A
+67.0	anonymous	F67NotInNumberNumber empty	Flow Type Probe A
+67.0	deploy	F67InNumberBoolean	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the In operator with the Boolean element "values". "values" can't be a Boolean.)
+67.0	deploy	F67NotInNumberBoolean	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the Not In operator with the Boolean element "values". "values" can't be a Boolean.)
+67.0	deploy	F67InNumberDate	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the In operator with the Date element "values". "values" can't be a Date.)
+67.0	deploy	F67NotInNumberDate	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the Not In operator with the Date element "values". "values" can't be a Date.)
+67.0	deploy	F67InNumberDateTime	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+67.0	deploy	F67NotInNumberDateTime	rejected: field integrity exception: unknown (The field "NumberOfEmployees" is being filtered using the Not In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+67.0	deploy	F67InCurrencyString	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67NotInCurrencyString	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67InCurrencyNumber	accepted
+67.0	anonymous	F67InCurrencyNumber value	Flow Type Probe B
+67.0	anonymous	F67InCurrencyNumber empty	null
+67.0	deploy	F67NotInCurrencyNumber	accepted
+67.0	anonymous	F67NotInCurrencyNumber value	Flow Type Probe A
+67.0	anonymous	F67NotInCurrencyNumber empty	Flow Type Probe A
+67.0	deploy	F67InCurrencyBoolean	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the In operator with the Boolean element "values". "values" can't be a Boolean.)
+67.0	deploy	F67NotInCurrencyBoolean	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the Not In operator with the Boolean element "values". "values" can't be a Boolean.)
+67.0	deploy	F67InCurrencyDate	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the In operator with the Date element "values". "values" can't be a Date.)
+67.0	deploy	F67NotInCurrencyDate	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the Not In operator with the Date element "values". "values" can't be a Date.)
+67.0	deploy	F67InCurrencyDateTime	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+67.0	deploy	F67NotInCurrencyDateTime	rejected: field integrity exception: unknown (The field "AnnualRevenue" is being filtered using the Not In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+67.0	deploy	F67InReferenceString	accepted
+67.0	anonymous	F67InReferenceString value	Flow Type Probe A
+67.0	anonymous	F67InReferenceString empty	null
+67.0	deploy	F67NotInReferenceString	accepted
+67.0	anonymous	F67NotInReferenceString value	null
+67.0	anonymous	F67NotInReferenceString empty	Flow Type Probe A
+67.0	deploy	F67InReferenceNumber	accepted
+67.0	anonymous	F67InReferenceNumber value	ERROR:System.FlowException
+67.0	anonymous	F67InReferenceNumber empty	null
+67.0	deploy	F67NotInReferenceNumber	accepted
+67.0	anonymous	F67NotInReferenceNumber value	ERROR:System.FlowException
+67.0	anonymous	F67NotInReferenceNumber empty	Flow Type Probe A
+67.0	deploy	F67InReferenceBoolean	accepted
+67.0	anonymous	F67InReferenceBoolean value	ERROR:System.FlowException
+67.0	anonymous	F67InReferenceBoolean empty	null
+67.0	deploy	F67NotInReferenceBoolean	accepted
+67.0	anonymous	F67NotInReferenceBoolean value	ERROR:System.FlowException
+67.0	anonymous	F67NotInReferenceBoolean empty	Flow Type Probe A
+67.0	deploy	F67InReferenceDate	accepted
+67.0	anonymous	F67InReferenceDate value	ERROR:System.FlowException
+67.0	anonymous	F67InReferenceDate empty	null
+67.0	deploy	F67NotInReferenceDate	accepted
+67.0	anonymous	F67NotInReferenceDate value	ERROR:System.FlowException
+67.0	anonymous	F67NotInReferenceDate empty	Flow Type Probe A
+67.0	deploy	F67InReferenceDateTime	accepted
+67.0	anonymous	F67InReferenceDateTime value	ERROR:System.FlowException
+67.0	anonymous	F67InReferenceDateTime empty	null
+67.0	deploy	F67NotInReferenceDateTime	accepted
+67.0	anonymous	F67NotInReferenceDateTime value	ERROR:System.FlowException
+67.0	anonymous	F67NotInReferenceDateTime empty	Flow Type Probe A
+67.0	deploy	F67InPicklistString	accepted
+67.0	anonymous	F67InPicklistString value	Flow Type Probe B
+67.0	anonymous	F67InPicklistString empty	null
+67.0	deploy	F67NotInPicklistString	accepted
+67.0	anonymous	F67NotInPicklistString value	Flow Type Probe A
+67.0	anonymous	F67NotInPicklistString empty	Flow Type Probe A
+67.0	deploy	F67InPicklistNumber	accepted
+67.0	anonymous	F67InPicklistNumber value	null
+67.0	anonymous	F67InPicklistNumber empty	null
+67.0	deploy	F67NotInPicklistNumber	accepted
+67.0	anonymous	F67NotInPicklistNumber value	Flow Type Probe A
+67.0	anonymous	F67NotInPicklistNumber empty	Flow Type Probe A
+67.0	deploy	F67InPicklistBoolean	accepted
+67.0	anonymous	F67InPicklistBoolean value	null
+67.0	anonymous	F67InPicklistBoolean empty	null
+67.0	deploy	F67NotInPicklistBoolean	accepted
+67.0	anonymous	F67NotInPicklistBoolean value	Flow Type Probe A
+67.0	anonymous	F67NotInPicklistBoolean empty	Flow Type Probe A
+67.0	deploy	F67InPicklistDate	accepted
+67.0	anonymous	F67InPicklistDate value	ERROR:System.FlowException
+67.0	anonymous	F67InPicklistDate empty	null
+67.0	deploy	F67NotInPicklistDate	accepted
+67.0	anonymous	F67NotInPicklistDate value	ERROR:System.FlowException
+67.0	anonymous	F67NotInPicklistDate empty	Flow Type Probe A
+67.0	deploy	F67InPicklistDateTime	accepted
+67.0	anonymous	F67InPicklistDateTime value	ERROR:System.FlowException
+67.0	anonymous	F67InPicklistDateTime empty	null
+67.0	deploy	F67NotInPicklistDateTime	accepted
+67.0	anonymous	F67NotInPicklistDateTime value	ERROR:System.FlowException
+67.0	anonymous	F67NotInPicklistDateTime empty	Flow Type Probe A
+67.0	deploy	F67InDateString	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67NotInDateString	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67InDateNumber	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the In operator with the Number element "values". "values" can't be a Number.)
+67.0	deploy	F67NotInDateNumber	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the Not In operator with the Number element "values". "values" can't be a Number.)
+67.0	deploy	F67InDateBoolean	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the In operator with the Boolean element "values". "values" can't be a Boolean.)
+67.0	deploy	F67NotInDateBoolean	rejected: field integrity exception: unknown (The field "Birthdate" is being filtered using the Not In operator with the Boolean element "values". "values" can't be a Boolean.)
+67.0	deploy	F67InDateDate	accepted
+67.0	anonymous	F67InDateDate value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+67.0	anonymous	F67InDateDate empty	null
+67.0	deploy	F67NotInDateDate	accepted
+67.0	anonymous	F67NotInDateDate value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+67.0	anonymous	F67NotInDateDate empty	Flow Type Probe A
+67.0	deploy	F67InDateDateTime	accepted
+67.0	anonymous	F67InDateDateTime value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+67.0	anonymous	F67InDateDateTime empty	null
+67.0	deploy	F67NotInDateDateTime	accepted
+67.0	anonymous	F67NotInDateDateTime value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+67.0	anonymous	F67NotInDateDateTime empty	Flow Type Probe A
+67.0	deploy	F67InBooleanString	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67NotInBooleanString	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67InBooleanNumber	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the In operator with the Number element "values". "values" can't be a Number.)
+67.0	deploy	F67NotInBooleanNumber	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the Not In operator with the Number element "values". "values" can't be a Number.)
+67.0	deploy	F67InBooleanBoolean	accepted
+67.0	anonymous	F67InBooleanBoolean value	null
+67.0	anonymous	F67InBooleanBoolean empty	null
+67.0	deploy	F67NotInBooleanBoolean	accepted
+67.0	anonymous	F67NotInBooleanBoolean value	Flow Type Probe A
+67.0	anonymous	F67NotInBooleanBoolean empty	Flow Type Probe A
+67.0	deploy	F67InBooleanDate	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the In operator with the Date element "values". "values" can't be a Date.)
+67.0	deploy	F67NotInBooleanDate	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the Not In operator with the Date element "values". "values" can't be a Date.)
+67.0	deploy	F67InBooleanDateTime	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+67.0	deploy	F67NotInBooleanDateTime	rejected: field integrity exception: unknown (The field "IsEmailBounced" is being filtered using the Not In operator with the Date/Time element "values". "values" can't be a Date/Time.)
+67.0	deploy	F67InDateTimeString	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67NotInDateTimeString	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the Not In operator with the Text element "values". "values" can't be a Text.)
+67.0	deploy	F67InDateTimeNumber	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the In operator with the Number element "values". "values" can't be a Number.)
+67.0	deploy	F67NotInDateTimeNumber	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the Not In operator with the Number element "values". "values" can't be a Number.)
+67.0	deploy	F67InDateTimeBoolean	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the In operator with the Boolean element "values". "values" can't be a Boolean.)
+67.0	deploy	F67NotInDateTimeBoolean	rejected: field integrity exception: unknown (The field "CreatedDate" is being filtered using the Not In operator with the Boolean element "values". "values" can't be a Boolean.)
+67.0	deploy	F67InDateTimeDate	accepted
+67.0	anonymous	F67InDateTimeDate value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+67.0	anonymous	F67InDateTimeDate empty	null
+67.0	deploy	F67NotInDateTimeDate	accepted
+67.0	anonymous	F67NotInDateTimeDate value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+67.0	anonymous	F67NotInDateTimeDate empty	Flow Type Probe A
+67.0	deploy	F67InDateTimeDateTime	accepted
+67.0	anonymous	F67InDateTimeDateTime value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+67.0	anonymous	F67InDateTimeDateTime empty	null
+67.0	deploy	F67NotInDateTimeDateTime	accepted
+67.0	anonymous	F67NotInDateTimeDateTime value	System.UnexpectedException (Salesforce system error; instance identifier omitted)
+67.0	anonymous	F67NotInDateTimeDateTime empty	Flow Type Probe A
+67.0	deploy	T67TextString	accepted
+67.0	anonymous	T67TextString value	42
+67.0	deploy	T67TextNumber	accepted
+67.0	anonymous	T67TextNumber value	42
+67.0	deploy	T67TextBoolean	accepted
+67.0	anonymous	T67TextBoolean value	true
+67.0	deploy	T67TextDate	accepted
+67.0	anonymous	T67TextDate value	February 3, 2001
+67.0	deploy	T67TextDateTime	accepted
+67.0	anonymous	T67TextDateTime value	2/2/2001, 8:05 PM
+67.0	deploy	T67TextLiteral	accepted
+67.0	anonymous	T67TextLiteral value	42
+67.0	deploy	T67NumberString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "NumberOfEmployees" target data field.)
+67.0	deploy	T67NumberNumber	accepted
+67.0	anonymous	T67NumberNumber value	42
+67.0	deploy	T67NumberBoolean	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "NumberOfEmployees" target data field.)
+67.0	deploy	T67NumberDate	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "NumberOfEmployees" target data field.)
+67.0	deploy	T67NumberDateTime	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "NumberOfEmployees" target data field.)
+67.0	deploy	T67NumberLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+67.0	deploy	T67CurrencyString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "AnnualRevenue" target data field.)
+67.0	deploy	T67CurrencyNumber	accepted
+67.0	anonymous	T67CurrencyNumber value	42
+67.0	deploy	T67CurrencyBoolean	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "AnnualRevenue" target data field.)
+67.0	deploy	T67CurrencyDate	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "AnnualRevenue" target data field.)
+67.0	deploy	T67CurrencyDateTime	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "AnnualRevenue" target data field.)
+67.0	deploy	T67CurrencyLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+67.0	deploy	T67ReferenceString	accepted
+67.0	anonymous	T67ReferenceString value	NONNULL
+67.0	deploy	T67ReferenceNumber	accepted
+67.0	anonymous	T67ReferenceNumber value	NONNULL
+67.0	deploy	T67ReferenceBoolean	accepted
+67.0	anonymous	T67ReferenceBoolean value	NONNULL
+67.0	deploy	T67ReferenceDate	accepted
+67.0	anonymous	T67ReferenceDate value	NONNULL
+67.0	deploy	T67ReferenceDateTime	accepted
+67.0	anonymous	T67ReferenceDateTime value	NONNULL
+67.0	deploy	T67ReferenceLiteral	accepted
+67.0	anonymous	T67ReferenceLiteral value	NONNULL
+67.0	deploy	T67PicklistString	accepted
+67.0	anonymous	T67PicklistString value	42
+67.0	deploy	T67PicklistNumber	accepted
+67.0	anonymous	T67PicklistNumber value	42
+67.0	deploy	T67PicklistBoolean	accepted
+67.0	anonymous	T67PicklistBoolean value	true
+67.0	deploy	T67PicklistDate	accepted
+67.0	anonymous	T67PicklistDate value	2001-02-03
+67.0	deploy	T67PicklistDateTime	accepted
+67.0	anonymous	T67PicklistDateTime value	2001-02-03T04:05:06Z
+67.0	deploy	T67PicklistLiteral	accepted
+67.0	anonymous	T67PicklistLiteral value	42
+67.0	deploy	T67DateString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "Birthdate" target data field.)
+67.0	deploy	T67DateNumber	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "Birthdate" target data field.)
+67.0	deploy	T67DateBoolean	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "Birthdate" target data field.)
+67.0	deploy	T67DateDate	accepted
+67.0	anonymous	T67DateDate value	2001-02-03 00:00:00
+67.0	deploy	T67DateDateTime	accepted
+67.0	anonymous	T67DateDateTime value	2001-02-03 00:00:00
+67.0	deploy	T67DateLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+67.0	deploy	T67BooleanString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "IsEmailBounced" target data field.)
+67.0	deploy	T67BooleanNumber	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "IsEmailBounced" target data field.)
+67.0	deploy	T67BooleanBoolean	accepted
+67.0	anonymous	T67BooleanBoolean value	true
+67.0	deploy	T67BooleanDate	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "IsEmailBounced" target data field.)
+67.0	deploy	T67BooleanDateTime	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "IsEmailBounced" target data field.)
+67.0	deploy	T67BooleanLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)
+67.0	deploy	T67DateTimeString	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "CreatedDate" target data field.)
+67.0	deploy	T67DateTimeNumber	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "CreatedDate" target data field.)
+67.0	deploy	T67DateTimeBoolean	rejected: field integrity exception: unknown (The element specifies the "inputValue" source data field, which has a data type that's incompatible with the "CreatedDate" target data field.)
+67.0	deploy	T67DateTimeDate	accepted
+67.0	anonymous	T67DateTimeDate value	2001-02-03 00:00:00
+67.0	deploy	T67DateTimeDateTime	accepted
+67.0	anonymous	T67DateTimeDateTime value	2001-02-03 04:05:06
+67.0	deploy	T67DateTimeLiteral	rejected: field integrity exception: unknown (The flow metadata specifies the value “42” for value, which isn’t available to the flow. Enter a valid value.)

@@ -1,0 +1,1 @@
+<MatchingRules><matchingRules><fullName>MrAcctExact</fullName><label>MrAcctExact</label><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>Name</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules></MatchingRules>

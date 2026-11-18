@@ -1,0 +1,11 @@
+Native standard Contact rule first-name capture (C9 panels c9s1, c9s2)
+Date: 2026-11-15 UTC.
+Org: one fresh 30-day Developer Edition scratch org on an authorized campaign Dev Hub, deleted after the run; deletion verified (active hub record 1 -> 0, the local target no longer resolves). No record, org or user id, username, alias or host is stored.
+APIs: 62.0 and 67.0. Routes: anonymous Apex and deployed @IsTest; two repeats. Eight observations per case; every case has eight identical observations.
+Rule: Standard_Contact_Duplicate_Rule. A three-value canary (exact twin plus an unrelated value) ran with the cases at each API and route.
+Probe: one record per value is inserted (DMLOptions allowSave), then Datacloud.FindDuplicates runs on an unsaved copy of every value; only matches of the named rule are reported. Observation: <value count>:<pairs>; a pair is <candidate index><existing index><confidence>, indexes in 0-9a-z, a missing confidence is 100.
+Companion fields: every value carries one shared last name and email address ("first|last|email"), so only the first name differs.
+Values: common first names and nicknames as test-data shapes; no person is described.
+The same observations are also stored with the Title panels of the run (fuzzy_title_variant, group c9s).
+org.tsv sha256: 27bf654999464d6883a1dbb0384b69b312c2617a7ead3d665f926af30da6aebe
+cases.json sha256: 23f82931c9917ac14f22be81f73b30905a68ea1367fdb1a90c6f6cdd0d3835d1

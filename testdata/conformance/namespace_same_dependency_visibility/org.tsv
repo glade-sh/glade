@@ -1,0 +1,17 @@
+case_id	api_version	route	compile_outcome	observed_diagnostic	source
+public	62.0	named-checkonly	COMPILED		public.cls
+private	62.0	named-checkonly	COMPILE_ERROR	Type is not visible: {{NAMESPACE}}.V036AccessOwner.Hidden	private.cls
+default	62.0	named-checkonly	COMPILE_ERROR	Type is not visible: {{NAMESPACE}}.V036AccessOwner.Defaulted	default.cls
+test_visible	62.0	named-checkonly	COMPILED		test_visible.cls
+deep_missing	62.0	named-checkonly	COMPILE_ERROR	Variable does not exist: V036AccessOwner.Present.Missing	deep_missing.cls
+public	67.0	named-checkonly	COMPILED		public.cls
+private	67.0	named-checkonly	COMPILE_ERROR	Type is not visible: {{NAMESPACE}}.V036AccessOwner.Hidden	private.cls
+default	67.0	named-checkonly	COMPILE_ERROR	Type is not visible: {{NAMESPACE}}.V036AccessOwner.Defaulted	default.cls
+test_visible	67.0	named-checkonly	COMPILED		test_visible.cls
+deep_missing	67.0	named-checkonly	COMPILE_ERROR	Variable does not exist: V036AccessOwner.Present.Missing	deep_missing.cls
+bare_nested	62.0	named-checkonly	COMPILE_ERROR	Invalid type: Present	bare_nested.cls
+qualified_present	62.0	named-checkonly	COMPILED		qualified_present.cls
+qualified_missing	62.0	named-checkonly	COMPILE_ERROR	Invalid type: {{NAMESPACE}}.V036AccessOwner.Missing	qualified_missing.cls
+bare_nested	67.0	named-checkonly	COMPILE_ERROR	Invalid type: Present	bare_nested.cls
+qualified_present	67.0	named-checkonly	COMPILED		qualified_present.cls
+qualified_missing	67.0	named-checkonly	COMPILE_ERROR	Invalid type: {{NAMESPACE}}.V036AccessOwner.Missing	qualified_missing.cls

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Friend__c</fullName><label>Friend</label><type>Lookup</type><referenceTo>Contact</referenceTo><relationshipName>Friend</relationshipName><relationshipLabel>Friends</relationshipLabel><deleteConstraint>SetNull</deleteConstraint></CustomField>

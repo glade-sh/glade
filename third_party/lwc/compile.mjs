@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+// glade-compiler-protocol: two-phase-v1
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline";
 import { format, inspect } from "node:util";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
@@ -107,10 +109,18 @@ function transformTemplate(source, filename, namespace, name, apiVersion, capabi
   return result;
 }
 
-function transformJavaScript(source, filename, namespace, name, apiVersion) {
+function transformJavaScript(source, filename, namespace, name, apiVersion, capabilities = []) {
   try {
-    return transformSync(source, filename, transformOptions(namespace, name, apiVersion));
+    const options = transformOptions(namespace, name, apiVersion, capabilities);
+    // Only the script transform accepts this option; templates reject it.
+    if (capabilities.includes("lightning__dynamicComponent")) options.dynamicImports = { strictSpecifier: false };
+    return transformSync(source, filename, options);
   } catch (error) {
+    // The captured nonliteral-import control reports the deployment diagnostic
+    // when the bundle has not declared dynamic-component capability.
+    if (!capabilities.includes("lightning__dynamicComponent") && error?.code === 1121) {
+      throw new Error("LWC1503: Dynamic imports are not allowed.", { cause: error });
+    }
     throw wireDeploymentDiagnostic(error, source, filename, namespace, name, apiVersion);
   }
 }
@@ -256,26 +266,44 @@ function rewriteStylesheetImports(code, bundleName) {
     );
 }
 
-function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, moduleAvailability, configuredProperties, salesforceImports, capabilities, lightningModules) {
+function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, moduleAvailability, configuredProperties, salesforceImports, capabilities, lightningModules, localModules, localStylesheetSources) {
   const jsPath = path.join(bundleDir, `${bundleName}.js`);
   const htmlPath = path.join(bundleDir, `${bundleName}.html`);
   const cssPath = path.join(bundleDir, `${bundleName}.css`);
   if (!fs.existsSync(jsPath)) {
+    if (fs.existsSync(cssPath) && !fs.existsSync(htmlPath)) {
+      assertCompilerPreservesAPIVersion(apiVersion);
+      const moduleKey = `${namespace}/${bundleName}`;
+      const entryFile = path.join(outDir, moduleKey, `${bundleName}.js`);
+      compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, bundleName, apiVersion, localModules, localStylesheetSources);
+      return { qualified: `${namespace}:${bundleName}`, moduleKey, file: entryFile, tag: `${namespace}-${kebabCase(bundleName)}` };
+    }
     return null;
   }
   assertCompilerPreservesAPIVersion(apiVersion);
-  preflightBundleImports(bundleDir, bundleName, apiVersion, moduleAvailability, configuredProperties, salesforceImports, lightningModules, namespace);
-  // GraphQL document validation is independent of the shared wire preflight.
-  walkBundleFiles(bundleDir, sourcePath => {
-    if (!sourcePath.endsWith(".js")) return;
+  // Component entries are validated after their templates. Utility entries
+  // and sibling modules are emitted as source, so validate their dynamic
+  // imports before copying them to the output.
+  const checkDynamicImports = (ast, sourcePath) => {
+    if (sourcePath !== jsPath || (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath))) {
+      validateDynamicModuleImports(ast, capabilities, namespace);
+    }
+  };
+  const { firstGraphQLFailure, entryAST } = preflightBundleImports(bundleDir, bundleName, apiVersion, moduleAvailability, configuredProperties, salesforceImports, lightningModules, namespace, checkDynamicImports);
+  // Recreate a rejected GraphQL or dynamic-import error in the original
+  // validation route so its public error stack retains the same shape,
+  // without retaining every AST.
+  if (firstGraphQLFailure) walkBundleFiles(bundleDir, sourcePath => {
+    if (sourcePath !== firstGraphQLFailure) return;
     const ast = parse(fs.readFileSync(sourcePath, "utf8"), {
       sourceType: "module",
       plugins: [["decorators", { decoratorsBeforeExport: true }], "classProperties", "classPrivateProperties", "classPrivateMethods"],
     });
     validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
+    checkDynamicImports(ast, sourcePath);
   });
   if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
-    return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities);
+    return compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities, localModules);
   }
 
   const moduleKey = `${namespace}/${bundleName}`;
@@ -292,7 +320,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   }
 
   if (fs.existsSync(cssPath)) {
-    const cssResult = transformStylesheet(cssPath, namespace, bundleName, apiVersion);
+    const cssResult = transformStylesheet(cssPath, namespace, bundleName, apiVersion, localModules);
     writeCompiled(path.join(bundleOut, `${bundleName}.css.js`), cssResult.code);
     writeCompiled(
       path.join(bundleOut, `${bundleName}.scoped.css.js`),
@@ -307,13 +335,14 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   }
 
   const jsSource = fs.readFileSync(jsPath, "utf8");
-  const jsResult = transformJavaScript(jsSource, jsPath, namespace, bundleName, apiVersion);
+  validateDynamicModuleImports(entryAST, capabilities, namespace);
+  const jsResult = transformJavaScript(jsSource, jsPath, namespace, bundleName, apiVersion, capabilities);
   const jsCode = rewriteComponentShadowReads(rewriteStylesheetImports(jsResult.code, bundleName), namespace);
 
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
   writeCompiled(entryFile, jsCode);
   compileSiblingModules(bundleDir, bundleName, bundleOut, namespace);
-  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities);
+  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities, localModules);
 
   return {
     qualified: `${namespace}:${bundleName}`,
@@ -323,7 +352,24 @@ function compileBundle(bundleDir, bundleName, namespace, outDir, apiVersion, mod
   };
 }
 
-function compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities) {
+// Native rows reject a nonliteral dynamic import and a literal naming a local
+// module when the bundle lacks lightning__dynamicComponent. A literal naming a
+// platform module has no captured row, so it keeps the earlier behavior.
+function validateDynamicModuleImports(ast, capabilities, namespace) {
+  if (capabilities.includes("lightning__dynamicComponent")) return;
+  const isLocal = (specifier) => specifier.startsWith("c/") || specifier.startsWith(`${namespace}/`);
+  walkAST(ast, (node) => {
+    const source = node.type === "ImportExpression" ? node.source :
+      node.type === "CallExpression" && node.callee?.type === "Import" ? node.arguments[0] : null;
+    if (!source) return;
+    const literal = source.type === "StringLiteral" || source.type === "Literal" ? source.value :
+      source.type === "TemplateLiteral" && source.expressions.length === 0 ? source.quasis[0].value.cooked : null;
+    if (typeof literal === "string" && !isLocal(literal)) return;
+    throw new Error("LWC1503: Dynamic imports are not allowed.");
+  });
+}
+
+function compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersion, capabilities, localModules) {
   const jsPath = path.join(bundleDir, `${bundleName}.js`);
   const moduleKey = `${namespace}/${bundleName}`;
   const bundleOut = path.join(outDir, moduleKey);
@@ -332,7 +378,7 @@ function compileUtilityModule(bundleDir, bundleName, namespace, outDir, apiVersi
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
   writeCompiled(entryFile, rewriteComponentShadowReads(fs.readFileSync(jsPath, "utf8"), namespace));
   compileSiblingModules(bundleDir, bundleName, bundleOut, namespace);
-  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities);
+  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities, localModules);
 
   return {
     qualified: `${namespace}:${bundleName}`,
@@ -361,7 +407,7 @@ function compileSiblingModules(bundleDir, bundleName, bundleOut, namespace) {
   });
 }
 
-function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities) {
+function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut, apiVersion, capabilities, localModules) {
   walkBundleFiles(bundleDir, (sourcePath) => {
     const rel = path.relative(bundleDir, sourcePath);
     if (rel === `${bundleName}.html`) {
@@ -380,7 +426,7 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
 
     const cssPath = sourcePath.slice(0, -".html".length) + ".css";
     if (fs.existsSync(cssPath)) {
-      compileCSSModule(cssPath, templateName, namespace, bundleDir, bundleOut, apiVersion);
+      compileCSSModule(cssPath, templateName, namespace, bundleDir, bundleOut, apiVersion, localModules);
     } else {
       writeCompiled(
         path.join(bundleOut, `${path.relative(bundleDir, cssPath)}.js`),
@@ -395,13 +441,75 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
   });
 }
 
-function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut, apiVersion) {
-  const cssResult = transformStylesheet(cssPath, namespace, name, apiVersion);
+// Build a self-contained stylesheet graph per entry. Replacing an ancestor
+// back-edge with an empty module prevents an ESM initialization cycle while
+// retaining the reachable styles once for that entry.
+function compileSharedStylesheetGraph(cssPath, entryFile, bundleDir, namespace, name, apiVersion, localModules, localStylesheetSources) {
+  const bundleOut = path.dirname(entryFile);
+  const outputs = new Map([[path.resolve(cssPath), entryFile]]);
+  // Reserve a directory that no source within the bundle can map onto. A
+  // fixed directory name could overwrite an ordinary stylesheet output.
+  let externalDir = "__external_styles";
+  for (let suffix = 1; fs.existsSync(path.join(bundleDir, externalDir)); suffix++) {
+    externalDir = `__external_styles_${suffix}`;
+  }
+  let externalCount = 0;
+  const active = new Set();
+  let emptyCycleFile;
+  function emit(sourcePath) {
+    active.add(sourcePath);
+    const outputPath = outputs.get(sourcePath);
+    const result = transformStylesheet(sourcePath, namespace, name, apiVersion, localModules);
+    const ast = parse(result.code, { sourceType: "module" });
+    const replacements = [];
+    for (const node of ast.program.body) {
+      if (node.type !== "ImportDeclaration") continue;
+      const specifier = node.source.value;
+      let target;
+      if ((specifier.startsWith("./") || specifier.startsWith("../")) && specifier.endsWith(".css")) {
+        target = path.resolve(path.dirname(sourcePath), specifier);
+      } else if (specifier.startsWith(`${namespace}/`)) {
+        target = localStylesheetSources.get(specifier.slice(namespace.length + 1));
+      }
+      if (!target) continue;
+      let dependency;
+      if (active.has(target)) {
+        if (!emptyCycleFile) {
+          emptyCycleFile = path.join(bundleOut, externalDir, "cycle-empty.js");
+          writeCompiled(emptyCycleFile, "export default [];\n");
+        }
+        dependency = emptyCycleFile;
+      } else {
+        if (!outputs.has(target)) {
+          const relative = path.relative(bundleDir, target);
+          const inside = relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+          const file = inside ? `${relative}.js` : path.join(externalDir, `${externalCount++}.css.js`);
+          outputs.set(target, path.join(bundleOut, file));
+          emit(target);
+        }
+        dependency = outputs.get(target);
+      }
+      let emittedSpecifier = path.relative(path.dirname(outputPath), dependency).split(path.sep).join("/");
+      if (!emittedSpecifier.startsWith(".")) emittedSpecifier = `./${emittedSpecifier}`;
+      replacements.push({ start: node.source.start, end: node.source.end, value: JSON.stringify(emittedSpecifier) });
+    }
+    let code = result.code;
+    for (const replacement of replacements.reverse()) {
+      code = code.slice(0, replacement.start) + replacement.value + code.slice(replacement.end);
+    }
+    writeCompiled(outputPath, code);
+    active.delete(sourcePath);
+  }
+  emit(path.resolve(cssPath));
+}
+
+function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut, apiVersion, localModules) {
+  const cssResult = transformStylesheet(cssPath, namespace, name, apiVersion, localModules);
   const rel = path.relative(bundleDir, cssPath);
   writeCompiled(path.join(bundleOut, `${rel}.js`), cssResult.code);
 }
 
-function transformStylesheet(cssPath, namespace, name, apiVersion) {
+function transformStylesheet(cssPath, namespace, name, apiVersion, localModules) {
   const source = fs.readFileSync(cssPath, "utf8");
   if (source.length === 0) {
     throw new Error(`Lightning Component Resource [lwc/${name}/${path.basename(cssPath)}] for Lightning Component Bundle ${name} cannot be empty.`);
@@ -423,6 +531,8 @@ function transformStylesheet(cssPath, namespace, name, apiVersion) {
       if (!fs.existsSync(target) || !fs.statSync(target).isFile()) {
         throw new Error(`LWC1011: Failed to resolve import "${specifier}" from "${path.basename(cssPath)}". Please add "${path.basename(specifier)}" file to the component folder.`);
       }
+    } else if (localModules && specifier.startsWith(`${namespace}/`) && !localModules.has(specifier.slice(namespace.length + 1))) {
+      throw new Error(`No MODULE named markup://${namespace}:${specifier.slice(namespace.length + 1)} found : [markup://${namespace}:${name}]`);
     } else if (specifier.includes(".") || specifier.includes(":")) {
       throw new Error(`Invalid import '${specifier}'. No '.' in module reference or start relative path with ./`);
     }
@@ -455,7 +565,11 @@ function stylesheetDeploymentError(error, source, filename, namespace, name, api
   return error;
 }
 
-function preflightBundleImports(bundleDir, bundleName, apiVersion, availability, configuredProperties, salesforceImports, lightningModules, namespace) {
+function preflightBundleImports(bundleDir, bundleName, apiVersion, availability, configuredProperties, salesforceImports, lightningModules, namespace, extraCheck) {
+  let firstGraphQLFailure;
+  // Retain only the entry AST for the template-side dynamic import check.
+  let entryAST;
+  const entryPath = path.join(bundleDir, `${bundleName}.js`);
   walkBundleFiles(bundleDir, (sourcePath) => {
     if (!sourcePath.endsWith(".js")) {
       return;
@@ -543,7 +657,19 @@ function preflightBundleImports(bundleDir, bundleName, apiVersion, availability,
         throw new Error(`LWC module "${specifier}" is unavailable at API version ${apiVersion}.0`);
       }
     });
+    // A later preflight error must retain precedence over an earlier GraphQL
+    // diagnostic. Remember only the first failing source and finish preflight.
+    if (sourcePath === entryPath) entryAST = ast;
+    if (!firstGraphQLFailure) {
+      try {
+        validateGraphQLDocuments(ast, salesforceImports?.schema, walkAST);
+        extraCheck?.(ast, sourcePath);
+      } catch (_) {
+        firstGraphQLFailure = sourcePath;
+      }
+    }
   });
+  return { firstGraphQLFailure, entryAST };
 }
 
 function deploymentDiagnostic(message, location) {
@@ -867,8 +993,20 @@ function walkBundleFiles(dir, visit) {
   }
 }
 
+// The schema registry contains aliases that are valid for the consuming
+// project's source namespace. Other source roots retain the pre-alias registry.
+function schemaImportsForBundle(imports, consumerOwned) {
+  if (consumerOwned !== false || !imports?.ownNamespace) return imports;
+  const schema = { ...imports.schema };
+  for (const name of imports.ownSchemaAliases || []) delete schema[name];
+  return { ...imports, schema, ownNamespace: "", ownSchemaObjects: {} };
+}
+
 async function main() {
-  const config = await readStdin();
+  const twoPhase = process.argv.includes("--two-phase");
+  const input = twoPhase ? readline.createInterface({ input: process.stdin, crlfDelay: Infinity }) : null;
+  const lines = input?.[Symbol.asyncIterator]();
+  const config = twoPhase ? JSON.parse((await lines.next()).value) : await readStdin();
   const projectRoot = path.resolve(config.projectRoot || ".");
   const outDir = path.resolve(config.outDir);
   const namespace = (config.namespace || "c").trim() || "c";
@@ -892,8 +1030,21 @@ async function main() {
     }
   }
 
+  // An opt-in complete source inventory makes local-module absence meaningful.
+  const localModules = config.completeLocalModuleInventory
+    ? new Set([...lwcRoots].map((dir) => path.basename(dir))) : null;
+  const localStylesheetSources = new Map();
+  for (const dir of lwcRoots) {
+    const name = path.basename(dir);
+    const cssPath = path.resolve(dir, `${name}.css`);
+    if (!fs.existsSync(cssPath) || fs.existsSync(path.join(dir, `${name}.js`)) || fs.existsSync(path.join(dir, `${name}.html`))) continue;
+    // Ambiguous source roots cannot safely identify an installed module.
+    if (localStylesheetSources.has(name)) localStylesheetSources.set(name, null);
+    else localStylesheetSources.set(name, cssPath);
+  }
+
   const schemaReferencesOnly = process.argv.includes("--salesforce-schema-references");
-  if (schemaReferencesOnly || process.argv.includes("--salesforce-import-references")) {
+  if (twoPhase || schemaReferencesOnly || process.argv.includes("--salesforce-import-references")) {
     const references = new Set();
     for (const bundleDir of lwcRoots) {
       walkBundleFiles(bundleDir, (sourcePath) => {
@@ -916,8 +1067,12 @@ async function main() {
         });
       });
     }
-    process.stdout.write(JSON.stringify([...references].sort()));
-    return;
+    process.stdout.write(JSON.stringify([...references].sort()) + (twoPhase ? "\n" : ""));
+    if (!twoPhase) return;
+    const metadata = await lines.next();
+    if (metadata.done) return;
+    config.salesforceImports = JSON.parse(metadata.value);
+    input.close();
   }
 
   // Outside the per-bundle try: a missing toolchain stays a process failure.
@@ -933,7 +1088,8 @@ async function main() {
       if (!Number.isInteger(apiVersion)) {
         throw new Error(`missing component API version for bundle ${bundleKey}`);
       }
-      const entry = compileBundle(bundleDir, bundleName, namespace, bundleOut, apiVersion, config.lwcModuleAvailability || {}, config.lwcConfiguredProperties?.[bundleKey] || [], config.salesforceImports, config.lwcCapabilities?.[bundleKey] || [], config.lightningModules);
+      const imports = schemaImportsForBundle(config.salesforceImports, config.lwcConsumerOwned?.[bundleKey]);
+      const entry = compileBundle(bundleDir, bundleName, namespace, bundleOut, apiVersion, config.lwcModuleAvailability || {}, config.lwcConfiguredProperties?.[bundleKey] || [], imports, config.lwcCapabilities?.[bundleKey] || [], config.lightningModules, localModules, localStylesheetSources);
       // Native c_metadata_* checks capability declarations after template
       // compilation; invalid dynamic usage keeps its actual compiler error.
       const capabilityError = config.lwcCapabilityErrors?.[bundleKey];

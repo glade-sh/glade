@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"regexp/syntax"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -15,6 +16,30 @@ import (
 // This includes reads on abandoned alternatives (R049-R051), greedy repetition
 // (R019-R048), and failed possessive matching (R031/R033).
 func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
+	return regexp2ObserverSource(source, re, nil)
+}
+
+// regexp2RequireEndObserverSource observes Java's requireEnd across every
+// attempt of a failed find. Java never clears requireEnd when a search fails,
+// so any attempt that evaluates a $, \Z, \b, \B or (?! at the end of the
+// input leaves it set. The instrumented end assertions in source (groups listed
+// in assertions) record a private capture at that point and finish the path;
+// every other atom only consumes. Negative lookaheads keep their meaning.
+func regexp2RequireEndObserverSource(source string, re *regexp2.Regexp, assertions []regexp2EndAssertion) (string, int) {
+	if len(assertions) == 0 {
+		return regexp2ObserverSource(source, re, map[int]bool{})
+	}
+	groups := map[int]bool{}
+	for _, assertion := range assertions {
+		groups[assertion.group] = assertion.multiline
+	}
+	return regexp2ObserverSource(source, re, groups)
+}
+
+// regexp2ObserverSource builds the hitEnd observer when endGroups is nil and the
+// requireEnd observer otherwise (group number -> whether it matches only at \z).
+func regexp2ObserverSource(source string, re *regexp2.Regexp, endGroups map[int]bool) (string, int) {
+	requireEnd := endGroups != nil
 	slot := 1
 	for _, number := range re.GetGroupNumbers() {
 		if number >= slot {
@@ -28,101 +53,276 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 	name := strconv.Itoa(slot)
 	mark := "(?<" + name + `>\z)`
 	wrap := func(atom string, readsEnd bool) string {
-		if readsEnd {
+		if readsEnd && !requireEnd {
 			return "(?(" + name + ")|(?:" + atom + "|" + mark + "))"
 		}
 		return "(?(" + name + ")|" + atom + ")"
 	}
-	var out strings.Builder
-	// Anchor-only expressions still need a declared slot for the conditions.
-	// This definition cannot capture or change the observation result.
-	out.WriteString("(?:(?<" + name + ">(?!))|)")
-	extended := false
-	var stack []bool
-	for i := 0; i < len(source); {
-		start, ch := i, source[i]
-		if extended && ch == '#' {
-			end := strings.IndexByte(source[i:], '\n')
-			if end < 0 {
-				out.WriteString(source[i:])
-				break
-			}
-			out.WriteString(source[i : i+end+1])
-			i += end + 1
-			continue
-		}
-		if extended && strings.ContainsRune(" \t\r\n\f", rune(ch)) {
-			out.WriteByte(ch)
-			i++
-			continue
-		}
-		switch ch {
-		case '(':
-			if strings.HasPrefix(source[i:], "(?#") {
-				if end := strings.IndexByte(source[i+3:], ')'); end >= 0 {
-					i += end + 4
-					out.WriteString(source[start:i])
-					continue
+	var rewrite func(source string, extended bool) string
+	rewrite = func(source string, extended bool) string {
+		closerAt := map[int]string{}
+		var out strings.Builder
+		var stack []bool
+		for i := 0; i < len(source); {
+			start, ch := i, source[i]
+			if extended && ch == '#' {
+				end := strings.IndexByte(source[i:], '\n')
+				if end < 0 {
+					out.WriteString(source[i:])
+					break
 				}
+				out.WriteString(source[i : i+end+1])
+				i += end + 1
+				continue
 			}
-			if strings.HasPrefix(source[i:], "(?") {
-				j, scoped, enabled, sawFlag := i+2, extended, true, false
-				for j < len(source) && strings.ContainsRune("imnsxIMNSX-+", rune(source[j])) {
-					if source[j] == '-' {
-						enabled = false
-					} else if source[j] == '+' {
-						enabled = true
-					} else {
-						sawFlag = true
-						if source[j] == 'x' || source[j] == 'X' {
-							scoped = enabled
+			if extended && strings.ContainsRune(" \t\r\n\f", rune(ch)) {
+				out.WriteByte(ch)
+				i++
+				continue
+			}
+			switch ch {
+			case '(':
+				if strings.HasPrefix(source[i:], "(?#") {
+					if end := strings.IndexByte(source[i+3:], ')'); end >= 0 {
+						i += end + 4
+						out.WriteString(source[start:i])
+						continue
+					}
+				}
+				if requireEnd {
+					if group, header, ok := regexp2InstrumentedGroupAt(source, i); ok {
+						if multiline, tracked := endGroups[group]; tracked {
+							end := regexp2GroupEnd(source, i)
+							if end > 0 {
+								body := source[i+header : end]
+								markCond := body
+								if multiline {
+									markCond = `\z`
+								}
+								out.WriteString("(?(" + name + ")|(?:(?<" + name + ">" + markCond + ")|" + source[i:end+1] + "))")
+								i = end + 1
+								continue
+							}
 						}
 					}
-					j++
 				}
-				if sawFlag && j < len(source) && (source[j] == ':' || source[j] == ')') {
-					if source[j] == ':' {
-						stack = append(stack, extended)
+				if strings.HasPrefix(source[i:], "(?!") && requireEnd {
+					// Java evaluates the condition, so an end read inside it counts
+					// even though the lookahead then fails. Try the observed body in a
+					// positive lookahead first (it stops at the first success, as Java
+					// does); it only keeps the path when it set the slot. Otherwise the
+					// real negative lookahead decides.
+					if end := regexp2GroupEnd(source, i); end > 0 {
+						inner := source[i+3 : end]
+						out.WriteString("(?(" + name + ")|(?:(?=" + rewrite(inner, extended) + ")(?(" + name + ")|(?!))|" + source[i:end+1] + "))")
+						i = end + 1
+						continue
 					}
-					extended = scoped
-					i = j + 1
-					out.WriteString(source[start:i])
+					out.WriteString("(?(" + name + ")|(?!")
+					i += 3
+					stack = append(stack, extended)
+					closerAt[len(stack)] = "))"
 					continue
 				}
-				if i+3 < len(source) && source[i+2] == '<' && source[i+3] != '=' && source[i+3] != '!' {
-					if end := strings.IndexByte(source[i+3:], '>'); end >= 0 {
-						i += end + 4
-					} else {
-						i += 2
-					}
-				} else if i+3 < len(source) && source[i+2] == '<' {
-					i += 4
-				} else {
+				if strings.HasPrefix(source[i:], "(?!") {
+					// A negative lookahead drops captures made inside it, which would
+					// hide reads at the end of the input. Observe its body through a
+					// positive lookahead that the path may skip.
+					out.WriteString("(?:(?=")
 					i += 3
+					stack = append(stack, extended)
+					closerAt[len(stack)] = ")|)"
+					continue
 				}
-			} else {
-				i++
-			}
-			stack = append(stack, extended)
-			out.WriteString(source[start:i])
-		case ')':
-			if len(stack) > 0 {
-				extended = stack[len(stack)-1]
-				stack = stack[:len(stack)-1]
-			}
-			out.WriteByte(ch)
-			i++
-		case '|', '*', '+', '?':
-			out.WriteByte(ch)
-			i++
-		case '{':
-			if end := strings.IndexByte(source[i:], '}'); end >= 0 && isRegexCountQuantifier(source[i+1:i+end]) {
-				i += end + 1
+				if strings.HasPrefix(source[i:], "(?") {
+					j, scoped, enabled, sawFlag := i+2, extended, true, false
+					for j < len(source) && strings.ContainsRune("imnsxIMNSX-+", rune(source[j])) {
+						if source[j] == '-' {
+							enabled = false
+						} else if source[j] == '+' {
+							enabled = true
+						} else {
+							sawFlag = true
+							if source[j] == 'x' || source[j] == 'X' {
+								scoped = enabled
+							}
+						}
+						j++
+					}
+					if sawFlag && j < len(source) && (source[j] == ':' || source[j] == ')') {
+						if source[j] == ':' {
+							stack = append(stack, extended)
+						}
+						extended = scoped
+						i = j + 1
+						out.WriteString(source[start:i])
+						continue
+					}
+					if i+3 < len(source) && source[i+2] == '<' && source[i+3] != '=' && source[i+3] != '!' {
+						if end := strings.IndexByte(source[i+3:], '>'); end >= 0 {
+							i += end + 4
+						} else {
+							i += 2
+						}
+					} else if i+3 < len(source) && source[i+2] == '<' {
+						i += 4
+					} else {
+						i += 3
+					}
+				} else {
+					i++
+				}
+				stack = append(stack, extended)
 				out.WriteString(source[start:i])
-			} else {
-				out.WriteString(wrap(`\{`, true))
+			case ')':
+				depth := len(stack)
+				if depth > 0 {
+					extended = stack[depth-1]
+					stack = stack[:depth-1]
+				}
+				if closer, ok := closerAt[depth]; ok && depth > 0 {
+					delete(closerAt, depth)
+					out.WriteString(closer)
+				} else {
+					out.WriteByte(ch)
+				}
 				i++
+			case '|', '*', '+', '?':
+				out.WriteByte(ch)
+				i++
+			case '{':
+				if end := strings.IndexByte(source[i:], '}'); end >= 0 && isRegexCountQuantifier(source[i+1:i+end]) {
+					i += end + 1
+					out.WriteString(source[start:i])
+				} else {
+					out.WriteString(wrap(`\{`, true))
+					i++
+				}
+			case '[':
+				i++
+				if i < len(source) && source[i] == '^' {
+					i++
+				}
+				if i < len(source) && source[i] == ']' {
+					i++
+				}
+				for i < len(source) {
+					if source[i] == '\\' && i+1 < len(source) {
+						control := source[i+1] == 'c'
+						i += 2
+						if control && i < len(source) {
+							i++
+						}
+						continue
+					}
+					i++
+					if source[i-1] == ']' {
+						break
+					}
+				}
+				out.WriteString(wrap(source[start:i], true))
+			case '\\':
+				i += 2
+				if i > len(source) {
+					i = len(source)
+				}
+				if i < len(source) {
+					switch source[start+1] {
+					case 'p', 'P':
+						if source[i] == '{' {
+							if end := strings.IndexByte(source[i:], '}'); end >= 0 {
+								i += end + 1
+							}
+						}
+					case 'k':
+						if source[i] == '<' {
+							if end := strings.IndexByte(source[i:], '>'); end >= 0 {
+								i += end + 1
+							}
+						}
+					case 'u', 'x':
+						if source[start+1] == 'x' && source[i] == '{' {
+							// \x{H...} is one atom.
+							if end := strings.IndexByte(source[i:], '}'); end >= 0 {
+								i += end + 1
+								break
+							}
+						}
+						count := 2
+						if source[start+1] == 'u' {
+							count = 4
+						}
+						for count > 0 && i < len(source) {
+							i++
+							count--
+						}
+					case 'c':
+						i++
+					default:
+						if source[start+1] >= '0' && source[start+1] <= '9' {
+							for i < len(source) && source[i] >= '0' && source[i] <= '9' {
+								i++
+							}
+						}
+					}
+				}
+				atom := source[start:i]
+				switch atom {
+				case `\A`, `\G`:
+					out.WriteString(wrap(atom, false))
+				case `\z`:
+					if requireEnd {
+						out.WriteString(wrap(atom, false))
+					} else {
+						out.WriteString(wrap(mark, false))
+					}
+				case `\b`, `\B`:
+					if requireEnd {
+						out.WriteString(wrap(atom, false))
+						break
+					}
+					out.WriteString(wrap(atom+"(?:"+mark+")?", true))
+				default:
+					out.WriteString(wrap(atom, true))
+				}
+			case '^':
+				out.WriteString(wrap("^", false))
+				i++
+			default:
+				_, size := utf8.DecodeRuneInString(source[i:])
+				i += size
+				out.WriteString(wrap(source[start:i], true))
 			}
+		}
+		return out.String()
+	}
+	return "(?:(?<" + name + ">(?!))|)" + rewrite(source, false), slot
+}
+
+// regexp2InstrumentedGroupAt reads a "(?<digits>" header at source[at:].
+func regexp2InstrumentedGroupAt(source string, at int) (group, header int, ok bool) {
+	if !strings.HasPrefix(source[at:], "(?<") {
+		return 0, 0, false
+	}
+	end := strings.IndexByte(source[at:], '>')
+	if end < 4 {
+		return 0, 0, false
+	}
+	number, err := strconv.Atoi(source[at+3 : at+end])
+	if err != nil || number <= 0 {
+		return 0, 0, false
+	}
+	return number, end + 1, true
+}
+
+// regexp2GroupEnd returns the index of the parenthesis closing the group that
+// opens at source[at], or -1. It skips escapes and character classes.
+func regexp2GroupEnd(source string, at int) int {
+	depth := 0
+	for i := at; i < len(source); i++ {
+		switch source[i] {
+		case '\\':
+			i++
 		case '[':
 			i++
 			if i < len(source) && source[i] == '^' {
@@ -131,80 +331,199 @@ func regexp2EndObserverSource(source string, re *regexp2.Regexp) (string, int) {
 			if i < len(source) && source[i] == ']' {
 				i++
 			}
-			for i < len(source) {
-				if source[i] == '\\' && i+1 < len(source) {
-					control := source[i+1] == 'c'
-					i += 2
-					if control && i < len(source) {
-						i++
-					}
-					continue
-				}
-				i++
-				if source[i-1] == ']' {
-					break
-				}
-			}
-			out.WriteString(wrap(source[start:i], true))
-		case '\\':
-			i += 2
-			if i > len(source) {
-				i = len(source)
-			}
-			if i < len(source) {
-				switch source[start+1] {
-				case 'p', 'P':
-					if source[i] == '{' {
-						if end := strings.IndexByte(source[i:], '}'); end >= 0 {
-							i += end + 1
-						}
-					}
-				case 'k':
-					if source[i] == '<' {
-						if end := strings.IndexByte(source[i:], '>'); end >= 0 {
-							i += end + 1
-						}
-					}
-				case 'u', 'x':
-					count := 2
-					if source[start+1] == 'u' {
-						count = 4
-					}
-					for count > 0 && i < len(source) {
-						i++
-						count--
-					}
-				case 'c':
+			for ; i < len(source) && source[i] != ']'; i++ {
+				if source[i] == '\\' {
 					i++
-				default:
-					if source[start+1] >= '0' && source[start+1] <= '9' {
-						for i < len(source) && source[i] >= '0' && source[i] <= '9' {
-							i++
-						}
-					}
 				}
 			}
-			atom := source[start:i]
-			switch atom {
-			case `\A`, `\G`:
-				out.WriteString(wrap(atom, false))
-			case `\z`:
-				out.WriteString(wrap(mark, false))
-			case `\b`, `\B`:
-				out.WriteString(wrap(atom+"(?:"+mark+")?", true))
-			default:
-				out.WriteString(wrap(atom, true))
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth == 0 {
+				return i
 			}
-		case '^':
-			out.WriteString(wrap("^", false))
-			i++
-		default:
-			_, size := utf8.DecodeRuneInString(source[i:])
-			i += size
-			out.WriteString(wrap(source[start:i], true))
 		}
 	}
-	return out.String(), slot
+	return -1
+}
+
+// requireEndObserver is the compiled observer of a plan, built once.
+type requireEndObserver struct {
+	re     *regexp2.Regexp
+	slot   int
+	minLen int
+}
+
+func (p *regexp2Plan) requireEndObserver() *requireEndObserver {
+	p.requireEndOnce.Do(func() {
+		source, slot := regexp2RequireEndObserverSource(p.matchSource, p.re, p.endAssertionGroups)
+		minLen := 0
+		// Java's Start node tries only the starts that leave room for the
+		// pattern's minimum length; an assertion at the end of the input is read
+		// by an attempt that started earlier.
+		if parsed, perr := javaRegexParse(regexNormalizeExtended(javaRegexRemoveQuoting(p.originalSource))); perr == nil && parsed != nil && parsed.root.minLen > 0 {
+			minLen = int(parsed.root.minLen)
+			source = fmt.Sprintf(`(?=(?s:.{%d}))`, minLen) + source
+		}
+		re, err := regexp2.Compile(source, regexp2.None)
+		if err != nil {
+			return
+		}
+		re.MatchTimeout = regexp2MatchTimeout
+		p.requireEndObs = &requireEndObserver{re: re, slot: slot, minLen: minLen}
+	})
+	return p.requireEndObs
+}
+
+// failedFindRequiresEnd reports Java's requireEnd after a find that failed
+// (see regexp2RequireEndObserverSource). The observer only reports a flag, so
+// any failure of its own reads as false and never reaches the caller.
+func (p *regexp2Plan) failedFindRequiresEnd(input string, startByte, endRune int) bool {
+	if len(p.endAssertionGroups) == 0 || endRune != utf8.RuneCountInString(input) {
+		return false
+	}
+	obs := p.requireEndObserver()
+	if obs == nil {
+		return false
+	}
+	match, err := searchRegexp2(obs.re, input, func() (*regexp2.Match, error) {
+		return obs.re.FindStringMatchStartingAt(input, startByte)
+	})
+	if err != nil || match == nil {
+		return false
+	}
+	group := match.GroupByNumber(obs.slot)
+	return group != nil && len(group.Captures) > 0
+}
+
+// failedFindHitEnd: a failed unanchored find ends in Java's Start node, which
+// sets hitEnd (see operationHitEnd). A root that is a bare ^ has no Start node.
+func (p *regexp2Plan) failedFindHitEnd(observed bool) bool {
+	if !regexRootIsBareCaret(p.originalSource) {
+		return true
+	}
+	return observed
+}
+
+// escapeEncodedLoneSurrogates writes each encoded lone surrogate of source as
+// a \uDxxx escape, which regexp2 reads as that code unit; as bytes they would
+// read as three U+FFFD characters.
+func escapeEncodedLoneSurrogates(source string) string {
+	if !hasLoneSurrogate(source) {
+		return source
+	}
+	var b strings.Builder
+	for i := 0; i < len(source); {
+		start := i
+		if source[i] == '\\' && i+1 < len(source) {
+			// Java reads a backslash before a non-alphabetic character as that
+			// character; the escape replaces both.
+			if isLoneSurrogateAt(source, i+1) {
+				start = i + 1
+			} else {
+				b.WriteByte(source[i])
+				b.WriteByte(source[i+1])
+				i += 2
+				continue
+			}
+		}
+		if isLoneSurrogateAt(source, start) {
+			r, size := decodeApexRune(source[start:])
+			fmt.Fprintf(&b, `\u%04X`, r)
+			i = start + size
+			continue
+		}
+		b.WriteByte(source[i])
+		i++
+	}
+	return b.String()
+}
+
+// operationHitEndRunes is operationHitEnd over decoded code units. The plans
+// that take this path have no linear program, so only the observer decides.
+func (p *regexp2Plan) operationHitEndRunes(runes []rune, anchored, full bool) (bool, error) {
+	source, slot := regexp2EndObserverSource(escapeEncodedLoneSurrogates(p.matchSource), p.re)
+	if anchored {
+		source = `\G(?:` + source + ")"
+	}
+	if full {
+		source += `(?=\z)`
+	}
+	re, err := regexp2.Compile(source, regexp2.None)
+	if err != nil {
+		return false, err
+	}
+	re.MatchTimeout = regexp2MatchTimeout
+	match, err := searchRegexp2(re, "", func() (*regexp2.Match, error) {
+		return re.FindRunesMatchStartingAt(runes, 0)
+	})
+	if err != nil || match == nil {
+		return false, err
+	}
+	group := match.GroupByNumber(slot)
+	return group != nil && len(group.Captures) > 0, nil
+}
+
+// loneSurrogateMatch matches text that holds a lone surrogate, which Java reads
+// as a code unit of its own (d10_m_lone_hi, d10_m_lone_lo, d10_m_prop_Cs,
+// d10_m_lit_lone_hi). It anchors at the start (and the end when full) over the
+// decoded code units through regexp2's rune API and returns the match with the
+// byte offset of every rune. It is taken only for such text and plans that need
+// neither the linear engine nor grapheme clusters; ok is false otherwise and the
+// string path decides.
+func (p *regexp2Plan) loneSurrogateMatch(input string, full bool) (match *regexp2.Match, offsets []int, runes []rune, ok bool, err error) {
+	if !mayHoldLoneSurrogate(input) || !hasLoneSurrogate(input) || p.linear != nil || p.grapheme != nil {
+		return nil, nil, nil, false, nil
+	}
+	runes = make([]rune, 0, len(input))
+	offsets = make([]int, 0, len(input)+1)
+	for i := 0; i < len(input); {
+		r, size := decodeApexRune(input[i:])
+		runes = append(runes, r)
+		offsets = append(offsets, i)
+		i += size
+	}
+	offsets = append(offsets, len(input))
+	source := `\G(?:` + escapeEncodedLoneSurrogates(p.matchSource) + ")"
+	if full {
+		source += `(?=\z)`
+	}
+	re, cerr := regexp2.Compile(source, regexp2.None)
+	if cerr != nil {
+		return nil, nil, nil, true, cerr
+	}
+	re.MatchTimeout = regexp2MatchTimeout
+	match, merr := searchRegexp2(re, "", func() (*regexp2.Match, error) {
+		return re.FindRunesMatchStartingAt(runes, 0)
+	})
+	if merr != nil {
+		return nil, nil, nil, true, merr
+	}
+	return match, offsets, runes, true, nil
+}
+
+// matchesLoneSurrogateInput is Pattern.matches over such text.
+func (p *regexp2Plan) matchesLoneSurrogateInput(input string) (matched, ok bool, err error) {
+	match, _, runes, ok, err := p.loneSurrogateMatch(input, true)
+	if !ok || err != nil {
+		return false, ok, err
+	}
+	return match != nil && match.Index == 0 && match.Length == len(runes), true, nil
+}
+
+// loneSurrogateIndices is the byte-offset group list of a loneSurrogateMatch.
+func (p *regexp2Plan) loneSurrogateIndices(match *regexp2.Match, offsets []int) []int {
+	indices := make([]int, 0, len(p.publicGroupNumbers)*2)
+	for _, number := range p.publicGroupNumbers {
+		group := match.GroupByNumber(number)
+		if group == nil || len(group.Captures) == 0 {
+			indices = append(indices, -1, -1)
+			continue
+		}
+		indices = append(indices, offsets[group.Index], offsets[group.Index+group.Length])
+	}
+	return indices
 }
 
 func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full bool) (*regexp2.Match, error) {
@@ -219,6 +538,9 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 		return nil, err
 	}
 	re.MatchTimeout = regexp2MatchTimeout
+	if p.noLinearMatch(input) {
+		return nil, nil
+	}
 	match, err := searchRegexp2(re, input, func() (*regexp2.Match, error) {
 		return re.FindStringMatchStartingAt(input, startByte)
 	})
@@ -228,10 +550,28 @@ func (p *regexp2Plan) matchStartingAt(input string, startByte, endRune int, full
 			return re.FindNextMatch(previous)
 		})
 	}
+	if match != nil && err == nil {
+		if depthErr := p.checkStackDepth(match); depthErr != nil {
+			return nil, depthErr
+		}
+	}
 	return match, err
 }
 
 func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anchored, full bool) (bool, error) {
+	if !anchored && p.noLinearMatch(input) {
+		// A failed unanchored find ends in Java's Start node, which sets
+		// hitEnd (pattern_matcher R011, d14_neg_lookahead_nomatch). A pattern
+		// whose root node is a bare ^ has no Start node (a group around it does):
+		// Java makes one attempt, and hitEnd is true when that attempt reads
+		// past the end. The linear program decides that exactly.
+		if p.linearProg == nil || !regexRootIsBareCaret(p.originalSource) {
+			return true, nil
+		}
+		if startByte == 0 {
+			return linearAttemptReachesEnd(p.linearProg, input, endRune), nil
+		}
+	}
 	source, slot := regexp2EndObserverSource(p.matchSource, p.re)
 	if anchored {
 		source = `\G(?:` + source + ")"
@@ -252,4 +592,138 @@ func (p *regexp2Plan) operationHitEnd(input string, startByte, endRune int, anch
 	}
 	group := match.GroupByNumber(slot)
 	return group != nil && len(group.Captures) > 0, nil
+}
+
+// regexStripLeadingFlags removes leading (?flags) groups from a pattern.
+func regexStripLeadingFlags(source string) string {
+	for strings.HasPrefix(source, "(?") {
+		end := strings.IndexByte(source, ')')
+		if end < 0 || strings.Trim(source[2:end], "idmsucxU-") != "" {
+			break
+		}
+		source = source[end+1:]
+	}
+	return source
+}
+
+// linearAttemptReachesEnd reports whether some path of prog, started at the
+// beginning of input, consumes every rune up to endRune and is still alive.
+// The program has no empty-width operation other than begin of text.
+func linearAttemptReachesEnd(prog *syntax.Prog, input string, endRune int) bool {
+	runes := []rune(input)
+	if endRune < len(runes) {
+		runes = runes[:endRune]
+	}
+	var current, next []uint32
+	seen := make([]int, len(prog.Inst))
+	for i := range seen {
+		seen[i] = -1
+	}
+	var add func(list *[]uint32, pc uint32, flags syntax.EmptyOp, gen int)
+	add = func(list *[]uint32, pc uint32, flags syntax.EmptyOp, gen int) {
+		if seen[pc] == gen {
+			return
+		}
+		seen[pc] = gen
+		inst := &prog.Inst[pc]
+		switch inst.Op {
+		case syntax.InstAlt, syntax.InstAltMatch:
+			add(list, inst.Out, flags, gen)
+			add(list, inst.Arg, flags, gen)
+		case syntax.InstCapture, syntax.InstNop:
+			add(list, inst.Out, flags, gen)
+		case syntax.InstEmptyWidth:
+			if syntax.EmptyOp(inst.Arg)&^flags == 0 {
+				add(list, inst.Out, flags, gen)
+			}
+		case syntax.InstRune, syntax.InstRune1, syntax.InstRuneAny, syntax.InstRuneAnyNotNL:
+			*list = append(*list, pc)
+		}
+	}
+	prev := rune(-1)
+	var first rune = -1
+	if len(runes) > 0 {
+		first = runes[0]
+	}
+	add(&current, uint32(prog.Start), syntax.EmptyOpContext(prev, first), 0)
+	for i, r := range runes {
+		next = next[:0]
+		after := rune(-1)
+		if i+1 < len(runes) {
+			after = runes[i+1]
+		}
+		for _, pc := range current {
+			inst := &prog.Inst[pc]
+			if inst.MatchRune(r) {
+				add(&next, inst.Out, syntax.EmptyOpContext(r, after), i+1)
+			}
+		}
+		current, next = next, current
+		if len(current) == 0 {
+			return false
+		}
+	}
+	return len(current) > 0
+}
+
+// regexRootIsBareCaret reports whether Java compiles source to a root Begin
+// node: no top-level alternation, and the first element, after any flag-only
+// groups, is a bare ^. A group around the ^ keeps Java's Start wrapper.
+func regexRootIsBareCaret(source string) bool {
+	source = regexNormalizeExtended(javaRegexRemoveQuoting(source))
+	// Java compiles \A to the same Begin node as a non-multiline ^.
+	if stripped := regexStripLeadingFlags(source); !strings.HasPrefix(stripped, "^") && !strings.HasPrefix(stripped, `\A`) {
+		return false
+	}
+	depth := 0
+	for i := 0; i < len(source); i++ {
+		switch source[i] {
+		case '\\':
+			i++
+		case '[':
+			// A ] right after [ or [^ is a literal; classes nest.
+			classDepth := 1
+			i++
+			if i < len(source) && source[i] == '^' {
+				i++
+			}
+			if i < len(source) && source[i] == ']' {
+				i++
+			}
+			for ; i < len(source) && classDepth > 0; i++ {
+				switch source[i] {
+				case '\\':
+					i++
+				case '[':
+					classDepth++
+				case ']':
+					classDepth--
+				}
+			}
+			i--
+		case '(':
+			depth++
+		case ')':
+			depth--
+		case '|':
+			if depth == 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// regexNormalizeExtended returns the pattern Java compiles from a COMMENTS-mode
+// pattern (whitespace and comments gone, x removed), or source itself when x is
+// never enabled or the pattern is invalid. Validation and error text keep using
+// the original source.
+func regexNormalizeExtended(source string) string {
+	if !regexSourceHasInlineFlag(source, 'x') {
+		return source
+	}
+	if normalized, ok := javaRegexExtendedNormalize(source); ok {
+		return normalized
+	}
+	return source
 }

@@ -1,0 +1,25 @@
+case_id	api_version	route	compile_outcome	runtime_outcome	observed_diagnostic	source
+box	62.0	anonymous	COMPILED	SUCCESS		anon/box.apex
+interface	62.0	anonymous	COMPILED	SUCCESS		anon/interface.apex
+new	62.0	anonymous	COMPILED	SUCCESS		anon/new.apex
+missing_inner	62.0	anonymous	COMPILE_ERROR	NOT_REACHED	Invalid type: V036PkgOuter.Absent	anon/missing_inner.apex
+missing_outer	62.0	anonymous	COMPILE_ERROR	NOT_REACHED	Invalid type: V036AbsentOuter.Box	anon/missing_outer.apex
+three_part	62.0	anonymous	COMPILE_ERROR	NOT_REACHED	Invalid type: V036PkgOuter.Box.Absent	anon/three_part.apex
+box	62.0	istest-checkonly	COMPILED	NOT_RUN		named62/V036NBox.cls
+interface	62.0	istest-checkonly	COMPILED	NOT_RUN		named62/V036NInterface.cls
+new	62.0	istest-checkonly	COMPILED	NOT_RUN		named62/V036NNew.cls
+missing_inner	62.0	istest-checkonly	COMPILE_ERROR	NOT_RUN	Invalid type: V036PkgOuter.Absent	named62/V036NMissingInner.cls
+missing_outer	62.0	istest-checkonly	COMPILE_ERROR	NOT_RUN	Invalid type: V036AbsentOuter.Box	named62/V036NMissingOuter.cls
+three_part	62.0	istest-checkonly	COMPILE_ERROR	NOT_RUN	Invalid type: V036PkgOuter.Box.Absent	named62/V036NThreePart.cls
+box	67.0	anonymous	COMPILED	SUCCESS		anon/box.apex
+interface	67.0	anonymous	COMPILED	SUCCESS		anon/interface.apex
+new	67.0	anonymous	COMPILED	SUCCESS		anon/new.apex
+missing_inner	67.0	anonymous	COMPILE_ERROR	NOT_REACHED	Invalid type: V036PkgOuter.Absent	anon/missing_inner.apex
+missing_outer	67.0	anonymous	COMPILE_ERROR	NOT_REACHED	Invalid type: V036AbsentOuter.Box	anon/missing_outer.apex
+three_part	67.0	anonymous	COMPILE_ERROR	NOT_REACHED	Invalid type: V036PkgOuter.Box.Absent	anon/three_part.apex
+box	67.0	istest-checkonly	COMPILED	NOT_RUN		named67/V036NBox.cls
+interface	67.0	istest-checkonly	COMPILED	NOT_RUN		named67/V036NInterface.cls
+new	67.0	istest-checkonly	COMPILED	NOT_RUN		named67/V036NNew.cls
+missing_inner	67.0	istest-checkonly	COMPILE_ERROR	NOT_RUN	Invalid type: V036PkgOuter.Absent	named67/V036NMissingInner.cls
+missing_outer	67.0	istest-checkonly	COMPILE_ERROR	NOT_RUN	Invalid type: V036AbsentOuter.Box	named67/V036NMissingOuter.cls
+three_part	67.0	istest-checkonly	COMPILE_ERROR	NOT_RUN	Invalid type: V036PkgOuter.Box.Absent	named67/V036NThreePart.cls

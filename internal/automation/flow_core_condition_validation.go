@@ -3,24 +3,22 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
-	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
 var flowCoreFormulaRecordFields = regexp.MustCompile(`\{!\$Record\.([[:alnum:]_]+)\}`)
 
-func flowCoreValidateProjectConditions(p project.Project, idx *Index) error {
+func flowCoreValidateProjectConditions(p project.Project, idx *Index, schemas *projectSchemaLoader) error {
 	if len(p.ObjectFiles) == 0 && len(p.FieldFiles) == 0 {
 		return nil
 	}
-	s, err := schema.LoadProject(p)
+	s, err := schemas.load()
 	if err != nil {
 		return nil
 	}
@@ -31,7 +29,7 @@ func flowCoreValidateProjectConditions(p project.Project, idx *Index) error {
 	}
 	for i := range idx.Flows {
 		flow := &idx.Flows[i]
-		data, err := os.ReadFile(flow.File)
+		data, err := p.ReadFile(flow.File)
 		if err != nil {
 			continue
 		}

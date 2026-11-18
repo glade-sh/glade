@@ -1,0 +1,63 @@
+api	case	route	exists	value
+67.0	Empty	IsTest	false	"Master Empty"
+67.0	Filled	IsTest	true	"Traduit"
+67.0	Missing	IsTest	false	"Master Missing"
+67.0	Space	IsTest	false	"Master Space"
+62.0	Empty	IsTest	false	"Master Empty"
+62.0	Filled	IsTest	true	"Traduit"
+62.0	Missing	IsTest	false	"Master Missing"
+62.0	Space	IsTest	false	"Master Space"
+67.0	Emspace	IsTest	false	"Master Emspace"
+67.0	Nbsp	IsTest	true	"\u00a0"
+67.0	Newline	IsTest	false	"Master Newline"
+67.0	Tab	IsTest	false	"Master Tab"
+62.0	Emspace	IsTest	false	"Master Emspace"
+62.0	Nbsp	IsTest	true	"\u00a0"
+62.0	Newline	IsTest	false	"Master Newline"
+62.0	Tab	IsTest	false	"Master Tab"
+67.0	UnicodeU+0009	IsTest	false	-
+67.0	UnicodeU+000A	IsTest	false	-
+67.0	UnicodeU+000D	IsTest	false	-
+67.0	UnicodeU+0020	IsTest	false	-
+67.0	UnicodeU+0085	IsTest	true	-
+67.0	UnicodeU+00A0	IsTest	true	-
+67.0	UnicodeU+1680	IsTest	false	-
+67.0	UnicodeU+2000	IsTest	false	-
+67.0	UnicodeU+2001	IsTest	false	-
+67.0	UnicodeU+2002	IsTest	false	-
+67.0	UnicodeU+2003	IsTest	false	-
+67.0	UnicodeU+2004	IsTest	false	-
+67.0	UnicodeU+2005	IsTest	false	-
+67.0	UnicodeU+2006	IsTest	false	-
+67.0	UnicodeU+2007	IsTest	true	-
+67.0	UnicodeU+2008	IsTest	false	-
+67.0	UnicodeU+2009	IsTest	false	-
+67.0	UnicodeU+200A	IsTest	false	-
+67.0	UnicodeU+2028	IsTest	false	-
+67.0	UnicodeU+2029	IsTest	false	-
+67.0	UnicodeU+202F	IsTest	true	-
+67.0	UnicodeU+205F	IsTest	false	-
+67.0	UnicodeU+3000	IsTest	false	-
+62.0	UnicodeU+0009	IsTest	false	-
+62.0	UnicodeU+000A	IsTest	false	-
+62.0	UnicodeU+000D	IsTest	false	-
+62.0	UnicodeU+0020	IsTest	false	-
+62.0	UnicodeU+0085	IsTest	true	-
+62.0	UnicodeU+00A0	IsTest	true	-
+62.0	UnicodeU+1680	IsTest	false	-
+62.0	UnicodeU+2000	IsTest	false	-
+62.0	UnicodeU+2001	IsTest	false	-
+62.0	UnicodeU+2002	IsTest	false	-
+62.0	UnicodeU+2003	IsTest	false	-
+62.0	UnicodeU+2004	IsTest	false	-
+62.0	UnicodeU+2005	IsTest	false	-
+62.0	UnicodeU+2006	IsTest	false	-
+62.0	UnicodeU+2007	IsTest	true	-
+62.0	UnicodeU+2008	IsTest	false	-
+62.0	UnicodeU+2009	IsTest	false	-
+62.0	UnicodeU+200A	IsTest	false	-
+62.0	UnicodeU+2028	IsTest	false	-
+62.0	UnicodeU+2029	IsTest	false	-
+62.0	UnicodeU+202F	IsTest	true	-
+62.0	UnicodeU+205F	IsTest	false	-
+62.0	UnicodeU+3000	IsTest	false	-

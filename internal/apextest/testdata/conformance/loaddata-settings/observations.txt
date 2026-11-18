@@ -1,0 +1,123 @@
+# loaddata-settings full native observations
+
+## API 62.0
+### ld01 [istest @62.0]
+method=observe outcome=Fail time=175ms
+message=System.AssertException: Assertion Failed: OBS|{"retNum":"12.34","retText":"alpha,beta","stamp":"2024-02-29 05:14:15","day":"2024-02-29","flag":true,"int":"7","num":"12.34","text":"alpha,beta","count":1}
+stack=Class.Ld01TextTypesTest.observe: line 8, column 1
+
+### ld02 [istest @62.0]
+method=observe outcome=Fail time=59ms
+message=System.AssertException: Assertion Failed: OBS|{"required":"req-t1","money":"19.99","pct":"12.50","choice":"A","phone":"+1 415 555 0100","mailOk":true}
+stack=Class.Ld02OtherTypesTest.observe: line 7, column 1
+
+### ld03 [istest @62.0]
+method=observe outcome=Fail time=90ms
+message=System.AssertException: Assertion Failed: OBS|{"B3":"text=null|num=null|int=null|flag=false|day=null|choice=null","B2":"text=say \"hi\"|num=0.00|int=null|flag=false|day=null|choice=B","B1":"text=a,b|num=null|int=7|flag=true|day=null|choice=A","count":3}
+stack=Class.Ld03QuotedBlankTest.observe: line 9, column 1
+
+### ld03b [istest @62.0]
+method=observe outcome=Fail time=42ms
+message=System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|CSV Parse error: ' ' is not valid for the type xsd:double"}
+stack=Class.Ld03bSpaceBlankTest.observe: line 7, column 1
+
+### ld04 [istest @62.0]
+method=observe outcome=Fail time=27ms
+message=System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|Unknown field: NoSuchField__c"}
+stack=Class.Ld04BadColumnTest.observe: line 7, column 1
+
+### ld05 [istest @62.0]
+method=observe outcome=Fail time=37ms
+message=System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|CSV Parse error: 'maybe' is not valid for type xsd:boolean, should be '0', '1', 'true' or 'false'"}
+stack=Class.Ld05BadTypeTest.observe: line 7, column 1
+
+### ld06 [istest @62.0]
+method=observe outcome=Fail time=99ms
+message=System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|Invalid ID value on line 2: parent-one","parentId":true}
+stack=Class.Ld06LookupTest.observe: line 8, column 1
+
+### ld07 [istest @62.0]
+method=observe outcome=Fail time=1392ms
+message=System.AssertException: Assertion Failed: OBS|{"withNone":"inst=null/null/false|org=null/null/false|user=null|prof=null|own=null|instU=null/null/false|instP=null/null/false","withOrg":"inst=org/1/false|org=org/1/false|user=null|prof=null|own=org/1/false|instU=org/1/false|instP=org/1/false","withProfile":"inst=profile/2/true|org=org/1/false|user=null|prof=profile/2/true|own=org/1/false|instU=profile/2/true|instP=profile/2/true","withUser":"inst=user/3/false|org=org/1/false|user=user/3/false|prof=profile/2/true|own=org/1/false|instU=user/3/false|instP=profile/2/true"}
+stack=Class.Ld07HierarchyFallbackTest.observe: line 20, column 1
+
+### ld08 [istest @62.0]
+method=observe outcome=Fail time=60ms
+message=System.AssertException: Assertion Failed: OBS|{"partialHasId":true,"partialOwnerOrg":true,"partialNote":null,"partialFlag":"true","partialNum":"7","partialValue":"field-default","orgRow":"null","userRow":"null","orgOwnerOrg":false,"orgIdNull":true,"instOwnerUser":true,"instIdNull":true,"instNote":null,"instFlag":"false","instNum":null,"instValue":null,"orgNull":false,"instNull":false}
+stack=Class.Ld08HierarchyDefaultsTest.observe: line 17, column 1
+
+### ld09 [istest @62.0]
+method=observe outcome=Fail time=51ms
+message=System.AssertException: Assertion Failed: OBS|{"org":"loaded/5.0/true","count":1}
+stack=Class.Ld09LoadSettingTest.observe: line 9, column 1
+
+### ld10 [istest @62.0]
+method=observe outcome=Fail time=422ms
+message=System.AssertException: Assertion Failed: OBS|{"instOwnerUser":true,"instIdNull":true,"org":"org/1/false/org-note","valuesProfile":"profile/7/true/null","instProfile":"profile/7/true/org-note","instUser":"profile/7/true/org-note","inst":"profile/7/true/org-note"}
+stack=Class.Ld10HierarchySparseTest.observe: line 22, column 1
+
+### ld11 [istest @62.0]
+method=observe outcome=Fail time=110ms
+message=System.AssertException: Assertion Failed: OBS|{"insert":"ok","fieldQuery":0,"countQuery":0}
+stack=Class.Ld11NoGrantTest.observe: line 9, column 1
+
+## API 67.0
+### ld01 [istest @67.0]
+method=observe outcome=Fail time=218ms
+message=System.AssertException: Assertion Failed: OBS|{"retNum":"12.34","retText":"alpha,beta","stamp":"2024-02-29 05:14:15","day":"2024-02-29","flag":true,"int":"7","num":"12.34","text":"alpha,beta","count":1}
+stack=Class.Ld01TextTypesTest.observe: line 8, column 1
+
+### ld02 [istest @67.0]
+method=observe outcome=Fail time=50ms
+message=System.AssertException: Assertion Failed: OBS|{"required":"req-t1","money":"19.99","pct":"12.50","choice":"A","phone":"+1 415 555 0100","mailOk":true}
+stack=Class.Ld02OtherTypesTest.observe: line 7, column 1
+
+### ld03 [istest @67.0]
+method=observe outcome=Fail time=64ms
+message=System.AssertException: Assertion Failed: OBS|{"B3":"text=null|num=null|int=null|flag=false|day=null|choice=null","B2":"text=say \"hi\"|num=0.00|int=null|flag=false|day=null|choice=B","B1":"text=a,b|num=null|int=7|flag=true|day=null|choice=A","count":3}
+stack=Class.Ld03QuotedBlankTest.observe: line 9, column 1
+
+### ld03b [istest @67.0]
+method=observe outcome=Fail time=35ms
+message=System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|CSV Parse error: ' ' is not valid for the type xsd:double"}
+stack=Class.Ld03bSpaceBlankTest.observe: line 7, column 1
+
+### ld04 [istest @67.0]
+method=observe outcome=Fail time=39ms
+message=System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|Unknown field: NoSuchField__c"}
+stack=Class.Ld04BadColumnTest.observe: line 7, column 1
+
+### ld05 [istest @67.0]
+method=observe outcome=Fail time=42ms
+message=System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|CSV Parse error: 'maybe' is not valid for type xsd:boolean, should be '0', '1', 'true' or 'false'"}
+stack=Class.Ld05BadTypeTest.observe: line 7, column 1
+
+### ld06 [istest @67.0]
+method=observe outcome=Fail time=58ms
+message=System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|Invalid ID value on line 2: parent-one","parentId":true}
+stack=Class.Ld06LookupTest.observe: line 8, column 1
+
+### ld07 [istest @67.0]
+method=observe outcome=Fail time=1601ms
+message=System.AssertException: Assertion Failed: OBS|{"withNone":"inst=null/null/false|org=null/null/false|user=null|prof=null|own=null|instU=null/null/false|instP=null/null/false","withOrg":"inst=org/1/false|org=org/1/false|user=null|prof=null|own=org/1/false|instU=org/1/false|instP=org/1/false","withProfile":"inst=profile/2/true|org=org/1/false|user=null|prof=profile/2/true|own=org/1/false|instU=profile/2/true|instP=profile/2/true","withUser":"inst=user/3/false|org=org/1/false|user=user/3/false|prof=profile/2/true|own=org/1/false|instU=user/3/false|instP=profile/2/true"}
+stack=Class.Ld07HierarchyFallbackTest.observe: line 20, column 1
+
+### ld08 [istest @67.0]
+method=observe outcome=Fail time=44ms
+message=System.AssertException: Assertion Failed: OBS|{"partialHasId":true,"partialOwnerOrg":true,"partialNote":null,"partialFlag":"true","partialNum":"7","partialValue":"field-default","orgRow":"null","userRow":"null","orgOwnerOrg":false,"orgIdNull":true,"instOwnerUser":true,"instIdNull":true,"instNote":null,"instFlag":"false","instNum":null,"instValue":null,"orgNull":false,"instNull":false}
+stack=Class.Ld08HierarchyDefaultsTest.observe: line 17, column 1
+
+### ld09 [istest @67.0]
+method=observe outcome=Fail time=41ms
+message=System.AssertException: Assertion Failed: OBS|{"org":"loaded/5.0/true","count":1}
+stack=Class.Ld09LoadSettingTest.observe: line 9, column 1
+
+### ld10 [istest @67.0]
+method=observe outcome=Fail time=564ms
+message=System.AssertException: Assertion Failed: OBS|{"instOwnerUser":true,"instIdNull":true,"org":"org/1/false/org-note","valuesProfile":"profile/7/true/null","instProfile":"profile/7/true/org-note","instUser":"profile/7/true/org-note","inst":"profile/7/true/org-note"}
+stack=Class.Ld10HierarchySparseTest.observe: line 22, column 1
+
+### ld11 [istest @67.0]
+method=observe outcome=Fail time=47ms
+message=System.AssertException: Assertion Failed: OBS|{"insert":"System.DmlException|Operation failed due to fields being inaccessible on Sobject Ungranted__c, check errors on Exception or Result! ","fieldQuery":"System.QueryException|No such column 'Value__c' on entity 'Ungranted__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.","countQuery":0}
+stack=Class.Ld11NoGrantTest.observe: line 9, column 1

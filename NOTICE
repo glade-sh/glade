@@ -1,2 +1,9 @@
 Glade
 Copyright 2026 Matt Simonis
+
+internal/stablemath
+Contains modified copies of source files from the Go standard library "math"
+package. Copyright 2009 The Go Authors, used under the BSD 3-Clause license
+in internal/stablemath/LICENSE. Some files also carry the FreeBSD/Sun
+Microsystems and Cephes notices of their origin; those notices are kept in the
+file headers.

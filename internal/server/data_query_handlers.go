@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,6 +18,9 @@ import (
 
 func (s *Server) objectNameForRecordID(id storage.ID) string {
 	for objectName, object := range s.Org.Objects {
+		if s.Org.SuppressesSpreadObject(objectName) {
+			continue
+		}
 		if stored, ok := object.Records[id]; ok && !stored.System.IsDeleted {
 			return objectName
 		}
@@ -27,6 +31,9 @@ func (s *Server) objectNameForRecordID(id storage.ID) string {
 	}
 	match := ""
 	for objectName, object := range s.Org.Objects {
+		if s.Org.SuppressesSpreadObject(objectName) {
+			continue
+		}
 		if object.Definition.KeyPrefix != prefix {
 			continue
 		}
@@ -39,6 +46,10 @@ func (s *Server) objectNameForRecordID(id storage.ID) string {
 }
 
 func (s *Server) commitOrg(org storage.OrgState) error {
+	// Criteria sharing rules take effect when the transaction commits.
+	if err := dml.ReconcileCriteriaSharing(&org); err != nil {
+		return err
+	}
 	if err := s.persistOrg(org); err != nil {
 		return err
 	}
@@ -55,6 +66,10 @@ func (s *Server) commitOrg(org storage.OrgState) error {
 
 func (s *Server) newDMLEngine(r *http.Request, org *storage.OrgState) dml.Engine {
 	engine := dml.NewEngine(org)
+	// A journal lets each row's rollback point undo its own changes. Without
+	// one the engine snapshots the org per row, which shares every record map
+	// and copies the written object's records again on the next row.
+	engine.IsolationJournal = storage.NewIsolationJournal(org)
 	if user := s.currentUser(r, ""); user.ID != "" {
 		engine.UserID = user.ID
 	}
@@ -86,7 +101,8 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 	if allRows {
 		query.AllRows = true
 	}
-	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: s.currentUser(r, "").ID})
+	user := s.currentUser(r, "")
+	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: user.ID, Locale: userString(user, "LocaleSidKey", "")})
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return
@@ -463,6 +479,19 @@ func writeExternalIDUpsertResult(w http.ResponseWriter, result dml.Result) {
 	writeJSON(w, http.StatusCreated, map[string]any{"id": result.ID, "success": true, "errors": []string{}, "created": true})
 }
 
+var restUnknownDMLField = regexp.MustCompile(`^dml: unknown field ([^ .]+)\.([^ .]+)$`)
+
+// restDMLFieldError: a field the object lacks is a column error on REST and
+// collections, with no fields (record_type_null_routes org.tsv and
+// unknown_field.tsv). Other errors pass through.
+func restDMLFieldError(code, message string, fields []string) (string, string, []string) {
+	match := restUnknownDMLField.FindStringSubmatch(message)
+	if match == nil {
+		return code, message, fields
+	}
+	return "INVALID_FIELD", fmt.Sprintf("No such column '%s' on sobject of type %s", match[2], match[1]), []string{}
+}
+
 func writeDMLFailure(w http.ResponseWriter, result dml.Result) {
 	if len(result.Errors) == 0 {
 		writeSalesforceError(w, errDMLFailure, result.Error)
@@ -478,7 +507,8 @@ func writeDMLFailure(w http.ResponseWriter, result dml.Result) {
 		if message == "" {
 			message = result.Error
 		}
-		errors = append(errors, salesforceError{ErrorCode: code, Message: message, Fields: append([]string(nil), err.Fields...)})
+		code, message, fields := restDMLFieldError(code, message, append([]string(nil), err.Fields...))
+		errors = append(errors, salesforceError{ErrorCode: code, Message: message, Fields: fields})
 	}
 	writeJSON(w, http.StatusBadRequest, errors)
 }

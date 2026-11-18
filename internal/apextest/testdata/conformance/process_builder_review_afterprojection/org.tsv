@@ -1,0 +1,13 @@
+api	route	case	actual
+62.0	istest	lookuphtml	api=62.0 | mixed: Con.BI3:null Con.AI3:null Con.BU2:one Con.AU2:one => a:one;b:two;c:null
+62.0	anonymous	lookuphtml	api=62.0 | mixed: Con.BI3:null Con.AI3:null Con.BU2:one Con.AU2:one => a:one;b:two;c:null
+62.0	istest	lookupmissing	api=62.0 | result=true:none | log=Con.BI1:null Con.AI1:null Con.BU1:null Con.AU1:null
+62.0	anonymous	lookupmissing	api=62.0 | result=true:none | log=Con.BI1:null Con.AI1:null Con.BU1:null Con.AU1:null
+62.0	istest	lookupreject	api=62.0 | result=false:CANNOT_EXECUTE_FLOW_TRIGGER | log=Con.BI1:null Con.AI1:null Con.BU1:deny
+62.0	anonymous	lookupreject	api=62.0 | result=false:CANNOT_EXECUTE_FLOW_TRIGGER | log=Con.BI1:null Con.AI1:null Con.BU1:deny
+67.0	istest	lookuphtml	api=67.0 | mixed: Con.BI3:null Con.AI3:null Con.BU2:one Con.AU2:one => a:one;b:two;c:null
+67.0	anonymous	lookuphtml	api=67.0 | mixed: Con.BI3:null Con.AI3:null Con.BU2:one Con.AU2:one => a:one;b:two;c:null
+67.0	istest	lookupmissing	api=67.0 | result=true:none | log=Con.BI1:null Con.AI1:null Con.BU1:null Con.AU1:null
+67.0	anonymous	lookupmissing	api=67.0 | result=true:none | log=Con.BI1:null Con.AI1:null Con.BU1:null Con.AU1:null
+67.0	istest	lookupreject	api=67.0 | result=false:CANNOT_EXECUTE_FLOW_TRIGGER | log=Con.BI1:null Con.AI1:null Con.BU1:deny
+67.0	anonymous	lookupreject	api=67.0 | result=false:CANNOT_EXECUTE_FLOW_TRIGGER | log=Con.BI1:null Con.AI1:null Con.BU1:deny

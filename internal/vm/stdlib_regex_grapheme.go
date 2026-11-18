@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"regexp"
+	"regexp/syntax"
 	"sort"
 	"strings"
 	"sync"
@@ -31,6 +32,13 @@ type regexp2Plan struct {
 	internalGroupNames map[string]bool
 	publicGroupNumbers []int
 	endAssertionGroups []regexp2EndAssertion
+	loopGroups         []string
+	linear             *regexp.Regexp // set for patterns that nest unbounded repeats
+	linearProg         *syntax.Prog   // the same pattern as a program, for the hitEnd simulation
+	linearMu           sync.Mutex
+	linearHit          string
+	requireEndOnce     sync.Once
+	requireEndObs      *requireEndObserver
 }
 
 func buildGraphemeBoundaryTable(input string) *graphemeBoundaryTable {
@@ -56,33 +64,38 @@ func (g *graphemeBoundaryTable) isBoundaryByte(pos int) bool {
 }
 
 func compileRegexp2PlanForInput(callee, source, input string) (*regexp2Plan, error) {
-	return compileRegexp2PlanForInputWithException(callee, source, input, "PatternSyntaxException")
+	return compileRegexp2PlanForInputWithException(callee, source, input, "StringException")
 }
 
 func compileRegexp2PlanForInputWithException(callee, source, input, exceptionType string) (*regexp2Plan, error) {
-	if exceptionType == "StringException" {
-		if err := validateJavaRegexGroups(source, exceptionType); err != nil {
-			return nil, err
-		}
-	}
-	regexp2Source, err := compileRegexp2Source(callee, source)
-	if err != nil {
-		return nil, err
-	}
+	traits := regexTraitsFor(source, input)
 	// A pattern without grapheme tokens compiles independently of its input:
 	// it needs no cluster table and its plan can be shared between calls.
-	inputIndependent := !regexSourceUsesGraphemeTokens(regexp2Source)
-	cacheKey := regexp2PlanCacheKey{callee: callee, source: source, exceptionType: exceptionType}
+	inputIndependent := !regexSourceUsesGraphemeTokens(source)
+	cacheKey := regexp2PlanCacheKey{callee: callee, source: source, exceptionType: exceptionType, traits: traits}
 	if inputIndependent {
 		if plan, ok := regexp2PlanCache.lookup(cacheKey); ok {
 			return plan, nil
 		}
+	}
+	// A simple (?x) pattern is read as the plain pattern Java sees: whitespace
+	// and comments gone, so escapes split by whitespace read as one token.
+	if err := validateJavaRegexSource(source, exceptionType); err != nil {
+		return nil, err
+	}
+	effective := regexNormalizeExtended(source)
+	regexp2Source, loopNames, err := compileRegexp2SourceLoops(callee, effective, traits)
+	if err != nil {
+		return nil, err
 	}
 	var table *graphemeBoundaryTable
 	if !inputIndependent {
 		table = buildGraphemeBoundaryTable(input)
 	}
 	internal := map[string]bool{}
+	for _, name := range loopNames {
+		internal[name] = true
+	}
 	regexp2Source = rewriteGraphemeTokensForRegexp2(regexp2Source, table, internal)
 	re, err := regexp2.Compile(regexp2Source, regexp2.None)
 	if err != nil {
@@ -100,7 +113,7 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 	}
 	re.MatchTimeout = regexp2MatchTimeout
 	plan := &regexp2Plan{
-		originalSource:     source,
+		originalSource:     effective,
 		source:             regexp2Source,
 		matchSource:        markedSource,
 		re:                 re,
@@ -108,6 +121,20 @@ func compileRegexp2PlanForInputWithException(callee, source, input, exceptionTyp
 		internalGroupNames: internal,
 		publicGroupNumbers: publicGroups,
 		endAssertionGroups: endGroups,
+		loopGroups:         loopNames,
+	}
+	nestSource, linearSource, linearOK := javaRegexRemoveQuoting(effective), regexp2Source, true
+	if linearOK && javaRegexNestsUnboundedRepeats(nestSource) && regexLinearAnchorsSafe(nestSource) && regexLinearAnchorsSafe(linearSource) {
+		// Java matches these in polynomial time; regexp2 backtracks exponentially
+		// when the match fails. A linear engine decides whether any match exists.
+		if linear, err := regexp.Compile(linearSource); err == nil {
+			plan.linear = linear
+			if parsed, perr := syntax.Parse(linear.String(), syntax.Perl); perr == nil {
+				if prog, cerr := syntax.Compile(parsed.Simplify()); cerr == nil {
+					plan.linearProg = prog
+				}
+			}
+		}
 	}
 	if inputIndependent {
 		regexp2PlanCache.store(cacheKey, plan)
@@ -123,6 +150,7 @@ type regexp2PlanCacheKey struct {
 	callee        string
 	source        string
 	exceptionType string
+	traits        regexTraits
 }
 
 // regexp2PlanCacheLimit bounds the shared plan cache. Patterns built from data
@@ -262,11 +290,17 @@ func regexp2PublicGroupNumbers(re *regexp2.Regexp, internal map[string]bool, sou
 }
 
 func (p *regexp2Plan) findValidStartingAt(input string, startAt int) (*regexp2.Match, error) {
+	if p.noLinearMatch(input) {
+		return nil, nil
+	}
 	match, err := searchRegexp2(p.re, input, func() (*regexp2.Match, error) {
 		return p.re.FindStringMatchStartingAt(input, startAt)
 	})
 	for match != nil && err == nil {
 		if p.validGraphemeMatch(input, match) {
+			if err := p.checkStackDepth(match); err != nil {
+				return nil, err
+			}
 			return match, nil
 		}
 		match, err = p.findNext(input, match)
@@ -278,6 +312,9 @@ func (p *regexp2Plan) findNextValid(input string, prev *regexp2.Match) (*regexp2
 	match, err := p.findNext(input, prev)
 	for match != nil && err == nil {
 		if p.validGraphemeMatch(input, match) {
+			if err := p.checkStackDepth(match); err != nil {
+				return nil, err
+			}
 			return match, nil
 		}
 		match, err = p.findNext(input, match)
@@ -356,4 +393,61 @@ func (p *regexp2Plan) publicGroupNumber(group int) (int, bool) {
 		return 0, false
 	}
 	return p.publicGroupNumbers[group], true
+}
+
+// regexLinearAnchorsSafe reports whether RE2 reads the anchors of source as
+// Java does. Java's $ also matches before a final line terminator, and with
+// (?m) before \r, U+0085, U+2028 and U+2029, which RE2 does not. RE2's \b is
+// ASCII-only while the translator can keep a Unicode \b. A linear "no
+// match" for such a pattern could be wrong, so the pattern gets no precheck.
+func regexLinearAnchorsSafe(source string) bool {
+	for i := 0; i < len(source); i++ {
+		switch source[i] {
+		case '\\':
+			if i+1 < len(source) {
+				switch source[i+1] {
+				case 'A', 'Z', 'z', 'G', 'b', 'B':
+					return false
+				}
+				i++
+			}
+		case '$':
+			return false
+		case '(':
+			if i+1 < len(source) && source[i+1] == '?' {
+				for j := i + 2; j < len(source); j++ {
+					c := source[j]
+					if c == 'm' || c == 'd' {
+						return false
+					}
+					if !strings.ContainsRune("idmsucxU-", rune(c)) {
+						break
+					}
+				}
+			}
+		}
+	}
+	return true
+}
+
+// noLinearMatch reports that the linear engine found no match anywhere in
+// input, so the backtracking search can be skipped. It answers false whenever
+// the pattern is not one that nests unbounded repeats.
+func (p *regexp2Plan) noLinearMatch(input string) bool {
+	if p.linear == nil || len(input) < 16 {
+		return false
+	}
+	p.linearMu.Lock()
+	known := p.linearHit == input
+	p.linearMu.Unlock()
+	if known {
+		return false
+	}
+	if p.linear.FindStringIndex(input) == nil {
+		return true
+	}
+	p.linearMu.Lock()
+	p.linearHit = input
+	p.linearMu.Unlock()
+	return false
 }

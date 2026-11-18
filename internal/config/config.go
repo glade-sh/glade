@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 )
 
@@ -21,6 +22,15 @@ type Config struct {
 	Project ProjectConfig `json:"project"`
 	Org     OrgConfig     `json:"org"`
 	Test    TestConfig    `json:"test"`
+	// DuplicateRules holds the duplicate-rule settings.
+	DuplicateRules DuplicateRulesConfig `json:"duplicateRules"`
+}
+
+// DuplicateRulesConfig configures duplicate rules. Standard turns on the
+// standard Account, Contact and Lead rules that no project metadata defines;
+// it is off by default. A project's duplicateRules metadata is always honored.
+type DuplicateRulesConfig struct {
+	Standard bool `json:"standard"`
 }
 
 type PDFConfig struct {
@@ -36,9 +46,18 @@ type ProjectConfig struct {
 	Dependencies               []LocalPackageDependency   `json:"dependencies,omitempty"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	DependencyPaths            []string                   `json:"dependencyPaths,omitempty"`
-	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
-	SchemaSnapshot             string                     `json:"schemaSnapshot,omitempty"`
-	SchemaSnapshotSHA256       string                     `json:"schemaSnapshotSHA256,omitempty"`
+	// SiblingDependencyScan opts in to resolving declared SFDX package
+	// dependencies from sibling project directories that sit beside the
+	// project. Off by default so a project compiles the same standalone and
+	// inside a larger checkout.
+	SiblingDependencyScan bool `json:"siblingDependencyScan,omitempty"`
+	// ExternalNamespaces declares installed packages whose source Glade does
+	// not have. Each namespace stays open: its types compile in every position
+	// and no dependency_missing diagnostic is reported (ruling 49(1)).
+	ExternalNamespaces   []string      `json:"externalNamespaces,omitempty"`
+	PackageShims         []PackageShim `json:"packageShims,omitempty"`
+	SchemaSnapshot       string        `json:"schemaSnapshot,omitempty"`
+	SchemaSnapshotSHA256 string        `json:"schemaSnapshotSHA256,omitempty"`
 }
 
 type ManagedPackageDependency struct {
@@ -94,7 +113,9 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 	return scheme + "://" + origin.Host, nil
 }
 
-func LoadNearest(start string) (Config, string, error) {
+func LoadNearest(start string) (Config, string, error) { return LoadNearestWithInputs(start, nil) }
+
+func LoadNearestWithInputs(start string, v *inputview.View) (Config, string, error) {
 	dir, err := filepath.Abs(start)
 	if err != nil {
 		return Config{}, "", err
@@ -102,8 +123,8 @@ func LoadNearest(start string) (Config, string, error) {
 
 	for {
 		path := filepath.Join(dir, "glade.yml")
-		if _, err := os.Stat(path); err == nil {
-			cfg, err := LoadFile(path)
+		if _, err := v.Stat(path); err == nil {
+			cfg, err := LoadFileWithInputs(path, v)
 			return cfg, path, err
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return Config{}, "", err
@@ -117,8 +138,10 @@ func LoadNearest(start string) (Config, string, error) {
 	}
 }
 
-func LoadFile(path string) (Config, error) {
-	data, err := os.ReadFile(path)
+func LoadFile(path string) (Config, error) { return LoadFileWithInputs(path, nil) }
+
+func LoadFileWithInputs(path string, v *inputview.View) (Config, error) {
+	data, err := v.ReadFile(path)
 	if err != nil {
 		return Config{}, err
 	}
@@ -227,6 +250,25 @@ func parseYAMLSubset(src string) (Config, error) {
 				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Project.DependencyPaths = values
+		case "project.siblingDependencyScan":
+			switch strings.ToLower(trimScalar(value)) {
+			case "true":
+				cfg.Project.SiblingDependencyScan = true
+			case "false":
+				cfg.Project.SiblingDependencyScan = false
+			default:
+				return Config{}, fmt.Errorf("glade.yml:%d: project.siblingDependencyScan: expected true or false", lineNo+1)
+			}
+		case "project.externalNamespaces":
+			values, err := parseInlineList(value)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: project.externalNamespaces: %w", lineNo+1, err)
+			}
+			namespaces, err := parseExternalNamespaces(values)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: project.externalNamespaces: %w", lineNo+1, err)
+			}
+			cfg.Project.ExternalNamespaces = namespaces
 		case "project.dependencies":
 			if value != "" && value != "[]" {
 				return Config{}, fmt.Errorf("glade.yml:%d: project.dependencies must be a block list", lineNo+1)
@@ -303,6 +345,15 @@ func parseYAMLSubset(src string) (Config, error) {
 				cfg.Test.PermissionSets = values
 			} else {
 				cfg.Test.PermissionSetGroups = values
+			}
+		case "duplicateRules.standard":
+			switch strings.ToLower(trimScalar(value)) {
+			case "on", "true":
+				cfg.DuplicateRules.Standard = true
+			case "off", "false":
+				cfg.DuplicateRules.Standard = false
+			default:
+				return Config{}, fmt.Errorf("glade.yml:%d: duplicateRules.standard: expected on or off", lineNo+1)
 			}
 		case "org.features":
 			values, err := parseInlineList(value)
@@ -494,6 +545,41 @@ func parseInlineList(s string) ([]string, error) {
 		out = append(out, trimScalar(part))
 	}
 	return out, nil
+}
+
+// parseExternalNamespaces validates namespace-only package declarations.
+// A namespace is an Apex identifier; duplicates differ only by case.
+func parseExternalNamespaces(values []string) ([]string, error) {
+	seen := make(map[string]bool, len(values))
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		namespace := strings.TrimSpace(value)
+		if !validExternalNamespace(namespace) {
+			return nil, fmt.Errorf("invalid namespace %q: expected an Apex identifier", value)
+		}
+		key := strings.ToLower(namespace)
+		if seen[key] {
+			return nil, fmt.Errorf("duplicate namespace %q", namespace)
+		}
+		seen[key] = true
+		out = append(out, namespace)
+	}
+	return out, nil
+}
+
+func validExternalNamespace(namespace string) bool {
+	if namespace == "" || strings.Contains(namespace, "__") || strings.HasSuffix(namespace, "_") {
+		return false
+	}
+	for i, r := range namespace {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z':
+		case i > 0 && (r >= '0' && r <= '9' || r == '_'):
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependency, error) {

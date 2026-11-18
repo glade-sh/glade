@@ -44,6 +44,9 @@ func (s *Server) recordCountPayload(r *http.Request) map[string]any {
 	names := make([]string, 0, len(s.Org.Objects))
 	recordsByName := make(map[string]map[storage.ID]storage.Record, len(s.Org.Objects))
 	for key, object := range s.Org.Objects {
+		if s.Org.SuppressesSpreadObject(key) {
+			continue
+		}
 		name := object.Definition.APIName
 		if name == "" {
 			name = key
@@ -194,7 +197,7 @@ func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, vers
 		return
 	}
 	if !s.isModeledToolingObject(version, query.Object) {
-		if _, ok := storage.ResolveObjectName(*s.Org, query.Object); ok || isToolingLocalSchemaQueryObject(query.Object) {
+		if _, ok := storage.ResolveVisibleObjectName(*s.Org, query.Object); ok || isToolingLocalSchemaQueryObject(query.Object) {
 			s.handleQuery(w, r, version, "tooling/query", allRows)
 			return
 		}
@@ -826,7 +829,8 @@ func (s *Server) createBulkQueryJob(w http.ResponseWriter, r *http.Request, vers
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs support simple scalar field projections only")
 		return
 	}
-	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: s.currentUser(r, "").ID})
+	user := s.currentUser(r, "")
+	result, err := soql.ExecuteWithCacheAndContext(*s.Org, query, nil, soql.ExecutionContext{SetupUserID: user.ID, Locale: userString(user, "LocaleSidKey", "")})
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return

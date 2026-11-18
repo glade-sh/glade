@@ -4,6 +4,7 @@ package config
 // Keep the accepted combinations explicit: a valid language and country do not
 // necessarily form a supported Salesforce locale.
 const testUserLocaleKeys = `
+de fr fa_IR
 af_ZA am_ET ar_AE ar_BH ar_DZ ar_EG ar_IQ ar_JO ar_KW ar_LB ar_LY ar_MA
 ar_OM ar_QA ar_SA ar_SD ar_TN ar_YE az_AZ be_BY bg_BG bn_BD bn_IN bs_BA
 ca_ES cs_CZ cy_GB da_DK de_AT de_BE de_CH de_DE de_LI de_LU dz_BT el_CY

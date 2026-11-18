@@ -1,0 +1,3 @@
+Capture 2026-11-09 UTC. Synthetic Apex only. A fresh one-day, non-namespaced campaign-hub Developer scratch org was used; source APIs 62.0 and 67.0.
+No package or provider class was installed.
+Each anonymous file ran independently with sf apex run at the row API. For the named route the six synthetic @IsTest classes were checked together in a dry-run deployment, source and request APIs equal to the row API, NoTestRun. Successful component and component-failure records determine the outcomes; no tests ran. Both scratch orgs were deleted, and hub ScratchOrgInfo status was verified Deleted. The synthetic package version and package were deleted; package absence was verified in the hub package list. No org identifiers, aliases, credentials or hostnames are recorded.

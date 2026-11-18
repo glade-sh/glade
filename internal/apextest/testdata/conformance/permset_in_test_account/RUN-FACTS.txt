@@ -1,0 +1,6 @@
+A permission set that a test assigns to the running administrator, by kind of grant: Account custom field Probe_A__c with a tab, Apex class, user permission, Account object or second field grant in the same set, then a dynamic SELECT of Probe_A__c. The same grants as permset_in_test, on a standard object.
+org: two fresh scratch orgs from a campaign Dev Hub, Developer Edition, each deleted after the run (delete verified). Org ids, usernames, aliases and hosts are not recorded.
+capture date: 2026-11-16 (UTC), the two runs agree on every row. sf 2.157.8. Class source API 62.0 and 67.0 (NpA<N>), deployed at 67.0.
+metadata: as standard_custom_field_admin plus Probe_Tab, Probe_Class, Probe_User, Probe_Extra and Probe_Double, each Probe_Access plus one more grant.
+route: named @IsTest methods, one transaction each. Each method assigns a set to the running administrator in the method body, then reads Probe_A__c (n01 to n10) or reads it inside System.runAs of the same user (n11).
+observation: text after "=>" in the assertion message; "ok n=<rows>" means the query ran.

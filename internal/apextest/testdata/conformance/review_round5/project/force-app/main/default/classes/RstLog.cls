@@ -1,0 +1,1 @@
+public class RstLog { public static String s = ''; public static void reset() { s = ''; } }

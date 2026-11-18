@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Fern_Kind__c</fullName><formula>RecordType.DeveloperName</formula><label>Fern Kind</label><type>Text</type></CustomField>

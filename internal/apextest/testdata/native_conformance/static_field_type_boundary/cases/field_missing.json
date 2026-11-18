@@ -1,0 +1,4 @@
+{
+  "NqBound1d4f56d8.cls": "public class NqBound1d4f56d8 {\n public interface Builder { String value(); }\n public static Builder Builder = new Worker();\n public static String choose(String v) { return 'outer'; }\n private class Worker implements Builder { public String value() { return 'field'; } }\n}\n",
+  "NqCaller1d4f56d8.cls": "public class NqCaller1d4f56d8 { public static String run() { return NqBound1d4f56d8.Builder.choose('b'); } }\n"
+}

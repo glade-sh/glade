@@ -1,0 +1,9 @@
+id	api	route	phase	variant	source
+VERSION-DEPLOY-19	19.0	deploy	case	v19	-
+VERSION-DEPLOY-20	20.0	deploy	case	v20	-
+VERSION-DEPLOY-67	67.0	deploy	case	v67	-
+VERSION-DEPLOY-68	68.0	deploy	case	v68	-
+VERSION-RUN-19-CALL	68.0	anonymous	case	v19	snippets/ver19.apex
+VERSION-RUN-20-CALL	68.0	anonymous	case	v20	snippets/ver20.apex
+VERSION-RUN-67	67.0	anonymous	case	v67	snippets/ver67.apex
+VERSION-RUN-68	68.0	anonymous	case	v68	snippets/ver68.apex

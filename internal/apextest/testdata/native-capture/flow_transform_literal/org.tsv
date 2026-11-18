@@ -1,0 +1,5 @@
+api	route	case	result
+62.0	anonymous	literal	{"populated":true,"title":"Mapped","lastName":"Sample"}
+62.0	anonymous	empty	{"populated":true,"title":"","lastName":"Sample"}
+67.0	anonymous	literal	{"populated":true,"title":"Mapped","lastName":"Sample"}
+67.0	anonymous	empty	{"populated":true,"title":"","lastName":"Sample"}

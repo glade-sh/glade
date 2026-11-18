@@ -2,11 +2,13 @@ package sema
 
 import (
 	"encoding/csv"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -112,11 +114,31 @@ func TestReceiverMemberOpaquePackageNamedIsTestRoutes(t *testing.T) {
 						files["Parcel.cls"] = "public class Parcel { public String local() { return 'local'; } }"
 					}
 					result := analyzeDeclarationProjectWithAPIVersion(t, files, api)
-					if result.HasErrors() {
+					if !onlyUndeclaredParcelOptions(result.Diagnostics) {
 						t.Fatal(result.Diagnostics)
 					}
 				})
 			}
 		}
 	}
+}
+
+// onlyUndeclaredParcelOptions reports whether the errors are exactly the
+// native rejections of the undeclared missingns references, once each: the
+// field type (ruling 49; namespace_external_positions ExtFieldOnlyV035) and
+// the static member call. Native receiver_member_opaque_package/org.tsv C01,
+// C02 (named) and C07, C08 (@IsTest static field) at APIs 62.0 and 67.0
+// report both, with or without a local Parcel class.
+func onlyUndeclaredParcelOptions(ds []diagnostic.Diagnostic) bool {
+	want := map[string]int{
+		"GLADESEMA002|Invalid type: missingns.Parcel.Options":             1,
+		"GLADESEMA008|Variable does not exist: missingns.Parcel.Instance": 1,
+	}
+	got := map[string]int{}
+	for _, d := range ds {
+		if d.Severity == diagnostic.Error {
+			got[d.Code+"|"+d.NativeMessage]++
+		}
+	}
+	return maps.Equal(got, want)
 }

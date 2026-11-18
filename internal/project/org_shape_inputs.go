@@ -11,8 +11,9 @@ func OrgShapeInputFiles(root string) []string {
 		filepath.Join(root, "cumulusci.template.yml"),
 		filepath.Join(root, "sfdx-project.json"),
 	}
-	paths = append(paths, scratchOrgConfigFiles(root)...)
-	paths = append(paths, extraScratchDefinitionFiles(root)...)
-	paths = append(paths, personAccountRecordTypePaths(root)...)
-	return dedupeStrings(append(paths, sourceSettingsFiles(root)...))
+	paths = append(paths, scratchOrgConfigFiles(nil, root)...)
+	paths = append(paths, extraScratchDefinitionFiles(nil, root)...)
+	settingsFiles, personAccounts := orgShapeEvidenceScan(nil, root)
+	paths = append(paths, personAccounts...)
+	return dedupeStrings(append(paths, settingsFiles...))
 }

@@ -1,0 +1,109 @@
+api	method	observation
+62.0	PfA.v01_direct_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+62.0	PfA.v01_direct_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+62.0	PfA.v01_direct_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+62.0	PfA.v02_inrunas_c	X=perm=false | A=perm=false | B=perm=true | C=perm=true | D=perm=false
+62.0	PfA.v02_inrunas_f	X=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible  | A=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible  | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible
+62.0	PfA.v02_inrunas_o	X=cr=true rd=true q=ok ins=ok | A=cr=true rd=true q=ok ins=ok | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=true rd=true q=ok ins=ok
+62.0	PfA.v03_start_after_c	A=perm=false | B=perm=true | D=perm=false
+62.0	PfA.v03_start_after_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+62.0	PfA.v03_start_after_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+62.0	PfA.v04_start_inside_c	A=perm=false | B=perm=true | D=perm=false | E=perm=true
+62.0	PfA.v04_start_inside_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException | E=cr=true rd=true q=ok
+62.0	PfA.v04_start_inside_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | D=cr=true rd=true q=ok | E=cr=true rd=true q=ok
+62.0	PfA.v05_nested_c	s1=perm=true | s2=perm=true | s3=perm=true | o=perm=false
+62.0	PfA.v05_nested_f	s1=cr=true rd=true q=ok | s2=cr=true rd=true q=ok | s3=cr=true rd=true q=ok | o=cr=false rd=false q=System.QueryException
+62.0	PfA.v05_nested_o	s1=cr=true rd=true q=ok | s2=cr=true rd=true q=ok | s3=cr=true rd=true q=ok | o=cr=true rd=true q=ok
+62.0	PfA.v06_unassign_c	B=perm=true | A=perm=false | C=perm=false
+62.0	PfA.v06_unassign_f	B=cr=true rd=true q=ok | A=cr=false rd=false q=System.QueryException | C=cr=false rd=false q=System.QueryException
+62.0	PfA.v06_unassign_o	B=cr=true rd=true q=ok | A=cr=true rd=true q=ok | C=cr=true rd=true q=ok
+62.0	PfA.v07_u_nested_c	X=perm=true | Y=perm=true
+62.0	PfA.v07_u_nested_f	X=cr=true rd=true q=ok | Y=cr=true rd=true q=ok
+62.0	PfA.v07_u_nested_o	X=cr=true rd=true q=ok | Y=cr=true rd=true q=ok
+62.0	PfA.v08_u_direct_c	C=perm=true
+62.0	PfA.v08_u_direct_f	C=cr=true rd=true q=ok
+62.0	PfA.v08_u_direct_o	C=cr=true rd=true q=ok
+62.0	PfA.v09_two_blocks_c	B1=perm=true | B2=perm=true
+62.0	PfA.v09_two_blocks_f	B1=cr=true rd=true q=ok | B2=cr=true rd=true q=ok
+62.0	PfA.v09_two_blocks_o	B1=cr=true rd=true q=ok | B2=cr=true rd=true q=ok
+62.0	PfA.v10_u_after_self_c	C=perm=true | B=perm=true | C2=perm=true
+62.0	PfA.v10_u_after_self_f	C=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C2=cr=true rd=true q=ok
+62.0	PfA.v10_u_after_self_o	C=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C2=cr=true rd=true q=ok
+62.0	PfS.s01_plain_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+62.0	PfS.s01_plain_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+62.0	PfS.s01_plain_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+62.0	PfS.s02_dml_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+62.0	PfS.s02_dml_f	A=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible  | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible
+62.0	PfS.s02_dml_o	A=cr=true rd=true q=ok ins=ok | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=true rd=true q=ok ins=ok
+62.0	PfS.s03_start_c	A=perm=false | B=perm=true | D=perm=false
+62.0	PfS.s03_start_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+62.0	PfS.s03_start_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+62.0	PfS.s04_unassign_c	B=perm=true | A=perm=false | C=perm=false
+62.0	PfS.s04_unassign_f	B=cr=true rd=true q=ok | A=cr=false rd=false q=System.QueryException | C=cr=false rd=false q=System.QueryException
+62.0	PfS.s04_unassign_o	B=cr=true rd=true q=ok | A=cr=true rd=true q=ok | C=cr=true rd=true q=ok
+62.0	PfT.s01_plain_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+62.0	PfT.s01_plain_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+62.0	PfT.s01_plain_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+62.0	PfT.s02_dml_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+62.0	PfT.s02_dml_f	A=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible  | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible
+62.0	PfT.s02_dml_o	A=cr=true rd=true q=ok ins=ok | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=true rd=true q=ok ins=ok
+62.0	PfT.s03_start_c	A=perm=false | B=perm=true | D=perm=false
+62.0	PfT.s03_start_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+62.0	PfT.s03_start_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+62.0	PfT.s04_unassign_c	B=perm=true | A=perm=false | C=perm=false
+62.0	PfT.s04_unassign_f	B=cr=true rd=true q=ok | A=cr=false rd=false q=System.QueryException | C=cr=false rd=false q=System.QueryException
+62.0	PfT.s04_unassign_o	B=cr=true rd=true q=ok | A=cr=true rd=true q=ok | C=cr=true rd=true q=ok
+67.0	PfA.v01_direct_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+67.0	PfA.v01_direct_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+67.0	PfA.v01_direct_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+67.0	PfA.v02_inrunas_c	X=perm=false | A=perm=false | B=perm=true | C=perm=true | D=perm=false
+67.0	PfA.v02_inrunas_f	X=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible  | A=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible  | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible
+67.0	PfA.v02_inrunas_o	X=cr=true rd=true q=ok ins=ok | A=cr=true rd=true q=ok ins=ok | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=true rd=true q=ok ins=ok
+67.0	PfA.v03_start_after_c	A=perm=false | B=perm=true | D=perm=false
+67.0	PfA.v03_start_after_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+67.0	PfA.v03_start_after_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+67.0	PfA.v04_start_inside_c	A=perm=false | B=perm=true | D=perm=false | E=perm=true
+67.0	PfA.v04_start_inside_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException | E=cr=true rd=true q=ok
+67.0	PfA.v04_start_inside_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | D=cr=true rd=true q=ok | E=cr=true rd=true q=ok
+67.0	PfA.v05_nested_c	s1=perm=true | s2=perm=true | s3=perm=true | o=perm=false
+67.0	PfA.v05_nested_f	s1=cr=true rd=true q=ok | s2=cr=true rd=true q=ok | s3=cr=true rd=true q=ok | o=cr=false rd=false q=System.QueryException
+67.0	PfA.v05_nested_o	s1=cr=true rd=true q=ok | s2=cr=true rd=true q=ok | s3=cr=true rd=true q=ok | o=cr=true rd=true q=ok
+67.0	PfA.v06_unassign_c	B=perm=true | A=perm=false | C=perm=false
+67.0	PfA.v06_unassign_f	B=cr=true rd=true q=ok | A=cr=false rd=false q=System.QueryException | C=cr=false rd=false q=System.QueryException
+67.0	PfA.v06_unassign_o	B=cr=true rd=true q=ok | A=cr=true rd=true q=ok | C=cr=true rd=true q=ok
+67.0	PfA.v07_u_nested_c	X=perm=true | Y=perm=true
+67.0	PfA.v07_u_nested_f	X=cr=true rd=true q=ok | Y=cr=true rd=true q=ok
+67.0	PfA.v07_u_nested_o	X=cr=true rd=true q=ok | Y=cr=true rd=true q=ok
+67.0	PfA.v08_u_direct_c	C=perm=true
+67.0	PfA.v08_u_direct_f	C=cr=true rd=true q=ok
+67.0	PfA.v08_u_direct_o	C=cr=true rd=true q=ok
+67.0	PfA.v09_two_blocks_c	B1=perm=true | B2=perm=true
+67.0	PfA.v09_two_blocks_f	B1=cr=true rd=true q=ok | B2=cr=true rd=true q=ok
+67.0	PfA.v09_two_blocks_o	B1=cr=true rd=true q=ok | B2=cr=true rd=true q=ok
+67.0	PfA.v10_u_after_self_c	C=perm=true | B=perm=true | C2=perm=true
+67.0	PfA.v10_u_after_self_f	C=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C2=cr=true rd=true q=ok
+67.0	PfA.v10_u_after_self_o	C=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C2=cr=true rd=true q=ok
+67.0	PfS.s01_plain_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+67.0	PfS.s01_plain_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+67.0	PfS.s01_plain_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+67.0	PfS.s02_dml_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+67.0	PfS.s02_dml_f	A=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible  | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible
+67.0	PfS.s02_dml_o	A=cr=true rd=true q=ok ins=ok | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=true rd=true q=ok ins=ok
+67.0	PfS.s03_start_c	A=perm=false | B=perm=true | D=perm=false
+67.0	PfS.s03_start_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+67.0	PfS.s03_start_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+67.0	PfS.s04_unassign_c	B=perm=true | A=perm=false | C=perm=false
+67.0	PfS.s04_unassign_f	B=cr=true rd=true q=ok | A=cr=false rd=false q=System.QueryException | C=cr=false rd=false q=System.QueryException
+67.0	PfS.s04_unassign_o	B=cr=true rd=true q=ok | A=cr=true rd=true q=ok | C=cr=true rd=true q=ok
+67.0	PfT.s01_plain_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+67.0	PfT.s01_plain_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+67.0	PfT.s01_plain_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | C=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+67.0	PfT.s02_dml_c	A=perm=false | B=perm=true | C=perm=true | D=perm=false
+67.0	PfT.s02_dml_f	A=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible  | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=false rd=false q=System.QueryException ins=System.DmlException Operation failed due to fields being inaccessible
+67.0	PfT.s02_dml_o	A=cr=true rd=true q=ok ins=ok | B=cr=true rd=true q=ok ins=ok | C=cr=true rd=true q=ok ins=ok | D=cr=true rd=true q=ok ins=ok
+67.0	PfT.s03_start_c	A=perm=false | B=perm=true | D=perm=false
+67.0	PfT.s03_start_f	A=cr=false rd=false q=System.QueryException | B=cr=true rd=true q=ok | D=cr=false rd=false q=System.QueryException
+67.0	PfT.s03_start_o	A=cr=true rd=true q=ok | B=cr=true rd=true q=ok | D=cr=true rd=true q=ok
+67.0	PfT.s04_unassign_c	B=perm=true | A=perm=false | C=perm=false
+67.0	PfT.s04_unassign_f	B=cr=true rd=true q=ok | A=cr=false rd=false q=System.QueryException | C=cr=false rd=false q=System.QueryException
+67.0	PfT.s04_unassign_o	B=cr=true rd=true q=ok | A=cr=true rd=true q=ok | C=cr=true rd=true q=ok

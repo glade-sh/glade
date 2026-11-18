@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/schema"
@@ -32,9 +32,8 @@ func captureBuildFingerprint() func() string {
 	return sync.OnceValue(func() string {
 		if file != nil {
 			defer file.Close()
-			hash := sha256.New()
-			if _, err := io.Copy(hash, file); err == nil {
-				return hex.EncodeToString(hash.Sum(nil))
+			if digest, err := executableDigest(file, executableDigestCacheDir(), time.Now); err == nil {
+				return digest
 			}
 		}
 		return "process:" + rand.Text()
@@ -62,6 +61,10 @@ func IdentityForBuild(index typesys.Index, artifacts *typesys.BuildArtifacts, op
 	if artifacts == nil || artifacts.Sources == nil || artifacts.SourceDigests == nil || artifacts.ApexMetadataInputs == nil {
 		return Identity{}, errors.New("semantic identity requires complete build artifacts")
 	}
+	// Unsaved editor content is never a cacheable generation.
+	if index.Volatile() || artifacts.Volatile() {
+		return Identity{}, typesys.ErrVolatileGeneration
+	}
 	sources, err := capturedSourceIdentities(index, artifacts)
 	if err != nil {
 		return Identity{}, err
@@ -69,9 +72,11 @@ func IdentityForBuild(index typesys.Index, artifacts *typesys.BuildArtifacts, op
 	projectPayload := struct {
 		Index   typesys.Index            `json:"index"`
 		Sources []capturedSourceIdentity `json:"sources"`
+		Subset  bool                     `json:"subset,omitempty"`
 	}{
 		Index:   index,
 		Sources: sources,
+		Subset:  index.Subset,
 	}
 	projectDigest, err := jsonSHA256(projectPayload)
 	if err != nil {

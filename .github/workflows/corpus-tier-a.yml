@@ -1,0 +1,79 @@
+name: Corpus tier A
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: corpus-a-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  corpus-a:
+    name: Corpus tier A (observational)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      CGO_ENABLED: "1"
+      GOMAXPROCS: "2"
+      GOMEMLIMIT: 4GiB
+      CORPUS_A_MANIFEST: >-
+        {"schema":1,"repos":[{"id":"public-1","url":"https://github.com/apex-enterprise-patterns/fflib-apex-common.git","pin":"669fad544a3cffab26b15b5d83ba4afc72badc75","license_sha256":"f669488a4e8b5a6d2fd339a9f02b1e426b31685e487cef8728da1adfb996b28e","golden":{"overlay":{"config":{}},"glade":{"sourceApi":"63.0"},"counts":{"classes":136,"tests":168,"passed":168},"wallSeconds":17.6}},{"id":"public-2","url":"https://github.com/apex-enterprise-patterns/fflib-apex-mocks.git","pin":"0f37f7677970bfa08ea19569f7495a037be62357","license_sha256":"f669488a4e8b5a6d2fd339a9f02b1e426b31685e487cef8728da1adfb996b28e","golden":{"overlay":{"config":{}},"glade":{"sourceApi":"63.0"},"counts":{"classes":106,"tests":472,"passed":472},"wallSeconds":25.3}},{"id":"public-3","url":"https://github.com/mitchspano/apex-trigger-actions-framework.git","pin":"5c3793d2b5baaa91b0b5b2b691ab1750ef37fa41","license_sha256":"3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5","golden":{"overlay":{"config":{}},"glade":{"sourceApi":"63.0"},"counts":{"classes":80,"tests":155,"passed":155},"wallSeconds":9.6}},{"id":"public-4","url":"https://github.com/apex-enterprise-patterns/force-di.git","pin":"574d0509fbc28c4492e732bccf9b480a26f12457","license_sha256":"d0d519eb26536acf48d9a086fb3b2d8457cabe27c88b1afaec42fbb7c747e057","golden":{"overlay":{"config":{}},"glade":{"sourceApi":"63.0"},"counts":{"classes":41,"tests":61,"passed":61},"wallSeconds":9.3}}]}
+    steps:
+      - name: Check out Glade
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          path: glade
+          persist-credentials: false
+      - name: Fetch the shared corpus runner at a fixed revision
+        run: |
+          git init -q glade-tools
+          git -C glade-tools fetch -q --no-tags --depth=1 https://github.com/glade-sh/glade-tools.git 63eea064136a8735f3dda790d6800c34996f1388
+          git -C glade-tools checkout -q --detach FETCH_HEAD
+          test "$(git -C glade-tools rev-parse HEAD)" = 63eea064136a8735f3dda790d6800c34996f1388
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: glade/go.mod
+          cache: false
+      - name: Restore Go build cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        continue-on-error: true
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: corpus-a-go-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('glade/go.sum') }}-tools63eea064-${{ github.sha }}
+          restore-keys: |
+            corpus-a-go-${{ runner.os }}-${{ runner.arch }}-1.26.11-${{ hashFiles('glade/go.sum') }}-tools63eea064-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-
+      - name: Check manifest preparation
+        working-directory: glade
+        run: python3 -m unittest discover -s scripts -p 'test_corpus_ci.py'
+      - name: Build the candidate binary
+        working-directory: glade
+        run: go build -o "$RUNNER_TEMP/glade" ./cmd/glade
+      - name: Run corpus shape synthetics
+        working-directory: glade
+        run: >-
+          go test -count=1 -run
+          '^(TestCorpusShape|TestCorpusShapeMutationCheck|TestCorpusShapeUnresolvedManagedType|TestCorpusShapePlatformTypeReferences|TestCorpusShapeInnerBlocks|TestCorpusShapeInnerBlockMutations|TestFieldProxyCorpusShapeRunnerNativeDiagnosticRoutes)$'
+          ./internal/apextest
+      - name: Build the shared corpus runner adapter
+        shell: bash
+        run: |
+          mkdir -p glade-tools/cmd/corpus-ci
+          cp glade/scripts/corpus_ci_runner.go.txt glade-tools/cmd/corpus-ci/main.go
+          cd glade-tools
+          go build -o "$RUNNER_TEMP/corpus-runner" ./cmd/corpus-ci
+      - name: Run pinned public goldens
+        working-directory: glade
+        env:
+          GLADE_BINARY: ${{ runner.temp }}/glade
+          CORPUS_RUNNER: ${{ runner.temp }}/corpus-runner
+        run: python3 scripts/corpus_ci.py

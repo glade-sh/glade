@@ -33,24 +33,42 @@ type describeShareRow struct {
 func describeShareRows() []describeShareRow {
 	return []describeShareRow{
 		{
-			name: "global describe map writes persist in the VM",
-			source: `Schema.getGlobalDescribe().put('zzshare', Account.SObjectType);
-System.debug('P1a:' + Schema.getGlobalDescribe().containsKey('zzshare') + ':' + Schema.getGlobalDescribe().size());
-Schema.getGlobalDescribe().remove('account');
-System.debug('P1b:' + Schema.getGlobalDescribe().containsKey('account') + ':' + Schema.getGlobalDescribe().get('account') + ':' + Schema.getGlobalDescribe().size());
-Schema.getGlobalDescribe().clear();
-System.debug('P1c:' + Schema.getGlobalDescribe().size() + ':' + Schema.getGlobalDescribe().keySet().size() + ':' + Schema.getGlobalDescribe().get('widget__c'));`,
-			debug: "P1a:true:172 | P1b:true:Account:171 | P1c:0:0:Widget__c",
+			// NATIVE review_round11 gw_chained_put and gw_chained_remove: put and
+			// remove on the global describe raise the uncatchable FinalException.
+			name:   "global describe chained put is read-only",
+			source: `Schema.getGlobalDescribe().put('zzshare', Account.SObjectType);`,
+			err:    "System.FinalException: Collection is read-only",
 		},
 		{
+			name:   "global describe chained remove is read-only",
+			source: `Schema.getGlobalDescribe().remove('account');`,
+			err:    "System.FinalException: Collection is read-only",
+		},
+		{
+			// NATIVE review_round11 gw_chained_clear: a chained clear leaves a
+			// fresh getGlobalDescribe() whole.
+			name: "global describe chained clear stays local",
+			source: `Integer n = Schema.getGlobalDescribe().size();
+Schema.getGlobalDescribe().clear();
+System.debug('P1c:' + (Schema.getGlobalDescribe().size() - n) + ':' + Schema.getGlobalDescribe().get('widget__c'));`,
+			debug: "P1c:0:Widget__c",
+		},
+		{
+			// NATIVE review_round11 gk_p2a: put on a typed holder is read-only.
+			name: "typed global describe put is read-only",
+			source: `Map<String, Schema.SObjectType> gd = Schema.getGlobalDescribe();
+gd.put('zzshare', Account.SObjectType);`,
+			err: "System.FinalException: Collection is read-only",
+		},
+		{
+			// NATIVE review_round11 gw_clear: clear empties that holder only.
 			name: "typed global describe variable is a private copy",
 			source: `Map<String, Schema.SObjectType> gd = Schema.getGlobalDescribe();
 Integer n = gd.size();
-gd.put('zzshare', Account.SObjectType);
-gd.remove('account');
-System.debug('P2a:' + gd.containsKey('zzshare') + ':' + (gd.size() - n) + ':' + gd.get('account'));
-System.debug('P2b:' + Schema.getGlobalDescribe().containsKey('zzshare') + ':' + (Schema.getGlobalDescribe().size() - n));`,
-			debug: "P2a:true:0:Account | P2b:false:0",
+gd.clear();
+System.debug('P2a:' + gd.size() + ':' + gd.containsKey('account') + ':' + gd.get('account') + ':' + gd.keySet().size());
+System.debug('P2b:' + (Schema.getGlobalDescribe().size() - n) + ':' + Schema.getGlobalDescribe().containsKey('account'));`,
+			debug: "P2a:0:false:null:0 | P2b:0:true",
 		},
 		{
 			name: "fields.getMap put is read-only",
@@ -135,9 +153,12 @@ System.debug('T4:' + d.getSObjectType() + ':' + Widget__c.SObjectType.getDescrib
 rts.put('zz', null);
 System.debug('P10a:' + rts.containsKey('zz') + ':' + Widget__c.SObjectType.getDescribe().getRecordTypeInfosByName().containsKey('zz'));
 Map<String, Schema.FieldSet> fs = Schema.SObjectType.Widget__c.fieldSets.getMap();
-fs.put('zz', null);
-System.debug('P10b:' + fs.containsKey('zz') + ':' + Schema.SObjectType.Widget__c.fieldSets.getMap().containsKey('zz'));`,
-			debug: "P10a:true:false | P10b:true:false",
+// Native pr163_fieldset_keys/org.tsv:12-13,20-21: put on a field set map
+			// is read-only at 62.0 and 67.0; clear() only empties the caller's copy
+			// (org.tsv:16-17,24-25).
+fs.clear();
+System.debug('P10b:' + fs.size() + ':' + Schema.SObjectType.Widget__c.fieldSets.getMap().size());`,
+			debug: "P10a:true:false | P10b:0:1",
 		},
 		{
 			// Set text shows ten elements, then "..." (record_type_shape list_forms
@@ -147,7 +168,10 @@ System.debug('P10b:' + fs.containsKey('zz') + ':' + Schema.SObjectType.Widget__c
 			name: "pristine reads",
 			source: `Schema.SObjectField t = Schema.SObjectType.Account.fields.getMap().get('name');
 System.debug('R1:' + t + ':' + t.label + ':' + t.getDescribe().getName() + ':' + Schema.SObjectType.Account.fields.Name + ':' + Schema.getGlobalDescribe().get('account') + ':' + Schema.getGlobalDescribe().size() + ':' + Schema.SObjectType.Account.fields.getMap().size() + ':' + Widget__c.SObjectType.getDescribe().getSObjectType() + ':' + Widget__c.SObjectType.getDescribe().fields.getMap().keySet());`,
-			debug: "R1:Name:Account Name:Name:Name:Account:171:62:Widget__c:{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ownerid, owner__c, recordtypeid, ...}",
+			// NATIVE review_round8 ks_b (62.0, 67.0): a custom field Owner__c sorts
+			// before OwnerId in the key set text. The namespaced row below (N1)
+			// is an unbacked Glade pin: no namespaced org was captured.
+			debug: "R1:Name:Account Name:Name:Name:Account:171:62:Widget__c:{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, owner__c, ownerid, recordtypeid, ...}",
 		},
 		{
 			name: "describe renderings",
@@ -156,7 +180,7 @@ System.debug('S2:' + describeShareDigest(String.valueOf(Schema.describeSObjects(
 System.debug('S3:' + describeShareDigest(String.valueOf(Schema.SObjectType.Account.fields)));
 System.debug('S4:' + describeShareDigest(String.valueOf(Schema.SObjectType.Account.fields.getMap())));
 System.debug('S5:' + describeShareDigest(JSON.serialize(Schema.SObjectType.Account.fields.getMap().keySet())));`,
-			debug: "S1:9698/efca687ded35 | S2:34894/0e56d86445ef | S3:33316/7c307881fd53 | S4:7552/1f383175d47a | S5:914/9c0c26ea89c4",
+			debug: "S1:9698/efca687ded35 | S2:34894/0e56d86445ef | S3:33316/7c307881fd53 | S4:7552/1f383175d47a | S5:914/eea6e7a71333",
 		},
 		{
 			name: "heap size with describe roots and field maps",
@@ -181,7 +205,7 @@ Map<String, Schema.SObjectField> fm = d.fields.getMap();
 System.debug('N1:' + fm.keySet() + ':' + fm.get('plain__c') + ':' + fm.get('size__c') + ':' + fm.get('zzns__plain__c') + ':' + fm.get('parent__r'));
 System.debug('S2:' + describeShareDigest(String.valueOf(d)));
 System.debug('N3:' + Schema.SObjectType.zzns__Gadget__c.fields.Plain__c + ':' + Schema.SObjectType.zzns__Gadget__c.fields.zzns__Size__c.getDescribe().getName() + ':' + Limits.getHeapSize());`,
-			debug: "N1:{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ownerid, zzns__plain__c, systemmodstamp, ...}:zzns__Plain__c:zzns__Size__c:zzns__Plain__c:zzns__Parent__c | S2:15389/62cbf55a9093 | N3:zzns__Plain__c:zzns__Size__c:8095",
+			debug: "N1:{createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ownerid, systemmodstamp, zzns__parent__c, ...}:zzns__Plain__c:zzns__Size__c:zzns__Plain__c:zzns__Parent__c | S2:15389/62cbf55a9093 | N3:zzns__Plain__c:zzns__Size__c:8095",
 		},
 		{
 			name:       "namespaced field token write",

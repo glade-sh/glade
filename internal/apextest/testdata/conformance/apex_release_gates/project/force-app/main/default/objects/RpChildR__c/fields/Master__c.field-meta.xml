@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Master__c</fullName><label>Master__c</label><type>MasterDetail</type><referenceTo>RpMaster__c</referenceTo><relationshipName>KidsR</relationshipName><relationshipLabel>KidsR</relationshipLabel><relationshipOrder>0</relationshipOrder><reparentableMasterDetail>true</reparentableMasterDetail><writeRequiresMasterRead>false</writeRequiresMasterRead></CustomField>

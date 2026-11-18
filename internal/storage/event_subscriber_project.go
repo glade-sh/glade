@@ -61,7 +61,7 @@ func SetProjectEventSubscriberTestPositions(org *OrgState) {
 		}
 		record = record.Clone()
 		record.Fields["Position"] = IntegerValue(0)
-		mutable.Records[id] = record
+		mutable.PutRecord(id, record)
 	}
 	org.Objects["EventBusSubscriber"] = *mutable
 	RebuildObjectIndexes(org, "EventBusSubscriber")
@@ -103,7 +103,7 @@ func AdvanceProjectEventSubscriberTestPositions(org *OrgState, events []Record) 
 		}
 		record = record.Clone()
 		record.Fields["Position"] = IntegerValue(position.Integer + count)
-		mutable.Records[id] = record
+		mutable.PutRecord(id, record)
 	}
 	org.Objects["EventBusSubscriber"] = *mutable
 	RebuildObjectIndexes(org, "EventBusSubscriber")

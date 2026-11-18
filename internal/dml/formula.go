@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -26,13 +27,14 @@ const (
 )
 
 type formulaValue struct {
-	kind       formulaKind
-	bool       bool
-	text       string
-	number     float64
-	numberText string
-	fieldType  storage.FieldType
-	display    string
+	kind                formulaKind
+	bool                bool
+	text                string
+	number              float64
+	numberText          string
+	fieldType           storage.FieldType
+	display             string
+	missingRelationship bool
 }
 
 func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
@@ -150,10 +152,17 @@ func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *s
 // FormulaEvaluationOptions carries per-instance options without changing the
 // defaults used by stored formulas, validation rules and workflow evaluation.
 type FormulaEvaluationOptions struct {
-	PreserveNumericNull  bool
+	PreserveNumericNull bool
+	// QueryBlankNumber preserves null through ROUND, ABS, FLOOR, MOD, MIN and
+	// MAX on queried numeric calculated fields with an explicit BlankAsBlank
+	// policy. Other callers keep the prior null-as-zero behavior.
+	QueryBlankNumber     bool
 	Template             bool
 	UserID               storage.ID
 	PermissionUserFields map[string]storage.Value
+	// AssignmentActive, when set, drops the assignments it rejects from a
+	// $Permission lookup (a test-made assignment the context does not apply yet).
+	AssignmentActive func(storage.Record) bool
 	// SetupUserID selects hierarchy settings without changing other global variables.
 	SetupUserID storage.ID
 	// FormulaSurface selects FormulaEval/recalculateFormulas result semantics.
@@ -175,8 +184,10 @@ type FormulaEvaluationOptions struct {
 	// FlowContext evaluates for a flow: LineFeedBR, and a stored formula field
 	// a flow formula references reads as its finished value (org capture
 	// flow_br_surfaces: LEN of $Record.<formula with BR()> is 3 in an after-save flow).
-	FlowContext bool
-	Error       *FormulaError
+	FlowContext                   bool
+	capturedAfterSaveSystemFields bool
+	capturedAfterSavePrior        *storage.Record
+	Error                         *FormulaError
 }
 
 func EvaluateRecordFormulaValueInOrgWithOptions(formula string, field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, options FormulaEvaluationOptions) (storage.Value, bool, bool) {
@@ -223,21 +234,25 @@ func EvaluateRecordFormulaValueInOrgWithOptions(formula string, field storage.Fi
 
 func parseRecordFormulaValue(formula string, field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, options FormulaEvaluationOptions) (formulaValue, bool) {
 	parser := formulaParser{
-		tokens:               tokenizeFormula(html.UnescapeString(formula)),
-		record:               record,
-		org:                  org,
-		definition:           definition,
-		evaluating:           make(map[string]bool),
-		namespace:            formulaFieldSourceNamespace("", definition, field),
-		preserveNumericNull:  options.PreserveNumericNull,
-		blankNumericAsZero:   currencyFormulaBlankAsZero(field) && !options.PreserveNumericNull,
-		formulaSurface:       options.FormulaSurface,
-		flowFinishFields:     options.FlowContext,
-		failure:              options.Error,
-		storedFormula:        options.FormulaSurface && field.Type == storage.FieldCalculated,
-		userID:               options.UserID,
-		permissionUserFields: options.PermissionUserFields,
-		setupUserID:          options.SetupUserID,
+		tokens:                        tokenizeFormula(html.UnescapeString(formula)),
+		record:                        record,
+		org:                           org,
+		definition:                    definition,
+		evaluating:                    make(map[string]bool),
+		namespace:                     formulaFieldSourceNamespace("", definition, field),
+		preserveNumericNull:           options.PreserveNumericNull,
+		queryBlankNumber:              options.QueryBlankNumber,
+		blankNumericAsZero:            currencyFormulaBlankAsZero(field) && !options.PreserveNumericNull,
+		formulaSurface:                options.FormulaSurface,
+		flowFinishFields:              options.FlowContext,
+		prior:                         options.capturedAfterSavePrior,
+		capturedAfterSaveSystemFields: options.capturedAfterSaveSystemFields,
+		failure:                       options.Error,
+		storedFormula:                 options.FormulaSurface && field.Type == storage.FieldCalculated,
+		userID:                        options.UserID,
+		permissionUserFields:          options.PermissionUserFields,
+		assignmentActive:              options.AssignmentActive,
+		setupUserID:                   options.SetupUserID,
 	}
 	if options.FormulaSurface {
 		parser.blankNumericAsZero = !options.PreserveNumericNull
@@ -251,6 +266,12 @@ func parseRecordFormulaValue(formula string, field storage.Field, org *storage.O
 
 func finishRecordFormulaValue(formula string, field storage.Field, value formulaValue, options FormulaEvaluationOptions) (storage.Value, bool, bool) {
 	if value.kind == formulaNull {
+		if !options.FormulaSurface && field.Type == storage.FieldCalculated &&
+			strings.EqualFold(field.DisplayType, "BOOLEAN") &&
+			strings.EqualFold(field.FormulaTreatBlanksAs, "BlankAsZero") && value.missingRelationship && value.fieldType == storage.FieldBoolean &&
+			formulaIsDirectReference(formula) {
+			return storage.BooleanValue(false), false, true
+		}
 		return storage.NullValue(), true, true
 	}
 	if options.TriggerRecord && isTextCalculatedField(field) && value.kind == formulaString {
@@ -267,6 +288,16 @@ func finishRecordFormulaValue(formula string, field storage.Field, value formula
 		return materializedFormulaSurfaceValue(field, value)
 	}
 	return materializedFormulaFieldValue(field, value)
+}
+
+func formulaIsDirectReference(formula string) bool {
+	tokens := tokenizeFormula(html.UnescapeString(formula))
+	start, end := 0, len(tokens)-1
+	for end-start >= 3 && tokens[start].text == "(" && tokens[end-1].text == ")" {
+		start++
+		end--
+	}
+	return end-start == 1 && tokens[start].typ == formulaTokenIdent && tokens[len(tokens)-1].typ == formulaTokenEOF
 }
 
 // formulaBRText is the value of BR() inside a formula (org capture
@@ -622,6 +653,7 @@ type formulaParser struct {
 	validationRule      bool
 	validationError     bool
 	preserveNumericNull bool
+	queryBlankNumber    bool
 	blankNumericAsZero  bool
 	formulaSurface      bool
 	validating          bool
@@ -632,11 +664,13 @@ type formulaParser struct {
 	flowRecordContext   bool
 	// flowFinishFields reads a stored formula field as its finished value
 	// (BR() as a line feed) when a flow formula references it.
-	flowFinishFields     bool
-	flowReference        func(string) (formulaValue, bool, bool)
-	userID               storage.ID
-	permissionUserFields map[string]storage.Value
-	setupUserID          storage.ID
+	flowFinishFields              bool
+	capturedAfterSaveSystemFields bool
+	flowReference                 func(string) (formulaValue, bool, bool)
+	userID                        storage.ID
+	permissionUserFields          map[string]storage.Value
+	assignmentActive              func(storage.Record) bool
+	setupUserID                   storage.ID
 }
 
 func (p *formulaParser) setupActor() storage.ID {
@@ -940,7 +974,7 @@ func (p *formulaParser) parsePower() (formulaValue, bool) {
 		if !aOK || !bOK {
 			return formulaValue{}, false
 		}
-		left = formulaNumberValue(math.Pow(a, b))
+		left = formulaNumberValue(stablemath.PowStable(a, b))
 	}
 	return left, true
 }
@@ -1258,7 +1292,7 @@ func (p *formulaParser) valueForRecordField(record storage.Record, field string)
 // none; CreatedById, CreatedDate and LastModifiedById are blank on insert and
 // set on update. A value the record carries in its fields wins.
 func (p *formulaParser) validationSystemFieldValue(record storage.Record, field string, fieldDef storage.Field) (formulaValue, bool) {
-	if !p.validationRule || record.HasExplicitNull(field) {
+	if (!p.validationRule && !(p.capturedAfterSaveSystemFields && strings.EqualFold(field, "CreatedDate"))) || record.HasExplicitNull(field) {
 		return formulaValue{}, false
 	}
 	if _, present := formulaRecordField(record, field); present {
@@ -1795,6 +1829,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
+		if p.queryBlankNumber && args[0].kind == formulaNull {
+			return args[0], true
+		}
 		number, ok := args[0].asNumber()
 		if !ok {
 			return formulaValue{}, false
@@ -1806,6 +1843,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 	case "ROUND":
 		if len(args) != 2 {
 			return formulaValue{}, false
+		}
+		if p.queryBlankNumber && args[0].kind == formulaNull {
+			return args[0], true
 		}
 		number, ok := args[0].asNumber()
 		if !ok {
@@ -1824,6 +1864,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
+		if p.queryBlankNumber && args[0].kind == formulaNull {
+			return args[0], true
+		}
 		number, ok := args[0].asNumber()
 		if !ok {
 			return formulaValue{}, false
@@ -1832,6 +1875,9 @@ func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue
 	case "MOD":
 		if len(args) != 2 {
 			return formulaValue{}, false
+		}
+		if p.queryBlankNumber && (args[0].kind == formulaNull || args[1].kind == formulaNull) {
+			return formulaValue{kind: formulaNull}, true
 		}
 		dividend, ok := args[0].asNumber()
 		if !ok {
@@ -1983,7 +2029,9 @@ func formulaMissingRelationshipValue(org storage.OrgState, lookup storage.Field,
 				return value
 			}
 		}
-		return formulaFieldValueForDefinition(storage.Record{}, name, field)
+		value := formulaFieldValueForDefinition(storage.Record{}, name, field)
+		value.missingRelationship = true
+		return value
 	}
 	return formulaValue{kind: formulaNull}
 }
@@ -2641,7 +2689,11 @@ func (e *Engine) formulaEvaluationOptions() FormulaEvaluationOptions {
 	if userID == "" {
 		userID = storage.DefaultUserID
 	}
-	return FormulaEvaluationOptions{UserID: userID, PermissionUserFields: fields}
+	options := FormulaEvaluationOptions{UserID: userID, PermissionUserFields: fields}
+	if e.PermissionAssignmentHidden != nil {
+		options.AssignmentActive = func(assignment storage.Record) bool { return !e.PermissionAssignmentHidden(assignment) }
+	}
+	return options
 }
 
 // setupFormulaEvaluationOptions adds the system setup actor (small-clusters
@@ -2654,10 +2706,15 @@ func (e *Engine) setupFormulaEvaluationOptions() FormulaEvaluationOptions {
 	return options
 }
 
+// The mixed after-save rows reference prior fields directly in Flow formulas.
+// The matcher limits these references to simple field names outside literals.
+var capturedAfterSavePriorReference = regexp.MustCompile(`(?i)\$Record__Prior\.([A-Za-z_][A-Za-z0-9_]*)`)
+
 // flowFormulaEvaluationOptions is setupFormulaEvaluationOptions for a flow.
 func (e *Engine) flowFormulaEvaluationOptions() FormulaEvaluationOptions {
 	options := e.setupFormulaEvaluationOptions()
 	options.FlowContext = true
+	options.capturedAfterSaveSystemFields = e != nil && e.capturedMixedAfterSave
 	return options
 }
 

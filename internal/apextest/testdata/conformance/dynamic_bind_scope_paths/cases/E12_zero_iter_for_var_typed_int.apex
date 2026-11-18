@@ -1,0 +1,1 @@
+try { for (Integer i : new List<Integer>()) { } List<Account> l = Database.query('SELECT Id FROM Account WHERE NumberOfEmployees = :i'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

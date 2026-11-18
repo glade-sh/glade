@@ -1,0 +1,8 @@
+{"api": "62.0", "id": "md_factors", "route": "istest", "tests": [["fa", "Fail", "System.AssertException: Assertion Failed: Fa|ok"], ["fb", "Fail", "System.AssertException: Assertion Failed: Fb|ok"], ["fc", "Fail", "System.AssertException: Assertion Failed: Fc|ok"], ["fd", "Fail", "System.AssertException: Assertion Failed: Fd|ok"], ["ptTest", "Fail", "System.AssertException: Assertion Failed: pt|null;"]]}
+{"api": "67.0", "id": "md_factors", "route": "istest", "tests": [["fa", "Fail", "System.AssertException: Assertion Failed: Fa|System.DmlException"], ["fb", "Fail", "System.AssertException: Assertion Failed: Fb|System.DmlException"], ["fc", "Fail", "System.AssertException: Assertion Failed: Fc|System.DmlException"], ["fd", "Fail", "System.AssertException: Assertion Failed: Fd|System.DmlException"], ["ptTest", "Fail", "System.AssertException: Assertion Failed: pt|null;"]]}
+{"api": "62.0", "debug": ["OBS|pt_snap|before=1|after=2"], "error": "", "id": "pt_snap", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|pt_snap|before=1|after=2"], "error": "", "id": "pt_snap", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|pt_trig|null;"], "error": "", "id": "pt_trig", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|pt_trig|null;"], "error": "", "id": "pt_trig", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}

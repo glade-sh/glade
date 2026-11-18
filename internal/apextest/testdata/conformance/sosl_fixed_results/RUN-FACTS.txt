@@ -1,0 +1,9 @@
+SOSL fixed results: async jobs, live list reference and term rules in tests, 2026-11-13 UTC
+Orgs: two fresh 30-day Developer scratch orgs on campaign Dev Hubs, scratch HOME, generic keychain. Both deleted and verified gone after the run.
+APIs: 62.0 and 67.0. The classes under classes/ were deployed with --dry-run and RunSpecifiedTests (checkOnly, @IsTest named tests only) at each API in turn; the native run used the same sources under short working names (FuH, FuQ, FuB, FuAsyncTest, FuTermsTest), renamed here without other change.
+Transport: every method ends with a deliberate System.assert(false, 'FU|<observation>|END'); the observation is read from the deploy result.
+FixedSearchAsyncTest: six Contacts A-F (Department labels), fixed results {C,A,E}; a Queueable (q), an @future method (f) and a Database.Batchable (b) each run a search and write the result to a marker Account, read after Test.stopTest. Modes: base, none, setAfter, clearAfter, addAfter, setInside, override, limits, inline, beforeStart. clearAfter and addAfter change the caller's list after the job was enqueued and before stopTest.
+FixedSearchTermsTest: the 53 term queries of the anonymous name/phone boundary capture, run in a test with no fixed results (nf), with all twelve seeded Contacts fixed in reverse order (fx), and with four fixed (sub: L,H,A,D). The seed is the same twelve synthetic Contacts.
+Repeats: 189 methods in each of two orgs at each API. Every cell is identical across the two orgs and the two APIs, so org.tsv holds one row per method and API.
+Differences between 62.0 and 67.0: none.
+org.tsv columns: case, api, route, observation. Async rows are JSON objects (key order is not significant).

@@ -3,6 +3,8 @@ package resource
 import (
 	"path/filepath"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 // CustomTab.customObject identifies an object-backed tab, not whether the tab
@@ -24,7 +26,7 @@ func TestLoadCustomTabKindsRemainCustom(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), tc.name+".tab-meta.xml")
 			writeFile(t, path, `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata"><label>Harbor</label><motif>Custom9: Lightning</motif>`+tc.content+`</CustomTab>`)
-			tab, err := loadTab(path)
+			tab, err := loadTab(project.Project{}, path)
 			if err != nil {
 				t.Fatal(err)
 			}

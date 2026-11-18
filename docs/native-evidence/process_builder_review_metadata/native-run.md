@@ -1,0 +1,3 @@
+# Native run
+
+A fresh 30-day Developer scratch org deployed synthetic metadata: a public custom metadata type with a two-field true record and false record, and an after-insert trigger dereferencing the named records. Named and anonymous cases at API 62.0 and 67.0 captured true and false records and the missing-record rejection. The trigger itself was deployed at the corresponding API version for each run. The permission set was assigned after an initial field-access diagnostic; only the final permitted results are in org.tsv. Sentinel assertions carry observations and roll back transactions. The org was deleted and ScratchOrgInfo verified Deleted; no matching ActiveScratchOrg row remained. Org IDs and aliases are not recorded.

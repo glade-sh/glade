@@ -299,7 +299,7 @@ func revokeChangedUsers(owner *Server, before, after map[storage.ID]storage.Reco
 func revokeFixtureUserTokens(owner *Server, fixture storage.Fixture) {
 	ids := make(map[storage.ID]struct{})
 	for _, object := range fixture.Objects {
-		name, ok := storage.ResolveObjectName(*owner.Org, object.Name)
+		name, ok := storage.ResolveVisibleObjectName(*owner.Org, object.Name)
 		if !ok || name != "User" {
 			continue
 		}

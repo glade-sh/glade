@@ -15,7 +15,7 @@ func TestProjectCompilerNeverExecutedAcrossRoutes(t *testing.T) {
 	projectRoot := t.TempDir()
 	for _, root := range []string{managed, projectRoot} {
 		for _, rel := range []string{"third_party/lwc/compile.mjs", "third_party/lwc/node_modules/@lwc/compiler/package.json", "lwcruntime/src/shims/wire-adapter.mjs", "lwcruntime/src/shims/lds-cache.mjs", "lwcruntime/src/shell/app.mjs", "lwcruntime/src/slds/slds-loader.mjs", "lwcruntime/src/lightning/button.mjs"} {
-			writeCompileFixtureFile(t, filepath.Join(root, rel), "fixture")
+			writeCompileFixtureFile(t, filepath.Join(root, rel), "// glade-compiler-protocol: two-phase-v1")
 		}
 	}
 	writeCompileFixtureFile(t, filepath.Join(projectRoot, "go.mod"), "module example.invalid/fixture")
@@ -26,7 +26,7 @@ func TestProjectCompilerNeverExecutedAcrossRoutes(t *testing.T) {
 	writeCompileFixtureFile(t, meta, `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>67.0</apiVersion></LightningComponentBundle>`)
 	bin := t.TempDir()
 	log := filepath.Join(t.TempDir(), "commands")
-	script := "#!/bin/sh\nprintf '%s\\n' \"$1\" >> \"$COMMAND_LOG\"\nif [ \"$2\" = --salesforce-import-references ]; then printf '[]'; else printf '{\"bundles\":{\"lwc/probe\":{}}}'; fi\n"
+	script := "#!/bin/sh\nprintf '%s\\n' \"$1\" >> \"$COMMAND_LOG\"\nif [ \"$2\" = --two-phase ]; then IFS= read -r cfg; printf '[]\\n'; IFS= read -r metadata; fi\nif [ \"$2\" = --salesforce-import-references ]; then printf '[]'; else printf '{\"bundles\":{\"lwc/probe\":{}}}'; fi\n"
 	if err := os.WriteFile(filepath.Join(bin, "node"), []byte(script), 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -49,8 +49,8 @@ func TestProjectCompilerNeverExecutedAcrossRoutes(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	if len(lines) != 4 {
-		t.Fatalf("expected both passes for both routes, got %q", data)
+	if len(lines) != 2 {
+		t.Fatalf("expected one compiler process per route, got %q", data)
 	}
 	for _, line := range lines {
 		if line != filepath.Join(managed, "third_party/lwc/compile.mjs") {

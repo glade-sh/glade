@@ -1,0 +1,10 @@
+capture: chainrecv-capture
+started: 2026-11-13T18:23:58Z
+finished: 2026-11-13T18:25:06Z
+apis: 62.0 67.0
+routes: anonymous
+cases: 9
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+cases.tsv sha256: 972ce566cbf8983c
+mode: live

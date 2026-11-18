@@ -1,0 +1,2 @@
+List<List<SObject>> r = Search.query('FIND {capz*} RETURNING Account(Id LIMIT 2000), Contact(Id LIMIT 2000), Lead(Id LIMIT 2000), Opportunity(Id LIMIT 2000), Case(Id LIMIT 2000), Campaign(Id LIMIT 2000), Product2(Id LIMIT 2000), Asset(Id LIMIT 2000), Event(Id LIMIT 2000), Task(Id LIMIT 2000)');
+obs = SoslObs67.sizes(r);

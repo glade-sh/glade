@@ -1,0 +1,7 @@
+api	case	route	outcome
+62.0	id	metadata-deploy	Pass
+67.0	id	metadata-deploy	Pass
+62.0	unknown	metadata-deploy	Variable does not exist: NoSuchThing__c
+67.0	unknown	metadata-deploy	Variable does not exist: NoSuchThing__c
+59.0	id-extension	visualforce-deploy	Pass
+67.0	id-extension	visualforce-deploy	Pass

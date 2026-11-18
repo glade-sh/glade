@@ -133,6 +133,8 @@ type namedGlobalDescribeExtension struct {
 	baseLen  int
 	names    string
 	extended map[string]Value
+	// shared: extended is the generation's map, read by other VMs too.
+	shared bool
 }
 
 // withNamedApexReferenceGlobalEntries adds the reference objects to the global
@@ -159,13 +161,23 @@ func (vm *VM) withNamedApexReferenceGlobalEntries(base Value) (Value, bool) {
 	if cached := vm.namedGlobalDescribe; cached != nil && sameMapBacking(cached.base, base.Map) &&
 		len(base.Map) == cached.baseLen && cached.names == joined {
 		extended.Map = cached.extended
+		extended.mapEntriesShared = cached.shared
 		return extended, true
 	}
-	extended.Map = maps.Clone(base.Map)
-	for _, name := range names {
-		extended.Map[mapKey(String(strings.ToLower(name)))] = sObjectTypeToken(name)
+	build := func() map[string]Value {
+		built := maps.Clone(base.Map)
+		for _, name := range names {
+			built[mapKey(String(strings.ToLower(name)))] = sObjectTypeToken(name)
+		}
+		return built
 	}
-	vm.namedGlobalDescribe = &namedGlobalDescribeExtension{base: base.Map, baseLen: len(base.Map), names: joined, extended: extended.Map}
+	shared, ok := vm.sharedGlobalDescribeExtension(base.Map, "named", joined, build)
+	if !ok {
+		shared = build()
+	}
+	extended.Map = shared
+	extended.mapEntriesShared = ok
+	vm.namedGlobalDescribe = &namedGlobalDescribeExtension{base: base.Map, baseLen: len(base.Map), names: joined, extended: extended.Map, shared: ok}
 	return extended, true
 }
 

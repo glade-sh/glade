@@ -1,0 +1,9 @@
+object	column	api	route	result	outcome
+SampleEntry__c	CREATED_DATE	59.0	deploy	accepted	deployed
+SampleEntry__c	FULL_NAME	59.0	deploy	rejected	Could not resolve list view column
+SampleEntry__c	LAST_MODIFIED_DATE	59.0	deploy	rejected	Could not resolve list view column
+SampleEntry__c	NOT_A_REAL_COLUMN	59.0	deploy	rejected	Could not resolve list view column
+SampleEntry__c	CREATED_DATE	67.0	deploy	accepted	deployed
+SampleEntry__c	FULL_NAME	67.0	deploy	rejected	Could not resolve list view column
+SampleEntry__c	LAST_MODIFIED_DATE	67.0	deploy	rejected	Could not resolve list view column
+SampleEntry__c	NOT_A_REAL_COLUMN	67.0	deploy	rejected	Could not resolve list view column

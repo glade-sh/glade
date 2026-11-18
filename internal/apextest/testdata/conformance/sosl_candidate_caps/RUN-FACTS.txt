@@ -1,0 +1,16 @@
+started: 2026-11-16T01:02:05.064782Z
+finished: 2026-11-16T01:09:38.856091Z
+apis: 62.0 67.0
+routes: anonymous
+sf: @salesforce/cli/2.156.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+mode: live
+case table sha256: e544f54d0849e8876de8a00453b6e23d2142bafa5c2e992501b2d1c11f98263a
+ready caps 0,0,0,0,0,0,0,0,0,0
+ready caps 200,200,200,200,200,200,200,200,200,200
+ready caps 200,200,200,200,200,200,200,200,200,200
+ready caps 200,200,200,200,200,200,200,200,200,200
+ready ceil 0
+ready ceil 2000
+ready ceil 2000
+ready ceil 2000

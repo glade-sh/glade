@@ -74,9 +74,9 @@ func applyProjectReportFile(org *storage.OrgState, path, namespace string, read 
 	id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
 		return strings.EqualFold(record.Fields["DeveloperName"].String, developerName) && strings.EqualFold(record.Fields["NamespacePrefix"].String, strings.TrimSpace(namespace))
 	})
-	object.Records[id] = storage.Record{ID: id, Object: "Report", Fields: map[string]storage.Value{
+	object.PutRecord(id, storage.Record{ID: id, Object: "Report", Fields: map[string]storage.Value{
 		"Id": storage.IDValue(id), "Name": storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Name), developerName)), "DeveloperName": storage.StringValue(developerName), "FolderName": folderName, "Format": storage.StringValue(strings.TrimSpace(meta.Format)), "NamespacePrefix": nullableNamespace(namespace),
-	}}
+	}})
 	org.Objects["Report"] = object
 	folderID, _ := projectFolderID(org, "Report", filepath.Base(filepath.Dir(path)))
 	definition := storage.ProjectReportMetadata{
@@ -174,9 +174,9 @@ func applyProjectDashboardFile(org *storage.OrgState, path, namespace string, re
 	id := metadataRecordIDForIdentity(object, func(record storage.Record) bool {
 		return strings.EqualFold(record.Fields["DeveloperName"].String, developerName) && strings.EqualFold(record.Fields["NamespacePrefix"].String, strings.TrimSpace(namespace))
 	})
-	object.Records[id] = storage.Record{ID: id, Object: "Dashboard", Fields: map[string]storage.Value{
+	object.PutRecord(id, storage.Record{ID: id, Object: "Dashboard", Fields: map[string]storage.Value{
 		"Id": storage.IDValue(id), "Title": storage.StringValue(firstNonEmpty(strings.TrimSpace(meta.Title), developerName)), "DeveloperName": storage.StringValue(developerName), "FolderId": folderID, "FolderName": folderName, "Type": storage.StringValue(strings.TrimSpace(meta.Type)), "NamespacePrefix": nullableNamespace(namespace),
-	}}
+	}})
 	org.Objects["Dashboard"] = object
 	return nil
 }

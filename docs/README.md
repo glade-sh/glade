@@ -17,7 +17,8 @@ an absent entry is not a support claim.
 1. Start and install: [INSTALL.md](INSTALL.md)
 2. Small pilot and day-to-day workflow: [TESTER_FIELD_GUIDE.md](TESTER_FIELD_GUIDE.md)
 3. Project configuration: [CONFIG.md](CONFIG.md)
-4. Run Apex tests: [LOCAL_TESTING.md](LOCAL_TESTING.md)
+4. Run Apex tests: [LOCAL_TESTING.md](LOCAL_TESTING.md); code coverage:
+   [CODE_COVERAGE.md](CODE_COVERAGE.md)
 5. Apex compiler rules and reserved identifiers:
    [APEX_LANGUAGE_COMPATIBILITY.md](APEX_LANGUAGE_COMPATIBILITY.md)
 6. Preview LWC locally: [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md)
@@ -66,7 +67,7 @@ labels do not establish fresh release validation.
 3. Product boundary for AI and human contributors: [../AGENTS.md](../AGENTS.md)
    and [AI_SETUP.md](AI_SETUP.md) for agent setup and validation by surface.
 4. Clean-room rules: [CLEAN_ROOM.md](CLEAN_ROOM.md)
-5. Storage model and DB behavior: [storage-schema.md](storage-schema.md)
+5. Storage model and DB behavior: [STORAGE_SCHEMA.md](STORAGE_SCHEMA.md)
 6. Apex declaration parser: [APEX_PARSER.md](APEX_PARSER.md)
 7. Apex language compatibility:
    [APEX_LANGUAGE_COMPATIBILITY.md](APEX_LANGUAGE_COMPATIBILITY.md)

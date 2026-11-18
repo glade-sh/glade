@@ -1,0 +1,18 @@
+<DuplicateRule xmlns="http://soap.sforce.com/2006/04/metadata">
+  <actionOnInsert>Allow</actionOnInsert>
+  <actionOnUpdate>Allow</actionOnUpdate>
+  <alertText>Matching probe record</alertText>
+  <duplicateRuleFilter>
+    <booleanFilter>1</booleanFilter>
+    <duplicateRuleFilterItems><field>Department</field><operation>equals</operation><sortOrder>1</sortOrder><table>Contact</table><value>CustomAlert</value></duplicateRuleFilterItems>
+  </duplicateRuleFilter>
+  <duplicateRuleMatchRules>
+    <matchRuleSObjectType>Contact</matchRuleSObjectType><matchingRule>ProbePhone</matchingRule>
+    <objectMapping xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>
+  </duplicateRuleMatchRules>
+  <isActive>true</isActive><masterLabel>ProbePhoneAlert</masterLabel>
+  <operationsOnInsert>Alert</operationsOnInsert>
+  <operationsOnUpdate>Alert</operationsOnUpdate>
+  <securityOption>BypassSharingRules</securityOption>
+  <sortOrder>4</sortOrder>
+</DuplicateRule>

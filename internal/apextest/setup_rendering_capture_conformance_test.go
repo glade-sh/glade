@@ -11,7 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	gladeproject "github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -196,7 +198,18 @@ func runSetupRenderingCaptureConformance(t *testing.T, capture setupRenderingCap
 							org := orgFromIndex(index)
 							org.APIVersion = api
 							runner := newConformanceRunner(t, index, conformanceRunnerOptions{LinkProject: true, Org: &org})
-							result, err := runner.execute(program)
+							var configure []func(*vm.VM)
+							if capture.family == "pdf_rendering" {
+								pageProject, err := gladeproject.Load(root)
+								if err != nil {
+									t.Fatal(err)
+								}
+								configure = append(configure, func(machine *vm.VM) {
+									visualforce.SetVMRenderEnvironment(machine, pageProject)
+									t.Cleanup(func() { visualforce.ClearVMRenderEnvironment(machine) })
+								})
+							}
+							result, err := runner.execute(program, configure...)
 							if err != nil {
 								var runtimeErr *vm.RuntimeError
 								if !errors.As(err, &runtimeErr) {
@@ -217,6 +230,12 @@ func runSetupRenderingCaptureConformance(t *testing.T, capture setupRenderingCap
 						var want, got any
 						if json.Unmarshal([]byte(row[4]), &want) != nil || json.Unmarshal([]byte(payload), &got) != nil {
 							t.Fatalf("invalid observation: native=%s; Glade=%q", row[4], payload)
+						}
+						if capture.family == "standard_profile_inventory" && assertVariableProfileObservation(t, row, rows, got) {
+							return
+						}
+						if capture.family == "email_services_metadata" && assertEmailServicesVariableObservation(t, row, want, got) {
+							return
 						}
 						if !reflect.DeepEqual(got, want) {
 							t.Fatalf("native=%s; Glade=%s", row[4], payload)

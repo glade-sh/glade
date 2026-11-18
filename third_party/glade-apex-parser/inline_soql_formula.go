@@ -28,6 +28,9 @@ func normalizeInlineSOQLFormula(source string) string {
 				continue
 			}
 			normalizeSOQLFormulaPredicates(source, &out, start, end)
+			if clause := inlineSOQLSetOptionsStart(source, start, end); clause >= 0 {
+				blankInlineSOSL(source, &out, clause, end)
+			}
 			i = end + 1
 		default:
 			i++

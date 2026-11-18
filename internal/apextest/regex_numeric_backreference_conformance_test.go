@@ -119,36 +119,6 @@ func TestNumericBackreferenceNativeProjectSplitReplaceAllAndMatcherRoutes(t *tes
 					if len(want) != 11 {
 						t.Fatalf("native route count=%d", len(want))
 					}
-					if row[2] == "ref10_nine_backspace" || row[2] == "ref10_nine_ref1_zero" || row[2] == "ref10_zero_backspace" {
-						// Capture the native gap, but test every route against the
-						// matcher control instead of asserting unsupported parity.
-						matched, ok := got["Matcher.matches"].(bool)
-						if !ok {
-							t.Fatal("missing matcher control")
-						}
-						text := "L" + input[1] + "R" + input[1] + "T"
-						parts, positive, replacement, found := []string{text}, []string{text}, text, []string{}
-						if matched {
-							parts, positive, replacement, found = []string{"L", "R", "T"}, []string{"L", "R" + input[1] + "T"}, "LQRQT", []string{input[1], input[1]}
-						}
-						control := map[string]any{"Matcher.find": found, "Matcher.replaceAll": replacement, "String.replaceAll": replacement}
-						for _, route := range []string{"String.split", "Pattern.split"} {
-							control[route+"/default"], control[route+"/negative"], control[route+"/positive"] = parts, parts, positive
-						}
-						for route, value := range control {
-							raw, err := json.Marshal(value)
-							if err != nil {
-								t.Fatal(err)
-							}
-							var expected any
-							if err := json.Unmarshal(raw, &expected); err != nil {
-								t.Fatal(err)
-							}
-							want[route] = expected
-						}
-						want["Matcher.matches"] = matched
-						t.Log("carried native mismatch; checking split/replaceAll/matcher equivalence (see CARRIED.txt)")
-					}
 					for route, expected := range want {
 						t.Run(route, func(t *testing.T) {
 							if !reflect.DeepEqual(got[route], expected) {

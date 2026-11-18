@@ -1108,3 +1108,11 @@ func protocolWiringGit(t *testing.T, root string, args ...string) {
 		t.Fatalf("git %s: %v\n%s", strings.Join(args, " "), err, output)
 	}
 }
+
+// The daemon never receives the one-shot mark: its runs can transition later.
+func TestRunRequestDoesNotCarryOneShotProcess(t *testing.T) {
+	request := NewRunRequestV1(apextest.Options{OneShotProcess: true}, "", 0, 0, false)
+	if apexOptionsFromRunRequestV1(request).OneShotProcess {
+		t.Fatal("a run request carried OneShotProcess to the daemon")
+	}
+}

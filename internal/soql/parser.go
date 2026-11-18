@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -757,6 +758,20 @@ func (p *parser) parseQuery() (Query, error) {
 				return Query{}, p.errorf("expected ROWS after ALL")
 			}
 			q.AllRows = true
+		case p.matchWord("SET"):
+			// api68_native queryoptions captures SET OPTIONS :bind as the
+			// last clause, after LIMIT.
+			if err := checkClauseOrder("SET OPTIONS", 11); err != nil {
+				return Query{}, err
+			}
+			if !p.matchWord("OPTIONS") {
+				return Query{}, p.errorf("expected OPTIONS after SET")
+			}
+			text := p.advance().text
+			if len(text) < 2 || text[0] != ':' || !isSOQLBindName(strings.SplitN(text[1:], ".", 2)[0]) {
+				return Query{}, unexpectedToken(text, "expected SET OPTIONS bind")
+			}
+			q.OptionsBind = text[1:]
 		case p.matchWord("USING"):
 			if err := checkClauseOrder("USING SCOPE", 1); err != nil {
 				return Query{}, err
@@ -1428,6 +1443,12 @@ func (e selectFieldExpression) outputName() string {
 	return e.Raw
 }
 func parseSelectFieldExpression(field string) (selectFieldExpression, bool) {
+	// A function expression carries its argument list in parentheses. A plain
+	// field path cannot parse as one, so answer it before splitting the text:
+	// the executor asks this per candidate record.
+	if !strings.Contains(field, "(") {
+		return selectFieldExpression{}, false
+	}
 	parts := strings.Fields(field)
 	if len(parts) == 0 || len(parts) > 2 {
 		return selectFieldExpression{}, false
@@ -1834,10 +1855,10 @@ func haversineDistance(left, right geolocationPoint) float64 {
 	lat2 := right.lat * math.Pi / 180
 	dlat := (right.lat - left.lat) * math.Pi / 180
 	dlon := (right.lon - left.lon) * math.Pi / 180
-	sinDlat := math.Sin(dlat / 2)
-	sinDlon := math.Sin(dlon / 2)
-	a := sinDlat*sinDlat + math.Cos(lat1)*math.Cos(lat2)*sinDlon*sinDlon
-	return earthRadiusKM * 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	sinDlat := stablemath.SinStable(dlat / 2)
+	sinDlon := stablemath.SinStable(dlon / 2)
+	a := float64(sinDlat*sinDlat) + float64(float64(float64(stablemath.CosStable(lat1)*stablemath.CosStable(lat2))*sinDlon)*sinDlon)
+	return earthRadiusKM * 2 * stablemath.Atan2Stable(math.Sqrt(a), math.Sqrt(1-a))
 }
 
 func numericLiteral(arg string) bool {

@@ -70,10 +70,10 @@ func pageAndEmailFilesKey(p project.Project) string {
 // schema that expression validation reads, computed once per project source set.
 func (c *loadCache) expressionSources(p project.Project) (*expressionValidationSources, error) {
 	if c == nil {
-		return loadExpressionValidationSources(p)
+		return sharedExpressionSources(p)
 	}
 	return c.sources.get(apexFilesKey(p)+"\x01"+p.Root+"\x01"+p.Namespace, func() (*expressionValidationSources, error) {
-		return loadExpressionValidationSources(p)
+		return sharedExpressionSources(p)
 	})
 }
 
@@ -121,14 +121,14 @@ func (c *loadCache) strictIndex(p project.Project, fallbackAPIVersion string) (p
 func parseStrictIndex(p project.Project, fallbackAPIVersion string) (parsedIndex, error) {
 	var parsed parsedIndex
 	for _, path := range p.VisualforcePageFiles {
-		page, err := parsePageFile(path, fallbackAPIVersion)
+		page, err := parsePageFile(path, fallbackAPIVersion, p)
 		if err != nil {
 			return parsedIndex{}, err
 		}
 		parsed.pages = append(parsed.pages, page)
 	}
 	for _, path := range p.VisualforceComponentFiles {
-		component, err := parseComponentFile(path, fallbackAPIVersion)
+		component, err := parseComponentFile(path, fallbackAPIVersion, p)
 		if err != nil {
 			return parsedIndex{}, err
 		}

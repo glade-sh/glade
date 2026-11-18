@@ -88,11 +88,16 @@ func TestCIDurationHistoryFallbackPlanTimingAdvisory(t *testing.T) {
 				for _, event := range []string{"push", "schedule", "workflow_dispatch", "", "pull_request", "pull_request_target"} {
 					t.Run(fmt.Sprintf("%s/%s/%s/%q", route, entry, source, event), func(t *testing.T) {
 						t.Setenv("GITHUB_EVENT_NAME", event)
+						t.Setenv("GITHUB_HEAD_REF", "")
 						packageName := fixturePackage
 						if route == "sema" {
 							packageName = semaFixturePackage
 						}
 						fixture := durationHistoryRouteFixture(t, packageName, elapsed)
+						if route == "apex" {
+							// The Apex gate tolerates one dominant test; use many small ones.
+							fixture = durationHistoryRouteSpreadFixture(t, packageName, elapsed)
+						}
 						setPlanHistoryUsed(t, fixture.shards[:], source == "history")
 						out, err := runDurationHistoryRoute(t, route, entry, fixture)
 						wantErr := source == "history" && event != "pull_request"
@@ -122,11 +127,17 @@ func TestCIDurationHistoryFallbackPlanTimingAdvisory(t *testing.T) {
 						if err != nil {
 							t.Fatal(err)
 						}
-						if err := json.Unmarshal(data, &history); err != nil || history.Package != packageName || !history.Complete || len(history.Tests) != 2 {
+						if err := json.Unmarshal(data, &history); err != nil || history.Package != packageName || !history.Complete || len(history.Tests) != map[string]int{"sema": 2, "apex": 64}[route] {
 							t.Fatalf("invalid refreshed history: %s err=%v", data, err)
 						}
-						for index, test := range history.Tests {
-							if test.DurationMillis != int64(math.Round(elapsed[index]*1000)) {
+						perShard := len(history.Tests) / 2
+						for index := 0; index < 2; index++ {
+							var total int64
+							for _, test := range history.Tests[index*perShard : (index+1)*perShard] {
+								total += test.DurationMillis
+							}
+							// Each spread test rounds to a millisecond.
+							if diff := total - int64(math.Round(elapsed[index]*1000)); diff > 32 || diff < -32 {
 								t.Fatalf("history lost observed duration: %s", data)
 							}
 						}
@@ -139,6 +150,7 @@ func TestCIDurationHistoryFallbackPlanTimingAdvisory(t *testing.T) {
 
 func TestCIDurationHistoryFallbackPlanKeepsEvidenceValidation(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "push")
+	t.Setenv("GITHUB_HEAD_REF", "")
 	for _, route := range []string{"sema", "apex"} {
 		for _, invalid := range []string{"missing terminal", "failed terminal", "plan mismatch"} {
 			t.Run(route+"/"+invalid, func(t *testing.T) {
@@ -176,6 +188,7 @@ func TestCIDurationHistoryFallbackPlanKeepsEvidenceValidation(t *testing.T) {
 // A main push without history must save its observed durations so the next
 // plan can balance; that next, history-driven plan is enforced again.
 func TestCISemaHistoryFallbackRefreshThenEnforces(t *testing.T) {
+	t.Setenv("GITHUB_HEAD_REF", "")
 	root := t.TempDir()
 	planner := filepath.Join(root, "cishard")
 	if out, err := exec.Command(realGoCommand(t), "build", "-o", planner, "./internal/cishard").CombinedOutput(); err != nil {

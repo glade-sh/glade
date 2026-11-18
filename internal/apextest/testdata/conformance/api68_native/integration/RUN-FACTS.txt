@@ -1,0 +1,11 @@
+capture: integration
+started: 2026-11-16T03:16:44Z
+finished: 2026-11-16T03:16:51Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+ApexIntegrationTests preview is expected to be disabled; deploy diagnostics are the answer

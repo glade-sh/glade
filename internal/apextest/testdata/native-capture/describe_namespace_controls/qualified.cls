@@ -1,0 +1,1 @@
+@IsTest private class SubscriberProbeTest { @IsTest static void check() { gladetest4.V035Provider.GlobalInner value = new gladetest4.V035Provider.GlobalInner(); System.assertEquals(2, value.size()); } }

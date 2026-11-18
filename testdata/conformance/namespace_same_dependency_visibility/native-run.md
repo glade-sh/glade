@@ -1,0 +1,1 @@
+Capture 2026-11-09 UTC. Authorized namespaced development org, using only owned synthetic Apex in check-only deployments; no metadata was persisted and no tests ran. Provider and consumer classes were compiled together at source and request APIs 62.0 and 67.0. The namespace is represented by {{NAMESPACE}}. No credentials, org IDs, org aliases, or hostnames are recorded.

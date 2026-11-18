@@ -46,9 +46,9 @@ func (t RuntimeTemplate) CloneRuntimeOrg() OrgState {
 func (o ObjectState) CloneRuntimeFrozenDefinition() ObjectState {
 	out := o
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {

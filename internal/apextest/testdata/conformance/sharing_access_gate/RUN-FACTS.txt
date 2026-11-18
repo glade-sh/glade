@@ -1,0 +1,6 @@
+User-mode DML exception type by class source API for a Standard User in System.runAs, and the static WITH SECURITY_ENFORCED compile at API 67.0.
+org: fresh scratch org from a campaign Dev Hub, Developer Edition, deleted after the run (delete verified). Org id, usernames, alias and host are not recorded.
+capture date: 2026-11-16 (UTC). sf 2.157.8. Class source API 55.0 through 62.0 and 67.0 (SamGate<N>), deployed at 67.0. Anonymous rows ran with sf apex run --api-version 62.0, 66.0, 67.0 and 68.0 as the administrator.
+metadata: as sharing_access_modes (Sam_Obj__c.Secret__c has no grant for the actor).
+route: named @IsTest methods, one transaction each, one run of each class; anonymous rows record compile success or the compile problem with line and column.
+observation: as sharing_access_modes. "compiled" or "compile <line>:<column> <problem>" for anonymous rows.

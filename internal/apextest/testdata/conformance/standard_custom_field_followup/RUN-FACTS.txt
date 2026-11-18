@@ -1,0 +1,10 @@
+capture: fls-followup-capture
+started: 2026-11-14T17:02:13Z
+finished: 2026-11-14T17:02:50Z
+apis: 62.0 67.0
+routes: istest
+cases: 2
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 30 days, deleted after the run)
+capture-cases.tsv sha256: c2ed6bd7ac7feb4f
+mode: live

@@ -8,6 +8,7 @@ import (
 )
 
 func TestLoadRequestedSiblingPackageDirectories(t *testing.T) {
+	t.Setenv(SiblingDependencyScanEnvVar, "1")
 	for _, tc := range []struct {
 		name         string
 		dependencies string
@@ -85,6 +86,7 @@ func TestLoadRequestedSiblingPackageDirectories(t *testing.T) {
 }
 
 func TestLoadRequestedSiblingPackagesRevisitSupplierThroughIntermediate(t *testing.T) {
+	t.Setenv(SiblingDependencyScanEnvVar, "1")
 	workspace := t.TempDir()
 	supplier := filepath.Join(workspace, "supplier")
 	intermediate := filepath.Join(workspace, "intermediate")

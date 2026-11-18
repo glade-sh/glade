@@ -1,0 +1,5 @@
+case	api	source_file
+inherited_missing	62.0	cases/inherited_missing.json
+inherited_missing	67.0	cases/inherited_missing.json
+inherited_valid	62.0	cases/inherited_valid.json
+inherited_valid	67.0	cases/inherited_valid.json

@@ -1,0 +1,13 @@
+case_id	api_version	route	compile_outcome	observed_diagnostic	source
+field_present	62.0	named-checkonly	COMPILED		cases/62.0-field_present/Nsv36TypeConsumer.cls
+field_missing_root	62.0	named-checkonly	COMPILE_ERROR	Invalid type: Nsv36TypeAbsent.Level	cases/62.0-field_missing_root/Nsv36TypeConsumer.cls
+field_missing_member	62.0	named-checkonly	COMPILE_ERROR	Invalid type: Nsv36TypeOwner.Absent	cases/62.0-field_missing_member/Nsv36TypeConsumer.cls
+parameter_present	62.0	named-checkonly	COMPILED		cases/62.0-parameter_present/Nsv36TypeConsumer.cls
+parameter_missing_root	62.0	named-checkonly	COMPILE_ERROR	Invalid type: Nsv36TypeAbsent.Level; Method does not exist or incorrect signature: void accept(Nsv36TypeAbsent.Level) from the type {{NAMESPACE}}.Nsv36TypeHelper	cases/62.0-parameter_missing_root/Nsv36TypeConsumer.cls
+parameter_missing_member	62.0	named-checkonly	COMPILE_ERROR	Invalid type: Nsv36TypeOwner.Absent; Method does not exist or incorrect signature: void accept(Nsv36TypeOwner.Absent) from the type {{NAMESPACE}}.Nsv36TypeHelper	cases/62.0-parameter_missing_member/Nsv36TypeConsumer.cls
+field_present	67.0	named-checkonly	COMPILED		cases/67.0-field_present/Nsv36TypeConsumer.cls
+field_missing_root	67.0	named-checkonly	COMPILE_ERROR	Invalid type: Nsv36TypeAbsent.Level	cases/67.0-field_missing_root/Nsv36TypeConsumer.cls
+field_missing_member	67.0	named-checkonly	COMPILE_ERROR	Invalid type: Nsv36TypeOwner.Absent	cases/67.0-field_missing_member/Nsv36TypeConsumer.cls
+parameter_present	67.0	named-checkonly	COMPILED		cases/67.0-parameter_present/Nsv36TypeConsumer.cls
+parameter_missing_root	67.0	named-checkonly	COMPILE_ERROR	Invalid type: Nsv36TypeAbsent.Level; Method does not exist or incorrect signature: void accept(Nsv36TypeAbsent.Level) from the type {{NAMESPACE}}.Nsv36TypeHelper	cases/67.0-parameter_missing_root/Nsv36TypeConsumer.cls
+parameter_missing_member	67.0	named-checkonly	COMPILE_ERROR	Invalid type: Nsv36TypeOwner.Absent; Method does not exist or incorrect signature: void accept(Nsv36TypeOwner.Absent) from the type {{NAMESPACE}}.Nsv36TypeHelper	cases/67.0-parameter_missing_member/Nsv36TypeConsumer.cls

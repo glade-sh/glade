@@ -26,7 +26,7 @@ func TestReadRequestPumpStopsWhenSessionIsDone(t *testing.T) {
 	sessionDone := make(chan struct{})
 	pumpDone := make(chan struct{})
 	go func() {
-		readRequests(reader, requests, sessionDone)
+		readRequests(reader, requests, sessionDone, nil)
 		close(pumpDone)
 	}()
 

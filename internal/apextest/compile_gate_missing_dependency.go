@@ -120,6 +120,21 @@ func (g *compileGate) withoutScopedDependencyErrors(diagnostics []diagnostic.Dia
 }
 
 func compileGateReferencesMissingNamespace(file, source string, units compileGateUnits, namespaces []string) bool {
+	// Every reference the walker can report is a lowercased source identifier
+	// that is a target key, and every target key below contains a namespace
+	// name. A source without any namespace text has no such identifier, so it
+	// is answered without parsing; the gate runs this over every unit for each
+	// missing dependency.
+	mentioned := false
+	for _, namespace := range namespaces {
+		if compileGateContainsFold(source, namespace) {
+			mentioned = true
+			break
+		}
+	}
+	if !mentioned {
+		return false
+	}
 	// Reuse the gate's variable/type binding, string/comment handling and query
 	// bind handling. Synthetic target entries represent configured unavailable
 	// namespaces; they do not turn dynamic lookup strings into dependencies.
@@ -152,5 +167,41 @@ func compileGateReferencesMissingNamespace(file, source string, units compileGat
 	for _, node := range parsed.Nodes {
 		collect(node)
 	}
-	return len(compileGateReferences(file, source, targets)) > 0
+	return len(compileGateReferencesInAST(parsed, source, targets)) > 0
+}
+
+// compileGateContainsFold reports whether source may contain name under the
+// walker's strings.ToLower comparison, without allocating a folded copy of the
+// source. Two non-ASCII runes have an ASCII lowercase form (U+212A KELVIN SIGN
+// to k, U+0130 LATIN CAPITAL I WITH DOT ABOVE to i); a source holding one keeps
+// the parsing path, as does a non-ASCII name, whose case pairs can differ in
+// their bytes.
+func compileGateContainsFold(source, name string) bool {
+	if name == "" {
+		return true
+	}
+	for i := 0; i < len(name); i++ {
+		if name[i] >= 0x80 {
+			return true
+		}
+	}
+	if strings.ContainsAny(name, "kK") && strings.Contains(source, "\u212a") {
+		return true
+	}
+	if strings.ContainsAny(name, "iI") && strings.Contains(source, "\u0130") {
+		return true
+	}
+	if len(name) > len(source) {
+		return false
+	}
+	first := name[0] | 0x20
+	for i := 0; i+len(name) <= len(source); i++ {
+		if source[i]|0x20 != first {
+			continue
+		}
+		if strings.EqualFold(source[i:i+len(name)], name) {
+			return true
+		}
+	}
+	return false
 }

@@ -1,0 +1,10 @@
+capture: cap-scs
+started: 2026-11-11T20:41:57Z
+finished: 2026-11-11T20:42:38Z
+apis: 62.0 67.0
+routes: anonymous 
+cases: 5
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: 9f463f06f8366625
+mode: live

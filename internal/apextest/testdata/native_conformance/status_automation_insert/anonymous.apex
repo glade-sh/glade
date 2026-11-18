@@ -1,0 +1,13 @@
+Id rt=Schema.SObjectType.Probe__c.getRecordTypeInfosByDeveloperName().get('Matched').getRecordTypeId();
+Probe__c original=new Probe__c(Name='exact',RecordTypeId=rt,Status__c='Additional Information Required');
+original.Status__c='In Progress'; original.Handler__c='In Progress'; original.Requested__c=true;
+Request__c request=new Request__c(Name='request'); upsert request; original.Request__c=request.Id;
+Probe__c clean=new Probe__c();
+Map<String,Schema.SObjectField> fields=Schema.SObjectType.Probe__c.fields.getMap();
+for(String key:original.getPopulatedFieldsAsMap().keySet()) if(fields.get(key).getDescribe().isCreateable()) clean.put(key,original.get(key));
+System.debug('OBSERVED|exact_pre|'+clean.Status__c+'|'+clean.Handler__c+'|'+(clean.Request__c!=null));
+upsert clean;
+clean=[SELECT Status__c,Handler__c,Marker__c,Request__c,Requested__c,EmailSent__c,Notified__c FROM Probe__c WHERE Id=:clean.Id];
+request=[SELECT Marker__c FROM Request__c WHERE Id=:request.Id];
+Integer exactMessages=[SELECT count() FROM Message__c WHERE Probe__c=:clean.Id];
+System.debug('OBSERVED|exact_insert|'+clean.Status__c+'|'+clean.Handler__c+'|'+clean.Marker__c+'|'+request.Marker__c+'|'+clean.Requested__c+'|'+clean.EmailSent__c+'|'+clean.Notified__c+'|'+exactMessages);

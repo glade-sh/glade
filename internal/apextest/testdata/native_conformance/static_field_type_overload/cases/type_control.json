@@ -1,0 +1,4 @@
+{
+  "NqAdjCheck1ea6663a.cls": "@IsTest private class NqAdjCheck1ea6663a { @IsTest static void verify() { System.assertEquals('outer:b', NqAdjacent1ea6663a.Builder.choose('b')); } }\n",
+  "NqAdjacent1ea6663a.cls": "public class NqAdjacent1ea6663a {\n public interface Builder { String choose(Integer v); }\n public static String choose(String v) { return 'outer:' + v; }\n}\n"
+}

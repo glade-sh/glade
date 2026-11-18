@@ -1,0 +1,1 @@
+public class Probe { public class Adapter {} public static Integer value(Integer x) { return x; } public static String value(String x) { return x; } public static Integer run() { return Probe.Adapter.value(2); } }

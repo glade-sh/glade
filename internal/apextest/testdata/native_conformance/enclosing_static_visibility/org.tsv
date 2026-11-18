@@ -1,0 +1,31 @@
+case	api	route	outcome
+public_external	62.0	metadata-deploy	accepted
+public_external	62.0	anonymous	value=public
+public_external	67.0	metadata-deploy	accepted
+public_external	67.0	anonymous	value=public
+private_inside	62.0	metadata-deploy	accepted
+private_inside	62.0	anonymous	value=private
+private_inside	67.0	metadata-deploy	accepted
+private_inside	67.0	anonymous	value=private
+private_external	62.0	metadata-deploy	Method is not visible: String VisOwner0362.value()
+private_external	67.0	metadata-deploy	Method is not visible: String VisOwner0367.value()
+protected_inside	62.0	metadata-deploy	protected methods cannot be static
+protected_inside	67.0	metadata-deploy	protected methods cannot be static
+protected_external	62.0	metadata-deploy	Method is not visible: String VisOwner0562.value(); protected methods cannot be static
+protected_external	67.0	metadata-deploy	Method is not visible: String VisOwner0567.value(); protected methods cannot be static
+protected_subclass	62.0	metadata-deploy	Dependent class is invalid and needs recompilation:  Class VisOwner0662 : protected methods cannot be static; protected methods cannot be static
+protected_subclass	67.0	metadata-deploy	Dependent class is invalid and needs recompilation:  Class VisOwner0667 : protected methods cannot be static; protected methods cannot be static
+overload_integer	62.0	metadata-deploy	accepted
+overload_integer	62.0	anonymous	value=integer
+overload_integer	67.0	metadata-deploy	accepted
+overload_integer	67.0	anonymous	value=integer
+overload_null	62.0	metadata-deploy	Ambiguous method signature: void value(NULL)
+overload_null	67.0	metadata-deploy	Ambiguous method signature: void value(NULL)
+overload_object_null	62.0	metadata-deploy	Ambiguous method signature: void value(NULL)
+overload_object_null	67.0	metadata-deploy	Ambiguous method signature: void value(NULL)
+overload_boolean	62.0	metadata-deploy	Method does not exist or incorrect signature: void value(Boolean) from the type VisOwner1062.Adapter
+overload_boolean	67.0	metadata-deploy	Method does not exist or incorrect signature: void value(Boolean) from the type VisOwner1067.Adapter
+outer_instance	62.0	metadata-deploy	Method does not exist or incorrect signature: void value() from the type VisOwner1162.Adapter
+outer_instance	67.0	metadata-deploy	Method does not exist or incorrect signature: void value() from the type VisOwner1167.Adapter
+missing_method	62.0	metadata-deploy	Method does not exist or incorrect signature: void value() from the type VisOwner1262.Adapter
+missing_method	67.0	metadata-deploy	Method does not exist or incorrect signature: void value() from the type VisOwner1267.Adapter

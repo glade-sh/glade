@@ -21,8 +21,11 @@ func semaHTTPReceiver(typeName string) string {
 	return ""
 }
 
+// api68_native sf-archive ARCHIVE-DEPLOY-67/68: a Developer scratch org
+// without the archive product reports SF_Archive.ArchiverAccessorResponse as
+// not visible at 67.0 and 68.0.
 func semaHTTPInvisibleType(typeName string) string {
-	for _, name := range []string{"commercetax.TaxEngineContext", "functions.Function"} {
+	for _, name := range []string{"commercetax.TaxEngineContext", "functions.Function", "SF_Archive.ArchiverAccessorResponse"} {
 		if strings.EqualFold(strings.TrimSpace(typeName), name) {
 			return name
 		}

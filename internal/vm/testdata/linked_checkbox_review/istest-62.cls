@@ -1,4 +1,4 @@
-@IsTest private class Road291Test62 {
+@IsTest private class Case291Test62 {
  @IsTest static void observe() {
   Parent__c p=new Parent__c(Name='parent',Flag__c=null,FalseFlag__c=null);
   Child__c child=new Child__c(Parent__r=p);

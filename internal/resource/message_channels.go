@@ -3,7 +3,6 @@ package resource
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -24,8 +23,8 @@ type messageChannelXML struct {
 	} `xml:",any"`
 }
 
-func loadMessageChannel(path, namespace string) (storage.MessageChannelMetadata, error) {
-	content, err := os.ReadFile(path)
+func loadMessageChannel(in inputs, path, namespace string) (storage.MessageChannelMetadata, error) {
+	content, err := in.ReadFile(path)
 	if err != nil {
 		return storage.MessageChannelMetadata{}, err
 	}

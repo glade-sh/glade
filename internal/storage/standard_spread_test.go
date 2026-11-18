@@ -57,11 +57,12 @@ func definitionJSON(t *testing.T, definition ObjectDefinition) string {
 }
 
 var lazySpreadShapes = map[string][]string{
-	"unspecified":  {project.UnspecifiedStandardFieldShape},
-	"communities":  {"Communities"},
-	"networks":     {"Communities", "NetworksEnabled", "Quotes", "MultiCurrency"},
-	"orderManaged": {"OrderManagement", "OrderManagementEnabled"},
-	"mixed":        {"Sites", "PersonAccounts", "StateAndCountryPicklist", "ContactsToMultipleAccounts", "PlatformCache", "Territory2", "KnowledgeEnabled"},
+	"plainDeveloper": {project.StandardFieldEditionDeveloper, project.PlainDeveloperObjectShape, project.PlainDeveloperDescribeShape},
+	"unspecified":    {project.UnspecifiedStandardFieldShape},
+	"communities":    {"Communities"},
+	"networks":       {"Communities", "NetworksEnabled", "Quotes", "MultiCurrency"},
+	"orderManaged":   {"OrderManagement", "OrderManagementEnabled"},
+	"mixed":          {"Sites", "PersonAccounts", "StateAndCountryPicklist", "ContactsToMultipleAccounts", "PlatformCache", "Territory2", "KnowledgeEnabled"},
 }
 
 // Each object the eager spread installs is also what the lazy spread installs

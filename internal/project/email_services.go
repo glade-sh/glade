@@ -3,7 +3,6 @@ package project
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -96,7 +95,7 @@ func LoadEmailServicesTolerant(p Project, read func(string) ([]byte, error)) ([]
 
 func loadEmailServices(p Project, read func(string) ([]byte, error)) ([]EmailService, []EmailServiceRejection) {
 	if read == nil {
-		read = os.ReadFile
+		read = p.ReadFile
 	}
 	var services []EmailService
 	var rejections []EmailServiceRejection

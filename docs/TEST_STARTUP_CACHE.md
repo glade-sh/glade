@@ -37,6 +37,22 @@ artifact. Do not parse or edit it.
 
 `.glade/` is gitignored by default. Do not commit these files.
 
+## Daemon directory trust rule
+
+On macOS and Linux, `glade test serve` and the commands that find it use the
+project-local `.glade/test/` directory only when every existing path component
+is owned by you or root and is not group- or world-writable (a sticky shared
+directory such as `/tmp` is allowed as an ancestor). Glade checks owner and mode
+on every use, not only at creation. A volume whose root is group-writable fails
+this check.
+
+When the check fails, or the socket path would be too long, Glade refuses that
+location, prints one warning line, and uses a `glade-test-serve-<hash>`
+directory under `glade/` in the per-user cache directory. If the cache directory
+cannot be determined or fails the same check, it uses the temp root. Glade creates
+the directory with mode
+0700. It never reads a PID file or socket from a refused location.
+
 `glade dap` uses a **separate** cache at `.glade/dap/startup.json`. Clearing or
 changing the test cache does not affect DAP.
 

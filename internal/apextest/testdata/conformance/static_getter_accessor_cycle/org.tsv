@@ -1,0 +1,7 @@
+api	case	route	outcome
+62.0	directAccess	IsTest	Pass
+62.0	finiteCycle	IsTest	Pass
+62.0	recursiveCycle	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	directAccess	IsTest	Pass
+67.0	finiteCycle	IsTest	Pass
+67.0	recursiveCycle	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001

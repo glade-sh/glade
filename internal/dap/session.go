@@ -13,10 +13,17 @@ type requestReader interface {
 	ReadRequest() (Request, error)
 }
 
-func readRequests(reader requestReader, requests chan<- requestReadResult, done <-chan struct{}) {
+func readRequests(reader requestReader, requests chan<- requestReadResult, done <-chan struct{}, interrupt func(Request)) {
 	defer close(requests)
 	for {
 		request, err := reader.ReadRequest()
+		if err == nil {
+			// Read ahead of the handling loop so a cancel or disconnect can
+			// end a launch the loop is still running.
+			if interrupt != nil {
+				interrupt(request)
+			}
+		}
 		select {
 		case requests <- requestReadResult{request: request, err: err}:
 		case <-done:
@@ -30,10 +37,10 @@ func readRequests(reader requestReader, requests chan<- requestReadResult, done 
 
 func Serve(r io.Reader, w io.Writer, handler *Handler) error {
 	reader := NewReader(r)
-	requests := make(chan requestReadResult)
+	requests := make(chan requestReadResult, 64)
 	done := make(chan struct{})
 	defer close(done)
-	go readRequests(reader, requests, done)
+	go readRequests(reader, requests, done, handler.Interrupt)
 	for {
 		select {
 		case result, ok := <-requests:

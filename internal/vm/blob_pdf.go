@@ -218,7 +218,7 @@ func renderTextPDF(input string, now time.Time, producer string) []byte {
 		if len(lines) > 0 {
 			content.WriteString("0 0 0 rg\nBT\n/F1 12 Tf\n")
 			for j, line := range lines {
-				fmt.Fprintf(&content, "1 0 0 1 42 %.2f Tm\n(%s)Tj\n", layout.height-52.76-float64(j)*13.8, pdfLiteral(line))
+				fmt.Fprintf(&content, "1 0 0 1 42 %.2f Tm\n(%s)Tj\n", layout.height-52.76-float64(float64(j)*13.8), pdfLiteral(line))
 			}
 			content.WriteString("ET\n")
 		}

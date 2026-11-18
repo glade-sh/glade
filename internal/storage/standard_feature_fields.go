@@ -12,6 +12,9 @@ func standardOptionalFieldEnabled(object, field, signature string) bool {
 	if policy == nil {
 		return true
 	}
+	if absent, _ := standardPolicyLookup(policy.plainDeveloperAbsent, field); absent && featureSignatureHas(signature, project.PlainDeveloperObjectShape) {
+		return false
+	}
 	if gate, ok := standardPolicyLookup(policy.gates, field); ok {
 		return standardFieldPolicyGateEnabled(gate, signature)
 	}
@@ -157,10 +160,19 @@ func StandardFeatureObjectNames(features []string) []string {
 		}
 	}
 	signature := canonicalFeatureSignature(features)
-	for _, policy := range standardFieldPolicies() {
+	for key, policy := range standardFieldPolicies() {
 		for _, gate := range policy.gates {
 			if standardFieldPolicyGateEnabled(gate, signature) {
 				names[gate.Object] = true
+			}
+		}
+		for _, groups := range policy.featureEnabledFields {
+			for _, group := range groups {
+				if standardFieldPolicyFeaturesPresent(group, signature) {
+					if canonical, ok := ResolveKnownStandardObjectName(key); ok {
+						names[canonical] = true
+					}
+				}
 			}
 		}
 	}

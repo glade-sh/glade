@@ -58,12 +58,21 @@ func newRenderEmailTemplateBodyResult(mergedBody string) Value {
 	return result
 }
 
-func messagingTemplateResultString(value Value) (string, bool) {
+func writeMessagingTemplateResultText(w *textWriter, value Value) bool {
 	if value.projectClass || !strings.EqualFold(value.Type, "Messaging.RenderEmailTemplateBodyResult") {
-		return "", false
+		return false
 	}
-	return value.Type + "[getErrors=" + value.Fields["errors"].String() + ";getMergedBody=" + value.Fields["mergedBody"].String() + ";getSuccess=" + value.Fields["success"].String() + ";]", true
+	w.WriteString(value.Type)
+	w.WriteString("[getErrors=")
+	value.Fields["errors"].writeText(w)
+	w.WriteString(";getMergedBody=")
+	value.Fields["mergedBody"].writeText(w)
+	w.WriteString(";getSuccess=")
+	value.Fields["success"].writeText(w)
+	w.WriteString(";]")
+	return true
 }
+
 func newFailedSendEmailResult(message string) Value {
 	result := Object("Messaging.SendEmailResult")
 	result.Fields["success"] = Bool(false)
@@ -88,7 +97,9 @@ func newSingleEmailMessage() Value {
 	} {
 		message.Fields[field] = Null
 	}
-	message.Fields["customHeaders"] = typedMap("Map<String,String>")
+	// The getter answers null until setCustomHeaders runs.
+	// NATIVE SingleEmailMessage custom headers apex_release_gates/org.tsv anonymous 67.0
+	message.Fields["customHeaders"] = Null
 	message.Fields["unsubscribeUrls"] = List()
 	for _, field := range []string{
 		"saveAsActivity", "treatBodiesAsTemplate", "treatTargetObjectAsRecipient",
@@ -867,7 +878,7 @@ func (vm *VM) persistSentEmailActivity(captured CapturedEmail, result *Result) e
 		// The sent activity is closed by the platform, rather than by a caller
 		// writing the read-only IsClosed field through ordinary Task DML.
 		record.Fields["IsClosed"] = storage.BooleanValue(true)
-		object.Records[storedID] = record
+		object.PutRecord(storedID, record)
 		vm.Org.Objects["Task"] = object
 	}
 	return nil
@@ -932,7 +943,7 @@ func (vm *VM) persistSentEmailMessage(captured CapturedEmail, result *Result) er
 			if deferredWhatID != "" {
 				record.Fields["RelatedToId"] = storage.IDValue(storage.ID(deferredWhatID))
 			}
-			object.Records[storedID] = record
+			object.PutRecord(storedID, record)
 			vm.Org.Objects["EmailMessage"] = object
 		}
 	}
@@ -1907,7 +1918,7 @@ func (vm *VM) visualforceEmailContentValue(key string) string {
 	if key == "" {
 		return ""
 	}
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesRaw() {
 		if !strings.EqualFold(className, "EmailContent") && !strings.EqualFold(class.Name, "EmailContent") && !hasSuffixFold(class.Name, ".emailcontent") {
 			continue
 		}
@@ -2058,7 +2069,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setCustomHeaders expects Map<String,String>")
 		}
 		if args[0].Kind == ValueNull {
-			receiver.Fields["customHeaders"] = typedMap("Map<String,String>")
+			receiver.Fields["customHeaders"] = Null
 		} else {
 			receiver.Fields["customHeaders"] = cloneValue(args[0])
 		}

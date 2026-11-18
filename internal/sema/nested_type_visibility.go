@@ -39,6 +39,9 @@ func (a *Analyzer) nestedTypeVisibility(model *semaTypeMemberView, owner typesys
 	if a == nil || model == nil {
 		return "", nil, false
 	}
+	if model.anonymous && owner.Namespace == "" {
+		owner.Namespace = a.namespace
+	}
 	if !strings.Contains(typeText, ".") && !a.ownerInheritsSource(model, owner) {
 		return "", nil, false
 	}
@@ -68,14 +71,18 @@ func (a *Analyzer) hiddenNestedTypeDisplay(model *semaTypeMemberView, owner type
 		return a.inheritedHiddenNestedDisplay(model, owner, ref)
 	}
 	top, ok := model.lookupName(parts[0])
-	if !ok || top.platform || top.dependency || top.sobject || strings.Contains(top.name, ".") {
+	if !ok || top.platform || top.sobject || (top.dependency && !sameNamespaceVisibilityDependency(owner, top)) {
+		return "", false
+	}
+	topName := visibilityLocalName(owner, top)
+	if strings.Contains(topName, ".") {
 		return "", false
 	}
 	ownerTop := owner.Name
 	if dot := strings.IndexByte(ownerTop, '.'); dot >= 0 {
 		ownerTop = ownerTop[:dot]
 	}
-	sameTree := strings.EqualFold(ownerTop, top.name)
+	sameTree := strings.EqualFold(ownerTop, topName)
 	ownerIsTest := false
 	if !sameTree {
 		if ownerMembers, found := model.lookupName(ownerTop); found {
@@ -83,13 +90,16 @@ func (a *Analyzer) hiddenNestedTypeDisplay(model *semaTypeMemberView, owner type
 		}
 		ownerIsTest = ownerIsTest || owner.IsTest
 	}
-	display := top.name
+	display := topName
 	for end := 2; end <= len(parts); end++ {
 		members, found := model.lookupName(strings.Join(parts[:end], "."))
-		if !found || members.platform || members.dependency || strings.Count(members.name, ".") != end-1 {
+		if !found || members.platform || (members.dependency && !sameNamespaceVisibilityDependency(owner, members)) {
 			return "", false
 		}
-		display = members.name
+		display = visibilityLocalName(owner, members)
+		if strings.Count(display, ".") != end-1 {
+			return "", false
+		}
 		if hasModifier(members.modifiers, "public") || hasModifier(members.modifiers, "global") {
 			continue
 		}
@@ -102,6 +112,19 @@ func (a *Analyzer) hiddenNestedTypeDisplay(model *semaTypeMemberView, owner type
 		return display, true
 	}
 	return "", false
+}
+
+func sameNamespaceVisibilityDependency(owner typesys.TypeSymbol, members typeMembers) bool {
+	return members.dependency && members.receiverDependencySource && owner.Namespace != "" &&
+		strings.EqualFold(owner.Namespace, members.namespace)
+}
+
+func visibilityLocalName(owner typesys.TypeSymbol, members typeMembers) string {
+	if sameNamespaceVisibilityDependency(owner, members) && len(members.name) > len(members.namespace) &&
+		strings.EqualFold(members.name[:len(members.namespace)+1], members.namespace+".") {
+		return members.name[len(members.namespace)+1:]
+	}
+	return members.name
 }
 
 func nestedTypeVisibilityDiagnostic(typ typesys.TypeSymbol, message string, rng *diagnostic.Range) diagnostic.Diagnostic {
@@ -167,7 +190,7 @@ func replaceTypeToken(text, old, replacement string) string {
 // the message names the qualified type.
 func (a *Analyzer) inheritedHiddenNestedDisplay(model *semaTypeMemberView, owner typesys.TypeSymbol, ref string) (string, bool) {
 	members, found := a.scopedNestedType(model, owner.Name, ref)
-	if !found || members.platform || members.dependency || members.sobject {
+	if !found || members.platform || members.sobject || (members.dependency && !sameNamespaceVisibilityDependency(owner, members)) {
 		return "", false
 	}
 	if hasModifier(members.modifiers, "public") || hasModifier(members.modifiers, "global") {
@@ -177,7 +200,7 @@ func (a *Analyzer) inheritedHiddenNestedDisplay(model *semaTypeMemberView, owner
 	if dot := strings.IndexByte(ownerTop, '.'); dot >= 0 {
 		ownerTop = ownerTop[:dot]
 	}
-	top := members.name
+	top := visibilityLocalName(owner, members)
 	if dot := strings.IndexByte(top, '.'); dot >= 0 {
 		top = top[:dot]
 	}
@@ -191,7 +214,7 @@ func (a *Analyzer) inheritedHiddenNestedDisplay(model *semaTypeMemberView, owner
 	if members.testVisible && ownerIsTest {
 		return "", false
 	}
-	display := members.name
+	display := visibilityLocalName(owner, members)
 	if a.namespace != "" {
 		display = a.namespace + "." + display
 	}

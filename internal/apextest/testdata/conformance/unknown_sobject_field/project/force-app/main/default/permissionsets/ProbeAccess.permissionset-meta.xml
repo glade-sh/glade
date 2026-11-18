@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata"><label>ProbeAccess</label>
+<objectPermissions><allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>true</modifyAllRecords><object>Widget__c</object><viewAllRecords>true</viewAllRecords></objectPermissions>
+<fieldPermissions><editable>true</editable><field>Widget__c.Real__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>Widget__c.Txt__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>Widget__c.Parent__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>Account.AcctCustom__c</field><readable>true</readable></fieldPermissions>
+<fieldPermissions><editable>true</editable><field>Account.Friend__c</field><readable>true</readable></fieldPermissions>
+</PermissionSet>

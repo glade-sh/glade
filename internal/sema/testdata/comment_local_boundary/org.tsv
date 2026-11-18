@@ -1,0 +1,5 @@
+case	api	route	outcome
+comment	62.0	metadata-deploy	accepted
+comment	67.0	metadata-deploy	accepted
+commentreject	62.0	metadata-deploy	Illegal assignment from Integer to String
+commentreject	67.0	metadata-deploy	Illegal assignment from Integer to String
