@@ -1,0 +1,2 @@
+Map<String,Schema.SObjectType> gd = Schema.getGlobalDescribe(); Integer before = gd.size(); Set<String> k = gd.keySet(); k.remove('account');
+System.debug('OBS|g_gd_remove|' + before + '|' + k.size() + '|' + k.contains('account') + '|' + gd.size() + '|' + gd.containsKey('account') + '|' + Schema.getGlobalDescribe().size() + '|' + Schema.getGlobalDescribe().containsKey('account'));

@@ -310,6 +310,9 @@ func describeChildRelationships(objectName string, org *storage.OrgState) []map[
 	}
 	childNames := make([]string, 0, len(org.Objects))
 	for childName := range org.Objects {
+		if org.SuppressesSpreadObject(childName) {
+			continue
+		}
 		childNames = append(childNames, childName)
 	}
 	sort.Strings(childNames)

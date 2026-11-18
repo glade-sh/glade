@@ -1,0 +1,1666 @@
+[
+ {
+  "rule": "foreach_bound",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "for (String s : CrProbe.\nvalue(1).split(' ')) { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"execute\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":14,\"offset\":13}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"execute\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":14,\"offset\":13}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]"
+ },
+ {
+  "rule": "foreach_bound",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "for (String s : CrProbe.\nmissing().split(' ')) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "for (String s : CrProbe.\ninstanceValue().split(' ')) { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"execute\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":22,\"offset\":21}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"execute\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":22,\"offset\":21}}}]"
+ },
+ {
+  "rule": "foreach_bound",
+  "name": "split_arguments",
+  "route": "anonymous",
+  "source": "for (String s : CrProbe.\nvalue().split(' ', 2)) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound",
+  "name": "declared_type",
+  "route": "anonymous",
+  "source": "for (Object s : CrProbe.\nvalue().split(' ')) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; for (String s : CrProbe.\nvalue().split(' ')) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "for (String s : CrProbe.\n\nvalue().split(' ')) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound_block",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "{ for (String s : CrProbe.\nvalue(1).split(' ')) { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"execute\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"range\":{\"start\":{\"line\":1,\"column\":3,\"offset\":2},\"end\":{\"line\":1,\"column\":16,\"offset\":15}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"execute\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"range\":{\"start\":{\"line\":1,\"column\":3,\"offset\":2},\"end\":{\"line\":1,\"column\":16,\"offset\":15}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]"
+ },
+ {
+  "rule": "foreach_bound_block",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "{ for (String s : CrProbe.\nmissing().split(' ')) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound_block",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "{ for (String s : CrProbe.\ninstanceValue().split(' ')) { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"execute\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"range\":{\"start\":{\"line\":1,\"column\":3,\"offset\":2},\"end\":{\"line\":1,\"column\":24,\"offset\":23}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"execute\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"range\":{\"start\":{\"line\":1,\"column\":3,\"offset\":2},\"end\":{\"line\":1,\"column\":24,\"offset\":23}}}]"
+ },
+ {
+  "rule": "foreach_bound_block",
+  "name": "split_arguments",
+  "route": "anonymous",
+  "source": "{ for (String s : CrProbe.\nvalue().split(' ', 2)) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound_block",
+  "name": "declared_type",
+  "route": "anonymous",
+  "source": "{ for (Object s : CrProbe.\nvalue().split(' ')) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound_block",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; { for (String s : CrProbe.\nvalue().split(' ')) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound_block",
+  "name": "enclosing_block",
+  "route": "anonymous",
+  "source": "{ { for (String s : CrProbe.\nvalue().split(' ')) { } } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "foreach_bound_block",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "{ for (String s : CrProbe.\n\nvalue().split(' ')) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "for (String s = CrProbe.\nvalue(1); false; ) { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"execute\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"range\":{\"start\":{\"line\":1,\"column\":6,\"offset\":5},\"end\":{\"line\":1,\"column\":19,\"offset\":18}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"execute\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"range\":{\"start\":{\"line\":1,\"column\":6,\"offset\":5},\"end\":{\"line\":1,\"column\":19,\"offset\":18}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]"
+ },
+ {
+  "rule": "for_init_bound",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "for (String s = CrProbe.\nmissing(); false; ) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "for (String s = CrProbe.\ninstanceValue(); false; ) { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"execute\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"range\":{\"start\":{\"line\":1,\"column\":6,\"offset\":5},\"end\":{\"line\":2,\"column\":2,\"offset\":26}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"execute\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"range\":{\"start\":{\"line\":1,\"column\":6,\"offset\":5},\"end\":{\"line\":2,\"column\":2,\"offset\":26}}}]"
+ },
+ {
+  "rule": "for_init_bound",
+  "name": "chained",
+  "route": "anonymous",
+  "source": "for (String s = CrProbe.\nvalue().trim(); false; ) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound",
+  "name": "declared_type",
+  "route": "anonymous",
+  "source": "for (Object s = CrProbe.\nvalue(); false; ) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound",
+  "name": "for_condition",
+  "route": "anonymous",
+  "source": "for (String s = CrProbe.\nvalue(); true; ) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; for (String s = CrProbe.\nvalue(); false; ) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "for (String s = CrProbe.\n\nvalue(); false; ) { }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "{ for (String s = CrProbe.\nvalue(1); false; ) { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"execute\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"range\":{\"start\":{\"line\":1,\"column\":8,\"offset\":7},\"end\":{\"line\":1,\"column\":21,\"offset\":20}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"execute\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"range\":{\"start\":{\"line\":1,\"column\":8,\"offset\":7},\"end\":{\"line\":1,\"column\":21,\"offset\":20}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "{ for (String s = CrProbe.\nmissing(); false; ) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "{ for (String s = CrProbe.\ninstanceValue(); false; ) { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"execute\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"range\":{\"start\":{\"line\":1,\"column\":8,\"offset\":7},\"end\":{\"line\":2,\"column\":2,\"offset\":28}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"execute\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"range\":{\"start\":{\"line\":1,\"column\":8,\"offset\":7},\"end\":{\"line\":2,\"column\":2,\"offset\":28}}}]"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "chained",
+  "route": "anonymous",
+  "source": "{ for (String s = CrProbe.\nvalue().trim(); false; ) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "declared_type",
+  "route": "anonymous",
+  "source": "{ for (Object s = CrProbe.\nvalue(); false; ) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "for_condition",
+  "route": "anonymous",
+  "source": "{ for (String s = CrProbe.\nvalue(); true; ) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; { for (String s = CrProbe.\nvalue(); false; ) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "enclosing_block",
+  "route": "anonymous",
+  "source": "{ { for (String s = CrProbe.\nvalue(); false; ) { } } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "for_init_bound_block",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "{ for (String s = CrProbe.\n\nvalue(); false; ) { } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "dowhile_bound",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "do { } while (CrProbe.\nvalue(1) == 'ok');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":23},\"end\":{\"line\":2,\"column\":6,\"offset\":28}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":23},\"end\":{\"line\":2,\"column\":6,\"offset\":28}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "do { } while (CrProbe.\nmissing() == 'ok');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":23},\"end\":{\"line\":2,\"column\":8,\"offset\":30}},\"nativeMessage\":\"Missing ')' at 'missing'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":23},\"end\":{\"line\":2,\"column\":8,\"offset\":30}},\"nativeMessage\":\"Missing ')' at 'missing'\"}]"
+ },
+ {
+  "rule": "dowhile_bound",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "do { } while (CrProbe.\ninstanceValue() == 'ok');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":23},\"end\":{\"line\":2,\"column\":14,\"offset\":36}},\"nativeMessage\":\"Missing ')' at 'instanceValue'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":23},\"end\":{\"line\":2,\"column\":14,\"offset\":36}},\"nativeMessage\":\"Missing ')' at 'instanceValue'\"}]"
+ },
+ {
+  "rule": "dowhile_bound",
+  "name": "comparison",
+  "route": "anonymous",
+  "source": "do { } while (CrProbe.\nvalue() != 'ok');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":23},\"end\":{\"line\":2,\"column\":6,\"offset\":28}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":23},\"end\":{\"line\":2,\"column\":6,\"offset\":28}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound",
+  "name": "loop_body",
+  "route": "anonymous",
+  "source": "do { Integer z = 1; } while (CrProbe.\nvalue() == 'ok');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":38},\"end\":{\"line\":2,\"column\":6,\"offset\":43}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":38},\"end\":{\"line\":2,\"column\":6,\"offset\":43}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; do { } while (CrProbe.\nvalue() == 'ok');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":38},\"end\":{\"line\":2,\"column\":6,\"offset\":43}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":38},\"end\":{\"line\":2,\"column\":6,\"offset\":43}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "do { } while (CrProbe.\n\nvalue() == 'ok');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":24},\"end\":{\"line\":3,\"column\":6,\"offset\":29}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":24},\"end\":{\"line\":3,\"column\":6,\"offset\":29}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound_block",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "{ do { } while (CrProbe.\nvalue(1) == 'ok'); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":25},\"end\":{\"line\":2,\"column\":6,\"offset\":30}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":25},\"end\":{\"line\":2,\"column\":6,\"offset\":30}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound_block",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "{ do { } while (CrProbe.\nmissing() == 'ok'); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":25},\"end\":{\"line\":2,\"column\":8,\"offset\":32}},\"nativeMessage\":\"Missing ')' at 'missing'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":25},\"end\":{\"line\":2,\"column\":8,\"offset\":32}},\"nativeMessage\":\"Missing ')' at 'missing'\"}]"
+ },
+ {
+  "rule": "dowhile_bound_block",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "{ do { } while (CrProbe.\ninstanceValue() == 'ok'); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":25},\"end\":{\"line\":2,\"column\":14,\"offset\":38}},\"nativeMessage\":\"Missing ')' at 'instanceValue'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":25},\"end\":{\"line\":2,\"column\":14,\"offset\":38}},\"nativeMessage\":\"Missing ')' at 'instanceValue'\"}]"
+ },
+ {
+  "rule": "dowhile_bound_block",
+  "name": "comparison",
+  "route": "anonymous",
+  "source": "{ do { } while (CrProbe.\nvalue() != 'ok'); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":25},\"end\":{\"line\":2,\"column\":6,\"offset\":30}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":25},\"end\":{\"line\":2,\"column\":6,\"offset\":30}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound_block",
+  "name": "loop_body",
+  "route": "anonymous",
+  "source": "{ do { Integer z = 1; } while (CrProbe.\nvalue() == 'ok'); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":40},\"end\":{\"line\":2,\"column\":6,\"offset\":45}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":40},\"end\":{\"line\":2,\"column\":6,\"offset\":45}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound_block",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; { do { } while (CrProbe.\nvalue() == 'ok'); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":40},\"end\":{\"line\":2,\"column\":6,\"offset\":45}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":40},\"end\":{\"line\":2,\"column\":6,\"offset\":45}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound_block",
+  "name": "enclosing_block",
+  "route": "anonymous",
+  "source": "{ { do { } while (CrProbe.\nvalue() == 'ok'); } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":27},\"end\":{\"line\":2,\"column\":6,\"offset\":32}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":27},\"end\":{\"line\":2,\"column\":6,\"offset\":32}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "dowhile_bound_block",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "{ do { } while (CrProbe.\n\nvalue() == 'ok'); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":26},\"end\":{\"line\":3,\"column\":6,\"offset\":31}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":26},\"end\":{\"line\":3,\"column\":6,\"offset\":31}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "else_if_bound",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "if (false) { } else if (CrProbe.\nvalue(1) == 'ok') { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]"
+ },
+ {
+  "rule": "else_if_bound",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "if (false) { } else if (CrProbe.\nmissing() == 'ok') { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]"
+ },
+ {
+  "rule": "else_if_bound",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "if (false) { } else if (CrProbe.\ninstanceValue() == 'ok') { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]"
+ },
+ {
+  "rule": "else_if_bound",
+  "name": "comparison",
+  "route": "anonymous",
+  "source": "if (false) { } else if (CrProbe.\nvalue() != 'ok') { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]"
+ },
+ {
+  "rule": "else_if_bound",
+  "name": "condition",
+  "route": "anonymous",
+  "source": "if (true) { } else if (CrProbe.\nvalue() == 'ok') { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":15,\"offset\":14},\"end\":{\"line\":1,\"column\":19,\"offset\":18}},\"nativeMessage\":\"Unexpected token 'else'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":15,\"offset\":14},\"end\":{\"line\":1,\"column\":19,\"offset\":18}},\"nativeMessage\":\"Unexpected token 'else'.\"}]"
+ },
+ {
+  "rule": "else_if_bound",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; if (false) { } else if (CrProbe.\nvalue() == 'ok') { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":31,\"offset\":30},\"end\":{\"line\":1,\"column\":35,\"offset\":34}},\"nativeMessage\":\"Unexpected token 'else'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":31,\"offset\":30},\"end\":{\"line\":1,\"column\":35,\"offset\":34}},\"nativeMessage\":\"Unexpected token 'else'.\"}]"
+ },
+ {
+  "rule": "else_if_bound",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "if (false) { } else if (CrProbe.\n\nvalue() == 'ok') { }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token 'else'.\",\"range\":{\"start\":{\"line\":1,\"column\":16,\"offset\":15},\"end\":{\"line\":1,\"column\":20,\"offset\":19}},\"nativeMessage\":\"Unexpected token 'else'.\"}]"
+ },
+ {
+  "rule": "when_value_bound",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "switch on 'a' { when CrProbe.\nvalue(1) { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":30},\"end\":{\"line\":2,\"column\":6,\"offset\":35}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":30},\"end\":{\"line\":2,\"column\":6,\"offset\":35}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "when_value_bound",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "switch on 'a' { when CrProbe.\nmissing() { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":30},\"end\":{\"line\":2,\"column\":8,\"offset\":37}},\"nativeMessage\":\"Missing ';' at 'missing'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":30},\"end\":{\"line\":2,\"column\":8,\"offset\":37}},\"nativeMessage\":\"Missing ';' at 'missing'\"}]"
+ },
+ {
+  "rule": "when_value_bound",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "switch on 'a' { when CrProbe.\ninstanceValue() { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":30},\"end\":{\"line\":2,\"column\":14,\"offset\":43}},\"nativeMessage\":\"Missing ';' at 'instanceValue'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":30},\"end\":{\"line\":2,\"column\":14,\"offset\":43}},\"nativeMessage\":\"Missing ';' at 'instanceValue'\"}]"
+ },
+ {
+  "rule": "when_value_bound",
+  "name": "switch_value",
+  "route": "anonymous",
+  "source": "switch on 1 { when CrProbe.\nvalue() { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":28},\"end\":{\"line\":2,\"column\":6,\"offset\":33}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":28},\"end\":{\"line\":2,\"column\":6,\"offset\":33}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "when_value_bound",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; switch on 'a' { when CrProbe.\nvalue() { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":45},\"end\":{\"line\":2,\"column\":6,\"offset\":50}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":45},\"end\":{\"line\":2,\"column\":6,\"offset\":50}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "when_value_bound",
+  "name": "enclosing_block",
+  "route": "anonymous",
+  "source": "{ switch on 'a' { when CrProbe.\nvalue() { } } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":32},\"end\":{\"line\":2,\"column\":6,\"offset\":37}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":32},\"end\":{\"line\":2,\"column\":6,\"offset\":37}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "when_value_bound",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "switch on 'a' { when CrProbe.\n\nvalue() { } }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":31},\"end\":{\"line\":3,\"column\":6,\"offset\":36}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":31},\"end\":{\"line\":3,\"column\":6,\"offset\":36}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "group_field_bound",
+  "name": "instance_field",
+  "route": "anonymous",
+  "source": "{ String s = (CrProbe.\nname); }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "group_field_bound",
+  "name": "unresolved_field",
+  "route": "anonymous",
+  "source": "{ String s = (CrProbe.\nmissing); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA021\",\"message\":\"method \\\"execute\\\" references unknown field \\\"missing\\\" on CrProbe\",\"range\":{\"start\":{\"line\":1,\"column\":3,\"offset\":2},\"end\":{\"line\":1,\"column\":18,\"offset\":17}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA021\",\"message\":\"method \\\"execute\\\" references unknown field \\\"missing\\\" on CrProbe\",\"range\":{\"start\":{\"line\":1,\"column\":3,\"offset\":2},\"end\":{\"line\":1,\"column\":18,\"offset\":17}}}]"
+ },
+ {
+  "rule": "group_field_bound",
+  "name": "declared_type",
+  "route": "anonymous",
+  "source": "{ Object s = (CrProbe.\nSF); }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "group_field_bound",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; { String s = (CrProbe.\nSF); }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "group_field_bound",
+  "name": "enclosing_block",
+  "route": "anonymous",
+  "source": "{ { String s = (CrProbe.\nSF); } }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "group_field_bound",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "{ String s = (CrProbe.\n\nSF); }\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "local_sig_free",
+  "name": "declared_type",
+  "route": "anonymous",
+  "source": "String f(System\n.Object s) { return s; }\nf('a');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":16},\"end\":{\"line\":2,\"column\":2,\"offset\":17}},\"nativeMessage\":\"Unexpected token '.'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":16},\"end\":{\"line\":2,\"column\":2,\"offset\":17}},\"nativeMessage\":\"Unexpected token '.'.\"}]"
+ },
+ {
+  "rule": "local_sig_free",
+  "name": "type_name",
+  "route": "anonymous",
+  "source": "String f(System\n.Integer s) { return s; }\nf('a');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":16},\"end\":{\"line\":2,\"column\":2,\"offset\":17}},\"nativeMessage\":\"Unexpected token '.'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":16},\"end\":{\"line\":2,\"column\":2,\"offset\":17}},\"nativeMessage\":\"Unexpected token '.'.\"}]"
+ },
+ {
+  "rule": "local_sig_free",
+  "name": "second_parameter",
+  "route": "anonymous",
+  "source": "String f(System\n.String s, String t) { return s; }\nf('a');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":16},\"end\":{\"line\":2,\"column\":2,\"offset\":17}},\"nativeMessage\":\"Unexpected token '.'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":16},\"end\":{\"line\":2,\"column\":2,\"offset\":17}},\"nativeMessage\":\"Unexpected token '.'.\"}]"
+ },
+ {
+  "rule": "local_sig_free",
+  "name": "return_value",
+  "route": "anonymous",
+  "source": "String f(System\n.String s) { return s + 'c'; }\nf('a');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":16},\"end\":{\"line\":2,\"column\":2,\"offset\":17}},\"nativeMessage\":\"Unexpected token '.'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":16},\"end\":{\"line\":2,\"column\":2,\"offset\":17}},\"nativeMessage\":\"Unexpected token '.'.\"}]"
+ },
+ {
+  "rule": "local_sig_free",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; String f(System\n.String s) { return s; }\nf('a');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":31},\"end\":{\"line\":2,\"column\":2,\"offset\":32}},\"nativeMessage\":\"Unexpected token '.'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":31},\"end\":{\"line\":2,\"column\":2,\"offset\":32}},\"nativeMessage\":\"Unexpected token '.'.\"}]"
+ },
+ {
+  "rule": "local_sig_free",
+  "name": "enclosing_block",
+  "route": "anonymous",
+  "source": "{ String f(System\n.String s) { return s; }\nf('a'); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA_ANONYMOUS_PARSE\",\"message\":\"expected ; at byte 10, got \\\"(\\\"\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":54,\"offset\":53}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA_ANONYMOUS_PARSE\",\"message\":\"expected ; at byte 10, got \\\"(\\\"\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":54,\"offset\":53}}}]"
+ },
+ {
+  "rule": "local_sig_free",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "String f(System\n\n.String s) { return s; }\nf('a');\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":17},\"end\":{\"line\":3,\"column\":2,\"offset\":18}},\"nativeMessage\":\"Unexpected token '.'.\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Unexpected token '.'.\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":17},\"end\":{\"line\":3,\"column\":2,\"offset\":18}},\"nativeMessage\":\"Unexpected token '.'.\"}]"
+ },
+ {
+  "rule": "local_body_bound",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "String f() { CrProbe.\nvalue(1); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":6,\"offset\":27}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":6,\"offset\":27}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "local_body_bound",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "String f() { CrProbe.\nmissing(); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":8,\"offset\":29}},\"nativeMessage\":\"Missing ';' at 'missing'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":8,\"offset\":29}},\"nativeMessage\":\"Missing ';' at 'missing'\"}]"
+ },
+ {
+  "rule": "local_body_bound",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "String f() { CrProbe.\ninstanceValue(); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":14,\"offset\":35}},\"nativeMessage\":\"Missing ';' at 'instanceValue'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":14,\"offset\":35}},\"nativeMessage\":\"Missing ';' at 'instanceValue'\"}]"
+ },
+ {
+  "rule": "local_body_bound",
+  "name": "chained",
+  "route": "anonymous",
+  "source": "String f() { CrProbe.\nvalue().trim(); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":6,\"offset\":27}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":6,\"offset\":27}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "local_body_bound",
+  "name": "return_value",
+  "route": "anonymous",
+  "source": "String f() { CrProbe.\nvalue(); return 'b' + 'c'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":6,\"offset\":27}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":22},\"end\":{\"line\":2,\"column\":6,\"offset\":27}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "local_body_bound",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; String f() { CrProbe.\nvalue(); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":37},\"end\":{\"line\":2,\"column\":6,\"offset\":42}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":37},\"end\":{\"line\":2,\"column\":6,\"offset\":42}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "local_body_bound",
+  "name": "enclosing_block",
+  "route": "anonymous",
+  "source": "{ String f() { CrProbe.\nvalue(); return 'a'; }\nf(); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA_ANONYMOUS_PARSE\",\"message\":\"expected ; at byte 10, got \\\"(\\\"\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":55,\"offset\":54}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA_ANONYMOUS_PARSE\",\"message\":\"expected ; at byte 10, got \\\"(\\\"\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":55,\"offset\":54}}}]"
+ },
+ {
+  "rule": "local_body_bound",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "String f() { CrProbe.\n\nvalue(); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":23},\"end\":{\"line\":3,\"column\":6,\"offset\":28}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":23},\"end\":{\"line\":3,\"column\":6,\"offset\":28}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "local_body_arg_bound",
+  "name": "argument",
+  "route": "anonymous",
+  "source": "String f() { System.debug(CrProbe.\nvalue(1)); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":35},\"end\":{\"line\":2,\"column\":6,\"offset\":40}},\"nativeMessage\":\"Expecting ')' but was: 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":35},\"end\":{\"line\":2,\"column\":6,\"offset\":40}},\"nativeMessage\":\"Expecting ')' but was: 'value'\"}]"
+ },
+ {
+  "rule": "local_body_arg_bound",
+  "name": "unresolved",
+  "route": "anonymous",
+  "source": "String f() { System.debug(CrProbe.\nmissing()); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":35},\"end\":{\"line\":2,\"column\":8,\"offset\":42}},\"nativeMessage\":\"Expecting ')' but was: 'missing'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'missing'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":35},\"end\":{\"line\":2,\"column\":8,\"offset\":42}},\"nativeMessage\":\"Expecting ')' but was: 'missing'\"}]"
+ },
+ {
+  "rule": "local_body_arg_bound",
+  "name": "instance",
+  "route": "anonymous",
+  "source": "String f() { System.debug(CrProbe.\ninstanceValue()); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":35},\"end\":{\"line\":2,\"column\":14,\"offset\":48}},\"nativeMessage\":\"Expecting ')' but was: 'instanceValue'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'instanceValue'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":35},\"end\":{\"line\":2,\"column\":14,\"offset\":48}},\"nativeMessage\":\"Expecting ')' but was: 'instanceValue'\"}]"
+ },
+ {
+  "rule": "local_body_arg_bound",
+  "name": "return_value",
+  "route": "anonymous",
+  "source": "String f() { System.debug(CrProbe.\nvalue()); return 'b' + 'c'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":35},\"end\":{\"line\":2,\"column\":6,\"offset\":40}},\"nativeMessage\":\"Expecting ')' but was: 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":35},\"end\":{\"line\":2,\"column\":6,\"offset\":40}},\"nativeMessage\":\"Expecting ')' but was: 'value'\"}]"
+ },
+ {
+  "rule": "local_body_arg_bound",
+  "name": "preceding_statement",
+  "route": "anonymous",
+  "source": "Integer z = 1; String f() { System.debug(CrProbe.\nvalue()); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":50},\"end\":{\"line\":2,\"column\":6,\"offset\":55}},\"nativeMessage\":\"Expecting ')' but was: 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'value'\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":50},\"end\":{\"line\":2,\"column\":6,\"offset\":55}},\"nativeMessage\":\"Expecting ')' but was: 'value'\"}]"
+ },
+ {
+  "rule": "local_body_arg_bound",
+  "name": "enclosing_block",
+  "route": "anonymous",
+  "source": "{ String f() { System.debug(CrProbe.\nvalue()); return 'a'; }\nf(); }\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA_ANONYMOUS_PARSE\",\"message\":\"expected ; at byte 10, got \\\"(\\\"\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":69,\"offset\":68}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA_ANONYMOUS_PARSE\",\"message\":\"expected ; at byte 10, got \\\"(\\\"\",\"range\":{\"start\":{\"line\":1,\"column\":1},\"end\":{\"line\":1,\"column\":69,\"offset\":68}}}]"
+ },
+ {
+  "rule": "local_body_arg_bound",
+  "name": "blank_line",
+  "route": "anonymous",
+  "source": "String f() { System.debug(CrProbe.\n\nvalue()); return 'a'; }\nf();\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":36},\"end\":{\"line\":3,\"column\":6,\"offset\":41}},\"nativeMessage\":\"Expecting ')' but was: 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'value'\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":36},\"end\":{\"line\":3,\"column\":6,\"offset\":41}},\"nativeMessage\":\"Expecting ')' but was: 'value'\"}]"
+ },
+ {
+  "rule": "inner_sig_bound",
+  "name": "declared_type",
+  "route": "class",
+  "source": "public class RouteInnerSigBound {\n public class Part { public void run(System.\nObject s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Object'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":79},\"end\":{\"line\":3,\"column\":7,\"offset\":85}},\"nativeMessage\":\"Expecting ')' but was: 'Object'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Object'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":79},\"end\":{\"line\":3,\"column\":7,\"offset\":85}},\"nativeMessage\":\"Expecting ')' but was: 'Object'\"}]"
+ },
+ {
+  "rule": "inner_sig_bound",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteInnerSigBound {\n public class Part { public void run(System.\nInteger s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Integer'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":79},\"end\":{\"line\":3,\"column\":8,\"offset\":86}},\"nativeMessage\":\"Expecting ')' but was: 'Integer'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Integer'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":79},\"end\":{\"line\":3,\"column\":8,\"offset\":86}},\"nativeMessage\":\"Expecting ')' but was: 'Integer'\"}]"
+ },
+ {
+  "rule": "inner_sig_bound",
+  "name": "second_parameter",
+  "route": "class",
+  "source": "public class RouteInnerSigBound {\n public class Part { public void run(System.\nString s, String t) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":79},\"end\":{\"line\":3,\"column\":7,\"offset\":85}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":79},\"end\":{\"line\":3,\"column\":7,\"offset\":85}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_sig_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteInnerSigBound {\n public class Part { public static void run(System.\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"inner type \\\"RouteInnerSigBound.Part\\\" cannot declare a static method \\\"run\\\"\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":3,\"column\":14,\"offset\":99}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":86},\"end\":{\"line\":3,\"column\":7,\"offset\":92}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"inner type \\\"RouteInnerSigBound.Part\\\" cannot declare a static method \\\"run\\\"\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":3,\"column\":14,\"offset\":99}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":86},\"end\":{\"line\":3,\"column\":7,\"offset\":92}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_sig_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerSigBound { public Integer z;\n public class Part { public void run(System.\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":97},\"end\":{\"line\":3,\"column\":7,\"offset\":103}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":97},\"end\":{\"line\":3,\"column\":7,\"offset\":103}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_sig_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerSigBound {\n public class Part { public void run(System.\n\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":80},\"end\":{\"line\":4,\"column\":7,\"offset\":86}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigBound.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":80},\"end\":{\"line\":4,\"column\":7,\"offset\":86}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_sig_free",
+  "name": "declared_type",
+  "route": "class",
+  "source": "public class RouteInnerSigFree {\n public class Part { public void run(System\n.Object s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":85},\"end\":{\"line\":3,\"column\":10,\"offset\":86}},\"nativeMessage\":\"Missing ';' at 's'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":85},\"end\":{\"line\":3,\"column\":10,\"offset\":86}},\"nativeMessage\":\"Missing ';' at 's'\"}]"
+ },
+ {
+  "rule": "inner_sig_free",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteInnerSigFree {\n public class Part { public void run(System\n.Integer s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":10,\"offset\":86},\"end\":{\"line\":3,\"column\":11,\"offset\":87}},\"nativeMessage\":\"Missing ';' at 's'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":10,\"offset\":86},\"end\":{\"line\":3,\"column\":11,\"offset\":87}},\"nativeMessage\":\"Missing ';' at 's'\"}]"
+ },
+ {
+  "rule": "inner_sig_free",
+  "name": "second_parameter",
+  "route": "class",
+  "source": "public class RouteInnerSigFree {\n public class Part { public void run(System\n.String s, String t) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":85},\"end\":{\"line\":3,\"column\":10,\"offset\":86}},\"nativeMessage\":\"Missing ';' at 's'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":85},\"end\":{\"line\":3,\"column\":10,\"offset\":86}},\"nativeMessage\":\"Missing ';' at 's'\"}]"
+ },
+ {
+  "rule": "inner_sig_free",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteInnerSigFree {\n public class Part { public static void run(System\n.String s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"inner type \\\"RouteInnerSigFree.Part\\\" cannot declare a static method \\\"run\\\"\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":54},\"end\":{\"line\":3,\"column\":15,\"offset\":98}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":92},\"end\":{\"line\":3,\"column\":10,\"offset\":93}},\"nativeMessage\":\"Missing ';' at 's'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"inner type \\\"RouteInnerSigFree.Part\\\" cannot declare a static method \\\"run\\\"\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":54},\"end\":{\"line\":3,\"column\":15,\"offset\":98}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":92},\"end\":{\"line\":3,\"column\":10,\"offset\":93}},\"nativeMessage\":\"Missing ';' at 's'\"}]"
+ },
+ {
+  "rule": "inner_sig_free",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerSigFree { public Integer z;\n public class Part { public void run(System\n.String s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":103},\"end\":{\"line\":3,\"column\":10,\"offset\":104}},\"nativeMessage\":\"Missing ';' at 's'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":103},\"end\":{\"line\":3,\"column\":10,\"offset\":104}},\"nativeMessage\":\"Missing ';' at 's'\"}]"
+ },
+ {
+  "rule": "inner_sig_free",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerSigFree {\n public class Part { public void run(System\n\n.String s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":4,\"column\":9,\"offset\":86},\"end\":{\"line\":4,\"column\":10,\"offset\":87}},\"nativeMessage\":\"Missing ';' at 's'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 's'\",\"file\":\"<root>/RouteInnerSigFree.cls\",\"range\":{\"start\":{\"line\":4,\"column\":9,\"offset\":86},\"end\":{\"line\":4,\"column\":10,\"offset\":87}},\"nativeMessage\":\"Missing ';' at 's'\"}]"
+ },
+ {
+  "rule": "inner_sig_second_param",
+  "name": "declared_type",
+  "route": "class",
+  "source": "public class RouteInnerSigSecond {\n public class Part { public void run(String a, System.\nObject s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Object'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":90},\"end\":{\"line\":3,\"column\":7,\"offset\":96}},\"nativeMessage\":\"Expecting ')' but was: 'Object'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Object'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":90},\"end\":{\"line\":3,\"column\":7,\"offset\":96}},\"nativeMessage\":\"Expecting ')' but was: 'Object'\"}]"
+ },
+ {
+  "rule": "inner_sig_second_param",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteInnerSigSecond {\n public class Part { public void run(String a, System.\nInteger s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Integer'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":90},\"end\":{\"line\":3,\"column\":8,\"offset\":97}},\"nativeMessage\":\"Expecting ')' but was: 'Integer'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Integer'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":90},\"end\":{\"line\":3,\"column\":8,\"offset\":97}},\"nativeMessage\":\"Expecting ')' but was: 'Integer'\"}]"
+ },
+ {
+  "rule": "inner_sig_second_param",
+  "name": "second_parameter",
+  "route": "class",
+  "source": "public class RouteInnerSigSecond {\n public class Part { public void run(String a, System.\nString s, String t) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":90},\"end\":{\"line\":3,\"column\":7,\"offset\":96}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":90},\"end\":{\"line\":3,\"column\":7,\"offset\":96}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_sig_second_param",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteInnerSigSecond {\n public class Part { public static void run(String a, System.\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"inner type \\\"RouteInnerSigSecond.Part\\\" cannot declare a static method \\\"run\\\"\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":56},\"end\":{\"line\":3,\"column\":14,\"offset\":110}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":97},\"end\":{\"line\":3,\"column\":7,\"offset\":103}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"inner type \\\"RouteInnerSigSecond.Part\\\" cannot declare a static method \\\"run\\\"\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":56},\"end\":{\"line\":3,\"column\":14,\"offset\":110}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":97},\"end\":{\"line\":3,\"column\":7,\"offset\":103}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_sig_second_param",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerSigSecond { public Integer z;\n public class Part { public void run(String a, System.\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":108},\"end\":{\"line\":3,\"column\":7,\"offset\":114}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":108},\"end\":{\"line\":3,\"column\":7,\"offset\":114}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_sig_second_param",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerSigSecond {\n public class Part { public void run(String a, System.\n\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":91},\"end\":{\"line\":4,\"column\":7,\"offset\":97}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerSigSecond.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":91},\"end\":{\"line\":4,\"column\":7,\"offset\":97}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_return_bound",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteInnerReturn {\n public class Part { public System.\nInteger run() { return null; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":8,\"offset\":75}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":8,\"offset\":75}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]"
+ },
+ {
+  "rule": "inner_return_bound",
+  "name": "return_value",
+  "route": "class",
+  "source": "public class RouteInnerReturn {\n public class Part { public System.\nString run() { return 'a'; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":7,\"offset\":74}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":7,\"offset\":74}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_return_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteInnerReturn {\n public class Part { public static System.\nString run() { return null; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"inner type \\\"RouteInnerReturn.Part\\\" cannot declare a static method \\\"run\\\"\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":3,\"column\":30,\"offset\":104}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":75},\"end\":{\"line\":3,\"column\":7,\"offset\":81}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"inner type \\\"RouteInnerReturn.Part\\\" cannot declare a static method \\\"run\\\"\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":3,\"column\":30,\"offset\":104}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":75},\"end\":{\"line\":3,\"column\":7,\"offset\":81}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_return_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerReturn { public Integer z;\n public class Part { public System.\nString run() { return null; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":86},\"end\":{\"line\":3,\"column\":7,\"offset\":92}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":86},\"end\":{\"line\":3,\"column\":7,\"offset\":92}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_return_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerReturn {\n public class Part { public System.\n\nString run() { return null; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":69},\"end\":{\"line\":4,\"column\":7,\"offset\":75}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerReturn.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":69},\"end\":{\"line\":4,\"column\":7,\"offset\":75}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_field_bound",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteInnerField {\n public class Part { public System.\nInteger f; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":67},\"end\":{\"line\":3,\"column\":8,\"offset\":74}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":67},\"end\":{\"line\":3,\"column\":8,\"offset\":74}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]"
+ },
+ {
+  "rule": "inner_field_bound",
+  "name": "initializer",
+  "route": "class",
+  "source": "public class RouteInnerField {\n public class Part { public System.\nString f = 'a'; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":67},\"end\":{\"line\":3,\"column\":7,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":67},\"end\":{\"line\":3,\"column\":7,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_field_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteInnerField {\n public class Part { public static System.\nString f; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"static can only be used on fields of a top level type\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":8,\"offset\":81},\"end\":{\"line\":3,\"column\":9,\"offset\":82}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":74},\"end\":{\"line\":3,\"column\":7,\"offset\":80}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"static can only be used on fields of a top level type\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":8,\"offset\":81},\"end\":{\"line\":3,\"column\":9,\"offset\":82}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":74},\"end\":{\"line\":3,\"column\":7,\"offset\":80}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_field_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerField { public Integer z;\n public class Part { public System.\nString f; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":85},\"end\":{\"line\":3,\"column\":7,\"offset\":91}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":85},\"end\":{\"line\":3,\"column\":7,\"offset\":91}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_field_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerField {\n public class Part { public System.\n\nString f; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":68},\"end\":{\"line\":4,\"column\":7,\"offset\":74}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerField.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":68},\"end\":{\"line\":4,\"column\":7,\"offset\":74}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_field_free",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteInnerFieldFree {\n public class Part { public System\n.Integer f; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":10,\"offset\":79},\"end\":{\"line\":3,\"column\":11,\"offset\":80}},\"nativeMessage\":\"Missing ';' at 'f'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":10,\"offset\":79},\"end\":{\"line\":3,\"column\":11,\"offset\":80}},\"nativeMessage\":\"Missing ';' at 'f'\"}]"
+ },
+ {
+  "rule": "inner_field_free",
+  "name": "initializer",
+  "route": "class",
+  "source": "public class RouteInnerFieldFree {\n public class Part { public System\n.String f = 'a'; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":78},\"end\":{\"line\":3,\"column\":10,\"offset\":79}},\"nativeMessage\":\"Missing ';' at 'f'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":78},\"end\":{\"line\":3,\"column\":10,\"offset\":79}},\"nativeMessage\":\"Missing ';' at 'f'\"}]"
+ },
+ {
+  "rule": "inner_field_free",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteInnerFieldFree {\n public class Part { public static System\n.String f; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"static can only be used on fields of a top level type\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":85},\"end\":{\"line\":3,\"column\":10,\"offset\":86}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":85},\"end\":{\"line\":3,\"column\":10,\"offset\":86}},\"nativeMessage\":\"Missing ';' at 'f'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"static can only be used on fields of a top level type\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":85},\"end\":{\"line\":3,\"column\":10,\"offset\":86}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":85},\"end\":{\"line\":3,\"column\":10,\"offset\":86}},\"nativeMessage\":\"Missing ';' at 'f'\"}]"
+ },
+ {
+  "rule": "inner_field_free",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerFieldFree { public Integer z;\n public class Part { public System\n.String f; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":96},\"end\":{\"line\":3,\"column\":10,\"offset\":97}},\"nativeMessage\":\"Missing ';' at 'f'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":3,\"column\":9,\"offset\":96},\"end\":{\"line\":3,\"column\":10,\"offset\":97}},\"nativeMessage\":\"Missing ';' at 'f'\"}]"
+ },
+ {
+  "rule": "inner_field_free",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerFieldFree {\n public class Part { public System\n\n.String f; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":4,\"column\":9,\"offset\":79},\"end\":{\"line\":4,\"column\":10,\"offset\":80}},\"nativeMessage\":\"Missing ';' at 'f'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'f'\",\"file\":\"<root>/RouteInnerFieldFree.cls\",\"range\":{\"start\":{\"line\":4,\"column\":9,\"offset\":79},\"end\":{\"line\":4,\"column\":10,\"offset\":80}},\"nativeMessage\":\"Missing ';' at 'f'\"}]"
+ },
+ {
+  "rule": "inner_ctor_bound",
+  "name": "declared_type",
+  "route": "class",
+  "source": "public class RouteInnerCtor {\n public class Part { public Part(System.\nObject s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Object'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":71},\"end\":{\"line\":3,\"column\":7,\"offset\":77}},\"nativeMessage\":\"Expecting ')' but was: 'Object'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Object'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":71},\"end\":{\"line\":3,\"column\":7,\"offset\":77}},\"nativeMessage\":\"Expecting ')' but was: 'Object'\"}]"
+ },
+ {
+  "rule": "inner_ctor_bound",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteInnerCtor {\n public class Part { public Part(System.\nInteger s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Integer'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":71},\"end\":{\"line\":3,\"column\":8,\"offset\":78}},\"nativeMessage\":\"Expecting ')' but was: 'Integer'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'Integer'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":71},\"end\":{\"line\":3,\"column\":8,\"offset\":78}},\"nativeMessage\":\"Expecting ')' but was: 'Integer'\"}]"
+ },
+ {
+  "rule": "inner_ctor_bound",
+  "name": "second_parameter",
+  "route": "class",
+  "source": "public class RouteInnerCtor {\n public class Part { public Part(System.\nString s, String t) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":71},\"end\":{\"line\":3,\"column\":7,\"offset\":77}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":71},\"end\":{\"line\":3,\"column\":7,\"offset\":77}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_ctor_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteInnerCtor {\n public class Part { private Part(System.\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":72},\"end\":{\"line\":3,\"column\":7,\"offset\":78}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":72},\"end\":{\"line\":3,\"column\":7,\"offset\":78}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_ctor_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerCtor { public Integer z;\n public class Part { public Part(System.\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":89},\"end\":{\"line\":3,\"column\":7,\"offset\":95}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":89},\"end\":{\"line\":3,\"column\":7,\"offset\":95}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_ctor_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerCtor {\n public class Part { public Part(System.\n\nString s) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":72},\"end\":{\"line\":4,\"column\":7,\"offset\":78}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Expecting ')' but was: 'String'\",\"file\":\"<root>/RouteInnerCtor.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":72},\"end\":{\"line\":4,\"column\":7,\"offset\":78}},\"nativeMessage\":\"Expecting ')' but was: 'String'\"}]"
+ },
+ {
+  "rule": "inner_prop_bound",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteInnerProp {\n public class Part { public System.\nInteger p { get; set; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":66},\"end\":{\"line\":3,\"column\":8,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":66},\"end\":{\"line\":3,\"column\":8,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]"
+ },
+ {
+  "rule": "inner_prop_bound",
+  "name": "accessors",
+  "route": "class",
+  "source": "public class RouteInnerProp {\n public class Part { public System.\nString p { get; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":66},\"end\":{\"line\":3,\"column\":7,\"offset\":72}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":66},\"end\":{\"line\":3,\"column\":7,\"offset\":72}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_prop_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteInnerProp {\n public class Part { public static System.\nString p { get; set; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"static can only be used on fields of a top level type\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":51},\"end\":{\"line\":3,\"column\":23,\"offset\":95}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":73},\"end\":{\"line\":3,\"column\":7,\"offset\":79}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA032\",\"message\":\"static can only be used on fields of a top level type\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":51},\"end\":{\"line\":3,\"column\":23,\"offset\":95}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":73},\"end\":{\"line\":3,\"column\":7,\"offset\":79}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_prop_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerProp { public Integer z;\n public class Part { public System.\nString p { get; set; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":84},\"end\":{\"line\":3,\"column\":7,\"offset\":90}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":84},\"end\":{\"line\":3,\"column\":7,\"offset\":90}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_prop_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerProp {\n public class Part { public System.\n\nString p { get; set; } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":67},\"end\":{\"line\":4,\"column\":7,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteInnerProp.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":67},\"end\":{\"line\":4,\"column\":7,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "inner_extends_bound",
+  "name": "base_type",
+  "route": "class",
+  "source": "public class RouteInnerExtends {\n public virtual class Base { }\n public class Part extends CrProbe.\nKid { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA017\",\"message\":\"class \\\"RouteInnerExtends.Part\\\" cannot extend non-virtual, non-abstract class \\\"CrProbe.Kid\\\"\",\"file\":\"<root>/RouteInnerExtends.cls\",\"range\":{\"start\":{\"line\":3,\"column\":2,\"offset\":65},\"end\":{\"line\":4,\"column\":8,\"offset\":107}},\"nativeMessage\":\"Non-virtual and non-abstract type cannot be extended: CrProbe.Kid\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Kid'\",\"file\":\"<root>/RouteInnerExtends.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":100},\"end\":{\"line\":4,\"column\":4,\"offset\":103}},\"nativeMessage\":\"Missing ';' at 'Kid'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA017\",\"message\":\"class \\\"RouteInnerExtends.Part\\\" cannot extend non-virtual, non-abstract class \\\"CrProbe.Kid\\\"\",\"file\":\"<root>/RouteInnerExtends.cls\",\"range\":{\"start\":{\"line\":3,\"column\":2,\"offset\":65},\"end\":{\"line\":4,\"column\":8,\"offset\":107}},\"nativeMessage\":\"Non-virtual and non-abstract type cannot be extended: CrProbe.Kid\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Kid'\",\"file\":\"<root>/RouteInnerExtends.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":100},\"end\":{\"line\":4,\"column\":4,\"offset\":103}},\"nativeMessage\":\"Missing ';' at 'Kid'\"}]"
+ },
+ {
+  "rule": "inner_extends_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerExtends { public Integer z;\n public virtual class Base { }\n public class Part extends RouteInnerExtends.\nBase { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Base'\",\"file\":\"<root>/RouteInnerExtends.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":128},\"end\":{\"line\":4,\"column\":5,\"offset\":132}},\"nativeMessage\":\"Missing ';' at 'Base'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Base'\",\"file\":\"<root>/RouteInnerExtends.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":128},\"end\":{\"line\":4,\"column\":5,\"offset\":132}},\"nativeMessage\":\"Missing ';' at 'Base'\"}]"
+ },
+ {
+  "rule": "inner_extends_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerExtends {\n public virtual class Base { }\n public class Part extends RouteInnerExtends.\n\nBase { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Base'\",\"file\":\"<root>/RouteInnerExtends.cls\",\"range\":{\"start\":{\"line\":5,\"column\":1,\"offset\":111},\"end\":{\"line\":5,\"column\":5,\"offset\":115}},\"nativeMessage\":\"Missing ';' at 'Base'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Base'\",\"file\":\"<root>/RouteInnerExtends.cls\",\"range\":{\"start\":{\"line\":5,\"column\":1,\"offset\":111},\"end\":{\"line\":5,\"column\":5,\"offset\":115}},\"nativeMessage\":\"Missing ';' at 'Base'\"}]"
+ },
+ {
+  "rule": "inner_implements_bound",
+  "name": "second_interface",
+  "route": "class",
+  "source": "public class RouteInnerImplements {\n public interface Face { }\n public class Part implements RouteInnerImplements.\nFace, Comparable { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA017\",\"message\":\"concrete class \\\"RouteInnerImplements.Part\\\" must implement interface method \\\"compareTo\\\" from \\\"Comparable\\\"\",\"file\":\"<root>/RouteInnerImplements.cls\",\"range\":{\"start\":{\"line\":3,\"column\":2,\"offset\":64},\"end\":{\"line\":4,\"column\":21,\"offset\":135}},\"nativeMessage\":\"Class RouteInnerImplements.Part must implement the method: Integer Comparable.compareTo(Object)\",\"requiredBy\":\"Comparable\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Face'\",\"file\":\"<root>/RouteInnerImplements.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":115},\"end\":{\"line\":4,\"column\":5,\"offset\":119}},\"nativeMessage\":\"Missing ';' at 'Face'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA017\",\"message\":\"concrete class \\\"RouteInnerImplements.Part\\\" must implement interface method \\\"compareTo\\\" from \\\"Comparable\\\"\",\"file\":\"<root>/RouteInnerImplements.cls\",\"range\":{\"start\":{\"line\":3,\"column\":2,\"offset\":64},\"end\":{\"line\":4,\"column\":21,\"offset\":135}},\"nativeMessage\":\"Class RouteInnerImplements.Part must implement the method: Integer Comparable.compareTo(Object)\",\"requiredBy\":\"Comparable\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Face'\",\"file\":\"<root>/RouteInnerImplements.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":115},\"end\":{\"line\":4,\"column\":5,\"offset\":119}},\"nativeMessage\":\"Missing ';' at 'Face'\"}]"
+ },
+ {
+  "rule": "inner_implements_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteInnerImplements { public Integer z;\n public interface Face { }\n public class Part implements RouteInnerImplements.\nFace { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Face'\",\"file\":\"<root>/RouteInnerImplements.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":133},\"end\":{\"line\":4,\"column\":5,\"offset\":137}},\"nativeMessage\":\"Missing ';' at 'Face'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Face'\",\"file\":\"<root>/RouteInnerImplements.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":133},\"end\":{\"line\":4,\"column\":5,\"offset\":137}},\"nativeMessage\":\"Missing ';' at 'Face'\"}]"
+ },
+ {
+  "rule": "inner_implements_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteInnerImplements {\n public interface Face { }\n public class Part implements RouteInnerImplements.\n\nFace { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Face'\",\"file\":\"<root>/RouteInnerImplements.cls\",\"range\":{\"start\":{\"line\":5,\"column\":1,\"offset\":116},\"end\":{\"line\":5,\"column\":5,\"offset\":120}},\"nativeMessage\":\"Missing ';' at 'Face'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Face'\",\"file\":\"<root>/RouteInnerImplements.cls\",\"range\":{\"start\":{\"line\":5,\"column\":1,\"offset\":116},\"end\":{\"line\":5,\"column\":5,\"offset\":120}},\"nativeMessage\":\"Missing ';' at 'Face'\"}]"
+ },
+ {
+  "rule": "outer_return_bound",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteOuterReturn {\n public System.\nInteger run() { return null; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":48},\"end\":{\"line\":3,\"column\":8,\"offset\":55}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":48},\"end\":{\"line\":3,\"column\":8,\"offset\":55}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]"
+ },
+ {
+  "rule": "outer_return_bound",
+  "name": "return_value",
+  "route": "class",
+  "source": "public class RouteOuterReturn {\n public System.\nString run() { return 'a'; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":48},\"end\":{\"line\":3,\"column\":7,\"offset\":54}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":48},\"end\":{\"line\":3,\"column\":7,\"offset\":54}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "outer_return_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteOuterReturn {\n public static System.\nString run() { return null; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":55},\"end\":{\"line\":3,\"column\":7,\"offset\":61}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":55},\"end\":{\"line\":3,\"column\":7,\"offset\":61}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "outer_return_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteOuterReturn { public Integer z;\n public System.\nString run() { return null; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":66},\"end\":{\"line\":3,\"column\":7,\"offset\":72}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":66},\"end\":{\"line\":3,\"column\":7,\"offset\":72}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "outer_return_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteOuterReturn {\n public System.\n\nString run() { return null; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":49},\"end\":{\"line\":4,\"column\":7,\"offset\":55}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterReturn.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":49},\"end\":{\"line\":4,\"column\":7,\"offset\":55}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "outer_prop_bound",
+  "name": "type_name",
+  "route": "class",
+  "source": "public class RouteOuterProp {\n public System.\nInteger p { get; set; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":46},\"end\":{\"line\":3,\"column\":8,\"offset\":53}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'Integer'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":46},\"end\":{\"line\":3,\"column\":8,\"offset\":53}},\"nativeMessage\":\"Missing ';' at 'Integer'\"}]"
+ },
+ {
+  "rule": "outer_prop_bound",
+  "name": "accessors",
+  "route": "class",
+  "source": "public class RouteOuterProp {\n public System.\nString p { get; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":46},\"end\":{\"line\":3,\"column\":7,\"offset\":52}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":46},\"end\":{\"line\":3,\"column\":7,\"offset\":52}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "outer_prop_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteOuterProp {\n public static System.\nString p { get; set; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":53},\"end\":{\"line\":3,\"column\":7,\"offset\":59}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":53},\"end\":{\"line\":3,\"column\":7,\"offset\":59}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "outer_prop_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteOuterProp { public Integer z;\n public System.\nString p { get; set; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":64},\"end\":{\"line\":3,\"column\":7,\"offset\":70}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":64},\"end\":{\"line\":3,\"column\":7,\"offset\":70}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "outer_prop_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteOuterProp {\n public System.\n\nString p { get; set; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":47},\"end\":{\"line\":4,\"column\":7,\"offset\":53}},\"nativeMessage\":\"Missing ';' at 'String'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'String'\",\"file\":\"<root>/RouteOuterProp.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":47},\"end\":{\"line\":4,\"column\":7,\"offset\":53}},\"nativeMessage\":\"Missing ';' at 'String'\"}]"
+ },
+ {
+  "rule": "method_foreach_bound",
+  "name": "argument",
+  "route": "class",
+  "source": "public class RouteMethodForeach {\n public void run() { for (String s : CrProbe.\nvalue(1).split(' ')) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodForeach.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":2,\"column\":35,\"offset\":68}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodForeach.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":2,\"column\":35,\"offset\":68}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]"
+ },
+ {
+  "rule": "method_foreach_bound",
+  "name": "unresolved",
+  "route": "class",
+  "source": "public class RouteMethodForeach {\n public void run() { for (String s : CrProbe.\nmissing().split(' ')) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_foreach_bound",
+  "name": "instance",
+  "route": "class",
+  "source": "public class RouteMethodForeach {\n public void run() { for (String s : CrProbe.\ninstanceValue().split(' ')) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodForeach.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":2,\"column\":43,\"offset\":76}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodForeach.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":2,\"column\":43,\"offset\":76}}}]"
+ },
+ {
+  "rule": "method_foreach_bound",
+  "name": "split_arguments",
+  "route": "class",
+  "source": "public class RouteMethodForeach {\n public void run() { for (String s : CrProbe.\nvalue().split(' ', 2)) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_foreach_bound",
+  "name": "declared_type",
+  "route": "class",
+  "source": "public class RouteMethodForeach {\n public void run() { for (Object s : CrProbe.\nvalue().split(' ')) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_foreach_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteMethodForeach {\n public static void run() { for (String s : CrProbe.\nvalue().split(' ')) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_foreach_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteMethodForeach { public Integer z;\n public void run() { for (String s : CrProbe.\nvalue().split(' ')) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_foreach_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteMethodForeach {\n public void run() { for (String s : CrProbe.\n\nvalue().split(' ')) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "argument",
+  "route": "class",
+  "source": "public class RouteMethodForInit {\n public void run() { for (String s = CrProbe.\nvalue(1); false; ) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodForInit.cls\",\"range\":{\"start\":{\"line\":2,\"column\":27,\"offset\":60},\"end\":{\"line\":2,\"column\":40,\"offset\":73}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodForInit.cls\",\"range\":{\"start\":{\"line\":2,\"column\":27,\"offset\":60},\"end\":{\"line\":2,\"column\":40,\"offset\":73}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "unresolved",
+  "route": "class",
+  "source": "public class RouteMethodForInit {\n public void run() { for (String s = CrProbe.\nmissing(); false; ) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "instance",
+  "route": "class",
+  "source": "public class RouteMethodForInit {\n public void run() { for (String s = CrProbe.\ninstanceValue(); false; ) { } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodForInit.cls\",\"range\":{\"start\":{\"line\":2,\"column\":27,\"offset\":60},\"end\":{\"line\":3,\"column\":2,\"offset\":81}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodForInit.cls\",\"range\":{\"start\":{\"line\":2,\"column\":27,\"offset\":60},\"end\":{\"line\":3,\"column\":2,\"offset\":81}}}]"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "chained",
+  "route": "class",
+  "source": "public class RouteMethodForInit {\n public void run() { for (String s = CrProbe.\nvalue().trim(); false; ) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "declared_type",
+  "route": "class",
+  "source": "public class RouteMethodForInit {\n public void run() { for (Object s = CrProbe.\nvalue(); false; ) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "for_condition",
+  "route": "class",
+  "source": "public class RouteMethodForInit {\n public void run() { for (String s = CrProbe.\nvalue(); true; ) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteMethodForInit {\n public static void run() { for (String s = CrProbe.\nvalue(); false; ) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteMethodForInit { public Integer z;\n public void run() { for (String s = CrProbe.\nvalue(); false; ) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_for_init_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteMethodForInit {\n public void run() { for (String s = CrProbe.\n\nvalue(); false; ) { } }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "method_dowhile_bound",
+  "name": "argument",
+  "route": "class",
+  "source": "public class RouteMethodDoWhile {\n public void run() { do { } while (CrProbe.\nvalue(1) == 'ok'); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":2,\"column\":35,\"offset\":68}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":78},\"end\":{\"line\":3,\"column\":6,\"offset\":83}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":2,\"column\":35,\"offset\":68}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":78},\"end\":{\"line\":3,\"column\":6,\"offset\":83}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "method_dowhile_bound",
+  "name": "unresolved",
+  "route": "class",
+  "source": "public class RouteMethodDoWhile {\n public void run() { do { } while (CrProbe.\nmissing() == 'ok'); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'missing'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":78},\"end\":{\"line\":3,\"column\":8,\"offset\":85}},\"nativeMessage\":\"Missing ')' at 'missing'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'missing'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":78},\"end\":{\"line\":3,\"column\":8,\"offset\":85}},\"nativeMessage\":\"Missing ')' at 'missing'\"}]"
+ },
+ {
+  "rule": "method_dowhile_bound",
+  "name": "instance",
+  "route": "class",
+  "source": "public class RouteMethodDoWhile {\n public void run() { do { } while (CrProbe.\ninstanceValue() == 'ok'); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":2,\"column\":43,\"offset\":76}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'instanceValue'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":78},\"end\":{\"line\":3,\"column\":14,\"offset\":91}},\"nativeMessage\":\"Missing ')' at 'instanceValue'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":55},\"end\":{\"line\":2,\"column\":43,\"offset\":76}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'instanceValue'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":78},\"end\":{\"line\":3,\"column\":14,\"offset\":91}},\"nativeMessage\":\"Missing ')' at 'instanceValue'\"}]"
+ },
+ {
+  "rule": "method_dowhile_bound",
+  "name": "comparison",
+  "route": "class",
+  "source": "public class RouteMethodDoWhile {\n public void run() { do { } while (CrProbe.\nvalue() != 'ok'); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":78},\"end\":{\"line\":3,\"column\":6,\"offset\":83}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":78},\"end\":{\"line\":3,\"column\":6,\"offset\":83}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "method_dowhile_bound",
+  "name": "loop_body",
+  "route": "class",
+  "source": "public class RouteMethodDoWhile {\n public void run() { do { Integer z = 1; } while (CrProbe.\nvalue() == 'ok'); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":93},\"end\":{\"line\":3,\"column\":6,\"offset\":98}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":93},\"end\":{\"line\":3,\"column\":6,\"offset\":98}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "method_dowhile_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteMethodDoWhile {\n public static void run() { do { } while (CrProbe.\nvalue() == 'ok'); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":85},\"end\":{\"line\":3,\"column\":6,\"offset\":90}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":85},\"end\":{\"line\":3,\"column\":6,\"offset\":90}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "method_dowhile_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteMethodDoWhile { public Integer z;\n public void run() { do { } while (CrProbe.\nvalue() == 'ok'); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":96},\"end\":{\"line\":3,\"column\":6,\"offset\":101}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":96},\"end\":{\"line\":3,\"column\":6,\"offset\":101}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "method_dowhile_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteMethodDoWhile {\n public void run() { do { } while (CrProbe.\n\nvalue() == 'ok'); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":79},\"end\":{\"line\":4,\"column\":6,\"offset\":84}},\"nativeMessage\":\"Missing ')' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ')' at 'value'\",\"file\":\"<root>/RouteMethodDoWhile.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":79},\"end\":{\"line\":4,\"column\":6,\"offset\":84}},\"nativeMessage\":\"Missing ')' at 'value'\"}]"
+ },
+ {
+  "rule": "method_when_bound",
+  "name": "argument",
+  "route": "class",
+  "source": "public class RouteMethodWhen {\n public void run() { switch on 'a' { when CrProbe.\nvalue(1) { } } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":39,\"offset\":69}}},{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":51,\"offset\":81}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":82},\"end\":{\"line\":3,\"column\":6,\"offset\":87}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":39,\"offset\":69}}},{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":51,\"offset\":81}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":82},\"end\":{\"line\":3,\"column\":6,\"offset\":87}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_when_bound",
+  "name": "unresolved",
+  "route": "class",
+  "source": "public class RouteMethodWhen {\n public void run() { switch on 'a' { when CrProbe.\nmissing() { } } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":39,\"offset\":69}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'missing'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":82},\"end\":{\"line\":3,\"column\":8,\"offset\":89}},\"nativeMessage\":\"Missing ';' at 'missing'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":39,\"offset\":69}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'missing'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":82},\"end\":{\"line\":3,\"column\":8,\"offset\":89}},\"nativeMessage\":\"Missing ';' at 'missing'\"}]"
+ },
+ {
+  "rule": "method_when_bound",
+  "name": "instance",
+  "route": "class",
+  "source": "public class RouteMethodWhen {\n public void run() { switch on 'a' { when CrProbe.\ninstanceValue() { } } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":39,\"offset\":69}}},{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":3,\"column\":8,\"offset\":89}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'instanceValue'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":82},\"end\":{\"line\":3,\"column\":14,\"offset\":95}},\"nativeMessage\":\"Missing ';' at 'instanceValue'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":39,\"offset\":69}}},{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":3,\"column\":8,\"offset\":89}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'instanceValue'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":82},\"end\":{\"line\":3,\"column\":14,\"offset\":95}},\"nativeMessage\":\"Missing ';' at 'instanceValue'\"}]"
+ },
+ {
+  "rule": "method_when_bound",
+  "name": "switch_value",
+  "route": "class",
+  "source": "public class RouteMethodWhen {\n public void run() { switch on 1 { when CrProbe.\nvalue() { } } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":36,\"offset\":66},\"end\":{\"line\":2,\"column\":37,\"offset\":67}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":80},\"end\":{\"line\":3,\"column\":6,\"offset\":85}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":36,\"offset\":66},\"end\":{\"line\":2,\"column\":37,\"offset\":67}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":80},\"end\":{\"line\":3,\"column\":6,\"offset\":85}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_when_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteMethodWhen {\n public static void run() { switch on 'a' { when CrProbe.\nvalue() { } } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":45,\"offset\":75},\"end\":{\"line\":2,\"column\":46,\"offset\":76}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":89},\"end\":{\"line\":3,\"column\":6,\"offset\":94}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":45,\"offset\":75},\"end\":{\"line\":2,\"column\":46,\"offset\":76}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":89},\"end\":{\"line\":3,\"column\":6,\"offset\":94}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_when_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteMethodWhen { public Integer z;\n public void run() { switch on 'a' { when CrProbe.\nvalue() { } } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":86},\"end\":{\"line\":2,\"column\":39,\"offset\":87}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":100},\"end\":{\"line\":3,\"column\":6,\"offset\":105}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":86},\"end\":{\"line\":2,\"column\":39,\"offset\":87}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":100},\"end\":{\"line\":3,\"column\":6,\"offset\":105}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_when_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteMethodWhen {\n public void run() { switch on 'a' { when CrProbe.\n\nvalue() { } } }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":39,\"offset\":69}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":83},\"end\":{\"line\":4,\"column\":6,\"offset\":88}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: switch branch must be a literal or enum constant\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":2,\"column\":38,\"offset\":68},\"end\":{\"line\":2,\"column\":39,\"offset\":69}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodWhen.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":83},\"end\":{\"line\":4,\"column\":6,\"offset\":88}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_throw_bound",
+  "name": "argument",
+  "route": "class",
+  "source": "public class RouteMethodThrow {\n public void run() { throw CrProbe.\nvalue(1); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":2,\"column\":35,\"offset\":66}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":6,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"method \\\"run\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":2,\"column\":35,\"offset\":66}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":6,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_throw_bound",
+  "name": "unresolved",
+  "route": "class",
+  "source": "public class RouteMethodThrow {\n public void run() { throw CrProbe.\nmissing(); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'missing'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":8,\"offset\":75}},\"nativeMessage\":\"Missing ';' at 'missing'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'missing'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":8,\"offset\":75}},\"nativeMessage\":\"Missing ';' at 'missing'\"}]"
+ },
+ {
+  "rule": "method_throw_bound",
+  "name": "instance",
+  "route": "class",
+  "source": "public class RouteMethodThrow {\n public void run() { throw CrProbe.\ninstanceValue(); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":2,\"column\":23,\"offset\":54}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":3,\"column\":7,\"offset\":74}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'instanceValue'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":14,\"offset\":81}},\"nativeMessage\":\"Missing ';' at 'instanceValue'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":2,\"column\":23,\"offset\":54}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"method \\\"run\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":3,\"column\":7,\"offset\":74}}},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'instanceValue'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":14,\"offset\":81}},\"nativeMessage\":\"Missing ';' at 'instanceValue'\"}]"
+ },
+ {
+  "rule": "method_throw_bound",
+  "name": "chained",
+  "route": "class",
+  "source": "public class RouteMethodThrow {\n public void run() { throw CrProbe.\nvalue().trim(); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":2,\"column\":23,\"offset\":54}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":6,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":2,\"column\":23,\"offset\":54}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":68},\"end\":{\"line\":3,\"column\":6,\"offset\":73}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_throw_bound",
+  "name": "modifier",
+  "route": "class",
+  "source": "public class RouteMethodThrow {\n public static void run() { throw CrProbe.\nvalue(); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":29,\"offset\":60},\"end\":{\"line\":2,\"column\":30,\"offset\":61}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":75},\"end\":{\"line\":3,\"column\":6,\"offset\":80}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":29,\"offset\":60},\"end\":{\"line\":2,\"column\":30,\"offset\":61}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":75},\"end\":{\"line\":3,\"column\":6,\"offset\":80}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_throw_bound",
+  "name": "preceding_member",
+  "route": "class",
+  "source": "public class RouteMethodThrow { public Integer z;\n public void run() { throw CrProbe.\nvalue(); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":71},\"end\":{\"line\":2,\"column\":23,\"offset\":72}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":86},\"end\":{\"line\":3,\"column\":6,\"offset\":91}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":71},\"end\":{\"line\":2,\"column\":23,\"offset\":72}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":86},\"end\":{\"line\":3,\"column\":6,\"offset\":91}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "method_throw_bound",
+  "name": "blank_line",
+  "route": "class",
+  "source": "public class RouteMethodThrow {\n public void run() { throw CrProbe.\n\nvalue(); }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":2,\"column\":23,\"offset\":54}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":69},\"end\":{\"line\":4,\"column\":6,\"offset\":74}},\"nativeMessage\":\"Missing ';' at 'value'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA030\",\"message\":\"method \\\"run\\\" has invalid statement: throw requires an Exception value\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":2,\"column\":22,\"offset\":53},\"end\":{\"line\":2,\"column\":23,\"offset\":54}},\"nativeMessage\":\"Throw expression must be of type exception: String\"},{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'value'\",\"file\":\"<root>/RouteMethodThrow.cls\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":69},\"end\":{\"line\":4,\"column\":6,\"offset\":74}},\"nativeMessage\":\"Missing ';' at 'value'\"}]"
+ },
+ {
+  "rule": "trigger_foreach_bound",
+  "name": "member",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeach on Account (before insert) {\nfor (Account a : Trigger.\nold) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_bound",
+  "name": "loop_type",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeach on Account (before insert) {\nfor (SObject a : Trigger.\nnew) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_bound",
+  "name": "preceding_statement",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeach on Account (before insert) { Integer z = 1;\nfor (Account a : Trigger.\nnew) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_bound",
+  "name": "blank_line",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeach on Account (before insert) {\nfor (Account a : Trigger.\n\nnew) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_free",
+  "name": "member",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachFree on Account (before insert) {\nfor (Account a : Trigger\n.old) { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Variable does not exist: Trigger\",\"file\":\"<root>/RouteTrigForeachFree.trigger\",\"range\":{\"start\":{\"line\":2,\"column\":18,\"offset\":75},\"end\":{\"line\":2,\"column\":25,\"offset\":82}},\"nativeMessage\":\"Variable does not exist: Trigger\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Variable does not exist: Trigger\",\"file\":\"<root>/RouteTrigForeachFree.trigger\",\"range\":{\"start\":{\"line\":2,\"column\":18,\"offset\":75},\"end\":{\"line\":2,\"column\":25,\"offset\":82}},\"nativeMessage\":\"Variable does not exist: Trigger\"}]"
+ },
+ {
+  "rule": "trigger_foreach_free",
+  "name": "loop_type",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachFree on Account (before insert) {\nfor (SObject a : Trigger\n.new) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_free",
+  "name": "preceding_statement",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachFree on Account (before insert) { Integer z = 1;\nfor (Account a : Trigger\n.new) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_free",
+  "name": "blank_line",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachFree on Account (before insert) {\nfor (Account a : Trigger\n\n.new) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_block_declaration_bound",
+  "name": "member",
+  "route": "trigger",
+  "source": "trigger RouteTrigBlockDecl on Account (before insert) {\nif (true) { List<Account> l = Trigger.\nold; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'old'\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":95},\"end\":{\"line\":3,\"column\":4,\"offset\":98}},\"nativeMessage\":\"Missing ';' at 'old'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'old'\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":95},\"end\":{\"line\":3,\"column\":4,\"offset\":98}},\"nativeMessage\":\"Missing ';' at 'old'\"}]"
+ },
+ {
+  "rule": "trigger_block_declaration_bound",
+  "name": "declared_type",
+  "route": "trigger",
+  "source": "trigger RouteTrigBlockDecl on Account (before insert) {\nif (true) { List<SObject> l = Trigger.\nnew; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'new'\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":95},\"end\":{\"line\":3,\"column\":4,\"offset\":98}},\"nativeMessage\":\"Missing ';' at 'new'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'new'\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":95},\"end\":{\"line\":3,\"column\":4,\"offset\":98}},\"nativeMessage\":\"Missing ';' at 'new'\"}]"
+ },
+ {
+  "rule": "trigger_block_declaration_bound",
+  "name": "nesting",
+  "route": "trigger",
+  "source": "trigger RouteTrigBlockDecl on Account (before insert) {\nif (true) { if (true) { List<Account> l = Trigger.\nnew; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"APEXPARSE001\",\"message\":\"syntax error\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":4,\"column\":2,\"offset\":115},\"end\":{\"line\":4,\"column\":2,\"offset\":115}},\"excerpt\":\"}\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"APEXPARSE001\",\"message\":\"syntax error\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":4,\"column\":2,\"offset\":115},\"end\":{\"line\":4,\"column\":2,\"offset\":115}},\"excerpt\":\"}\"}]"
+ },
+ {
+  "rule": "trigger_block_declaration_bound",
+  "name": "preceding_statement",
+  "route": "trigger",
+  "source": "trigger RouteTrigBlockDecl on Account (before insert) { Integer z = 1;\nif (true) { List<Account> l = Trigger.\nnew; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'new'\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":110},\"end\":{\"line\":3,\"column\":4,\"offset\":113}},\"nativeMessage\":\"Missing ';' at 'new'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'new'\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":3,\"column\":1,\"offset\":110},\"end\":{\"line\":3,\"column\":4,\"offset\":113}},\"nativeMessage\":\"Missing ';' at 'new'\"}]"
+ },
+ {
+  "rule": "trigger_block_declaration_bound",
+  "name": "blank_line",
+  "route": "trigger",
+  "source": "trigger RouteTrigBlockDecl on Account (before insert) {\nif (true) { List<Account> l = Trigger.\n\nnew; }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'new'\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":96},\"end\":{\"line\":4,\"column\":4,\"offset\":99}},\"nativeMessage\":\"Missing ';' at 'new'\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA013\",\"message\":\"Missing ';' at 'new'\",\"file\":\"<root>/RouteTrigBlockDecl.trigger\",\"range\":{\"start\":{\"line\":4,\"column\":1,\"offset\":96},\"end\":{\"line\":4,\"column\":4,\"offset\":99}},\"nativeMessage\":\"Missing ';' at 'new'\"}]"
+ },
+ {
+  "rule": "trigger_foreach_call_bound",
+  "name": "argument",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachCall on Account (before insert) {\nfor (String s : CrProbe.\nvalue(1).split(' ')) { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"trigger \\\"RouteTrigForeachCall\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteTrigForeachCall.trigger\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":58},\"end\":{\"line\":2,\"column\":14,\"offset\":71}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA009\",\"message\":\"trigger \\\"RouteTrigForeachCall\\\" has no matching overload for call \\\"CrProbe.value\\\" with 1 argument(s)\",\"file\":\"<root>/RouteTrigForeachCall.trigger\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":58},\"end\":{\"line\":2,\"column\":14,\"offset\":71}},\"nativeMessage\":\"Method does not exist or incorrect signature: void value(Integer) from the type CrProbe\"}]"
+ },
+ {
+  "rule": "trigger_foreach_call_bound",
+  "name": "unresolved",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachCall on Account (before insert) {\nfor (String s : CrProbe.\nmissing().split(' ')) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_call_bound",
+  "name": "instance",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachCall on Account (before insert) {\nfor (String s : CrProbe.\ninstanceValue().split(' ')) { }\n}\n",
+  "main62": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"trigger \\\"RouteTrigForeachCall\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteTrigForeachCall.trigger\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":58},\"end\":{\"line\":2,\"column\":22,\"offset\":79}}}]",
+  "main67": "[{\"severity\":\"error\",\"code\":\"GLADESEMA027\",\"message\":\"trigger \\\"RouteTrigForeachCall\\\" has invalid static access for \\\"CrProbe.instanceValue\\\": instance method called through a type\",\"file\":\"<root>/RouteTrigForeachCall.trigger\",\"range\":{\"start\":{\"line\":2,\"column\":1,\"offset\":58},\"end\":{\"line\":2,\"column\":22,\"offset\":79}}}]"
+ },
+ {
+  "rule": "trigger_foreach_call_bound",
+  "name": "split_arguments",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachCall on Account (before insert) {\nfor (String s : CrProbe.\nvalue().split(' ', 2)) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_call_bound",
+  "name": "declared_type",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachCall on Account (before insert) {\nfor (Object s : CrProbe.\nvalue().split(' ')) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_call_bound",
+  "name": "preceding_statement",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachCall on Account (before insert) { Integer z = 1;\nfor (String s : CrProbe.\nvalue().split(' ')) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ },
+ {
+  "rule": "trigger_foreach_call_bound",
+  "name": "blank_line",
+  "route": "trigger",
+  "source": "trigger RouteTrigForeachCall on Account (before insert) {\nfor (String s : CrProbe.\n\nvalue().split(' ')) { }\n}\n",
+  "main62": "null",
+  "main67": "null"
+ }
+]

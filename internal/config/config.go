@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 )
 
@@ -21,6 +22,15 @@ type Config struct {
 	Project ProjectConfig `json:"project"`
 	Org     OrgConfig     `json:"org"`
 	Test    TestConfig    `json:"test"`
+	// DuplicateRules holds the duplicate-rule settings.
+	DuplicateRules DuplicateRulesConfig `json:"duplicateRules"`
+}
+
+// DuplicateRulesConfig configures duplicate rules. Standard turns on the
+// standard Account, Contact and Lead rules that no project metadata defines;
+// it is off by default. A project's duplicateRules metadata is always honored.
+type DuplicateRulesConfig struct {
+	Standard bool `json:"standard"`
 }
 
 type PDFConfig struct {
@@ -103,7 +113,9 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 	return scheme + "://" + origin.Host, nil
 }
 
-func LoadNearest(start string) (Config, string, error) {
+func LoadNearest(start string) (Config, string, error) { return LoadNearestWithInputs(start, nil) }
+
+func LoadNearestWithInputs(start string, v *inputview.View) (Config, string, error) {
 	dir, err := filepath.Abs(start)
 	if err != nil {
 		return Config{}, "", err
@@ -111,8 +123,8 @@ func LoadNearest(start string) (Config, string, error) {
 
 	for {
 		path := filepath.Join(dir, "glade.yml")
-		if _, err := os.Stat(path); err == nil {
-			cfg, err := LoadFile(path)
+		if _, err := v.Stat(path); err == nil {
+			cfg, err := LoadFileWithInputs(path, v)
 			return cfg, path, err
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return Config{}, "", err
@@ -126,8 +138,10 @@ func LoadNearest(start string) (Config, string, error) {
 	}
 }
 
-func LoadFile(path string) (Config, error) {
-	data, err := os.ReadFile(path)
+func LoadFile(path string) (Config, error) { return LoadFileWithInputs(path, nil) }
+
+func LoadFileWithInputs(path string, v *inputview.View) (Config, error) {
+	data, err := v.ReadFile(path)
 	if err != nil {
 		return Config{}, err
 	}
@@ -331,6 +345,15 @@ func parseYAMLSubset(src string) (Config, error) {
 				cfg.Test.PermissionSets = values
 			} else {
 				cfg.Test.PermissionSetGroups = values
+			}
+		case "duplicateRules.standard":
+			switch strings.ToLower(trimScalar(value)) {
+			case "on", "true":
+				cfg.DuplicateRules.Standard = true
+			case "off", "false":
+				cfg.DuplicateRules.Standard = false
+			default:
+				return Config{}, fmt.Errorf("glade.yml:%d: duplicateRules.standard: expected on or off", lineNo+1)
 			}
 		case "org.features":
 			values, err := parseInlineList(value)

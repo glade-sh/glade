@@ -2,9 +2,10 @@ package project
 
 import (
 	"encoding/xml"
-	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 const sourceSettingsSuffix = ".settings-meta.xml"
@@ -12,16 +13,16 @@ const sourceSettingsSuffix = ".settings-meta.xml"
 // sourceSettingsFiles lists deployed org settings (settings/*.settings-meta.xml)
 // under root. The scan is bounded like the Person Accounts evidence scan and
 // shares its directory walk (orgShapeEvidenceScan).
-func sourceSettingsFiles(root string) []string {
-	found, _ := orgShapeEvidenceScan(root)
+func sourceSettingsFiles(v *inputview.View, root string) []string {
+	found, _ := orgShapeEvidenceScan(v, root)
 	return found
 }
 
 // sourceSettingsFilesIn lists the settings files directly in one settings
 // directory.
-func sourceSettingsFilesIn(dir string) []string {
+func sourceSettingsFilesIn(v *inputview.View, dir string) []string {
 	var found []string
-	items, _ := os.ReadDir(dir)
+	items, _ := v.ReadDir(dir)
 	for _, item := range items {
 		if !item.IsDir() && strings.HasSuffix(item.Name(), sourceSettingsSuffix) {
 			found = append(found, filepath.Join(dir, item.Name()))
@@ -35,18 +36,18 @@ func sourceSettingsFilesIn(dir string) []string {
 // Settings are keyed by file name (Quote.settings-meta.xml is quoteSettings),
 // which is how the metadata deploy identifies the type. Only boolean children
 // are read; other values never reach the trigger table.
-func sourceSettingsDefinition(root string) (scratchOrgDefinition, bool) {
-	return sourceSettingsDefinitionFromFiles(sourceSettingsFiles(root))
+func sourceSettingsDefinition(v *inputview.View, root string) (scratchOrgDefinition, bool) {
+	return sourceSettingsDefinitionFromFiles(v, sourceSettingsFiles(v, root))
 }
 
-func sourceSettingsDefinitionFromFiles(files []string) (scratchOrgDefinition, bool) {
+func sourceSettingsDefinitionFromFiles(v *inputview.View, files []string) (scratchOrgDefinition, bool) {
 	settings := map[string]any{}
 	for _, path := range files {
 		name := strings.TrimSuffix(filepath.Base(path), sourceSettingsSuffix)
 		if name == "" {
 			continue
 		}
-		data, err := os.ReadFile(path)
+		data, err := v.ReadFile(path)
 		if err != nil {
 			continue
 		}

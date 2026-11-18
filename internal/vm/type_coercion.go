@@ -86,7 +86,7 @@ func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, ar
 	fieldMatchCount := 0
 	var qualifierMatched Method
 	qualifierMatchCount := 0
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesRaw() {
 		if strings.EqualFold(className, baseType) || (!vm.typeMatches(className, baseType, make(map[string]bool)) && !classExtendsType(class, baseType)) {
 			continue
 		}
@@ -1249,7 +1249,7 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 		return true
 	}
 	seen[typeName] = true
-	class, ok := vm.lookupClass(typeName)
+	class, ok := vm.lookupClassRaw(typeName)
 	if !ok {
 		return false
 	}

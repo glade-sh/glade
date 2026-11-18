@@ -1022,9 +1022,9 @@ func visualforceVMClass(machine *vm.VM, names ...string) (vm.Class, bool) {
 		if name == "" {
 			continue
 		}
-		for key, class := range machine.ClassEntries() {
+		for key, class := range machine.ClassHeaderEntries() {
 			if strings.EqualFold(key, name) || strings.EqualFold(class.Name, name) {
-				return class, true
+				return class.BuiltClass(), true
 			}
 		}
 	}

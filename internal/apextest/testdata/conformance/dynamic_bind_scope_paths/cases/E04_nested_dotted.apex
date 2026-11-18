@@ -1,0 +1,1 @@
+try { Contact c = new Contact(LastName='x'); List<Account> l = Database.query('SELECT Id FROM Account WHERE Name = :c.Account.Name'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

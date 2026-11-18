@@ -100,25 +100,28 @@ System.assertEquals(Account.SObjectType, m.get('ACCOUNT'));`
 // they were, and the writer reads its own write.
 func TestGlobalDescribeSharedMapsSurviveWrites(t *testing.T) {
 	routes := []struct{ name, source string }{
-		{"put", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.put('private', Account.SObjectType); System.assert(h.containsKey('private'));`},
-		{"put over existing", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.put('account', User.SObjectType); System.assertEquals(User.SObjectType, h.get('account'));`},
-		{"remove", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); Integer before = h.size(); h.remove('account'); System.assert(h.size() < before);`},
+		// put, putAll and remove raise the read-only fault (review_round11
+		// gw_put, gw_put_existing, gw_putall, gk_direct); the writer still runs.
+		{"put", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.put('private', Account.SObjectType);`},
+		{"put over existing", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.put('account', User.SObjectType);`},
+		{"remove", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.remove('account');`},
 		{"clear", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.clear(); System.assertEquals(0, h.size());`},
-		{"putAll", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.putAll(new Map<String,Schema.SObjectType>{'private' => User.SObjectType}); System.assert(h.containsKey('private'));`},
+		{"putAll", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.putAll(new Map<String,Schema.SObjectType>{'private' => User.SObjectType});`},
 		{"keySet remove", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.keySet().remove('account');`},
 		{"keySet clear", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.keySet().clear();`},
 		{"keySet retainAll", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.keySet().retainAll(new Set<String>{'user'});`},
 		{"values clear", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.values().clear();`},
 		{"unchained put", `Schema.getGlobalDescribe().put('private', Account.SObjectType);`},
+		{"unchained key-set remove", `Schema.getGlobalDescribe().keySet().remove('account');`},
 		{"unchained clear", `Schema.getGlobalDescribe().clear();`},
 		{"app describe retyped", `Map<String,Schema.SObjectType> h = Schema.getAppDescribe('x'); h.put('private', Account.SObjectType);`},
 		{"module describe retyped", `Map<String,Schema.SObjectType> h = Schema.getModuleDescribe(); h.clear();`},
-		{"differently spelled type", `Map<String,SObjectType> h = Schema.getGlobalDescribe(); h.put('private', Account.SObjectType); h.remove('user');`},
+		{"differently spelled type", `Map<String,SObjectType> h = Schema.getGlobalDescribe(); h.keySet().remove('user'); System.assert(!h.containsKey('user'));`},
 		{"cloned map", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe().clone(); h.clear();`},
 		{"token write", `Schema.getGlobalDescribe().get('account').object = 'Contact';`},
 		{"change event token write", `Schema.getGlobalDescribe().get('accountchangeevent').object = 'Contact';`},
-		{"token write then put", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.get('account').object = 'Contact'; h.put('private', User.SObjectType); System.assertEquals('Contact', String.valueOf(h.get('account')));`},
-		{"put then token write", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.put('private', User.SObjectType); h.get('account').object = 'Contact'; System.assertEquals('Contact', String.valueOf(Schema.getGlobalDescribe().get('account')));`},
+		{"token write then key-set remove", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.get('account').object = 'Contact'; h.keySet().remove('user'); System.assertEquals('Contact', String.valueOf(h.get('account')));`},
+		{"key-set remove then token write", `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.keySet().remove('user'); h.get('account').object = 'Contact'; System.assertEquals('Contact', String.valueOf(Schema.getGlobalDescribe().get('account')));`},
 	}
 	for _, namespaced := range []bool{false, true} {
 		for _, route := range routes {
@@ -128,9 +131,17 @@ func TestGlobalDescribeSharedMapsSurviveWrites(t *testing.T) {
 				pristineBase := globalDescribeMapDigest(early.schemaGlobalDescribe().Map)
 				pristineExtended := globalDescribeMapDigest(globalDescribeMapBacking(t, early).Map)
 				writer := describeShareClone(base, template)
-				describeShareRunApex(t, writer, route.source)
+				readOnly := map[string]bool{"put": true, "put over existing": true, "remove": true, "putAll": true, "unchained put": true}[route.name]
+				run := func() {
+					if readOnly {
+						describeShareRunApexReadOnly(t, writer, route.source)
+						return
+					}
+					describeShareRunApex(t, writer, route.source)
+				}
+				run()
 				// Writing twice, in a second cache generation of the same VM, must not matter.
-				describeShareRunApex(t, writer, route.source)
+				run()
 				late := describeShareClone(base, template)
 				for name, machine := range map[string]*VM{"early": early, "late": late} {
 					if got := globalDescribeMapDigest(machine.schemaGlobalDescribe().Map); !reflect.DeepEqual(got, pristineBase) {
@@ -157,8 +168,9 @@ System.assertEquals(h.size(), h.keySet().size());`)
 // keeps its contents when the clone writes through the same static.
 func TestGlobalDescribeStaticHoldersSurviveCloneWrites(t *testing.T) {
 	mutations := []string{
-		`DescribeOwner.stored.put('private', Account.SObjectType);`,
-		`DescribeOwner.stored.remove('account');`,
+		// put and remove are read-only (review_round11 gw_put, gk_direct).
+		`DescribeOwner.stored.keySet().remove('user');`,
+		`DescribeOwner.stored.keySet().remove('account');`,
 		`DescribeOwner.stored.clear();`,
 		`DescribeOwner.stored.get('account').object = 'Contact';`,
 		`DescribeOwner.token.object = 'Contact';`,
@@ -225,7 +237,9 @@ func TestGlobalDescribeWriterDetachesOnlyItself(t *testing.T) {
 	reader := describeShareClone(base, template)
 	writer := describeShareClone(base, template)
 	shared := reader.schemaGlobalDescribe().Map
-	describeShareRunApex(t, writer, `Schema.getGlobalDescribe().put('private', Account.SObjectType);`)
+	// The global view refuses put (review_round11 gw_chained_put); the raw
+	// app/module cache it extends stays writable.
+	describeShareRunApex(t, writer, `Schema.getAppDescribe('app').put('private', Account.SObjectType);`)
 	if sameMapBacking(writer.schemaGlobalDescribe().Map, shared) {
 		t.Fatal("writer still holds the shared map")
 	}
@@ -258,7 +272,7 @@ func TestGlobalDescribeMapsConcurrentClones(t *testing.T) {
 					case 0:
 						source = `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); System.assert(h.containsKey('account')); System.assertEquals(h.size(), h.keySet().size());`
 					case 1:
-						source = `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); h.put('private', Account.SObjectType); Integer before = h.size(); h.remove('user'); System.assert(h.size() < before);`
+						source = `Map<String,Schema.SObjectType> h = Schema.getGlobalDescribe(); Integer before = h.size(); h.keySet().remove('user'); System.assert(h.size() < before);`
 					case 2:
 						source = `Schema.getGlobalDescribe().get('account').object = 'Worker'; System.assertEquals('Worker', String.valueOf(Schema.getGlobalDescribe().get('account')));`
 					default:
@@ -302,9 +316,9 @@ func globalDescribeMapAtAPI(t *testing.T, machine *VM, api string) map[string]st
 func TestGlobalDescribeMapsAcrossAPIVersions(t *testing.T) {
 	versions := []string{"62.0", "67.0"}
 	writes := map[string]string{
-		"put":         `Schema.getGlobalDescribe().put('private', Account.SObjectType);`,
-		"clear":       `Schema.getGlobalDescribe().clear();`,
-		"token write": `Schema.getGlobalDescribe().get('accountchangeevent').object = 'Contact';`,
+		"key-set remove": `Schema.getGlobalDescribe().keySet().remove('account');`,
+		"clear":          `Schema.getGlobalDescribe().clear();`,
+		"token write":    `Schema.getGlobalDescribe().get('accountchangeevent').object = 'Contact';`,
 	}
 	for _, namespaced := range []bool{false, true} {
 		want := map[string]map[string]string{}

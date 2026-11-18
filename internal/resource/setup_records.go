@@ -58,7 +58,7 @@ func setupRecordMetadataOwners(p project.Project) map[string]string {
 			return
 		}
 		seen[current] = true
-		lists := [][]string{current.BusinessHoursSettingsFiles, current.AutoResponseRuleFiles, current.ApprovalProcessFiles, current.AssignmentRuleFiles, current.MatchingRuleFiles, current.PlatformEventChannelMemberFiles, current.DuplicateRuleFiles}
+		lists := [][]string{current.BusinessHoursSettingsFiles, current.SharingSettingsFiles, current.AutoResponseRuleFiles, current.ApprovalProcessFiles, current.AssignmentRuleFiles, current.MatchingRuleFiles, current.PlatformEventChannelMemberFiles, current.DuplicateRuleFiles}
 		if len(current.AutoResponseRuleFiles) > 0 {
 			lists = append(lists, current.EmailTemplateFiles)
 		}
@@ -232,6 +232,21 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 		if strings.HasSuffix(lower, ".matchingrule-meta.xml") || strings.HasSuffix(lower, ".matchingrule") {
 			continue // Matching declarations are installed by the automation loader.
 		}
+		if base := strings.ToLower(filepath.Base(path)); base == "sharing.settings-meta.xml" || base == "sharing.settings" {
+			if owners[path] != "" {
+				continue // Org-wide settings come from the root project only.
+			}
+			var settings struct {
+				KeepManualSharesOnTransfer *bool `xml:"enableKeepManualSharesOnTransfer"`
+			}
+			if err := xml.Unmarshal(body, &settings); err != nil {
+				return fmt.Errorf("load SharingSettings metadata %s: %w", path, err)
+			}
+			if settings.KeepManualSharesOnTransfer != nil {
+				staged.Metadata.KeepManualSharesOnTransfer = *settings.KeepManualSharesOnTransfer
+			}
+			continue
+		}
 		if strings.HasSuffix(lower, ".duplicaterule-meta.xml") || strings.HasSuffix(lower, ".duplicaterule") {
 			var rule duplicateRuleRecordXML
 			if err := xml.Unmarshal(body, &rule); err != nil {
@@ -278,7 +293,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 						if record.Fields["IsDefault"].Boolean {
 							record = record.Clone()
 							record.Fields["IsDefault"] = storage.BooleanValue(false)
-							state.Records[id] = record
+							state.PutRecord(id, record)
 						}
 					}
 					staged.Objects["BusinessHours"] = state
@@ -304,6 +319,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 		storage.RebuildObjectIndexes(org, name)
 	}
 	org.Metadata.ChangeEventEntities = staged.Metadata.ChangeEventEntities
+	org.Metadata.KeepManualSharesOnTransfer = staged.Metadata.KeepManualSharesOnTransfer
 	org.IDSequences = generator.Sequences
 	org.ClearRuntimeSchemaStamp()
 	return nil
@@ -312,7 +328,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 func upsertSetupMetadataRecord(org *storage.OrgState, generator *storage.IDGenerator, object string, fields map[string]storage.Value, keys []string) error {
 	state := org.Objects[object]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	var selected storage.ID
 	for id, record := range state.Records {
@@ -351,7 +367,7 @@ func upsertSetupMetadataRecord(org *storage.OrgState, generator *storage.IDGener
 	for name, value := range fields {
 		record.Fields[name] = value
 	}
-	state.Records[selected] = record
+	state.PutRecord(selected, record)
 	org.Objects[object] = state
 	return nil
 }

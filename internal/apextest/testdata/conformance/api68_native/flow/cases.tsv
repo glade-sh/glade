@@ -1,0 +1,8 @@
+id	api	route	phase	variant	source
+FLOW-DEPLOY-68	68.0	deploy	case	vflow68	-
+FLOW-DEPLOY-67	67.0	deploy	case	vflow67	-
+FLOW-DEPLOY-68-DEFAULT	68.0	deploy	case	vflow68def	-
+FLOW-DEPLOY-67-USERMODE	67.0	deploy	case	vflow67user	-
+FLOW-USERMODE-68	68.0	test	case	vflow68	CapFlow68Test
+FLOW-DEFAULT-67	67.0	test	case	vflow67	CapFlow67Test
+FLOW-DEFAULT-68	68.0	test	case	vflow68	CapFlow68Test

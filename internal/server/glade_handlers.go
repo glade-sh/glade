@@ -338,7 +338,7 @@ func removeAutomatedProcessUsers(org *storage.OrgState) {
 			userType = value.String
 		}
 		if strings.EqualFold(userType, "AutomatedProcess") {
-			delete(users.Records, id)
+			users.DeleteRecord(id)
 		}
 	}
 	org.Objects["User"] = users

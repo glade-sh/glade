@@ -1,0 +1,9 @@
+family=hidden_record_grid
+apis=62.0 66.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, deleted after the run (SF-4 capture, advisor/parallel/gap-residuals)
+payloads=the test assertion message of each method; Salesforce ids masked
+repeats=two independent runs per API; rows identical
+shapes=Private custom object, Standard User actor who is not the owner, default-mode list update and Database.update(row, false); classes with sharing, without sharing, no declaration and inherited sharing; records created in the test method (a), in @TestSetup (b), or already in the org under SeeAllData=true (c)
+local_actor=HidUser stands in for the actor that the native org held beforehand
+raw_runs=parallel/gap-residuals/raw (capture cache, not committed)

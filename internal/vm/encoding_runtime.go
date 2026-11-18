@@ -80,6 +80,10 @@ func normalizeURLCharset(charset string) string {
 		return "utf-16be"
 	case "utf16le":
 		return "utf-16le"
+	case "sjis", "x-sjis", "csshiftjis":
+		return "shift-jis"
+	case "ms932", "cswindows31j":
+		return "windows-31j"
 	default:
 		return normalized
 	}
@@ -101,7 +105,7 @@ func urlCharsetEncoding(charset string) (encoding.Encoding, error) {
 		return textunicode.UTF16(textunicode.BigEndian, textunicode.IgnoreBOM), nil
 	case "utf-16le":
 		return textunicode.UTF16(textunicode.LittleEndian, textunicode.IgnoreBOM), nil
-	case "shift-jis":
+	case "shift-jis", "windows-31j":
 		return japanese.ShiftJIS, nil
 	case "gb18030":
 		return simplifiedchinese.GB18030, nil
@@ -173,6 +177,8 @@ func encodeURLCharsetBytes(text, charset string, codec encoding.Encoding) ([]byt
 			out = append(out, b)
 		}
 		return out, nil
+	case "shift-jis", "windows-31j":
+		return encodeJapaneseURLBytes(text, charset), nil
 	default:
 		// Apex uses '?' for unmappable source characters. Keep successfully
 		// encoded bytes, including literal ASCII SUB, unchanged.
@@ -265,6 +271,8 @@ func decodeURLCharsetBytes(data []byte, charset string, codec encoding.Encoding)
 			}
 		}
 		return out.String(), nil
+	case "shift-jis", "windows-31j":
+		return decodeJapaneseURLBytes(data, charset), nil
 	default:
 		decoded, err := codec.NewDecoder().Bytes(data)
 		return string(decoded), err

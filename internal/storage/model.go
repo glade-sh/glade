@@ -70,26 +70,78 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 	return config.NormalizeOrgDomainURL(raw)
 }
 
+// SummaryHold carries the parent roll-up values as they stood before one DML
+// statement. A child after-trigger reads them until the statement finishes
+// (rollup_trigger_timing native rows); the stored value is already current.
+type SummaryHold struct {
+	Values map[string]Value
+	// Live holds each parent's value when the statement began, for the delta
+	// the statement adds to an enclosing statement's hold.
+	Live map[string]Value
+	// Dropped keys read the live value; enclosing holds do not answer for them.
+	Dropped map[string]bool
+	// Upsert marks a hold that spans both groups of an upsert.
+	Upsert bool
+}
+
+func (h *SummaryHold) Drop(key string) {
+	delete(h.Values, key)
+	if h.Dropped == nil {
+		h.Dropped = make(map[string]bool)
+	}
+	h.Dropped[key] = true
+}
+
 type OrgState struct {
 	ChangeDataCaptureTestSetup *ChangeDataCaptureSnapshot `json:"-"`
 	// Formula execution context is set on a per-query OrgState value copy.
 	// It is neither persisted nor stored in query or schema caches.
 	formulaUserID           ID
 	formulaPermissionFields map[string]Value
+	// SummaryHolds freeze roll-up values for the statements whose after-triggers
+	// are running. Never persisted; see SummaryHold.
+	SummaryHolds []*SummaryHold `json:"-"`
 
-	OrgID                  string                 `json:"orgId,omitempty"`
-	APIVersion             string                 `json:"apiVersion,omitempty"`
-	Namespace              string                 `json:"namespace,omitempty"`
-	DomainURL              string                 `json:"domainUrl,omitempty"`
-	Features               []string               `json:"features,omitzero"`
-	Metadata               MetadataRegistry       `json:"metadata,omitempty"`
-	Objects                map[string]ObjectState `json:"objects"`
-	IDSequences            map[string]uint64      `json:"idSequences,omitempty"`
-	Transactions           []TransactionFrame     `json:"transactions,omitempty"`
-	Now                    func() time.Time       `json:"-"`
-	Today                  func() time.Time       `json:"-"` // Execution user's local calendar for formula TODAY().
-	PlatformCache          *PlatformCacheState    `json:"-"`
-	PlatformCacheTestSetup *PlatformCacheState    `json:"-"`
+	OrgID      string                 `json:"orgId,omitempty"`
+	APIVersion string                 `json:"apiVersion,omitempty"`
+	Namespace  string                 `json:"namespace,omitempty"`
+	DomainURL  string                 `json:"domainUrl,omitempty"`
+	Features   []string               `json:"features,omitzero"`
+	Metadata   MetadataRegistry       `json:"metadata,omitempty"`
+	Objects    map[string]ObjectState `json:"objects"`
+	// StandardSpread marks an org whose standard catalog objects are installed
+	// on first reference from a shared per-shape source (see
+	// standard_spread_source.go). "plain" is before the org shape applied,
+	// "shaped" after. Empty means the org holds every object it will hold.
+	StandardSpread string `json:"standardSpread,omitempty"`
+	// StandardSpreadPruned remembers that a completed spread was narrowed by
+	// the plain Developer profile, so a later profile can restore the spread.
+	StandardSpreadPruned bool `json:"standardSpreadPruned,omitempty"`
+	// StandardSpreadRemoved holds source-backed objects actually removed by
+	// the captured default shape so an uncaptured transition can restore them.
+	StandardSpreadRemoved []string `json:"standardSpreadRemoved,omitempty"`
+	// StandardSpreadHiddenAccess retains the local virtual user-access rows for
+	// definitions removed by the captured plain Developer spread. Native rows
+	// do not establish a replacement for these query shapes.
+	StandardSpreadHiddenAccess map[string][]string `json:"standardSpreadHiddenAccess,omitempty"`
+	// StandardSpreadHiddenDefinitions preserves unprobed routes for removed
+	// definitions without restoring them to the captured inventory.
+	StandardSpreadHiddenDefinitions map[string]ObjectDefinition `json:"standardSpreadHiddenDefinitions,omitempty"`
+	// StandardSpreadSuppressed records fingerprints of lazy inventory entries
+	// that were not visible before the captured default shape was materialized.
+	StandardSpreadSuppressed *SpreadSuppression `json:"standardSpreadSuppressed,omitempty"`
+	// StandardSpreadCapturedPlain records the exact default Developer shape
+	// used by the native inventory probes, including across serialization.
+	StandardSpreadCapturedPlain bool `json:"standardSpreadCapturedPlain,omitempty"`
+	// StandardDuplicateRules turns on the seeded standard duplicate rules (the
+	// duplicateRules.standard setting); project metadata rules are always on.
+	StandardDuplicateRules bool                `json:"standardDuplicateRules,omitempty"`
+	IDSequences            map[string]uint64   `json:"idSequences,omitempty"`
+	Transactions           []TransactionFrame  `json:"transactions,omitempty"`
+	Now                    func() time.Time    `json:"-"`
+	Today                  func() time.Time    `json:"-"` // Execution user's local calendar for formula TODAY().
+	PlatformCache          *PlatformCacheState `json:"-"`
+	PlatformCacheTestSetup *PlatformCacheState `json:"-"`
 
 	SystemTimestampBase     string `json:"-"`
 	SystemTimestampSequence int64  `json:"-"`
@@ -98,11 +150,24 @@ type OrgState struct {
 	objectNameCache                 *sync.Map
 	keyPrefixesValidated            bool
 	lazyStandardSpread              bool
+	eagerStandardSpread             bool
+	spreadPrefixSeed                map[string]string
 	keyPrefixesValidatedObjectCount int
 	keyPrefixesValidatedPrefixes    []keyPrefixSnapshotEntry
 	keyPrefixesValidatedGeneration  uint64
 	schemaGeneration                uint64
 	runtimeGeneration               *orgRuntimeGeneration
+
+	// spreadPrefixesPlanned records that a source-backed lazy org has had its
+	// prefixes validated. Clearing the schema stamp does not clear it: the cold
+	// objects still take their prefixes from the unique assignment.
+	spreadPrefixesPlanned bool
+
+	// spreadInstalled records each definition the eager spread built from the
+	// plain catalog profile. It is never mutated after it is set, so clones
+	// may share it.
+	spreadInstalled map[string]installedSpreadDefinition
+	spreadExplicit  map[string]bool
 }
 
 type orgRuntimeGeneration struct {
@@ -265,6 +330,10 @@ type MetadataRegistry struct {
 	Layouts                     []LayoutMetadata           `json:"layouts,omitempty"`
 	ProjectReports              []ProjectReportMetadata    `json:"projectReports,omitempty"`
 	ReportFolderShares          []ProjectReportFolderShare `json:"reportFolderShares,omitempty"`
+	// KeepManualSharesOnTransfer is the project SharingSettings
+	// enableKeepManualSharesOnTransfer value (apextest api68_native
+	// sharing-off and sharing-on).
+	KeepManualSharesOnTransfer bool `json:"keepManualSharesOnTransfer,omitempty"`
 }
 
 // ProjectReportMetadata is the immutable project definition associated with a
@@ -470,6 +539,10 @@ type ObjectState struct {
 	Indexes       map[string]IndexSet `json:"indexes,omitempty"`
 	RecordsShared bool                `json:"-"`
 	IndexesShared bool                `json:"-"`
+
+	// recordsClock versions the Records map. Write it through the record
+	// write methods, never through the map directly.
+	recordsClock *recordsClockTag
 }
 
 // OwnerSharingRule is a supported declared owner-based Read rule between public groups.
@@ -478,6 +551,24 @@ type OwnerSharingRule struct {
 	SourceGroup string `json:"sourceGroup"`
 	TargetGroup string `json:"targetGroup"`
 	AccessLevel string `json:"accessLevel"`
+}
+
+// CriteriaSharingCondition is one supported field test of a criteria rule.
+type CriteriaSharingCondition struct {
+	Field     string `json:"field"`
+	Operation string `json:"operation"`
+	Value     string `json:"value"`
+}
+
+// CriteriaSharingRule is a declared Read rule that shares matching records with
+// one public group. Salesforce evaluates it at commit, never inside the writing
+// transaction (grant rows), so the rule is configuration only until a
+// commit reconciles its Rule share rows.
+type CriteriaSharingRule struct {
+	Name        string                     `json:"name"`
+	TargetGroup string                     `json:"targetGroup"`
+	AccessLevel string                     `json:"accessLevel"`
+	Criteria    []CriteriaSharingCondition `json:"criteria"`
 }
 
 type ObjectDefinition struct {
@@ -503,6 +594,9 @@ type ObjectDefinition struct {
 	// ExternalSharingModel is the declared external organization-wide default
 	// (CustomObject externalSharingModel); empty when the metadata omits it.
 	ExternalSharingModel string `json:"externalSharingModel,omitempty"`
+
+	// CriteriaSharingRules are the declared criteria-based Read rules for public groups.
+	CriteriaSharingRules []CriteriaSharingRule `json:"criteriaSharingRules,omitempty"`
 }
 
 type Field struct {
@@ -1024,6 +1118,21 @@ type FlowAssignment struct {
 	LiteralValue string `json:"literalValue,omitempty"`
 	Formula      string `json:"formula,omitempty"`
 	SourceField  string `json:"sourceField,omitempty"`
+	// Merge holds the parts of a String assignment that merges a Number or Date
+	// resource. It applies only for a user locale captured natively; any other
+	// locale runs the unrewritten LiteralValue.
+	Merge []FlowMergePart `json:"merge,omitempty"`
+}
+
+// FlowMergePart is one piece of a merged flow string: literal Text, or a
+// resource read by Ref (a variable) or Expression (a formula resource) and
+// rendered by Kind ("number" with Scale, "date", or "" for plain text).
+type FlowMergePart struct {
+	Text       string `json:"text,omitempty"`
+	Ref        string `json:"ref,omitempty"`
+	Expression string `json:"expression,omitempty"`
+	Kind       string `json:"kind,omitempty"`
+	Scale      int    `json:"scale,omitempty"`
 }
 
 type FlowLoop struct {
@@ -1194,6 +1303,12 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// TestAssigned marks a PermissionSetAssignment that a test, a @TestSetup
+	// method or code they call inserted. Natively the running user's own
+	// context does not see it (permset_in_test rows).
+	TestAssigned bool `json:"testAssigned,omitempty"`
+	// CriteriaSharingOwned identifies a share created by criteria reconciliation.
+	CriteriaSharingOwned bool `json:"criteriaSharingOwned,omitempty"`
 	// triggerAssignments tracks explicit before-trigger assignments during DML.
 	triggerAssignments uint8
 	// dmlNameUnassigned is transient provenance for a queried, unassigned Name.
@@ -1810,7 +1925,20 @@ func StripNamespaceToken(namespace, name string) string {
 	return name
 }
 
+// ResolveVisibleObjectName keeps route lookups at the source spread's
+// original visibility while allowing the physical inventory to be completed.
+func ResolveVisibleObjectName(org OrgState, name string) (string, bool) {
+	if org.SuppressesSpreadObject(name) {
+		return "", false
+	}
+	return ResolveObjectName(org, name)
+}
+
 func ResolveObjectName(org OrgState, name string) (string, bool) {
+	if org.StandardSpread != "" {
+		// Objects is shared by value copies, so this installs for the caller.
+		installSpreadObject(&org, name)
+	}
 	org.objectNameCache = ownedObjectNameCache(org)
 	cacheKey := strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" + strconv.Itoa(len(org.Objects)) + "|" + strings.ToLower(strings.TrimSpace(name))
 	if org.objectNameCache != nil {
@@ -2330,9 +2458,9 @@ func (o ObjectState) Clone() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {
@@ -2362,6 +2490,10 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.Relations[i].JunctionReferenceTo = append([]string(nil), d.Relations[i].JunctionReferenceTo...)
 	}
 	out.OwnerSharingRules = append([]OwnerSharingRule(nil), d.OwnerSharingRules...)
+	out.CriteriaSharingRules = append([]CriteriaSharingRule(nil), d.CriteriaSharingRules...)
+	for i := range out.CriteriaSharingRules {
+		out.CriteriaSharingRules[i].Criteria = append([]CriteriaSharingCondition(nil), d.CriteriaSharingRules[i].Criteria...)
+	}
 	out.RecordTypes = append([]RecordTypeInfo(nil), d.RecordTypes...)
 	for i := range out.RecordTypes {
 		if d.RecordTypes[i].PicklistDefaults == nil {
@@ -2594,6 +2726,9 @@ func (i IndexSet) Clone() IndexSet {
 
 func (o OrgState) Clone() OrgState {
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2630,6 +2765,9 @@ func (o OrgState) Clone() OrgState {
 // its own, as Clone does.
 func (o OrgState) CloneObjectsShallow(extra int) OrgState {
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	if o.Objects != nil || extra > 0 {
 		out.Objects = make(map[string]ObjectState, len(o.Objects)+extra)
@@ -2649,6 +2787,9 @@ func (o OrgState) CloneObjectsShallow(extra int) OrgState {
 func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2684,6 +2825,9 @@ func (o OrgState) CloneRuntime() OrgState {
 func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2745,12 +2889,16 @@ func IsImmutableMetadataObject(objectName string) bool {
 func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
-			if IsImmutableMetadataObject(object.Definition.APIName) || IsImmutableMetadataObject(name) {
+			if IsImmutableMetadataObject(object.Definition.APIName) || IsImmutableMetadataObject(name) ||
+				sharesSetupRecordsAtRuntimeClone(name, object) {
 				out.Objects[name] = object.CloneRuntimeSnapshot()
 			} else {
 				out.Objects[name] = object.CloneRuntimeFrozenDefinition()
@@ -2784,9 +2932,9 @@ func (o ObjectState) CloneRuntime() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {

@@ -27,7 +27,11 @@
     "59.0",
     "67.0"
   ],
-  "TestV14SalesforceConformance": [
+  "TestV14SalesforceConformancePart1of2": [
+    "59.0",
+    "67.0"
+  ],
+  "TestV14SalesforceConformancePart2of2": [
     "59.0",
     "67.0"
   ]

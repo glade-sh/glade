@@ -1,0 +1,7 @@
+id	api	route	phase	variant	source
+PE-DEPLOY-68	68.0	deploy	case	v68	-
+PE-DEPLOY-67	67.0	deploy	case	v67	-
+PE-SCHEMA-68	68.0	anonymous	case	v68	snippets/pe68.apex
+PE-SCHEMA-67	67.0	anonymous	case	v67	snippets/pe67.apex
+PE-DECLARE-68	68.0	deploy	case	vdecl68	-
+PE-DECLARE-67	67.0	deploy	case	vdecl67	-

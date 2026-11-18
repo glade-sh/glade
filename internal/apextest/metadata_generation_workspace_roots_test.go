@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -154,7 +155,7 @@ func TestSourceUnitGenerationLoadedWorkspaceRootRoutes(t *testing.T) {
 		})
 	}
 	generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
-	units, err := captureRuntimeSourceUnitsInRoots(index, &generation, map[string]string{}, roots)
+	units, err := captureRuntimeSourceUnitsInRoots(index, &generation, map[string]string{}, roots, os.ReadFile)
 	if err != nil {
 		t.Fatal(err)
 	}

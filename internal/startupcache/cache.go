@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
@@ -54,6 +55,10 @@ type Entry struct {
 	Manifest    Manifest         `json:"manifest"`
 	Org         storage.OrgState `json:"org"`
 	Runtime     CompiledRuntime  `json:"runtime"`
+	// Inputs are the input-view observations the entry was built from. Only
+	// debugger entries carry them; the JSON cache persists them and the split
+	// test cache does not.
+	Inputs []inputview.Observation `json:"inputs,omitempty"`
 }
 
 type Manifest struct {
@@ -106,7 +111,24 @@ func ValidateInputWithSourceDigests(projectRoot string, digests *typesys.SourceD
 	return validateInputWithSourceDigests(projectRoot, digests, nil)
 }
 
-func validateInputWithSourceDigests(projectRoot string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (*ValidatedInput, error) {
+// ValidateInputWithSourceDigestsAndDigestLookup can reuse digests from a
+// caller's stamp-validated cache. The lookup must only return a digest for the
+// file's current trusted identity; untrusted and absent entries return false.
+func ValidateInputWithSourceDigestsAndDigestLookup(projectRoot string, digests *typesys.SourceDigestSet, lookup func(string) ([sha256.Size]byte, bool)) (*ValidatedInput, error) {
+	return validateInputWithSourceDigests(projectRoot, digests, nil, lookup)
+}
+
+// ValidateInputWithSourceDigestsAndScopedLookup uses eligible as a cheap
+// membership check before asking lookup for one current digest.
+func ValidateInputWithSourceDigestsAndScopedLookup(projectRoot string, digests *typesys.SourceDigestSet, eligible func(string) bool, lookup func(string) ([sha256.Size]byte, bool)) (*ValidatedInput, error) {
+	return validateInputWithSourceDigestsAndScope(projectRoot, digests, nil, eligible, lookup)
+}
+
+func validateInputWithSourceDigests(projectRoot string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error), lookups ...func(string) ([sha256.Size]byte, bool)) (*ValidatedInput, error) {
+	return validateInputWithSourceDigestsAndScope(projectRoot, digests, readFile, nil, lookups...)
+}
+
+func validateInputWithSourceDigestsAndScope(projectRoot string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error), eligible func(string) bool, lookups ...func(string) ([sha256.Size]byte, bool)) (*ValidatedInput, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return nil, err
@@ -116,7 +138,7 @@ func validateInputWithSourceDigests(projectRoot string, digests *typesys.SourceD
 	if err != nil {
 		return nil, err
 	}
-	manifest, err := buildManifestWithSourceDigests(root, loaded, true, digests, readFile)
+	manifest, err := buildManifestWithSourceDigestsAndScope(root, loaded, true, digests, readFile, eligible, lookups...)
 	if err != nil {
 		return nil, err
 	}
@@ -480,19 +502,28 @@ func BuildManifestWithSourceDigests(projectRoot string, p project.Project, index
 	return manifest
 }
 
-func buildManifestWithSourceDigests(projectRoot string, p project.Project, includeHashes bool, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (Manifest, error) {
+func buildManifestWithSourceDigests(projectRoot string, p project.Project, includeHashes bool, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error), lookups ...func(string) ([sha256.Size]byte, bool)) (Manifest, error) {
+	return buildManifestWithSourceDigestsAndScope(projectRoot, p, includeHashes, digests, readFile, nil, lookups...)
+}
+
+func buildManifestWithSourceDigestsAndScope(projectRoot string, p project.Project, includeHashes bool, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error), eligible func(string) bool, lookups ...func(string) ([sha256.Size]byte, bool)) (Manifest, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return Manifest{}, err
 	}
 	root = filepath.Clean(root)
+	inputs := p.Inputs()
+	if readFile != nil {
+		// An explicit reader keeps its own byte source.
+		inputs = nil
+	}
 	apexDigests, useSnapshot := completeApexSourceDigests(p, digests)
 	paths := make([]File, 0, 128)
 	for _, manifestProject := range manifestProjects(p) {
 		for _, file := range deduplicateStrings(appendProjectFilesFromProject(manifestProject)) {
 			abs := absoluteProjectPath(manifestProject.Root, file)
 			digest, isApex := apexDigests[filepath.Clean(abs)]
-			fp, err := fingerprintFileWithSourceDigest(root, abs, includeHashes, digest, useSnapshot && isApex, readFile)
+			fp, err := fingerprintInputForScope(inputs, root, abs, includeHashes, digest, useSnapshot && isApex, readFile, eligible, lookups...)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -500,7 +531,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 		}
 		for _, source := range manifestProject.ApexFiles {
 			sidecar := absoluteProjectPath(manifestProject.Root, source) + "-meta.xml"
-			fp, exists, err := fingerprintOptionalFileWithReader(root, sidecar, includeHashes, readFile)
+			fp, exists, err := fingerprintOptionalInputForScope(inputs, root, sidecar, includeHashes, readFile, eligible, lookups...)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -514,14 +545,14 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 		return incompleteManifest(root, p), err
 	}
 	for _, input := range runtimeInputs {
-		fp, err := fingerprintFileWithSourceDigest(root, input, includeHashes, [sha256.Size]byte{}, false, readFile)
+		fp, err := fingerprintInputForScope(inputs, root, input, includeHashes, [sha256.Size]byte{}, false, readFile, eligible, lookups...)
 		if err != nil {
 			return incompleteManifest(root, p), err
 		}
 		paths = append(paths, fp)
 	}
 	for _, artifactPath := range dependencyArtifactPaths(p) {
-		fp, err := fingerprintFileWithSourceDigest(root, artifactPath, includeHashes, [sha256.Size]byte{}, false, readFile)
+		fp, err := fingerprintInputForScope(inputs, root, artifactPath, includeHashes, [sha256.Size]byte{}, false, readFile, eligible, lookups...)
 		if err != nil {
 			return incompleteManifest(root, p), err
 		}
@@ -534,7 +565,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 			return incompleteManifest(root, p), err
 		}
 		for _, configPath := range candidates {
-			fp, exists, err := fingerprintOptionalFileWithReader(root, configPath, includeHashes, readFile)
+			fp, exists, err := fingerprintOptionalInputForScope(inputs, root, configPath, includeHashes, readFile, eligible, lookups...)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -546,7 +577,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 	packageRoots := make([]Directory, 0, len(p.PackageDirectories))
 	for _, manifestProject := range manifestProjects(p) {
 		for _, pkgRoot := range packageRootsForProject(manifestProject) {
-			fp, ok, err := statOptionalDirectory(root, pkgRoot)
+			fp, ok, err := statOptionalInputDirectory(inputs, root, pkgRoot)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -557,7 +588,7 @@ func buildManifestWithSourceDigests(projectRoot string, p project.Project, inclu
 	}
 	// Setup stages deploy before tests run; only the consumer project loads them.
 	for _, setupRoot := range p.SetupMetadataRoots() {
-		fp, ok, err := statOptionalDirectory(root, setupRoot)
+		fp, ok, err := statOptionalInputDirectory(inputs, root, setupRoot)
 		if err != nil {
 			return incompleteManifest(root, p), err
 		}
@@ -926,7 +957,11 @@ func fingerprintOptionalFileWithReader(projectRoot, path string, includeHash boo
 }
 
 func statOptionalDirectory(projectRoot, path string) (Directory, bool, error) {
-	info, err := os.Stat(path)
+	return statOptionalInputDirectory(nil, projectRoot, path)
+}
+
+func statOptionalInputDirectory(inputs *inputview.View, projectRoot, path string) (Directory, bool, error) {
+	info, err := inputs.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return Directory{}, false, nil
 	}
@@ -1242,7 +1277,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 	}
 	for dir := filepath.Clean(root); ; dir = filepath.Dir(dir) {
 		nearest := filepath.Join(dir, "glade.yml")
-		if _, err := os.Stat(nearest); err == nil {
+		if _, err := p.Stat(nearest); err == nil {
 			paths = append(paths, nearest)
 			break
 		} else if !errors.Is(err, os.ErrNotExist) {
@@ -1255,7 +1290,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 	}
 	for _, name := range []string{"cumulusci.yml", "cumulusci.template.yml"} {
 		configPath := filepath.Join(root, name)
-		data, err := os.ReadFile(configPath) // #nosec G304 -- configPath is constructed from the loaded project root and a fixed filename.
+		data, err := p.ReadFile(configPath) // #nosec G304 -- configPath is constructed from the loaded project root and a fixed filename.
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
@@ -1272,7 +1307,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 				continue
 			}
 			full := filepath.Clean(filepath.Join(root, filepath.FromSlash(path)))
-			if full == filepath.Clean(root) || !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) || !project.PathInsideRoot(root, full) {
+			if full == filepath.Clean(root) || !strings.HasPrefix(full, filepath.Clean(root)+string(os.PathSeparator)) || !project.PathInsideRootWithInputs(p.Inputs(), root, full) {
 				continue
 			}
 			paths = append(paths, full)

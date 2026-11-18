@@ -1,0 +1,12 @@
+capture: elastic
+started: 2026-11-16T03:18:58Z
+finished: 2026-11-16T03:20:04Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+elastic capacity needs an org opt-in beta; a Developer scratch org reports the key absent
+asyncApexExecutionsOverride is captured only as deploy acceptance or rejection

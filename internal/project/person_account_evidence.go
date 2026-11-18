@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 // personAccountEvidenceSkipDirs are directories that never hold object
@@ -26,18 +28,18 @@ const personAccountEvidenceMaxDepth = 12
 // personAccountRecordTypePaths accepts both the retrieved PersonAccount layout
 // and the default Account.PersonAccount identity exposed by listMetadata.
 // Other Account record types do not establish that Person Accounts are enabled.
-func personAccountRecordTypePaths(root string) []string {
-	_, found := orgShapeEvidenceScan(root)
+func personAccountRecordTypePaths(v *inputview.View, root string) []string {
+	_, found := orgShapeEvidenceScan(v, root)
 	return found
 }
 
 // personAccountRecordTypesIn lists the Person Accounts record type evidence
 // under one objects directory.
-func personAccountRecordTypesIn(objects string) []string {
+func personAccountRecordTypesIn(v *inputview.View, objects string) []string {
 	var found []string
 	for _, object := range []string{"PersonAccount", "Account"} {
 		recordTypes := filepath.Join(objects, object, "recordTypes")
-		items, _ := os.ReadDir(recordTypes)
+		items, _ := v.ReadDir(recordTypes)
 		for _, item := range items {
 			if item.IsDir() || !strings.HasSuffix(item.Name(), ".recordType-meta.xml") {
 				continue
@@ -48,7 +50,7 @@ func personAccountRecordTypesIn(objects string) []string {
 					XMLName  xml.Name `xml:"RecordType"`
 					FullName string   `xml:"fullName"`
 				}
-				data, err := os.ReadFile(file)
+				data, err := v.ReadFile(file)
 				if err != nil || xml.Unmarshal(data, &recordType) != nil || strings.TrimSpace(recordType.FullName) != "PersonAccount" {
 					continue
 				}
@@ -65,12 +67,12 @@ func personAccountRecordTypesIn(objects string) []string {
 // (under objects directories, which the walk does not enter further). The
 // metadata-folder skip list and depth bound apply as before; the settings list
 // is sorted and the record type list keeps walk order.
-func orgShapeEvidenceScan(root string) (settings, personAccounts []string) {
+func orgShapeEvidenceScan(v *inputview.View, root string) (settings, personAccounts []string) {
 	if root == "" {
 		return nil, nil
 	}
 	settingsSubtree := ""
-	_ = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+	_ = v.WalkDirProjectRoot(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || !entry.IsDir() {
 			return nil
 		}
@@ -89,11 +91,11 @@ func orgShapeEvidenceScan(root string) (settings, personAccounts []string) {
 		}
 		switch name {
 		case "objects":
-			personAccounts = append(personAccounts, personAccountRecordTypesIn(path)...)
+			personAccounts = append(personAccounts, personAccountRecordTypesIn(v, path)...)
 			return filepath.SkipDir
 		case "settings":
 			if settingsSubtree == "" {
-				settings = append(settings, sourceSettingsFilesIn(path)...)
+				settings = append(settings, sourceSettingsFilesIn(v, path)...)
 				settingsSubtree = path
 			}
 		}

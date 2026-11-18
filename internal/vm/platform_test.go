@@ -1258,7 +1258,10 @@ System.assertEquals('Nook Supply', ((Account)results.get('Account')[0].getSObjec
 Search.SearchResults snippetResults = Search.find(
 	'FIND {North} IN ALL FIELDS RETURNING Account(Id, Name, Site) WITH SNIPPET'
 );
-System.assertEquals('North dock', snippetResults.get('Account')[0].getSnippet('Site'));
+// NATIVE an Account result has no field snippet sosl_search_matrix/org.tsv:168 anonymous 62.0
+// NATIVE an Account result has no field snippet sosl_search_matrix/org.tsv:169 anonymous 67.0
+System.assertEquals(null, snippetResults.get('Account')[0].getSnippet('Site'));
+System.assertEquals(null, snippetResults.get('Account')[0].getSnippet());
 
 Search.SuggestionOption option = new Search.SuggestionOption();
 option.setLimit(5);
@@ -1302,7 +1305,8 @@ System.runAs(u) {
 	try {
 		Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Score__c)', AccessLevel.USER_MODE);
 	} catch (QueryException qe) {
-		caught = qe.getMessage().contains('Account') || qe.getMessage().contains('Score__c');
+		// NATIVE denial names the object in lower case sosl_istest_edges/org.tsv am_dyn_user istest 62.0 67.0
+		caught = qe.getMessage().toLowerCase().contains('account') || qe.getMessage().contains('Score__c');
 	}
 	System.assert(caught);
 	List<List<SObject>> systemRows = Search.query(
@@ -5807,8 +5811,9 @@ func TestExecApexPagesPageReferenceAndMessagesEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference page = new PageReference('/apex/Trail');
 System.assertEquals('/apex/Trail', page.getUrl());
-System.assertEquals('/apex/Trail', page.toString());
-System.assertEquals('/apex/Trail', String.valueOf(page));
+// Native dth_r2_pgref (API 62.0 and 67.0): every text form is System.PageReference[url].
+System.assertEquals('System.PageReference[/apex/Trail]', page.toString());
+System.assertEquals('System.PageReference[/apex/Trail]', String.valueOf(page));
 System.assertEquals(false, page.getRedirect());
 page.setRedirect(true);
 System.assertEquals(true, page.getRedirect());
@@ -5877,8 +5882,11 @@ func TestExecPageReferenceLocalMapsStartTypedAndMutable(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference blank = new PageReference();
 System.assertEquals('', blank.getUrl());
-System.assertEquals('', blank.toString());
-System.assertEquals('', String.valueOf(blank));
+// new PageReference() does not compile natively (sema rejects it: surf_collections_strings
+// dth_r2_pgctor); the VM keeps it for internal callers. A page with no url prints
+// System.PageReference[null], like the implicit current page.
+System.assertEquals('System.PageReference[null]', blank.toString());
+System.assertEquals('System.PageReference[null]', String.valueOf(blank));
 System.assertEquals(0, blank.getParameters().size());
 System.assertEquals(0, blank.getHeaders().size());
 blank.getParameters().put('id', '001B000001DVM9t');
@@ -8939,10 +8947,11 @@ try { FlexQueue.moveJobToFront('707000000000001'); System.assert(false); } catch
 try { FlexQueue.moveJobToEnd('707000000000001'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
 try { FlexQueue.moveBeforeJob('707000000000001', '707000000000002'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
 try { FlexQueue.moveAfterJob('707000000000001', '707000000000002'); System.assert(false); } catch(NoSuchElementException e) { System.assert('Job with id 707000000000001AAA not found in the queue'.equals(e.getMessage())); }
-System.pauseJobById('08e000000000001');
-System.pauseJobByName('local job');
-System.resumeJobById('08e000000000001');
-System.resumeJobByName('local job');
+// NATIVE pause and resume of a job that does not exist apex_release_gates/org.tsv PjProbe67/PJ4 anonymous 62.0 67.0
+try { System.pauseJobById('08e000000000001'); System.assert(false); } catch(AsyncException e) { System.assertEquals('No Apex job with CronTriggerId 08e000000000001 exists', e.getMessage()); }
+try { System.pauseJobByName('local job'); System.assert(false); } catch(AsyncException e) { System.assertEquals('No Apex job named local job exists', e.getMessage()); }
+try { System.resumeJobById('08e000000000001'); System.assert(false); } catch(AsyncException e) { System.assertEquals('No Apex job with CronTriggerId 08e000000000001 exists', e.getMessage()); }
+try { System.resumeJobByName('local job'); System.assert(false); } catch(AsyncException e) { System.assertEquals('No Apex job named local job exists', e.getMessage()); }
 System.assertEquals(0, System.purgeOldAsyncJobs(Date.today()));
 System.assertEquals(0, System.purgeOldAsyncJobs(Date.today(), 10));
 List<Id> batchJobIds = Test.enqueueBatchJobs(2);
@@ -12225,7 +12234,8 @@ Test.stopTest();
 	queueProgram, err := CompileAnonymous(`
 System.assertEquals(false, System.AsyncInfo.hasMaxStackDepth());
 System.assertEquals(1, System.AsyncInfo.getCurrentQueueableStackDepth());
-System.assertEquals(0, System.AsyncInfo.getMaximumQueueableStackDepth());
+// Native surf_async_options as02: no options means a null maximum.
+System.assertEquals(null, System.AsyncInfo.getMaximumQueueableStackDepth());
 // Native bare-enqueue rows at source62/67 distinguish absent delay from zero.
 System.assertEquals(null, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
 `)
@@ -13453,10 +13463,12 @@ System.assertEquals(3, gap.hour());
 System.assertEquals(10, gap.hourGmt());
 
 Datetime overlap = Datetime.newInstance(2024, 11, 3, 1, 30, 0);
-System.assertEquals('2024-11-03 08:30:00', overlap.formatGmt('yyyy-MM-dd HH:mm:ss'));
+// Native surf_datetime_locale dt03: an ambiguous local time takes the
+// post-transition (standard-time) occurrence.
+System.assertEquals('2024-11-03 09:30:00', overlap.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals('11/3/2024, 1:30 AM', overlap.format());
 System.assertEquals(1, overlap.hour());
-System.assertEquals(8, overlap.hourGmt());
+System.assertEquals(9, overlap.hourGmt());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -15357,10 +15369,11 @@ System.assertEquals(1, [SELECT Id FROM Account].size());
 func TestExecInvocableActionInvocationDTOAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
 Invocable.Action action = Invocable.Action.createStandardAction('localNoop');
-System.assertEquals('localNoop', action.getName());
+// NATIVE a standard action has a type, no name and no version apex_release_gates/org.tsv IaProbe67/IA1 anonymous 66.0 67.0
+System.assertEquals(null, action.getName());
 System.assertEquals('localNoop', action.getType());
 System.assertEquals('', action.getNamespace());
-System.assertEquals('', action.getVersion());
+System.assertEquals(null, action.getVersion());
 System.assertEquals(true, action.isStandard());
 Boolean rejected=false;
 try {action.invoke();} catch(TypeException e){rejected='"localNoop" isn\'t a valid action type.'.equals(e.getMessage());}
@@ -16236,7 +16249,8 @@ System.assertEquals(2, CounterMock.idx);
 	machine := New(nil)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "CounterMock",
+		Name:       "CounterMock",
+		Interfaces: []string{"HttpCalloutMock"},
 		StaticFields: map[string]Field{
 			"idx": {Name: "idx", Type: "Integer", Static: true, Value: Int(0), InitialValue: Int(0)},
 		},
@@ -16309,7 +16323,8 @@ System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'page-2']);
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "CounterMock",
+		Name:       "CounterMock",
+		Interfaces: []string{"HttpCalloutMock"},
 		StaticFields: map[string]Field{
 			"idx": {Name: "idx", Type: "Integer", Static: true, Value: Int(0), InitialValue: Int(0)},
 		},

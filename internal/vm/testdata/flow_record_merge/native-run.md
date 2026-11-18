@@ -8,7 +8,7 @@ is the DML message from a `JSON.serialize` debug line, with the debug log's `&#1
 read back as `|`) and @IsTest (`MfProbe`, `sf apex run test`, the observation is the
 assertion message). Both routes are in `org.tsv`; they agree on every row.
 
-Org: 1-day Developer scratch org, deployed `project/`, permission set assigned to the
+Org: 1-day Developer scratch org, deployed `project/`, permission set assigned (outside the test, so it applies at once; `project/glade.yml` seeds it the same way) to the
 running administrator, deleted afterwards. A "Mf Err NN" flow (before-save, create or
 update, filter Name = ERRNN) throws a Custom Error whose message merges seven `$Record`
 fields. The `Mf Var NN` flow merges Number variables, constants and a formula.

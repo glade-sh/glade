@@ -68,16 +68,35 @@ func l07ReportPath(name string) string {
 
 var l07APIVersions = []string{"59.0", "67.0", "68.0"}
 
-func TestL07SalesforceConformanceAPI59(t *testing.T) {
-	l07SalesforceConformance(t, "59.0")
+// Each API's 204 rows are split into l07PartCount interleaved parts, one
+// top-level test each, so the planner can spread the replay further. The parts
+// cover every row exactly once per API. GLADE_L07_ROW_RANGE selects a
+// zero-based, half-open start:end range of rows that each part intersects with
+// its own; the report file name gets ".partNofM" appended.
+const l07PartCount = 2
+
+func TestL07SalesforceConformanceAPI59Part1of2(t *testing.T) {
+	l07SalesforceConformance(t, "59.0", 0)
 }
 
-func TestL07SalesforceConformanceAPI67(t *testing.T) {
-	l07SalesforceConformance(t, "67.0")
+func TestL07SalesforceConformanceAPI59Part2of2(t *testing.T) {
+	l07SalesforceConformance(t, "59.0", 1)
 }
 
-func TestL07SalesforceConformanceAPI68(t *testing.T) {
-	l07SalesforceConformance(t, "68.0")
+func TestL07SalesforceConformanceAPI67Part1of2(t *testing.T) {
+	l07SalesforceConformance(t, "67.0", 0)
+}
+
+func TestL07SalesforceConformanceAPI67Part2of2(t *testing.T) {
+	l07SalesforceConformance(t, "67.0", 1)
+}
+
+func TestL07SalesforceConformanceAPI68Part1of2(t *testing.T) {
+	l07SalesforceConformance(t, "68.0", 0)
+}
+
+func TestL07SalesforceConformanceAPI68Part2of2(t *testing.T) {
+	l07SalesforceConformance(t, "68.0", 1)
 }
 
 // TestL07SalesforceConformancePrerequisites runs the version-independent checks
@@ -240,7 +259,7 @@ func l07RequireToolchain(t *testing.T) {
 	}
 }
 
-func l07SalesforceConformance(t *testing.T, apiVersion string) {
+func l07SalesforceConformance(t *testing.T, apiVersion string, part int) {
 	t.Helper()
 	knownVersion := false
 	for _, version := range l07APIVersions {
@@ -257,6 +276,18 @@ func l07SalesforceConformance(t *testing.T, apiVersion string) {
 	for _, c := range cases {
 		l07ValidateCaseAPI(t, c, apiVersion)
 	}
+	selectedRows, err := selectedPartRows(part, l07PartCount, len(cases), os.Getenv("GLADE_L07_ROW_RANGE"))
+	if err != nil {
+		t.Fatalf("invalid GLADE_L07_ROW_RANGE: %v", err)
+	}
+	if len(selectedRows) == 0 {
+		t.Skipf("GLADE_L07_ROW_RANGE selects no row of part %d", part+1)
+	}
+	var partCases []l07Case
+	for _, index := range selectedRows {
+		partCases = append(partCases, cases[index])
+	}
+	cases = partCases
 	compileCases, runtimeCases := l07CasesByKind(cases)
 	dependencyRoot, err := gladehome.Root()
 	if err != nil {
@@ -392,6 +423,7 @@ func l07SalesforceConformance(t *testing.T, apiVersion string) {
 	t.Logf("L07 matches %d/%d; compile %d/%d; DOM %d/%d; observed local DOM %d/%d", matches, total, compileMatches, len(compileCases)*len(versions), domMatches, len(runtimeCases)*len(versions), localDOMRows, len(runtimeCases)*len(versions))
 	t.Logf("L07 carries %d DOM rows; diagnostics %d/%d with %d carries", carriedRows, diagnosticMatches, diagnosticTotal, diagnosticCarries)
 	if path := l07ReportPath(apiVersion); path != "" {
+		path = fmt.Sprintf("%s.part%dof%d", path, part+1, l07PartCount)
 		if err := os.WriteFile(path, []byte(report.String()), 0600); err != nil {
 			t.Fatal(err)
 		}

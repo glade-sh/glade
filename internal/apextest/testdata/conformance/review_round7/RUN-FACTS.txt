@@ -1,0 +1,11 @@
+family=review_round7
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=OBS lines from the USER_DEBUG log (anonymous); Salesforce ids masked
+repeats=two clean runs; rows identical
+raw_runs=review7/out/20261117T062650Z and 20261117T063522Z (capture cache, not committed)
+class_api_proof=every row reports the deployed class and trigger API equal to the API under test
+residue_note=x_fls at 62.0 carries residue tainted:unchecked-dml:1 in both runs: it inserts the PermissionSetAssignment that the later rows need, and that object is not in the cleanup list, so the record stays for the rest of the run (intended). Every other row is cleaned.
+shapes=b_single, b_two, b_same, b_maxup, b_minlow: a mixed upsert (one update, one insert) of children whose parents carry COUNT, SUM, MAX and MIN roll-ups; the parent after-update trigger logs Trigger.new, Trigger.oldMap and a SOQL read of each parent, and the child trigger logs the parent as it reads it. b_two uses two parents: A gets only an insert, B only an update. b_same updates a child without changing its summarized value. b_maxup raises the MAX through the insert (update 10 to 5, insert 30); b_minlow lowers the MIN through the insert (update 10 to 20, insert 3). b4_dbl and b4_dbl_all: anonymous Database.update(List,false) and Database.update(List) of an inserted master-detail child.
+notes=a parent fires once per group whose children it owns and whose roll-up the group changes; the new record holds the landed values (insert pass: 2/17/10/7), the old record the values before the statement for the first firing and the previous firing's new values for the next (2/27/20/7 over 2/17/10/7). In b_two the insert-only parent fires in the insert pass, the update-only parent after the update group's child trigger, which still reads its own pre-statement values; neither fires twice. A child update that leaves the summarized value alone fires the parent once. An insert that raises the MAX or lowers the MIN lands as such (2/40/30/10, 2/13/10/3). The anonymous Database.update(List,false) and Database.update(List) of an inserted child both succeed at 62.0 and 67.0.

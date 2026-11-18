@@ -45,7 +45,7 @@ func TestSemaBindingResolverNestedFieldsBoundedWork(t *testing.T) {
 	// Nested owners add small declarations. They must not each rediscover the
 	// hundreds of unrelated locals in the enclosing body. An allocation bound
 	// avoids depending on the machine's timing or scheduling.
-	if limit := 3*outerAllocs + 500; nestedAllocs > limit {
+	if limit := float64(3*outerAllocs) + 500; nestedAllocs > limit {
 		t.Fatalf("nested owners allocated %.0f, want <= %.0f: enclosing declarations rescanned", nestedAllocs, limit)
 	}
 }

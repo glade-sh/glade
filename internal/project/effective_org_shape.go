@@ -12,7 +12,7 @@ import "path/filepath"
 func EffectiveOrgShapeFeatures(p Project) []string {
 	var features []string
 	for _, root := range effectiveOrgShapeRoots(p) {
-		features = append(features, OrgShapeFeatures(root)...)
+		features = append(features, orgShapeFeatures(p.inputs, root)...)
 	}
 	return dedupeStrings(features)
 }

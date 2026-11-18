@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -1807,8 +1808,8 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 }
 
 func TestRunWithSourceDigestsPersistsExactV7RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v34" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v34", testRuntimeCacheABI)
+	if testRuntimeCacheABI != "apextest-runtime-v44" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v44", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -3321,8 +3322,10 @@ private class ParallelJournalTest {
 		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
 	}
 	stats := SnapshotPerfCounters()
-	if stats.CloneRuntimeOrgCalls != 2 {
-		t.Fatalf("cloneRuntimeOrg calls = %d, want one journal org per worker", stats.CloneRuntimeOrgCalls)
+	// Workers are capped at GOMAXPROCS, and the pool clones a journal org only
+	// when a worker starts, so a fast first worker may run every method alone.
+	if limit := uint64(min(2, runtime.GOMAXPROCS(0))); stats.CloneRuntimeOrgCalls < 1 || stats.CloneRuntimeOrgCalls > limit {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want 1..%d (at most one journal org per worker)", stats.CloneRuntimeOrgCalls, limit)
 	}
 	if stats.CloneFallbacks != 0 {
 		t.Fatalf("clone fallbacks = %d, want worker journal path", stats.CloneFallbacks)

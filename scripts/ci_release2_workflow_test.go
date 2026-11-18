@@ -18,19 +18,19 @@ func TestCIRelease2PackageShardWorkflow(t *testing.T) {
 			matrix = "shard: [0, 1]"
 		}
 		countEnv := fmt.Sprintf("CI_%s_SHARDS: \"%d\"", strings.ToUpper(pkg), counts[pkg])
-		for _, marker := range []string{matrix, countEnv, "scripts/ci-go-test.sh " + pkg + "-shard", pkg + "-history-input", "name: " + pkg + "-shard-${{ matrix.shard }}", "${{ github.run_attempt }}-${{ matrix.shard }}"} {
+		for _, marker := range []string{matrix, countEnv, "scripts/ci-go-test.sh " + pkg + "-shard", "needs: history-input", "name: " + pkg + "-shard-${{ matrix.shard }}", "${{ github.run_attempt }}-${{ matrix.shard }}"} {
 			if !strings.Contains(job, marker) {
 				t.Errorf("%s shard job missing %q", pkg, marker)
 			}
 		}
-		input := jobs[pkg+"-history-input"]
+		input := jobs["history-input"]
 		for _, marker := range []string{"CI_DURATION_HISTORY_CACHE_REF", pkg + "-duration-history-v1", "name: " + pkg + "-history-input"} {
 			if !strings.Contains(input, marker) {
 				t.Errorf("%s input missing %q", pkg, marker)
 			}
 		}
-		history := jobs[pkg+"-history"]
-		for _, marker := range []string{"needs: " + pkg, "if: ${{ success() }}", "pattern: " + pkg + "-shard-*", pkg + "-duration-history-v1"} {
+		history := jobs["history"]
+		for _, marker := range []string{"needs." + pkg + ".result == 'success'", "pattern: " + pkg + "-shard-*", pkg + "-duration-history-v1"} {
 			if !strings.Contains(history, marker) {
 				t.Errorf("%s history missing %q", pkg, marker)
 			}
@@ -46,13 +46,13 @@ func TestCIRelease2PackageShardWorkflow(t *testing.T) {
 		if strings.Contains(history, fmt.Sprintf("%s-shard-%d", pkg, counts[pkg])) {
 			t.Errorf("%s history names a shard beyond the matrix", pkg)
 		}
-		for _, name := range []string{pkg, pkg + "-history"} {
+		for _, name := range []string{pkg, "history"} {
 			if !strings.Contains(jobs["required-ci"], "      - "+name+"\n") {
 				t.Errorf("Required CI omits %s", name)
 			}
 		}
 	}
-	if !strings.Contains(jobs["vm-history"], `CI_VM_HISTORY_COMPLETE: "1"`) {
+	if !strings.Contains(jobs["history"], `CI_VM_HISTORY_COMPLETE: "1"`) {
 		t.Error("VM validated deferrals must be retained in history")
 	}
 }

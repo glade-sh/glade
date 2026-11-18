@@ -27,6 +27,31 @@ func passiveRouteList() []crRoute {
 	}
 }
 
+// describeShareJunctionOrg is the shared describe fixture plus one relationship
+// with junction names. The shared fixture alone carries none.
+func describeShareJunctionOrg() storage.OrgState {
+	org := describeShareOrg()
+	org.Objects["LinkParent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "LinkParent__c", Fields: map[string]storage.Field{"Id": {APIName: "Id", Label: "Record ID", Type: storage.FieldID}},
+	}}
+	org.Objects["LinkChild__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "LinkChild__c",
+		Fields: map[string]storage.Field{
+			"Id":        {APIName: "Id", Label: "Record ID", Type: storage.FieldID},
+			"Parent__c": {APIName: "Parent__c", Label: "Parent", Type: storage.FieldReference, ReferenceTo: []string{"LinkParent__c"}, RelationshipName: "Parent__r"},
+		},
+		Relations: []storage.Relationship{{
+			Field:               "Parent__c",
+			ParentObjects:       []string{"LinkParent__c"},
+			ParentRelationship:  "Parent__r",
+			ChildRelationship:   "Children__r",
+			JunctionIDListNames: []string{"LinkIds"},
+			JunctionReferenceTo: []string{"LinkParent__c"},
+		}},
+	}}
+	return org
+}
+
 func passiveFindJunction(t *testing.T, m *VM, api string) (string, int, []string) {
 	m.currentMethod.APIVersion = api
 	var names []string
@@ -50,7 +75,7 @@ func passiveFindJunction(t *testing.T, m *VM, api string) (string, int, []string
 
 func TestChildRelationshipDescribePassiveRoutes(t *testing.T) {
 	routes := passiveRouteList()
-	base0, tmpl0 := describeSharePrimedBaseFor(t, false)
+	base0, tmpl0 := describeSharePrimedBaseWithOrg(t, describeShareJunctionOrg())
 	obj, idx, jn := passiveFindJunction(t, describeShareClone(base0, tmpl0), "67.0")
 	digestOf := func(m *VM, api, o string) []string {
 		m.currentMethod.APIVersion = api
@@ -64,7 +89,10 @@ func TestChildRelationshipDescribePassiveRoutes(t *testing.T) {
 	for _, r := range routes {
 		all = append(all, rt{r, "Account"})
 	}
-	if obj != "" {
+	if obj == "" || len(jn) == 0 {
+		t.Fatal("fixture has no relationship with junction names; the e/* routes would not run")
+	}
+	{
 		pre := fmt.Sprintf(`List<Schema.ChildRelationship> rels = Schema.getGlobalDescribe().get('%s').getDescribe().getChildRelationships(); Schema.ChildRelationship cr = rels[%d];
 `, obj, idx)
 		all = append(all,
@@ -75,7 +103,7 @@ func TestChildRelationshipDescribePassiveRoutes(t *testing.T) {
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, route := range all {
 			t.Run(api+"/"+route.name, func(t *testing.T) {
-				base, template := describeSharePrimedBaseFor(t, false)
+				base, template := describeSharePrimedBaseWithOrg(t, describeShareJunctionOrg())
 				early := describeShareClone(base, template)
 				pristine := digestOf(early, api, route.obj)
 				writer := describeShareClone(base, template)
@@ -96,7 +124,7 @@ func TestChildRelationshipDescribePassiveRoutes(t *testing.T) {
 	}
 	for _, route := range all {
 		t.Run("race/"+route.name, func(t *testing.T) {
-			base, template := describeSharePrimedBaseFor(t, false)
+			base, template := describeSharePrimedBaseWithOrg(t, describeShareJunctionOrg())
 			var group sync.WaitGroup
 			start := make(chan struct{})
 			for i := 0; i < 4; i++ {
@@ -123,27 +151,7 @@ func TestChildRelationshipDescribePassiveRoutes(t *testing.T) {
 // and adding names through the passive accessors in one VM rewrites nothing the
 // other VMs read, including the list backing array.
 func TestChildRelationshipDescribeJunctionListsStayShared(t *testing.T) {
-	// The shared fixture org carries no junction names, so add one explicitly.
-	org := describeShareOrg()
-	org.Objects["LinkParent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
-		APIName: "LinkParent__c", Fields: map[string]storage.Field{"Id": {APIName: "Id", Label: "Record ID", Type: storage.FieldID}},
-	}}
-	org.Objects["LinkChild__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
-		APIName: "LinkChild__c",
-		Fields: map[string]storage.Field{
-			"Id":        {APIName: "Id", Label: "Record ID", Type: storage.FieldID},
-			"Parent__c": {APIName: "Parent__c", Label: "Parent", Type: storage.FieldReference, ReferenceTo: []string{"LinkParent__c"}, RelationshipName: "Parent__r"},
-		},
-		Relations: []storage.Relationship{{
-			Field:               "Parent__c",
-			ParentObjects:       []string{"LinkParent__c"},
-			ParentRelationship:  "Parent__r",
-			ChildRelationship:   "Children__r",
-			JunctionIDListNames: []string{"LinkIds"},
-			JunctionReferenceTo: []string{"LinkParent__c"},
-		}},
-	}}
-	base, template := describeSharePrimedBaseWithOrg(t, org)
+	base, template := describeSharePrimedBaseWithOrg(t, describeShareJunctionOrg())
 	object, index, names := passiveFindJunction(t, describeShareClone(base, template), "67.0")
 	if object == "" || len(names) == 0 {
 		t.Fatal("fixture has no relationship with junction names")

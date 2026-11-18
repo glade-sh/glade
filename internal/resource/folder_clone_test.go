@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 func TestFolderMetadataKeepsFrozenDefinitionPrivate(t *testing.T) {
@@ -16,7 +18,7 @@ func TestFolderMetadataKeepsFrozenDefinitionPrivate(t *testing.T) {
 	if err := os.WriteFile(folder, []byte(`<DocumentFolder><name>Owned</name></DocumentFolder>`), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if err := ensureFolderObject(&clone, []string{folder}, ""); err != nil {
+	if err := ensureFolderObject(project.Project{}, &clone, []string{folder}, ""); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := org.Objects["Folder"].Definition.Fields["PublicFolderAccess"]; ok {

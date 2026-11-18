@@ -1,0 +1,11 @@
+capture: criteria-sharing grant checkpoints, private Case with an active criteria rule
+source rows: grant_observations.tsv
+apis: 62.0 67.0
+rows: 24 (12 per API: commit-0 x2, commit-wait x2, update-into x3, update-out x3, cleanup, named-control)
+org shape: Case sharing model Private; one criteria rule sharing Subject = NATIVE_CASE_SHARE_PROBE to a public group; one Standard User reader who is a direct member of the group; the same project as ../case_phase
+routes: anonymous transactions for every row except named-control, which is one @IsTest method
+transactions: each step runs in its own transaction; elapsed_s_since_tx1 is the wall time since the first transaction
+orgs: fresh scratch orgs on a campaign Dev Hub, deleted after the run
+what the rows do not give: any scheduler duration or service guarantee; the next transaction observed the grant five or six seconds after commit, and rows at 30 and 120 seconds hold the same state
+the Apex that produced the rows is held in the private capture packet and is not in this repository. The replay tests write their own scripts that print the same observation format, so the format and the values are the oracle, not the script text.
+the named-control third record (L) is not described in the rows; the replay inserts it non-matching and updates it into the rule inside the test, which is one reading of the format

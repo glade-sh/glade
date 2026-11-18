@@ -52,6 +52,15 @@ func newSemaSources(artifacts *typesys.BuildArtifacts, recorder *perfRecorder) *
 	return newSemaSourcesWithCaptured(artifacts, nil, recorder)
 }
 
+// semaSourcesOrDisk returns shared, or a resolver that reads from disk when
+// the caller has none.
+func semaSourcesOrDisk(shared *semaSources) *semaSources {
+	if shared != nil {
+		return shared
+	}
+	return newSemaSources(nil, nil)
+}
+
 func newSemaSourcesWithCaptured(artifacts *typesys.BuildArtifacts, capturedSource func(string) (string, bool), recorder *perfRecorder) *semaSources {
 	return &semaSources{
 		artifacts:      artifacts,

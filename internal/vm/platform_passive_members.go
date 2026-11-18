@@ -502,6 +502,15 @@ func (vm *VM) flowInterviewOutputValue(output dml.FlowInterviewOutput) Value {
 }
 
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (value Value, updated Value, mutated bool, handled bool, err error) {
+	if receiver.datetimeWeekTerm != 0 && receiver.Kind == ValueObject {
+		// A Datetime produced from a Datetime (addDays and the like) keeps the
+		// source's term. No native row covers arithmetic; this is the choice.
+		defer func() {
+			if handled && value.Kind == ValueObject && value.Type == "Datetime" && value.datetimeWeekTerm == 0 {
+				value.datetimeWeekTerm = receiver.datetimeWeekTerm
+			}
+		}()
+	}
 	defer func() {
 		if mutated {
 			vm.advanceAliasContainmentMutation()
@@ -513,6 +522,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if value, updated, mutated, handled, err := callApprovalRequestMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err
+	}
+	if receiver.Type == queryOptionsType || receiver.Type == queryOptionsBuilderType {
+		if value, mutated, handled, err := callQueryOptionsMember(receiver, method, args); handled || err != nil {
+			return value, receiver, mutated, handled, err
+		}
+	}
+	if receiver.Type == jweTokenType {
+		if value, handled, err := callJweTokenMember(receiver, method, args); handled || err != nil {
+			return value, receiver, false, handled, err
+		}
 	}
 	// R243/R254 guards are local argument/context failures; no hosted operation
 	// is performed, and other members retain the existing DTO implementation.
@@ -1062,28 +1081,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if stack, ok := receiver.Fields["__stackTrace"]; ok {
 				if stack.Kind == ValueString {
-					// Captures distinguish this unthrown DmlException construction
-					// from the thrown IllegalArgumentException helper. Do not infer
-					// the same rule for other types or deeper call chains.
-					callers := 0
-					thrown := receiver.Fields["__thrown"].Bool
-					switch exceptionTypeName(receiver.Type) {
-					case "DmlException":
-						if !thrown {
-							callers = 2
-						}
-					case "IllegalArgumentException":
-						if thrown {
-							callers = 1
-						}
-					}
 					if receiver.exceptionAnonymousCallerLine > 0 {
-						for i := 0; i < callers; i++ {
+						for i := 0; i < vm.exceptionAnonymousFrameCount(receiver); i++ {
 							stack.Text += fmt.Sprintf("\nAnonymousBlock: line %d, column 1", receiver.exceptionAnonymousCallerLine)
 						}
 					}
 					if cause, ok := receiver.Fields["__cause"]; ok && cause.Kind == ValueObject {
 						if causeStack, ok := cause.Fields["__stackTrace"]; ok && causeStack.Kind == ValueString && causeStack.Text != "" {
+							for i := 0; cause.exceptionAnonymousCallerLine > 0 && i < vm.exceptionAnonymousFrameCount(cause); i++ {
+								causeStack.Text += fmt.Sprintf("\nAnonymousBlock: line %d, column 1", cause.exceptionAnonymousCallerLine)
+							}
 							return String(stack.Text + "\nCaused by\n" + causeStack.Text), receiver, false, true, nil
 						}
 					}
@@ -1203,6 +1210,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				for i := range vm.testContext.EventPublishes {
 					vm.testContext.EventPublishes[i].Fail = true
 				}
+				// Native platform-events pe02/pe03/pe05/pe06/pe08 (62.0 and 67.0):
+				// fail() discards the platform events pending at the call. Later
+				// publishes and change events (held in the change journal until
+				// delivery) are unaffected, as are events already delivered.
+				vm.testContext.PlatformEvents = nil
 			}
 			return Null, receiver, false, true, nil
 		}
@@ -2471,6 +2483,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Matcher":
 		return callMatcherMember(receiver, method, args)
 	case "Date":
+		if out, ok := vm.dateHybridMember(receiver, method, args); ok {
+			return out, receiver, false, true, nil
+		}
 		switch method {
 		case "format", "toString":
 			if len(args) != 0 {
@@ -2620,9 +2635,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			rawInstant := t
+			t = julianReadInstant(t)
 			if len(args) == 0 {
 				if method == "toString" {
-					return String(apexDatetimeDisplayText(t)), receiver, false, true, nil
+					return String(apexDatetimeDisplayText(rawInstant)), receiver, false, true, nil
 				}
 				if method == "formatGmt" {
 					return Null, receiver, false, true, fmt.Errorf("Datetime.formatGmt expects pattern String")
@@ -2680,11 +2697,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				tzID = canonical
 				offset = parsedOffset
 				zoneLabel = label
-				t = local
+				t = hybridLocal(rawInstant, local)
 			} else {
 				t = t.UTC()
 			}
-			formatted, err := formatApexDatetimePattern(t, args[0].Text, tzID, zoneLabel, offset, vm.currentUserInfoField("LocaleSidKey", "en_US"))
+			pattern := args[0].Text
+			if rawInstant.Before(hybridYearEnd) {
+				seconds := rawInstant.UTC().Unix() + int64(offset/time.Second)
+				localDays := seconds / 86400
+				if seconds%86400 < 0 {
+					localDays--
+				}
+				pattern = hybridPatternLiterals(pattern, localDays, vm.currentUserInfoField("LocaleSidKey", "en_US"))
+				if _, ok := julianOnlyLeapDay(rawInstant, offset); ok {
+					// 1500-02-29 has no Gregorian twin: month and day read 2000-02-29.
+					t = time.Date(2000, time.February, 29, t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.Location())
+				}
+			}
+			formatted, err := formatApexDatetimePattern(t, pattern, tzID, zoneLabel, offset, vm.currentUserInfoField("LocaleSidKey", "en_US"))
 			if err != nil {
 				return Null, receiver, false, true, newExceptionError("System.StringException", err.Error())
 			}
@@ -2696,6 +2726,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			t, err := parsePlatformDatetime(receiver)
 			if err != nil {
 				return Null, receiver, false, true, err
+			}
+			rawInstant := t
+			t = julianReadInstant(t)
+			if rawInstant.Before(hybridYearEnd) {
+				offset := time.Duration(0)
+				if method == "date" {
+					if _, off, _, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t); ok {
+						offset = off
+					}
+				}
+				seconds := rawInstant.UTC().Unix() + int64(offset/time.Second)
+				days := seconds / 86400
+				if seconds%86400 < 0 {
+					days--
+				}
+				return hybridDateValue(days), receiver, false, true, nil
 			}
 			if method == "date" {
 				zoneID := vm.currentUserTimeZoneID()
@@ -2763,9 +2809,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			case "addDays":
 				t = t.AddDate(0, 0, amount)
 			case "addMonths":
-				t = addMonthsClamped(t, amount)
+				t = addMonthsHybrid(t, amount)
 			case "addYears":
-				t = addMonthsClamped(t, amount*12)
+				t = addMonthsHybrid(t, amount*12)
 			case "addHours":
 				t = t.Add(time.Duration(amount) * time.Hour)
 			case "addMinutes":
@@ -2783,6 +2829,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			rawInstant := t
+			t = julianReadInstant(t)
 			if strings.HasSuffix(method, "Gmt") {
 				t = t.UTC()
 				method = strings.TrimSuffix(method, "Gmt")
@@ -2792,6 +2840,28 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Null, receiver, false, true, unsupportedCallError("Datetime." + method + " timezone " + vm.currentUserTimeZoneID())
 				}
 				t = local
+			}
+			if rawInstant.Before(hybridYearEnd) && (method == "year" || method == "month" || method == "day" || method == "dayOfYear") {
+				// The civil fields of a date in the hybrid calendar's early years,
+				// including the Julian leap day and the days the cutover skipped
+				// (native CalShapes: 1500-02-29 has day 60, 1582-10-15 day 278).
+				_, offset := t.Zone()
+				seconds := rawInstant.UTC().Unix() + int64(offset)
+				days := seconds / 86400
+				if seconds%86400 < 0 {
+					days--
+				}
+				year, month, day := hybridCivil(days)
+				switch method {
+				case "year":
+					return Int(int64(year)), receiver, false, true, nil
+				case "month":
+					return Int(int64(month)), receiver, false, true, nil
+				case "day":
+					return Int(int64(day)), receiver, false, true, nil
+				default:
+					return Int(days - hybridDays(year, 1, 1) + 1), receiver, false, true, nil
+				}
 			}
 			switch method {
 			case "year":
@@ -2822,11 +2892,37 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			rawInstant := t
+			t = julianReadInstant(t)
 			_, _, local, label, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
 			if !ok {
 				return Null, receiver, false, true, unsupportedCallError("Datetime.formatLong timezone " + vm.currentUserTimeZoneID())
 			}
-			return String(local.Format("1/2/2006, 3:04:05 PM") + " " + label), receiver, false, true, nil
+			local = hybridLocal(rawInstant, local)
+			if zone, modeled := supportedNamedTimeZone(vm.currentUserTimeZoneID()); modeled && zone.beforeFirstTransition(rawInstant) {
+				// Before the zone's first recorded transition the long form names
+				// the offset (native CalLocal2: 1500 in Los Angeles is GMT-8).
+				_, seconds := local.Zone()
+				label = formatGMTOffsetLabel(time.Duration(seconds) * time.Second)
+			}
+			julianLeapYear := 0
+			if _, seconds := local.Zone(); rawInstant.Before(hybridYearEnd) {
+				if year, ok := julianOnlyLeapDay(rawInstant, time.Duration(seconds)*time.Second); ok {
+					// 1500-02-29 has no Gregorian twin: read 2000-02-29, restore the year.
+					julianLeapYear = year
+					local = time.Date(2000, time.February, 29, local.Hour(), local.Minute(), local.Second(), local.Nanosecond(), local.Location())
+				}
+			}
+			restore := func(text string) string {
+				if julianLeapYear != 0 {
+					return strings.Replace(text, "2000", fmt.Sprintf("%04d", julianLeapYear), 1)
+				}
+				return text
+			}
+			if text, shaped := datetimeFormatLongForLocale(local, vm.currentUserInfoField("LocaleSidKey", "en_US")); shaped {
+				return String(restore(text)), receiver, false, true, nil
+			}
+			return String(restore(local.Format("1/2/2006, 3:04:05 PM") + " " + label)), receiver, false, true, nil
 		case "isSameDay":
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.isSameDay expects Datetime")
@@ -2950,7 +3046,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return receiver.Fields["id"], receiver, false, true, nil
 		case "getDisplayName":
 			if len(args) == 0 {
-				return vm.timeZoneDisplayName(receiver), receiver, false, true, nil
+				name, err := vm.timeZoneDisplayName(receiver)
+				return name, receiver, false, true, err
 			}
 			return Null, receiver, false, true, unsupportedCallError("TimeZone.getDisplayName locale/style overloads")
 		case "getOffset":
@@ -4003,6 +4100,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, inputErr
 			}
 			engine := vm.newDMLEngine(result)
+			engine.UserModeRecordVisible = func(objectName string, record storage.Record) bool {
+				return vm.currentUserObjectPermission(objectName, "isAccessible") && vm.userModeRecordVisible(objectName, record, vm.currentUserInfoField("Id", "005-local-user"))
+			}
 			output, err := engine.RunAutolaunchedFlowWithOutput(rule, input)
 			if err != nil {
 				if detail, ok := dml.FlowUnhandledDetail(err); ok {
@@ -6138,7 +6238,13 @@ func (vm *VM) callSObjectFieldDescribe(receiver Value, args []Value, result *Res
 	if !ok || fieldValue.Kind != ValueString {
 		return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing field")
 	}
-	describe, err := vm.describeFieldValue(objectValue.Text, fieldValue.Text)
+	var describe Value
+	var err error
+	if receiver.Fields["__plainDeveloperTier"].Bool {
+		describe, err = vm.describePlainDeveloperTier(objectValue.Text)
+	} else {
+		describe, err = vm.describeFieldValue(objectValue.Text, fieldValue.Text)
+	}
 	if err != nil {
 		return Null, receiver, false, true, err
 	}
@@ -6211,3 +6317,55 @@ func (vm *VM) callSObjectFieldDescribe(receiver Value, args []Value, result *Res
 // missingCertificateMessage is the stable prefix of the native message; the
 // platform appends a help link whose release and instance vary per org.
 const missingCertificateMessage = "Data Not Available: The data you were trying to access could not be found."
+
+// exceptionAnonymousFrameCount is how many AnonymousBlock frames native
+// Salesforce appends after the class frames of an exception raised below an
+// anonymous caller. It depends only on the exception type: not on class depth,
+// the catch site or whether the exception was thrown. Types not measured keep
+// no appended frames.
+func (vm *VM) exceptionAnonymousFrameCount(exception Value) int {
+	switch exceptionTypeName(exception.Type) {
+	case "IllegalArgumentException":
+		return 1
+	case "NullPointerException", "ListException", "MathException", "TypeException", "QueryException", "DmlException":
+		return 2
+	}
+	if class, ok := vm.lookupClass(exception.Type); ok && !class.PlatformType {
+		return 1
+	}
+	return 0
+}
+
+// datetimeFormatLongForLocale shapes Datetime.formatLong for the locales the
+// native surf_datetime_locale rows captured (en_GB, de_DE, ja_JP). They use a
+// 24-hour clock and a GMT-offset zone token; English month names do not appear.
+// Other locales keep the en_US shape until rows exist for them.
+func datetimeFormatLongForLocale(local time.Time, locale string) (string, bool) {
+	var layout string
+	clock := ""
+	switch locale {
+	case "en_GB":
+		layout = "02/01/2006, 15:04:05"
+	case "de_DE":
+		layout = "02.01.2006, 15:04:05"
+	case "ja_JP":
+		layout = "2006/01/02"
+		clock = fmt.Sprintf(" %d:%02d:%02d", local.Hour(), local.Minute(), local.Second())
+	default:
+		return "", false
+	}
+	_, offset := local.Zone()
+	zone := "GMT"
+	if offset != 0 {
+		sign := "+"
+		if offset < 0 {
+			sign = "-"
+			offset = -offset
+		}
+		zone += sign + strconv.Itoa(offset/3600)
+		if minutes := offset % 3600 / 60; minutes != 0 {
+			zone += fmt.Sprintf(":%02d", minutes)
+		}
+	}
+	return local.Format(layout) + clock + " " + zone, true
+}

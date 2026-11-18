@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome
+ARCHIVE-DEPLOY-68	68.0	deploy	false	false	ApexClass CapArchive68: Type is not visible: SF_Archive.ArchiverAccessorResponse; ApexClass CapArchive68: Type is not visible: SF_Archive.ArchiverAccessorResponse
+ARCHIVE-DEPLOY-67	67.0	deploy	false	false	ApexClass CapArchive67: Type is not visible: SF_Archive.ArchiverAccessorResponse; ApexClass CapArchive67: Type is not visible: SF_Archive.ArchiverAccessorResponse

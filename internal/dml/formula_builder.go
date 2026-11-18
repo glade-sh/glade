@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -350,11 +351,11 @@ func (p *formulaParser) evaluateExtendedFormulaFunction(name string, args []form
 		case "SQRT":
 			n = math.Sqrt(n)
 		case "EXP":
-			n = math.Exp(n)
+			n = stablemath.ExpStable(n)
 		case "LN":
-			n = math.Log(n)
+			n = stablemath.LogStable(n)
 		case "LOG":
-			n = math.Log10(n)
+			n = stablemath.Log10Stable(n)
 		}
 		if math.IsNaN(n) || math.IsInf(n, 0) {
 			return formulaValue{}, true, false
@@ -363,6 +364,13 @@ func (p *formulaParser) evaluateExtendedFormulaFunction(name string, args []form
 	case "POWER", "MIN", "MAX":
 		if len(args) == 0 || (name == "POWER" && len(args) != 2) {
 			return formulaValue{}, true, false
+		}
+		if p.queryBlankNumber && (name == "MIN" || name == "MAX") {
+			for _, a := range args {
+				if a.kind == formulaNull {
+					return formulaValue{kind: formulaNull}, true, true
+				}
+			}
 		}
 		n, ok := args[0].asNumber()
 		if !ok {
@@ -375,7 +383,7 @@ func (p *formulaParser) evaluateExtendedFormulaFunction(name string, args []form
 			}
 			switch name {
 			case "POWER":
-				n = math.Pow(n, v)
+				n = stablemath.PowStable(n, v)
 			case "MIN":
 				n = math.Min(n, v)
 			case "MAX":

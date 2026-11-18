@@ -174,9 +174,9 @@ func upsertEmailServiceRecord(org *OrgState, generator *IDGenerator, object, key
 	record.Fields["Id"] = IDValue(id)
 	stampSeedSystemFields(&record)
 	if state.Records == nil {
-		state.Records = make(map[ID]Record)
+		state.SetRecords(make(map[ID]Record))
 	}
-	state.Records[id] = record
+	state.PutRecord(id, record)
 	org.Objects[object] = state
 	return id, nil
 }

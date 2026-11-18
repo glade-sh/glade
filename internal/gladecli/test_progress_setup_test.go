@@ -116,7 +116,8 @@ func TestProgressFailingSetupCLIHasSeparateCounts(t *testing.T) {
 			seen := map[string]bool{}
 			for _, test := range envelope.Tests {
 				seen[test.MethodName] = true
-				if test.Status != testreport.StatusRuntimeError || test.Reason != testreport.ReasonRuntimeError {
+				// A setup exception is a Fail row on each method (test_runner_coverage/org.tsv ic04-sync).
+				if test.Status != testreport.StatusFail || test.Reason != testreport.ReasonRuntimeError {
 					t.Fatalf("setup terminal status/reason changed: %#v", test)
 				}
 				if test.Problem == nil || !strings.Contains(test.Problem.Message, "owned setup marker") {

@@ -213,7 +213,15 @@ func flowTriggeredStepsSafe(rule storage.FlowRule, steps []storage.FlowStep, lab
 // flowActionError reports a failed Apex action. Inside an event-triggered
 // interview a thrown exception is a fault the interview can handle or die on.
 func (e *Engine) flowActionError(name string, err error) error {
-	if !e.platformEventInterview || e.FlowFaultDetail == nil {
+	if e.FlowFaultDetail == nil {
+		return flowActionFailure(name, err)
+	}
+	if !e.platformEventInterview {
+		if detail := e.FlowFaultDetail(err); detail != "" && e.recordTriggeredFlow > 0 {
+			// The text stays out of $Flow.FaultMessage, which keeps its earlier
+			// wording; only the unhandled form reports it.
+			return &flowElementFault{err: flowActionFailureError(name, err), verb: flowApexActionVerb, code: "APEX_FAILED", text: detail, inTest: e.flowFaultInTest()}
+		}
 		return flowActionFailure(name, err)
 	}
 	return flowActionFailureWithDetail(name, err, e.FlowFaultDetail(err))

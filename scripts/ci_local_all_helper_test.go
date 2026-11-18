@@ -17,8 +17,8 @@ func TestCILocalAllApexHelperTwelveShards(t *testing.T) {
 	testCILocalAllApexHelper(t, 12)
 }
 
-func TestCILocalAllApexHelperFourteenShards(t *testing.T) {
-	testCILocalAllApexHelper(t, 14)
+func TestCILocalAllApexHelperSixteenShards(t *testing.T) {
+	testCILocalAllApexHelper(t, 16)
 }
 
 func testCILocalAllApexHelper(t *testing.T, count int) {

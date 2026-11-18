@@ -18,8 +18,17 @@ type Engine struct {
 	PermissionUserFields map[string]storage.Value
 	// UserHasCustomPermission consults the host's current execution-user context.
 	UserHasCustomPermission func(string) bool
-	Options                 Options
-	FlowActionInvoker       func(storage.FlowAction, storage.Record) error
+	// PermissionAssignmentHidden reports a test-made assignment the host's
+	// current context does not apply yet.
+	PermissionAssignmentHidden func(storage.Record) bool
+	// DuplicateMatcher lets Apex apply its current sharing and field access
+	// through the common duplicate evaluator. Non-Apex callers use the evaluator directly.
+	DuplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (DuplicateResult, bool)
+	// DuplicatePeerMatcher is DuplicateMatcher limited to the given records, the
+	// ones the current statement inserted earlier. Nil scans them without access checks.
+	DuplicatePeerMatcher func(storage.DuplicateRule, storage.Record, map[storage.ID]storage.Record) (DuplicateResult, bool)
+	Options              Options
+	FlowActionInvoker    func(storage.FlowAction, storage.Record) error
 	// FlowMatchObserver is called once each time a flow rule matches a record.
 	// It is advisory and must not change execution.
 	FlowMatchObserver func()
@@ -84,8 +93,17 @@ type Engine struct {
 	// FlowFaultInTest reports a run inside a test, where Salesforce words a
 	// duplicate-value fault without the field or the record.
 	FlowFaultInTest func() bool
+	// UserModeRecordVisible reports whether the running user sees a record.
+	// A Flow that runs in user mode (runInMode UserMode) skips Update Records
+	// targets it cannot see.
+	UserModeRecordVisible func(objectName string, record storage.Record) bool
 
-	platformEventInterview    bool
+	platformEventInterview bool
+	// recordTriggeredFlow is positive while a record-triggered after-save flow
+	// runs: its Create and Update Records elements save under the duplicate
+	// rules, and its unhandled Apex action failures surface as the flow's
+	// process failure (native rows in automation_residual_paths).
+	recordTriggeredFlow       int
 	activeFlowName            string
 	pendingInterviewEvents    []storage.Record
 	capturedMixedAfterSave    bool
@@ -96,6 +114,12 @@ type Engine struct {
 	flowDepth                 int
 	summaryOrder              []string
 	summaryUpdates            map[string]SummaryUpdate
+	summaryHold               *storage.SummaryHold
+	summaryHoldRelations      []heldSummaryRelation
+	summaryHoldSuspended      bool
+	summaryTakeScope          map[string]bool
+	summaryRendered           map[string]storage.Record
+	summaryRenderedOrder      []string
 	automationRoll            map[string]bool
 	uniqueBatch               *uniqueBatchContext
 	activityRefresh           *activityRefreshBatch
@@ -194,7 +218,13 @@ func (c *SummaryRelationCache) store(childObjectName string, relations []summary
 }
 
 type Options struct {
-	AssignmentRule *storage.AssignmentRuleSelection
+	// UserModePermissionSetID carries the scoped access level through DML retries.
+	UserModePermissionSetID string
+	// ExplicitUserMode marks a Database call with an explicit
+	// AccessLevel.USER_MODE; ExplicitUserModePartialRecord narrows it to a
+	// partial single-record call.
+	ExplicitUserMode, ExplicitUserModePartialRecord bool
+	AssignmentRule                                  *storage.AssignmentRuleSelection
 	// Apex insert/update statements enforce duplicate rules; explicit
 	// Database.DMLOptions.DuplicateRuleHeader.allowSave saves Allow+Alert matches.
 	EnforceDuplicateRules, AllowDuplicateSave bool
@@ -232,6 +262,10 @@ type Options struct {
 	AllowApexIDLookupUpsert bool
 	// Test-context emptyRecycleBin releases membership while retaining deleted rows.
 	RetainEmptiedRecycleBinRecords bool
+	// ScaledNumberOverflow selects the Apex insert rejection of an integer
+	// part too large for a Percent or Number field with a scale: 0 off, 1 the
+	// API 62-66 wording, 2 the API 67+ wording.
+	ScaledNumberOverflow int
 }
 
 type SummaryUpdate struct {
@@ -344,6 +378,7 @@ func (e *Engine) RunAutolaunchedFlowWithOutput(rule storage.FlowRule, input Flow
 	}
 	frame := newFlowFrame()
 	frame.autolaunched = true
+	frame.userMode = strings.EqualFold(strings.TrimSpace(rule.RunInMode), "UserMode")
 	frame.stepTargets = rule.StepTargets
 	frame.textTemplates = cloneFlowTextTemplates(rule.TextTemplates)
 	for name, value := range input.Scalars {
@@ -472,6 +507,7 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 	results := make([]Result, len(records))
 	statementStamp := ""
 	for i, record := range records {
+		originalFields := record.Fields
 		if !e.DeferAutomation {
 			record = record.Clone()
 			object, objectName, err := e.object(record.Object)
@@ -511,7 +547,7 @@ func (e *Engine) Insert(records []storage.Record) []Result {
 			}
 			record = before[0]
 		}
-		id, err := e.insertOne(record, &statementStamp)
+		id, err := e.insertOne(record, &statementStamp, originalFields)
 		if err != nil {
 			results[i] = resultFromError(record.ID, err)
 			continue
@@ -648,7 +684,7 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 		stored.System.LastModifiedDate = stamp
 		stored.System.SystemModstamp = stamp
 		stored.System.LastModifiedByID = e.systemUserID()
-		object.Records[storedID] = stored
+		object.PutRecord(storedID, stored)
 		e.Org.Objects[objectName] = object
 		e.addUniqueIndexRecord(objectName, object.Definition, stored)
 		e.restoreCascadeDeletedChildren(objectName, storedID, make(map[string]bool))
@@ -700,9 +736,9 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 		}
 		if e.Options.RetainEmptiedRecycleBinRecords {
 			stored.System.RecycleBinEmptied = true
-			object.Records[storedID] = stored
+			object.PutRecord(storedID, stored)
 		} else {
-			delete(object.Records, storedID)
+			object.DeleteRecord(storedID)
 		}
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
@@ -791,7 +827,7 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		storedDuplicate.System.LastModifiedDate = stamp
 		storedDuplicate.System.SystemModstamp = stamp
 		storedDuplicate.System.LastModifiedByID = e.systemUserID()
-		object.Records[storedDuplicateID] = storedDuplicate
+		object.PutRecord(storedDuplicateID, storedDuplicate)
 		e.Org.Objects[objectName] = object
 		e.removeUniqueIndexRecord(objectName, object.Definition, storedDuplicate)
 		if e.ChangeObserver != nil {
@@ -847,7 +883,7 @@ func (e *Engine) setLock(records []storage.Record, locked bool) []Result {
 			e.IsolationJournal.RecordUpdate(objectName, storedID, stored)
 		}
 		stored.System.Locked = locked
-		object.Records[storedID] = stored
+		object.PutRecord(storedID, stored)
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
 	}
@@ -875,7 +911,7 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 					e.IsolationJournal.RecordUpdate(childObjectName, id, record)
 				}
 				record.Fields[relation.Field] = storage.IDValue(newID)
-				childObject.Records[id] = record
+				childObject.PutRecord(id, record)
 				seen[id] = struct{}{}
 				changed = true
 			}
@@ -962,19 +998,27 @@ func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
 		return nil
 	}
 	updates := make([]SummaryUpdate, 0, len(e.summaryOrder))
+	var kept []string
 	for _, key := range e.summaryOrder {
+		if e.summaryTakeScope != nil && !e.summaryTakeScope[key] {
+			kept = append(kept, key)
+			continue
+		}
 		update, ok := e.summaryUpdates[key]
+		delete(e.summaryUpdates, key)
 		if !ok || update.Object == "" || update.Before.ID == "" || update.After.ID == "" {
 			continue
 		}
 		updates = append(updates, update)
 	}
-	e.summaryOrder = nil
-	e.summaryUpdates = nil
+	e.summaryOrder = kept
+	if len(kept) == 0 {
+		e.summaryUpdates = nil
+	}
 	return updates
 }
 
-func (e *Engine) insertOne(record storage.Record, statementStamp *string) (storage.ID, error) {
+func (e *Engine) insertOne(record storage.Record, statementStamp *string, capturedInsert ...map[string]storage.Value) (storage.ID, error) {
 	// Only the person account's own contact insert is the system insert;
 	// anything it causes is an ordinary insert.
 	personContact := e.personContactInsert
@@ -993,6 +1037,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := e.validateManagedShareInsert(record); err != nil {
 		return "", err
 	}
+	normalizeTextWrites(object.Definition, e.Org.Namespace, &record)
 	normalizeNameFields(objectName, object.Definition, &record)
 	if err := validateBusinessAccountContacts(objectName, object.Definition, record); err != nil {
 		return "", err
@@ -1050,7 +1095,14 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := e.applyStringLengthRules(object.Definition, &record); err != nil {
 		return "", err
 	}
-	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
+	var originalFields map[string]storage.Value
+	if len(capturedInsert) > 0 {
+		originalFields = capturedInsert[0]
+	}
+	if err := validateFieldsForOperation(object.Definition, e.Org.Namespace, record, nil, originalFields); err != nil {
+		return "", err
+	}
+	if err := e.validateScaledNumberOverflow(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
 	e.applyQuoteLineItemDerivedFields(&record)
@@ -1143,7 +1195,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	if err := storage.ValidateID(record.ID); err != nil {
 		return "", err
 	}
-	e.noteDuplicateInsert(statementStamp, duplicateReport, record.ID)
+	e.noteDuplicateInsert(statementStamp, duplicateReport, objectName, record.ID)
 	if record.HierarchyNameUsesRecordID || customTextNameUsesRecordID(object.Definition, record) {
 		if record.Fields == nil {
 			record.Fields = make(map[string]storage.Value)
@@ -1182,7 +1234,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 		record.System.OwnerID = userID
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordInsert(objectName, record.ID)
@@ -1195,9 +1247,13 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	storedRecord.ParentRelationships = nil
 	storedRecord.LoadedReferences = nil
 	storedRecord.ClearClearedLookupHistory()
-	object.Records[record.ID] = storedRecord
+	object.PutRecord(record.ID, storedRecord)
 	e.Org.Objects[objectName] = object
 	e.RecordCreations.Record(record.ID)
+	if e.duplicates.insertMatched {
+		e.RecordCreations.MarkDuplicate(record.ID)
+		e.duplicates.insertMatched = false
+	}
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	e.recalculateSummaryFieldsForChildren(objectName, record)
 	if err := e.reconcilePrivateOwnerShares(objectName, record.ID); err != nil {

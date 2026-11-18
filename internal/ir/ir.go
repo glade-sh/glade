@@ -99,9 +99,19 @@ type Expr struct {
 	Left      *Expr      `json:"left,omitempty"`
 	Right     *Expr      `json:"right,omitempty"`
 
+	// Pos is the source offset of a method call's name token, or of the new
+	// token of a constructor call. Stack frames report that token's line.
+	Pos int `json:"pos,omitempty"`
+
 	// CastQueryOperand distinguishes a directly enclosed query expression
 	// from a stored result or an Object bridge before runtime values erase it.
 	CastQueryOperand bool `json:"castQueryOperand,omitempty"`
+
+	// StartPos is the source offset of the expression's first token, set only
+	// on an operand that runs conditionally: the right side of && || ?? and
+	// each ternary branch. Code coverage attributes the operand's lines when
+	// it runs. Zero means unknown. It never affects evaluation.
+	StartPos int32 `json:"startPos,omitempty"`
 }
 
 type NamedArg struct {

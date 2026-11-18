@@ -1,0 +1,10 @@
+family=order-default
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=USER_DEBUG lines (anonymous) or assertion messages (isTest); Salesforce ids masked as <id>
+rows 62.0,67.0=payloads identical at both API versions
+holdout_inputs_sha256=72da65b3fb7e64a78fea0cc9c4485fa62c76fdd529238bc1721220fb4a5bbe0a
+sf_cli=2.157.8
+run=request-order 20261116T042700Z
+run=request-supp 20261116T044238Z

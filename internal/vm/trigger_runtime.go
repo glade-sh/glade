@@ -72,8 +72,30 @@ type triggerExecutionError struct {
 func (e *triggerExecutionError) Error() string { return e.detail }
 func (e *triggerExecutionError) Unwrap() error { return e.cause }
 
+// triggerDepthUnwind is the depth failure while it leaves the nested trigger
+// activations. Natively no Apex catch in an inner activation observes it: it
+// reaches the DML statement in the outermost trigger, which sees a catchable
+// DmlException or a failed SaveResult (trigger_depth_unwind, test_boundary_edges
+// trm_catch and trm_partial). It deliberately has no Unwrap to the exception,
+// so the Apex try/catch machinery cannot intercept it on the way out.
+type triggerDepthUnwind struct{ failure *triggerExecutionError }
+
+func (e *triggerDepthUnwind) Error() string { return e.failure.detail }
+
+// triggerActivation is one running trigger event, for the depth failure text.
+type triggerActivation struct{ object, timing, operation string }
+
+func triggerEventName(timing, operation string) string {
+	return strings.ToUpper(timing[:1]) + timing[1:] + strings.ToUpper(operation[:1]) + operation[1:]
+}
+
 func (vm *VM) wrapTriggerExecutionError(trigger Trigger, err error) error {
 	if hasSuffixFold(trigger.Object, "__e") {
+		return err
+	}
+	var depthFailure *apexThrowError
+	if errors.As(err, &depthFailure) && vm.triggerDepth > 1 && strings.Contains(exceptionMessage(depthFailure.value), ": maximum trigger depth exceeded\n") {
+		// Only the outermost activation wraps the depth failure.
 		return err
 	}
 	var flowFailure *invocableFlowCallerTriggerFailure
@@ -155,6 +177,11 @@ func dmlExceptionFromTriggerError(op string, err error) error {
 	if errors.As(err, &thrown) {
 		if detail := exceptionMessage(thrown.value); detail != "" {
 			message = detail
+		}
+		if strings.Contains(message, ": maximum trigger depth exceeded\n") {
+			// The depth failure reaches each enclosing DML statement as the
+			// same DmlException (test_boundary_edges tr_depth).
+			return err
 		}
 	} else {
 		if _, readonly := triggerReadOnlyMessage(err); !readonly {
@@ -251,7 +278,7 @@ func (vm *VM) rollbackAfterTriggerFailures(op string, records []storage.Record, 
 		backupObject, hasBackupObject := backup.Objects[objectName]
 		if hasBackupObject {
 			if storedID, previous, found := storage.LookupRecordByID(backupObject.Records, record.ID); found {
-				current.Records[storedID] = previous.Clone()
+				current.PutRecord(storedID, previous.Clone())
 				vm.Org.Objects[objectName] = current
 				continue
 			}
@@ -259,7 +286,7 @@ func (vm *VM) rollbackAfterTriggerFailures(op string, records []storage.Record, 
 		if strings.EqualFold(op, "insert") || strings.EqualFold(op, "upsert") {
 			if storedID, _, found := storage.LookupRecordByID(current.Records, record.ID); found {
 				vm.recordCreations.Forget(storedID)
-				delete(current.Records, storedID)
+				current.DeleteRecord(storedID)
 				vm.Org.Objects[objectName] = current
 			}
 		}
@@ -289,13 +316,13 @@ func (vm *VM) hasTriggerForDML(timing, op string, records []storage.Record) bool
 	}
 	return false
 }
-func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollback vmDMLRollbackPoint, result *Result) error {
+func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollback vmDMLRollbackPoint, result *Result, summaryParent, summaryKey string, children []storage.Record, childResults []dml.Result) ([]dml.Result, error) {
 	if engine == nil {
-		return nil
+		return nil, nil
 	}
 	updates := engine.TakeSummaryUpdates()
 	if len(updates) == 0 {
-		return nil
+		return nil, nil
 	}
 	byObject := make(map[string][]dml.SummaryUpdate)
 	order := make([]string, 0)
@@ -321,55 +348,156 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollb
 				update.After.Object = objectName
 			}
 		}
+		engine.OverlayHeldSummary(&update)
 		byObject[objectName] = append(byObject[objectName], update)
 	}
+	clonedResults := false
 	for _, objectName := range order {
 		group := byObject[objectName]
-		before := make([]storage.Record, 0, len(group))
-		records := make([]storage.Record, 0, len(group))
-		for _, update := range group {
-			before = append(before, update.Before)
-			records = append(records, update.After)
+		if summaryParent != objectName {
+			before := make([]storage.Record, 0, len(group))
+			records := make([]storage.Record, 0, len(group))
+			for _, update := range group {
+				before = append(before, update.Before)
+				records = append(records, update.After)
+			}
+			triggerRecords := vm.hydrateUpdateTriggerRecords(records, before)
+			failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
+			if err != nil {
+				if allOrNone {
+					if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+				}
+				return nil, dmlExceptionFromTriggerError("update", err)
+			}
+			if hasDMLFailures(failures) {
+				if allOrNone {
+					if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+				}
+				return nil, fmt.Errorf("summary update trigger failed for %s: %s", objectName, failures[0].Error)
+			}
+			if err := vm.storeTriggerRecords(objectName, triggerRecords); err != nil {
+				if allOrNone {
+					if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+				}
+				return nil, err
+			}
+			if _, err := vm.runTriggers(triggerTimingAfter, "update", triggerRecords, before, result); err != nil {
+				if allOrNone {
+					if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+						return nil, rollbackErr
+					}
+				}
+				return nil, dmlExceptionFromTriggerError("update", err)
+			}
+			if err := vm.applyDeferredAutomation(engine, triggerRecords, before, allOrNone, rollback, result); err != nil {
+				return nil, err
+			}
+			continue
 		}
-		triggerRecords := vm.hydrateUpdateTriggerRecords(records, before)
-		failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
+		parentPoint := vm.beginDMLRollbackPoint(true, false)
+		// Resolve a 15- or 18-character foreign key against the stored parent
+		// once per child. Multiple siblings retain their original result indices.
+		inputs := make(map[storage.ID][]int)
+		for j, child := range children {
+			if j >= len(childResults) || !childResults[j].Success {
+				continue
+			}
+			id := storageIDFromValue(child.Fields[summaryKey])
+			if parentID, _, ok := storage.LookupRecordByID(vm.Org.Objects[objectName].Records, id); ok {
+				inputs[parentID] = append(inputs[parentID], j)
+			}
+		}
+
+		// Both parent attempts use the same trigger, validation and automation phases.
+		attempt := func(updates []dml.SummaryUpdate) ([]dml.SummaryUpdate, bool, error) {
+			before := make([]storage.Record, 0, len(updates))
+			records := make([]storage.Record, 0, len(updates))
+			for _, update := range updates {
+				before = append(before, update.Before)
+				records = append(records, update.After)
+			}
+			triggerRecords := vm.hydrateUpdateTriggerRecords(records, before)
+			failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
+			if err != nil {
+				return nil, false, dmlExceptionFromTriggerError("update", err)
+			}
+			if hasDMLFailures(failures) {
+				return nil, false, fmt.Errorf("summary update trigger failed for %s: %s", objectName, failures[0].Error)
+			}
+			valid := make([]storage.Record, 0, len(records))
+			validBefore := make([]storage.Record, 0, len(records))
+			survivors := make([]dml.SummaryUpdate, 0, len(records))
+			failed := false
+			for i, record := range triggerRecords {
+				if affected := inputs[record.ID]; len(affected) > 0 {
+					if failure := engine.ValidateSummaryUpdate(updates[i], record); !failure.Success {
+						failed = true
+						if !clonedResults {
+							childResults = append([]dml.Result(nil), childResults...)
+							clonedResults = true
+						}
+						for _, j := range affected {
+							childResults[j] = failure
+						}
+						continue
+					}
+				}
+				valid = append(valid, record)
+				validBefore = append(validBefore, before[i])
+				survivors = append(survivors, updates[i])
+			}
+			if err := vm.storeTriggerRecords(objectName, valid); err != nil {
+				return nil, false, err
+			}
+			// Parent after-trigger row errors are not captured for this path.
+			// Like the other summary path, ignore them.
+			if _, err := vm.runTriggers(triggerTimingAfter, "update", valid, validBefore, result); err != nil {
+				return nil, false, dmlExceptionFromTriggerError("update", err)
+			}
+			if err := vm.applyDeferredAutomation(engine, valid, validBefore, allOrNone, rollback, result); err != nil {
+				return nil, false, err
+			}
+			return survivors, failed, nil
+		}
+		survivors, failed, err := attempt(group)
 		if err != nil {
+			vm.finishDMLRollbackPoint(parentPoint)
 			if allOrNone {
 				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
-					return rollbackErr
+					return nil, rollbackErr
 				}
 			}
-			return dmlExceptionFromTriggerError("update", err)
+			return nil, err
 		}
-		if hasDMLFailures(failures) {
-			if allOrNone {
-				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
-					return rollbackErr
+		if failed {
+			if err := vm.restoreDMLRollbackPoint(parentPoint); err != nil {
+				return nil, err
+			}
+			if len(survivors) > 0 {
+				_, _, err = attempt(survivors)
+				if err != nil {
+					if allOrNone {
+						if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+							return nil, rollbackErr
+						}
+					}
+					return nil, err
 				}
 			}
-			return fmt.Errorf("summary update trigger failed for %s: %s", objectName, failures[0].Error)
-		}
-		if err := vm.storeTriggerRecords(objectName, triggerRecords); err != nil {
-			if allOrNone {
-				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
-					return rollbackErr
-				}
-			}
-			return err
-		}
-		if _, err := vm.runTriggers(triggerTimingAfter, "update", triggerRecords, before, result); err != nil {
-			if allOrNone {
-				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
-					return rollbackErr
-				}
-			}
-			return dmlExceptionFromTriggerError("update", err)
-		}
-		if err := vm.applyDeferredAutomation(engine, triggerRecords, before, allOrNone, rollback, result); err != nil {
-			return err
+		} else {
+			vm.finishDMLRollbackPoint(parentPoint)
 		}
 	}
-	return nil
+	if !clonedResults {
+		return nil, nil
+	}
+	return childResults, nil
 }
 func (vm *VM) storeTriggerRecords(objectName string, records []storage.Record) error {
 	if vm == nil || vm.Org == nil || len(records) == 0 {
@@ -408,7 +536,7 @@ func (vm *VM) storeTriggerRecords(objectName string, records []storage.Record) e
 		}
 		merged.System = stored.System
 		preserveReadOnlyCalculatedFields(object.Definition, &merged, stored)
-		object.Records[storedID] = merged
+		object.PutRecord(storedID, merged)
 	}
 	vm.Org.Objects[objectName] = object
 	return nil
@@ -584,19 +712,57 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 		return nil, nil
 	}
 	if vm.triggerDepth >= maxTriggerDepth {
-		return nil, newExceptionError("DmlException", fmt.Sprintf("maximum trigger depth exceeded (%d)", maxTriggerDepth))
+		// test_boundary_edges tr_depth (APIs 62 and 67): the depth failure names
+		// the trigger and lists each active activation.
+		var detail strings.Builder
+		detail.WriteString(triggers[0].Name + ": maximum trigger depth exceeded")
+		for _, activation := range vm.triggerActivations {
+			detail.WriteString("\n" + strings.TrimSuffix(activation.object, "__c") + " trigger event " + triggerEventName(activation.timing, activation.operation))
+		}
+		failure := &triggerExecutionError{cause: newExceptionError("DmlException", detail.String()), detail: detail.String()}
+		if vm.triggerDepth > 1 {
+			return nil, &triggerDepthUnwind{failure: failure}
+		}
+		return nil, failure
+	}
+	if vm.triggerDepth == 0 {
+		vm.outerTriggerLimits = vm.limits
+	} else if vm.triggerDepth == 1 {
+		vm.innerTriggerLimits = vm.limits
 	}
 	vm.triggerDepth++
+	// The text is built only for a depth failure; this runs for every trigger event.
+	vm.triggerActivations = append(vm.triggerActivations, triggerActivation{object: object, timing: triggers[0].Timing, operation: triggers[0].Operation})
 	defer func() {
 		vm.triggerDepth--
+		vm.triggerActivations = vm.triggerActivations[:len(vm.triggerActivations)-1]
 	}()
 	failures := make([]dml.Result, len(records))
 	for _, trigger := range triggers {
 		triggerFailures, err := vm.runTrigger(trigger, records, oldRecords, result)
 		if err != nil {
+			var unwind *triggerDepthUnwind
+			if vm.triggerDepth == 2 && errors.As(err, &unwind) {
+				// This activation was started by the DML statement of the
+				// outermost trigger: the failure surfaces there. The aborted chain's
+				// statements and queries are not counted, the outermost trigger's own
+				// up to that statement are (native review1 hd_swallow rows).
+				vm.restoreDepthCounters(vm.innerTriggerLimits)
+				vm.depthFailureSurfaced = true
+				return nil, unwind.failure
+			}
+			if vm.triggerDepth == 1 && vm.depthFailureSurfaced {
+				vm.depthFailureSurfaced = false
+				// Uncaught in the outermost trigger: its own work goes too
+				// (d2_limits: the caller sees only its own statements).
+				vm.restoreDepthCounters(vm.outerTriggerLimits)
+			}
 			return nil, err
 		}
 		mergeDMLFailuresInPlace(failures, triggerFailures)
+	}
+	if vm.triggerDepth == 1 {
+		vm.depthFailureSurfaced = false
 	}
 	if hasDMLFailures(failures) {
 		return failures, nil
@@ -685,6 +851,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	})
 	leaveBeforeUpdate := vm.enterBeforeUpdateTrigger(trigger, records)
 	defer leaveBeforeUpdate()
+	mutationSeqBefore := vm.collectionMutationSeq
 	caller := vm.Globals
 	callerTypes := vm.VarTypes
 	callerFinals := vm.finalLocals
@@ -698,6 +865,9 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	callerTriggerNamespaces := vm.activeTriggerNamespaces
 	callerStatement := vm.currentStatement
 	callerHasStatement := vm.hasStatement
+	callerSource := vm.currentSource
+	callerCallPos := vm.callPos
+	vm.callPos = 0
 	frame := make(map[string]Value)
 	ctx := triggerContext(trigger, records, oldRecords)
 	vm.applyTriggerFormulaSurface(trigger.Object, ctx, records)
@@ -745,6 +915,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.callStack[lastCall] = callFrame{}
 		vm.callStack = vm.callStack[:lastCall]
 		vm.Globals = caller
+		vm.refreshCallerEscapedCollectionAliases(caller, mutationSeqBefore)
 		vm.VarTypes = callerTypes
 		vm.finalLocals = callerFinals
 		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
@@ -756,6 +927,8 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.currentTrigger = callerTrigger
 		vm.eventBusTriggerContext = callerEventBusContext
 		vm.currentStatement = callerStatement
+		vm.currentSource = callerSource
+		vm.callPos = callerCallPos
 		vm.hasStatement = callerHasStatement
 	}()
 	out, err := vm.executeProgram(trigger.Program, result)
@@ -1022,7 +1195,7 @@ func (vm *VM) recordsFromTriggerRetryInput(value Value) ([]storage.Record, []*Va
 	return records, targets, nil
 }
 
-func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string, results []dml.Result, rollback vmDMLRollbackPoint, attempt int) ([]dml.Result, error) {
+func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string, results []dml.Result, rollback vmDMLRollbackPoint, attempt, operationSize int) ([]dml.Result, error) {
 	// Complete the first trigger cycle,
 	// roll back its writes, then rerun both events on the surviving inputs.
 	// Apex static observations remain visible across these storage rollbacks.
@@ -1058,7 +1231,7 @@ func (vm *VM) retryPartialTriggerDML(op string, input Value, externalIDField str
 			next.List = append(next.List, row)
 		}
 	}
-	retried, err := vm.applyDMLWithAccessPolicy(op, next, false, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, attempt+1)
+	retried, err := vm.applyDMLWithAccessPolicy(op, next, false, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, attempt+1, operationSize)
 	if err != nil {
 		return nil, err
 	}
@@ -1079,7 +1252,7 @@ func (vm *VM) snapshotTriggerDMLInput(value Value, targets []*Value) Value {
 	return out
 }
 
-func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string) ([]dml.Result, error) {
+func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result, checkRecordAccess, checkApexIdentity bool, resolvedMode string, operationSize int) ([]dml.Result, error) {
 	// Only insert/update split here, and each
 	// chunk completes its before/after cycle before the next chunk begins.
 	input := vm.snapshotTriggerDMLInput(value, targets)
@@ -1092,7 +1265,7 @@ func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, al
 		chunk.List = input.List[start:min(start+200, len(input.List))]
 		// The outer call already counted the full DML operation. Attempt zero
 		// gives this chunk its own native two-retry budget without recounting it.
-		saved, err := vm.applyDMLWithAccessPolicy(op, chunk, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, 0)
+		saved, err := vm.applyDMLWithAccessPolicy(op, chunk, allOrNone, externalIDField, options, result, checkRecordAccess, checkApexIdentity, resolvedMode, 0, operationSize)
 		if err != nil {
 			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
 				return nil, rollbackErr
@@ -1108,4 +1281,9 @@ func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, al
 		}
 	}
 	return results, nil
+}
+
+func (vm *VM) restoreDepthCounters(snapshot Limits) {
+	vm.limits.Queries, vm.limits.QueryRows = snapshot.Queries, snapshot.QueryRows
+	vm.limits.DMLStatements, vm.limits.DMLRows = snapshot.DMLStatements, snapshot.DMLRows
 }

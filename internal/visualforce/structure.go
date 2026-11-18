@@ -2,9 +2,10 @@ package visualforce
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 // validateMarkupStructure enforces the local structural rules that can be
@@ -33,8 +34,8 @@ func validateVisualforceDocumentRoot(root *MarkupNode, expected string) error {
 	return nil
 }
 
-func validateVisualforceFileStructure(path, expected string) error {
-	source, err := os.ReadFile(path)
+func validateVisualforceFileStructure(path, expected string, projects ...project.Project) error {
+	source, err := inputProject(projects).ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("read Visualforce source for structure validation: %w", err)
 	}
