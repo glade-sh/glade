@@ -3348,7 +3348,7 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 	switch method {
 	case "add", "addAll", "remove", "removeAll", "retainAll", "clear", "put":
 		vm.mapPutParentContainment = nil
-		if receiver.describeKeySetReadOnly && describeKeySetReadOnlyMethod(method) {
+		if receiver.describeKeySetReadOnly && describeKeySetReadOnlyMethod(method) && !emptyCollectionArgument(method, args) {
 			// Uncatchable natively: ks_set_ops try/catch (Exception) does not catch it.
 			return Null, true, fmt.Errorf("System.FinalException: Collection is read-only")
 		}
@@ -4190,6 +4190,24 @@ func hasUpperCaseLetter(text string) bool {
 // ks_clear, ks_retain, ks_removeall, both APIs).
 func describeKeySetReadOnlyMethod(method string) bool {
 	return method == "add" || method == "addAll"
+}
+
+// emptyCollectionArgument reports addAll of an empty List or Set, which a
+// read-only key set accepts as a no-op returning false (review_round12
+// ke_addall_list, ke_addall_set, ke_addall_values and the DEFERRED describe
+// rows, APIs 62.0 and 67.0). A non-empty argument still faults, even when it
+// holds only existing keys (ke_addall_existing).
+func emptyCollectionArgument(method string, args []Value) bool {
+	if method != "addAll" || len(args) != 1 {
+		return false
+	}
+	switch args[0].Kind {
+	case ValueList:
+		return len(args[0].List) == 0
+	case ValueSet:
+		return len(args[0].Set) == 0
+	}
+	return false
 }
 
 // readOnlyCollectionFault is the uncatchable FinalException that add and
