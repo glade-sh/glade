@@ -2793,7 +2793,10 @@ func jsonSObjectIntegerScalar(displayType, token string) (Value, bool) {
 			moment = time.UnixMilli(n).UTC()
 		}
 		if strings.EqualFold(strings.TrimSpace(displayType), "DATE") {
-			return platformScalar("Date", moment.Format("2006-01-02")), true
+			// The integer names a proleptic Gregorian date (native rows d_1, d_12,
+			// d_1000 serialize as 0001-01-01, 0012-01-01, 1000-01-01), so the Date
+			// label is the hybrid-calendar label of that instant.
+			return platformScalar("Date", dateLabelFromGregorian(moment)), true
 		}
 		// Years outside 0001-9999 keep the serialized text form.
 		return platformScalar("Datetime", moment.Format("2006-01-02T15:04:05.000Z")), true
