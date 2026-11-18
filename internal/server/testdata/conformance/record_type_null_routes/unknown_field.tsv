@@ -1,0 +1,11 @@
+api	probe	observation
+62.0	rest.post.unknown	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'Nope__c' on sobject of type Account"}], "status": 400}
+62.0	rest.patch.unknown	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'Nope__c' on sobject of type Account"}], "status": 400}
+62.0	rest.patch.recordTypeId	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type Account"}], "status": 400}
+62.0	collections.post.unknown	{"body": [{"errors": [{"fields": [], "message": "No such column 'Nope__c' on sobject of type Account", "statusCode": "INVALID_FIELD"}], "success": false}], "status": 200}
+62.0	collections.patch.unknown	{"body": [{"errors": [{"fields": [], "message": "No such column 'Nope__c' on sobject of type Account", "statusCode": "INVALID_FIELD"}], "success": false}], "status": 200}
+67.0	rest.post.unknown	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'Nope__c' on sobject of type Account"}], "status": 400}
+67.0	rest.patch.unknown	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'Nope__c' on sobject of type Account"}], "status": 400}
+67.0	rest.patch.recordTypeId	{"body": [{"errorCode": "INVALID_FIELD", "message": "No such column 'RecordTypeId' on sobject of type Account"}], "status": 400}
+67.0	collections.post.unknown	{"body": [{"errors": [{"fields": [], "message": "No such column 'Nope__c' on sobject of type Account", "statusCode": "INVALID_FIELD"}], "success": false}], "status": 200}
+67.0	collections.patch.unknown	{"body": [{"errors": [{"fields": [], "message": "No such column 'Nope__c' on sobject of type Account", "statusCode": "INVALID_FIELD"}], "success": false}], "status": 200}

@@ -1,0 +1,2 @@
+public class MxLog { public static String seen = ''; public static void reset(String m) { seen = ''; }
+ public static String fmt(MxP__c p) { return p.Cnt__c + '/' + p.Sm__c + '/' + p.Mx__c + '/' + p.Mn__c; } }

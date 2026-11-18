@@ -1,0 +1,17 @@
+id	api	route	shape	outcome	notes
+emptyBB	62.0	istest	emptyBB	stop=ok|seq=0:as,1:cs,2:af,3:cx,4:cf|createdid=as,cs,af,cx,cf	one observation
+emptyBF	62.0	istest	emptyBF	stop=ok|seq=0:f,1:as,2:af|createdid=f,as,af	one observation
+emptyBQ	62.0	istest	emptyBQ	stop=ok|seq=0:as,1:k,2:af|createdid=as,k,af	one observation
+locBQ	62.0	istest	locBQ	stop=ok|seq=0:tq,1:as,2:k,3:ax,4:af|createdid=tq,as,k,ax,af	one observation
+multiBQ	62.0	istest	multiBQ	stop=ok|seq=0:as,1:k,2:ax,3:af|createdid=as,k,ax,af	one observation
+preBF	62.0	istest	preBF	stop=ok|seq=0:f,1:as,2:k,3:ax,4:af|createdid=f,as,k,ax,af	one observation
+preQF	62.0	istest	preQF	stop=ok|seq=0:f,1:c,2:k|createdid=f,c,k	one observation
+sb	62.0	istest	sb	stop=ok|seq=0:as,1:ax,2:af,3:sc|createdid=as,ax,af,sc	one observation
+emptyBB	67.0	istest	emptyBB	stop=ok|seq=0:as,1:cs,2:af,3:cx,4:cf|createdid=as,cs,af,cx,cf	one observation
+emptyBF	67.0	istest	emptyBF	stop=ok|seq=0:f,1:as,2:af|createdid=f,as,af	one observation
+emptyBQ	67.0	istest	emptyBQ	stop=ok|seq=0:as,1:k,2:af|createdid=as,k,af	one observation
+locBQ	67.0	istest	locBQ	stop=ok|seq=0:tq,1:as,2:k,3:ax,4:af|createdid=tq,as,k,ax,af	one observation
+multiBQ	67.0	istest	multiBQ	stop=ok|seq=0:as,1:k,2:ax,3:af|createdid=as,k,ax,af	one observation
+preBF	67.0	istest	preBF	stop=ok|seq=0:f,1:as,2:k,3:ax,4:af|createdid=f,as,k,ax,af	one observation
+preQF	67.0	istest	preQF	stop=ok|seq=0:f,1:c,2:k|createdid=f,c,k	one observation
+sb	67.0	istest	sb	stop=ok|seq=0:as,1:ax,2:af,3:sc|createdid=as,ax,af,sc	one observation

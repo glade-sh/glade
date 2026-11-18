@@ -12,7 +12,8 @@ import (
 
 const maxApexParameters = 32
 
-func (a *Analyzer) checkDeclarationContracts(index typesys.Index) []diagnostic.Diagnostic {
+func (a *Analyzer) checkDeclarationContracts(index typesys.Index, state *semaTypeMemberState) []diagnostic.Diagnostic {
+	views := &semaLazyView{state: state, index: index}
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
@@ -21,7 +22,7 @@ func (a *Analyzer) checkDeclarationContracts(index typesys.Index) []diagnostic.D
 		diagnostics = append(diagnostics, declarationIdentityDiagnostics(typ)...)
 		if declarationFromParsedSource(typ) {
 			diagnostics = append(diagnostics, declarationModifierDiagnostics(typ)...)
-			diagnostics = append(diagnostics, capturedAbstractRedeclarationDiagnostics(index, typ, memberModifierDiagnostics(typ))...)
+			diagnostics = append(diagnostics, capturedAbstractRedeclarationDiagnostics(views, typ, memberModifierDiagnostics(typ))...)
 			diagnostics = append(diagnostics, lifecycleGlobalFieldDiagnostics(index, typ)...)
 		}
 		diagnostics = append(diagnostics, memberIdentityDiagnostics(typ)...)
@@ -67,7 +68,7 @@ func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 		hasProtected := hasModifier(mods, "protected")
 		// Apex top-level declarations require public or global visibility. @IsTest
 		// private declarations remain the one documented exception.
-		if !typ.IsTest && (!hasAnyAccessModifier(mods) || hasPrivate || hasProtected) {
+		if !typ.IsTest && !hasIntegrationTestAnnotation(typ) && (!hasAnyAccessModifier(mods) || hasPrivate || hasProtected) {
 			message := fmt.Sprintf("top-level %s %q must be public or global", typ.Kind, typ.Name)
 			if typ.Kind == apexast.DeclarationClass && hasPrivate {
 				// Native authorization and request context access_controller_private at API 59/67.
@@ -75,7 +76,7 @@ func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 			}
 			d := declarationContractDiagnostic(typ, typ.Range, message)
 			if typ.Kind == apexast.DeclarationClass && !hasAnyAccessModifier(mods) {
-				// Native source_boundary/road131 default-access twins, API 62/67.
+				// Native source_boundary/case131 default-access twins, API 62/67.
 				d.NativeMessage = "Top-level type must have public or global visibility"
 			}
 			diagnostics = append(diagnostics, d)
@@ -438,4 +439,15 @@ func lifecycleGlobalFieldDiagnostics(index typesys.Index, typ typesys.TypeSymbol
 		}
 	}
 	return diagnostics
+}
+
+// An @IntegrationTest class may be private, like an @IsTest class
+// (api68_native_second INTEGRATION-DEPLOY-67/68).
+func hasIntegrationTestAnnotation(typ typesys.TypeSymbol) bool {
+	for _, annotation := range typ.Annotations {
+		if strings.EqualFold(annotation.Name, "IntegrationTest") {
+			return true
+		}
+	}
+	return false
 }

@@ -1,0 +1,32 @@
+class	api	outcome
+EhProbe62	62	REJECT|Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void setCustomHeaders(Map<String,String>) from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect
+EhProbe63	63	REJECT|Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void setCustomHeaders(Map<String,String>) from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect
+EhProbe64	64	REJECT|Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void setCustomHeaders(Map<String,String>) from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect
+EhProbe65	65	REJECT|Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void setCustomHeaders(Map<String,String>) from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect
+EhProbe66	66	REJECT|Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void getCustomHeaders() from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect signature: void setCustomHeaders(Map<String,String>) from the type Messaging.SingleEmailMessage ;; Method does not exist or incorrect
+EqExOv267	67	REJECT|@Override specified for non-overriding method: Boolean EqExOv267.DrException.doesNotExist(Object)
+EqPlOv67	67	REJECT|@Override specified for non-overriding method: Boolean EqPlOv67.Plain.equals(Object)
+ItBad65	65	REJECT|Annotation property, testFor on IsTest, must be in version 66 or higher
+ItBad66	66	REJECT|Invalid prefix for property testFor. Specify bogus in the format 'prefix:name, ...' where prefix is ApexClass: OR ApexTrigger:. Use commas to separate multiple type names in the same format.
+ItBad67	67	REJECT|Invalid prefix for property testFor. Specify bogus in the format 'prefix:name, ...' where prefix is ApexClass: OR ApexTrigger:. Use commas to separate multiple type names in the same format.
+ItBoth65	65	REJECT|Expecting ')' but was: ','
+ItBoth66	66	REJECT|Expecting ')' but was: ','
+ItBoth67	67	REJECT|Expecting ')' but was: ','
+ItCrit65	65	REJECT|Annotation property, critical on IsTest, must be in version 66 or higher
+ItFor65	65	REJECT|Annotation property, testFor on IsTest, must be in version 66 or higher
+ItMeth65	65	REJECT|Annotation property, critical on IsTest, must be in version 66 or higher ;; Annotation property, testFor on IsTest, must be in version 66 or higher
+ItMeth66	66	REJECT|Annotation property, critical on IsTest, is not allowed on methods ;; Annotation property, testFor on IsTest, is not allowed on methods
+ItMeth67	67	REJECT|Annotation property, critical on IsTest, is not allowed on methods ;; Annotation property, testFor on IsTest, is not allowed on methods
+ItNoVal65	65	REJECT|Annotation property, critical on IsTest, must be in version 66 or higher
+NsDeep62	62	REJECT|SOQL statements cannot query aggregate relationships more than 4 level(s) away from the root entity object.
+NsDeep67	67	REJECT|SOQL statements cannot query aggregate relationships more than 4 level(s) away from the root entity object.
+EqOv62	62	OK
+EqOv67	67	OK
+EqNoOv62	62	OK
+EqNoOv67	67	OK
+ItCrit66	66	OK
+ItCrit67	67	OK
+ItFor66	66	OK
+ItFor67	67	OK
+ItNoVal66	66	OK
+ItNoVal67	67	OK

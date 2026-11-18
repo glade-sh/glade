@@ -12,6 +12,8 @@ type changeDataCaptureEntry struct {
 	operation     string
 	before, after storage.Record
 	user          string
+	// merge marks a change that a record merge made.
+	merge bool
 }
 
 func (vm *VM) hasChangeDataCaptureSubscribers() bool {
@@ -38,6 +40,7 @@ func (vm *VM) observeChangeDataCapture(operation string, before, after storage.R
 	// Enabling CDC applies to changes already made in this test transaction.
 	vm.testContext.changeJournal = append(vm.testContext.changeJournal, changeDataCaptureEntry{
 		operation: operation, before: before.Clone(), after: after.Clone(), user: vm.currentUserID(),
+		merge: vm.testContext.changeMerging,
 	})
 }
 
@@ -127,6 +130,8 @@ func (vm *VM) materializeChangeDataCapture(entries []changeDataCaptureEntry) []s
 		key := strings.ToLower(record.Object) + "/" + canonicalIDMapKey(string(record.ID))
 		if i, ok := byID[key]; ok && entry.operation == "UPDATE" && (changes[i].operation == "CREATE" || changes[i].operation == "UPDATE") {
 			changes[i].after = entry.after
+			// An ordinary update that joins a merge's update keeps the event.
+			changes[i].merge = changes[i].merge && entry.merge
 			continue
 		}
 		byID[key] = len(changes)
@@ -175,6 +180,12 @@ func (vm *VM) materializeChangeDataCapture(entries []changeDataCaptureEntry) []s
 				}
 			}
 			fields[name] = value.Clone()
+		}
+		if entry.operation == "UPDATE" && entry.merge && len(changed) == 0 {
+			// Native lead merges (automation_residual_paths cdcMerge, 62.0 and
+			// 67.0) never report an update event without a changed field. Other
+			// updates keep their event.
+			continue
 		}
 		sort.Slice(changed, func(i, j int) bool { return changed[i].String < changed[j].String })
 		sort.Slice(nulled, func(i, j int) bool { return nulled[i].String < nulled[j].String })

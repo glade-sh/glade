@@ -1,0 +1,79 @@
+case_id	entry	query
+S1Acca	Search.query	FIND {Quartzwindow} RETURNING Account
+S1Accb	Search.query	FIND {Quartzwindow} RETURNING Account(Id)
+S1Accc	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name)
+S1Accd	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name WHERE Name LIKE 'Quartz%')
+S1Acce	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name LIMIT 300)
+S1Accf	Search.query	FIND {Quartzwindow} RETURNING Account LIMIT 300
+S1Accg	Search.query	FIND {Quartzwindow} RETURNING Account(Id) LIMIT 2000
+S1AccaNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Account
+S1AccbNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Account(Id)
+S1AcccNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Account(Id,Name ORDER BY Name)
+S1Cona	Search.query	FIND {Quartzwindow} RETURNING Contact
+S1Conb	Search.query	FIND {Quartzwindow} RETURNING Contact(Id)
+S1Conc	Search.query	FIND {Quartzwindow} RETURNING Contact(Id,LastName ORDER BY LastName)
+S1Cond	Search.query	FIND {Quartzwindow} RETURNING Contact(Id,LastName WHERE LastName LIKE 'Quartz%')
+S1Cone	Search.query	FIND {Quartzwindow} RETURNING Contact(Id,LastName LIMIT 300)
+S1Conf	Search.query	FIND {Quartzwindow} RETURNING Contact LIMIT 300
+S1Cong	Search.query	FIND {Quartzwindow} RETURNING Contact(Id) LIMIT 2000
+S1ConaNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Contact
+S1ConbNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Contact(Id)
+S1ConcNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Contact(Id,LastName ORDER BY LastName)
+S1Leaa	Search.query	FIND {Quartzwindow} RETURNING Lead
+S1Leab	Search.query	FIND {Quartzwindow} RETURNING Lead(Id)
+S1Leac	Search.query	FIND {Quartzwindow} RETURNING Lead(Id,LastName ORDER BY LastName)
+S1Lead	Search.query	FIND {Quartzwindow} RETURNING Lead(Id,LastName WHERE LastName LIKE 'Quartz%')
+S1Leae	Search.query	FIND {Quartzwindow} RETURNING Lead(Id,LastName LIMIT 300)
+S1Leaf	Search.query	FIND {Quartzwindow} RETURNING Lead LIMIT 300
+S1Leag	Search.query	FIND {Quartzwindow} RETURNING Lead(Id) LIMIT 2000
+S1LeaaNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Lead
+S1LeabNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Lead(Id)
+S1LeacNF	Search.query	FIND {Quartzwindow} IN NAME FIELDS RETURNING Lead(Id,LastName ORDER BY LastName)
+S1Oppa	Search.query	FIND {Quartzwindow} RETURNING Opportunity
+S1Oppb	Search.query	FIND {Quartzwindow} RETURNING Opportunity(Id)
+S1Oppc	Search.query	FIND {Quartzwindow} RETURNING Opportunity(Id,Name ORDER BY Name)
+S1Casa	Search.query	FIND {Quartzwindow} RETURNING Case
+S1Casb	Search.query	FIND {Quartzwindow} RETURNING Case(Id)
+S1Casc	Search.query	FIND {Quartzwindow} RETURNING Case(Id,Subject ORDER BY Subject)
+S2idId	Search.query	FIND {Quartzwindow} RETURNING Account(Id),Contact(Id)
+S2bare	Search.query	FIND {Quartzwindow} RETURNING Account,Contact
+S2where	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name WHERE Name LIKE 'Quartz%'),Contact(Id,LastName WHERE LastName LIKE 'Quartz%')
+S2lim600	Search.query	FIND {Quartzwindow} RETURNING Account(Id),Contact(Id) LIMIT 600
+S2cap300	Search.query	FIND {Quartzwindow} RETURNING Account(Id LIMIT 300),Contact(Id)
+S2ord	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName)
+S4Lnone	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name)
+S4L2000	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 2000
+S4L1001	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 1001
+S4L1000	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 1000
+S4L999	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 999
+S4L997	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 997
+S4L501	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 501
+S4L500	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 500
+S4L499	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 499
+S4L7	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 7
+S4L6	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 6
+S4L5	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 5
+S4L4	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 4
+S4L3	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 3
+S4revLnone	Search.query	FIND {Quartzwindow} RETURNING Opportunity(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name)
+S4revL999	Search.query	FIND {Quartzwindow} RETURNING Opportunity(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 999
+S4revL5	Search.query	FIND {Quartzwindow} RETURNING Opportunity(Id,Name ORDER BY Name),Lead(Id,LastName ORDER BY LastName),Contact(Id,LastName ORDER BY LastName),Account(Id,Name ORDER BY Name) LIMIT 5
+S4cap300	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name LIMIT 300),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name)
+S4cap10L1000	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name LIMIT 10),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name) LIMIT 1000
+S4unord	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name),Contact(Id,LastName),Lead(Id,LastName),Opportunity(Id,Name)
+S5Lnone	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject)
+S5L2000	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject) LIMIT 2000
+S5L1251	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject) LIMIT 1251
+S5L1250	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject) LIMIT 1250
+S5L1249	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject) LIMIT 1249
+S5L1001	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject) LIMIT 1001
+S5L11	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject) LIMIT 11
+S5L9	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject) LIMIT 9
+S5L6	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject) LIMIT 6
+S10Lnone	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject),Campaign(Id,Name ORDER BY Name),Product2(Id,Name ORDER BY Name),Solution(Id,SolutionName ORDER BY SolutionName),Asset(Id,Name ORDER BY Name),Task(Id,Subject ORDER BY Subject)
+S10L2000	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject),Campaign(Id,Name ORDER BY Name),Product2(Id,Name ORDER BY Name),Solution(Id,SolutionName ORDER BY SolutionName),Asset(Id,Name ORDER BY Name),Task(Id,Subject ORDER BY Subject) LIMIT 2000
+S10L1999	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject),Campaign(Id,Name ORDER BY Name),Product2(Id,Name ORDER BY Name),Solution(Id,SolutionName ORDER BY SolutionName),Asset(Id,Name ORDER BY Name),Task(Id,Subject ORDER BY Subject) LIMIT 1999
+S10L1001	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject),Campaign(Id,Name ORDER BY Name),Product2(Id,Name ORDER BY Name),Solution(Id,SolutionName ORDER BY SolutionName),Asset(Id,Name ORDER BY Name),Task(Id,Subject ORDER BY Subject) LIMIT 1001
+S10L25	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject),Campaign(Id,Name ORDER BY Name),Product2(Id,Name ORDER BY Name),Solution(Id,SolutionName ORDER BY SolutionName),Asset(Id,Name ORDER BY Name),Task(Id,Subject ORDER BY Subject) LIMIT 25
+S10L21	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject),Campaign(Id,Name ORDER BY Name),Product2(Id,Name ORDER BY Name),Solution(Id,SolutionName ORDER BY SolutionName),Asset(Id,Name ORDER BY Name),Task(Id,Subject ORDER BY Subject) LIMIT 21
+S10L11	Search.query	FIND {Quartzwindow} RETURNING Account(Id,Name ORDER BY Name),Contact(Id,LastName ORDER BY LastName),Lead(Id,LastName ORDER BY LastName),Opportunity(Id,Name ORDER BY Name),Case(Id,Subject ORDER BY Subject),Campaign(Id,Name ORDER BY Name),Product2(Id,Name ORDER BY Name),Solution(Id,SolutionName ORDER BY SolutionName),Asset(Id,Name ORDER BY Name),Task(Id,Subject ORDER BY Subject) LIMIT 11

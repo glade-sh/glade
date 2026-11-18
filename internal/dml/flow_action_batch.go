@@ -65,8 +65,12 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 		previous[i] = stored.Clone()
 		previous[i].Object = objectName
 	}
+	return true, e.runFlowActionBatch(rule, action, objectName, definition, records, previous, after)
+}
+
+func (e *Engine) runFlowActionBatch(rule storage.FlowRule, action storage.FlowAction, objectName string, definition storage.ObjectDefinition, records, previous []storage.Record, after func(int, AutomationResult) error) error {
 	if e.flowDepth > 8 {
-		return true, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
+		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
 	}
 	e.flowDepth++
 	defer func() { e.flowDepth-- }()
@@ -104,14 +108,19 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 		}
 		restore()
 	}
+	batchActionFailed := false
 	if len(requests) > 0 {
 		err := e.FlowActionBatchInvoker(action, requests)
+		batchActionFailed = err != nil
 		for _, frame := range frames {
 			if frame != nil {
 				frame.preparedAction.err = err
 			}
 		}
 	}
+	// A failed shared action can send multiple interviews to Custom Error.
+	// Collect those errors by input index; the enclosing atomic DML rolls back.
+	var batchFailure *flowActionBatchFailure
 	for i, frame := range frames {
 		outcome := AutomationResult{}
 		if frame != nil {
@@ -123,7 +132,11 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 				if err != nil {
 					return false, flowCoreRecordTriggerError(rule, err)
 				}
-				if changed {
+				// flow_action_fault_update/org.tsv (nofault): when the interview's own
+				// row is written by a filtered record update, earlier assignments
+				// to $Record are not persisted; only a $Record update stores them.
+				// A field update after the filtered write keeps the prior path.
+				if changed && (len(frame.batchUpdatedFields) == 0 || frame.batchLaterFieldUpdate) {
 					if err := e.storeFlowFieldUpdates(objectName, previous[i], working[i]); err != nil {
 						return false, err
 					}
@@ -131,23 +144,40 @@ func (e *Engine) ApplyFlowActionBatch(records []storage.Record, after func(int, 
 				return changed, nil
 			}()
 			if err != nil {
-				return true, err
+				failure, custom := FlowCustomErrorFailureResult(err)
+				if !batchActionFailed || !custom {
+					if batchFailure != nil {
+						return batchFailure.cause
+					}
+					return err
+				}
+				if batchFailure == nil {
+					batchFailure = &flowActionBatchFailure{cause: err, results: make([]Result, len(records))}
+					for j := range batchFailure.results {
+						batchFailure.results[j].Success = true
+					}
+				}
+				batchFailure.results[i] = failure
+				continue
 			}
 			outcome.FlowUpdated = changed
 		}
 		e.Org.IDSequences = maxSequences(e.Org.IDSequences, e.IDs.Sequences)
-		if after != nil {
+		if after != nil && batchFailure == nil {
 			// The ordinary route finishes Flow before refiring Apex triggers.
 			// Nested DML in the callback therefore starts at the caller's depth.
 			e.flowDepth--
 			err := after(i, outcome)
 			e.flowDepth++
 			if err != nil {
-				return true, err
+				return err
 			}
 		}
 	}
-	return true, nil
+	if batchFailure != nil {
+		return batchFailure
+	}
+	return nil
 }
 
 // Inspect both success and fault graphs. Memoized summaries count repeated

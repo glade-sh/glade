@@ -54,7 +54,7 @@ func (s *Server) handleCompositeTree(w http.ResponseWriter, r *http.Request, par
 		writeSalesforceError(w, errRequiredFieldMissing, "object name is required for Composite tree")
 		return
 	}
-	objectName, ok := storage.ResolveObjectName(*s.Org, parts[0])
+	objectName, ok := storage.ResolveVisibleObjectName(*s.Org, parts[0])
 	if !ok {
 		writeSalesforceError(w, errUnknownObject, "unknown object "+parts[0])
 		return
@@ -71,7 +71,7 @@ func (s *Server) handleCompositeTree(w http.ResponseWriter, r *http.Request, par
 		return
 	}
 
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	results := make([]dml.Result, 0)
 	referenceIDs := make([]string, 0)
@@ -103,7 +103,7 @@ func (s *Server) handleCompositeTree(w http.ResponseWriter, r *http.Request, par
 		}
 	}
 	if hasFailure {
-		writeJSON(w, http.StatusBadRequest, compositeTreePayload(true, compositeAllOrNoneRollbackResults(results), referenceIDs))
+		writeJSON(w, http.StatusBadRequest, compositeTreePayload(true, results, referenceIDs))
 		return
 	}
 	if err := s.commitOrg(next); err != nil {
@@ -205,6 +205,9 @@ func (s *Server) resolveCompositeTreeChildRelationship(parentObjectName, relatio
 			continue
 		}
 		for objectName, object := range s.Org.Objects {
+			if s.Org.SuppressesSpreadObject(objectName) {
+				continue
+			}
 			field, ok := object.Definition.Fields[relation.Field]
 			if !ok || field.Type != storage.FieldReference || !containsStringFold(field.ReferenceTo, parentObjectName) {
 				continue
@@ -216,9 +219,25 @@ func (s *Server) resolveCompositeTreeChildRelationship(parentObjectName, relatio
 }
 
 func compositeTreePayload(hasErrors bool, results []dml.Result, referenceIDs []string) map[string]any {
+	rows := make([]map[string]any, 0, len(results))
+	for i, result := range results {
+		if hasErrors && result.Success {
+			continue
+		}
+		row := map[string]any{}
+		if i < len(referenceIDs) && referenceIDs[i] != "" {
+			row["referenceId"] = referenceIDs[i]
+		}
+		if hasErrors {
+			row["errors"] = compositeErrorRows(result)
+		} else {
+			row["id"] = result.ID
+		}
+		rows = append(rows, row)
+	}
 	return map[string]any{
 		"hasErrors": hasErrors,
-		"results":   compositeResults(results, referenceIDs),
+		"results":   rows,
 	}
 }
 

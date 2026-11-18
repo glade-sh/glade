@@ -143,6 +143,21 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 		},
 	},
 	{
+		// api68_native integration: without this feature each @IntegrationTest
+		// reports the native deploy problem.
+		Name: "ApexIntegrationTests",
+		Consumers: []FeatureConsumer{
+			{"sema", "internal/sema/annotation_contracts.go"},
+			{"apextest", "internal/apextest/runner.go"},
+		},
+	},
+	{
+		// api68_native crypto-ec/crypto-jwe: without this feature the EC key
+		// and JWE Crypto methods raise SecurityException.
+		Name:      "PlatformEncryption",
+		Consumers: []FeatureConsumer{{"vm", "internal/vm/crypto_key_service.go"}},
+	},
+	{
 		Name:      "Territory2",
 		Consumers: []FeatureConsumer{{"storage", "internal/storage/org_object_availability.go"}, {"project", "internal/project/project.go"}},
 	},
@@ -189,27 +204,27 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 	{
 		Name: "B2BCommerce",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
 		},
 	},
 	{
 		Name: "CommerceEnabled",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
 			{"project", "internal/project/project.go"},
 		},
 	},
 	{
 		Name: "MiddleNameEnabled",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
 			{"project", "internal/project/project.go"},
 		},
 	},
 	{
 		Name: "EnhancedCommerceOrders",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
 			{"project", "internal/project/project.go"},
 		},
 	},
@@ -235,13 +250,19 @@ var scratchFeatureRegistry = []ScratchFeatureDescriptor{
 	{
 		Name: "LiveAgent",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
+		},
+	},
+	{
+		Name: "SocialCustomerService",
+		Consumers: []FeatureConsumer{
+			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
 		},
 	},
 	{
 		Name: "LiveAgentEnabled",
 		Consumers: []FeatureConsumer{
-			{"storage-policy-data", "internal/storage/standard_field_policy.json.gz"},
+			{"storage-policy-data", "internal/storage/standard_field_policy.json"},
 			{"project", "internal/project/project.go"},
 		},
 	},

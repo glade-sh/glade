@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -117,7 +118,7 @@ func (expr binaryExpr) Eval(ctx *ExpressionContext) *vm.Value {
 		if !leftOK || !rightOK {
 			return &vm.Null
 		}
-		out := numericResult(left, right, math.Pow(leftNumber, rightNumber))
+		out := numericResult(left, right, stablemath.PowStable(leftNumber, rightNumber))
 		return &out
 	case "==", "!=":
 		out := vm.Bool(compareValues(expr.op, left, right))

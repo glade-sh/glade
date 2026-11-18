@@ -1,6 +1,7 @@
 package dap
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -24,6 +25,7 @@ type Handler struct {
 	seqMu       sync.Mutex
 	snapshot    Snapshot
 	launch      LaunchHandler
+	launchCtx   LaunchHandlerContext
 	seq         int
 	breakpoints map[string][]Breakpoint
 	varRefs     map[int]vm.Value
@@ -32,12 +34,21 @@ type Handler struct {
 	live        *LiveSession
 	events      chan Event
 	pending     *pendingLiveSession
+
+	inflightMu  sync.Mutex
+	inflightSeq int
+	inflight    context.CancelFunc
+	// cancelled holds request ids cancelled before they started. disconnected
+	// is set once the client has asked to disconnect.
+	cancelled    map[int]bool
+	disconnected bool
 }
 
 type pendingLiveSession struct {
 	machine   *vm.VM
 	program   ir.Program
 	className string
+	start     func(*vm.VM)
 	done      LiveSessionDoneHook
 }
 
@@ -99,6 +110,8 @@ func (h *Handler) Handle(request Request) []any {
 			return []any{h.success(request, nil)}
 		}
 		return h.withStoppedEvent(request, "pause")
+	case CommandCancel:
+		return []any{h.success(request, nil)}
 	case CommandDisconnect:
 		if live := h.liveSession(); live != nil {
 			live.Disconnect()
@@ -138,9 +151,15 @@ func (h *Handler) PrepareLiveSessionWithDone(machine *vm.VM, program ir.Program,
 }
 
 func (h *Handler) PrepareLiveSessionInClassWithDone(machine *vm.VM, program ir.Program, className string, done LiveSessionDoneHook) {
+	h.PrepareLiveSessionInClassWithHooks(machine, program, className, nil, done)
+}
+
+// PrepareLiveSessionInClassWithHooks installs request-local resources only when
+// execution actually starts, so an abandoned pending launch retains none.
+func (h *Handler) PrepareLiveSessionInClassWithHooks(machine *vm.VM, program ir.Program, className string, start func(*vm.VM), done LiveSessionDoneHook) {
 	h.stateMu.Lock()
 	defer h.stateMu.Unlock()
-	h.pending = &pendingLiveSession{machine: machine, program: program, className: className, done: done}
+	h.pending = &pendingLiveSession{machine: machine, program: program, className: className, start: start, done: done}
 }
 
 func (h *Handler) handleEvaluate(request Request) Response {
@@ -157,12 +176,12 @@ func (h *Handler) handleEvaluate(request Request) Response {
 		return h.failure(request, fmt.Sprintf("unknown expression %q", args.Expression))
 	}
 	ref := 0
-	if len(childValues(value)) > 0 {
+	if hasChildValues(value) {
 		ref = h.variableReferenceLocked("eval."+args.Expression, value)
 	}
 	h.stateMu.Unlock()
 	return h.success(request, map[string]any{
-		"result":             value.String(),
+		"result":             previewValue(value),
 		"type":               string(value.Kind),
 		"variablesReference": ref,
 	})
@@ -259,8 +278,8 @@ func (h *Handler) ApplyPause(pause vm.DebugPause) Event {
 	h.snapshot = Snapshot{
 		Threads: []Thread{{ID: 1, Name: "main"}},
 		Frames:  stackFramesFromPause(pause),
-		Vars:    pause.Vars,
-		Statics: pause.Statics,
+		Vars:    isolateSnapshotValues(pause.Vars),
+		Statics: isolateSnapshotValues(pause.Statics),
 	}
 	h.varRefs = make(map[int]vm.Value)
 	h.varRefKeys = make(map[string]int)
@@ -359,22 +378,26 @@ func (h *Handler) handleVariables(request Request) Response {
 	if err := request.DecodeArguments(&args); err != nil {
 		return h.failure(request, err.Error())
 	}
-	var variables []Variable
+	var pending []pendingVariable
 	h.stateMu.Lock()
 	if args.VariablesReference == localsReference {
-		variables = h.variablesFromNamedValuesLocked("locals", h.localsLocked())
+		pending = h.variablesFromNamedValuesLocked("locals", h.localsLocked(), args.Start, args.Count)
 	} else if args.VariablesReference == staticsReference {
-		variables = h.variablesFromNamedValuesLocked("statics", namedValuesFromMap(h.snapshot.Statics))
+		pending = h.variablesFromNamedValuesLocked("statics", namedValuesFromMap(h.snapshot.Statics), args.Start, args.Count)
 	} else if args.VariablesReference == triggerReference {
-		variables = h.variablesFromNamedValuesLocked("trigger", h.triggerContextLocked())
+		pending = h.variablesFromNamedValuesLocked("trigger", h.triggerContextLocked(), args.Start, args.Count)
 	} else if value, ok := h.varRefs[args.VariablesReference]; ok {
-		variables = h.variablesFromNamedValuesLocked(fmt.Sprintf("ref:%d", args.VariablesReference), childValues(value))
+		children, start, count := pagedChildValues(value, args.Start, args.Count)
+		pending = h.variablesFromNamedValuesLocked(fmt.Sprintf("ref:%d", args.VariablesReference), children, start, count)
 	} else {
 		h.stateMu.Unlock()
 		return h.failure(request, fmt.Sprintf("unknown variablesReference %d", args.VariablesReference))
 	}
 	h.stateMu.Unlock()
-	variables = sliceVariables(variables, args.Start, args.Count)
+	variables := make([]Variable, 0, len(pending))
+	for _, item := range pending {
+		variables = append(variables, variableFromValue(item.name, item.value, item.ref))
+	}
 	return h.success(request, map[string]any{"variables": variables})
 }
 
@@ -385,6 +408,7 @@ func (h *Handler) withInitializedEvent(request Request) []any {
 			"supportsSetVariable":              false,
 			"supportsStepBack":                 false,
 			"supportsRestartRequest":           false,
+			"supportsCancelRequest":            true,
 		}),
 		h.event("initialized", nil),
 	}
@@ -413,10 +437,40 @@ func (h *Handler) handleLaunch(request Request) []any {
 	if err := request.DecodeArguments(&args); err != nil {
 		return []any{h.failure(request, err.Error())}
 	}
-	if h.launch == nil {
+	h.stateMu.Lock()
+	launch, launchCtx := h.launch, h.launchCtx
+	h.stateMu.Unlock()
+	if launch == nil && launchCtx == nil {
 		return []any{h.failure(request, "launch not implemented")}
 	}
-	if err := h.launch(args); err != nil {
+	ctx, cancel := context.WithCancel(context.Background())
+	h.inflightMu.Lock()
+	h.inflightSeq, h.inflight = request.Seq, cancel
+	if h.disconnected || h.cancelled[request.Seq] {
+		cancel()
+	}
+	delete(h.cancelled, request.Seq)
+	h.inflightMu.Unlock()
+	var err error
+	if launchCtx != nil {
+		err = launchCtx(ctx, args)
+	} else {
+		err = launch(args)
+	}
+	h.inflightMu.Lock()
+	h.inflightSeq, h.inflight = 0, nil
+	h.inflightMu.Unlock()
+	cancelled := ctx.Err() != nil
+	cancel()
+	if cancelled {
+		// A launch that installed its session just before the cancel must not
+		// leave it for configurationDone to start.
+		h.stateMu.Lock()
+		h.pending = nil
+		h.stateMu.Unlock()
+		return []any{h.failure(request, "cancelled")}
+	}
+	if err != nil {
 		return []any{h.failure(request, err.Error())}
 	}
 	messages := []any{h.success(request, nil)}
@@ -431,6 +485,45 @@ func (h *Handler) handleLaunch(request Request) []any {
 func (h *Handler) handleConfigurationDone(request Request) []any {
 	h.startPendingLiveSession()
 	return []any{h.success(request, nil)}
+}
+
+// Interrupt is called by the transport as soon as a request is read, before the
+// request is handled. A cancel request for the launch in flight, or a
+// disconnect, cancels the launch context so a slow launch ends early.
+func (h *Handler) Interrupt(request Request) {
+	switch request.Command {
+	case CommandCancel:
+		var args struct {
+			RequestID int `json:"requestId"`
+		}
+		_ = request.DecodeArguments(&args)
+		h.inflightMu.Lock()
+		if h.inflight != nil && (args.RequestID == 0 || args.RequestID == h.inflightSeq) {
+			h.inflight()
+		} else if args.RequestID > 0 {
+			// The request may be queued behind another or not started yet.
+			if h.cancelled == nil {
+				h.cancelled = make(map[int]bool)
+			}
+			h.cancelled[args.RequestID] = true
+		}
+		h.inflightMu.Unlock()
+	case CommandDisconnect, CommandTerminate:
+		h.inflightMu.Lock()
+		h.disconnected = true
+		if h.inflight != nil {
+			h.inflight()
+		}
+		h.inflightMu.Unlock()
+	}
+}
+
+// SetLaunchHandlerContext is like SetLaunchHandler. The context ends when the
+// client cancels the launch request or disconnects.
+func (h *Handler) SetLaunchHandlerContext(handler LaunchHandlerContext) {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	h.launchCtx = handler
 }
 
 func (h *Handler) SetLaunchHandler(handler LaunchHandler) {
@@ -516,6 +609,9 @@ func (h *Handler) startPendingLiveSession() {
 	if pending == nil {
 		return
 	}
+	if pending.start != nil {
+		pending.start(pending.machine)
+	}
 	h.StartLiveSessionInClassWithDone(pending.machine, pending.program, pending.className, pending.done)
 }
 
@@ -573,14 +669,23 @@ func (h *Handler) triggerContextLocked() []namedValue {
 	return namedValuesFromMap(values)
 }
 
-func (h *Handler) variablesFromNamedValuesLocked(prefix string, values []namedValue) []Variable {
-	variables := make([]Variable, 0, len(values))
-	for _, value := range values {
+// variablesFromNamedValuesLocked formats only the requested window of values,
+// so a small page of a large collection formats and references only that page.
+type pendingVariable struct {
+	name  string
+	value vm.Value
+	ref   int
+}
+
+func (h *Handler) variablesFromNamedValuesLocked(prefix string, values []namedValue, start, count int) []pendingVariable {
+	from, to := variableWindow(len(values), start, count)
+	variables := make([]pendingVariable, 0, to-from)
+	for _, value := range values[from:to] {
 		ref := 0
-		if len(childValues(value.value)) > 0 {
+		if hasChildValues(value.value) {
 			ref = h.variableReferenceLocked(prefix+"."+value.name, value.value)
 		}
-		variables = append(variables, variableFromValue(value.name, value.value, ref))
+		variables = append(variables, pendingVariable{value.name, value.value, ref})
 	}
 	return variables
 }
@@ -614,18 +719,20 @@ func breakpointID(path string, index, line, column int) int {
 	return id
 }
 
-func sliceVariables(variables []Variable, start, count int) []Variable {
+// variableWindow clamps a DAP start/count pair to [0, total]. A count of zero
+// or less means every remaining item.
+func variableWindow(total, start, count int) (int, int) {
 	if start < 0 {
 		start = 0
 	}
-	if start > len(variables) {
-		start = len(variables)
+	if start > total {
+		start = total
 	}
-	end := len(variables)
+	end := total
 	if count > 0 && start+count < end {
 		end = start + count
 	}
-	return variables[start:end]
+	return start, end
 }
 
 func evaluateSnapshotExpression(vars, statics map[string]vm.Value, expression string) (vm.Value, bool) {

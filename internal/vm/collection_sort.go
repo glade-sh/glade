@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 )
@@ -167,7 +168,7 @@ func (vm *VM) mapLookupKey(receiver Value, key Value) string {
 func (vm *VM) mapEntryKey(receiver Value, key Value) (string, error) {
 	// Native request control header_case_replace replaces a differently cased
 	// header key. Ordinary Apex maps retain their existing key rules.
-	if receiver.Runtime == "pagereference-headers" {
+	if receiver.Runtime == "pagereference-headers" || isFieldSetMapValue(receiver) {
 		if stored, ok := caseInsensitiveStringMapStoredKey(receiver, key); ok {
 			return stored, nil
 		}
@@ -312,6 +313,71 @@ func collectionMembers(value Value) []Value {
 		return nil
 	}
 }
+
+// scalarMembership answers collectionContainsValue for a needle with a scalar
+// key (setEqualityKeyer.scalarKey, the keyer built from the values and the
+// needles) when every value is a scalar without a ref. It relies on
+// apexCollectionElementEquals reducing to Value.Equal for those pairs: no
+// operand is a string-like object, an enum, an Id object or a user class, and
+// no scale rule applies. Text-backed Decimals are therefore never decided here:
+// collection equality may compare their scale (native DecEq rows on the
+// parallel-rows branch: 2.5 is not 2.50), which no value key can follow, so a
+// Decimal needle is left undecided and a Decimal value is compared as before.
+// Doubles carry no scale (decimalScalesDiffer skips float-backed values) and
+// keep their keys.
+// A keyed value equals a keyed needle exactly when the keys match, and no Apex
+// code runs, so the order and number of comparisons are not observable. It is
+// unusable below setEqualityIndexMin values or needles, or when any value is not
+// a scalar.
+type scalarMembership struct {
+	keyer   setEqualityKeyer
+	keys    map[string]struct{}
+	unkeyed []Value
+}
+
+func newScalarMembership(values, needles []Value) scalarMembership {
+	// Building the key set costs about one scan of values, so it pays only
+	// when there are enough needles to scan for.
+	if len(values) < setEqualityIndexMin || len(needles) < setEqualityIndexMin {
+		return scalarMembership{}
+	}
+	keyer := newSetEqualityKeyer(values, needles)
+	index := scalarMembership{keyer: keyer, keys: make(map[string]struct{}, len(values))}
+	for _, value := range values {
+		if value.Ref != 0 || value.mapKeySetSource != nil || !equalScalarKind(value.Kind) {
+			return scalarMembership{}
+		}
+		if key, ok := keyer.scalarKey(value); ok && !textDecimal(value) {
+			index.keys[key] = struct{}{}
+		} else {
+			index.unkeyed = append(index.unkeyed, value)
+		}
+	}
+	return index
+}
+
+// contains reports membership when the index can decide it.
+func (index scalarMembership) contains(vm *VM, needle Value, result *Result) (bool, bool, error) {
+	if index.keys == nil || textDecimal(needle) {
+		return false, false, nil
+	}
+	key, ok := index.keyer.scalarKey(needle)
+	if !ok {
+		return false, false, nil
+	}
+	if _, found := index.keys[key]; found {
+		return true, true, nil
+	}
+	found, err := vm.collectionContainsValue(index.unkeyed, needle, result)
+	return found, true, err
+}
+
+// textDecimal reports a Decimal held as text (not a Double): the values whose
+// collection equality can depend on scale.
+func textDecimal(value Value) bool {
+	return value.Kind == ValueDecimal && !isFloatBackedDecimal(value)
+}
+
 func (vm *VM) collectionContainsValue(values []Value, needle Value, result *Result) (bool, error) {
 	index, err := vm.collectionIndexOfValue(values, needle, result)
 	return index >= 0, err
@@ -329,6 +395,9 @@ func (vm *VM) collectionIndexOfValue(values []Value, needle Value, result *Resul
 	return -1, nil
 }
 func (vm *VM) apexCollectionElementEquals(left, right Value, result *Result) (bool, error) {
+	if valueScaleDiffers(left, right) {
+		return false, nil
+	}
 	if collectionStringLike(left) || collectionStringLike(right) {
 		return left.Equal(right), nil
 	}
@@ -906,6 +975,10 @@ func collectionNumericValue(value Value) float64 {
 	return value.Decimal
 }
 func collectionNumericLess(left, right Value) bool {
+	if _, handled := signedDoubleZeroEqual(left, right); handled {
+		// Native List.sort orders Double -0.0 before 0.0.
+		return math.Signbit(left.Decimal) && !math.Signbit(right.Decimal)
+	}
 	leftRat, leftOK := valueDecimalRat(left)
 	rightRat, rightOK := valueDecimalRat(right)
 	if leftOK && rightOK {

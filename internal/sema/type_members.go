@@ -1,11 +1,15 @@
 package sema
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -66,18 +70,23 @@ type semaTypeMemberModel struct {
 	// nested SFDX project and source tree. Aggregate corpus roots can contain
 	// many independent projects, and a project can retain both force-app and
 	// mdapi representations with the same Apex names.
-	sourceMembersByUnit       map[string]map[string]typeMembers
-	sourceUnitsWithDuplicates map[string]bool
-	sourceUnitByFile          map[string]string
-	completeSourceNestedTypes map[string]bool
-	sourceScopeByAlias        map[string]semaSourceScope
-	sourceProjectByUnit       map[string]string
-	defaultSourceScope        semaSourceScope
+	sourceMembersByUnit           map[string]map[string]typeMembers
+	sourceUnitsWithDuplicates     map[string]bool
+	sourceUnitByFile              map[string]string
+	completeSourceNestedTypes     map[string]bool
+	completeDependencyNestedTypes map[string]bool
+	sourceScopeByAlias            map[string]semaSourceScope
+	sourceProjectByUnit           map[string]string
+	defaultSourceScope            semaSourceScope
 }
 
 type semaLazyPlatformTypeMemberModel struct {
-	symbols        []typesys.TypeSymbol
-	symbolsByKey   map[string]*typesys.TypeSymbol
+	symbols      []typesys.TypeSymbol
+	symbolsByKey map[string]*typesys.TypeSymbol
+	// excludedByKey holds the keys a gated stub type the view leaves out
+	// owns, as it owned them in the ungated view; disjoint from symbolsByKey.
+	excludedByKey  map[string]int
+	excluded       typesys.ExcludedPlatformTypes
 	candidates     map[string][]string
 	lookups        sync.Map
 	fieldNamesOnce sync.Once
@@ -130,6 +139,18 @@ func (m *semaTypeMemberModel) hasField(key string) bool {
 type semaTypeMemberState struct {
 	base     *semaTypeMemberModel
 	platform *semaTypeMemberModel
+	// historyProbe is set only on the private state of a parallel body run.
+	// semaAnyKnownField raises it when an earlier type's hydration could have
+	// changed its answer, which a worker that has not seen that type cannot know.
+	historyProbe *atomic.Bool
+	// unknownHistory records speculative misses and every subsequently visible
+	// hydrated field, including entries that are later replaced.
+	unknownHistory *semaUnknownHistory
+	// historyUsed, when set beside historyProbe, is raised when an answer of
+	// "yes" needed a hydrated entry rather than the base or platform model.
+	// An incremental run reuses cached body results only while no answer
+	// depended on what an earlier type happened to hydrate.
+	historyUsed *atomic.Bool
 }
 
 type semaTypeMemberView struct {
@@ -252,6 +273,9 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 		members, ok := v.state.platform.lookup(key)
 		if ok {
 			v.hydrated[key] = members
+			if v.state.unknownHistory != nil {
+				v.state.unknownHistory.hydrated(members)
+			}
 			v.changedHydration()
 			return members, true
 		}
@@ -290,6 +314,9 @@ func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
 		}
 	}
 	v.hydrated[key] = members
+	if v.state.unknownHistory != nil {
+		v.state.unknownHistory.hydrated(members)
+	}
 	v.changedHydration()
 }
 
@@ -327,69 +354,106 @@ func (v *semaTypeMemberView) shortCandidateKeys(short string) []string {
 var semaPlatformTypeMemberModelCache typesys.PlatformViewCache[*semaTypeMemberModel]
 
 func semaPlatformTypeMemberModel() *semaTypeMemberModel {
-	return semaPlatformTypeMemberModelCache.Get(buildSemaPlatformTypeMemberModel)
+	return semaPlatformTypeMemberModelCache.GetWithExcluded(buildSemaPlatformTypeMemberModelWithExcluded)
 }
 
 func buildSemaPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaTypeMemberModel {
+	return buildSemaPlatformTypeMemberModelWithExcluded(symbols, typesys.ExcludedPlatformTypes{})
+}
+
+func buildSemaPlatformTypeMemberModelWithExcluded(symbols []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) *semaTypeMemberModel {
 	return &semaTypeMemberModel{
 		members:  map[string]typeMembers{},
-		platform: newSemaLazyPlatformTypeMemberModel(symbols),
+		platform: newSemaLazyPlatformTypeMemberModelWithExcluded(symbols, excluded),
 	}
 }
 
 func newSemaLazyPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaLazyPlatformTypeMemberModel {
+	return newSemaLazyPlatformTypeMemberModelWithExcluded(symbols, typesys.ExcludedPlatformTypes{})
+}
+
+// semaPlatformSymbolKeyRef names the owner of a key: a view symbol, or the
+// gated stub type at excluded index when symbol is nil.
+type semaPlatformSymbolKeyRef struct {
+	symbol   *typesys.TypeSymbol
+	excluded int
+}
+
+func newSemaLazyPlatformTypeMemberModelWithExcluded(symbols []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) *semaLazyPlatformTypeMemberModel {
 	// The typesys view is process-immutable. Index names once, then materialize
-	// member maps only for symbols an analysis actually resolves.
+	// member maps only for symbols an analysis actually resolves. Gated stub
+	// types the view leaves out are indexed by name in their ungated place and
+	// built only when a lookup selects one.
 	model := &semaLazyPlatformTypeMemberModel{
 		symbols:      symbols,
 		symbolsByKey: make(map[string]*typesys.TypeSymbol, len(symbols)*2),
 		candidates:   make(map[string][]string),
+		excluded:     excluded,
 	}
-	shortAliases := make(map[string]*typesys.TypeSymbol)
+	if excluded.Len() != 0 {
+		model.excludedByKey = make(map[string]int)
+	}
+	exists := func(key string) bool {
+		if _, ok := model.symbolsByKey[key]; ok {
+			return true
+		}
+		_, ok := model.excludedByKey[key]
+		return ok
+	}
+	put := func(key string, ref semaPlatformSymbolKeyRef) {
+		if ref.symbol != nil {
+			model.symbolsByKey[key] = ref.symbol
+			delete(model.excludedByKey, key)
+			return
+		}
+		delete(model.symbolsByKey, key)
+		model.excludedByKey[key] = ref.excluded
+	}
+	shortAliases := make(map[string]semaPlatformSymbolKeyRef)
 	ambiguousShortAliases := make(map[string]bool)
-	for i := range symbols {
-		symbol := &symbols[i]
-		localKey := normalizeName(symbol.Name)
+	typesys.EachPlatformTypeName(symbols, excluded, func(namespace, name string, _ apexast.DeclarationKind, symbol *typesys.TypeSymbol, excludedIndex int) {
+		ref := semaPlatformSymbolKeyRef{symbol: symbol, excluded: excludedIndex}
+		localKey := normalizeName(name)
 		qualifiedKey := localKey
-		if symbol.Namespace != "" {
-			qualifiedKey = normalizeName(symbol.Namespace) + "." + localKey
+		if namespace != "" {
+			qualifiedKey = normalizeName(namespace) + "." + localKey
 		}
 		short := semaShortTypeKeyFromNormalizedKey(localKey)
 		// Platform symbols may carry the namespace separately from Name.
 		// Neither representation may register an unavailable bare SObject name.
 		referenceOnlyAlias := qualifiedKey != short && storage.IsReferenceOnlyStandardObject(short)
-		if _, exists := model.symbolsByKey[localKey]; !exists && (localKey != short || !referenceOnlyAlias) {
-			model.symbolsByKey[localKey] = symbol
+		if !exists(localKey) && (localKey != short || !referenceOnlyAlias) {
+			put(localKey, ref)
 		}
-		model.symbolsByKey[qualifiedKey] = symbol
+		put(qualifiedKey, ref)
 		if short == "" {
-			continue
+			return
 		}
 		// A namespaced platform type cannot make an unavailable reference-only
 		// SObject name resolve as a bare type. Keep its qualified entries above.
 		if referenceOnlyAlias {
-			continue
+			return
 		}
 		if short != localKey {
 			if existing, exists := shortAliases[short]; !exists {
-				shortAliases[short] = symbol
-			} else if existing != symbol {
+				shortAliases[short] = ref
+			} else if existing != ref {
 				ambiguousShortAliases[short] = true
 			}
 			model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], short)
 		}
 		model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], localKey)
 		model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], qualifiedKey)
-	}
-	for short, symbol := range shortAliases {
+	})
+	for short, ref := range shortAliases {
 		if !ambiguousShortAliases[short] {
-			if _, exists := model.symbolsByKey[short]; !exists {
-				model.symbolsByKey[short] = symbol
+			if !exists(short) {
+				put(short, ref)
 			}
 		}
 	}
 	for short := range ambiguousShortAliases {
-		if _, exists := model.symbolsByKey[short]; exists {
+		if exists(short) {
 			continue
 		}
 		candidates := model.candidates[short]
@@ -402,6 +466,18 @@ func newSemaLazyPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaLazyP
 		model.candidates[short] = filtered
 	}
 	return model
+}
+
+// symbolForKey returns the platform symbol that owns key, building a gated
+// stub symbol the view leaves out on first use.
+func (m *semaLazyPlatformTypeMemberModel) symbolForKey(key string) (*typesys.TypeSymbol, bool) {
+	if symbol, ok := m.symbolsByKey[key]; ok {
+		return symbol, true
+	}
+	if index, ok := m.excludedByKey[key]; ok {
+		return m.excluded.Symbol(index), true
+	}
+	return nil, false
 }
 
 func appendUniqueSemaCandidate(candidates []string, key string) []string {
@@ -425,7 +501,7 @@ func (m *semaLazyPlatformTypeMemberModel) lookup(key string) (typeMembers, bool)
 	if objectName, ok := semaStandardSObjectNameForKey(key); ok {
 		result.members = semaStandardSObjectPlaceholder(objectName)
 		result.ok = true
-	} else if symbol, ok := m.symbolsByKey[key]; ok {
+	} else if symbol, ok := m.symbolForKey(key); ok {
 		result.members = semaTypeMembersFromPlatformSymbol(*symbol)
 		result.ok = true
 	} else {
@@ -458,8 +534,10 @@ func (m *semaLazyPlatformTypeMemberModel) hasField(key string) bool {
 		}
 		m.fieldNames = fields
 	})
-	_, ok := m.fieldNames[key]
-	return ok
+	if _, ok := m.fieldNames[key]; ok {
+		return true
+	}
+	return m.excluded.HasFieldName(key)
 }
 
 func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
@@ -544,10 +622,262 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 }
 
 func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
-	return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+	workers := semaMethodBodyWorkerCount()
+	if workers <= 1 || model == nil || model.state == nil {
+		return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+	}
+	return a.checkMethodBodiesSpeculative(index, model, recorder, workers)
+}
+
+// semaUnknownHistory records the union of fields that appeared during a
+// speculative run. A field can disappear from a view when an entry is replaced,
+// so examining only the final views would miss a possible serial dependency.
+type semaUnknownHistory struct {
+	mu           sync.Mutex
+	missingNames map[string]struct{}
+	fields       map[string]struct{}
+}
+
+func newSemaUnknownHistory() *semaUnknownHistory {
+	return &semaUnknownHistory{missingNames: make(map[string]struct{}), fields: make(map[string]struct{})}
+}
+
+// seed includes the view history that every worker starts with. A worker can
+// replace one of those entries before it observes a missing field.
+func (h *semaUnknownHistory) seed(view *semaTypeMemberView) {
+	for _, members := range view.hydrated {
+		h.hydrated(members)
+	}
+}
+
+func (h *semaUnknownHistory) missing(name string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.missingNames[normalizeName(name)] = struct{}{}
+}
+
+func (h *semaUnknownHistory) hydrated(members typeMembers) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for name := range members.fields {
+		h.fields[name] = struct{}{}
+	}
+}
+
+func (h *semaUnknownHistory) conflict() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for name := range h.missingNames {
+		if _, ok := h.fields[name]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *semaUnknownHistory) hasMissing() bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return len(h.missingNames) != 0
+}
+
+// checkMethodBodiesSpeculative checks bodies on several workers and still
+// reports exactly what one worker reports. A single worker carries one view
+// through every type, so a type's check can see what earlier types hydrated.
+// Parallel workers see less. The only reader of that history is
+// semaAnyKnownField. Record each negative answer and each hydrated field; a
+// collision may depend on serial history and requires a serial retry. Otherwise
+// merge the worker histories for subsequent passes.
+func (a *Analyzer) checkMethodBodiesSpeculative(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workers int) []diagnostic.Diagnostic {
+	started := recorder.beginPhase()
+	watch := newSemaUnknownHistory()
+	watch.seed(model)
+	probed := &semaTypeMemberState{base: model.state.base, platform: model.state.platform, unknownHistory: watch}
+	scratch := model.cloneOnto(probed)
+	run := &semaBodyRun{seedWorkers: true}
+	diagnostics, recovered := a.checkMethodBodiesRecovering(index, scratch, workers, run)
+	if watch.conflict() || (recovered != nil && watch.hasMissing()) {
+		// The discarded attempt still cost time, so it stays in the phase. The
+		// serial pass reads the same sources the attempt already counted, so
+		// it does not count them again.
+		if recorder != nil {
+			recorder.addPhaseDuration(&recorder.counters.MethodBodies, started)
+		}
+		return a.checkMethodBodiesRun(index, model, recorder, 1, &semaBodyRun{repeatsAttempt: true})
+	}
+	if recovered != nil {
+		panic(recovered)
+	}
+	for _, view := range run.views {
+		model.mergeHydrated(view)
+	}
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.MethodBodies, started)
+	}
+	return diagnostics
+}
+
+// checkMethodBodiesRecovering runs the speculative attempt and hands back a
+// panic instead of raising it: a raised probe discards the attempt, panic
+// included, because the serial rerun may not reach it.
+func (a *Analyzer) checkMethodBodiesRecovering(index typesys.Index, scratch *semaTypeMemberView, workers int, run *semaBodyRun) (diagnostics []diagnostic.Diagnostic, recovered any) {
+	defer func() {
+		if value := recover(); value != nil {
+			recovered = semaCapturePanic(value)
+		}
+	}()
+	return a.checkMethodBodiesRun(index, scratch, nil, workers, run), nil
+}
+
+// semaBodyRun carries the extras of a speculative parallel body run.
+type semaBodyRun struct {
+	// seedWorkers starts each worker's view from the primary view's hydrated
+	// entries, as a serial run's view would be when body checking began.
+	seedWorkers bool
+	// abort, once true, stops workers from claiming further types.
+	abort *atomic.Bool
+	// views receives every worker view, primary first.
+	views []*semaTypeMemberView
+	// repeatsAttempt marks the serial pass that follows a discarded attempt.
+	// The attempt already counted the source reads of the passes that run
+	// before the bodies, so this pass leaves those counters as they were.
+	repeatsAttempt bool
+}
+
+// semaWorkerPanic carries a recovered panic together with the stack of the
+// goroutine that raised it. A worker's panic is raised again from the
+// coordinator, whose own stack says nothing about the failing body check.
+// Printing it with %v gives the original value, as a serial run's panic does.
+// %+v adds the original stack.
+type semaWorkerPanic struct {
+	value any
+	stack []byte
+}
+
+// semaCapturePanic wraps a value just returned by recover, on the stack that
+// raised it. A value already wrapped keeps its first stack.
+func semaCapturePanic(value any) *semaWorkerPanic {
+	if wrapped, ok := value.(*semaWorkerPanic); ok {
+		return wrapped
+	}
+	return &semaWorkerPanic{value: value, stack: debug.Stack()}
+}
+
+func (p *semaWorkerPanic) Error() string { return fmt.Sprint(p.value) }
+
+func (p *semaWorkerPanic) Unwrap() error {
+	err, _ := p.value.(error)
+	return err
+}
+
+func (p *semaWorkerPanic) Format(state fmt.State, verb rune) {
+	_, _ = fmt.Fprint(state, p.value)
+	if verb == 'v' && state.Flag('+') {
+		_, _ = fmt.Fprintf(state, "\n%s", p.stack)
+	}
+}
+
+// cloneOnto returns a view over state that starts with v's configuration and
+// hydrated entries. Entries are replaced, never edited in place, so sharing
+// their maps is safe.
+func (v *semaTypeMemberView) cloneOnto(state *semaTypeMemberState) *semaTypeMemberView {
+	out := state.view()
+	out.current = v.current
+	out.sourceUnit = v.sourceUnit
+	out.anonymous = v.anonymous
+	out.namedApexReferenceObjects = v.namedApexReferenceObjects
+	for key, members := range v.hydrated {
+		out.hydrated[key] = members
+	}
+	if len(v.namedApexReferenceMembers) != 0 {
+		out.namedApexReferenceMembers = make(map[string]typeMembers, len(v.namedApexReferenceMembers))
+		for key, members := range v.namedApexReferenceMembers {
+			out.namedApexReferenceMembers[key] = members
+		}
+	}
+	return out
+}
+
+// mergeHydrated adds src's hydrated entries to v. An entry both views hold
+// keeps v's members and gains the fields only src's copy has, which is what a
+// view that saw both histories would hold. When v's copy is still a standard
+// SObject placeholder and src's copy is the hydrated entry built from it, the
+// hydrated entry is the base, so the merged entry also reports its fields as
+// loaded instead of being rebuilt on the next lookup.
+func (v *semaTypeMemberView) mergeHydrated(src *semaTypeMemberView) {
+	merge := func(dst map[string]typeMembers, from map[string]typeMembers) {
+		for key, members := range from {
+			held, ok := dst[key]
+			if !ok {
+				dst[key] = members
+				continue
+			}
+			if members.standardSObjectFieldsLoaded && !held.standardSObjectFieldsLoaded {
+				// Entries are shared between views, so build a new field map.
+				fields := make(map[string]typesys.MemberSymbol, len(members.fields)+len(held.fields))
+				for fieldKey, field := range members.fields {
+					fields[fieldKey] = field
+				}
+				for fieldKey, field := range held.fields {
+					fields[fieldKey] = field
+				}
+				members.fields = fields
+				dst[key] = members
+				continue
+			}
+			var fields map[string]typesys.MemberSymbol
+			for fieldKey, field := range members.fields {
+				if _, has := held.fields[fieldKey]; has {
+					continue
+				}
+				if fields == nil {
+					fields = make(map[string]typesys.MemberSymbol, len(held.fields)+1)
+					for k, f := range held.fields {
+						fields[k] = f
+					}
+				}
+				fields[fieldKey] = field
+			}
+			if fields != nil {
+				held.fields = fields
+				dst[key] = held
+			}
+		}
+	}
+	merge(v.hydrated, src.hydrated)
+	if len(src.namedApexReferenceMembers) != 0 {
+		if v.namedApexReferenceMembers == nil {
+			v.namedApexReferenceMembers = make(map[string]typeMembers, len(src.namedApexReferenceMembers))
+		}
+		merge(v.namedApexReferenceMembers, src.namedApexReferenceMembers)
+	}
+	v.changedHydration()
+}
+
+// semaMethodBodyMaxWorkers bounds the body-check workers. Each worker holds a
+// private member view, and bodies are CPU bound, so more than a few cores
+// add memory without adding speed.
+const semaMethodBodyMaxWorkers = 8
+
+// semaMethodBodyWorkerCount follows the process's CPU budget: one worker under
+// GOMAXPROCS=1 (the serial path), up to semaMethodBodyMaxWorkers otherwise.
+// Diagnostics do not depend on the count.
+func semaMethodBodyWorkerCount() int {
+	workers := runtime.GOMAXPROCS(0)
+	if workers > semaMethodBodyMaxWorkers {
+		workers = semaMethodBodyMaxWorkers
+	}
+	if workers < 1 {
+		workers = 1
+	}
+	return workers
 }
 
 func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workerCount int) []diagnostic.Diagnostic {
+	return a.checkMethodBodiesRun(index, model, recorder, workerCount, nil)
+}
+
+func (a *Analyzer) checkMethodBodiesRun(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workerCount int, run *semaBodyRun) []diagnostic.Diagnostic {
 	constructability := buildConstructability(index)
 	duplicateTypes := semaDuplicateTypeKeys(index)
 	sources := a.sources
@@ -556,8 +886,15 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 	}
 	var diagnostics []diagnostic.Diagnostic
 	bodyStarted := recorder.beginPhase()
+	var arenaBefore sourceArenaCounts
+	if run != nil && run.repeatsAttempt {
+		arenaBefore = recorder.sourceArenaCounts()
+	}
 	diagnostics = append(diagnostics, a.checkFieldInitializerTypes(index, model, sources)...)
 	workItems := buildSemaMethodBodyWorkItems(index, sources)
+	if run != nil && run.repeatsAttempt {
+		recorder.setSourceArenaCounts(arenaBefore)
+	}
 	if workerCount > 1 {
 		tasks := buildSemaMethodBodyTasks(index, workItems)
 		if workerCount > len(tasks) {
@@ -568,8 +905,18 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 			views := make([]*semaTypeMemberView, workerCount)
 			views[0] = model
 			for workerID := 1; workerID < workerCount; workerID++ {
-				views[workerID] = model.state.view()
+				if run != nil && run.seedWorkers {
+					views[workerID] = model.cloneOnto(model.state)
+				} else {
+					views[workerID] = model.state.view()
+				}
 			}
+			if run != nil {
+				run.views = views
+			}
+			// Worker w takes tasks w, w+n, w+2n, ..., so each type's view is the
+			// same on every run. Each result lands in its own type's slot and
+			// the merge below walks the slots in the serial order.
 			var workers sync.WaitGroup
 			for workerID := 0; workerID < workerCount; workerID++ {
 				workerID := workerID
@@ -577,24 +924,34 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 				go func() {
 					defer workers.Done()
 					for taskIndex := workerID; taskIndex < len(tasks); taskIndex += workerCount {
+						if run != nil && run.abort != nil && run.abort.Load() {
+							return
+						}
 						task := tasks[taskIndex]
 						results[task.typeIndex] = a.checkSemaMethodBodyTask(index, task, workItems, views[workerID], duplicateTypes, constructability)
 					}
 				}()
 			}
 			workers.Wait()
-			for _, typeIndex := range semaInnerFirstTypeOrder(index) {
-				result := results[typeIndex]
-				if result.recovered != nil {
-					panic(result.recovered)
+			// The serial path stops at the first panicking type in index order.
+			for typeIndex := range results {
+				if results[typeIndex].recovered != nil {
+					panic(results[typeIndex].recovered)
 				}
-				diagnostics = append(diagnostics, result.diagnostics...)
+			}
+			for _, typeIndex := range semaInnerFirstTypeOrder(index) {
+				diagnostics = append(diagnostics, results[typeIndex].diagnostics...)
 			}
 			if recorder != nil {
 				recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
 			}
 			return diagnostics
 		}
+	}
+	if run != nil {
+		// Fewer tasks than workers: the pass ran serially on this view, which
+		// holds the history the caller's view must receive.
+		run.views = []*semaTypeMemberView{model}
 	}
 	workItemIndex := 0
 	byType := make([][]diagnostic.Diagnostic, len(index.Types))
@@ -804,7 +1161,9 @@ func buildSemaMethodBodyTasks(index typesys.Index, workItems []semaMethodBodyWor
 
 func (a *Analyzer) checkSemaMethodBodyTask(index typesys.Index, task semaMethodBodyTask, workItems []semaMethodBodyWorkItem, model *semaTypeMemberView, duplicateTypes map[string]int, constructability map[string]typesys.TypeSymbol) (result semaMethodBodyResult) {
 	defer func() {
-		result.recovered = recover()
+		if value := recover(); value != nil {
+			result.recovered = semaCapturePanic(value)
+		}
 	}()
 	typ := index.Types[task.typeIndex]
 	bodyModel := model
@@ -839,7 +1198,13 @@ type semaMethodBodySource struct {
 }
 
 func buildSemaMethodBodyWorkItems(index typesys.Index, sources *semaSources) []semaMethodBodyWorkItem {
-	bodySources, workItemCount := collectSemaMethodBodySources(index, sources)
+	return buildSemaMethodBodyWorkItemsFor(index, sources, nil)
+}
+
+// buildSemaMethodBodyWorkItemsFor builds the work items of the types include
+// admits; a nil include admits every type.
+func buildSemaMethodBodyWorkItemsFor(index typesys.Index, sources *semaSources, include func(typeIndex int) bool) []semaMethodBodyWorkItem {
+	bodySources, workItemCount := collectSemaMethodBodySources(index, sources, include)
 	workItems := make([]semaMethodBodyWorkItem, 0, workItemCount)
 	for _, bodySource := range bodySources {
 		typeIndex := bodySource.typeIndex
@@ -909,11 +1274,14 @@ func resolveSemaMethodBodyWorkItem(index typesys.Index, item semaMethodBodyWorkI
 	return typ, member, true
 }
 
-func collectSemaMethodBodySources(index typesys.Index, sources *semaSources) ([]semaMethodBodySource, int) {
+func collectSemaMethodBodySources(index typesys.Index, sources *semaSources, include func(typeIndex int) bool) ([]semaMethodBodySource, int) {
 	var bodySources []semaMethodBodySource
 	workItemCount := 0
 	for typeIndex, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || !semaTypeHasMethodBodyWork(typ) {
+			continue
+		}
+		if include != nil && !include(typeIndex) {
 			continue
 		}
 		source, ok := sources.normalizedForType(typ)
@@ -1225,7 +1593,12 @@ func buildTypeMembersWithSources(index typesys.Index, sources *semaSources) *sem
 	return buildTypeMemberLayerWithSources(index, sources, semaPlatformTypeMemberModel())
 }
 
+// semaTypeMemberLayerBuilds counts whole-project member models built in this
+// process. Tests read it to prove an analysis builds one model, not one per class.
+var semaTypeMemberLayerBuilds atomic.Int64
+
 func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, platform *semaTypeMemberModel) *semaTypeMemberModel {
+	semaTypeMemberLayerBuilds.Add(1)
 	if sources == nil {
 		sources = newSemaSources(nil, nil)
 	}
@@ -1271,15 +1644,16 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			case apexast.DeclarationEnum:
 				nestedName := typ.Name + "." + member.Name
 				enumMembers := typeMembers{
-					name:        semaQualifiedDependencyTypeName(typ.Namespace, nestedName, typ.Dependency, typ.Artifact, typ.SourceRoot),
-					shortKey:    semaShortTypeKey(nestedName),
-					namespace:   typ.Namespace,
-					dependency:  typ.Dependency,
-					kind:        apexast.DeclarationEnum,
-					modifiers:   append([]string(nil), member.Modifiers...),
-					testVisible: hasAnnotation(member.Annotations, "TestVisible"),
-					methods:     make(map[string][]typesys.MemberSymbol),
-					fields:      make(map[string]typesys.MemberSymbol),
+					name:                     semaQualifiedDependencyTypeName(typ.Namespace, nestedName, typ.Dependency, typ.Artifact, typ.SourceRoot),
+					shortKey:                 semaShortTypeKey(nestedName),
+					namespace:                typ.Namespace,
+					dependency:               typ.Dependency,
+					receiverDependencySource: typ.HasSourceSnapshot() && typ.SourceRoot != "" && !typ.Artifact,
+					kind:                     apexast.DeclarationEnum,
+					modifiers:                append([]string(nil), member.Modifiers...),
+					testVisible:              hasAnnotation(member.Annotations, "TestVisible"),
+					methods:                  make(map[string][]typesys.MemberSymbol),
+					fields:                   make(map[string]typesys.MemberSymbol),
 				}
 				enumType := typesys.TypeSymbol{
 					Kind:  apexast.DeclarationEnum,
@@ -1300,12 +1674,14 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 						Modifiers: []string{"public", "static"},
 					}
 				}
-				if !semaRequiresQualifiedDependencyName(typ) {
+				if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 					key := normalizeName(nestedName)
 					if semaShouldStoreTypeMembers(out[key], typ) {
 						out[key] = enumMembers
 					}
-					shortAliases[normalizeName(member.Name)] = append(shortAliases[normalizeName(member.Name)], nestedName)
+					if !semaSameNamespaceSourceDependency(index, typ) {
+						shortAliases[normalizeName(member.Name)] = append(shortAliases[normalizeName(member.Name)], nestedName)
+					}
 				}
 				if typ.Namespace != "" {
 					out[normalizeName(typ.Namespace+"."+nestedName)] = enumMembers
@@ -1332,7 +1708,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 				sourceMembersByUnit[unit][normalizeName(typ.Namespace+"."+members.name)] = members
 			}
 		}
-		if !semaRequiresQualifiedDependencyName(typ) {
+		if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 			key := normalizeName(typ.Name)
 			if semaShouldStoreTypeMembers(out[key], typ) {
 				out[key] = members
@@ -1520,20 +1896,21 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	for _, name := range index.CustomLabelNames {
 		customLabelNames[normalizeName(name)] = true
 	}
-	complete, scopes, projects, defaultScope := semaCompleteSourceNestedInventories(index, sourceUnitByFile)
+	complete, completeDeps, scopes, projects, defaultScope := semaCompleteSourceNestedInventories(index, sourceUnitByFile)
 	model := &semaTypeMemberModel{
-		orgShapeFeatures:          append([]string(nil), index.OrgShapeFeatures...),
-		customLabelNames:          customLabelNames,
-		customLabelsKnown:         index.CustomLabelsKnown,
-		members:                   out,
-		sourceTypesByFile:         sourceTypesByFile,
-		sourceMembersByUnit:       sourceMembersByUnit,
-		sourceUnitsWithDuplicates: sourceUnitsWithDuplicates,
-		sourceUnitByFile:          sourceUnitByFile,
-		completeSourceNestedTypes: complete,
-		sourceScopeByAlias:        scopes,
-		sourceProjectByUnit:       projects,
-		defaultSourceScope:        defaultScope,
+		orgShapeFeatures:              append([]string(nil), index.OrgShapeFeatures...),
+		customLabelNames:              customLabelNames,
+		customLabelsKnown:             index.CustomLabelsKnown,
+		members:                       out,
+		sourceTypesByFile:             sourceTypesByFile,
+		sourceMembersByUnit:           sourceMembersByUnit,
+		sourceUnitsWithDuplicates:     sourceUnitsWithDuplicates,
+		sourceUnitByFile:              sourceUnitByFile,
+		completeSourceNestedTypes:     complete,
+		completeDependencyNestedTypes: completeDeps,
+		sourceScopeByAlias:            scopes,
+		sourceProjectByUnit:           projects,
+		defaultSourceScope:            defaultScope,
 	}
 	for _, feature := range index.OrgShapeFeatures {
 		if strings.EqualFold(feature, "Knowledge") {
@@ -1563,7 +1940,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 // Only actual, unambiguous source declarations without an inherited inventory
 // close their nested names. Count lookup aliases as well as namespace-qualified
 // identities: independent packaging namespaces can share an unqualified name.
-func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]string) (map[string]bool, map[string]semaSourceScope, map[string]string, semaSourceScope) {
+func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]string) (map[string]bool, map[string]bool, map[string]semaSourceScope, map[string]string, semaSourceScope) {
 	nearestProject := func(dir, sourceRoot string) string {
 		project := ""
 		semaSourceUnitMarkerWalk(dir, sourceRoot, func(marker string) bool {
@@ -1599,7 +1976,7 @@ func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]s
 		}
 		name := semaTypeMembersName(typ)
 		add(name)
-		if !semaRequiresQualifiedDependencyName(typ) {
+		if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 			add(typ.Name)
 		}
 		if typ.Namespace != "" {
@@ -1613,7 +1990,19 @@ func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]s
 		counts[normalizeName(trigger.Name)]++
 	}
 	complete := make(map[string]bool)
+	completeDeps := make(map[string]bool)
 	for i, typ := range index.Types {
+		if typ.Dependency && !index.Subset && !typ.Artifact && (typ.Namespace == "" || semaSameNamespaceSourceDependency(index, typ)) && typ.SourceRoot != "" && typ.File != "" && typ.HasSourceSnapshot() && typ.SuperClass == "" && len(typ.Interfaces) == 0 {
+			unambiguous := true
+			for _, key := range aliases[i] {
+				unambiguous = unambiguous && counts[key] == 1
+			}
+			if unambiguous {
+				for _, key := range aliases[i] {
+					completeDeps[key] = true
+				}
+			}
+		}
 		if typ.Dependency || typ.Artifact || typ.File == "" || !typ.HasSourceSnapshot() {
 			continue
 		}
@@ -1658,15 +2047,43 @@ func semaCompleteSourceNestedInventories(index typesys.Index, units map[string]s
 		}
 		scopes[key] = semaSourceScope{project: project, namespace: namespace}
 	}
-	return complete, scopes, projects, defaultScope
+	return complete, completeDeps, scopes, projects, defaultScope
 }
 
 func buildSemaTypeMemberView(index typesys.Index) *semaTypeMemberView {
 	return newSemaTypeMemberState(buildTypeMembers(index)).view()
 }
 
+// semaLazyView hands a pass one member view, built on first use. With a state
+// the view layers over the analysis' shared type-member model; without one the
+// pass builds a private model, as callers outside a full analysis do. A pass
+// that never reaches a candidate declaration builds nothing.
+type semaLazyView struct {
+	state *semaTypeMemberState
+	index typesys.Index
+	model *semaTypeMemberView
+}
+
+func (l *semaLazyView) get() *semaTypeMemberView {
+	if l.model == nil {
+		if l.state != nil {
+			l.model = l.state.view()
+		} else {
+			l.model = buildSemaTypeMemberView(l.index)
+		}
+	}
+	return l.model
+}
+
 func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
 	return semaRequiresQualifiedDependencyNameValues(typ.Namespace, typ.Dependency, typ.Artifact, typ.SourceRoot)
+}
+
+// Source in the project's own namespace participates in unqualified lookup.
+// A foreign namespace, an artifact, or an unavailable source proves no such alias.
+func semaSameNamespaceSourceDependency(index typesys.Index, typ typesys.TypeSymbol) bool {
+	return typ.Dependency && !typ.Artifact && typ.SourceRoot != "" && typ.HasSourceSnapshot() &&
+		index.Project.Namespace != "" && strings.EqualFold(index.Project.Namespace, typ.Namespace)
 }
 
 func semaGeneratedFlowInterviewType(typ typesys.TypeSymbol) bool {
@@ -1774,14 +2191,14 @@ func semaTypeMemberCandidateKeys(index typesys.Index) []string {
 				continue
 			}
 			nestedName := typ.Name + "." + member.Name
-			if !semaRequiresQualifiedDependencyName(typ) {
+			if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 				keys = append(keys, normalizeName(nestedName))
 			}
 			if typ.Namespace != "" {
 				keys = append(keys, normalizeName(typ.Namespace+"."+nestedName))
 			}
 		}
-		if !semaRequiresQualifiedDependencyName(typ) {
+		if !semaRequiresQualifiedDependencyName(typ) || semaSameNamespaceSourceDependency(index, typ) {
 			keys = append(keys, normalizeName(typ.Name))
 		}
 		if typ.Namespace != "" {
@@ -2128,36 +2545,32 @@ func ensureSemaStandardChildRelationshipMembers() {
 	semaStandardChildRelationshipCache.once.Do(func() {
 		byParent := make(map[string][]semaStandardChildRelationshipMember)
 		seen := make(map[string]bool)
-		for _, childObject := range storage.KnownStandardObjectNames() {
-			childName := childObject
-			if canonical, ok := storage.ResolveKnownStandardObjectName(childObject); ok {
-				childName = canonical
+		// The generated table is the catalog walk over every known standard
+		// object (storage.TestStandardChildRelationshipsMatchCatalog pins it);
+		// reading it keeps the first child-relationship lookup from decoding
+		// every catalog member.
+		for _, relationship := range storage.StandardChildRelationships() {
+			childName := relationship.Child
+			for _, parent := range relationship.Parents {
+				parentName := parent
+				if canonical, ok := storage.ResolveKnownStandardObjectName(parent); ok {
+					parentName = canonical
+				}
+				parentKey := normalizeName(parentName)
+				if parentKey == "" {
+					continue
+				}
+				member := semaStandardChildRelationshipMember{
+					name: relationship.Name,
+					typ:  "List<" + childName + ">",
+				}
+				dedupeKey := parentKey + "\x00" + normalizeName(member.name) + "\x00" + normalizeName(member.typ)
+				if seen[dedupeKey] {
+					continue
+				}
+				seen[dedupeKey] = true
+				byParent[parentKey] = append(byParent[parentKey], member)
 			}
-			storage.VisitStandardObjectRelationships(childName, nil, func(relationship storage.Relationship) {
-				if relationship.ChildRelationship == "" {
-					return
-				}
-				for _, parent := range relationship.ParentObjects {
-					parentName := parent
-					if canonical, ok := storage.ResolveKnownStandardObjectName(parent); ok {
-						parentName = canonical
-					}
-					parentKey := normalizeName(parentName)
-					if parentKey == "" {
-						continue
-					}
-					member := semaStandardChildRelationshipMember{
-						name: relationship.ChildRelationship,
-						typ:  "List<" + childName + ">",
-					}
-					dedupeKey := parentKey + "\x00" + normalizeName(member.name) + "\x00" + normalizeName(member.typ)
-					if seen[dedupeKey] {
-						continue
-					}
-					seen[dedupeKey] = true
-					byParent[parentKey] = append(byParent[parentKey], member)
-				}
-			})
 		}
 		semaStandardChildRelationshipCache.byParent = byParent
 	})

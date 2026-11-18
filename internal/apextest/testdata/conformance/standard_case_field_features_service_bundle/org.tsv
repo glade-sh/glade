@@ -1,0 +1,73 @@
+id	api	route	compiled	success	outcome
+Subject_read	62.0	anonymous	true	true	R|true
+Subject_read	67.0	anonymous	true	true	R|true
+Subject_soql	62.0	anonymous	true	true	R|ok
+Subject_soql	67.0	anonymous	true	true	R|ok
+Subject_describe	62.0	anonymous	true	true	R|true
+Subject_describe	67.0	anonymous	true	true	R|true
+Subject_dynquery	62.0	anonymous	true	true	R|ok
+Subject_dynquery	67.0	anonymous	true	true	R|ok
+Subject_put	62.0	anonymous	true	true	R|ok
+Subject_put	67.0	anonymous	true	true	R|ok
+Subject_assign	62.0	anonymous	true	true	R|ok
+Subject_assign	67.0	anonymous	true	true	R|ok
+SourceId_read	62.0	anonymous	true	true	R|true
+SourceId_read	67.0	anonymous	true	true	R|true
+SourceId_soql	62.0	anonymous	true	true	R|ok
+SourceId_soql	67.0	anonymous	true	true	R|ok
+SourceId_describe	62.0	anonymous	true	true	R|true
+SourceId_describe	67.0	anonymous	true	true	R|true
+SourceId_dynquery	62.0	anonymous	true	true	R|ok
+SourceId_dynquery	67.0	anonymous	true	true	R|ok
+SourceId_put	62.0	anonymous	true	true	R|ok
+SourceId_put	67.0	anonymous	true	true	R|ok
+SourceId_assign	62.0	anonymous	true	true	R|ok
+SourceId_assign	67.0	anonymous	true	true	R|ok
+Language_read	62.0	anonymous	false	false	CE|Variable does not exist: Language
+Language_read	67.0	anonymous	false	false	CE|Variable does not exist: Language
+Language_soql	62.0	anonymous	false	false	CE| SELECT Language FROM Case LIMIT 1        ^ ERROR at Row:1:Column:8 No such column 'Language' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+Language_soql	67.0	anonymous	false	false	CE| SELECT Language FROM Case LIMIT 1        ^ ERROR at Row:1:Column:8 No such column 'Language' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+Language_describe	62.0	anonymous	true	true	R|false
+Language_describe	67.0	anonymous	true	true	R|false
+Language_dynquery	62.0	anonymous	true	false	EX|System.QueryException: No such column 'Language' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+Language_dynquery	67.0	anonymous	true	false	EX|System.QueryException: No such column 'Language' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+Language_put	62.0	anonymous	true	false	EX|System.SObjectException: Invalid field Language for Case
+Language_put	67.0	anonymous	true	false	EX|System.SObjectException: Invalid field Language for Case
+Language_assign	62.0	anonymous	false	false	CE|Variable does not exist: Language
+Language_assign	67.0	anonymous	false	false	CE|Variable does not exist: Language
+Division_read	62.0	anonymous	false	false	CE|Variable does not exist: Division
+Division_read	67.0	anonymous	false	false	CE|Variable does not exist: Division
+Division_soql	62.0	anonymous	false	false	CE| SELECT Division FROM Case LIMIT 1        ^ ERROR at Row:1:Column:8 No such column 'Division' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+Division_soql	67.0	anonymous	false	false	CE| SELECT Division FROM Case LIMIT 1        ^ ERROR at Row:1:Column:8 No such column 'Division' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+Division_describe	62.0	anonymous	true	true	R|false
+Division_describe	67.0	anonymous	true	true	R|false
+Division_dynquery	62.0	anonymous	true	false	EX|System.QueryException: No such column 'Division' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+Division_dynquery	67.0	anonymous	true	false	EX|System.QueryException: No such column 'Division' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+Division_put	62.0	anonymous	true	false	EX|System.SObjectException: Invalid field Division for Case
+Division_put	67.0	anonymous	true	false	EX|System.SObjectException: Invalid field Division for Case
+Division_assign	62.0	anonymous	false	false	CE|Variable does not exist: Division
+Division_assign	67.0	anonymous	false	false	CE|Variable does not exist: Division
+ConnectionReceivedId_read	62.0	anonymous	false	false	CE|Variable does not exist: ConnectionReceivedId
+ConnectionReceivedId_read	67.0	anonymous	false	false	CE|Variable does not exist: ConnectionReceivedId
+ConnectionReceivedId_soql	62.0	anonymous	false	false	CE| SELECT ConnectionReceivedId FROM Case LIMIT        ^ ERROR at Row:1:Column:8 No such column 'ConnectionReceivedId' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+ConnectionReceivedId_soql	67.0	anonymous	false	false	CE| SELECT ConnectionReceivedId FROM Case LIMIT        ^ ERROR at Row:1:Column:8 No such column 'ConnectionReceivedId' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+ConnectionReceivedId_describe	62.0	anonymous	true	true	R|false
+ConnectionReceivedId_describe	67.0	anonymous	true	true	R|false
+ConnectionReceivedId_dynquery	62.0	anonymous	true	false	EX|System.QueryException: No such column 'ConnectionReceivedId' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+ConnectionReceivedId_dynquery	67.0	anonymous	true	false	EX|System.QueryException: No such column 'ConnectionReceivedId' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+ConnectionReceivedId_put	62.0	anonymous	true	false	EX|System.SObjectException: Invalid field ConnectionReceivedId for Case
+ConnectionReceivedId_put	67.0	anonymous	true	false	EX|System.SObjectException: Invalid field ConnectionReceivedId for Case
+ConnectionReceivedId_assign	62.0	anonymous	false	false	CE|Variable does not exist: ConnectionReceivedId
+ConnectionReceivedId_assign	67.0	anonymous	false	false	CE|Variable does not exist: ConnectionReceivedId
+ConnectionSentId_read	62.0	anonymous	false	false	CE|Variable does not exist: ConnectionSentId
+ConnectionSentId_read	67.0	anonymous	false	false	CE|Variable does not exist: ConnectionSentId
+ConnectionSentId_soql	62.0	anonymous	false	false	CE| SELECT ConnectionSentId FROM Case LIMIT        ^ ERROR at Row:1:Column:8 No such column 'ConnectionSentId' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+ConnectionSentId_soql	67.0	anonymous	false	false	CE| SELECT ConnectionSentId FROM Case LIMIT        ^ ERROR at Row:1:Column:8 No such column 'ConnectionSentId' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+ConnectionSentId_describe	62.0	anonymous	true	true	R|false
+ConnectionSentId_describe	67.0	anonymous	true	true	R|false
+ConnectionSentId_dynquery	62.0	anonymous	true	false	EX|System.QueryException: No such column 'ConnectionSentId' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+ConnectionSentId_dynquery	67.0	anonymous	true	false	EX|System.QueryException: No such column 'ConnectionSentId' on entity 'Case'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+ConnectionSentId_put	62.0	anonymous	true	false	EX|System.SObjectException: Invalid field ConnectionSentId for Case
+ConnectionSentId_put	67.0	anonymous	true	false	EX|System.SObjectException: Invalid field ConnectionSentId for Case
+ConnectionSentId_assign	62.0	anonymous	false	false	CE|Variable does not exist: ConnectionSentId
+ConnectionSentId_assign	67.0	anonymous	false	false	CE|Variable does not exist: ConnectionSentId

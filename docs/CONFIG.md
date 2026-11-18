@@ -74,11 +74,14 @@ Supported keys:
 | `project.dependencies` | Declared package names or SFDX aliases mapped to local source paths. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `project.dependencyPaths` | Inline list of local directories to search for declared SFDX package dependencies, relative to the supplying `glade.yml`. |
+| `project.siblingDependencyScan` | `true` lets Glade also look for declared SFDX package dependencies in directories beside the project. Default `false`. The `--sibling-dependencies` flag or `GLADE_SIBLING_DEPENDENCIES=1` turns it on for one run. |
+| `project.externalNamespaces` | Inline list of installed managed-package namespaces with no local source. Each stays open; see [External namespaces](#external-namespaces). |
 | `project.schemaSnapshot` | Schema snapshot path, relative to `glade.yml`; requires `schemaSnapshotSHA256`. |
 | `project.schemaSnapshotSHA256` | Paired 64-character hexadecimal SHA-256 digest for `schemaSnapshot`. |
 
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `pdf.command` | Absolute executable path for optional external HTML-to-PDF rendering; empty uses the local text writer. |
+| `duplicateRules.standard` | `on` enforces the standard Account, Contact and Lead duplicate rules that no project metadata defines; `off` (the default) leaves them unenforced. `GLADE_STANDARD_DUPLICATE_RULES=on` turns them on for one run. A project's `duplicateRules` metadata for a standard rule is always honored, active or inactive, and custom duplicate rules are always enforced. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 | `org.hierarchyAccessObjects` | Inline list of private custom object API names for which the source org grants read access through the owner's role hierarchy. Unlisted objects do not receive that grant. |
 | `test.permissionSets` | Inline list of project permission-set API names to assign to the running test user. |
@@ -104,6 +107,14 @@ snapshot. Omitted or false assertions leave unknown fields open. An object with
 `"partial": true` remains open even if it also asserts completeness. Only make
 this assertion when the snapshot includes the whole field surface needed by the
 project, including installed and org-specific fields.
+
+Field-set inventories have a separate completeness assertion. For an object
+whose captured field-set map is complete, set `"fieldSetsComplete": true` and
+list its names in `"fieldSetNames"` in the pinned snapshot. Source field-set
+metadata adds names to that inventory. Omitted assertions and partial snapshots
+leave unknown field sets open; dependency snapshots do not close the host org's
+inventory. Only assert completeness for the represented org and its installed
+packages.
 
 ### Test user and clock
 
@@ -166,6 +177,31 @@ to a `packageDirectories[].package` entry in a local project's own
 `sfdx-project.json`. Glade reads local source only; it does not install a
 package or fetch one from the network.
 
+### External namespaces
+
+Salesforce rejects a type from a namespace the org does not have, in every
+position: a local, field, parameter, return, generic argument, `new`, cast,
+`instanceof`, `extends` and `implements` give `Invalid type: <name>`, and a
+static field read through it gives `Variable does not exist: <name>`. Glade
+gives the same answers for a namespace the project never declares.
+
+When the org has a managed package installed but Glade has no source for it,
+declare its namespace:
+
+```yaml
+project:
+  externalNamespaces: [ccpkg, vendorns]
+```
+
+Each entry is an Apex namespace identifier; names compare without case, and a
+duplicate is a configuration error. A declared namespace stays open: its types
+compile in every position, and Glade reports no `dependency_missing`
+diagnostic for it. Glade still has no package bodies, so a static method call
+into the package (`vendorns.Logger.log(...)`) makes the calling class a compile
+exclusion, as for any source-less dependency; tests in other classes still run.
+A `managedPackageDependencies` entry for the same namespace takes precedence.
+Declare only packages the target org has; Glade never infers one from a name.
+
 ### Dependency paths
 
 Use `project.dependencyPaths` when a local dependency checkout is outside the
@@ -192,14 +228,21 @@ Lookup steps:
 1. A matching explicit `project.dependencies` mapping.
 2. A matching `project.managedPackageDependencies` entry that loads; this skips
    local lookup.
-3. The parent and grandparent directories themselves, plus `<base>/<name>` and
-   `<base>/packages/<name>` for package-name variants, and sibling project
-   directories directly under the parent that contain an
-   `sfdx-project.json`.
+3. Sibling scan only (off by default): the parent and grandparent directories
+   themselves, plus `<base>/<name>` and `<base>/packages/<name>` for
+   package-name variants, and sibling project directories directly under the
+   parent that contain an `sfdx-project.json`.
 4. Each `dependencyPaths` entry, in the order listed.
-5. If the consumer manifest's `packageAliases` object has a key matching the
-   dependency name, immediate child directories under each immediate directory
-   beneath the project root's grandparent.
+5. Sibling scan only, and only if the consumer manifest's `packageAliases`
+   object has a key matching the dependency name: immediate child directories
+   under each immediate directory beneath the project root's grandparent.
+
+Resolution is deterministic by default. Steps 3 and 5 and the namespace-based
+sibling pickup run only when you opt in with `project.siblingDependencyScan:
+true` in `glade.yml`, the `--sibling-dependencies` flag on any command, or
+`GLADE_SIBLING_DEPENDENCIES=1`. Without it, a project resolves the same
+standalone and beside other checkouts, and a dependency that only a neighbor
+would supply reports `dependency_missing`.
 
 Local candidates from all applicable locations count together. A candidate
 matches only when one of its package directories declares the

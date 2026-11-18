@@ -2,7 +2,6 @@ package apextest
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -112,26 +111,6 @@ func customAddressRunAt(t *testing.T, index typesys.Index, api, runtimeAPI, sour
 	return out, err
 }
 
-// customAddressJSONEqual compares row P14 by value: the probe re-serializes a
-// deserializeUntyped map, whose key order is a separate generic gap. Direct
-// System.Address JSON order is asserted by TestCustomAddressJSONPropertyOrder.
-func customAddressJSONEqual(native, glade string) bool {
-	parse := func(text string) map[string]any {
-		out := map[string]any{}
-		for _, part := range strings.Split(text, ";") {
-			key, value, _ := strings.Cut(part, "=")
-			var decoded any
-			if json.Unmarshal([]byte(value), &decoded) != nil {
-				return nil
-			}
-			out[key] = decoded
-		}
-		return out
-	}
-	left, right := parse(native), parse(glade)
-	return left != nil && reflect.DeepEqual(left, right)
-}
-
 // TestCustomAddressFieldsNativeConformance replays the native custom Address
 // capture (fresh Developer scratch org, Custom Address Fields enabled, API
 // 62.0 and 67.0): describe facets, component and compound access, DML, SOQL,
@@ -159,10 +138,6 @@ func TestCustomAddressFieldsNativeConformance(t *testing.T) {
 					continue
 				}
 				observed, ok := got[row.id]
-				if row.id == "P14" && ok && customAddressJSONEqual(row.observation, observed) {
-					matched++
-					continue
-				}
 				if !ok || observed != row.observation {
 					t.Errorf("%s: native <%s> glade <%s>", row.id, row.observation, observed)
 					continue
@@ -217,7 +192,7 @@ func TestCustomAddressFieldsNativeConformance(t *testing.T) {
 					}
 				}
 			}
-			// P10x: the WHERE rule of P10 without the COUNT() routing gap.
+			// P10x: the WHERE rule of P10 with a plain Id select list.
 			out, err := customAddressRun(t, index, api, `try { Database.query('SELECT Id FROM Addr_Test__c WHERE Home__c != null'); } catch (QueryException e) { System.debug('ADDR|' + e.getMessage()); }`)
 			if err != nil || len(out) != 1 || out[0] != "Address fields can only be filtered using Distance expressions" {
 				t.Errorf("P10x: %v %v", out, err)

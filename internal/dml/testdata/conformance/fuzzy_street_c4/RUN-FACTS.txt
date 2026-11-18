@@ -1,0 +1,12 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for a custom Account matching rule with one Street item (BillingStreet, NullNotAllowed), duplicate rule Allow with alert; standard Account duplicate rule inactive
+date: 2026-11-15
+CLI: @salesforce/cli/2.157.8 darwin-arm64 node-v26.13.0
+org: fresh 30-day Developer Edition scratch orgs on campaign Dev Hubs, deleted after each run; deletion verified (active scratch record 1 -> 0, local target no longer resolves); org readback {"OrganizationType": "Developer Edition", "LanguageLocaleKey": "en_US"}
+probe: FuzzyPanel.run inserts one record per value (DMLOptions allowSave), then calls findDuplicates on unsaved copies of every value; each match is candidate index, existing index (base 36) and the confidence when not 100; record ids are compared inside Apex and never exported
+apis: 62.0 and 67.0; class ApiVersion read back after each deploy
+routes: anonymous Apex and named @IsTest methods; two repeats each
+log guard: debug level ERROR; each run fails on Apex log truncation, an incomplete observation frame or a class API mismatch; a canary panel brackets every six panels; none failed
+ids: no record, org or user id, username or alias is stored
+groups: fit panels (cj*, cl*, cu*, cp*, cs*, cd*, hu1) shaped the model; holdout panels (hj1, hl1, hp1, hs1, hd1, hd2) use other street names and numbers and were scored after the model was frozen, without being read. hu1 was generated as a holdout panel; its rows (Wren St and Str against Birkin Dr and Drv) informed a rule, so it is fit data
+holdout note: hd1 was first scored against an earlier model (114 extra Glade matches); its street name, Orchard, was then probed as one word pair in fuzzy_street_c5 ng7, and the panel was scored again without being read
+note: a few values have no self match natively (a lone suffix word, "PO Box" with no number); those rows record the answer

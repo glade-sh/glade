@@ -1,0 +1,12 @@
+capture: limits
+started: 2026-11-16T03:11:57Z
+finished: 2026-11-16T03:12:24Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+gate: Limits getters are runtime surfaces; class version is the comparison axis here
+Data Cloud DMO/DLO cursor capture is not runnable without a Data Cloud license; only getters are captured

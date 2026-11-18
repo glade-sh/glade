@@ -1,0 +1,9 @@
+api	case	route	outcome
+62.0	getterFinite	IsTest	Pass
+62.0	getterRecursive	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	setterFinite	IsTest	Pass
+62.0	setterRecursive	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	getterFinite	IsTest	Pass
+67.0	getterRecursive	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	setterFinite	IsTest	Pass
+67.0	setterRecursive	IsTest	Fail; System.LimitException: Maximum stack depth reached: 1001

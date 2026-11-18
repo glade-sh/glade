@@ -1,0 +1,9 @@
+id	route	file
+cm01	istest	Cm01HttpMockTest
+cm02	istest	Cm02StaticResourceMockTest
+cm03	istest	Cm03MultiStaticResourceMockTest
+cm04	istest	Cm04WebServiceMockTest
+cm05	istest	Cm05NoMockHttpTest
+cm06	istest	Cm06MockDefaultsTest
+cm07	istest	Cm07SetMockReplaceTest
+cm08	istest	Cm08SetMockMismatchTest

@@ -76,6 +76,10 @@ type standardDescribeCatalogV2RawCache struct {
 	// is set for the production pack, whose generated scalar table is checked
 	// against every member; injected decoders keep decoding.
 	scalars func(standardDescribeCatalogV2IndexEntry) (standardDescribeObject, bool)
+	// narrow answers a narrow lookup without decoding the whole member. It is
+	// set for the production pack; injected decoders answer from their full
+	// decode.
+	narrow func(standardDescribeCatalogV2IndexEntry) (standardDescribeNarrow, error)
 }
 
 type standardDescribeCatalogV2RawCacheEntry struct {
@@ -88,6 +92,12 @@ type standardDescribeCatalogV2RawCacheEntry struct {
 	scalarReady bool
 	scalar      standardDescribeObject
 	scalarErr   error
+	narrowReady bool
+	narrowValue standardDescribeNarrow
+	narrowErr   error
+	fieldsReady bool
+	fieldsValue standardDescribeObject
+	fieldsErr   error
 }
 
 var standardDescribeCatalogV2ProductionCache = newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
@@ -96,10 +106,14 @@ var standardDescribeCatalogV2ProductionCache = newStandardDescribeCatalogV2Cache
 // must not mutate the returned slices or nested values.
 var standardDescribeCatalogV2RawProductionCache = func() *standardDescribeCatalogV2RawCache {
 	cache := newStandardDescribeCatalogV2RawCache(func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
+		standardDescribeFullDecodes.Add(1)
 		return decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, entry)
 	})
 	cache.scalarOnly = true
 	cache.scalars = lookupStandardDescribeCatalogV2Scalar
+	cache.narrow = func(entry standardDescribeCatalogV2IndexEntry) (standardDescribeNarrow, error) {
+		return decodeStandardDescribeCatalogV2Narrow(standardDescribeCatalogV2Pack, entry)
+	}
 	return cache
 }()
 
@@ -224,6 +238,66 @@ func (cache *standardDescribeCatalogV2RawCache) scalarForName(objectName string)
 	return cached.scalar, true, cached.scalarErr
 }
 
+// narrowForName answers the overlay check plan's question about an object. When
+// the member is already fully decoded the answer comes from that decode.
+// Otherwise the production cache scans the member once and keeps only the
+// narrow result, leaving the full decode to whoever needs it. The result is
+// memoized per object and is immutable.
+func (cache *standardDescribeCatalogV2RawCache) narrowForName(objectName string) (standardDescribeNarrow, bool, error) {
+	if cache.narrow == nil {
+		describe, found, err := cache.entryForName(objectName)
+		if err != nil || !found {
+			return standardDescribeNarrow{}, found, err
+		}
+		return standardDescribeNarrowFromDescribe(describe), true, nil
+	}
+	cached, found, err := cache.rawEntryForName(objectName)
+	if err != nil || !found {
+		return standardDescribeNarrow{}, found, err
+	}
+	cached.mu.Lock()
+	defer cached.mu.Unlock()
+	if !cached.narrowReady {
+		if cached.fullReady {
+			if cached.err == nil {
+				cached.narrowValue = standardDescribeNarrowFromDescribe(cached.value)
+			}
+			cached.narrowErr = cached.err
+		} else {
+			cached.narrowValue, cached.narrowErr = cache.narrow(cached.indexEntry)
+		}
+		cached.narrowReady = true
+	}
+	return cached.narrowValue, true, cached.narrowErr
+}
+
+// fieldsForName retains only the field and mergeable facets used by enrichment.
+func (cache *standardDescribeCatalogV2RawCache) fieldsForName(objectName string) (standardDescribeObject, bool, error) {
+	if cache.narrow == nil {
+		return cache.entryForName(objectName)
+	}
+	cached, found, err := cache.rawEntryForName(objectName)
+	if err != nil || !found {
+		return standardDescribeObject{}, found, err
+	}
+	cached.mu.Lock()
+	defer cached.mu.Unlock()
+	if !cached.fieldsReady {
+		if cached.fullReady {
+			cached.fieldsValue = standardDescribeObject{Fields: cached.value.Fields, Mergeable: cached.value.Mergeable}
+			cached.fieldsErr = cached.err
+		} else {
+			cached.fieldsValue, cached.fieldsErr = decodeStandardDescribeCatalogV2Fields(standardDescribeCatalogV2Pack, cached.indexEntry)
+		}
+		cached.fieldsReady = true
+	}
+	return cached.fieldsValue, true, cached.fieldsErr
+}
+
+func lookupStandardDescribeFieldsV2(objectName string) (standardDescribeObject, bool, error) {
+	return standardDescribeCatalogV2RawProductionCache.fieldsForName(objectName)
+}
+
 func validateResolvedStandardDescribeCatalogV2IndexEntry(entry standardDescribeCatalogV2IndexEntry) error {
 	canonical, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, entry.Name)
 	if !ok || canonical != entry {
@@ -236,18 +310,24 @@ func lookupStandardDescribeCatalogV2(objectName string) (standardDescribeObject,
 	return standardDescribeCatalogV2RawProductionCache.entryForName(objectName)
 }
 
+func lookupStandardDescribeNarrowV2(objectName string) (standardDescribeNarrow, bool, error) {
+	return standardDescribeCatalogV2RawProductionCache.narrowForName(objectName)
+}
+
 func lookupStandardDescribeChildRelationshipsV2(objectName string) (standardDescribeChildRelationshipsV2Member, bool, error) {
 	entry, ok := lookupStandardDescribeCatalogV2Index(standardDescribeChildRelationshipsV2Index, objectName)
 	if !ok {
 		return standardDescribeChildRelationshipsV2Member{}, false, nil
 	}
-	data, err := decodeStandardDescribeCatalogV2MemberBytes(standardDescribeChildRelationshipsV2Pack, entry, standardDescribeChildRelationshipsV2Magic, len(standardDescribeChildRelationshipsV2Index))
+	var member standardDescribeChildRelationshipsV2Member
+	err := withStandardDescribeCatalogV2MemberBytes(standardDescribeChildRelationshipsV2Pack, entry, standardDescribeChildRelationshipsV2Magic, len(standardDescribeChildRelationshipsV2Index), func(data []byte) error {
+		if err := json.Unmarshal(data, &member); err != nil {
+			return fmt.Errorf("decode standard describe reverse member %q: %w", entry.Name, err)
+		}
+		return nil
+	})
 	if err != nil {
 		return standardDescribeChildRelationshipsV2Member{}, true, err
-	}
-	var member standardDescribeChildRelationshipsV2Member
-	if err := json.Unmarshal(data, &member); err != nil {
-		return standardDescribeChildRelationshipsV2Member{}, true, fmt.Errorf("decode standard describe reverse member %q: %w", entry.Name, err)
 	}
 	return member, true, nil
 }
@@ -287,48 +367,92 @@ func standardDescribeNameAtLeast(name, key string) bool {
 }
 
 func decodeStandardDescribeCatalogV2Member(pack []byte, entry standardDescribeCatalogV2IndexEntry) (standardDescribeObject, error) {
-	data, err := decodeStandardDescribeCatalogV2MemberBytes(pack, entry, standardDescribeCatalogV2Magic, len(standardDescribeCatalogV2Index))
+	standardCatalogMemberDecodes.Add(1)
+	var describe standardDescribeObject
+	err := withStandardDescribeCatalogV2MemberBytes(pack, entry, standardDescribeCatalogV2Magic, len(standardDescribeCatalogV2Index), func(data []byte) error {
+		var decodeErr error
+		describe, decodeErr = decodeStandardDescribeObjectJSON(data)
+		if decodeErr != nil {
+			return fmt.Errorf("decode standard describe member %q: %w", entry.Name, decodeErr)
+		}
+		return nil
+	})
 	if err != nil {
 		return standardDescribeObject{}, err
-	}
-	describe, err := decodeStandardDescribeObjectJSON(data)
-	if err != nil {
-		return standardDescribeObject{}, fmt.Errorf("decode standard describe member %q: %w", entry.Name, err)
 	}
 	return describe, nil
 }
 
+// standardDescribeMemberBuffers holds uncompressed member buffers. A buffer is
+// only lent to a callback that copies what it keeps: decoded values never
+// reference it (strings are copied, encoding/json copies too).
+var standardDescribeMemberBuffers sync.Pool
+
+// standardDescribeMemberBufferMaxCap keeps the pool from holding an outlier.
+const standardDescribeMemberBufferMaxCap = 4 << 20
+
+// standardDescribeMemberBufferStep rounds up a replacement pooled buffer.
+const standardDescribeMemberBufferStep = 256 << 10
+
+// decodeStandardDescribeCatalogV2MemberBytes returns a member's JSON in a
+// buffer the caller owns.
 func decodeStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescribeCatalogV2IndexEntry, magic []byte, count int) ([]byte, error) {
+	return decodeStandardDescribeCatalogV2MemberInto(pack, entry, magic, count, nil)
+}
+
+// withStandardDescribeCatalogV2MemberBytes verifies a member and lends its JSON
+// to use from a pooled buffer. use must not retain data or slices of it.
+func withStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescribeCatalogV2IndexEntry, magic []byte, count int, use func(data []byte) error) error {
+	var buffer []byte
+	if pooled, ok := standardDescribeMemberBuffers.Get().(*[]byte); ok {
+		buffer = *pooled
+	}
+	// Size a replacement in steps so the next members of similar size reuse it.
+	if need := int(entry.UncompressedLength) + 1; cap(buffer) < need && need <= standardDescribeMemberBufferMaxCap {
+		buffer = make([]byte, 0, (need+standardDescribeMemberBufferStep-1)/standardDescribeMemberBufferStep*standardDescribeMemberBufferStep)
+	}
+	data, err := decodeStandardDescribeCatalogV2MemberInto(pack, entry, magic, count, buffer[:0])
+	if err == nil {
+		err = use(data)
+	}
+	if cap(data) > 0 && cap(data) <= standardDescribeMemberBufferMaxCap {
+		data = data[:0]
+		standardDescribeMemberBuffers.Put(&data)
+	}
+	return err
+}
+
+func decodeStandardDescribeCatalogV2MemberInto(pack []byte, entry standardDescribeCatalogV2IndexEntry, magic []byte, count int, buffer []byte) ([]byte, error) {
 	if len(pack) < standardDescribeCatalogV2HeaderSize || !bytes.Equal(pack[:8], magic) || binary.BigEndian.Uint32(pack[8:12]) != 2 || int64(binary.BigEndian.Uint32(pack[12:16])) != int64(count) {
-		return nil, fmt.Errorf("decode standard describe member %q: invalid pack header", entry.Name)
+		return buffer, fmt.Errorf("decode standard describe member %q: invalid pack header", entry.Name)
 	}
 	end := entry.Offset + uint64(entry.CompressedLength)
 	if end < entry.Offset || entry.Offset < standardDescribeCatalogV2HeaderSize || end > uint64(len(pack)) {
-		return nil, fmt.Errorf("decode standard describe member %q: member bounds [%d,%d) exceed pack length %d", entry.Name, entry.Offset, end, len(pack))
+		return buffer, fmt.Errorf("decode standard describe member %q: member bounds [%d,%d) exceed pack length %d", entry.Name, entry.Offset, end, len(pack))
 	}
 	memberReader := bytes.NewReader(pack[entry.Offset:end])
 	reader, err := standardDescribeGzipReader(memberReader)
 	if err != nil {
-		return nil, fmt.Errorf("decode standard describe member %q: %w", entry.Name, err)
+		return buffer, fmt.Errorf("decode standard describe member %q: %w", entry.Name, err)
 	}
 	defer standardDescribeGzipReaders.Put(reader)
 	reader.Multistream(false)
-	data, readErr := readAllSized(io.LimitReader(reader, int64(entry.UncompressedLength)+1), int(entry.UncompressedLength)+1)
+	data, readErr := readAllSized(io.LimitReader(reader, int64(entry.UncompressedLength)+1), int(entry.UncompressedLength)+1, buffer)
 	closeErr := reader.Close()
 	if readErr != nil {
-		return nil, fmt.Errorf("decode standard describe member %q: %w", entry.Name, readErr)
+		return data, fmt.Errorf("decode standard describe member %q: %w", entry.Name, readErr)
 	}
 	if closeErr != nil {
-		return nil, fmt.Errorf("decode standard describe member %q: %w", entry.Name, closeErr)
+		return data, fmt.Errorf("decode standard describe member %q: %w", entry.Name, closeErr)
 	}
 	if memberReader.Len() != 0 {
-		return nil, fmt.Errorf("decode standard describe member %q: %d trailing compressed bytes", entry.Name, memberReader.Len())
+		return data, fmt.Errorf("decode standard describe member %q: %d trailing compressed bytes", entry.Name, memberReader.Len())
 	}
 	if len(data) != int(entry.UncompressedLength) {
-		return nil, fmt.Errorf("decode standard describe member %q: uncompressed length %d, want %d", entry.Name, len(data), entry.UncompressedLength)
+		return data, fmt.Errorf("decode standard describe member %q: uncompressed length %d, want %d", entry.Name, len(data), entry.UncompressedLength)
 	}
 	if digest := sha256.Sum256(data); digest != entry.SHA256 {
-		return nil, fmt.Errorf("decode standard describe member %q: SHA256 %x, want %x", entry.Name, digest, entry.SHA256)
+		return data, fmt.Errorf("decode standard describe member %q: SHA256 %x, want %x", entry.Name, digest, entry.SHA256)
 	}
 	return data, nil
 }
@@ -404,8 +528,12 @@ func standardDescribeGzipReader(source io.Reader) (*gzip.Reader, error) {
 
 // readAllSized is io.ReadAll with an initial capacity, so a member whose size
 // the index records is read without regrowing the buffer.
-func readAllSized(reader io.Reader, capacity int) ([]byte, error) {
-	data := make([]byte, 0, capacity)
+// A non-nil buffer with enough capacity is reused.
+func readAllSized(reader io.Reader, capacity int, buffer []byte) ([]byte, error) {
+	data := buffer[:0]
+	if cap(data) < capacity {
+		data = make([]byte, 0, capacity)
+	}
 	for {
 		if len(data) == cap(data) {
 			data = append(data, 0)[:len(data)]
@@ -443,15 +571,34 @@ func StandardCatalogReleaseEnabled() bool { return standardCatalogReleaseEnabled
 // result. Callers that already hold an entry keep it. It does nothing unless
 // EnableStandardCatalogRelease ran.
 func ReleaseStandardCatalogCaches() {
-	if !standardCatalogReleaseEnabled.Load() {
+	if !releaseDecodedCatalog() {
 		return
+	}
+	dropPlainSpreadTemplates()
+}
+
+// releaseDecodedCatalog frees the decoded entries without touching templates.
+// The periodic release in spreadTemplate uses it: dropping plain templates there
+// would make every rebuilt cell decode again.
+func releaseDecodedCatalog() bool {
+	if !standardCatalogReleaseEnabled.Load() {
+		return false
 	}
 	standardDescribeCatalogV2ProductionCache.release()
 	standardDescribeCatalogV2RawProductionCache.release()
+	releaseStandardSObjectStubMembers()
 	standardCatalogReleases.Add(1)
+	return true
 }
 
 var standardCatalogReleases atomic.Uint64
+
+var standardCatalogMemberDecodes atomic.Uint64
+
+// StandardCatalogMemberDecodeCount reports how many catalog members were
+// decoded in this process. Tests use it to see that a release makes a later
+// lookup decode again.
+func StandardCatalogMemberDecodeCount() uint64 { return standardCatalogMemberDecodes.Load() }
 
 // StandardCatalogReleaseCount reports how many releases ran. Tests use it to
 // bound the releases a sequence of org builds performs.

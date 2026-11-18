@@ -170,13 +170,15 @@ Map<String,Schema.SObjectField> copy = first.clone();
 Integer beforeSize = first.size();
 Set<String> keys = first.keySet();
 ` + mutation + `
-System.assertEquals(beforeSize, first.size());
+// NATIVE review_round9 ks_remove_effect: the write reaches the map the key
+// set came from (and its alias); the sibling and the earlier clone keep their
+// fields (unbacked Glade pins: no row reads them).
+System.assertNotEquals(beforeSize, first.size());
+System.assertEquals(first.size(), alias.size());
 System.assertEquals(beforeSize, second.size());
-System.assertEquals(beforeSize, alias.size());
 System.assertEquals(beforeSize, copy.size());
 Schema.SObjectField token = copy.get('Name');
 token.label = 'private label';
-System.assertEquals('private label', first.get('Name').label);
 System.assertEquals('private label', second.get('Name').label);
 System.assertEquals('private label', Account.SObjectType.fields.Name.label);`
 					program, err := CompileAnonymousWithOptions(source, CompileOptions{APIVersion: api})

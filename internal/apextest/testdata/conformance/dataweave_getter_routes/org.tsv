@@ -1,0 +1,21 @@
+api	case	route	outcome
+62.0	directGetter	IsTest-assert	Pass
+62.0	finiteGetter	IsTest-assert	Pass
+62.0	missingScript	IsTest-assert	Pass
+62.0	plainControl	IsTest-assert	Pass
+62.0	recursiveGetter	IsTest-assert	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	directGetter	IsTest-assert	Pass
+67.0	finiteGetter	IsTest-assert	Pass
+67.0	missingScript	IsTest-assert	Pass
+67.0	plainControl	IsTest-assert	Pass
+67.0	recursiveGetter	IsTest-assert	Fail; System.LimitException: Maximum stack depth reached: 1001
+62.0	directGetter	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: ""direct""|visits=1"
+62.0	finiteGetter	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: ""finite""|visits=2"
+62.0	missingScript	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: System.NoDataFoundException|Could not find DataWeave script unavailableSyntheticScript
+62.0	plainControl	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: ""plain"""
+62.0	recursiveGetter	IsTest-observe	Fail; System.LimitException: Maximum stack depth reached: 1001
+67.0	directGetter	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: ""direct""|visits=1"
+67.0	finiteGetter	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: ""finite""|visits=2"
+67.0	missingScript	IsTest-observe	Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: System.NoDataFoundException|Could not find DataWeave script unavailableSyntheticScript
+67.0	plainControl	IsTest-observe	"Fail; System.AssertException: Assertion Failed: Expected: OBS, Actual: ""plain"""
+67.0	recursiveGetter	IsTest-observe	Fail; System.LimitException: Maximum stack depth reached: 1001

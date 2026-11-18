@@ -8,7 +8,8 @@ async function source(path) {
 
 const [
   packageJSON,
-  releaseManifestSource,
+  syncReleaseManifest,
+  gitignore,
   home,
   config,
   quickstart,
@@ -29,7 +30,8 @@ const [
   playground
 ] = await Promise.all([
   source('../package.json'),
-  source('../release-manifest.json'),
+  source('../scripts/sync-release-manifest.mjs'),
+  source('../.gitignore'),
   source('../.vitepress/theme/home/GladeHome.vue'),
   source('../.vitepress/config.ts'),
   source('../docs-src/guide/quickstart.md'),
@@ -51,11 +53,11 @@ const [
 ])
 
 test('stable release and deployed commit share one generated site-build contract', () => {
-  assert.ok(releaseManifestSource, 'checked stable release manifest should exist')
-  const releaseManifest = JSON.parse(releaseManifestSource)
-  assert.equal(releaseManifest.channel, 'stable')
-  assert.match(releaseManifest.version, /^v\d+\.\d+\.\d+$/)
-  assert.ok(releaseManifest.assets.length >= 4)
+  assert.match(syncReleaseManifest, /https:\/\/downloads\.glade\.sh\/latest\/release-manifest\.json/)
+  assert.match(syncReleaseManifest, /manifest\.channel, 'stable'/)
+  assert.match(syncReleaseManifest, /\['darwin\/amd64', 'darwin\/arm64', 'linux\/amd64', 'linux\/arm64'\]/)
+  assert.match(JSON.parse(packageJSON).scripts['build:site'], /^node scripts\/sync-release-manifest\.mjs && /)
+  assert.match(gitignore, /^release-manifest\.json$/m)
   assert.match(home, /import releaseManifest from '(?:\.\.\/)+release-manifest\.json'/)
   assert.doesNotMatch(home, /releases\/tag\/v\d+\.\d+\.\d+|>v\d+\.\d+\.\d+</)
   assert.match(packageJSON, /write-site-build\.mjs/)

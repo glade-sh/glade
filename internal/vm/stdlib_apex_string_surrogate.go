@@ -352,3 +352,16 @@ func apexSubstringBoundary(text string, index int) int {
 	}
 	return len(text)
 }
+
+// apexCodeUnitRunes decodes text as Java sees it: one rune per code point, with
+// each encoded lone surrogate as its own code unit. A plain Go string cannot
+// carry that to regexp2, which reads the rune slice instead.
+func apexCodeUnitRunes(text string) []rune {
+	runes := make([]rune, 0, len(text))
+	for i := 0; i < len(text); {
+		r, size := decodeApexRune(text[i:])
+		runes = append(runes, r)
+		i += size
+	}
+	return runes
+}

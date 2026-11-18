@@ -18,6 +18,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dap"
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestGracefulStopDAPBeforeCommandRoutes(t *testing.T) {
@@ -108,7 +109,7 @@ func TestGracefulStopDAPStdioProjectRoutes(t *testing.T) {
 		for _, route := range []string{"no-serve", "daemon"} {
 			t.Run(api+"/"+route, func(t *testing.T) {
 				root := writeDiscoveryStopProject(t, api)
-				ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+				ctx, cancel := context.WithTimeout(context.Background(), testutil.Deadline(45*time.Second))
 				defer cancel()
 				cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestGracefulStopDAPStdioHelper$", "--",
 					"test", "--project", root, "--debug", "--no-progress", "--"+route)

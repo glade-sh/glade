@@ -1,0 +1,5 @@
+case_id	api_version	route	compile_outcome	observed_diagnostic	source
+present	62.0	named-checkonly	COMPILED		V036SameConsumerPresent.cls
+missing	62.0	named-checkonly	COMPILE_ERROR	Invalid type: V036SameOwner.Absent	V036SameConsumerMissing.cls
+present	67.0	named-checkonly	COMPILED		V036SameConsumerPresent.cls
+missing	67.0	named-checkonly	COMPILE_ERROR	Invalid type: V036SameOwner.Absent	V036SameConsumerMissing.cls

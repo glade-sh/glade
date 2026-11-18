@@ -1,0 +1,5 @@
+id	lwc_api	apex_api	route	outcome
+field_collision	59.0	62.0	lwc-browser	passed
+missing_method	59.0	62.0	metadata-deploy	Method does not exist or incorrect signature: void missing(String) from the type Parcel62.Builder
+field_collision	67.0	67.0	lwc-browser	passed
+missing_method	67.0	67.0	metadata-deploy	Method does not exist or incorrect signature: void missing(String) from the type Parcel67.Builder

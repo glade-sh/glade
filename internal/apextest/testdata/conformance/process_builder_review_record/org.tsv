@@ -1,0 +1,5 @@
+api	route	case	actual
+62.0	istest	recordflow	api=62.0 | mixed: Acc.BI3:null Acc.AI3:null before2:null:two:three Acc.BU2:changed Acc.AU2:changed after2:changed:two:three => go:changed;go:changed;stop:null
+62.0	anonymous	recordflow	api=62.0 | mixed: Acc.BI3:null Acc.AI3:null before2:null:two:three Acc.BU2:changed Acc.AU2:changed after2:changed:two:three => go:changed;go:changed;stop:null
+67.0	istest	recordflow	api=67.0 | mixed: Acc.BI3:null Acc.AI3:null before2:null:two:three Acc.BU2:changed Acc.AU2:changed after2:changed:two:three => go:changed;go:changed;stop:null
+67.0	anonymous	recordflow	api=67.0 | mixed: Acc.BI3:null Acc.AI3:null before2:null:two:three Acc.BU2:changed Acc.AU2:changed after2:changed:two:three => go:changed;go:changed;stop:null

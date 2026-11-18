@@ -412,7 +412,13 @@ Useful flags include `changed --since <ref>`,
 `--connect`, `--no-serve`, `--class`, `--method`, `--class-file`,
 `--shard-count`, `--shard-index`, `--duration-history`,
 `--write-class-shards`, `--test-timeout`, `--gc-aggressive`, `--json`,
-`--junit`, and `--limit-mode`.
+`--junit`, `--code-coverage`, `--coverage-gate`, and `--limit-mode`.
+
+`--code-coverage` records Apex code coverage per test, class and trigger, as
+`sf apex run test --code-coverage` reports it. `--coverage-gate RunLocalTests`
+or `--coverage-gate RunSpecifiedTests` also applies that deployment coverage
+rule and fails the run when it is not met. See
+[Code coverage](https://github.com/glade-sh/glade/blob/main/docs/CODE_COVERAGE.md).
 
 The per-test wall-clock cap defaults to **10 minutes** and also applies to
 `@TestSetup`. Choose a Go duration such as `90s` or `15m` with

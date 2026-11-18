@@ -1,0 +1,3 @@
+# Native run
+
+A fresh 30-day Developer scratch org used synthetic Case metadata. Metadata was deployed at API 67.0 and the Case field permission set assigned. The sorted queue lookup was configured with a nonmatching developer name before assigning the result to OwnerId. Named tests and anonymous executions at API 62.0 and 67.0 recorded the error status and complete error message, plus a nonmatching success control. Sentinel assertions carry observations and roll back their transactions. The row includes the unmodified dynamic error identifier; replay comparisons ignore only that identifier. ScratchOrgInfo was verified Deleted and no ActiveScratchOrg row remained. Org IDs and aliases are not recorded.

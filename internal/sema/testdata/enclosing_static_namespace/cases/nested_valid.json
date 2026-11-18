@@ -1,0 +1,6 @@
+{
+  "NqOuter416fa7bb.cls": "public class NqOuter416fa7bb { public class Adapter {} public static Boolean ping() { return true; } public Boolean onlyInstance() { return true; } }\n",
+  "NqTarget416fa7bb.cls": "public class NqTarget416fa7bb { public static Boolean valid() { return true; } }\n",
+  "NqUser416fa7bb.cls": "public class NqUser416fa7bb { public static Boolean run() { return NqOuter416fa7bb.Adapter.ping(); } }\n",
+  "gladetest2.cls": "public class gladetest2 { public static Boolean ping() { return true; } }\n"
+}

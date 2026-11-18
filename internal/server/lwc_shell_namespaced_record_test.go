@@ -25,7 +25,7 @@ func TestResolveLWCShellRequestNamespacedRecordPage(t *testing.T) {
 	}{
 		{name: "namespaced object accepts", objectPart: "acme__Widget__c", supported: "Widget__c", wantObject: "acme__Widget__c"},
 		{name: "record placeholder resolves from id", objectPart: "Record", supported: "Widget__c", wantObject: "acme__Widget__c"},
-		{name: "placeholder with unknown id rejects", objectPart: "Record", supported: "Widget__c", wantCode: "GLADELWC004"},
+		{name: "placeholder with unknown id follows the ids object", objectPart: "Record", supported: "Widget__c", wantObject: "acme__Widget__c"},
 		{name: "unsupported object rejects", objectPart: "acme__Widget__c", supported: "Contact", wantCode: "GLADELWC004"},
 	}
 	for _, tc := range cases {

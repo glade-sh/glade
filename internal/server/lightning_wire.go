@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -115,6 +116,8 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		})
 		return
 	}
+	visualforce.SetVMRenderEnvironment(machine, s.Source.Project)
+	defer visualforce.ClearVMRenderEnvironment(machine)
 	// LWC Apex actions are mutating request boundaries. Execute against an
 	// isolated org and publish it only after the action succeeds and the
 	// backing store accepts the result. Using s.Org directly would leak DML
@@ -122,6 +125,12 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 	workingOrg := s.Org.Clone()
 	machine.SetOrg(&workingOrg)
 	machine.SetSynchronousActionBoundary(true)
+	if s.LimitMode != "" {
+		machine.SetLimitMode(s.LimitMode)
+	}
+	if s.LimitCaps != (vm.LimitCaps{}) {
+		machine.SetLimitCaps(s.LimitCaps)
+	}
 	machine.SetCurrentUser(s.currentUser(r, ""))
 	if pageURL := lightningLocalContextPageURL(r); pageURL != "" {
 		machine.SetCurrentPageURL(pageURL)
@@ -163,11 +172,26 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		})
 		return
 	}
+	// Async work enqueued by the action runs after the action's transaction
+	// commits (native rows: lightning_action_async_drain). It reuses the shared
+	// async drain; a failing job rolls back only itself, so the caller still
+	// sees the action's own result.
 	if machine.HasPendingAsyncWork() {
-		writeWireJSON(w, lwcbrowser.WireResponse{
-			Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
-		})
-		return
+		var drained vm.Result
+		if err := machine.DrainAsync(&drained); err != nil {
+			writeWireJSON(w, lwcbrowser.WireResponse{
+				Error: apexWireInvocationError("", "RuntimeError", className, methodName, rawParams, err.Error(), http.StatusInternalServerError),
+			})
+			return
+		}
+		// A drained job may itself try an uncaptured kind (executeBatch,
+		// System.schedule). Nothing is committed yet, so reject the action.
+		if machine.HasRejectedAsyncAction() {
+			writeWireJSON(w, lwcbrowser.WireResponse{
+				Error: apexWireInvocationError("", "UnsupportedFeature", className, methodName, rawParams, "asynchronous Apex work cannot be committed by the local synchronous LWC action boundary", http.StatusNotImplemented),
+			})
+			return
+		}
 	}
 	if !orgStateEqual(workingOrg, *s.Org) {
 		if err := s.commitOrg(workingOrg); err != nil {
@@ -233,6 +257,11 @@ func apexWireActionError(action *vm.UIActionError, className, methodName string,
 }
 
 func orgStateEqual(left, right storage.OrgState) bool {
+	// A call that wrote nothing leaves the working org identical to the server
+	// org; the structural check proves that without serializing either one.
+	if left.PersistedFieldsIdentical(right) {
+		return true
+	}
 	leftBytes, leftErr := json.Marshal(left)
 	rightBytes, rightErr := json.Marshal(right)
 	if leftErr != nil || rightErr != nil {
@@ -1957,6 +1986,9 @@ func defaultPicklistValueName(field storage.Field, _ string) string {
 
 func findChildObjectForRelationship(org *storage.OrgState, parentObjectName string, relation storage.Relationship) (string, storage.ObjectState, bool) {
 	for name, object := range org.Objects {
+		if org.SuppressesSpreadObject(name) {
+			continue
+		}
 		field, ok := object.Definition.Fields[relation.Field]
 		if !ok || field.Type != storage.FieldReference {
 			continue

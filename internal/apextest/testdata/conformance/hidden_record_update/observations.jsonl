@@ -1,0 +1,10 @@
+{"api": "67.0", "debug": [], "error": "System.TypeException: System.runAs can only be used within a test method: ", "id": "h4_67_anonrunas", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "h4_67_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|setup|rec=2"], "error": "", "id": "h4_67_setup", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|user|u=1|p=2"], "error": "", "id": "h4_67_user", "route": "anonymous"}
+{"api": "62.0", "id": "h4t62_share", "route": "istest", "tests": [["listUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"]]}
+{"api": "62.0", "id": "h4t62_system", "route": "istest", "tests": [["dbFalse", "Fail", "System.AssertException: Assertion Failed: n1|SAVE|INSUFFICIENT_ACCESS_OR_READONLY"], ["dbUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"], ["listUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"]]}
+{"api": "66.0", "id": "h4t66_share", "route": "istest", "tests": [["listUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"]]}
+{"api": "66.0", "id": "h4t66_system", "route": "istest", "tests": [["dbFalse", "Fail", "System.AssertException: Assertion Failed: n1|SAVE|INSUFFICIENT_ACCESS_OR_READONLY"], ["dbUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"], ["listUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"]]}
+{"api": "67.0", "id": "h4t67_share", "route": "istest", "tests": [["listUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"]]}
+{"api": "67.0", "id": "h4t67_system", "route": "istest", "tests": [["dbFalse", "Fail", "System.AssertException: Assertion Failed: n1|SAVE|INSUFFICIENT_ACCESS_OR_READONLY"], ["dbUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"], ["listUpdate", "Fail", "System.AssertException: Assertion Failed: n1|EX|INSUFFICIENT_ACCESS_OR_READONLY"]]}

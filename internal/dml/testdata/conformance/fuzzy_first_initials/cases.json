@@ -1,0 +1,33 @@
+{
+  "hf1": {
+    "kind": "panel",
+    "object": "Contact",
+    "rule": "G4First",
+    "fields": [
+      "FirstName"
+    ],
+    "item": "FirstName",
+    "values": [
+      "T",
+      "T.",
+      "T W",
+      "T. W.",
+      "T.W.",
+      "TW",
+      "Tw",
+      "B",
+      "B.",
+      "B T",
+      "Tobiah",
+      "L",
+      "L.",
+      "L M",
+      "L. M.",
+      "Lm",
+      "Ty",
+      "T L",
+      "W",
+      "W."
+    ]
+  }
+}

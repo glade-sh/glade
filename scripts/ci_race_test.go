@@ -335,9 +335,9 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		t.Fatal("race workflow must set the shared CI Go memory limit for all jobs")
 	}
 	for _, marker := range []string{
-		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
+		"name: Race", "schedule:", "cron: '43 10 * * *'", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
-		"fail-fast: false", "max-parallel: 6", "GOMAXPROCS: \"2\"", "go-version: \"1.26.10\"",
+		"fail-fast: false", "max-parallel: 6", "GOMAXPROCS: \"2\"", "go-version: \"1.26.11\"",
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "ci-artifacts/race/", "if-no-files-found: error",
 		"npm ci --prefix third_party/lwc", "matrix.package == './internal/gladecli'",
@@ -351,7 +351,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race workflow missing %q", marker)
 		}
 	}
-	for _, forbidden := range []string{"pull_request:", "pull_request_target:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
+	for _, forbidden := range []string{"workflow_run:", "pull_request:", "pull_request_target:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
 		if strings.Contains(workflow, forbidden) {
 			t.Errorf("race workflow contains forbidden %q", forbidden)
 		}
@@ -490,7 +490,8 @@ func TestCIRaceWorkflowSharesValidatedLWCHistory(t *testing.T) {
 		`git merge-base HEAD "refs/remotes/origin/$DEFAULT_BRANCH"`,
 		`-f head_sha="$ref" -f status=success`,
 		"pattern: go-test-lwc-compile-shard-*",
-		`scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}`,
+		`/tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..11}`,
+		`scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" "${shards[@]}"`,
 		`rm -f "$CI_LWC_COMPILE_HISTORY_PATH"`,
 		"using deterministic scheduling fallback",
 		"name: race-lwc-history-input-${{ github.run_id }}-${{ github.run_attempt }}",

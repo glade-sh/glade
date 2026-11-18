@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -33,6 +34,7 @@ const workspaceMetadataXML = `<CustomMetadata xmlns="http://soap.sforce.com/2006
 // ORG-RUN.txt in each directory records those native captures. These rows pin
 // metadata results; they do not assert a Salesforce sibling-directory layout.
 func TestMetadataGenerationReadsSiblingProjectCustomMetadata(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, version := range []string{"62.0", "67.0"} {
 		for _, duplicate := range []bool{false, true} {
 			name := "unique"
@@ -153,7 +155,7 @@ func TestSourceUnitGenerationLoadedWorkspaceRootRoutes(t *testing.T) {
 		})
 	}
 	generation := runtimeMetadataGeneration{inputs: map[string]typesys.ApexMetadataInput{}}
-	units, err := captureRuntimeSourceUnitsInRoots(index, &generation, map[string]string{}, roots)
+	units, err := captureRuntimeSourceUnitsInRoots(index, &generation, map[string]string{}, roots, os.ReadFile)
 	if err != nil {
 		t.Fatal(err)
 	}

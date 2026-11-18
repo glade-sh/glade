@@ -33,6 +33,8 @@ func TestDuplicateRulesContinueAfterPermittedMatchEngineNativeRoutes(t *testing.
 				storage.EnsureStandardObject(&org, "Contact")
 				automation.ApplyToOrg(&org, policies)
 				storage.EnsureDeterministicPlatformData(&org)
+				// The native rows ran with the standard rules active.
+				org.StandardDuplicateRules = true
 				if got := len(dml.ActiveDuplicateRules(&org, "Contact")); got < 3 {
 					t.Fatalf("default and both custom rules must be installed; got %d", got)
 				}

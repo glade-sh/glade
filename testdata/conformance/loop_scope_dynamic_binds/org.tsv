@@ -1,0 +1,255 @@
+id	api	route	compiled	observation
+d01_bound_top	62.0	anonymous	true	OUT:bound
+d01_bound_top	67.0	anonymous	true	OUT:bound
+d02_undeclared_top	62.0	anonymous	true	EXC:System.QueryException: Variable does not exist: n
+d02_undeclared_top	67.0	anonymous	true	EXC:System.QueryException: Variable does not exist: n
+d03_declared_later_top	62.0	anonymous	true	OUT:none
+d03_declared_later_top	67.0	anonymous	true	OUT:none
+d04_out_of_scope_block	62.0	anonymous	true	OUT:bound
+d04_out_of_scope_block	67.0	anonymous	true	OUT:bound
+d05_enclosing_block	62.0	anonymous	true	OUT:bound
+d05_enclosing_block	67.0	anonymous	true	OUT:bound
+d06_loop_declared_later_caught	62.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d06_loop_declared_later_caught	67.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d07_loop_declared_before	62.0	anonymous	true	OUT:bound|OUT:bound
+d07_loop_declared_before	67.0	anonymous	true	OUT:bound|OUT:bound
+d08_while_local_then_bind_after	62.0	anonymous	true	OUT:bound
+d08_while_local_then_bind_after	67.0	anonymous	true	OUT:bound
+d09_case_insensitive	62.0	anonymous	true	OUT:bound
+d09_case_insensitive	67.0	anonymous	true	OUT:bound
+d10_undeclared_caught	62.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n
+d10_undeclared_caught	67.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n
+d11_declared_later_caught	62.0	anonymous	true	OUT:none
+d11_declared_later_caught	67.0	anonymous	true	OUT:none
+d12_while_declared_later_caught	62.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d12_while_declared_later_caught	67.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d13_dowhile_declared_later_caught	62.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d13_dowhile_declared_later_caught	67.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d14_out_of_scope_block_caught	62.0	anonymous	true	OUT:bound
+d14_out_of_scope_block_caught	67.0	anonymous	true	OUT:bound
+d15_dotted_bind_declared	62.0	anonymous	true	EXC:System.QueryException: Variable does not exist: acc.Name
+d15_dotted_bind_declared	67.0	anonymous	true	EXC:System.QueryException: Variable does not exist: acc.Name
+d16_dotted_bind_undeclared	62.0	anonymous	true	EXC:System.QueryException: Variable does not exist: acc.Name
+d16_dotted_bind_undeclared	67.0	anonymous	true	EXC:System.QueryException: Variable does not exist: acc.Name
+d17_literal_query_declared_later_caught	62.0	anonymous	true	OUT:none
+d17_literal_query_declared_later_caught	67.0	anonymous	true	OUT:none
+l01_while_local_then_redeclare	62.0	anonymous	true	OUT:7
+l01_while_local_then_redeclare	67.0	anonymous	true	OUT:7
+l02_dowhile_local_then_redeclare	62.0	anonymous	true	OUT:7
+l02_dowhile_local_then_redeclare	67.0	anonymous	true	OUT:7
+l03_while_local_read_after	62.0	anonymous	false	Variable does not exist: abc
+l03_while_local_read_after	67.0	anonymous	false	Variable does not exist: abc
+l04_dowhile_local_read_after	62.0	anonymous	false	Variable does not exist: abc
+l04_dowhile_local_read_after	67.0	anonymous	false	Variable does not exist: abc
+l05_outer_then_while_redeclare	62.0	anonymous	true	OUT:7
+l05_outer_then_while_redeclare	67.0	anonymous	true	OUT:7
+l06_outer_then_dowhile_redeclare	62.0	anonymous	true	OUT:7
+l06_outer_then_dowhile_redeclare	67.0	anonymous	true	OUT:7
+l07_for_local_then_redeclare	62.0	anonymous	true	OUT:7
+l07_for_local_then_redeclare	67.0	anonymous	true	OUT:7
+l08_while_local_each_iteration	62.0	anonymous	true	OUT:2
+l08_while_local_each_iteration	67.0	anonymous	true	OUT:2
+l09_two_whiles_same_local	62.0	anonymous	true	OUT:ok
+l09_two_whiles_same_local	67.0	anonymous	true	OUT:ok
+l10_while_local_then_uninit_redeclare	62.0	anonymous	true	OUT:null
+l10_while_local_then_uninit_redeclare	67.0	anonymous	true	OUT:null
+l11_dowhile_local_then_uninit_redeclare	62.0	anonymous	true	OUT:null
+l11_dowhile_local_then_uninit_redeclare	67.0	anonymous	true	OUT:null
+l12_while_uninit_local_each_iteration	62.0	anonymous	true	OUT:null,null,
+l12_while_uninit_local_each_iteration	67.0	anonymous	true	OUT:null,null,
+l13_dowhile_uninit_local_each_iteration	62.0	anonymous	true	OUT:null,null,
+l13_dowhile_uninit_local_each_iteration	67.0	anonymous	true	OUT:null,null,
+l14_while_local_type_change_after	62.0	anonymous	true	OUT:str
+l14_while_local_type_change_after	67.0	anonymous	true	OUT:str
+l15_if_local_then_redeclare	62.0	anonymous	true	OUT:7
+l15_if_local_then_redeclare	67.0	anonymous	true	OUT:7
+l16_while_inner_local_shadow_outer_later	62.0	anonymous	true	OUT:x
+l16_while_inner_local_shadow_outer_later	67.0	anonymous	true	OUT:x
+p01_sibling_blocks	62.0	anonymous	true	OUT:bound
+p01_sibling_blocks	67.0	anonymous	true	OUT:bound
+p02_shadow_inner_after_exit	62.0	anonymous	true	OUT:loc
+p02_shadow_inner_after_exit	67.0	anonymous	true	OUT:loc
+p03_nested_declared_later_in_enclosing_block	62.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n
+p03_nested_declared_later_in_enclosing_block	67.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n
+p04_nested_use_declared_later_top	62.0	anonymous	true	OUT:none
+p04_nested_use_declared_later_top	67.0	anonymous	true	OUT:none
+p05_if_declared_later	62.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n
+p05_if_declared_later	67.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n
+p06_foreach_var_after	62.0	anonymous	true	OUT:none
+p06_foreach_var_after	67.0	anonymous	true	OUT:none
+p07_for_init_var_after	62.0	anonymous	true	OUT:bound
+p07_for_init_var_after	67.0	anonymous	true	OUT:bound
+p08_if_local_after	62.0	anonymous	true	OUT:bound
+p08_if_local_after	67.0	anonymous	true	OUT:bound
+p09_try_local_after	62.0	anonymous	true	OUT:bound
+p09_try_local_after	67.0	anonymous	true	OUT:bound
+p10_outer_reentry_inner_block	62.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n
+p10_outer_reentry_inner_block	67.0	anonymous	true	OUT:System.QueryException: Variable does not exist: n
+p11_sibling_earlier_then_loop_later	62.0	anonymous	true	OUT:bound|OUT:bound
+p11_sibling_earlier_then_loop_later	67.0	anonymous	true	OUT:bound|OUT:bound
+p12_loop_use_declared_later_top	62.0	anonymous	true	OUT:none|OUT:none
+p12_loop_use_declared_later_top	67.0	anonymous	true	OUT:none|OUT:none
+p13_shadow_inner_in_loop	62.0	anonymous	true	OUT:loc
+p13_shadow_inner_in_loop	67.0	anonymous	true	OUT:loc
+p14_shadow_while_inner	62.0	anonymous	true	OUT:loc
+p14_shadow_while_inner	67.0	anonymous	true	OUT:loc
+p15_shadow_dowhile_inner	62.0	anonymous	true	OUT:loc
+p15_shadow_dowhile_inner	67.0	anonymous	true	OUT:loc
+p16_while_local_then_redeclare_bind	62.0	anonymous	true	OUT:loc
+p16_while_local_then_redeclare_bind	67.0	anonymous	true	OUT:loc
+p17_departed_then_live_nested	62.0	anonymous	true	OUT:loc
+p17_departed_then_live_nested	67.0	anonymous	true	OUT:loc
+p18_two_departed	62.0	anonymous	true	OUT:loc
+p18_two_departed	67.0	anonymous	true	OUT:loc
+p19_while_break_local_after	62.0	anonymous	true	OUT:bound
+p19_while_break_local_after	67.0	anonymous	true	OUT:bound
+p20_foreach_var_nested_after	62.0	anonymous	true	OUT:none
+p20_foreach_var_nested_after	67.0	anonymous	true	OUT:none
+p21_foreach_var_inside	62.0	anonymous	true	OUT:bound
+p21_foreach_var_inside	67.0	anonymous	true	OUT:bound
+p22_dowhile_break_local_after	62.0	anonymous	true	OUT:bound
+p22_dowhile_break_local_after	67.0	anonymous	true	OUT:bound
+p23_for_continue_local_after	62.0	anonymous	true	OUT:bound
+p23_for_continue_local_after	67.0	anonymous	true	OUT:bound
+p24_try_throw_local_after	62.0	anonymous	true	OUT:bound
+p24_try_throw_local_after	67.0	anonymous	true	OUT:bound
+p25_for_init_var_inside	62.0	anonymous	true	OUT:bound
+p25_for_init_var_inside	67.0	anonymous	true	OUT:bound
+l01_while_local_then_redeclare	62.0	named_class	true	OUT:7
+l01_while_local_then_redeclare	67.0	named_class	true	OUT:7
+l02_dowhile_local_then_redeclare	62.0	named_class	true	OUT:7
+l02_dowhile_local_then_redeclare	67.0	named_class	true	OUT:7
+l03_while_local_read_after	62.0	named_class	false	Variable does not exist: abc
+l03_while_local_read_after	67.0	named_class	false	Variable does not exist: abc
+l04_dowhile_local_read_after	62.0	named_class	false	Variable does not exist: abc
+l04_dowhile_local_read_after	67.0	named_class	false	Variable does not exist: abc
+l05_outer_then_while_redeclare	62.0	named_class	false	Duplicate variable: abc
+l05_outer_then_while_redeclare	67.0	named_class	false	Duplicate variable: abc
+l06_outer_then_dowhile_redeclare	62.0	named_class	false	Duplicate variable: abc
+l06_outer_then_dowhile_redeclare	67.0	named_class	false	Duplicate variable: abc
+l07_for_local_then_redeclare	62.0	named_class	true	OUT:7
+l07_for_local_then_redeclare	67.0	named_class	true	OUT:7
+l08_while_local_each_iteration	62.0	named_class	true	OUT:2
+l08_while_local_each_iteration	67.0	named_class	true	OUT:2
+l09_two_whiles_same_local	62.0	named_class	true	OUT:ok
+l09_two_whiles_same_local	67.0	named_class	true	OUT:ok
+l10_while_local_then_uninit_redeclare	62.0	named_class	true	OUT:null
+l10_while_local_then_uninit_redeclare	67.0	named_class	true	OUT:null
+l11_dowhile_local_then_uninit_redeclare	62.0	named_class	true	OUT:null
+l11_dowhile_local_then_uninit_redeclare	67.0	named_class	true	OUT:null
+l12_while_uninit_local_each_iteration	62.0	named_class	true	OUT:null,null,
+l12_while_uninit_local_each_iteration	67.0	named_class	true	OUT:null,null,
+l13_dowhile_uninit_local_each_iteration	62.0	named_class	true	OUT:null,null,
+l13_dowhile_uninit_local_each_iteration	67.0	named_class	true	OUT:null,null,
+l14_while_local_type_change_after	62.0	named_class	true	OUT:str
+l14_while_local_type_change_after	67.0	named_class	true	OUT:str
+l15_if_local_then_redeclare	62.0	named_class	true	OUT:7
+l15_if_local_then_redeclare	67.0	named_class	true	OUT:7
+l16_while_inner_local_shadow_outer_later	62.0	named_class	true	OUT:x
+l16_while_inner_local_shadow_outer_later	67.0	named_class	true	OUT:x
+f01_field_after_while	62.0	named_class	true	OUT:100
+f01_field_after_while	67.0	named_class	true	OUT:100
+f02_field_after_dowhile	62.0	named_class	true	OUT:100
+f02_field_after_dowhile	67.0	named_class	true	OUT:100
+f03_field_after_for	62.0	named_class	true	OUT:100
+f03_field_after_for	67.0	named_class	true	OUT:100
+f04_field_after_if	62.0	named_class	true	OUT:100
+f04_field_after_if	67.0	named_class	true	OUT:100
+f05_field_after_while_write	62.0	named_class	true	OUT:5|OUT:5
+f05_field_after_while_write	67.0	named_class	true	OUT:5|OUT:5
+d01_bound_top	62.0	named_class	true	OUT:bound
+d01_bound_top	67.0	named_class	true	OUT:bound
+d02_undeclared_top	62.0	named_class	true	EXC:System.QueryException: Variable does not exist: n
+d02_undeclared_top	67.0	named_class	true	EXC:System.QueryException: Variable does not exist: n
+d03_declared_later_top	62.0	named_class	true	EXC:System.QueryException: Variable does not exist: n
+d03_declared_later_top	67.0	named_class	true	EXC:System.QueryException: Variable does not exist: n
+d04_out_of_scope_block	62.0	named_class	true	OUT:bound
+d04_out_of_scope_block	67.0	named_class	true	OUT:bound
+d05_enclosing_block	62.0	named_class	true	OUT:bound
+d05_enclosing_block	67.0	named_class	true	OUT:bound
+d06_loop_declared_later_caught	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d06_loop_declared_later_caught	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d07_loop_declared_before	62.0	named_class	true	OUT:bound|OUT:bound
+d07_loop_declared_before	67.0	named_class	true	OUT:bound|OUT:bound
+d08_while_local_then_bind_after	62.0	named_class	true	OUT:bound
+d08_while_local_then_bind_after	67.0	named_class	true	OUT:bound
+d09_case_insensitive	62.0	named_class	true	OUT:bound
+d09_case_insensitive	67.0	named_class	true	OUT:bound
+d10_undeclared_caught	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+d10_undeclared_caught	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+d11_declared_later_caught	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+d11_declared_later_caught	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+d12_while_declared_later_caught	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d12_while_declared_later_caught	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d13_dowhile_declared_later_caught	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d13_dowhile_declared_later_caught	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+d14_out_of_scope_block_caught	62.0	named_class	true	OUT:bound
+d14_out_of_scope_block_caught	67.0	named_class	true	OUT:bound
+d15_dotted_bind_declared	62.0	named_class	true	EXC:System.QueryException: Variable does not exist: acc.Name
+d15_dotted_bind_declared	67.0	named_class	true	EXC:System.QueryException: Variable does not exist: acc.Name
+d16_dotted_bind_undeclared	62.0	named_class	true	EXC:System.QueryException: Variable does not exist: acc.Name
+d16_dotted_bind_undeclared	67.0	named_class	true	EXC:System.QueryException: Variable does not exist: acc.Name
+d17_literal_query_declared_later_caught	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+d17_literal_query_declared_later_caught	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+n01_field_bind_local_later	62.0	named_class	true	OUT:fld
+n01_field_bind_local_later	67.0	named_class	true	OUT:fld
+n02_field_bind_after_while_local	62.0	named_class	true	OUT:loc
+n02_field_bind_after_while_local	67.0	named_class	true	OUT:loc
+n03_field_bind_after_block_local	62.0	named_class	true	OUT:loc
+n03_field_bind_after_block_local	67.0	named_class	true	OUT:loc
+n04_field_bind_loop_local_later_caught	62.0	named_class	true	OUT:fld|OUT:fld
+n04_field_bind_loop_local_later_caught	67.0	named_class	true	OUT:fld|OUT:fld
+n05_param_bind	62.0	named_class	true	OUT:bound
+n05_param_bind	67.0	named_class	true	OUT:bound
+p01_sibling_blocks	62.0	named_class	true	OUT:bound
+p01_sibling_blocks	67.0	named_class	true	OUT:bound
+p02_shadow_inner_after_exit	62.0	named_class	false	Duplicate variable: n
+p02_shadow_inner_after_exit	67.0	named_class	false	Duplicate variable: n
+p03_nested_declared_later_in_enclosing_block	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p03_nested_declared_later_in_enclosing_block	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p04_nested_use_declared_later_top	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p04_nested_use_declared_later_top	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p05_if_declared_later	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p05_if_declared_later	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p06_foreach_var_after	62.0	named_class	true	OUT:none
+p06_foreach_var_after	67.0	named_class	true	OUT:none
+p07_for_init_var_after	62.0	named_class	true	OUT:bound
+p07_for_init_var_after	67.0	named_class	true	OUT:bound
+p08_if_local_after	62.0	named_class	true	OUT:bound
+p08_if_local_after	67.0	named_class	true	OUT:bound
+p09_try_local_after	62.0	named_class	true	OUT:bound
+p09_try_local_after	67.0	named_class	true	OUT:bound
+p10_outer_reentry_inner_block	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p10_outer_reentry_inner_block	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p11_sibling_earlier_then_loop_later	62.0	named_class	true	OUT:bound|OUT:bound
+p11_sibling_earlier_then_loop_later	67.0	named_class	true	OUT:bound|OUT:bound
+p12_loop_use_declared_later_top	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+p12_loop_use_declared_later_top	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n|OUT:System.QueryException: Variable does not exist: n
+p13_shadow_inner_in_loop	62.0	named_class	false	Duplicate variable: n
+p13_shadow_inner_in_loop	67.0	named_class	false	Duplicate variable: n
+p14_shadow_while_inner	62.0	named_class	false	Duplicate variable: n
+p14_shadow_while_inner	67.0	named_class	false	Duplicate variable: n
+p15_shadow_dowhile_inner	62.0	named_class	false	Duplicate variable: n
+p15_shadow_dowhile_inner	67.0	named_class	false	Duplicate variable: n
+p16_while_local_then_redeclare_bind	62.0	named_class	true	OUT:bound
+p16_while_local_then_redeclare_bind	67.0	named_class	true	OUT:bound
+n06_callee_does_not_see_caller_local	62.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+n06_callee_does_not_see_caller_local	67.0	named_class	true	OUT:System.QueryException: Variable does not exist: n
+p17_departed_then_live_nested	62.0	named_class	true	OUT:loc
+p17_departed_then_live_nested	67.0	named_class	true	OUT:loc
+p18_two_departed	62.0	named_class	true	OUT:loc
+p18_two_departed	67.0	named_class	true	OUT:loc
+p19_while_break_local_after	62.0	named_class	true	OUT:bound
+p19_while_break_local_after	67.0	named_class	true	OUT:bound
+p20_foreach_var_nested_after	62.0	named_class	true	OUT:none
+p20_foreach_var_nested_after	67.0	named_class	true	OUT:none
+p21_foreach_var_inside	62.0	named_class	true	OUT:bound
+p21_foreach_var_inside	67.0	named_class	true	OUT:bound
+p22_dowhile_break_local_after	62.0	named_class	true	OUT:bound
+p22_dowhile_break_local_after	67.0	named_class	true	OUT:bound
+p23_for_continue_local_after	62.0	named_class	true	OUT:bound
+p23_for_continue_local_after	67.0	named_class	true	OUT:bound
+p24_try_throw_local_after	62.0	named_class	true	OUT:bound
+p24_try_throw_local_after	67.0	named_class	true	OUT:bound
+p25_for_init_var_inside	62.0	named_class	true	OUT:bound
+p25_for_init_var_inside	67.0	named_class	true	OUT:bound

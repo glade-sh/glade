@@ -1,0 +1,46 @@
+Fresh Developer edition scratch org, 30-day, captured 2026-11-11 on a campaign Dev Hub.
+The project deployed at the listed API version; the @IsTest routes ran through the synchronous
+test runner and the anonymous route ran publish and read in separate executions with a
+wait between (two reads 45 seconds apart gave identical rows). Both API versions and an
+earlier capture of the first 18 cases in another scratch org gave identical rows. Org ids,
+usernames and record ids are not recorded. The org was deleted afterwards and a later lookup
+of it failed.
+PE06B anonymous at 62.0: one observation (a third full capture) read no log rows after the
+wait; every other observation (earlier captures at both API versions and six repeats at 67.0) gave the
+pre and fault rows kept in org.tsv. The empty read is treated as a late subscriber run.
+
+api=67.0
+native_complete=true
+deployment_success=true
+fixture_permission_set_assigned=true
+rows=88
+anonymous_rows=22
+org_deleted=true
+transport=System.assert
+input_sha256:cases.tsv=ae1a2d956a0297b48b15ee95b846b2f81ee07e1393fb75117f87a4b07d8021ec
+input_sha256:anonymous-publish.apex=e04343a7536c07ef48713dcd15adc4616219d564d4894b261c2dcb96a2ede3d4
+input_sha256:anonymous-read.apex=fad6970097b96c75f7ca2e12359d7b968c4673caff733970223c4769cdf637dc
+source_sha256:sfdx-project.json=3ca98838e504b17eb4dcc7f8313d3c84c42c738b22bf2f65453730c8e6ad52bb
+source_sha256:config/project-scratch-def.json=70785c0f617fc748019a578ff0feaef910d9fe16f0f6b50969bd590cc566cdc9
+source_sha256:force-app/main/default/permissionsets/EvtFixture.permissionset-meta.xml=5d30dd49e6eafbc88b4572ead066caea227427d35be39634d73314477ec32e67
+source_sha256:force-app/main/default/classes/EvtLogAction.cls=622918432e67dca3dcb2aeafc0d70a6ecf984ee93bbb1ee7fdb93bdb62a7d4b0
+source_sha256:force-app/main/default/classes/EvtLogAction.cls-meta.xml=eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7
+source_sha256:force-app/main/default/classes/EvtProbe.cls=754dc26df821953106ac80519d16f15eb14c832173dc640bfb1a0e0ecd6f291a
+source_sha256:force-app/main/default/classes/EvtProbe.cls-meta.xml=eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7
+source_sha256:force-app/main/default/classes/EvtProbeTest.cls=f3a0d837dc3af96879c50c236a20d1e2da3d265f1c2bae2d2cf4684c1d4b97ff
+source_sha256:force-app/main/default/classes/EvtProbeTest.cls-meta.xml=eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7
+source_sha256:force-app/main/default/classes/EvtThrow.cls=a0c88108338ae0b839299769d9bc44e4c699b70c4b90a86730d6f8fe639d4566
+source_sha256:force-app/main/default/classes/EvtThrow.cls-meta.xml=eb65541b37507969fa6cfd374d00ac66a8ad6fa4b9ee12555821fa441f99b8d7
+source_sha256:force-app/main/default/objects/EvtLog__c/EvtLog__c.object-meta.xml=a1e710c189e7b0b8f922ed74e06615430cc224934472e2ce5378f168b14fb99d
+source_sha256:force-app/main/default/objects/EvtLog__c/fields/Detail__c.field-meta.xml=780fdcf30e250d9863ff63fcd457911d81fbadfbf38d87e9fa2f94b2d759a20a
+source_sha256:force-app/main/default/objects/EvtLog__c/fields/Note__c.field-meta.xml=92ea4841fa4ffa6a100171d539c18ccb0e91c4d4b31e3729ae48639871e39a54
+source_sha256:force-app/main/default/objects/EvtLog__c/fields/Phase__c.field-meta.xml=b16251671bc7c846ff00785e7f33c40606f81647db07ba4fa068ad49e0c680e9
+source_sha256:force-app/main/default/objects/EvtLog__c/fields/Short__c.field-meta.xml=11ceda84ae294c03412f4408d6ef35263c4f38ce5e06588ded12d146004149ed
+source_sha256:force-app/main/default/objects/EvtAfter__e/EvtAfter__e.object-meta.xml=30ed03ab7afe3872416ffb062dcac1842680be5258da5cda57bf26a7abecc748
+source_sha256:force-app/main/default/objects/EvtAfter__e/fields/Key__c.field-meta.xml=34efd4617c787297bef263a8009305ccdf82b5e76548100dc8798256b645b24b
+source_sha256:force-app/main/default/objects/EvtAfter__e/fields/Operation__c.field-meta.xml=3e6ce45cdb9c126791d63707f7db149e5e1cc08b3fff2e4e993588ad95c0a6cc
+source_sha256:force-app/main/default/objects/EvtImm__e/EvtImm__e.object-meta.xml=d3936855aec9c1d11751bf1422f45213b346d55ccfa3ed0aad74212b52b0a65f
+source_sha256:force-app/main/default/objects/EvtImm__e/fields/Key__c.field-meta.xml=34efd4617c787297bef263a8009305ccdf82b5e76548100dc8798256b645b24b
+source_sha256:force-app/main/default/objects/EvtImm__e/fields/Operation__c.field-meta.xml=3e6ce45cdb9c126791d63707f7db149e5e1cc08b3fff2e4e993588ad95c0a6cc
+source_sha256:force-app/main/default/flows/EvtAfterSub.flow-meta.xml=36923667a789b651328b667c57c64ce61d91650e5b89b140d0c40cc9cbb2b4d3
+source_sha256:force-app/main/default/flows/EvtImmSub.flow-meta.xml=143b6f0c3e31c0ab0b2e6fd92d377ab664895a0d279130a101b54f5e2e76cb38

@@ -3,7 +3,19 @@
     "59.0",
     "67.0"
   ],
-  "TestV09SalesforceConformance": [
+  "TestV09SalesforceConformancePart1of4": [
+    "59.0",
+    "67.0"
+  ],
+  "TestV09SalesforceConformancePart2of4": [
+    "59.0",
+    "67.0"
+  ],
+  "TestV09SalesforceConformancePart3of4": [
+    "59.0",
+    "67.0"
+  ],
+  "TestV09SalesforceConformancePart4of4": [
     "59.0",
     "67.0"
   ],
@@ -15,7 +27,11 @@
     "59.0",
     "67.0"
   ],
-  "TestV14SalesforceConformance": [
+  "TestV14SalesforceConformancePart1of2": [
+    "59.0",
+    "67.0"
+  ],
+  "TestV14SalesforceConformancePart2of2": [
     "59.0",
     "67.0"
   ]

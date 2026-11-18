@@ -2,7 +2,6 @@ package apextest
 
 import (
 	"encoding/xml"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -34,7 +33,7 @@ func applyCustomPermissionRecordsInNamespace(org *storage.OrgState, p project.Pr
 	storage.EnsureStandardObject(org, "CustomPermission")
 	state := org.Objects["CustomPermission"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	generator := storage.NewStandardIDGenerator()
 	generator.Prefixes["CustomPermission"] = state.Definition.KeyPrefix
@@ -43,7 +42,7 @@ func applyCustomPermissionRecordsInNamespace(org *storage.OrgState, p project.Pr
 	}
 	for _, file := range p.CustomPermissionFiles {
 		name := metadataNameFromPath(file, ".custompermission-meta.xml", ".custompermission")
-		data, err := os.ReadFile(file)
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -71,7 +70,7 @@ func applyCustomPermissionRecordsInNamespace(org *storage.OrgState, p project.Pr
 		if namespace != "" {
 			fields["NamespacePrefix"] = storage.StringValue(namespace)
 		}
-		state.Records[id] = storage.Record{ID: id, Object: "CustomPermission", Fields: fields}
+		state.PutRecord(id, storage.Record{ID: id, Object: "CustomPermission", Fields: fields})
 	}
 	org.IDSequences = generator.Sequences
 	org.Objects["CustomPermission"] = state
@@ -120,11 +119,11 @@ func applyCustomPermissionGrantsInNamespace(org *storage.OrgState, parentID stor
 		if err != nil {
 			continue
 		}
-		state.Records[id] = storage.Record{ID: id, Object: "SetupEntityAccess", Fields: map[string]storage.Value{
+		state.PutRecord(id, storage.Record{ID: id, Object: "SetupEntityAccess", Fields: map[string]storage.Value{
 			"ParentId":        storage.IDValue(parentID),
 			"SetupEntityId":   storage.IDValue(permissionID),
 			"SetupEntityType": storage.StringValue("CustomPermission"),
-		}}
+		}})
 	}
 	org.Objects["SetupEntityAccess"] = state
 }

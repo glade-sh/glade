@@ -1,0 +1,33 @@
+api	method	observation
+62.0	u2_04_runas_version	ran d=0
+62.0	u3_05_cursor_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+62.0	u3_05b_cursor_def	n=1
+62.0	u3_05c_cursor_sys	n=1
+62.0	u3_06_undelete_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+62.0	u3_06b_merge_user	ok=true
+62.0	u3_06c_convert_user	ok=true
+62.0	u3_07_suggest_user	n=0
+66.0	u2_04_runas_version	ran d=0
+66.0	u3_05_cursor_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+66.0	u3_05b_cursor_def	n=1
+66.0	u3_05c_cursor_sys	n=1
+66.0	u3_06_undelete_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+66.0	u3_06b_merge_user	ok=true
+66.0	u3_06c_convert_user	ok=true
+66.0	u3_07_suggest_user	n=0
+67.0	u2_04_runas_version	ran d=0
+67.0	u3_05_cursor_user	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_05b_cursor_def	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_05c_cursor_sys	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+67.0	u3_06_undelete_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+67.0	u3_06b_merge_user	ok=true
+67.0	u3_06c_convert_user	ok=true
+67.0	u3_07_suggest_user	n=0
+68.0	u2_04_runas_version	ran d=0
+68.0	u3_05_cursor_user	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_05b_cursor_def	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_05c_cursor_sys	RAW System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!
+68.0	u3_06_undelete_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+68.0	u3_06b_merge_user	ok=true
+68.0	u3_06c_convert_user	ok=true
+68.0	u3_07_suggest_user	n=0

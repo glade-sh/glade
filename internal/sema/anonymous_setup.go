@@ -229,12 +229,13 @@ func newAnonymousSetupKey(index typesys.Index, apiVersion string) (anonymousSetu
 		Root                       string
 		APIVersion                 string
 		Index                      typesys.Index
+		Subset                     bool
 		Hidden                     []anonymousHiddenSymbolState
 		InferredChildRelationships []bool
 		SourceDigests              []anonymousSourceDigest
 		ProjectIdentity            [sha256.Size]byte
 		HasProjectIdentity         bool
-	}{index.Project.Root, apiVersion, index, hidden, inferredChildRelationships, digests, projectIdentity, hasProjectIdentity})
+	}{index.Project.Root, apiVersion, index, index.Subset, hidden, inferredChildRelationships, digests, projectIdentity, hasProjectIdentity})
 	if err != nil {
 		return anonymousSetupKey{}, false
 	}
@@ -354,6 +355,7 @@ type anonymousIndexIdentity struct {
 	objects               anonymousSliceIdentity[schema.Object]
 	visualforcePageNames  anonymousSliceIdentity[string]
 	visualforcePagesKnown bool
+	subset                bool
 	customLabelNames      anonymousSliceIdentity[string]
 	customLabelsKnown     bool
 	orgShapeFeatures      anonymousSliceIdentity[string]
@@ -389,6 +391,7 @@ func anonymousSetupKeyFor(index typesys.Index, apiVersion string) (anonymousSetu
 		objects:               newAnonymousSliceIdentity(index.Objects),
 		visualforcePageNames:  newAnonymousSliceIdentity(index.VisualforcePageNames),
 		visualforcePagesKnown: index.VisualforcePagesKnown,
+		subset:                index.Subset,
 		customLabelNames:      newAnonymousSliceIdentity(index.CustomLabelNames),
 		customLabelsKnown:     index.CustomLabelsKnown,
 		orgShapeFeatures:      newAnonymousSliceIdentity(index.OrgShapeFeatures),

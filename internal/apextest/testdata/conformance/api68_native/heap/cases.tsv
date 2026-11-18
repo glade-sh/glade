@@ -1,0 +1,14 @@
+id	api	route	phase	variant	source
+HEAP-DEPLOY-68	68.0	deploy	case	v68	-
+HEAP-DEPLOY-67	67.0	deploy	case	v67	-
+HEAP-SYNC-68	68.0	anonymous	case	v68	snippets/sync68.apex
+HEAP-SYNC-67	67.0	anonymous	case	v67	snippets/sync67.apex
+HEAP-ASYNC-ENQ-68	68.0	anonymous	case	v68	snippets/async68.apex
+HEAP-ASYNC-ENQ-67	67.0	anonymous	case	v67	snippets/async67.apex
+HEAP-READ	68.0	anonymous	case	v68	snippets/read.apex
+HEAP-SETTING-ON	68.0	deploy	case	vset	-
+HEAP-CLEAR	68.0	anonymous	case	v68	snippets/clear.apex
+HEAP-SYNC-OVERRIDE-68	68.0	anonymous	case	vset	snippets/sync68.apex
+HEAP-ASYNC-OVERRIDE-68	68.0	anonymous	case	vset	snippets/async68.apex
+HEAP-READ-OVERRIDE	68.0	anonymous	case	vset	snippets/read.apex
+HEAP-SETTING-OFF	68.0	deploy	after	vsetback	-

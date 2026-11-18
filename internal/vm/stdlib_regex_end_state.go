@@ -63,14 +63,14 @@ func instrumentRegexp2EndAssertions(source string, original *regexp2.Regexp) (st
 			i++
 		}
 		if ch == '\\' {
-			if !inClass && i+1 < len(source) && source[i+1] == 'b' {
+			if !inClass && i+1 < len(source) && (source[i+1] == 'b' || source[i+1] == 'B') {
 				for next <= maxSlot && reserved[next] {
 					next++
 				}
 				if next > maxSlot {
 					return source, nil
 				}
-				out.WriteString("(?<" + strconv.Itoa(next) + `>\b)`)
+				out.WriteString("(?<" + strconv.Itoa(next) + `>\` + string(source[i+1]) + `)`)
 				groups = append(groups, regexp2EndAssertion{group: next, multiline: true})
 				next++
 				i++
@@ -153,6 +153,19 @@ func instrumentRegexp2EndAssertions(source string, original *regexp2.Regexp) (st
 					continue
 				}
 			}
+			if strings.HasPrefix(source[i:], "(?!") {
+				// Java sets requireEnd when a negative lookahead is tried at the end of
+				// the input: more input could make it fail (Pattern.Neg).
+				for next <= maxSlot && reserved[next] {
+					next++
+				}
+				if next > maxSlot {
+					return source, nil
+				}
+				out.WriteString("(?:(?<" + strconv.Itoa(next) + `>\z)|)`)
+				groups = append(groups, regexp2EndAssertion{group: next, multiline: true})
+				next++
+			}
 			optionStack = append(optionStack, options)
 		case ')':
 			if len(optionStack) > 0 {
@@ -204,6 +217,25 @@ func (p *regexp2Plan) matchRequiresEnd(input string, match *regexp2.Match) bool 
 			terminatorStart = end - 1
 		}
 	}
+	return p.requiresEndAt(end, terminatorStart, match)
+}
+
+// matchRequiresEndRunes is matchRequiresEnd over decoded code units.
+func (p *regexp2Plan) matchRequiresEndRunes(runes []rune, match *regexp2.Match) bool {
+	end := len(runes)
+	terminatorStart := -1
+	if end >= 2 && runes[end-2] == '\r' && runes[end-1] == '\n' {
+		terminatorStart = end - 2
+	} else if end >= 1 {
+		switch runes[end-1] {
+		case '\n', '\r', '\u0085', '\u2028', '\u2029':
+			terminatorStart = end - 1
+		}
+	}
+	return p.requiresEndAt(end, terminatorStart, match)
+}
+
+func (p *regexp2Plan) requiresEndAt(end, terminatorStart int, match *regexp2.Match) bool {
 	for _, assertion := range p.endAssertionGroups {
 		group := match.GroupByNumber(assertion.group)
 		if group == nil {

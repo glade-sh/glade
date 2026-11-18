@@ -1,0 +1,13 @@
+api	case	route	outcome
+62.0	idHeader	IsTest	Pass
+67.0	idHeader	IsTest	Pass
+62.0	modifierCase	IsTest	Pass
+67.0	modifierCase	IsTest	Pass
+62.0	comparisonInitializer	IsTest	Pass
+67.0	comparisonInitializer	IsTest	Pass
+62.0	rejectHeader	metadata-deploy	Method does not exist or incorrect signature: void setHeader(String, Integer) from the type System.HttpRequest
+67.0	rejectHeader	metadata-deploy	Method does not exist or incorrect signature: void setHeader(String, Integer) from the type System.HttpRequest
+62.0	rejectModifier	metadata-deploy	Missing ';' at 'Integer'; Variable does not exist: FINALS
+67.0	rejectModifier	metadata-deploy	Missing ';' at 'Integer'; Variable does not exist: FINALS
+62.0	rejectCompare	metadata-deploy	Comparison arguments must be compatible types: Integer, Boolean
+67.0	rejectCompare	metadata-deploy	Comparison arguments must be compatible types: Integer, Boolean

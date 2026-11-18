@@ -342,10 +342,15 @@ var commandReferences = []CommandHelp{
 			{Name: "--daemon", Description: "Keep index warm in process for watch loops."},
 			{Name: "--json", Description: "Write JSON test results."},
 			{Name: "--junit", Value: "<path>", Description: "Write JUnit XML results."},
+			{Name: "--code-coverage", Description: "Record Apex code coverage per test, class and trigger."},
+			{Name: "--synchronous", Description: "Report coverage as a synchronous sf run does (every trigger in every test's rows); does not change how tests run. Needs --code-coverage."},
+			{Name: "--coverage-gate", Value: "<level>", Description: "Apply the RunLocalTests or RunSpecifiedTests deployment coverage rule; implies --code-coverage."},
 			{Name: "--cpu-profile", Value: "<path>", Description: "Profile the local command lifetime, finalized on exit; incompatible with --connect."},
 			{Name: "--mem-profile", Value: "<path>", Description: "Write a heap profile on local command exit; incompatible with --connect."},
 			{Name: "--perf-json", Value: "<path>", Description: "Write performance counters for a local one-shot run."},
 			{Name: "--impact-json", Value: "<path>", Description: "Write per-test dependencies for a local one-shot run."},
+			{Name: "--cpu-risk", Description: "Print an advisory Salesforce CPU risk estimate to stderr; never changes results."},
+			{Name: "--cpu-risk-json", Value: "<path>", Description: "Write the advisory CPU risk report as JSON."},
 			{Name: "--runtime-rest-api-version", Value: "<version>", Description: "Test org REST context; does not change source API versions."},
 			{Name: "--trace", Value: "<path>", Description: "Write a Chrome trace JSON document for this run."},
 			{Name: "--services", Value: "<path>", Description: "Validate a services.yml virtualization config."},
@@ -1190,11 +1195,19 @@ Common flags:
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
+  --code-coverage           Record Apex code coverage per test, class and trigger.
+  --synchronous             Report coverage as sf apex run test --synchronous does:
+                           every trigger is listed in the run and in each test's rows.
+                           It does not change how tests run. Needs --code-coverage.
+  --coverage-gate <level>   Apply the RunLocalTests or RunSpecifiedTests deployment
+                           coverage rule; implies --code-coverage. A failed gate fails the run.
   --cpu-profile <path>      Profile the local command lifetime (including watch/daemon); finalized on exit.
   --mem-profile <path>      Write a heap profile on local command exit (including watch/daemon).
                            CPU/heap profiles are incompatible with explicit --connect.
   --perf-json <path>        Write opt-in performance counters for this local one-shot run.
   --impact-json <path>      Write per-test execution dependencies and shared inputs (local one-shot).
+  --cpu-risk                Print an advisory Salesforce CPU risk estimate to stderr (local one-shot).
+  --cpu-risk-json <path>    Write the advisory CPU risk report as JSON.
   --trace <path>            Write a Chrome trace JSON document for this run.
   --services <path>         Validate a services.yml virtualization config.
   --progress                Show progress on stderr; uses a progress bar on TTY and line output when redirected.

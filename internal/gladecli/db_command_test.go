@@ -150,7 +150,7 @@ func TestRunDBUIReadyFileUsesDefaultProjectEnv(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testutil.Deadline(5 * time.Second)):
 		t.Fatalf("db ui did not stop after cancel; stdout=%s stderr=%s", stdout.String(), stderr.String())
 	}
 	wantDB := filepath.Join(root, ".glade", "envs", "dev.sqlite")
@@ -211,7 +211,7 @@ func TestRunDBUIScopesRoutesToDBManager(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(testutil.Deadline(5 * time.Second)):
 		t.Fatalf("db ui did not stop after cancel; stdout=%s stderr=%s", stdout.String(), stderr.String())
 	}
 }

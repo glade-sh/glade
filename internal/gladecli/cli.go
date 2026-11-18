@@ -23,6 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/frontendcache"
 	"github.com/glade-sh/glade/internal/gladehome"
@@ -37,6 +38,7 @@ import (
 	"github.com/glade-sh/glade/internal/semanticcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/visualforce"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -207,8 +209,43 @@ func diagnosticTry(code string) []string {
 	}
 }
 
+// siblingDependenciesFlag opts in to resolving declared SFDX package
+// dependencies from sibling project directories (off by default).
+const siblingDependenciesFlag = "--sibling-dependencies"
+
+// applySiblingDependenciesFlag removes the global --sibling-dependencies flag
+// (anywhere before a "--" terminator) and records the choice in the environment
+// so every project load in this process and its children sees it.
+func applySiblingDependenciesFlag(args []string) []string {
+	out := args[:0:0]
+	for i, arg := range args {
+		if arg == "--" {
+			out = append(out, args[i:]...)
+			break
+		}
+		if arg == siblingDependenciesFlag {
+			_ = os.Setenv(project.SiblingDependencyScanEnvVar, "1")
+			continue
+		}
+		out = append(out, arg)
+	}
+	return out
+}
+
 // Run executes the glade CLI and returns a process exit code.
+// platformNamespaceGatedCommand reports a command whose platform view leaves
+// the ConnectApi and Slack stubs out until the project names them (typesys
+// platform_gate.go): the commands that run, check or serve Apex.
+func platformNamespaceGatedCommand(command string) bool {
+	switch command {
+	case "test", "exec", "check", "server":
+		return true
+	}
+	return false
+}
+
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	args = applySiblingDependenciesFlag(args)
 	if len(args) == 0 {
 		_ = cliui.WriteHelp(stdout)
 		return 0
@@ -227,6 +264,11 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	if topic, ok := helpRequestTopic(args); ok {
 		printHelpTopic(stdout, topic)
 		return 0
+	}
+	if !platformNamespaceGatedCommand(args[0]) {
+		// Editor, inspection and report commands read whole platform tables;
+		// they keep the gated ConnectApi and Slack stubs as before the gate.
+		typesys.RequestAllGatedNamespaces()
 	}
 
 	switch args[0] {
@@ -984,7 +1026,7 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	}
 
 	parserStatus := parserSelfCheck()
-	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatus()
+	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatusBounded(ctx)
 	loadedProject := project.Project{}
 	projectErr := rootProblem
 	if projectErr == nil {
@@ -1050,6 +1092,13 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	info.ExitCode = exitCodeForOK(ok)
 	if !info.ToolchainOK {
 		advisory := "LWC compilation and Lightning runtime routes need the bundled toolchain. Reinstall the Glade release, or install it from a Glade source checkout."
+		if strings.Contains(toolchainDetail, "recovery busy") {
+			advisory = "If installation has stopped, run glade toolchain status in the original managed toolchain environment to recover it, then retry glade doctor."
+		} else if strings.Contains(toolchainDetail, "busy") || strings.Contains(toolchainDetail, "retry") {
+			advisory = "The toolchain check did not complete. Retry glade doctor after installation or recovery finishes."
+		} else if strings.Contains(toolchainDetail, "interrupted installer transaction") {
+			advisory = "Rerun the installer to recover the interrupted toolchain transaction, then retry glade doctor."
+		}
 		if ok {
 			advisory = "Apex check and test are available; " + advisory
 		}
@@ -2717,17 +2766,24 @@ func loadProjectIndex(root string) (project.Project, typesys.Index, error) {
 }
 
 func buildProjectIndex(p project.Project) typesys.Index {
+	index, _ := buildProjectIndexWithArtifacts(p)
+	return index
+}
+
+// buildProjectIndexWithArtifacts also returns the digests of the sources the
+// build read.
+func buildProjectIndexWithArtifacts(p project.Project) (typesys.Index, typesys.BuildArtifacts) {
 	s, err := gladeschema.LoadProject(p)
 	if err != nil {
-		index := typesys.Build(p, gladeschema.Schema{})
+		index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
 		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
 			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
 		})
-		return index
+		return index, artifacts
 	}
-	return typesys.Build(p, s)
+	return typesys.BuildWithArtifacts(p, s)
 }
 
 func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (project.Project, typesys.Index, error) {
@@ -2756,15 +2812,16 @@ func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (
 }
 
 type execProjectLoad struct {
-	index  typesys.Index
-	org    storage.OrgState
-	orgErr error
-	err    error
+	project project.Project
+	index   typesys.Index
+	org     storage.OrgState
+	orgErr  error
+	err     error
 }
 
 func loadExecProject(root string, loadOrg bool) execProjectLoad {
 	p, index, err := loadProjectIndex(root)
-	load := execProjectLoad{index: index, err: err}
+	load := execProjectLoad{project: p, index: index, err: err}
 	if err == nil && loadOrg {
 		load.org, load.orgErr = orgStateFromIndexWithSpread(root, p, index, true)
 	}
@@ -2825,6 +2882,7 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	if err != nil {
 		return err
 	}
+	visualforce.SetPersistentGateCache(apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{}).Enabled)
 	jsonOut := parsed.Bool("json")
 	debug = parsed.Bool("debug")
 	projectRoot := strings.TrimSpace(parsed.String("project"))
@@ -2917,6 +2975,10 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 		}
 		projectIndex = load.index
 		hasProjectRuntime = true
+		if load.project.Root != "" {
+			visualforce.SetVMRenderEnvironment(machine, load.project)
+			defer visualforce.ClearVMRenderEnvironment(machine)
+		}
 		if dbPath == "" {
 			org := load.org
 			machine.SetOrg(&org)
@@ -2993,6 +3055,13 @@ func runExecWithProjectLoader(ctx context.Context, args []string, w io.Writer, l
 	}
 	if execErr != nil {
 		return execErr
+	}
+	if !dryRun && machine.Org != nil {
+		// Criteria sharing rules take effect when the transaction commits, so the
+		// grant is visible to the next execution and never to this one.
+		if err := dml.ReconcileCriteriaSharing(machine.Org); err != nil {
+			return err
+		}
 	}
 	if store != nil && !dryRun && machine.Org != nil {
 		if err := store.Save(storage.SnapshotRuntimeOrg(machine.Org)); err != nil {
@@ -3199,20 +3268,38 @@ func runLSP(ctx context.Context, args []string, w io.Writer) error {
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
+	if !parsed.Bool("diagnostics-once") {
+		// Serve at once and index in the background. Requests that need the
+		// index wait for it; initialize and document sync do not.
+		handler := lsp.NewPendingHandler()
+		go func() {
+			loader, err := newLSPProjectLoader(root)
+			if err != nil {
+				handler.Fail(err)
+				return
+			}
+			handler.SetRefresher(loader.refresh)
+			handler.SetGenerationValidator(loader.valid)
+			handler.SetBase(loader.base())
+			handler.StartAnalysis()
+		}()
+		serveErr := lsp.Serve(os.Stdin, w, handler)
+		if serveErr != nil {
+			return serveErr
+		}
+		return handler.LoadError()
+	}
 	index, err := loadIndex(root)
 	if err != nil {
 		return err
 	}
 	handler := lsp.NewHandler(index)
-	if parsed.Bool("diagnostics-once") {
-		for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
-			if err := lsp.WriteMessage(w, notification); err != nil {
-				return err
-			}
+	for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
+		if err := lsp.WriteMessage(w, notification); err != nil {
+			return err
 		}
-		return nil
 	}
-	return lsp.Serve(os.Stdin, w, handler)
+	return nil
 }
 
 func runProfile(ctx context.Context, args []string, w io.Writer) error {

@@ -602,6 +602,6 @@ func TestStandardDescribeProfileNativeCommercePrerequisite(t *testing.T) {
 func standardDescribeDeclaredBoundaryIndex(t *testing.T, api string, classes, objects map[string]string) typesys.Index {
 	t.Helper()
 	index := nativeBoundaryIndex(t, api, classes, objects)
-	writeFile(t, filepath.Join(index.Project.Root, "config/project-scratch-def.json"), `{"edition":"Developer"}`)
+	writeFile(t, filepath.Join(index.Project.Root, "config/project-scratch-def.json"), `{"edition":"Developer","features":[],"settings":{}}`)
 	return loadTestIndex(t, index.Project.Root)
 }

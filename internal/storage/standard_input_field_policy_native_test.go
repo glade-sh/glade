@@ -1,24 +1,17 @@
 package storage
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"testing"
 )
 
 func TestStandardFieldPolicyNativeDMLInputSidecarRoute(t *testing.T) {
-	stream, err := gzip.NewReader(bytes.NewReader(standardFieldPolicyData))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer stream.Close()
 	var policy struct {
 		Objects map[string]struct {
 			InputFields []string `json:"input_fields"`
 		}
 	}
-	if err := json.NewDecoder(stream).Decode(&policy); err != nil {
+	if err := json.Unmarshal(standardFieldPolicyData, &policy); err != nil {
 		t.Fatal(err)
 	}
 	fields := policy.Objects["EmailMessage"].InputFields

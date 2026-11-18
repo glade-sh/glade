@@ -49,6 +49,7 @@ func multiHelperProject(t *testing.T, api string, count int, loaded bool) (strin
 }
 
 func TestUnloadedDependencyMultiHelperNamedTestRunnerLSPNativeRoutes(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		f, err := os.Open(filepath.Join("testdata/conformance/unloaded_dependency/multi_helper", "api"+api[:2], "org.tsv"))
 		if err != nil {
@@ -135,6 +136,7 @@ func TestUnloadedDependencyMultiHelperNamedTestRunnerLSPNativeRoutes(t *testing.
 }
 
 func TestUnloadedDependencyMultiHelperRestorationUnitRoute(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, count := range []int{2, 3} {
 			t.Run(fmt.Sprintf("%s/%d_helpers/restoration_unit", api, count), func(t *testing.T) {
@@ -172,6 +174,7 @@ func TestUnloadedDependencyMultiHelperRestorationUnitRoute(t *testing.T) {
 }
 
 func TestUnloadedDependencyUnreachedHelperRestorationUnitRoute(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api+"/unreached_helper/restoration_unit", func(t *testing.T) {
 			root, suffix := multiHelperProject(t, api, 2, false)

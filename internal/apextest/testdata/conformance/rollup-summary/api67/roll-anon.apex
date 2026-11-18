@@ -1,0 +1,18 @@
+RollTriggerLog.events=new List<String>();
+RollParent__c p=new RollParent__c(Name='roll-anon'); insert p;
+Map<String,Object> o=new Map<String,Object>{'start'=>RollProbe.shap(p),'startFresh'=>RollProbe.shap(RollProbe.fresh(p.Id))};
+RollChild__c a=new RollChild__c(Name='a',Parent__c=p.Id,Amount__c=10,Active__c=true);
+RollChild__c b=new RollChild__c(Name='b',Parent__c=p.Id,Amount__c=30,Active__c=true);
+RollChild__c c=new RollChild__c(Name='c',Parent__c=p.Id,Amount__c=20,Active__c=false);
+RollChild__c d=new RollChild__c(Name='d',Parent__c=p.Id,Amount__c=null,Active__c=true);
+insert new List<RollChild__c>{a,b,c,d};
+o.put('afterInsertHeld',RollProbe.shap(p)); o.put('afterInsertFresh',RollProbe.shap(RollProbe.fresh(p.Id)));
+update new RollChild__c(Id=a.Id,Amount__c=50);
+o.put('afterUpdateFresh',RollProbe.shap(RollProbe.fresh(p.Id)));
+delete c;
+o.put('afterDeleteFresh',RollProbe.shap(RollProbe.fresh(p.Id)));
+undelete c;
+o.put('afterUndeleteFresh',RollProbe.shap(RollProbe.fresh(p.Id)));
+o.put('events',RollTriggerLog.events);
+delete [SELECT Id FROM RollChild__c WHERE Parent__c=:p.Id]; delete p;
+System.debug('OBS|'+JSON.serialize(o));

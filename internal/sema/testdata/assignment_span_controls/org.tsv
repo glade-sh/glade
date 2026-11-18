@@ -1,0 +1,17 @@
+case	api	route	outcome
+if_constructor	62.0	metadata-deploy	accepted
+if_constructor	67.0	metadata-deploy	accepted
+while_constructor	62.0	metadata-deploy	accepted
+while_constructor	67.0	metadata-deploy	accepted
+for_update	62.0	metadata-deploy	accepted
+for_update	67.0	metadata-deploy	accepted
+for_compound	62.0	metadata-deploy	accepted
+for_compound	67.0	metadata-deploy	accepted
+for_compact	62.0	metadata-deploy	accepted
+for_compact	67.0	metadata-deploy	accepted
+for_sibling	62.0	metadata-deploy	accepted
+for_sibling	67.0	metadata-deploy	accepted
+if_bad	62.0	metadata-deploy	Illegal assignment from Integer to String
+if_bad	67.0	metadata-deploy	Illegal assignment from Integer to String
+for_bad	62.0	metadata-deploy	Illegal assignment from Integer to String
+for_bad	67.0	metadata-deploy	Illegal assignment from Integer to String

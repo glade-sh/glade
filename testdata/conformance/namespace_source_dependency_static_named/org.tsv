@@ -1,0 +1,7 @@
+case_id	api_version	route	compile_outcome	observed_diagnostic	source
+present	62.0	named-checkonly	COMPILED		cases/62.0-present/Nsv36ConsumerProbe.cls
+missing_root	62.0	named-checkonly	COMPILE_ERROR	Variable does not exist: Nsv36AbsentProbe.Level	cases/62.0-missing_root/Nsv36ConsumerProbe.cls
+missing_member	62.0	named-checkonly	COMPILE_ERROR	Variable does not exist: Nsv36OwnerProbe.Absent	cases/62.0-missing_member/Nsv36ConsumerProbe.cls
+present	67.0	named-checkonly	COMPILED		cases/67.0-present/Nsv36ConsumerProbe.cls
+missing_root	67.0	named-checkonly	COMPILE_ERROR	Variable does not exist: Nsv36AbsentProbe.Level	cases/67.0-missing_root/Nsv36ConsumerProbe.cls
+missing_member	67.0	named-checkonly	COMPILE_ERROR	Variable does not exist: Nsv36OwnerProbe.Absent	cases/67.0-missing_member/Nsv36ConsumerProbe.cls

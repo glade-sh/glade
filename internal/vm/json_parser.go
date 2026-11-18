@@ -442,7 +442,9 @@ func jsonParserTokenize(text string) ([]Value, error) {
 		}
 	}
 	if len(tokens) == 0 {
-		return nil, fmt.Errorf("JSONParser input is empty")
+		// Native jn04 (surf_json): an empty input has no tokens, so the first
+		// nextToken() returns null instead of throwing.
+		return nil, nil
 	}
 	if len(stack) != 0 {
 		frame := stack[len(stack)-1]
@@ -495,7 +497,9 @@ func jsonParserBeforeValue(stack *[]jsonParserFrame, rootWritten *bool) (string,
 	top := &(*stack)[len(*stack)-1]
 	switch top.kind {
 	case "array":
-		return top.currentName, nil
+		// Native jn04 (surf_json): a value inside an array has no current name;
+		// START_ARRAY and END_ARRAY keep the enclosing field name.
+		return "", nil
 	case "object":
 		if top.expectingName {
 			return "", fmt.Errorf("JSONParser object value is missing a field name")

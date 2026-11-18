@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
+	"time"
 )
 
 func RunPlugin(ctx context.Context, plugin InstalledPlugin, args []string, stdout, stderr io.Writer) (int, error) {
@@ -14,15 +16,32 @@ func RunPlugin(ctx context.Context, plugin InstalledPlugin, args []string, stdou
 }
 
 func RunPluginWithInput(ctx context.Context, plugin InstalledPlugin, args []string, stdin io.Reader, stdout, stderr io.Writer) (int, error) {
-	cmd := exec.CommandContext(ctx, plugin.Executable, args...)
-	cmd.Stdin = stdin
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
-	cmd.Env = append(pluginSubprocessEnv(os.Environ()),
+	env := append(pluginSubprocessEnv(os.Environ()),
 		"GLADE_PLUGIN_HOST=glade",
 		"GLADE_PLUGIN_API_VERSION="+APIVersion,
 	)
-	err := cmd.Run()
+	// Linux can briefly reject exec while another process holds the executable
+	// open for writing. Retry only a failed start; a plugin that ran is never rerun.
+	const attempts = 5
+	var err error
+	for attempt := 0; ; attempt++ {
+		cmd := exec.CommandContext(ctx, plugin.Executable, args...)
+		cmd.Stdin = stdin
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+		cmd.Env = env
+		err = cmd.Run()
+		if !errors.Is(err, syscall.ETXTBSY) || attempt == attempts-1 {
+			break
+		}
+		timer := time.NewTimer(25 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return 1, ctx.Err()
+		case <-timer.C:
+		}
+	}
 	if err == nil {
 		return 0, nil
 	}

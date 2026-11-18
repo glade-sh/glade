@@ -46,6 +46,7 @@ func TestAddressLocationReviewNativeRoutes(t *testing.T) {
 					if row.ID == "DUPLICATE_SHADOW" {
 						// The native scratch fixture has the standard Account rules.
 						storage.EnsureDeterministicPlatformData(&org)
+						org.StandardDuplicateRules = true
 					}
 					org.APIVersion = api
 					account := org.Objects["Account"]

@@ -1,0 +1,5 @@
+api	route	case	actual
+62.0	istest	priorformula	api=62.0 | mixed: Acc.BU3:null Acc.AU3:null Acc.BU2:hit Acc.AU2:hit => a:hit;b:null;c1:hit
+62.0	anonymous	priorformula	api=62.0 | mixed: Acc.BU3:null Acc.AU3:null Acc.BU2:hit Acc.AU2:hit => a:hit;b:null;c1:hit
+67.0	istest	priorformula	api=67.0 | mixed: Acc.BU3:null Acc.AU3:null Acc.BU2:hit Acc.AU2:hit => a:hit;b:null;c1:hit
+67.0	anonymous	priorformula	api=67.0 | mixed: Acc.BU3:null Acc.AU3:null Acc.BU2:hit Acc.AU2:hit => a:hit;b:null;c1:hit

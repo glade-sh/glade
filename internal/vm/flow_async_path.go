@@ -74,10 +74,19 @@ func (vm *VM) rollbackFlowPathSavepoint(id string) {
 	}
 }
 
+// flowJobSequence orders a job that a rollback can discard: an async path or a
+// publish-after-commit event interview. Other jobs are never discarded.
+func flowJobSequence(job AsyncJob) uint64 {
+	if job.FlowPath != nil {
+		return job.FlowPath.sequence
+	}
+	return job.EventSeq
+}
+
 func (vm *VM) rollbackFlowPathsAfter(mark uint64) {
 	kept := vm.localAsyncJobs[:0]
 	for _, job := range vm.localAsyncJobs {
-		if job.FlowPath == nil || job.FlowPath.sequence <= mark {
+		if flowJobSequence(job) <= mark {
 			kept = append(kept, job)
 		}
 	}

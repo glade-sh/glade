@@ -1,0 +1,1 @@
+Test.startTest(); System.enqueueJob(new AsyncFinHost__A__('fgetters')); Test.stopTest(); List<Account> r = [SELECT Description FROM Account WHERE Name = 'AOBS-fgetters_fin' LIMIT 1]; obs = r.isEmpty() ? 'NOREC' : r[0].Description;

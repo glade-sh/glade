@@ -1,0 +1,1 @@
+public class OverrideProbe { public virtual class Base { private virtual Integer value() { return 1; } public Integer observe() { return value(); } } public class Child extends Base { private override Integer value() { return 2; } } public static Integer run() { return new Child().observe(); } }

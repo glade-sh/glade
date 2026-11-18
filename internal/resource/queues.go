@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -39,7 +38,7 @@ func ApplyProjectQueues(org *storage.OrgState, p project.Project) error {
 	sort.Strings(paths)
 	queues := make([]queueXML, 0, len(paths))
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("load Queue metadata %s: %w", path, err)
 		}
@@ -109,7 +108,7 @@ func ApplyProjectQueues(org *storage.OrgState, p project.Project) error {
 		} else {
 			record.Fields["Email"] = storage.NullValue()
 		}
-		groups.Records[id] = record
+		groups.PutRecord(id, record)
 		linked := make(map[string]bool)
 		for _, existing := range links.Records {
 			if storage.IDsEqual(existing.Fields["QueueId"].ID, id) {
@@ -125,11 +124,11 @@ func ApplyProjectQueues(org *storage.OrgState, p project.Project) error {
 			if err != nil {
 				return err
 			}
-			links.Records[linkID] = storage.Record{ID: linkID, Object: "QueueSobject", Fields: map[string]storage.Value{
+			links.PutRecord(linkID, storage.Record{ID: linkID, Object: "QueueSobject", Fields: map[string]storage.Value{
 				"Id":          storage.IDValue(linkID),
 				"QueueId":     storage.IDValue(id),
 				"SobjectType": storage.StringValue(objectName),
-			}}
+			}})
 			linked[strings.ToLower(objectName)] = true
 		}
 	}

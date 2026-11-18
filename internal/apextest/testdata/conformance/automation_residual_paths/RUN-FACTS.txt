@@ -1,0 +1,12 @@
+native_complete=true
+source_apis=62.0,67.0
+routes=anonymous,istest
+capture_date=2026-11-12
+org=one scratch Developer Edition org, deployed per API with the metadata of project/, deleted after the run
+cases=ResidualProbe test methods and ResidualRun.run(method) anonymous calls (each rolled back inside the call)
+repeats=2 per API and route. Rows that differed between repeats are kept as method and method.repeat: cdcMerge (istest); flowApexThrow and flowApexThrowSave differ only in the anonymous Error ID, which the test masks
+masked=record ids as 00QREDACTED; anonymous Error ID text as "Error ID: 0-0 (0)"
+setup=permission set ResidualFields assigned to the capture user; Parcel__c access uses AccessLevel.SYSTEM_MODE
+duplicate_rules=Standard_Lead_Duplicate_Rule deactivated; two custom Lead rules: Email exact with Block, Phone exact with Allow and Alert
+criteria=method criteria runs 80 Lead inserts against one assignment rule with one entry per case; 1 means the record went to the queue
+M5_multipicklist_contains=deploy rejected: This type of field (Picklist (Multi-Select)) cannot use the selected operator.

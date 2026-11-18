@@ -1,0 +1,5 @@
+case	source_api	route	result
+describe	62.0	anonymous	all assertions passed
+describe_reject	62.0	anonymous	Field does not exist: key on ObjectPermissions
+describe	67.0	anonymous	all assertions passed
+describe_reject	67.0	anonymous	Field does not exist: key on ObjectPermissions

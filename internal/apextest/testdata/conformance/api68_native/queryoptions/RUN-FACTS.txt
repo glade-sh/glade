@@ -1,0 +1,13 @@
+capture: queryoptions
+started: 2026-11-16T03:14:57Z
+finished: 2026-11-16T03:15:33Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+gate: QueryOptions is a runtime surface at 68; the saved class version comparison is captured
+Data Cloud DLO/DMO cases Q2/Q3 cannot use real object names in a scratch org without Data Cloud; SET OPTIONS on a platform object is captured instead
+managed-package namespace collision (C-Q4/K3) is not runnable without a managed package; not captured

@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>EmailSent__c</fullName><label>EmailSent</label><defaultValue>false</defaultValue><type>Checkbox</type></CustomField>

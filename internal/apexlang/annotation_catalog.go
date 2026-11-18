@@ -35,6 +35,7 @@ var annotations = []AnnotationSpec{
 	{Name: "HttpGet"}, {Name: "HttpPost"}, {Name: "HttpPut"}, {Name: "HttpPatch"}, {Name: "HttpDelete"},
 	{Name: "IntegrationTest", Preview: true},
 	{Name: "TearDown", Preview: true},
+	{Name: "BeforeClass", Preview: true},
 }
 
 func AllAnnotations() []AnnotationSpec {

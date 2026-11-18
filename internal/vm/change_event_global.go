@@ -2,6 +2,7 @@ package vm
 
 import (
 	"maps"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexversion"
@@ -205,6 +206,8 @@ type changeEventGlobalExtension struct {
 	baseLen  int
 	api      int
 	extended map[string]Value
+	// shared: extended is the generation's map, read by other VMs too.
+	shared bool
 }
 
 // withChangeEventGlobalEntries adds the change event keys the native global
@@ -230,48 +233,61 @@ func (vm *VM) withChangeEventGlobalEntries(base Value) (Value, bool) {
 		extended := base
 		extended.mapBackingShared = true
 		extended.Map = cached.extended
+		extended.mapEntriesShared = cached.shared
 		return extended, true
 	}
-	additions := map[string]Value{}
-	add := func(eventName string) {
-		key := mapKey(String(strings.ToLower(eventName)))
-		if _, present := base.Map[key]; present {
-			return
+	build := func() map[string]Value {
+		additions := map[string]Value{}
+		add := func(eventName string) {
+			key := mapKey(String(strings.ToLower(eventName)))
+			if _, present := base.Map[key]; present {
+				return
+			}
+			additions[key] = sObjectTypeToken(eventName)
 		}
-		additions[key] = sObjectTypeToken(eventName)
-	}
-	for _, entry := range changeEventStandardObjects {
-		if (entry.since != 0 && major < entry.since) || (entry.until != 0 && major >= entry.until) {
-			continue
-		}
-		// The rows come from a plain Developer org: every entry is listed
-		// there whether or not Glade models the standard object or its
-		// feature (global_describe_changeevent_full).
-		add(entry.name + "ChangeEvent")
-	}
-	if vm.Org.Namespace == "" {
-		for name, object := range vm.Org.Objects {
-			if !hasSuffixFold(name, "__c") || storage.IsCustomMetadataDefinition(object.Definition) {
+		for _, entry := range changeEventStandardObjects {
+			if (entry.since != 0 && major < entry.since) || (entry.until != 0 && major >= entry.until) {
 				continue
 			}
-			// A custom-looking name in the standard catalog is not a project
-			// object; the native rows list no change event for it.
-			if _, catalog := storage.ResolveKnownStandardObjectName(name); catalog {
-				continue
-			}
-			add(name[:len(name)-len("__c")] + "__ChangeEvent")
+			// The rows come from a plain Developer org: every entry is listed
+			// there whether or not Glade models the standard object or its
+			// feature (global_describe_changeevent_full).
+			add(entry.name + "ChangeEvent")
 		}
+		if vm.Org.Namespace == "" {
+			for name, object := range vm.Org.Objects {
+				if !hasSuffixFold(name, "__c") || storage.IsCustomMetadataDefinition(object.Definition) {
+					continue
+				}
+				// A custom-looking name in the standard catalog is not a project
+				// object; the native rows list no change event for it.
+				if _, catalog := storage.ResolveKnownStandardObjectName(name); catalog {
+					continue
+				}
+				add(name[:len(name)-len("__c")] + "__ChangeEvent")
+			}
+		}
+		if len(additions) == 0 {
+			return nil
+		}
+		built := maps.Clone(base.Map)
+		for key, token := range additions {
+			built[key] = token
+		}
+		return built
 	}
-	if len(additions) == 0 {
+	built, shared := vm.sharedGlobalDescribeExtension(base.Map, "changeEvent", strconv.Itoa(major), build)
+	if !shared {
+		built = build()
+	}
+	if built == nil {
 		return base, false
 	}
 	extended := base
 	extended.mapBackingShared = true
-	extended.Map = maps.Clone(base.Map)
-	for key, token := range additions {
-		extended.Map[key] = token
-	}
-	vm.changeEventGlobal = &changeEventGlobalExtension{base: base.Map, baseLen: len(base.Map), api: major, extended: extended.Map}
+	extended.Map = built
+	extended.mapEntriesShared = shared
+	vm.changeEventGlobal = &changeEventGlobalExtension{base: base.Map, baseLen: len(base.Map), api: major, extended: extended.Map, shared: shared}
 	return extended, true
 }
 

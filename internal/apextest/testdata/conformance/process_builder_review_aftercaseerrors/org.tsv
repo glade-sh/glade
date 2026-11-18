@@ -1,0 +1,9 @@
+api	route	case	actual
+62.0	istest	errors	api=62.0 | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing person | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing email | log=BU:2,AU:2,pb:2,one:2
+62.0	anonymous	errors	api=62.0 | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing person | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing email | log=BU:2,AU:2,pb:2,one:2
+62.0	istest	triple	api=62.0 | row=true:none:none | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing person | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing email | log=BU:3,AU:3,pb:3,one:3,two:1,BU:1,AU:1,pb:1,one:1,two:1
+62.0	anonymous	triple	api=62.0 | row=true:none:none | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing person | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing email | log=BU:3,AU:3,pb:3,one:3,two:1,BU:1,AU:1,pb:1,one:1,two:1
+67.0	istest	errors	api=67.0 | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing person | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing email | log=BU:2,AU:2,pb:2,one:2
+67.0	anonymous	errors	api=67.0 | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing person | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing email | log=BU:2,AU:2,pb:2,one:2
+67.0	istest	triple	api=67.0 | row=true:none:none | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing person | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing email | log=BU:3,AU:3,pb:3,one:3,two:1,BU:1,AU:1,pb:1,one:1,two:1
+67.0	anonymous	triple	api=67.0 | row=true:none:none | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing person | row=false:FIELD_CUSTOM_VALIDATION_EXCEPTION:Missing email | log=BU:3,AU:3,pb:3,one:3,two:1,BU:1,AU:1,pb:1,one:1,two:1

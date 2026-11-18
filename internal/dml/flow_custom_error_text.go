@@ -2,6 +2,7 @@ package dml
 
 import (
 	"html"
+	"math/big"
 	"strings"
 	"time"
 
@@ -36,9 +37,24 @@ func firstFlowFormulaMap(maps []map[string]string) map[string]string {
 // formula resource outside the captured frame-bound set (resources): native
 // rows (flow_assign_routes, API 62.0 and 67.0) render its result.
 func (e *Engine) renderFlowCustomErrorMessage(message string, frame *flowFrame, constants, formulas, resources map[string]string) string {
+	text, _ := e.renderFlowCustomErrorMessageForAPI(message, frame, constants, formulas, resources, "")
+	return text
+}
+
+// flowMergeUnhandledFault reports a merge field whose native flow run fails
+// with an unhandled fault instead of rendering text (flow_record_merge: a
+// DateTime or Time record field at API 62.0).
+type flowMergeUnhandledFault struct{}
+
+func (flowMergeUnhandledFault) Error() string {
+	return "flow merge field raised an unhandled fault"
+}
+
+func (e *Engine) renderFlowCustomErrorMessageForAPI(message string, frame *flowFrame, constants, formulas, resources map[string]string, apiVersion string) (string, bool) {
 	if frame == nil || !strings.Contains(message, "{!") {
-		return message
+		return message, false
 	}
+	fault := false
 	capturedFormula := flowCapturedCustomErrorFormula(message, formulas, frame)
 	rendered, ok := renderFlowTextTemplate(message, frame, func(reference string) (storage.Value, bool) {
 		if number, ok := constants[strings.ToLower(reference)]; ok {
@@ -58,6 +74,27 @@ func (e *Engine) renderFlowCustomErrorMessage(message string, frame *flowFrame, 
 			return storage.Value{}, false
 		}
 		value, found := e.flowFrameReferenceValue(reference, frame)
+		if recordField, kind := e.flowRecordMergeField(reference, frame); recordField && found && (apiVersion == "62.0" || apiVersion == "67.0") {
+			switch kind {
+			case storage.FieldDecimal:
+				if value.Kind == storage.ValueDecimal || value.Kind == storage.ValueInteger {
+					return storage.StringValue(flowRecordMergeNumber(value)), true
+				}
+			case storage.FieldDateTime, storage.FieldTime:
+				if value.Kind == storage.ValueNull {
+					return storage.StringValue(""), true
+				}
+				switch apiVersion {
+				case "62.0":
+					fault = true
+					return storage.Value{}, false
+				case "67.0":
+					if text, ok := e.flowRecordMergeTemporal(kind, value); ok {
+						return storage.StringValue(text), true
+					}
+				}
+			}
+		}
 		if expression, formula := formulas[flowFrameKey(reference)]; formula && capturedFormula && flowCoreFormulaUsesScalars(expression, frame, true) {
 			value, found = e.flowContextFormulaValueWithCapturedBindings(expression, frame, true)
 		} else if expression, formula := resources[strings.ToLower(strings.TrimSpace(reference))]; formula && !found {
@@ -72,10 +109,13 @@ func (e *Engine) renderFlowCustomErrorMessage(message string, frame *flowFrame, 
 		}
 		return storage.StringValue(text), true
 	})
-	if !ok {
-		return message
+	if fault {
+		return message, true
 	}
-	return rendered.String
+	if !ok {
+		return message, false
+	}
+	return rendered.String, false
 }
 
 func (e *Engine) flowMergeLocaleIsEnUS() bool {
@@ -203,4 +243,115 @@ func flowCapturedCustomErrorFormula(message string, formulas map[string]string, 
 		}
 	}
 	return false
+}
+
+// flowRecordMergeField resolves a `$Record.Field` merge reference to the
+// triggering record's field type.
+func (e *Engine) flowRecordMergeField(reference string, frame *flowFrame) (bool, storage.FieldType) {
+	if e == nil || e.Org == nil || frame == nil {
+		return false, ""
+	}
+	name, field, ok := strings.Cut(strings.TrimSpace(reference), ".")
+	if !ok || !strings.EqualFold(name, "$Record") || strings.Contains(field, ".") {
+		return false, ""
+	}
+	record, present := frame.records[flowFrameKey(name)]
+	if !present {
+		return false, ""
+	}
+	objectName, modeled := storage.ResolveObjectName(*e.Org, record.Object)
+	if !modeled {
+		return false, ""
+	}
+	definition := e.Org.Objects[objectName].Definition
+	resolved, found := storage.ResolveFieldName(definition, e.Org.Namespace, field)
+	if !found {
+		return false, ""
+	}
+	return true, definition.Fields[resolved].Type
+}
+
+// flowRecordMergeNumber renders a Number, Currency or Percent record field the
+// way the native Custom Error does: at most three fraction digits, rounded half
+// to even, without trailing zeros. A negative value that rounds to zero keeps
+// its sign; an exact zero does not (flow_record_merge).
+func flowRecordMergeNumber(value storage.Value) string {
+	text := value.Decimal
+	if text == "" {
+		text = value.String
+	}
+	if value.Kind == storage.ValueInteger {
+		return groupFlowMergeNumber(workflowValueString(value))
+	}
+	number, ok := new(big.Rat).SetString(strings.TrimSpace(text))
+	if !ok {
+		return groupFlowMergeNumber(text)
+	}
+	negative := number.Sign() < 0
+	scaled := new(big.Rat).Mul(new(big.Rat).Abs(number), big.NewRat(1000, 1))
+	whole := new(big.Int).Quo(scaled.Num(), scaled.Denom())
+	remainder := new(big.Rat).Sub(scaled, new(big.Rat).SetInt(whole))
+	switch remainder.Cmp(big.NewRat(1, 2)) {
+	case 1:
+		whole.Add(whole, big.NewInt(1))
+	case 0:
+		if whole.Bit(0) == 1 {
+			whole.Add(whole, big.NewInt(1))
+		}
+	}
+	digits := whole.String()
+	for len(digits) < 4 {
+		digits = "0" + digits
+	}
+	rounded := digits[:len(digits)-3] + "." + digits[len(digits)-3:]
+	grouped := groupFlowMergeNumber(rounded)
+	if negative && number.Sign() != 0 && !strings.HasPrefix(grouped, "-") {
+		grouped = "-" + grouped
+	}
+	return grouped
+}
+
+// flowRecordMergeTemporal renders a DateTime or Time record field at API 67.0
+// for the captured en_US user: DateTime in the user's time zone as
+// "3/9/2031, 8:04 AM", Time as "3:04 PM" with no zone shift.
+func (e *Engine) flowRecordMergeTemporal(kind storage.FieldType, value storage.Value) (string, bool) {
+	if !e.flowMergeLocaleIsEnUS() {
+		return "", false
+	}
+	text := strings.TrimSpace(value.String)
+	if kind == storage.FieldTime {
+		for _, layout := range []string{"15:04:05.000Z", "15:04:05.000", "15:04:05Z", "15:04:05", "15:04"} {
+			if parsed, err := time.Parse(layout, text); err == nil {
+				return parsed.Format("3:04 PM"), true
+			}
+		}
+		return "", false
+	}
+	zone, ok := e.flowMergeUserLocation()
+	if !ok {
+		return "", false
+	}
+	for _, layout := range []string{time.RFC3339Nano, "2006-01-02T15:04:05.000Z0700", "2006-01-02T15:04:05Z"} {
+		if parsed, err := time.Parse(layout, text); err == nil {
+			return parsed.In(zone).Format("1/2/2006, 3:04 PM"), true
+		}
+	}
+	return "", false
+}
+
+// flowMergeUserLocation is the captured user time zone (America/Los_Angeles).
+func (e *Engine) flowMergeUserLocation() (*time.Location, bool) {
+	if e == nil || e.Org == nil {
+		return nil, false
+	}
+	users, ok := e.Org.Objects["User"]
+	if !ok {
+		return nil, false
+	}
+	user, ok := users.Records[e.systemUserID()]
+	if !ok || user.Fields["TimeZoneSidKey"].String != "America/Los_Angeles" {
+		return nil, false
+	}
+	zone, err := time.LoadLocation("America/Los_Angeles")
+	return zone, err == nil
 }

@@ -1,0 +1,15 @@
+capture: code coverage of one 14-method test class (CovSuiteTest), blind holdout
+captured: 2026-11-16 (UTC 22:15-22:21)
+orgs: two fresh 1-day Developer scratch orgs on campaign Dev Hubs, one per API; both deleted and verified gone
+sf: @salesforce/cli 2.157.8
+class apis: 62.0 and 67.0 (every .cls-meta.xml and .trigger-meta.xml; ApexClass.ApiVersion and ApexTrigger.ApiVersion read back)
+run: sf apex run test --class-names CovSuiteTest --result-format json --synchronous --wait 30 --api-version <api> --code-coverage --json
+repeats: two per API (r1, r2); after each run the Tooling ApexCodeCoverageAggregate and ApexCodeCoverage rows were queried
+outcome: 14 ran, 13 passed, 1 failed by design (exit 100) on all four runs
+columns: api, repeat, source (aggregate | per-test), class_or_trigger, test_method, num_lines_covered, num_lines_uncovered, covered_lines, uncovered_lines
+notes:
+  Every row is identical between repeats and between the two APIs.
+  CovPureApi (an interface) has no row. CovEmpty has an aggregate row with no lines and no per-test row.
+  Per-test rows carry declaration lines (method, constructor and property) that earlier tests in method-name order covered.
+  Every trigger has a per-test row in every test, empty when the test did not fire it.
+  Rows were built from the raw Tooling JSON only; ids are scrubbed.

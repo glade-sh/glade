@@ -180,7 +180,7 @@ func connectAPIReflectionFailure(typeName, phase string) (*typesys.ConnectAPIFai
 		return nil, "", false
 	}
 	canonical := typeName
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(typeName)); ok {
 		canonical = generated.Name
 	}
 	return profile.Fail, strings.ReplaceAll(profile.Fail.Message, "{T}", canonical), true

@@ -1,0 +1,9 @@
+api	method	observation
+62.0	capturedNameControl	ok:0
+62.0	failedSetupThenQuery	ok:0
+62.0	otherAssignment	ok:0
+62.0	queryOtherName	ok:0
+67.0	capturedNameControl	System.QueryException:No such column 'Probe_B__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	failedSetupThenQuery	System.QueryException:No such column 'Probe_A__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	otherAssignment	System.QueryException:No such column 'Probe_A__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.
+67.0	queryOtherName	System.QueryException:No such column 'Probe_B__c' on entity 'Account'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names.

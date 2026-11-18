@@ -19,8 +19,13 @@ func (a *Analyzer) scopedNestedType(model *semaTypeMemberView, owner, short stri
 	for scope := strings.TrimSpace(owner); scope != ""; {
 		cls := scope
 		for depth := 0; cls != "" && depth < 16; depth++ {
-			if members, known := model.lookupName(cls + "." + short); known && !members.platform && !members.dependency {
-				return members, true
+			if members, known := model.lookupName(cls + "." + short); known && !members.platform {
+				if !members.dependency {
+					return members, true
+				}
+				if caller, found := model.lookupName(owner); found && members.receiverDependencySource && caller.namespace != "" && strings.EqualFold(caller.namespace, members.namespace) {
+					return members, true
+				}
 			}
 			cls = a.superClassOf(model, cls, scope)
 		}

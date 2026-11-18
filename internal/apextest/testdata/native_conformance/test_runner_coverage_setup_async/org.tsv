@@ -1,0 +1,441 @@
+api	repeat	step	kind	test_class	method	component	covered	detail
+62.0	r1	R3EventTest	test	R3EventTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	R3EventTest	test	R3EventTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	R3EventTest	run					testRunCoverage=59% classes=CovAccountCdc:0/2;CovEvtTrigger:0/2;R3Facts:10/13
+62.0	r1	R3EventTest	per	R3EventTest	observe	CovAccountCdc		
+62.0	r1	R3EventTest	per	R3EventTest	observe	CovEvtTrigger		
+62.0	r1	R3EventTest	per	R3EventTest	observe	R3Facts	2,3,4,8,9,10,11,14,15,16	
+62.0	r1	R3EventTest	per	R3EventTest	observeAgain	CovAccountCdc		
+62.0	r1	R3EventTest	per	R3EventTest	observeAgain	CovEvtTrigger		
+62.0	r1	R3EventTest	per	R3EventTest	observeAgain	R3Facts	2,3,4,8,9,10,11,14,15,16	
+62.0	r1	R3DeliverTest	test	R3DeliverTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	R3DeliverTest	test	R3DeliverTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	R3DeliverTest	run					testRunCoverage=82% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:12/13
+62.0	r1	R3DeliverTest	per	R3DeliverTest	observe	CovAccountCdc		
+62.0	r1	R3DeliverTest	per	R3DeliverTest	observe	CovEvtTrigger	2,3	
+62.0	r1	R3DeliverTest	per	R3DeliverTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	R3DeliverTest	per	R3DeliverTest	observeAgain	CovAccountCdc		
+62.0	r1	R3DeliverTest	per	R3DeliverTest	observeAgain	CovEvtTrigger		
+62.0	r1	R3DeliverTest	per	R3DeliverTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	R3SchedTest	test	R3SchedTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+62.0	r1	R3SchedTest	test	R3SchedTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+62.0	r1	R3SchedTest	run					testRunCoverage=89% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13;R3Sched:2/2
+62.0	r1	R3SchedTest	per	R3SchedTest	observe	CovAccountCdc		
+62.0	r1	R3SchedTest	per	R3SchedTest	observe	CovEvtTrigger		
+62.0	r1	R3SchedTest	per	R3SchedTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	R3SchedTest	per	R3SchedTest	observe	R3Sched	2,3	
+62.0	r1	R3SchedTest	per	R3SchedTest	observeAgain	CovAccountCdc		
+62.0	r1	R3SchedTest	per	R3SchedTest	observeAgain	CovEvtTrigger		
+62.0	r1	R3SchedTest	per	R3SchedTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	R3SchedTest	per	R3SchedTest	observeAgain	R3Sched	2	
+62.0	r1	R3BatchChainTest	test	R3BatchChainTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+62.0	r1	R3BatchChainTest	test	R3BatchChainTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+62.0	r1	R3BatchChainTest	run					testRunCoverage=92% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Batch:7/7;R3Facts:13/13;R3Later:2/2
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	CovAccountCdc		
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	CovEvtTrigger		
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	R3Batch	2,3,5,6,8,9,10	
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	R3Later	2,3	
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	CovAccountCdc		
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	CovEvtTrigger		
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Batch	2,5,8	
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Later	2	
+62.0	r1	R3CdcTest	test	R3CdcTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+62.0	r1	R3CdcTest	test	R3CdcTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+62.0	r1	R3CdcTest	run					testRunCoverage=89% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13;R3Q:2/2
+62.0	r1	R3CdcTest	per	R3CdcTest	observe	CovAccountCdc		
+62.0	r1	R3CdcTest	per	R3CdcTest	observe	CovEvtTrigger		
+62.0	r1	R3CdcTest	per	R3CdcTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	R3CdcTest	per	R3CdcTest	observe	R3Q	2,3	
+62.0	r1	R3CdcTest	per	R3CdcTest	observeAgain	CovAccountCdc		
+62.0	r1	R3CdcTest	per	R3CdcTest	observeAgain	CovEvtTrigger		
+62.0	r1	R3CdcTest	per	R3CdcTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	R3CdcTest	per	R3CdcTest	observeAgain	R3Q	2	
+62.0	r1	R3CdcOnlyTest	test	R3CdcOnlyTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	R3CdcOnlyTest	test	R3CdcOnlyTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	R3CdcOnlyTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+62.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	CovAccountCdc		
+62.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	CovEvtTrigger		
+62.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	CovAccountCdc		
+62.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	CovEvtTrigger		
+62.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	R3NoneTest	test	R3NoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	R3NoneTest	test	R3NoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	R3NoneTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+62.0	r1	R3NoneTest	per	R3NoneTest	observe	CovAccountCdc		
+62.0	r1	R3NoneTest	per	R3NoneTest	observe	CovEvtTrigger		
+62.0	r1	R3NoneTest	per	R3NoneTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	R3NoneTest	per	R3NoneTest	observeAgain	CovAccountCdc		
+62.0	r1	R3NoneTest	per	R3NoneTest	observeAgain	CovEvtTrigger		
+62.0	r1	R3NoneTest	per	R3NoneTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	all-async	test	R3BatchChainTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+62.0	r1	all-async	test	R3BatchChainTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+62.0	r1	all-async	test	R3CdcOnlyTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	all-async	test	R3CdcOnlyTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	all-async	test	R3CdcTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+62.0	r1	all-async	test	R3CdcTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+62.0	r1	all-async	test	R3DeliverTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	all-async	test	R3DeliverTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	all-async	test	R3EventTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	all-async	test	R3EventTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	all-async	test	R3NoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	all-async	test	R3NoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	all-async	test	R3SchedTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+62.0	r1	all-async	test	R3SchedTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+62.0	r1	all-async	run					testRunCoverage=100% classes=CovEvtTrigger:2/2;R3Batch:7/7;R3Facts:13/13;R3Later:2/2;R3Q:2/2;R3Sched:2/2
+62.0	r1	all-async	per	R3BatchChainTest	observe	R3Batch	2,3,5,6,8,9,10	
+62.0	r1	all-async	per	R3BatchChainTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	all-async	per	R3BatchChainTest	observe	R3Later	2,3	
+62.0	r1	all-async	per	R3BatchChainTest	observeAgain	R3Batch	2,5,8	
+62.0	r1	all-async	per	R3BatchChainTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	all-async	per	R3BatchChainTest	observeAgain	R3Later	2	
+62.0	r1	all-async	per	R3CdcOnlyTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	all-async	per	R3CdcOnlyTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	all-async	per	R3CdcTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	all-async	per	R3CdcTest	observe	R3Q	2,3	
+62.0	r1	all-async	per	R3CdcTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	all-async	per	R3CdcTest	observeAgain	R3Q	2	
+62.0	r1	all-async	per	R3DeliverTest	observe	CovEvtTrigger	2,3	
+62.0	r1	all-async	per	R3DeliverTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	all-async	per	R3DeliverTest	observeAgain	CovEvtTrigger		
+62.0	r1	all-async	per	R3DeliverTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	all-async	per	R3EventTest	observe	R3Facts	2,3,4,8,9,10,11,14,15,16	
+62.0	r1	all-async	per	R3EventTest	observeAgain	R3Facts	2,3,4,8,9,10,11,14,15,16	
+62.0	r1	all-async	per	R3NoneTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	all-async	per	R3NoneTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r1	all-async	per	R3SchedTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	all-async	per	R3SchedTest	observe	R3Sched	2,3	
+62.0	r1	all-async	per	R3SchedTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r1	all-async	per	R3SchedTest	observeAgain	R3Sched	2	
+62.0	r2	R3EventTest	test	R3EventTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	R3EventTest	test	R3EventTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	R3EventTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+62.0	r2	R3EventTest	per	R3EventTest	observe	CovAccountCdc		
+62.0	r2	R3EventTest	per	R3EventTest	observe	CovEvtTrigger		
+62.0	r2	R3EventTest	per	R3EventTest	observe	R3Facts	2,3,4,8,9,10,11,14,15,16	
+62.0	r2	R3EventTest	per	R3EventTest	observeAgain	CovAccountCdc		
+62.0	r2	R3EventTest	per	R3EventTest	observeAgain	CovEvtTrigger		
+62.0	r2	R3EventTest	per	R3EventTest	observeAgain	R3Facts	2,3,4,8,9,10,11,14,15,16	
+62.0	r2	R3DeliverTest	test	R3DeliverTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	R3DeliverTest	test	R3DeliverTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	R3DeliverTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+62.0	r2	R3DeliverTest	per	R3DeliverTest	observe	CovAccountCdc		
+62.0	r2	R3DeliverTest	per	R3DeliverTest	observe	CovEvtTrigger	2,3	
+62.0	r2	R3DeliverTest	per	R3DeliverTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	R3DeliverTest	per	R3DeliverTest	observeAgain	CovAccountCdc		
+62.0	r2	R3DeliverTest	per	R3DeliverTest	observeAgain	CovEvtTrigger		
+62.0	r2	R3DeliverTest	per	R3DeliverTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	R3SchedTest	test	R3SchedTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+62.0	r2	R3SchedTest	test	R3SchedTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+62.0	r2	R3SchedTest	run					testRunCoverage=89% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13;R3Sched:2/2
+62.0	r2	R3SchedTest	per	R3SchedTest	observe	CovAccountCdc		
+62.0	r2	R3SchedTest	per	R3SchedTest	observe	CovEvtTrigger		
+62.0	r2	R3SchedTest	per	R3SchedTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	R3SchedTest	per	R3SchedTest	observe	R3Sched	2,3	
+62.0	r2	R3SchedTest	per	R3SchedTest	observeAgain	CovAccountCdc		
+62.0	r2	R3SchedTest	per	R3SchedTest	observeAgain	CovEvtTrigger		
+62.0	r2	R3SchedTest	per	R3SchedTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	R3SchedTest	per	R3SchedTest	observeAgain	R3Sched	2	
+62.0	r2	R3BatchChainTest	test	R3BatchChainTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+62.0	r2	R3BatchChainTest	test	R3BatchChainTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+62.0	r2	R3BatchChainTest	run					testRunCoverage=92% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Batch:7/7;R3Facts:13/13;R3Later:2/2
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	CovAccountCdc		
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	CovEvtTrigger		
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	R3Batch	2,3,5,6,8,9,10	
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	R3Later	2,3	
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	CovAccountCdc		
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	CovEvtTrigger		
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Batch	2,5,8	
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Later	2	
+62.0	r2	R3CdcTest	test	R3CdcTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+62.0	r2	R3CdcTest	test	R3CdcTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+62.0	r2	R3CdcTest	run					testRunCoverage=89% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13;R3Q:2/2
+62.0	r2	R3CdcTest	per	R3CdcTest	observe	CovAccountCdc		
+62.0	r2	R3CdcTest	per	R3CdcTest	observe	CovEvtTrigger		
+62.0	r2	R3CdcTest	per	R3CdcTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	R3CdcTest	per	R3CdcTest	observe	R3Q	2,3	
+62.0	r2	R3CdcTest	per	R3CdcTest	observeAgain	CovAccountCdc		
+62.0	r2	R3CdcTest	per	R3CdcTest	observeAgain	CovEvtTrigger		
+62.0	r2	R3CdcTest	per	R3CdcTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	R3CdcTest	per	R3CdcTest	observeAgain	R3Q	2	
+62.0	r2	R3CdcOnlyTest	test	R3CdcOnlyTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	R3CdcOnlyTest	test	R3CdcOnlyTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	R3CdcOnlyTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+62.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	CovAccountCdc		
+62.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	CovEvtTrigger		
+62.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	CovAccountCdc		
+62.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	CovEvtTrigger		
+62.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	R3NoneTest	test	R3NoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	R3NoneTest	test	R3NoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	R3NoneTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+62.0	r2	R3NoneTest	per	R3NoneTest	observe	CovAccountCdc		
+62.0	r2	R3NoneTest	per	R3NoneTest	observe	CovEvtTrigger		
+62.0	r2	R3NoneTest	per	R3NoneTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	R3NoneTest	per	R3NoneTest	observeAgain	CovAccountCdc		
+62.0	r2	R3NoneTest	per	R3NoneTest	observeAgain	CovEvtTrigger		
+62.0	r2	R3NoneTest	per	R3NoneTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	all-async	test	R3BatchChainTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+62.0	r2	all-async	test	R3BatchChainTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+62.0	r2	all-async	test	R3CdcOnlyTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	all-async	test	R3CdcOnlyTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	all-async	test	R3CdcTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+62.0	r2	all-async	test	R3CdcTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+62.0	r2	all-async	test	R3DeliverTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	all-async	test	R3DeliverTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	all-async	test	R3EventTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	all-async	test	R3EventTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	all-async	test	R3NoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	all-async	test	R3NoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	all-async	test	R3SchedTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+62.0	r2	all-async	test	R3SchedTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+62.0	r2	all-async	run					testRunCoverage=100% classes=CovEvtTrigger:2/2;R3Batch:7/7;R3Facts:13/13;R3Later:2/2;R3Q:2/2;R3Sched:2/2
+62.0	r2	all-async	per	R3BatchChainTest	observe	R3Batch	2,3,5,6,8,9,10	
+62.0	r2	all-async	per	R3BatchChainTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	all-async	per	R3BatchChainTest	observe	R3Later	2,3	
+62.0	r2	all-async	per	R3BatchChainTest	observeAgain	R3Batch	2,5,8	
+62.0	r2	all-async	per	R3BatchChainTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	all-async	per	R3BatchChainTest	observeAgain	R3Later	2	
+62.0	r2	all-async	per	R3CdcOnlyTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	all-async	per	R3CdcOnlyTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	all-async	per	R3CdcTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	all-async	per	R3CdcTest	observe	R3Q	2,3	
+62.0	r2	all-async	per	R3CdcTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	all-async	per	R3CdcTest	observeAgain	R3Q	2	
+62.0	r2	all-async	per	R3DeliverTest	observe	CovEvtTrigger	2,3	
+62.0	r2	all-async	per	R3DeliverTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	all-async	per	R3DeliverTest	observeAgain	CovEvtTrigger		
+62.0	r2	all-async	per	R3DeliverTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	all-async	per	R3EventTest	observe	R3Facts	2,3,4,8,9,10,11,14,15,16	
+62.0	r2	all-async	per	R3EventTest	observeAgain	R3Facts	2,3,4,8,9,10,11,14,15,16	
+62.0	r2	all-async	per	R3NoneTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	all-async	per	R3NoneTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+62.0	r2	all-async	per	R3SchedTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	all-async	per	R3SchedTest	observe	R3Sched	2,3	
+62.0	r2	all-async	per	R3SchedTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+62.0	r2	all-async	per	R3SchedTest	observeAgain	R3Sched	2	
+67.0	r1	R3EventTest	test	R3EventTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	R3EventTest	test	R3EventTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	R3EventTest	run					testRunCoverage=59% classes=CovAccountCdc:0/2;CovEvtTrigger:0/2;R3Facts:10/13
+67.0	r1	R3EventTest	per	R3EventTest	observe	CovAccountCdc		
+67.0	r1	R3EventTest	per	R3EventTest	observe	CovEvtTrigger		
+67.0	r1	R3EventTest	per	R3EventTest	observe	R3Facts	2,3,4,8,9,10,11,14,15,16	
+67.0	r1	R3EventTest	per	R3EventTest	observeAgain	CovAccountCdc		
+67.0	r1	R3EventTest	per	R3EventTest	observeAgain	CovEvtTrigger		
+67.0	r1	R3EventTest	per	R3EventTest	observeAgain	R3Facts	2,3,4,8,9,10,11,14,15,16	
+67.0	r1	R3DeliverTest	test	R3DeliverTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	R3DeliverTest	test	R3DeliverTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	R3DeliverTest	run					testRunCoverage=82% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:12/13
+67.0	r1	R3DeliverTest	per	R3DeliverTest	observe	CovAccountCdc		
+67.0	r1	R3DeliverTest	per	R3DeliverTest	observe	CovEvtTrigger	2,3	
+67.0	r1	R3DeliverTest	per	R3DeliverTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	R3DeliverTest	per	R3DeliverTest	observeAgain	CovAccountCdc		
+67.0	r1	R3DeliverTest	per	R3DeliverTest	observeAgain	CovEvtTrigger		
+67.0	r1	R3DeliverTest	per	R3DeliverTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	R3SchedTest	test	R3SchedTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+67.0	r1	R3SchedTest	test	R3SchedTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+67.0	r1	R3SchedTest	run					testRunCoverage=89% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13;R3Sched:2/2
+67.0	r1	R3SchedTest	per	R3SchedTest	observe	CovAccountCdc		
+67.0	r1	R3SchedTest	per	R3SchedTest	observe	CovEvtTrigger		
+67.0	r1	R3SchedTest	per	R3SchedTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	R3SchedTest	per	R3SchedTest	observe	R3Sched	2,3	
+67.0	r1	R3SchedTest	per	R3SchedTest	observeAgain	CovAccountCdc		
+67.0	r1	R3SchedTest	per	R3SchedTest	observeAgain	CovEvtTrigger		
+67.0	r1	R3SchedTest	per	R3SchedTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	R3SchedTest	per	R3SchedTest	observeAgain	R3Sched	2	
+67.0	r1	R3BatchChainTest	test	R3BatchChainTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+67.0	r1	R3BatchChainTest	test	R3BatchChainTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+67.0	r1	R3BatchChainTest	run					testRunCoverage=92% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Batch:7/7;R3Facts:13/13;R3Later:2/2
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	CovAccountCdc		
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	CovEvtTrigger		
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	R3Batch	2,3,5,6,8,9,10	
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observe	R3Later	2,3	
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	CovAccountCdc		
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	CovEvtTrigger		
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Batch	2,5,8	
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Later	2	
+67.0	r1	R3CdcTest	test	R3CdcTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+67.0	r1	R3CdcTest	test	R3CdcTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+67.0	r1	R3CdcTest	run					testRunCoverage=89% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13;R3Q:2/2
+67.0	r1	R3CdcTest	per	R3CdcTest	observe	CovAccountCdc		
+67.0	r1	R3CdcTest	per	R3CdcTest	observe	CovEvtTrigger		
+67.0	r1	R3CdcTest	per	R3CdcTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	R3CdcTest	per	R3CdcTest	observe	R3Q	2,3	
+67.0	r1	R3CdcTest	per	R3CdcTest	observeAgain	CovAccountCdc		
+67.0	r1	R3CdcTest	per	R3CdcTest	observeAgain	CovEvtTrigger		
+67.0	r1	R3CdcTest	per	R3CdcTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	R3CdcTest	per	R3CdcTest	observeAgain	R3Q	2	
+67.0	r1	R3CdcOnlyTest	test	R3CdcOnlyTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	R3CdcOnlyTest	test	R3CdcOnlyTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	R3CdcOnlyTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+67.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	CovAccountCdc		
+67.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	CovEvtTrigger		
+67.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	CovAccountCdc		
+67.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	CovEvtTrigger		
+67.0	r1	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	R3NoneTest	test	R3NoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	R3NoneTest	test	R3NoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	R3NoneTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+67.0	r1	R3NoneTest	per	R3NoneTest	observe	CovAccountCdc		
+67.0	r1	R3NoneTest	per	R3NoneTest	observe	CovEvtTrigger		
+67.0	r1	R3NoneTest	per	R3NoneTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	R3NoneTest	per	R3NoneTest	observeAgain	CovAccountCdc		
+67.0	r1	R3NoneTest	per	R3NoneTest	observeAgain	CovEvtTrigger		
+67.0	r1	R3NoneTest	per	R3NoneTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	all-async	test	R3BatchChainTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+67.0	r1	all-async	test	R3BatchChainTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+67.0	r1	all-async	test	R3CdcOnlyTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	all-async	test	R3CdcOnlyTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	all-async	test	R3CdcTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+67.0	r1	all-async	test	R3CdcTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+67.0	r1	all-async	test	R3DeliverTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	all-async	test	R3DeliverTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	all-async	test	R3EventTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	all-async	test	R3EventTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	all-async	test	R3NoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	all-async	test	R3NoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	all-async	test	R3SchedTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+67.0	r1	all-async	test	R3SchedTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+67.0	r1	all-async	run					testRunCoverage=100% classes=CovEvtTrigger:2/2;R3Batch:7/7;R3Facts:13/13;R3Later:2/2;R3Q:2/2;R3Sched:2/2
+67.0	r1	all-async	per	R3BatchChainTest	observe	R3Batch	2,3,5,6,8,9,10	
+67.0	r1	all-async	per	R3BatchChainTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	all-async	per	R3BatchChainTest	observe	R3Later	2,3	
+67.0	r1	all-async	per	R3BatchChainTest	observeAgain	R3Batch	2,5,8	
+67.0	r1	all-async	per	R3BatchChainTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	all-async	per	R3BatchChainTest	observeAgain	R3Later	2	
+67.0	r1	all-async	per	R3CdcOnlyTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	all-async	per	R3CdcOnlyTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	all-async	per	R3CdcTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	all-async	per	R3CdcTest	observe	R3Q	2,3	
+67.0	r1	all-async	per	R3CdcTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	all-async	per	R3CdcTest	observeAgain	R3Q	2	
+67.0	r1	all-async	per	R3DeliverTest	observe	CovEvtTrigger	2,3	
+67.0	r1	all-async	per	R3DeliverTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	all-async	per	R3DeliverTest	observeAgain	CovEvtTrigger		
+67.0	r1	all-async	per	R3DeliverTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	all-async	per	R3EventTest	observe	R3Facts	2,3,4,8,9,10,11,14,15,16	
+67.0	r1	all-async	per	R3EventTest	observeAgain	R3Facts	2,3,4,8,9,10,11,14,15,16	
+67.0	r1	all-async	per	R3NoneTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	all-async	per	R3NoneTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r1	all-async	per	R3SchedTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	all-async	per	R3SchedTest	observe	R3Sched	2,3	
+67.0	r1	all-async	per	R3SchedTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r1	all-async	per	R3SchedTest	observeAgain	R3Sched	2	
+67.0	r2	R3EventTest	test	R3EventTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	R3EventTest	test	R3EventTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	R3EventTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+67.0	r2	R3EventTest	per	R3EventTest	observe	CovAccountCdc		
+67.0	r2	R3EventTest	per	R3EventTest	observe	CovEvtTrigger		
+67.0	r2	R3EventTest	per	R3EventTest	observe	R3Facts	2,3,4,8,9,10,11,14,15,16	
+67.0	r2	R3EventTest	per	R3EventTest	observeAgain	CovAccountCdc		
+67.0	r2	R3EventTest	per	R3EventTest	observeAgain	CovEvtTrigger		
+67.0	r2	R3EventTest	per	R3EventTest	observeAgain	R3Facts	2,3,4,8,9,10,11,14,15,16	
+67.0	r2	R3DeliverTest	test	R3DeliverTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	R3DeliverTest	test	R3DeliverTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	R3DeliverTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+67.0	r2	R3DeliverTest	per	R3DeliverTest	observe	CovAccountCdc		
+67.0	r2	R3DeliverTest	per	R3DeliverTest	observe	CovEvtTrigger	2,3	
+67.0	r2	R3DeliverTest	per	R3DeliverTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	R3DeliverTest	per	R3DeliverTest	observeAgain	CovAccountCdc		
+67.0	r2	R3DeliverTest	per	R3DeliverTest	observeAgain	CovEvtTrigger		
+67.0	r2	R3DeliverTest	per	R3DeliverTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	R3SchedTest	test	R3SchedTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+67.0	r2	R3SchedTest	test	R3SchedTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+67.0	r2	R3SchedTest	run					testRunCoverage=89% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13;R3Sched:2/2
+67.0	r2	R3SchedTest	per	R3SchedTest	observe	CovAccountCdc		
+67.0	r2	R3SchedTest	per	R3SchedTest	observe	CovEvtTrigger		
+67.0	r2	R3SchedTest	per	R3SchedTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	R3SchedTest	per	R3SchedTest	observe	R3Sched	2,3	
+67.0	r2	R3SchedTest	per	R3SchedTest	observeAgain	CovAccountCdc		
+67.0	r2	R3SchedTest	per	R3SchedTest	observeAgain	CovEvtTrigger		
+67.0	r2	R3SchedTest	per	R3SchedTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	R3SchedTest	per	R3SchedTest	observeAgain	R3Sched	2	
+67.0	r2	R3BatchChainTest	test	R3BatchChainTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+67.0	r2	R3BatchChainTest	test	R3BatchChainTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+67.0	r2	R3BatchChainTest	run					testRunCoverage=92% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Batch:7/7;R3Facts:13/13;R3Later:2/2
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	CovAccountCdc		
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	CovEvtTrigger		
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	R3Batch	2,3,5,6,8,9,10	
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observe	R3Later	2,3	
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	CovAccountCdc		
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	CovEvtTrigger		
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Batch	2,5,8	
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	R3BatchChainTest	per	R3BatchChainTest	observeAgain	R3Later	2	
+67.0	r2	R3CdcTest	test	R3CdcTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+67.0	r2	R3CdcTest	test	R3CdcTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+67.0	r2	R3CdcTest	run					testRunCoverage=89% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13;R3Q:2/2
+67.0	r2	R3CdcTest	per	R3CdcTest	observe	CovAccountCdc		
+67.0	r2	R3CdcTest	per	R3CdcTest	observe	CovEvtTrigger		
+67.0	r2	R3CdcTest	per	R3CdcTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	R3CdcTest	per	R3CdcTest	observe	R3Q	2,3	
+67.0	r2	R3CdcTest	per	R3CdcTest	observeAgain	CovAccountCdc		
+67.0	r2	R3CdcTest	per	R3CdcTest	observeAgain	CovEvtTrigger		
+67.0	r2	R3CdcTest	per	R3CdcTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	R3CdcTest	per	R3CdcTest	observeAgain	R3Q	2	
+67.0	r2	R3CdcOnlyTest	test	R3CdcOnlyTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	R3CdcOnlyTest	test	R3CdcOnlyTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	R3CdcOnlyTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+67.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	CovAccountCdc		
+67.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	CovEvtTrigger		
+67.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	CovAccountCdc		
+67.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	CovEvtTrigger		
+67.0	r2	R3CdcOnlyTest	per	R3CdcOnlyTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	R3NoneTest	test	R3NoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	R3NoneTest	test	R3NoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	R3NoneTest	run					testRunCoverage=88% classes=CovAccountCdc:0/2;CovEvtTrigger:2/2;R3Facts:13/13
+67.0	r2	R3NoneTest	per	R3NoneTest	observe	CovAccountCdc		
+67.0	r2	R3NoneTest	per	R3NoneTest	observe	CovEvtTrigger		
+67.0	r2	R3NoneTest	per	R3NoneTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	R3NoneTest	per	R3NoneTest	observeAgain	CovAccountCdc		
+67.0	r2	R3NoneTest	per	R3NoneTest	observeAgain	CovEvtTrigger		
+67.0	r2	R3NoneTest	per	R3NoneTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	all-async	test	R3BatchChainTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+67.0	r2	all-async	test	R3BatchChainTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EXEC=1, R3-FINISH=1, R3-LATER=1, R3-SEED=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Batch/BatchApex/Completed/0, R3Batch/BatchApexWorker/Completed/0, R3Later/Queueable/Completed/0)
+67.0	r2	all-async	test	R3CdcOnlyTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	all-async	test	R3CdcOnlyTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	all-async	test	R3CdcTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+67.0	r2	all-async	test	R3CdcTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-CDCSRC=1, R3-Q=1} cdcContacts=0 cronTriggers=0 queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(R3Q/Queueable/Completed/0)
+67.0	r2	all-async	test	R3DeliverTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	all-async	test	R3DeliverTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-EVENT=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	all-async	test	R3EventTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	all-async	test	R3EventTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	all-async	test	R3NoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	all-async	test	R3NoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SYNC=1} cdcContacts=0 cronTriggers=0 queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	all-async	test	R3SchedTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+67.0	r2	all-async	test	R3SchedTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={R3-SCHED=1} cdcContacts=0 cronTriggers=1 queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(R3Sched/ScheduledApex/Queued/0)
+67.0	r2	all-async	run					testRunCoverage=100% classes=CovEvtTrigger:2/2;R3Batch:7/7;R3Facts:13/13;R3Later:2/2;R3Q:2/2;R3Sched:2/2
+67.0	r2	all-async	per	R3BatchChainTest	observe	R3Batch	2,3,5,6,8,9,10	
+67.0	r2	all-async	per	R3BatchChainTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	all-async	per	R3BatchChainTest	observe	R3Later	2,3	
+67.0	r2	all-async	per	R3BatchChainTest	observeAgain	R3Batch	2,5,8	
+67.0	r2	all-async	per	R3BatchChainTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	all-async	per	R3BatchChainTest	observeAgain	R3Later	2	
+67.0	r2	all-async	per	R3CdcOnlyTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	all-async	per	R3CdcOnlyTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	all-async	per	R3CdcTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	all-async	per	R3CdcTest	observe	R3Q	2,3	
+67.0	r2	all-async	per	R3CdcTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	all-async	per	R3CdcTest	observeAgain	R3Q	2	
+67.0	r2	all-async	per	R3DeliverTest	observe	CovEvtTrigger	2,3	
+67.0	r2	all-async	per	R3DeliverTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	all-async	per	R3DeliverTest	observeAgain	CovEvtTrigger		
+67.0	r2	all-async	per	R3DeliverTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	all-async	per	R3EventTest	observe	R3Facts	2,3,4,8,9,10,11,14,15,16	
+67.0	r2	all-async	per	R3EventTest	observeAgain	R3Facts	2,3,4,8,9,10,11,14,15,16	
+67.0	r2	all-async	per	R3NoneTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	all-async	per	R3NoneTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,14,15,16	
+67.0	r2	all-async	per	R3SchedTest	observe	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	all-async	per	R3SchedTest	observe	R3Sched	2,3	
+67.0	r2	all-async	per	R3SchedTest	observeAgain	R3Facts	2,3,4,5,6,8,9,10,11,12,14,15,16	
+67.0	r2	all-async	per	R3SchedTest	observeAgain	R3Sched	2	

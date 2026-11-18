@@ -1,0 +1,2 @@
+test:
+  permissionSets: [HcAccess, Dec_Hash_Access, Rng_Access]

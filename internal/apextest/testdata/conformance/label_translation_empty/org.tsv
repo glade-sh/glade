@@ -1,0 +1,13 @@
+api	case	route	outcome
+62.0	empty-french	anonymous	Master empty; translationExists=false
+67.0	empty-french	anonymous	Master empty; translationExists=false
+62.0	missing-french	anonymous	Master missing; translationExists=false
+67.0	missing-french	anonymous	Master missing; translationExists=false
+62.0	filled-french	anonymous	Traduit; translationExists=true
+67.0	filled-french	anonymous	Traduit; translationExists=true
+62.0	absent-label	anonymous	System.InvalidParameterValueException: Invalid or non-existent label: AbsentLabel
+67.0	absent-label	anonymous	System.InvalidParameterValueException: Invalid or non-existent label: AbsentLabel
+62.0	french	IsTest	Pass
+67.0	french	IsTest	Pass
+62.0	defaults	IsTest	Pass
+67.0	defaults	IsTest	Pass

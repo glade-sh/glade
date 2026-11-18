@@ -1,0 +1,17 @@
+case	api	route	outcome
+and_line	62.0	metadata-deploy	accepted
+and_line	67.0	metadata-deploy	accepted
+or_line	62.0	metadata-deploy	accepted
+or_line	67.0	metadata-deploy	accepted
+and_line_comment	62.0	metadata-deploy	accepted
+and_line_comment	67.0	metadata-deploy	accepted
+and_block_comment	62.0	metadata-deploy	accepted
+and_block_comment	67.0	metadata-deploy	accepted
+adjacent_generic	62.0	metadata-deploy	accepted
+adjacent_generic	67.0	metadata-deploy	accepted
+arithmetic	62.0	metadata-deploy	accepted
+arithmetic	67.0	metadata-deploy	accepted
+bad_compare	62.0	metadata-deploy	Comparison arguments must be compatible types: Integer, Boolean
+bad_compare	67.0	metadata-deploy	Comparison arguments must be compatible types: Integer, Boolean
+bad_generic	62.0	metadata-deploy	Illegal assignment from List<Integer> to List<String>
+bad_generic	67.0	metadata-deploy	Illegal assignment from List<Integer> to List<String>

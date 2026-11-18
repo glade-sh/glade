@@ -1,0 +1,12 @@
+capture: crypto-jwe
+started: 2026-11-16T03:14:13Z
+finished: 2026-11-16T03:14:48Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+gate: platform.encryption.apexcrypto is closed in a fresh Developer scratch org; EC/JWE crypto methods raise the documented availability SecurityException
+Crypto.generateAesKey and the System.JweToken container are not gated

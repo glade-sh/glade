@@ -1,0 +1,37 @@
+case_id	api_version	context	route	compile_outcome	runtime_outcome	observed_value_or_diagnostic	source
+R01_local	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: RootV035.Inner	anon/R01_local.apex
+R02_new	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 12: Invalid type: RootV035.Inner	anon/R02_new.apex
+R03_static_field	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 13: Variable does not exist: RootV035.Inner	anon/R03_static_field.apex
+R04_static_method	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Variable does not exist: RootV035.Inner	anon/R04_static_method.apex
+R05_static_field_argument	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 14: Variable does not exist: RootV035.Inner	anon/R05_static_field_argument.apex
+R06_three_part_field	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 12: Variable does not exist: RootV035.Inner.Deep	anon/R06_three_part_field.apex
+R07_cast	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 2 col 12: Invalid type: RootV035.Inner	anon/R07_cast.apex
+R08_generic	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: RootV035.Inner	anon/R08_generic.apex
+R09_unqualified_root_control	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: RootV035	anon/R09_unqualified_root_control.apex
+R10_root_field_control	62.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 13: Variable does not exist: RootV035	anon/R10_root_field_control.apex
+R01_local	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: RootV035.Inner	anon/R01_local.apex
+R02_new	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 12: Invalid type: RootV035.Inner	anon/R02_new.apex
+R03_static_field	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 13: Variable does not exist: RootV035.Inner	anon/R03_static_field.apex
+R04_static_method	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Variable does not exist: RootV035.Inner	anon/R04_static_method.apex
+R05_static_field_argument	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 14: Variable does not exist: RootV035.Inner	anon/R05_static_field_argument.apex
+R06_three_part_field	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 12: Variable does not exist: RootV035.Inner.Deep	anon/R06_three_part_field.apex
+R07_cast	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 2 col 12: Invalid type: RootV035.Inner	anon/R07_cast.apex
+R08_generic	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: RootV035.Inner	anon/R08_generic.apex
+R09_unqualified_root_control	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 1: Invalid type: RootV035	anon/R09_unqualified_root_control.apex
+R10_root_field_control	67.0	no_package_scratch	anonymous	COMPILE_ERROR	NOT_REACHED	line 1 col 13: Variable does not exist: RootV035	anon/R10_root_field_control.apex
+RootCastV035Test	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 65: Invalid type: RootV035.Inner	named/RootCastV035Test.cls
+RootFieldV035Test	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 12: Invalid type: RootV035.Inner	named/RootFieldV035Test.cls
+RootLocalV035Test	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 37: Invalid type: RootV035.Inner	named/RootLocalV035Test.cls
+RootNewV035Test	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 48: Invalid type: RootV035.Inner	named/RootNewV035Test.cls
+RootParamV035Test	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 40: Invalid type: RootV035.Inner	named/RootParamV035Test.cls
+RootReturnV035Test	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 27: Invalid type: RootV035.Inner	named/RootReturnV035Test.cls
+RootStaticFieldV035Test	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 48: Variable does not exist: RootV035.Inner	named/RootStaticFieldV035Test.cls
+RootStaticMethodV035Test	62.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 37: Variable does not exist: RootV035.Inner	named/RootStaticMethodV035Test.cls
+RootCastV035Test	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 65: Invalid type: RootV035.Inner	named/RootCastV035Test.cls
+RootFieldV035Test	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 12: Invalid type: RootV035.Inner	named/RootFieldV035Test.cls
+RootLocalV035Test	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 37: Invalid type: RootV035.Inner	named/RootLocalV035Test.cls
+RootNewV035Test	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 48: Invalid type: RootV035.Inner	named/RootNewV035Test.cls
+RootParamV035Test	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 40: Invalid type: RootV035.Inner	named/RootParamV035Test.cls
+RootReturnV035Test	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 27: Invalid type: RootV035.Inner	named/RootReturnV035Test.cls
+RootStaticFieldV035Test	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 48: Variable does not exist: RootV035.Inner	named/RootStaticFieldV035Test.cls
+RootStaticMethodV035Test	67.0	no_package_scratch	istest-checkonly	COMPILE_ERROR	NOT_REACHED	line 3 col 37: Variable does not exist: RootV035.Inner	named/RootStaticMethodV035Test.cls

@@ -59,7 +59,6 @@ func TestQualifiedReceiverShapesAnonymousNativeConformance(t *testing.T) {
 	index.VisualforcePageNames = []string{"ownedlanding"}
 
 	orgRows := readQualifiedReceiverTSV(t, filepath.Join(dir, "org.tsv"), 4)
-	deferred := qualifiedReceiverUndeclaredNamespaceDeferrals(t, dir)
 	if len(orgRows) != 55 {
 		t.Fatalf("native rows=%d, want header plus 54 cases", len(orgRows))
 	}
@@ -83,12 +82,6 @@ func TestQualifiedReceiverShapesAnonymousNativeConformance(t *testing.T) {
 
 		result := AnalyzeAnonymous(index, source, row[0])
 		t.Run(key, func(t *testing.T) {
-			if deferred[row[1]] {
-				if row[2] != "false" || result.HasErrors() {
-					t.Fatalf("deferred undeclared-namespace row: native=%s, Glade diagnostics=%+v", row[2], result.Diagnostics)
-				}
-				return
-			}
 			if row[2] == "false" && !result.HasErrors() {
 				t.Fatalf("native rejected compilation (%s), but Glade accepted", row[3])
 			}
@@ -108,21 +101,4 @@ func TestQualifiedReceiverShapesAnonymousNativeConformance(t *testing.T) {
 	if len(seen) != len(cases) {
 		t.Fatalf("native case coverage=%d, case table coverage=%d", len(seen), len(cases))
 	}
-}
-
-// deferred.tsv names native rejections of an undeclared namespace qualifier.
-// The capture org lacks that namespace; offline Glade cannot see installed
-// packages or the deploying org's namespace, so it defers (accepts) these
-// non-local shapes. Local declaration rows reject as natively (A04 C055).
-func qualifiedReceiverUndeclaredNamespaceDeferrals(t *testing.T, dir string) map[string]bool {
-	t.Helper()
-	rows := readQualifiedReceiverTSV(t, filepath.Join(dir, "deferred.tsv"), 2)
-	deferred := make(map[string]bool, len(rows)-1)
-	for _, row := range rows[1:] {
-		deferred[row[0]] = true
-	}
-	if len(deferred) != 4 {
-		t.Fatalf("deferred rows=%d, want 4", len(deferred))
-	}
-	return deferred
 }

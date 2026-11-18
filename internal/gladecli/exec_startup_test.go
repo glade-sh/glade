@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/testutil"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -141,7 +142,7 @@ func TestRunExecCanceledDuringProjectLoadJoinsAndPreservesErrors(t *testing.T) {
 			}()
 			select {
 			case <-started:
-			case <-time.After(10 * time.Second):
+			case <-time.After(testutil.Deadline(10 * time.Second)):
 				t.Fatal("concurrent project loader did not start")
 			}
 			cancel()
@@ -163,7 +164,7 @@ func TestRunExecCanceledDuringProjectLoadJoinsAndPreservesErrors(t *testing.T) {
 				default:
 					t.Fatal("exec returned before loader finished")
 				}
-			case <-time.After(10 * time.Second):
+			case <-time.After(testutil.Deadline(10 * time.Second)):
 				t.Fatal("exec did not return after loader completed")
 			}
 		})
