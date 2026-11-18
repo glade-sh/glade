@@ -64,7 +64,7 @@ func (e *Engine) flowContextFormulaValueWithCapturedBindings(expression string, 
 		}
 		return formulaValue{}, false, false
 	}
-	value, _, ok := evaluateFlowFormulaParser(formulaParser{tokens: bound, record: record, org: e.Org, userID: e.systemUserID(), permissionUserFields: e.PermissionUserFields, flowTextNulls: true, flowReference: resolve})
+	value, _, ok := evaluateFlowFormulaParser(formulaParser{tokens: bound, record: record, org: e.Org, userID: e.systemUserID(), permissionUserFields: e.PermissionUserFields, assignmentActive: e.formulaEvaluationOptions().AssignmentActive, flowTextNulls: true, flowReference: resolve})
 	return value, ok
 }
 

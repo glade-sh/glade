@@ -1,0 +1,2 @@
+Salesforce Developer scratch org; capture date 2026-11-09.
+Deployed the synthetic objects, fields, observer and test classes. Ran the API 62 test with the trigger at API 62 and the API 67 test with the trigger at API 67; both passed all assertions. Tests use explicit system-mode DML and query. They check a parenthesized parent checkbox reference and AND(parent checkbox, TRUE) after insert, after update and query, for missing, false and true parents. The scratch org was deleted and its Dev Hub record reported Deleted.

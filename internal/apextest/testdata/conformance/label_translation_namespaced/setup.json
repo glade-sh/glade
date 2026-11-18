@@ -1,0 +1,49 @@
+{
+  "masterLanguage": "fr",
+  "labels": [
+    {
+      "case": "Filled",
+      "name": "GladeProbeFilled2cea372ec811",
+      "masterValue": "MasterFilled",
+      "protected": false
+    },
+    {
+      "case": "Missing",
+      "name": "GladeProbeMissing2cea372ec811",
+      "masterValue": "MasterMissing",
+      "protected": false
+    },
+    {
+      "case": "Blank",
+      "name": "GladeProbeBlank2cea372ec811",
+      "masterValue": "MasterBlank",
+      "protected": false
+    },
+    {
+      "case": "Nbsp",
+      "name": "GladeProbeNbsp2cea372ec811",
+      "masterValue": "MasterNbsp",
+      "protected": false
+    }
+  ],
+  "localizations": [
+    {
+      "case": "Filled",
+      "language": "en_US",
+      "attemptedValue": "EnglishFilled",
+      "result": "accepted"
+    },
+    {
+      "case": "Blank",
+      "language": "en_US",
+      "attemptedValue": "\u2003",
+      "result": "rejected; Required fields are missing: [Value]"
+    },
+    {
+      "case": "Nbsp",
+      "language": "en_US",
+      "attemptedValue": "\u00a0",
+      "result": "accepted"
+    }
+  ]
+}

@@ -54,7 +54,7 @@ func (s *Server) handleCompositeTree(w http.ResponseWriter, r *http.Request, par
 		writeSalesforceError(w, errRequiredFieldMissing, "object name is required for Composite tree")
 		return
 	}
-	objectName, ok := storage.ResolveObjectName(*s.Org, parts[0])
+	objectName, ok := storage.ResolveVisibleObjectName(*s.Org, parts[0])
 	if !ok {
 		writeSalesforceError(w, errUnknownObject, "unknown object "+parts[0])
 		return
@@ -71,7 +71,7 @@ func (s *Server) handleCompositeTree(w http.ResponseWriter, r *http.Request, par
 		return
 	}
 
-	next := s.Org.Clone()
+	next := s.Org.CloneCopyOnWrite()
 	engine := s.newDMLEngine(r, &next)
 	results := make([]dml.Result, 0)
 	referenceIDs := make([]string, 0)
@@ -205,6 +205,9 @@ func (s *Server) resolveCompositeTreeChildRelationship(parentObjectName, relatio
 			continue
 		}
 		for objectName, object := range s.Org.Objects {
+			if s.Org.SuppressesSpreadObject(objectName) {
+				continue
+			}
 			field, ok := object.Definition.Fields[relation.Field]
 			if !ok || field.Type != storage.FieldReference || !containsStringFold(field.ReferenceTo, parentObjectName) {
 				continue

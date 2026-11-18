@@ -34,6 +34,26 @@ func TestCIPackageConcurrentTestInventory(t *testing.T) {
 	if _, ok := lanes.ConcurrentTestCounts["./internal/sema"]; !ok {
 		t.Errorf("missing sema concurrency inventory; want %d tests", len(concurrentRaceTests(t, "../internal/sema")))
 	}
+	// The inventory must also be complete: every internal package whose tests
+	// are concurrent, directly or through helpers, needs an entry. lwc/compile
+	// keeps its hand-maintained selection (TestCIRacePushRetainsConcurrentTests).
+	for _, glob := range []string{"../internal/*", "../internal/*/*", "../internal/testutil/*"} {
+		dirs, err := filepath.Glob(glob)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, dir := range dirs {
+			pkg := "./" + filepath.ToSlash(strings.TrimPrefix(dir, "../"))
+			if pkg == "./internal/lwc/compile" {
+				continue
+			}
+			if tests := concurrentRaceTests(t, dir); len(tests) > 0 {
+				if _, ok := lanes.ConcurrentTestCounts[pkg]; !ok {
+					t.Errorf("%s has concurrent tests but no inventory entry; want %d", pkg, len(tests))
+				}
+			}
+		}
+	}
 	for pkg, count := range lanes.ConcurrentTestCounts {
 		t.Run(pkg, func(t *testing.T) {
 			if !strings.HasPrefix(pkg, "./internal/") || strings.Contains(pkg, "..") {

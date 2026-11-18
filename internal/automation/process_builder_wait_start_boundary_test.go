@@ -76,7 +76,7 @@ func TestProcessBuilderWaitStartBoundaries(t *testing.T) {
 		{"duplicate variable name tags", replace("</Flow>", "<variables><name>other</name><name>myVariable_waitStartTimeVariable</name><dataType>DateTime</dataType><isCollection>false</isCollection><isInput>false</isInput><isOutput>false</isOutput><value><elementReference>$Flow.CurrentDateTime</elementReference></value></variables></Flow>"), false},
 		{"unknown assignment property", replace("<assignmentItems>", "<unexpected>true</unexpected><assignmentItems>"), false},
 	}
-	defs := flowProjectRelationshipDefinitions(p)
+	defs := flowProjectRelationshipDefinitions(p, newProjectSchemaLoader(p))
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			_, skip := normalizeProcessBuilderFlow([]byte(tc.source), defs)

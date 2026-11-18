@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/glade-sh/glade/internal/stablemath"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -192,9 +193,9 @@ func evalVisualforceFormulaFunction(ctx *ExpressionContext, name string, args []
 			}
 			n = math.Sqrt(n)
 		case "EXP":
-			n = math.Exp(n)
+			n = stablemath.ExpStable(n)
 		case "LN":
-			n = math.Log(n)
+			n = stablemath.LogStable(n)
 		}
 		out = vm.Decimal(n)
 		if math.Trunc(n) == n && !math.IsInf(n, 0) {

@@ -1,0 +1,1 @@
+public class NsDeep62 { public static void run(){ List<L1__c> r=[SELECT Id,(SELECT Id,(SELECT Id,(SELECT Id,(SELECT Id,(SELECT Id FROM Down6__r) FROM Down5__r) FROM Down4__r) FROM Down3__r) FROM Down2__r) FROM L1__c]; } }

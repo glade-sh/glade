@@ -1,0 +1,25 @@
+apex_api	lwc_api	case	route	outcome
+45.0	59.0	control	LWC-LightningOut	success:control:A
+45.0	59.0	missing	LWC-LightningOut	success:two:A:null
+45.0	59.0	null	LWC-LightningOut	success:two:A:null
+45.0	59.0	valid	LWC-LightningOut	success:two:A:42
+45.0	59.0	invalid	LWC-LightningOut	error:Value provided is invalid for action parameter 'count' of type 'Integer'
+45.0	59.0	object	LWC-LightningOut	error:Value provided is invalid for action parameter 'count' of type 'Integer'
+54.0	59.0	control	LWC-LightningOut	success:control:A
+54.0	59.0	missing	LWC-LightningOut	success:two:A:null
+54.0	59.0	null	LWC-LightningOut	success:two:A:null
+54.0	59.0	valid	LWC-LightningOut	success:two:A:42
+54.0	59.0	invalid	LWC-LightningOut	error:Value provided is invalid for action parameter 'count' of type 'Integer'
+54.0	59.0	object	LWC-LightningOut	error:Value provided is invalid for action parameter 'count' of type 'Integer'
+45.0	67.0	control	LWC-LightningOut	success:control:A
+45.0	67.0	missing	LWC-LightningOut	success:two:A:null
+45.0	67.0	null	LWC-LightningOut	success:two:A:null
+45.0	67.0	valid	LWC-LightningOut	success:two:A:42
+45.0	67.0	invalid	LWC-LightningOut	error:Value provided is invalid for action parameter 'count' of type 'Integer'
+45.0	67.0	object	LWC-LightningOut	error:Value provided is invalid for action parameter 'count' of type 'Integer'
+54.0	67.0	control	LWC-LightningOut	success:control:A
+54.0	67.0	missing	LWC-LightningOut	success:two:A:null
+54.0	67.0	null	LWC-LightningOut	success:two:A:null
+54.0	67.0	valid	LWC-LightningOut	success:two:A:42
+54.0	67.0	invalid	LWC-LightningOut	error:Value provided is invalid for action parameter 'count' of type 'Integer'
+54.0	67.0	object	LWC-LightningOut	error:Value provided is invalid for action parameter 'count' of type 'Integer'

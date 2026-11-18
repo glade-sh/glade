@@ -1,0 +1,1 @@
+@RestResource(urlMapping='/page-error-pdf-62/*') global with sharing class PageErrorRestPdfV62 { @HttpGet global static String get() { return PageErrorHostV62.pdf(); } }

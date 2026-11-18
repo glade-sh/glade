@@ -13,7 +13,7 @@ func (e *Engine) rollbackInsertedRecord(objectName string, definition storage.Ob
 	}
 	object, ok := e.Org.Objects[objectName]
 	if ok && object.Records != nil {
-		delete(object.Records, record.ID)
+		object.DeleteRecord(record.ID)
 		e.Org.Objects[objectName] = object
 	}
 	e.removeUniqueIndexRecord(objectName, definition, record)
@@ -392,12 +392,12 @@ func (e *Engine) insertPlatformRecord(record storage.Record) (storage.ID, error)
 		record.System.OwnerID = userID
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if e.IsolationJournal != nil {
 		e.IsolationJournal.RecordInsert(objectName, record.ID)
 	}
-	object.Records[record.ID] = record.Clone()
+	object.PutRecord(record.ID, record.Clone())
 	e.Org.Objects[objectName] = object
 	e.RecordCreations.Record(record.ID)
 	return record.ID, nil

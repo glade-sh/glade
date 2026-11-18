@@ -12,12 +12,11 @@ import (
 // The earlier native redeclarations cover public, zero-argument String methods
 // in an abstract subclass of an abstract source class. The hierarchy helper
 // adds the captured void and inner Object shapes; keep other modifier checks.
-func capturedAbstractRedeclarationDiagnostics(index typesys.Index, typ typesys.TypeSymbol, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
-	diagnostics = capturedAbstractHierarchyDiagnostics(index, typ, diagnostics)
+func capturedAbstractRedeclarationDiagnostics(views *semaLazyView, typ typesys.TypeSymbol, diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	diagnostics = capturedAbstractHierarchyDiagnostics(views, typ, diagnostics)
 	if typ.Dependency || typ.OwnerName != "" || typ.Namespace != "" || typ.SuperClass == "" || !hasModifier(typ.Modifiers, "abstract") || !typeUsesAPIVersionAtLeast(typ, 62) {
 		return diagnostics
 	}
-	var model *semaTypeMemberView
 	for _, member := range typ.Members {
 		if member.Kind != apexast.DeclarationMethod || len(member.Parameters) != 0 ||
 			!hasModifier(member.Modifiers, "public") || !hasModifier(member.Modifiers, "abstract") ||
@@ -25,9 +24,7 @@ func capturedAbstractRedeclarationDiagnostics(index typesys.Index, typ typesys.T
 			(!strings.EqualFold(member.Type, "String") && !strings.EqualFold(member.Type, "Integer")) {
 			continue
 		}
-		if model == nil {
-			model = buildSemaTypeMemberView(index)
-		}
+		model := views.get()
 		parentName := resolveNestedTypeName(model, typ.Name, typ.SuperClass)
 		parent, _, ok := semaLookupTypeMembers(model, parentName)
 		if !ok || parent.dependency || !hasModifier(parent.modifiers, "abstract") {

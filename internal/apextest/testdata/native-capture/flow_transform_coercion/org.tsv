@@ -1,0 +1,95 @@
+api	route	case	result
+62.0	deploy	C62AcctIdString	accepted
+62.0	deploy	C62Dec0Emp	accepted
+62.0	deploy	C62Dec0Rev	accepted
+62.0	deploy	C62Dec2Emp	accepted
+62.0	deploy	C62Dec2Rev	accepted
+62.0	deploy	C62IdString	accepted
+62.0	deploy	C62OwnerIdString	accepted
+62.0	deploy	T62ReferenceBoolean	accepted
+62.0	deploy	T62ReferenceDate	accepted
+62.0	deploy	T62ReferenceDateTime	accepted
+62.0	deploy	T62ReferenceNumber	accepted
+62.0	deploy	T62ReferenceString	accepted
+67.0	deploy	C67AcctIdString	accepted
+67.0	deploy	C67Dec0Emp	accepted
+67.0	deploy	C67Dec0Rev	accepted
+67.0	deploy	C67Dec2Emp	accepted
+67.0	deploy	C67Dec2Rev	accepted
+67.0	deploy	C67IdString	accepted
+67.0	deploy	C67OwnerIdString	accepted
+67.0	deploy	T67ReferenceBoolean	accepted
+67.0	deploy	T67ReferenceDate	accepted
+67.0	deploy	T67ReferenceDateTime	accepted
+67.0	deploy	T67ReferenceNumber	accepted
+67.0	deploy	T67ReferenceString	accepted
+62.0	anonymous	C62Dec0Emp i42	42|Integer
+62.0	anonymous	C62Dec0Emp d415	41|Integer
+62.0	anonymous	C62Dec0Emp d4125	41|Integer
+62.0	anonymous	C62Dec0Emp d416	41|Integer
+62.0	anonymous	C62Dec0Emp dn	-41|Integer
+62.0	anonymous	C62Dec0Emp d420	42|Integer
+62.0	anonymous	C62Dec0Rev i42	42|Decimal
+62.0	anonymous	C62Dec0Rev d415	41.5|Decimal
+62.0	anonymous	C62Dec0Rev d4125	41.25|Decimal
+62.0	anonymous	C62Dec0Rev d416	41.6|Decimal
+62.0	anonymous	C62Dec0Rev dn	-41.5|Decimal
+62.0	anonymous	C62Dec0Rev d420	42.0|Decimal
+62.0	anonymous	C62Dec2Emp i42	42|Integer
+62.0	anonymous	C62Dec2Emp d415	41|Integer
+62.0	anonymous	C62Dec2Emp d4125	41|Integer
+62.0	anonymous	C62Dec2Emp d416	41|Integer
+62.0	anonymous	C62Dec2Emp dn	-41|Integer
+62.0	anonymous	C62Dec2Emp d420	42|Integer
+62.0	anonymous	C62Dec2Rev i42	42|Decimal
+62.0	anonymous	C62Dec2Rev d415	41.5|Decimal
+62.0	anonymous	C62Dec2Rev d4125	41.25|Decimal
+62.0	anonymous	C62Dec2Rev d416	41.6|Decimal
+62.0	anonymous	C62Dec2Rev dn	-41.5|Decimal
+62.0	anonymous	C62Dec2Rev d420	42.0|Decimal
+62.0	anonymous	T62ReferenceString value	42|Id
+62.0	anonymous	T62ReferenceNumber value	42|Id
+62.0	anonymous	T62ReferenceBoolean value	true|Id
+62.0	anonymous	T62ReferenceDate value	February 3, 2001|Id
+62.0	anonymous	T62ReferenceDateTime value	2/2/2001, 8:05 PM|Id
+62.0	anonymous	T62ReferenceString realid	SAME_AS_INPUT|Id
+62.0	anonymous	C62OwnerIdString userid	SAME_AS_INPUT|Id
+62.0	anonymous	C62AcctIdString realid	SAME_AS_INPUT|Id
+62.0	anonymous	C62AcctIdString s42	42|Id
+62.0	anonymous	C62AcctIdString bad	not an id|Id
+62.0	anonymous	C62IdString realid	SAME_AS_INPUT|Id
+67.0	anonymous	C67Dec0Emp i42	42|Integer
+67.0	anonymous	C67Dec0Emp d415	41|Integer
+67.0	anonymous	C67Dec0Emp d4125	41|Integer
+67.0	anonymous	C67Dec0Emp d416	41|Integer
+67.0	anonymous	C67Dec0Emp dn	-41|Integer
+67.0	anonymous	C67Dec0Emp d420	42|Integer
+67.0	anonymous	C67Dec0Rev i42	42|Decimal
+67.0	anonymous	C67Dec0Rev d415	41.5|Decimal
+67.0	anonymous	C67Dec0Rev d4125	41.25|Decimal
+67.0	anonymous	C67Dec0Rev d416	41.6|Decimal
+67.0	anonymous	C67Dec0Rev dn	-41.5|Decimal
+67.0	anonymous	C67Dec0Rev d420	42.0|Decimal
+67.0	anonymous	C67Dec2Emp i42	42|Integer
+67.0	anonymous	C67Dec2Emp d415	41|Integer
+67.0	anonymous	C67Dec2Emp d4125	41|Integer
+67.0	anonymous	C67Dec2Emp d416	41|Integer
+67.0	anonymous	C67Dec2Emp dn	-41|Integer
+67.0	anonymous	C67Dec2Emp d420	42|Integer
+67.0	anonymous	C67Dec2Rev i42	42|Decimal
+67.0	anonymous	C67Dec2Rev d415	41.5|Decimal
+67.0	anonymous	C67Dec2Rev d4125	41.25|Decimal
+67.0	anonymous	C67Dec2Rev d416	41.6|Decimal
+67.0	anonymous	C67Dec2Rev dn	-41.5|Decimal
+67.0	anonymous	C67Dec2Rev d420	42.0|Decimal
+67.0	anonymous	T67ReferenceString value	42|Id
+67.0	anonymous	T67ReferenceNumber value	42|Id
+67.0	anonymous	T67ReferenceBoolean value	true|Id
+67.0	anonymous	T67ReferenceDate value	February 3, 2001|Id
+67.0	anonymous	T67ReferenceDateTime value	2/2/2001, 8:05 PM|Id
+67.0	anonymous	T67ReferenceString realid	SAME_AS_INPUT|Id
+67.0	anonymous	C67OwnerIdString userid	SAME_AS_INPUT|Id
+67.0	anonymous	C67AcctIdString realid	SAME_AS_INPUT|Id
+67.0	anonymous	C67AcctIdString s42	42|Id
+67.0	anonymous	C67AcctIdString bad	not an id|Id
+67.0	anonymous	C67IdString realid	SAME_AS_INPUT|Id

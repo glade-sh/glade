@@ -36,6 +36,30 @@ func freshPassiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existin
 	return out
 }
 
+// sameClassLists compares two class lists by content. A lazy shell is compared
+// as the full class it builds.
+func sameClassLists(a, b []vm.Class) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !reflect.DeepEqual(a[i].FreshClass(), b[i].FreshClass()) {
+			return false
+		}
+	}
+	return true
+}
+
+// eagerClasses returns the classes with every lazy shell replaced by its full
+// declaration: the full registration the lazy shells stand in for.
+func eagerClasses(classes []vm.Class) []vm.Class {
+	out := make([]vm.Class, len(classes))
+	for i, class := range classes {
+		out[i] = class.FreshClass()
+	}
+	return out
+}
+
 func passiveStandardRuntimeClassFilterCases() []struct {
 	name       string
 	indexTypes []typesys.TypeSymbol
@@ -71,7 +95,7 @@ func TestPassiveStandardRuntimeClassesMatchFreshBuild(t *testing.T) {
 				t.Fatalf("passive classes = %d, want %d", len(got), len(want))
 			}
 			for i := range want {
-				if !reflect.DeepEqual(got[i], want[i]) {
+				if !reflect.DeepEqual(got[i].FreshClass(), want[i]) {
 					t.Fatalf("passive class %d = %s, want %s (or contents differ)", i, got[i].Name, want[i].Name)
 				}
 			}
@@ -92,6 +116,11 @@ func TestPassiveStandardRuntimeClassesDoNotAliasTemplate(t *testing.T) {
 	first := passiveStandardRuntimeClasses(nil, nil)
 	for i := range first {
 		class := &first[i]
+		if class.IsLazy() {
+			// A shell has no maps and is shared by design; its members are
+			// built from the symbol view, so nothing a caller does reaches them.
+			continue
+		}
 		class.Name += "X"
 		if len(class.Interfaces) > 0 {
 			class.Interfaces[0] = "Mutated"
@@ -142,15 +171,20 @@ func TestPassiveStandardRuntimeClassesDoNotAliasTemplate(t *testing.T) {
 	}
 	want := freshPassiveStandardRuntimeClasses(nil, nil)
 	second := passiveStandardRuntimeClasses(nil, nil)
-	if !reflect.DeepEqual(second, want) {
-		t.Fatal("mutating one call's passive classes changed a later call")
+	if len(second) != len(want) {
+		t.Fatalf("passive classes = %d, want %d", len(second), len(want))
+	}
+	for i := range want {
+		if !reflect.DeepEqual(second[i].FreshClass(), want[i]) {
+			t.Fatalf("mutating one call's passive classes changed a later call (%s)", want[i].Name)
+		}
 	}
 	templates := passiveStandardRuntimeClassTemplates()
 	if len(templates) != len(want) {
 		t.Fatalf("templates = %d, want %d", len(templates), len(want))
 	}
 	for i := range want {
-		if !reflect.DeepEqual(templates[i].class, want[i]) {
+		if !reflect.DeepEqual(templates[i].class.FreshClass(), want[i]) {
 			t.Fatalf("template %s changed after caller mutation", want[i].Name)
 		}
 	}
@@ -280,7 +314,7 @@ private class PassiveReflectionTest {
 	}
 	want := freshPassiveStandardRuntimeClasses(nil, nil)
 	for i, template := range passiveStandardRuntimeClassTemplates() {
-		if !reflect.DeepEqual(template.class, want[i]) {
+		if !reflect.DeepEqual(template.class.FreshClass(), want[i]) {
 			t.Fatalf("Run mutated passive template %s", want[i].Name)
 		}
 	}

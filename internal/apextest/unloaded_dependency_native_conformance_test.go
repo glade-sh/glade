@@ -14,6 +14,7 @@ import (
 )
 
 func TestUnloadedDependencyNamedTestRunnerAndLSPNativeConformance(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	dir := filepath.Join("testdata", "conformance", "unloaded_dependency")
 	var cases []struct {
 		ID, State, Source, Outcome string
@@ -163,6 +164,7 @@ func TestUnloadedDependencyNamedTestRunnerAndLSPNativeConformance(t *testing.T) 
 }
 
 func TestUnloadedDependencyRuntimeReasonAndPreparationRoute(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	err := &vm.RuntimeError{Type: "dependency_missing", Message: "unresolved Apex reference; unloaded declared dependency"}
 	if got := terminalReason(err); string(got) != "dependency-missing" {
 		t.Fatalf("runtime reason=%q, want dependency-missing", got)
@@ -176,6 +178,7 @@ func TestUnloadedDependencyRuntimeReasonAndPreparationRoute(t *testing.T) {
 // Local diagnostic policy: a declared unavailable package does not turn a
 // known platform type's missing member into an absent dependency.
 func TestUnloadedDependencyKnownPlatformNamedPolicy(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api+"/named_test_runner_lsp", func(t *testing.T) {
 			root := t.TempDir()
@@ -201,6 +204,7 @@ func TestUnloadedDependencyKnownPlatformNamedPolicy(t *testing.T) {
 }
 
 func TestUnloadedDependencyExcludedTriggerSnapshotRoute(t *testing.T) {
+	t.Setenv("GLADE_SIBLING_DEPENDENCIES", "1")
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api+"/excluded_trigger_test_runner", func(t *testing.T) {
 			root := t.TempDir()

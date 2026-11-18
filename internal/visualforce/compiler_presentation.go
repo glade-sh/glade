@@ -290,10 +290,11 @@ func validatePresentationControllerTypes(root *MarkupNode, p project.Project) er
 		if !strings.EqualFold(strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)), controller) {
 			continue
 		}
-		file, err := parser.ParseFile(path)
+		source, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}
+		file := parser.ParseSource(path, string(source))
 		for _, declaration := range file.Declarations {
 			if !strings.EqualFold(declaration.Name, controller) {
 				continue
@@ -350,6 +351,11 @@ func validateNativeIDAndParam(token html.Token, startTag, location string, linkD
 			}
 			if a.Val == "" {
 				// Rows IdEmpty*: an empty id fails the page's validation on every component.
+				return fmt.Errorf("Failed validation: ApexPage")
+			}
+			// vf_whitespace_ids captures a single-space ID on these two
+			// components as rejected at both supported API floors.
+			if a.Val == " " && (strings.EqualFold(component, "outputText") || strings.EqualFold(component, "outputPanel")) {
 				return fmt.Errorf("Failed validation: ApexPage")
 			}
 			if strings.Contains(a.Val, "{!") {

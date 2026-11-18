@@ -1,0 +1,7 @@
+source_api	grant	case	observation
+62.0	none	anon_upsert	COMPILE_ERROR Ln 2 Col 16 Field does not exist: A36External__c on Account
+67.0	none	anon_upsert	COMPILE_ERROR Ln 2 Col 16 Field does not exist: A36External__c on Account
+62.0	permset	anon_upsert	ok created=true
+62.0	permset	anon_insert	ok
+67.0	permset	anon_upsert	ok created=false
+67.0	permset	anon_insert	ok

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -47,9 +46,13 @@ type Object struct {
 	EnableSearch           bool              `json:"enableSearch,omitempty"`
 	Triggerable            *bool             `json:"triggerable,omitempty"`
 	NameField              NameField         `json:"nameField,omitempty"`
-	Fields                 []Field           `json:"fields,omitempty"`
-	RecordTypes            []RecordType      `json:"recordTypes,omitempty"`
-	ValidationRules        []ValidationRule  `json:"validationRules,omitempty"`
+	// FieldSetsComplete is an explicit assertion about a captured inventory;
+	// ordinary source metadata and partial snapshots leave unknown names open.
+	FieldSetsComplete bool             `json:"fieldSetsComplete,omitempty"`
+	FieldSetNames     []string         `json:"fieldSetNames,omitempty"`
+	Fields            []Field          `json:"fields,omitempty"`
+	RecordTypes       []RecordType     `json:"recordTypes,omitempty"`
+	ValidationRules   []ValidationRule `json:"validationRules,omitempty"`
 
 	ExternalSharingModel string `json:"externalSharingModel,omitempty"`
 }
@@ -106,6 +109,7 @@ type Field struct {
 	ChildRelationshipNameInferred bool               `json:"-"`
 	DeleteConstraint              string             `json:"deleteConstraint,omitempty"`
 	DefaultValue                  string             `json:"defaultValue,omitempty"`
+	DefaultValueFromMetadata      bool               `json:"defaultValueFromMetadata,omitempty"`
 	Required                      bool               `json:"required,omitempty"`
 	Nillable                      *bool              `json:"nillable,omitempty"`
 	DefaultedOnCreate             *bool              `json:"defaultedOnCreate,omitempty"`
@@ -442,10 +446,17 @@ func LoadProject(p project.Project) (Schema, error) {
 		// The hash verifies integrity, not completeness. Only an explicit
 		// assertion on a non-partial snapshot establishes authority.
 		object.CompleteSnapshot = object.FieldsComplete && !object.Partial
+		object.FieldSetsComplete = object.FieldSetsComplete && !object.Partial
 		if existing := byName[object.Name]; existing != nil {
 			mergeObjectMetadataIndexed(existing, object, indexesFor(existing))
 			existing.FieldsComplete = existing.FieldsComplete || object.FieldsComplete
 			existing.CompleteSnapshot = existing.CompleteSnapshot || object.CompleteSnapshot
+			existing.FieldSetsComplete = existing.FieldSetsComplete || object.FieldSetsComplete
+			for _, name := range object.FieldSetNames {
+				if !stringSliceContainsFold(existing.FieldSetNames, name) {
+					existing.FieldSetNames = append(existing.FieldSetNames, name)
+				}
+			}
 		} else {
 			byName[object.Name] = &object
 		}
@@ -456,7 +467,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if objectName == "" {
 			continue
 		}
-		field, err := loadField(path)
+		field, err := loadField(p.ReadFile, path)
 		if err != nil {
 			return Schema{}, err
 		}
@@ -483,7 +494,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if objectName == "" {
 			continue
 		}
-		recordType, err := loadRecordType(path)
+		recordType, err := loadRecordType(p.ReadFile, path)
 		if err != nil {
 			return Schema{}, err
 		}
@@ -507,7 +518,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if objectName == "" {
 			continue
 		}
-		rule, err := loadValidationRule(path, validationRuleSourceNamespace(p.Namespace, objectName))
+		rule, err := loadValidationRule(p.ReadFile, path, validationRuleSourceNamespace(p.Namespace, objectName))
 		if err != nil {
 			return Schema{}, err
 		}
@@ -527,16 +538,35 @@ func LoadProject(p project.Project) (Schema, error) {
 		}
 	}
 
+	// Project field-set metadata augments a captured inventory; do not infer
+	// completeness merely because source files happen to be present.
+	for _, path := range p.FieldSetFiles {
+		dir := filepath.Dir(path)
+		if !strings.EqualFold(filepath.Base(dir), "fieldSets") {
+			continue
+		}
+		objectName := namespaceProjectObjectName(p.Namespace, remapProjectAPIName(p, filepath.Base(filepath.Dir(dir))))
+		object := byName[objectName]
+		if object == nil || !object.FieldSetsComplete {
+			continue
+		}
+		name := strings.TrimSuffix(filepath.Base(path), ".fieldSet-meta.xml")
+		if name != "" && !stringSliceContainsFold(object.FieldSetNames, name) {
+			object.FieldSetNames = append(object.FieldSetNames, name)
+		}
+	}
+
 	if err := addCustomTabAccessFields(p, byName); err != nil {
 		return Schema{}, err
 	}
 	addCustomAddressComponentFields(byName)
 	addPersonContactAliases(byName, project.OrgShapeFeatures(p.Root))
+	addScratchDefaultRecordTypes(byName, project.ScratchObjectDefaultRecordTypes(p.Root))
 	addReferencedCustomObjects(byName)
 
 	records := make([]CustomMetadataRecord, 0, len(p.CustomMetadataFiles))
 	for _, path := range p.CustomMetadataFiles {
-		record, err := loadCustomMetadataRecord(path)
+		record, err := loadCustomMetadataRecord(p.ReadFile, path)
 		if err != nil {
 			return Schema{}, err
 		}
@@ -585,7 +615,7 @@ func loadPinnedSchemaSnapshot(p project.Project) ([]Object, error) {
 	if path == "" || configured == "" {
 		return nil, errors.New("project.schemaSnapshot and project.schemaSnapshotSHA256 must be configured together")
 	}
-	data, err := os.ReadFile(path) // #nosec G304 -- path is an explicit project configuration value bound to a required SHA-256.
+	data, err := p.ReadFile(path) // #nosec G304 -- path is an explicit project configuration value bound to a required SHA-256.
 	if err != nil {
 		return nil, err
 	}
@@ -740,8 +770,8 @@ func isCustomEntityName(name string) bool {
 	return false
 }
 
-func loadValidationRule(path, namespace string) (ValidationRule, error) {
-	data, err := os.ReadFile(path)
+func loadValidationRule(read func(string) ([]byte, error), path, namespace string) (ValidationRule, error) {
+	data, err := read(path)
 	if err != nil {
 		return ValidationRule{}, err
 	}
@@ -778,8 +808,8 @@ func validationRuleFromXML(raw validationRuleXML, fallback, namespace string) Va
 	}
 }
 
-func loadRecordType(path string) (RecordType, error) {
-	data, err := os.ReadFile(path)
+func loadRecordType(read func(string) ([]byte, error), path string) (RecordType, error) {
+	data, err := read(path)
 	if err != nil {
 		return RecordType{}, err
 	}
@@ -858,7 +888,7 @@ func recordTypePicklistDefaults(values []recordTypePicklistXML) map[string]strin
 }
 
 func loadObject(path string, p project.Project) (Object, error) {
-	data, err := os.ReadFile(path)
+	data, err := p.ReadFile(path)
 	if err != nil {
 		return Object{}, err
 	}
@@ -913,7 +943,7 @@ func loadObject(path string, p project.Project) (Object, error) {
 
 func loadSharingReasons(objectPath string, p project.Project) ([]string, map[string]string) {
 	dir := filepath.Join(filepath.Dir(objectPath), "sharingReasons")
-	entries, err := os.ReadDir(dir)
+	entries, err := p.ReadDir(dir)
 	if err != nil {
 		return nil, nil
 	}
@@ -924,7 +954,7 @@ func loadSharingReasons(objectPath string, p project.Project) ([]string, map[str
 		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".sharingreason-meta.xml") {
 			continue
 		}
-		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		data, err := p.ReadFile(filepath.Join(dir, entry.Name()))
 		if err != nil {
 			continue
 		}
@@ -954,8 +984,8 @@ func loadSharingReasons(objectPath string, p project.Project) ([]string, map[str
 	return reasons, labels
 }
 
-func loadField(path string) (Field, error) {
-	data, err := os.ReadFile(path)
+func loadField(read func(string) ([]byte, error), path string) (Field, error) {
+	data, err := read(path)
 	if err != nil {
 		return Field{}, err
 	}
@@ -1021,6 +1051,7 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		ChildRelationshipNameInferred: childRelationshipNameInferred,
 		DeleteConstraint:              raw.DeleteConstraint,
 		DefaultValue:                  strings.TrimSpace(raw.DefaultValue),
+		DefaultValueFromMetadata:      strings.TrimSpace(raw.DefaultValue) != "",
 		Required:                      raw.Required,
 		ExternalID:                    raw.ExternalID,
 		IDLookup:                      raw.IDLookup,
@@ -1189,7 +1220,7 @@ func hasNamespaceToken(name string) bool {
 func loadValueSets(p project.Project) (map[string][]PicklistValue, error) {
 	sets := make(map[string][]PicklistValue)
 	for _, path := range append(append([]string{}, p.GlobalValueSetFiles...), p.StandardValueSetFiles...) {
-		values, err := loadValueSet(path)
+		values, err := loadValueSet(p.ReadFile, path)
 		if err != nil {
 			return nil, err
 		}
@@ -1202,8 +1233,8 @@ func loadValueSets(p project.Project) (map[string][]PicklistValue, error) {
 	return sets, nil
 }
 
-func loadValueSet(path string) ([]PicklistValue, error) {
-	data, err := os.ReadFile(path)
+func loadValueSet(read func(string) ([]byte, error), path string) ([]PicklistValue, error) {
+	data, err := read(path)
 	if err != nil {
 		return nil, err
 	}
@@ -1284,8 +1315,8 @@ func stringSliceContainsFold(values []string, value string) bool {
 	return false
 }
 
-func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
-	data, err := os.ReadFile(path)
+func loadCustomMetadataRecord(read func(string) ([]byte, error), path string) (CustomMetadataRecord, error) {
+	data, err := read(path)
 	if err != nil {
 		return CustomMetadataRecord{}, err
 	}

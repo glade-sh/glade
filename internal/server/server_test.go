@@ -4435,14 +4435,14 @@ func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		// 39 profiles: the 14 setup profiles plus the 25 profile-owned sets
+		// 38 profiles (profile_usertype): the 13 setup profiles plus the 25 profile-owned sets
 		// of the permission_set_inventory capture (API 62.0 and 67.0) that
 		// name no setup profile.
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 39},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 39},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 39},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 39},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 39, wantNoOps: "limits,async"},
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 38},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 38},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 38},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 38},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 38, wantNoOps: "limits,async"},
 	}
 	for _, api := range storage.SupportedRESTAPIVersions {
 		t.Run(api, func(t *testing.T) {

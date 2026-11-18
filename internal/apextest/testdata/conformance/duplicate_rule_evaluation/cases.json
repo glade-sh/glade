@@ -1,0 +1,144 @@
+{
+  "account": {
+    "m_gridZip0": "AccountBehavior.m_gridZip0()",
+    "m_gridZip1": "AccountBehavior.m_gridZip1()",
+    "m_gridZip2": "AccountBehavior.m_gridZip2()",
+    "m_gridZip3": "AccountBehavior.m_gridZip3()",
+    "m_gridCity": "AccountBehavior.m_gridCity()",
+    "m_gateOff": "AccountBehavior.m_gateOff()",
+    "m_websiteVaried_W1a": "AccountBehavior.m_websiteVaried_W1a()",
+    "m_websiteVaried_W1b": "AccountBehavior.m_websiteVaried_W1b()",
+    "m_websiteVaried_W2": "AccountBehavior.m_websiteVaried_W2()",
+    "m_namePath": "AccountBehavior.m_namePath()",
+    "m_phoneFormats": "AccountBehavior.m_phoneFormats()",
+    "m_edit_update": "AccountBehavior.m_edit_update()",
+    "m_edit_upsert": "AccountBehavior.m_edit_upsert()",
+    "m_gateOff2": "AccountGateBehavior.m_gateOff2()"
+  },
+  "overfull": {
+    "equal120": "OverfullBehavior.equal120()",
+    "boundary99": "OverfullBehavior.boundary99()",
+    "boundary100": "OverfullBehavior.boundary100()",
+    "boundary101": "OverfullBehavior.boundary101()",
+    "strongLate": "OverfullBehavior.strongLate()",
+    "strongEarly": "OverfullBehavior.strongEarly()",
+    "strongInterleaved": "OverfullBehavior.strongInterleaved()",
+    "touched": "OverfullBehavior.touched()",
+    "twoPaths60": "OverfullBehavior.twoPaths60()",
+    "twoPaths110_10": "OverfullBehavior.twoPaths110_10()",
+    "twoPaths10_110": "OverfullBehavior.twoPaths10_110()",
+    "twoGates": "OverfullBehavior.twoGates()",
+    "nameOrder": "OverfullBehavior.nameOrder()",
+    "byId": "OverfullBehavior.byId()",
+    "contact120": "OverfullBehavior.contact120()",
+    "lead120": "OverfullBehavior.lead120()",
+    "strongLateWeak": "OverfullWeakBehavior.strongLateWeak()",
+    "strongEarlyWeak": "OverfullWeakBehavior.strongEarlyWeak()",
+    "strongInterleavedWeak": "OverfullWeakBehavior.strongInterleavedWeak()",
+    "strongLate110": "OverfullWeakBehavior.strongLate110()",
+    "weakOnly120": "OverfullWeakBehavior.weakOnly120()"
+  },
+  "pa": {
+    "paFields": "PABehavior.paFields()",
+    "paById": "PABehavior.paById()",
+    "paEdit": "PABehavior.paEdit()",
+    "crossSubtype": "PABehavior.crossSubtype()",
+    "noRecordType": "PABehavior.noRecordType()",
+    "mixedList": "PABehavior.mixedList()",
+    "byIdBatch": "PABehavior.byIdBatch()",
+    "resultShape": "PABehavior.resultShape()"
+  },
+  "pa_off": {
+    "mixedListOff": "PABehavior.mixedList()",
+    "paFieldsOff": "PABehavior.paFields()"
+  },
+  "pa_two": {
+    "twoRules": "PABehavior.twoRules()",
+    "resultShapeTwo": "PABehavior.resultShape()",
+    "mixedListTwo": "PABehavior.mixedList()",
+    "paFieldsTwo": "PABehavior.paFields()"
+  },
+  "editR1Alert": {
+    "edits_R1_Alert": "EditBehavior.edits('R1')"
+  },
+  "editR1Block": {
+    "edits_R1_Block": "EditBehavior.edits('R1')"
+  },
+  "editR2Alert": {
+    "edits_R2_Alert": "EditBehavior.edits('R2')"
+  },
+  "editR2Block": {
+    "edits_R2_Block": "EditBehavior.edits('R2')"
+  },
+  "editR3Alert": {
+    "edits_R3_Alert": "EditBehavior.edits('R3')"
+  },
+  "editR3Block": {
+    "edits_R3_Block": "EditBehavior.edits('R3')"
+  },
+  "editR4Alert": {
+    "edits_R4_Alert": "EditBehavior.edits('R4')"
+  },
+  "editR4Block": {
+    "edits_R4_Block": "EditBehavior.edits('R4')"
+  },
+  "editR5Alert": {
+    "edits_R5_Alert": "EditBehavior.edits('R5')"
+  },
+  "editR5Block": {
+    "edits_R5_Block": "EditBehavior.edits('R5')"
+  },
+  "editR6Alert": {
+    "edits_R6_Alert": "EditBehavior.edits('R6')"
+  },
+  "editR6Block": {
+    "edits_R6_Block": "EditBehavior.edits('R6')"
+  },
+  "editR7Alert": {
+    "edits_R7_Alert": "EditBehavior.edits('R7')"
+  },
+  "editR7Block": {
+    "edits_R7_Block": "EditBehavior.edits('R7')"
+  },
+  "customExact": {
+    "customExact120": "OverfullCustomBehavior.customExact120()"
+  },
+  "customFuzzy": {
+    "customFuzzy120": "OverfullCustomBehavior.customFuzzy120()"
+  },
+  "shareEnforce": {
+    "hidden": "ShareBehavior.hidden()",
+    "sharedManual": "ShareBehavior.sharedManual()",
+    "sharedCriteria": "ShareBehavior.sharedCriteria()",
+    "mixed": "ShareBehavior.mixed()",
+    "classWith": "ShareBehavior.classWith()",
+    "classWithout": "ShareBehavior.classWithout()",
+    "classInherited": "ShareBehavior.classInherited()",
+    "overflow": "ShareBehavior.overflow()",
+    "fieldHidden": "ShareBehavior.fieldHidden()",
+    "adminBaseline": "ShareBehavior.adminBaseline()"
+  },
+  "shareBypass": {
+    "hidden": "ShareBehavior.hidden()",
+    "sharedManual": "ShareBehavior.sharedManual()",
+    "sharedCriteria": "ShareBehavior.sharedCriteria()",
+    "mixed": "ShareBehavior.mixed()",
+    "classWith": "ShareBehavior.classWith()",
+    "classWithout": "ShareBehavior.classWithout()",
+    "classInherited": "ShareBehavior.classInherited()",
+    "overflow": "ShareBehavior.overflow()",
+    "fieldHidden": "ShareBehavior.fieldHidden()",
+    "adminBaseline": "ShareBehavior.adminBaseline()"
+  },
+  "shareStandard": {
+    "hidden": "ShareBehavior.hidden()",
+    "sharedManual": "ShareBehavior.sharedManual()",
+    "sharedCriteria": "ShareBehavior.sharedCriteria()",
+    "mixed": "ShareBehavior.mixed()",
+    "classWith": "ShareBehavior.classWith()",
+    "classWithout": "ShareBehavior.classWithout()",
+    "classInherited": "ShareBehavior.classInherited()",
+    "overflow": "ShareBehavior.overflow()",
+    "adminBaseline": "ShareBehavior.adminBaseline()"
+  }
+}

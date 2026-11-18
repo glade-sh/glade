@@ -73,6 +73,9 @@ func lwcLocalObjectOptions(org *storage.OrgState, query string, limit int) []lwc
 	search := strings.ToLower(strings.TrimSpace(query))
 	names := make([]string, 0, len(org.Objects))
 	for name := range org.Objects {
+		if org.SuppressesSpreadObject(name) {
+			continue
+		}
 		names = append(names, name)
 	}
 	sort.Slice(names, func(i, j int) bool {

@@ -1,0 +1,24 @@
+{"api": "62.0", "debug": ["OBS|ke_addall_list|false|0"], "error": "", "id": "ke_addall_list", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_addall_list|false|0"], "error": "", "id": "ke_addall_list", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ke_addall_set|false|0"], "error": "", "id": "ke_addall_set", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_addall_set|false|0"], "error": "", "id": "ke_addall_set", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ke_def_addall_list|false|0"], "error": "", "id": "ke_def_addall_list", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_def_addall_list|false|0"], "error": "", "id": "ke_def_addall_list", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ke_def_addall_set|false|0"], "error": "", "id": "ke_def_addall_set", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_def_addall_set|false|0"], "error": "", "id": "ke_def_addall_set", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ke_addall_values|false|0"], "error": "", "id": "ke_addall_values", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_addall_values|false|0"], "error": "", "id": "ke_addall_values", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ke_def_addall_values|false|0"], "error": "", "id": "ke_def_addall_values", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_def_addall_values|false|0"], "error": "", "id": "ke_def_addall_values", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ke_removeall_empty|false|0"], "error": "", "id": "ke_removeall_empty", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_removeall_empty|false|0"], "error": "", "id": "ke_removeall_empty", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ke_retainall_full|false|0"], "error": "", "id": "ke_retainall_full", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_retainall_full|false|0"], "error": "", "id": "ke_retainall_full", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ke_add_existing", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ke_add_existing", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ke_addall_existing", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ke_addall_existing", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ke_returned_addall|0"], "error": "", "id": "ke_returned_addall", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ke_returned_addall|0"], "error": "", "id": "ke_returned_addall", "route": "anonymous"}
+{"api": "62.0", "id": "ke_test", "route": "istest", "tests": [["viaClass", "Fail", "System.AssertException: Assertion Failed: Expected: CAPTURE, Actual: false|0"]]}
+{"api": "67.0", "id": "ke_test", "route": "istest", "tests": [["viaClass", "Fail", "System.AssertException: Assertion Failed: Expected: CAPTURE, Actual: false|0"]]}

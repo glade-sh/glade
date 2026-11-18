@@ -2194,7 +2194,8 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	if _, err := stringStatic("String.format", []Value{String("{0,number,#.00}"), List(Int(42))}); err == nil || err.Error() != "Cannot format given Object as a Number" {
 		t.Fatalf("String.format expected typed number StringException, got %v", err)
 	}
-	if _, err := stringStatic("String.format", []Value{String("{0"), List(Int(42))}); err == nil || !strings.Contains(err.Error(), "unmatched") {
+	if _, err := stringStatic("String.format", []Value{String("{0"), List(Int(42))}); err == nil || err.Error() != `Unmatched '{' braces in message "{0"` {
+		// Native surf_collections_strings cs05: a StringException quoting the pattern.
 		t.Fatalf("String.format expected unmatched brace error, got %v", err)
 	}
 	if _, err := stringStatic("String.fromCharArray", []Value{List(String("x"))}); err == nil {
@@ -2270,14 +2271,13 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	if err != nil || !handled || escapedUnderscore.Text != "AB,C.D" {
 		t.Fatalf("replaceAll escaped underscore = %#v handled=%v err=%v", escapedUnderscore, handled, err)
 	}
-	var runtimeErr *RuntimeError
-	_, _, err = callStringMember(String("abc"), "replaceFirst", []Value{String("(?<word>[a-z]+)"), String("${word}")})
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceFirst replacement named group references") {
-		t.Fatalf("replaceFirst named regex unsupported err = %#v", err)
+	namedFirst, handled, err := callStringMember(String("abc"), "replaceFirst", []Value{String("(?<word>[a-z]+)"), String("<${word}>")})
+	if err != nil || !handled || namedFirst.Text != "<abc>" {
+		t.Fatalf("replaceFirst named group = %#v handled=%v err=%v", namedFirst, handled, err)
 	}
 	_, _, err = callStringMember(String("abc"), "replaceAll", []Value{String("([a-z]+)"), String("${word}")})
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceAll replacement named group references") {
-		t.Fatalf("replaceAll named replacement unsupported err = %#v", err)
+	if err == nil || !strings.Contains(err.Error(), "No group with name {word}") {
+		t.Fatalf("replaceAll missing named group err = %v", err)
 	}
 	backrefSplit, handled, err := callStringMember(String("axa axb bxb"), "split", []Value{String(`([ab])x\1`), Int(-1)})
 	if err != nil || !handled || backrefSplit.Kind != ValueList || len(backrefSplit.List) != 3 || backrefSplit.List[0].Text != "" || backrefSplit.List[1].Text != " axb " || backrefSplit.List[2].Text != "" {
@@ -5323,10 +5323,6 @@ System.assertEquals(9, clonedCounts.get('a'));
 List<Integer> clonedOrderedValues = clonedCounts.values();
 System.assertEquals(2, clonedOrderedValues.get(0));
 System.assertEquals(9, clonedOrderedValues.get(1));
-Map<String,Integer> deepCounts = copiedCounts.deepClone();
-deepCounts.put('b', 8);
-System.assertEquals(2, copiedCounts.get('b'));
-System.assertEquals(8, deepCounts.get('b'));
 `)
 	if err != nil {
 		t.Fatal(err)

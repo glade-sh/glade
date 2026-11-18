@@ -50,14 +50,27 @@ func (vm *VM) rememberClosedSOQLLocal(name, typeName string, value Value) {
 }
 
 func (vm *VM) lookupSOQLBind(name string) (Value, error) {
+	// Database.query keeps the scope rules in soql_bind_scope.go; the other
+	// dynamic routes keep the lexical-first lookup below.
+	query := vm.dynamicSOQLBindRoute == "Database.query"
+	if query {
+		if departed, ok := vm.departedBind(name); ok {
+			return departed, nil
+		}
+	}
 	value, err := vm.lookup(name)
 	if err == nil || vm.dynamicSOQLBindRoute == "" || !strings.HasPrefix(err.Error(), "unknown variable ") {
 		return value, err
 	}
 	if departed, ok := vm.closedSOQLLocals[strings.ToLower(name)]; ok {
-		if departed.Kind != ValueSet || vm.dynamicSOQLBindRoute == "Database.countQuery" {
+		// Database.query reads String locals from the frame's slots only.
+		stringLocal := departed.Kind == ValueString || departed.Kind == ValueNull
+		if !(query && stringLocal) && (departed.Kind != ValueSet || vm.dynamicSOQLBindRoute == "Database.countQuery") {
 			return departed, nil
 		}
+	}
+	if query && vm.hoistedAnonymousString(name) {
+		return Null, nil
 	}
 	return value, err
 }

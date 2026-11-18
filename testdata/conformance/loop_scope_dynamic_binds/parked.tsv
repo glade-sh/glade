@@ -1,0 +1,3 @@
+id	reason
+d15_dotted_bind_declared	dotted binds in dynamic SOQL; not a scope rule
+d16_dotted_bind_undeclared	dotted binds in dynamic SOQL; not a scope rule

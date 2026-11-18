@@ -1,0 +1,14 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for custom Account matching rules with one Street item (BillingStreet), NullNotAllowed (rule N4Street) and MatchBlanks (rule N4StreetMB), duplicate rules Allow with alert; standard Account duplicate rule inactive
+date: 2026-11-15
+CLI: @salesforce/cli/2.157.8 darwin-arm64 node-v26.13.0
+org: three runs, each on a fresh 30-day Developer Edition scratch org on a campaign Dev Hub, deleted after the run; deletion verified every time (active scratch record 1 -> 0, local target no longer resolves); org readback {"OrganizationType": "Developer Edition", "LanguageLocaleKey": "en_US"}
+probe: the fuzzy_street_c8 probe (FuzzyPanel.run): one record per value, then findDuplicates on unsaved copies of every value; record ids are compared inside Apex and never exported
+apis: 62.0 and 67.0; class ApiVersion read back after each deploy
+routes: anonymous Apex and named @IsTest methods; two repeats each; all eight observations of a panel are identical
+log guard: debug level ERROR; each run fails on Apex log truncation, an incomplete observation frame or a class API mismatch; a canary panel brackets every six panels; none failed
+ids: no record, org or user id, username or alias is stored
+blanks: the MatchBlanks panels (matchblanks.txt) carry no blank street
+purpose: review panels for the model of commit 2a69555ed7, in shapes fuzzy_street_c4, c5 and c8 do not hold
+runs: 1 r1, r1m (addresses in Cyrillic, CJK and Greek script), r2 (names of four words and more), r3 (compound number words), r4, r4m (floor words in other positions), r5 (two differing name words), r5n, r5m (no street number), r6 (suite values, Aly, Calle, Via); 2 r7, r7m (a street number alone, with a suffix or with a stop word); 3 g1, g1m, g7, g7m (twins of r1, r1m, r7, r7m)
+holdout: r2, r3, r4, r4m, r5, r5n, r5m, r6 were scored once against commit 2a69555ed7 and shaped no rule: every pair agreed except the eight of r2 and r3 in residuals.tsv, which the model of fc2dfc7863 matches too. r1, r1m, r7 and r7m were read and are fit: they shaped three rules (a street name on one side only is a mismatch; a street with no key word finds nothing; a street of one word that is not a number is the name). g1, g1m, g7 and g7m are their twins in other scripts, words and numbers, scored once after those rules were frozen and not read before: every pair agreed
+residuals: residuals.tsv pins eight false matches, all ordinal or compound number words (r2 "300 E Twenty Third St" against "300 E Twenty Third Street"; r3 "500 Twenty First St" against "500 Twenty One St" and "500 20 1 St", "40 Forty Second St" against "40 Forty Two St"). Natively each of these streets finds only itself

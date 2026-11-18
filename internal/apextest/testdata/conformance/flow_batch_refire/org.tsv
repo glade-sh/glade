@@ -1,0 +1,5 @@
+source_api	route	id	observation
+62.0	istest	2	{"rows":[{"date":null,"name":"Synthetic 0","unit":"updated"},{"date":null,"name":"Edited by trigger","unit":"updated"}],"sizes":[2],"success":true,"triggerLog":["2:Synthetic 0:updated","1:Edited by trigger:updated"]}
+62.0	istest	3	{"rows":[{"date":null,"name":"Synthetic 0","unit":"updated"},{"date":null,"name":"Edited by trigger","unit":"updated"},{"date":null,"name":"Synthetic 2","unit":"updated"}],"sizes":[3],"success":true,"triggerLog":["3:Synthetic 0:updated","1:Edited by trigger:updated"]}
+67.0	istest	2	{"rows":[{"date":null,"name":"Synthetic 0","unit":"updated"},{"date":null,"name":"Edited by trigger","unit":"updated"}],"sizes":[2],"success":true,"triggerLog":["2:Synthetic 0:updated","1:Edited by trigger:updated"]}
+67.0	istest	3	{"rows":[{"date":null,"name":"Synthetic 0","unit":"updated"},{"date":null,"name":"Edited by trigger","unit":"updated"},{"date":null,"name":"Synthetic 2","unit":"updated"}],"sizes":[3],"success":true,"triggerLog":["3:Synthetic 0:updated","1:Edited by trigger:updated"]}

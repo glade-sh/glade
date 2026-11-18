@@ -1,0 +1,1 @@
+Map<String,Schema.SObjectField> a=Account.SObjectType.getDescribe().fields.getMap(),c=Contact.SObjectType.getDescribe().fields.getMap();throw new StandardResultException('test:'+Test.isRunningTest()+'|tier:'+a.containsKey('Tier')+'|accountPortal:'+a.containsKey('IsCustomerPortal')+'|contactPortal:'+c.containsKey('IsCustomerPortal')+'|end');

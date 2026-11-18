@@ -1,0 +1,7 @@
+id	api	route	compiled	success	outcome
+PclMsgGuestCaseTest	62.0	istest	true	Failed	run=Fail System.AssertException: Assertion Failed: System.SecurityException:Access to entity 'Case' denied
+PclMsgGuestCaseTest	67.0	istest	true	Failed	run=Fail System.AssertException: Assertion Failed: System.SecurityException:Access to entity 'Case' denied
+PclMsgGuestLeadTest	62.0	istest	true	Failed	run=Fail System.AssertException: Assertion Failed: System.SecurityException:Access to entity 'Lead' denied
+PclMsgGuestLeadTest	67.0	istest	true	Failed	run=Fail System.AssertException: Assertion Failed: System.SecurityException:Access to entity 'Lead' denied
+PclMsgCcLeadTest	62.0	istest	true	Failed	run=Fail System.AssertException: Assertion Failed: System.SecurityException:Access to entity 'Lead' denied
+PclMsgCcLeadTest	67.0	istest	true	Failed	run=Fail System.AssertException: Assertion Failed: System.SecurityException:Access to entity 'Lead' denied

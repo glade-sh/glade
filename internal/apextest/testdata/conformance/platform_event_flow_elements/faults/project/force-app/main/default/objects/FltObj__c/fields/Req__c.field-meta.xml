@@ -1,0 +1,1 @@
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Req__c</fullName><label>Req</label><length>20</length><required>true</required><type>Text</type></CustomField>

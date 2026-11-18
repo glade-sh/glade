@@ -14,18 +14,18 @@ import (
 
 func TestCIScaleApexWorkflowRoutes(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
-	for _, marker := range []string{"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]", "CI_APEXTEST_SHARDS: \"12\"", "timeout-minutes: 100", "fail-fast: false"} {
+	for _, marker := range []string{"shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]", "CI_APEXTEST_SHARDS: \"16\"", "timeout-minutes: 100", "fail-fast: false"} {
 		if !strings.Contains(jobs["apextest"], marker) {
 			t.Errorf("Apex matrix missing %q", marker)
 		}
 	}
-	history := jobs["apextest-history"]
-	for index := range 12 {
+	history := jobs["history"]
+	for index := range 16 {
 		if !strings.Contains(history, fmt.Sprintf("/tmp/apextest-history-input/apex-shard-%d", index)) {
 			t.Errorf("Apex history omits shard %d", index)
 		}
 	}
-	for _, name := range []string{"apextest", "apextest-history"} {
+	for _, name := range []string{"apextest", "history"} {
 		if !strings.Contains(jobs["required-ci"], "      - "+name+"\n") {
 			t.Errorf("Required CI omits %s", name)
 		}
@@ -425,7 +425,13 @@ if (( count < 3 )); then echo 'getaddrinfo ENOTFOUND'; exit 17; fi
 				})
 			}
 		}
-		want := map[string]int{"ci.yml": 3, "browser.yml": 1, "race.yml": 3}[filename]
+		if filename == "ci.yml" {
+			if count != 5 {
+				t.Errorf("%s browser install routes including PR = %d, want 5", filename, count)
+			}
+			count-- // The original full-suite count remains four: remaining Go packages, LWC and Visualforce shards, and two others.
+		}
+		want := map[string]int{"ci.yml": 4, "browser.yml": 1, "race.yml": 3}[filename]
 		if count != want {
 			t.Errorf("%s browser install routes = %d, want %d", filename, count, want)
 		}

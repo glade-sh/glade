@@ -371,6 +371,10 @@ type querySemanticsChecker struct {
 	bindingTypes   []typesys.TypeSymbol
 	hasBaseline    bool
 	shapeFeatures  []string
+	// packageFieldsNarrow and sourcelessPackageNamespaces come from the
+	// project's declared dependencies (typesys.ProjectInfo).
+	packageFieldsNarrow         bool
+	sourcelessPackageNamespaces []string
 	// namedApexReferenceObjects is set for files declaring named classes.
 	namedApexReferenceObjects bool
 	// anonymousRoute is set for the execute-anonymous body.
@@ -388,6 +392,9 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		bindingTypes:   index.Types,
 		hasBaseline:    len(declaredObjects) > 0,
 		shapeFeatures:  index.OrgShapeFeatures,
+
+		packageFieldsNarrow:         index.Project.PackageFieldsNarrow,
+		sourcelessPackageNamespaces: strings.FieldsFunc(index.Project.SourcelessPackageNamespaces, func(r rune) bool { return r == ',' }),
 	}
 	checker.apiVersion, _ = apexversion.Major(index.Project.SourceAPIVersion)
 	for _, typ := range index.Types {
@@ -416,7 +423,7 @@ var semaPlatformKnownTypesCache typesys.PlatformViewCache[map[string]bool]
 // it needs no project/API/org invalidation. Project names belong exclusively
 // to querySemanticsChecker.knownTypes. Readers never mutate the shared map.
 func semaPlatformKnownTypes() map[string]bool {
-	return semaPlatformKnownTypesCache.Get(func(view []typesys.TypeSymbol) map[string]bool {
+	return semaPlatformKnownTypesCache.GetWithExcluded(func(view []typesys.TypeSymbol, excluded typesys.ExcludedPlatformTypes) map[string]bool {
 		known := make(map[string]bool)
 		for _, typ := range view {
 			known[strings.ToLower(typ.Name)] = true
@@ -424,6 +431,13 @@ func semaPlatformKnownTypes() map[string]bool {
 				known[strings.ToLower(typ.Namespace+"."+typ.Name)] = true
 			}
 		}
+		// Gated stub types the view leaves out keep the names they had.
+		excluded.Each(func(_ int, namespace, name string, _ apexast.DeclarationKind) {
+			known[strings.ToLower(name)] = true
+			if namespace != "" {
+				known[strings.ToLower(namespace+"."+name)] = true
+			}
+		})
 		return known
 	})
 }
@@ -472,6 +486,7 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 		diagnostics = append(diagnostics, c.soqlBindExpressionDiagnostics(query, ctx, bindings)...)
 		diagnostics = append(diagnostics, c.queryFieldBindDiagnostics(query, ctx, bindings)...)
 		diagnostics = append(diagnostics, queryWindowBindDiagnostics(query, ctx, bindings)...)
+		diagnostics = append(diagnostics, queryOptionsBindDiagnostics(query, ctx, bindings)...)
 	}
 	for _, literal := range semaSOSLLiterals(source, spans) {
 		query, err := sosl.ParseInline(literal.text)
@@ -844,7 +859,13 @@ func semaTypeFieldBindings(source string, typeStart int, spans semaCodeSpans) []
 
 func semaDirectTypeFieldBindings(source string, rangeStart, rangeEnd int, spans semaCodeSpans) []semaScopedBinding {
 	var fields []semaScopedBinding
-	for _, match := range semaBindingDeclarationMatches(source[rangeStart+1 : rangeEnd]) {
+	// Only type-scope declarations survive the filter below, so the scan reads
+	// the type body with nested block interiors removed when that cannot
+	// change the matches (see semaTypeScopeDeclarationText).
+	body := source[rangeStart+1 : rangeEnd]
+	scanText, cuts := semaTypeScopeDeclarationText(body, spans.nestedBlocks(rangeStart+1, rangeEnd), rangeStart+1)
+	for _, match := range semaBindingDeclarationMatches(scanText) {
+		match = cuts.restore(match)
 		if !semaDeclarationAtTypeScope(source, rangeStart+1, rangeStart+1+match[4], spans) {
 			continue
 		}
@@ -1041,6 +1062,25 @@ func queryWindowBindDiagnostics(query soql.Query, ctx queryTextContext, bindings
 		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, bind.name, bind.clause)...)
 	}
 	return diagnostics
+}
+
+// queryOptionsBindMessage is the deploy problem for a SET OPTIONS bind of
+// another declared type (api68_native queryoptions QO-COMPILE-BAD-67/68).
+const queryOptionsBindMessage = "SET OPTIONS bind variable must be of type Database.QueryOptions"
+
+func queryOptionsBindDiagnostics(query soql.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
+	name := query.OptionsBind
+	if name == "" || !semaBindName(name) {
+		return nil
+	}
+	typeName, declared := bindings[strings.ToLower(name)]
+	typeName = strings.ToLower(strings.Join(strings.Fields(typeName), ""))
+	if !declared || typeName == "" || typeName == "database.queryoptions" || typeName == "system.database.queryoptions" {
+		return nil
+	}
+	item := ctx.diagnostic("GLADESEMA_QUERY_BIND", queryOptionsBindMessage, ":"+name, findQueryIdentifier(ctx.queryText, ":"+name, 0))
+	item.NativeMessage = queryOptionsBindMessage
+	return []diagnostic.Diagnostic{item}
 }
 
 func queryNumericBindDiagnostics(ctx queryTextContext, bindings map[string]string, name, clause string) []diagnostic.Diagnostic {
@@ -1442,7 +1482,15 @@ func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion 
 		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", soql.FormulaWhereVersionMessage, "FORMULA", findQueryIdentifier(ctx.queryText, "FORMULA", 0))}
 	}
 	if apiVersion >= 67 && strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") {
-		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))}
+		d := ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported, use WITH USER_MODE instead.", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))
+		// Native sharing_access_gate anonymous rows (API 67.0 and 68.0) report
+		// the compile error at the opening bracket of the static query. Class
+		// compile positions have no row and keep the identifier.
+		if ctx.file == "" && ctx.queryOffset > 0 {
+			bracket := ctx.locator.position(ctx.queryOffset - 1)
+			d.Range.Start = bracket
+		}
+		return []diagnostic.Diagnostic{d}
 	}
 	return nil
 }
@@ -1681,6 +1729,13 @@ func (c querySemanticsChecker) checkQueryField(objectName, fieldPath string, ctx
 		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
 		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
 	}
+	// Case lacks a name that no configured feature supplies, even when feature
+	// profiles made the schema object partial. A field the project declares
+	// itself stays.
+	if !strings.Contains(fieldPath, ".") && c.unsuppliedFieldLacking(objectName, fieldPath) {
+		offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+		return []diagnostic.Diagnostic{ctx.nativeSOQLDiagnostic("GLADESEMA_QUERY_FIELD", soql.MissingColumnMessage(fieldPath, objectName), fieldPath, offset, true)}
+	}
 	// record_type_shape c2: RecordTypeId of an object with no record type in a
 	// declared shape is "No such column" (semaRecordTypeFieldAbsent).
 	if c.anonymousRoute && strings.EqualFold(fieldPath, "RecordTypeId") && c.recordTypeFieldUnavailable(objectName) {
@@ -1906,6 +1961,25 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 	return schema.Field{}, false
 }
 
+func (c querySemanticsChecker) unsuppliedFieldLacking(objectName, fieldName string) bool {
+	canonical, standard := storage.ResolveKnownStandardObjectName(objectName)
+	if !standard || !storage.StandardObjectUnsuppliedFieldRejected(canonical, fieldName, c.shapeFeatures) {
+		return false
+	}
+	if object, ok := c.object(objectName); ok {
+		if provider := c.providers[normalizeName(object.Name)]; provider != nil {
+			declared := false
+			provider.visitDeclared(func(field schema.Field) {
+				if field.File != "" && strings.EqualFold(field.Name, fieldName) {
+					declared = true
+				}
+			})
+			return !declared
+		}
+	}
+	return true
+}
+
 func (c querySemanticsChecker) featureFieldUnavailable(objectName, fieldName string) bool {
 	if !storage.StandardFeatureHasVersionedFields(objectName) && !storage.StandardFeatureHasNamedOnlyFields(objectName) {
 		return false
@@ -1998,8 +2072,13 @@ func (c querySemanticsChecker) allowsIncompleteExternalManagedPackageField(objec
 	if objectNamespace := semaNamespaceFromAPIName(object.Name); objectNamespace != "" {
 		return !strings.EqualFold(objectNamespace, c.namespace)
 	}
-	_, ok = storage.StandardObjectDefinition(object.Name)
-	return ok
+	if _, ok = storage.StandardObjectDefinition(object.Name); !ok {
+		return false
+	}
+	// Native rows accept a namespaced field on a standard object only for an
+	// installed package. Declared dependencies stand for installed packages;
+	// a project that declares none keeps every namespace open.
+	return storage.PackageFieldNamespaceAllowed(c.packageFieldsNarrow, c.sourcelessPackageNamespaces, fieldNamespace)
 }
 
 func (c querySemanticsChecker) relationshipField(objectName, relationshipName string) (schema.Field, string, bool) {
@@ -2699,6 +2778,13 @@ func (s semaCodeSpans) matchingBrace(offset int) int {
 		return -1
 	}
 	return s.facts.matchingBrace(offset)
+}
+
+func (s semaCodeSpans) nestedBlocks(start, end int) [][2]int {
+	if s.facts == nil {
+		return nil
+	}
+	return s.facts.nestedBlocks(start, end)
 }
 
 func semaMatchingBracket(source string, start int) int {

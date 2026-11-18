@@ -1,0 +1,16 @@
+{"api": "62.0", "debug": ["OBS|b4_dbl|ok"], "error": "", "id": "b4_dbl", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|b4_dbl|ok"], "error": "", "id": "b4_dbl", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|b4_dbl_all|ok"], "error": "", "id": "b4_dbl_all", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|b4_dbl_all|ok"], "error": "", "id": "b4_dbl_all", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|b_maxup|CIA=1/10/10/10;PA=new:2/40/30/10,old:1/10/10/10,q:2/40/30/10;CUA=2/40/30/10;PA=new:2/35/30/5,old:2/40/30/10,q:2/35/30/5;FA=2/35/30/5;"], "error": "", "id": "b_maxup", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|b_maxup|CIA=1/10/10/10;PA=new:2/40/30/10,old:1/10/10/10,q:2/40/30/10;CUA=2/40/30/10;PA=new:2/35/30/5,old:2/40/30/10,q:2/35/30/5;FA=2/35/30/5;"], "error": "", "id": "b_maxup", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|b_minlow|CIA=1/10/10/10;PA=new:2/13/10/3,old:1/10/10/10,q:2/13/10/3;CUA=2/13/10/3;PA=new:2/23/20/3,old:2/13/10/3,q:2/23/20/3;FA=2/23/20/3;"], "error": "", "id": "b_minlow", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|b_minlow|CIA=1/10/10/10;PA=new:2/13/10/3,old:1/10/10/10,q:2/13/10/3;CUA=2/13/10/3;PA=new:2/23/20/3,old:2/13/10/3,q:2/23/20/3;FA=2/23/20/3;"], "error": "", "id": "b_minlow", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|b_same|CIA=1/10/10/10;PA=new:2/17/10/7,old:1/10/10/10,q:2/17/10/7;CUA=2/17/10/7;FA=2/17/10/7;"], "error": "", "id": "b_same", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|b_same|CIA=1/10/10/10;PA=new:2/17/10/7,old:1/10/10/10,q:2/17/10/7;CUA=2/17/10/7;FA=2/17/10/7;"], "error": "", "id": "b_same", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|b_single|CIA=1/10/10/10;PA=new:2/17/10/7,old:1/10/10/10,q:2/17/10/7;CUA=2/17/10/7;PA=new:2/27/20/7,old:2/17/10/7,q:2/27/20/7;FA=2/27/20/7;"], "error": "", "id": "b_single", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|b_single|CIA=1/10/10/10;PA=new:2/17/10/7,old:1/10/10/10,q:2/17/10/7;CUA=2/17/10/7;PA=new:2/27/20/7,old:2/17/10/7,q:2/27/20/7;FA=2/27/20/7;"], "error": "", "id": "b_single", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|b_two|CIA=1/10/10/10;PA=new:2/17/10/7,old:1/10/10/10,q:2/17/10/7;CUB=1/10/10/10;PB=new:1/20/20/20,old:1/10/10/10,q:1/20/20/20;FA=2/17/10/7;FB=1/20/20/20;"], "error": "", "id": "b_two", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|b_two|CIA=1/10/10/10;PA=new:2/17/10/7,old:1/10/10/10,q:2/17/10/7;CUB=1/10/10/10;PB=new:1/20/20/20,old:1/10/10/10,q:1/20/20/20;FA=2/17/10/7;FB=1/20/20/20;"], "error": "", "id": "b_two", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}

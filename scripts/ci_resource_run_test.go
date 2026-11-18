@@ -204,7 +204,8 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 		"sema-full":              {"resource-usage.json", "scripts/ci-go-test.sh sema-full"},
 		"server-and-playground":  {"resource-server-and-playground.json", "scripts/ci-go-test.sh lane server-and-playground"},
 		"server-process-builder": {"resource-server-process-builder.json", "scripts/ci-go-test.sh lane server-process-builder"},
-		"test":                   {"resource-repoguard.json", "resource-remaining-go.json", "scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go", "scripts/ci-go-test.sh visualforce-shard"},
+		"test":                   {"resource-repoguard.json", "resource-remaining-go.json", "scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
+		"lwc-vf":                 {"resource-usage.json", "scripts/ci-go-test.sh lwc-compile-shard", "scripts/ci-go-test.sh visualforce-shard"},
 		"apextest":               {"resource-usage.json", "scripts/ci-go-test.sh apex-shard"},
 	}
 	for job, markers := range want {
@@ -227,10 +228,10 @@ func TestCIResourceTelemetryCoversAuthoritativeLanes(t *testing.T) {
 			t.Fatalf("resource telemetry changed runner policy with %q", forbidden)
 		}
 	}
-	if got := strings.Count(workflow, "GOMAXPROCS: \"4\""); got != 2 {
-		t.Fatalf("four-CPU jobs = %d, want the Apex matrix and the shared binary build only", got)
+	if got := strings.Count(workflow, "GOMAXPROCS: \"4\""); got != 3 {
+		t.Fatalf("four-CPU jobs = %d, want the Apex matrix and the two shared binary builds only", got)
 	}
-	for _, job := range []string{"apextest", "test-binaries"} {
+	for _, job := range []string{"apextest", "test-binaries", "test-binaries-apextest"} {
 		if !strings.Contains(jobs[job], "GOMAXPROCS: \"4\"") {
 			t.Errorf("%s does not use the runner's four CPUs", job)
 		}

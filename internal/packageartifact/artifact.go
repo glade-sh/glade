@@ -380,8 +380,11 @@ func WriteJSON(path string, artifact Artifact) error {
 	return os.WriteFile(path, data, 0o644)
 }
 
-func ReadJSON(path string) (Artifact, error) {
-	data, err := os.ReadFile(path)
+func ReadJSON(path string) (Artifact, error) { return ReadJSONWith(os.ReadFile, path) }
+
+// ReadJSONWith reads the artifact through read.
+func ReadJSONWith(read func(string) ([]byte, error), path string) (Artifact, error) {
+	data, err := read(path)
 	if err != nil {
 		return Artifact{}, err
 	}
@@ -541,6 +544,7 @@ func artifactSourceFiles(p project.Project) []string {
 	files = append(files, p.PermissionSetFiles...)
 	files = append(files, p.PermissionSetGroupFiles...)
 	files = append(files, p.BusinessHoursSettingsFiles...)
+	files = append(files, p.SharingSettingsFiles...)
 	files = append(files, p.PlatformEventChannelMemberFiles...)
 	files = append(files, p.DuplicateRuleFiles...)
 	files = append(files, p.MatchingRuleFiles...)

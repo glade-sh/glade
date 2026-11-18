@@ -1,0 +1,7 @@
+capture: Datacloud.FindDuplicates verdicts and match confidences for one stored record and one unsaved candidate under a single active matching rule, for match keys that depend on the rule
+captures: C1 (2026-11-14; eleven custom rules K1 to K10, one fresh 30-day Developer Edition scratch org per rule, each deleted after its run) and B2 stage 2 (2026-11-14; the standard Contact and Lead rules active, the custom rules inactive, one fresh 30-day Developer Edition scratch org, deleted after its run), both on campaign Dev Hubs
+route: anonymous Apex and @IsTest; API 62.0 and 67.0; two repeats; every observation of a pair agrees across API, route and repeat
+row value: {"rule","stored","candidate","find"}; find is "1@<confidence>" when the candidate finds the stored record and "0@" when it does not; a field missing from a record is blank
+rules: cases.json; C1 rules are NullNotAllowed custom rules (C1 K10 varies the Description field for the name probes, so only its company probes compare a rule field); B2 rows run the builtin Standard_Contact_Match_Rule_v1_1 and Standard_Lead_Match_Rule_v1_0
+ids: C1.<rule>.<probe> and B2.<panel>.<pair index>; no record, org or user id, username or alias is stored
+holdouts: the holdout probes of both captures are not included

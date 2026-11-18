@@ -1,0 +1,12 @@
+capture: crypto-ec-shield
+started: 2026-11-16T03:44:44Z
+finished: 2026-11-16T03:45:24Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+gate: platform.encryption.apexcrypto is OPEN in a scratch org created with features [PlatformEncryption]
+saved class version is the comparison axis

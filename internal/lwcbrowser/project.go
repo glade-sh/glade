@@ -10,7 +10,9 @@ import (
 
 func PreparePageConfig(p project.Project, cacheRoot string) (PageConfig, compile.Manifest, error) {
 	outDir := filepath.Join(cacheRoot, "lwc")
-	compiled, err := compile.Compile(p, compile.Options{OutDir: outDir, LightningModules: SalesforceImportMap()})
+	// The offline host serves local modules from this compiled project manifest.
+	// Foreign namespaces remain external and are not judged by this inventory.
+	compiled, err := compile.Compile(p, compile.Options{OutDir: outDir, LightningModules: SalesforceImportMap(), CompleteLocalModuleInventory: true})
 	if err != nil {
 		return PageConfig{}, compile.Manifest{}, err
 	}

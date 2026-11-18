@@ -1,0 +1,1 @@
+Account a=new Account(Name='Amberquartz',Phone='5550109');insert a;

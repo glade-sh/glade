@@ -1,0 +1,20 @@
+Native surname substitution capture
+Started: 2026-11-13T14:38:58.829913+00:00
+Finished: 2026-11-13T14:44:51.413961+00:00
+Org: fresh 30-day Developer Edition scratch org on an authorized campaign Dev Hub. Default Contact and Lead duplicate rules. The org was deleted after the run; its active hub scratch record changed from 1 to 0, and the local target no longer resolves.
+APIs: 62.0 and 67.0. Classes redeployed for each API and ApexClass.ApiVersion verified by Tooling query.
+Routes: anonymous and @IsTest; each repeated twice. 64 methods x 2 APIs x 2 routes x 2 repeats = 512 observations. Every set of eight repeated observations agrees byte for byte. FindDuplicates and Database.insert(row,false) agree on every entry.
+Design: 624 directed inputs plus two sentinels per method (128 directed sentinel inputs). Each of the 752 inputs is observed eight times, through both Find and DML: 6016 candidate observations, 12032 Find/DML outcomes. Each transaction ends in an intentional AssertException to roll back. Labels identify actual seed IDs inside Apex; no IDs are exported. Raw and integer confidence, rule name, allow-save and saved count are recorded or asserted. Every observation has a framed payload with a checked length and Test.isRunningTest flag. The driver rejects log truncation/exhaustion text, missing cases or incomplete frames, a route mismatch, and class API mismatches.
+Panel J: 480 directed inputs. First, middle (floor(length/2)), and final letter substitutions, lengths 4 through 8, both directions, Contact and Lead. Two key pairs per geometry: same-row adjacent, adjacent-row same-column (vertical), adjacent-row adjacent-column (diagonal); same-row six- and nine-column far controls. Exact first name and a unique per-pair email corroborate. Lead Company values differ per pair. Seeds are generated synthetically with deterministic seed 824031; they do not prefix existing surname or duplicate-save fixture tokens.
+Panel K: 144 directed inputs. No email, different email, different first name, or phone only, across every position and neighboring geometry, both objects and directions. Each method also has an exact positive and unrelated negative sentinel, asserted inside Apex.
+Predictions frozen before scratch creation and native observations: Glade 5a8491b452287acb059d92f0064b42af69c56b67, GLADE_STANDARD_DUPLICATE_RULES=on, glade exec at API 67.0, frozen at 2026-11-13T14:38:25.473508+00:00. Predictions are a private comparison artifact, never a test oracle.
+No new grade residuals or membership exceptions. Older trailing-letter residuals remain in the separate surname_keyboard fixture.
+Frozen SurnameBehavior.cls sha256: ae7dc04a2cd1cf2906dc93965f8f46e6179ab2fbde260e6ea3670ca77a687f06
+Frozen cases.json sha256: a4139e4567fc72d536c14f689953d5116023e8d0a9bf966832f4902ab1f21451
+Frozen pairs.tsv sha256: df64b98659c9d0876a79e4d1cc81bf88eddd8d51a278fa29be8db80489333b8e
+Frozen predicted.json sha256: ec7215f49126fb5a0053f08e60c8798c5fea1abfbebe60cf70eee17cb1c1a31c
+Frozen glade-frozen sha256: 0117515cc3a76a3cc4589996416ba5d770d1bd9f2d53f079d74cbd6de94dd626
+org.tsv sha256: 60890a30752b7fe553fdc434ce559a9148a597495507e1c2fc58dbf9b46033bd
+pairs.tsv sha256: df64b98659c9d0876a79e4d1cc81bf88eddd8d51a278fa29be8db80489333b8e
+panel.cls sha256: ae7dc04a2cd1cf2906dc93965f8f46e6179ab2fbde260e6ea3670ca77a687f06
+cases.json sha256: a4139e4567fc72d536c14f689953d5116023e8d0a9bf966832f4902ab1f21451

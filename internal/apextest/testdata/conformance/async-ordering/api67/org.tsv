@@ -1,0 +1,5 @@
+id	api	route	compiled	success	outcome
+ao01	67.0	istest	true	Failed	observe=Fail System.UnexpectedException: No more than one executeBatch can be called from within a test method.  Please make sure th
+ao02	67.0	istest	true	Failed	observe=Fail System.LimitException: Too many future calls: 1
+ao03	67.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"rows":["queue-body-first|job=<id>@2026-11-15 20:24:43","q
+ao04	67.0	istest	true	Failed	observe=Fail System.LimitException: Too many future calls: 1

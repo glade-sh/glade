@@ -230,6 +230,15 @@ func (vm *VM) processApexActionFailure(err error) string {
 	if !errors.As(err, &failure) {
 		return ""
 	}
+	detail := apexFailureText(failure)
+	if vm.testContext == nil {
+		detail += "  Error ID: " + strconv.Itoa(vm.nextProcessErrorID())
+	}
+	return detail
+}
+
+// apexFailureText renders an unhandled Apex exception as "Type: message".
+func apexFailureText(failure *RuntimeError) string {
 	typeName := failure.Type
 	if _, standard := typesys.StandardExceptionParent(typeName); standard && !strings.HasPrefix(typeName, "System.") {
 		typeName = "System." + typeName
@@ -238,11 +247,7 @@ func (vm *VM) processApexActionFailure(err error) string {
 	if failure.exceptionMessage != nil {
 		message = *failure.exceptionMessage
 	}
-	detail := typeName + ": " + message
-	if vm.testContext == nil {
-		detail += "  Error ID: " + strconv.Itoa(vm.nextProcessErrorID())
-	}
-	return detail
+	return typeName + ": " + message
 }
 
 func (vm *VM) nextProcessErrorID() int {

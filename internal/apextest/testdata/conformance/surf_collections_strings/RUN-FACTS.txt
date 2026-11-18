@@ -1,0 +1,132 @@
+surf_collections_strings: hash rows added 2026-11-16 (SF-1 dth_*, SF-2 dec_*)
+
+Rows dth_* come from the native Datetime, Time and Date hashCode capture and
+rows dec_* from the Decimal hashCode capture. Both ran in scratch orgs at API
+62.0 and 67.0, two repeats each; the repeats agree. Every outcome is the
+unmodified test-result message (or the compile problem, or the queried log
+payload) from raw/. The cases are Class.method in cases.tsv; the harness runs
+each captured method alone.
+
+Source restorations: the capture scrubbed the DthTz user emails and usernames
+to a placeholder; they are synthetic example.invalid addresses here. The Dec
+capture parked anonymous payloads in a Dec_Log__c record; the anonymous
+sources print the same payload with System.debug. The Dec_Hash_Access
+permission set was an environment step in the capture (assigned to the
+running user, glade.yml replays it); Dth_Probe_Access is assigned only to the
+runAs users, as in the capture, so the API 67.0 DthField insert is the native
+"fields being inaccessible" DmlException.
+
+Volatile values: the Datetime rows that read an inserted record's CreatedDate
+(the S, SOQL, FM and FR tails) hold the clock. The harness masks those tails
+after checking that each hash is Long.hashCode(ms) XOR 577755.
+
+Fixes these rows drove: Julian civil dates before 1582-10-15 in the Datetime
+builders; real offset history for America/Los_Angeles, Asia/Kolkata and
+Australia/Adelaide before 2008; the 1700-01-01..4000-12-31 DateTime field
+range on insert; List<Decimal> == by scale; Percent and Number integer-part
+overflow on insert with the API 62 and API 67 wording; Time.getTime and
+Date.getTime as compile errors. hashCode itself already matched.
+
+Not observed, so base behavior: the cross-type direct hash grid and the rest below.
+The cross-type direct hash grid for Double, Long and
+Integer covers 1.5d, 1 and 1 only. DecHashWrap did not compile natively and
+has no row. Currency overflow, rounding-edge overflow, Julian readers
+(yearGmt and formatGmt of a pre-cutover instant) are not captured; the readers
+read the same Julian civil date the builders were given, so one civil input
+round-trips (neighbor test), and Datetime.parse and the local valueOf build
+Julian too. Other zones' history is unobserved.
+
+dth_loc_* rows (SF-1b, 2026-11-16): the locale capture, API 62.0 and 67.0, test
+and anonymous, repeats agree (test r1 and r3 compared). A Datetime keeps the
+hash of its construction: built under en_US and hashed in a de runAs it stays
+577755, and the reverse stays 577677. Language-only de and fr hash as Mon/4
+(577677). is_IS, nl_NL and de_DE are Mon/4, fa_IR Sat/1 (577751), iw_IL and es_MX
+Sun/1 (577755), tr_TR Mon/1 (577757). dv_MV and he_IL are rejected by the
+LocaleSidKey picklist. Date and Time hashes carry no week term; List, Set and Map
+follow the element hashes. The anonymous rows run as a user of that locale
+(cases.tsv column 4).
+
+Fixes: a Datetime value stamps the user's week term the first time an expression
+yields it; its hash uses the stamp. A Datetime produced from a stamped one
+(addDays and the like) keeps the source's term; no native row covers arithmetic,
+so that is a choice. A Datetime read from an SObject field, a SOQL row or JSON is
+stamped when an expression first yields it, not when the query ran; SObject
+field hashes still read the locale at hash time. A language-only locale maps to
+its CLDR likely region (table in platform_sobject_members.go); only de and fr are
+captured. de, fr and fa_IR are accepted as test locale keys. The Maldives
+(MV) term is still unobserved, because dv_MV is rejected.
+
+dth_r2_* rows (second batch, 2026-11-17, API 62.0 and 67.0, two repeats, one
+scratch org per repeat, deleted and verified): DateTime and Date field range
+(insert, Database.insert and update: 1700-01-01 through 4000-12-31, rejected with
+FIELD_INTEGRITY_EXCEPTION naming the value); Decimal collection equality (List ==,
+equals, contains, indexOf, List<Object>, nested lists, a Set and a record's
+Decimal field all compare scale: 1.5 differs from 1.50, 3 from 3.0); time-zone
+display (format z and zzzz, getOffset and the label follow the zone's real
+history for LA, Adelaide and Kolkata); PageReference text (every text form is
+System.PageReference[url]; JSON.serialize throws; the unset current page is
+System.PageReference[null]; new PageReference() does not exist natively); the
+SF-1b stamping shapes across users (SOQL, JSON, record field, list, map, valueOf,
+addDays).
+Masked in the harness: TimeZone.getDisplayName names the zone at the moment of
+the run, so tzdisp drops it; record ids in update messages.
+Left as base: the hash of a whole SObject (it includes the Id), UserRecordAccess
+beyond the three sharing models below, and the Maldives term.
+
+Raw for the dth_r2_* rows: the campaign evidence directory parallel/batch2-20261117 (README.txt names the run
+directory of each class). The dth_r3_* rows come from the same directory: cap5_r1 and cap5_r2
+(CalShapes, CalArith, CalDate, pgctor, pgctor_ok) and cap6_r1 and cap6_r2 (CalLocal2, CalParse).
+
+dth_r3_* rows (third batch, 2026-11-17, API 62.0 and 67.0, two repeats): the hybrid calendar. A Date before
+1582-10-15 is a Julian civil date (1500-02-29 exists; Date 1500-01-01 hashes as the real instant and
+serializes as 1500-01-10); a Datetime keeps its real instant, and every reader (valueOf in the user's
+zone, concatenation and toString in GMT, year/month/day/dayOfYear, date, format) reads the Julian civil
+date, while JSON.serialize writes the proleptic Gregorian text. addMonths and addYears work on the civil
+date and clamp to the month's own length (Julian 1400-02-29 plus a year is 1401-02-28). The Date members
+addDays, addMonths, addYears, daysBetween, dayOfYear, toStartOfWeek, daysInMonth and isLeapYear follow
+the same calendar. Year 1 is Julian; years before 1 stay proleptic (uncaptured). Datetime.parse and
+Date.parse read no date before 1700 (Invalid date/time), and valueOf reads any year. Before a zone's
+first recorded transition (Los Angeles before 1883) the offset is the standard one and formatLong names
+it GMT-8. pgctor: new PageReference() fails to compile natively; pgctor_ok: System.debug of a
+PageReference prints System.PageReference[url]. JSON.deserialize of a Date reads the Gregorian date and
+keeps it as the Julian label of the same instant, so its JSON text round-trips.
+Typed flow merges (FlowTyped, cap5): a String assignment that merges a Number variable or formula renders
+the declared scale (2.50, 7.00), a Date renders as January 2, 2026, a Boolean as true, and a String as is,
+alone or inside text. Native rejects at deploy time (two repeats identical, campaign capture flow-target-reject
+r1 and r2, raw/deploy-fails-1.txt, copied to internal/automation/testdata/flow_target_reject/deploy-fails.tsv; no
+org.tsv rows, the deploy fails) exactly four shapes: an assignment whose string value is one merge of a Number, Boolean
+or Date variable into a variable of the same type (Ft_num_target, Ft_bool_target, Ft_date_target) and of a Number
+formula into a Number variable (Ft_num_target_text). Every other merge into a non-String variable (other type
+pairings, Boolean or Date formulas, String sources, merges inside text) is uncaptured and keeps the text it had before
+typed merges, pinned in internal/automation/flow_merge_target_test.go. The Number rejection does not depend on scale:
+a scale capture (two repeats on API 62.0 and 67.0, four identical result files, copied to
+internal/automation/testdata/flow_target_reject/deploy-fails-scale.tsv) rejects every same-type Number pair from scale
+0 to 17 on both sides, for a variable and for a formula source ((0,0), (2,3), (3,2), (0,2), (2,0); formula 0 or 3 into
+target 2 or 3), with the same message. A scale of 18 fails with "The scale can't be greater than 17." instead, so
+Glade keeps the earlier compile for it, and for a Number target without a declared scale (no row). A second scale
+capture (same method, internal/automation/testdata/flow_target_reject/deploy-fails-scale2.tsv, four identical result
+files) measured the endpoints and the interior: variable pairs (17,17), (17,0), (0,17), (1,16), (16,1), (5,10), (10,5),
+(1,1) and formula pairs (17,17), (17,0), (0,17), (1,1) are all rejected with the merge message. Together the two
+captures are the basis for the 0 to 17 range rule. Also uncaptured, so on the earlier
+behavior: Currency, DateTime and other resource types, and a Number without a declared scale.
+The flow change is gated to autolaunched flows and a String target.
+dth_r3_fmtjulian (cap7): format() on Julian dates. The weekday, day of year, week of year, week of month,
+day of week in month and year tokens, and formatLong, follow the hybrid calendar (1500-02-29 is a Saturday,
+day 60, week 9). The weekday-name and weekday-number tokens read English only; other locales keep the label
+shifted reading for those two tokens.
+Flow merges by user locale (rows dth_r4_flowlocale to dth_r4_flowlocale4; API 62.0 and 67.0 identical, two repeats each).
+Runs, in the campaign evidence directory parallel/batch2-20261117: cap8_r1 and cap8_r2 (FlowLocale: de_DE, fr_FR,
+en_GB, ja_JP), cap9_r1 and cap9_r62 (FlowLocale2: en_US, es_ES, pt_BR; one run per API), and for FlowLocale3
+(it_IT, nl_NL, en_CA, en_AU, fr_CA, de_AT) and FlowLocale4 (de_CH, es_MX, zh_CN, ko_KR, sv_SE, pl_PL) the cells of
+cap10_r1 and cap10_r2 that returned test results plus cap11_c3 and cap11_c4 (one org per API). The other cells of
+cap10 hit "admin operation already in progress" and are superseded. FlowLocale and FlowLocale2 ran natively as
+FlowLocale; FlowLocale2 ships under its own class name.
+A Number variable or formula merged into flow text takes the user's group and decimal marks; the declared scale stays.
+Group and decimal: en_US, en_GB, en_CA, en_AU, ja_JP, zh_CN, ko_KR, es_MX 1,234,567.891; de_DE, it_IT, nl_NL, es_ES,
+pt_BR 1.234.567,891; fr_FR U+202F then comma; fr_CA, de_AT, sv_SE, pl_PL U+00A0 then comma; de_CH U+2019 then point.
+A negative number leads with the minus (U+2212 for sv_SE). A Date keeps the English month name and takes the locale
+order: en_US and en_CA January 2, 2026; en_GB, en_AU, fr_FR, fr_CA, it_IT, nl_NL, sv_SE, pl_PL 2 January 2026; de_DE,
+de_AT, de_CH 2. January 2026; es_ES, es_MX, pt_BR 2 de January de 2026; ja_JP and zh_CN 2026年1月2日; ko_KR 2026년 1월 2일.
+Only these nineteen locales are modeled. For any other LocaleSidKey (it is a run-time check on the running user, so
+a bare language such as de also falls out) the merge keeps the unrewritten text it had before typed merges.
+Unobserved: other locales and Time or Datetime variables.

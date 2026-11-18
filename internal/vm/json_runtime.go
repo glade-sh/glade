@@ -261,6 +261,11 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 
 func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNulls bool, state *jsonSerializationState) any {
 	value = value.currentMapKeySet()
+	if value.Kind == ValueObject && value.Type == "Matcher" && value.Fields != nil {
+		// A Matcher may hold a deferred requireEnd; settle it so the serialized
+		// fields agree with requireEnd().
+		matcherResolveRequireEnd(value)
+	}
 	root := state.root
 	state.root = false
 	// List mutation can leave an earlier slice header inside the same logical
@@ -389,6 +394,19 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		if state.rejectUnsupportedTypes && !value.classInstance && strings.EqualFold(value.Type, "JSONParser") {
 			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Type unsupported in JSON: common.apex.json.ApexJsonParser")})
 		}
+		if state.rejectUnsupportedTypes && !value.classInstance && !value.projectClass && strings.EqualFold(value.Type, "PageReference") {
+			// Native PgRef (surf_collections_strings dth_r2_pgref, API 62.0 and 67.0).
+			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Apex Type unsupported in JSON: System.PageReference")})
+		}
+		isException := state.rejectUnsupportedTypes && vm.jsonExceptionValue(value)
+		if isException {
+			if apexversion.AtLeast(vm.jsonCallerAPIVersion(), 63) {
+				panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Type unsupported in JSON: "+shortTypeName(exceptionTypeName(value.Type)))})
+			}
+			if isBuiltinExceptionType(value.Type) {
+				panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Apex Type unsupported in JSON: "+vm.exceptionQualifiedTypeName(value.Type))})
+			}
+		}
 		value = vm.picklistEntryJSONView(value, suppressObjectNulls)
 		if strings.EqualFold(value.Type, "Database.QueryLocator") {
 			return &queryLocatorJSONError{}
@@ -455,6 +473,16 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		base := orderedJSONObject{}
 		seen := map[string]bool{}
 		getterNames := vm.jsonSerializableGetterNameSet(value.Type)
+		// JSON.serialize reflects getter mutations in ordinary scalar fields,
+		// even when those fields precede the getter in output order. Defer
+		// reading those fields until this object's getters have run.
+		type deferredScalarField struct {
+			index int
+			name  string
+		}
+		var deferredScalars []deferredScalarField
+		deferScalars := state.rejectUnsupportedTypes && value.classInstance && value.projectClass &&
+			!suppressObjectNulls && len(getterNames) > 0
 		for _, fieldName := range vm.jsonSerializableFieldNames(value.Type) {
 			fieldKey := strings.ToLower(fieldName)
 			field, owner, fieldOK := vm.lookupField(value.Type, fieldName)
@@ -466,6 +494,7 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 				}
 				if field.Getter != nil && !field.Static {
 					getterValue, err := vm.callGetter(vm.getterOwner(owner, field), field, value)
+					propagateJSONGetterLimit(err, state)
 					if err == nil && !(suppressObjectNulls && getterValue.Kind == ValueNull) {
 						base = append(base, orderedJSONField{name: field.Name, value: vm.jsonFromValueForSerializeWithState(getterValue, suppressObjectNulls, state)})
 						seen[fieldKey] = true
@@ -483,12 +512,22 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 			if isInternalSObjectField(actualName) || (suppressObjectNulls && item.Kind == ValueNull) {
 				continue
 			}
-			base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)})
+			if deferScalars && jsonScalarFieldValue(item) {
+				deferredScalars = append(deferredScalars, deferredScalarField{index: len(base), name: actualName})
+				base = append(base, orderedJSONField{name: actualName})
+			} else {
+				base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)})
+			}
 			seen[strings.ToLower(actualName)] = true
 		}
 		var extras []string
 		for field := range value.Fields {
 			fieldKey := strings.ToLower(field)
+			// Below API 63 a custom exception serializes its declared fields
+			// only, not the message and trace members the runtime stores.
+			if isException {
+				break
+			}
 			if isInheritedInstanceFieldStorage(field) || isInternalSObjectField(field) || seen[fieldKey] {
 				continue
 			}
@@ -515,11 +554,18 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 				continue
 			}
 			getterValue, err := vm.callGetter(vm.getterOwner(value.Type, field), field, value)
+			propagateJSONGetterLimit(err, state)
 			if err != nil || (suppressObjectNulls && getterValue.Kind == ValueNull) {
 				continue
 			}
 			base = append(base, orderedJSONField{name: name, value: vm.jsonFromValueForSerializeWithState(getterValue, suppressObjectNulls, state)})
 			seen[strings.ToLower(name)] = true
+		}
+		for _, deferred := range deferredScalars {
+			_, item, ok := objectFieldValue(value, deferred.name)
+			if ok {
+				base[deferred.index].value = vm.jsonFromValueForSerializeWithState(item, suppressObjectNulls, state)
+			}
 		}
 		if !seen["urls"] {
 			if urls, ok := vm.describeJSONURLs(value); ok {
@@ -529,6 +575,27 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		return base
 	default:
 		return jsonFromValue(value, suppressObjectNulls)
+	}
+}
+
+// jsonScalarFieldValue excludes composites, whose serialization may itself
+// invoke getters and therefore has its own ordering behavior.
+func jsonScalarFieldValue(value Value) bool {
+	switch value.Kind {
+	case ValueList, ValueSet, ValueMap, ValueObject:
+		return false
+	default:
+		return true
+	}
+}
+
+func propagateJSONGetterLimit(err error, state *jsonSerializationState) {
+	if err == nil || !state.rejectUnsupportedTypes {
+		return
+	}
+	var fault *RuntimeError
+	if errors.As(err, &fault) && fault.callStackLimit && strings.EqualFold(fault.Type, "System.LimitException") {
+		panic(jsonConversionFailure{err: err})
 	}
 }
 
@@ -559,7 +626,7 @@ func (vm *VM) isEnumObjectValue(value Value) bool {
 		strings.EqualFold(value.Type, "Metadata.MetadataType"):
 		return true
 	}
-	if generated, ok := generatedPlatformTypes()[strings.ToLower(value.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
+	if generated, ok := lookupGeneratedPlatformType(strings.ToLower(value.Type)); ok && generated.Kind == apexast.DeclarationEnum {
 		return true
 	}
 	if _, ok := vm.resolveEnumClass(value.Type); ok {
@@ -1217,6 +1284,11 @@ func decodeJSONUntypedValue(text string) (Value, error) {
 	decoder, text := newApexJSONDecoder(text)
 	value, err := decodeJSONUntypedToken(decoder, text)
 	if err != nil {
+		// Native jn03 (surf_json): an out-of-range bare root number reports
+		// the text alone; nested numbers keep their location.
+		if number, ok := err.(*jsonNumberInputError); ok && strings.TrimSpace(text) == number.text {
+			number.root = true
+		}
 		return Null, jsonUnexpectedCharacterError(jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset())), text)
 	}
 	return value, nil
@@ -1308,6 +1380,15 @@ func decodeJSONUntypedToken(decoder *apexJSONDecoder, source string) (Value, err
 			return Null, &jsonNumberInputError{text: value.String(), line: line, column: column}
 		}
 		decimal, err := decimalFromText(value.String())
+		if errors.Is(err, strconv.ErrRange) {
+			// Native jn03 (surf_json): 1e400 parses to a Decimal rendered 1E+400.
+			canonical, canonicalErr := canonicalDecimalText(value.String())
+			if canonicalErr != nil {
+				return Null, canonicalErr
+			}
+			parsed, _ := strconv.ParseFloat(value.String(), 64)
+			return Value{Kind: ValueDecimal, Decimal: parsed, Text: canonical}, nil
+		}
 		if err != nil {
 			return Null, err
 		}
@@ -1553,9 +1634,13 @@ type jsonNumberInputError struct {
 	text   string
 	line   int
 	column int
+	root   bool
 }
 
 func (err *jsonNumberInputError) Error() string {
+	if err.root {
+		return fmt.Sprintf("For input string: %q", err.text)
+	}
 	return fmt.Sprintf("For input string: %q at [line:%d, column:%d]", err.text, err.line, err.column)
 }
 
@@ -2708,7 +2793,10 @@ func jsonSObjectIntegerScalar(displayType, token string) (Value, bool) {
 			moment = time.UnixMilli(n).UTC()
 		}
 		if strings.EqualFold(strings.TrimSpace(displayType), "DATE") {
-			return platformScalar("Date", moment.Format("2006-01-02")), true
+			// The integer names a proleptic Gregorian date (native rows d_1, d_12,
+			// d_1000 serialize as 0001-01-01, 0012-01-01, 1000-01-01), so the Date
+			// label is the hybrid-calendar label of that instant.
+			return platformScalar("Date", dateLabelFromGregorian(moment)), true
 		}
 		// Years outside 0001-9999 keep the serialized text form.
 		return platformScalar("Datetime", moment.Format("2006-01-02T15:04:05.000Z")), true
@@ -2986,7 +3074,7 @@ func (vm *VM) jsonAbstractObjectFieldError(fieldType string, raw any, strict boo
 		}
 		return nil
 	}
-	if platform, known := generatedPlatformTypes()[strings.ToLower(typeName)]; known && platform.Kind == apexast.DeclarationInterface {
+	if platform, known := lookupGeneratedPlatformType(strings.ToLower(typeName)); known && platform.Kind == apexast.DeclarationInterface {
 		name := platform.Name
 		if qualified, system := typeExceptionSystemTypeName(name); system {
 			name = qualified
@@ -3534,11 +3622,27 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 		if cached, ok := index[relationshipKey]; ok {
 			return cached.Type, cached.OK
 		}
+		// An index built while the spread stayed lazy has not seen the owed
+		// objects. A complete org would have, so this name still needs the
+		// filter's answer.
+		if _, declined := vm.jsonChildRelTypeCache.load(childRelFilterDeclinedKey(parentKey)); declined &&
+			!vm.childRelFilterMissIsFinal(parentObject, relationshipKey) && vm.materializeLazyStandardSpread() {
+			return vm.jsonSObjectChildRelationshipType(typeName, relationshipName)
+		}
 		return "", false
 	}
 	index := vm.buildJSONSObjectChildRelationshipTypeIndex(parentObject)
+	cached, hit := index[relationshipKey]
+	if !hit && vm.Org.LazyStandardSpreadEnabled() && vm.childRelFilterMissIsFinal(parentObject, relationshipKey) {
+		// No owed catalog object declares this name: skip the spread. Mark
+		// the index before storing it so a later name the filter cannot rule
+		// out still completes the spread.
+		vm.jsonChildRelTypeCache.store(childRelFilterDeclinedKey(parentKey), jsonRelationshipTypeLookup{})
+		vm.jsonChildRelTypeCache.storeParent(parentKey, index)
+		return "", false
+	}
 	vm.jsonChildRelTypeCache.storeParent(parentKey, index)
-	if cached, ok := index[relationshipKey]; ok {
+	if hit {
 		return cached.Type, cached.OK
 	}
 	// A lazy org may not hold the child object yet. Complete the spread once
@@ -4256,7 +4360,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		if err != nil {
 			return Null, true, jsonDeserializeException("%s", jsonDateDeserializeErrorMessage(text))
 		}
-		return platformScalar("Date", value.Format("2006-01-02")), true, nil
+		return platformScalar("Date", dateLabelFromGregorian(value)), true, nil
 	case "Datetime":
 		text, ok := raw.(string)
 		if !ok {
@@ -4577,7 +4681,7 @@ func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
 	if !vm.isSObjectLikeType(typeName) {
 		return false
 	}
-	if _, ok := vm.classEntry(typeName); ok {
+	if _, ok := vm.classEntryRaw(typeName); ok {
 		return false
 	}
 	if vm.Org == nil {
@@ -4691,4 +4795,20 @@ func (vm *VM) fillDuplicateFieldSlots(obj Value, owner string, field Field, fiel
 		}
 		obj.Fields[slot] = value
 	}
+}
+
+// jsonExceptionValue reports an Exception instance, built in or declared.
+func (vm *VM) jsonExceptionValue(value Value) bool {
+	return value.Kind == ValueObject && isExceptionType(value.Type) && vm.typeMatches(value.Type, "Exception", make(map[string]bool))
+}
+
+// jsonCallerAPIVersion is the API version of the code that called into JSON.
+func (vm *VM) jsonCallerAPIVersion() string {
+	if vm.currentMethod.APIVersion != "" {
+		return vm.currentMethod.APIVersion
+	}
+	if vm.Org != nil {
+		return vm.Org.APIVersion
+	}
+	return ""
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html"
 	"math"
-	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -21,6 +20,7 @@ type flowXML struct {
 	graphStop        string
 	graph            *flowTargetGraph
 	decisionFormulas map[string]string
+	mergeProblem     string
 	frameFormulas    map[string]string
 
 	APIVersion            string                       `xml:"apiVersion"`
@@ -84,6 +84,7 @@ type flowFormulaXML struct {
 	Name       string `xml:"name"`
 	DataType   string `xml:"dataType"`
 	Expression string `xml:"expression"`
+	Scale      string `xml:"scale"`
 }
 
 type flowDecisionXML struct {
@@ -117,6 +118,9 @@ type flowAssignmentItemXML struct {
 	AssignToReference string       `xml:"assignToReference"`
 	Operator          string       `xml:"operator"`
 	Value             flowValueXML `xml:"value"`
+	// merge holds the parts of a String assignment that merges a Number or
+	// Date; the value stays the original text (see flowMergeFormulaStringAssignments).
+	merge []storage.FlowMergePart
 }
 
 type flowRecordUpdateXML struct {
@@ -246,6 +250,7 @@ type flowVariableXML struct {
 	IsCollection bool         `xml:"isCollection"`
 	IsInput      bool         `xml:"isInput"`
 	IsOutput     bool         `xml:"isOutput"`
+	Scale        string       `xml:"scale"`
 	Value        flowValueXML `xml:"value"`
 }
 
@@ -294,6 +299,20 @@ type flowTransformXML struct {
 	SumField         string                   `xml:"sumField"`
 	Connector        flowConnectorXML         `xml:"connector"`
 	FaultConnector   flowConnectorXML         `xml:"faultConnector"`
+	DataType         string                   `xml:"dataType"`
+	IsCollection     string                   `xml:"isCollection"`
+	ObjectType       string                   `xml:"objectType"`
+	TransformValues  []flowTransformValuesXML `xml:"transformValues"`
+}
+
+type flowTransformValuesXML struct {
+	Actions []flowTransformValueActionXML `xml:"transformValueActions"`
+}
+
+type flowTransformValueActionXML struct {
+	OutputFieldAPIName string       `xml:"outputFieldApiName"`
+	TransformType      string       `xml:"transformType"`
+	Value              flowValueXML `xml:"value"`
 }
 
 type flowCollectionProcessorXML struct {
@@ -326,8 +345,8 @@ type flowValueXML struct {
 	Expression       string `xml:"expression"`
 }
 
-func loadFlow(path string, definitions ...map[string]storage.ObjectDefinition) (Flow, []diagnostic.Diagnostic, error) {
-	source, err := os.ReadFile(path)
+func loadFlowWith(read func(string) ([]byte, error), path string, definitions ...map[string]storage.ObjectDefinition) (Flow, []diagnostic.Diagnostic, error) {
+	source, err := read(path)
 	if err != nil {
 		return Flow{}, nil, err
 	}
@@ -456,6 +475,12 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 	}
 	name := flowFileName(path)
 	objectName := strings.TrimSpace(raw.Start.Object)
+	if objectName == "" && strings.EqualFold(strings.TrimSpace(raw.ProcessType), "AutoLaunchedFlow") {
+		flowMergeFormulaStringAssignments(&raw)
+	}
+	if raw.mergeProblem != "" {
+		return Flow{ObjectName: objectName, File: path}, []diagnostic.Diagnostic{{Severity: diagnostic.Error, Code: "GLADEAUTO004", File: path, Message: raw.mergeProblem}}, nil
+	}
 	flow := Flow{ObjectName: objectName, File: path}
 	if declaration, ok := screenFlowDeclaration(raw, path); ok {
 		flow.Declaration = &declaration
@@ -761,6 +786,7 @@ func compileFlowSource(path string, data []byte, processBuilderSkip string, defi
 	}
 	for _, customError := range raw.CustomErrors {
 		ce := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)
+		ce.APIVersion = strings.TrimSpace(raw.APIVersion)
 		if ce.Name != "" {
 			rule.CustomErrors = append(rule.CustomErrors, ce)
 		}
@@ -1994,6 +2020,11 @@ func modeledFlowRecordCreate(create flowRecordCreateXML, formulas map[string]str
 				sourceField = strings.TrimSpace(assignment.Value.ElementReference)
 			}
 		}
+		// A fault path stores the interview's fault text (native
+		// platform_event_flow_elements/extended PE06B, PE06E, PE06K).
+		if formula == "" && sourceField == "" && strings.EqualFold(strings.TrimSpace(assignment.Value.ElementReference), "$Flow.FaultMessage") {
+			sourceField = "$Flow.FaultMessage"
+		}
 		out.InputAssignments = append(out.InputAssignments, storage.WorkflowFieldUpdate{
 			Name:         field,
 			Field:        field,
@@ -2084,6 +2115,9 @@ func modeledFlowSubflow(subflow flowSubflowXML, formulas map[string]string, vari
 func modeledFlowTransform(transform flowTransformXML, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) (storage.FlowTransform, bool) {
 	name := firstNonBlank(transform.Name, transform.Label)
 	transformType := strings.TrimSpace(transform.TransformType)
+	if name != "" && transformType == "" && len(transform.TransformValues) > 0 {
+		return modeledFlowRecordTransform(name, transform)
+	}
 	if name == "" || transformType == "" {
 		return storage.FlowTransform{}, false
 	}
@@ -2107,6 +2141,28 @@ func modeledFlowTransform(transform flowTransformXML, variables map[string]flowV
 		})
 	}
 	return out, true
+}
+
+func modeledFlowRecordTransform(name string, transform flowTransformXML) (storage.FlowTransform, bool) {
+	objectType := strings.TrimSpace(transform.ObjectType)
+	if objectType == "" || !strings.EqualFold(strings.TrimSpace(transform.DataType), "SObject") ||
+		strings.EqualFold(strings.TrimSpace(transform.IsCollection), "true") || len(transform.TransformValues) != 1 {
+		return storage.FlowTransform{}, false
+	}
+	out := storage.FlowTransform{Name: name, TransformType: "RecordMap", ObjectType: objectType}
+	seen := make(map[string]bool)
+	for _, action := range transform.TransformValues[0].Actions {
+		field := strings.TrimSpace(action.OutputFieldAPIName)
+		reference := strings.TrimSpace(action.Value.ElementReference)
+		literalString := action.Value.StringValue != "" || action.Value.EmptyStringValue
+		key := strings.ToLower(field)
+		if field == "" || seen[key] || (reference == "" && !literalString) || (reference != "" && literalString) || !strings.EqualFold(strings.TrimSpace(action.TransformType), "Map") {
+			return storage.FlowTransform{}, false
+		}
+		seen[key] = true
+		out.FieldMappings = append(out.FieldMappings, storage.WorkflowFieldUpdate{Field: field, SourceField: reference, LiteralValue: action.Value.StringValue, FlowLiteralString: literalString})
+	}
+	return out, len(out.FieldMappings) > 0
 }
 
 func modeledFlowCollectionProcessor(proc flowCollectionProcessorXML, variables map[string]flowVariableXML) (storage.FlowCollectionProcessor, bool) {
@@ -2637,7 +2693,9 @@ func flowPopulateBranchBody(branch storage.FlowBranch, target, stop string, raw 
 				continue
 			}
 			modeled = true
-			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)})
+			branchError := modeledFlowCustomError(customError, raw.Constants, flowCustomErrorFrameFormulas(raw), formulas)
+			branchError.APIVersion = strings.TrimSpace(raw.APIVersion)
+			branch.Steps = append(branch.Steps, storage.FlowStep{Kind: "customError", CustomError: branchError})
 			break
 		}
 		if modeled {
@@ -2942,6 +3000,18 @@ func modeledFlowAssignment(assignment flowAssignmentXML, item flowAssignmentItem
 		sourceField = firstNonBlank(flowLookupSourceFieldValue(item.Value, variables, lookups), strings.TrimSpace(item.Value.ElementReference))
 		sourceField = flowCoreAssignmentSourceField(item, variables, lookups, sourceField)
 	}
+	merge := append([]storage.FlowMergePart(nil), item.merge...)
+	for i := range merge {
+		if merge[i].Expression == "" {
+			continue
+		}
+		expression, known := formulas[strings.ToLower(strings.TrimSpace(merge[i].Expression))]
+		if !known {
+			merge = nil
+			break
+		}
+		merge[i].Expression = expression
+	}
 	return storage.FlowAssignment{
 		Name:         firstNonBlank(assignment.Name, assignment.Label, target),
 		Target:       target,
@@ -2949,6 +3019,7 @@ func modeledFlowAssignment(assignment flowAssignmentXML, item flowAssignmentItem
 		LiteralValue: flowLiteralOrVariableValue(item.Value, variables),
 		Formula:      formula,
 		SourceField:  sourceField,
+		Merge:        merge,
 	}, true
 }
 
@@ -4337,7 +4408,7 @@ func flowProcessPriorValueSources(raw flowXML, variables map[string]flowVariable
 
 // processBuilderCapturedPair checks the two dependent, literal Text updates
 // captured in process_builder_review_multiprocess and process_builder_review_reverse.
-func processBuilderCapturedPair(object string, paths []string, definitions map[string]storage.ObjectDefinition) bool {
+func processBuilderCapturedPair(read func(string) ([]byte, error), object string, paths []string, definitions map[string]storage.ObjectDefinition) bool {
 	if len(paths) != 2 {
 		return false
 	}
@@ -4351,7 +4422,7 @@ func processBuilderCapturedPair(object string, paths []string, definitions map[s
 		}
 	}
 	for _, path := range paths {
-		source, err := os.ReadFile(path)
+		source, err := read(path)
 		if err != nil {
 			return false
 		}
@@ -4410,7 +4481,7 @@ func processBuilderCapturedPair(object string, paths []string, definitions map[s
 // leaveUncoveredProcessesUnrun applies the checks that read other flows.
 // The captured dependent pair is admitted; other multiple-process shapes stay
 // unrun. Flow-action targets must match the separately captured graphs.
-func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[string]storage.ObjectDefinition, features ...[]string) error {
+func leaveUncoveredProcessesUnrun(read func(string) ([]byte, error), idx *Index, paths []string, definitions map[string]storage.ObjectDefinition, features ...[]string) error {
 	counts := make(map[string]int)
 	processPaths := make(map[string][]string)
 	flows := make(map[string]storage.FlowRule)
@@ -4440,7 +4511,7 @@ func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[st
 			continue
 		}
 		skip := ""
-		if counts[strings.ToLower(flow.ObjectName)] > 1 && !processBuilderCapturedPair(flow.ObjectName, processPaths[strings.ToLower(flow.ObjectName)], definitions) {
+		if counts[strings.ToLower(flow.ObjectName)] > 1 && !processBuilderCapturedPair(read, flow.ObjectName, processPaths[strings.ToLower(flow.ObjectName)], definitions) {
 			skip = "several active processes on one object"
 		} else if after := afterSave[strings.ToLower(flow.ObjectName)]; len(after) > 1 {
 			if len(after) != 2 {
@@ -4451,7 +4522,7 @@ func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[st
 						break
 					}
 				}
-				if _, ok := storage.CapturedFourAfterSavePlan(after, def, definitions); !ok && !processBuilderCapturedMixedAfterSave(idx, flow.ObjectName, after, def, definitions) && !capturedCaseAfterSave(after, def) && !processBuilderCapturedBranchedAfterSave(idx, flow.ObjectName, after, def, definitions, features...) {
+				if _, ok := storage.CapturedFourAfterSavePlan(after, def, definitions); !ok && !processBuilderCapturedMixedAfterSave(read, idx, flow.ObjectName, after, def, definitions) && !capturedCaseAfterSave(after, def) && !processBuilderCapturedBranchedAfterSave(read, idx, flow.ObjectName, after, def, definitions, features...) {
 					skip = "several after-save flows on its object"
 				}
 			} else {
@@ -4468,7 +4539,7 @@ func leaveUncoveredProcessesUnrun(idx *Index, paths []string, definitions map[st
 		if skip == "" {
 			continue
 		}
-		source, err := os.ReadFile(paths[i])
+		source, err := read(paths[i])
 		if err != nil {
 			return err
 		}
@@ -4702,4 +4773,185 @@ func flowIsActiveProcess(flow Flow) bool {
 func capturedCaseAfterSave(rules []storage.FlowRule, def storage.ObjectDefinition) bool {
 	_, ok := storage.CapturedCaseAfterSavePlan(rules, def)
 	return ok
+}
+
+// flowMergeFormulaStringAssignments resolves the "{!Name}" merge fields of a
+// String assignment value in an autolaunched flow, for a Name that is a formula
+// or a variable of the flow. The base is the earlier logic, unchanged: a value
+// that is exactly one merge of a String resource reads as a reference to it, and
+// any other merge of String resources becomes a synthetic String formula joining
+// the pieces. Native FlowShapes rows (API 62.0 and 67.0). Two native-captured
+// deltas sit on top, and nothing else changes for any other shape (a merge of
+// globals, unknown names, other resource types, other operators, collection
+// targets, targets that are not variables):
+//
+//	(a) flow-target-reject: an Assign of one exact merge into a scalar variable
+//	    of the same type fails the deploy, for a Number, Boolean or Date variable
+//	    and for a Number formula into a Number variable (mergeProblem).
+//	(b) FlowTyped and FlowLocale: an Assign into a scalar String variable also
+//	    merges Boolean, Date and Number (with a declared scale) resources. A
+//	    Boolean reads as true, a String as is, and a Number or Date keeps its
+//	    original text on the value while the parts go on the item (merge): native
+//	    renders them in the user's locale, so the run renders the parts for a
+//	    captured locale and otherwise runs the original text.
+func flowMergeFormulaStringAssignments(raw *flowXML) {
+	type resource struct {
+		formula    bool
+		dataType   string
+		scale      string
+		expression string
+	}
+	base := map[string]resource{}
+	typed := map[string]resource{}
+	typedSupported := func(dataType, scale string) bool {
+		switch strings.ToLower(strings.TrimSpace(dataType)) {
+		case "boolean", "date":
+			return true
+		case "number":
+			_, err := strconv.Atoi(strings.TrimSpace(scale))
+			return err == nil
+		}
+		return false
+	}
+	for _, formula := range raw.Formulas {
+		key := strings.ToLower(strings.TrimSpace(formula.Name))
+		r := resource{true, strings.ToLower(strings.TrimSpace(formula.DataType)), strings.TrimSpace(formula.Scale), formula.Expression}
+		if r.dataType == "string" {
+			base[key] = r
+		} else if typedSupported(formula.DataType, formula.Scale) {
+			typed[key] = r
+		}
+	}
+	type target struct {
+		dataType   string
+		collection bool
+		scale      string
+	}
+	targets := map[string]target{}
+	for _, variable := range raw.Variables {
+		key := strings.ToLower(strings.TrimSpace(variable.Name))
+		targets[key] = target{strings.ToLower(strings.TrimSpace(variable.DataType)), variable.IsCollection, strings.TrimSpace(variable.Scale)}
+		r := resource{false, strings.ToLower(strings.TrimSpace(variable.DataType)), strings.TrimSpace(variable.Scale), ""}
+		if r.dataType == "string" {
+			// The earlier logic reads any String variable, collections included.
+			base[key] = r
+		} else if !variable.IsCollection && typedSupported(variable.DataType, variable.Scale) {
+			typed[key] = r
+		}
+	}
+	merge := regexp.MustCompile(`\{!([A-Za-z_][A-Za-z0-9_]*)\}`)
+	counter := 0
+	for i := range raw.Assignments {
+		for j := range raw.Assignments[i].Items {
+			item := &raw.Assignments[i].Items[j]
+			value := &item.Value
+			text := value.StringValue
+			if value.ElementReference != "" || !strings.Contains(text, "{!") {
+				continue
+			}
+			matches := merge.FindAllStringSubmatchIndex(text, -1)
+			if len(matches) == 0 {
+				continue
+			}
+			exact := len(matches) == 1 && matches[0][0] == 0 && matches[0][1] == len(text)
+			assign := strings.EqualFold(strings.TrimSpace(item.Operator), "Assign")
+			dest, declared := targets[strings.ToLower(strings.TrimSpace(item.AssignToReference))]
+			scalar := declared && !dest.collection
+			// (a) The captured rejections.
+			if exact && assign && scalar && dest.dataType != "string" {
+				source, ok := typed[strings.ToLower(text[matches[0][2]:matches[0][3]])]
+				// Native rejects every same-type Number pair whatever the two scales
+				// (flow-target-reject scale captures: 0 to 17 on both sides). A scale
+				// above 17 fails with a different native message, so it stays on the
+				// earlier behavior, as does a target without a declared scale.
+				scaleOK := func(scale string) bool { n, err := strconv.Atoi(scale); return err == nil && n >= 0 && n <= 17 }
+				if dest.dataType == "number" && !(scaleOK(dest.scale) && scaleOK(source.scale)) {
+					ok = false
+				}
+				if ok && source.dataType == dest.dataType && (!source.formula || dest.dataType == "number") && raw.mergeProblem == "" {
+					raw.mergeProblem = fmt.Sprintf("field integrity exception: unknown (In an Assignment element, \u201c%s\u201d isn\u2019t a valid value when the \u201c%s\u201d variable is set with the Equals operator.)", text, strings.TrimSpace(item.AssignToReference))
+				}
+			}
+			// (b) A scalar String variable also merges the typed resources.
+			known := base
+			if assign && scalar && dest.dataType == "string" {
+				known = make(map[string]resource, len(base)+len(typed))
+				for k, r := range typed {
+					known[k] = r
+				}
+				for k, r := range base {
+					known[k] = r
+				}
+			}
+			allKnown := true
+			hasTyped := false
+			for _, m := range matches {
+				r, ok := known[strings.ToLower(text[m[2]:m[3]])]
+				if !ok {
+					allKnown = false
+				}
+				if r.dataType == "number" || r.dataType == "date" {
+					hasTyped = true
+				}
+			}
+			if !allKnown {
+				continue
+			}
+			if hasTyped {
+				// Only a scalar String Assign reaches here: known holds the typed
+				// resources for no other shape.
+				var parts []storage.FlowMergePart
+				last := 0
+				for _, m := range matches {
+					if m[0] > last {
+						parts = append(parts, storage.FlowMergePart{Text: text[last:m[0]]})
+					}
+					name := text[m[2]:m[3]]
+					r := known[strings.ToLower(name)]
+					part := storage.FlowMergePart{Ref: name, Kind: r.dataType}
+					if r.formula {
+						// Holds the formula's name until modeledFlowAssignment
+						// resolves its normalized expression.
+						part.Ref, part.Expression = "", name
+					}
+					if r.dataType == "number" {
+						part.Scale, _ = strconv.Atoi(r.scale)
+					} else if r.dataType != "date" {
+						part.Kind = ""
+					}
+					parts = append(parts, part)
+					last = m[1]
+				}
+				if last < len(text) {
+					parts = append(parts, storage.FlowMergePart{Text: text[last:]})
+				}
+				item.merge = parts
+				continue
+			}
+			if exact {
+				value.StringValue, value.ElementReference = "", text[matches[0][2]:matches[0][3]]
+				continue
+			}
+			var pieces []string
+			last := 0
+			for _, m := range matches {
+				if m[0] > last {
+					pieces = append(pieces, strconv.Quote(text[last:m[0]]))
+				}
+				ref := text[m[2]:m[3]]
+				if r := known[strings.ToLower(ref)]; r.formula {
+					ref = "(" + r.expression + ")"
+				}
+				pieces = append(pieces, ref)
+				last = m[1]
+			}
+			if last < len(text) {
+				pieces = append(pieces, strconv.Quote(text[last:]))
+			}
+			counter++
+			name := fmt.Sprintf("GladeMerge%d", counter)
+			raw.Formulas = append(raw.Formulas, flowFormulaXML{Name: name, DataType: "String", Expression: strings.Join(pieces, " & ")})
+			value.StringValue, value.ElementReference = "", name
+		}
+	}
 }

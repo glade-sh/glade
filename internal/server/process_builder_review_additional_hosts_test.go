@@ -13,11 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/glade-sh/glade/internal/apextest"
-	"github.com/glade-sh/glade/internal/project"
-	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
-	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // The synthetic native rows cover the metadata and runtime boundaries exercised
@@ -84,8 +80,10 @@ func TestProcessBuilderReviewAdditionalHosts(t *testing.T) {
 		{"process_builder_review_afterdatefirst", "sharepair", []string{"process_builder_review_aftercomplex", "process_builder_review_afteraccept", "process_builder_review_afteruser", "process_builder_review_afterprior", "process_builder_review_afterprior2", "process_builder_review_afterbranch", "process_builder_review_afterperson", "process_builder_review_afterreplace"}},
 		{"process_builder_review_afterarg", "priorflowinsert", []string{"process_builder_review_aftercomplex", "process_builder_review_afteraccept", "process_builder_review_afteruser", "process_builder_review_afterprior", "process_builder_review_afterprior2", "process_builder_review_afterbranch", "process_builder_review_afterperson"}},
 	}
+	pbHostTempEnv(t)
 	for _, scenario := range scenarios {
 		t.Run(scenario.fixture+"_"+scenario.method, func(t *testing.T) {
+			t.Parallel() // Scenarios share nothing: each owns its fixtures and servers.
 			base := filepath.Join("..", "apextest", "testdata", "conformance")
 			fixture := filepath.Join(base, scenario.fixture)
 			rows, err := os.ReadFile(filepath.Join(fixture, "org.tsv"))
@@ -102,87 +100,69 @@ func TestProcessBuilderReviewAdditionalHosts(t *testing.T) {
 					native[f[0]] = f[3]
 				}
 			}
+			hosts := newPBHostFixtures(t)
 			for _, api := range []string{"62.0", "67.0"} {
 				for _, route := range []string{"vf", "lwc", "server"} {
 					if api == "62.0" && route == "server" {
 						continue
 					} // Tooling endpoint starts at API 65.
 					t.Run(api+"/"+route, func(t *testing.T) {
-						root := t.TempDir()
-						if err := os.CopyFS(root, os.DirFS(filepath.Join(base, "process_builder_shapes", "project"))); err != nil {
-							t.Fatal(err)
-						}
-						layers := append([]string{"process_builder_review"}, scenario.parents...)
-						layers = append(layers, scenario.fixture)
-						if scenario.fixture == "process_builder_shapes" {
-							layers = nil // The captured base project was already copied.
-						}
-						for _, layer := range layers {
-							overlay := filepath.Join(base, layer, "project")
-							if err := filepath.WalkDir(overlay, func(path string, e fs.DirEntry, err error) error {
-								if err != nil {
-									return err
-								}
-								if e.IsDir() {
-									return nil
-								}
-								rel, err := filepath.Rel(overlay, path)
-								if err != nil {
-									return err
-								}
-								data, err := os.ReadFile(path)
-								if err != nil {
-									return err
-								}
-								if err := os.MkdirAll(filepath.Dir(filepath.Join(root, rel)), 0755); err != nil {
-									return err
-								}
-								return os.WriteFile(filepath.Join(root, rel), data, 0644)
-							}); err != nil {
-								t.Fatal(err)
-							}
-						}
 						class := "FernCases" + strings.TrimSuffix(api, ".0")
 						if strings.HasPrefix(scenario.fixture, "process_builder_review_aftercase") || scenario.fixture == "process_builder_review_afternullqueue" || scenario.fixture == "process_builder_review_afterqueueerror" {
 							class = "FernCaseCases" + strings.TrimSuffix(api, ".0")
-							writeServerTestFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [Fern_Access, Fern_CaseAccess]\n")
 						}
-						writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/PBHost.cls"), fmt.Sprintf("public class PBHost { @AuraEnabled @RemoteAction public static String observe() { return %s.%s(); } }", class, scenario.method))
-						writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/PBHost.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
-						writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Remote.page"), `<apex:page controller="PBHost"></apex:page>`)
-						p, err := project.Load(root)
-						if err != nil {
-							t.Fatal(err)
-						}
-						source, err := NewSourceMetadataFromProject(p)
-						if err != nil {
-							t.Fatal(err)
-						}
-						schema, err := gladeschema.LoadProject(p)
-						if err != nil {
-							t.Fatal(err)
-						}
-						index := typesys.Build(p, schema)
-						org, err := apextest.OrgFromIndexWithConfiguredPermissions(index)
-						if err != nil {
-							t.Fatal(err)
-						}
-						if scenario.fixture == "process_builder_review_afterperson" || scenario.fixture == "process_builder_review_aftersharebulk" || scenario.fixture == "process_builder_review_afterarg" || scenario.fixture == "process_builder_review_afterreplace" || scenario.fixture == "process_builder_review_afterdatefirst" {
-							users := org.Objects["User"]
-							syntheticID := storage.ID("005000000000099AAA")
-							users.Records[syntheticID] = storage.Record{ID: syntheticID, Object: "User", Fields: map[string]storage.Value{"Alias": storage.StringValue("pbfake"), "Username": storage.StringValue("synthetic.runner@example.invalid"), "IsActive": storage.BooleanValue(true)}}
-							if scenario.fixture == "process_builder_review_afterreplace" || scenario.fixture == "process_builder_review_afterdatefirst" {
-								secondID := storage.ID("005000000000098AAA")
-								users.Records[secondID] = storage.Record{ID: secondID, Object: "User", Fields: map[string]storage.Value{"Alias": storage.StringValue("pbthird"), "Username": storage.StringValue("synthetic.third@example.invalid"), "IsActive": storage.BooleanValue(true)}}
+						srv := hosts.server(t, api, func(root string) {
+							if err := os.CopyFS(root, os.DirFS(filepath.Join(base, "process_builder_shapes", "project"))); err != nil {
+								t.Fatal(err)
 							}
-							org.Objects["User"] = users
-						}
-						srv := newLightningTestServer(t, &org, source)
-						configureVisualforceTestPrincipal(t, srv)
-						srv.SetProjectIndex(index)
-						if srv.runtimeErr != nil {
-							t.Fatal(srv.runtimeErr)
-						}
+							layers := append([]string{"process_builder_review"}, scenario.parents...)
+							layers = append(layers, scenario.fixture)
+							if scenario.fixture == "process_builder_shapes" {
+								layers = nil // The captured base project was already copied.
+							}
+							for _, layer := range layers {
+								overlay := filepath.Join(base, layer, "project")
+								if err := filepath.WalkDir(overlay, func(path string, e fs.DirEntry, err error) error {
+									if err != nil {
+										return err
+									}
+									if e.IsDir() {
+										return nil
+									}
+									rel, err := filepath.Rel(overlay, path)
+									if err != nil {
+										return err
+									}
+									data, err := os.ReadFile(path)
+									if err != nil {
+										return err
+									}
+									if err := os.MkdirAll(filepath.Dir(filepath.Join(root, rel)), 0755); err != nil {
+										return err
+									}
+									return os.WriteFile(filepath.Join(root, rel), data, 0644)
+								}); err != nil {
+									t.Fatal(err)
+								}
+							}
+							if strings.HasPrefix(scenario.fixture, "process_builder_review_aftercase") || scenario.fixture == "process_builder_review_afternullqueue" || scenario.fixture == "process_builder_review_afterqueueerror" {
+								writeServerTestFile(t, filepath.Join(root, "glade.yml"), "test:\n  permissionSets: [Fern_Access, Fern_CaseAccess]\n")
+							}
+							writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/PBHost.cls"), fmt.Sprintf("public class PBHost { @AuraEnabled @RemoteAction public static String observe() { return %s.%s(); } }", class, scenario.method))
+							writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/PBHost.cls-meta.xml"), `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>`+api+`</apiVersion><status>Active</status></ApexClass>`)
+							writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Remote.page"), `<apex:page controller="PBHost"></apex:page>`)
+						}, func(o *storage.OrgState) {
+							if scenario.fixture == "process_builder_review_afterperson" || scenario.fixture == "process_builder_review_aftersharebulk" || scenario.fixture == "process_builder_review_afterarg" || scenario.fixture == "process_builder_review_afterreplace" || scenario.fixture == "process_builder_review_afterdatefirst" {
+								users := o.Objects["User"]
+								syntheticID := storage.ID("005000000000099AAA")
+								users.Records[syntheticID] = storage.Record{ID: syntheticID, Object: "User", Fields: map[string]storage.Value{"Alias": storage.StringValue("pbfake"), "Username": storage.StringValue("synthetic.runner@example.invalid"), "IsActive": storage.BooleanValue(true)}}
+								if scenario.fixture == "process_builder_review_afterreplace" || scenario.fixture == "process_builder_review_afterdatefirst" {
+									secondID := storage.ID("005000000000098AAA")
+									users.Records[secondID] = storage.Record{ID: secondID, Object: "User", Fields: map[string]storage.Value{"Alias": storage.StringValue("pbthird"), "Username": storage.StringValue("synthetic.third@example.invalid"), "IsActive": storage.BooleanValue(true)}}
+								}
+								o.Objects["User"] = users
+							}
+						})
 						want := native[api]
 						if want == "" {
 							t.Fatal("missing native row")

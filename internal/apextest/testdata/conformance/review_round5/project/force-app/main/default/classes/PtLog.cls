@@ -1,0 +1,1 @@
+public class PtLog { public static String seen = ''; public static void reset() { seen = ''; } }

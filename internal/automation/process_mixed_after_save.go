@@ -2,7 +2,6 @@ package automation
 
 import (
 	"encoding/xml"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -11,7 +10,7 @@ import (
 // The captured graph has exactly one workflow-alert recipient, either an Email
 // field or a User lookup. Preserve its source binding on the compiled action so
 // the runtime can distinguish the captured success and zero-recipient rows.
-func processBuilderCapturedMixedAfterSave(idx *Index, object string, rules []storage.FlowRule, definition storage.ObjectDefinition, definitions map[string]storage.ObjectDefinition) bool {
+func processBuilderCapturedMixedAfterSave(read func(string) ([]byte, error), idx *Index, object string, rules []storage.FlowRule, definition storage.ObjectDefinition, definitions map[string]storage.ObjectDefinition) bool {
 	plan, ok := storage.CapturedMixedAfterSavePlan(rules, definition, definitions)
 	if !ok {
 		return false
@@ -28,7 +27,7 @@ func processBuilderCapturedMixedAfterSave(idx *Index, object string, rules []sto
 		if !strings.EqualFold(workflow.ObjectName, object) {
 			continue
 		}
-		source, err := os.ReadFile(workflow.File)
+		source, err := read(workflow.File)
 		if err != nil {
 			return false
 		}

@@ -70,26 +70,78 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 	return config.NormalizeOrgDomainURL(raw)
 }
 
+// SummaryHold carries the parent roll-up values as they stood before one DML
+// statement. A child after-trigger reads them until the statement finishes
+// (rollup_trigger_timing native rows); the stored value is already current.
+type SummaryHold struct {
+	Values map[string]Value
+	// Live holds each parent's value when the statement began, for the delta
+	// the statement adds to an enclosing statement's hold.
+	Live map[string]Value
+	// Dropped keys read the live value; enclosing holds do not answer for them.
+	Dropped map[string]bool
+	// Upsert marks a hold that spans both groups of an upsert.
+	Upsert bool
+}
+
+func (h *SummaryHold) Drop(key string) {
+	delete(h.Values, key)
+	if h.Dropped == nil {
+		h.Dropped = make(map[string]bool)
+	}
+	h.Dropped[key] = true
+}
+
 type OrgState struct {
 	ChangeDataCaptureTestSetup *ChangeDataCaptureSnapshot `json:"-"`
 	// Formula execution context is set on a per-query OrgState value copy.
 	// It is neither persisted nor stored in query or schema caches.
 	formulaUserID           ID
 	formulaPermissionFields map[string]Value
+	// SummaryHolds freeze roll-up values for the statements whose after-triggers
+	// are running. Never persisted; see SummaryHold.
+	SummaryHolds []*SummaryHold `json:"-"`
 
-	OrgID                  string                 `json:"orgId,omitempty"`
-	APIVersion             string                 `json:"apiVersion,omitempty"`
-	Namespace              string                 `json:"namespace,omitempty"`
-	DomainURL              string                 `json:"domainUrl,omitempty"`
-	Features               []string               `json:"features,omitzero"`
-	Metadata               MetadataRegistry       `json:"metadata,omitempty"`
-	Objects                map[string]ObjectState `json:"objects"`
-	IDSequences            map[string]uint64      `json:"idSequences,omitempty"`
-	Transactions           []TransactionFrame     `json:"transactions,omitempty"`
-	Now                    func() time.Time       `json:"-"`
-	Today                  func() time.Time       `json:"-"` // Execution user's local calendar for formula TODAY().
-	PlatformCache          *PlatformCacheState    `json:"-"`
-	PlatformCacheTestSetup *PlatformCacheState    `json:"-"`
+	OrgID      string                 `json:"orgId,omitempty"`
+	APIVersion string                 `json:"apiVersion,omitempty"`
+	Namespace  string                 `json:"namespace,omitempty"`
+	DomainURL  string                 `json:"domainUrl,omitempty"`
+	Features   []string               `json:"features,omitzero"`
+	Metadata   MetadataRegistry       `json:"metadata,omitempty"`
+	Objects    map[string]ObjectState `json:"objects"`
+	// StandardSpread marks an org whose standard catalog objects are installed
+	// on first reference from a shared per-shape source (see
+	// standard_spread_source.go). "plain" is before the org shape applied,
+	// "shaped" after. Empty means the org holds every object it will hold.
+	StandardSpread string `json:"standardSpread,omitempty"`
+	// StandardSpreadPruned remembers that a completed spread was narrowed by
+	// the plain Developer profile, so a later profile can restore the spread.
+	StandardSpreadPruned bool `json:"standardSpreadPruned,omitempty"`
+	// StandardSpreadRemoved holds source-backed objects actually removed by
+	// the captured default shape so an uncaptured transition can restore them.
+	StandardSpreadRemoved []string `json:"standardSpreadRemoved,omitempty"`
+	// StandardSpreadHiddenAccess retains the local virtual user-access rows for
+	// definitions removed by the captured plain Developer spread. Native rows
+	// do not establish a replacement for these query shapes.
+	StandardSpreadHiddenAccess map[string][]string `json:"standardSpreadHiddenAccess,omitempty"`
+	// StandardSpreadHiddenDefinitions preserves unprobed routes for removed
+	// definitions without restoring them to the captured inventory.
+	StandardSpreadHiddenDefinitions map[string]ObjectDefinition `json:"standardSpreadHiddenDefinitions,omitempty"`
+	// StandardSpreadSuppressed records fingerprints of lazy inventory entries
+	// that were not visible before the captured default shape was materialized.
+	StandardSpreadSuppressed *SpreadSuppression `json:"standardSpreadSuppressed,omitempty"`
+	// StandardSpreadCapturedPlain records the exact default Developer shape
+	// used by the native inventory probes, including across serialization.
+	StandardSpreadCapturedPlain bool `json:"standardSpreadCapturedPlain,omitempty"`
+	// StandardDuplicateRules turns on the seeded standard duplicate rules (the
+	// duplicateRules.standard setting); project metadata rules are always on.
+	StandardDuplicateRules bool                `json:"standardDuplicateRules,omitempty"`
+	IDSequences            map[string]uint64   `json:"idSequences,omitempty"`
+	Transactions           []TransactionFrame  `json:"transactions,omitempty"`
+	Now                    func() time.Time    `json:"-"`
+	Today                  func() time.Time    `json:"-"` // Execution user's local calendar for formula TODAY().
+	PlatformCache          *PlatformCacheState `json:"-"`
+	PlatformCacheTestSetup *PlatformCacheState `json:"-"`
 
 	SystemTimestampBase     string `json:"-"`
 	SystemTimestampSequence int64  `json:"-"`
@@ -98,11 +150,24 @@ type OrgState struct {
 	objectNameCache                 *sync.Map
 	keyPrefixesValidated            bool
 	lazyStandardSpread              bool
+	eagerStandardSpread             bool
+	spreadPrefixSeed                map[string]string
 	keyPrefixesValidatedObjectCount int
 	keyPrefixesValidatedPrefixes    []keyPrefixSnapshotEntry
 	keyPrefixesValidatedGeneration  uint64
 	schemaGeneration                uint64
 	runtimeGeneration               *orgRuntimeGeneration
+
+	// spreadPrefixesPlanned records that a source-backed lazy org has had its
+	// prefixes validated. Clearing the schema stamp does not clear it: the cold
+	// objects still take their prefixes from the unique assignment.
+	spreadPrefixesPlanned bool
+
+	// spreadInstalled records each definition the eager spread built from the
+	// plain catalog profile. It is never mutated after it is set, so clones
+	// may share it.
+	spreadInstalled map[string]installedSpreadDefinition
+	spreadExplicit  map[string]bool
 }
 
 type orgRuntimeGeneration struct {
@@ -244,20 +309,31 @@ type MetadataRegistry struct {
 	Labels                 []LabelMetadata               `json:"labels,omitempty"`
 	ValueSetTranslations   []StandardValueSetTranslation `json:"standardValueSetTranslations,omitempty"`
 	ManagedLabelNamespaces []string                      `json:"managedLabelNamespaces,omitempty"`
-	Tabs                   []TabMetadata                 `json:"tabs,omitempty"`
-	Applications           []ApplicationMetadata         `json:"applications,omitempty"`
-	DataCategoryGroups     []DataCategoryGroup           `json:"dataCategoryGroups,omitempty"`
-	QuickActions           []QuickActionMetadata         `json:"quickActions,omitempty"`
-	FieldSets              []FieldSetMetadata            `json:"fieldSets,omitempty"`
-	StaticResources        []StaticResourceMetadata      `json:"staticResources,omitempty"`
-	ContentAssets          []ContentAssetMetadata        `json:"contentAssets,omitempty"`
-	Endpoints              []EndpointMetadata            `json:"endpoints,omitempty"`
-	EmailTemplates         []EmailTemplateMetadata       `json:"emailTemplates,omitempty"`
-	MessageChannels        []MessageChannelMetadata      `json:"messageChannels,omitempty"`
-	FeatureParameters      []FeatureParameterMetadata    `json:"featureParameters,omitempty"`
-	Layouts                []LayoutMetadata              `json:"layouts,omitempty"`
-	ProjectReports         []ProjectReportMetadata       `json:"projectReports,omitempty"`
-	ReportFolderShares     []ProjectReportFolderShare    `json:"reportFolderShares,omitempty"`
+	// PackageFieldsNarrow is set when the project declares package
+	// dependencies with known namespaces. A namespaced custom field that a
+	// standard object lacks is then accepted only for a namespace listed in
+	// SourcelessPackageNamespaces (installed, source absent). When unset the
+	// project declared nothing and every ns__X__c name stays accepted.
+	PackageFieldsNarrow         bool                       `json:"packageFieldsNarrow,omitempty"`
+	SourcelessPackageNamespaces []string                   `json:"sourcelessPackageNamespaces,omitempty"`
+	Tabs                        []TabMetadata              `json:"tabs,omitempty"`
+	Applications                []ApplicationMetadata      `json:"applications,omitempty"`
+	DataCategoryGroups          []DataCategoryGroup        `json:"dataCategoryGroups,omitempty"`
+	QuickActions                []QuickActionMetadata      `json:"quickActions,omitempty"`
+	FieldSets                   []FieldSetMetadata         `json:"fieldSets,omitempty"`
+	StaticResources             []StaticResourceMetadata   `json:"staticResources,omitempty"`
+	ContentAssets               []ContentAssetMetadata     `json:"contentAssets,omitempty"`
+	Endpoints                   []EndpointMetadata         `json:"endpoints,omitempty"`
+	EmailTemplates              []EmailTemplateMetadata    `json:"emailTemplates,omitempty"`
+	MessageChannels             []MessageChannelMetadata   `json:"messageChannels,omitempty"`
+	FeatureParameters           []FeatureParameterMetadata `json:"featureParameters,omitempty"`
+	Layouts                     []LayoutMetadata           `json:"layouts,omitempty"`
+	ProjectReports              []ProjectReportMetadata    `json:"projectReports,omitempty"`
+	ReportFolderShares          []ProjectReportFolderShare `json:"reportFolderShares,omitempty"`
+	// KeepManualSharesOnTransfer is the project SharingSettings
+	// enableKeepManualSharesOnTransfer value (apextest api68_native
+	// sharing-off and sharing-on).
+	KeepManualSharesOnTransfer bool `json:"keepManualSharesOnTransfer,omitempty"`
 }
 
 // ProjectReportMetadata is the immutable project definition associated with a
@@ -311,6 +387,9 @@ type LabelMetadata struct {
 	ShortDescription string `json:"shortDescription,omitempty"`
 	Categories       string `json:"categories,omitempty"`
 	File             string `json:"file,omitempty"`
+	// TranslationSourceRaw retains source text that the legacy Value field
+	// normalizes. Older and pathless registries do not have this provenance.
+	TranslationSourceRaw *string `json:"translationSourceRaw,omitempty"`
 }
 
 // StandardValueSetTranslation is a project-authored translation of one
@@ -460,6 +539,10 @@ type ObjectState struct {
 	Indexes       map[string]IndexSet `json:"indexes,omitempty"`
 	RecordsShared bool                `json:"-"`
 	IndexesShared bool                `json:"-"`
+
+	// recordsClock versions the Records map. Write it through the record
+	// write methods, never through the map directly.
+	recordsClock *recordsClockTag
 }
 
 // OwnerSharingRule is a supported declared owner-based Read rule between public groups.
@@ -468,6 +551,24 @@ type OwnerSharingRule struct {
 	SourceGroup string `json:"sourceGroup"`
 	TargetGroup string `json:"targetGroup"`
 	AccessLevel string `json:"accessLevel"`
+}
+
+// CriteriaSharingCondition is one supported field test of a criteria rule.
+type CriteriaSharingCondition struct {
+	Field     string `json:"field"`
+	Operation string `json:"operation"`
+	Value     string `json:"value"`
+}
+
+// CriteriaSharingRule is a declared Read rule that shares matching records with
+// one public group. Salesforce evaluates it at commit, never inside the writing
+// transaction (grant rows), so the rule is configuration only until a
+// commit reconciles its Rule share rows.
+type CriteriaSharingRule struct {
+	Name        string                     `json:"name"`
+	TargetGroup string                     `json:"targetGroup"`
+	AccessLevel string                     `json:"accessLevel"`
+	Criteria    []CriteriaSharingCondition `json:"criteria"`
 }
 
 type ObjectDefinition struct {
@@ -493,6 +594,9 @@ type ObjectDefinition struct {
 	// ExternalSharingModel is the declared external organization-wide default
 	// (CustomObject externalSharingModel); empty when the metadata omits it.
 	ExternalSharingModel string `json:"externalSharingModel,omitempty"`
+
+	// CriteriaSharingRules are the declared criteria-based Read rules for public groups.
+	CriteriaSharingRules []CriteriaSharingRule `json:"criteriaSharingRules,omitempty"`
 }
 
 type Field struct {
@@ -503,39 +607,40 @@ type Field struct {
 	MasterDetail   bool      `json:"masterDetail,omitempty"`
 	DisplayType    string    `json:"displayType,omitempty"`
 	// LongTextArea retains the declared metadata kind behind describe TEXTAREA.
-	LongTextArea         bool                `json:"longTextArea,omitempty"`
-	Length               int                 `json:"length,omitempty"`
-	Precision            int                 `json:"precision,omitempty"`
-	Digits               int                 `json:"digits,omitempty"`
-	Scale                int                 `json:"scale,omitempty"`
-	ScaleSpecified       bool                `json:"scaleSpecified,omitempty"`
-	Formula              string              `json:"formula,omitempty"`
-	FormulaTreatBlanksAs string              `json:"formulaTreatBlanksAs,omitempty"`
-	DefaultValue         string              `json:"defaultValue,omitempty"`
-	CompoundFieldName    string              `json:"compoundFieldName,omitempty"`
-	AutoNumber           bool                `json:"autoNumber,omitempty"`
-	DisplayFormat        string              `json:"displayFormat,omitempty"`
-	SummarizedField      string              `json:"summarizedField,omitempty"`
-	SummaryForeignKey    string              `json:"summaryForeignKey,omitempty"`
-	SummaryOperation     string              `json:"summaryOperation,omitempty"`
-	SummaryFilterItems   []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
-	FilteredLookupInfo   FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
-	Required             bool                `json:"required,omitempty"`
-	Nillable             *bool               `json:"nillable,omitempty"`
-	DefaultedOnCreate    *bool               `json:"defaultedOnCreate,omitempty"`
-	Accessible           *bool               `json:"accessible,omitempty"`
-	Createable           *bool               `json:"createable,omitempty"`
-	Updateable           *bool               `json:"updateable,omitempty"`
-	Filterable           *bool               `json:"filterable,omitempty"`
-	Groupable            *bool               `json:"groupable,omitempty"`
-	Sortable             *bool               `json:"sortable,omitempty"`
-	Aggregatable         *bool               `json:"aggregatable,omitempty"`
-	Permissionable       *bool               `json:"permissionable,omitempty"`
-	DeprecatedAndHidden  *bool               `json:"deprecatedAndHidden,omitempty"`
-	ExternalID           bool                `json:"externalId,omitempty"`
-	Unique               bool                `json:"unique,omitempty"`
-	Encrypted            bool                `json:"encrypted,omitempty"`
-	CaseSensitive        bool                `json:"caseSensitive,omitempty"`
+	LongTextArea             bool                `json:"longTextArea,omitempty"`
+	Length                   int                 `json:"length,omitempty"`
+	Precision                int                 `json:"precision,omitempty"`
+	Digits                   int                 `json:"digits,omitempty"`
+	Scale                    int                 `json:"scale,omitempty"`
+	ScaleSpecified           bool                `json:"scaleSpecified,omitempty"`
+	Formula                  string              `json:"formula,omitempty"`
+	FormulaTreatBlanksAs     string              `json:"formulaTreatBlanksAs,omitempty"`
+	DefaultValue             string              `json:"defaultValue,omitempty"`
+	DefaultValueFromMetadata bool                `json:"defaultValueFromMetadata,omitempty"`
+	CompoundFieldName        string              `json:"compoundFieldName,omitempty"`
+	AutoNumber               bool                `json:"autoNumber,omitempty"`
+	DisplayFormat            string              `json:"displayFormat,omitempty"`
+	SummarizedField          string              `json:"summarizedField,omitempty"`
+	SummaryForeignKey        string              `json:"summaryForeignKey,omitempty"`
+	SummaryOperation         string              `json:"summaryOperation,omitempty"`
+	SummaryFilterItems       []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo       FilteredLookupInfo  `json:"filteredLookupInfo,omitempty"`
+	Required                 bool                `json:"required,omitempty"`
+	Nillable                 *bool               `json:"nillable,omitempty"`
+	DefaultedOnCreate        *bool               `json:"defaultedOnCreate,omitempty"`
+	Accessible               *bool               `json:"accessible,omitempty"`
+	Createable               *bool               `json:"createable,omitempty"`
+	Updateable               *bool               `json:"updateable,omitempty"`
+	Filterable               *bool               `json:"filterable,omitempty"`
+	Groupable                *bool               `json:"groupable,omitempty"`
+	Sortable                 *bool               `json:"sortable,omitempty"`
+	Aggregatable             *bool               `json:"aggregatable,omitempty"`
+	Permissionable           *bool               `json:"permissionable,omitempty"`
+	DeprecatedAndHidden      *bool               `json:"deprecatedAndHidden,omitempty"`
+	ExternalID               bool                `json:"externalId,omitempty"`
+	Unique                   bool                `json:"unique,omitempty"`
+	Encrypted                bool                `json:"encrypted,omitempty"`
+	CaseSensitive            bool                `json:"caseSensitive,omitempty"`
 	// Describe-only observation; storage comparison semantics stay independent.
 	DescribeCaseSensitive    *bool             `json:"describeCaseSensitive,omitempty"`
 	RestrictedPicklist       bool              `json:"restrictedPicklist,omitempty"`
@@ -697,7 +802,9 @@ type WorkflowFieldUpdate struct {
 	Name         string `json:"name"`
 	Field        string `json:"field"`
 	LiteralValue string `json:"literalValue,omitempty"`
-	Formula      string `json:"formula,omitempty"`
+	// FlowLiteralString marks a present string literal, including an empty one.
+	FlowLiteralString bool   `json:"flowLiteralString,omitempty"`
+	Formula           string `json:"formula,omitempty"`
 	// FlowFrameFormula marks an individually selected record-triggered Flow formula.
 	FlowFrameFormula bool   `json:"flowFrameFormula,omitempty"`
 	SourceField      string `json:"sourceField,omitempty"`
@@ -1011,6 +1118,21 @@ type FlowAssignment struct {
 	LiteralValue string `json:"literalValue,omitempty"`
 	Formula      string `json:"formula,omitempty"`
 	SourceField  string `json:"sourceField,omitempty"`
+	// Merge holds the parts of a String assignment that merges a Number or Date
+	// resource. It applies only for a user locale captured natively; any other
+	// locale runs the unrewritten LiteralValue.
+	Merge []FlowMergePart `json:"merge,omitempty"`
+}
+
+// FlowMergePart is one piece of a merged flow string: literal Text, or a
+// resource read by Ref (a variable) or Expression (a formula resource) and
+// rendered by Kind ("number" with Scale, "date", or "" for plain text).
+type FlowMergePart struct {
+	Text       string `json:"text,omitempty"`
+	Ref        string `json:"ref,omitempty"`
+	Expression string `json:"expression,omitempty"`
+	Kind       string `json:"kind,omitempty"`
+	Scale      int    `json:"scale,omitempty"`
 }
 
 type FlowLoop struct {
@@ -1087,9 +1209,12 @@ type FlowSubflow struct {
 }
 
 type FlowCustomError struct {
-	Name        string                   `json:"name"`
-	Description string                   `json:"description,omitempty"`
-	Messages    []FlowCustomErrorMessage `json:"messages,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	// APIVersion is the flow's source API version; DateTime and Time merge
+	// fields render per version (flow_record_merge).
+	APIVersion string                   `json:"apiVersion,omitempty"`
+	Messages   []FlowCustomErrorMessage `json:"messages,omitempty"`
 }
 
 type FlowCustomErrorMessage struct {
@@ -1116,6 +1241,7 @@ type FlowTransform struct {
 	TargetCollection string                `json:"targetCollection"`
 	FieldMappings    []WorkflowFieldUpdate `json:"fieldMappings,omitempty"`
 	SumField         string                `json:"sumField,omitempty"`
+	ObjectType       string                `json:"objectType,omitempty"`
 }
 
 type FlowCollectionProcessor struct {
@@ -1177,6 +1303,12 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// TestAssigned marks a PermissionSetAssignment that a test, a @TestSetup
+	// method or code they call inserted. Natively the running user's own
+	// context does not see it (permset_in_test rows).
+	TestAssigned bool `json:"testAssigned,omitempty"`
+	// CriteriaSharingOwned identifies a share created by criteria reconciliation.
+	CriteriaSharingOwned bool `json:"criteriaSharingOwned,omitempty"`
 	// triggerAssignments tracks explicit before-trigger assignments during DML.
 	triggerAssignments uint8
 	// dmlNameUnassigned is transient provenance for a queried, unassigned Name.
@@ -1793,7 +1925,20 @@ func StripNamespaceToken(namespace, name string) string {
 	return name
 }
 
+// ResolveVisibleObjectName keeps route lookups at the source spread's
+// original visibility while allowing the physical inventory to be completed.
+func ResolveVisibleObjectName(org OrgState, name string) (string, bool) {
+	if org.SuppressesSpreadObject(name) {
+		return "", false
+	}
+	return ResolveObjectName(org, name)
+}
+
 func ResolveObjectName(org OrgState, name string) (string, bool) {
+	if org.StandardSpread != "" {
+		// Objects is shared by value copies, so this installs for the caller.
+		installSpreadObject(&org, name)
+	}
 	org.objectNameCache = ownedObjectNameCache(org)
 	cacheKey := strings.ToLower(strings.TrimSpace(org.Namespace)) + "|" + strconv.Itoa(len(org.Objects)) + "|" + strings.ToLower(strings.TrimSpace(name))
 	if org.objectNameCache != nil {
@@ -2313,9 +2458,9 @@ func (o ObjectState) Clone() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {
@@ -2345,6 +2490,10 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.Relations[i].JunctionReferenceTo = append([]string(nil), d.Relations[i].JunctionReferenceTo...)
 	}
 	out.OwnerSharingRules = append([]OwnerSharingRule(nil), d.OwnerSharingRules...)
+	out.CriteriaSharingRules = append([]CriteriaSharingRule(nil), d.CriteriaSharingRules...)
+	for i := range out.CriteriaSharingRules {
+		out.CriteriaSharingRules[i].Criteria = append([]CriteriaSharingCondition(nil), d.CriteriaSharingRules[i].Criteria...)
+	}
 	out.RecordTypes = append([]RecordTypeInfo(nil), d.RecordTypes...)
 	for i := range out.RecordTypes {
 		if d.RecordTypes[i].PicklistDefaults == nil {
@@ -2577,6 +2726,9 @@ func (i IndexSet) Clone() IndexSet {
 
 func (o OrgState) Clone() OrgState {
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2603,6 +2755,31 @@ func (o OrgState) Clone() OrgState {
 	return out
 }
 
+// CloneObjectsShallow returns an org copy whose Objects map is its own, with
+// room for extra entries, while every object state, record map and definition
+// is shared with the receiver. It is for read-only views that add objects of
+// their own beside the receiver's. Every copied state is marked
+// RecordsShared and IndexesShared, so a writer that goes through
+// EnsureMutableObjectRecords clones the maps first; definitions must go
+// through EnsureMutableObjectDefinition. The copy gets an object name cache of
+// its own, as Clone does.
+func (o OrgState) CloneObjectsShallow(extra int) OrgState {
+	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
+	out.Features = slices.Clone(o.Features)
+	if o.Objects != nil || extra > 0 {
+		out.Objects = make(map[string]ObjectState, len(o.Objects)+extra)
+		for name, object := range o.Objects {
+			object.RecordsShared, object.IndexesShared = true, true
+			out.Objects[name] = object
+		}
+	}
+	out.objectNameCache = newObjectNameCacheFrom(o.objectNameCache, o.Objects, out.Objects)
+	return out
+}
+
 // CloneRuntime returns an org copy suitable for isolated test/runtime execution.
 // Records, indexes, definitions, sequences, and transaction frames are isolated
 // so parallel test setup and execution can infer runtime metadata without
@@ -2610,6 +2787,9 @@ func (o OrgState) Clone() OrgState {
 func (o OrgState) CloneRuntime() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2645,6 +2825,9 @@ func (o OrgState) CloneRuntime() OrgState {
 func (o OrgState) CloneRuntimeFrozenDefinition() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	out.Metadata.Flows = cloneFlowRules(o.Metadata.Flows)
@@ -2706,12 +2889,16 @@ func IsImmutableMetadataObject(objectName string) bool {
 func (o OrgState) CloneRuntimeFrozenShared() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := o
+	out.StandardSpreadHiddenAccess = cloneSpreadHiddenAccess(o.StandardSpreadHiddenAccess)
+	out.StandardSpreadHiddenDefinitions = cloneSpreadHiddenDefinitions(o.StandardSpreadHiddenDefinitions)
+	out.StandardSpreadSuppressed = cloneSpreadSuppressed(o.StandardSpreadSuppressed)
 	out.Features = slices.Clone(o.Features)
 	out.Metadata.FeatureParameters = append([]FeatureParameterMetadata(nil), o.Metadata.FeatureParameters...)
 	if o.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(o.Objects))
 		for name, object := range o.Objects {
-			if IsImmutableMetadataObject(object.Definition.APIName) || IsImmutableMetadataObject(name) {
+			if IsImmutableMetadataObject(object.Definition.APIName) || IsImmutableMetadataObject(name) ||
+				sharesSetupRecordsAtRuntimeClone(name, object) {
 				out.Objects[name] = object.CloneRuntimeSnapshot()
 			} else {
 				out.Objects[name] = object.CloneRuntimeFrozenDefinition()
@@ -2745,9 +2932,9 @@ func (o ObjectState) CloneRuntime() ObjectState {
 	out := o
 	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
-		out.Records = make(map[ID]Record, len(o.Records))
+		out.adoptRecords(make(map[ID]Record, len(o.Records)))
 		for id, record := range o.Records {
-			out.Records[id] = record.Clone()
+			out.PutRecord(id, record.Clone())
 		}
 	}
 	if o.Indexes != nil {
@@ -2801,4 +2988,20 @@ func (m Mutation) Clone() Mutation {
 		out.After = &after
 	}
 	return out
+}
+
+// PackageFieldNamespaceAllowed reports whether an undefined namespaced custom
+// field of namespace may be tolerated on a standard object: the project
+// declared nothing (narrow is false) or declared the namespace with its
+// source absent.
+func PackageFieldNamespaceAllowed(narrow bool, sourceless []string, namespace string) bool {
+	if !narrow {
+		return true
+	}
+	for _, candidate := range sourceless {
+		if strings.EqualFold(candidate, namespace) {
+			return true
+		}
+	}
+	return false
 }

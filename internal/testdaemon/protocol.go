@@ -27,7 +27,9 @@ const (
 	// different builds fail at ping rather than on one run. Version 2 added
 	// run.excludedClasses, the classes the dependency-scoped compile gate
 	// excluded; a version 1 strict decoder rejects that field. Version 3 adds
-	// timeoutSource so timeout diagnostics retain the client setting.
+	// timeoutSource so timeout diagnostics retain the client setting. The
+	// run.siblingDependencyScan field is always sent, so a strict decoder from an
+	// older daemon rejects every run instead of serving it in the wrong mode.
 	ProtocolVersionV1     = 3
 	MaxProtocolFrameBytes = 8 << 20
 )
@@ -81,6 +83,16 @@ type RunRequestV1 struct {
 	ShardCount            int              `json:"shardCount"`
 	ShardIndex            int              `json:"shardIndex"`
 	ReturnClassShards     bool             `json:"returnClassShards"`
+	// SiblingDependencyScan is the client's sibling-scan mode (the
+	// --sibling-dependencies flag or GLADE_SIBLING_DEPENDENCIES). The daemon
+	// refuses a run whose mode differs from the one it started with.
+	SiblingDependencyScan bool `json:"siblingDependencyScan"`
+	// CodeCoverage and CoverageGate are sent only when set, so a run without
+	// coverage keeps the version 3 frame and an older strict daemon rejects
+	// a coverage run instead of answering it without coverage.
+	CodeCoverage        bool   `json:"codeCoverage,omitempty"`
+	CoverageGate        string `json:"coverageGate,omitempty"`
+	CoverageSynchronous bool   `json:"coverageSynchronous,omitempty"`
 }
 
 type LimitCapsV1 struct {
@@ -140,6 +152,7 @@ type testReportRunV1Wire struct {
 	Summary               testreport.Summary            `json:"summary"`
 	Suites                []testreport.Suite            `json:"suites"`
 	ExcludedClasses       []testreport.CompileExclusion `json:"excludedClasses,omitempty"`
+	Coverage              *testreport.Coverage          `json:"coverage,omitempty"`
 }
 
 type responseV1Wire struct {
@@ -209,6 +222,7 @@ func DecodeResponseV1(r io.Reader) (ResponseV1, error) {
 			Dependencies:          wire.Run.Dependencies,
 			Suites:                wire.Run.Suites,
 			ExcludedClasses:       wire.Run.ExcludedClasses,
+			Coverage:              wire.Run.Coverage,
 		}
 		if reconstructed := response.Run.Summary(); wire.Run.Summary != reconstructed {
 			return ResponseV1{}, fmt.Errorf("decode test daemon protocol frame: run summary does not match suites")

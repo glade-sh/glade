@@ -3,6 +3,7 @@ package sema
 import (
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -27,12 +28,16 @@ func sourceSyntaxDiagnostics(typ typesys.TypeSymbol, body string, bodyOffset int
 	}
 	if anonymous {
 		// C040: the source restriction belongs to anonymous SOQL, not named Apex.
-		ignored := newSemaIgnoredText(body)
-		for _, match := range anonymousSystemModeQueryPattern.FindAllStringIndex(code, -1) {
-			if !ignored.inSOQLLiteral(match[0]) {
-				continue
+		matches := anonymousSystemModeQueryPattern.FindAllStringIndex(code, -1)
+		if len(matches) != 0 {
+			for _, query := range semaSOQLLiterals(body, newSemaCodeSpans(body)) {
+				for _, match := range matches {
+					if match[0] < query.queryOffset || match[1] > query.queryOffset+len(query.text) {
+						continue
+					}
+					diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_SOURCE_SYNTAX", Message: "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.", File: typ.File, Range: semaRange(source, bodyOffset+match[0], bodyOffset+match[1])})
+				}
 			}
-			diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_SOURCE_SYNTAX", Message: "Cannot use SYSTEM_MODE access level in anonymous execution of Apex.", File: typ.File, Range: semaRange(source, bodyOffset+match[0], bodyOffset+match[1])})
 		}
 	}
 	return diagnostics
@@ -45,7 +50,7 @@ func sourceSyntaxStatementDiagnostics(typ typesys.TypeSymbol, code string, bodyO
 	add := func(message string, start, end int) {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_SOURCE_SYNTAX", Message: message, File: typ.File, Range: semaRange(source, bodyOffset+start, bodyOffset+end)})
 	}
-	tokens := sourceSyntaxTokenPattern.FindAllStringIndex(code, -1)
+	tokens := sourceSyntaxTokens(code)
 	var parens []string
 	var blocks []bool
 	previous := ""
@@ -118,4 +123,33 @@ func sourceSyntaxCodeText(source string) string {
 		i = end
 	}
 	return string(code)
+}
+
+// sourceSyntaxTokens splits code exactly as sourceSyntaxTokenPattern does: an
+// ASCII identifier run, or otherwise one character that is not RE2 whitespace
+// (an invalid UTF-8 byte counts as one character, as the pattern treats it).
+func sourceSyntaxTokens(code string) [][]int {
+	tokens := make([][]int, 0, len(code)/4)
+	for i := 0; i < len(code); {
+		value := code[i]
+		switch {
+		case value == '_' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z':
+			end := i + 1
+			for end < len(code) && (code[end] == '_' || code[end] >= 'a' && code[end] <= 'z' || code[end] >= 'A' && code[end] <= 'Z' || code[end] >= '0' && code[end] <= '9') {
+				end++
+			}
+			tokens = append(tokens, []int{i, end})
+			i = end
+		case value == ' ' || value == '\t' || value == '\n' || value == '\f' || value == '\r':
+			i++
+		case value < utf8.RuneSelf:
+			tokens = append(tokens, []int{i, i + 1})
+			i++
+		default:
+			_, size := utf8.DecodeRuneInString(code[i:])
+			tokens = append(tokens, []int{i, i + size})
+			i += size
+		}
+	}
+	return tokens
 }

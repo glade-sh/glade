@@ -16,11 +16,11 @@ System.assertEquals(0, holder.size(), 'writer');
 System.assertEquals(0, alias.size(), 'local alias');
 System.assertEquals(0, DescribeOwner.stored.size(), 'static alias');
 System.assertEquals(0, instance.member.size(), 'field alias');
-// Global-describe key sets are release-baseline snapshots. App/module live
-// views have separate controls. A saved snapshot removal must stay local.
+// The holder is already empty, so a saved key-set removal leaves it at 0
+// (native review_round10 g_gd_remove writes through to the holder only).
 Integer writerSize = holder.size();
 saved.remove('account');
-System.assertEquals(writerSize, holder.size(), 'saved global snapshot');
+System.assertEquals(writerSize, holder.size(), 'saved global key set');
 System.assertEquals(writerSize, alias.size());
 System.assertEquals(writerSize, DescribeOwner.stored.size());
 System.assertEquals(writerSize, instance.member.size());
@@ -41,11 +41,11 @@ System.assertEquals(0, holder.size(), 'writer');
 System.assertEquals(0, alias.size(), 'local alias');
 System.assertEquals(0, DescribeOwner.stored.size(), 'static alias');
 System.assertEquals(0, instance.member.size(), 'field alias');
-// Global-describe key sets are release-baseline snapshots. App/module live
-// views have separate controls. A saved snapshot removal must stay local.
+// The holder is already empty, so a saved key-set removal leaves it at 0
+// (native review_round10 g_gd_remove writes through to the holder only).
 Integer writerSize = holder.size();
 saved.remove('account');
-System.assertEquals(writerSize, holder.size(), 'saved global snapshot');
+System.assertEquals(writerSize, holder.size(), 'saved global key set');
 System.assertEquals(writerSize, alias.size());
 System.assertEquals(writerSize, DescribeOwner.stored.size());
 System.assertEquals(writerSize, instance.member.size());
@@ -66,11 +66,11 @@ System.assertEquals(0, holder.size(), 'writer');
 System.assertEquals(0, alias.size(), 'local alias');
 System.assertEquals(0, DescribeOwner.stored.size(), 'static alias');
 System.assertEquals(0, instance.member.size(), 'field alias');
-// Global-describe key sets are release-baseline snapshots. App/module live
-// views have separate controls. A saved snapshot removal must stay local.
+// The holder is already empty, so a saved key-set removal leaves it at 0
+// (native review_round10 g_gd_remove writes through to the holder only).
 Integer writerSize = holder.size();
 saved.remove('account');
-System.assertEquals(writerSize, holder.size(), 'saved global snapshot');
+System.assertEquals(writerSize, holder.size(), 'saved global key set');
 System.assertEquals(writerSize, alias.size());
 System.assertEquals(writerSize, DescribeOwner.stored.size());
 System.assertEquals(writerSize, instance.member.size());
@@ -91,11 +91,11 @@ System.assertEquals(0, holder.size(), 'writer');
 System.assertEquals(0, alias.size(), 'local alias');
 System.assertEquals(0, DescribeOwner.stored.size(), 'static alias');
 System.assertEquals(0, instance.member.size(), 'field alias');
-// Global-describe key sets are release-baseline snapshots. App/module live
-// views have separate controls. A saved snapshot removal must stay local.
+// The holder is already empty, so a saved key-set removal leaves it at 0
+// (native review_round10 g_gd_remove writes through to the holder only).
 Integer writerSize = holder.size();
 saved.remove('account');
-System.assertEquals(writerSize, holder.size(), 'saved global snapshot');
+System.assertEquals(writerSize, holder.size(), 'saved global key set');
 System.assertEquals(writerSize, alias.size());
 System.assertEquals(writerSize, DescribeOwner.stored.size());
 System.assertEquals(writerSize, instance.member.size());
@@ -116,11 +116,11 @@ System.assertEquals(0, holder.size(), 'writer');
 System.assertEquals(0, alias.size(), 'local alias');
 System.assertEquals(0, DescribeOwner.stored.size(), 'static alias');
 System.assertEquals(0, instance.member.size(), 'field alias');
-// Global-describe key sets are release-baseline snapshots. App/module live
-// views have separate controls. A saved snapshot removal must stay local.
+// The holder is already empty, so a saved key-set removal leaves it at 0
+// (native review_round10 g_gd_remove writes through to the holder only).
 Integer writerSize = holder.size();
 saved.remove('account');
-System.assertEquals(writerSize, holder.size(), 'saved global snapshot');
+System.assertEquals(writerSize, holder.size(), 'saved global key set');
 System.assertEquals(writerSize, alias.size());
 System.assertEquals(writerSize, DescribeOwner.stored.size());
 System.assertEquals(writerSize, instance.member.size());

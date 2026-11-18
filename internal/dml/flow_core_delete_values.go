@@ -33,7 +33,20 @@ func flowCoreDeleteCriteriaShape(del storage.FlowRecordDelete, definition storag
 	return true
 }
 
+// flowMergeFaultError turns a merge field's unhandled fault into the native
+// record-trigger failure (flow_record_merge, API 62.0). Other errors pass through.
+func flowMergeFaultError(rule storage.FlowRule, err error) (error, bool) {
+	var mergeFault flowMergeUnhandledFault
+	if !errors.As(err, &mergeFault) {
+		return err, false
+	}
+	return dmlErrorf("CANNOT_EXECUTE_FLOW_TRIGGER", nil, "We can't save this record because the “%s” process failed. Give your Salesforce admin these details. <b>An unhandled fault has occurred in this flow</b><br>An unhandled fault has occurred while processing the flow.  Please contact your system administrator for more information.", processFlowLabel(rule)), true
+}
+
 func flowCoreRecordTriggerError(rule storage.FlowRule, err error) error {
+	if fault, ok := flowMergeFaultError(rule, err); ok {
+		return &flowCoreSubflowOutputFailure{cause: fault}
+	}
 	var noMatch *flowCoreDeleteCriteriaError
 	if !strings.EqualFold(rule.TriggerType, "RecordAfterSave") {
 		return err
@@ -41,6 +54,12 @@ func flowCoreRecordTriggerError(rule storage.FlowRule, err error) error {
 	var createType *flowCreateReferenceTypeError
 	if errors.As(err, &createType) {
 		return flowCoreRecordCreateTriggerError(rule, createType)
+	}
+	var elementFault *flowElementFault
+	if errors.As(err, &elementFault) {
+		if failure, ok := flowUnhandledTriggerError(rule, elementFault); ok {
+			return failure
+		}
 	}
 	var unknownOutput *flowCoreUnknownSubflowOutputError
 	var unstoredInput *flowUnstoredSubflowInputFieldError

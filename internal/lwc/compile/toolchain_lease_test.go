@@ -44,7 +44,7 @@ func compilerLease(t *testing.T, batch bool) {
 		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(path, nil, 0644); err != nil {
+		if err := os.WriteFile(path, []byte("// glade-compiler-protocol: two-phase-v1"), 0644); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -61,7 +61,7 @@ func compilerLease(t *testing.T, batch bool) {
 	if err := os.MkdirAll(bin, 0755); err != nil {
 		t.Fatal(err)
 	}
-	node := "#!/bin/sh\ncat >/dev/null\nif [ \"$2\" = \"--salesforce-import-references\" ]; then printf '[]'; exit 0; fi\ntouch \"$GLADE_TEST_STARTED\"\nwhile [ ! -e \"$GLADE_TEST_RELEASE\" ]; do sleep 0.1; done\nprintf '{\"modules\":{},\"bundles\":{\"probe\":{\"modules\":{}}}}'\n"
+	node := "#!/bin/sh\nif [ \"$2\" = \"--two-phase\" ]; then IFS= read -r cfg; printf '[]\\n'; IFS= read -r metadata; else cat >/dev/null; fi\nif [ \"$2\" = \"--salesforce-import-references\" ]; then printf '[]'; exit 0; fi\ntouch \"$GLADE_TEST_STARTED\"\nwhile [ ! -e \"$GLADE_TEST_RELEASE\" ]; do sleep 0.1; done\nprintf '{\"modules\":{},\"bundles\":{\"probe\":{\"modules\":{}}}}'\n"
 	if err := os.WriteFile(filepath.Join(bin, "node"), []byte(node), 0755); err != nil {
 		t.Fatal(err)
 	}

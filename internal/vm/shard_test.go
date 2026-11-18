@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testutil/testshard"
 )
 
@@ -23,6 +24,11 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "vm: %v\n", err)
 		os.Exit(2)
 	}
+	// Measured on shard 3/8: releasing the decoded catalog cuts peak RSS by
+	// about a quarter for about 3% more instructions. The apextest binary does
+	// not opt in: measured there, the release added work and saved no memory.
+	// gladecli and server drive the same runner and stay off until measured.
+	storage.SetStandardCatalogReleaseEnabled(true)
 	os.Exit(m.Run())
 }
 

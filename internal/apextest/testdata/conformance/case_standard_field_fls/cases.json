@@ -1,0 +1,15 @@
+{
+ "E00_describe": "Map<String,Object> m=new Map<String,Object>(); Map<String,Schema.SObjectField> f=Schema.SObjectType.Case.fields.getMap();for(String n:new String[]{'EntitlementId','MilestoneStatus','SlaStartDate','SlaExitDate','IsStopped','StopStartDate','BusinessHoursId','ContactId'}){m.put('Case.'+n,f.containsKey(n));}m.put('Contact.IsPersonAccount',Schema.SObjectType.Contact.fields.getMap().containsKey('IsPersonAccount'));m.put('Opportunity.SyncedQuoteId',Schema.SObjectType.Opportunity.fields.getMap().containsKey('SyncedQuoteId'));m.put('User.DefaultCurrencyIsoCode',Schema.SObjectType.User.fields.getMap().containsKey('DefaultCurrencyIsoCode'));Map<String,Schema.SObjectType> g=Schema.getGlobalDescribe();for(String n:new String[]{'Entitlement','EntitlementContact','MilestoneType','SlaProcess','CaseMilestone','ServiceContract'}){m.put('obj.'+n,g.containsKey(n));}throw new DmlException('OBS|'+JSON.serialize(m));",
+ "E01_token_EntitlementId": "Schema.SObjectField f=Case.EntitlementId;",
+ "E02_soql_EntitlementId": "List<Case> r=[SELECT EntitlementId FROM Case LIMIT 1];",
+ "E03_assign_EntitlementId": "Case c=new Case(); c.EntitlementId=null;",
+ "E04_put_EntitlementId": "Case c=new Case(); c.put('EntitlementId',null);",
+ "E05_ctor_EntitlementId": "Case c=new Case(EntitlementId=null);",
+ "E06_token_BusinessHoursId": "Schema.SObjectField f=Case.BusinessHoursId;",
+ "E07_token_MilestoneStatus": "Schema.SObjectField f=Case.MilestoneStatus;",
+ "E08_token_IsStopped": "Schema.SObjectField f=Case.IsStopped;",
+ "E09_token_ContactIsPersonAccount": "Schema.SObjectField f=Contact.IsPersonAccount;",
+ "E10_soql_Entitlement_object": "List<Entitlement> r=[SELECT Id FROM Entitlement LIMIT 1];",
+ "E11_token_ContactId_control": "Schema.SObjectField f=Case.ContactId;",
+ "E12_token_NoSuch_control": "Schema.SObjectField f=Case.NoSuchEntitlementField;"
+}

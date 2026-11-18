@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"maps"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -41,7 +40,7 @@ func ApplyProjectRoles(org *storage.OrgState, p project.Project) error {
 	sort.Strings(paths)
 	roles := make([]roleXML, 0, len(paths))
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := p.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("load Role metadata %s: %w", path, err)
 		}
@@ -119,7 +118,7 @@ func ApplyProjectRoles(org *storage.OrgState, p project.Project) error {
 		if role.MayForecastManagerShare != nil {
 			record.Fields["MayForecastManagerShare"] = storage.BooleanValue(*role.MayForecastManagerShare)
 		}
-		state.Records[id] = record
+		state.PutRecord(id, record)
 	}
 	// Allocate every identity before resolving parent names, independent of file order.
 	for _, role := range roles {
@@ -134,7 +133,7 @@ func ApplyProjectRoles(org *storage.OrgState, p project.Project) error {
 			}
 			record.Fields["ParentRoleId"] = storage.IDValue(parentID)
 		}
-		state.Records[id] = record
+		state.PutRecord(id, record)
 	}
 	if org.Objects == nil {
 		org.Objects = make(map[string]storage.ObjectState)

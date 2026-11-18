@@ -1,0 +1,7 @@
+api	case	outcome
+59.0	ValidNew	accept
+59.0	BadVerb	reject
+59.0	BadObject	reject
+67.0	ValidNew	accept
+67.0	BadVerb	reject
+67.0	BadObject	reject

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customLabels><name>GladeProbeFilled2cea372ec811</name><label>EnglishFilled</label></customLabels>
+    <customLabels><name>GladeProbeNbsp2cea372ec811</name><label>&#160;</label></customLabels>
+</Translations>

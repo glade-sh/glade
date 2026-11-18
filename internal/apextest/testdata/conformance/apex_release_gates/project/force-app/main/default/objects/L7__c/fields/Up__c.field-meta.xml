@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Up__c</fullName><label>Up</label><type>Lookup</type><referenceTo>L6__c</referenceTo><relationshipName>Down7</relationshipName><relationshipLabel>Down7</relationshipLabel><deleteConstraint>SetNull</deleteConstraint></CustomField>

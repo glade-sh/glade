@@ -511,6 +511,13 @@ func evalVisualforceURLFor(ctx *ExpressionContext, args []Expression) *vm.Value 
 		return failVisualforceFormula(ctx, "")
 	}
 	base := target.String()
+	if target.Kind == vm.ValueObject && strings.EqualFold(target.Type, "PageReference") {
+		// Apex String.valueOf of a PageReference reads System.PageReference[url];
+		// URLFOR addresses the page URL.
+		if pageURL := vm.PageReferenceURL(target); pageURL.Kind == vm.ValueString {
+			base = pageURL.Text
+		}
+	}
 	if len(args) >= 2 {
 		path := evalExpressionValue(args[1], ctx)
 		if path.Kind != vm.ValueNull && strings.TrimSpace(path.String()) != "" {

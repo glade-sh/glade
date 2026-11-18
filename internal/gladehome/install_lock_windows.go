@@ -13,3 +13,13 @@ func lockInstallFile(file *os.File, exclusive bool) error {
 	}
 	return windows.LockFileEx(windows.Handle(file.Fd()), flags, 0, 1, 0, &windows.Overlapped{})
 }
+
+func tryLockInstallFile(file *os.File, exclusive bool) error {
+	flags := uint32(windows.LOCKFILE_FAIL_IMMEDIATELY)
+	if exclusive {
+		flags |= windows.LOCKFILE_EXCLUSIVE_LOCK
+	}
+	return windows.LockFileEx(windows.Handle(file.Fd()), flags, 0, 1, 0, &windows.Overlapped{})
+}
+
+func isInstallLockBusy(err error) bool { return err == windows.ERROR_LOCK_VIOLATION }

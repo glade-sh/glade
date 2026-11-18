@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels><fullName>GladeProbeFilled2cea372ec811</fullName><language>fr</language><protected>false</protected><value>MasterFilled</value></labels>
+    <labels><fullName>GladeProbeMissing2cea372ec811</fullName><language>fr</language><protected>false</protected><value>MasterMissing</value></labels>
+    <labels><fullName>GladeProbeBlank2cea372ec811</fullName><language>fr</language><protected>false</protected><value>MasterBlank</value></labels>
+    <labels><fullName>GladeProbeNbsp2cea372ec811</fullName><language>fr</language><protected>false</protected><value>MasterNbsp</value></labels>
+</CustomLabels>

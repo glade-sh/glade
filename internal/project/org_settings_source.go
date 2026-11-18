@@ -2,53 +2,32 @@ package project
 
 import (
 	"encoding/xml"
-	"io/fs"
-	"os"
 	"path/filepath"
-	"sort"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 const sourceSettingsSuffix = ".settings-meta.xml"
 
-// sourceSettingsSkipDirs extends the metadata-folder skip list with object
-// trees, which are large and never hold org settings.
-func sourceSettingsSkipDir(name string) bool {
-	return personAccountEvidenceSkipDirs[name] || name == "objects"
+// sourceSettingsFiles lists deployed org settings (settings/*.settings-meta.xml)
+// under root. The scan is bounded like the Person Accounts evidence scan and
+// shares its directory walk (orgShapeEvidenceScan).
+func sourceSettingsFiles(v *inputview.View, root string) []string {
+	found, _ := orgShapeEvidenceScan(v, root)
+	return found
 }
 
-// sourceSettingsFiles lists deployed org settings (settings/*.settings-meta.xml)
-// under root. The scan is bounded like the Person Accounts evidence scan.
-func sourceSettingsFiles(root string) []string {
-	if root == "" {
-		return nil
-	}
+// sourceSettingsFilesIn lists the settings files directly in one settings
+// directory.
+func sourceSettingsFilesIn(v *inputview.View, dir string) []string {
 	var found []string
-	_ = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || !entry.IsDir() {
-			return nil
+	items, _ := v.ReadDir(dir)
+	for _, item := range items {
+		if !item.IsDir() && strings.HasSuffix(item.Name(), sourceSettingsSuffix) {
+			found = append(found, filepath.Join(dir, item.Name()))
 		}
-		if path != root {
-			rel, relErr := filepath.Rel(root, path)
-			if relErr != nil || strings.Count(rel, string(os.PathSeparator)) >= personAccountEvidenceMaxDepth {
-				return filepath.SkipDir
-			}
-		}
-		if sourceSettingsSkipDir(entry.Name()) {
-			return filepath.SkipDir
-		}
-		if entry.Name() != "settings" {
-			return nil
-		}
-		items, _ := os.ReadDir(path)
-		for _, item := range items {
-			if !item.IsDir() && strings.HasSuffix(item.Name(), sourceSettingsSuffix) {
-				found = append(found, filepath.Join(path, item.Name()))
-			}
-		}
-		return filepath.SkipDir
-	})
-	sort.Strings(found)
+	}
 	return found
 }
 
@@ -57,14 +36,18 @@ func sourceSettingsFiles(root string) []string {
 // Settings are keyed by file name (Quote.settings-meta.xml is quoteSettings),
 // which is how the metadata deploy identifies the type. Only boolean children
 // are read; other values never reach the trigger table.
-func sourceSettingsDefinition(root string) (scratchOrgDefinition, bool) {
+func sourceSettingsDefinition(v *inputview.View, root string) (scratchOrgDefinition, bool) {
+	return sourceSettingsDefinitionFromFiles(v, sourceSettingsFiles(v, root))
+}
+
+func sourceSettingsDefinitionFromFiles(v *inputview.View, files []string) (scratchOrgDefinition, bool) {
 	settings := map[string]any{}
-	for _, path := range sourceSettingsFiles(root) {
+	for _, path := range files {
 		name := strings.TrimSuffix(filepath.Base(path), sourceSettingsSuffix)
 		if name == "" {
 			continue
 		}
-		data, err := os.ReadFile(path)
+		data, err := v.ReadFile(path)
 		if err != nil {
 			continue
 		}

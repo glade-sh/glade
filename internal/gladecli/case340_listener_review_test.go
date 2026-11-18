@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/testutil"
 )
 
 func TestCase340ListenerRejectsUntrustedAuthority(t *testing.T) {
@@ -36,7 +38,7 @@ func TestCase340ListenerRejectsUntrustedAuthority(t *testing.T) {
 	transport := &http.Transport{Proxy: nil}
 	t.Cleanup(transport.CloseIdleConnections)
 	client := &http.Client{Transport: transport, Timeout: time.Second}
-	deadline := time.Now().Add(15 * time.Second)
+	deadline := time.Now().Add(testutil.Deadline(15 * time.Second))
 	for {
 		req, err := http.NewRequest(http.MethodGet, "http://"+address+"/services/data/", nil)
 		if err != nil {

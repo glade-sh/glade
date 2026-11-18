@@ -1,0 +1,14 @@
+id	route	file
+st01	istest	St01StaticTest
+st03	istest	St03PrivateTest
+st04	istest	St04ConstructorTest
+st05	istest	St05ParamCtorTest
+st06	istest	St06AbstractTest
+st07	istest	St07NonVirtualTest
+st08	istest	St08FinalTest
+st09	istest	St09InterfaceTest
+st10	istest	St10NullProviderTest
+st11	istest	St11PrivateStaticTest
+st12	istest	St12PropsTest
+st13	istest	St13BatchableTest
+st14	istest	St14InnerTest

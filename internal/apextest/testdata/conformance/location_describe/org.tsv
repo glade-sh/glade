@@ -1,0 +1,15 @@
+api	route	case	contains	name	compound
+62.0	anonymous	Probe_Point__c	true	Probe_Point__c	null
+62.0	anonymous	Probe_Point__Latitude__s	true	Probe_Point__Latitude__s	Probe_Point__c
+62.0	anonymous	probe_point__longitude__s	true	Probe_Point__Longitude__s	Probe_Point__c
+62.0	anonymous	Probe_Text__c	true	Probe_Text__c	null
+62.0	anonymous	Probe_Text__Latitude__s	false	null	null
+62.0	anonymous	Absent__Latitude__s	false	null	null
+67.0	anonymous	Probe_Point__c	true	Probe_Point__c	null
+67.0	anonymous	Probe_Point__Latitude__s	true	Probe_Point__Latitude__s	Probe_Point__c
+67.0	anonymous	probe_point__longitude__s	true	Probe_Point__Longitude__s	Probe_Point__c
+67.0	anonymous	Probe_Text__c	true	Probe_Text__c	null
+67.0	anonymous	Probe_Text__Latitude__s	false	null	null
+67.0	anonymous	Absent__Latitude__s	false	null	null
+62.0	istest	all assertions	pass	-	-
+67.0	istest	all assertions	pass	-	-

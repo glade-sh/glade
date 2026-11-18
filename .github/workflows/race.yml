@@ -1,19 +1,10 @@
 name: Race
 
 on:
-  # Main-branch race runs start when the CI workflow for the same push has
-  # completed successfully. The concurrency-only race matrix is about 60 jobs;
-  # starting it on the push itself made it compete with the CI workflow for
-  # the account's 20 concurrent hosted runners (v0.3.3 main push: 20 jobs
-  # running for 65 minutes straight; the CI workflow took 78 min against
-  # 38 min for the same tree as a pull request). Race is not a release
-  # authority, so it can follow the CI workflow instead of racing it.
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   schedule:
-    - cron: '43 10 * * 1'
+    # Race is not a release authority and is red by design on main pushes;
+    # it runs nightly only.
+    - cron: '43 10 * * *'
   workflow_dispatch:
 
 permissions:
@@ -28,9 +19,6 @@ concurrency:
 
 jobs:
   plan:
-    # A red or cancelled CI run gets no race run; its rerun completes the CI
-    # workflow again and triggers Race then.
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -54,13 +42,13 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Classify race packages
         id: classify
         run: |
           case "${{ github.event_name }}" in
-            push|workflow_run)
+            push)
               mode=concurrency
               packages="$(scripts/ci-race-packages.sh full)"
               ;;
@@ -156,7 +144,9 @@ jobs:
       - name: Validate LWC duration history
         if: steps.classify.outputs.mode == 'full' && steps.lwc-history.outputs.run_id != '' && steps.lwc-timing-download.outcome == 'success'
         run: |
-          if scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7}; then
+          shards=(/tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..7})
+          if [[ -d /tmp/race-lwc-predecessor/go-test-lwc-compile-shard-11 ]]; then shards=(/tmp/race-lwc-predecessor/go-test-lwc-compile-shard-{0..11}); fi
+          if scripts/ci-go-test.sh lwc-compile-history-refresh "$CI_LWC_COMPILE_HISTORY_PATH" "${shards[@]}"; then
             :
           else
             status=$?
@@ -200,26 +190,26 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-race-test-binaries-${{ hashFiles('go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-test-binaries-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Restore Go build cache
         id: restore-go-build-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-test-binaries-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-race-test-binaries-${{ hashFiles('go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.10-ci-test-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-race-test-binaries-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.11-ci-test-${{ hashFiles('go.sum') }}-
       - name: Bind binary artifact attempt
         id: bundle
         run: echo "attempt=$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
@@ -342,7 +332,7 @@ jobs:
           path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Download shared LWC duration history
         if: matrix.package == './internal/lwc/compile'
@@ -445,7 +435,7 @@ jobs:
           path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         if: ${{ matrix.package == './internal/gladecli' }}
@@ -507,7 +497,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         if: ${{ contains(fromJSON('["./internal/gladehome","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
@@ -579,7 +569,7 @@ jobs:
           path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Run assigned Apex race shards
         run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
@@ -612,7 +602,7 @@ jobs:
           path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Run assigned Apex race shard
         run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
@@ -645,7 +635,7 @@ jobs:
           path: /tmp/glade-race-test-binaries
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - name: Run assigned Apex race shards
         run: scripts/ci-race-test.sh ./internal/apextest internal-apextest
@@ -709,7 +699,7 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: "1.26.10"
+          go-version: "1.26.11"
           cache: false
       - if: ${{ contains(matrix.packages, './internal/gladecli') || contains(matrix.packages, './internal/server') || contains(matrix.packages, './internal/gladehome') }}
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0

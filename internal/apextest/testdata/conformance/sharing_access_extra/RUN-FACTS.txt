@@ -1,0 +1,6 @@
+runAs(Version), Database cursors, undelete, merge and convertLead with AccessLevel.USER_MODE, and Search.suggest with an access level, for a Standard User in System.runAs.
+org: fresh scratch org from a campaign Dev Hub, Developer Edition, deleted after the run (delete verified). Org id, usernames, alias and host are not recorded.
+capture date: 2026-11-16 (UTC). sf 2.157.8. Class source API 62.0, 66.0, 67.0 and 68.0 (SamExtra<N>), deployed at 68.0.
+metadata: as sharing_access_modes.
+route: named @IsTest methods, one transaction each, one run of each class.
+observation: as sharing_access_modes. Cursor rows at 67.0 and 68.0 fail in setup (administrator Secret__c insert); sharing_access_follow repeats them with system-mode setup.

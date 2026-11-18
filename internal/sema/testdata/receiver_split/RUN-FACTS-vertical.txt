@@ -1,0 +1,5 @@
+Additional capture: fresh Developer scratch org, 30 days, on a campaign Dev Hub.
+Started: 2026-11-14T05:36:29Z. Finished: 2026-11-14T05:36:51Z.
+APIs: 62.0 and 67.0. Salesforce CLI: 2.157.8. Org deleted and deletion verified.
+Vertical-tab cases used REST Tooling executeAnonymous because SOAP rejects that character before compilation.
+REST compiler results include their reported line, column and complete primary message.

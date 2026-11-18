@@ -201,6 +201,13 @@ func (vm *VM) currentSharingMode() string {
 	if vm.currentTrigger {
 		return "without sharing"
 	}
+	// A runAs(User) block enforces that user's record sharing for its own
+	// statements, whatever the sharing keyword of the class that holds the
+	// block (hidden_record_grid HidWithoutShare rows, APIs 62.0-67.0). Code the
+	// block calls keeps its own declaration.
+	if n := len(vm.runAsFrameDepths); n > 0 && vm.runAsFrameDepths[n-1] == len(vm.callStack) && apexversion.AtLeast(vm.currentMethod.APIVersion, 62) {
+		return "with sharing"
+	}
 	// Native test invocations enforce sharing in the test method itself,
 	// including a class declared without sharing. Ordinary helpers still use
 	// their own declarations and the effective caller frame below.
