@@ -256,7 +256,11 @@ change.
    `go test -count=1 ./scripts` (in a real checkout with `jq` and Node), and
    `go test ./internal/repoguard`.
 5. Check the diff since the last tag for third-party names, personal paths,
-   org ids and credentials.
+   org ids and credentials: `scripts/leak-scan.sh` over the whole range, and
+   `scripts/leak-scan-commits.sh <last-tag>..<candidate>` for the commit that
+   introduced each finding. Both fail when `LEAK_SCAN_DENYLIST` is empty;
+   `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` skips the denylist entries with a
+   warning, never the path checks.
 6. After merge and before tagging, verify the exact candidate's main-push
    `Required CI` and trusted `Salesforce Correctness` authorities as specified
    in the release policy, including its limited tree-attestation alternative
