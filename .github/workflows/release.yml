@@ -24,6 +24,18 @@ permissions:
   contents: read
 
 jobs:
+  distribute-ref:
+    # A dispatch runs the dispatched ref's workflow and publisher, so the
+    # Cloudflare secret is only exposed to distribute-only runs from main.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.distribute_only && github.ref != 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Reject distribute-only dispatch outside main
+        run: |
+          echo "::error::distribute_only dispatches must run from refs/heads/main, not $GITHUB_REF"
+          exit 1
+
   codeql-release:
     name: CodeQL release gate
     if: startsWith(github.ref, 'refs/tags/')
@@ -502,7 +514,7 @@ jobs:
 
   distribute:
     needs: publish
-    if: ${{ always() && (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && needs.publish.result == 'success' || github.event_name == 'workflow_dispatch' && inputs.distribute_only) }}
+    if: ${{ always() && (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && needs.publish.result == 'success' || github.event_name == 'workflow_dispatch' && inputs.distribute_only && github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-24.04
     permissions:
       actions: read
@@ -546,6 +558,7 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == push ]]; then
             test "$glade_sha" = "$GITHUB_SHA"
           else
+            test "$GITHUB_REF" = refs/heads/main
             tag_tools_sha="$(scripts/verify-salesforce-check.sh --tag-tools-sha "$VERSION")"
             if [[ "$GLADE_TOOLS_SHA" != "$tag_tools_sha" ]]; then
               echo "::error::glade_tools_sha differs from the Glade-Tools-SHA trailer of tag $VERSION"

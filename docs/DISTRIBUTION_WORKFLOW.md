@@ -219,7 +219,10 @@ The job never changes the GitHub Release. Its token has only `actions`,
 To publish only the static host for a tag whose GitHub Release is already
 published, dispatch the workflow from `main` in distribute-only mode. Pass the
 tag's `Glade-Tools-SHA` trailer as `glade_tools_sha`; the job checks it against
-the tag. No archive is rebuilt and no other release job runs.
+the tag. No archive is rebuilt and no other release job runs. A dispatch runs
+the dispatched ref's own workflow and publisher, so distribute-only mode runs
+only from `refs/heads/main`: from any other ref the `distribute-ref` job fails
+and `distribute`, which holds the Cloudflare secret, does not start.
 
 ```bash
 tools_sha="$(scripts/verify-salesforce-check.sh --tag-tools-sha vX.Y.Z)"

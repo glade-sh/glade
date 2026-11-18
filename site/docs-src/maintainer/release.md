@@ -83,7 +83,9 @@ repository. `scripts/release-check.sh` remains the correctness authority.
    conditional create, reads it back and verifies its bytes and SHA-256
    against the GitHub Release bundle. It needs the `CLOUDFLARE_API_TOKEN`
    secret and fails naming it when absent. For an already published tag,
-   dispatch the workflow from `main` with `distribute_only=true`.
+   dispatch the workflow from `main` with `distribute_only=true`; the mode
+   refuses any other ref so the Cloudflare secret only reaches `main`'s
+   publisher.
 7. Mutable pointers move last: `index.json` and `latest/release-manifest.json`
    change only after every versioned product object verifies.
 8. Publish the site, then run

@@ -76,7 +76,7 @@ func TestReleaseWorkflowDistributesStaticDownloadsAfterGitHubPublish(t *testing.
 	for _, want := range []string{
 		"always()",
 		"github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && needs.publish.result == 'success'",
-		"github.event_name == 'workflow_dispatch' && inputs.distribute_only",
+		"github.event_name == 'workflow_dispatch' && inputs.distribute_only && github.ref == 'refs/heads/main'",
 	} {
 		if !strings.Contains(distribute.If, want) {
 			t.Fatalf("distribute condition %q lacks %q", distribute.If, want)
@@ -135,6 +135,7 @@ func TestReleaseWorkflowDistributesStaticDownloadsAfterGitHubPublish(t *testing.
 		`test "$(git cat-file -t "refs/tags/$VERSION")" = tag`,
 		`glade_sha="$(git rev-parse "refs/tags/$VERSION^{commit}")"`,
 		`test "$glade_sha" = "$GITHUB_SHA"`,
+		`test "$GITHUB_REF" = refs/heads/main`,
 		`scripts/verify-salesforce-check.sh --tag-tools-sha "$VERSION"`,
 		`gh release view "$VERSION" --json isDraft --jq .isDraft`,
 		`echo "GLADE_SHA=$glade_sha" >> "$GITHUB_ENV"`,
@@ -235,6 +236,31 @@ func TestReleaseWorkflowDistributeOnlyDispatchSkipsBuildAndPublish(t *testing.T)
 	}
 	if job := document.Jobs["build"]; !strings.Contains(job.If, "needs.shared-payload.result == 'success'") {
 		t.Fatalf("build does not require the shared payload: %q", job.If)
+	}
+}
+
+func TestReleaseWorkflowDistributeOnlyRequiresMain(t *testing.T) {
+	document, _ := readReleaseWorkflowDocument(t)
+	distribute := document.Jobs["distribute"]
+	dispatch := distribute.If[strings.Index(distribute.If, "github.event_name == 'workflow_dispatch'"):]
+	if !strings.Contains(dispatch, "inputs.distribute_only && github.ref == 'refs/heads/main'") {
+		t.Fatalf("distribute-only path is not limited to main: %q", distribute.If)
+	}
+	guard, ok := document.Jobs["distribute-ref"]
+	if !ok {
+		t.Fatal("release workflow lacks the distribute-only ref guard")
+	}
+	if guard.If != "${{ github.event_name == 'workflow_dispatch' && inputs.distribute_only && github.ref != 'refs/heads/main' }}" {
+		t.Fatalf("distribute-ref condition = %q", guard.If)
+	}
+	if len(guard.Permissions) != 0 || len(guard.Steps) != 1 || guard.Steps[0].Uses != "" || len(guard.Steps[0].Env) != 0 {
+		t.Fatalf("distribute-ref must be a permissionless, secret-free failing step: %#v", guard)
+	}
+	command := exec.Command("bash", "-e", "-c", guard.Steps[0].Run)
+	command.Env = append(os.Environ(), "GITHUB_REF=refs/heads/feature")
+	out, err := command.CombinedOutput()
+	if err == nil || !strings.Contains(string(out), "::error::distribute_only dispatches must run from refs/heads/main, not refs/heads/feature") {
+		t.Fatalf("off-main distribute-only dispatch was not rejected by name: err=%v\n%s", err, out)
 	}
 }
 
