@@ -107,12 +107,25 @@ func StandardFeatureCapturedReference(object, field, target string) bool {
 	return false
 }
 
+// standardFeatureVersionedObjectName canonicalizes an object that carries
+// captured per-API field versions. Most are feature-profile describes, but the
+// version matrix also covers standard catalog objects that no profile owns.
+func standardFeatureVersionedObjectName(object string) (string, bool) {
+	bundle := loadStandardFeatureDescribes()
+	for name := range bundle.FieldVersions {
+		if strings.EqualFold(name, object) {
+			return name, true
+		}
+	}
+	return "", false
+}
+
 // StandardFeatureFieldVersion reports captured source-version membership for
 // the isolated feature surfaces. The second value is false for unmeasured
 // fields or API versions, which retain the ordinary catalog behavior.
 func StandardFeatureFieldVersion(object, field, api string) (bool, bool) {
 	bundle := loadStandardFeatureDescribes()
-	name, ok := standardFeatureDescribeName(object)
+	name, ok := standardFeatureVersionedObjectName(object)
 	if !ok {
 		return false, false
 	}
@@ -126,9 +139,8 @@ func StandardFeatureFieldVersion(object, field, api string) (bool, bool) {
 }
 
 func StandardFeatureHasVersionedFields(object string) bool {
-	bundle := loadStandardFeatureDescribes()
-	name, ok := standardFeatureDescribeName(object)
-	return ok && len(bundle.FieldVersions[name]) > 0
+	_, ok := standardFeatureVersionedObjectName(object)
+	return ok
 }
 
 // StandardFeatureNamedOnlyField identifies fields observed in named Apex but

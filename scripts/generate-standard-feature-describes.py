@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Pack the owned feature-profile describe observations for runtime use."""
+"""Pack the owned feature-profile describe observations for runtime use.
+
+Field versions come from the gift, docgen and auth-flow bisect captures.
+Auth-flow rows cover standard catalog objects no profile describe owns, so
+version-bisect/authflow-cases.json is their field inventory; their describes
+stay in the standard catalog.
+"""
 import argparse
 import csv
 import io
@@ -12,6 +18,7 @@ CAPTURE = ROOT / "internal/apextest/testdata/conformance/standard_describe_profi
 OUTPUT = ROOT / "internal/storage/standard_feature_describes.json.gz"
 PROFILES = ("npc-min", "npc-references", "docgen-min", "publicsector", "template")
 APIS = tuple(f"{n}.0" for n in range(62, 68))
+VERSION_BISECTS = ("gift-bisect", "doc-bisect", "authflow-bisect")
 
 
 def main():
@@ -32,13 +39,17 @@ def main():
             objects[name] = item
     versions = {}
     routes = {}
+    version_classes = {}
     with (CAPTURE / "org.tsv").open(newline="") as source:
         for row in csv.DictReader(source, delimiter="\t"):
-            if row["profile"] not in ("gift-bisect", "doc-bisect"):
+            if row["profile"] not in VERSION_BISECTS:
                 continue
             if row["route"] not in ("anonymous", "istest"):
                 continue
             obj, field = row["case"].split(".", 1)
+            klass = "authflow" if row["profile"] == "authflow-bisect" else "feature"
+            if version_classes.setdefault(obj, klass) != klass:
+                raise ValueError(f"version capture class mismatch: {obj}")
             key = (obj, field, row["api"])
             pair = routes.setdefault(key, {})
             if row["route"] in pair or row["result"] not in ("true", "false"):
@@ -48,7 +59,18 @@ def main():
         if set(pair) != {"anonymous", "istest"} or pair["anonymous"] != pair["istest"]:
             raise ValueError(f"native routes differ: {obj}.{field} {api}")
         versions.setdefault(obj, {}).setdefault(field, {})[api] = pair["anonymous"]
+    authflow_cases = json.loads((CAPTURE / "version-bisect" / "authflow-cases.json").read_text())
+    for obj in authflow_cases:
+        if obj not in versions:
+            raise ValueError(f"auth flow case without native rows: {obj}")
     for obj, fields in versions.items():
+        if version_classes[obj] == "authflow":
+            if sorted(fields) != sorted(authflow_cases.get(obj, [])):
+                raise ValueError(f"auth flow case list mismatch: {obj}")
+            for field, apis in fields.items():
+                if set(apis) != set(APIS):
+                    raise ValueError(f"incomplete native field matrix: {obj}.{field}")
+            continue
         if obj not in objects:
             raise ValueError(f"version field without native object: {obj}")
         for field, apis in fields.items():
