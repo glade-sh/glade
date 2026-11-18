@@ -78,12 +78,17 @@ repository. `scripts/release-check.sh` remains the correctness authority.
 5. Let the Release workflow build archives, verify their parser and
    attestations, and publish the GitHub Release. Check the body for real blank
    lines, not literal `\n`.
-6. Publish each `vX.Y.Z/**` product object with a conditional create
-   (`If-None-Match: *` or an equivalent publisher-enforced no-clobber write).
-   Read it back and verify its bytes and SHA-256 against the GitHub Release.
-7. Update mutable pointers last: `index.json` and `latest/release-manifest.json`
-   move only after every versioned product object verifies.
-8. Sync and publish the site, then run
+6. Let the workflow's `distribute` job publish `downloads.glade.sh` after the
+   GitHub Release. It creates each `vX.Y.Z/**` product object with a
+   conditional create, reads it back and verifies its bytes and SHA-256
+   against the GitHub Release bundle. It needs the `CLOUDFLARE_API_TOKEN`
+   secret and fails naming it when absent. For an already published tag,
+   dispatch the workflow from `main` with `distribute_only=true`; the mode
+   refuses any other ref so the Cloudflare secret only reaches `main`'s
+   publisher.
+7. Mutable pointers move last: `index.json` and `latest/release-manifest.json`
+   change only after every versioned product object verifies.
+8. Publish the site, then run
    `bash scripts/release-distribution-check.sh vX.Y.Z`. It verifies the channel,
    site release, and both default and pinned installs in isolated projects.
 9. Check an update from the prior release.
@@ -137,15 +142,11 @@ GLADE_HOME="$(mktemp -d)" GLADE_PLUGIN_REGISTRY_URL="https://plugins.glade.sh/in
 The docs site is the single public docs surface. User docs live under
 `/guide/...`. Maintainer docs live under `/maintainer/...`.
 
-After the stable download pointer moves, sync the checked site input on the
-docs change and review it before merge:
-
-```bash
-cd site
-npm run release:sync
-npm run release:sync:check
-git diff -- release-manifest.json
-```
+The site build writes `release-manifest.json` from the live
+`https://downloads.glade.sh/latest/release-manifest.json` before VitePress
+runs, so the site shows the stable download channel at build time. After the
+stable download pointer moves, rebuild the site. `npm run release:sync` writes
+the same file for a local preview.
 
 Cloudflare Pages project `glade-site` publishes from product `main`. After the
 merge, require the Git integration deployment or deploy the clean, exact main

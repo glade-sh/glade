@@ -38,7 +38,12 @@ reports which bumps the touched paths require.
    ids and credentials.
 6. After merge and before tagging, run `scripts/verify-required-ci.sh` for the
    exact candidate and check the separate Browser, Race and Security workflows.
-7. Tag and publish per `docs/DISTRIBUTION_WORKFLOW.md`.
+7. Tag and publish per `docs/DISTRIBUTION_WORKFLOW.md`. The Release workflow
+   publishes the GitHub Release, then its `distribute` job publishes
+   `downloads.glade.sh` (needs the `CLOUDFLARE_API_TOKEN` secret). If that job
+   fails, fix the cause and dispatch `release.yml` from `main` with
+   `distribute_only=true`, `version` and the tag's `glade_tools_sha`. Check
+   `https://downloads.glade.sh/latest/release-manifest.json` names the version.
 8. Install from the published archive on one machine and run `glade doctor`.
 
 No step repeats on an unchanged tree. Fix a gap found while qualifying before

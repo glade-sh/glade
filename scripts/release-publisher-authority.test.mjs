@@ -114,3 +114,27 @@ for (const mode of ['forged-ci', 'forged-sf', 'wrong-source', 'missing-provenanc
     assert.deepEqual(f.writes, [])
   })
 }
+
+test('release workflow runs this publisher with the pinned Wrangler after GitHub publication', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8')
+  const publisher = await readFile(new URL('./release-publish.mjs', import.meta.url), 'utf8')
+  const pins = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8'))
+  const lock = JSON.parse(await readFile(new URL('./package-lock.json', import.meta.url), 'utf8'))
+  const distribute = workflow.match(/^  distribute:\n([\s\S]*)$/m)?.[1]
+  assert.ok(distribute, 'release workflow lacks the distribute job')
+  assert.ok(workflow.indexOf('\n  publish:\n') < workflow.indexOf('\n  distribute:\n'), 'GitHub publication must come first')
+  assert.match(distribute, /needs: publish\n/)
+  assert.doesNotMatch(distribute, /: write\b/)
+  const install = distribute.indexOf('run: npm ci --prefix scripts --ignore-scripts\n')
+  const publish = distribute.indexOf('run: node scripts/release-publish.mjs dist "$VERSION" "$GLADE_SHA"\n')
+  const verify = distribute.indexOf('- name: Verify public downloads')
+  assert.ok(install >= 0 && install < publish && publish < verify, 'install, publish and public verification must run in order')
+  assert.match(distribute, /WRANGLER_MODULE: \$\{\{ github\.workspace \}\}\/scripts\/node_modules\/wrangler/)
+  assert.match(distribute, /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/)
+  assert.match(distribute, /CLOUDFLARE_ACCOUNT_ID: \$\{\{ vars\.CLOUDFLARE_ACCOUNT_ID \}\}/)
+  assert.match(publisher, /require\(process\.env\.WRANGLER_MODULE \|\| 'wrangler'\)/)
+  assert.match(publisher, /bucket_name: 'glade-downloads'/)
+  assert.equal(pins.dependencies.wrangler, lock.packages['node_modules/wrangler'].version)
+  const [major, minor] = pins.dependencies.wrangler.split('.').map(Number)
+  assert.ok(major > 4 || (major === 4 && minor >= 37), 'the remote preview R2 binding needs Wrangler 4.37 or newer')
+})
