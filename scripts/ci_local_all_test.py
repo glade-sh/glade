@@ -121,6 +121,71 @@ class LocalAllTest(unittest.TestCase):
         self.assertIn('scripts/ci-gofmt.sh', block)
         self.assertIn('scripts/ci-gofmt.sh', ' '.join(calls['workflow-lint'][0]))
 
+    def leak_scan_project(self, base):
+        project = base / 'project'
+        (project / 'scripts').mkdir(parents=True)
+        shutil.copy(ROOT / 'scripts/leak-scan.sh', project / 'scripts/leak-scan.sh')
+        shutil.copy(ROOT / 'scripts/leak-scan-expand-gzip.py', project / 'scripts/leak-scan-expand-gzip.py')
+        env = {**os.environ, 'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@example.invalid',
+               'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@example.invalid'}
+        subprocess.run(['git', 'init', '-q'], cwd=project, check=True, capture_output=True, env=env)
+        (project / 'README.md').write_text('base\n')
+        subprocess.run(['git', 'add', '-A'], cwd=project, check=True, capture_output=True, env=env)
+        subprocess.run(['git', 'commit', '-qm', 'base'], cwd=project, check=True, capture_output=True, env=env)
+        return project
+
+    def run_leak_scan_lane(self, project, line, denylist):
+        # One commit holding the scanned line, then the lane's own command
+        # against the fixture project. The denylist variable is removed from
+        # the environment before each capture so a value set on the host
+        # cannot choose the route; every case supplies a synthetic entry.
+        env = {**os.environ, 'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@example.invalid',
+               'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@example.invalid'}
+        (project / 'docs').mkdir(exist_ok=True)
+        (project / 'docs/notes.md').write_text(line)
+        subprocess.run(['git', 'add', '-A'], cwd=project, check=True, capture_output=True, env=env)
+        subprocess.run(['git', 'commit', '-qm', 'change'], cwd=project, check=True, capture_output=True, env=env)
+        with tempfile.TemporaryDirectory() as directory:
+            logs = pathlib.Path(directory)
+            with mock.patch.dict(os.environ):
+                os.environ.pop('LEAK_SCAN_DENYLIST', None)
+                os.environ.pop('LEAK_SCAN_ALLOW_EMPTY_DENYLIST', None)
+                os.environ.pop('LEAK_SCAN_RANGE', None)
+                if denylist is not None:
+                    os.environ['LEAK_SCAN_DENYLIST'] = denylist
+                calls = self.capture_plan(logs)
+            command, options = calls['leak-scan']
+            r = runner.Runner(logs, 1)
+            r.env.pop('LEAK_SCAN_DENYLIST', None)
+            if denylist is not None:
+                r.env['LEAK_SCAN_DENYLIST'] = denylist
+            with mock.patch.object(runner, 'ROOT', project):
+                r.command('leak-scan-check', command, **options)
+            status, log = r.results['leak-scan-check']
+            return status, options, log.read_text()
+
+    def test_leak_scan_lane_warns_and_passes_without_denylist(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.leak_scan_project(pathlib.Path(directory))
+            status, options, log = self.run_leak_scan_lane(project, 'plain documentation line\n', None)
+            self.assertEqual(status, 'PASS', log)
+            self.assertEqual(options['env'], {'LEAK_SCAN_ALLOW_EMPTY_DENYLIST': '1'})
+            self.assertIn('leak-scan: WARNING denylist check skipped', log)
+            self.assertIn('leak-scan: clean', log)
+
+    def test_leak_scan_lane_enforces_a_set_denylist(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.leak_scan_project(pathlib.Path(directory))
+            status, options, log = self.run_leak_scan_lane(project, 'plain documentation line\n', 'glade-synthetic-unmatched-entry')
+            self.assertEqual(status, 'PASS', log)
+            self.assertEqual(options['env'], {'LEAK_SCAN_ALLOW_EMPTY_DENYLIST': '0'})
+            self.assertIn('1 denylist entries', log)
+            self.assertNotIn('WARNING', log)
+            status, options, log = self.run_leak_scan_lane(project, 'tested against glade-synthetic-matched-entry\n', 'glade-synthetic-matched-entry')
+            self.assertEqual(status, 'FAIL', log)
+            self.assertIn('file 1:1: denylist', log)
+            self.assertNotIn('glade-synthetic-matched-entry', log)
+
     def test_cancel_shard_pool_stops_active_and_queued_work(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
