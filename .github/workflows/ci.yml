@@ -1847,6 +1847,11 @@ jobs:
       - name: Scan added lines for private material
         env:
           LEAK_SCAN_DENYLIST: ${{ secrets.LEAK_SCAN_DENYLIST }}
+          # A pull request from a fork (or any head repository other than the
+          # base) cannot see this repository's secrets, so an empty denylist
+          # is expected there; every other event must have the secret and
+          # fails without it.
+          LEAK_SCAN_ALLOW_EMPTY_DENYLIST: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.fork == true || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name) && '1' || '0' }}
           EVENT_NAME: ${{ github.event_name }}
           PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
           MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
