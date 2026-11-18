@@ -1,0 +1,9 @@
+id	api	route	compiled	success	outcome
+VERSION-DEPLOY-19	19.0	deploy	true	true	deployed; WARN[ApexApiVersionRetirement] This deployment contains 1 Apex classes with warnings. Some Examples: CapVer19: 1,14 SEVERE [1:14]: Apex API version 19.0 is scheduled for retirement. Update to the latest API version to avoid compilation errors.
+VERSION-DEPLOY-20	20.0	deploy	true	true	deployed
+VERSION-DEPLOY-67	67.0	deploy	true	true	deployed
+VERSION-DEPLOY-68	68.0	deploy	true	true	deployed
+VERSION-RUN-19-CALL	68.0	anonymous	true	true	V19 [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+VERSION-RUN-20-CALL	68.0	anonymous	true	true	V20 [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+VERSION-RUN-67	67.0	anonymous	true	true	V67 [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]
+VERSION-RUN-68	68.0	anonymous	true	true	V68 [LIMITS soql=0/100,dml=0/150,cpu=0/10000,heap_cap=0/10000000,callouts=0/100,future=0/50,queueable=0/50]

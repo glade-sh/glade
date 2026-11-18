@@ -4789,6 +4789,7 @@ func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t 
 func TestRunExecWithProjectUsesLocalPlatformHarnesses(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"67.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "duplicateRules:\n  standard: on\n")
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{
 		"exec", "--project", root,

@@ -1,0 +1,1 @@
+Search.SearchResults sr = Search.find('FIND {copper} RETURNING Case(Subject) WITH SNIPPET'); String r = ''; for (Search.SearchResult x : sr.get('Case')) { r += x.getSObject().get('Subject') + '=' + x.getSnippet() + '/' + x.getSnippet('Subject') + ';'; } obs = r;

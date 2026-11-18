@@ -1,0 +1,2 @@
+Map<String,Schema.SObjectType> gd = Schema.getGlobalDescribe(); Set<String> k = gd.keySet(); k.clear();
+System.debug('OBS|g_gd_clear|' + k.size() + '|' + gd.size() + '|' + Schema.getGlobalDescribe().size());

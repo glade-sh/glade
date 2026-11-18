@@ -1,0 +1,47 @@
+id	api	route	type	line	anonymous_frames	note	stack_decoded	test_assert_site
+d1-same-throw	62.0	anonymous	System.IllegalArgumentException	3	1		Class.FrameLeaf62.sameThrow: line 3, column 1\nAnonymousBlock: line 1, column 1	
+d1-same-throw	67.0	anonymous	System.IllegalArgumentException	3	1		Class.FrameLeaf67.sameThrow: line 3, column 1\nAnonymousBlock: line 1, column 1	
+d1-same-npe	62.0	anonymous	System.NullPointerException	6	2		Class.FrameLeaf62.sameNpe: line 6, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d1-same-npe	67.0	anonymous	System.NullPointerException	6	2		Class.FrameLeaf67.sameNpe: line 6, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d1-anon-npe	62.0	anonymous	System.NullPointerException	8	2		Class.FrameLeaf62.npe: line 8, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1	
+d1-anon-npe	67.0	anonymous	System.NullPointerException	8	2		Class.FrameLeaf67.npe: line 8, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1	
+d1-anon-throw	62.0	anonymous	FrameCustomException	9	1		Class.FrameLeaf62.throwCustom: line 9, column 1\nAnonymousBlock: line 3, column 1	
+d1-anon-throw	67.0	anonymous	FrameCustomException	9	1		Class.FrameLeaf67.throwCustom: line 9, column 1\nAnonymousBlock: line 3, column 1	
+d1-new	62.0	anonymous	System.DmlException	12	2		Class.FrameLeaf62.newDml: line 12, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d1-new	67.0	anonymous	System.DmlException	12	2		Class.FrameLeaf67.newDml: line 12, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d1-new-custom	62.0	anonymous	FrameCustomException	15	1		Class.FrameLeaf62.newCustom: line 15, column 1\nAnonymousBlock: line 1, column 1	
+d1-new-custom	67.0	anonymous	FrameCustomException	15	1		Class.FrameLeaf67.newCustom: line 15, column 1\nAnonymousBlock: line 1, column 1	
+d2-caller-throw	62.0	anonymous	System.IllegalArgumentException	10	1		Class.FrameLeaf62.throwIAE: line 10, column 1\nClass.FrameTop62.callThrow: line 12, column 1\nAnonymousBlock: line 1, column 1	
+d2-caller-throw	67.0	anonymous	System.IllegalArgumentException	10	1		Class.FrameLeaf67.throwIAE: line 10, column 1\nClass.FrameTop67.callThrow: line 12, column 1\nAnonymousBlock: line 1, column 1	
+d2-same-npe	62.0	anonymous	System.NullPointerException	6	2		Class.FrameLeaf62.sameNpe: line 6, column 1\nClass.FrameTop62.sameNpeD2: line 14, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d2-same-npe	67.0	anonymous	System.NullPointerException	6	2		Class.FrameLeaf67.sameNpe: line 6, column 1\nClass.FrameTop67.sameNpeD2: line 14, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d2-anon-npe	62.0	anonymous	System.NullPointerException	8	2		Class.FrameLeaf62.npe: line 8, column 1\nClass.FrameTop62.npeUp: line 15, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1	
+d2-anon-npe	67.0	anonymous	System.NullPointerException	8	2		Class.FrameLeaf67.npe: line 8, column 1\nClass.FrameTop67.npeUp: line 15, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1	
+d3-caller-npe	62.0	anonymous	System.NullPointerException	8	2		Class.FrameLeaf62.npe: line 8, column 1\nClass.FrameMid62.npeThrough: line 2, column 1\nClass.FrameTop62.d3Top: line 17, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d3-caller-npe	67.0	anonymous	System.NullPointerException	8	2		Class.FrameLeaf67.npe: line 8, column 1\nClass.FrameMid67.npeThrough: line 2, column 1\nClass.FrameTop67.d3Top: line 17, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d3-mid-npe	62.0	anonymous	System.NullPointerException	8	2		Class.FrameLeaf62.npe: line 8, column 1\nClass.FrameMid62.midNpe: line 4, column 1\nClass.FrameTop62.d3Mid: line 19, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+d3-mid-npe	67.0	anonymous	System.NullPointerException	8	2		Class.FrameLeaf67.npe: line 8, column 1\nClass.FrameMid67.midNpe: line 4, column 1\nClass.FrameTop67.d3Mid: line 19, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+chain-split	62.0	anonymous	System.NullPointerException	18	2		Class.FrameLeaf62.fail: line 18, column 1\nClass.FrameTop62.captureI: line 5, column 1\nAnonymousBlock: line 5, column 1\nAnonymousBlock: line 5, column 1	
+chain-split	67.0	anonymous	System.NullPointerException	18	2		Class.FrameLeaf67.fail: line 18, column 1\nClass.FrameTop67.captureI: line 5, column 1\nAnonymousBlock: line 5, column 1\nAnonymousBlock: line 5, column 1	
+chain-split	62.0	istest	System.NullPointerException	18	0		Class.FrameLeaf62.fail: line 18, column 1\nClass.FrameTop62.captureI: line 5, column 1\nClass.FrameLineTest62.chainSplit: line 7, column 1	Class.FrameLineTest62.chainSplit: line 9, column 1
+chain-split	67.0	istest	System.NullPointerException	18	0		Class.FrameLeaf67.fail: line 18, column 1\nClass.FrameTop67.captureI: line 5, column 1\nClass.FrameLineTest67.chainSplit: line 7, column 1	Class.FrameLineTest67.chainSplit: line 9, column 1
+arg-split	62.0	anonymous	System.NullPointerException	17	2		Class.FrameLeaf62.boom: line 17, column 1\nAnonymousBlock: line 5, column 1\nAnonymousBlock: line 5, column 1	
+arg-split	67.0	anonymous	System.NullPointerException	17	2		Class.FrameLeaf67.boom: line 17, column 1\nAnonymousBlock: line 5, column 1\nAnonymousBlock: line 5, column 1	
+arg-split	62.0	istest	System.NullPointerException	17	0		Class.FrameLeaf62.boom: line 17, column 1\nClass.FrameLineTest62.argSplit: line 16, column 1	Class.FrameLineTest62.argSplit: line 18, column 1
+arg-split	67.0	istest	System.NullPointerException	17	0		Class.FrameLeaf67.boom: line 17, column 1\nClass.FrameLineTest67.argSplit: line 16, column 1	Class.FrameLineTest67.argSplit: line 18, column 1
+ctor-split	62.0	anonymous	System.NullPointerException	18	2		Class.FrameLeaf62.fail: line 18, column 1\nClass.FrameTop62.<init>: line 3, column 1\nAnonymousBlock: line 4, column 1\nAnonymousBlock: line 4, column 1	
+ctor-split	67.0	anonymous	System.NullPointerException	18	2		Class.FrameLeaf67.fail: line 18, column 1\nClass.FrameTop67.<init>: line 3, column 1\nAnonymousBlock: line 4, column 1\nAnonymousBlock: line 4, column 1	
+ctor-split	62.0	istest	System.NullPointerException	18	0		Class.FrameLeaf62.fail: line 18, column 1\nClass.FrameTop62.<init>: line 3, column 1\nClass.FrameLineTest62.ctorSplit: line 24, column 1	Class.FrameLineTest62.ctorSplit: line 27, column 1
+ctor-split	67.0	istest	System.NullPointerException	18	0		Class.FrameLeaf67.fail: line 18, column 1\nClass.FrameTop67.<init>: line 3, column 1\nClass.FrameLineTest67.ctorSplit: line 24, column 1	Class.FrameLineTest67.ctorSplit: line 27, column 1
+chain-recv	62.0	anonymous	COMPILE				compileProblem: Variable does not exist: FrameTop62	
+chain-recv	67.0	anonymous	COMPILE				compileProblem: Variable does not exist: FrameTop67	
+x-new-iae	62.0	anonymous	System.IllegalArgumentException	4	1	extra-type-split	Class.XLeaf62.x_new_iae: line 4, column 1\nAnonymousBlock: line 1, column 1	
+x-new-npe	62.0	anonymous	System.NullPointerException	5	2	extra-type-split	Class.XLeaf62.x_new_npe: line 5, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+x-throw-dml	62.0	anonymous	System.DmlException	2	2	extra-type-split	Class.XLeaf62.x_throw_dml: line 2, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1	
+x-throw-npe	62.0	anonymous	System.NullPointerException	3	2	extra-type-split	Class.XLeaf62.x_throw_npe: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1	
+x2-throw-dml	62.0	anonymous	System.DmlException	2	2	extra-type-split	Class.XLeaf62.x_throw_dml: line 2, column 1\nClass.XTop62.x2_throw_dml: line 1, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+x-new-iae	67.0	anonymous	System.IllegalArgumentException	4	1	extra-type-split	Class.XLeaf67.x_new_iae: line 4, column 1\nAnonymousBlock: line 1, column 1	
+x-new-npe	67.0	anonymous	System.NullPointerException	5	2	extra-type-split	Class.XLeaf67.x_new_npe: line 5, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	
+x-throw-dml	67.0	anonymous	System.DmlException	2	2	extra-type-split	Class.XLeaf67.x_throw_dml: line 2, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1	
+x-throw-npe	67.0	anonymous	System.NullPointerException	3	2	extra-type-split	Class.XLeaf67.x_throw_npe: line 3, column 1\nAnonymousBlock: line 3, column 1\nAnonymousBlock: line 3, column 1	
+x2-throw-dml	67.0	anonymous	System.DmlException	2	2	extra-type-split	Class.XLeaf67.x_throw_dml: line 2, column 1\nClass.XTop67.x2_throw_dml: line 1, column 1\nAnonymousBlock: line 1, column 1\nAnonymousBlock: line 1, column 1	

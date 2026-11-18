@@ -453,6 +453,17 @@ common local development loops:
   `lightning/platformResourceLoader` local script and style loading,
   `lightning/platformShowToastEvent`, `lightning/showToastEvent`, and
   `lightning/toast` browser toast paths.
+  Toast auto-dismiss durations are measurements from the API 68 captures, not
+  documented Salesforce constants: the midpoint of the last poll that saw the
+  toast and the first poll that saw it gone, push-relative, from 100 ms polling
+  (event dismissible and pester 20.8 s, module dismissible 5.3 s). The export
+  `TOAST_DURATIONS_MS` in `lwcruntime/src/shell/toast-service.mjs` is frozen;
+  `setToastClock` is the only test seam.
+  `lightning-tabset` moves tabs that do not fit into the More Tabs menu by a
+  fitted rule (see `TAB_FIT_MARGIN` in `lwcruntime/src/lightning/tabset.mjs`),
+  checked against native captures of 8 container widths and tab counts at 67.0
+  and a width sweep at 68.0; it is an approximation outside those widths, and it
+  depends on the browser's own text widths.
 - `lightning/platformWorkspaceApi` active-route and tab label/icon
   approximation for console apps, including local tab info, open/close/focus,
   refresh, highlight, and console wire values. Full console workspace behavior

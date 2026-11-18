@@ -8,7 +8,14 @@
 # .github/leak-scan-allow.txt skip the denylist entries only. The output identifies
 # the file by ordinal, line and pattern class, never filenames or matched text.
 #
-# Exit 0 when clean, 1 when there are findings, 2 on usage or git errors.
+# A LEAK_SCAN_DENYLIST with no entries (unset, empty, or comments only) fails
+# the scan, so a missing secret cannot silently disable the private-name check.
+# LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1 opts out deliberately: the scan then prints
+# a WARNING that the denylist check was skipped, while the pattern checks
+# (personal, volume and private temp paths) still run.
+#
+# Exit 0 when clean, 1 when there are findings or the denylist is empty without
+# the opt-out, 2 on usage or git errors.
 set -euo pipefail
 
 range=""
@@ -34,10 +41,12 @@ else
   python3 "$helper" "$root" "$work/diff" "${range:-HEAD~1..HEAD}" || exit 2
 fi
 printf '%s\n' "${LEAK_SCAN_DENYLIST:-}" >"$work/deny"
+allowempty=0
+if [ "${LEAK_SCAN_ALLOW_EMPTY_DENYLIST:-}" = "1" ]; then allowempty=1; fi
 allow="$root/.github/leak-scan-allow.txt"
 [ -f "$allow" ] || allow=/dev/null
 
-awk -v denyfile="$work/deny" -v allowfile="$allow" '
+awk -v denyfile="$work/deny" -v allowfile="$allow" -v allowempty="$allowempty" '
 BEGIN {
   nd = 0
   while ((getline line < denyfile) > 0) {
@@ -112,7 +121,16 @@ in_hunk {
 }
 END {
   nfiles = 0; for (f in files) nfiles++
+  # The skip warning must also be disclosed when findings end the scan with
+  # exit 1, so it prints before the findings exit, not only on a clean scan.
+  if (nd == 0 && allowempty) {
+    printf "leak-scan: WARNING denylist check skipped: LEAK_SCAN_DENYLIST is empty (LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1); the pattern checks still ran\n"
+  }
   if (findings > 0) { printf "leak-scan: %d finding(s) in %d file(s)\n", findings, nfiles; exit 1 }
+  if (nd == 0 && !allowempty) {
+    printf "leak-scan: FAIL LEAK_SCAN_DENYLIST is empty; the private-name check cannot run. Set the secret, or pass LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1 to skip it deliberately.\n"
+    exit 1
+  }
   printf "leak-scan: clean (%d added lines scanned, %d denylist entries)\n", added, nd
 }
 ' "$work/diff"

@@ -25,8 +25,9 @@ func TestGlobalDescribeKeysVerifiedMemo(t *testing.T) {
 		t.Fatal("memoized keys differ from a fresh derivation")
 	}
 	size := len(second.Map)
-	machine.Globals["held"] = second
-	if _, _, err := machine.callValueMember("held", second, "put", []Value{String("private"), sObjectTypeToken("Account")}, &Result{}); err != nil {
+	// The global view refuses put (review_round11 gw_put); the raw app/module
+	// cache it extends stays writable.
+	if _, _, err := machine.callValueMember("", machine.schemaGlobalDescribe(), "put", []Value{String("private"), sObjectTypeToken("Account")}, &Result{}); err != nil {
 		t.Fatal(err)
 	}
 	// The write persists in the VM's raw map (compatibility baseline); the

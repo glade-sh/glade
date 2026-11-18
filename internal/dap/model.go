@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/trace"
 	"github.com/glade-sh/glade/internal/vm"
@@ -241,10 +242,32 @@ func namedValuesFromMap(vars map[string]vm.Value) []namedValue {
 	return out
 }
 
+// previewLimit bounds the text of a debugger variable or evaluate result.
+const previewLimit = 256
+
+// previewValue returns Value.String's exact text when it fits previewLimit.
+// Longer text is cut at previewLimit bytes, on a UTF-8 boundary, and marked
+// with "...". The bounded renderer stops once the limit is passed.
+func previewValue(value vm.Value) string {
+	text, truncated := value.BoundedString(previewLimit)
+	if !truncated {
+		return text
+	}
+	// Drop a rune that the cut split; other bytes are kept as rendered.
+	start := len(text) - 1
+	for start > 0 && len(text)-start < utf8.UTFMax && !utf8.RuneStart(text[start]) {
+		start--
+	}
+	if start >= 0 && !utf8.FullRuneInString(text[start:]) {
+		text = text[:start]
+	}
+	return text + "..."
+}
+
 func variableFromValue(name string, value vm.Value, ref int) Variable {
 	out := Variable{
 		Name:               name,
-		Value:              value.String(),
+		Value:              previewValue(value),
 		Type:               string(value.Kind),
 		VariablesReference: ref,
 	}
@@ -268,6 +291,44 @@ func variableChildren(value vm.Value) []Variable {
 		out = append(out, variableFromValue(child.name, child.value, 0))
 	}
 	return out
+}
+
+// hasChildValues reports len(childValues(value)) > 0 without building them.
+func hasChildValues(value vm.Value) bool {
+	switch value.Kind {
+	case vm.ValueList:
+		return len(value.List) > 0
+	case vm.ValueSet:
+		return len(value.Set) > 0
+	case vm.ValueMap:
+		return len(value.Map) > 0
+	case vm.ValueObject:
+		return len(value.Fields) > 0
+	default:
+		return false
+	}
+}
+
+// pagedChildValues returns the children needed for one variables page and the
+// start/count to apply to them. Lists and sets build only the requested
+// window, named by their real index; maps and objects need their sorted keys,
+// so they return every child and the caller's window.
+func pagedChildValues(value vm.Value, start, count int) ([]namedValue, int, int) {
+	var items []vm.Value
+	switch value.Kind {
+	case vm.ValueList:
+		items = value.List
+	case vm.ValueSet:
+		items = value.Set
+	default:
+		return childValues(value), start, count
+	}
+	from, to := variableWindow(len(items), start, count)
+	out := make([]namedValue, 0, to-from)
+	for i := from; i < to; i++ {
+		out = append(out, namedValue{name: strconv.Itoa(i), value: items[i]})
+	}
+	return out, 0, 0
 }
 
 func childValues(value vm.Value) []namedValue {

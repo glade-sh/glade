@@ -1,10 +1,11 @@
 package project
 
 import (
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/inputview"
 )
 
 // ForceIgnoreFileName is the Salesforce CLI ignore file. A source deploy skips
@@ -46,6 +47,7 @@ type forceIgnoreRule struct {
 // source-tracked org: a nearer .forceignore replaces the outer one for the
 // files below it.
 type forceIgnoreSet struct {
+	inputs  *inputview.View
 	nearest map[string]*forceIgnoreFile
 	loaded  map[string]*forceIgnoreFile
 }
@@ -78,7 +80,7 @@ func (s *forceIgnoreSet) load(dir string) (*forceIgnoreFile, bool) {
 		return fi, fi != nil
 	}
 	path := filepath.Join(dir, ForceIgnoreFileName)
-	data, err := os.ReadFile(path) // #nosec G304 -- path is a fixed filename under a project source directory.
+	data, err := s.inputs.ReadFile(path) // #nosec G304 -- path is a fixed filename under a project source directory.
 	if err != nil {
 		s.loaded[dir] = nil
 		return nil, false

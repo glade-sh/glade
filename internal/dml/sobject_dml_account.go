@@ -137,20 +137,43 @@ func accountUsesBusinessContactDefault(objectName string, record storage.Record,
 // AccountHasExplicitBusinessRecordType requires a known business type. Its
 // family is metadata, not a property of the configurable name or label.
 func AccountHasExplicitBusinessRecordType(objectName string, definition storage.ObjectDefinition, record storage.Record) bool {
+	rt, ok := explicitAccountRecordType(objectName, definition, record)
+	return ok && !rt.PersonAccount
+}
+
+func explicitAccountRecordType(objectName string, definition storage.ObjectDefinition, record storage.Record) (storage.RecordTypeInfo, bool) {
 	if !strings.EqualFold(objectName, "Account") || record.DMLRecordTypeDefaulted() {
-		return false
+		return storage.RecordTypeInfo{}, false
 	}
-	value, present := record.GetField("RecordTypeId")
-	if !present {
-		return false
-	}
+	value, _ := record.GetField("RecordTypeId")
 	id := idFromStorageValue(value)
-	for _, recordType := range definition.RecordTypes {
-		if id != "" && recordType.ID != "" && storage.IDsEqual(id, recordType.ID) {
-			return !recordType.PersonAccount
+	if id == "" {
+		return storage.RecordTypeInfo{}, false
+	}
+	for _, rt := range definition.RecordTypes {
+		if rt.ID != "" && storage.IDsEqual(id, rt.ID) {
+			return rt, true
 		}
 	}
-	return false
+	return storage.RecordTypeInfo{}, false
+}
+
+// DuplicateSearchRules selects the matching rules for a Datacloud search.
+// FindDuplicates selects the person subtype by explicit record type, even when
+// first and last names alone would create a person account on insert.
+// FindDuplicatesByIds uses the account's persisted subtype.
+func DuplicateSearchRules(org *storage.OrgState, object string, record storage.Record, byID bool) ([]storage.DuplicateRule, bool) {
+	if org != nil && strings.EqualFold(object, "Account") && strings.EqualFold(record.Object, object) {
+		person := isPersonAccountRecord(record)
+		if !byID {
+			rt, ok := explicitAccountRecordType(object, org.Objects["Account"].Definition, record)
+			person = ok && rt.PersonAccount
+		}
+		if person {
+			return activeDuplicateRules(org, object, "PersonAccount"), true
+		}
+	}
+	return ActiveDuplicateRules(org, object), false
 }
 
 func hasPersonAccountSignal(record storage.Record) bool {
@@ -507,7 +530,7 @@ func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
 		e.IsolationJournal.RecordUpdate("Account", account.ID, stored)
 	}
 	stored.Fields["PersonContactId"] = storage.IDValue(contactID)
-	accountObject.Records[account.ID] = stored
+	accountObject.PutRecord(account.ID, stored)
 	e.Org.Objects["Account"] = accountObject
 	return nil
 }
@@ -585,7 +608,7 @@ func (e *Engine) syncPersonContact(account storage.Record) error {
 		delete(contact.ExplicitNulls, field)
 	}
 	clearExplicitPersonContactFields(&contact, account, e.personAccountFieldMappings())
-	contactObject.Records[contactID] = contact
+	contactObject.PutRecord(contactID, contact)
 	e.Org.Objects["Contact"] = contactObject
 	return nil
 }
@@ -679,7 +702,7 @@ func (e *Engine) syncPersonAccountCustomFields(contact storage.Record) {
 			delete(account.ExplicitNulls, mapping.account)
 		}
 	}
-	object.Records[storedID] = account
+	object.PutRecord(storedID, account)
 	e.Org.Objects["Account"] = object
 }
 

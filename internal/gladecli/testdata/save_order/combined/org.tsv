@@ -1,0 +1,5 @@
+id	api	route	compiled	transport	observation
+combined	62.0	anonymous	true	intentional exception	test:false|ok,FIELD_CUSTOM_VALIDATION_EXCEPTION,FIELD_CUSTOM_VALIDATION_EXCEPTION|before:ok:FB;before:reject-validation:FB;before:reject-after:FB;after:ok:FB;after:reject-after:FB;before:ok:FB;after:ok:FB;|saved:1:FB
+combined	62.0	istest	true	intentional assertion	test:true|ok,FIELD_CUSTOM_VALIDATION_EXCEPTION,FIELD_CUSTOM_VALIDATION_EXCEPTION|before:ok:FB;before:reject-validation:FB;before:reject-after:FB;after:ok:FB;after:reject-after:FB;before:ok:FB;after:ok:FB;|saved:1:FB
+combined	67.0	anonymous	true	intentional exception	test:false|ok,FIELD_CUSTOM_VALIDATION_EXCEPTION,FIELD_CUSTOM_VALIDATION_EXCEPTION|before:ok:FB;before:reject-validation:FB;before:reject-after:FB;after:ok:FB;after:reject-after:FB;before:ok:FB;after:ok:FB;|saved:1:FB
+combined	67.0	istest	true	intentional assertion	test:true|ok,FIELD_CUSTOM_VALIDATION_EXCEPTION,FIELD_CUSTOM_VALIDATION_EXCEPTION|before:ok:FB;before:reject-validation:FB;before:reject-after:FB;after:ok:FB;after:reject-after:FB;before:ok:FB;after:ok:FB;|saved:1:FB

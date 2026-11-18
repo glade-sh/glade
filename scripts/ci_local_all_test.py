@@ -121,6 +121,71 @@ class LocalAllTest(unittest.TestCase):
         self.assertIn('scripts/ci-gofmt.sh', block)
         self.assertIn('scripts/ci-gofmt.sh', ' '.join(calls['workflow-lint'][0]))
 
+    def leak_scan_project(self, base):
+        project = base / 'project'
+        (project / 'scripts').mkdir(parents=True)
+        shutil.copy(ROOT / 'scripts/leak-scan.sh', project / 'scripts/leak-scan.sh')
+        shutil.copy(ROOT / 'scripts/leak-scan-expand-gzip.py', project / 'scripts/leak-scan-expand-gzip.py')
+        env = {**os.environ, 'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@example.invalid',
+               'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@example.invalid'}
+        subprocess.run(['git', 'init', '-q'], cwd=project, check=True, capture_output=True, env=env)
+        (project / 'README.md').write_text('base\n')
+        subprocess.run(['git', 'add', '-A'], cwd=project, check=True, capture_output=True, env=env)
+        subprocess.run(['git', 'commit', '-qm', 'base'], cwd=project, check=True, capture_output=True, env=env)
+        return project
+
+    def run_leak_scan_lane(self, project, line, denylist):
+        # One commit holding the scanned line, then the lane's own command
+        # against the fixture project. The denylist variable is removed from
+        # the environment before each capture so a value set on the host
+        # cannot choose the route; every case supplies a synthetic entry.
+        env = {**os.environ, 'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@example.invalid',
+               'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@example.invalid'}
+        (project / 'docs').mkdir(exist_ok=True)
+        (project / 'docs/notes.md').write_text(line)
+        subprocess.run(['git', 'add', '-A'], cwd=project, check=True, capture_output=True, env=env)
+        subprocess.run(['git', 'commit', '-qm', 'change'], cwd=project, check=True, capture_output=True, env=env)
+        with tempfile.TemporaryDirectory() as directory:
+            logs = pathlib.Path(directory)
+            with mock.patch.dict(os.environ):
+                os.environ.pop('LEAK_SCAN_DENYLIST', None)
+                os.environ.pop('LEAK_SCAN_ALLOW_EMPTY_DENYLIST', None)
+                os.environ.pop('LEAK_SCAN_RANGE', None)
+                if denylist is not None:
+                    os.environ['LEAK_SCAN_DENYLIST'] = denylist
+                calls = self.capture_plan(logs)
+            command, options = calls['leak-scan']
+            r = runner.Runner(logs, 1)
+            r.env.pop('LEAK_SCAN_DENYLIST', None)
+            if denylist is not None:
+                r.env['LEAK_SCAN_DENYLIST'] = denylist
+            with mock.patch.object(runner, 'ROOT', project):
+                r.command('leak-scan-check', command, **options)
+            status, log = r.results['leak-scan-check']
+            return status, options, log.read_text()
+
+    def test_leak_scan_lane_warns_and_passes_without_denylist(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.leak_scan_project(pathlib.Path(directory))
+            status, options, log = self.run_leak_scan_lane(project, 'plain documentation line\n', None)
+            self.assertEqual(status, 'PASS', log)
+            self.assertEqual(options['env'], {'LEAK_SCAN_ALLOW_EMPTY_DENYLIST': '1'})
+            self.assertIn('leak-scan: WARNING denylist check skipped', log)
+            self.assertIn('leak-scan: clean', log)
+
+    def test_leak_scan_lane_enforces_a_set_denylist(self):
+        with tempfile.TemporaryDirectory() as directory:
+            project = self.leak_scan_project(pathlib.Path(directory))
+            status, options, log = self.run_leak_scan_lane(project, 'plain documentation line\n', 'glade-synthetic-unmatched-entry')
+            self.assertEqual(status, 'PASS', log)
+            self.assertEqual(options['env'], {'LEAK_SCAN_ALLOW_EMPTY_DENYLIST': '0'})
+            self.assertIn('1 denylist entries', log)
+            self.assertNotIn('WARNING', log)
+            status, options, log = self.run_leak_scan_lane(project, 'tested against glade-synthetic-matched-entry\n', 'glade-synthetic-matched-entry')
+            self.assertEqual(status, 'FAIL', log)
+            self.assertIn('file 1:1: denylist', log)
+            self.assertNotIn('glade-synthetic-matched-entry', log)
+
     def test_cancel_shard_pool_stops_active_and_queued_work(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
@@ -328,11 +393,11 @@ except KeyboardInterrupt:
             calls = self.capture_plan(root)
             env = calls['apextest-dispatch'][1]['env']
             self.assertEqual(env.get('CI_APEXTEST_HISTORY_COMPLETE'), '1')
-            self.assertEqual(env['CI_APEXTEST_SHARDS'], '14')
+            self.assertEqual(env['CI_APEXTEST_SHARDS'], '16')
 
     def test_apex_ci_history_collects_deferred_union(self):
         package = 'github.com/glade-sh/glade/internal/apextest'
-        names = ['TestA%02d' % i for i in range(13)] + ['TestRunDataWeaveTypedAdmitted']
+        names = ['TestA%02d' % i for i in range(15)] + ['TestRunDataWeaveTypedAdmitted']
         shards = [dict(index=i, tests=[name], estimatedDurationMillis=0, regex='^(?:' + name + ')$') for i, name in enumerate(names)]
         plan = dict(version=1, package=package, historyUsed=False, shards=shards)
         with tempfile.TemporaryDirectory() as directory:
@@ -345,7 +410,7 @@ except KeyboardInterrupt:
                 (fixture / 'discovery.txt').write_text('\n'.join(names) + '\n')
                 (fixture / 'plan.json').write_text(json.dumps(plan))
                 (fixture / 'selected-shard.json').write_text(json.dumps(shards[i]))
-                deferred = i == 13
+                deferred = i == 15
                 (fixture / 'validation-summary.json').write_text(json.dumps(dict(valid=True, expected=[name], passed=[] if deferred else [name], errors=[], deferred=[name] if deferred else [])))
                 events = []
                 if deferred:
@@ -358,6 +423,9 @@ except KeyboardInterrupt:
             options = self.capture_plan(root)['apextest-dispatch'][1]['env']
             env = {**os.environ, **options, 'FIXTURES': str(root), 'FLAG': str(root / 'flag'), 'REAL': str(ROOT / 'scripts/ci-go-test.sh'), 'GITHUB_EVENT_NAME': 'pull_request'}
             env.pop('GLADE_DATAWEAVE_APEX_TEST_HOME', None)
+            # Exercise the helper's default history path inside this fixture,
+            # even when the surrounding CI job supplies a shared history path.
+            env.pop('CI_APEXTEST_HISTORY_PATH', None)
             result = subprocess.run(['bash', str(root / 'scripts/apextest-shards.sh'), str(root / 'evidence')], env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual((root / 'flag').read_text(), '1')
@@ -476,7 +544,7 @@ except KeyboardInterrupt:
                 self.assertFalse(r.browser_available('lwcruntime'))
 
     def test_shard_inventory_matches_workflow(self):
-        self.assertEqual(runner.SHARDS, {'apextest': 14, 'sema': 2, 'lwc-compile': 8, 'visualforce': 4, 'gladecli': 2, 'vm': 3})
+        self.assertEqual(runner.SHARDS, {'apextest': 16, 'sema': 2, 'lwc-compile': 12, 'visualforce': 8, 'gladecli': 2, 'vm': 3})
 
 
 if __name__ == '__main__':

@@ -1,7 +1,16 @@
 package storage
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
+	"math"
+	"reflect"
+	"slices"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/project"
 )
@@ -84,6 +93,19 @@ func (o *OrgState) AllowsStandardObject(objectName string) bool {
 	if o != nil && o.HasFeature(project.PlainDeveloperObjectShape) && !PlainDeveloperObjectPresent(objectName, PlainDeveloperAnyRoute) {
 		return false
 	}
+	return o.allowsStandardObjectFeatures(objectName)
+}
+
+// allowsSpreadInventory preserves the eager spread's physical catalog in the
+// exact captured default shape. Route availability remains a separate check.
+func (o *OrgState) allowsSpreadInventory(objectName string) bool {
+	if o != nil && o.StandardSpreadCapturedPlain && !plainDeveloperPrunable(objectName) {
+		return o.allowsStandardObjectFeatures(objectName)
+	}
+	return o.AllowsStandardObject(objectName)
+}
+
+func (o *OrgState) allowsStandardObjectFeatures(objectName string) bool {
 	if o.HasCapturedB2BCommerceShape() && !o.HasFeature(project.UnspecifiedStandardFieldShape) {
 		name := strings.ToLower(objectName)
 		if _, ok := b2bAvailableObjectLookup[name]; ok {
@@ -161,6 +183,33 @@ func (o *OrgState) AllowsStandardObject(objectName string) bool {
 }
 
 func refreshOrgFeatureObjects(org *OrgState) {
+	// The plain Developer inventory is a union of the captured API and route
+	// lists. Preserve non-catalog project objects when applying this profile.
+	if org.StandardSpreadCapturedPlain && org.HasFeature(project.PlainDeveloperObjectShape) && (org.eagerStandardSpread || org.lazyStandardSpread || org.StandardSpread != "") {
+		var hidden [3]hiddenSpreadDefinition
+		count := 0
+		for _, name := range plainDeveloperPrunedObjects() {
+			if object, exists := org.Objects[name]; exists {
+				// Only remove untouched catalog entries, retaining project schema
+				// and data that were installed before the shape was applied.
+				if len(object.Records) != 0 || !isUnmodifiedSpreadObject(org, name, object) {
+					continue
+				}
+				hidden[count] = hiddenSpreadDefinition{name, object.Definition}
+				count++
+				DeleteObject(org, name)
+				if org.eagerStandardSpread {
+					org.StandardSpreadPruned = true
+				} else {
+					removed := append([]string(nil), org.StandardSpreadRemoved...)
+					org.StandardSpreadRemoved = append(removed, name)
+				}
+			}
+		}
+		if count != 0 {
+			recordSpreadHiddenAccessBatch(org, hidden[:count])
+		}
+	}
 	if org.HasCapturedB2BCommerceShape() && !org.HasFeature(project.UnspecifiedStandardFieldShape) {
 		for _, names := range [][]string{b2bAvailableObjectNames, b2bUnavailableObjectNames} {
 			for _, name := range names {
@@ -198,6 +247,245 @@ func refreshOrgFeatureObjects(org *OrgState) {
 	}
 }
 
+func cloneSpreadHiddenAccess(source map[string][]string) map[string][]string {
+	if source == nil {
+		return nil
+	}
+	clone := make(map[string][]string, len(source))
+	for name, fields := range source {
+		clone[name] = slices.Clone(fields)
+	}
+	return clone
+}
+
+func recordSuppressedSpreadObject(org *OrgState, name string, batch map[string]string) {
+	if org == nil || !org.StandardSpreadCapturedPlain || org.AllowsStandardObject(name) {
+		return
+	}
+	object, exists := org.Objects[name]
+	if !exists {
+		return
+	}
+	fingerprint := spreadDefinitionFingerprint(object.Definition)
+	if batch != nil {
+		batch[name] = hex.EncodeToString(fingerprint[:])
+		return
+	}
+	org.ensureSpreadSuppression()
+	org.StandardSpreadSuppressed.put(name, hex.EncodeToString(fingerprint[:]))
+}
+
+// SuppressesSpreadObject preserves the source route's previous visibility for
+// untouched inventory additions. Explicit, edited and record-bearing objects
+// remain visible.
+func (o *OrgState) SuppressesSpreadObject(name string) bool {
+	if o == nil || !o.StandardSpreadCapturedPlain {
+		return false
+	}
+	if prefix, rest, ok := strings.Cut(strings.TrimSpace(name), "."); ok && strings.EqualFold(prefix, "Schema") {
+		name = rest
+	}
+	canonical, known := ResolveKnownStandardObjectName(name)
+	if !known {
+		return false
+	}
+	object, exists := o.Objects[canonical]
+	if fingerprint, marked := o.StandardSpreadSuppressed.lookup(canonical); marked {
+		if !exists {
+			return true
+		}
+		if len(object.Records) != 0 {
+			return false
+		}
+		current := spreadDefinitionFingerprint(object.Definition)
+		return hex.EncodeToString(current[:]) == fingerprint
+	}
+	return !exists && (o.StandardSpread != "" || o.lazyStandardSpread) && !o.AllowsStandardObject(canonical)
+}
+
+// SuppressedSpreadVisibilityStamp tracks every input that can change whether
+// a recorded inventory object contributes to a virtual schema view.
+func (o *OrgState) SuppressedSpreadVisibilityStamp() string {
+	if o == nil || !o.StandardSpreadCapturedPlain {
+		return ""
+	}
+	entries := o.StandardSpreadSuppressed.snapshot()
+	if len(entries) == 0 {
+		return ""
+	}
+	names := make([]string, 0, len(entries))
+	for name := range entries {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	h := sha256.New()
+	write := func(s string) {
+		var size [8]byte
+		binary.LittleEndian.PutUint64(size[:], uint64(len(s)))
+		h.Write(size[:])
+		h.Write([]byte(s))
+	}
+	for _, name := range names {
+		write(name)
+		write(entries[name])
+		if object, exists := o.Objects[name]; exists {
+			h.Write([]byte{1})
+			fingerprint := spreadDefinitionFingerprint(object.Definition)
+			h.Write(fingerprint[:])
+			var count [8]byte
+			binary.LittleEndian.PutUint64(count[:], uint64(len(object.Records)))
+			h.Write(count[:])
+		} else {
+			h.Write([]byte{0})
+		}
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+type hiddenSpreadDefinition struct {
+	name       string
+	definition ObjectDefinition
+}
+
+func recordSpreadHiddenAccess(org *OrgState, name string, definition ObjectDefinition) {
+	recordSpreadHiddenAccessBatch(org, []hiddenSpreadDefinition{{name, definition}})
+}
+
+func recordSpreadHiddenAccessBatch(org *OrgState, hidden []hiddenSpreadDefinition) {
+	next := cloneSpreadHiddenAccess(org.StandardSpreadHiddenAccess)
+	if next == nil {
+		next = make(map[string][]string)
+	}
+	definitions := cloneSpreadHiddenDefinitions(org.StandardSpreadHiddenDefinitions)
+	if definitions == nil {
+		definitions = make(map[string]ObjectDefinition)
+	}
+	for _, entry := range hidden {
+		fields := make([]string, 0, len(entry.definition.Fields))
+		for fieldName, field := range entry.definition.Fields {
+			if field.APIName != "" {
+				fieldName = field.APIName
+			}
+			fields = append(fields, fieldName)
+		}
+		sort.Strings(fields)
+		next[entry.name] = fields
+		definitions[entry.name] = cloneSpreadHiddenDefinition(entry.definition)
+	}
+	org.StandardSpreadHiddenAccess = next
+	org.StandardSpreadHiddenDefinitions = definitions
+}
+
+func cloneSpreadHiddenDefinitions(source map[string]ObjectDefinition) map[string]ObjectDefinition {
+	if source == nil {
+		return nil
+	}
+	clone := make(map[string]ObjectDefinition, len(source))
+	for name, definition := range source {
+		clone[name] = cloneSpreadHiddenDefinition(definition)
+	}
+	return clone
+}
+
+// Hidden definitions outlive the removed object and are copied across runtime
+// clones. Copy nested pointers as well as maps and slices to keep them isolated.
+func cloneSpreadHiddenDefinition(definition ObjectDefinition) ObjectDefinition {
+	return cloneSpreadHiddenValue(reflect.ValueOf(definition)).Interface().(ObjectDefinition)
+}
+
+func cloneSpreadHiddenValue(value reflect.Value) reflect.Value {
+	switch value.Kind() {
+	case reflect.Pointer:
+		if value.IsNil() {
+			return reflect.Zero(value.Type())
+		}
+		clone := reflect.New(value.Type().Elem())
+		clone.Elem().Set(cloneSpreadHiddenValue(value.Elem()))
+		return clone
+	case reflect.Interface:
+		if value.IsNil() {
+			return reflect.Zero(value.Type())
+		}
+		clone := reflect.New(value.Type()).Elem()
+		clone.Set(cloneSpreadHiddenValue(value.Elem()))
+		return clone
+	case reflect.Struct:
+		clone := reflect.New(value.Type()).Elem()
+		clone.Set(value)
+		for i := 0; i < value.NumField(); i++ {
+			if value.Field(i).CanInterface() && clone.Field(i).CanSet() {
+				clone.Field(i).Set(cloneSpreadHiddenValue(value.Field(i)))
+			}
+		}
+		return clone
+	case reflect.Map:
+		if value.IsNil() {
+			return reflect.Zero(value.Type())
+		}
+		clone := reflect.MakeMapWithSize(value.Type(), value.Len())
+		iter := value.MapRange()
+		for iter.Next() {
+			clone.SetMapIndex(iter.Key(), cloneSpreadHiddenValue(iter.Value()))
+		}
+		return clone
+	case reflect.Slice:
+		if value.IsNil() {
+			return reflect.Zero(value.Type())
+		}
+		clone := reflect.MakeSlice(value.Type(), value.Len(), value.Len())
+		for i := 0; i < value.Len(); i++ {
+			clone.Index(i).Set(cloneSpreadHiddenValue(value.Index(i)))
+		}
+		return clone
+	case reflect.Array:
+		clone := reflect.New(value.Type()).Elem()
+		for i := 0; i < value.Len(); i++ {
+			clone.Index(i).Set(cloneSpreadHiddenValue(value.Index(i)))
+		}
+		return clone
+	default:
+		return value
+	}
+}
+
+// plainDeveloperPrunedObjects are the catalog objects the captured default
+// Developer shape removes, in catalog spelling. They resolve from folded
+// spellings so the spread core scan does not count them as objects code reads
+// by literal: a source spread must not install them up front.
+var plainDeveloperPrunedObjects = sync.OnceValue(func() [3]string {
+	var names [3]string
+	for i, folded := range [3]string{"aifeatureextractor", "airesearchpromptresult", "aiscoringstatusevent"} {
+		canonical, ok := ResolveKnownStandardObjectName(folded)
+		if !ok {
+			panic("storage: plain Developer pruned object missing from the catalog: " + folded)
+		}
+		names[i] = canonical
+	}
+	return names
+})
+
+func plainDeveloperPrunable(name string) bool {
+	switch strings.ToLower(name) {
+	case "aifeatureextractor", "airesearchpromptresult", "aiscoringstatusevent":
+		return true
+	}
+	return false
+}
+
+func isUnmodifiedSpreadObject(org *OrgState, name string, object ObjectState) bool {
+	if org.spreadExplicit[name] {
+		return false
+	}
+	// Definitions change copy-on-write, so a definition that still holds every
+	// value and collection the spread installed is the catalog build itself.
+	if installed, ok := org.spreadInstalled[name]; ok {
+		return spreadDefinitionFingerprint(object.Definition) == installed.fingerprint
+	}
+	baseline := NewOrgState()
+	ensureStandardObjectWithProfile(&baseline, name, nil)
+	return reflect.DeepEqual(object.Definition, baseline.Objects[name].Definition)
+}
+
 // Plain Developer route masks over plainDeveloperObjectLookup bits.
 const (
 	PlainDeveloperAnonymous62 uint8 = 1
@@ -228,4 +516,118 @@ func PlainDeveloperObjectPresent(objectName string, mask uint8) bool {
 		}
 	}
 	return true
+}
+
+// installedSpreadDefinition is a shallow copy of a definition. A map shares
+// its entries with the copy, so the entry counts are kept separately.
+type installedSpreadDefinition struct {
+	definition       ObjectDefinition
+	fields, metadata int
+	fingerprint      [32]byte
+}
+
+func recordInstalledSpreadDefinition(definition ObjectDefinition) installedSpreadDefinition {
+	return installedSpreadDefinition{definition: definition, fields: len(definition.Fields), metadata: len(definition.Metadata), fingerprint: spreadDefinitionFingerprint(definition)}
+}
+
+// sameDefinitionInstance reports whether a definition still holds the
+// recorded scalar values, and the recorded map and slice instances at their
+// recorded lengths.
+func sameDefinitionInstance(a ObjectDefinition, recorded installedSpreadDefinition) bool {
+	b := recorded.definition
+	return spreadDefinitionFingerprint(a) == recorded.fingerprint && a.APIName == b.APIName && a.Label == b.Label && a.PluralLabel == b.PluralLabel &&
+		a.KeyPrefix == b.KeyPrefix && a.SharingModel == b.SharingModel && a.EnableSearch == b.EnableSearch &&
+		a.ExternalSharingModel == b.ExternalSharingModel &&
+		len(a.Fields) == recorded.fields && sameMapInstance(a.Fields, b.Fields) &&
+		len(a.Metadata) == recorded.metadata && sameMapInstance(a.Metadata, b.Metadata) &&
+		sameSliceInstance(a.OwnerSharingRules, b.OwnerSharingRules) && sameSliceInstance(a.Relations, b.Relations) &&
+		sameSliceInstance(a.RecordTypes, b.RecordTypes) && sameSliceInstance(a.ValidationRules, b.ValidationRules) &&
+		sameSliceInstance(a.AutoResponseRules, b.AutoResponseRules) && sameSliceInstance(a.AssignmentRules, b.AssignmentRules) &&
+		sameSliceInstance(a.DuplicateRules, b.DuplicateRules) && sameSliceInstance(a.WorkflowRules, b.WorkflowRules) &&
+		sameSliceInstance(a.FlowRules, b.FlowRules) && sameSliceInstance(a.Indexes, b.Indexes) &&
+		sameSliceInstance(a.CriteriaSharingRules, b.CriteriaSharingRules)
+}
+
+func sameMapInstance[M ~map[K]V, K comparable, V any](a, b M) bool {
+	return reflect.ValueOf(a).UnsafePointer() == reflect.ValueOf(b).UnsafePointer()
+}
+
+func sameSliceInstance[T any](a, b []T) bool {
+	if len(a) != len(b) || cap(a) != cap(b) || (a == nil) != (b == nil) {
+		return false
+	}
+	return len(a) == 0 || &a[0] == &b[0]
+}
+
+// spreadDefinitionFingerprint snapshots values, including nested collection entries.
+func spreadDefinitionFingerprint(d ObjectDefinition) [32]byte {
+	var data bytes.Buffer
+	hashSpreadValue(&data, reflect.ValueOf(d))
+	return sha256.Sum256(data.Bytes())
+}
+
+// hashSpreadValue includes nil markers and all fields rather than JSON's
+// omitempty projection. Maps are ordered so the fingerprint is stable.
+func hashSpreadValue(h *bytes.Buffer, v reflect.Value) {
+	h.WriteByte(byte(v.Kind()))
+	writeNumber := func(n uint64) { var b [8]byte; binary.LittleEndian.PutUint64(b[:], n); h.Write(b[:]) }
+	switch v.Kind() {
+	case reflect.Pointer, reflect.Interface:
+		if v.IsNil() {
+			h.WriteByte(0)
+			return
+		}
+		h.WriteByte(1)
+		hashSpreadValue(h, v.Elem())
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			hashSpreadValue(h, v.Field(i))
+		}
+	case reflect.Map:
+		if v.IsNil() {
+			h.WriteByte(0)
+			return
+		}
+		h.WriteByte(1)
+		writeNumber(uint64(v.Len()))
+		keys := v.MapKeys()
+		sort.Slice(keys, func(i, j int) bool { return keys[i].String() < keys[j].String() })
+		for _, k := range keys {
+			hashSpreadValue(h, k)
+			hashSpreadValue(h, v.MapIndex(k))
+		}
+	case reflect.Slice:
+		if v.IsNil() {
+			h.WriteByte(0)
+			return
+		}
+		h.WriteByte(1)
+		writeNumber(uint64(v.Len()))
+		for i := 0; i < v.Len(); i++ {
+			hashSpreadValue(h, v.Index(i))
+		}
+	case reflect.Array:
+		writeNumber(uint64(v.Len()))
+		for i := 0; i < v.Len(); i++ {
+			hashSpreadValue(h, v.Index(i))
+		}
+	case reflect.String:
+		value := v.String()
+		writeNumber(uint64(len(value)))
+		h.WriteString(value)
+	case reflect.Bool:
+		if v.Bool() {
+			h.WriteByte(1)
+		} else {
+			h.WriteByte(0)
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		writeNumber(uint64(v.Int()))
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		writeNumber(v.Uint())
+	case reflect.Float32, reflect.Float64:
+		writeNumber(math.Float64bits(v.Float()))
+	default:
+		panic("unsupported spread definition field: " + v.Kind().String())
+	}
 }

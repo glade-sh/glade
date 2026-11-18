@@ -62,6 +62,7 @@ func applyConfiguredTestPermissions(org *storage.OrgState, p project.Project) er
 	machine.SetTraceEnabled(false)
 	machine.SetOrg(org)
 	machine.EnableTestContext()
+	machine.MarkPermissionAssignmentsPreexisting()
 	program, err := vm.CompileAnonymous(statements.String())
 	if err != nil {
 		return fmt.Errorf("glade.yml: test permission assignments: %w", err)
@@ -185,7 +186,7 @@ func seedProjectMutingPermissionSet(org *storage.OrgState, p project.Project, na
 	storage.EnsureStandardObject(org, "MutingPermissionSet")
 	state := org.Objects["MutingPermissionSet"]
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	if id, ok := recordFieldID(state, "DeveloperName", name); ok {
 		return id, true
@@ -201,7 +202,7 @@ func seedProjectMutingPermissionSet(org *storage.OrgState, p project.Project, na
 	}
 	cache := make(map[string]permissionSetMetadataCacheEntry)
 	label := name
-	if metadata, ok := readPermissionSetMetadata(file, cache); ok {
+	if metadata, ok := readPermissionSetMetadata(p.ReadFile, file, cache); ok {
 		if strings.TrimSpace(metadata.Label) != "" {
 			label = strings.TrimSpace(metadata.Label)
 		}
@@ -219,12 +220,12 @@ func seedProjectMutingPermissionSet(org *storage.OrgState, p project.Project, na
 		metadata.FieldPermissions = filtered
 		cache[file] = permissionSetMetadataCacheEntry{metadata: metadata, ok: true}
 	}
-	state.Records[id] = storage.Record{ID: id, Object: "MutingPermissionSet", Fields: map[string]storage.Value{
+	state.PutRecord(id, storage.Record{ID: id, Object: "MutingPermissionSet", Fields: map[string]storage.Value{
 		"DeveloperName": storage.StringValue(name),
 		"MasterLabel":   storage.StringValue(label),
-	}}
+	}})
 	org.Objects["MutingPermissionSet"] = state
-	applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator, objectPermissionRecordKeys(org.Objects["ObjectPermissions"]), fieldPermissionRecordKeys(org.Objects["FieldPermissions"]), cache)
+	applyProjectPermissionSetMetadataPermissions(p.ReadFile, org, file, string(id), &generator, objectPermissionRecordKeys(org.Objects["ObjectPermissions"]), fieldPermissionRecordKeys(org.Objects["FieldPermissions"]), cache)
 	org.IDSequences = generator.Sequences
 	return id, true
 }

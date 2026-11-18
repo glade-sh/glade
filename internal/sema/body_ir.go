@@ -2956,7 +2956,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			}
 		}
 		if semaAPI67RejectedPlatformCallAtVersion(typ.EffectiveAPIVersion, receiver, method, "class") || (strings.EqualFold(method, "validateKeys") && semaAPI67RejectedPlatformCallArgs(typ.EffectiveAPIVersion, receiver, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name))) {
-			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+			return []diagnostic.Diagnostic{valueCollectionCallDiagnostic(unsupportedLocalFeatureDiagnostic(typ, member, receiver+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source), receiver, method, irCallArgTypes(a, expr.Args, scope, model, typ.Name), model)}
 		}
 		// C033/C035: namespaced platform types can reach the dotted fallback
 		// before ordinary call validation. A bound namespace is a value receiver
@@ -3456,6 +3456,14 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			return []diagnostic.Diagnostic{nativeSourceOverloadDiagnostic(ambiguousCallDiagnostic(typ, member, expr.Callee, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source), receiverType, method, sourceArgTypes, candidates, model, typ)}
 		}
 	}
+	// A query literal passed where one SObject is expected is the single-row
+	// conversion native accepts (review_round7: MxLog.fmt([SELECT ...]) after a
+	// string concatenation reached this path).
+	for _, candidate := range candidates {
+		if memberApplicableWithIRSOQLSingletonArgs(candidate.member, argTypes, expr.Args, model) {
+			return nil
+		}
+	}
 	d := diagnostic.Diagnostic{
 		Severity:      diagnostic.Error,
 		Code:          "GLADESEMA009",
@@ -3845,6 +3853,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 		// Lowered increment operators keep the existing increment checks and
 		// must not be diagnosed as missing source methods.
 		increment := semaIRIncrementCall(ir.Expr{Kind: ir.ExprCall, Callee: method})
+		if d, ok := semaMatcherToMatchResultDiagnostic(typ, member, platformType, receiverMode, method, args, bodyOffset+pos, source); ok {
+			return []diagnostic.Diagnostic{d}, true
+		}
 		if strings.EqualFold(platformType, "String") ||
 			(receiverMode == "instance" && len(args) == 0 && strings.EqualFold(platformType, "Integer") && !increment) {
 			return []diagnostic.Diagnostic{valueCollectionCallDiagnostic(unknownCallDiagnostic(typ, member, receiverType+"."+method, bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source), receiverType, method, irCallArgTypes(a, args, scope, model, typ.Name), model)}, true

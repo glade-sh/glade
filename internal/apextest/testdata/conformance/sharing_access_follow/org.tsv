@@ -1,0 +1,109 @@
+api	method	observation
+62.0	f_adm_nopsa_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+62.0	f_adm_psa_cond_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+62.0	f_adm_psa_uncond_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+62.0	f_d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+62.0	f_d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+62.0	f_d5_08_query_default	n=1
+62.0	f_suggest_admin	n=0
+62.0	f_suggest_admin_user	n=0
+62.0	f_u1_07_child_denied	rm= recs=Id,Name,Sam_Nones__r; mod={}
+62.0	f_u1_08_parent_denied	rm=Sam_None__c=Name;Sam_Obj__c=None__c; recs=Id,Name,None__r; mod={0}
+62.0	f_u1_08b_parent_denied_noref	rm=Sam_Obj__c=None__c; recs=Id,Name; mod={0}
+62.0	f_u3_01_secret_sysclause_userarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+62.0	f_u3_01o_open_sysclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+62.0	f_u3_02_secret_userclause_sysarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+62.0	f_u3_02o_open_userclause_sysarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+62.0	f_u3_02u_open_userclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+62.0	f_u3_03_binds_secret_sysclause_userarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+62.0	f_u3_03c_count_where_secret	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+62.0	f_u3_03d_count_plain	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+62.0	f_u3_03o_binds_open_sysclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+62.0	f_u3_03p_binds_open_userclause_sysarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+62.0	f_u3_04_null_level	EX System.NullPointerException: Argument 2 cannot be null
+62.0	f_u3_04c_null_level_count	EX System.NullPointerException: Argument 2 cannot be null
+62.0	f_undelete_obj_partial_user	ok=false CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Entity type is not undeletable
+62.0	f_undelete_obj_stmt_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+62.0	f_undelete_obj_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+62.0	f_undelete_sh_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+66.0	f_adm_nopsa_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+66.0	f_adm_psa_cond_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+66.0	f_adm_psa_uncond_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+66.0	f_d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+66.0	f_d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+66.0	f_d5_08_query_default	n=1
+66.0	f_suggest_admin	n=0
+66.0	f_suggest_admin_user	n=0
+66.0	f_u1_07_child_denied	rm= recs=Id,Name,Sam_Nones__r; mod={}
+66.0	f_u1_08_parent_denied	rm=Sam_None__c=Name;Sam_Obj__c=None__c; recs=Id,Name,None__r; mod={0}
+66.0	f_u1_08b_parent_denied_noref	rm=Sam_Obj__c=None__c; recs=Id,Name; mod={0}
+66.0	f_u3_01_secret_sysclause_userarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+66.0	f_u3_01o_open_sysclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+66.0	f_u3_02_secret_userclause_sysarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+66.0	f_u3_02o_open_userclause_sysarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+66.0	f_u3_02u_open_userclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+66.0	f_u3_03_binds_secret_sysclause_userarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+66.0	f_u3_03c_count_where_secret	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+66.0	f_u3_03d_count_plain	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+66.0	f_u3_03o_binds_open_sysclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+66.0	f_u3_03p_binds_open_userclause_sysarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+66.0	f_u3_04_null_level	EX System.NullPointerException: Argument 2 cannot be null
+66.0	f_u3_04c_null_level_count	EX System.NullPointerException: Argument 2 cannot be null
+66.0	f_undelete_obj_partial_user	ok=false CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Entity type is not undeletable
+66.0	f_undelete_obj_stmt_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+66.0	f_undelete_obj_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+66.0	f_undelete_sh_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+67.0	f_adm_nopsa_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+67.0	f_adm_psa_cond_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+67.0	f_adm_psa_uncond_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+67.0	f_d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+67.0	f_d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+67.0	f_d5_08_query_default	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+67.0	f_suggest_admin	n=0
+67.0	f_suggest_admin_user	n=0
+67.0	f_u1_07_child_denied	rm= recs=Id,Name,Sam_Nones__r; mod={}
+67.0	f_u1_08_parent_denied	rm=Sam_None__c=Name;Sam_Obj__c=None__c; recs=Id,Name,None__r; mod={0}
+67.0	f_u1_08b_parent_denied_noref	rm=Sam_Obj__c=None__c; recs=Id,Name; mod={0}
+67.0	f_u3_01_secret_sysclause_userarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	f_u3_01o_open_sysclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+67.0	f_u3_02_secret_userclause_sysarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+67.0	f_u3_02o_open_userclause_sysarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+67.0	f_u3_02u_open_userclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+67.0	f_u3_03_binds_secret_sysclause_userarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+67.0	f_u3_03c_count_where_secret	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+67.0	f_u3_03d_count_plain	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+67.0	f_u3_03o_binds_open_sysclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+67.0	f_u3_03p_binds_open_userclause_sysarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+67.0	f_u3_04_null_level	EX System.NullPointerException: Argument 2 cannot be null
+67.0	f_u3_04c_null_level_count	EX System.NullPointerException: Argument 2 cannot be null
+67.0	f_undelete_obj_partial_user	ok=false CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Entity type is not undeletable
+67.0	f_undelete_obj_stmt_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+67.0	f_undelete_obj_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+67.0	f_undelete_sh_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()
+68.0	f_adm_nopsa_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+68.0	f_adm_psa_cond_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+68.0	f_adm_psa_uncond_ins_user	EX System.DmlException: Operation failed due to fields being inaccessible on Sobject Sam_Obj__c, check errors on Exception or Result!  | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=(Secret__c) fls=false
+68.0	f_d5_06_query_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+68.0	f_d5_07_dynquery_user	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+68.0	f_d5_08_query_default	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+68.0	f_suggest_admin	n=0
+68.0	f_suggest_admin_user	n=0
+68.0	f_u1_07_child_denied	rm= recs=Id,Name,Sam_Nones__r; mod={}
+68.0	f_u1_08_parent_denied	rm=Sam_None__c=Name;Sam_Obj__c=None__c; recs=Id,Name,None__r; mod={0}
+68.0	f_u1_08b_parent_denied_noref	rm=Sam_Obj__c=None__c; recs=Id,Name; mod={0}
+68.0	f_u3_01_secret_sysclause_userarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	f_u3_01o_open_sysclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+68.0	f_u3_02_secret_userclause_sysarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={Sam_Obj__c={Secret__c}}
+68.0	f_u3_02o_open_userclause_sysarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+68.0	f_u3_02u_open_userclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+68.0	f_u3_03_binds_secret_sysclause_userarg	EX System.QueryException: No such column 'Secret__c' on entity 'Sam_Obj__c'. If you are attempting to use a custom field, be sure to append the '__c' after the custom field name. Please reference your WSDL or the describe call for the appropriate names. | inacc={}
+68.0	f_u3_03c_count_where_secret	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+68.0	f_u3_03d_count_plain	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+68.0	f_u3_03o_binds_open_sysclause_userarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+68.0	f_u3_03p_binds_open_userclause_sysarg	EX System.SecurityException: Cannot use the WITH AccessLevel clause in dynamic queries that also specify an access level.
+68.0	f_u3_04_null_level	EX System.NullPointerException: Argument 2 cannot be null
+68.0	f_u3_04c_null_level_count	EX System.NullPointerException: Argument 2 cannot be null
+68.0	f_undelete_obj_partial_user	ok=false CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY:Entity type is not undeletable
+68.0	f_undelete_obj_stmt_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+68.0	f_undelete_obj_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY, Entity type is not undeletable: [] | n=1 st=CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY f=()
+68.0	f_undelete_sh_user	EX System.DmlException: Undelete failed. First exception on row 0 with id [ID]; first error: INSUFFICIENT_ACCESS_OR_READONLY, insufficient access rights on object id: [] | n=1 st=INSUFFICIENT_ACCESS_OR_READONLY f=()

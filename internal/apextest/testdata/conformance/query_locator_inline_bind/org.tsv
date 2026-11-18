@@ -1,0 +1,45 @@
+id	api	route	compiled	success	outcome
+I01_inline_locator_static_final	62.0	anonymous	true	true	R|ok
+I01_inline_locator_static_final	67.0	anonymous	true	true	R|ok
+I01_inline_locator_static_final_t	62.0	istest	true	passed	run=Pass
+I01_inline_locator_static_final_t	67.0	istest	true	passed	run=Pass
+I02_inline_locator_static_nonfinal	62.0	anonymous	true	true	R|ok
+I02_inline_locator_static_nonfinal	67.0	anonymous	true	true	R|ok
+I02_inline_locator_static_nonfinal_t	62.0	istest	true	passed	run=Pass
+I02_inline_locator_static_nonfinal_t	67.0	istest	true	passed	run=Pass
+I03_inline_locator_instance_field	62.0	anonymous	true	true	R|ok
+I03_inline_locator_instance_field	67.0	anonymous	true	true	R|ok
+I03_inline_locator_instance_field_t	62.0	istest	true	passed	run=Pass
+I03_inline_locator_instance_field_t	67.0	istest	true	passed	run=Pass
+I04_inline_locator_local	62.0	anonymous	true	true	R|ok
+I04_inline_locator_local	67.0	anonymous	true	true	R|ok
+I04_inline_locator_local_t	62.0	istest	true	passed	run=Pass
+I04_inline_locator_local_t	67.0	istest	true	passed	run=Pass
+I05_inline_query_static_final	62.0	anonymous	true	true	R|ok
+I05_inline_query_static_final	67.0	anonymous	true	true	R|ok
+I05_inline_query_static_final_t	62.0	istest	true	passed	run=Pass
+I05_inline_query_static_final_t	67.0	istest	true	passed	run=Pass
+I06_dynamic_locator_static_final	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: QLabels.HOT
+I06_dynamic_locator_static_final	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: QLabels.HOT
+I06_dynamic_locator_static_final_t	62.0	istest	true	failed	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: QLabels.HOT
+I06_dynamic_locator_static_final_t	67.0	istest	true	failed	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: QLabels.HOT
+I07_dynamic_query_static_final	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: QLabels.HOT
+I07_dynamic_query_static_final	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: QLabels.HOT
+I07_dynamic_query_static_final_t	62.0	istest	true	failed	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: QLabels.HOT
+I07_dynamic_query_static_final_t	67.0	istest	true	failed	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: QLabels.HOT
+I08_dynamic_locator_instance_field	62.0	anonymous	true	true	R|System.QueryException: Variable does not exist: inst.f
+I08_dynamic_locator_instance_field	67.0	anonymous	true	true	R|System.QueryException: Variable does not exist: inst.f
+I08_dynamic_locator_instance_field_t	62.0	istest	true	failed	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: inst.f
+I08_dynamic_locator_instance_field_t	67.0	istest	true	failed	run=Fail System.AssertException: Assertion Failed: R|System.QueryException: Variable does not exist: inst.f
+I10_inline_locator_in_clause	62.0	anonymous	true	true	R|ok
+I10_inline_locator_in_clause	67.0	anonymous	true	true	R|ok
+I10_inline_locator_in_clause_t	62.0	istest	true	passed	run=Pass
+I10_inline_locator_in_clause_t	67.0	istest	true	passed	run=Pass
+I11_inline_locator_user_mode	62.0	anonymous	true	true	R|ok
+I11_inline_locator_user_mode	67.0	anonymous	true	true	R|ok
+I11_inline_locator_user_mode_t	62.0	istest	true	passed	run=Pass
+I11_inline_locator_user_mode_t	67.0	istest	true	passed	run=Pass
+I12_inline_locator_iterate	62.0	anonymous	true	true	R|ok
+I12_inline_locator_iterate	67.0	anonymous	true	true	R|ok
+I12_inline_locator_iterate_t	62.0	istest	true	passed	run=Pass
+I12_inline_locator_iterate_t	67.0	istest	true	passed	run=Pass

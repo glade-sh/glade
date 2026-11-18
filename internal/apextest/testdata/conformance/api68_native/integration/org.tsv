@@ -1,0 +1,3 @@
+id	api	route	compiled	success	outcome
+INTEGRATION-DEPLOY-68	68.0	deploy	false	false	ApexClass CapIntegration68: Annotation is not valid in your org: IntegrationTest; ApexClass CapIntegration68: Annotation is not valid in your org: IntegrationTest; ApexClass CapIntegration68: Annotation is not valid in your org: IntegrationTest
+INTEGRATION-DEPLOY-67	67.0	deploy	false	false	ApexClass CapIntegration67: Annotation is not valid in your org: IntegrationTest; ApexClass CapIntegration67: Annotation is not valid in your org: IntegrationTest; ApexClass CapIntegration67: Annotation is not valid in your org: IntegrationTest

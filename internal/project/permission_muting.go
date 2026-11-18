@@ -2,7 +2,6 @@ package project
 
 import (
 	"encoding/xml"
-	"os"
 	"strings"
 )
 
@@ -115,7 +114,7 @@ func PermissionMutingRejections(p Project, read func(string) ([]byte, error)) []
 		return nil
 	}
 	if read == nil {
-		read = os.ReadFile
+		read = p.ReadFile
 	}
 	var rejections []PermissionMutingRejection
 	invalid := map[string]bool{}

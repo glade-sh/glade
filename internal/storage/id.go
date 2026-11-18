@@ -213,60 +213,30 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 		markKeyPrefixesValidated(org)
 		return
 	}
+	if org.StandardSpread != "" {
+		applySpreadKeyPrefixPlan(org)
+		markKeyPrefixesValidated(org)
+		return
+	}
 	names := make([]string, 0, len(org.Objects))
 	for name := range org.Objects {
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	used := make(map[string]string, len(names))
-	nextCustom := 0
-	nextMetadata := 0
-	nextCustomSetting := 0
-	reserved := make(map[string]bool, len(names))
-	for _, name := range names {
-		reserved[strings.TrimSpace(org.Objects[name].Definition.KeyPrefix)] = true
-		// A custom object sorted before a standard one cannot claim its prefix.
-		if prefix := standardKeyPrefixForObject(name); prefix != "" {
-			if owner := standardKeyPrefixOwner(prefix); owner != "" {
-				used[prefix] = owner
-			} else if used[prefix] == "" {
-				used[prefix] = name
-			}
-		}
-	}
-	changed := false
-	for _, name := range names {
+	entries := make([]keyPrefixEntry, len(names))
+	for i, name := range names {
 		state := org.Objects[name]
-		prefix := strings.TrimSpace(state.Definition.KeyPrefix)
-		if standardPrefix := standardKeyPrefixForObject(name); standardPrefix != "" && keyPrefixAvailableForObject(standardPrefix, name, used) {
-			prefix = standardPrefix
-		}
-		if !keyPrefixAvailableForObject(prefix, name, used) {
-			for {
-				candidate := ""
-				switch {
-				case IsCustomSettingDefinition(state.Definition):
-					candidate = CustomSettingPrefix(nextCustomSetting)
-					nextCustomSetting++
-				case strings.HasSuffix(strings.ToLower(name), "__mdt"):
-					candidate = customMetadataPrefix(nextMetadata)
-					nextMetadata++
-				default:
-					candidate = customPrefix(nextCustom)
-					nextCustom++
-				}
-				if !reserved[candidate] && keyPrefixAvailableForObject(candidate, name, used) {
-					prefix = candidate
-					break
-				}
-			}
-		}
-		if state.Definition.KeyPrefix != prefix {
+		entries[i] = keyPrefixEntry{name: name, prefix: state.Definition.KeyPrefix, customSetting: IsCustomSettingDefinition(state.Definition)}
+	}
+	assigned := assignUniqueKeyPrefixes(entries)
+	changed := false
+	for i, name := range names {
+		state := org.Objects[name]
+		if state.Definition.KeyPrefix != assigned[i] {
 			changed = true
 		}
-		state.Definition.KeyPrefix = prefix
+		state.Definition.KeyPrefix = assigned[i]
 		org.Objects[name] = state
-		used[prefix] = name
 	}
 	if changed {
 		org.ClearRuntimeSchemaStamp()
@@ -314,6 +284,9 @@ type keyPrefixSnapshotEntry struct {
 // markKeyPrefixesValidated records every object's prefix. The snapshot is a
 // fresh slice on every mark because org clones share it by value copy.
 func markKeyPrefixesValidated(org *OrgState) {
+	if org.StandardSpread != "" {
+		org.spreadPrefixesPlanned = true
+	}
 	org.keyPrefixesValidated = true
 	org.keyPrefixesValidatedObjectCount = len(org.Objects)
 	org.keyPrefixesValidatedGeneration = org.RuntimeGenerationID()
@@ -621,4 +594,64 @@ func copyStringMap(in map[string]string) map[string]string {
 
 func isBase62(r rune) bool {
 	return r >= '0' && r <= '9' || r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z'
+}
+
+// keyPrefixEntry is one object as the key prefix assignment sees it.
+type keyPrefixEntry struct {
+	name          string
+	prefix        string
+	customSetting bool
+}
+
+// assignUniqueKeyPrefixes returns the final key prefix of each entry, which
+// must be sorted by name. Standard prefixes win where available; a conflicting
+// or invalid prefix takes the next free custom prefix in name order.
+func assignUniqueKeyPrefixes(entries []keyPrefixEntry) []string {
+	used := make(map[string]string, len(entries))
+	nextCustom := 0
+	nextMetadata := 0
+	nextCustomSetting := 0
+	reserved := make(map[string]bool, len(entries))
+	for _, entry := range entries {
+		reserved[strings.TrimSpace(entry.prefix)] = true
+		// A custom object sorted before a standard one cannot claim its prefix.
+		if prefix := standardKeyPrefixForObject(entry.name); prefix != "" {
+			if owner := standardKeyPrefixOwner(prefix); owner != "" {
+				used[prefix] = owner
+			} else if used[prefix] == "" {
+				used[prefix] = entry.name
+			}
+		}
+	}
+	out := make([]string, len(entries))
+	for i, entry := range entries {
+		name := entry.name
+		prefix := strings.TrimSpace(entry.prefix)
+		if standardPrefix := standardKeyPrefixForObject(name); standardPrefix != "" && keyPrefixAvailableForObject(standardPrefix, name, used) {
+			prefix = standardPrefix
+		}
+		if !keyPrefixAvailableForObject(prefix, name, used) {
+			for {
+				candidate := ""
+				switch {
+				case entry.customSetting:
+					candidate = CustomSettingPrefix(nextCustomSetting)
+					nextCustomSetting++
+				case strings.HasSuffix(strings.ToLower(name), "__mdt"):
+					candidate = customMetadataPrefix(nextMetadata)
+					nextMetadata++
+				default:
+					candidate = customPrefix(nextCustom)
+					nextCustom++
+				}
+				if !reserved[candidate] && keyPrefixAvailableForObject(candidate, name, used) {
+					prefix = candidate
+					break
+				}
+			}
+		}
+		out[i] = prefix
+		used[prefix] = name
+	}
+	return out
 }

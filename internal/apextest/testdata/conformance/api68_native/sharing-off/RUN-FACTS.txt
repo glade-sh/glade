@@ -1,0 +1,13 @@
+capture: sharing-off
+started: 2026-11-16T03:23:04Z
+finished: 2026-11-16T03:23:30Z
+org: 00D<masked> (Developer)
+instance api version: 68.0
+highest version at /services/data: 68.0
+server release: Latest Release
+route: saved classes at the case API version; anonymous wrappers call them
+scrub: ids, usernames, instance hosts, alias
+truncated debug logs: none
+gate: profile filtering and keep-manual-shares are org-wide; class version is a control
+share recipient is a public group: a Developer scratch org has one free Salesforce license, used as the new owner
+the standard-object sharing reason is captured as a Metadata deploy result

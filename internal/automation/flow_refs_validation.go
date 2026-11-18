@@ -3,7 +3,6 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -36,7 +35,7 @@ func flowRefsValidateProjectDecisions(p project.Project, idx *Index, schemas *pr
 	}
 	for i := range idx.Flows {
 		flow := &idx.Flows[i]
-		data, err := os.ReadFile(flow.File)
+		data, err := p.ReadFile(flow.File)
 		if err != nil {
 			continue
 		}

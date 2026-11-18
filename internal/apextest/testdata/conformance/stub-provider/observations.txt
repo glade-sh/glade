@@ -1,0 +1,133 @@
+# stub-provider full native observations
+
+## API 62.0
+### st01 [istest @62.0]
+method=observe outcome=Fail time=44ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"staticCalls":1,"value":"real-stat"}
+stack=Class.St01StaticTest.observe: line 8, column 1
+
+### st03 [istest @62.0]
+method=observe outcome=Fail time=32ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"String","member":"callHidden"}],"providerCalls":1,"privateCalls":null,"value":"stub-callHidden"}
+stack=Class.St03PrivateTest.observe: line 7, column 1
+
+### st04 [istest @62.0]
+method=observe outcome=Fail time=19ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"isTarget":true,"ctorCount":0,"ctorField":null}
+stack=Class.St04ConstructorTest.observe: line 6, column 1
+
+### st05 [istest @62.0]
+method=observe outcome=Fail time=17ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"String","member":"run"}],"providerCalls":1,"ctorCount":0,"ctorField":null,"value":"stub-run","created":true}
+stack=Class.St05ParamCtorTest.observe: line 10, column 1
+
+### st06 [istest @62.0]
+method=observe outcome=Fail time=15ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["unnamed__0"],"types":["String"],"result":"String","member":"run"},{"args":[],"names":[],"types":[],"result":"String","member":"tag"}],"providerCalls":2,"tag":"stub-tag","run":"stub-run"}
+stack=Class.St06AbstractTest.observe: line 8, column 1
+
+### st07 [istest @62.0]
+method=observe outcome=Fail time=39ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"String","member":"nonVirtual"}],"providerCalls":1,"nonVirtualCalls":null,"value":"stub-nonVirtual"}
+stack=Class.St07NonVirtualTest.observe: line 7, column 1
+
+### st08 [istest @62.0]
+method=observe outcome=Fail time=20ms
+message=System.AssertException: Assertion Failed: OBS|{"providerCalls":1,"value":"stub-run","created":true}
+stack=Class.St08FinalTest.observe: line 8, column 1
+
+### st09 [istest @62.0]
+method=observe outcome=Fail time=26ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["unnamed__0"],"types":["String"],"result":"String","member":"run"},{"args":["y","2"],"names":["unnamed__0","unnamed__1"],"types":["String","Integer"],"result":"String","member":"two"}],"providerCalls":2,"two":"stub-two","run":"stub-run"}
+stack=Class.St09InterfaceTest.observe: line 8, column 1
+
+### st10 [istest @62.0]
+method=observe outcome=Fail time=21ms
+message=System.AssertException: Assertion Failed: OBS|{"error":"System.NullPointerException|stubProvider cannot be null","created":false}
+stack=Class.St10NullProviderTest.observe: line 6, column 1
+
+### st11 [istest @62.0]
+method=observe outcome=Fail time=21ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"privateStaticCalls":1,"value":"real-hidden-static"}
+stack=Class.St11PrivateStaticTest.observe: line 8, column 1
+
+### st12 [istest @62.0]
+method=observe outcome=Fail time=19ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":[],"names":[],"types":[],"result":"String","member":"run"}],"providerCalls":1,"run":"stub-run","read":"written","set":"ok"}
+stack=Class.St12PropsTest.observe: line 9, column 1
+
+### st13 [istest @62.0]
+method=observe outcome=Fail time=17ms
+message=System.AssertException: Assertion Failed: OBS|{"providerCalls":0,"error":"System.TypeException|Test.createStub() cannot be invoked for batch apex","created":false}
+stack=Class.St13BatchableTest.observe: line 8, column 1
+
+### st14 [istest @62.0]
+method=observe outcome=Fail time=17ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"error":"System.TypeException|Test.createStub() cannot be called with inner Apex classes","created":false}
+stack=Class.St14InnerTest.observe: line 8, column 1
+
+## API 67.0
+### st01 [istest @67.0]
+method=observe outcome=Fail time=30ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"staticCalls":1,"value":"real-stat"}
+stack=Class.St01StaticTest.observe: line 8, column 1
+
+### st03 [istest @67.0]
+method=observe outcome=Fail time=32ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"String","member":"callHidden"}],"providerCalls":1,"privateCalls":null,"value":"stub-callHidden"}
+stack=Class.St03PrivateTest.observe: line 7, column 1
+
+### st04 [istest @67.0]
+method=observe outcome=Fail time=28ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"isTarget":true,"ctorCount":0,"ctorField":null}
+stack=Class.St04ConstructorTest.observe: line 6, column 1
+
+### st05 [istest @67.0]
+method=observe outcome=Fail time=29ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"String","member":"run"}],"providerCalls":1,"ctorCount":0,"ctorField":null,"value":"stub-run","created":true}
+stack=Class.St05ParamCtorTest.observe: line 10, column 1
+
+### st06 [istest @67.0]
+method=observe outcome=Fail time=20ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["unnamed__0"],"types":["String"],"result":"String","member":"run"},{"args":[],"names":[],"types":[],"result":"String","member":"tag"}],"providerCalls":2,"tag":"stub-tag","run":"stub-run"}
+stack=Class.St06AbstractTest.observe: line 8, column 1
+
+### st07 [istest @67.0]
+method=observe outcome=Fail time=23ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["value"],"types":["String"],"result":"String","member":"nonVirtual"}],"providerCalls":1,"nonVirtualCalls":null,"value":"stub-nonVirtual"}
+stack=Class.St07NonVirtualTest.observe: line 7, column 1
+
+### st08 [istest @67.0]
+method=observe outcome=Fail time=32ms
+message=System.AssertException: Assertion Failed: OBS|{"providerCalls":1,"value":"stub-run","created":true}
+stack=Class.St08FinalTest.observe: line 8, column 1
+
+### st09 [istest @67.0]
+method=observe outcome=Fail time=61ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":["x"],"names":["unnamed__0"],"types":["String"],"result":"String","member":"run"},{"args":["y","2"],"names":["unnamed__0","unnamed__1"],"types":["String","Integer"],"result":"String","member":"two"}],"providerCalls":2,"two":"stub-two","run":"stub-run"}
+stack=Class.St09InterfaceTest.observe: line 8, column 1
+
+### st10 [istest @67.0]
+method=observe outcome=Fail time=25ms
+message=System.AssertException: Assertion Failed: OBS|{"error":"System.NullPointerException|stubProvider cannot be null","created":false}
+stack=Class.St10NullProviderTest.observe: line 6, column 1
+
+### st11 [istest @67.0]
+method=observe outcome=Fail time=32ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"privateStaticCalls":1,"value":"real-hidden-static"}
+stack=Class.St11PrivateStaticTest.observe: line 8, column 1
+
+### st12 [istest @67.0]
+method=observe outcome=Fail time=27ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[{"args":[],"names":[],"types":[],"result":"String","member":"run"}],"providerCalls":1,"run":"stub-run","read":"written","set":"ok"}
+stack=Class.St12PropsTest.observe: line 9, column 1
+
+### st13 [istest @67.0]
+method=observe outcome=Fail time=17ms
+message=System.AssertException: Assertion Failed: OBS|{"providerCalls":0,"error":"System.TypeException|Test.createStub() cannot be invoked for batch apex","created":false}
+stack=Class.St13BatchableTest.observe: line 8, column 1
+
+### st14 [istest @67.0]
+method=observe outcome=Fail time=20ms
+message=System.AssertException: Assertion Failed: OBS|{"calls":[],"providerCalls":0,"error":"System.TypeException|Test.createStub() cannot be called with inner Apex classes","created":false}
+stack=Class.St14InnerTest.observe: line 8, column 1

@@ -20,6 +20,8 @@ type enumSuffixClassIndex struct {
 // enumSuffixClassCandidates returns the class entry keys whose current class
 // name ends with "."+suffix and that have enum values, in sorted key order.
 func (vm *VM) enumSuffixClassCandidates(suffix string) []string {
+	// Gated stub enums of this simple name were entries before the gate.
+	vm.bindGatedPlatformClassesNamed(suffix)
 	index := vm.enumSuffixClasses
 	if index == nil || index.generation != vm.classLookupGeneration || index.classCount != len(vm.Classes) {
 		index = vm.buildEnumSuffixClassIndex()
@@ -31,7 +33,7 @@ func (vm *VM) enumSuffixClassCandidates(suffix string) []string {
 func (vm *VM) buildEnumSuffixClassIndex() *enumSuffixClassIndex {
 	index := &enumSuffixClassIndex{generation: vm.classLookupGeneration, classCount: len(vm.Classes), bySuffix: make(map[string][]string)}
 	keys := make([]string, 0, len(vm.Classes))
-	for key, class := range vm.ClassEntries() {
+	for key, class := range vm.classEntriesNoLazy() {
 		if len(class.EnumValues) == 0 {
 			continue
 		}

@@ -44,7 +44,10 @@ func (vm *VM) callConnectAPIServiceInSiloedTest(callee string, args []Value) (Va
 	if connectAPITestSetterName(methodName) {
 		return vm.callConnectAPITestSetter(className, methodName, args)
 	}
-	if !vm.connectAPIDataSiloedTest() {
+	siloed := vm.connectAPIDataSiloedTest()
+	// A method with a setTest counterpart resolves registered results in every
+	// data context (native rows, SeeAllData=true classes: connectapi_settest).
+	if !siloed && (vm.testContext == nil || !vm.testContext.SeeAllDataSet || !vm.connectAPIHasTestSetter(className, methodName)) {
 		return Null, false, nil
 	}
 	method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
@@ -64,6 +67,9 @@ func (vm *VM) callConnectAPIServiceInSiloedTest(callee string, args []Value) (Va
 			}
 		}
 		return Null, true, vm.assertError("Assertion Failed: " + connectAPIMissingTestResultMessage(className, method))
+	}
+	if !siloed {
+		return Null, false, nil
 	}
 	return Null, true, newExceptionError("System.UnsupportedOperationException", connectAPIDataSiloedMessage)
 }
@@ -167,15 +173,23 @@ type connectAPIArgumentRule struct {
 	// acceptFold names a literal accepted in any case; the Knowledge
 	// communityId takes "internal" (capi3_knowledge_community/internal.tsv).
 	acceptFold string
+	// acceptExact names a literal accepted only in this exact case; the feed
+	// subjectId takes "me" and does not normalize it (connectapi_settest).
+	acceptExact string
+	// byName applies the rule only to overloads that declare the parameter.
+	byName bool
 }
 
 var connectAPIArgumentRules = map[string][]connectAPIArgumentRule{
-	"connectapi.chatterfeeds.deletecomment":                                     {{index: 1, param: "commentId", required: true, idFormat: true, idPrefix: "0D7"}},
-	"connectapi.chatterfeeds.deletefeedelement":                                 {{index: 1, param: "feedElementId", required: true, idFormat: true}},
-	"connectapi.chatterfeeds.getcommentsforfeedelement":                         {{index: 1, param: "feedElementId", required: true, idFormat: true}},
-	"connectapi.chatterfeeds.getfeedelement":                                    {{index: 1, param: "feedElementId", required: true, idFormat: true}},
-	"connectapi.chatterfeeds.getfeedelementbatch":                               {{index: 1, param: "feedElementIds", required: true}},
-	"connectapi.chatterfeeds.getfeedelementsfromfeed":                           {{index: 1, param: "feedType", required: true}},
+	"connectapi.chatterfeeds.deletecomment":             {{index: 1, param: "commentId", required: true, idFormat: true, idPrefix: "0D7"}},
+	"connectapi.chatterfeeds.deletefeedelement":         {{index: 1, param: "feedElementId", required: true, idFormat: true}},
+	"connectapi.chatterfeeds.getcommentsforfeedelement": {{index: 1, param: "feedElementId", required: true, idFormat: true}},
+	"connectapi.chatterfeeds.getfeedelement":            {{index: 1, param: "feedElementId", required: true, idFormat: true}},
+	"connectapi.chatterfeeds.getfeedelementbatch":       {{index: 1, param: "feedElementIds", required: true}},
+	"connectapi.chatterfeeds.getfeedelementsfromfeed": {
+		{index: 1, param: "feedType", required: true},
+		{index: 2, param: "subjectId", required: true, idFormat: true, acceptExact: "me", byName: true},
+	},
 	"connectapi.chatterfeeds.iscommenteditablebyme":                             {{index: 1, param: "commentId", required: true, idFormat: true, idPrefix: "0D7"}},
 	"connectapi.chatterfeeds.isfeedelementeditablebyme":                         {{index: 1, param: "feedElementId", required: true, idFormat: true}},
 	"connectapi.chatterfeeds.postcommenttofeedelement":                          {{index: 1, param: "feedElementId", required: true, idFormat: true}},
@@ -269,11 +283,16 @@ func connectAPIArgumentError(className string, method Method, args []Value) erro
 		// Generated overloads may carry positional names, so the captured
 		// position identifies the argument and the captured name is reported.
 		index := rule.index
+		found := false
 		for i, param := range method.Params {
 			if strings.EqualFold(param.Name, rule.param) {
 				index = i
+				found = true
 				break
 			}
+		}
+		if rule.byName && !found {
+			continue
 		}
 		if index >= len(args) {
 			continue
@@ -290,6 +309,9 @@ func connectAPIArgumentError(className string, method Method, args []Value) erro
 		}
 		text := arg.Text
 		if rule.acceptFold != "" && strings.EqualFold(text, rule.acceptFold) {
+			continue
+		}
+		if rule.acceptExact != "" && text == rule.acceptExact {
 			continue
 		}
 		rejected := rule.rejectTested && connectAPIWellFormedID(text) && text[:3] != rule.rejectExempt && strings.Contains(connectAPITestedIDPrefixes, "|"+text[:3]+"|")

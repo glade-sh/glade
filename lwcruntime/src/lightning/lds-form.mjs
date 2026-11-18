@@ -76,7 +76,7 @@ function publicProps(selector) {
   const props = {};
   for (const name of COMMON_PROPS) props[name] = { config: 0 };
   if (selector === "lightning-datatable") {
-    for (const name of ["maxRowSelection", "disabledRows", "showRowNumberColumn"]) props[name] = { config: 0 };
+    for (const name of ["maxRowSelection", "disabledRows", "showRowNumberColumn", "errors"]) props[name] = { config: 0 };
     for (const name of ["selectedRows", "draftValues"]) props[name] = { config: 3 };
   }
   if (isRecordFormSelector(selector) || isFieldSelector(selector)) {
@@ -753,7 +753,7 @@ function renderInputField($api, $cmp) {
   const displayValue = date ? $cmp.__dateText ?? displayFieldDate($cmp.value) : $cmp.value;
   const controls = [labelNode, h(multiline ? "textarea" : "input", {
     classMap: { "slds-input": !multiline, "slds-textarea": multiline },
-    attrs: { type: multiline ? undefined : type, "data-field-name": normalizeFieldName($cmp.fieldName) || undefined,
+    attrs: { type: multiline ? undefined : type, "data-field-name": normalizeFieldName($cmp.fieldName) || undefined, ...emailFieldAttrs($cmp, metadataType),
       "aria-invalid": $cmp.__fieldError ? "true" : !date && type !== "checkbox" && $cmp.value !== false && $cmp.value !== null && $cmp.value !== undefined && $cmp.value !== "" ? "false" : undefined },
     props: {
       value: type === "checkbox" ? "" : (displayValue === false ? "" : displayValue ?? ""),
@@ -768,6 +768,21 @@ function renderInputField($api, $cmp) {
   }
   if (!multiline || $cmp.__fieldError) controls.push(errorNode);
   return [h("div", { classMap: { "slds-form-element": true }, key: 0 }, $api.f(controls))];
+}
+
+// Native API 68 capture (record-edit-form, Contact Email): an Email field
+// renders inputmode "email", the placeholder "name@example.com", its name and
+// the metadata length as maxlength. A plain lightning-input type=email has
+// none of these. Only the Email data type was captured.
+function emailFieldAttrs(component, metadataType) {
+  if (metadataType !== "email") return {};
+  const length = component.__fieldMetadata.length;
+  return {
+    inputmode: "email",
+    placeholder: "name@example.com",
+    name: normalizeFieldName(component.fieldName) || undefined,
+    maxlength: Number.isInteger(length) && length > 0 ? String(length) : undefined,
+  };
 }
 
 function referenceFieldInfo(component) {
@@ -1058,7 +1073,7 @@ function renderDatatable($api, $cmp) {
       const { row, rowIndex, name } = entry;
       const checked = selected.has(String(name));
       const cells = [];
-      if (numbered) cells.push(h("td", { key: "number" }, []));
+      if (numbered) cells.push(h("td", { key: "number" }, datatableRowErrorButton($api, $cmp, entry, columns)));
       if (!$cmp.hideCheckboxColumn) {
         const id = $cmp.__datatableID + "-row-" + rowIndex;
         cells.push(h("td", { key: "selection" }, [
@@ -1083,6 +1098,26 @@ function renderDatatable($api, $cmp) {
   $cmp.enableInfiniteLoading ? h("button", { classMap: { "slds-button": true, "slds-button_neutral": true }, attrs: { type: "button" }, key: 5,
     on: { click: b($cmp.handleLoadMore) } }, [t("Load More")]) : null];
   return [h("div", { classMap: { "slds-table_edit_container": true }, key: 9 }, tableChildren)];
+}
+
+// Native API 68 capture: with a row number column, a row listed in errors.rows
+// shows an error icon button in that column. Its name is "<rowTitle> has N
+// errors"; without a rowTitle the first cell's text stands in, and a cell that
+// is not text falls back to "Row Number <n>". The capture had one message and
+// one field name per row, so N counts messages. Rows without errors, and
+// tables without the row number column, keep the base rendering.
+function datatableRowErrorButton($api, $cmp, entry, columns) {
+  const { h, t } = $api;
+  const rowError = $cmp.errors?.rows?.[entry.name];
+  if (!rowError || typeof rowError !== "object") return [];
+  const first = columns[0] && entry.row ? entry.row[columns[0].fieldName] : undefined;
+  const scope = rowError.rowTitle || (typeof first === "string" && first ? first : "Row Number " + (entry.rowIndex + 1));
+  const count = Array.isArray(rowError.messages) ? rowError.messages.length : 0;
+  const name = scope + " has " + count + " errors";
+  return [h("button", {
+    classMap: { "slds-button": true, "slds-button_icon": true, "slds-button_icon-error": true },
+    attrs: { part: "button button-icon", "data-trigger": "true", tabindex: "-1", "aria-haspopup": "dialog" }, key: "row-error",
+  }, [h("span", { classMap: { "slds-assistive-text": true }, key: "row-error-text" }, [t(name)])])];
 }
 
 function datatableCell($api, $cmp, row, rowIndex, column, colIndex, rowKey) {

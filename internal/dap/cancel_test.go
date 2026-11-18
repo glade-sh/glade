@@ -3,7 +3,10 @@ package dap
 import (
 	"context"
 	"encoding/json"
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/vm"
 	"io"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -168,5 +171,32 @@ func TestCancelRequestForOtherRequestLeavesLaunchRunning(t *testing.T) {
 	launch := waitForResponse(t, messages, CommandLaunch)
 	if launch["success"] != true {
 		t.Fatalf("launch response = %v", launch)
+	}
+}
+
+func TestCancelledLaunchLeavesNoPendingSession(t *testing.T) {
+	handler := NewHandler(Snapshot{})
+	installed := make(chan struct{})
+	var started atomic.Bool
+	handler.SetLaunchHandlerContext(func(ctx context.Context, request LaunchRequest) error {
+		// Install the session, then lose the race to a cancel.
+		handler.PrepareLiveSessionInClassWithHooks(vm.New(nil), ir.Program{}, "", func(*vm.VM) { started.Store(true) }, nil)
+		close(installed)
+		<-ctx.Done()
+		return nil
+	})
+	inW, messages, _ := startCancelServe(t, handler)
+	writeRequest(t, inW, request(1, CommandLaunch, map[string]any{"program": "x"}))
+	<-installed
+	writeRequest(t, inW, request(2, CommandCancel, map[string]any{"requestId": 1}))
+	launch := waitForResponse(t, messages, CommandLaunch)
+	if launch["success"] != false || launch["message"] != "cancelled" {
+		t.Fatalf("launch response = %v", launch)
+	}
+	writeRequest(t, inW, request(3, CommandConfigurationDone, nil))
+	waitForResponse(t, messages, CommandConfigurationDone)
+	time.Sleep(100 * time.Millisecond)
+	if started.Load() {
+		t.Fatal("configurationDone started a cancelled launch")
 	}
 }

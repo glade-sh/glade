@@ -1,0 +1,55 @@
+ru_RU Fd_numexact=ok:{!NumVar}
+ru_RU Fd_numtext=ok:n={!NumVar}
+ru_RU Fd_numnl=ok:a<NL>b {!NumVar}
+ru_RU Fd_numtab=ok:a<TAB>b {!NumVar}
+ru_RU Fd_numamp=ok:x &amp; {!NumVar}
+ru_RU Fd_numq=ok:q "{!NumVar}" \\ z
+ru_RU Fd_dateexact=ok:{!DateVar}
+ru_RU Fd_datetext=ok:d={!DateVar}
+ru_RU Fd_datenl=ok:a<NL>b {!DateVar}
+ru_RU Fd_datetab=ok:a<TAB>b {!DateVar}
+ru_RU Fd_dateamp=ok:x &amp; {!DateVar}
+pt_PT Fd_numexact=ok:{!NumVar}
+pt_PT Fd_numtext=ok:n={!NumVar}
+pt_PT Fd_numnl=ok:a<NL>b {!NumVar}
+pt_PT Fd_numtab=ok:a<TAB>b {!NumVar}
+pt_PT Fd_numamp=ok:x &amp; {!NumVar}
+pt_PT Fd_numq=ok:q "{!NumVar}" \\ z
+pt_PT Fd_dateexact=ok:{!DateVar}
+pt_PT Fd_datetext=ok:d={!DateVar}
+pt_PT Fd_datenl=ok:a<NL>b {!DateVar}
+pt_PT Fd_datetab=ok:a<TAB>b {!DateVar}
+pt_PT Fd_dateamp=ok:x &amp; {!DateVar}
+de Fd_numexact=ok:{!NumVar}
+de Fd_numtext=ok:n={!NumVar}
+de Fd_numnl=ok:a<NL>b {!NumVar}
+de Fd_numtab=ok:a<TAB>b {!NumVar}
+de Fd_numamp=ok:x &amp; {!NumVar}
+de Fd_numq=ok:q "{!NumVar}" \\ z
+de Fd_dateexact=ok:{!DateVar}
+de Fd_datetext=ok:d={!DateVar}
+de Fd_datenl=ok:a<NL>b {!DateVar}
+de Fd_datetab=ok:a<TAB>b {!DateVar}
+de Fd_dateamp=ok:x &amp; {!DateVar}
+en_US Fd_numexact=ok:1,234,567.50
+en_US Fd_numtext=ok:n=1,234,567.50
+en_US Fd_numnl=ok:a<NL>b 1,234,567.50
+en_US Fd_numtab=ok:a<TAB>b 1,234,567.50
+en_US Fd_numamp=ok:x &amp; 1,234,567.50
+en_US Fd_numq=ok:q "1,234,567.50" \\ z
+en_US Fd_dateexact=ok:January 2, 2026
+en_US Fd_datetext=ok:d=January 2, 2026
+en_US Fd_datenl=ok:a<NL>b January 2, 2026
+en_US Fd_datetab=ok:a<TAB>b January 2, 2026
+en_US Fd_dateamp=ok:x &amp; January 2, 2026
+de_DE Fd_numexact=ok:1.234.567,50
+de_DE Fd_numtext=ok:n=1.234.567,50
+de_DE Fd_numnl=ok:a<NL>b 1.234.567,50
+de_DE Fd_numtab=ok:a<TAB>b 1.234.567,50
+de_DE Fd_numamp=ok:x &amp; 1.234.567,50
+de_DE Fd_numq=ok:q "1.234.567,50" \\ z
+de_DE Fd_dateexact=ok:2. January 2026
+de_DE Fd_datetext=ok:d=2. January 2026
+de_DE Fd_datenl=ok:a<NL>b 2. January 2026
+de_DE Fd_datetab=ok:a<TAB>b 2. January 2026
+de_DE Fd_dateamp=ok:x &amp; 2. January 2026

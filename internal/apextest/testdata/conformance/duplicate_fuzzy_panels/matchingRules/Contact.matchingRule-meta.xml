@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?><MatchingRules xmlns="http://soap.sforce.com/2006/04/metadata">
+<matchingRules><fullName>G4Last</fullName><label>G4Last</label><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>LastName</fieldName><matchingMethod>LastName</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules>
+<matchingRules><fullName>G4First</fullName><label>G4First</label><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>FirstName</fieldName><matchingMethod>FirstName</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules>
+<matchingRules><fullName>G4Title</fullName><label>G4Title</label><booleanFilter>1 AND 2</booleanFilter><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>Title</fieldName><matchingMethod>Title</matchingMethod></matchingRuleItems><matchingRuleItems><blankValueBehavior>NullNotAllowed</blankValueBehavior><fieldName>LastName</fieldName><matchingMethod>Exact</matchingMethod></matchingRuleItems><ruleStatus>Active</ruleStatus></matchingRules>
+</MatchingRules>

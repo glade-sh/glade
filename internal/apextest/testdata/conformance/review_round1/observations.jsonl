@@ -1,0 +1,22 @@
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|fo|id,ownerid,isdeleted,name,createddate,createdbyid,lastmodifieddate,lastmodifiedbyid,systemmodstamp,alpha__c,mid__c,zeta__c"], "error": "", "id": "x_fo", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fo|id,ownerid,isdeleted,name,createddate,createdbyid,lastmodifieddate,lastmodifiedbyid,systemmodstamp,alpha__c,mid__c,zeta__c"], "error": "", "id": "x_fo", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.UnexpectedException: field 'Cu__c' can not be grouped in a query call", "id": "x_gb", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.UnexpectedException: field 'Cu__c' can not be grouped in a query call", "id": "x_gb", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|hd_catch|ok|d=16|log=1C,1F,||after=dml4,q2"], "error": "", "id": "x_hd_catch", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|hd_catch|ok|d=16|log=1C,1F,||after=dml4,q2"], "error": "", "id": "x_hd_catch", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|hd_dbfalse|false|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|d=16"], "error": "", "id": "x_hd_dbfalse", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|hd_dbfalse|false|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|d=16"], "error": "", "id": "x_hd_dbfalse", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|hd_partial|ok|d=16|log=1P,||after=dml4,q2"], "error": "", "id": "x_hd_partial", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|hd_partial|ok|d=16|log=1P,||after=dml4,q2"], "error": "", "id": "x_hd_partial", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|hd_plain|System.DmlException|max=true|d=16|log=||after=dml3,q1"], "error": "", "id": "x_hd_plain", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|hd_plain|System.DmlException|max=true|d=16|log=||after=dml3,q1"], "error": "", "id": "x_hd_plain", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|hd_swallow|ok|d=16|log=1C,|dml=4,rows=4,q=2,qr=2|after=dml4,q2"], "error": "", "id": "x_hd_swallow", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|hd_swallow|ok|d=16|log=1C,|dml=4,rows=4,q=2,qr=2|after=dml4,q2"], "error": "", "id": "x_hd_swallow", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|nested|0,1,|final=2"], "error": "", "id": "x_nested", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|nested|0,1,|final=2"], "error": "", "id": "x_nested", "route": "anonymous"}
+{"api": "62.0", "id": "x_route", "route": "istest", "tests": [["hdCatch", "Fail", "System.AssertException: Assertion Failed: hdCatch|log=1C,1F,|d=16"], ["hdPartial", "Fail", "System.AssertException: Assertion Failed: hdPartial|log=1P,|d=16"], ["hdPlain", "Fail", "System.AssertException: Assertion Failed: hdPlain|System.DmlException|d=16|max=true"], ["hdSwallowLimits", "Fail", "System.AssertException: Assertion Failed: hdSwallow|log=1C,|dml=4,rows=4,q=2,qr=2|after=dml4,q2"], ["nestedInner", "Fail", "System.AssertException: Assertion Failed: nested|0,1,"]]}
+{"api": "67.0", "id": "x_route", "route": "istest", "tests": [["hdCatch", "Fail", "System.AssertException: Assertion Failed: hdCatch|log=1C,1F,|d=16"], ["hdPartial", "Fail", "System.AssertException: Assertion Failed: hdPartial|log=1P,|d=16"], ["hdPlain", "Fail", "System.AssertException: Assertion Failed: hdPlain|System.DmlException|d=16|max=true"], ["hdSwallowLimits", "Fail", "System.AssertException: Assertion Failed: hdSwallow|log=1C,|dml=4,rows=4,q=2,qr=2|after=dml4,q2"], ["nestedInner", "Fail", "System.AssertException: Assertion Failed: nested|0,1,"]]}
+{"api": "62.0", "debug": ["OBS|seed|a=1|b=1"], "error": "", "id": "x_seed", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|seed|a=1|b=1"], "error": "", "id": "x_seed", "route": "anonymous"}

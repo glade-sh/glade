@@ -1,0 +1,4 @@
+id	route	file
+PclMsgGuestCaseTest	istest	PclMsgGuestCaseTest
+PclMsgGuestLeadTest	istest	PclMsgGuestLeadTest
+PclMsgCcLeadTest	istest	PclMsgCcLeadTest

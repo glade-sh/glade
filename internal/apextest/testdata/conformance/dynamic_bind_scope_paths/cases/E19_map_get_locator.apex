@@ -1,0 +1,1 @@
+try { Map<String,String> m = new Map<String,String>{'k'=>'x'}; Database.QueryLocator ql = Database.getQueryLocator('SELECT Id FROM Account WHERE Name = :m.get(\'k\')'); System.debug('R|ok'); } catch (Exception e) { System.debug('R|' + e.getTypeName() + ': ' + e.getMessage()); }

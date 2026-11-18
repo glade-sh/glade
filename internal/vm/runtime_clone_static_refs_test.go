@@ -466,10 +466,13 @@ func assertStaticRefsShared(t *testing.T, source, clone *VM) {
 func assertStaticRefsMatchFresh(t *testing.T, machine *VM) {
 	t.Helper()
 	refs, fields := machine.collectStaticValueRefs()
-	if !reflect.DeepEqual(machine.staticValueRefs, refs) {
-		t.Fatalf("cached static refs = %v, fresh = %v", machine.staticValueRefs, refs)
+	// A written clone layers private maps over the shared index; compare the
+	// effective index.
+	cachedRefs, cachedFields := machine.staticRefIndexSnapshot()
+	if !reflect.DeepEqual(cachedRefs, refs) {
+		t.Fatalf("cached static refs = %v, fresh = %v", cachedRefs, refs)
 	}
-	if got, want := normalizedStaticRefLocations(machine.staticValueRefFields), normalizedStaticRefLocations(fields); !reflect.DeepEqual(got, want) {
+	if got, want := normalizedStaticRefLocations(cachedFields), normalizedStaticRefLocations(fields); !reflect.DeepEqual(got, want) {
 		t.Fatalf("cached static locations = %v, fresh = %v", got, want)
 	}
 }

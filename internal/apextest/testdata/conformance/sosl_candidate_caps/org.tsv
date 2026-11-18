@@ -1,0 +1,41 @@
+id	api	route	observation
+cap10_order	62.0	anonymous	200,200,200,200,200,200,200,200,200,200
+cap10_order	67.0	anonymous	200,200,200,200,200,200,200,200,200,200
+cap10_plain	62.0	anonymous	200,200,200,200,200,200,200,200,200,200
+cap10_plain	67.0	anonymous	200,200,200,200,200,200,200,200,200,200
+cap10_where	62.0	anonymous	200,200,200,200,200,200,200,200,200,200
+cap10_where	67.0	anonymous	200,200,200,200,200,200,200,200,200,200
+cap1_order	62.0	anonymous	301
+cap1_order	67.0	anonymous	301
+cap1_plain	62.0	anonymous	250
+cap1_plain	67.0	anonymous	250
+cap1_where	62.0	anonymous	301
+cap1_where	67.0	anonymous	301
+cap3_order	62.0	anonymous	250,250,250
+cap3_order	67.0	anonymous	250,250,250
+cap3_plain	62.0	anonymous	250,250,250
+cap3_plain	67.0	anonymous	250,250,250
+cap3_where	62.0	anonymous	250,250,250
+cap3_where	67.0	anonymous	250,250,250
+cap8_order	62.0	anonymous	250,250,250,250,250,250,250,250
+cap8_order	67.0	anonymous	250,250,250,250,250,250,250,250
+cap8_plain	62.0	anonymous	250,250,250,250,250,250,250,250
+cap8_plain	67.0	anonymous	250,250,250,250,250,250,250,250
+cap8_where	62.0	anonymous	250,250,250,250,250,250,250,250
+cap8_where	67.0	anonymous	250,250,250,250,250,250,250,250
+ceil_gl2000	62.0	anonymous	2000
+ceil_gl2000	67.0	anonymous	2000
+ceil_gl2001	62.0	anonymous	System.QueryException|maximum limit of search results is 2000
+ceil_gl2001	67.0	anonymous	System.QueryException|maximum limit of search results is 2000
+ceil_l2000	62.0	anonymous	2000
+ceil_l2000	67.0	anonymous	2000
+ceil_l2001	62.0	anonymous	System.QueryException|Maximum entity limit is 2000
+ceil_l2001	67.0	anonymous	System.QueryException|Maximum entity limit is 2000
+ceil_off	62.0	anonymous	100
+ceil_off	67.0	anonymous	100
+ceil_order	62.0	anonymous	2000
+ceil_order	67.0	anonymous	2000
+ceil_plain	62.0	anonymous	250
+ceil_plain	67.0	anonymous	250
+ceil_where	62.0	anonymous	2000
+ceil_where	67.0	anonymous	2000

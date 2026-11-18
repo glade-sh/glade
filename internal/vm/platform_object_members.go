@@ -1201,6 +1201,11 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 		if len(args) != 0 {
 			return Null, false
 		}
+		// A standard action has a type and no name; a custom action has a name.
+		// NATIVE Invocable.Action getName and getVersion apex_release_gates/org.tsv IaProbe66/IA1 anonymous 66.0 67.0
+		if standard, ok := receiver.Fields["standard"]; ok && standard.Kind == ValueBool && standard.Bool {
+			return typedNull("String"), true
+		}
 		return String(invocableActionDisplayName(receiver)), true
 	case strings.EqualFold(methodName, "getNamespace"):
 		if len(args) != 0 {
@@ -1215,6 +1220,9 @@ func (vm *VM) callInvocableActionMember(receiver Value, methodName string, args 
 	case strings.EqualFold(methodName, "getVersion"):
 		if len(args) != 0 {
 			return Null, false
+		}
+		if value, ok := receiver.Fields["version"]; !ok || value.Kind != ValueString {
+			return typedNull("String"), true
 		}
 		return String(invocableActionStringField(receiver, "version")), true
 	case strings.EqualFold(methodName, "isStandard"):

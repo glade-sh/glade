@@ -1,0 +1,34 @@
+{"api": "62.0", "debug": [], "error": "Field does not exist: Amt__c on RcA__c", "id": "g_amt_a", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_amt_a|ok"], "error": "", "id": "g_amt_a", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_amt_b|ok"], "error": "", "id": "g_amt_b", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_amt_b|ok"], "error": "", "id": "g_amt_b", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "Field does not exist: Amt__c on RcA__c", "id": "g_name_a", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_name_a|ok"], "error": "", "id": "g_name_a", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_name_b|ok"], "error": "", "id": "g_name_b", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_name_b|ok"], "error": "", "id": "g_name_b", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_noext_a|ok"], "error": "", "id": "g_noext_a", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_noext_a|ok"], "error": "", "id": "g_noext_a", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_noext_b|ok"], "error": "", "id": "g_noext_b", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_noext_b|ok"], "error": "", "id": "g_noext_b", "route": "anonymous"}
+{"api": "62.0", "id": "g_route", "route": "istest", "tests": [["amt", "Fail", "System.AssertException: Assertion Failed: amt|ok"], ["noext", "Fail", "System.AssertException: Assertion Failed: noext|ok"], ["sys", "Fail", "System.AssertException: Assertion Failed: sys|ok"]]}
+{"api": "67.0", "id": "g_route", "route": "istest", "tests": [["amt", "Fail", "System.AssertException: Assertion Failed: amt|System.DmlException"], ["noext", "Fail", "System.AssertException: Assertion Failed: noext|System.DmlException"], ["sys", "Fail", "System.AssertException: Assertion Failed: sys|ok"]]}
+{"api": "62.0", "debug": [], "error": "Field does not exist: Amt__c on RcA__c", "id": "g_sys_a", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_sys_a|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."], "error": "", "id": "g_sys_a", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_sys_b|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."], "error": "", "id": "g_sys_b", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_sys_b|System.SecurityException|Cannot use SYSTEM_MODE access level in anonymous execution of Apex."], "error": "", "id": "g_sys_b", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "Field does not exist: Amt__c on RcA__c", "id": "g_usr_a", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_usr_a|System.DmlException|Operation failed due to fields being inaccessible on Sobject RcA__c, c"], "error": "", "id": "g_usr_a", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_usr_b|System.DmlException|Operation failed due to fields being inaccessible on Sobject RcA__c, c"], "error": "", "id": "g_usr_b", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_usr_b|System.DmlException|Operation failed due to fields being inaccessible on Sobject RcA__c, c"], "error": "", "id": "g_usr_b", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|n_del|L1=0/0/10/10/0;final=1/10/10/10/1"], "error": "", "id": "n_del", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|n_del|L1=0/0/10/10/0;final=1/10/10/10/1"], "error": "", "id": "n_del", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|n_none|L1=1/20/20/20/1;final=2/30/10/20/2"], "error": "", "id": "n_none", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|n_none|L1=1/20/20/20/1;final=2/30/10/20/2"], "error": "", "id": "n_none", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|n_sib2|L2=1/20/20/20/1;L1=2/25/5/20/1;final=3/35/5/20/2"], "error": "", "id": "n_sib2", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|n_sib2|L2=1/20/20/20/1;L1=2/25/5/20/1;final=3/35/5/20/2"], "error": "", "id": "n_sib2", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|n_sib3|L3=1/20/20/20/1;L2=2/21/1/20/1;L1=3/26/1/20/1;final=4/36/1/20/2"], "error": "", "id": "n_sib3", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|n_sib3|L3=1/20/20/20/1;L2=2/21/1/20/1;L1=3/26/1/20/1;final=4/36/1/20/2"], "error": "", "id": "n_sib3", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|n_sib3up|L3=1/5/5/5/0;L2=2/55/5/50/1;L1=3/95/5/50/2;final=4/125/5/50/3"], "error": "", "id": "n_sib3up", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|n_sib3up|L3=1/5/5/5/0;L2=2/55/5/50/1;L1=3/95/5/50/2;final=4/125/5/50/3"], "error": "", "id": "n_sib3up", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}

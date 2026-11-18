@@ -290,10 +290,11 @@ func validatePresentationControllerTypes(root *MarkupNode, p project.Project) er
 		if !strings.EqualFold(strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)), controller) {
 			continue
 		}
-		file, err := parser.ParseFile(path)
+		source, err := p.ReadFile(path)
 		if err != nil {
 			return err
 		}
+		file := parser.ParseSource(path, string(source))
 		for _, declaration := range file.Declarations {
 			if !strings.EqualFold(declaration.Name, controller) {
 				continue

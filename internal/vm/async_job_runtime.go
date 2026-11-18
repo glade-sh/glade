@@ -14,6 +14,26 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+// releaseSavepointsAtTestBoundary ends every active savepoint at startTest and
+// stopTest; a later rollback to one fails (test_boundary_edges sb1, sb2, sb4,
+// APIs 62 and 67).
+func (vm *VM) releaseSavepointsAtTestBoundary() {
+	for id := range vm.savepointOrder {
+		delete(vm.savepoints, id)
+		delete(vm.savepointMarks, id)
+		delete(vm.emailSavepoints, id)
+		delete(vm.creationSavepoints, id)
+		delete(vm.flowPathSavepoints, id)
+		delete(vm.calloutPendingWork.savepoints, id)
+		vm.releaseChangeDataCapture(id)
+		delete(vm.savepointOrder, id)
+		if vm.boundaryReleasedSavepoints == nil {
+			vm.boundaryReleasedSavepoints = make(map[string]bool)
+		}
+		vm.boundaryReleasedSavepoints[id] = true
+	}
+}
+
 func (vm *VM) testStart() (Value, error) {
 	if vm.testContext == nil {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Method only allowed during testing", Stack: vm.stackFrames()}
@@ -21,6 +41,7 @@ func (vm *VM) testStart() (Value, error) {
 	if vm.testContext.Started {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing already started", Stack: vm.stackFrames()}
 	}
+	vm.releaseSavepointsAtTestBoundary()
 	vm.testContext.Started = true
 	vm.testContext.Stopped = false
 	vm.fakeNow = vm.fakeNow.Add(time.Second)
@@ -36,7 +57,7 @@ func (vm *VM) testStart() (Value, error) {
 }
 func (vm *VM) testStop(result *Result) (Value, error) {
 	if vm.testContext == nil {
-		return Null, fmt.Errorf("Test.stopTest is only available in test context")
+		return Null, &RuntimeError{Type: "System.FinalException", Message: "Method only allowed during testing", Stack: vm.stackFrames()}
 	}
 	if !vm.testContext.Started {
 		return Null, &RuntimeError{Type: "System.FinalException", Message: "Testing has not started", Stack: vm.stackFrames()}
@@ -47,12 +68,112 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 	vm.testContext.Stopped = true
 	vm.prepareTestStopAsyncJobs()
 	err := vm.drainTestWork(result)
+	vm.releaseSavepointsAtTestBoundary()
 	// The test boundary clears pending DML and active-savepoint callout guards.
 	vm.calloutPendingWork = calloutPendingWork{}
 	vm.cpuBudgetUsed = vm.testContext.parentCPUBudget
 	vm.limits = vm.testContext.ParentLimits
 	vm.limitViolations = append([]LimitViolation(nil), vm.testContext.ParentViolations...)
 	return Null, err
+}
+
+// DrainTestSetupAsync runs the async work a @TestSetup method left queued,
+// the way stopTest runs it, so the setup org that every test method starts
+// from holds its effects. Natively a Queueable enqueued in @TestSetup runs at
+// the end of setup and its lines count as covered
+// (test_runner_coverage/org.tsv cvasync-setup, API 62.0 and 67.0).
+func (vm *VM) DrainTestSetupAsync() error {
+	if vm == nil || vm.testContext == nil {
+		return nil
+	}
+	// The end of setup runs the async jobs setup code queued, and the jobs
+	// those jobs queue (a batch finish() that enqueues a Queueable), the way
+	// stopTest runs them: Queueable, @future, Batch Apex and scheduled Apex.
+	// It delivers no platform event and no change data capture event
+	// (test_runner_coverage_carry Setup*Test and R3*Test rows, API 62.0 and
+	// 67.0). Test.getEventBus().deliver() in setup delivers as it always does.
+	var futures []storage.ID
+	pending := false
+	for _, job := range vm.testContext.AsyncJobs {
+		if !setupDrainedJobKind(job.Kind) {
+			continue
+		}
+		pending = true
+		if job.Kind == "Future" {
+			futures = append(futures, storage.ID(job.ID))
+		}
+	}
+	if !pending {
+		return nil
+	}
+	// The end of setup drains like stopTest: a Queueable that chains another
+	// fails with the stopTest AsyncException (native SetupChainTest rows).
+	previousStopped, previousPreserve, previousStopDraining := vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining
+	previousStart := vm.testContext.AsyncStartIndex
+	vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining = true, true, true
+	var kept []AsyncJob
+	var err error
+	for iteration := 0; iteration < maxLoopIterations; iteration++ {
+		var run []AsyncJob
+		for _, job := range vm.testContext.AsyncJobs {
+			if setupDrainedJobKind(job.Kind) && !job.Deferred {
+				run = append(run, job)
+			} else {
+				kept = append(kept, job)
+			}
+		}
+		if len(run) == 0 {
+			break
+		}
+		vm.testContext.AsyncJobs, vm.testContext.AsyncStartIndex = run, 0
+		if iteration == 0 {
+			vm.prepareTestStopAsyncJobs()
+		}
+		vm.setupDrainPasses = iteration + 1
+		processed := vm.asyncJobsProcessed
+		if err = vm.drainTestAsync(&Result{}); err != nil {
+			break
+		}
+		if vm.asyncJobsProcessed == processed {
+			// Nothing ran: what is left never comes due here (an aborted or
+			// future-dated schedule). Stop, as drainTestWork does.
+			break
+		}
+	}
+	vm.testContext.AsyncJobs = append(kept, vm.testContext.AsyncJobs...)
+	vm.testContext.AsyncStartIndex = min(previousStart, len(vm.testContext.AsyncJobs))
+	vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining = previousStopped, previousPreserve, previousStopDraining
+	// A test method sees no AsyncApexJob row for an @future call its setup
+	// queued, while Queueable and batch rows stay (native SetupFutureTest
+	// and SetupQTest rows, test_runner_coverage_carry).
+	if vm.Org != nil && len(futures) > 0 {
+		object := vm.Org.Objects["AsyncApexJob"]
+		for _, id := range futures {
+			if record, ok := object.Records[id]; ok {
+				vm.recordIsolationJournalMutation("AsyncApexJob", id, record, true)
+				object.DeleteRecord(id)
+			}
+		}
+		vm.Org.Objects["AsyncApexJob"] = object
+	}
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		// A job's uncaught exception fails setup as an Apex exception, the way
+		// it would surface from setup code.
+		if len(thrown.stack) == 0 {
+			thrown.stack = vm.rawStackFrames()
+		}
+		return runtimeError(thrown.value, thrown.stack)
+	}
+	return err
+}
+
+func setupDrainedJobKind(kind string) bool {
+	switch kind {
+	case "Queueable", "Future", "BatchApex", "ScheduledApex":
+		return true
+	}
+	return false
 }
 
 // Queueables, futures and scheduled Apex submitted before startTest execute at
@@ -63,7 +184,7 @@ func (vm *VM) prepareTestStopAsyncJobs() {
 	jobs := vm.testContext.AsyncJobs
 	boundary := min(max(vm.testContext.AsyncStartIndex, 0), len(jobs))
 	prior := make([]AsyncJob, 0, boundary)
-	ready := make([]AsyncJob, 0, len(jobs))
+	ready := make([]stopAsyncReady, 0, len(jobs))
 	for i, job := range jobs {
 		reused := vm.activeTestScheduledReuse(job)
 		if job.ScheduledAborted && !reused {
@@ -84,11 +205,88 @@ func (vm *VM) prepareTestStopAsyncJobs() {
 		if i < boundary && job.Kind != "Queueable" && job.Kind != "Future" && job.Kind != "ScheduledApex" && job.Kind != "BatchApex" && !reused {
 			prior = append(prior, job)
 		} else {
-			ready = append(ready, job)
+			ready = append(ready, stopAsyncReady{job: job, preStart: i < boundary})
 		}
 	}
-	vm.testContext.AsyncJobs = append(prior, ready...)
-	vm.testContext.AsyncStartIndex = len(prior)
+	vm.orderStopAsyncJobs(ready)
+	for _, item := range ready {
+		prior = append(prior, item.job)
+	}
+	vm.testContext.AsyncJobs = prior
+	vm.testContext.AsyncStartIndex = len(prior) - len(ready)
+}
+
+// stopSortEligibleBatch identifies direct batches covered by the stopTest
+// observations in async_stop_mix and async_stop_boundary/org.tsv.
+func (vm *VM) stopSortEligibleBatch(job AsyncJob) bool {
+	return job.Kind == "BatchApex" && job.DirectBatchSubmission && !job.SuppressWorkerRecords && !vm.capturedBatchFaultJob(job)
+}
+
+// splitBatchAtStop covers the scope and source shapes in async_stop_shape
+// emptyBQ, multiBQ and locBQ and async_stop_boundary pre, stateful and locator.
+func (vm *VM) splitBatchAtStop(job AsyncJob, projectNative bool) bool {
+	return vm.testContext != nil && vm.testContext.Stopped && vm.testContext.Draining && vm.testContext.StopDraining &&
+		vm.stopSortEligibleBatch(job) && !projectNative
+}
+
+type stopAsyncReady struct {
+	job      AsyncJob
+	preStart bool
+}
+
+// stopAsyncRank ranks runs of eligible jobs; unobserved shapes are barriers.
+// async_stop_shape preBF, preQF and sb cover pre-start and scheduled ordering.
+func (vm *VM) stopAsyncRank(job AsyncJob, preStart bool) (int, bool) {
+	switch job.Kind {
+	case "Future":
+		return 0, true
+	case "Queueable":
+		return 1, !job.QueueableDelaySet
+	case "BatchApex":
+		return 1, vm.stopSortEligibleBatch(job)
+	case "ScheduledApex":
+		return 2, !preStart
+	}
+	return 0, false
+}
+
+// queueStopBatchContinuation queues the next phase of a split stopTest batch
+// at the tail, ahead of pending Schedulables (async_stop_mix bsch: the
+// Schedulable runs after the batch finish) and ahead of the first pending
+// barrier, so a batch phase never passes work no row covers.
+func (vm *VM) queueStopBatchContinuation(job AsyncJob) {
+	jobs := vm.testContext.AsyncJobs
+	at := len(jobs)
+	for i := max(0, vm.testContext.AsyncStartIndex); i < len(jobs); i++ {
+		if _, ranked := vm.stopAsyncRank(jobs[i], false); jobs[i].Kind == "ScheduledApex" || !ranked {
+			at = i
+			break
+		}
+	}
+	vm.testContext.AsyncJobs = slices.Insert(jobs, at, job)
+}
+
+// orderStopAsyncJobs sorts each run without moving work across barriers.
+func (vm *VM) orderStopAsyncJobs(jobs []stopAsyncReady) {
+	for start := 0; start < len(jobs); {
+		if _, ok := vm.stopAsyncRank(jobs[start].job, jobs[start].preStart); !ok {
+			start++
+			continue
+		}
+		end := start + 1
+		for end < len(jobs) {
+			if _, ok := vm.stopAsyncRank(jobs[end].job, jobs[end].preStart); !ok {
+				break
+			}
+			end++
+		}
+		slices.SortStableFunc(jobs[start:end], func(a, b stopAsyncReady) int {
+			ra, _ := vm.stopAsyncRank(a.job, a.preStart)
+			rb, _ := vm.stopAsyncRank(b.job, b.preStart)
+			return ra - rb
+		})
+		start = end
+	}
 }
 
 func (vm *VM) drainTestWork(result *Result) error {
@@ -223,10 +421,11 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 			}
 		}
 	}
-	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
+	// The specific counter first: its exhaustion text is the native message.
+	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
 		return Null, err
 	}
-	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
+	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
 	if len(args) == 1 {
@@ -335,7 +534,7 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("batchJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize, DirectBatchSubmission: vm.currentAsyncKind == ""}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize, DirectBatchSubmission: vm.currentAsyncKind == "", QueueableBatchSubmission: vm.currentAsyncKind == "Queueable" && vm.testContext != nil}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -536,6 +735,11 @@ func (vm *VM) abortJob(args []Value) (Value, error) {
 			continue
 		}
 		if job.Kind == "ScheduledApex" || job.Kind == "ScheduledBatch" {
+			// Aborting a scheduled job deletes its CronTrigger: one DML statement.
+			// NATIVE abortJob on a scheduled job apex_release_gates/org.tsv PjProbe67/PJ7 anonymous 62.0 63.0 67.0
+			if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+				return Null, err
+			}
 			vm.testContext.AsyncJobs[i].ScheduledAborted = true
 		} else {
 			vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs[:i], vm.testContext.AsyncJobs[i+1:]...)
@@ -573,6 +777,10 @@ func (vm *VM) enqueueTestBatchJobs(args []Value) (Value, error) {
 	}
 	if args[0].Kind != ValueInt {
 		return Null, fmt.Errorf("Test.enqueueBatchJobs expects Integer")
+	}
+	if args[0].Int > 105 && vm.Org != nil {
+		// Five active jobs plus a flex queue of 100 (test_boundary_edges bt_enq106).
+		return Null, newExceptionError("System.AsyncException", fmt.Sprintf("You've exceeded the limit of 100 jobs in the flex queue for org %s. Wait for some of your batch jobs to finish before adding more. To monitor and reorder jobs, use the Apex Flex Queue page in Setup.", vm.Org.OrgID))
 	}
 	ids := typedList("List<Id>")
 	ids.nativeListMembership = true
@@ -666,7 +874,7 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 				record.Fields = make(map[string]storage.Value)
 			}
 			record.Fields["Status"] = storage.StringValue("Aborted")
-			object.Records[record.ID] = record
+			object.PutRecord(record.ID, record)
 			vm.Org.Objects["AsyncApexJob"] = object
 		}
 	}
@@ -692,7 +900,7 @@ func (vm *VM) releaseScheduledCron(cronID string) {
 			record.Fields["State"] = storage.StringValue("Deleted")
 			record.System.IsDeleted = true
 			delete(record.Fields, "NextFireTime")
-			object.Records[record.ID] = record
+			object.PutRecord(record.ID, record)
 			vm.Org.Objects["CronTrigger"] = object
 		}
 	}
@@ -708,7 +916,7 @@ func (vm *VM) releaseScheduledCron(cronID string) {
 		if storedID, record, found := storage.LookupRecordByID(object.Records, detailID); found && !record.System.IsDeleted {
 			vm.recordIsolationJournalMutation("CronJobDetail", storedID, record, true)
 			record.System.IsDeleted = true
-			object.Records[storedID] = record
+			object.PutRecord(storedID, record)
 			vm.Org.Objects["CronJobDetail"] = object
 		}
 	}
@@ -1017,6 +1225,7 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		job := (*jobs)[jobIndex]
 		*jobs = append((*jobs)[:jobIndex], (*jobs)[jobIndex+1:]...)
 		processed++
+		vm.asyncJobsProcessed++
 		var asyncStaticSnapshot map[string]map[string]Value
 		var asyncStaticInitSnapshot map[string]staticInitState
 		// stopTest runs collected work with the caller's static state, including
@@ -1050,7 +1259,10 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		if vm.isolateAsyncJobFailures {
 			isolationMark, isolated = vm.beginBatchChunkTransaction()
 		}
+		vm.queueableBodyFailureRetained = false
 		err := vm.runAsyncJob(job, result, &batchProjection)
+		bodyFailureRetained := vm.queueableBodyFailureRetained
+		vm.queueableBodyFailureRetained = false
 		if err != nil && isolated {
 			// Each drained job is its own transaction: undo what the failed job
 			// wrote, record it as Failed and keep draining the others.
@@ -1071,7 +1283,10 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 			vm.staticInitState = copyStaticInitStateMap(asyncStaticInitSnapshot)
 		}
 		if err != nil {
-			if !job.ScheduledAborted && !batchProjection {
+			// Failed Queueable bodies observed at stopTest retain the Processing
+			// projection and their body writes while the error propagates.
+			retainProcessing := vm.testContext != nil && vm.testContext.StopDraining && job.Kind == "Queueable" && bodyFailureRetained && vm.asyncJobRecordStatus(job.ID) == "Processing"
+			if !job.ScheduledAborted && !batchProjection && !retainProcessing {
 				vm.recordAsyncJob(job, "Failed", err.Error())
 			}
 			return err
@@ -1161,7 +1376,7 @@ func (vm *VM) asyncJobDue(job AsyncJob) bool {
 }
 func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		fields := make(map[string]Value, len(class.StaticFields))
 		for fieldName, field := range class.StaticFields {
 			fields[fieldName] = field.Value
@@ -1172,7 +1387,7 @@ func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 }
 func (vm *VM) testAsyncStaticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
-	for className, class := range vm.ClassEntries() {
+	for className, class := range vm.classEntriesNoLazy() {
 		if !classHasStaticCollectionField(class) {
 			continue
 		}
@@ -1229,6 +1444,12 @@ func (vm *VM) enqueueAsyncJob(job AsyncJob) {
 	}
 	if vm.testContext != nil {
 		job.RunAsUser = vm.eventSubscriberRunAsUser()
+		// Native sharing_access_modes u2_06b rows (APIs 62.0-68.0): a
+		// Queueable enqueued inside runAs and drained by a Test.stopTest
+		// outside the block still runs as the enqueuing user.
+		if job.RunAsUser.Kind == "" && job.Kind == "Queueable" && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth {
+			job.RunAsUser = vm.testContext.CurrentUser
+		}
 		vm.recordApexClass(vm.asyncClassName(job))
 		// async_lifecycle_c14 Y8 (API 62/67) and the scheduleBatch-isTest rows
 		// of async_static_callbacks, async_context_ids and async_route_twins:
@@ -1305,9 +1526,13 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 		return true
 	}
 	// Owned API 62/67 F04/F12: a future's explicit-depth Queueable starts
-	// during stopTest. Uncapped future descendants retain their boundary.
+	// during stopTest; the gen2q rows add the uncapped child at stopTest only.
+	// Explicit test-context drains keep the uncapped child deferred.
 	if vm.currentAsyncKind == "Future" {
-		return job.QueueableDepth == 1 && job.QueueableMaxDepth >= job.QueueableDepth
+		if job.QueueableDepth != 1 {
+			return false
+		}
+		return job.QueueableMaxDepth >= job.QueueableDepth || (vm.testContext != nil && vm.testContext.StopDraining && job.QueueableMaxDepth >= 0)
 	}
 	if vm.currentAsyncKind != "Queueable" {
 		return false
@@ -1345,6 +1570,18 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		previousExecutionUser, previousTestUser := vm.executionUser, vm.testContext.CurrentUser
 		vm.executionUser, vm.testContext.CurrentUser = job.RunAsUser, job.RunAsUser
 		defer func() { vm.executionUser, vm.testContext.CurrentUser = previousExecutionUser, previousTestUser }()
+	}
+	// A job of a user other than the one who ran the test sees every assignment
+	// (sharing_access_modes d3 rows; residuals.tsv A5 and A6). A job of the test
+	// runner reads the grant the way the code that drains it does: hidden outside
+	// a runAs block, and inside one only what the block saw when it started
+	// (residuals.tsv PsrAsyncTest and the A1-A4, A7-A9 rows).
+	if vm.testContext != nil {
+		if runner := stringField(vm.defaultOrgUser(), "Id"); runner != "" && !storage.IDsEqual(storage.ID(runner), storage.ID(vm.currentUserID())) {
+			previousAll := vm.permAssignAll
+			vm.permAssignAll = true
+			defer func() { vm.permAssignAll = previousAll }()
+		}
 	}
 	switch job.Kind {
 	case "FlowAsyncPath":
@@ -1395,12 +1632,18 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		previousFinalizer := vm.currentFinalizer
 		vm.currentFinalizer = Value{}
 		jobTransaction := vm.beginDMLRollbackPoint(vm.testContext == nil, false)
+		bodyEntered := false
+		// Native as04 (surf_async_options, API 62 and 67): a Queueable body that
+		// does not implement Database.AllowsCallouts cannot call out.
+		previousCalloutDisabled := vm.futureCalloutDisabled
+		vm.futureCalloutDisabled = !vm.typeMatches(job.Object.Type, "Database.AllowsCallouts", make(map[string]bool))
+		defer func() { vm.futureCalloutDisabled = previousCalloutDisabled }()
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withQueueableJob(job, func() (Value, error) {
 				if staticExecute {
-					return vm.callAsyncEntry(target, Null, args, result, true)
+					return vm.callAsyncEntry(target, Null, args, result, true, &bodyEntered)
 				}
-				return vm.callAsyncEntry(target, job.Object, args, result, true)
+				return vm.callAsyncEntry(target, job.Object, args, result, true, &bodyEntered)
 			})
 		})
 		finalizer := vm.currentFinalizer
@@ -1419,10 +1662,16 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 			if err == nil {
 				vm.recordAsyncJob(job, "Completed", "")
 			}
+			// Native fn01 (surf_async_options, API 62 and 67): a Finalizer may call
+			// out even when its parent Queueable lacks Database.AllowsCallouts.
+			vm.futureCalloutDisabled = previousCalloutDisabled
 			finalizerErr := vm.runQueueableFinalizer(finalizer, job, result, err)
 			if err == nil {
 				err = finalizerErr
 			}
+		} else if err != nil && bodyEntered {
+			// Only a body failure with no finalizer matches the native rows.
+			vm.queueableBodyFailureRetained = true
 		}
 		return err
 	case "BatchApex":
@@ -1488,7 +1737,7 @@ func (vm *VM) resolveAsyncCallbackForArgs(typeName, method string, args []Value)
 }
 
 // Override only the callback's caller frame; helpers retain normal dispatch.
-func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result *Result, queueable bool) (Value, error) {
+func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result *Result, queueable bool, entered ...*bool) (Value, error) {
 	if method.IsStatic {
 		receiver = Null
 	}
@@ -1504,10 +1753,18 @@ func (vm *VM) callAsyncEntry(method Method, receiver Value, args []Value, result
 	if mode == "" || inheritedTestEntry {
 		sharing = "without sharing"
 	}
-	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) {
+	// Native sharing_access_modes d3_b_Inh and d3_f_Inh rows (APIs 62.0-68.0):
+	// an inherited-sharing Batchable or @future entered from the test method
+	// runs without sharing, as a Queueable does, at every API.
+	if inheritedTestEntry && !queueable && apexversion.Enabled(vm.currentMethod.APIVersion, apexversion.SecureDefaults) &&
+		vm.currentAsyncKind != "Future" && vm.currentAsyncKind != "BatchApex" {
 		sharing = "with sharing"
 	}
-	return vm.callMethodWithReceiver(method, receiver, args, result, sharing)
+	var bodyEntered *bool
+	if len(entered) > 0 {
+		bodyEntered = entered[0]
+	}
+	return vm.callMethodWithReceiverEntry(method, receiver, args, result, bodyEntered, sharing)
 }
 
 func (vm *VM) withQueueableDuplicateSignatureTransaction(run func() (Value, error)) (Value, error) {
@@ -1538,7 +1795,16 @@ func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Resul
 	if len(target.Params) == 0 {
 		args = nil
 	}
+	syncQueries, syncCPUTimeMS := vm.limitCaps.Queries, vm.limitCaps.CPUTimeMS
 	_, err := vm.withAsyncLimitWindow(func() (Value, error) {
+		if vm.limitCaps.nativeDefaults {
+			// async_limit_messages a_fgetters_fin: a finalizer keeps the
+			// synchronous query and CPU caps with the asynchronous heap.
+			vm.limitCaps.Queries, vm.limitCaps.CPUTimeMS = syncQueries, syncCPUTimeMS
+			previousFinalizer := vm.inFinalizer
+			vm.inFinalizer = true
+			defer func() { vm.inFinalizer = previousFinalizer }()
+		}
 		return vm.withQueueableDelay(job, func() (Value, error) {
 			return vm.withAsyncKind("Queueable", func() (Value, error) {
 				// B44X01Z/02Z/05Z: omitted finalizers enter with sharing at API
@@ -1549,7 +1815,10 @@ func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Resul
 				if !target.SourceContextBound {
 					mode, _ = vm.classSharingMode(target.ClassName)
 				}
-				if mode == "" {
+				// Native sharing_access_modes d3_fin_Inh rows (APIs 62.0-68.0): an
+				// inherited-sharing finalizer run by Test.stopTest enters with
+				// sharing too.
+				if mode == "" || mode == "inherited sharing" && vm.testContext != nil {
 					return vm.callMethodWithReceiver(target, finalizer, args, result, "with sharing")
 				}
 				return vm.callAsyncEntry(target, finalizer, args, result, false)
@@ -1631,7 +1900,13 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		}
 	}
 	locatorStart := false
-	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok {
+	resume := job.batchResume
+	if resume != nil {
+		scope = resume.scope
+		locatorStart = resume.locatorStart
+		statefulObject = resume.statefulObject
+	}
+	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok && resume == nil {
 		receiver := batchTransactionReceiver(baseObject, stateful, &statefulObject)
 		value, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			restoreMixedDML := vm.beginMixedDMLTransaction()
@@ -1674,7 +1949,7 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 	projectNative = projectNative && !locatorStart && vm.capturedBatchFaultScope(scope)
 	projectedErrors := 0
 	chunks := batchChunks(scope, job.BatchSize)
-	if vm.testContext != nil && vm.testExecutionEntry != nil && job.DirectBatchSubmission && len(chunks) > 1 {
+	if vm.testContext != nil && vm.testExecutionEntry != nil && (job.DirectBatchSubmission || job.QueueableBatchSubmission) && len(chunks) > 1 {
 		// async_lifecycle_c14 Y4 (API 62/67 and 68): a test method may run one
 		// executeBatch chunk. The rejection is not catchable. Scoped to a test
 		// method entry so direct VM chunk-semantics runs keep multi chunks.
@@ -1683,6 +1958,16 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 		vm.recordAsyncJob(job, "Failed", err.Error())
 		return err
 	}
+	if resume == nil && vm.splitBatchAtStop(job, projectNative) {
+		// Native stopTest runs batch start in its submission slot, then
+		// execute and finish as separate continuations at the queue tail
+		// (async_stop_order bqf, async_stop_mix bb, bqb, bxq).
+		job.batchResume = &batchResumeState{scope: scope, locatorStart: locatorStart, statefulObject: statefulObject, finishOnly: len(chunks) == 0}
+		vm.queueStopBatchContinuation(job)
+		markProjection()
+		return nil
+	}
+	runExecute := resume == nil || !resume.finishOnly
 	executeArgs := []Value{asyncContext("Database.BatchableContext", job.ID), List()}
 	execute, ok, ambiguous := vm.resolveAsyncCallbackForArgs(job.Object.Type, "execute", executeArgs)
 	if ambiguous {
@@ -1701,7 +1986,7 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 			return vm.ambiguousOverloadError(job.Object.Type+".execute", nil)
 		}
 	}
-	if ok {
+	if ok && runExecute {
 		vm.recordAsyncJobTotals(job, len(chunks), 0, 0)
 		processed := 0
 		processedItems := 0
@@ -1758,6 +2043,13 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 				vm.recordBatchWorkerJob(job, processed, processedItems, chunk, "Completed", "")
 			}
 		}
+	}
+	if resume != nil && runExecute {
+		// Work the execute phase enqueued runs before finish (async_stop_mix bxq).
+		job.batchResume = &batchResumeState{scope: scope, locatorStart: locatorStart, statefulObject: statefulObject, finishOnly: true}
+		vm.queueStopBatchContinuation(job)
+		markProjection()
+		return nil
 	}
 	if finish, ok := vm.resolveInstanceMethod(job.Object.Type, "finish"); ok {
 		vm.recordAsyncJob(job, "Completed", "")
@@ -2732,7 +3024,7 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	} else {
 		delete(record.Fields, "CompletedDate")
 	}
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	vm.Org.Objects["AsyncApexJob"] = object
 }
 
@@ -2800,7 +3092,7 @@ func (vm *VM) recordAsyncJobTotals(job AsyncJob, total, processed, errors int) {
 	record.Fields["TotalJobItems"] = storage.IntegerValue(int64(total))
 	record.Fields["JobItemsProcessed"] = storage.IntegerValue(int64(processed))
 	record.Fields["NumberOfErrors"] = storage.IntegerValue(int64(errors))
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	vm.Org.Objects["AsyncApexJob"] = object
 }
 func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
@@ -2849,7 +3141,7 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	if strings.EqualFold(state, "Deleted") {
 		delete(record.Fields, "NextFireTime")
 	}
-	object.Records[record.ID] = record
+	object.PutRecord(record.ID, record)
 	vm.Org.Objects["CronTrigger"] = object
 	vm.recordCronJobDetail(job)
 }
@@ -3122,14 +3414,14 @@ func (vm *VM) recordCronJobDetail(job AsyncJob) {
 		return
 	}
 	vm.recordIsolationJournalMutation("CronJobDetail", id, storage.Record{}, false)
-	object.Records[id] = storage.Record{
+	object.PutRecord(id, storage.Record{
 		ID:     id,
 		Object: "CronJobDetail",
 		Fields: map[string]storage.Value{
 			"Name":    storage.StringValue(job.Name),
 			"JobType": storage.StringValue(cronJobType(job)),
 		},
-	}
+	})
 	vm.Org.Objects["CronJobDetail"] = object
 }
 func asyncClassName(job AsyncJob) string {

@@ -143,6 +143,8 @@ func unresolvedCursorJSON(receiver Value) bool {
 }
 
 func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, cursor bool, result *Result) (Value, error) {
+	inlineQuery := vm.inlineQueryLocatorCall
+	vm.inlineQueryLocatorCall = false
 	if query.Kind == ValueNull {
 		return Null, newExceptionError("NullPointerException", "Argument 1 cannot be null")
 	}
@@ -161,6 +163,11 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 		expand = func(raw string) (string, error) { return vm.expandSOQLBindsFromMap(raw, binds) }
 	} else {
 		binds = typedMap("Map<String,Object>")
+	}
+	if !cursor && !mapBinds {
+		if err := vm.validateDynamicSOQLExceptionBinds(query.Text); err != nil {
+			return Null, err
+		}
 	}
 	// Validate restrictions on query handles before the ordinary SOQL engine.
 	// Normal queries still support COUNT, aggregates, OFFSET and FOR UPDATE.
@@ -202,6 +209,11 @@ func (vm *VM) databaseQueryHandle(query Value, binds Value, accessLevel Value, c
 				message = "You cannot lock records with Cursor using FOR UPDATE"
 			}
 			return Null, newExceptionError("QueryException", message)
+		}
+	}
+	if !cursor && !mapBinds && !inlineQuery {
+		if err := vm.validateDynamicSOQLBindSyntaxMode(query.Text, false, true); err != nil {
+			return Null, err
 		}
 	}
 	accounting := soqlLocatorAccounting

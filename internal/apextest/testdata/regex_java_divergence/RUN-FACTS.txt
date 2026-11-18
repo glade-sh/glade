@@ -1,0 +1,62 @@
+capture: regex_java_divergence
+sf: @salesforce/cli/2.157.8
+apis: 62.0 and 67.0 (loop and Stack Overflow bisect rows: 67.0 only, except d6_alt_star_replace_5000 and d6_alt_star_split_5000, which have both; the d6c rows below have both)
+routes: anonymous Apex and @IsTest, one class per group and API
+org: campaign scratch orgs (1 day each), deleted and verified gone after every run
+runs, all 2026-11-16 UTC:
+  repeat 1  14:43-15:01  309 cases (anonymous and @IsTest; first two attempts lost their org alias to a concurrent run and were redone)
+  repeat 2  15:03-15:22  326 cases (all groups, anonymous and @IsTest)
+  loop sweep 15:09-15:12  52 solo cases at 67.0 (stack overflow and nested repeat boundaries)
+  d8x       15:21-15:23   12 cases (index counting, quoting, lookbehind and stacked quantifiers)
+  followups 15:25-15:31   90 cases (null arguments, nested repeat bisect, MatchResult)
+stability: every row captured twice (repeat 1 and repeat 2) matched exactly. Rows for Pattern.quote(null) and
+  Matcher.quoteReplacement(null) were dropped: the native UnexpectedException carries volatile request numbers.
+bisect d6c (2026-11-16 UTC, 62.0 and 67.0, anonymous, two or three fresh scratch orgs each, deleted and verified gone):
+  (\w+\s?)* over n repeats of 'a ': true to 1,050, Stack Overflow from 1,500; 1,100 to 1,200 differ between runs
+    (not kept as rows). (?:\r?\n)+ over n CRLF: true to 1,100, Stack Overflow from 1,200 (both repeats, both APIs).
+    The (a|b)* boundary stays 1,200 true and 1,300 overflow, so the loop limit depends on the body; d6c_crlf_1200 is carried.
+loop limit: the single limit of 1,250 iterations stays. The overflow boundary depends on the loop body
+  ((a|b)* 1,200 true; (.|\n)* and (?:\r?\n)+ overflow at 1,200; (\w+\s?)* flips between 1,100 and 1,200), so no single
+  number fits every row. d6b_dotnl_1200 and d6c_crlf_1200 are carried in carried.tsv for that reason.
+hitEnd after a failed find (d15, 62.0 and 67.0, anonymous and @IsTest, two repeats): a failed unanchored find always
+  reports hitEnd=true (also pattern_matcher R011 and d14_neg_lookahead_nomatch). A pattern anchored at the start makes one
+  attempt: ^(a+)+b on 24 a gives hitEnd=true and on 23 a plus c gives false. The @IsTest rows were captured too; only
+  the anonymous rows are in org.tsv.
+  Java keeps its Start wrapper unless the root node is a bare ^: (^(a+)+b) and (?:^(a+)+b) on 23 a plus c give
+  hitEnd=true. (?i)^(s+)+x on 20 s plus U+017F gives find=false hitEnd=false (ASCII-only fold without u).
+  d15 anonymous and @IsTest rows: two repeats, 62.0 and 67.0, in org.tsv (classes Rxd150062 and Rxd150067).
+(?x) rows d16 (62.0 and 67.0, anonymous and @IsTest, two repeats): a comment ends at \r and at U+2028 but, under d, only at \n;
+  whitespace splits tokens: (?x)( ?:a) is a non-capturing group, (?x)\0 1 4 2 reads octal 142 and (?x)\x2 3 reads hex 23.
+(?x) rows d17 (62.0 and 67.0, anonymous and @IsTest, two repeats): the character after (? is read raw, so (?x)(? =a)a is an Unknown inline modifier
+  while (?x)(? :a) is a non-capturing group; ( ?<n>a)\k<n> compiles with 1 group; a comment inside a class ends at \r.
+(?x) rows d17x_C01..C32 (62.0 and 67.0, @IsTest, two repeats; all four runs agree and equal the Java 21 predictions): classes Rxd17x0062 and Rxd17x0067
+  are the research packet's RegexXTest with @IsTest added to the class and the reserved word end renamed. They show:
+  the six whitespace characters skip; a comment ends at \n, \r (not under d), U+0085, U+2028 and U+2029, but Java returns U+0085, U+2028, U+2029
+  and NUL as pattern characters; whitespace splits \0 \x \u payloads and counted repeats after the first digit; (? x) and (?-x ) are errors.
+(?x) rows d18 (62.0 and 67.0, anonymous and @IsTest, two repeats): whitespace inside counted repeats, hex, octal and unicode payloads that follow a class;
+  [a b]a* +a is a possessive a*+ (no match on baaa); \x{4 1} reads \x{41}.
+\N{name} rows d19 (62.0 and 67.0, anonymous and @IsTest, two repeats): the name body is read raw, so (?x)\N{LATIN SMALL LETTER A} matches a;
+  an unknown name is Invalid regex: Unknown character name [FOO BAR] near the closing brace. Glade resolves only the names in javaCharacterByName;
+  other valid Unicode names are reported as unknown.
+\N{name} lookup rows d20 and d21 (62.0 and 67.0, anonymous and @IsTest, two repeats; all runs agree): Character.codePointOf trims, upper-cases and looks the
+  name up in the Unicode name table (controls use their Unicode 1.0 names, e.g. LINE FEED (LF)); underscores, hyphens for spaces and double spaces are unknown.
+  Failing that, the text after the last space is a hex code point and the whole text must equal Character.getName: so CJK UNIFIED IDEOGRAPHS 4E00 and HANGUL SYLLABLES AC00
+  resolve, BASIC LATIN 41 and LATIN 1 SUPPLEMENT 80 do not. U+1F600 via String.fromCharArray did not match natively, so GRINNING FACE is kept only as a compile row (d21_name_grinning_trim).
+\N{name} rows d22 (62.0 and 67.0, anonymous and @IsTest, two repeats): FACE WITH BAGS UNDER EYES (Unicode 16) is an Unknown character name [..] at the closing brace, SHAKING FACE (15.0) compiles,
+  and \N{BELL} is U+1F514 (it matches the bell emoji, not U+0007): the formal name table wins over the Unicode 1.0 control names. The first BELL emoji row in the batch used a doubly escaped subject and was recaptured as d22_name_bell_emoji.
+\c rows d24 (62.0 and 67.0, anonymous and @IsTest, two repeats): \c takes the next code point, so \c followed by U+1F600 matches U+1F640 (start 1), and \cA matches U+0001.
+requireEnd after a failed find (d14x rows, 62.0 and 67.0, anonymous and @IsTest, two repeats, 2026-11-16 UTC, scratch org deleted and verified gone after each run): Java never clears requireEnd when a search fails.
+  An attempt that evaluates $, \Z, \b, \B or a negative lookahead at the end of the input leaves it true (a(?!) and a\B on a: true). Start tries only the starts that leave room for the pattern's
+  minimum length, so \bz on ab, \b\w+ on two spaces and b$x on ab stay false. b$x and b\Zx on ab+LF are true, (?m)b$x on ab+LF is false (a multiline $ before a terminator does not read the end),
+  a(?!b)x on ab is false, a(?=b$)c on ab is true, and a second failed find after a match keeps the end read made at the last start (a\B on aXa).
+Matcher.toMatchResult rows (u6, named @IsTest route, 62.0 and 67.0, two repeats): the deploy fails on line 4 of the class with "Method does not exist or incorrect signature: void toMatchResult() from the type System.Matcher"
+  (column of the method name) and "Invalid type: MatchResult" (column of the type). The anonymous rows u6_toMatchResult and u6_matchResultType are in org.tsv; the named rows are asserted in internal/sema/matcher_to_match_result_test.go.
+requireEnd follow-ups (d14x, 62.0 and 67.0, anonymous and @IsTest, two repeats in two scratch orgs run at the same time, deleted and verified gone): find() after a find that failed past the region end does not change
+  hitEnd or requireEnd ($ on a: find true, find false gives hitEnd=true requireEnd=true; a\B on aXa with three finds gives false hitEnd=true requireEnd=true). A negative lookahead whose body reads the end counts even though the
+  lookahead then fails, and the body stops at its first success: a(?!b$)c on ab is requireEnd=true, a(?!b|b$) is false, a(?!b$|b) is true.
+Lone surrogate and find-again rows (d10_m_lit_lone_hi, d10_m_matcher_*, d14x_usepattern_*, d14x_caret_third_find; 62.0 and 67.0, anonymous and @IsTest, two repeats in two scratch orgs run at the same time, deleted and verified gone):
+  a literal lone surrogate in the pattern matches the same code unit through Pattern.matches and Pattern.compile(..).matcher(..).matches() (and so does (.), with end(1) 1).
+  After a failed find Java keeps last: usePattern(q) then find() searches q again (false hitEnd=true requireEnd=false), usePattern(a) then find() on the same text finds a (true hitEnd=false requireEnd=false),
+  and ^ on ab gives find true, false, true.
+Lone surrogate end state and escape rows (d10_m_lookingat_lone_dollar, d10_m_backslash_lone_hi; 62.0 and 67.0, anonymous and @IsTest, two repeats in two scratch orgs, deleted and verified gone):
+  .$ lookingAt over one lone high surrogate is true hitEnd=true requireEnd=true; a backslash before a lone surrogate in the pattern quotes it, so Pattern.matches('\\\uD83D', '\uD83D') is true.

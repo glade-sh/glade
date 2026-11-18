@@ -225,6 +225,8 @@ func (vm *VM) sObjectFieldMapCanonicalKeySet(value Value) (Value, bool) {
 	}
 	out := Set()
 	out.Type = "Set<String>"
+	out.describeKeySetText = true
+	out.describeKeySetReadOnly = true
 	seen := map[string]bool{}
 	for _, rawKey := range orderedValueMapKeys(value) {
 		fieldName, ok := sObjectFieldMapCanonicalFieldName(value.Map[rawKey])
@@ -240,6 +242,11 @@ func (vm *VM) sObjectFieldMapCanonicalKeySet(value Value) (Value, bool) {
 			fieldName = vm.describeFieldName(fieldName)
 		}
 		out.Set = append(out.Set, String(strings.ToLower(fieldName)))
+	}
+	// Writes through the key set reach the field map it came from
+	// (review_round9 ks_remove_effect, ks_clear_effect).
+	if vm != nil {
+		vm.bindMapKeySet(value, &out)
 	}
 	return out, true
 }
@@ -775,7 +782,13 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (ou
 				if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, actualField); ok {
 					actualField = canonical
 					fieldDef := definition.Fields[canonical]
-					if strings.TrimSpace(fieldDef.Formula) != "" || fieldDef.Type == storage.FieldSummary || systemFieldDynamicPutReadOnly(canonical) {
+					// A record that already has an Id cannot take a new master through
+					// a dynamic put when the relationship is not reparentable.
+					// NATIVE master-detail dynamic put apex_release_gates/org.tsv anonymous 62.0 67.0
+					masterDetailLocked := !receiver.classInstance && fieldDef.MasterDetail && !fieldDef.ReparentableMasterDetail &&
+						sObjectIDFromFields(receiver.Fields) != ""
+					if strings.TrimSpace(fieldDef.Formula) != "" || fieldDef.Type == storage.FieldSummary || systemFieldDynamicPutReadOnly(canonical) || masterDetailLocked ||
+						!receiver.classInstance && storage.StandardFeatureEnabledFieldDynamicPutReadOnly(definition, canonical) {
 						return Null, true, newExceptionError("System.SObjectException", "Field "+canonical+" is not editable")
 					}
 					if err := scaleZeroNumberDynamicPutError(definition, fieldDef, args[0], value); err != nil {

@@ -127,7 +127,7 @@ Climb only as far as the change needs. Each step runs once per exact tree.
 | Step | Command | When |
 | --- | --- | --- |
 | Focused | `go test ./internal/<pkg> -run '^(TestA\|TestB)$'` | While iterating. Rerun a failure alone before anything broader. |
-| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard`; for apextest use focused `-run` tests | Once before review; CI runs the 14 apextest shards. |
+| Package | `go test ./internal/<pkg>` for each changed package, plus `./internal/gladecli ./internal/repoguard`; for apextest use focused `-run` tests | Once before review; CI runs the 16 apextest shards. |
 | Full local release | `scripts/ci-go-test.sh local-release` | Changes that cross packages or touch the parser, `sema`, `vm`, `storage`, `soql` or `dml`; release candidates. |
 | Distribution smoke | `scripts/release-check.sh` (adds `git diff --check`, the site release proof and `scripts/smoke.sh`) | Release candidates, from a clean checkout. |
 | Required CI, locally | `scripts/ci-local-all` | Before opening or updating a release PR. |
@@ -141,7 +141,7 @@ under `ci-artifacts/local-release/`. Avoid running it alongside another broad
 suite on the same host.
 
 `scripts/ci-local-all` runs the jobs behind `Required CI` without GitHub
-Actions, with the same shard counts: apextest 14, vm 3, gladecli 2, sema 2,
+Actions, with the same shard counts: apextest 16, vm 3, gladecli 2, sema 2,
 LWC compile 8 and Visualforce 4. It needs Go with CGO, Node 22, actionlint,
 the CodeQL CLI and Go query packs, and Playwright Chromium. A missing tool is
 `SKIP-ENV`, which exits nonzero. Shards run serially unless `--jobs N` is set.
@@ -154,7 +154,7 @@ pushes to `main` run these workflows:
 
 | Workflow | Triggers | What it gates |
 | --- | --- | --- |
-| `CI` (`ci.yml`) | PR, merge queue, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: workflow-lint, site, test-binaries and test-binaries-apextest (separate producers, so the apextest shards do not wait on the other three binaries), vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` job (remaining Go packages plus repoguard) and the `lwc-vf` matrix (LWC compile and Visualforce shards), smoke-runtime, smoke-distribution and leak-scan (`scripts/leak-scan.sh` over the added lines of the change: personal and host paths, private temp paths, and the entries of the `LEAK_SCAN_DENYLIST` repository secret, with `.github/leak-scan-allow.txt` exempting named files from the denylist). The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
+| `CI` (`ci.yml`) | PR, merge queue, push to `main`, Monday schedule, dispatch | The `Required CI` job, the only ruleset-required check. It succeeds only when every dependency succeeds: workflow-lint, site, test-binaries and test-binaries-apextest (separate producers, so the apextest shards do not wait on the other three binaries), vet, the sharded apextest, vm, gladecli and sema jobs and their duration-history jobs, node-integration, nested-sources, server-and-playground, the `test` job (remaining Go packages plus repoguard) and the `lwc-vf` matrix (LWC compile and Visualforce shards), smoke-runtime, smoke-distribution and leak-scan (`scripts/leak-scan.sh` over the added lines of the change: personal and host paths, private temp paths, and the entries of the `LEAK_SCAN_DENYLIST` repository secret, with `.github/leak-scan-allow.txt` exempting named files from the denylist; a denylist with no entries fails the job, and only a pull request from a fork or another head repository — which cannot see repository secrets — passes `LEAK_SCAN_ALLOW_EMPTY_DENYLIST=1` and skips the denylist with a warning while the path checks still run). `scripts/leak-scan-commits.sh A..B` re-runs the scan for every commit of a range on its own and names the commit with a finding, for release checks ([WORKFLOW.md](WORKFLOW.md) section 3.11). The schedule adds `Required Scheduled CI` (sema-full and sema-equivalence). |
 | `Browser` (`browser.yml`) | PR, push to `main`, daily, dispatch | LWC browser and L08 conformance. Missing or skipped browser results fail. |
 | `Race` (`race.yml`) | Nightly schedule, dispatch | The full race matrix, with apextest in three parts. It does not run on pushes or pull requests and is not a PR check. |
 | `Security` (`security.yml`) | PR, push to `main`, `v*` tags, Monday schedule, dispatch | govulncheck, gosec, npm audit, dependency review and OpenSSF Scorecard. The fast CodeQL profile runs on PRs and main pushes; full runs on the schedule, tags and dispatch. |

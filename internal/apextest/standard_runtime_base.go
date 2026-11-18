@@ -131,3 +131,70 @@ func ownedPassiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existin
 	}
 	return out
 }
+
+// PersistableClasses returns classes in the form a startup cache stores: every
+// lazy platform shell is replaced by a private copy of its full declaration. A
+// shell holds no members and a cache payload cannot carry its build state. The
+// input slice is not changed.
+func PersistableClasses(classes []vm.Class) []vm.Class {
+	var out []vm.Class
+	for i, class := range classes {
+		if !class.IsLazy() {
+			if out != nil {
+				out[i] = class
+			}
+			continue
+		}
+		if out == nil {
+			out = make([]vm.Class, len(classes))
+			copy(out, classes[:i])
+		}
+		out[i] = class.FreshClass()
+	}
+	if out == nil {
+		return classes
+	}
+	return out
+}
+
+// RestoreLazyClasses is the inverse of PersistableClasses: a stored platform
+// class that the standard symbol view still declares without static members
+// is registered as the lazy shell again, so a restored runtime keeps no member
+// maps for classes nothing has looked up. Other classes are kept as stored.
+func RestoreLazyClasses(classes []vm.Class) []vm.Class {
+	var shells map[string]vm.Class
+	var out []vm.Class
+	for i, class := range classes {
+		if !class.PlatformType || class.IsLazy() || len(class.StaticFields) != 0 {
+			if out != nil {
+				out[i] = class
+			}
+			continue
+		}
+		if shells == nil {
+			templates := passiveStandardRuntimeClassTemplates()
+			shells = make(map[string]vm.Class, len(templates))
+			for _, template := range templates {
+				if template.lazy {
+					shells[template.class.Name] = template.class
+				}
+			}
+		}
+		shell, ok := shells[class.Name]
+		if !ok || shell.Namespace != class.Namespace {
+			if out != nil {
+				out[i] = class
+			}
+			continue
+		}
+		if out == nil {
+			out = make([]vm.Class, len(classes))
+			copy(out, classes[:i])
+		}
+		out[i] = shell
+	}
+	if out == nil {
+		return classes
+	}
+	return out
+}

@@ -25,6 +25,7 @@ import (
 	"github.com/glade-sh/glade/internal/automation"
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/inputview"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/profile"
@@ -83,6 +84,23 @@ type Options struct {
 	ProjectSnapshot            *project.Project
 	SourceDigests              *typesys.SourceDigestSet
 	Progress                   func(TestProgress)
+	// debugSink receives each test method's System.debug lines. It is a
+	// package-internal conformance transport: native captures read the test
+	// log, and the report has no debug section.
+	debugSink func(class, method string, lines []string)
+	// CodeCoverage records Apex code coverage for each test, class and
+	// trigger, and for the run (glade test --code-coverage).
+	CodeCoverage bool
+	// CoverageGate applies a deployment coverage rule, RunLocalTests or
+	// RunSpecifiedTests, to the run's coverage. It implies CodeCoverage.
+	CoverageGate string
+	// CoverageSynchronous reports coverage as a synchronous Salesforce run
+	// does (sf apex run test --synchronous): every trigger is listed in the
+	// run and in every test's rows. The default follows an asynchronous run.
+	CoverageSynchronous bool
+
+	// coverage collects one run's coverage events; set by runCasesGated.
+	coverage *coverageSession
 }
 
 // DiskRuntimeCachePolicyReason identifies the reason a test run will or will
@@ -195,6 +213,9 @@ type TestCase struct {
 	// Salesforce-accepted value-returning or differently-modified test method.
 	ReturnType string
 	Modifiers  []string
+	// TearDownMethods are the @TearDown methods of an @IntegrationTest class.
+	// The invocation runs them after the test method, pass or fail.
+	TearDownMethods []string
 }
 
 type TestProgress struct {
@@ -210,6 +231,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 	filters := testFilters(opts.Filter)
 	selectedClasses := selectedClassSet(opts.SelectedClasses)
 	selectedMethod := strings.TrimSpace(opts.SelectedMethod)
+	integrationFeature := integrationTestsEnabled(index)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
@@ -221,14 +243,24 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 			continue
 		}
 		costHint := testCaseCostHintForType(typ)
+		integration := isIntegrationTestClass(integrationFeature, typ)
+		var tearDowns []string
+		if integration {
+			for _, member := range typ.Members {
+				if member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "TearDown") {
+					tearDowns = append(tearDowns, member.Name)
+				}
+			}
+		}
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod {
 				continue
 			}
-			if !member.IsTest {
+			integrationMethod := integration && hasModifier(member.Modifiers, "IntegrationTest")
+			if !member.IsTest && !integrationMethod {
 				continue
 			}
-			if isTestSetup(member.Modifiers) {
+			if isTestSetup(member.Modifiers, integration) {
 				continue
 			}
 			testName := typ.Name + "." + member.Name
@@ -252,10 +284,30 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				CostHint:           costHint,
 				ReturnType:         member.Type,
 				Modifiers:          member.Modifiers,
+				TearDownMethods:    integrationTearDowns(integrationMethod, tearDowns),
 			})
 		}
 	}
 	return out
+}
+
+// integrationTestsEnabled reports the ApexIntegrationTests scratch feature
+// (api68_native_second integration-shield). Without it, @IntegrationTest
+// methods are not tests.
+func integrationTestsEnabled(index typesys.Index) bool {
+	for _, feature := range index.OrgShapeFeatures {
+		if strings.EqualFold(feature, "ApexIntegrationTests") {
+			return true
+		}
+	}
+	return false
+}
+
+func integrationTearDowns(integrationMethod bool, tearDowns []string) []string {
+	if !integrationMethod {
+		return nil
+	}
+	return tearDowns
 }
 
 func selectedClassSet(classes []string) map[string]bool {
@@ -352,6 +404,7 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 // project subset without its invalid classes and their dependents.
 func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases []TestCase, hooks semanticGateHooks, runState *runExecution, gate *compileGate) (report testreport.Run) {
 	started := time.Now()
+	visualforce.SetPersistentGateCache(!opts.NoDiskCache && diskCacheEnabled())
 	if gate != nil && opts.Progress != nil {
 		opts.Progress = compileGateNestedProgress(opts.Progress)
 	}
@@ -374,6 +427,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	}
 	defer func() { report.RuntimeRESTAPIVersion = runtimeRESTAPIVersion }()
 	sources := newSourceCache()
+	sources.allowVisualforceDiskDigests = runState.diskCacheEnabled
 	// A matching snapshot selects the already-loaded project graph for runtime
 	// metadata generation and org setup; nil retains disk discovery. This keeps
 	// dependency roots from changing between indexing and generation. Native
@@ -471,7 +525,7 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	recordCloneReason("", "run-base", "vm-runtime", runState.counters)
 	machineCloneStarted := time.Now()
 	baseMachine := runtime.restored.CloneMachine(nil)
-	baseMachine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	baseMachine.SetExpressionTypeResolver(runtimeExpressionResolver(runtimeKey, index))
 	recordCloneRuntimeMachineDuration(time.Since(machineCloneStarted), runState.counters)
 	baseMachine.SetTestDocumentBaseline(&org)
 	baseMachine.SetTestReportBaseline(&org)
@@ -523,6 +577,9 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	if runState.counters.enabled {
 		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.projectCompileNS, time.Since(freezeStarted))
 	}
+	if opts.CodeCoverage || opts.CoverageGate != "" {
+		opts.coverage = newCoverageSession()
+	}
 	suites := make(map[string][]testreport.Case)
 	order := make([]string, 0)
 	classSeen := make(map[string]bool)
@@ -543,13 +600,19 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		}
 		key := testCaseKey(testCase)
 		testMethodErr := testMethodErrors[key]
+		invokeProgram, hasInvoke := testInvokePrograms[key]
+		invokeErr := testInvokeErrors[key]
+		if !hasInvoke && invokeErr == nil {
+			// An empty program runs nothing and would report Pass.
+			invokeErr = fmt.Errorf("internal error: no compiled invocation for %s.%s", testCase.ClassName, testCase.MethodName)
+		}
 		planned[i] = testCasePlan{
 			TestCase:           testCase,
 			TestMethod:         testMethods[key],
 			TestRuntimeMethods: testRuntimeMethods[testMethodSourceKey(testCase.ClassName, testCase.File)],
 			TestMethodErr:      testMethodErr,
-			InvokeProgram:      testInvokePrograms[key],
-			InvokeProgErr:      testInvokeErrors[key],
+			InvokeProgram:      invokeProgram,
+			InvokeProgErr:      invokeErr,
 		}
 	}
 	if emitProgress {
@@ -589,11 +652,14 @@ assemble:
 			// Report the compiled entry registered for execution, not the requested
 			// source: duplicate class/method names can bind to the same body.
 			// Other statuses do not establish that the test entry ran.
-			if results[index].Status == testreport.StatusPass || results[index].Status == testreport.StatusFail {
+			if (results[index].Status == testreport.StatusPass || results[index].Status == testreport.StatusFail) && !results[index].EntryNotRun {
 				results[index].SourceFile = testMethods[testCaseKey(cases[index])].File
 			}
 			suites[className] = append(suites[className], results[index])
 		}
+	}
+	if ctx.Err() == nil {
+		persistAgedVisualforceDigests(index.Project.Root, generation.metadata)
 	}
 	var reportStarted time.Time
 	if runState.counters.enabled {
@@ -606,6 +672,9 @@ assemble:
 	}
 	for _, name := range order {
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
+	}
+	if opts.coverage != nil {
+		opts.coverage.attach(&run, coverageProject(index, sources), opts.CoverageGate, opts.CoverageSynchronous)
 	}
 	if runState.counters.enabled {
 		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.reportAssemblyNS, time.Since(reportStarted))
@@ -879,7 +948,7 @@ func semanticGateDiagnostics(ctx context.Context, index typesys.Index, artifacts
 				perfCounters.phases.semanticBuilds.Add(1)
 				perfCounters.phases.semanticAnalyses.Add(1)
 			}
-			analyzed := sema.AnalyzeWithOptions(analysisIndex, analyzeOptions)
+			analyzed := analyzeSemantic(ctx, analysisIndex, analyzeOptions)
 			if hooks.afterAnalysis != nil {
 				hooks.afterAnalysis()
 			}
@@ -1052,11 +1121,10 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -1084,14 +1152,13 @@ func validateCapturedBuildGeneration(index typesys.Index, artifacts *typesys.Bui
 }
 
 func validateApexMetadataInput(path string, expected typesys.ApexMetadataInput) error {
-	data, err := os.ReadFile(path) // #nosec G304 -- fixed metadata companion for an indexed Apex source.
+	actual, err := currentFileDigest(path)
 	if err != nil {
 		if os.IsNotExist(err) && !expected.Present {
 			return nil
 		}
 		return sourceSnapshotMismatch(path, expected.Digest, nil, err)
 	}
-	actual := sha256.Sum256(data)
 	if !expected.Present || actual != expected.Digest {
 		return sourceSnapshotMismatch(path, expected.Digest, &actual, nil)
 	}
@@ -1221,11 +1288,11 @@ type setupCompileCacheEntry struct {
 	ProgramErrs map[string]error
 }
 
+// testCompileCacheEntry holds compiled test methods. Invocation programs are
+// compiled per call for the requested cases and are never cached.
 type testCompileCacheEntry struct {
-	Methods     map[string]vm.Method
-	MethodErrs  map[string]error
-	Programs    map[string]ir.Program
-	ProgramErrs map[string]error
+	Methods    map[string]vm.Method
+	MethodErrs map[string]error
 }
 
 var (
@@ -1271,7 +1338,11 @@ func runtimeKeyWithSourceDigests(index typesys.Index, digests *typesys.SourceDig
 	return runtimeKeyWithDigestLookup(index, lookup, readFile)
 }
 
-func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha256.Size]byte, bool), readFile func(string) ([]byte, error)) runtimeCacheKey {
+func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha256.Size]byte, bool), readFile func(string) ([]byte, error), views ...*inputview.View) runtimeCacheKey {
+	var view *inputview.View
+	if len(views) > 0 {
+		view = views[0]
+	}
 	if readFile == nil {
 		readFile = os.ReadFile
 	}
@@ -1328,7 +1399,7 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 	// Invalidate seeds created before hierarchy settings entered this identity,
 	// including a cached enabled seed produced under the old empty key.
 	write("org-hierarchy-access-v1")
-	if domainURL, objects, err := project.OrgRuntimeSettings(index.Project.Root); err != nil {
+	if domainURL, objects, err := project.OrgRuntimeSettingsWithInputs(view, index.Project.Root); err != nil {
 		write("org-domain-url-error:" + err.Error())
 	} else {
 		if domainURL != "" {
@@ -1396,9 +1467,43 @@ const (
 )
 
 type runtimeMetadataGeneration struct {
-	authority   runtimeMetadataAuthority
-	inputs      map[string]typesys.ApexMetadataInput
-	apiVersions map[string]string
+	standardDuplicateRules      bool
+	authority                   runtimeMetadataAuthority
+	inputs                      map[string]typesys.ApexMetadataInput
+	apiVersions                 map[string]string
+	visualforceInputs           map[string]bool
+	recentVisualforce           map[string]recentVisualforceInput
+	recentVisualforceBytes      int64
+	allowVisualforceDiskDigests bool
+	persistVisualforceAtEnd     bool
+}
+
+func (generation runtimeMetadataGeneration) trustedVisualforceDigest(path string) ([sha256.Size]byte, bool) {
+	if !generation.visualforceInputs[path] {
+		return [sha256.Size]byte{}, false
+	}
+	if recent, ok := generation.recentVisualforce[path]; ok {
+		if recent.matches(path) {
+			return recent.digest, true
+		}
+		return [sha256.Size]byte{}, false
+	}
+	return trustedCurrentFileDigest(path)
+}
+
+type runtimeDigestLookup struct {
+	eligible func(string) bool
+	current  func(string) ([sha256.Size]byte, bool)
+}
+
+func (generation runtimeMetadataGeneration) visualforceDigestLookup() *runtimeDigestLookup {
+	if len(generation.visualforceInputs) == 0 {
+		return nil
+	}
+	return &runtimeDigestLookup{
+		eligible: func(path string) bool { return generation.visualforceInputs[path] },
+		current:  generation.trustedVisualforceDigest,
+	}
 }
 
 type runtimeSourceInput struct {
@@ -1428,7 +1533,7 @@ type runtimeGeneration struct {
 	oneShot bool
 }
 
-func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration) runtimeCacheKey {
+func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourceGeneration, view *inputview.View) runtimeCacheKey {
 	lookup := func(file string) ([sha256.Size]byte, bool) {
 		input, ok := generation.inputs[file]
 		return input.digest, ok
@@ -1440,7 +1545,7 @@ func runtimeKeyWithSourceGeneration(index typesys.Index, generation runtimeSourc
 		}
 		return []byte(input.raw), nil
 	}
-	return runtimeKeyWithDigestLookup(index, lookup, readCaptured)
+	return runtimeKeyWithDigestLookup(index, lookup, readCaptured, view)
 }
 
 func runtimeKeyWithMetadataGeneration(base runtimeCacheKey, generation runtimeMetadataGeneration) runtimeCacheKey {
@@ -1452,6 +1557,7 @@ func runtimeKeyWithMetadataGeneration(base runtimeCacheKey, generation runtimeMe
 	write("apextest-runtime-metadata-v1")
 	write(string(base))
 	write(string(generation.authority))
+	write("standard-duplicate-rules:" + strconv.FormatBool(generation.standardDuplicateRules))
 	paths := make([]string, 0, len(generation.inputs))
 	for path := range generation.inputs {
 		paths = append(paths, path)
@@ -1698,11 +1804,10 @@ func validateRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDi
 		if !ok {
 			return incompleteSourceSnapshotError("missing digest for " + file)
 		}
-		data, err := os.ReadFile(file) // #nosec G304 -- indexed source path.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return sourceSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return sourceSnapshotMismatch(file, expected, &actual, nil)
 		}
@@ -1767,11 +1872,17 @@ func validateRuntimeGeneration(sources *sourceCache) error {
 }
 
 func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache) (runtimeGeneration, error) {
-	if _, err := project.OrgDomainURL(index.Project.Root); err != nil {
-		return runtimeGeneration{}, err
-	}
 	if sources == nil {
 		return runtimeGeneration{}, fmt.Errorf("source cache is nil")
+	}
+	sources.mu.RLock()
+	var view *inputview.View
+	if sources.capturedProject != nil {
+		view = sources.capturedProject.Inputs()
+	}
+	sources.mu.RUnlock()
+	if _, err := project.OrgDomainURLWithInputs(view, index.Project.Root); err != nil {
+		return runtimeGeneration{}, err
 	}
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	sources.bindSourceDigests(digests)
@@ -1783,6 +1894,9 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err != nil {
 		return runtimeGeneration{}, err
 	}
+	sources.mu.RLock()
+	metadata.allowVisualforceDiskDigests = sources.allowVisualforceDiskDigests
+	sources.mu.RUnlock()
 	if err := sources.captureProjectRuntimeMetadata(index, &metadata); err != nil {
 		return runtimeGeneration{}, err
 	}
@@ -1790,7 +1904,7 @@ func prepareRuntimeGeneration(index typesys.Index, digests *typesys.SourceDigest
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		return runtimeGeneration{}, err
 	}
-	base := runtimeKeyWithSourceGeneration(index, source)
+	base := runtimeKeyWithSourceGeneration(index, source, view)
 	return runtimeGeneration{
 		source:   source,
 		metadata: metadata,
@@ -1820,6 +1934,9 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	var err error
 	digests, err = authoritativeRuntimeSourceDigests(index, digests)
 	if err != nil {
+		if sources != nil && sources.privateRuntime {
+			return "", zero, err
+		}
 		key := runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
 		rememberRuntimeCacheRoot(index, key)
 		evictSnapshotCaches(key)
@@ -1828,10 +1945,23 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if sources == nil {
 		sources = newSourceCache()
 	}
+	diskCacheAllowed := diskCacheEnabled()
+	if len(useDiskCache) > 0 {
+		diskCacheAllowed = useDiskCache[0]
+	}
+	if sources.privateRuntime {
+		diskCacheAllowed = false
+	}
 	var generation runtimeGeneration
 	if prepared == nil {
+		sources.mu.Lock()
+		sources.allowVisualforceDiskDigests = diskCacheAllowed
+		sources.mu.Unlock()
 		generation, err = prepareRuntimeGeneration(index, digests, sources)
 		if err != nil {
+			if sources.privateRuntime {
+				return "", zero, err
+			}
 			key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
 			rememberRuntimeCacheRoot(index, key)
 			evictSnapshotCaches(key)
@@ -1842,29 +1972,32 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
 		key := generation.key
-		rememberRuntimeCacheRoot(index, key)
-		evictSnapshotCaches(key)
+		if !sources.privateRuntime {
+			rememberRuntimeCacheRoot(index, key)
+			evictSnapshotCaches(key)
+		}
 		return key, zero, err
 	}
 	invokeSnapshotValidationHook("runtime_after_initial_validation")
-	diskCacheAllowed := diskCacheEnabled()
-	if len(useDiskCache) > 0 {
-		diskCacheAllowed = useDiskCache[0]
-	}
 	key := generation.key
-	rememberRuntimeCacheRoot(index, key)
-	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
-		invokeSnapshotValidationHook("runtime_before_memory_cache_return")
-		if err := sources.validateCapturedSourceGeneration(); err != nil {
-			evictSnapshotCaches(key)
-			return key, zero, err
+	if !sources.privateRuntime {
+		rememberRuntimeCacheRoot(index, key)
+	}
+	if !sources.privateRuntime {
+		if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+			invokeSnapshotValidationHook("runtime_before_memory_cache_return")
+			if err := sources.validateCapturedSourceGeneration(); err != nil {
+				evictSnapshotCaches(key)
+				return key, zero, err
+			}
+			return key, cached, nil
 		}
-		return key, cached, nil
 	}
 
+	digestLookup := generation.metadata.visualforceDigestLookup()
 	var lookupInput *startupcache.ValidatedInput
 	if diskCacheAllowed {
-		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
+		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		if diskEntry, ok := tryLoadDiskRuntimeWithValidatedInput(index, key, lookupInput); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
 				invokeSnapshotValidationHook("runtime_before_disk_cache_return")
@@ -1899,7 +2032,7 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	if orgErr != nil && !isEmailServiceRejection(orgErr) {
 		return key, zero, orgErr
 	}
-	pageNames := visualforcePageNamesWithCompilation(index, generation.controllerCompilation)
+	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		// Preserve cold startup's allocation order: VM construction warms the
@@ -1930,20 +2063,24 @@ func runtimeFromIndexWithPreparedGenerationProjected[T any](index typesys.Index,
 	}
 	invokeSnapshotValidationHook("runtime_before_memory_cache_publication")
 	if err := sources.validateCapturedSourceGeneration(); err != nil {
-		evictSnapshotCaches(key)
+		if !sources.privateRuntime {
+			evictSnapshotCaches(key)
+		}
 		return key, zero, err
 	}
-	runtimeCacheMu.Lock()
-	evicted := storeRuntimeCacheEntryLocked(key, entry)
-	runtimeCacheMu.Unlock()
-	dropEvictedRuntimeCacheCompanions(evicted)
+	if !sources.privateRuntime {
+		runtimeCacheMu.Lock()
+		evicted := storeRuntimeCacheEntryLocked(key, entry)
+		runtimeCacheMu.Unlock()
+		dropEvictedRuntimeCacheCompanions(evicted)
+	}
 	if diskCacheAllowed {
 		invokeSnapshotValidationHook("runtime_before_disk_cache_publication")
 		if err := sources.validateCapturedSourceGeneration(); err != nil {
 			evictSnapshotCaches(key)
 			return key, zero, err
 		}
-		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput); ok {
+		if publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup); ok {
 			persistDiskRuntimeWithValidatedInput(index, key, org, entry, publicationInput)
 		}
 	}
@@ -1982,6 +2119,9 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	}
 	var generation runtimeGeneration
 	if prepared == nil {
+		sources.mu.Lock()
+		sources.allowVisualforceDiskDigests = diskCacheAllowed
+		sources.mu.Unlock()
 		generation, err = prepareRuntimeGeneration(index, digests, sources)
 		if err != nil {
 			key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
@@ -2013,10 +2153,11 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 		return key, cached, nil
 	}
 
+	digestLookup := generation.metadata.visualforceDigestLookup()
 	var lookupInput *startupcache.ValidatedInput
 	if diskCacheAllowed {
 		lookupStarted := time.Now()
-		lookupInput, _ = validatedDiskRuntimeInput(index, digests)
+		lookupInput, _ = validatedDiskRuntimeInputWithLookup(index, digests, digestLookup)
 		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(lookupStarted))
 		if diskEntry, ok := tryLoadDiskRuntimeWithPerfValidatedInput(index, key, lookupInput, counters); ok {
 			if projected, projectOK := project(diskEntry); projectOK {
@@ -2064,7 +2205,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 	counters.recordObservedPhaseDuration(&counters.phases.orgBuildNS, time.Since(orgStarted))
 
 	compileStarted = time.Now()
-	pageNames := visualforcePageNamesWithCompilation(index, generation.controllerCompilation)
+	pageNames := visualforcePageNamesWithSources(index, generation.controllerCompilation, sources)
 	baseMachine := classRuntime.machine
 	if baseMachine == nil {
 		baseMachine = vm.New(nil)
@@ -2113,7 +2254,7 @@ func runtimeFromIndexWithPreparedGenerationAndPerfProjected[T any](index typesys
 			return key, zero, err
 		}
 		publicationStarted := time.Now()
-		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput)
+		publicationInput, ok := validatedDiskRuntimeInputForPublication(index, digests, lookupInput, digestLookup)
 		counters.recordObservedPhaseDuration(&counters.phases.cacheValidateNS, time.Since(publicationStarted))
 		if ok {
 			persistDiskRuntimeWithPerfValidatedInput(index, key, org, entry, publicationInput, counters)
@@ -2230,7 +2371,11 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 			evictSnapshotCaches(baseKey)
 			return nil, nil, nil, nil, err
 		}
-		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs, nil
+		// A one-method run and a whole-class run share compileCases, but
+		// each needs the invocations of its own cases. They are one short
+		// statement per case, so they are compiled per call.
+		programs, programErrs := compileTestInvokePrograms(cases)
+		return cached.Methods, cached.MethodErrs, programs, programErrs, nil
 	}
 	testCacheMu.RUnlock()
 	methods, methodErrs := compileTestMethodsForIndex(&index, compileCases, sources)
@@ -2248,7 +2393,7 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 		return methods, methodErrs, programs, programErrs, err
 	}
 	testCacheMu.Lock()
-	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs, Programs: programs, ProgramErrs: programErrs}
+	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs}
 	testCacheMu.Unlock()
 	return methods, methodErrs, programs, programErrs, nil
 }
@@ -2641,7 +2786,78 @@ func rollbackJournal(journal *storage.IsolationJournal, mark testJournalMark, co
 	return err
 }
 
+// splitClassGroupsBySourceUnit gives each source unit of a class name its own
+// run group. Same-named test classes from two package directories each read
+// their own unit's custom metadata, so they cannot share one class org. A
+// class name with one source unit keeps its name as the group key, so other
+// runs are unchanged.
+func splitClassGroupsBySourceUnit(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string, map[string]bool) {
+	groupClass := make(map[string]string, len(classOrder))
+	splitClasses := map[string]bool{}
+	for _, className := range classOrder {
+		groupClass[className] = className
+		units := map[string]bool{}
+		for _, i := range classIndexes[className] {
+			units[planned[i].TestMethod.SourceUnit] = true
+		}
+		if len(units) > 1 {
+			splitClasses[className] = true
+		}
+	}
+	if len(splitClasses) == 0 {
+		return classOrder, classIndexes, groupClass, splitClasses
+	}
+	order := make([]string, 0, len(classOrder))
+	indexes := make(map[string][]int, len(classIndexes))
+	groupClass = make(map[string]string, len(classOrder))
+	for _, className := range classOrder {
+		var units []string
+		byUnit := map[string][]int{}
+		for _, i := range classIndexes[className] {
+			unit := planned[i].TestMethod.SourceUnit
+			if _, seen := byUnit[unit]; !seen {
+				units = append(units, unit)
+			}
+			byUnit[unit] = append(byUnit[unit], i)
+		}
+		for n, unit := range units {
+			key := className
+			if n > 0 {
+				key = className + "\x00" + unit
+			}
+			order = append(order, key)
+			indexes[key] = byUnit[unit]
+			groupClass[key] = className
+		}
+	}
+	return order, indexes, groupClass, splitClasses
+}
+
+// groupSetups returns the @TestSetup methods, invocations and errors of one
+// run group. A class name split across source units runs only the setup
+// declared in its group's own file.
+func groupSetups(className string, split bool, file string, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error) ([]vm.Method, error, []ir.Program, error) {
+	if !split {
+		return setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className]
+	}
+	var methods []vm.Method
+	var programs []ir.Program
+	all, allPrograms := setups[className], setupInvokePrograms[className]
+	for i, method := range all {
+		if filepath.Clean(method.File) != filepath.Clean(file) {
+			continue
+		}
+		methods = append(methods, method)
+		if i < len(allPrograms) {
+			programs = append(programs, allPrograms[i])
+		}
+	}
+	key := setupSourceKey(className, file)
+	return methods, setupErrors[key], programs, setupInvokeErrors[key]
+}
+
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
+	classOrder, classIndexes, groupClass, splitClasses := splitClassGroupsBySourceUnit(classOrder, classIndexes, planned)
 	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
@@ -2709,10 +2925,11 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		go func() {
 			defer wg.Done()
 			for {
-				className, ok := dispatcher.next()
+				groupKey, ok := dispatcher.next()
 				if !ok {
 					return
 				}
+				className := groupClass[groupKey]
 				classStart := time.Now()
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
@@ -2724,21 +2941,24 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				setupCtx, setupCancel := testContext(ctx, opts)
 				var setupLimits vm.Limits
 				classOrg := org
-				if indexes := classIndexes[className]; len(indexes) > 0 {
+				groupFile := ""
+				if indexes := classIndexes[groupKey]; len(indexes) > 0 {
 					classOrg = customMetadataForSourceUnit(org, planned[indexes[0]].TestMethod.SourceUnit)
+					groupFile = planned[indexes[0]].TestCase.File
 				}
-				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, classOrg, opts, counters, &setupLimits)
+				classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr := groupSetups(className, splitClasses[className], groupFile, setups, setupErrors, setupInvokePrograms, setupInvokeErrors)
+				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr, triggerErrors, classOrg, opts, counters, &setupLimits)
 				if setupCancel != nil {
 					setupCancel()
 				}
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
 				}
-				methodIndexes := append([]int(nil), classIndexes[className]...)
+				methodIndexes := append([]int(nil), classIndexes[groupKey]...)
 				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				if opts.ParallelMethods && len(methodIndexes) > 1 {
 					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
-					if extra := adaptiveBudgets[className]; extra > methodParallelism {
+					if extra := adaptiveBudgets[groupKey]; extra > methodParallelism {
 						methodParallelism = extra
 					}
 					methodParallelism = min(methodParallelism, executionWidth)
@@ -2746,13 +2966,13 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					// methods while it runs, instead of leaving a long class serial.
 					grow := func() int {
 						allowed := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
-						if extra := adaptiveBudgets[className]; extra > allowed {
+						if extra := adaptiveBudgets[groupKey]; extra > allowed {
 							allowed = extra
 						}
 						return min(allowed, executionWidth)
 					}
 					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupLimits, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, methodParallelism, &methodWindow, grow, workerOrgs)
-					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
+					dispatcher.recordObserved(groupKey, time.Since(classStart).Milliseconds())
 					continue
 				}
 				var journal *storage.IsolationJournal
@@ -2803,7 +3023,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 						reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 					}
 				}
-				dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
+				dispatcher.recordObserved(groupKey, time.Since(classStart).Milliseconds())
 			}
 		}()
 	}
@@ -3205,6 +3425,10 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	machine.SetContext(ctx)
 	machine.EnableTestContext()
 	machine.SetCurrentPageURLNull()
+	if recorder := opts.coverage.install(machine); recorder != nil {
+		// A failed setup keeps the coverage it reached, like a failed test.
+		defer opts.coverage.recordSetup(className, setups[0].File, recorder)
+	}
 	for i, setup := range setups {
 		machine.EnablePlatformCacheTestSetupSnapshot()
 		if err := ctx.Err(); err != nil {
@@ -3213,13 +3437,16 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 		if i >= len(setupPrograms) {
 			return setupOrg, machine.DeterministicRandomState(), fmt.Errorf("missing compiled @TestSetup invocation for %s", setup.Name), false
 		}
-		result, err := machine.ExecuteTestInClass(setupPrograms[i], setup.ClassName)
+		result, err := machine.ExecuteTestInClassFromSourceUnit(setupPrograms[i], setup.ClassName, setup.SourceUnit)
 		if err != nil {
 			return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 		}
 		if len(limits) > 0 && limits[0] != nil {
 			*limits[0] = result.Limits
 		}
+	}
+	if err := machine.DrainTestSetupAsync(); err != nil {
+		return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 	}
 	machine.CaptureChangeDataCaptureTestSetup()
 	return setupOrg, machine.DeterministicRandomState(), nil, false
@@ -3240,6 +3467,9 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 		recordRunDuration(elapsed, counters)
 		out.DurationMS = elapsed.Milliseconds()
 	}()
+	if setupFailed, ok := setupFailureCase(testCase, setupErr); ok {
+		return setupFailed
+	}
 	for _, err := range []error{setupErr, baseRuntimeErr, firstTriggerError(triggerErrors), testMethodErr, invokeErr} {
 		if err != nil {
 			return preInvocationErrorCase(testCase, err)
@@ -3284,7 +3514,14 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 	if opts.WorkSink != nil {
 		machine.SetWorkTracking(true)
 	}
+	if recorder := opts.coverage.install(machine); recorder != nil {
+		// A failed or throwing test keeps its coverage.
+		defer opts.coverage.recordCase(testCase.ClassName, testCase.MethodName, testCase.File, recorder)
+	}
 	result, err := machine.ExecuteTestInClass(invokeProgram, testCase.ClassName)
+	if opts.debugSink != nil {
+		opts.debugSink(testCase.ClassName, testCase.MethodName, result.Debug)
+	}
 	if opts.WorkSink != nil {
 		opts.WorkSink(testCase.ClassName, testCase.MethodName, machine.WorkCounts(), machine.MethodWork())
 	}
@@ -3359,6 +3596,38 @@ func firstTriggerError(errs []error) error {
 		return errs[0]
 	}
 	return nil
+}
+
+// setupFailureCase maps an Apex exception thrown by the class's @TestSetup
+// method. Salesforce fails the class: the setup row and every test method row
+// are Fail rows carrying the setup exception and its stack (org.tsv
+// ic04-sync and sf-*-sync). A setup that cannot run for a local reason (an
+// unsupported feature, a missing dependency, a timeout or cancellation) keeps
+// the preparation diagnostic from preInvocationErrorCase.
+func setupFailureCase(testCase TestCase, err error) (testreport.Case, bool) {
+	if err == nil {
+		return testreport.Case{}, false
+	}
+	var runtimeErr *vm.RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		return testreport.Case{}, false
+	}
+	switch runtimeErr.Type {
+	case "UnsupportedFeature", "dependency_missing":
+		return testreport.Case{}, false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return testreport.Case{}, false
+	}
+	return testreport.Case{
+		ClassName: testCase.ClassName, MethodName: testCase.MethodName,
+		SelectedSourceFile: testCase.File, Status: testreport.StatusFail,
+		// The rows prove the Fail outcome only; the reason label stays what
+		// setup failures always reported.
+		Reason:      testreport.ReasonRuntimeError,
+		Problem:     problemFromError(err, testCase),
+		EntryNotRun: true,
+	}, true
 }
 
 // A setup or preparation failure has not invoked the selected test entry.
@@ -3496,7 +3765,7 @@ func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
 // the documented legacy live-read behavior.
 func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index, digests *typesys.SourceDigestSet) error {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return err
 	}
@@ -3508,7 +3777,7 @@ func RegisterProjectRuntimeWithSourceDigests(machine *vm.VM, index typesys.Index
 		return triggerErrors[0]
 	}
 	registerVisualforcePages(machine, runtime.PageNames)
-	machine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	machine.SetExpressionTypeResolver(runtimeExpressionResolver(key, index))
 	return registerBaseRuntime(machine, methods, classes, triggers)
 }
 
@@ -3526,7 +3795,7 @@ func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error
 // second time.
 func NewProjectRuntimeForRequest(index typesys.Index) (*vm.VM, error) {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexForExecutionWithSourceDigests(index, nil, sources)
+	key, runtime, err := runtimeFromIndexForExecutionWithSourceDigests(index, nil, sources)
 	if err != nil {
 		return nil, err
 	}
@@ -3534,7 +3803,7 @@ func NewProjectRuntimeForRequest(index typesys.Index) (*vm.VM, error) {
 		return nil, runtime.BaseErr
 	}
 	machine := runtime.restored.CloneMachine(nil)
-	machine.SetExpressionTypeResolver(sema.RuntimeExpressionTypeResolver(index))
+	machine.SetExpressionTypeResolver(runtimeExpressionResolver(key, index))
 	return machine, nil
 }
 
@@ -3588,11 +3857,11 @@ func RegisterUncachedProjectRuntimeForRequest(machine *vm.VM, index typesys.Inde
 // the documented legacy live-read behavior of RegisterProjectRuntimeForRequest.
 func RegisterProjectRuntimeForRequestWithSourceDigests(machine *vm.VM, index typesys.Index, digests *typesys.SourceDigestSet) error {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return err
 	}
-	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromEntry(runtime, index))
+	return RegisterCompiledProjectRuntimeForRequest(machine, compiledProjectRuntimeFromKeyedEntry(key, runtime, index))
 }
 
 func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime {
@@ -3604,11 +3873,32 @@ func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime
 // snapshot that produced index when building runtime cache keys.
 func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) (CompiledProjectRuntime, error) {
 	sources := newSourceCache()
-	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
 	if err != nil {
 		return CompiledProjectRuntime{}, err
 	}
-	return compiledProjectRuntimeFromEntry(runtime, index), nil
+	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
+}
+
+// CompileProjectRuntimeForProject compiles from the build artifacts of one
+// index build and binds runtime metadata generation to p, the project that
+// build loaded. Reads p makes go through its input view, so a caller that
+// rechecks the view after compiling covers the metadata the runtime used.
+func CompileProjectRuntimeForProject(index typesys.Index, p project.Project, artifacts typesys.BuildArtifacts) (CompiledProjectRuntime, error) {
+	sources := newSourceCache()
+	sources.seedProjectSnapshot(&p)
+	sources.privateRuntime = p.Inputs() != nil
+	if err := sources.seedBuildArtifacts(index, &artifacts); err != nil {
+		return CompiledProjectRuntime{}, err
+	}
+	key, runtime, err := runtimeFromIndexWithSourceDigests(index, artifacts.SourceDigests, sources)
+	if err != nil {
+		return CompiledProjectRuntime{}, err
+	}
+	if sources.privateRuntime {
+		return compiledProjectRuntimeFromEntry(runtime, index), nil
+	}
+	return compiledProjectRuntimeFromKeyedEntry(key, runtime, index), nil
 }
 
 func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
@@ -3644,6 +3934,13 @@ func RegisterTestMethodForRequest(machine *vm.VM, index typesys.Index, className
 		return fmt.Errorf("test method %s.%s was not compiled", className, methodName)
 	}
 	return registerTestRuntime(machine, []vm.Method{method})
+}
+
+// compiledProjectRuntimeFromKeyedEntry shares the generation's resolver.
+func compiledProjectRuntimeFromKeyedEntry(key runtimeCacheKey, runtime runtimeCacheEntry, index typesys.Index) CompiledProjectRuntime {
+	compiled := compiledProjectRuntimeFromEntry(runtime)
+	compiled.expressionTypes = runtimeExpressionResolver(key, index)
+	return compiled
 }
 
 func compiledProjectRuntimeFromEntry(runtime runtimeCacheEntry, indexes ...typesys.Index) CompiledProjectRuntime {
@@ -3686,10 +3983,14 @@ func visualforceControllerCompilationHint(index typesys.Index, diagnostics []dia
 }
 
 func visualforcePageNamesWithCompilation(index typesys.Index, compilation *visualforce.ControllerCompilation) []string {
+	return visualforcePageNamesWithSources(index, compilation, newSourceCache())
+}
+
+func visualforcePageNamesWithSources(index typesys.Index, compilation *visualforce.ControllerCompilation, sources *sourceCache) []string {
 	if index.Project.Root == "" {
 		return nil
 	}
-	p, err := project.Load(index.Project.Root)
+	p, err := sources.capturedProjectSnapshot(index.Project.Root)
 	if err != nil {
 		return nil
 	}
@@ -3752,22 +4053,25 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
-	mu                      sync.RWMutex
-	expectedDigests         *typesys.SourceDigestSet
-	expectedDigestLookup    func(string) ([sha256.Size]byte, bool)
-	snapshotErr             error
-	files                   map[string]string
-	rawFiles                map[string]string
-	apiVersions             map[string]string
-	fileRemaps              map[string][]namespaceremap.Rule
-	capturedFiles           map[string][sha256.Size]byte
-	capturedMetadata        map[string]typesys.ApexMetadataInput
-	metadataAuthority       runtimeMetadataAuthority
-	projectMetadataBodies   map[string]string
-	runtimeSourceUnits      map[string]string
-	projectMetadataPrepared bool
-	capturedProject         *project.Project
-	generationValidator     func() error
+	mu                          sync.RWMutex
+	expectedDigests             *typesys.SourceDigestSet
+	expectedDigestLookup        func(string) ([sha256.Size]byte, bool)
+	snapshotErr                 error
+	files                       map[string]string
+	rawFiles                    map[string]string
+	apiVersions                 map[string]string
+	fileRemaps                  map[string][]namespaceremap.Rule
+	capturedFiles               map[string][sha256.Size]byte
+	capturedMetadata            map[string]typesys.ApexMetadataInput
+	metadataAuthority           runtimeMetadataAuthority
+	projectMetadataBodies       map[string]string
+	runtimeSourceUnits          map[string]string
+	projectMetadataPrepared     bool
+	capturedProject             *project.Project
+	privateRuntime              bool
+	allowVisualforceDiskDigests bool
+	recentVisualforce           map[string]recentVisualforceInput
+	generationValidator         func() error
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no
@@ -3822,6 +4126,7 @@ func (cache *sourceCache) bindSourceDigests(digests *typesys.SourceDigestSet) {
 		cache.apiVersions = make(map[string]string)
 		cache.capturedFiles = nil
 		cache.capturedMetadata = nil
+		cache.recentVisualforce = nil
 		cache.metadataAuthority = ""
 		cache.snapshotErr = nil
 	}
@@ -3905,6 +4210,7 @@ func (cache *sourceCache) seedBuildArtifacts(index typesys.Index, artifacts *typ
 	}
 	cache.capturedFiles = capturedFiles
 	cache.capturedMetadata = capturedMetadata
+	cache.recentVisualforce = nil
 	cache.metadataAuthority = runtimeMetadataAuthorityArtifact
 	cache.snapshotErr = nil
 	cache.mu.Unlock()
@@ -4034,6 +4340,7 @@ func (cache *sourceCache) prepareMetadataGeneration(index typesys.Index) (runtim
 
 	cache.mu.Lock()
 	cache.capturedMetadata = inputs
+	cache.recentVisualforce = nil
 	cache.apiVersions = apiVersions
 	cache.metadataAuthority = runtimeMetadataAuthorityLegacy
 	cache.snapshotErr = nil
@@ -4085,18 +4392,21 @@ func (cache *sourceCache) validateCapturedSourceGenerationRaw() error {
 	for path, input := range cache.capturedMetadata {
 		metadata[path] = input
 	}
+	recent := cache.recentVisualforce
 	cache.mu.RUnlock()
 	for file, expected := range files {
-		data, err := os.ReadFile(file) // #nosec G304 -- source path is bound to a BuildArtifacts occurrence.
+		actual, err := currentFileDigest(file)
 		if err != nil {
 			return cache.recordSnapshotMismatch(file, expected, nil, err)
 		}
-		actual := sha256.Sum256(data)
 		if actual != expected {
 			return cache.recordSnapshotMismatch(file, expected, &actual, nil)
 		}
 	}
 	for path, expected := range metadata {
+		if input, ok := recent[path]; ok && expected.Present && input.matches(path) {
+			continue
+		}
 		if err := validateApexMetadataInput(path, expected); err != nil {
 			return err
 		}
@@ -4114,6 +4424,7 @@ func (cache *sourceCache) bindSourceDigestLookup(lookup func(string) ([sha256.Si
 	cache.apiVersions = make(map[string]string)
 	cache.capturedFiles = nil
 	cache.capturedMetadata = nil
+	cache.recentVisualforce = nil
 	cache.metadataAuthority = ""
 	cache.snapshotErr = nil
 	cache.expectedDigests = nil
@@ -4308,16 +4619,33 @@ func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []v
 		if seen[template.key] {
 			continue
 		}
-		out = append(out, clonePassiveRuntimeClass(template.class))
+		out = append(out, template.registrable())
 	}
 	return out
 }
 
 // passiveStandardRuntimeClassTemplate is one passive platform class built from
 // the immutable standard symbol view. key is its lower-cased runtime name.
+//
+// A class with no static members is a lazy shell: it carries only its name,
+// namespace and flags, and its fields, methods and constructors are built when
+// a lookup first needs them. The shell and its build state are shared by every
+// runtime that registers it. A class with static members keeps its full
+// declaration, because a runtime writes static values into the class it owns.
 type passiveStandardRuntimeClassTemplate struct {
 	key   string
 	class vm.Class
+	lazy  bool
+}
+
+// registrable returns the value to register: the shared shell of a lazy class,
+// or a private copy of an eager one, since RegisterClass writes the maps and
+// slices it is given.
+func (template passiveStandardRuntimeClassTemplate) registrable() vm.Class {
+	if template.lazy {
+		return template.class
+	}
+	return clonePassiveRuntimeClass(template.class)
 }
 
 var passiveStandardRuntimeClassCache struct {
@@ -4327,8 +4655,7 @@ var passiveStandardRuntimeClassCache struct {
 
 // passiveStandardRuntimeClassTemplates builds the passive platform classes once
 // per symbol view, in symbol-view order with the first spelling of each runtime
-// name. Callers filter by project names and clone; RegisterClass writes the maps
-// and slices it is given, so templates are never handed out directly.
+// name. Callers filter by project names and register through registrable.
 func passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplate {
 	return passiveStandardRuntimeClassCache.templates.Get(func(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 		passiveStandardRuntimeClassCache.builds++
@@ -4338,8 +4665,9 @@ func passiveStandardRuntimeClassTemplates() []passiveStandardRuntimeClassTemplat
 
 func buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []passiveStandardRuntimeClassTemplate {
 	seen := make(map[string]bool)
+	set := vm.NewLazyClassSet(len(view))
 	var out []passiveStandardRuntimeClassTemplate
-	for _, typ := range view {
+	for i, typ := range view {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
 		}
@@ -4348,10 +4676,36 @@ func buildPassiveStandardRuntimeClassTemplates(view []typesys.TypeSymbol) []pass
 		if name == "" || seen[key] || (typ.Kind != apexast.DeclarationEnum && !isPassiveStandardRuntimeType(name)) {
 			continue
 		}
-		out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: passiveRuntimeClassFromTypeSymbol(typ, name)})
 		seen[key] = true
+		if passiveLazyEligible(typ) {
+			index := i
+			if shell, ok := set.Add(passiveRuntimeClassHeader(typ, name), func() vm.Class {
+				return passiveRuntimeClassFromTypeSymbol(view[index], name)
+			}); ok {
+				out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: shell, lazy: true})
+				continue
+			}
+		}
+		out = append(out, passiveStandardRuntimeClassTemplate{key: key, class: passiveRuntimeClassFromTypeSymbol(typ, name)})
 	}
 	return out
+}
+
+// passiveLazyEligible reports whether a passive class can be registered as a
+// lazy shell: it is a class or interface with no static field or property.
+func passiveLazyEligible(typ typesys.TypeSymbol) bool {
+	if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
+		return false
+	}
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationField, apexast.DeclarationProperty:
+			if hasModifier(member.Modifiers, "static") {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // clonePassiveRuntimeClass copies every map and slice a passive class owns, so
@@ -4438,8 +4792,10 @@ func isPassiveStandardRuntimeType(name string) bool {
 	}
 }
 
-func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.Class {
-	class := vm.Class{
+// passiveRuntimeClassHeader is a passive class's name, namespace and flags, with
+// no members.
+func passiveRuntimeClassHeader(typ typesys.TypeSymbol, name string) vm.Class {
+	return vm.Class{
 		PlatformType: typ.File == "<standard-platform>",
 		Name:         name,
 		Namespace:    typ.Namespace,
@@ -4450,10 +4806,14 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 		Modifiers:    append([]string(nil), typ.Modifiers...),
 		IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
 		IsInterface:  typ.Kind == apexast.DeclarationInterface,
-		Fields:       make(map[string]vm.Field),
-		StaticFields: make(map[string]vm.Field),
-		Methods:      make(map[string]vm.Method),
 	}
+}
+
+func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.Class {
+	class := passiveRuntimeClassHeader(typ, name)
+	class.Fields = make(map[string]vm.Field)
+	class.StaticFields = make(map[string]vm.Field)
+	class.Methods = make(map[string]vm.Method)
 	for _, member := range typ.Members {
 		switch member.Kind {
 		case apexast.DeclarationField, apexast.DeclarationProperty:
@@ -4754,6 +5114,7 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 	programs := make(map[string][]ir.Program)
 	programErrs := make(map[string]error)
 	sources := sourceCacheFor(caches)
+	integrationFeature := integrationTestsEnabled(index)
 	for _, typ := range index.Types {
 		if !typ.HasSourceSnapshot() {
 			continue
@@ -4767,31 +5128,43 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 		if selectedClasses != nil && !selectedClasses[typ.Name] {
 			continue
 		}
+		integration := isIntegrationTestClass(integrationFeature, typ)
 		for _, member := range typ.Members {
-			if member.Kind != apexast.DeclarationMethod || !isTestSetup(member.Modifiers) {
+			if member.Kind != apexast.DeclarationMethod || !isTestSetup(member.Modifiers, integration) {
 				continue
 			}
 			source, err := sources.read(typ.File)
 			if err != nil {
 				errs[typ.Name] = err
+				errs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, member.BodyRange, source, sources.apexAPIVersion(typ.File), namedPrefixApprovals(index, typ, member, source))
 			if err != nil {
 				errs[typ.Name] = err
+				errs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			method.IsStatic = true
+			method.SourceUnit = sources.runtimeSourceUnit(typ.File)
 			out[typ.Name] = append(out[typ.Name], method)
 			program, err := vm.CompileAnonymous(method.Name + "();")
 			if err != nil {
 				programErrs[typ.Name] = err
+				programErrs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			programs[typ.Name] = append(programs[typ.Name], program)
 		}
 	}
 	return out, errs, programs, programErrs
+}
+
+// setupSourceKey keys a @TestSetup error by class and file, so two same-named
+// test classes from different source units keep their own errors. The maps
+// also keep the class-name key every other caller reads.
+func setupSourceKey(className, file string) string {
+	return className + "\x00" + filepath.Clean(file)
 }
 
 // compileTestMethods compiles test methods by the name path only. Runner paths
@@ -4865,7 +5238,11 @@ func compileTestInvokePrograms(cases []TestCase) (map[string]ir.Program, map[str
 	errs := make(map[string]error)
 	for _, testCase := range cases {
 		key := testCaseKey(testCase)
-		program, err := vm.CompileAnonymous(testCase.MethodName + "();")
+		invocation := testCase.MethodName + "();"
+		if len(testCase.TearDownMethods) > 0 {
+			invocation = "try { " + invocation + " } finally { " + strings.Join(testCase.TearDownMethods, "(); ") + "(); }"
+		}
+		program, err := vm.CompileAnonymous(invocation)
 		if err != nil {
 			errs[key] = err
 			continue
@@ -4898,6 +5275,29 @@ var standardApexTestOrgCache struct {
 	mu    sync.Mutex
 	built bool
 	org   storage.OrgState
+}
+
+// eagerStandardSpread makes every test org start from the whole standard
+// catalog instead of the source-backed lazy spread. The lazy spread must give
+// the same answers; tests flip this to compare the two.
+var eagerStandardSpread atomic.Bool
+
+// lazyStandardApexTestOrg is the empty org of the source-backed lazy spread:
+// catalog objects arrive on first reference with the definition the eager
+// spread holds.
+func lazyStandardApexTestOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	org.OrgID = storage.DefaultOrgID
+	org.EnableStandardSpreadSource()
+	return org
+}
+
+// standardApexTestOrgForRun starts the org of a test run.
+func standardApexTestOrgForRun() storage.OrgState {
+	if eagerStandardSpread.Load() {
+		return standardApexTestOrg()
+	}
+	return lazyStandardApexTestOrg()
 }
 
 func standardApexTestOrg() storage.OrgState {
@@ -4986,10 +5386,11 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 	key, _ := json.Marshal(struct {
 		Features  []string
 		DomainURL string
-	}{features, domainURL})
+		Eager     bool
+	}{features, domainURL, eagerStandardSpread.Load()})
 	shapedStandardApexTestOrgCache.mu.Lock()
 	if shapedStandardApexTestOrgCache.key != string(key) {
-		org := standardApexTestOrg()
+		org := standardApexTestOrgForRun()
 		org.APIVersion = storage.DefaultRESTAPIVersion
 		org.DomainURL = domainURL
 		storage.ApplyProjectOrgShape(&org, features)
@@ -5003,6 +5404,16 @@ func shapedStandardApexTestOrg(features []string, domainURL string) storage.OrgS
 }
 
 func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState {
+	org := orgFromIndexLazy(index, caches...)
+	// This host-facing API returns the complete schema a caller can enumerate.
+	storage.MaterializeStandardObjectSpread(&org)
+	return org
+}
+
+// orgFromIndexLazy is orgFromIndex for callers that fingerprint or compare the
+// org and treat catalog objects the lazy spread has not installed as absent
+// from both sides.
+func orgFromIndexLazy(index typesys.Index, caches ...*sourceCache) storage.OrgState {
 	org, _ := orgFromIndexWithError(index, caches...)
 	// This host-facing API exposes mutable schema maps. Internal runtime
 	// construction retains frozen definitions and detaches only its overlays.
@@ -5016,7 +5427,13 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	// Runtime construction validates config before building or returning caches.
 	// The legacy OrgFromIndex API has no error return; only a validated seed is
 	// installed here, and empty remains unset until the VM resolves its fallback.
-	domainURL, err := project.OrgDomainURL(index.Project.Root)
+	sources.mu.RLock()
+	var view *inputview.View
+	if sources.capturedProject != nil {
+		view = sources.capturedProject.Inputs()
+	}
+	sources.mu.RUnlock()
+	domainURL, err := project.OrgDomainURLWithInputs(view, index.Project.Root)
 	if err != nil {
 		domainURL = ""
 	}
@@ -5031,10 +5448,18 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	shapedSeed := index.Project.Root != "" && index.Project.Namespace == "" && len(index.Objects) == 0
 	var org storage.OrgState
-	if shapedSeed {
+	if shapedSeed && sources.privateRuntime {
+		// The attempt is not committed yet. Keep its project-specific shape
+		// private so a discarded build cannot publish a shared seed.
+		seed := standardApexTestOrgForRun()
+		seed.APIVersion = storage.DefaultRESTAPIVersion
+		seed.DomainURL = domainURL
+		storage.ApplyProjectOrgShape(&seed, features)
+		org = seed.CloneRuntimeFrozenDefinition()
+	} else if shapedSeed {
 		org = shapedStandardApexTestOrg(features, domainURL)
 	} else {
-		org = standardApexTestOrg()
+		org = standardApexTestOrgForRun()
 		// The shaped route released the catalogs when its seed was built. This
 		// route reads them while the project objects and shape apply, so it
 		// releases once the org is complete, and only once per process.
@@ -5048,6 +5473,7 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 	}
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))
 	for name, describe := range registry.Objects {
+		org.MarkExplicitSpreadObject(name)
 		org.Objects[name] = storage.ObjectState{
 			Definition: sobject.ToObjectDefinition(describe),
 			Records:    make(map[storage.ID]storage.Record),
@@ -5107,8 +5533,8 @@ func orgFromIndexWithError(index typesys.Index, caches ...*sourceCache) (storage
 			if err != nil {
 				return org, err
 			}
-			applyCustomApplicationRecords(&org, p.ApplicationFiles)
-			applyCustomNotificationTypeRecords(&org, p.Root)
+			applyCustomApplicationRecords(&org, p.ApplicationFiles, p.ReadFile)
+			applyCustomNotificationTypeRecords(&org, p.Root, p.ReadFile)
 			rejections, err := resource.ApplyProjectTolerant(&org, p, sources.readCapturedProjectMetadata)
 			if err != nil {
 				if len(project.EmailServiceMetadataFiles(p)) > 0 {
@@ -5288,7 +5714,7 @@ func foldPersonAccountObjectIntoAccount(org *storage.OrgState) {
 	if recordTypes, ok := org.Objects["RecordType"]; ok {
 		for id, record := range recordTypes.Records {
 			if strings.EqualFold(record.Fields["SobjectType"].String, "PersonAccount") {
-				delete(recordTypes.Records, id)
+				recordTypes.DeleteRecord(id)
 			}
 		}
 		org.Objects["RecordType"] = recordTypes
@@ -5439,7 +5865,7 @@ func apexReferenceScanSource(source string) string {
 	return string(out)
 }
 
-func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, scanSource string, pattern *regexp.Regexp) {
+func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, scanSource string, pattern *regexp.Regexp) {
 	for _, match := range pattern.FindAllStringSubmatchIndex(scanSource, -1) {
 		if len(match) != 6 {
 			continue
@@ -5462,7 +5888,7 @@ func recordProjectReferencedSObjectLiteralFields(org *storage.OrgState, inferred
 	}
 }
 
-func recordProjectReferencedSObjectLiteralLookupFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, scanSource string, pattern *regexp.Regexp, varTypes map[string]string) {
+func recordProjectReferencedSObjectLiteralLookupFields(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, scanSource string, pattern *regexp.Regexp, varTypes map[string]string) {
 	for _, match := range pattern.FindAllStringSubmatchIndex(scanSource, -1) {
 		if len(match) != 6 {
 			continue
@@ -5506,7 +5932,7 @@ func projectChildRelationshipSourceReferences(source string) []projectChildRelat
 	return refs
 }
 
-func applyProjectReferencedSourceChildRelationships(org *storage.OrgState, inferred map[string]map[string]storage.Field, refs map[string]projectChildRelationshipSourceReference, childRelationshipLookup map[string]struct{}) {
+func applyProjectReferencedSourceChildRelationships(org *storage.OrgState, inferred map[string]map[string]storage.Field, refs map[string]projectChildRelationshipSourceReference, childRelationshipLookup *childRelationshipLookup) {
 	for _, ref := range refs {
 		canonicalChild, ok := storage.ResolveObjectName(*org, ref.ChildObject)
 		if !ok {
@@ -5588,7 +6014,7 @@ func apexMemberReferenceIsCall(source string, end int) bool {
 	return false
 }
 
-func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
@@ -5617,11 +6043,11 @@ func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[st
 	inferred[objectName][fieldName] = inferredReferencedField(fieldName)
 }
 
-func recordProjectReferencedBooleanField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+func recordProjectReferencedBooleanField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName string) {
 	recordProjectReferencedStandardField(org, inferred, childRelationshipLookup, objectName, fieldName)
 }
 
-func recordProjectReferencedNumericField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName string) {
+func recordProjectReferencedNumericField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName string) {
 	recordProjectReferencedStandardField(org, inferred, childRelationshipLookup, objectName, fieldName)
 }
 
@@ -5657,11 +6083,11 @@ func recordProjectReferencedListCustomSetting(org *storage.OrgState, objectName 
 	org.Objects[canonicalObject] = state
 }
 
-func recordProjectReferencedLookupField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName, parentObjectName string) {
+func recordProjectReferencedLookupField(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName, parentObjectName string) {
 	recordProjectReferencedLookupFieldWithChildRelationship(org, inferred, childRelationshipLookup, objectName, fieldName, parentObjectName, "")
 }
 
-func recordProjectReferencedLookupFieldWithChildRelationship(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}, objectName, fieldName, parentObjectName, childRelationshipName string) {
+func recordProjectReferencedLookupFieldWithChildRelationship(org *storage.OrgState, inferred map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup, objectName, fieldName, parentObjectName, childRelationshipName string) {
 	if strings.EqualFold(fieldName, "SObjectType") || strings.EqualFold(fieldName, "Fields") {
 		return
 	}
@@ -5731,7 +6157,7 @@ func parentRelationshipKnown(definition storage.ObjectDefinition, name string) b
 	return false
 }
 
-func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]map[string]storage.Field, childRelationshipLookup map[string]struct{}) {
+func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]map[string]storage.Field, childRelationshipLookup *childRelationshipLookup) {
 	for objectName, objectFields := range fields {
 		state, ok := org.Objects[objectName]
 		if !ok {
@@ -6049,19 +6475,51 @@ func syntheticFieldSetCanEditField(fieldName string, field storage.Field) bool {
 	return true
 }
 
-func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string, relationshipLookup map[string]struct{}) bool {
-	parentName, ok := storage.ResolveObjectName(org, objectName)
-	if !ok {
+func projectReferencedNameIsChildRelationship(org storage.OrgState, objectName, name string, relationshipLookup *childRelationshipLookup) bool {
+	var parentName string
+	if _, owed := storage.LazyStandardObjectName(&org, objectName); owed {
+		// ResolveObjectName would install the pending parent into the
+		// caller's Objects map; resolve it the way the lookup keys do.
+		parentName = resolvedChildRelationshipParentName(org, map[string]string{}, objectName)
+	} else if resolved, ok := storage.ResolveObjectName(org, objectName); ok {
+		parentName = resolved
+	} else {
 		parentName = objectName
 	}
 	if relationshipLookup == nil {
 		relationshipLookup = projectReferencedChildRelationshipLookup(org)
 	}
-	_, ok = relationshipLookup[strings.ToLower(parentName)+"\x00"+strings.ToLower(name)]
-	return ok
+	return relationshipLookup.has(org, parentName, name)
 }
 
-func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]struct{} {
+// childRelationshipLookup answers whether a name is a child relationship of a
+// parent object, as an org holding the whole standard spread would.
+//
+// keys holds the relationships of the objects present when the lookup was
+// built; for an eager org that is the whole answer. A lazy org has not
+// installed most catalog children, so a miss there is checked against the
+// definitions its complete spread would hold: an installed child's own
+// definition, otherwise the shared spread template, installing nothing:
+//   - first the children the catalog's relationship table lists for the name,
+//     either with this parent or with several parents (the polymorphic ones);
+//   - then, only when the generated child relationship filter cannot rule the
+//     pair out, every catalog child, once per lookup.
+//
+// Building the lookup costs what it did before; the fallback runs only for
+// names that are neither fields nor installed relationships.
+type childRelationshipLookup struct {
+	keys map[string]struct{}
+
+	mu          sync.Mutex
+	answers     map[string]bool
+	parentNames map[string]string
+	complete    map[string]struct{}
+	// clone holds catalog objects without a shared template, installed on a
+	// copy of the org so the real org is never written.
+	clone *storage.OrgState
+}
+
+func projectReferencedChildRelationshipLookup(org storage.OrgState) *childRelationshipLookup {
 	lookup := make(map[string]struct{}, len(org.Objects))
 	parentNames := make(map[string]string)
 	for _, child := range org.Objects {
@@ -6076,7 +6534,164 @@ func projectReferencedChildRelationshipLookup(org storage.OrgState) map[string]s
 			}
 		}
 	}
-	return lookup
+	return &childRelationshipLookup{keys: lookup}
+}
+
+func (l *childRelationshipLookup) has(org storage.OrgState, parentName, name string) bool {
+	key := strings.ToLower(parentName) + "\x00" + strings.ToLower(name)
+	if _, ok := l.keys[key]; ok {
+		return true
+	}
+	if !org.StandardSpreadSourceBacked() {
+		return false
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if answer, ok := l.answers[key]; ok {
+		return answer
+	}
+	if l.answers == nil {
+		l.answers = make(map[string]bool)
+		l.parentNames = make(map[string]string)
+	}
+	answer := l.spreadHas(org, parentName, name, key)
+	l.answers[key] = answer
+	return answer
+}
+
+// spreadHas reports whether a catalog child in the org's complete spread
+// declares the relationship. The caller holds l.mu.
+func (l *childRelationshipLookup) spreadHas(org storage.OrgState, parentName, name, key string) bool {
+	for _, child := range childRelationshipTableCandidates(name, parentName) {
+		definition, ok := l.spreadDefinition(org, child)
+		if ok && l.definitionHas(org, definition, parentName, name) {
+			return true
+		}
+	}
+	if !childRelationshipSpreadCompletionNeeded(org, parentName, name) {
+		return false
+	}
+	if l.complete == nil {
+		l.complete = make(map[string]struct{})
+		for _, child := range storage.KnownStandardObjectNames() {
+			definition, ok := l.spreadDefinition(org, child)
+			if !ok {
+				continue
+			}
+			for _, relation := range definition.Relations {
+				if relation.ChildRelationship == "" {
+					continue
+				}
+				relationName := strings.ToLower(relation.ChildRelationship)
+				for _, parent := range relation.ParentObjects {
+					resolved := resolvedChildRelationshipParentName(org, l.parentNames, parent)
+					l.complete[strings.ToLower(resolved)+"\x00"+relationName] = struct{}{}
+				}
+			}
+		}
+	}
+	_, ok := l.complete[key]
+	return ok
+}
+
+// childRelationshipSpreadCompletionNeeded reports whether a miss must be
+// checked against every catalog child. Where the generated filter covers the
+// org it rules out almost every name. Where it does not (the plain phase, an
+// org namespace, an uncovered feature) the table candidates are the answer.
+var childRelationshipSpreadCompletionNeeded = func(org storage.OrgState, parentName, name string) bool {
+	rulesOut, covered := vm.ChildRelationshipFilterRulesOut(&org, parentName, name)
+	return covered && !rulesOut
+}
+
+func (l *childRelationshipLookup) definitionHas(org storage.OrgState, definition storage.ObjectDefinition, parentName, name string) bool {
+	for _, relation := range definition.Relations {
+		if !strings.EqualFold(relation.ChildRelationship, name) {
+			continue
+		}
+		for _, parent := range relation.ParentObjects {
+			if strings.EqualFold(resolvedChildRelationshipParentName(org, l.parentNames, parent), parentName) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// spreadDefinition returns the definition the org's complete spread holds for
+// a catalog child. The caller holds l.mu.
+func (l *childRelationshipLookup) spreadDefinition(org storage.OrgState, name string) (storage.ObjectDefinition, bool) {
+	// An installed child keeps its installed definition, which may differ
+	// from the catalog template; the completed spread holds that one.
+	if canonical, known := storage.ResolveKnownStandardObjectName(name); known {
+		if object, installed := org.Objects[canonical]; installed {
+			return object.Definition, true
+		}
+	}
+	if definition, ok := storage.StandardSpreadObjectDefinition(&org, name); ok {
+		return definition, true
+	}
+	canonical, owed := storage.LazyStandardObjectName(&org, name)
+	if !owed {
+		// Removed by the shape or not a catalog object.
+		return storage.ObjectDefinition{}, false
+	}
+	if l.clone == nil {
+		clone := org.CloneRuntimeFrozenDefinition()
+		l.clone = &clone
+	}
+	installed, ok := storage.EnsureLazyStandardObject(l.clone, canonical)
+	if !ok {
+		object, exists := l.clone.Objects[canonical]
+		return object.Definition, exists
+	}
+	return l.clone.Objects[installed].Definition, true
+}
+
+var childRelationshipTableIndex struct {
+	once  sync.Once
+	names map[string][]storage.StandardChildRelationship
+}
+
+// childRelationshipTableCandidates lists the catalog children the generated
+// relationship table names for a child relationship: those it lists with
+// parent, and those it lists with several parents, whose shaped definitions
+// can add more.
+func childRelationshipTableCandidates(name, parent string) []string {
+	childRelationshipTableIndex.once.Do(func() {
+		names := make(map[string][]storage.StandardChildRelationship)
+		for _, relation := range storage.StandardChildRelationships() {
+			key := strings.ToLower(relation.Name)
+			names[key] = append(names[key], relation)
+		}
+		childRelationshipTableIndex.names = names
+	})
+	relations := childRelationshipTableIndex.names[strings.ToLower(name)]
+	if len(relations) == 0 {
+		return nil
+	}
+	rows := make(map[string]int, len(relations))
+	for _, relation := range relations {
+		rows[relation.Child] += len(relation.Parents)
+	}
+	var out []string
+	for _, relation := range relations {
+		count, pending := rows[relation.Child]
+		if !pending {
+			continue
+		}
+		matches := count > 1
+		for _, candidate := range relation.Parents {
+			if strings.EqualFold(candidate, parent) {
+				matches = true
+				break
+			}
+		}
+		if matches {
+			out = append(out, relation.Child)
+			delete(rows, relation.Child)
+		}
+	}
+	return out
 }
 
 func resolvedChildRelationshipParentName(org storage.OrgState, names map[string]string, parent string) string {
@@ -6084,12 +6699,51 @@ func resolvedChildRelationshipParentName(org storage.OrgState, names map[string]
 	if cached, ok := names[key]; ok {
 		return cached
 	}
+	// A catalog object the lazy spread still owes resolves to its canonical
+	// name, which differs from parent only in case, so the lookup key is the
+	// same as after an install. Resolving it here installs nothing, so the
+	// caller's range over org.Objects sees a map nobody writes.
+	if childRelationshipParentNameResolvesByCase(org.Namespace, parent) {
+		if canonical, owed := storage.LazyStandardObjectName(&org, parent); owed {
+			names[key] = canonical
+			return canonical
+		}
+	}
+	// Preserve the resolver's namespace and whitespace behavior for other
+	// pending names without letting it add an object to the caller's map.
+	if _, owed := storage.LazyStandardObjectName(&org, parent); owed {
+		org = org.CloneRuntimeFrozenDefinition()
+	}
 	parentName, ok := storage.ResolveObjectName(org, parent)
 	if !ok {
 		parentName = parent
 	}
 	names[key] = parentName
 	return parentName
+}
+
+// childRelationshipParentNameResolvesByCase reports whether ResolveObjectName
+// can only answer parent by an exact or case-folded object name: no
+// surrounding space, no namespace token or custom suffix, and no prefix the
+// org namespace strips. Other names keep the resolving path.
+func childRelationshipParentNameResolvesByCase(namespace, parent string) bool {
+	if parent == "" || parent != strings.TrimSpace(parent) {
+		return false
+	}
+	first := strings.Index(parent, "__")
+	if first < 0 {
+		return true
+	}
+	if first != strings.LastIndex(parent, "__") || storage.StripNamespaceToken(namespace, parent) != parent {
+		return false
+	}
+	lower := strings.ToLower(parent)
+	for _, suffix := range []string{"__c", "__r", "__e", "__mdt", "__share"} {
+		if strings.HasSuffix(lower, suffix) {
+			return false
+		}
+	}
+	return true
 }
 
 func inferredReferencedField(fieldName string) storage.Field {
@@ -6251,8 +6905,8 @@ func mergeProjectRecordTypeReferences(chunks ...[]projectRecordTypeReference) []
 func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []projectRecordTypeReference {
 	cache := sourceCacheFor(caches)
 	var staticRefs []projectRecordTypeReference
-	for _, file := range projectDataJSONFiles(p.Root) {
-		data, err := os.ReadFile(file)
+	for _, file := range projectDataJSONFiles(p) {
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6266,7 +6920,7 @@ func projectReferencedRecordTypes(p project.Project, caches ...*sourceCache) []p
 		}
 	}
 	for _, file := range []string{filepath.Join(p.Root, "cumulusci.yml")} {
-		data, err := os.ReadFile(file)
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6358,7 +7012,7 @@ func projectRecordTypeNameFromCallArg(match []string, constants map[string]strin
 	return strings.TrimSpace(name)
 }
 
-func projectDataFieldReferences(root string) []projectDataFieldReference {
+func projectDataFieldReferences(p project.Project) []projectDataFieldReference {
 	seen := make(map[string]bool)
 	var refs []projectDataFieldReference
 	add := func(objectName, fieldName string, value any) {
@@ -6374,8 +7028,8 @@ func projectDataFieldReferences(root string) []projectDataFieldReference {
 		seen[key] = true
 		refs = append(refs, projectDataFieldReference{ObjectName: objectName, FieldName: fieldName})
 	}
-	for _, file := range projectDataJSONFiles(root) {
-		data, err := os.ReadFile(file)
+	for _, file := range projectDataJSONFiles(p) {
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6420,7 +7074,7 @@ func collectDataFieldReferences(value any, currentObject string, add func(object
 	}
 }
 
-func projectDataRelationshipReferences(root string) []projectDataRelationshipReference {
+func projectDataRelationshipReferences(p project.Project) []projectDataRelationshipReference {
 	seen := make(map[string]bool)
 	var refs []projectDataRelationshipReference
 	add := func(childObject, parentRelationship string) {
@@ -6436,8 +7090,8 @@ func projectDataRelationshipReferences(root string) []projectDataRelationshipRef
 		seen[key] = true
 		refs = append(refs, projectDataRelationshipReference{ChildObject: childObject, ParentRelationship: parentRelationship})
 	}
-	for _, file := range projectDataJSONFiles(root) {
-		data, err := os.ReadFile(file)
+	for _, file := range projectDataJSONFiles(p) {
+		data, err := p.ReadFile(file)
 		if err != nil {
 			continue
 		}
@@ -6522,12 +7176,13 @@ func isFieldDescribeDescriptor(value any) bool {
 	return false
 }
 
-func projectDataJSONFiles(root string) []string {
+func projectDataJSONFiles(p project.Project) []string {
+	root := p.Root
 	if root == "" {
 		return nil
 	}
 	var files []string
-	_ = filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+	_ = p.Inputs().WalkDirProjectRoot(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -6834,14 +7489,14 @@ type permissionSetMetadataCacheEntry struct {
 	ok       bool
 }
 
-func readPermissionSetMetadata(file string, cache map[string]permissionSetMetadataCacheEntry) (permissionSetMetadata, bool) {
+func readPermissionSetMetadata(read func(string) ([]byte, error), file string, cache map[string]permissionSetMetadataCacheEntry) (permissionSetMetadata, bool) {
 	if cache == nil {
-		return readPermissionSetMetadataNoCache(file)
+		return readPermissionSetMetadataNoCache(read, file)
 	}
 	if cached, ok := cache[file]; ok {
 		return cached.metadata, cached.ok
 	}
-	metadata, ok := readPermissionSetMetadataNoCache(file)
+	metadata, ok := readPermissionSetMetadataNoCache(read, file)
 	cache[file] = permissionSetMetadataCacheEntry{
 		metadata: metadata,
 		ok:       ok,
@@ -6849,8 +7504,8 @@ func readPermissionSetMetadata(file string, cache map[string]permissionSetMetada
 	return metadata, ok
 }
 
-func readPermissionSetMetadataNoCache(file string) (permissionSetMetadata, bool) {
-	data, err := os.ReadFile(file)
+func readPermissionSetMetadataNoCache(read func(string) ([]byte, error), file string) (permissionSetMetadata, bool) {
+	data, err := read(file)
 	if err != nil {
 		return permissionSetMetadata{}, false
 	}
@@ -7052,7 +7707,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 	state := org.Objects["ApexClass"]
 	state.Definition = definition
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	generator := storage.NewIDGenerator(map[string]string{"ApexClass": "01p"})
 	sources := sourceCacheFor(caches)
@@ -7085,7 +7740,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 		if !typ.Dependency {
 			sourceUnit = projectClassUnit
 		}
-		state.Records[id] = storage.Record{
+		state.PutRecord(id, storage.Record{
 			ID:                 id,
 			Object:             "ApexClass",
 			MetadataSourceUnit: sourceUnit,
@@ -7102,7 +7757,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 				CreatedDate: apexClassSeedTimestamp, LastModifiedDate: apexClassSeedTimestamp, SystemModstamp: apexClassSeedTimestamp,
 				CreatedByID: storage.ID(storage.DefaultUserID), LastModifiedByID: storage.ID(storage.DefaultUserID),
 			},
-		}
+		})
 	}
 	org.Objects["ApexClass"] = state
 }
@@ -7120,7 +7775,7 @@ type customApplicationMetadata struct {
 	Label string `xml:"label"`
 }
 
-func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []string) {
+func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []string, read func(string) ([]byte, error)) {
 	if org == nil || len(applicationFiles) == 0 {
 		return
 	}
@@ -7128,11 +7783,11 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 	storage.EnsureStandardObject(org, "AppMenuItem")
 	apps := org.Objects["CustomApplication"]
 	if apps.Records == nil {
-		apps.Records = make(map[storage.ID]storage.Record)
+		apps.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	menu := org.Objects["AppMenuItem"]
 	if menu.Records == nil {
-		menu.Records = make(map[storage.ID]storage.Record)
+		menu.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	paths := append([]string(nil), applicationFiles...)
 	sort.Strings(paths)
@@ -7144,7 +7799,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 			continue
 		}
 		label := developerName
-		if data, err := os.ReadFile(path); err == nil {
+		if data, err := read(path); err == nil {
 			var meta customApplicationMetadata
 			if xml.Unmarshal(data, &meta) == nil && strings.TrimSpace(meta.Label) != "" {
 				label = strings.TrimSpace(meta.Label)
@@ -7154,7 +7809,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 		menuID := storage.ID(fmt.Sprintf("0DS%012d", menuSeq))
 		appSeq++
 		menuSeq++
-		apps.Records[appID] = storage.Record{
+		apps.PutRecord(appID, storage.Record{
 			ID:     appID,
 			Object: "CustomApplication",
 			Fields: map[string]storage.Value{
@@ -7162,8 +7817,8 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 				"Label":         storage.StringValue(label),
 				"Name":          storage.StringValue(developerName),
 			},
-		}
-		menu.Records[menuID] = storage.Record{
+		})
+		menu.PutRecord(menuID, storage.Record{
 			ID:     menuID,
 			Object: "AppMenuItem",
 			Fields: map[string]storage.Value{
@@ -7173,7 +7828,7 @@ func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []str
 				"Type":          storage.StringValue("TabSet"),
 				"SortOrder":     storage.IntegerValue(int64(menuSeq - 1)),
 			},
-		}
+		})
 	}
 	org.Objects["CustomApplication"] = apps
 	org.Objects["AppMenuItem"] = menu
@@ -7206,7 +7861,9 @@ type customNotificationTypeMetadata struct {
 	MasterLabel string `xml:"masterLabel"`
 }
 
-func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
+// The walk that finds notification types stays on the live tree, as the
+// startup manifest walk does; each file found is read through read.
+func applyCustomNotificationTypeRecords(org *storage.OrgState, root string, read func(string) ([]byte, error)) {
 	if org == nil || strings.TrimSpace(root) == "" {
 		return
 	}
@@ -7236,14 +7893,14 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 		}
 	}
 	if state.Records == nil {
-		state.Records = make(map[storage.ID]storage.Record)
+		state.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	sort.Strings(files)
 	seq := len(state.Records) + 1
 	for _, path := range files {
 		developerName := notificationTypeDeveloperName(path)
 		label := developerName
-		if data, err := os.ReadFile(path); err == nil {
+		if data, err := read(path); err == nil {
 			var meta customNotificationTypeMetadata
 			if xml.Unmarshal(data, &meta) == nil {
 				if strings.TrimSpace(meta.MasterLabel) != "" {
@@ -7258,14 +7915,14 @@ func applyCustomNotificationTypeRecords(org *storage.OrgState, root string) {
 		}
 		id := storage.ID(fmt.Sprintf("0ML%012d", seq))
 		seq++
-		state.Records[id] = storage.Record{
+		state.PutRecord(id, storage.Record{
 			ID:     id,
 			Object: "CustomNotificationType",
 			Fields: map[string]storage.Value{
 				"DeveloperName": storage.StringValue(developerName),
 				"MasterLabel":   storage.StringValue(label),
 			},
-		}
+		})
 	}
 	org.Objects["CustomNotificationType"] = state
 }
@@ -7858,13 +8515,24 @@ func skipBlockComment(source string, start int) int {
 	return len(source) - 1
 }
 
-func isTestSetup(modifiers []string) bool {
+// isTestSetup reports a @TestSetup method. With integration set (an
+// @IntegrationTest class under the ApexIntegrationTests feature), @BeforeClass
+// also counts: it runs once before the class methods, like @TestSetup, and its
+// data is visible to every method. No row covers @BeforeClass elsewhere.
+func isTestSetup(modifiers []string, integration bool) bool {
 	for _, modifier := range modifiers {
-		if strings.EqualFold(strings.TrimPrefix(modifier, "@"), "TestSetup") {
+		trimmed := strings.TrimPrefix(modifier, "@")
+		if strings.EqualFold(trimmed, "TestSetup") || integration && strings.EqualFold(trimmed, "BeforeClass") {
 			return true
 		}
 	}
 	return false
+}
+
+// isIntegrationTestClass reports an @IntegrationTest class with the
+// ApexIntegrationTests feature on.
+func isIntegrationTestClass(featureOn bool, typ typesys.TypeSymbol) bool {
+	return featureOn && hasModifier(typ.Modifiers, "IntegrationTest")
 }
 
 func isSeeAllDataTest(modifiers []string) bool {

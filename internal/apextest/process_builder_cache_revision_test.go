@@ -23,7 +23,7 @@ func TestProcessBuilderRejectsPriorDiskRuntimeCache(t *testing.T) {
 		{"apextest-runtime-v34", "|process-builder-v036-outputs1"},
 		{"apextest-runtime-v34", "|process-builder-v036-outputs2"},
 		{"apextest-runtime-v34", "|process-builder-v036-projection1"},
-		{"apextest-runtime-v33", ""}, {"apextest-runtime-v35", ""},
+		{"apextest-runtime-v33", ""}, {"apextest-runtime-v34", ""},
 	} {
 		t.Run(tc.abi+tc.suffix, func(t *testing.T) { testProcessBuilderRejectsRuntimeCache(t, tc.abi, tc.suffix) })
 	}

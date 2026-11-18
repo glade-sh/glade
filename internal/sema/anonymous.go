@@ -24,9 +24,42 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 	if diagnostics := apexast.SharingDeclarationDiagnostics("", source); len(diagnostics) != 0 {
 		return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: diagnostics}
 	}
+	major, _ := apexversion.Major(apiVersion)
+	var receiverTrivia []receiverTrivia
+	if major >= 62 && major <= 67 {
+		receiverTrivia = scanReceiverTrivia(source)
+	}
 	program, err := vm.CompileAnonymousWithOptions(source, vm.CompileOptions{APIVersion: apiVersion, PrefixStatementCandidates: true})
 	if err != nil {
 		return anonymousCompileFailure(index, source, rng, err)
+	}
+	if major >= 62 && major <= 67 {
+		var receiverModel *semaTypeMemberView
+		followupModel := func() *semaTypeMemberView {
+			if receiverModel == nil {
+				receiverModel = anonymousSetupFor(index, apiVersion).typeMembers.anonymousView()
+			}
+			return receiverModel
+		}
+		for _, item := range receiverTrivia {
+			if d, _ := receiverFollowupDiagnostic(source, "", "anonymous", item, followupModel); d != nil {
+				return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{*d}, ReceiverTriviaDiagnostic: true}
+			}
+		}
+		for _, item := range receiverTrivia {
+			if d := receiverControlDiagnostic(source, item); d != nil {
+				return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{*d}, ReceiverTriviaDiagnostic: true}
+			}
+			if item.kind == receiverBoundBreak && item.dot > 0 {
+				root := item.tokens[item.dot-1].text
+				if strings.EqualFold(root, "this") || strings.EqualFold(root, "super") || strings.EqualFold(root, "Trigger") {
+					continue
+				}
+			}
+			if d := receiverBoundDiagnostic(source, "", "anonymous", item); d != nil {
+				return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{*d}, ReceiverTriviaDiagnostic: true}
+			}
+		}
 	}
 	if diagnostics := anonymousThisDiagnostic(program, source); len(diagnostics) != 0 {
 		return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: diagnostics}
@@ -36,6 +69,21 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 	index = setup.index
 	model := setup.typeMembers.anonymousView()
 	typ, member := anonymousExecuteSymbols(apiVersion, rng)
+	for _, item := range receiverTrivia {
+		if item.kind != receiverFreeName {
+			continue
+		}
+		scopes, _ := analyzer.collectBodyScopes(typ, member, source, 0, source, map[string]string{}, model)
+		for _, candidate := range receiverTrivia {
+			if receiverLocalMethodParameter(program, candidate) {
+				continue
+			}
+			if d := receiverFreeDiagnostic(source, index.Project.Namespace, candidate, scopes, model); d != nil {
+				return Result{Project: index.Project, Summary: Summary{Diagnostics: 1}, Diagnostics: []diagnostic.Diagnostic{*d}, ReceiverTriviaDiagnostic: true}
+			}
+		}
+		break
+	}
 	if diagnostics := installAnonymousLocalMethods(model, typ, program, source); len(diagnostics) != 0 {
 		return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: diagnostics}
 	}
@@ -72,7 +120,7 @@ func AnalyzeAnonymous(index typesys.Index, source, apiVersion string) Result {
 	if !compiled {
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA_ANONYMOUS_PARSE", Message: "anonymous Apex could not be compiled", Range: &rng})
 	}
-	return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: NativeLifecycleDiagnostics(index, diagnostics)}
+	return Result{Project: index.Project, Summary: Summary{Diagnostics: len(diagnostics)}, Diagnostics: nativeLifecycleDiagnostics(index, diagnostics, setup.typeMembers, analyzer.sources)}
 }
 
 func anonymousExecuteSymbols(apiVersion string, rng diagnostic.Range) (typesys.TypeSymbol, typesys.MemberSymbol) {

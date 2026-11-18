@@ -98,6 +98,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		if err := vm.maybePauseForDebug(inst); err != nil {
 			return execOutcome{}, err
 		}
+		heapPlan := vm.planHeapStatement(inst)
 		switch inst.Op {
 		case ir.OpDeclare:
 			if err := vm.finalCollectionIncrementResultError(inst, result); err != nil {
@@ -170,7 +171,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 				return out, err
 			}
 		case ir.OpIf:
-			condition, err := vm.eval(inst.Expr, result)
+			condition, err := vm.evalHeapNeutral(inst.Expr, result)
 			if err != nil {
 				return execOutcome{}, err
 			}
@@ -257,7 +258,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 		default:
 			return execOutcome{}, fmt.Errorf("unsupported instruction %q", inst.Op)
 		}
-		if err := vm.updateHeapLimit(); err != nil {
+		if err := vm.updateHeapLimitAfter(heapPlan); err != nil {
 			return execOutcome{}, err
 		}
 	}
@@ -265,12 +266,33 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (_ execOutcome,
 }
 
 func (vm *VM) updateHeapLimit() error {
+	return vm.updateHeapLimitAfter(heapStatementPlan{})
+}
+
+// updateHeapLimitAfter is the strict per-statement heap check. A statement
+// planned by planHeapStatement is priced from the previous exact check when
+// the plan still holds; every other check walks the heap.
+func (vm *VM) updateHeapLimitAfter(plan heapStatementPlan) error {
 	if vm.limitMode != LimitModeStrict {
 		return nil
 	}
-	total := vm.currentHeapSize()
+	total, ok := vm.heapSizeFromPlan(plan)
+	if ok {
+		if heapVerifyAgainstFullWalk {
+			vm.verifyHeapSize(total)
+		}
+		vm.armHeapCheck()
+	} else {
+		total = vm.heapSizeAndArm()
+	}
 	vm.limits.HeapSize = total
 	return vm.checkLimit("heapSize", vm.limits.HeapSize, vm.limitCaps.HeapSize)
+}
+
+func (vm *VM) verifyHeapSize(total int) {
+	if want := vm.currentHeapSizeFullWalk(); want != total {
+		panic(fmt.Sprintf("incremental heap size %d != full walk %d", total, want))
+	}
 }
 
 func (vm *VM) currentHeapSize() int {
@@ -406,7 +428,7 @@ func (vm *VM) heapStaticRootMaps() []map[string]Field {
 func (vm *VM) buildHeapStaticRootMaps() []map[string]Field {
 	var roots []map[string]Field
 	seenClasses := make(map[string]bool)
-	for name, class := range vm.ClassEntries() {
+	for name, class := range vm.classEntriesNoLazy() {
 		if class.PlatformType {
 			continue
 		}
@@ -952,7 +974,11 @@ func (vm *VM) setCurrentStatement(inst ir.Instruction, source string) {
 		file = vm.currentMethod.File
 	}
 	vm.currentStatement = callFrame{Symbol: symbol, File: file, Line: line, Column: column, statement: true}
+	vm.currentSource = source
 	vm.hasStatement = true
+	if vm.coverage != nil {
+		vm.coverStatement(line, column)
+	}
 }
 
 // cachedApexMethodFrameSymbol memoizes apexMethodFrameSymbol per method and
@@ -1052,7 +1078,7 @@ func (vm *VM) executeWhile(source string, inst ir.Instruction, result *Result) (
 		if err := vm.incrementCPUBudget(1); err != nil {
 			return execOutcome{}, err
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1096,7 +1122,7 @@ func (vm *VM) executeDoWhile(source string, inst ir.Instruction, result *Result)
 		default:
 			return out, nil
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1171,7 +1197,7 @@ func (vm *VM) executeFor(source string, inst ir.Instruction, result *Result) (ex
 		if err := vm.chargeLoopIteration("for", iteration); err != nil {
 			return execOutcome{}, err
 		}
-		condition, err := vm.eval(inst.Expr, result)
+		condition, err := vm.evalHeapNeutral(inst.Expr, result)
 		if err != nil {
 			return execOutcome{}, err
 		}
@@ -1280,7 +1306,7 @@ func (vm *VM) rejectActiveCollectionAdd(collection Value) error {
 }
 
 func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
-	iterable, err := vm.eval(inst.Expr, result)
+	iterable, err := vm.evalHeapNeutralCollection(inst.Expr, result)
 	if err != nil {
 		return execOutcome{}, dynamicSOQLForLoopError(inst.Expr, err)
 	}
@@ -1306,7 +1332,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	releaseTraversal := vm.beginCollectionTraversal(iterable, true)
 	defer releaseTraversal()
 	removalEpoch := vm.collectionTraversalMutationEpochs[iterable.Ref]
+	chunked := false
 	if vm.shouldChunkEnhancedForList(inst.Type, iterable) {
+		chunked = true
 		if len(values) == 0 && inst.Expr.Kind == ir.ExprSOQL {
 			// SF191: a SOQL list-loop enters once with an empty batch.
 			values = []Value{typedList(inst.Type)}
@@ -1319,10 +1347,15 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	previousType, hadType := vm.VarTypes[inst.Name]
 	iterated := false
 	defer func() {
+		delete(vm.heapCheck.loopVars, inst.Name)
 		// After the loop a String loop variable binds in dynamic SOQL as
 		// null (see soql_bind_scope.go).
 		if iterated && isStringBindType(inst.Type) {
 			vm.rememberDepartedString(inst.Name, inst.Pos, Null)
+		} else if !iterated && !existed {
+			// A loop that never ran still leaves its variable bindable, as
+			// null and of any type (dynamic_bind_scope_paths D23, E10-E12).
+			vm.rememberEndedBindValue(inst.Name, inst.Pos, Null)
 		}
 		if existed {
 			vm.Globals[inst.Name] = previous
@@ -1349,6 +1382,12 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		vm.Globals[inst.Name] = coerced
 		vm.VarTypes[inst.Name] = inst.Type
 		iterated = true
+		if vm.coverage != nil && inst.Expr.Kind == ir.ExprSOQL {
+			vm.coverIteration(source, inst.Pos)
+		}
+		if !chunked && !existed && coerced.Ref == value.Ref {
+			vm.noteHeapLoopBinding(inst.Name, inst.Expr, iterable, coerced)
+		}
 		out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 		if err != nil {
 			return execOutcome{}, err
@@ -1419,7 +1458,36 @@ func chunkValuesForEnhancedFor(loopType string, values []Value, size int) []Valu
 	return chunks
 }
 
+// endedCatch is the catch clause that ran in a try statement, if any.
+type endedCatch struct {
+	clause ir.CatchClause
+	value  Value
+	ran    bool
+}
+
 func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
+	var ended endedCatch
+	out, err := vm.executeTryScoped(source, inst, result, &ended)
+	// Catch variables stay bindable in dynamic SOQL after the statement:
+	// the thrown value where the clause ran, null for the others
+	// (dynamic_bind_scope_paths D37, E14-E17).
+	for _, clause := range vmCatchClauses(inst) {
+		if clause.Name == "" {
+			continue
+		}
+		if _, live := vm.Globals[clause.Name]; live {
+			continue
+		}
+		if ended.ran && clause.Pos == ended.clause.Pos && clause.Name == ended.clause.Name {
+			vm.rememberEndedBindValue(clause.Name, clause.Pos, ended.value)
+		} else {
+			vm.rememberEndedBindValue(clause.Name, clause.Pos, Null)
+		}
+	}
+	return out, err
+}
+
+func (vm *VM) executeTryScoped(source string, inst ir.Instruction, result *Result, ended *endedCatch) (execOutcome, error) {
 	out, err := vm.executeBlockScope(ir.Program{Source: source}, inst, result)
 	if err != nil {
 		var thrown *apexThrowError
@@ -1437,6 +1505,9 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 			if !vm.exceptionMatchesAny(catchClause.Types, out.thrown) {
 				continue
 			}
+			if vm.coverage != nil {
+				vm.coverSourcePos(source, catchClause.Pos)
+			}
 			previous, existed := vm.Globals[catchClause.Name]
 			previousType, typeExisted := vm.VarTypes[catchClause.Name]
 			caught := out.thrown
@@ -1446,6 +1517,9 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 				vm.VarTypes[catchClause.Name] = catchType
 			}
 			vm.Globals[catchClause.Name] = caught
+			if len(vm.bindFrame.slots) != 0 {
+				vm.dropEndedBindSite(catchClause.Name, catchClause.Pos)
+			}
 			vm.activeExceptions = append(vm.activeExceptions, activeException{value: out.thrown, stack: out.thrownStack})
 			out, err = vm.executeProgram(ir.Program{Instructions: catchClause.Body, Source: source}, result)
 			vm.activeExceptions = vm.activeExceptions[:len(vm.activeExceptions)-1]
@@ -1459,6 +1533,7 @@ func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (ex
 			} else {
 				delete(vm.VarTypes, catchClause.Name)
 			}
+			ended.clause, ended.value, ended.ran = catchClause, caught, true
 			if err != nil {
 				return execOutcome{}, err
 			}
@@ -1495,6 +1570,9 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 		if c.Else {
 			elseCase = c
 			continue
+		}
+		if vm.coverage != nil {
+			vm.coverSourcePos(source, c.Pos)
 		}
 		for _, expr := range c.Exprs {
 			if caseType, binding, ok := switchTypeCase(expr); ok {
@@ -1700,10 +1778,23 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 			return execOutcome{}, err
 		}
 	}
+	// runAs with a User charges a DML statement; Limits.getRunAs is that
+	// counter (limits_counter_edges runas101, runas151). The Package.Version
+	// form has no row and charges nothing. Native sharing_access_modes d4 rows
+	// (APIs 62.0-68.0) agree: one DML statement per runAs(User) on entry,
+	// nested blocks included, the 151st raises the DML LimitException,
+	// runAs(Version) counts none (u2_04), and the count does not mark
+	// callout-pending work.
+	if changesUser {
+		if err := vm.incrementSavepointStatement(); err != nil {
+			return execOutcome{}, err
+		}
+	}
 	if err := vm.incrementLimit("runAs", 1); err != nil {
 		return execOutcome{}, err
 	}
 	previous := vm.testContext.CurrentUser
+	runnerBefore := vm.currentUserID()
 	previousPackageVersion := vm.testContext.CurrentPackageVersion
 	var priorDescribes map[describeCacheKey]Value
 	var runAsUserID string
@@ -1731,7 +1822,16 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		previousLocaleCase = vm.localeCase
 		vm.snapshotLocaleCase()
 	}
+	// The administrator capture has no runAs boundary. Stop using its
+	// transaction-local assignment marker after entering one.
+	vm.mixedDML.newAdminPermissionSetID = ""
+	if changesUser {
+		defer vm.beginRunAsPermissionFrame(runnerBefore)()
+	}
 	vm.testContext.RunAsDepth++
+	if changesUser {
+		vm.runAsFrameDepths = append(vm.runAsFrameDepths, len(vm.callStack))
+	}
 	if packageVersion.Kind != "" {
 		vm.testContext.CurrentPackageVersion = packageVersion
 		vm.testContext.PackageRunAsDepth++
@@ -1749,6 +1849,7 @@ func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (
 		}
 		vm.testContext.RunAsDepth--
 		if changesUser {
+			vm.runAsFrameDepths = vm.runAsFrameDepths[:len(vm.runAsFrameDepths)-1]
 			if isRunAsDescribe != nil {
 				for key := range vm.describeCache {
 					if isRunAsDescribe(key) {
@@ -1809,7 +1910,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 		}
 	}
 	if object.Records == nil {
-		object.Records = make(map[storage.ID]storage.Record)
+		object.SetRecords(make(map[storage.ID]storage.Record))
 	}
 	id := sObjectIDFromFields(user.Fields)
 	if id == "" {
@@ -1901,7 +2002,7 @@ func (vm *VM) ensureRunAsUserRecord(user *Value) error {
 			}
 		}
 		vm.recordIsolationJournalMutation(objectName, id, storage.Record{}, false)
-		object.Records[id] = record
+		object.PutRecord(id, record)
 	}
 	vm.Org.Objects[objectName] = object
 	vm.ensureUserProfilePermissionSetAssignment(record)

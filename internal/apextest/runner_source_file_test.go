@@ -129,7 +129,8 @@ func TestRunSetupFailurePreservesSelectedSourceAndActualError(t *testing.T) {
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
 	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, Discover(index, Options{}))
 	row := run.Suites[0].Cases[0]
-	if row.Status != testreport.StatusRuntimeError || row.Reason != testreport.ReasonRuntimeError || row.Problem.Type == "UnsupportedFeature" || row.SourceFile != "" || row.SelectedSourceFile != path {
+	// A setup exception is a Fail row on the selected method (test_runner_coverage/org.tsv ic04-sync).
+	if row.Status != testreport.StatusFail || row.Reason != testreport.ReasonRuntimeError || row.Problem.Type == "UnsupportedFeature" || row.SourceFile != "" || row.SelectedSourceFile != path {
 		t.Fatalf("pre-invocation attribution/error contradiction: %#v", row)
 	}
 }

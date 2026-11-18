@@ -70,7 +70,8 @@ List<Account> associated = (List<Account>)Search.query(
 )[0];
 Set<String> associatedNames = new Set<String>();
 for (Account row : associated) associatedNames.add(row.Name);
-System.assertEquals(new Set<String>{'Red Alpha', 'Red Beta'}, associatedNames);
+// NATIVE AND NOT excludes only its own operand sosl_search_matrix/org.tsv pr_notchain anonymous 62.0 67.0
+System.assertEquals(new Set<String>{'Red Alpha'}, associatedNames);
 
 List<Account> grouped = (List<Account>)Search.query(
 	'FIND {(Red OR Blue) AND Alpha} RETURNING Account(Id, Name)'

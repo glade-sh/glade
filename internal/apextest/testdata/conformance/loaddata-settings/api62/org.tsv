@@ -1,0 +1,13 @@
+id	api	route	compiled	success	outcome
+ld01	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"retNum":"12.34","retText":"alpha,beta","stamp":"2024-02-29 05:14:15","d
+ld02	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"required":"req-t1","money":"19.99","pct":"12.50","choice":"A","phone":"
+ld03	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"B3":"text=null|num=null|int=null|flag=false|day=null|choice=null","B2":
+ld03b	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|CSV Parse error: ' ' is not v
+ld04	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|Unknown field: NoSuchField__c
+ld05	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|CSV Parse error: 'maybe' is n
+ld06	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"stored":0,"error":"System.StringException|Invalid ID value on line 2: p
+ld07	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"withNone":"inst=null/null/false|org=null/null/false|user=null|prof=null
+ld08	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"partialHasId":true,"partialOwnerOrg":true,"partialNote":null,"partialFl
+ld09	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"org":"loaded/5.0/true","count":1}
+ld10	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"instOwnerUser":true,"instIdNull":true,"org":"org/1/false/org-note","val
+ld11	62.0	istest	true	Failed	observe=Fail System.AssertException: Assertion Failed: OBS|{"insert":"ok","fieldQuery":0,"countQuery":0}

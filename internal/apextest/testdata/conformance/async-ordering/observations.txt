@@ -1,0 +1,43 @@
+# async-ordering full native observations
+
+## API 62.0
+### ao01 [istest @62.0]
+method=observe outcome=Fail time=262ms
+message=System.UnexpectedException: No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+stack=External entry point
+
+### ao02 [istest @62.0]
+method=observe outcome=Fail time=254ms
+message=System.LimitException: Too many future calls: 1
+stack=Class.BatchFuture.finish: line 8, column 1
+
+### ao03 [istest @62.0]
+method=observe outcome=Fail time=216ms
+message=System.AssertException: Assertion Failed: OBS|{"rows":["queue-body-first|job=<id>@2026-11-15 20:23:24","queue-body-second|job=<id>@2026-11-15 20:23:24"],"stop":"ok","second":true,"first":true}
+stack=Class.Ao03TwoQueueablesTest.observe: line 10, column 1
+
+### ao04 [istest @62.0]
+method=observe outcome=Fail time=369ms
+message=System.LimitException: Too many future calls: 1
+stack=Class.BatchFuture.finish: line 8, column 1
+
+## API 67.0
+### ao01 [istest @67.0]
+method=observe outcome=Fail time=310ms
+message=System.UnexpectedException: No more than one executeBatch can be called from within a test method.  Please make sure the iterable returned from your start method matches the batch size, resulting in one executeBatch invocation.
+stack=External entry point
+
+### ao02 [istest @67.0]
+method=observe outcome=Fail time=266ms
+message=System.LimitException: Too many future calls: 1
+stack=Class.BatchFuture.finish: line 8, column 1
+
+### ao03 [istest @67.0]
+method=observe outcome=Fail time=162ms
+message=System.AssertException: Assertion Failed: OBS|{"rows":["queue-body-first|job=<id>@2026-11-15 20:24:43","queue-body-second|job=<id>@2026-11-15 20:24:43"],"stop":"ok","second":true,"first":true}
+stack=Class.Ao03TwoQueueablesTest.observe: line 10, column 1
+
+### ao04 [istest @67.0]
+method=observe outcome=Fail time=387ms
+message=System.LimitException: Too many future calls: 1
+stack=Class.BatchFuture.finish: line 8, column 1

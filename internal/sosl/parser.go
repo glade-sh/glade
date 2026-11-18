@@ -3,7 +3,6 @@ package sosl
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +31,20 @@ type SearchTerm struct {
 	Text         string
 	Prefix       bool
 	NeedsMatcher bool
+	// NameWordGlob is an unquoted ASCII name word with one interior *, ? or ??.
+	NameWordGlob bool
+	// PhoneDigits identifies a bare seven- or ten-digit search term.
+	PhoneDigits bool
+	// WordGlobPrefix is an unquoted ASCII word with one interior ? or ?? and a
+	// trailing *, such as copp?r* (sosl_search_matrix wc_qmstar).
+	WordGlobPrefix bool
+	// LeadingStar is * followed by ASCII letters; the index returns nothing
+	// for it and does not raise an error (sosl_search_matrix wc_lead).
+	LeadingStar bool
+	// EscapedLiteral is an unquoted term whose only wildcard-like characters
+	// are backslash-escaped { " : \ or ?. Text holds the decoded literal and
+	// matching is by whole-token phrase (sosl_search_matrix esc_*, wc_esc).
+	EscapedLiteral bool
 }
 
 type SelectExpr struct {
@@ -47,15 +60,16 @@ type Condition struct {
 	Values   []string
 	// UnquotedValues retains literal spelling for filter type validation. The
 	// indexes refer to Values; null entries are tracked separately by NullInList.
-	UnquotedValues map[int]bool
-	ValueIsNull    bool
-	ValueQuoted    bool
-	RelativeDate   bool
-	NullInList     bool
-	Bind           string
-	Not            bool
-	And            []Condition
-	Or             []Condition
+	UnquotedValues    map[int]bool
+	NullDatetimeBound bool // validated null Datetime bind on a greater-than predicate
+	ValueIsNull       bool
+	ValueQuoted       bool
+	RelativeDate      bool
+	NullInList        bool
+	Bind              string
+	Not               bool
+	And               []Condition
+	Or                []Condition
 }
 
 type OrderSpec struct {
@@ -202,9 +216,17 @@ func ParseInline(input string) (Query, error) {
 	return parser.parse()
 }
 
+// ParseExpandedBinds preserves ordered null operands after a valid source
+// query has been expanded. The caller must verify their original bind types.
+func ParseExpandedBinds(input string) (Query, error) {
+	p := parser{tokens: lex(input), expanded: true}
+	return p.parse()
+}
+
 type parser struct {
-	tokens []token
-	pos    int
+	expanded bool
+	tokens   []token
+	pos      int
 }
 
 func (p *parser) parse() (Query, error) {
@@ -369,7 +391,7 @@ func (p *parser) parseReturning(query *Query) error {
 		}
 		object := p.next().text
 		if !p.accept(tokenLParen) {
-			query.Returning = append(query.Returning, ReturningObject{Object: object, Fields: []SelectExpr{{Field: "Id"}}})
+			query.addReturning(ReturningObject{Object: object, Fields: []SelectExpr{{Field: "Id"}}})
 			if p.accept(tokenComma) {
 				continue
 			}
@@ -378,19 +400,16 @@ func (p *parser) parseReturning(query *Query) error {
 		if p.peek().kind == tokenRParen {
 			return contract("QueryException", "unexpected token: ')'")
 		}
+		if next := p.peek(); next.kind == tokenWord && (strings.EqualFold(next.text, "LIMIT") || strings.EqualFold(next.text, "WHERE")) {
+			// An object clause needs a field first (sosl_search_matrix rt2, rt3).
+			upper := strings.ToUpper(next.text)
+			return &ContractError{Type: "QueryException", Message: "unexpected token: '" + upper + "'", InlineMessage: "Unexpected token '" + upper + "'."}
+		}
 		returning, err := p.parseReturningObject(object)
 		if err != nil {
 			return err
 		}
-		duplicate := false
-		for _, previous := range query.Returning {
-			// C013 repeats the identical bucket. Distinct projections or filters
-			// retain their existing behavior until captured independently.
-			duplicate = duplicate || reflect.DeepEqual(previous, returning)
-		}
-		if !duplicate {
-			query.Returning = append(query.Returning, returning)
-		}
+		query.addReturning(returning)
 		if !p.accept(tokenComma) {
 			return nil
 		}
@@ -398,6 +417,20 @@ func (p *parser) parseReturning(query *Query) error {
 			return p.errorf("unexpected comma before global SOSL clause")
 		}
 	}
+}
+
+// addReturning appends one RETURNING specification. An object named again,
+// adjacent or not, with or without a field list, keeps its first position
+// and takes the last specification: one list per object
+// (sosl_search_matrix rt1, rt5, rt6 and rtd_*).
+func (q *Query) addReturning(returning ReturningObject) {
+	for i := range q.Returning {
+		if strings.EqualFold(q.Returning[i].Object, returning.Object) {
+			q.Returning[i] = returning
+			return
+		}
+	}
+	q.Returning = append(q.Returning, returning)
 }
 
 func (p *parser) parseReturningObject(object string) (ReturningObject, error) {
@@ -639,7 +672,7 @@ func (p *parser) parseConditionLeaf() (Condition, error) {
 		return Condition{}, err
 	}
 	// Q026/Q037-Q040: a literal null is rejected for ordered comparisons.
-	if nullValue && !quoted && (operation == "<" || operation == "<=" || operation == ">" || operation == ">=") {
+	if !p.expanded && nullValue && !quoted && (operation == "<" || operation == "<=" || operation == ">" || operation == ">=") {
 		return Condition{}, contract("QueryException", "invalid operator")
 	}
 	return Condition{Field: field.text, Operator: operation, Value: value, Bind: bind, ValueIsNull: nullValue && !quoted, ValueQuoted: quoted, RelativeDate: !quoted && value != "" && !isDigit(value[0]) && strings.Contains(value, ":")}, nil
@@ -841,6 +874,10 @@ func (p *parser) parseWith(query *Query) error {
 		value := p.next()
 		if value.kind == tokenWord {
 			return contract("QueryException", "unexpected token: '"+value.text+"'")
+		}
+		if value.kind == tokenString && strings.EqualFold(value.text, "LABELS") {
+			// Accepted with the same rows (sosl_search_matrix wi_meta).
+			return nil
 		}
 		return &UnsupportedFeatureError{Message: "SOSL WITH METADATA hosted search service"}
 	case strings.EqualFold(clause.text, "NETWORK"):

@@ -175,10 +175,10 @@ func LoadListViewMetadata(org *storage.OrgState, paths []string, readFile func(s
 				}
 			}
 		}
-		views.Records[id] = storage.Record{ID: id, Object: "ListView", Fields: map[string]storage.Value{
+		views.PutRecord(id, storage.Record{ID: id, Object: "ListView", Fields: map[string]storage.Value{
 			"DeveloperName": storage.StringValue(metadata.Name), "Name": storage.StringValue(metadata.Label),
 			"SobjectType": storage.StringValue(objectType), "IsSoqlCompatible": storage.BooleanValue(true), "__glade_list_view_metadata": storage.StringValue(string(data)),
-		}}
+		}})
 	}
 	org.Objects["ListView"] = views
 	return nil

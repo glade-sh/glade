@@ -1,0 +1,29 @@
+capture: test runner and code coverage (CV1-CV5, CV8, I-C01..I-C04, I-C10, C-R1..C-R4, deployment gates)
+captured: 2026-11-16 (UTC, 14:40-15:15)
+orgs: fresh 1-day scratch orgs on campaign Dev Hubs, Developer edition, no features; each deleted and verified gone
+sf: @salesforce/cli 2.157.8 (client 2.157.8), CLI default query API v68.0
+class apis: 62.0 and 67.0 (class metadata apiVersion); deployment-gate scenarios at 67.0 only
+captures:
+  1  coverage and runner (CvShapeA/B, CvUnion, CvWeight, CvSetupCov*, IsoBase, SeeAllData classes, RunnerSurfaceProbeTest, setup failure)  62.0 and 67.0
+  2  second shape set (CvShapeC), failed-test coverage (CvFail), async from setup and body, triggers  62.0 and 67.0
+  3  deployment gates g1..g9, one org each, sf project deploy start --test-level  67.0
+  4  setup-failure variants (custom throw, DML, null deref, limit)  62.0 and 67.0
+columns: id, api, kind, subject, step, covered lines, uncovered lines, detail
+  agg      ApexCodeCoverageAggregate row for subject (class or trigger), written when it changes; step is capture:tag
+  per      ApexCodeCoverage row for TestClass.method; detail is the covered class; written when it changes
+  org      ApexOrgWideCoverage.PercentCovered after the step
+  run      sf apex run test --json summary; coverage runs add testRunCoverage, orgWide and per-class covered/total=percent
+  test     method row from that run: method|Outcome|Message|StackTrace
+  testResult ApexTestResult rows queried afterward: class|method|Outcome|setup|Message|StackTrace
+  queueItem  ApexTestQueueItem Status|ExtendedStatus
+  deployError  Metadata API component failure for a deploy rejected at compile
+  deploy   sf project deploy start result: status, tests, failures, per-component covered/total, coverage warnings
+  cliError sf apex run test command error
+notes:
+  Aggregate rows list a component only after deploy; an empty class, interface, or declaration-only class has a row with no lines.
+  Per-test rows are replaced when the same test class runs again, so an earlier method's row can vanish. Aggregates only grow.
+  In a run of several methods, per-test rows carry method-signature lines over from earlier methods. Solo runs do not. The conformance
+  test uses solo rows only.
+  The sf run summary adds uncalled triggers (0 covered) to every run's coverage list. Glade does not model that listing.
+  Salesforce coverage varies in nothing observed between the two class API versions: every aggregate row matches at 62.0 and 67.0.
+  Ids, usernames, hosts and aliases are scrubbed; async job and queue item ids are not kept.

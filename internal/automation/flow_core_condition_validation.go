@@ -3,7 +3,6 @@ package automation
 import (
 	"encoding/xml"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 
@@ -30,7 +29,7 @@ func flowCoreValidateProjectConditions(p project.Project, idx *Index, schemas *p
 	}
 	for i := range idx.Flows {
 		flow := &idx.Flows[i]
-		data, err := os.ReadFile(flow.File)
+		data, err := p.ReadFile(flow.File)
 		if err != nil {
 			continue
 		}

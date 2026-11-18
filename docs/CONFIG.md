@@ -81,6 +81,7 @@ Supported keys:
 
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `pdf.command` | Absolute executable path for optional external HTML-to-PDF rendering; empty uses the local text writer. |
+| `duplicateRules.standard` | `on` enforces the standard Account, Contact and Lead duplicate rules that no project metadata defines; `off` (the default) leaves them unenforced. `GLADE_STANDARD_DUPLICATE_RULES=on` turns them on for one run. A project's `duplicateRules` metadata for a standard rule is always honored, active or inactive, and custom duplicate rules are always enforced. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 | `org.hierarchyAccessObjects` | Inline list of private custom object API names for which the source org grants read access through the owner's role hierarchy. Unlisted objects do not receive that grant. |
 | `test.permissionSets` | Inline list of project permission-set API names to assign to the running test user. |

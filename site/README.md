@@ -117,8 +117,10 @@ npx --yes wrangler pages deploy .vitepress/dist --project-name glade-site --bran
 ```
 
 After the production deployment, reconcile the deployed commit and stable
-release using the standalone postdeploy smoke. It is not run by the Release
-workflow. Run from the checkout of the deployed commit:
+release using the postdeploy smoke. After a release, the Release workflow's
+`distribute` job triggers the Pages deploy hook and runs this smoke itself; the
+manual deployment above and this command are the fallback. Run from the checkout
+of the deployed commit:
 
 ```bash
 expected_sha="$(git -C .. rev-parse HEAD)"

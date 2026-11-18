@@ -77,6 +77,8 @@ func readDuplicateNativeData(t *testing.T) (duplicateNativeData, map[string]map[
 }
 
 func TestDuplicateEnforcementNativeRows(t *testing.T) {
+	// The native rows ran with the standard duplicate rules active.
+	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
 	data, rows := readDuplicateNativeData(t)
 	if !data.Cleanup.Deleted || !data.Cleanup.Verified || !data.Cleanup.AuthRemoved {
 		t.Fatal("owned scratch deletion has not been verified")
@@ -163,6 +165,8 @@ func assertDuplicateNativePayload(t *testing.T, marker, message string, want map
 }
 
 func TestDuplicateEnforcementNativeConformanceAPIRoutes(t *testing.T) {
+	// The native rows ran with the standard duplicate rules active.
+	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
 	data, rows := readDuplicateNativeData(t)
 	for _, fixture := range []string{"existing", "extension", "standard", "standard_extended"} {
 		class, helper, tag := "StandardDuplicateProbeTest", "StandardDuplicateProbe", "STANDARD_OBS|"
@@ -272,6 +276,8 @@ func TestDuplicateEnforcementNativeConformanceAPIRoutes(t *testing.T) {
 }
 
 func TestDuplicateHeaderNativeRejectionAPIRoutes(t *testing.T) {
+	// The native rows ran with the standard duplicate rules active.
+	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
 	data, rows := readDuplicateNativeData(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		for _, route := range []string{"anonymous", "istest"} {
@@ -301,6 +307,8 @@ func TestDuplicateHeaderNativeRejectionAPIRoutes(t *testing.T) {
 }
 
 func TestDuplicateStandardRuleMetadataNativeConformance(t *testing.T) {
+	// The native rows ran with the standard duplicate rules active.
+	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
 	data, rows := readDuplicateNativeData(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {
@@ -355,6 +363,8 @@ func TestDuplicateStandardRuleMetadataNativeConformance(t *testing.T) {
 }
 
 func TestDuplicateReportCommittedAnonymousNativeConformance(t *testing.T) {
+	// The native rows ran with the standard duplicate rules active.
+	t.Setenv("GLADE_STANDARD_DUPLICATE_RULES", "on")
 	data, rows := readDuplicateNativeData(t)
 	for _, api := range []string{"62.0", "67.0"} {
 		t.Run(api, func(t *testing.T) {

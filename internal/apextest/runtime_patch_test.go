@@ -2417,6 +2417,9 @@ func TestRuntimeTransitionCanonicalOrgSortsRelationshipsWithoutMutatingInput(t *
 func runtimeTransitionCanonicalJSON(t testing.TB, value any) string {
 	t.Helper()
 	if org, ok := value.(storage.OrgState); ok {
+		// Compare the logical org: a lazy org holds the catalog objects it has
+		// touched, so complete it first. The callers pass private clones.
+		storage.MaterializeStandardObjectSpread(&org)
 		data, err := json.Marshal(runtimeTransitionCanonicalOrg(org))
 		if err != nil {
 			t.Fatal(err)

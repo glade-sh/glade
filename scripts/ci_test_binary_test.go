@@ -199,7 +199,7 @@ func TestCISharedBinaryWorkflowWiring(t *testing.T) {
 	if !strings.Contains(string(helper), `command = [GO, "test", "-trimpath", "-vet=off", "-c"`) {
 		t.Fatal("shared test binaries must be built with -trimpath")
 	}
-	for name, producer := range map[string]string{"lwc-vf": "needs: [lwc-compile-history-input, visualforce-history-input, test-binaries]", "sema": "needs: test-binaries", "apextest": "needs: [apextest-history-input, test-binaries-apextest]"} {
+	for name, producer := range map[string]string{"lwc-vf": "needs: [history-input, test-binaries]", "sema": "needs: test-binaries", "apextest": "needs: [history-input, test-binaries-apextest]"} {
 		if !strings.Contains(jobs[name], producer) || !strings.Contains(jobs[name], "CI_TEST_BIN_DIR") {
 			t.Errorf("%s does not consume only its shared binaries", name)
 		}
