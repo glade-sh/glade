@@ -432,10 +432,11 @@ func (vm *VM) executeDatabaseDMLWithOptions(op string, args []Value, result *Res
 	dmlOptions.AllowTestHistoryInsert = historyTestSeed && op == "insert" && vm.allowTestHistoryInsert()
 	dmlOptions.ExplicitUserMode = isUserModeAccessLevel(accessLevel)
 	dmlOptions.ExplicitUserModePartialRecord = dmlOptions.ExplicitUserMode && !allOrNone && args[0].Kind == ValueObject
-	savedCaptured := vm.runAsRecordAccessCaptured
+	savedCaptured, savedExplicit := vm.runAsRecordAccessCaptured, vm.explicitUserModeDML
 	vm.runAsRecordAccessCaptured = isUserModeAccessLevel(accessLevel) || !allOrNone && op == "update" && args[0].Kind == ValueList
+	vm.explicitUserModeDML = isUserModeAccessLevel(accessLevel)
 	results, err := vm.applyDMLWithRecordAccess(op, args[0], allOrNone, externalIDField, dmlOptions, result, dmlMode, accessLevelPermissionSetID(accessLevel))
-	vm.runAsRecordAccessCaptured = savedCaptured
+	vm.runAsRecordAccessCaptured, vm.explicitUserModeDML = savedCaptured, savedExplicit
 	appendDurationTraceLazy(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), func() map[string]any {
 		return vm.traceDMLArgs(op, traceRecords, len(traceRecords))
 	})
@@ -1644,6 +1645,17 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 		return nil, err
 	}
 	if err := vm.checkMixedDML(op, records); err != nil {
+		if op == "lock" && !allOrNone && vm.approvalLockCall && strings.EqualFold(vm.mixedDML.setupObject, "PermissionSetAssignment") {
+			// Native PsrFinishLockTest.lockAfterAssignment (permset_in_test
+			// residuals, API 62.0 and 67.0): a partial Approval.lock after a
+			// PermissionSetAssignment insert reports MIXED_DML_OPERATION in its LockResult
+			// instead of throwing.
+			failures := make([]dml.Result, len(records))
+			for i, record := range records {
+				failures[i] = mixedDMLRowFailure(record, err)
+			}
+			return failures, nil
+		}
 		return nil, err
 	}
 	appendTraceLazy(result, "apex.dml."+op, "apex.dml", func() map[string]any {
@@ -2540,6 +2552,13 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	if len(records) == 0 {
 		return nil, nil
 	}
+	if (op == "insert" || op == "upsert") && recordsIncludeObject(records, "PermissionSetAssignment") {
+		defer func() {
+			if outErr == nil {
+				vm.markTestAssignedPermissionSets(out)
+			}
+		}()
+	}
 	// Preserve the original operation size across chunking and partial retries.
 	operationSize := len(records)
 	if len(triggerRetries) > 1 {
@@ -2637,6 +2656,16 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 					message := failures[i].Error
 					prefix := "Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, "
 					if strings.HasPrefix(message, prefix) && strings.HasSuffix(message, ": []") {
+						failures[i].Error = strings.TrimSuffix(strings.TrimPrefix(message, prefix), ": []")
+					}
+				}
+				// Native PsrMixedTest.mixedDatabaseInsertLast (permset_in_test
+				// residuals, API 62.0): a partial list insert whose assignment row
+				// follows a non-setup row reports the row error without the
+				// exception wrapper, as the scalar case above does.
+				if op == "insert" && value.Kind == ValueList && len(records) > 1 && i > 0 && strings.EqualFold(record.Object, "PermissionSetAssignment") && vm.testContext != nil && vm.testContext.RunAsDepth == 0 && vm.currentSourceExecutionPolicy().APIVersion == "62.0" {
+					prefix := "Insert failed. First exception on row 0; first error: MIXED_DML_OPERATION, "
+					if message := failures[i].Error; strings.HasPrefix(message, prefix) && strings.HasSuffix(message, ": []") {
 						failures[i].Error = strings.TrimSuffix(strings.TrimPrefix(message, prefix), ": []")
 					}
 				}
@@ -3221,12 +3250,28 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 	engine.Options = options
 	engine.Options.AllowBatchUniqueValueSwap = allOrNone
 	engine.Options.EnforceDuplicateRules = op == "insert" || op == "update" || op == "upsert"
+	if op == "insert" {
+		// dec_DecHashProbe_F17/F20: the insert rejection wording follows the API.
+		engine.Options.ScaledNumberOverflow = 1
+		if apexversion.AtLeast(vm.currentMethod.APIVersion, 67) {
+			engine.Options.ScaledNumberOverflow = 2
+		}
+	}
 	engine.PriorRecords = dmlPriorRecordsByID(before)
 	if op == "update" && vm.inAfterUndeleteTrigger() {
 		engine.Options.AllowUpdateDeleted = true
 	}
-	if !allOrNone && vm.hasAfterTriggerForDML(op, records) {
+	hasAfterTrigger := vm.hasAfterTriggerForDML(op, records)
+	if !allOrNone && hasAfterTrigger {
 		ensurePartialAfterTriggerBackup()
+	}
+	if (hasAfterTrigger || len(vm.Org.SummaryHolds) > 0) && vm.installContextDepth == 0 {
+		// Native after-triggers read the parent roll-ups as they stood before
+		// the statement (rollup_trigger_timing). A statement nested in an
+		// enclosing hold joins it even without a trigger of its own, so its
+		// change reaches the enclosing statement.
+		engine.BeginSummaryHold(records)
+		defer engine.ReleaseSummaryHold()
 	}
 	var results []dml.Result
 	switch op {
@@ -3333,6 +3378,7 @@ func (vm *VM) applyDMLWithAccessPolicy(op string, value Value, allOrNone bool, e
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
 	}
+	engine.ReleaseSummaryHold()
 	if op == "insert" || op == "update" {
 		assignmentFailures, err := vm.applyAssignmentRuleUpdates(&engine, records, engineResults, result)
 		if err != nil {
@@ -4000,8 +4046,16 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		engine.Options.UpsertChangedExactDuplicatesOnly = true
 	}
 	engine.PriorRecords = dmlPriorRecordsByID(before)
-	if !allOrNone && vm.hasAfterTriggerForDML("upsert", records) {
+	hasAfterTrigger := vm.hasAfterTriggerForDML("upsert", records)
+	if !allOrNone && hasAfterTrigger {
 		ensurePartialAfterTriggerBackup()
+	}
+	if hasAfterTrigger && vm.installContextDepth == 0 {
+		// The hold spans both groups: each group's triggers see the roll-up
+		// with the earlier group landed.
+		engine.BeginSummaryHold(records)
+		engine.MarkSummaryHoldUpsert()
+		defer engine.ReleaseSummaryHold()
 	}
 	var engineResults []dml.Result
 	engine.Options.AllowApexIDLookupUpsert = true
@@ -4080,8 +4134,24 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			vm.rollbackAfterTriggerFailures(kind, afterRecords, afterFailures, partialAfterTriggerBackup)
 			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
-		if _, err := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, "", "", nil, nil); err != nil {
-			return results, err
+		if kind == "update" {
+			// A parent that the insert group already fired for fires again
+			// when this group's children belong to it and still change its
+			// roll-up (review_round7 b_single: PA twice; b_same, b_two: once).
+			engine.RequeueRenderedSummaryUpdates(afterRecords)
+			engine.ReleaseSummaryHold()
+		} else {
+			// The insert group has landed when the update group's triggers run;
+			// the update has not (sf4_mixed_upsert). Only the parents of the
+			// inserted children fire now, reading the same landed values
+			// (review_round6 m_none, review_round7 b_two).
+			engine.LandSummaryHold(afterRecords)
+			engine.SetSummaryTakeScope(afterRecords)
+		}
+		_, summaryErr := vm.runSummaryUpdateTriggers(&engine, allOrNone, rollback, result, "", "", nil, nil)
+		engine.ClearSummaryTakeScope()
+		if summaryErr != nil {
+			return results, summaryErr
 		}
 		if err := vm.applyDeferredAutomation(&engine, afterRecords, groupBefore, allOrNone, rollback, result); err != nil {
 			if failures, ok := flowActionInputDMLResults("upsert", results, err); ok {
@@ -5365,7 +5435,7 @@ func (vm *VM) vmValueFromRecord(record storage.Record) Value {
 		value.Fields["Id"] = platformScalar("Id", string(id))
 	}
 	for field, fieldValue := range record.Fields {
-		vm.putVMRecordFieldPath(value, record.Object, field, vmValueFromStorage(fieldValue))
+		vm.putVMRecordFieldPath(value, record.Object, field, vm.stampedValueFromStorage(fieldValue))
 	}
 	for relationship, records := range record.Children {
 		children := make([]Value, 0, len(records))
@@ -5419,7 +5489,7 @@ func (vm *VM) vmValueFromOrdinaryRecord(record storage.Record) Value {
 		value.Fields["Id"] = platformScalar("Id", string(record.ID))
 	}
 	for field, fieldValue := range record.Fields {
-		vm.putVMRecordFieldPath(value, record.Object, field, vmValueFromStorage(fieldValue))
+		vm.putVMRecordFieldPath(value, record.Object, field, vm.stampedValueFromStorage(fieldValue))
 	}
 	for relationship, records := range record.Children {
 		children := make([]Value, 0, len(records))
@@ -6116,6 +6186,9 @@ func coerceSObjectFieldRuntimeValue(value Value, field storage.Field) Value {
 		return value
 	}
 	converted := vmValueFromStorage(stored)
+	if value.datetimeWeekTerm != 0 && converted.Kind == ValueObject && converted.Type == "Datetime" {
+		converted.datetimeWeekTerm = value.datetimeWeekTerm
+	}
 	if field.Type == storage.FieldTime && converted.Kind == ValueString {
 		return platformScalar("Time", converted.Text)
 	}
@@ -7121,10 +7194,11 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, mode i
 		vm.testContext != nil && vm.testContext.RunAsDepth > 0 && !vm.runAsSecureDefaults() && vm.objectPermissionsDeleteInput(value) {
 		results, err = vm.applyDMLWithAccessPolicy(op, value, true, externalIDField, dmlOptions, result, false, true, dmlMode)
 	} else {
-		savedCaptured := vm.runAsRecordAccessCaptured
+		savedCaptured, savedExplicit := vm.runAsRecordAccessCaptured, vm.explicitUserModeDML
 		vm.runAsRecordAccessCaptured = mode == ir.DMLModeUser || op == "delete" && value.Kind == ValueObject
+		vm.explicitUserModeDML = mode == ir.DMLModeUser
 		results, err = vm.applyDMLWithRecordAccess(op, value, true, externalIDField, dmlOptions, result, dmlMode)
-		vm.runAsRecordAccessCaptured = savedCaptured
+		vm.runAsRecordAccessCaptured, vm.explicitUserModeDML = savedCaptured, savedExplicit
 	}
 	if err != nil {
 		return vm.flowCoreStatementInsertError(op, value, err)
@@ -7515,4 +7589,28 @@ func preserveMissingSystemFields(record *storage.Record, original storage.System
 	if record.System.SystemModstamp == "" {
 		record.System.SystemModstamp = original.SystemModstamp
 	}
+}
+
+// recordsIncludeObject reports whether any record in a DML list is of the
+// object. A list insert whose assignment is not the first element (native
+// PsrFinishMixedTest.setupObjectsAssignmentLast) hides its grant the same way.
+func recordsIncludeObject(records []storage.Record, object string) bool {
+	for _, record := range records {
+		if strings.EqualFold(record.Object, object) {
+			return true
+		}
+	}
+	return false
+}
+
+// stampedValueFromStorage materializes a stored value, stamping a Datetime with
+// the week term of the user running now: a record built or read under one user
+// keeps that user's hash term when another user reads its field (native
+// dth_r2_stp_ab and stp_ba: recAfield).
+func (vm *VM) stampedValueFromStorage(value storage.Value) Value {
+	out := vmValueFromStorage(value)
+	if value.Kind == storage.ValueDateTime {
+		out = vm.stampDatetimeWeekTerm(out)
+	}
+	return out
 }

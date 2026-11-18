@@ -18,7 +18,42 @@ var (
 	invocableCapabilityValue = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*://[A-Za-z][A-Za-z0-9_]*$`)
 )
 
+// integrationTestUnavailableMessage is the deploy problem for each
+// @IntegrationTest occurrence in a Developer scratch org created without the
+// ApexIntegrationTests feature (api68_native integration
+// INTEGRATION-DEPLOY-67/68). The enabled feature is not modeled.
+const integrationTestUnavailableMessage = "Annotation is not valid in your org: IntegrationTest"
+
 func checkAnnotationCatalog(index typesys.Index) []diagnostic.Diagnostic {
+	diagnostics := checkAnnotationCatalogDiagnostics(index)
+	for _, feature := range index.OrgShapeFeatures {
+		if strings.EqualFold(feature, "ApexIntegrationTests") {
+			// The enabled feature accepts @IntegrationTest, @BeforeClass and
+			// @TearDown (api68_native_second INTEGRATION-DEPLOY-67/68).
+			kept := diagnostics[:0]
+			for _, item := range diagnostics {
+				if integrationPreviewDiagnostic(item) {
+					continue
+				}
+				kept = append(kept, item)
+			}
+			diagnostics = kept
+			break
+		}
+	}
+	return diagnostics
+}
+
+func integrationPreviewDiagnostic(item diagnostic.Diagnostic) bool {
+	for _, name := range []string{"IntegrationTest", "BeforeClass", "TearDown"} {
+		if item.Message == "Apex annotation @"+name+" is preview-disabled" {
+			return true
+		}
+	}
+	return false
+}
+
+func checkAnnotationCatalogDiagnostics(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
@@ -58,7 +93,11 @@ func annotationCatalogDiagnostics(file string, fallback diagnostic.Range, annota
 			continue
 		}
 		if spec.Preview {
-			diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, r, fmt.Sprintf("Apex annotation @%s is preview-disabled", annotation.Name)))
+			item := annotationCatalogDiagnostic(file, r, fmt.Sprintf("Apex annotation @%s is preview-disabled", annotation.Name))
+			if strings.EqualFold(spec.Name, "IntegrationTest") {
+				item.NativeMessage = integrationTestUnavailableMessage
+			}
+			diagnostics = append(diagnostics, item)
 		}
 		seenArguments := make(map[string]bool, len(annotation.Arguments))
 		positionalArguments := 0

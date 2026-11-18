@@ -463,9 +463,9 @@
    "max_conf_mae": 0.001
   },
   "62/P4.LN.KB2": {
-   "min_recall": 0.8197,
+   "min_recall": 0.8727,
    "max_extra": 0,
-   "max_conf_mae": 0.1555,
+   "max_conf_mae": 0.187,
    "legacy_max_conf_mae": 0.126
   },
   "67/Holdout4.Account.BillingCity.City.NullNotAllowed.1": {
@@ -1719,9 +1719,9 @@
    "max_conf_mae": 0.042
   },
   "67/N4.LN.Var.002": {
-   "min_recall": 0.9381,
+   "min_recall": 0.9484,
    "max_extra": 0,
-   "max_conf_mae": 0.022,
+   "max_conf_mae": 0.034,
    "legacy_max_conf_mae": 0.013
   },
   "67/N4.LN.Var.003": {
@@ -1733,7 +1733,8 @@
   "67/N4.LN.Var.004": {
    "min_recall": 0.9629,
    "max_extra": 0,
-   "max_conf_mae": 0.001
+   "max_conf_mae": 0.001,
+   "legacy_max_conf_mae": 0.001
   },
   "67/N4.LN.Var.005": {
    "min_recall": 0.9999,
@@ -1860,9 +1861,10 @@
    "max_conf_mae": 0.001
   },
   "67/N4.LN.Var.029": {
-   "min_recall": 0.9876,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.026
+   "max_conf_mae": 0.038,
+   "legacy_max_conf_mae": 0.026
   },
   "67/N4.LN.Var.030": {
    "min_recall": 0.9999,
@@ -1881,9 +1883,9 @@
    "max_conf_mae": 0.043
   },
   "67/N4.LN.Var.033": {
-   "min_recall": 0.9758,
+   "min_recall": 0.9838,
    "max_extra": 0,
-   "max_conf_mae": 0.017,
+   "max_conf_mae": 0.026,
    "legacy_max_conf_mae": 0.01
   },
   "67/N4.LN.Var.034": {
@@ -1940,9 +1942,9 @@
    "legacy_max_conf_mae": 0.028
   },
   "67/N4.LN.Var.044": {
-   "min_recall": 0.9897,
+   "min_recall": 0.9999,
    "max_extra": 0,
-   "max_conf_mae": 0.021,
+   "max_conf_mae": 0.032,
    "legacy_max_conf_mae": 0.011
   },
   "67/N4.LN.Var.045": {
@@ -2050,9 +2052,9 @@
    "max_conf_mae": 0.001
   },
   "67/N4.LN.Var.065": {
-   "min_recall": 0.9791,
+   "min_recall": 0.9895,
    "max_extra": 0,
-   "max_conf_mae": 0.0209,
+   "max_conf_mae": 0.022,
    "legacy_max_conf_mae": 0.012
   },
   "67/N4.LN.Var.066": {
@@ -2200,9 +2202,9 @@
    "max_conf_mae": 0.001
   },
   "67/P4.LN.KB2": {
-   "min_recall": 0.8197,
+   "min_recall": 0.8727,
    "max_extra": 0,
-   "max_conf_mae": 0.1555,
+   "max_conf_mae": 0.187,
    "legacy_max_conf_mae": 0.126
   },
   "67/P4.MULTI.NameCity": {

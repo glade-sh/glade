@@ -69,7 +69,9 @@ System.assert(Schema.getGlobalDescribe().containsKey('private'));
 				id++
 			}
 
-			for _, mutation := range []string{"put('private',Account.SObjectType)", "putAll(new Map<String,Schema.SObjectType>{'private'=>Account.SObjectType})", "remove('account')", "clear()"} {
+			// put, putAll and remove are read-only on the global describe
+			// (review_round11 gw_chained_put, gw_chained_remove, gw_putall).
+			for _, mutation := range []string{"keySet().remove('account')", "clear()"} {
 				fmt.Fprintf(&methods, `@IsTest static void path%d() {
 Integer sizeBefore = Schema.getGlobalDescribe().size();
 Schema.getGlobalDescribe().%s;

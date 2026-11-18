@@ -183,6 +183,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	artifacts.Sources = sources
 	features := capturedOrgShapeFeatures(p)
 	labelNames, labelsKnown := projectCustomLabels(p)
+	flowShapes := project.FlowRunModeShapes(p, nil)
 	parser := apexast.NewParser()
 	defer parser.Close()
 	projectBinding := p.PackageNamespaceBinding()
@@ -203,7 +204,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 		CustomLabelsKnown:     labelsKnown,
 		OrgShapeFeatures:      features,
 		CustomMetadataRecords: s.CustomMetadataRecords,
-		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features, labelNames, labelsKnown),
+		projectIdentity:       incrementalProjectIdentityWithFeatures(p, features, labelNames, labelsKnown, flowShapes),
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -289,6 +290,24 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 			Code:     "GLADEEMAILSERVICE001",
 			File:     rejection.File,
 			Message:  rejection.Message,
+		})
+	}
+	for _, rejection := range project.StandardSharingReasonRejections(p, nil) {
+		idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+			Severity:      diagnostic.Error,
+			Code:          standardSharingReasonDiagnosticCode,
+			File:          rejection.File,
+			Message:       rejection.Message,
+			NativeMessage: rejection.Message,
+		})
+	}
+	for _, rejection := range project.FlowRunModeRejectionsFromShapes(p, flowShapes) {
+		idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+			Severity:      diagnostic.Error,
+			Code:          flowRunModeDiagnosticCode,
+			File:          rejection.File,
+			Message:       rejection.Message,
+			NativeMessage: rejection.Message,
 		})
 	}
 	for _, rejection := range project.PermissionMutingRejections(p, nil) {
@@ -1219,7 +1238,21 @@ type incrementalProjectIdentityLedger struct {
 	// PermissionMutingDigests binds the muting deploy rejections to the
 	// muting permission set and group file contents.
 	PermissionMutingDigests map[string]string `json:",omitempty"`
+	// FlowRunModeShapes binds the Flow run-mode deploy rejections to the
+	// declared version and run mode of each Flow that sets runInMode.
+	FlowRunModeShapes map[string]string `json:",omitempty"`
+	// AccountSharingReasonShapes binds the Account sharing reason deploy
+	// rejections to the declared reason names.
+	AccountSharingReasonShapes map[string]string `json:",omitempty"`
 }
+
+// standardSharingReasonDiagnosticCode marks an Account sharing reason that
+// native deployment rejects (project.StandardSharingReasonRejections).
+const standardSharingReasonDiagnosticCode = "GLADESHAREREASON001"
+
+// flowRunModeDiagnosticCode marks a Flow whose run mode needs a later Flow
+// API version (project.FlowRunModeRejections).
+const flowRunModeDiagnosticCode = "GLADEFLOWMODE001"
 
 // permissionMutingDiagnosticCode marks a muting permission set or group that
 // native deployment rejects.
@@ -1298,20 +1331,22 @@ func capturedOrgShapeFeatures(p project.Project) []string {
 
 func incrementalProjectIdentity(p project.Project) string {
 	labelNames, labelsKnown := projectCustomLabels(p)
-	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p), labelNames, labelsKnown)
+	return incrementalProjectIdentityWithFeatures(p, capturedOrgShapeFeatures(p), labelNames, labelsKnown, project.FlowRunModeShapes(p, nil))
 }
 
-func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool) string {
+func incrementalProjectIdentityWithFeatures(p project.Project, features, labelNames []string, labelsKnown bool, flowShapes map[string]string) string {
 	ledger := incrementalProjectIdentityLedger{
-		OrgShapeFeatures:        features,
-		VisualforcePageNames:    projectVisualforcePageNames(p),
-		VisualforcePagesKnown:   projectVisualforcePagesKnown(p),
-		CustomLabelNames:        labelNames,
-		CustomLabelsKnown:       labelsKnown,
-		Project:                 incrementalProjectConfigForIdentity(p),
-		DependencyDiagnostics:   p.DependencyDiagnostics,
-		EmailServiceDigests:     emailServiceDigests(p),
-		PermissionMutingDigests: permissionMutingDigests(p),
+		OrgShapeFeatures:           features,
+		VisualforcePageNames:       projectVisualforcePageNames(p),
+		VisualforcePagesKnown:      projectVisualforcePagesKnown(p),
+		CustomLabelNames:           labelNames,
+		CustomLabelsKnown:          labelsKnown,
+		Project:                    incrementalProjectConfigForIdentity(p),
+		DependencyDiagnostics:      p.DependencyDiagnostics,
+		EmailServiceDigests:        emailServiceDigests(p),
+		PermissionMutingDigests:    permissionMutingDigests(p),
+		FlowRunModeShapes:          flowShapes,
+		AccountSharingReasonShapes: project.AccountSharingReasonShapes(p, nil),
 	}
 	for _, dep := range p.ManagedPackageDependencies {
 		identity := incrementalManagedDependencyIdentity{

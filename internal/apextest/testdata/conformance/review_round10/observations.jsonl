@@ -1,0 +1,22 @@
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "g_class_method", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "g_class_method", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "g_gd_add", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "g_gd_add", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_gd_clear|0|0|1315"], "error": "", "id": "g_gd_clear", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_gd_clear|0|0|1428"], "error": "", "id": "g_gd_clear", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_gd_clone_add|true"], "error": "", "id": "g_gd_clone_add", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_gd_clone_add|true"], "error": "", "id": "g_gd_clone_add", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_gd_remove|1315|1314|false|1314|false|1315|true"], "error": "", "id": "g_gd_remove", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_gd_remove|1428|1427|false|1427|false|1428|true"], "error": "", "id": "g_gd_remove", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "g_map_id_add", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "g_map_id_add", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_map_remove|1|0"], "error": "", "id": "g_map_remove", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_map_remove|1|0"], "error": "", "id": "g_map_remove", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "g_populated_add", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "g_populated_add", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|g_populated_remove|2|1|false"], "error": "", "id": "g_populated_remove", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|g_populated_remove|2|1|false"], "error": "", "id": "g_populated_remove", "route": "anonymous"}
+{"api": "62.0", "id": "g_test", "route": "istest", "tests": [["inTest", "Fail", "System.FinalException: Collection is read-only"], ["viaClass", "Fail", "System.FinalException: Collection is read-only"]]}
+{"api": "67.0", "id": "g_test", "route": "istest", "tests": [["inTest", "Fail", "System.FinalException: Collection is read-only"], ["viaClass", "Fail", "System.FinalException: Collection is read-only"]]}
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}

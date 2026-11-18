@@ -14,7 +14,8 @@ import (
 const fuzzyPanelsKeyboardDir = "../apextest/testdata/conformance/duplicate_fuzzy_panels/"
 
 // fuzzyPanelsTwinDir holds the blind native panels captured after the
-// keyboard fallback (anonymous route only): the twin tk01-tk22 and bk01 on.
+// keyboard fallback (anonymous route only): the twin tk01-tk22, bk01 on and
+// ck01 on.
 const fuzzyPanelsTwinDir = "testdata/conformance/duplicate_fuzzy_panels/"
 
 // fuzzyPanelsLastName returns the values and the shared native observation of
@@ -97,11 +98,13 @@ func lastNameTrainBase(a, b string) (bool, float64) {
 // (internal/dml/testdata/conformance/duplicate_fuzzy_panels, tk01-tk22) is the
 // same rule on 65 other stems, anonymous route only. The keyboard fallback adds
 // no match native does not report, on any of them, and every pair the scorer
-// without the fallback gets right stays right. The keyboard group fitted the
-// shape table and the per-shape floors that the single margin replaced; the
-// hkeyboard group was in view when the shape rule was chosen, so it is not
-// held-out evidence for the shape gate. The twin and the second blind panel
-// were captured after the code they score; neither fitted anything.
+// without the fallback gets right stays right. The fit panels (the keyboard
+// group, k1 to k3) fitted the shape table and the per-shape floors that the
+// single margin replaced; the hkeyboard group was in view when the shape rule
+// was chosen, so it is not held-out evidence for the shape gate. The twin, the
+// second and the third blind panel were captured after the code they score.
+// The twin's tk14 sets the highest native non-match the margin clears; none of
+// the three blind groups fitted the shape table.
 func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 	values, observations := fuzzyPanelsLastName(t, "keyboard", "hkeyboard")
 	// exact counts the ordered pairs (self pairs included) where Glade and
@@ -113,20 +116,24 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 	}
 	want := map[string]tally{
 		"k1":  {fuzzyNameKeysCount{native: 180, hit: 98, miss: 82, confidence: 8}, 934, 878},
-		"k2":  {fuzzyNameKeysCount{native: 182, hit: 60, miss: 122, confidence: 2}, 900, 888},
+		"k2":  {fuzzyNameKeysCount{native: 182, hit: 106, miss: 76, confidence: 4}, 944, 888},
 		"k3":  {fuzzyNameKeysCount{native: 194, hit: 122, miss: 72, confidence: 12}, 940, 896},
-		"hk1": {fuzzyNameKeysCount{native: 122, hit: 50, miss: 72, confidence: 2}, 602, 600},
-		"hk2": {fuzzyNameKeysCount{native: 58, hit: 42, miss: 16, confidence: 6}, 234, 228},
-		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 772, miss: 1284, confidence: 158}, 4714, 4374},
-		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1245, miss: 906, confidence: 140}, 14587, 14303},
+		"hk1": {fuzzyNameKeysCount{native: 122, hit: 82, miss: 40, confidence: 6}, 630, 600},
+		"hk2": {fuzzyNameKeysCount{native: 58, hit: 46, miss: 12, confidence: 6}, 238, 228},
+		"bk":  {fuzzyNameKeysCount{native: 2056, hit: 1434, miss: 622, confidence: 332}, 5202, 4374},
+		"tk":  {fuzzyNameKeysCount{native: 2151, hit: 1379, miss: 772, confidence: 194}, 14667, 14303},
+		"rk":  {fuzzyNameKeysCount{native: 865, hit: 489, miss: 376, confidence: 78}, 3969, 3757},
+		"sk":  {fuzzyNameKeysCount{native: 1159, hit: 743, miss: 416, confidence: 230}, 6409, 6145},
+		"dk":  {fuzzyNameKeysCount{native: 206, hit: 154, miss: 52, confidence: 12}, 1186, 1168},
+		"ck":  {fuzzyNameKeysCount{native: 2087, hit: 1799, miss: 288, confidence: 376}, 5897, 4917},
 	}
-	// The twin panels (tk01 to tk22) are counted as one group.
-	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard") {
+	// The blind panels are counted by group: tk (tk01 to tk22), bk, ck and dk (dk01, dk02).
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard", "rkeyboard", "skeyboard") {
 		values[panel.name] = panel.values
 		observations[panel.name] = ""
 	}
 	twin := map[string]map[[2]int]float64{}
-	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard") {
+	for _, panel := range keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard", "rkeyboard", "skeyboard") {
 		twin[panel.name] = panel.native
 	}
 	rounded := func(matched bool, confidence float64) float64 {
@@ -142,8 +149,17 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 		group := method
 		if n, ok := twin[method]; ok {
 			native, group = n, "tk"
-			if strings.HasPrefix(method, "bk") {
+			switch {
+			case strings.HasPrefix(method, "bk"):
 				group = "bk"
+			case strings.HasPrefix(method, "ck"):
+				group = "ck"
+			case strings.HasPrefix(method, "dk"):
+				group = "dk"
+			case strings.HasPrefix(method, "rk"):
+				group = "rk"
+			case strings.HasPrefix(method, "sk"):
+				group = "sk"
 			}
 		} else {
 			native = fuzzyNameKeysPanel(t, observations[method], len(vals))
@@ -192,4 +208,66 @@ func TestLastNameKeyboardFuzzyPanelsNativeRows(t *testing.T) {
 			t.Errorf("%s: %s exact=%d base=%d, want %s exact=%d base=%d", group, tl.fuzzyNameKeysCount, tl.exact, tl.base, want[group].fuzzyNameKeysCount, want[group].exact, want[group].base)
 		}
 	}
+}
+
+// NATIVE duplicate_fuzzy_panels/org.tsv group dkeyboard dk01 (both routes, API
+// 62.0 and 67.0, two repeats): every pair of a stem and a variant with the same
+// substitution positions and key steps, a flat score between 91.6 and 92.5 and
+// a different Metaphone 3 code is a native match at 96, whether the codes are
+// near (one character apart) or far. The Metaphone code distance is therefore
+// not the component the flat score lacks. Glade keeps these pairs below
+// keyboardFallbackMargin.
+func TestLastNameKeyboardNearAndFarCodesMatchNatively(t *testing.T) {
+	var panel keyboardNativePanel
+	for _, p := range keyboardTwinPanels(t, "dkeyboard") {
+		if p.name == "dk01" {
+			panel = p
+		}
+	}
+	pairs, far := 0, 0
+	for i, a := range panel.values {
+		for j, b := range panel.values {
+			x, y := lastNameApostrophes.Replace(foldText(a)), lastNameApostrophes.Replace(foldText(b))
+			score, ok := keyboardFlatDistance(x, y)
+			if i >= j || !ok || score < 91.6 || score >= 92.5 || lastNameWordKey(x) != lastNameWordKey(y) || lastNameMetaphone3(x) == lastNameMetaphone3(y) {
+				continue
+			}
+			pairs++
+			if panel.native[[2]int{i, j}] != 96 || panel.native[[2]int{j, i}] != 96 {
+				t.Errorf("%s/%s: native %v/%v, want 96", a, b, panel.native[[2]int{i, j}], panel.native[[2]int{j, i}])
+			}
+			if matched, _ := fuzzyLastName(a, b, false); matched {
+				t.Errorf("%s/%s: Glade matches below the margin at %.2f", a, b, score)
+			}
+			if lev(lastNameMetaphone3(x), lastNameMetaphone3(y)) >= 3 {
+				far++
+			}
+		}
+	}
+	t.Logf("%d pairs, %d with codes three or more characters apart", pairs, far)
+	if pairs != 21 || far < 10 {
+		t.Errorf("%d pairs, %d far; want 21 and at least 10", pairs, far)
+	}
+}
+
+// lev is the edit distance of two strings.
+func lev(a, b string) int {
+	ra, rb := []rune(a), []rune(b)
+	prev := make([]int, len(rb)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i := 1; i <= len(ra); i++ {
+		cur := make([]int, len(rb)+1)
+		cur[0] = i
+		for j := 1; j <= len(rb); j++ {
+			cost := 1
+			if ra[i-1] == rb[j-1] {
+				cost = 0
+			}
+			cur[j] = min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost)
+		}
+		prev = cur
+	}
+	return prev[len(rb)]
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/apexcov"
 )
 
 func BenchmarkExecTriggerDML(b *testing.B) {
@@ -37,6 +39,47 @@ for (Integer i = 0; i < 25; i++) {
 		}); err != nil {
 			b.Fatal(err)
 		}
+		if _, err := machine.Execute(program); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// BenchmarkExecTriggerDMLCoverage is BenchmarkExecTriggerDML with code
+// coverage on: every trigger statement reaches an apexcov.Recorder.
+func BenchmarkExecTriggerDMLCoverage(b *testing.B) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	a.Name = a.Name + '!';
+}
+`)
+	if err != nil {
+		b.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+for (Integer i = 0; i < 25; i++) {
+	insert new Account(Name = 'Acme');
+}
+`)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		machine := New(nil)
+		org := testDataOrg()
+		machine.SetOrg(&org)
+		if err := machine.RegisterTrigger(Trigger{
+			Name:      "AccountBeforeInsert",
+			Object:    "Account",
+			Timing:    triggerTimingBefore,
+			Operation: "insert",
+			Program:   triggerProgram,
+			File:      "AccountBeforeInsert.trigger",
+		}); err != nil {
+			b.Fatal(err)
+		}
+		machine.SetCoverage(apexcov.NewRecorder())
 		if _, err := machine.Execute(program); err != nil {
 			b.Fatal(err)
 		}

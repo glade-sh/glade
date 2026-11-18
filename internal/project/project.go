@@ -105,6 +105,7 @@ type Project struct {
 	PermissionSetGroupFiles     []string                   `json:"permissionSetGroupFiles,omitempty"`
 	MutingPermissionSetFiles    []string                   `json:"mutingPermissionSetFiles,omitempty"`
 	BusinessHoursSettingsFiles  []string                   `json:"businessHoursSettingsFiles,omitempty"`
+	SharingSettingsFiles        []string                   `json:"sharingSettingsFiles,omitempty"`
 	MatchingRuleFiles           []string                   `json:"matchingRuleFiles,omitempty"`
 	DuplicateRuleFiles          []string                   `json:"duplicateRuleFiles,omitempty"`
 	PermissionAssignmentFiles   []string                   `json:"permissionAssignmentFiles"`
@@ -784,6 +785,7 @@ func load(root string, v *inputview.View, stack map[string]bool, dependency bool
 	sort.Strings(p.PermissionSetGroupFiles)
 	sort.Strings(p.MutingPermissionSetFiles)
 	sort.Strings(p.BusinessHoursSettingsFiles)
+	sort.Strings(p.SharingSettingsFiles)
 	sort.Strings(p.DuplicateRuleFiles)
 	sort.Strings(p.MatchingRuleFiles)
 	sort.Strings(p.PermissionAssignmentFiles)
@@ -858,6 +860,7 @@ func dedupeProjectFiles(p *Project) {
 	p.PermissionSetGroupFiles = dedupeFilePaths(keys, p.PermissionSetGroupFiles)
 	p.MutingPermissionSetFiles = dedupeFilePaths(keys, p.MutingPermissionSetFiles)
 	p.BusinessHoursSettingsFiles = dedupeFilePaths(keys, p.BusinessHoursSettingsFiles)
+	p.SharingSettingsFiles = dedupeFilePaths(keys, p.SharingSettingsFiles)
 	p.DuplicateRuleFiles = dedupeFilePaths(keys, p.DuplicateRuleFiles)
 	p.MatchingRuleFiles = dedupeFilePaths(keys, p.MatchingRuleFiles)
 	p.PermissionAssignmentFiles = dedupeFilePaths(keys, p.PermissionAssignmentFiles)
@@ -2368,6 +2371,8 @@ func collectFiles(root string, p *Project, ignore *forceIgnoreSet) error {
 			p.PermissionSetFiles = append(p.PermissionSetFiles, path)
 		case strings.EqualFold(filepath.Base(path), "BusinessHours.settings-meta.xml"), strings.EqualFold(filepath.Base(path), "BusinessHours.settings"):
 			p.BusinessHoursSettingsFiles = append(p.BusinessHoursSettingsFiles, path)
+		case strings.EqualFold(filepath.Base(path), "Sharing.settings-meta.xml"), strings.EqualFold(filepath.Base(path), "Sharing.settings"):
+			p.SharingSettingsFiles = append(p.SharingSettingsFiles, path)
 		case strings.HasSuffix(lower, ".matchingrule"), strings.HasSuffix(lower, ".matchingrule-meta.xml"):
 			p.MatchingRuleFiles = append(p.MatchingRuleFiles, path)
 		case strings.HasSuffix(lower, ".duplicaterule"), strings.HasSuffix(lower, ".duplicaterule-meta.xml"):

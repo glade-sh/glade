@@ -1415,6 +1415,17 @@ var nameVariants = func() map[string]bool {
 	return out
 }()
 
+// nameVariantHeads are the candidate names with a dictionary entry.
+var nameVariantHeads = func() map[string]bool {
+	out := map[string]bool{}
+	for _, line := range strings.Split(strings.TrimSpace(nameVariantTable), "\n") {
+		if names := strings.Fields(line); len(names) > 1 {
+			out[strings.ReplaceAll(names[0], "_", " ")] = true
+		}
+	}
+	return out
+}()
+
 // nameVariantOf reports an existing name the candidate's dictionary entry lists.
 func nameVariantOf(candidate, existing string) bool {
 	return nameVariants[candidate+"\x00"+existing]

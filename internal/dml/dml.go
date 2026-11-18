@@ -18,6 +18,9 @@ type Engine struct {
 	PermissionUserFields map[string]storage.Value
 	// UserHasCustomPermission consults the host's current execution-user context.
 	UserHasCustomPermission func(string) bool
+	// PermissionAssignmentHidden reports a test-made assignment the host's
+	// current context does not apply yet.
+	PermissionAssignmentHidden func(storage.Record) bool
 	// DuplicateMatcher lets Apex apply its current sharing and field access
 	// through the common duplicate evaluator. Non-Apex callers use the evaluator directly.
 	DuplicateMatcher func(storage.DuplicateRule, storage.Record, func(storage.ID) bool) (DuplicateResult, bool)
@@ -90,6 +93,10 @@ type Engine struct {
 	// FlowFaultInTest reports a run inside a test, where Salesforce words a
 	// duplicate-value fault without the field or the record.
 	FlowFaultInTest func() bool
+	// UserModeRecordVisible reports whether the running user sees a record.
+	// A Flow that runs in user mode (runInMode UserMode) skips Update Records
+	// targets it cannot see.
+	UserModeRecordVisible func(objectName string, record storage.Record) bool
 
 	platformEventInterview bool
 	// recordTriggeredFlow is positive while a record-triggered after-save flow
@@ -107,6 +114,12 @@ type Engine struct {
 	flowDepth                 int
 	summaryOrder              []string
 	summaryUpdates            map[string]SummaryUpdate
+	summaryHold               *storage.SummaryHold
+	summaryHoldRelations      []heldSummaryRelation
+	summaryHoldSuspended      bool
+	summaryTakeScope          map[string]bool
+	summaryRendered           map[string]storage.Record
+	summaryRenderedOrder      []string
 	automationRoll            map[string]bool
 	uniqueBatch               *uniqueBatchContext
 	activityRefresh           *activityRefreshBatch
@@ -249,6 +262,10 @@ type Options struct {
 	AllowApexIDLookupUpsert bool
 	// Test-context emptyRecycleBin releases membership while retaining deleted rows.
 	RetainEmptiedRecycleBinRecords bool
+	// ScaledNumberOverflow selects the Apex insert rejection of an integer
+	// part too large for a Percent or Number field with a scale: 0 off, 1 the
+	// API 62-66 wording, 2 the API 67+ wording.
+	ScaledNumberOverflow int
 }
 
 type SummaryUpdate struct {
@@ -361,6 +378,7 @@ func (e *Engine) RunAutolaunchedFlowWithOutput(rule storage.FlowRule, input Flow
 	}
 	frame := newFlowFrame()
 	frame.autolaunched = true
+	frame.userMode = strings.EqualFold(strings.TrimSpace(rule.RunInMode), "UserMode")
 	frame.stepTargets = rule.StepTargets
 	frame.textTemplates = cloneFlowTextTemplates(rule.TextTemplates)
 	for name, value := range input.Scalars {
@@ -980,15 +998,23 @@ func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
 		return nil
 	}
 	updates := make([]SummaryUpdate, 0, len(e.summaryOrder))
+	var kept []string
 	for _, key := range e.summaryOrder {
+		if e.summaryTakeScope != nil && !e.summaryTakeScope[key] {
+			kept = append(kept, key)
+			continue
+		}
 		update, ok := e.summaryUpdates[key]
+		delete(e.summaryUpdates, key)
 		if !ok || update.Object == "" || update.Before.ID == "" || update.After.ID == "" {
 			continue
 		}
 		updates = append(updates, update)
 	}
-	e.summaryOrder = nil
-	e.summaryUpdates = nil
+	e.summaryOrder = kept
+	if len(kept) == 0 {
+		e.summaryUpdates = nil
+	}
 	return updates
 }
 
@@ -1011,6 +1037,7 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 	if err := e.validateManagedShareInsert(record); err != nil {
 		return "", err
 	}
+	normalizeTextWrites(object.Definition, e.Org.Namespace, &record)
 	normalizeNameFields(objectName, object.Definition, &record)
 	if err := validateBusinessAccountContacts(objectName, object.Definition, record); err != nil {
 		return "", err
@@ -1073,6 +1100,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string, captur
 		originalFields = capturedInsert[0]
 	}
 	if err := validateFieldsForOperation(object.Definition, e.Org.Namespace, record, nil, originalFields); err != nil {
+		return "", err
+	}
+	if err := e.validateScaledNumberOverflow(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
 	e.applyQuoteLineItemDerivedFields(&record)

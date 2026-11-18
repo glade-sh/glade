@@ -95,6 +95,9 @@ func (vm *VM) currentUserHasDirectPermission(permission string) bool {
 // (r6flow_expiry); group and uncaptured states keep the existing lookup.
 func (vm *VM) currentUserHasPermission(permission string) bool {
 	return storage.CustomPermissionGrantedWhere(vm.Org, storage.ID(vm.currentUserID()), vm.currentUserPermissionFields(), permission, func(assignment storage.Record) bool {
+		if vm.permissionAssignmentNotYetApplied(assignment, vm.currentUserID()) {
+			return false
+		}
 		if group, ok := assignment.GetField("PermissionSetGroupId"); ok && storageValueIDText(group) != "" {
 			return true
 		}
@@ -686,7 +689,7 @@ func (vm *VM) enforceUserModeDMLAccess(op string, value Value, accessLevel Value
 // (native partial_dml_multifield throw rows, APIs 62.0, 67.0 and 68.0).
 func userModeFieldDMLException(op, objectName string, record Value, fields []string, index int) error {
 	message := fmt.Sprintf("Operation failed due to fields being inaccessible on Sobject %s, check errors on Exception or Result! ", objectName)
-	exception := Object("DmlException")
+	exception := Object("System.DmlException")
 	exception.Fields["message"] = String(message)
 	types := make([]string, index+1)
 	results := make([]dml.Result, index+1)
@@ -841,6 +844,9 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 		if strings.EqualFold(canonicalField, "Id") || vm.sobjectFormulaField(objectName, canonicalField) {
 			continue
 		}
+		if vm.anonymousMasterDetailUpdate(op) && vm.lockedMasterDetailField(objectName, canonicalField) {
+			continue
+		}
 		// A queried null User field that no assignment or constructor argument
 		// set is not written: native user_self_update queriedRoleActive (API
 		// 67.0) saves a queried null ManagerId that an explicit null denies.
@@ -848,6 +854,9 @@ func (vm *VM) userModeDMLRecordAccess(op string, record Value, objectPermission,
 			continue
 		}
 		allowed := vm.currentUserFieldPermissionWithScope(objectName, canonicalField, fieldPermission, scopedPermissionSetID)
+		if allowed && vm.adminLegacyExplicitUserModeFieldDenied(op, objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
+			allowed = false
+		}
 		if allowed && !wideAccountRecord && vm.adminStandardCustomFieldDMLDenied(op, record, objectName, canonicalField, fieldPermission, scopedPermissionSetID) {
 			allowed = false
 		}
@@ -1398,6 +1407,12 @@ func (vm *VM) enforceDMLRecordAccess(op string, value Value, externalIDField str
 			// otherUserTitle and otherStandardUserTitle rows); the DML record
 			// access check reports it.
 			if strings.EqualFold(record.Object, "User") && (op == "update" || op == "upsert") {
+				continue
+			}
+			// Native hidden_record_grid rows (APIs 62.0-67.0, every sharing
+			// declaration): a default-mode update of a hidden custom-object
+			// record under runAs is a DML row failure, not a SecurityException.
+			if op == "update" && hasSuffixFold(record.Object, "__c") && vm.testContext != nil && vm.testContext.RunAsDepth > vm.testContext.PackageRunAsDepth && apexversion.AtLeast(vm.currentSourceExecutionPolicy().APIVersion, 62) {
 				continue
 			}
 			return newExceptionError("SecurityException", fmt.Sprintf("Access to record '%s' denied", stored.ID))
@@ -2249,6 +2264,9 @@ func (vm *VM) assignedPermissionSources(userID string, activeOnly bool) []permis
 		if record.System.IsDeleted {
 			continue
 		}
+		if vm.permissionAssignmentNotYetApplied(record, userID) {
+			continue
+		}
 		group, hasGroup := record.GetField("PermissionSetGroupId")
 		if activeOnly && (!hasGroup || storageValueIDText(group) == "") {
 			active, known := dml.PermissionAssignmentState(record, func() time.Time { return vm.fakeNow })
@@ -2537,4 +2555,134 @@ func (vm *VM) deployedPermissionSetIDs() []string {
 		}
 	}
 	return out
+}
+
+// permissionAssignmentNotYetApplied reports a permission set assignment that
+// the running user's current context does not see. Natively the grant of a set
+// that a test assigns to the running user (from the method, a runAs block,
+// @TestSetup or around Test.startTest) is absent outside System.runAs and
+// inside the runAs block that made the assignment; a block entered afterwards
+// applies it until that block ends (permset_in_test rows, APIs 62.0 and
+// 67.0). Other users' runAs blocks and assignments that existed before the test
+// keep the immediate grant. An asynchronous job of the user who ran the test
+// reads the grant as the code that drains it does (residuals.tsv A1-A9).
+func (vm *VM) permissionAssignmentNotYetApplied(assignment storage.Record, userID string) bool {
+	if !assignment.TestAssigned || vm == nil || vm.testContext == nil || vm.permAssignAll || userID == "" {
+		return false
+	}
+	principal := vm.currentUserID()
+	if !storage.IDsEqual(storage.ID(userID), storage.ID(principal)) {
+		return false
+	}
+	if assignee, ok := assignment.GetField("AssigneeId"); !ok || !storage.IDsEqual(storage.ID(storageValueIDText(assignee)), storage.ID(principal)) {
+		return false
+	}
+	runner := vm.permRunnerUserID
+	if vm.userRunAsDepth() == 0 {
+		runner = principal
+	}
+	if runner == "" || !storage.IDsEqual(storage.ID(runner), storage.ID(principal)) {
+		// Inside the block of a user other than the test runner, only an
+		// assignment that block made for itself is hidden from it (native
+		// PsrUraTest.userRecordAccessInsideBlock, API 62.0: permAfter=false).
+		if vm.userRunAsDepth() == 0 || vm.permAssignVisible == nil {
+			return false
+		}
+		_, seen := vm.permAssignVisible[assignment.ID]
+		return !seen
+	}
+	_, seen := vm.permAssignVisible[assignment.ID]
+	return !seen
+}
+
+// userRunAsDepth counts the runAs blocks that run as a user. A System.runAs of a
+// Version does not change the user, so it does not count (native
+// permset_in_test/residuals.tsv PsrVersionTest: a Version block, plain or
+// holding a runAs of the running user, does not see an assignment the test made
+// and does not unlock it).
+func (vm *VM) userRunAsDepth() int {
+	depth := vm.testContext.RunAsDepth - vm.testContext.PackageRunAsDepth
+	if depth < 0 {
+		return 0
+	}
+	return depth
+}
+
+// beginRunAsPermissionFrame records which test-made assignments a runAs block
+// sees at its start and returns the function that restores the outer frame.
+func (vm *VM) beginRunAsPermissionFrame(userBefore string) func() {
+	previousVisible, previousRunner := vm.permAssignVisible, vm.permRunnerUserID
+	if vm.testContext != nil && vm.userRunAsDepth() == 0 {
+		vm.permRunnerUserID = userBefore
+	}
+	visible := map[storage.ID]struct{}{}
+	if vm.Org != nil {
+		for _, record := range vm.Org.Objects["PermissionSetAssignment"].Records {
+			if record.TestAssigned && !record.System.IsDeleted {
+				visible[record.ID] = struct{}{}
+			}
+		}
+	}
+	vm.permAssignVisible = visible
+	return func() { vm.permAssignVisible, vm.permRunnerUserID = previousVisible, previousRunner }
+}
+
+// markTestAssignedPermissionSets flags PermissionSetAssignment rows that a
+// successful insert created inside a test.
+func (vm *VM) markTestAssignedPermissionSets(results []dml.Result) {
+	if vm == nil || vm.Org == nil || vm.testContext == nil || vm.permAssignAll || vm.permAssignmentsPreexisting {
+		return
+	}
+	for _, result := range results {
+		if !result.Success || result.ID == "" {
+			continue
+		}
+		state := vm.Org.Objects["PermissionSetAssignment"]
+		storedID, record, ok := storage.LookupRecordByID(state.Records, result.ID)
+		if !ok || record.TestAssigned {
+			continue
+		}
+		storage.EnsureMutableObjectRecords(vm.Org, "PermissionSetAssignment")
+		state = vm.Org.Objects["PermissionSetAssignment"]
+		storedID, record, ok = storage.LookupRecordByID(state.Records, result.ID)
+		if !ok {
+			continue
+		}
+		vm.recordIsolationJournalMutation("PermissionSetAssignment", storedID, record, true)
+		record.TestAssigned = true
+		state.PutRecord(storedID, record)
+		vm.Org.Objects["PermissionSetAssignment"] = state
+	}
+}
+
+// MarkPermissionAssignmentsPreexisting makes the assignments this VM inserts
+// count as part of the org before the test, so they apply at once. The project
+// configuration (glade.yml test.permissionSets) seeds the sets a native
+// capture's org already held with it.
+func (vm *VM) MarkPermissionAssignmentsPreexisting() {
+	vm.permAssignmentsPreexisting = true
+}
+
+// adminLegacyExplicitUserModeFieldDenied applies the captured sharing_access_gate
+// d5_12 rows at source APIs 55.0 to 61.0: the test runner's administrator, with
+// no effective grant, cannot write an optional custom field of an ordinary
+// custom object through an explicit "insert as user" of one record. A permission
+// set that the test assigned to the administrator does not count (permset_in_test).
+func (vm *VM) adminLegacyExplicitUserModeFieldDenied(op, objectName, fieldName, method, scopedPermissionSetID string) bool {
+	if op != "insert" || !vm.explicitUserModeAccess || !vm.userModeSingleRecord || scopedPermissionSetID != "" || vm.testContext == nil || vm.testContext.RunAsDepth != 0 || vm.Org == nil {
+		return false
+	}
+	if !userModeCustomObjectFieldDMLAPI(vm.currentSourceExecutionPolicy().APIVersion) || !isCustomSchemaName(fieldName) {
+		return false
+	}
+	user := vm.fieldPermissionPrincipal()
+	if vm.currentUserProfileName(user) != "System Administrator" || !vm.adminFieldNeedsExplicitGrant(objectName, fieldName) {
+		return false
+	}
+	return !vm.adminExplicitFieldGrant(user, stringField(user, "ProfileId"), objectName, fieldName, method)
+}
+
+func (vm *VM) lockedMasterDetailField(objectName, fieldName string) bool {
+	_, field, ok := vm.sObjectFieldDefinition(objectName, fieldName)
+	return ok && field.MasterDetail && !field.ReparentableMasterDetail
 }

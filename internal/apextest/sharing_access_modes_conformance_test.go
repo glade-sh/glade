@@ -39,34 +39,9 @@ func TestSharingAccessFollowNativeConformance(t *testing.T) {
 
 // sharingAccessCarried maps family/api/method (api "*" for every API) to the
 // reason a native row is not asserted.
-var sharingAccessCarried = func() map[string]string {
-	// The api67_access_defaults adm rows are no counterexample: that capture
-	// deployed the administrator profile with the field grants, so the field
-	// was readable before the test assigned anything.
-	const assignment = "native does not apply a permission set that the test assigns to the running administrator to that test's own context (sharing_access_follow f_adm_* rows: Secret__c stays ungranted with and without the assignment); Glade applies the assignment at once"
-	const setup = "native setup fails: the administrator's default-mode Secret__c insert at 67.0+ lacks the field because the in-test Sam_Admin assignment does not apply (f_adm_* rows); sharing_access_follow repeats the shape with system-mode setup"
-	carried := map[string]string{
-		"sharing_access_gate/*/d5_12_ins_user_outside":      assignment,
-		"sharing_access_gate/67.0/d5_06_query_user":         setup,
-		"sharing_access_gate/67.0/d5_07_dynquery_user":      setup,
-		"sharing_access_follow/*/f_adm_psa_cond_ins_user":   assignment,
-		"sharing_access_follow/*/f_adm_psa_uncond_ins_user": assignment,
-		"sharing_access_follow/*/f_undelete_sh_user":        "undelete of a record deleted by another user: recycle-bin access is not modeled (native INSUFFICIENT_ACCESS_OR_READONLY)",
-		"sharing_access_extra/67.0/u3_05_cursor_user":       setup,
-		"sharing_access_extra/67.0/u3_05b_cursor_def":       setup,
-		"sharing_access_extra/67.0/u3_05c_cursor_sys":       setup,
-		"sharing_access_extra/68.0/u3_05_cursor_user":       setup,
-		"sharing_access_extra/68.0/u3_05b_cursor_def":       setup,
-		"sharing_access_extra/68.0/u3_05c_cursor_sys":       setup,
-	}
-	for _, api := range []string{"67.0", "68.0"} {
-		for _, method := range []string{"u1_07_child_denied", "u1_08_parent_denied", "u3_01_sys_clause_user_arg", "u3_02_user_clause_sys_arg",
-			"u3_03_binds_sys_clause_user_arg", "u3_03b_binds_user_clause_sys_arg", "u3_03c_count_sys_clause_user_arg", "u3_04_null_level"} {
-			carried["sharing_access_modes/"+api+"/"+method] = setup
-		}
-	}
-	return carried
-}()
+var sharingAccessCarried = map[string]string{
+	"sharing_access_follow/*/f_undelete_sh_user": "undelete of a record deleted by another user: recycle-bin access is not modeled (native INSUFFICIENT_ACCESS_OR_READONLY)",
+}
 
 func sharingAccessCarry(family, api, method string) (string, bool) {
 	for _, key := range []string{family + "/" + api + "/" + method, family + "/*/" + method} {
@@ -229,6 +204,146 @@ func TestSharingAccessUncapturedNeighborsKeepBase(t *testing.T) {
 		t.Run(api+"/"+method, func(t *testing.T) {
 			class := "SamNeighbor" + strings.TrimSuffix(api, ".0")
 			run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
+			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
+				t.Fatalf("missing runner observation %+v", run.Summary())
+			}
+			_, got, ok := strings.Cut(run.Suites[0].Cases[0].Problem.Message, " => ")
+			if !ok || strings.TrimSpace(got) != want {
+				t.Fatalf("base=%q\nglade=%q", want, run.Suites[0].Cases[0].Problem.Message)
+			}
+		})
+	}
+}
+
+// Native permset_in_test rows: a permission set that a test assigns to the
+// running user does not apply outside System.runAs. It applies inside a runAs
+// block entered after the assignment and is gone when the block ends, whether
+// the assignment came from the test method, a runAs block, @TestSetup or
+// Test.startTest. A block that makes the assignment does not see it itself.
+// Another user's assignment applies in that user's runAs block.
+func TestPermissionSetAssignedInTestNativeConformance(t *testing.T) {
+	runPermissionSetInTestFamily(t, "permset_in_test", 108)
+}
+
+// The same rule for a set that grants an Account custom field together with a
+// tab, an Apex class, a user permission, Account object access or a second
+// field, and for a runAs block of the same user.
+func TestPermissionSetAssignedInTestAccountFieldNativeConformance(t *testing.T) {
+	runPermissionSetInTestFamily(t, "permset_in_test_account", 22)
+}
+
+func runPermissionSetInTestFamily(t *testing.T, name string, count int) {
+	t.Helper()
+	family := filepath.Join("testdata/conformance", name)
+	raw, err := os.Open(filepath.Join(family, "org.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	reader := csv.NewReader(raw)
+	reader.Comma = '\t'
+	reader.LazyQuotes = true
+	reader.FieldsPerRecord = 3
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1+count || strings.Join(rows[0], ",") != "api,method,observation" {
+		t.Fatalf("incomplete native rows: %d", len(rows))
+	}
+	root := t.TempDir()
+	project := filepath.Join(family, "project")
+	err = filepath.WalkDir(project, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(project, path)
+		if err != nil {
+			return err
+		}
+		writeFile(t, filepath.Join(root, rel), string(body))
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := loadTestIndex(t, root)
+	for i, row := range rows[1:] {
+		api, method, want := row[0], row[1], row[2]
+		line := i + 2
+		t.Run(api+"/"+method, func(t *testing.T) {
+			prefix, name, _ := strings.Cut(method, ".")
+			class := prefix + strings.TrimSuffix(api, ".0")
+			run := Run(index, Options{SelectedClasses: []string{class}, SelectedMethod: name, NoDiskCache: true, Parallelism: 1, LimitMode: vm.LimitModeStrict})
+			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
+				t.Fatalf("missing runner observation %+v", run.Summary())
+			}
+			_, got, _ := strings.Cut(run.Suites[0].Cases[0].Problem.Message, " => ")
+			if strings.TrimSpace(got) != strings.TrimSpace(want) {
+				t.Fatalf("NATIVE %s %s/org.tsv:%d istest %s\nnative=%q\nglade =%q", method, name, line, api, want, strings.TrimSpace(got))
+			}
+		})
+	}
+}
+
+// Shapes next to the permset_in_test rows keep their earlier behavior: another
+// user's runAs still sees the assignment at once, and the administrator's
+// update, list insert and default-mode insert below API 62.0 still pass without
+// a field grant. They have no native rows. An asynchronous job and a Version
+// runAs read through the same lookup as the captured custom-permission and field
+// reads (residuals.tsv), so their describe reads here are hidden too.
+// expected.tsv records the base results.
+func TestPermissionSetAssignedInTestUncapturedNeighborsKeepBase(t *testing.T) {
+	neighbors := "testdata/permset_in_test_neighbors"
+	raw, err := os.Open(filepath.Join(neighbors, "expected.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer raw.Close()
+	reader := csv.NewReader(raw)
+	reader.Comma = '\t'
+	reader.LazyQuotes = true
+	reader.FieldsPerRecord = 3
+	rows, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 9 || strings.Join(rows[0], ",") != "api,method,observation" {
+		t.Fatalf("incomplete neighbor rows: %d", len(rows))
+	}
+	root := t.TempDir()
+	for _, source := range []struct{ from, to string }{
+		{"testdata/conformance/permset_in_test/project", ""},
+		{filepath.Join(neighbors, "classes"), "force-app/main/default/classes"},
+	} {
+		err := filepath.WalkDir(source.from, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.IsDir() {
+				return err
+			}
+			body, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			rel, err := filepath.Rel(source.from, path)
+			if err != nil {
+				return err
+			}
+			writeFile(t, filepath.Join(root, source.to, rel), string(body))
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	index := loadTestIndex(t, root)
+	for _, row := range rows[1:] {
+		api, method, want := row[0], row[1], row[2]
+		t.Run(api+"/"+method, func(t *testing.T) {
+			run := Run(index, Options{SelectedClasses: []string{"PfNeighbor" + strings.TrimSuffix(api, ".0")}, SelectedMethod: method, NoDiskCache: true, Parallelism: 1})
 			if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 || run.Suites[0].Cases[0].Problem == nil {
 				t.Fatalf("missing runner observation %+v", run.Summary())
 			}

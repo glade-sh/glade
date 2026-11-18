@@ -229,6 +229,10 @@ func sharingUpdateObservationMachine(cell sharingUpdateObservation) (*VM, storag
 }
 
 // These are local scope controls for paths not established by the capture.
+// Two gaps: they run at TransportAPI 68.0, which the capture grid (62.0, 66.0,
+// 67.0) does not cover, and they call Database.update(row) with allOrNone=true,
+// where a DmlException is the expected consequence of a denied row rather than
+// a per-row failure.
 func TestDefaultRunAsPrivateTextUpdateScope(t *testing.T) {
 	for _, variant := range []string{"captured", "hydrated caller", "explicit system field", "older source", "outside runAs", "package runAs", "trigger", "list", "other operation", "public model", "owner", "standard object", "numeric field", "unknown field", "other lookup", "no text", "null text", "numeric text", "other owner lookup", "owner transfer", "group owner"} {
 		t.Run(variant, func(t *testing.T) {
@@ -331,13 +335,13 @@ func TestDefaultPrivateTextUpdatePreservesExplicitAccessPaths(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = machine.ExecuteTestInClass(invoke, "UpdateScope")
-			want := "System.SecurityException"
 			// NATIVE hidden-update-user-DmlException sharing_access_modes/org.tsv:346 istest 67.0:
 			// an explicit "update as user" of a hidden record from a without-sharing
-			// class fails as a DML row.
-			if strings.Contains(body, "update as user") {
-				want = "System.DmlException"
-			}
+			// class fails as a DML row. NATIVE hidden_record_grid/rows.tsv HidWithoutShare
+			// aBoth and bBoth, 62.0, 66.0 and 67.0: so does the default-mode update and
+			// Database.update of a hidden record created in the test or in @TestSetup
+			// (INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY), not a SecurityException.
+			want := "System.DmlException"
 			var runtimeErr *RuntimeError
 			if !errors.As(err, &runtimeErr) || exceptionQualifiedTypeName(runtimeErr.Type) != want {
 				t.Fatalf("existing access path exception=%v", err)

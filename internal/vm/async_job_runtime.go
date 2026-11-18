@@ -77,6 +77,105 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 	return Null, err
 }
 
+// DrainTestSetupAsync runs the async work a @TestSetup method left queued,
+// the way stopTest runs it, so the setup org that every test method starts
+// from holds its effects. Natively a Queueable enqueued in @TestSetup runs at
+// the end of setup and its lines count as covered
+// (test_runner_coverage/org.tsv cvasync-setup, API 62.0 and 67.0).
+func (vm *VM) DrainTestSetupAsync() error {
+	if vm == nil || vm.testContext == nil {
+		return nil
+	}
+	// The end of setup runs the async jobs setup code queued, and the jobs
+	// those jobs queue (a batch finish() that enqueues a Queueable), the way
+	// stopTest runs them: Queueable, @future, Batch Apex and scheduled Apex.
+	// It delivers no platform event and no change data capture event
+	// (test_runner_coverage_carry Setup*Test and R3*Test rows, API 62.0 and
+	// 67.0). Test.getEventBus().deliver() in setup delivers as it always does.
+	var futures []storage.ID
+	pending := false
+	for _, job := range vm.testContext.AsyncJobs {
+		if !setupDrainedJobKind(job.Kind) {
+			continue
+		}
+		pending = true
+		if job.Kind == "Future" {
+			futures = append(futures, storage.ID(job.ID))
+		}
+	}
+	if !pending {
+		return nil
+	}
+	// The end of setup drains like stopTest: a Queueable that chains another
+	// fails with the stopTest AsyncException (native SetupChainTest rows).
+	previousStopped, previousPreserve, previousStopDraining := vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining
+	previousStart := vm.testContext.AsyncStartIndex
+	vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining = true, true, true
+	var kept []AsyncJob
+	var err error
+	for iteration := 0; iteration < maxLoopIterations; iteration++ {
+		var run []AsyncJob
+		for _, job := range vm.testContext.AsyncJobs {
+			if setupDrainedJobKind(job.Kind) && !job.Deferred {
+				run = append(run, job)
+			} else {
+				kept = append(kept, job)
+			}
+		}
+		if len(run) == 0 {
+			break
+		}
+		vm.testContext.AsyncJobs, vm.testContext.AsyncStartIndex = run, 0
+		if iteration == 0 {
+			vm.prepareTestStopAsyncJobs()
+		}
+		vm.setupDrainPasses = iteration + 1
+		processed := vm.asyncJobsProcessed
+		if err = vm.drainTestAsync(&Result{}); err != nil {
+			break
+		}
+		if vm.asyncJobsProcessed == processed {
+			// Nothing ran: what is left never comes due here (an aborted or
+			// future-dated schedule). Stop, as drainTestWork does.
+			break
+		}
+	}
+	vm.testContext.AsyncJobs = append(kept, vm.testContext.AsyncJobs...)
+	vm.testContext.AsyncStartIndex = min(previousStart, len(vm.testContext.AsyncJobs))
+	vm.testContext.Stopped, vm.testContext.PreserveAsyncStatics, vm.testContext.StopDraining = previousStopped, previousPreserve, previousStopDraining
+	// A test method sees no AsyncApexJob row for an @future call its setup
+	// queued, while Queueable and batch rows stay (native SetupFutureTest
+	// and SetupQTest rows, test_runner_coverage_carry).
+	if vm.Org != nil && len(futures) > 0 {
+		object := vm.Org.Objects["AsyncApexJob"]
+		for _, id := range futures {
+			if record, ok := object.Records[id]; ok {
+				vm.recordIsolationJournalMutation("AsyncApexJob", id, record, true)
+				object.DeleteRecord(id)
+			}
+		}
+		vm.Org.Objects["AsyncApexJob"] = object
+	}
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		// A job's uncaught exception fails setup as an Apex exception, the way
+		// it would surface from setup code.
+		if len(thrown.stack) == 0 {
+			thrown.stack = vm.rawStackFrames()
+		}
+		return runtimeError(thrown.value, thrown.stack)
+	}
+	return err
+}
+
+func setupDrainedJobKind(kind string) bool {
+	switch kind {
+	case "Queueable", "Future", "BatchApex", "ScheduledApex":
+		return true
+	}
+	return false
+}
+
 // Queueables, futures and scheduled Apex submitted before startTest execute at
 // stopTest (async execution F036/F040), and so does Batch Apex (batch_event_async
 // two_beforeOnly and two_beforeAndInside, API 62/67). Scheduled batches expose
@@ -435,7 +534,7 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("batchJobs", 1); err != nil {
 		return Null, err
 	}
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize, DirectBatchSubmission: vm.currentAsyncKind == ""}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: cloneValueDetachedPreserveRefs(args[0]), BatchSize: batchSize, DirectBatchSubmission: vm.currentAsyncKind == "", QueueableBatchSubmission: vm.currentAsyncKind == "Queueable" && vm.testContext != nil}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -1126,6 +1225,7 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 		job := (*jobs)[jobIndex]
 		*jobs = append((*jobs)[:jobIndex], (*jobs)[jobIndex+1:]...)
 		processed++
+		vm.asyncJobsProcessed++
 		var asyncStaticSnapshot map[string]map[string]Value
 		var asyncStaticInitSnapshot map[string]staticInitState
 		// stopTest runs collected work with the caller's static state, including
@@ -1471,6 +1571,18 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		vm.executionUser, vm.testContext.CurrentUser = job.RunAsUser, job.RunAsUser
 		defer func() { vm.executionUser, vm.testContext.CurrentUser = previousExecutionUser, previousTestUser }()
 	}
+	// A job of a user other than the one who ran the test sees every assignment
+	// (sharing_access_modes d3 rows; residuals.tsv A5 and A6). A job of the test
+	// runner reads the grant the way the code that drains it does: hidden outside
+	// a runAs block, and inside one only what the block saw when it started
+	// (residuals.tsv PsrAsyncTest and the A1-A4, A7-A9 rows).
+	if vm.testContext != nil {
+		if runner := stringField(vm.defaultOrgUser(), "Id"); runner != "" && !storage.IDsEqual(storage.ID(runner), storage.ID(vm.currentUserID())) {
+			previousAll := vm.permAssignAll
+			vm.permAssignAll = true
+			defer func() { vm.permAssignAll = previousAll }()
+		}
+	}
 	switch job.Kind {
 	case "FlowAsyncPath":
 		return vm.runFlowAsyncPath(job, result)
@@ -1521,6 +1633,11 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 		vm.currentFinalizer = Value{}
 		jobTransaction := vm.beginDMLRollbackPoint(vm.testContext == nil, false)
 		bodyEntered := false
+		// Native as04 (surf_async_options, API 62 and 67): a Queueable body that
+		// does not implement Database.AllowsCallouts cannot call out.
+		previousCalloutDisabled := vm.futureCalloutDisabled
+		vm.futureCalloutDisabled = !vm.typeMatches(job.Object.Type, "Database.AllowsCallouts", make(map[string]bool))
+		defer func() { vm.futureCalloutDisabled = previousCalloutDisabled }()
 		_, err := vm.withAsyncLimitWindow(func() (Value, error) {
 			return vm.withQueueableJob(job, func() (Value, error) {
 				if staticExecute {
@@ -1545,6 +1662,9 @@ func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result, batchProjec
 			if err == nil {
 				vm.recordAsyncJob(job, "Completed", "")
 			}
+			// Native fn01 (surf_async_options, API 62 and 67): a Finalizer may call
+			// out even when its parent Queueable lacks Database.AllowsCallouts.
+			vm.futureCalloutDisabled = previousCalloutDisabled
 			finalizerErr := vm.runQueueableFinalizer(finalizer, job, result, err)
 			if err == nil {
 				err = finalizerErr
@@ -1829,7 +1949,7 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result, batchProjection ...*bool
 	projectNative = projectNative && !locatorStart && vm.capturedBatchFaultScope(scope)
 	projectedErrors := 0
 	chunks := batchChunks(scope, job.BatchSize)
-	if vm.testContext != nil && vm.testExecutionEntry != nil && job.DirectBatchSubmission && len(chunks) > 1 {
+	if vm.testContext != nil && vm.testExecutionEntry != nil && (job.DirectBatchSubmission || job.QueueableBatchSubmission) && len(chunks) > 1 {
 		// async_lifecycle_c14 Y4 (API 62/67 and 68): a test method may run one
 		// executeBatch chunk. The rejection is not catchable. Scoped to a test
 		// method entry so direct VM chunk-semantics runs keep multi chunks.

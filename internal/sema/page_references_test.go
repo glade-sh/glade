@@ -130,3 +130,16 @@ func TestPageReferenceDiagnosticPreservesCompilationRoute(t *testing.T) {
 		}
 	}
 }
+
+// A no-argument PageReference constructor does not compile natively.
+func TestPageReferenceNoArgumentConstructorIsRejected(t *testing.T) {
+	index := typesys.Build(project.Project{}, schema.Schema{})
+	for _, api := range []string{"62.0", "67.0"} {
+		if result := AnalyzeAnonymous(index, "PageReference p = new PageReference();", api); !result.HasErrors() {
+			t.Fatalf("new PageReference() accepted at API %s", api)
+		}
+		if result := AnalyzeAnonymous(index, "PageReference p = new PageReference('/x');", api); result.HasErrors() {
+			t.Fatalf("new PageReference('/x') rejected at API %s: %v", api, result.Diagnostics)
+		}
+	}
+}

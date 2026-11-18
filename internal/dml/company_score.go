@@ -126,7 +126,7 @@ func companyNumber(s string) bool {
 }
 func companyGap(s string, candidate bool) float64 {
 	if companyNumber(s) {
-		v := .12 + .08*float64(len(s)-1)
+		v := .12 + float64(.08*float64(len(s)-1))
 		if candidate {
 			v += .18
 		}
@@ -152,7 +152,7 @@ func companyTokenValue(a, b string) float64 {
 		for common < min(len(a), len(b)) && a[common] == b[common] {
 			common++
 		}
-		p := .21*float64(min(len(a), len(b))-common) + .15*math.Abs(float64(len(a)-len(b)))
+		p := float64(.21*float64(min(len(a), len(b))-common)) + float64(.15*math.Abs(float64(len(a)-len(b))))
 		return 1 - math.Max(.21, math.Min(.36, p))
 	}
 	sim := jaroWinkler(a, b)

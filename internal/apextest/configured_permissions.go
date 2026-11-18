@@ -62,6 +62,7 @@ func applyConfiguredTestPermissions(org *storage.OrgState, p project.Project) er
 	machine.SetTraceEnabled(false)
 	machine.SetOrg(org)
 	machine.EnableTestContext()
+	machine.MarkPermissionAssignmentsPreexisting()
 	program, err := vm.CompileAnonymous(statements.String())
 	if err != nil {
 		return fmt.Errorf("glade.yml: test permission assignments: %w", err)

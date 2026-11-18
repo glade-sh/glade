@@ -1,0 +1,22 @@
+{"api": "62.0", "debug": ["OBS|ks_clear_effect|0|0|0"], "error": "", "id": "ks_clear_effect", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_clear_effect|0|0|0"], "error": "", "id": "ks_clear_effect", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_clone_add|14|{a_b__c, aaa_x, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, ...}"], "error": "", "id": "ks_clone_add", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_clone_add|14|{a_b__c, aaa_x, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, ...}"], "error": "", "id": "ks_clone_add", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_clone_addall|15|{a_b__c, aaa_x, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, ...}"], "error": "", "id": "ks_clone_addall", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_clone_addall|15|{a_b__c, aaa_x, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, ...}"], "error": "", "id": "ks_clone_addall", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_clone_text|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id"], "error": "", "id": "ks_clone_text", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_clone_text|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id"], "error": "", "id": "ks_clone_text", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_list_set|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id"], "error": "", "id": "ks_list_set", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_list_set|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id"], "error": "", "id": "ks_list_set", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_map_clone|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id|13"], "error": "", "id": "ks_map_clone", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_map_clone|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id|13"], "error": "", "id": "ks_map_clone", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_map_copy|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id|13"], "error": "", "id": "ks_map_copy", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_map_copy|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id|13"], "error": "", "id": "ks_map_copy", "route": "anonymous"}
+{"api": "62.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_plain_map_add", "route": "anonymous"}
+{"api": "67.0", "debug": [], "error": "System.FinalException: Collection is read-only", "id": "ks_plain_map_add", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_remove_effect|13|12|false|12|false|12|false"], "error": "", "id": "ks_remove_effect", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_remove_effect|13|12|false|12|false|12|false"], "error": "", "id": "ks_remove_effect", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|ks_u_addall|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id"], "error": "", "id": "ks_u_addall", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|ks_u_addall|{a_b__c, ab__c, alpha__c, createdbyid, createddate, id, isdeleted, lastmodifiedbyid, lastmodifieddate, name, ...}|id"], "error": "", "id": "ks_u_addall", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|fls|assigned"], "error": "", "id": "x_fls", "route": "anonymous"}

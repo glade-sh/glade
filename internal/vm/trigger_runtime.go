@@ -72,6 +72,16 @@ type triggerExecutionError struct {
 func (e *triggerExecutionError) Error() string { return e.detail }
 func (e *triggerExecutionError) Unwrap() error { return e.cause }
 
+// triggerDepthUnwind is the depth failure while it leaves the nested trigger
+// activations. Natively no Apex catch in an inner activation observes it: it
+// reaches the DML statement in the outermost trigger, which sees a catchable
+// DmlException or a failed SaveResult (trigger_depth_unwind, test_boundary_edges
+// trm_catch and trm_partial). It deliberately has no Unwrap to the exception,
+// so the Apex try/catch machinery cannot intercept it on the way out.
+type triggerDepthUnwind struct{ failure *triggerExecutionError }
+
+func (e *triggerDepthUnwind) Error() string { return e.failure.detail }
+
 // triggerActivation is one running trigger event, for the depth failure text.
 type triggerActivation struct{ object, timing, operation string }
 
@@ -338,6 +348,7 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollb
 				update.After.Object = objectName
 			}
 		}
+		engine.OverlayHeldSummary(&update)
 		byObject[objectName] = append(byObject[objectName], update)
 	}
 	clonedResults := false
@@ -708,7 +719,16 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 		for _, activation := range vm.triggerActivations {
 			detail.WriteString("\n" + strings.TrimSuffix(activation.object, "__c") + " trigger event " + triggerEventName(activation.timing, activation.operation))
 		}
-		return nil, &triggerExecutionError{cause: newExceptionError("DmlException", detail.String()), detail: detail.String()}
+		failure := &triggerExecutionError{cause: newExceptionError("DmlException", detail.String()), detail: detail.String()}
+		if vm.triggerDepth > 1 {
+			return nil, &triggerDepthUnwind{failure: failure}
+		}
+		return nil, failure
+	}
+	if vm.triggerDepth == 0 {
+		vm.outerTriggerLimits = vm.limits
+	} else if vm.triggerDepth == 1 {
+		vm.innerTriggerLimits = vm.limits
 	}
 	vm.triggerDepth++
 	// The text is built only for a depth failure; this runs for every trigger event.
@@ -721,9 +741,28 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 	for _, trigger := range triggers {
 		triggerFailures, err := vm.runTrigger(trigger, records, oldRecords, result)
 		if err != nil {
+			var unwind *triggerDepthUnwind
+			if vm.triggerDepth == 2 && errors.As(err, &unwind) {
+				// This activation was started by the DML statement of the
+				// outermost trigger: the failure surfaces there. The aborted chain's
+				// statements and queries are not counted, the outermost trigger's own
+				// up to that statement are (native review1 hd_swallow rows).
+				vm.restoreDepthCounters(vm.innerTriggerLimits)
+				vm.depthFailureSurfaced = true
+				return nil, unwind.failure
+			}
+			if vm.triggerDepth == 1 && vm.depthFailureSurfaced {
+				vm.depthFailureSurfaced = false
+				// Uncaught in the outermost trigger: its own work goes too
+				// (d2_limits: the caller sees only its own statements).
+				vm.restoreDepthCounters(vm.outerTriggerLimits)
+			}
 			return nil, err
 		}
 		mergeDMLFailuresInPlace(failures, triggerFailures)
+	}
+	if vm.triggerDepth == 1 {
+		vm.depthFailureSurfaced = false
 	}
 	if hasDMLFailures(failures) {
 		return failures, nil
@@ -812,6 +851,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	})
 	leaveBeforeUpdate := vm.enterBeforeUpdateTrigger(trigger, records)
 	defer leaveBeforeUpdate()
+	mutationSeqBefore := vm.collectionMutationSeq
 	caller := vm.Globals
 	callerTypes := vm.VarTypes
 	callerFinals := vm.finalLocals
@@ -875,6 +915,7 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		vm.callStack[lastCall] = callFrame{}
 		vm.callStack = vm.callStack[:lastCall]
 		vm.Globals = caller
+		vm.refreshCallerEscapedCollectionAliases(caller, mutationSeqBefore)
 		vm.VarTypes = callerTypes
 		vm.finalLocals = callerFinals
 		vm.closedSOQLLocals, vm.dynamicSOQLBindRoute, vm.bindFrame = callerClosedLocals, callerBindRoute, callerBindFrame
@@ -1240,4 +1281,9 @@ func (vm *VM) applyTriggerDMLChunks(op string, value Value, targets []*Value, al
 		}
 	}
 	return results, nil
+}
+
+func (vm *VM) restoreDepthCounters(snapshot Limits) {
+	vm.limits.Queries, vm.limits.QueryRows = snapshot.Queries, snapshot.QueryRows
+	vm.limits.DMLStatements, vm.limits.DMLRows = snapshot.DMLStatements, snapshot.DMLRows
 }

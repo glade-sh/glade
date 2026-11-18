@@ -1,0 +1,9 @@
+family=review_round12
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run and verified gone (ActiveScratchOrg query on the hub)
+payloads=OBS lines from the USER_DEBUG log, the uncaught exception (the row's error column) or the test failure message; no ids in any payload
+repeats=two clean runs; rows identical
+raw_runs=review15/out/20261118T035515Z and 20261118T035720Z (capture cache, not committed)
+shapes=on the key set of Schema.SObjectType.Account.fields.getMap() and of Account.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).fields.getMap(): addAll of an empty List, an empty Set and an empty Map's values(); removeAll of an empty Set; retainAll of a full copy; add of an existing key; addAll of a List holding only an existing key; a DEFERRED key set returned from a class method and then given an empty addAll, anonymous and inside an @IsTest method
+notes=addAll of an empty collection is a no-op that returns false on these read-only key sets, as are removeAll of an empty Set and retainAll of a full copy. add of an existing key, and addAll of a non-empty List even when it holds only existing keys, raise the uncatchable System.FinalException: Collection is read-only.

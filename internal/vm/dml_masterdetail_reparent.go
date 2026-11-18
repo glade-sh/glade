@@ -69,7 +69,7 @@ func (vm *VM) masterDetailReparentFailures(op string, records []storage.Record, 
 				locked = append(locked, name)
 			}
 		}
-		userMode := op == "update" && resolvedMode == "USER_MODE"
+		userMode := op == "update" && resolvedMode == "USER_MODE" && !vm.anonymousMasterDetailUpdate(op)
 		if userMode && i < len(targets) && targets[i] != nil {
 			// The record handed to DML keeps only changed fields. A queried
 			// master that was not touched still counts under user mode.
@@ -152,4 +152,16 @@ func (vm *VM) recordValueForMessage(record storage.Record, targets []*Value, i i
 	value := Object(record.Object)
 	value.Fields["Id"] = platformScalar("Id", string(record.ID))
 	return value
+}
+
+// An anonymous block that updates a record carrying its unchanged
+// non-reparentable master-detail value, in default mode, is not rejected at 67.0
+// (review_round6: top-level Database.update(c,false), a queried record and the
+// plain update all succeed; explicit user mode fails). Class, trigger and test
+// context keep the denial (RM rows; a class called from anonymous Apex too): the review3
+// grid (anonymous rows pass at 62.0 and 67.0 with and without custom fields,
+// administrator with a permission set) against the class and test rows
+// (apex_release_gates RM1 and RM15, review3 g_route), which fail at 67.0.
+func (vm *VM) anonymousMasterDetailUpdate(op string) bool {
+	return op == "update" && !vm.explicitUserModeDML && vm.currentClass == "" && len(vm.callStack) == 0 && !vm.currentTrigger && vm.testContext == nil
 }

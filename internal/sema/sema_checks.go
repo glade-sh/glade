@@ -486,6 +486,7 @@ func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFact
 		diagnostics = append(diagnostics, c.soqlBindExpressionDiagnostics(query, ctx, bindings)...)
 		diagnostics = append(diagnostics, c.queryFieldBindDiagnostics(query, ctx, bindings)...)
 		diagnostics = append(diagnostics, queryWindowBindDiagnostics(query, ctx, bindings)...)
+		diagnostics = append(diagnostics, queryOptionsBindDiagnostics(query, ctx, bindings)...)
 	}
 	for _, literal := range semaSOSLLiterals(source, spans) {
 		query, err := sosl.ParseInline(literal.text)
@@ -1061,6 +1062,25 @@ func queryWindowBindDiagnostics(query soql.Query, ctx queryTextContext, bindings
 		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, bind.name, bind.clause)...)
 	}
 	return diagnostics
+}
+
+// queryOptionsBindMessage is the deploy problem for a SET OPTIONS bind of
+// another declared type (api68_native queryoptions QO-COMPILE-BAD-67/68).
+const queryOptionsBindMessage = "SET OPTIONS bind variable must be of type Database.QueryOptions"
+
+func queryOptionsBindDiagnostics(query soql.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
+	name := query.OptionsBind
+	if name == "" || !semaBindName(name) {
+		return nil
+	}
+	typeName, declared := bindings[strings.ToLower(name)]
+	typeName = strings.ToLower(strings.Join(strings.Fields(typeName), ""))
+	if !declared || typeName == "" || typeName == "database.queryoptions" || typeName == "system.database.queryoptions" {
+		return nil
+	}
+	item := ctx.diagnostic("GLADESEMA_QUERY_BIND", queryOptionsBindMessage, ":"+name, findQueryIdentifier(ctx.queryText, ":"+name, 0))
+	item.NativeMessage = queryOptionsBindMessage
+	return []diagnostic.Diagnostic{item}
 }
 
 func queryNumericBindDiagnostics(ctx queryTextContext, bindings map[string]string, name, clause string) []diagnostic.Diagnostic {

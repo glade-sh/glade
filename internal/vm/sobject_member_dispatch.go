@@ -225,6 +225,8 @@ func (vm *VM) sObjectFieldMapCanonicalKeySet(value Value) (Value, bool) {
 	}
 	out := Set()
 	out.Type = "Set<String>"
+	out.describeKeySetText = true
+	out.describeKeySetReadOnly = true
 	seen := map[string]bool{}
 	for _, rawKey := range orderedValueMapKeys(value) {
 		fieldName, ok := sObjectFieldMapCanonicalFieldName(value.Map[rawKey])
@@ -240,6 +242,11 @@ func (vm *VM) sObjectFieldMapCanonicalKeySet(value Value) (Value, bool) {
 			fieldName = vm.describeFieldName(fieldName)
 		}
 		out.Set = append(out.Set, String(strings.ToLower(fieldName)))
+	}
+	// Writes through the key set reach the field map it came from
+	// (review_round9 ks_remove_effect, ks_clear_effect).
+	if vm != nil {
+		vm.bindMapKeySet(value, &out)
 	}
 	return out, true
 }

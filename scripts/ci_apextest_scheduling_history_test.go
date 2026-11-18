@@ -8,11 +8,25 @@ import (
 	"testing"
 )
 
+// nearMillis allows for each spread test rounding to a millisecond.
+func nearMillis(got, want int64) bool { return got-want <= 40 && want-got <= 40 }
+
+func profileMillis(tests []struct {
+	Name           string `json:"name"`
+	DurationMillis int64  `json:"durationMillis"`
+}) int64 {
+	var total int64
+	for _, test := range tests {
+		total += test.DurationMillis
+	}
+	return total
+}
+
 func TestCICase319BalanceFailureSchedulingProfile(t *testing.T) {
 	t.Setenv("GITHUB_EVENT_NAME", "push")
 	for _, invalid := range []bool{false, true} {
 		t.Run(map[bool]string{false: "valid", true: "invalid"}[invalid], func(t *testing.T) {
-			fixture := durationHistoryRouteFixture(t, fixturePackage, [2]float64{193.89, 51.65})
+			fixture := durationHistoryRouteSpreadFixture(t, fixturePackage, [2]float64{193.89, 51.65})
 			setPlanHistoryUsed(t, fixture.shards[:], true)
 			profile := filepath.Join(t.TempDir(), "scheduling.json")
 			t.Setenv("CI_APEXTEST_SCHEDULING_PROFILE", profile)
@@ -45,7 +59,7 @@ func TestCICase319BalanceFailureSchedulingProfile(t *testing.T) {
 					DurationMillis int64  `json:"durationMillis"`
 				} `json:"tests"`
 			}
-			if err := json.Unmarshal(data, &got); err != nil || got.Package != fixturePackage || len(got.Tests) != 2 || got.Tests[0].DurationMillis != 193890 || got.Tests[1].DurationMillis != 51650 {
+			if err := json.Unmarshal(data, &got); err != nil || got.Package != fixturePackage || len(got.Tests) != 64 || !nearMillis(profileMillis(got.Tests[:32]), 193890) || !nearMillis(profileMillis(got.Tests[32:]), 51650) {
 				t.Fatalf("unexpected profile %s: %v", data, err)
 			}
 		})

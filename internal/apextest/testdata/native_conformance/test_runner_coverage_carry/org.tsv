@@ -1,0 +1,759 @@
+api	repeat	step	kind	test_class	method	component	covered	detail
+62.0	r1	mix-full	test	CarryMixTest	Alpha			Pass|
+62.0	r1	mix-full	test	CarryMixTest	Gamma			Pass|
+62.0	r1	mix-full	test	CarryMixTest	Zeta			Pass|
+62.0	r1	mix-full	test	CarryMixTest	apple			Pass|
+62.0	r1	mix-full	test	CarryMixTest	beta			Pass|
+62.0	r1	mix-full	test	CarryMixTest	delta			Pass|
+62.0	r1	mix-full	run					testRunCoverage=76% classes=CarryMix:11/11;CarryOther:2/2;CvTrig:0/4
+62.0	r1	mix-full	per	CarryMixTest	Alpha	CarryMix	2,3	
+62.0	r1	mix-full	per	CarryMixTest	Alpha	CvTrig		
+62.0	r1	mix-full	per	CarryMixTest	Gamma	CarryMix	2,11,12	
+62.0	r1	mix-full	per	CarryMixTest	Gamma	CvTrig		
+62.0	r1	mix-full	per	CarryMixTest	Zeta	CarryMix	2,11,14,15,16	
+62.0	r1	mix-full	per	CarryMixTest	Zeta	CvTrig		
+62.0	r1	mix-full	per	CarryMixTest	apple	CarryMix	2,5,6,11,14,15	
+62.0	r1	mix-full	per	CarryMixTest	apple	CvTrig		
+62.0	r1	mix-full	per	CarryMixTest	beta	CarryMix	2,5,8,9,11,14,15	
+62.0	r1	mix-full	per	CarryMixTest	beta	CvTrig		
+62.0	r1	mix-full	per	CarryMixTest	delta	CarryMix	2,5,8,11,14,15	
+62.0	r1	mix-full	per	CarryMixTest	delta	CarryOther	2,3	
+62.0	r1	mix-full	per	CarryMixTest	delta	CvTrig		
+62.0	r1	mix-gamma	test	CarryMixTest	Gamma			Pass|
+62.0	r1	mix-gamma	run					testRunCoverage=73% classes=CarryMix:11/11;CvTrig:0/4
+62.0	r1	mix-gamma	per	CarryMixTest	Gamma	CarryMix	11,12	
+62.0	r1	mix-gamma	per	CarryMixTest	Gamma	CvTrig		
+62.0	r1	mix-full-async	test	CarryMixTest	Alpha			Pass|
+62.0	r1	mix-full-async	test	CarryMixTest	Gamma			Pass|
+62.0	r1	mix-full-async	test	CarryMixTest	Zeta			Pass|
+62.0	r1	mix-full-async	test	CarryMixTest	apple			Pass|
+62.0	r1	mix-full-async	test	CarryMixTest	beta			Pass|
+62.0	r1	mix-full-async	test	CarryMixTest	delta			Pass|
+62.0	r1	mix-full-async	run					testRunCoverage=100% classes=CarryMix:11/11;CarryOther:2/2
+62.0	r1	mix-full-async	per	CarryMixTest	Alpha	CarryMix	2,3	
+62.0	r1	mix-full-async	per	CarryMixTest	Gamma	CarryMix	2,11,12	
+62.0	r1	mix-full-async	per	CarryMixTest	Zeta	CarryMix	2,11,14,15,16	
+62.0	r1	mix-full-async	per	CarryMixTest	apple	CarryMix	2,5,6,11,14,15	
+62.0	r1	mix-full-async	per	CarryMixTest	beta	CarryMix	2,5,8,9,11,14,15	
+62.0	r1	mix-full-async	per	CarryMixTest	delta	CarryMix	2,5,8,11,14,15	
+62.0	r1	mix-full-async	per	CarryMixTest	delta	CarryOther	2,3	
+62.0	r1	setup	test	CarrySetupTest	first			Pass|
+62.0	r1	setup	test	CarrySetupTest	second			Pass|
+62.0	r1	setup	run					testRunCoverage=50% classes=CarryS:4/4;CvTrig:0/4
+62.0	r1	setup	per	CarrySetupTest	first	CarryS	2,3,5,6	
+62.0	r1	setup	per	CarrySetupTest	first	CvTrig		
+62.0	r1	setup	per	CarrySetupTest	second	CarryS	2,5	
+62.0	r1	setup	per	CarrySetupTest	second	CvTrig		
+62.0	r1	x12-par-on	test	CarryX1Test	one			Pass|
+62.0	r1	x12-par-on	test	CarryX1Test	two			Pass|
+62.0	r1	x12-par-on	test	CarryX2Test	alpha			Pass|
+62.0	r1	x12-par-on	test	CarryX2Test	three			Pass|
+62.0	r1	x12-par-on	run					testRunCoverage=100% classes=CarryShared:8/8
+62.0	r1	x12-par-on	per	CarryX1Test	one	CarryShared	2,3	
+62.0	r1	x12-par-on	per	CarryX1Test	two	CarryShared	2,5,6	
+62.0	r1	x12-par-on	per	CarryX2Test	alpha	CarryShared	11,12	
+62.0	r1	x12-par-on	per	CarryX2Test	three	CarryShared	8,9,11	
+62.0	r1	x12-par-off	test	CarryX1Test	one			Pass|
+62.0	r1	x12-par-off	test	CarryX1Test	two			Pass|
+62.0	r1	x12-par-off	test	CarryX2Test	alpha			Pass|
+62.0	r1	x12-par-off	test	CarryX2Test	three			Pass|
+62.0	r1	x12-par-off	run					testRunCoverage=100% classes=CarryShared:8/8
+62.0	r1	x12-par-off	per	CarryX1Test	one	CarryShared	2,3	
+62.0	r1	x12-par-off	per	CarryX1Test	two	CarryShared	2,5,6	
+62.0	r1	x12-par-off	per	CarryX2Test	alpha	CarryShared	11,12	
+62.0	r1	x12-par-off	per	CarryX2Test	three	CarryShared	8,9,11	
+62.0	r1	SetupQTest	test	SetupQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r1	SetupQTest	test	SetupQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r1	SetupQTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+62.0	r1	SetupQTest	per	SetupQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	SetupQTest	per	SetupQTest	observe	CvTrig	2,3,6	
+62.0	r1	SetupQTest	per	SetupQTest	observe	MarkerQ	2,3	
+62.0	r1	SetupQTest	per	SetupQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	SetupQTest	per	SetupQTest	observeAgain	CvTrig		
+62.0	r1	SetupQTest	per	SetupQTest	observeAgain	MarkerQ	2	
+62.0	r1	SetupTwoQTest	test	SetupTwoQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+62.0	r1	SetupTwoQTest	test	SetupTwoQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+62.0	r1	SetupTwoQTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+62.0	r1	SetupTwoQTest	per	SetupTwoQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	SetupTwoQTest	per	SetupTwoQTest	observe	CvTrig	2,3,6	
+62.0	r1	SetupTwoQTest	per	SetupTwoQTest	observe	MarkerQ	2,3	
+62.0	r1	SetupTwoQTest	per	SetupTwoQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	SetupTwoQTest	per	SetupTwoQTest	observeAgain	CvTrig		
+62.0	r1	SetupTwoQTest	per	SetupTwoQTest	observeAgain	MarkerQ	2	
+62.0	r1	SetupChainTest	test	SetupChainTest	observe			Fail|System.AsyncException: Maximum stack depth has been reached.
+62.0	r1	SetupChainTest	test	SetupChainTest	observeAgain			Fail|System.AsyncException: Maximum stack depth has been reached.
+62.0	r1	SetupChainTest	run					testRunCoverage=71% classes=AsyncFacts:11/11;CarryMix:11/11;CarryOther:2/2;CarryS:4/4;CarryShared:8/8;CvTrig:3/4;MarkerBatch:0/6;MarkerChain1:0/3;MarkerChain2:0/2;MarkerException:0/0;MarkerFuture:0/2;MarkerQ:2/2;MarkerThrow:0/3
+62.0	r1	SetupFutureTest	test	SetupFutureTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+62.0	r1	SetupFutureTest	test	SetupFutureTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+62.0	r1	SetupFutureTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerFuture:2/2
+62.0	r1	SetupFutureTest	per	SetupFutureTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r1	SetupFutureTest	per	SetupFutureTest	observe	CvTrig	2,3,6	
+62.0	r1	SetupFutureTest	per	SetupFutureTest	observe	MarkerFuture	3,4	
+62.0	r1	SetupFutureTest	per	SetupFutureTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r1	SetupFutureTest	per	SetupFutureTest	observeAgain	CvTrig		
+62.0	r1	SetupFutureTest	per	SetupFutureTest	observeAgain	MarkerFuture	3	
+62.0	r1	SetupBatchTest	test	SetupBatchTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+62.0	r1	SetupBatchTest	test	SetupBatchTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+62.0	r1	SetupBatchTest	run					testRunCoverage=95% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerBatch:6/6
+62.0	r1	SetupBatchTest	per	SetupBatchTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	SetupBatchTest	per	SetupBatchTest	observe	CvTrig	2,3,6	
+62.0	r1	SetupBatchTest	per	SetupBatchTest	observe	MarkerBatch	2,3,5,6,8,9	
+62.0	r1	SetupBatchTest	per	SetupBatchTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	SetupBatchTest	per	SetupBatchTest	observeAgain	CvTrig		
+62.0	r1	SetupBatchTest	per	SetupBatchTest	observeAgain	MarkerBatch	2,5,8	
+62.0	r1	SetupThrowTest	test	SetupThrowTest	observe			Fail|MarkerException: job-boom
+62.0	r1	SetupThrowTest	test	SetupThrowTest	observeAgain			Fail|MarkerException: job-boom
+62.0	r1	SetupThrowTest	run					testRunCoverage=84% classes=AsyncFacts:11/11;CarryMix:11/11;CarryOther:2/2;CarryS:4/4;CarryShared:8/8;CvTrig:3/4;MarkerBatch:6/6;MarkerChain1:0/3;MarkerChain2:0/2;MarkerException:0/0;MarkerFuture:2/2;MarkerQ:2/2;MarkerThrow:0/3
+62.0	r1	SetupStopTest	test	SetupStopTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r1	SetupStopTest	test	SetupStopTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r1	SetupStopTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+62.0	r1	SetupStopTest	per	SetupStopTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	SetupStopTest	per	SetupStopTest	observe	CvTrig	2,3,6	
+62.0	r1	SetupStopTest	per	SetupStopTest	observe	MarkerQ	2,3	
+62.0	r1	SetupStopTest	per	SetupStopTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	SetupStopTest	per	SetupStopTest	observeAgain	CvTrig		
+62.0	r1	SetupStopTest	per	SetupStopTest	observeAgain	MarkerQ	2	
+62.0	r1	SetupNoneTest	test	SetupNoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	SetupNoneTest	test	SetupNoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	SetupNoneTest	run					testRunCoverage=93% classes=AsyncFacts:11/11;CvTrig:3/4
+62.0	r1	SetupNoneTest	per	SetupNoneTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r1	SetupNoneTest	per	SetupNoneTest	observe	CvTrig	2,3,6	
+62.0	r1	SetupNoneTest	per	SetupNoneTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r1	SetupNoneTest	per	SetupNoneTest	observeAgain	CvTrig		
+62.0	r1	setup-all-async	test	SetupBatchTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+62.0	r1	setup-all-async	test	SetupBatchTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+62.0	r1	setup-all-async	test	SetupChainTest	observe			Fail|System.AsyncException: Maximum stack depth has been reached.
+62.0	r1	setup-all-async	test	SetupChainTest	observeAgain			Fail|System.AsyncException: Maximum stack depth has been reached.
+62.0	r1	setup-all-async	test	SetupFutureTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+62.0	r1	setup-all-async	test	SetupFutureTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+62.0	r1	setup-all-async	test	SetupNoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	setup-all-async	test	SetupNoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r1	setup-all-async	test	SetupQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r1	setup-all-async	test	SetupQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r1	setup-all-async	test	SetupStopTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r1	setup-all-async	test	SetupStopTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r1	setup-all-async	test	SetupThrowTest	observe			Fail|MarkerException: job-boom
+62.0	r1	setup-all-async	test	SetupThrowTest	observeAgain			Fail|MarkerException: job-boom
+62.0	r1	setup-all-async	test	SetupTwoQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+62.0	r1	setup-all-async	test	SetupTwoQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+62.0	r1	setup-all-async	run					testRunCoverage=96% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerBatch:6/6;MarkerFuture:2/2;MarkerQ:2/2
+62.0	r1	setup-all-async	per	SetupBatchTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	setup-all-async	per	SetupBatchTest	observe	CvTrig	2,3,6	
+62.0	r1	setup-all-async	per	SetupBatchTest	observe	MarkerBatch	2,3,5,6,8,9	
+62.0	r1	setup-all-async	per	SetupBatchTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	setup-all-async	per	SetupBatchTest	observeAgain	CvTrig		
+62.0	r1	setup-all-async	per	SetupBatchTest	observeAgain	MarkerBatch	2,5,8	
+62.0	r1	setup-all-async	per	SetupFutureTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r1	setup-all-async	per	SetupFutureTest	observe	CvTrig	2,3,6	
+62.0	r1	setup-all-async	per	SetupFutureTest	observe	MarkerFuture	3,4	
+62.0	r1	setup-all-async	per	SetupFutureTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r1	setup-all-async	per	SetupFutureTest	observeAgain	CvTrig		
+62.0	r1	setup-all-async	per	SetupFutureTest	observeAgain	MarkerFuture	3	
+62.0	r1	setup-all-async	per	SetupNoneTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r1	setup-all-async	per	SetupNoneTest	observe	CvTrig	2,3,6	
+62.0	r1	setup-all-async	per	SetupNoneTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r1	setup-all-async	per	SetupNoneTest	observeAgain	CvTrig		
+62.0	r1	setup-all-async	per	SetupQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	setup-all-async	per	SetupQTest	observe	CvTrig	2,3,6	
+62.0	r1	setup-all-async	per	SetupQTest	observe	MarkerQ	2,3	
+62.0	r1	setup-all-async	per	SetupQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	setup-all-async	per	SetupQTest	observeAgain	CvTrig		
+62.0	r1	setup-all-async	per	SetupQTest	observeAgain	MarkerQ	2	
+62.0	r1	setup-all-async	per	SetupStopTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	setup-all-async	per	SetupStopTest	observe	CvTrig	2,3,6	
+62.0	r1	setup-all-async	per	SetupStopTest	observe	MarkerQ	2,3	
+62.0	r1	setup-all-async	per	SetupStopTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	setup-all-async	per	SetupStopTest	observeAgain	CvTrig		
+62.0	r1	setup-all-async	per	SetupStopTest	observeAgain	MarkerQ	2	
+62.0	r1	setup-all-async	per	SetupTwoQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	setup-all-async	per	SetupTwoQTest	observe	CvTrig	2,3,6	
+62.0	r1	setup-all-async	per	SetupTwoQTest	observe	MarkerQ	2,3	
+62.0	r1	setup-all-async	per	SetupTwoQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r1	setup-all-async	per	SetupTwoQTest	observeAgain	CvTrig		
+62.0	r1	setup-all-async	per	SetupTwoQTest	observeAgain	MarkerQ	2	
+62.0	r1	f7a-ab-async	test	CvUnionTest	aLeft			Pass|
+62.0	r1	f7a-ab-async	test	CvUnionTest	bRight			Pass|
+62.0	r1	f7a-ab-async	run					testRunCoverage=100% classes=CvUnion:6/6
+62.0	r1	f7a-ab-async	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+62.0	r1	f7a-ab-async	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+62.0	r1	f7a-ab-sync	test	CvUnionTest	aLeft			Pass|
+62.0	r1	f7a-ab-sync	test	CvUnionTest	bRight			Pass|
+62.0	r1	f7a-ab-sync	run					testRunCoverage=60% classes=CvTrig:0/4;CvUnion:6/6
+62.0	r1	f7a-ab-sync	per	CvUnionTest	aLeft	CvTrig		
+62.0	r1	f7a-ab-sync	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+62.0	r1	f7a-ab-sync	per	CvUnionTest	bRight	CvTrig		
+62.0	r1	f7a-ab-sync	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+62.0	r1	f7b-a-sync	test	CvUnionTest	aLeft			Pass|
+62.0	r1	f7b-a-sync	run					testRunCoverage=50% classes=CvTrig:0/4;CvUnion:5/6
+62.0	r1	f7b-a-sync	per	CvUnionTest	aLeft	CvTrig		
+62.0	r1	f7b-a-sync	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+62.0	r1	f7b-ab-async	test	CvUnionTest	aLeft			Pass|
+62.0	r1	f7b-ab-async	test	CvUnionTest	bRight			Pass|
+62.0	r1	f7b-ab-async	run					testRunCoverage=100% classes=CvUnion:6/6
+62.0	r1	f7b-ab-async	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+62.0	r1	f7b-ab-async	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+62.0	r2	mix-full	test	CarryMixTest	Alpha			Pass|
+62.0	r2	mix-full	test	CarryMixTest	Gamma			Pass|
+62.0	r2	mix-full	test	CarryMixTest	Zeta			Pass|
+62.0	r2	mix-full	test	CarryMixTest	apple			Pass|
+62.0	r2	mix-full	test	CarryMixTest	beta			Pass|
+62.0	r2	mix-full	test	CarryMixTest	delta			Pass|
+62.0	r2	mix-full	run					testRunCoverage=94% classes=CarryMix:11/11;CarryOther:2/2;CvTrig:3/4
+62.0	r2	mix-full	per	CarryMixTest	Alpha	CarryMix	2,3	
+62.0	r2	mix-full	per	CarryMixTest	Alpha	CvTrig		
+62.0	r2	mix-full	per	CarryMixTest	Gamma	CarryMix	2,11,12	
+62.0	r2	mix-full	per	CarryMixTest	Gamma	CvTrig		
+62.0	r2	mix-full	per	CarryMixTest	Zeta	CarryMix	2,11,14,15,16	
+62.0	r2	mix-full	per	CarryMixTest	Zeta	CvTrig		
+62.0	r2	mix-full	per	CarryMixTest	apple	CarryMix	2,5,6,11,14,15	
+62.0	r2	mix-full	per	CarryMixTest	apple	CvTrig		
+62.0	r2	mix-full	per	CarryMixTest	beta	CarryMix	2,5,8,9,11,14,15	
+62.0	r2	mix-full	per	CarryMixTest	beta	CvTrig		
+62.0	r2	mix-full	per	CarryMixTest	delta	CarryMix	2,5,8,11,14,15	
+62.0	r2	mix-full	per	CarryMixTest	delta	CarryOther	2,3	
+62.0	r2	mix-full	per	CarryMixTest	delta	CvTrig		
+62.0	r2	mix-gamma	test	CarryMixTest	Gamma			Pass|
+62.0	r2	mix-gamma	run					testRunCoverage=93% classes=CarryMix:11/11;CvTrig:3/4
+62.0	r2	mix-gamma	per	CarryMixTest	Gamma	CarryMix	11,12	
+62.0	r2	mix-gamma	per	CarryMixTest	Gamma	CvTrig		
+62.0	r2	mix-full-async	test	CarryMixTest	Alpha			Pass|
+62.0	r2	mix-full-async	test	CarryMixTest	Gamma			Pass|
+62.0	r2	mix-full-async	test	CarryMixTest	Zeta			Pass|
+62.0	r2	mix-full-async	test	CarryMixTest	apple			Pass|
+62.0	r2	mix-full-async	test	CarryMixTest	beta			Pass|
+62.0	r2	mix-full-async	test	CarryMixTest	delta			Pass|
+62.0	r2	mix-full-async	run					testRunCoverage=100% classes=CarryMix:11/11;CarryOther:2/2
+62.0	r2	mix-full-async	per	CarryMixTest	Alpha	CarryMix	2,3	
+62.0	r2	mix-full-async	per	CarryMixTest	Gamma	CarryMix	2,11,12	
+62.0	r2	mix-full-async	per	CarryMixTest	Zeta	CarryMix	2,11,14,15,16	
+62.0	r2	mix-full-async	per	CarryMixTest	apple	CarryMix	2,5,6,11,14,15	
+62.0	r2	mix-full-async	per	CarryMixTest	beta	CarryMix	2,5,8,9,11,14,15	
+62.0	r2	mix-full-async	per	CarryMixTest	delta	CarryMix	2,5,8,11,14,15	
+62.0	r2	mix-full-async	per	CarryMixTest	delta	CarryOther	2,3	
+62.0	r2	setup	test	CarrySetupTest	first			Pass|
+62.0	r2	setup	test	CarrySetupTest	second			Pass|
+62.0	r2	setup	run					testRunCoverage=88% classes=CarryS:4/4;CvTrig:3/4
+62.0	r2	setup	per	CarrySetupTest	first	CarryS	2,3,5,6	
+62.0	r2	setup	per	CarrySetupTest	first	CvTrig		
+62.0	r2	setup	per	CarrySetupTest	second	CarryS	2,5	
+62.0	r2	setup	per	CarrySetupTest	second	CvTrig		
+62.0	r2	x12-par-on	test	CarryX1Test	one			Pass|
+62.0	r2	x12-par-on	test	CarryX1Test	two			Pass|
+62.0	r2	x12-par-on	test	CarryX2Test	alpha			Pass|
+62.0	r2	x12-par-on	test	CarryX2Test	three			Pass|
+62.0	r2	x12-par-on	run					testRunCoverage=100% classes=CarryShared:8/8
+62.0	r2	x12-par-on	per	CarryX1Test	one	CarryShared	2,3	
+62.0	r2	x12-par-on	per	CarryX1Test	two	CarryShared	2,5,6	
+62.0	r2	x12-par-on	per	CarryX2Test	alpha	CarryShared	11,12	
+62.0	r2	x12-par-on	per	CarryX2Test	three	CarryShared	8,9,11	
+62.0	r2	x12-par-off	test	CarryX1Test	one			Pass|
+62.0	r2	x12-par-off	test	CarryX1Test	two			Pass|
+62.0	r2	x12-par-off	test	CarryX2Test	alpha			Pass|
+62.0	r2	x12-par-off	test	CarryX2Test	three			Pass|
+62.0	r2	x12-par-off	run					testRunCoverage=100% classes=CarryShared:8/8
+62.0	r2	x12-par-off	per	CarryX1Test	one	CarryShared	2,3	
+62.0	r2	x12-par-off	per	CarryX1Test	two	CarryShared	2,5,6	
+62.0	r2	x12-par-off	per	CarryX2Test	alpha	CarryShared	11,12	
+62.0	r2	x12-par-off	per	CarryX2Test	three	CarryShared	8,9,11	
+62.0	r2	SetupQTest	test	SetupQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r2	SetupQTest	test	SetupQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r2	SetupQTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+62.0	r2	SetupQTest	per	SetupQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	SetupQTest	per	SetupQTest	observe	CvTrig	2,3,6	
+62.0	r2	SetupQTest	per	SetupQTest	observe	MarkerQ	2,3	
+62.0	r2	SetupQTest	per	SetupQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	SetupQTest	per	SetupQTest	observeAgain	CvTrig		
+62.0	r2	SetupQTest	per	SetupQTest	observeAgain	MarkerQ	2	
+62.0	r2	SetupTwoQTest	test	SetupTwoQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+62.0	r2	SetupTwoQTest	test	SetupTwoQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+62.0	r2	SetupTwoQTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+62.0	r2	SetupTwoQTest	per	SetupTwoQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	SetupTwoQTest	per	SetupTwoQTest	observe	CvTrig	2,3,6	
+62.0	r2	SetupTwoQTest	per	SetupTwoQTest	observe	MarkerQ	2,3	
+62.0	r2	SetupTwoQTest	per	SetupTwoQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	SetupTwoQTest	per	SetupTwoQTest	observeAgain	CvTrig		
+62.0	r2	SetupTwoQTest	per	SetupTwoQTest	observeAgain	MarkerQ	2	
+62.0	r2	SetupChainTest	test	SetupChainTest	observe			Fail|System.AsyncException: Maximum stack depth has been reached.
+62.0	r2	SetupChainTest	test	SetupChainTest	observeAgain			Fail|System.AsyncException: Maximum stack depth has been reached.
+62.0	r2	SetupChainTest	run					testRunCoverage=84% classes=AsyncFacts:11/11;CarryMix:11/11;CarryOther:2/2;CarryS:4/4;CarryShared:8/8;CvTrig:3/4;MarkerBatch:6/6;MarkerChain1:0/3;MarkerChain2:0/2;MarkerException:0/0;MarkerFuture:2/2;MarkerQ:2/2;MarkerThrow:0/3
+62.0	r2	SetupFutureTest	test	SetupFutureTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+62.0	r2	SetupFutureTest	test	SetupFutureTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+62.0	r2	SetupFutureTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerFuture:2/2
+62.0	r2	SetupFutureTest	per	SetupFutureTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r2	SetupFutureTest	per	SetupFutureTest	observe	CvTrig	2,3,6	
+62.0	r2	SetupFutureTest	per	SetupFutureTest	observe	MarkerFuture	3,4	
+62.0	r2	SetupFutureTest	per	SetupFutureTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r2	SetupFutureTest	per	SetupFutureTest	observeAgain	CvTrig		
+62.0	r2	SetupFutureTest	per	SetupFutureTest	observeAgain	MarkerFuture	3	
+62.0	r2	SetupBatchTest	test	SetupBatchTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+62.0	r2	SetupBatchTest	test	SetupBatchTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+62.0	r2	SetupBatchTest	run					testRunCoverage=95% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerBatch:6/6
+62.0	r2	SetupBatchTest	per	SetupBatchTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	SetupBatchTest	per	SetupBatchTest	observe	CvTrig	2,3,6	
+62.0	r2	SetupBatchTest	per	SetupBatchTest	observe	MarkerBatch	2,3,5,6,8,9	
+62.0	r2	SetupBatchTest	per	SetupBatchTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	SetupBatchTest	per	SetupBatchTest	observeAgain	CvTrig		
+62.0	r2	SetupBatchTest	per	SetupBatchTest	observeAgain	MarkerBatch	2,5,8	
+62.0	r2	SetupThrowTest	test	SetupThrowTest	observe			Fail|MarkerException: job-boom
+62.0	r2	SetupThrowTest	test	SetupThrowTest	observeAgain			Fail|MarkerException: job-boom
+62.0	r2	SetupThrowTest	run					testRunCoverage=84% classes=AsyncFacts:11/11;CarryMix:11/11;CarryOther:2/2;CarryS:4/4;CarryShared:8/8;CvTrig:3/4;MarkerBatch:6/6;MarkerChain1:0/3;MarkerChain2:0/2;MarkerException:0/0;MarkerFuture:2/2;MarkerQ:2/2;MarkerThrow:0/3
+62.0	r2	SetupStopTest	test	SetupStopTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r2	SetupStopTest	test	SetupStopTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r2	SetupStopTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+62.0	r2	SetupStopTest	per	SetupStopTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	SetupStopTest	per	SetupStopTest	observe	CvTrig	2,3,6	
+62.0	r2	SetupStopTest	per	SetupStopTest	observe	MarkerQ	2,3	
+62.0	r2	SetupStopTest	per	SetupStopTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	SetupStopTest	per	SetupStopTest	observeAgain	CvTrig		
+62.0	r2	SetupStopTest	per	SetupStopTest	observeAgain	MarkerQ	2	
+62.0	r2	SetupNoneTest	test	SetupNoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	SetupNoneTest	test	SetupNoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	SetupNoneTest	run					testRunCoverage=93% classes=AsyncFacts:11/11;CvTrig:3/4
+62.0	r2	SetupNoneTest	per	SetupNoneTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r2	SetupNoneTest	per	SetupNoneTest	observe	CvTrig	2,3,6	
+62.0	r2	SetupNoneTest	per	SetupNoneTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r2	SetupNoneTest	per	SetupNoneTest	observeAgain	CvTrig		
+62.0	r2	setup-all-async	test	SetupBatchTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+62.0	r2	setup-all-async	test	SetupBatchTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+62.0	r2	setup-all-async	test	SetupChainTest	observe			Fail|System.AsyncException: Maximum stack depth has been reached.
+62.0	r2	setup-all-async	test	SetupChainTest	observeAgain			Fail|System.AsyncException: Maximum stack depth has been reached.
+62.0	r2	setup-all-async	test	SetupFutureTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+62.0	r2	setup-all-async	test	SetupFutureTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+62.0	r2	setup-all-async	test	SetupNoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	setup-all-async	test	SetupNoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+62.0	r2	setup-all-async	test	SetupQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r2	setup-all-async	test	SetupQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r2	setup-all-async	test	SetupStopTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r2	setup-all-async	test	SetupStopTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+62.0	r2	setup-all-async	test	SetupThrowTest	observe			Fail|MarkerException: job-boom
+62.0	r2	setup-all-async	test	SetupThrowTest	observeAgain			Fail|MarkerException: job-boom
+62.0	r2	setup-all-async	test	SetupTwoQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+62.0	r2	setup-all-async	test	SetupTwoQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+62.0	r2	setup-all-async	run					testRunCoverage=96% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerBatch:6/6;MarkerFuture:2/2;MarkerQ:2/2
+62.0	r2	setup-all-async	per	SetupBatchTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	setup-all-async	per	SetupBatchTest	observe	CvTrig	2,3,6	
+62.0	r2	setup-all-async	per	SetupBatchTest	observe	MarkerBatch	2,3,5,6,8,9	
+62.0	r2	setup-all-async	per	SetupBatchTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	setup-all-async	per	SetupBatchTest	observeAgain	CvTrig		
+62.0	r2	setup-all-async	per	SetupBatchTest	observeAgain	MarkerBatch	2,5,8	
+62.0	r2	setup-all-async	per	SetupFutureTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r2	setup-all-async	per	SetupFutureTest	observe	CvTrig	2,3,6	
+62.0	r2	setup-all-async	per	SetupFutureTest	observe	MarkerFuture	3,4	
+62.0	r2	setup-all-async	per	SetupFutureTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r2	setup-all-async	per	SetupFutureTest	observeAgain	CvTrig		
+62.0	r2	setup-all-async	per	SetupFutureTest	observeAgain	MarkerFuture	3	
+62.0	r2	setup-all-async	per	SetupNoneTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r2	setup-all-async	per	SetupNoneTest	observe	CvTrig	2,3,6	
+62.0	r2	setup-all-async	per	SetupNoneTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+62.0	r2	setup-all-async	per	SetupNoneTest	observeAgain	CvTrig		
+62.0	r2	setup-all-async	per	SetupQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	setup-all-async	per	SetupQTest	observe	CvTrig	2,3,6	
+62.0	r2	setup-all-async	per	SetupQTest	observe	MarkerQ	2,3	
+62.0	r2	setup-all-async	per	SetupQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	setup-all-async	per	SetupQTest	observeAgain	CvTrig		
+62.0	r2	setup-all-async	per	SetupQTest	observeAgain	MarkerQ	2	
+62.0	r2	setup-all-async	per	SetupStopTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	setup-all-async	per	SetupStopTest	observe	CvTrig	2,3,6	
+62.0	r2	setup-all-async	per	SetupStopTest	observe	MarkerQ	2,3	
+62.0	r2	setup-all-async	per	SetupStopTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	setup-all-async	per	SetupStopTest	observeAgain	CvTrig		
+62.0	r2	setup-all-async	per	SetupStopTest	observeAgain	MarkerQ	2	
+62.0	r2	setup-all-async	per	SetupTwoQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	setup-all-async	per	SetupTwoQTest	observe	CvTrig	2,3,6	
+62.0	r2	setup-all-async	per	SetupTwoQTest	observe	MarkerQ	2,3	
+62.0	r2	setup-all-async	per	SetupTwoQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+62.0	r2	setup-all-async	per	SetupTwoQTest	observeAgain	CvTrig		
+62.0	r2	setup-all-async	per	SetupTwoQTest	observeAgain	MarkerQ	2	
+62.0	r2	f7a-ab-sync	test	CvUnionTest	aLeft			Pass|
+62.0	r2	f7a-ab-sync	test	CvUnionTest	bRight			Pass|
+62.0	r2	f7a-ab-sync	run					testRunCoverage=60% classes=CvTrig:0/4;CvUnion:6/6
+62.0	r2	f7a-ab-sync	per	CvUnionTest	aLeft	CvTrig		
+62.0	r2	f7a-ab-sync	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+62.0	r2	f7a-ab-sync	per	CvUnionTest	bRight	CvTrig		
+62.0	r2	f7a-ab-sync	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+62.0	r2	f7b-a-sync	test	CvUnionTest	aLeft			Pass|
+62.0	r2	f7b-a-sync	run					testRunCoverage=50% classes=CvTrig:0/4;CvUnion:5/6
+62.0	r2	f7b-a-sync	per	CvUnionTest	aLeft	CvTrig		
+62.0	r2	f7b-a-sync	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+62.0	r2	f7b-ab-async	test	CvUnionTest	aLeft			Pass|
+62.0	r2	f7b-ab-async	test	CvUnionTest	bRight			Pass|
+62.0	r2	f7b-ab-async	run					testRunCoverage=100% classes=CvUnion:6/6
+62.0	r2	f7b-ab-async	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+62.0	r2	f7b-ab-async	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+67.0	r1	mix-full	test	CarryMixTest	Alpha			Pass|
+67.0	r1	mix-full	test	CarryMixTest	Gamma			Pass|
+67.0	r1	mix-full	test	CarryMixTest	Zeta			Pass|
+67.0	r1	mix-full	test	CarryMixTest	apple			Pass|
+67.0	r1	mix-full	test	CarryMixTest	beta			Pass|
+67.0	r1	mix-full	test	CarryMixTest	delta			Pass|
+67.0	r1	mix-full	run					testRunCoverage=76% classes=CarryMix:11/11;CarryOther:2/2;CvTrig:0/4
+67.0	r1	mix-full	per	CarryMixTest	Alpha	CarryMix	2,3	
+67.0	r1	mix-full	per	CarryMixTest	Alpha	CvTrig		
+67.0	r1	mix-full	per	CarryMixTest	Gamma	CarryMix	2,11,12	
+67.0	r1	mix-full	per	CarryMixTest	Gamma	CvTrig		
+67.0	r1	mix-full	per	CarryMixTest	Zeta	CarryMix	2,11,14,15,16	
+67.0	r1	mix-full	per	CarryMixTest	Zeta	CvTrig		
+67.0	r1	mix-full	per	CarryMixTest	apple	CarryMix	2,5,6,11,14,15	
+67.0	r1	mix-full	per	CarryMixTest	apple	CvTrig		
+67.0	r1	mix-full	per	CarryMixTest	beta	CarryMix	2,5,8,9,11,14,15	
+67.0	r1	mix-full	per	CarryMixTest	beta	CvTrig		
+67.0	r1	mix-full	per	CarryMixTest	delta	CarryMix	2,5,8,11,14,15	
+67.0	r1	mix-full	per	CarryMixTest	delta	CarryOther	2,3	
+67.0	r1	mix-full	per	CarryMixTest	delta	CvTrig		
+67.0	r1	mix-gamma	test	CarryMixTest	Gamma			Pass|
+67.0	r1	mix-gamma	run					testRunCoverage=73% classes=CarryMix:11/11;CvTrig:0/4
+67.0	r1	mix-gamma	per	CarryMixTest	Gamma	CarryMix	11,12	
+67.0	r1	mix-gamma	per	CarryMixTest	Gamma	CvTrig		
+67.0	r1	mix-full-async	test	CarryMixTest	Alpha			Pass|
+67.0	r1	mix-full-async	test	CarryMixTest	Gamma			Pass|
+67.0	r1	mix-full-async	test	CarryMixTest	Zeta			Pass|
+67.0	r1	mix-full-async	test	CarryMixTest	apple			Pass|
+67.0	r1	mix-full-async	test	CarryMixTest	beta			Pass|
+67.0	r1	mix-full-async	test	CarryMixTest	delta			Pass|
+67.0	r1	mix-full-async	run					testRunCoverage=100% classes=CarryMix:11/11;CarryOther:2/2
+67.0	r1	mix-full-async	per	CarryMixTest	Alpha	CarryMix	2,3	
+67.0	r1	mix-full-async	per	CarryMixTest	Gamma	CarryMix	2,11,12	
+67.0	r1	mix-full-async	per	CarryMixTest	Zeta	CarryMix	2,11,14,15,16	
+67.0	r1	mix-full-async	per	CarryMixTest	apple	CarryMix	2,5,6,11,14,15	
+67.0	r1	mix-full-async	per	CarryMixTest	beta	CarryMix	2,5,8,9,11,14,15	
+67.0	r1	mix-full-async	per	CarryMixTest	delta	CarryMix	2,5,8,11,14,15	
+67.0	r1	mix-full-async	per	CarryMixTest	delta	CarryOther	2,3	
+67.0	r1	setup	test	CarrySetupTest	first			Pass|
+67.0	r1	setup	test	CarrySetupTest	second			Pass|
+67.0	r1	setup	run					testRunCoverage=50% classes=CarryS:4/4;CvTrig:0/4
+67.0	r1	setup	per	CarrySetupTest	first	CarryS	2,3,5,6	
+67.0	r1	setup	per	CarrySetupTest	first	CvTrig		
+67.0	r1	setup	per	CarrySetupTest	second	CarryS	2,5	
+67.0	r1	setup	per	CarrySetupTest	second	CvTrig		
+67.0	r1	x12-par-on	test	CarryX1Test	one			Pass|
+67.0	r1	x12-par-on	test	CarryX1Test	two			Pass|
+67.0	r1	x12-par-on	test	CarryX2Test	alpha			Pass|
+67.0	r1	x12-par-on	test	CarryX2Test	three			Pass|
+67.0	r1	x12-par-on	run					testRunCoverage=100% classes=CarryShared:8/8
+67.0	r1	x12-par-on	per	CarryX1Test	one	CarryShared	2,3	
+67.0	r1	x12-par-on	per	CarryX1Test	two	CarryShared	2,5,6	
+67.0	r1	x12-par-on	per	CarryX2Test	alpha	CarryShared	11,12	
+67.0	r1	x12-par-on	per	CarryX2Test	three	CarryShared	8,9,11	
+67.0	r1	x12-par-off	test	CarryX1Test	one			Pass|
+67.0	r1	x12-par-off	test	CarryX1Test	two			Pass|
+67.0	r1	x12-par-off	test	CarryX2Test	alpha			Pass|
+67.0	r1	x12-par-off	test	CarryX2Test	three			Pass|
+67.0	r1	x12-par-off	run					testRunCoverage=100% classes=CarryShared:8/8
+67.0	r1	x12-par-off	per	CarryX1Test	one	CarryShared	2,3	
+67.0	r1	x12-par-off	per	CarryX1Test	two	CarryShared	2,5,6	
+67.0	r1	x12-par-off	per	CarryX2Test	alpha	CarryShared	11,12	
+67.0	r1	x12-par-off	per	CarryX2Test	three	CarryShared	8,9,11	
+67.0	r1	SetupQTest	test	SetupQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r1	SetupQTest	test	SetupQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r1	SetupQTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+67.0	r1	SetupQTest	per	SetupQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	SetupQTest	per	SetupQTest	observe	CvTrig	2,3,6	
+67.0	r1	SetupQTest	per	SetupQTest	observe	MarkerQ	2,3	
+67.0	r1	SetupQTest	per	SetupQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	SetupQTest	per	SetupQTest	observeAgain	CvTrig		
+67.0	r1	SetupQTest	per	SetupQTest	observeAgain	MarkerQ	2	
+67.0	r1	SetupTwoQTest	test	SetupTwoQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+67.0	r1	SetupTwoQTest	test	SetupTwoQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+67.0	r1	SetupTwoQTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+67.0	r1	SetupTwoQTest	per	SetupTwoQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	SetupTwoQTest	per	SetupTwoQTest	observe	CvTrig	2,3,6	
+67.0	r1	SetupTwoQTest	per	SetupTwoQTest	observe	MarkerQ	2,3	
+67.0	r1	SetupTwoQTest	per	SetupTwoQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	SetupTwoQTest	per	SetupTwoQTest	observeAgain	CvTrig		
+67.0	r1	SetupTwoQTest	per	SetupTwoQTest	observeAgain	MarkerQ	2	
+67.0	r1	SetupChainTest	test	SetupChainTest	observe			Fail|System.AsyncException: Maximum stack depth has been reached.
+67.0	r1	SetupChainTest	test	SetupChainTest	observeAgain			Fail|System.AsyncException: Maximum stack depth has been reached.
+67.0	r1	SetupChainTest	run					testRunCoverage=71% classes=AsyncFacts:11/11;CarryMix:11/11;CarryOther:2/2;CarryS:4/4;CarryShared:8/8;CvTrig:3/4;MarkerBatch:0/6;MarkerChain1:0/3;MarkerChain2:0/2;MarkerException:0/0;MarkerFuture:0/2;MarkerQ:2/2;MarkerThrow:0/3
+67.0	r1	SetupFutureTest	test	SetupFutureTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+67.0	r1	SetupFutureTest	test	SetupFutureTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+67.0	r1	SetupFutureTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerFuture:2/2
+67.0	r1	SetupFutureTest	per	SetupFutureTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r1	SetupFutureTest	per	SetupFutureTest	observe	CvTrig	2,3,6	
+67.0	r1	SetupFutureTest	per	SetupFutureTest	observe	MarkerFuture	3,4	
+67.0	r1	SetupFutureTest	per	SetupFutureTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r1	SetupFutureTest	per	SetupFutureTest	observeAgain	CvTrig		
+67.0	r1	SetupFutureTest	per	SetupFutureTest	observeAgain	MarkerFuture	3	
+67.0	r1	SetupBatchTest	test	SetupBatchTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+67.0	r1	SetupBatchTest	test	SetupBatchTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+67.0	r1	SetupBatchTest	run					testRunCoverage=95% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerBatch:6/6
+67.0	r1	SetupBatchTest	per	SetupBatchTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	SetupBatchTest	per	SetupBatchTest	observe	CvTrig	2,3,6	
+67.0	r1	SetupBatchTest	per	SetupBatchTest	observe	MarkerBatch	2,3,5,6,8,9	
+67.0	r1	SetupBatchTest	per	SetupBatchTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	SetupBatchTest	per	SetupBatchTest	observeAgain	CvTrig		
+67.0	r1	SetupBatchTest	per	SetupBatchTest	observeAgain	MarkerBatch	2,5,8	
+67.0	r1	SetupThrowTest	test	SetupThrowTest	observe			Fail|MarkerException: job-boom
+67.0	r1	SetupThrowTest	test	SetupThrowTest	observeAgain			Fail|MarkerException: job-boom
+67.0	r1	SetupThrowTest	run					testRunCoverage=84% classes=AsyncFacts:11/11;CarryMix:11/11;CarryOther:2/2;CarryS:4/4;CarryShared:8/8;CvTrig:3/4;MarkerBatch:6/6;MarkerChain1:0/3;MarkerChain2:0/2;MarkerException:0/0;MarkerFuture:2/2;MarkerQ:2/2;MarkerThrow:0/3
+67.0	r1	SetupStopTest	test	SetupStopTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r1	SetupStopTest	test	SetupStopTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r1	SetupStopTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+67.0	r1	SetupStopTest	per	SetupStopTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	SetupStopTest	per	SetupStopTest	observe	CvTrig	2,3,6	
+67.0	r1	SetupStopTest	per	SetupStopTest	observe	MarkerQ	2,3	
+67.0	r1	SetupStopTest	per	SetupStopTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	SetupStopTest	per	SetupStopTest	observeAgain	CvTrig		
+67.0	r1	SetupStopTest	per	SetupStopTest	observeAgain	MarkerQ	2	
+67.0	r1	SetupNoneTest	test	SetupNoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	SetupNoneTest	test	SetupNoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	SetupNoneTest	run					testRunCoverage=93% classes=AsyncFacts:11/11;CvTrig:3/4
+67.0	r1	SetupNoneTest	per	SetupNoneTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r1	SetupNoneTest	per	SetupNoneTest	observe	CvTrig	2,3,6	
+67.0	r1	SetupNoneTest	per	SetupNoneTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r1	SetupNoneTest	per	SetupNoneTest	observeAgain	CvTrig		
+67.0	r1	setup-all-async	test	SetupBatchTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+67.0	r1	setup-all-async	test	SetupBatchTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+67.0	r1	setup-all-async	test	SetupChainTest	observe			Fail|System.AsyncException: Maximum stack depth has been reached.
+67.0	r1	setup-all-async	test	SetupChainTest	observeAgain			Fail|System.AsyncException: Maximum stack depth has been reached.
+67.0	r1	setup-all-async	test	SetupFutureTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+67.0	r1	setup-all-async	test	SetupFutureTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+67.0	r1	setup-all-async	test	SetupNoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	setup-all-async	test	SetupNoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r1	setup-all-async	test	SetupQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r1	setup-all-async	test	SetupQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r1	setup-all-async	test	SetupStopTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r1	setup-all-async	test	SetupStopTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r1	setup-all-async	test	SetupThrowTest	observe			Fail|MarkerException: job-boom
+67.0	r1	setup-all-async	test	SetupThrowTest	observeAgain			Fail|MarkerException: job-boom
+67.0	r1	setup-all-async	test	SetupTwoQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+67.0	r1	setup-all-async	test	SetupTwoQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+67.0	r1	setup-all-async	run					testRunCoverage=96% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerBatch:6/6;MarkerFuture:2/2;MarkerQ:2/2
+67.0	r1	setup-all-async	per	SetupBatchTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	setup-all-async	per	SetupBatchTest	observe	CvTrig	2,3,6	
+67.0	r1	setup-all-async	per	SetupBatchTest	observe	MarkerBatch	2,3,5,6,8,9	
+67.0	r1	setup-all-async	per	SetupBatchTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	setup-all-async	per	SetupBatchTest	observeAgain	CvTrig		
+67.0	r1	setup-all-async	per	SetupBatchTest	observeAgain	MarkerBatch	2,5,8	
+67.0	r1	setup-all-async	per	SetupFutureTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r1	setup-all-async	per	SetupFutureTest	observe	CvTrig	2,3,6	
+67.0	r1	setup-all-async	per	SetupFutureTest	observe	MarkerFuture	3,4	
+67.0	r1	setup-all-async	per	SetupFutureTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r1	setup-all-async	per	SetupFutureTest	observeAgain	CvTrig		
+67.0	r1	setup-all-async	per	SetupFutureTest	observeAgain	MarkerFuture	3	
+67.0	r1	setup-all-async	per	SetupNoneTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r1	setup-all-async	per	SetupNoneTest	observe	CvTrig	2,3,6	
+67.0	r1	setup-all-async	per	SetupNoneTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r1	setup-all-async	per	SetupNoneTest	observeAgain	CvTrig		
+67.0	r1	setup-all-async	per	SetupQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	setup-all-async	per	SetupQTest	observe	CvTrig	2,3,6	
+67.0	r1	setup-all-async	per	SetupQTest	observe	MarkerQ	2,3	
+67.0	r1	setup-all-async	per	SetupQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	setup-all-async	per	SetupQTest	observeAgain	CvTrig		
+67.0	r1	setup-all-async	per	SetupQTest	observeAgain	MarkerQ	2	
+67.0	r1	setup-all-async	per	SetupStopTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	setup-all-async	per	SetupStopTest	observe	CvTrig	2,3,6	
+67.0	r1	setup-all-async	per	SetupStopTest	observe	MarkerQ	2,3	
+67.0	r1	setup-all-async	per	SetupStopTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	setup-all-async	per	SetupStopTest	observeAgain	CvTrig		
+67.0	r1	setup-all-async	per	SetupStopTest	observeAgain	MarkerQ	2	
+67.0	r1	setup-all-async	per	SetupTwoQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	setup-all-async	per	SetupTwoQTest	observe	CvTrig	2,3,6	
+67.0	r1	setup-all-async	per	SetupTwoQTest	observe	MarkerQ	2,3	
+67.0	r1	setup-all-async	per	SetupTwoQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r1	setup-all-async	per	SetupTwoQTest	observeAgain	CvTrig		
+67.0	r1	setup-all-async	per	SetupTwoQTest	observeAgain	MarkerQ	2	
+67.0	r1	f7a-ab-async	test	CvUnionTest	aLeft			Pass|
+67.0	r1	f7a-ab-async	test	CvUnionTest	bRight			Pass|
+67.0	r1	f7a-ab-async	run					testRunCoverage=100% classes=CvUnion:6/6
+67.0	r1	f7a-ab-async	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+67.0	r1	f7a-ab-async	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+67.0	r1	f7a-ab-sync	test	CvUnionTest	aLeft			Pass|
+67.0	r1	f7a-ab-sync	test	CvUnionTest	bRight			Pass|
+67.0	r1	f7a-ab-sync	run					testRunCoverage=60% classes=CvTrig:0/4;CvUnion:6/6
+67.0	r1	f7a-ab-sync	per	CvUnionTest	aLeft	CvTrig		
+67.0	r1	f7a-ab-sync	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+67.0	r1	f7a-ab-sync	per	CvUnionTest	bRight	CvTrig		
+67.0	r1	f7a-ab-sync	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+67.0	r1	f7b-a-sync	test	CvUnionTest	aLeft			Pass|
+67.0	r1	f7b-a-sync	run					testRunCoverage=50% classes=CvTrig:0/4;CvUnion:5/6
+67.0	r1	f7b-a-sync	per	CvUnionTest	aLeft	CvTrig		
+67.0	r1	f7b-a-sync	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+67.0	r1	f7b-ab-async	test	CvUnionTest	aLeft			Pass|
+67.0	r1	f7b-ab-async	test	CvUnionTest	bRight			Pass|
+67.0	r1	f7b-ab-async	run					testRunCoverage=100% classes=CvUnion:6/6
+67.0	r1	f7b-ab-async	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+67.0	r1	f7b-ab-async	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+67.0	r2	mix-full	test	CarryMixTest	Alpha			Pass|
+67.0	r2	mix-full	test	CarryMixTest	Gamma			Pass|
+67.0	r2	mix-full	test	CarryMixTest	Zeta			Pass|
+67.0	r2	mix-full	test	CarryMixTest	apple			Pass|
+67.0	r2	mix-full	test	CarryMixTest	beta			Pass|
+67.0	r2	mix-full	test	CarryMixTest	delta			Pass|
+67.0	r2	mix-full	run					testRunCoverage=94% classes=CarryMix:11/11;CarryOther:2/2;CvTrig:3/4
+67.0	r2	mix-full	per	CarryMixTest	Alpha	CarryMix	2,3	
+67.0	r2	mix-full	per	CarryMixTest	Alpha	CvTrig		
+67.0	r2	mix-full	per	CarryMixTest	Gamma	CarryMix	2,11,12	
+67.0	r2	mix-full	per	CarryMixTest	Gamma	CvTrig		
+67.0	r2	mix-full	per	CarryMixTest	Zeta	CarryMix	2,11,14,15,16	
+67.0	r2	mix-full	per	CarryMixTest	Zeta	CvTrig		
+67.0	r2	mix-full	per	CarryMixTest	apple	CarryMix	2,5,6,11,14,15	
+67.0	r2	mix-full	per	CarryMixTest	apple	CvTrig		
+67.0	r2	mix-full	per	CarryMixTest	beta	CarryMix	2,5,8,9,11,14,15	
+67.0	r2	mix-full	per	CarryMixTest	beta	CvTrig		
+67.0	r2	mix-full	per	CarryMixTest	delta	CarryMix	2,5,8,11,14,15	
+67.0	r2	mix-full	per	CarryMixTest	delta	CarryOther	2,3	
+67.0	r2	mix-full	per	CarryMixTest	delta	CvTrig		
+67.0	r2	mix-gamma	test	CarryMixTest	Gamma			Pass|
+67.0	r2	mix-gamma	run					testRunCoverage=93% classes=CarryMix:11/11;CvTrig:3/4
+67.0	r2	mix-gamma	per	CarryMixTest	Gamma	CarryMix	11,12	
+67.0	r2	mix-gamma	per	CarryMixTest	Gamma	CvTrig		
+67.0	r2	mix-full-async	test	CarryMixTest	Alpha			Pass|
+67.0	r2	mix-full-async	test	CarryMixTest	Gamma			Pass|
+67.0	r2	mix-full-async	test	CarryMixTest	Zeta			Pass|
+67.0	r2	mix-full-async	test	CarryMixTest	apple			Pass|
+67.0	r2	mix-full-async	test	CarryMixTest	beta			Pass|
+67.0	r2	mix-full-async	test	CarryMixTest	delta			Pass|
+67.0	r2	mix-full-async	run					testRunCoverage=100% classes=CarryMix:11/11;CarryOther:2/2
+67.0	r2	mix-full-async	per	CarryMixTest	Alpha	CarryMix	2,3	
+67.0	r2	mix-full-async	per	CarryMixTest	Gamma	CarryMix	2,11,12	
+67.0	r2	mix-full-async	per	CarryMixTest	Zeta	CarryMix	2,11,14,15,16	
+67.0	r2	mix-full-async	per	CarryMixTest	apple	CarryMix	2,5,6,11,14,15	
+67.0	r2	mix-full-async	per	CarryMixTest	beta	CarryMix	2,5,8,9,11,14,15	
+67.0	r2	mix-full-async	per	CarryMixTest	delta	CarryMix	2,5,8,11,14,15	
+67.0	r2	mix-full-async	per	CarryMixTest	delta	CarryOther	2,3	
+67.0	r2	setup	test	CarrySetupTest	first			Pass|
+67.0	r2	setup	test	CarrySetupTest	second			Pass|
+67.0	r2	setup	run					testRunCoverage=88% classes=CarryS:4/4;CvTrig:3/4
+67.0	r2	setup	per	CarrySetupTest	first	CarryS	2,3,5,6	
+67.0	r2	setup	per	CarrySetupTest	first	CvTrig		
+67.0	r2	setup	per	CarrySetupTest	second	CarryS	2,5	
+67.0	r2	setup	per	CarrySetupTest	second	CvTrig		
+67.0	r2	x12-par-on	test	CarryX1Test	one			Pass|
+67.0	r2	x12-par-on	test	CarryX1Test	two			Pass|
+67.0	r2	x12-par-on	test	CarryX2Test	alpha			Pass|
+67.0	r2	x12-par-on	test	CarryX2Test	three			Pass|
+67.0	r2	x12-par-on	run					testRunCoverage=100% classes=CarryShared:8/8
+67.0	r2	x12-par-on	per	CarryX1Test	one	CarryShared	2,3	
+67.0	r2	x12-par-on	per	CarryX1Test	two	CarryShared	2,5,6	
+67.0	r2	x12-par-on	per	CarryX2Test	alpha	CarryShared	11,12	
+67.0	r2	x12-par-on	per	CarryX2Test	three	CarryShared	8,9,11	
+67.0	r2	x12-par-off	test	CarryX1Test	one			Pass|
+67.0	r2	x12-par-off	test	CarryX1Test	two			Pass|
+67.0	r2	x12-par-off	test	CarryX2Test	alpha			Pass|
+67.0	r2	x12-par-off	test	CarryX2Test	three			Pass|
+67.0	r2	x12-par-off	run					testRunCoverage=100% classes=CarryShared:8/8
+67.0	r2	x12-par-off	per	CarryX1Test	one	CarryShared	2,3	
+67.0	r2	x12-par-off	per	CarryX1Test	two	CarryShared	2,5,6	
+67.0	r2	x12-par-off	per	CarryX2Test	alpha	CarryShared	11,12	
+67.0	r2	x12-par-off	per	CarryX2Test	three	CarryShared	8,9,11	
+67.0	r2	SetupQTest	test	SetupQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r2	SetupQTest	test	SetupQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r2	SetupQTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+67.0	r2	SetupQTest	per	SetupQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	SetupQTest	per	SetupQTest	observe	CvTrig	2,3,6	
+67.0	r2	SetupQTest	per	SetupQTest	observe	MarkerQ	2,3	
+67.0	r2	SetupQTest	per	SetupQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	SetupQTest	per	SetupQTest	observeAgain	CvTrig		
+67.0	r2	SetupQTest	per	SetupQTest	observeAgain	MarkerQ	2	
+67.0	r2	SetupTwoQTest	test	SetupTwoQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+67.0	r2	SetupTwoQTest	test	SetupTwoQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+67.0	r2	SetupTwoQTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+67.0	r2	SetupTwoQTest	per	SetupTwoQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	SetupTwoQTest	per	SetupTwoQTest	observe	CvTrig	2,3,6	
+67.0	r2	SetupTwoQTest	per	SetupTwoQTest	observe	MarkerQ	2,3	
+67.0	r2	SetupTwoQTest	per	SetupTwoQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	SetupTwoQTest	per	SetupTwoQTest	observeAgain	CvTrig		
+67.0	r2	SetupTwoQTest	per	SetupTwoQTest	observeAgain	MarkerQ	2	
+67.0	r2	SetupChainTest	test	SetupChainTest	observe			Fail|System.AsyncException: Maximum stack depth has been reached.
+67.0	r2	SetupChainTest	test	SetupChainTest	observeAgain			Fail|System.AsyncException: Maximum stack depth has been reached.
+67.0	r2	SetupChainTest	run					testRunCoverage=84% classes=AsyncFacts:11/11;CarryMix:11/11;CarryOther:2/2;CarryS:4/4;CarryShared:8/8;CvTrig:3/4;MarkerBatch:6/6;MarkerChain1:0/3;MarkerChain2:0/2;MarkerException:0/0;MarkerFuture:2/2;MarkerQ:2/2;MarkerThrow:0/3
+67.0	r2	SetupFutureTest	test	SetupFutureTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+67.0	r2	SetupFutureTest	test	SetupFutureTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+67.0	r2	SetupFutureTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerFuture:2/2
+67.0	r2	SetupFutureTest	per	SetupFutureTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r2	SetupFutureTest	per	SetupFutureTest	observe	CvTrig	2,3,6	
+67.0	r2	SetupFutureTest	per	SetupFutureTest	observe	MarkerFuture	3,4	
+67.0	r2	SetupFutureTest	per	SetupFutureTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r2	SetupFutureTest	per	SetupFutureTest	observeAgain	CvTrig		
+67.0	r2	SetupFutureTest	per	SetupFutureTest	observeAgain	MarkerFuture	3	
+67.0	r2	SetupBatchTest	test	SetupBatchTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+67.0	r2	SetupBatchTest	test	SetupBatchTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+67.0	r2	SetupBatchTest	run					testRunCoverage=95% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerBatch:6/6
+67.0	r2	SetupBatchTest	per	SetupBatchTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	SetupBatchTest	per	SetupBatchTest	observe	CvTrig	2,3,6	
+67.0	r2	SetupBatchTest	per	SetupBatchTest	observe	MarkerBatch	2,3,5,6,8,9	
+67.0	r2	SetupBatchTest	per	SetupBatchTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	SetupBatchTest	per	SetupBatchTest	observeAgain	CvTrig		
+67.0	r2	SetupBatchTest	per	SetupBatchTest	observeAgain	MarkerBatch	2,5,8	
+67.0	r2	SetupThrowTest	test	SetupThrowTest	observe			Fail|MarkerException: job-boom
+67.0	r2	SetupThrowTest	test	SetupThrowTest	observeAgain			Fail|MarkerException: job-boom
+67.0	r2	SetupThrowTest	run					testRunCoverage=84% classes=AsyncFacts:11/11;CarryMix:11/11;CarryOther:2/2;CarryS:4/4;CarryShared:8/8;CvTrig:3/4;MarkerBatch:6/6;MarkerChain1:0/3;MarkerChain2:0/2;MarkerException:0/0;MarkerFuture:2/2;MarkerQ:2/2;MarkerThrow:0/3
+67.0	r2	SetupStopTest	test	SetupStopTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r2	SetupStopTest	test	SetupStopTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r2	SetupStopTest	run					testRunCoverage=94% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerQ:2/2
+67.0	r2	SetupStopTest	per	SetupStopTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	SetupStopTest	per	SetupStopTest	observe	CvTrig	2,3,6	
+67.0	r2	SetupStopTest	per	SetupStopTest	observe	MarkerQ	2,3	
+67.0	r2	SetupStopTest	per	SetupStopTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	SetupStopTest	per	SetupStopTest	observeAgain	CvTrig		
+67.0	r2	SetupStopTest	per	SetupStopTest	observeAgain	MarkerQ	2	
+67.0	r2	SetupNoneTest	test	SetupNoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	SetupNoneTest	test	SetupNoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	SetupNoneTest	run					testRunCoverage=93% classes=AsyncFacts:11/11;CvTrig:3/4
+67.0	r2	SetupNoneTest	per	SetupNoneTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r2	SetupNoneTest	per	SetupNoneTest	observe	CvTrig	2,3,6	
+67.0	r2	SetupNoneTest	per	SetupNoneTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r2	SetupNoneTest	per	SetupNoneTest	observeAgain	CvTrig		
+67.0	r2	setup-all-async	test	SetupBatchTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+67.0	r2	setup-all-async	test	SetupBatchTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-B=1, MK-BF=1, MK-SEED=1} queueableJobs=0 futureCalls=0 asyncCalls=1 jobs=(MarkerBatch/BatchApex/Completed/0, MarkerBatch/BatchApexWorker/Completed/0)
+67.0	r2	setup-all-async	test	SetupChainTest	observe			Fail|System.AsyncException: Maximum stack depth has been reached.
+67.0	r2	setup-all-async	test	SetupChainTest	observeAgain			Fail|System.AsyncException: Maximum stack depth has been reached.
+67.0	r2	setup-all-async	test	SetupFutureTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+67.0	r2	setup-all-async	test	SetupFutureTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-F=1} queueableJobs=0 futureCalls=1 asyncCalls=1 jobs=()
+67.0	r2	setup-all-async	test	SetupNoneTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	setup-all-async	test	SetupNoneTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-SYNC=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=()
+67.0	r2	setup-all-async	test	SetupQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r2	setup-all-async	test	SetupQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=1 futureCalls=0 asyncCalls=1 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r2	setup-all-async	test	SetupStopTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r2	setup-all-async	test	SetupStopTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=1} queueableJobs=0 futureCalls=0 asyncCalls=0 jobs=(MarkerQ/Queueable/Completed/0)
+67.0	r2	setup-all-async	test	SetupThrowTest	observe			Fail|MarkerException: job-boom
+67.0	r2	setup-all-async	test	SetupThrowTest	observeAgain			Fail|MarkerException: job-boom
+67.0	r2	setup-all-async	test	SetupTwoQTest	observe			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+67.0	r2	setup-all-async	test	SetupTwoQTest	observeAgain			Fail|System.AssertException: Assertion Failed: FACTS markers={MK-Q=2} queueableJobs=2 futureCalls=0 asyncCalls=2 jobs=(MarkerQ/Queueable/Completed/0, MarkerQ/Queueable/Completed/0)
+67.0	r2	setup-all-async	run					testRunCoverage=96% classes=AsyncFacts:11/11;CvTrig:3/4;MarkerBatch:6/6;MarkerFuture:2/2;MarkerQ:2/2
+67.0	r2	setup-all-async	per	SetupBatchTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	setup-all-async	per	SetupBatchTest	observe	CvTrig	2,3,6	
+67.0	r2	setup-all-async	per	SetupBatchTest	observe	MarkerBatch	2,3,5,6,8,9	
+67.0	r2	setup-all-async	per	SetupBatchTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	setup-all-async	per	SetupBatchTest	observeAgain	CvTrig		
+67.0	r2	setup-all-async	per	SetupBatchTest	observeAgain	MarkerBatch	2,5,8	
+67.0	r2	setup-all-async	per	SetupFutureTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r2	setup-all-async	per	SetupFutureTest	observe	CvTrig	2,3,6	
+67.0	r2	setup-all-async	per	SetupFutureTest	observe	MarkerFuture	3,4	
+67.0	r2	setup-all-async	per	SetupFutureTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r2	setup-all-async	per	SetupFutureTest	observeAgain	CvTrig		
+67.0	r2	setup-all-async	per	SetupFutureTest	observeAgain	MarkerFuture	3	
+67.0	r2	setup-all-async	per	SetupNoneTest	observe	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r2	setup-all-async	per	SetupNoneTest	observe	CvTrig	2,3,6	
+67.0	r2	setup-all-async	per	SetupNoneTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,12,13,14	
+67.0	r2	setup-all-async	per	SetupNoneTest	observeAgain	CvTrig		
+67.0	r2	setup-all-async	per	SetupQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	setup-all-async	per	SetupQTest	observe	CvTrig	2,3,6	
+67.0	r2	setup-all-async	per	SetupQTest	observe	MarkerQ	2,3	
+67.0	r2	setup-all-async	per	SetupQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	setup-all-async	per	SetupQTest	observeAgain	CvTrig		
+67.0	r2	setup-all-async	per	SetupQTest	observeAgain	MarkerQ	2	
+67.0	r2	setup-all-async	per	SetupStopTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	setup-all-async	per	SetupStopTest	observe	CvTrig	2,3,6	
+67.0	r2	setup-all-async	per	SetupStopTest	observe	MarkerQ	2,3	
+67.0	r2	setup-all-async	per	SetupStopTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	setup-all-async	per	SetupStopTest	observeAgain	CvTrig		
+67.0	r2	setup-all-async	per	SetupStopTest	observeAgain	MarkerQ	2	
+67.0	r2	setup-all-async	per	SetupTwoQTest	observe	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	setup-all-async	per	SetupTwoQTest	observe	CvTrig	2,3,6	
+67.0	r2	setup-all-async	per	SetupTwoQTest	observe	MarkerQ	2,3	
+67.0	r2	setup-all-async	per	SetupTwoQTest	observeAgain	AsyncFacts	2,3,4,5,6,8,9,10,12,13,14	
+67.0	r2	setup-all-async	per	SetupTwoQTest	observeAgain	CvTrig		
+67.0	r2	setup-all-async	per	SetupTwoQTest	observeAgain	MarkerQ	2	
+67.0	r2	f7a-ab-async	test	CvUnionTest	aLeft			Pass|
+67.0	r2	f7a-ab-async	test	CvUnionTest	bRight			Pass|
+67.0	r2	f7a-ab-async	run					testRunCoverage=100% classes=CvUnion:6/6
+67.0	r2	f7a-ab-async	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+67.0	r2	f7a-ab-async	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	
+67.0	r2	f7a-ab-sync	test	CvUnionTest	aLeft			Pass|
+67.0	r2	f7a-ab-sync	test	CvUnionTest	bRight			Pass|
+67.0	r2	f7a-ab-sync	run					testRunCoverage=60% classes=CvTrig:0/4;CvUnion:6/6
+67.0	r2	f7a-ab-sync	per	CvUnionTest	aLeft	CvTrig		
+67.0	r2	f7a-ab-sync	per	CvUnionTest	aLeft	CvUnion	2,3,4,5,9	
+67.0	r2	f7a-ab-sync	per	CvUnionTest	bRight	CvTrig		
+67.0	r2	f7a-ab-sync	per	CvUnionTest	bRight	CvUnion	2,3,4,7,9	

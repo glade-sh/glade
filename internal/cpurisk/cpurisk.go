@@ -73,15 +73,15 @@ func WeightSources() map[string]string {
 
 // Estimate returns the approximate Salesforce CPU milliseconds for the work.
 func (w Weights) Estimate(c vm.WorkCounts) float64 {
-	return float64(c.DMLRows)*w.DMLRowMS +
-		float64(c.SOQLRows)*w.SOQLRowMS +
-		float64(c.SOQLQueries)*w.SOQLQueryMS +
-		float64(c.DMLStatements)*w.DMLStatementMS +
-		float64(c.LoopIterations)*w.LoopIterationMS +
-		float64(c.Instructions)*w.InstructionMS +
-		float64(c.TriggerRuns)*w.TriggerRunMS +
-		float64(c.FlowRuns)*w.FlowRunMS +
-		float64(c.Callouts)*w.CalloutMS
+	return float64(float64(c.DMLRows)*w.DMLRowMS) +
+		float64(float64(c.SOQLRows)*w.SOQLRowMS) +
+		float64(float64(c.SOQLQueries)*w.SOQLQueryMS) +
+		float64(float64(c.DMLStatements)*w.DMLStatementMS) +
+		float64(float64(c.LoopIterations)*w.LoopIterationMS) +
+		float64(float64(c.Instructions)*w.InstructionMS) +
+		float64(float64(c.TriggerRuns)*w.TriggerRunMS) +
+		float64(float64(c.FlowRuns)*w.FlowRunMS) +
+		float64(float64(c.Callouts)*w.CalloutMS)
 }
 
 // Level classifies an estimate against the synchronous limit.

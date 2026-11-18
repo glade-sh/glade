@@ -1,0 +1,1 @@
+System.debug('OBS|gk_class|' + GdHolder.run());

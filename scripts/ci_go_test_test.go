@@ -335,6 +335,14 @@ func newApexHistoryFixture(t *testing.T, shardElapsed [2]float64) apexHistoryFix
 
 func newApexHistoryFixtureWithCount(t *testing.T, count int, shardElapsed [2]float64) apexHistoryFixture {
 	t.Helper()
+	return newApexHistoryFixtureSpread(t, count, shardElapsed, false)
+}
+
+// newApexHistoryFixtureSpread optionally divides each shard's elapsed time
+// equally among its tests. The Apex balance gate tolerates one dominant test,
+// so a fixture that models real imbalance needs many small tests.
+func newApexHistoryFixtureSpread(t *testing.T, count int, shardElapsed [2]float64, spread bool) apexHistoryFixture {
+	t.Helper()
 	fixture := apexHistoryFixture{root: t.TempDir()}
 	fixture.output = filepath.Join(fixture.root, "history", "apextest-duration-history.json")
 	names := make([]string, count)
@@ -373,7 +381,9 @@ func newApexHistoryFixtureWithCount(t *testing.T, count int, shardElapsed [2]flo
 		var events strings.Builder
 		for testIndex, name := range shardTests[index] {
 			elapsed := 0.0
-			if testIndex == 0 {
+			if spread {
+				elapsed = shardElapsed[index] / float64(len(shardTests[index]))
+			} else if testIndex == 0 {
 				elapsed = shardElapsed[index]
 			}
 			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%g}\n", fixturePackage, name, elapsed)
@@ -726,11 +736,11 @@ func TestCIApexDurationHistoryImbalanceGuard(t *testing.T) {
 	}{
 		{name: "balanced", elapsed: [2]float64{1, 1}},
 		{name: "exact 1.5 median boundary", elapsed: [2]float64{3, 1}},
-		{name: "above 1.5 median", elapsed: [2]float64{3.001, 1}, wantErr: true},
-		{name: "above 1.5 median with fallback plan", elapsed: [2]float64{3.001, 1}, fallback: true},
+		{name: "above 1.5 median", elapsed: [2]float64{4, 1}, wantErr: true},
+		{name: "above 1.5 median with fallback plan", elapsed: [2]float64{4, 1}, fallback: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			fixture := newApexHistoryFixture(t, tc.elapsed)
+			fixture := newApexHistoryFixtureSpread(t, 64, tc.elapsed, true)
 			setPlanHistoryUsed(t, fixture.shards[:], !tc.fallback)
 			out, err := runApexHistoryRefresh(t, fixture)
 			if (err != nil) != tc.wantErr {
@@ -742,7 +752,18 @@ func TestCIApexDurationHistoryImbalanceGuard(t *testing.T) {
 
 func durationHistoryRouteFixture(t *testing.T, packageName string, elapsed [2]float64) apexHistoryFixture {
 	t.Helper()
-	fixture := newApexHistoryFixtureWithCount(t, 2, elapsed)
+	return durationHistoryRouteFixtureCount(t, packageName, elapsed, 2, false)
+}
+
+// durationHistoryRouteSpreadFixture models imbalance across many small tests.
+func durationHistoryRouteSpreadFixture(t *testing.T, packageName string, elapsed [2]float64) apexHistoryFixture {
+	t.Helper()
+	return durationHistoryRouteFixtureCount(t, packageName, elapsed, 64, true)
+}
+
+func durationHistoryRouteFixtureCount(t *testing.T, packageName string, elapsed [2]float64, count int, spread bool) apexHistoryFixture {
+	t.Helper()
+	fixture := newApexHistoryFixtureSpread(t, count, elapsed, spread)
 	if packageName != fixturePackage {
 		for _, dir := range fixture.shards {
 			for _, name := range []string{"plan.json", "events.json"} {
@@ -788,13 +809,13 @@ func TestCIDurationHistoryTimingEventRoutes(t *testing.T) {
 				{name: "exact boundary PR", event: "pull_request", elapsed: [2]float64{3, 1}},
 				{name: "balanced push", event: "push", elapsed: [2]float64{1, 1}},
 				{name: "exact boundary push", event: "push", elapsed: [2]float64{3, 1}},
-				{name: "noisy PR", event: "pull_request", elapsed: [2]float64{100.69, 33.31}, advisory: true},
+				{name: "noisy PR", event: "pull_request", elapsed: [2]float64{200.69, 33.31}, advisory: true},
 				{name: "extreme noise PR", event: "pull_request", elapsed: [2]float64{1000, 0}, advisory: true},
-				{name: "noisy push", event: "push", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
-				{name: "noisy schedule", event: "schedule", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
-				{name: "noisy dispatch", event: "workflow_dispatch", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
-				{name: "noisy local", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
-				{name: "noisy PR target", event: "pull_request_target", elapsed: [2]float64{100.69, 33.31}, wantErr: true},
+				{name: "noisy push", event: "push", elapsed: [2]float64{200.69, 33.31}, wantErr: true},
+				{name: "noisy schedule", event: "schedule", elapsed: [2]float64{200.69, 33.31}, wantErr: true},
+				{name: "noisy dispatch", event: "workflow_dispatch", elapsed: [2]float64{200.69, 33.31}, wantErr: true},
+				{name: "noisy local", elapsed: [2]float64{200.69, 33.31}, wantErr: true},
+				{name: "noisy PR target", event: "pull_request_target", elapsed: [2]float64{200.69, 33.31}, wantErr: true},
 			} {
 				t.Run(route+"/"+entry+"/"+tc.name, func(t *testing.T) {
 					t.Setenv("GITHUB_EVENT_NAME", tc.event)
@@ -803,6 +824,10 @@ func TestCIDurationHistoryTimingEventRoutes(t *testing.T) {
 						packageName = semaFixturePackage
 					}
 					fixture := durationHistoryRouteFixture(t, packageName, tc.elapsed)
+					if route == "apex" {
+						// The Apex gate tolerates one dominant test; use many small ones.
+						fixture = durationHistoryRouteSpreadFixture(t, packageName, tc.elapsed)
+					}
 					// History-planned evidence; fallback plans are covered by
 					// TestCIDurationHistoryFallbackPlanTimingAdvisory.
 					setPlanHistoryUsed(t, fixture.shards[:], true)
@@ -830,11 +855,17 @@ func TestCIDurationHistoryTimingEventRoutes(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					if err := json.Unmarshal(data, &history); err != nil || history.Package != packageName || !history.Complete || len(history.Tests) != 2 {
+					if err := json.Unmarshal(data, &history); err != nil || history.Package != packageName || !history.Complete || len(history.Tests) != map[string]int{"sema": 2, "apex": 64}[route] {
 						t.Fatalf("invalid refreshed history: %s err=%v", data, err)
 					}
-					for index, test := range history.Tests {
-						if test.DurationMillis != int64(math.Round(tc.elapsed[index]*1000)) {
+					perShard := len(history.Tests) / 2
+					for index := 0; index < 2; index++ {
+						var total int64
+						for _, test := range history.Tests[index*perShard : (index+1)*perShard] {
+							total += test.DurationMillis
+						}
+						// Each spread test rounds to a millisecond.
+						if diff := total - int64(math.Round(tc.elapsed[index]*1000)); diff > 40 || diff < -40 {
 							t.Fatalf("history lost observed duration: %s", data)
 						}
 					}

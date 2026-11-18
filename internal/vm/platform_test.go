@@ -5811,8 +5811,9 @@ func TestExecApexPagesPageReferenceAndMessagesEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference page = new PageReference('/apex/Trail');
 System.assertEquals('/apex/Trail', page.getUrl());
-System.assertEquals('/apex/Trail', page.toString());
-System.assertEquals('/apex/Trail', String.valueOf(page));
+// Native dth_r2_pgref (API 62.0 and 67.0): every text form is System.PageReference[url].
+System.assertEquals('System.PageReference[/apex/Trail]', page.toString());
+System.assertEquals('System.PageReference[/apex/Trail]', String.valueOf(page));
 System.assertEquals(false, page.getRedirect());
 page.setRedirect(true);
 System.assertEquals(true, page.getRedirect());
@@ -5881,8 +5882,11 @@ func TestExecPageReferenceLocalMapsStartTypedAndMutable(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference blank = new PageReference();
 System.assertEquals('', blank.getUrl());
-System.assertEquals('', blank.toString());
-System.assertEquals('', String.valueOf(blank));
+// new PageReference() does not compile natively (sema rejects it: surf_collections_strings
+// dth_r2_pgctor); the VM keeps it for internal callers. A page with no url prints
+// System.PageReference[null], like the implicit current page.
+System.assertEquals('System.PageReference[null]', blank.toString());
+System.assertEquals('System.PageReference[null]', String.valueOf(blank));
 System.assertEquals(0, blank.getParameters().size());
 System.assertEquals(0, blank.getHeaders().size());
 blank.getParameters().put('id', '001B000001DVM9t');
@@ -12230,7 +12234,8 @@ Test.stopTest();
 	queueProgram, err := CompileAnonymous(`
 System.assertEquals(false, System.AsyncInfo.hasMaxStackDepth());
 System.assertEquals(1, System.AsyncInfo.getCurrentQueueableStackDepth());
-System.assertEquals(0, System.AsyncInfo.getMaximumQueueableStackDepth());
+// Native surf_async_options as02: no options means a null maximum.
+System.assertEquals(null, System.AsyncInfo.getMaximumQueueableStackDepth());
 // Native bare-enqueue rows at source62/67 distinguish absent delay from zero.
 System.assertEquals(null, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
 `)
@@ -13458,10 +13463,12 @@ System.assertEquals(3, gap.hour());
 System.assertEquals(10, gap.hourGmt());
 
 Datetime overlap = Datetime.newInstance(2024, 11, 3, 1, 30, 0);
-System.assertEquals('2024-11-03 08:30:00', overlap.formatGmt('yyyy-MM-dd HH:mm:ss'));
+// Native surf_datetime_locale dt03: an ambiguous local time takes the
+// post-transition (standard-time) occurrence.
+System.assertEquals('2024-11-03 09:30:00', overlap.formatGmt('yyyy-MM-dd HH:mm:ss'));
 System.assertEquals('11/3/2024, 1:30 AM', overlap.format());
 System.assertEquals(1, overlap.hour());
-System.assertEquals(8, overlap.hourGmt());
+System.assertEquals(9, overlap.hourGmt());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -16242,7 +16249,8 @@ System.assertEquals(2, CounterMock.idx);
 	machine := New(nil)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "CounterMock",
+		Name:       "CounterMock",
+		Interfaces: []string{"HttpCalloutMock"},
 		StaticFields: map[string]Field{
 			"idx": {Name: "idx", Type: "Integer", Static: true, Value: Int(0), InitialValue: Int(0)},
 		},
@@ -16315,7 +16323,8 @@ System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'page-2']);
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
-		Name: "CounterMock",
+		Name:       "CounterMock",
+		Interfaces: []string{"HttpCalloutMock"},
 		StaticFields: map[string]Field{
 			"idx": {Name: "idx", Type: "Integer", Static: true, Value: Int(0), InitialValue: Int(0)},
 		},

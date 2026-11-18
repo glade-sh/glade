@@ -3,9 +3,12 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"math/big"
+	"math/bits"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexlang"
@@ -14,7 +17,19 @@ import (
 )
 
 func apexDatetimeDisplayText(instant time.Time) string {
-	return instant.UTC().Format("2006-01-02 15:04:05")
+	utc := instant.UTC()
+	if utc.Before(hybridYearEnd) {
+		seconds := utc.Unix()
+		days := seconds / 86400
+		if seconds%86400 < 0 {
+			days--
+		}
+		if year, month, day := hybridCivil(days); year >= 1 {
+			clock := utc.Sub(time.Unix(days*86400, 0).UTC())
+			return fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", year, month, day, int(clock/time.Hour), int(clock/time.Minute)%60, int(clock/time.Second)%60)
+		}
+	}
+	return utc.Format("2006-01-02 15:04:05")
 }
 
 func (vm *VM) displayString(value Value, result *Result) (string, error) {
@@ -45,7 +60,7 @@ func (vm *VM) displayStringValue(value Value, result *Result) (Value, error) {
 		text, err := vm.displayList(value.List, result)
 		return String(text), err
 	case ValueSet:
-		text, err := vm.displaySet(value.Set, result)
+		text, err := vm.displaySet(describeKeySetTextOrder(value), result)
 		return String(text), err
 	case ValueMap:
 		// Direct ordinary class values use native
@@ -3216,6 +3231,10 @@ func isSObjectFieldTokenType(typeName string) bool {
 // Equal SObjects hash their visible field values, not the record map's address.
 // Internal selection/error/clone markers do not participate in value equality.
 func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
+	return sObjectHashCodeEnv(hashEnv{}, value, seen)
+}
+
+func sObjectHashCodeEnv(env hashEnv, value Value, seen map[uint64]bool) int32 {
 	if value.Ref != 0 {
 		if seen[value.Ref] {
 			return 0
@@ -3223,7 +3242,10 @@ func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
 		seen[value.Ref] = true
 		defer delete(seen, value.Ref)
 	}
-	hash := javaStringHashCode(strings.ToLower(stripSObjectNamespacePrefix(canonicalRuntimePlatformType(value.Type))))
+	// Native hash rows (surf_collections_strings hs02): the sum, over assigned
+	// fields, of fieldName.hashCode() ^ fieldValue.hashCode(). The object type
+	// does not take part, and an empty record hashes to 0.
+	var hash int32
 	for field, child := range value.Fields {
 		// Preserve the legacy hash for record shapes outside the captured
 		// System.hashCode rule, even when equality retains an explicit null Id.
@@ -3233,23 +3255,32 @@ func sObjectHashCode(value Value, seen map[uint64]bool) int32 {
 		if !sObjectEqualityFieldIncluded(value, field, child) {
 			continue
 		}
-		hash += javaStringHashCode(strings.ToLower(field)) ^ sObjectFieldHashCode(child, seen)
+		if child.Kind == ValueList {
+			// Native hs5 (surf_collections_strings cs20-cs21): a child
+			// relationship list contributes its size, and nothing when empty.
+			if len(child.List) == 0 {
+				continue
+			}
+			hash += javaStringHashCode(field) ^ int32(len(child.List))
+			continue
+		}
+		hash += javaStringHashCode(field) ^ sObjectFieldHashCode(env, env.readField(value, field, child), seen)
 	}
 	return hash
 }
 
-func sObjectFieldHashCode(value Value, seen map[uint64]bool) int32 {
-	if id, ok := sObjectIDFromValue(value); ok {
-		return javaStringHashCode(canonicalIDMapKey(string(id)))
+func sObjectFieldHashCode(env hashEnv, value Value, seen map[uint64]bool) int32 {
+	if text, ok := typedIDValueText(value); ok {
+		return javaStringHashCode(displayIDText(text))
 	}
 	if isRelationshipNull(value) || sObjectHashMissingRelationship(value, seen) {
 		return 0
 	}
 	if value.Kind == ValueObject && sObjectValueType(value.Type) {
-		return sObjectHashCode(value, seen)
+		return sObjectHashCodeEnv(env, value, seen)
 	}
 	if value.Kind != ValueList && value.Kind != ValueSet && value.Kind != ValueMap {
-		return valueHashCode(value)
+		return valueHashCodeEnv(env, value)
 	}
 	if value.Ref != 0 {
 		if seen[value.Ref] {
@@ -3263,15 +3294,15 @@ func sObjectFieldHashCode(value Value, seen map[uint64]bool) int32 {
 	case ValueList:
 		hash = 1
 		for _, item := range value.List {
-			hash = 31*hash + sObjectFieldHashCode(item, seen)
+			hash = 31*hash + sObjectFieldHashCode(env, item, seen)
 		}
 	case ValueSet:
 		for _, item := range value.Set {
-			hash += sObjectFieldHashCode(item, seen)
+			hash += sObjectFieldHashCode(env, item, seen)
 		}
 	case ValueMap:
 		for key, item := range value.Map {
-			hash += javaStringHashCode(key) ^ sObjectFieldHashCode(item, seen)
+			hash += javaStringHashCode(key) ^ sObjectFieldHashCode(env, item, seen)
 		}
 	}
 	return hash
@@ -3306,4 +3337,178 @@ func sObjectHashMissingRelationship(value Value, seen map[uint64]bool) bool {
 		}
 	}
 	return seenField
+}
+
+// javaBigDecimalHashCode mirrors java.math.BigDecimal.hashCode: 31 times the
+// unscaled value's BigInteger hash, plus the scale. The native row hs02 pins
+// the scale-0 case (a Decimal field set to 1 hashes to 31); other scales follow
+// the same Java rule.
+func javaBigDecimalHashCode(value Value) int32 {
+	text := strings.TrimSpace(value.Text)
+	if text == "" {
+		text = strconv.FormatFloat(value.Decimal, 'f', -1, 64)
+	}
+	negative := false
+	if strings.HasPrefix(text, "-") {
+		negative = true
+		text = text[1:]
+	} else if strings.HasPrefix(text, "+") {
+		text = text[1:]
+	}
+	exponent := 0
+	if at := strings.IndexAny(text, "eE"); at >= 0 {
+		parsed, err := strconv.Atoi(strings.TrimPrefix(text[at+1:], "+"))
+		if err != nil {
+			return valueHashCode(value)
+		}
+		exponent = parsed
+		text = text[:at]
+	}
+	scale := 0
+	if dot := strings.IndexByte(text, '.'); dot >= 0 {
+		scale = len(text) - dot - 1
+		text = text[:dot] + text[dot+1:]
+	}
+	scale -= exponent
+	unscaled, ok := new(big.Int).SetString(text, 10)
+	if !ok {
+		return valueHashCode(value)
+	}
+	var hash int32
+	if unscaled.Sign() != 0 {
+		words := unscaled.Bits()
+		var mag []uint32
+		for i := len(words) - 1; i >= 0; i-- {
+			word := uint64(words[i])
+			if bits.UintSize == 64 {
+				mag = append(mag, uint32(word>>32), uint32(word))
+			} else {
+				mag = append(mag, uint32(word))
+			}
+		}
+		for len(mag) > 0 && mag[0] == 0 {
+			mag = mag[1:]
+		}
+		for _, word := range mag {
+			hash = 31*hash + int32(word)
+		}
+		if negative {
+			hash = -hash
+		}
+	}
+	return 31*hash + int32(scale)
+}
+
+// hashEnv carries the VM context a hash needs: the declared scale a queried
+// Decimal reads back with (native cs13, cs25: a Number(18,2) holding 1.5 hashes
+// as 1.50 directly, in a List or Set, and as a nested parent) and the user's
+// locale, which sets the Datetime calendar term. The zero value hashes with
+// stored values and the en_US term.
+type hashEnv struct {
+	vm *VM
+}
+
+func (vm *VM) hashEnv() hashEnv { return hashEnv{vm: vm} }
+
+func (env hashEnv) readField(owner Value, field string, child Value) Value {
+	if env.vm == nil || child.Kind != ValueDecimal || isInternalSObjectField(field) {
+		return child
+	}
+	_, fieldDef, ok := env.vm.sObjectFieldDefinition(owner.Type, field)
+	if !ok {
+		return child
+	}
+	if read := coerceReadSObjectFieldRuntimeValue(owner, child, fieldDef); read.Kind == ValueDecimal {
+		return read
+	}
+	return child
+}
+
+// calendarTerm is the XOR term of the Datetime hash. Native Datetime.hashCode
+// is Long.hashCode(millis) XOR (calendarHashBase ^ weekTerm(locale)), the
+// java.util.Calendar hash shape (firstDayOfWeek<<1) ^ (minimalDaysInFirstWeek<<4)
+// on top of a fitted base. The base, 577755 ^ 18 = 577609, carries the lenient
+// bit and the zone part and is FITTED, not derived: the time zone never changed
+// the term (Los Angeles, Kolkata, Auckland), and no clean Calendar
+// decomposition of it exists. The week term follows the user's locale
+// (surf_collections_strings cs28-cs44). KNOWN GAP: a locale without a region
+// uses the en_US term, and region data outside the captured set is unverified.
+func (env hashEnv) calendarTerm() int32 {
+	return env.localeCalendarTerm()
+}
+
+// calendarHashBase is the fitted base of the Datetime hash term (see calendarTerm).
+const calendarHashBase = 577755 ^ 18
+
+// localeCalendarTerm is the term of the user running now. A Datetime carries the
+// term of its construction instead (Value.datetimeWeekTerm).
+func (env hashEnv) localeCalendarTerm() int32 {
+	const base = calendarHashBase
+	locale := "en_US"
+	if env.vm != nil {
+		locale = env.vm.currentUserInfoField("LocaleSidKey", "en_US")
+	}
+	return base ^ calendarWeekTerm(locale)
+}
+
+// calendarWeekTerm returns (firstDayOfWeek<<1) ^ (minimalDaysInFirstWeek<<4)
+// with Calendar.SUNDAY = 1 through SATURDAY = 7. The region sets are the public
+// CLDR supplemental weekData (firstDay and minDays by territory); regions not
+// listed use the CLDR default of Monday and one day. Captured regions: US, CA,
+// BR, IN, CN, KR, JP, PT (Sunday); GB, FR, DE, ES, RU (Monday, minDays 4); AU
+// (Monday, 1); AE (Saturday, 1). PT is Sunday with minDays 4, as CLDR lists it.
+func calendarWeekTerm(locale string) int32 {
+	if cached, ok := calendarWeekTerms.Load(locale); ok {
+		return cached.(int32)
+	}
+	term := calendarWeekTermUncached(locale)
+	calendarWeekTerms.Store(locale, term)
+	return term
+}
+
+// calendarWeekTerms memoizes calendarWeekTerm by locale; a Datetime stamps its
+// term on every construction, so the lookup must not allocate.
+var calendarWeekTerms sync.Map
+
+func calendarWeekTermUncached(locale string) int32 {
+	parts := strings.Split(locale, "_")
+	if len(parts) < 2 || parts[1] == "" {
+		// A language-only locale takes its CLDR likely region (native dth_loc_a_de
+		// and dth_loc_b_fr: de and fr hash as Monday with four days). A language
+		// outside the table keeps the earlier en_US term.
+		region, ok := likelyLocaleRegion[strings.ToLower(parts[0])]
+		if !ok {
+			return 1<<1 ^ 1<<4
+		}
+		parts = []string{parts[0], region}
+	}
+	region := strings.ToUpper(parts[1])
+	has := func(set string) bool { return strings.Contains(" "+set+" ", " "+region+" ") }
+	first := int32(2) // Monday
+	switch {
+	case has("AE AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY"):
+		first = 7
+	case has("MV"):
+		first = 6
+	case has("AG AS BD BR BS BT BW BZ CA CN CO DM DO ET GT GU HK HN ID IL IN JM JP KE KH KR LA MH MM MO MT MX MZ NI NP PA PE PH PK PR PT PY SA SG SV TH TT TW UM US VE VI WS YE ZA ZW"):
+		first = 1
+	}
+	min := int32(1)
+	if has("AD AN AT AX BE BG CH CZ DE DK EE ES FI FJ FO FR GB GF GG GI GP GR HU IE IM IS IT JE LI LT LU MC MQ NL NO PL PT RE RU SE SJ SK SM VA") {
+		min = 4
+	}
+	return first<<1 ^ min<<4
+}
+
+// likelyLocaleRegion maps a language to its CLDR likely-subtags region (the
+// public supplemental likelySubtags data). Only de and fr are captured.
+var likelyLocaleRegion = map[string]string{
+	"af": "ZA", "am": "ET", "ar": "EG", "az": "AZ", "be": "BY", "bg": "BG", "bn": "BD", "bs": "BA", "ca": "ES", "cs": "CZ",
+	"cy": "GB", "da": "DK", "de": "DE", "el": "GR", "en": "US", "es": "ES", "et": "EE", "eu": "ES", "fa": "IR", "fi": "FI",
+	"fr": "FR", "ga": "IE", "gl": "ES", "gu": "IN", "he": "IL", "iw": "IL", "hi": "IN", "hr": "HR", "hu": "HU", "hy": "AM",
+	"id": "ID", "in": "ID", "is": "IS", "it": "IT", "ja": "JP", "ka": "GE", "kk": "KZ", "km": "KH", "kn": "IN", "ko": "KR",
+	"lt": "LT", "lv": "LV", "mk": "MK", "ml": "IN", "mn": "MN", "mr": "IN", "ms": "MY", "mt": "MT", "my": "MM", "nb": "NO",
+	"ne": "NP", "nl": "NL", "no": "NO", "pa": "IN", "pl": "PL", "pt": "BR", "ro": "RO", "ru": "RU", "sk": "SK", "sl": "SI",
+	"sq": "AL", "sr": "RS", "sv": "SE", "sw": "TZ", "ta": "IN", "te": "IN", "th": "TH", "tl": "PH", "tr": "TR", "uk": "UA",
+	"ur": "PK", "uz": "UZ", "vi": "VN", "zh": "CN", "zu": "ZA",
 }

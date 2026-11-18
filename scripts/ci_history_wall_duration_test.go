@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -41,17 +42,26 @@ func wallEventLines(packageName string, events []wallEvent) string {
 }
 
 // wallHistoryFixture writes one shard directory per entry of shardEvents. Each
-// shard owns the single test TestWallNN.
+// shard owns the top-level tests named in its events, TestWallNN by default.
 func wallHistoryFixture(t *testing.T, packageName string, historyUsed bool, shardEvents [][]wallEvent) (string, []string) {
 	t.Helper()
 	root := t.TempDir()
-	names := make([]string, len(shardEvents))
+	names := make([][]string, len(shardEvents))
+	var all []string
 	shards := make([]map[string]any, len(shardEvents))
 	for i := range names {
-		names[i] = fmt.Sprintf("TestWall%02d", i)
-		shards[i] = map[string]any{"index": i, "tests": []string{names[i]},
-			"estimatedDurationMillis": 0, "regex": "^(?:" + names[i] + ")$"}
+		seen := map[string]bool{}
+		for _, event := range shardEvents[i] {
+			if !strings.Contains(event.test, "/") && !seen[event.test] {
+				seen[event.test] = true
+				names[i] = append(names[i], event.test)
+			}
+		}
+		all = append(all, names[i]...)
+		shards[i] = map[string]any{"index": i, "tests": names[i],
+			"estimatedDurationMillis": 0, "regex": "^(?:" + strings.Join(names[i], "|") + ")$"}
 	}
+	sort.Strings(all)
 	plan := map[string]any{"version": 1, "package": packageName, "historyUsed": historyUsed, "shards": shards}
 	dirs := make([]string, len(shardEvents))
 	for i := range dirs {
@@ -62,10 +72,10 @@ func wallHistoryFixture(t *testing.T, packageName string, historyUsed bool, shar
 		writeJSONFixture(t, filepath.Join(dirs[i], "plan.json"), plan)
 		writeJSONFixture(t, filepath.Join(dirs[i], "selected-shard.json"), shards[i])
 		writeJSONFixture(t, filepath.Join(dirs[i], "validation-summary.json"), map[string]any{
-			"valid": true, "expected": []string{names[i]}, "passed": []string{names[i]}, "errors": []string{},
+			"valid": true, "expected": names[i], "passed": names[i], "errors": []string{},
 		})
 		for file, data := range map[string]string{
-			"discovery.txt": strings.Join(names, "\n") + "\n",
+			"discovery.txt": strings.Join(all, "\n") + "\n",
 			"events.json":   wallEventLines(packageName, shardEvents[i]),
 		} {
 			if err := os.WriteFile(filepath.Join(dirs[i], file), []byte(data), 0600); err != nil {
@@ -196,8 +206,10 @@ func TestCIApexHistoryWallTimeFallsBackToElapsed(t *testing.T) {
 	})
 }
 
-// The balance gate must see the same weights the planner will use: a shard
-// whose parents hide four minutes behind parallel subtests is not balanced.
+// The balance gate must see the same weights the planner will use. A shard
+// whose parent hides four minutes behind parallel subtests is that one large
+// test. The history keeps its wall weight and the gate tolerates it while the
+// shard stays within the caps; skew elsewhere in the shard still rejects.
 func TestCIApexHistoryBalanceGateUsesWallTime(t *testing.T) {
 	events := [][]wallEvent{
 		parallelParent("TestWall00", 240),
@@ -206,12 +218,39 @@ func TestCIApexHistoryBalanceGateUsesWallTime(t *testing.T) {
 	}
 	t.Setenv("GITHUB_EVENT_NAME", "push")
 	t.Setenv("GITHUB_HEAD_REF", "")
+	// A 240s hidden-subtest parent beside two 1s shards is far over every cap.
 	output, dirs := wallHistoryFixture(t, fixturePackage, true, events)
 	if out, err := runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs); err == nil || !strings.Contains(out, "shard 0 elapsed") || !strings.Contains(out, "exceeds 1.5x") {
-		t.Fatalf("history-planned skew hidden behind parallel subtests must be rejected: %v\n%s", err, out)
+		t.Fatalf("a hidden-subtest parent far over the cap must be rejected: %v\n%s", err, out)
+	}
+	quiet := func(names ...string) [][]wallEvent {
+		var rows [][]wallEvent
+		for _, name := range names {
+			rows = append(rows, sequentialTest(name, 100))
+		}
+		return rows
+	}
+	// Shard 0 is 220s against a 100s median: a 100s parent plus 60s and 60s
+	// tests. Without the parent it is inside the ratio, so the history keeps
+	// the wall weight.
+	under := append([][]wallEvent{append(append(parallelParent("TestWall00", 100), sequentialTest("TestWall03", 60)...), sequentialTest("TestWall05", 60)...)}, quiet("TestWall01", "TestWall02", "TestWall04")...)
+	output, dirs = wallHistoryFixture(t, fixturePackage, true, under)
+	out, err := runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs)
+	if err != nil || !strings.Contains(out, "dominated by one test TestWall00") {
+		t.Fatalf("a parent under the cap must keep history: %v\n%s", err, out)
+	}
+	if got := readWallHistory(t, output); got["TestWall00"] != 100000 {
+		t.Fatalf("history must keep the wall weight: %v", got)
+	}
+	// A 60s parent with three 90s tests is 330s: the rest of the shard is
+	// skewed, so the parent being under the cap does not save it.
+	skewed := append([][]wallEvent{append(append(append(parallelParent("TestWall00", 60), sequentialTest("TestWall03", 90)...), sequentialTest("TestWall05", 90)...), sequentialTest("TestWall06", 90)...)}, quiet("TestWall01", "TestWall02", "TestWall04")...)
+	output, dirs = wallHistoryFixture(t, fixturePackage, true, skewed)
+	if out, err := runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs); err == nil || !strings.Contains(out, "shard 0 elapsed") || !strings.Contains(out, "exceeds 1.5x") {
+		t.Fatalf("skew beside a hidden-subtest parent must be rejected: %v\n%s", err, out)
 	}
 	output, dirs = wallHistoryFixture(t, fixturePackage, false, events)
-	out, err := runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs)
+	out, err = runWallHistory(t, fixturePackage, "Apex", "apextest", output, dirs)
 	if err != nil || !strings.Contains(out, "timing advisory:") {
 		t.Fatalf("fallback-planned skew must stay advisory: %v\n%s", err, out)
 	}

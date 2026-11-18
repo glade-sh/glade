@@ -52,6 +52,10 @@ func (vm *VM) executeAutomationLock(op string, args []Value, result *Result) (Va
 	}
 	forwarded := append([]Value(nil), args...)
 	forwarded[0] = value
+	// The partial-lock mixed-DML result is captured for Approval.lock only.
+	previousApprovalLock := vm.approvalLockCall
+	vm.approvalLockCall = op == "lock"
+	defer func() { vm.approvalLockCall = previousApprovalLock }()
 	resultType := "Approval.LockResult"
 	if op == "unlock" {
 		resultType = "Approval.UnlockResult"

@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>MinActive__c</fullName><label>Min Active</label><summarizedField>RollChild__c.Amount__c</summarizedField><summaryFilterItems><field>RollChild__c.Active__c</field><operation>equals</operation><value>True</value></summaryFilterItems><summaryForeignKey>RollChild__c.Parent__c</summaryForeignKey><summaryOperation>min</summaryOperation><type>Summary</type></CustomField>

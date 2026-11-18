@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -13,9 +14,10 @@ func TestGlobalDescribeViewsIsolateMutations(t *testing.T) {
 	for _, namespaced := range []bool{false, true} {
 		for _, api := range []string{"62.0", "67.0"} {
 			for _, mutation := range []string{
-				"holder.put('private', Account.SObjectType);",
-				"holder.putAll(new Map<String,Schema.SObjectType>{'private' => Account.SObjectType});",
-				"holder.remove('account');",
+				// put, putAll and remove are read-only (review_round11 gw_put,
+				// gw_putall, gk_direct); these are the writes that succeed.
+				"holder.keySet().remove('account');",
+				"holder.keySet().retainAll(new Set<String>{'user'});",
 				"holder.clear();",
 			} {
 				t.Run(fmt.Sprintf("namespace=%v/api=%s/%s", namespaced, api, mutation), func(t *testing.T) {
@@ -64,14 +66,14 @@ func TestGlobalDescribeViewKeepsCanonicalStorageUntilWrite(t *testing.T) {
 	order := append([]string(nil), orderedValueMapKeys(raw)...)
 	machine.Globals["holder"] = view
 	machine.VarTypes["holder"] = view.Type
-	if _, _, err := machine.callValueMember("holder", view, "put", []Value{String("private"), sObjectTypeToken("Account")}, &Result{}); err != nil {
+	if _, _, err := machine.callValueMember("holder", view, "clear", nil, &Result{}); err != nil {
 		t.Fatal(err)
 	}
 	updated := machine.Globals["holder"]
 	if sameMapBacking(updated.Map, raw.Map) || updated.Ref != view.Ref {
 		t.Fatal("write did not detach the view while preserving its identity")
 	}
-	if _, ok := raw.Map[mapKey(String("private"))]; ok || !reflect.DeepEqual(order, orderedValueMapKeys(raw)) {
+	if _, ok := raw.Map[mapKey(String("account"))]; !ok || !reflect.DeepEqual(order, orderedValueMapKeys(raw)) {
 		t.Fatal("write changed canonical entries or order")
 	}
 }
@@ -115,7 +117,8 @@ func TestGlobalDescribeWrittenEntriesStillValidateOnTypedBinding(t *testing.T) {
 		{Bool(true), sObjectTypeToken("Account")},
 	} {
 		machine := describeShareUnprimed()
-		raw := machine.globalDescribeMapValue()
+		// The raw app/module cache stays writable; the global view is not.
+		raw := machine.schemaGlobalDescribe()
 		if _, _, err := machine.callValueMember("", raw, "put", []Value{entry.key, entry.value}, &Result{}); err != nil {
 			t.Fatal(err)
 		}
@@ -135,8 +138,10 @@ func TestGlobalDescribeWritesPreserveRawAppAndModuleViews(t *testing.T) {
 		{"remove", []Value{String("missing")}},
 	} {
 		machine := describeShareUnprimed()
-		if _, _, err := machine.callValueMember("", machine.globalDescribeMapValue(), mutation.method, mutation.args, &Result{}); err != nil {
-			t.Fatal(err)
+		// NATIVE review_round11 gw_put, gw_putall, gw_remove_missing: the
+		// global view refuses the write and leaves the raw cache alone.
+		if _, _, err := machine.callValueMember("", machine.globalDescribeMapValue(), mutation.method, mutation.args, &Result{}); err == nil || err.Error() != readOnlyCollectionFault {
+			t.Fatalf("%s: err=%v, want the read-only fault", mutation.method, err)
 		}
 		if isGlobalDescribeMap(machine.schemaGlobalDescribe()) {
 			t.Fatalf("%s published the global-only marker into the raw cache", mutation.method)
@@ -149,13 +154,17 @@ System.assert(Schema.getModuleDescribe('module').keySet().contains('Widget__c'))
 }
 
 // keySet on the global describe map returns a fresh Set whose contents match
-// the lower-cased unique keys; mutating it must not touch the map.
+// the lower-cased unique keys; mutating a copy of it must not touch the map.
+// NATIVE review_round10 g_gd_add: add on the key set itself raises the
+// uncatchable FinalException, and g_gd_clone_add: a clone is writable. remove
+// and clear on the key set itself write through to that map and not to a fresh
+// getGlobalDescribe() (g_gd_remove N to N-1, g_gd_clear 0|0|N; APIs 62.0, 67.0).
 func TestGlobalDescribeKeySetIsFreshAndComplete(t *testing.T) {
 	for _, namespaced := range []bool{false, true} {
 		t.Run(fmt.Sprintf("namespace=%v", namespaced), func(t *testing.T) {
 			machine := describeShareUnprimedFor(namespaced)
 			program, err := CompileAnonymousWithOptions(`Map<String,Schema.SObjectType> g = Schema.getGlobalDescribe();
-Set<String> keys = g.keySet();
+Set<String> keys = g.keySet().clone();
 System.assert(keys.contains('account'));
 System.assert(!keys.contains('Account'));
 Integer n = keys.size();
@@ -170,6 +179,19 @@ System.assertEquals(mapSize, g.size());
 for (String k : again) {
     System.assertEquals(k, k.toLowerCase());
 }
+Set<String> live = g.keySet();
+live.remove('account');
+System.assertEquals(n - 1, live.size());
+System.assert(!live.contains('account'));
+System.assertEquals(mapSize - 1, g.size());
+System.assert(!g.containsKey('account'));
+System.assertEquals(null, g.get('account'));
+System.assertEquals(mapSize, Schema.getGlobalDescribe().size());
+System.assert(Schema.getGlobalDescribe().containsKey('account'));
+live.clear();
+System.assertEquals(0, live.size());
+System.assertEquals(0, g.size());
+System.assertEquals(mapSize, Schema.getGlobalDescribe().size());
 `, CompileOptions{APIVersion: "67.0"})
 			if err != nil {
 				t.Fatal(err)
@@ -178,5 +200,37 @@ for (String k : again) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+// NATIVE review_round11 dc_typed_self, dc_chained_self, dc_int, dc_object,
+// dc_list_value, dc_nested_map, dc_nested_sobject_list_map and dc_fieldmap (62.0, 67.0): Map.deepClone is refused unless the map's values
+// are SObjects; dc_sobject and dc_account run.
+func TestMapDeepCloneNeedsSObjectValues(t *testing.T) {
+	for _, row := range []struct{ source, err string }{
+		{"Map<String,Schema.SObjectType> gd = Schema.getGlobalDescribe(); Map<String,Schema.SObjectType> d = gd.deepClone();", "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>"},
+		{"Map<String,Schema.SObjectType> d = Schema.getGlobalDescribe().deepClone();", "Operation only applies to SObject value map types: Map<String,Schema.SObjectType>"},
+		{"Map<String,Integer> m = new Map<String,Integer>{'a' => 1}; Map<String,Integer> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Integer>"},
+		{"Map<String,Object> m = new Map<String,Object>{'a' => 1}; Map<String,Object> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Object>"},
+		{"Map<String,Map<String,Account>> m = new Map<String,Map<String,Account>>{'a' => new Map<String,Account>()}; Map<String,Map<String,Account>> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Map<String,Account>>"},
+		{"Map<String,Map<Id,SObject>> m = new Map<String,Map<Id,SObject>>(); Map<String,Map<Id,SObject>> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Map<Id,SObject>>"},
+		{"Map<String,Schema.SObjectField> m = Schema.SObjectType.Account.fields.getMap(); Map<String,Schema.SObjectField> d = m.deepClone();", "Operation only applies to SObject value map types: Map<String,Schema.SObjectField>"},
+		{"Map<String,SObject> m = new Map<String,SObject>{'a' => new Account(Name = 'x')}; Map<String,SObject> d = m.deepClone(); System.assertEquals('x', d.get('a').get('Name'));", ""},
+		{"Map<Id,Account> m = new Map<Id,Account>(); Map<Id,Account> d = m.deepClone(); System.assertEquals(0, d.size());", ""},
+	} {
+		for _, namespaced := range []bool{false, true} {
+			machine := describeShareUnprimedFor(namespaced)
+			program, err := CompileAnonymousWithOptions(row.source, CompileOptions{APIVersion: "67.0"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = machine.Execute(program)
+			switch {
+			case row.err == "" && err != nil:
+				t.Fatalf("%s: %v", row.source, err)
+			case row.err != "" && (err == nil || !strings.Contains(err.Error(), row.err)):
+				t.Fatalf("%s: err=%v, want %q", row.source, err, row.err)
+			}
+		}
 	}
 }

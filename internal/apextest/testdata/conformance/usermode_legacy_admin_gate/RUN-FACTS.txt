@@ -1,0 +1,9 @@
+Administrator's explicit Database.insert(record, AccessLevel.USER_MODE) in a swallowing try/catch, from a class at API 61.0 and 62.0, run by a @IsTest class at 62.0 and 67.0, for a custom object whose one optional text field has no grant.
+org: unnamespaced rows from a fresh scratch org on a campaign Dev Hub (Developer Edition, deleted after the run, delete verified); namespaced rows from a persistent namespaced dev org with the classes, object and permission set deployed from the nsp project and destroyed afterwards. Org ids, usernames, aliases and hosts are not recorded.
+capture date: 2026-11-16 (UTC). sf 2.156.8 to 2.157.8. Each row is one test method, one transaction, two repeats.
+user: the System Administrator profile user that ran the tests. Modify All Data covers object access; the field has no grant unless the row's grant says so.
+grant: nogrant = no field grant (CxT0 classes). testsetup-permset = the permission set that grants the field is assigned to the running user in @TestSetup (CxT1 classes). preassigned-permset = the permission set was assigned to the user in the org before the test run started. profile = the Admin profile carries the field grant (deployed before the run).
+org column: plain = unnamespaced object; nsp = the project's own namespace (nsprobe), classes and object deployed into that namespaced org.
+route: named @IsTest methods; the test body asserts false with RESULT => text; observation is the SaveResult or exception text and the row count.
+Glade overlays: overlay-permset/glade.yml is test.permissionSets for the preassigned-permset rows; overlay-profile adds the Admin profile for the profile rows.
+Not captured: sfdx-project.json apexTestAccess, which applies only to package-version test runs.

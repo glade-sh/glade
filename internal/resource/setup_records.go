@@ -58,7 +58,7 @@ func setupRecordMetadataOwners(p project.Project) map[string]string {
 			return
 		}
 		seen[current] = true
-		lists := [][]string{current.BusinessHoursSettingsFiles, current.AutoResponseRuleFiles, current.ApprovalProcessFiles, current.AssignmentRuleFiles, current.MatchingRuleFiles, current.PlatformEventChannelMemberFiles, current.DuplicateRuleFiles}
+		lists := [][]string{current.BusinessHoursSettingsFiles, current.SharingSettingsFiles, current.AutoResponseRuleFiles, current.ApprovalProcessFiles, current.AssignmentRuleFiles, current.MatchingRuleFiles, current.PlatformEventChannelMemberFiles, current.DuplicateRuleFiles}
 		if len(current.AutoResponseRuleFiles) > 0 {
 			lists = append(lists, current.EmailTemplateFiles)
 		}
@@ -232,6 +232,21 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 		if strings.HasSuffix(lower, ".matchingrule-meta.xml") || strings.HasSuffix(lower, ".matchingrule") {
 			continue // Matching declarations are installed by the automation loader.
 		}
+		if base := strings.ToLower(filepath.Base(path)); base == "sharing.settings-meta.xml" || base == "sharing.settings" {
+			if owners[path] != "" {
+				continue // Org-wide settings come from the root project only.
+			}
+			var settings struct {
+				KeepManualSharesOnTransfer *bool `xml:"enableKeepManualSharesOnTransfer"`
+			}
+			if err := xml.Unmarshal(body, &settings); err != nil {
+				return fmt.Errorf("load SharingSettings metadata %s: %w", path, err)
+			}
+			if settings.KeepManualSharesOnTransfer != nil {
+				staged.Metadata.KeepManualSharesOnTransfer = *settings.KeepManualSharesOnTransfer
+			}
+			continue
+		}
 		if strings.HasSuffix(lower, ".duplicaterule-meta.xml") || strings.HasSuffix(lower, ".duplicaterule") {
 			var rule duplicateRuleRecordXML
 			if err := xml.Unmarshal(body, &rule); err != nil {
@@ -304,6 +319,7 @@ func applySetupRecordMetadata(org *storage.OrgState, p project.Project, readMeta
 		storage.RebuildObjectIndexes(org, name)
 	}
 	org.Metadata.ChangeEventEntities = staged.Metadata.ChangeEventEntities
+	org.Metadata.KeepManualSharesOnTransfer = staged.Metadata.KeepManualSharesOnTransfer
 	org.IDSequences = generator.Sequences
 	org.ClearRuntimeSchemaStamp()
 	return nil

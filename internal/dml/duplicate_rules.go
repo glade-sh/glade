@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"math"
 	"os"
 	"sort"
 	"strings"
@@ -405,8 +406,11 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 		}
 		var standardMatch func(existing storage.Record) (bool, float64)
 		var keys []fuzzyKeyMode
+		var prepared preparedCustomMatch
+		usePrepared := false
 		if !standard {
 			keys = customRuleKeyModes(matching)
+			prepared, usePrepared = newPreparedCustomMatch(matching, keys, candidate)
 		}
 		scan := true
 		if standard {
@@ -437,7 +441,12 @@ func FindDuplicateMatchesAmong(org *storage.OrgState, rule storage.DuplicateRule
 				matched, confidence = standardMatch(existing)
 			} else {
 				var supported bool
-				if matched, supported, confidence = customDuplicateMatch(matching, keys, candidate, existing); !supported {
+				if usePrepared {
+					matched, supported, confidence = prepared.match(existing)
+				} else {
+					matched, supported, confidence = customDuplicateMatch(matching, keys, candidate, existing)
+				}
+				if !supported {
 					return result, false
 				}
 			}
@@ -933,13 +942,19 @@ func StandardDuplicateRulesEnabled(org *storage.OrgState) bool {
 	return false
 }
 
-// Creation order is stable for ties in confidence because the input is already
-// ordered by creation before capping.
+// Matches sort by the confidence Apex shows, the whole number
+// math.Floor(c+0.5) (NATIVE fuzzy tie order
+// ../apextest/testdata/conformance/duplicate_fuzzy_tie_order/org.tsv). Records
+// whose shown confidences are equal keep creation order, whatever their
+// unrounded scores. The sort is stable and the input is already ordered by
+// creation before capping.
 type byDuplicateConfidence struct{ m *DuplicateMatch }
 
-func (b byDuplicateConfidence) Len() int           { return len(b.m.Records) }
-func (b byDuplicateConfidence) Less(i, j int) bool { return b.m.Confidences[i] > b.m.Confidences[j] }
-func (b byDuplicateConfidence) Swap(i, j int)      { byMatchCreation{b.m}.Swap(i, j) }
+func (b byDuplicateConfidence) Len() int { return len(b.m.Records) }
+func (b byDuplicateConfidence) Less(i, j int) bool {
+	return math.Floor(b.m.Confidences[i]+0.5) > math.Floor(b.m.Confidences[j]+0.5)
+}
+func (b byDuplicateConfidence) Swap(i, j int) { byMatchCreation{b.m}.Swap(i, j) }
 
 // The activated Person Account rows establish an exact surname and email,
 // with matching first names (including an initial). Every observed positive

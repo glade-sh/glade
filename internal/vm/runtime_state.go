@@ -66,6 +66,9 @@ type VM struct {
 	// runAsRecordAccessCaptured marks a DML call shape whose hidden-record
 	// failure the sharing_access_modes d2 rows capture as a DML row failure.
 	runAsRecordAccessCaptured bool
+	// explicitUserModeDML marks a statement written as user mode (`as user` or
+	// an explicit USER_MODE access level), not the 67.0 default.
+	explicitUserModeDML bool
 	// staticSOQLQuery is set while a static [SELECT ...] expression runs.
 	staticSOQLQuery bool
 	// userModeSingleRecord marks the field check of single-record user-mode DML.
@@ -205,19 +208,31 @@ type VM struct {
 	testContext                  *TestContext
 	uiExceptionContext           bool
 	mixedDML                     mixedDMLState
-	localAsyncJobs               []AsyncJob
-	localAsyncSeq                int
-	flowAsyncSeq                 uint64
-	flowPathSavepoints           map[string]uint64
-	runningProcessRecords        map[storage.ID]int
-	processErrorSequence         int
-	localAsyncDrain              bool
-	localAsyncChain              bool
-	rejectAsyncActions           bool
-	isolateAsyncJobFailures      bool
-	actionAsyncSavepoints        map[string]int
-	asyncActionViolation         bool
-	executionUser                Value
+	// permAssignVisible holds the test-made permission set assignments that
+	// the innermost System.runAs block saw when it started; permAssignAll
+	// lifts the rule inside an asynchronous job (its own transaction), and
+	// permRunnerUserID is the user that ran the test outside every block.
+	permAssignVisible map[storage.ID]struct{}
+	permAssignAll     bool
+	// approvalLockCall marks a running Approval.lock call.
+	approvalLockCall bool
+	permRunnerUserID string
+	// permAssignmentsPreexisting stops flagging assignments as test-made: the
+	// project's configured assignments stand for sets the org already had.
+	permAssignmentsPreexisting bool
+	localAsyncJobs             []AsyncJob
+	localAsyncSeq              int
+	flowAsyncSeq               uint64
+	flowPathSavepoints         map[string]uint64
+	runningProcessRecords      map[storage.ID]int
+	processErrorSequence       int
+	localAsyncDrain            bool
+	localAsyncChain            bool
+	rejectAsyncActions         bool
+	isolateAsyncJobFailures    bool
+	actionAsyncSavepoints      map[string]int
+	asyncActionViolation       bool
+	executionUser              Value
 	// Captured once from the runner's initial org, before test setup inserts.
 	// Clones share this immutable ID set; EnableTestContext must not recapture it.
 	testDocumentBaseline          map[storage.ID]struct{}
@@ -286,6 +301,16 @@ type VM struct {
 	toolingExecuteAnonymous bool
 	triggerDepth            int
 	triggerActivations      []triggerActivation
+	// runAsFrameDepths holds the call depth of each active runAs(User) block.
+	runAsFrameDepths []int
+	// outerTriggerLimits are the governor counters when the outermost trigger
+	// activation began; a depth failure restores the DML and query counters.
+	outerTriggerLimits Limits
+	// innerTriggerLimits are the counters when the second activation began.
+	innerTriggerLimits Limits
+	// depthFailureSurfaced marks a depth failure that reached the outermost
+	// trigger's DML statement, so only that failure restores the counters.
+	depthFailureSurfaced bool
 	// inFinalizer is set while a Queueable finalizer runs: it keeps the
 	// synchronous query, CPU and relationship-subquery caps.
 	inFinalizer             bool
@@ -351,12 +376,20 @@ type VM struct {
 	debugOutputLimit int
 	traceOutputLimit int
 	traceEnabled     bool
-	ctx              context.Context
-	contextPollCount uint8
-	activeGetters    map[string]int
-	activeSetters    map[string]int
-	triggerGlobals   map[string]Value
-	cryptoRandomSeq  uint64
+	// coverage receives code coverage events; nil leaves collection off.
+	coverage         CoverageSink
+	coverageLastName string
+	coverageLastSkip bool
+	// asyncJobsProcessed counts async jobs a drain took off the queue;
+	// setupDrainPasses is the pass count of the last @TestSetup drain.
+	asyncJobsProcessed int
+	setupDrainPasses   int
+	ctx                context.Context
+	contextPollCount   uint8
+	activeGetters      map[string]int
+	activeSetters      map[string]int
+	triggerGlobals     map[string]Value
+	cryptoRandomSeq    uint64
 	// uuidRandomReader is a per-VM test seam; nil selects crypto/rand.Reader.
 	uuidRandomReader   io.Reader
 	staticInitState    map[string]staticInitState
@@ -436,13 +469,15 @@ type VM struct {
 	localOnlyObjectRefs       map[uint64]bool
 	// Exceptions to the ordinary SObject field graph are append-only. Unlike
 	// local-only provenance, they must survive runtime/static cloning.
-	sObjectCollectionAliasRefs  map[uint64]bool
-	sObjectAliasTypes           map[string]sObjectAliasTypeVerdict
-	sObjectAliasTypeOrg         *storage.OrgState
-	collectionMutationRefSeq    map[uint64]uint64
-	collectionMutationRefFloor  uint64
-	collectionMutationSeq       uint64
-	escapedCollectionLatest     map[uint64]escapedCollectionMutation
+	sObjectCollectionAliasRefs map[uint64]bool
+	sObjectAliasTypes          map[string]sObjectAliasTypeVerdict
+	sObjectAliasTypeOrg        *storage.OrgState
+	collectionMutationRefSeq   map[uint64]uint64
+	collectionMutationRefFloor uint64
+	collectionMutationSeq      uint64
+	escapedCollectionLatest    map[uint64]escapedCollectionMutation
+	// escapedCollectionLatestSeq is the newest sequence in escapedCollectionLatest.
+	escapedCollectionLatestSeq  uint64
 	nestedReceiverCache         map[uint64]nestedReceiverGraph
 	nestedReceiverMapRoots      map[uintptr]map[uint64]struct{}
 	nestedReceiverCacheRefs     int
@@ -881,6 +916,9 @@ type AsyncJob struct {
 
 	// Direct submissions retain the observed phase state at a batch fault.
 	DirectBatchSubmission bool
+	// QueueableBatchSubmission marks a batch submitted by a Queueable body that
+	// a test runs (native async-ordering ao01 at 62.0 and 67.0).
+	QueueableBatchSubmission bool
 
 	// Scheduled test payloads outlive cancellation but require an active replacement to run.
 	ScheduledAborted            bool
@@ -2430,6 +2468,9 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine := dml.NewEngine(vm.Org)
 	engine.DuplicateMatcher, engine.DuplicatePeerMatcher = vm.newDuplicateMatchers()
 	engine.UserHasCustomPermission = vm.currentUserHasDirectPermission
+	engine.PermissionAssignmentHidden = func(assignment storage.Record) bool {
+		return vm.permissionAssignmentNotYetApplied(assignment, vm.currentUserID())
+	}
 	if vm.work.tracking {
 		engine.FlowMatchObserver = func() { vm.work.flowRuns++ }
 	}
@@ -3488,6 +3529,17 @@ func (vm *VM) ExecuteInClass(program ir.Program, className string) (result Resul
 }
 
 // ExecuteTestInClass scopes the sharing entry to an actual test invocation.
+// ExecuteTestInClassFromSourceUnit is ExecuteTestInClass with the entry
+// bound to one source unit: a call the program makes to a name that two
+// source units declare resolves to that unit's declaration, as a call from
+// that unit's own code does.
+func (vm *VM) ExecuteTestInClassFromSourceUnit(program ir.Program, className, sourceUnit string) (Result, error) {
+	previous := vm.currentMethod.SourceUnit
+	vm.currentMethod.SourceUnit = sourceUnit
+	defer func() { vm.currentMethod.SourceUnit = previous }()
+	return vm.ExecuteTestInClass(program, className)
+}
+
 func (vm *VM) ExecuteTestInClass(program ir.Program, className string) (Result, error) {
 	previousEntry, previousTest := vm.entrySharingMode, vm.testExecutionEntry
 	if vm.entrySharingMode == "" {

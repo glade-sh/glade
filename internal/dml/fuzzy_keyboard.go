@@ -223,7 +223,7 @@ func keyboardDistance(a, b string) (float64, bool) {
 	if cost >= keyboardNever {
 		return 0, false
 	}
-	return 100 * (1 - cost/float64(n)), true
+	return float64(100 * (1 - cost/float64(n))), true
 }
 
 func keyboardDistanceRunes(a, b []rune) (float64, bool) {
@@ -256,5 +256,5 @@ func keyboardDistanceRunes(a, b []rune) (float64, bool) {
 	if cost >= keyboardNever {
 		return 0, false
 	}
-	return 100 * (1 - cost/float64(n)), true
+	return float64(100 * (1 - cost/float64(n))), true
 }

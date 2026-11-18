@@ -167,10 +167,14 @@ func editSimilarity(a, b string) float64 {
 	if longest == 0 {
 		return 100
 	}
-	return 100 * (1 - float64(levenshtein(ra, rb))/float64(longest))
+	return float64(100 * (1 - float64(levenshtein(ra, rb))/float64(longest)))
 }
 
 // averageWith100 is the single-item rule confidence of the Maximum methods.
+//
+// Callers pass products as float64(100 * x). An explicit conversion stops the
+// compiler fusing the multiply into this add (FMA on arm64, not amd64), which
+// would make confidences differ in the last bit across architectures.
 func averageWith100(score float64) float64 { return (100 + score) / 2 }
 
 // ---- First Name: Exact, Initials, Jaro-Winkler, Name Variant; threshold 85 ----
@@ -218,7 +222,7 @@ func firstNameAlgorithms(x, y, fx, fy string) (bool, float64) {
 		return true, 100
 	}
 	score := jaroWinkler(x, y)
-	return score >= firstNameJaroWinkler-1e-9, averageWith100(100 * score)
+	return score >= firstNameJaroWinkler-1e-9, averageWith100(float64(100 * score))
 }
 
 // firstNameKey is the match key of a first name; empty for a dictionary name
@@ -335,10 +339,17 @@ func fuzzyLastName(a, b string, _ bool) (bool, float64) {
 	// lastNameKeyboard without its terminal swap step, which did not apply.
 	base, ok := keyboardSimilarity(x, y)
 	matched, confidence := ok && base >= 90, averageWith100(base)
-	if matched || !keyboardPanelCell(length, substitutions, trailing) {
+	if matched {
 		return matched, confidence
 	}
-	if score, ok := keyboardDistance(x, y); ok && score >= keyboardFallbackMargin {
+	// The per-key-pair score keeps the gated shapes it matched, then the flat
+	// score (fuzzy_keyboard_flat.go) decides every other pair at the same margin.
+	if keyboardPanelCell(length, substitutions, trailing) {
+		if score, ok := keyboardDistance(x, y); ok && score >= keyboardFallbackMargin {
+			return true, averageWith100(score)
+		}
+	}
+	if score, ok := keyboardFlatDistance(x, y); ok && score >= keyboardFallbackMargin {
 		return true, averageWith100(score)
 	}
 	return matched, confidence
@@ -576,7 +587,7 @@ func keyboardSimilarity(a, b string) (float64, bool) {
 		}
 	}
 	extra := len(rb) - len(ra)
-	score := 100 * (1 - (cost+0.25*float64(extra))/float64(n))
+	score := 100 * (1 - (cost+float64(0.25*float64(extra)))/float64(n))
 	switch {
 	case extra == 0 && different == 1:
 		return score, true
@@ -1026,6 +1037,11 @@ var streetPOBox = regexp.MustCompile(`^p ?o ?box ([0-9]+)$`)
 // letters still make a street number.
 var streetGluedNumber = regexp.MustCompile(`^[0-9]+[a-z]{3,}$`)
 
+func streetKnownSuffix(w string, custom bool) bool {
+	_, ok := streetSuffixes(custom)[w]
+	return ok
+}
+
 func parseStreetFor(s string, custom bool) streetParts {
 	var p streetParts
 	cleaned := streetCleanFor(s, custom)
@@ -1046,10 +1062,12 @@ func parseStreetFor(s string, custom bool) streetParts {
 		// not a number is all name ("3F" reports 86 for itself, 100 under
 		// Match Blank Fields; "12" reports 100).
 	case custom && streetGluedNumber.MatchString(words[0]):
-	case custom && streetOrdinalWord(words[0]):
+	case custom && len(words) == 2 && streetOrdinalWord(words[0]) && streetKnownSuffix(words[1], custom):
 		// NATIVE fuzzy_street_c10/org.tsv o4, o5: an ordinal first word is
 		// no street number ("3rd Ave" and "Third Ave" report 88 for
-		// themselves, as a street with no number does; "101st St" too).
+		// themselves, as a street with no number does; "101st St" too). No
+		// capture holds an ordinal first word with a name word or a suite
+		// ("5th Main St"), so those keep the base rules.
 	case custom:
 		// NATIVE fuzzy_street_c5/org.tsv nl1, np1, np2, fuzzy_street_c4 cl1
 		// to cl3: a directional between the number and a street name with a
@@ -1603,11 +1621,13 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 	if foldedEqual(a, b) {
 		return true, 100
 	}
-	wa, wb := companyWords(a), companyWords(b)
+	// The cached words are shared: read them only.
+	ia, ib := companyKeyOf(a), companyKeyOf(b)
+	wa, wb := ia.words, ib.words
 	if len(wa) == 0 || len(wb) == 0 {
 		return false, 0
 	}
-	ja, jb := strings.Join(wa, " "), strings.Join(wb, " ")
+	ja, jb := ia.joined, ib.joined
 	if strings.Contains(a, "-") != strings.Contains(b, "-") {
 		// A hyphenated name matches only the same words spelled with a space;
 		// the rows score it 97 or 100 by direction and match neither its
@@ -1617,12 +1637,12 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 	if companyAcronyms[ja] == jb || companyAcronyms[jb] == ja {
 		return true, 100
 	}
-	if len(wa) == 1 && len(wb) == 1 && companyKey(wa) == companyKey(wb) {
+	if len(wa) == 1 && len(wb) == 1 && ia.key == ib.key {
 		if ok, c := companySingleWordMatch(wa[0], wb[0]); ok {
 			return true, c
 		}
 	}
-	if companyKey(wa) != companyKey(wb) {
+	if ia.key != ib.key {
 		return false, 0
 	}
 	confidence := 100.0
@@ -1662,13 +1682,21 @@ func legacyFuzzyCompany(a, b string, _ bool) (bool, float64) {
 // A pair outside the fitted routes, or one the fitted scorer rejects, keeps
 // the word scorer's decision.
 func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
+	ok, score := fuzzyCompanyBase(a, b, matchBlanks)
+	if !ok || a == b {
+		return ok, score
+	}
+	return companyCeiling(a, b, score)
+}
+
+func fuzzyCompanyBase(a, b string, matchBlanks bool) (bool, float64) {
 	if a == b && companySimpleExact(a) {
 		return true, 100
 	}
 	ma, mb := companyMarks(a), companyMarks(b)
 	if (ma|mb)&companyMarkQualifier != 0 {
 		if x, y, ok := companySpacedAsDash(a, b); ok {
-			return fuzzyCompany(x, y, matchBlanks)
+			return fuzzyCompanyBase(x, y, matchBlanks)
 		}
 		if !companySlashKeys(a, b) {
 			return false, 0
@@ -1676,6 +1704,9 @@ func fuzzyCompany(a, b string, matchBlanks bool) (bool, float64) {
 	}
 	ok, score := fuzzyCompanyRouted(a, b, matchBlanks, ma, mb)
 	if ok {
+		if score < 100 && (ma&mb)&companyMarkQualifier != 0 && companyVowelParenScore(a, b) {
+			return true, 100
+		}
 		return ok, score
 	}
 	if companyDoubledEqual(a, b) {
@@ -1769,7 +1800,11 @@ func fuzzyCompanyRouted(a, b string, matchBlanks bool, ma, mb int) (bool, float6
 		}
 	}
 	if route != companyRouteNone && same {
-		if raw := companyFitScore(a, b); raw >= companyFitThreshold && companyFitCovered(route, a, b) {
+		threshold, bonus := float64(companyFitThreshold), 0.0
+		if route == companyRouteShape {
+			threshold, bonus = companyGluedThreshold(a, b)
+		}
+		if raw := companyFitScore(a, b); raw+bonus >= threshold && companyFitCovered(route, a, b) {
 			if route == companyRouteJoin {
 				if matched, _ := legacyFuzzyCompany(a, b, matchBlanks); !matched {
 					return true, companyJoinConfidence(a, b, raw)
@@ -2110,8 +2145,135 @@ func uniqueWords(words []string) []string {
 }
 
 // fuzzyTitle returns the rule confidence directly (see titleConfidence); the
-// caller converts it to the item score.
+// caller converts it to the item score. A pair the title paths leave unmatched
+// still matches when one title is initials alone (titleInitialsLetter).
 func fuzzyTitle(a, b string, _ bool) (bool, float64) {
+	if matched, confidence := fuzzyTitleWords(a, b, false); matched {
+		return true, confidence
+	}
+	switch words := titleInitialsLetter(a, b); {
+	case words >= 4:
+		return true, 88
+	case words == 3:
+		return true, 89
+	case words > 0:
+		return true, titleInitialsConfidence
+	}
+	return false, 0
+}
+
+// titleInitialsConfidence is the rule confidence of the title initials path
+// with up to two words on either side: the item scores 86 beside an exact last
+// name, (100 + 86) / 2. Three words report 89 and four or more 88.
+const titleInitialsConfidence = 93
+
+// titleRawTokens are the whitespace tokens of a title in lower case, without
+// periods, with an ampersand as a separator.
+func titleRawTokens(s string) []string {
+	s = strings.ToLower(s)
+	if strings.ContainsAny(s, ".&") {
+		s = strings.NewReplacer(".", "", "&", " ").Replace(s)
+	}
+	return strings.Fields(s)
+}
+
+// titleInitialsLetter reports titles of which one is single letters alone (two
+// or more, "A B C") and the other, not single letters alone, has a word of
+// letters only that starts with one of them; zero when they are not. NATIVE
+// (fuzzy_title_variant f1t3, fuzzy_residual_panels t3ti1_p1 and r2ti_p1):
+// "A B C" finds "Chief Officer", "Alpha, Beta" and "Chief&Officer" but not
+// "Alpha,Beta" (one word with a comma) or "Zorp Quill". The article "a" is no
+// initial ("C A" does not find "Alpha Beta", "A B C" does not find "Able"),
+// and the other title drops of, the, and, a, an and it. The result is the
+// larger word count of the two titles without those words, which sets the
+// confidence: "A B C D" finds "Chief Officer" at 89, "A B C D E" at 88, and
+// "A C" finds "Bravo Charlie Delta" at 89.
+func titleInitialsLetter(a, b string) int {
+	if n := titleInitialsOneWay(a, b); n > 0 {
+		return n
+	}
+	return titleInitialsOneWay(b, a)
+}
+
+func titleInitialsOneWay(initials, other string) int {
+	if !titleSingleLetters(initials) {
+		return 0
+	}
+	ti := titleRawTokens(initials)
+	if len(ti) < 2 {
+		return 0
+	}
+	letters, count := "", 0
+	for _, t := range ti {
+		if utf8.RuneCountInString(t) != 1 {
+			return 0
+		}
+		if t == "a" {
+			continue
+		}
+		letters += t
+		count++
+	}
+	to := titleRawTokens(other)
+	single := true
+	for _, t := range to {
+		if utf8.RuneCountInString(t) != 1 {
+			single = false
+			break
+		}
+	}
+	if single {
+		return 0
+	}
+	words, found := 0, false
+	for _, t := range to {
+		switch t {
+		case "of", "the", "and", "a", "an", "it":
+			continue
+		}
+		words++
+		if first, _ := utf8.DecodeRuneInString(t); titleAllLetters(t) && strings.ContainsRune(letters, first) {
+			found = true
+		}
+	}
+	if !found {
+		return 0
+	}
+	return max(count, words)
+}
+
+// titleSingleLetters reports two or more tokens of titleRawTokens that are all
+// one character, without allocating: the check that almost every title pair
+// fails.
+func titleSingleLetters(s string) bool {
+	tokens, run := 0, 0
+	for _, r := range s {
+		switch {
+		case r == '.':
+		case r == '&' || unicode.IsSpace(r):
+			run = 0
+		default:
+			if run++; run > 1 {
+				return false
+			}
+			if run == 1 {
+				tokens++
+			}
+		}
+	}
+	return tokens >= 2
+}
+
+func titleAllLetters(s string) bool {
+	for _, r := range s {
+		if !unicode.IsLetter(r) {
+			return false
+		}
+	}
+	return s != ""
+}
+
+func fuzzyTitleWords(a, b string, _ bool) (bool, float64) {
 	wa, wb := titleWords(a), titleWords(b)
 	if len(wa) == 0 || len(wb) == 0 {
 		return foldText(a) == foldText(b), 100

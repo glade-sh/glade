@@ -39,6 +39,9 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 		"list map null key flag":     func(value *Value) { value.sobjectListNullMapKey = true },
 		"set ownership token":        func(value *Value) { value.primitiveSetState = &primitiveSetState{} },
 		"report empty dimension":     func(value *Value) { value.reportEmptyDimension = true },
+		"datetime week term":         func(value *Value) { value.datetimeWeekTerm = 18 },
+		"describe key-set text":      func(value *Value) { value.describeKeySetText = true },
+		"describe key-set read-only": func(value *Value) { value.describeKeySetReadOnly = true },
 	} {
 		t.Run(name, func(t *testing.T) {
 			candidate := base
@@ -58,7 +61,7 @@ func TestValueSameHeaderAndBacking(t *testing.T) {
 }
 
 func TestValueSameHeaderAndBackingGuardsValueFieldCount(t *testing.T) {
-	if got, want := reflect.TypeOf(Value{}).NumField(), 41; got != want {
+	if got, want := reflect.TypeOf(Value{}).NumField(), 44; got != want {
 		t.Fatalf("valueSameHeaderAndBacking must be updated for Value fields: got %d, want %d", got, want)
 	}
 }

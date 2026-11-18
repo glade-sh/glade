@@ -1,0 +1,12 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true
+    }
+  ],
+  "name": "psr-residuals",
+  "namespace": "",
+  "sfdcLoginUrl": "<org-url>",
+  "sourceApiVersion": "67.0"
+}

@@ -70,12 +70,37 @@ func NormalizeOrgDomainURL(raw string) (string, error) {
 	return config.NormalizeOrgDomainURL(raw)
 }
 
+// SummaryHold carries the parent roll-up values as they stood before one DML
+// statement. A child after-trigger reads them until the statement finishes
+// (rollup_trigger_timing native rows); the stored value is already current.
+type SummaryHold struct {
+	Values map[string]Value
+	// Live holds each parent's value when the statement began, for the delta
+	// the statement adds to an enclosing statement's hold.
+	Live map[string]Value
+	// Dropped keys read the live value; enclosing holds do not answer for them.
+	Dropped map[string]bool
+	// Upsert marks a hold that spans both groups of an upsert.
+	Upsert bool
+}
+
+func (h *SummaryHold) Drop(key string) {
+	delete(h.Values, key)
+	if h.Dropped == nil {
+		h.Dropped = make(map[string]bool)
+	}
+	h.Dropped[key] = true
+}
+
 type OrgState struct {
 	ChangeDataCaptureTestSetup *ChangeDataCaptureSnapshot `json:"-"`
 	// Formula execution context is set on a per-query OrgState value copy.
 	// It is neither persisted nor stored in query or schema caches.
 	formulaUserID           ID
 	formulaPermissionFields map[string]Value
+	// SummaryHolds freeze roll-up values for the statements whose after-triggers
+	// are running. Never persisted; see SummaryHold.
+	SummaryHolds []*SummaryHold `json:"-"`
 
 	OrgID      string                 `json:"orgId,omitempty"`
 	APIVersion string                 `json:"apiVersion,omitempty"`
@@ -305,6 +330,10 @@ type MetadataRegistry struct {
 	Layouts                     []LayoutMetadata           `json:"layouts,omitempty"`
 	ProjectReports              []ProjectReportMetadata    `json:"projectReports,omitempty"`
 	ReportFolderShares          []ProjectReportFolderShare `json:"reportFolderShares,omitempty"`
+	// KeepManualSharesOnTransfer is the project SharingSettings
+	// enableKeepManualSharesOnTransfer value (apextest api68_native
+	// sharing-off and sharing-on).
+	KeepManualSharesOnTransfer bool `json:"keepManualSharesOnTransfer,omitempty"`
 }
 
 // ProjectReportMetadata is the immutable project definition associated with a
@@ -1089,6 +1118,21 @@ type FlowAssignment struct {
 	LiteralValue string `json:"literalValue,omitempty"`
 	Formula      string `json:"formula,omitempty"`
 	SourceField  string `json:"sourceField,omitempty"`
+	// Merge holds the parts of a String assignment that merges a Number or Date
+	// resource. It applies only for a user locale captured natively; any other
+	// locale runs the unrewritten LiteralValue.
+	Merge []FlowMergePart `json:"merge,omitempty"`
+}
+
+// FlowMergePart is one piece of a merged flow string: literal Text, or a
+// resource read by Ref (a variable) or Expression (a formula resource) and
+// rendered by Kind ("number" with Scale, "date", or "" for plain text).
+type FlowMergePart struct {
+	Text       string `json:"text,omitempty"`
+	Ref        string `json:"ref,omitempty"`
+	Expression string `json:"expression,omitempty"`
+	Kind       string `json:"kind,omitempty"`
+	Scale      int    `json:"scale,omitempty"`
 }
 
 type FlowLoop struct {
@@ -1259,6 +1303,10 @@ type LookupHistoryScope struct{ identity byte }
 func NewLookupHistoryScope() *LookupHistoryScope { return &LookupHistoryScope{} }
 
 type Record struct {
+	// TestAssigned marks a PermissionSetAssignment that a test, a @TestSetup
+	// method or code they call inserted. Natively the running user's own
+	// context does not see it (permset_in_test rows).
+	TestAssigned bool `json:"testAssigned,omitempty"`
 	// CriteriaSharingOwned identifies a share created by criteria reconciliation.
 	CriteriaSharingOwned bool `json:"criteriaSharingOwned,omitempty"`
 	// triggerAssignments tracks explicit before-trigger assignments during DML.

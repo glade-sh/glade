@@ -941,6 +941,12 @@ func (vm *VM) storeGlobalDescribeCacheEntry(entry Value) {
 	if isGlobalDescribeMap(entry) && vm.Org != nil && vm.Org.Namespace != "" {
 		return
 	}
+	// A write to a global describe view never reaches a fresh
+	// getGlobalDescribe(): chained clear leaves it whole (review_round11
+	// gw_chained_clear), as do key-set writes (review_round10 g_gd_remove).
+	if isGlobalDescribeMap(entry) {
+		return
+	}
 	if cached, ok := vm.globalDescribeCacheEntry(entry.Ref); ok {
 		// The base cache also backs app/module describe. The global-only
 		// lookup marker belongs to the returned view, never to that base.

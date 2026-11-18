@@ -1,0 +1,14 @@
+{"api": "62.0", "debug": ["OBS|catchlog|System.DmlException|d=16|loc=Trigger.DpATrg: line 9, column 1: []|chain=1D|L="], "error": "", "id": "d2_catchlog", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|catchlog|System.DmlException|d=16|loc=Trigger.DpATrg: line 9, column 1: []|chain=1D|L="], "error": "", "id": "d2_catchlog", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|dbfalse|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|loc=Trigger.DpATrg: line 7, column 1|d=16"], "error": "", "id": "d2_dbfalse", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|dbfalse|CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY|loc=Trigger.DpATrg: line 7, column 1|d=16"], "error": "", "id": "d2_dbfalse", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|limits|System.DmlException|d=16|dml=1|rows=1|q=1|qr=1"], "error": "", "id": "d2_limits", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|limits|System.DmlException|d=16|dml=1|rows=1|q=1|qr=1"], "error": "", "id": "d2_limits", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|seed|a=1|b=1"], "error": "", "id": "d2_seed", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|seed|a=1|b=1"], "error": "", "id": "d2_seed", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|swallow|ok|d=16|chain=1DS"], "error": "", "id": "d2_swallow", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|swallow|ok|d=16|chain=1DS"], "error": "", "id": "d2_swallow", "route": "anonymous"}
+{"api": "62.0", "debug": ["OBS|throw|System.DmlException|d=16|loc=Trigger.DpATrg: line 7, column 1: []|max=true"], "error": "", "id": "d2_throw", "route": "anonymous"}
+{"api": "67.0", "debug": ["OBS|throw|System.DmlException|d=16|loc=Trigger.DpATrg: line 7, column 1: []|max=true"], "error": "", "id": "d2_throw", "route": "anonymous"}
+{"api": "62.0", "id": "d2t_route", "route": "istest", "tests": [["depthMessage", "Fail", "System.AssertException: Assertion Failed: d=16|Trigger.DpATrg: line 7, column 1: []"]]}
+{"api": "67.0", "id": "d2t_route", "route": "istest", "tests": [["depthMessage", "Fail", "System.AssertException: Assertion Failed: d=16|Trigger.DpATrg: line 7, column 1: []"]]}

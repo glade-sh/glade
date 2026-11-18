@@ -79,6 +79,12 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 		if vm.futureBodyDepth > 0 || vm.inBatchStartOrExecute() {
 			return Null, newExceptionError("System.AsyncException", "Future method cannot be called from a future or batch method: "+futureMethodSignature(method))
 		}
+		if vm.testContext != nil && vm.currentAsyncKind == "BatchApex" && vm.inBatchFinish {
+			// Native async-ordering ao02 and ao04 (62.0 and 67.0): a test that runs
+			// a batch finish calling an @future method fails at the call with a
+			// limit exception the finish cannot catch.
+			return Null, &RuntimeError{Type: "System.LimitException", Message: fmt.Sprintf("Too many future calls: %d", vm.limits.FutureCalls+1), Stack: vm.stackFrames()}
+		}
 		vm.futureBodyDepth++
 		defer func() { vm.futureBodyDepth-- }()
 	}
@@ -472,6 +478,9 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 	vm.currentClass = method.ClassName
 	vm.currentMethod = method
 	vm.currentTrigger = false
+	if vm.coverage != nil {
+		vm.coverMethodEntry(method)
+	}
 	if vm.currentClass == "" {
 		vm.currentClass = classNameFromMethod(method.Name)
 	}
@@ -550,12 +559,22 @@ func (vm *VM) callMethodWithReceiverEntry(method Method, receiver Value, args []
 		if errors.As(err, &pageFailure) {
 			return Null, pageFailure
 		}
+		var unwind *triggerDepthUnwind
+		if errors.As(err, &unwind) {
+			// The depth failure must keep its type through a handler class.
+			return Null, unwind
+		}
 		var runtimeErr *RuntimeError
 		if errors.As(err, &runtimeErr) {
 			if len(runtimeErr.Stack) == 0 {
 				runtimeErr.Stack = vm.stackFrames()
 			}
 			return Null, runtimeErr
+		}
+		// The read-only collection fault is uncatchable but keeps its native
+		// type in a test result (review_round10 g_test).
+		if err.Error() == readOnlyCollectionFault {
+			return Null, &RuntimeError{Type: "System.FinalException", Message: "Collection is read-only", Stack: vm.stackFrames()}
 		}
 		return Null, &RuntimeError{Type: "RuntimeError", Message: err.Error(), Stack: vm.stackFrames()}
 	}
@@ -1043,6 +1062,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 	receiver = receiver.currentMapKeySet()
 	normalizeFieldMapHolderArgs(args)
 	if receiver.Kind == ValueMap && (receiver.mapBackingShared || receiver.mapEntriesShared || isGlobalDescribeMap(receiver)) && mapMutatingMemberName(method) {
+		if globalDescribeMapReadOnly(receiver, method) {
+			return Null, true, errors.New(readOnlyCollectionFault)
+		}
 		vm.prepareSharedMapMutation(&receiver)
 	}
 	if isIteratorValue(receiver) && (strings.EqualFold(method, "hasNext") || strings.EqualFold(method, "next")) {
@@ -1258,6 +1280,10 @@ func (vm *VM) callObjectMember(receiver Value, method string, args []Value) (Val
 		(receiver.Kind == ValueList || receiver.Kind == ValueSet || receiver.Kind == ValueMap) {
 		hash, err := vm.collectionHashCode(receiver, &Result{})
 		return Int(int64(hash)), true, err
+	}
+	if len(args) == 0 && strings.EqualFold(method, "hashCode") && receiver.Kind == ValueObject &&
+		(sObjectValueType(receiver.Type) || strings.EqualFold(receiver.Type, "Datetime")) {
+		return Int(int64(valueHashCodeEnv(vm.hashEnv(), receiver))), true, nil
 	}
 	if text, captured := vm.stubNamespaceObjectText(receiver, method, args); captured {
 		return String(text), true, nil
@@ -2055,6 +2081,9 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		return Null, false
 	}
 	if isGlobalDescribeMap(receiver) {
+		if vm != nil && vm.globalDescribeViewLacksKey(receiver, key.Text) {
+			return Null, false
+		}
 		if vm != nil {
 			if resolved, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok && vm.globalDescribeContainsKeyNamesObject(key.Text, resolved) {
 				return sObjectTypeToken(resolved), true
@@ -2108,6 +2137,9 @@ func (vm *VM) specialMapContainsKey(receiver, key Value) bool {
 		return false
 	}
 	if isGlobalDescribeMap(receiver) {
+		if vm != nil && vm.globalDescribeViewLacksKey(receiver, key.Text) {
+			return false
+		}
 		if vm != nil {
 			if resolved, ok := vm.resolveGlobalDescribeObjectName(key.Text); ok && vm.ownedGlobalDescribeLocalKey(key.Text, resolved) {
 				return false
@@ -3316,6 +3348,10 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 	switch method {
 	case "add", "addAll", "remove", "removeAll", "retainAll", "clear", "put":
 		vm.mapPutParentContainment = nil
+		if receiver.describeKeySetReadOnly && describeKeySetReadOnlyMethod(method) && !emptyCollectionArgument(method, args) {
+			// Uncatchable natively: ks_set_ops try/catch (Exception) does not catch it.
+			return Null, true, fmt.Errorf("System.FinalException: Collection is read-only")
+		}
 	}
 	switch method {
 	case "get":
@@ -3393,6 +3429,11 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 				receiver = appendSetEntry(receiver, item, hash)
 				changed = true
 			}
+		}
+		// Names taken from a field map's key set bring its text order along
+		// (review_round9 ks_u_addall).
+		if changed && args[0].describeKeySetText && !receiver.describeKeySetText {
+			receiver.describeKeySetText = true
 		}
 		if changed {
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
@@ -3496,10 +3537,17 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		out := make([]Value, 0, len(receiver.Set))
 		hashes := make([]setInsertionHash, 0, len(receiver.Set))
 		remove := collectionMembers(args[0])
+		removeKeys := newScalarMembership(remove, receiver.Set)
 		for index, value := range receiver.Set {
-			contains, err := vm.collectionContainsValue(remove, value, result)
+			contains, decided, err := removeKeys.contains(vm, value, result)
 			if err != nil {
 				return Null, true, err
+			}
+			if !decided {
+				contains, err = vm.collectionContainsValue(remove, value, result)
+				if err != nil {
+					return Null, true, err
+				}
 			}
 			if contains {
 				changed = true
@@ -3528,12 +3576,19 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		previous := snapshotAlias(receiver)
 		changed := false
 		keep := collectionMembers(args[0])
+		keepKeys := newScalarMembership(keep, receiver.Set)
 		out := make([]Value, 0, len(receiver.Set))
 		hashes := make([]setInsertionHash, 0, len(receiver.Set))
 		for index, value := range receiver.Set {
-			contains, err := vm.collectionContainsValue(keep, value, result)
+			contains, decided, err := keepKeys.contains(vm, value, result)
 			if err != nil {
 				return Null, true, err
+			}
+			if !decided {
+				contains, err = vm.collectionContainsValue(keep, value, result)
+				if err != nil {
+					return Null, true, err
+				}
 			}
 			if contains {
 				out = append(out, value)
@@ -3566,6 +3621,8 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 		cloned.setInsertionHashes = cloneSetInsertionHashes(receiver)
 		cloned.mapKeySetSource = nil
 		cloned.mapKeySetHashes = nil
+		// A clone is a copy: only the field map's own key set is read-only.
+		cloned.describeKeySetReadOnly = false
 		bindPrimitiveSetCloneState(receiver, &cloned)
 		return cloned, true, nil
 	case "deepClone":
@@ -3577,7 +3634,9 @@ func (vm *VM) callSetValueMember(receiverName string, receiver Value, method str
 				return Null, true, fmt.Errorf("Set.deepClone preserve options expect Boolean arguments")
 			}
 		}
-		return cloneValue(receiver), true, nil
+		deep := cloneValue(receiver)
+		deep.describeKeySetReadOnly = false
+		return deep, true, nil
 	case "iterator":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Set.iterator expects 0 arguments")
@@ -3913,6 +3972,11 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 				}
 			}
 			out.Type = "Set<String>"
+			// add and addAll are refused (review_round10 g_gd_add). remove and
+			// clear write through to this map and not to a fresh
+			// getGlobalDescribe() (g_gd_remove, g_gd_clear).
+			out.describeKeySetReadOnly = true
+			vm.bindMapKeySet(receiver, &out)
 			return out, true, nil
 		}
 		if out, ok := vm.sObjectFieldMapCanonicalKeySet(receiver); ok {
@@ -3936,9 +4000,18 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 		if strings.HasPrefix(receiver.Runtime, "sobject-populated-fields:") {
 			out.Runtime = receiver.Runtime + ":keyset"
 		}
-		if keyType, _, ok := mapTypeArgs(receiver.Type); ok {
+		if keyType, valueType, ok := mapTypeArgs(receiver.Type); ok {
 			out.Type = "Set<" + keyType + ">"
+			// The key set of a copied or cloned field map renders like the
+			// original's (review_round9 ks_map_copy, ks_map_clone); a copy's
+			// key set is not read-only for lack of a row.
+			if strings.EqualFold(strings.TrimSpace(valueType), "Schema.SObjectField") || strings.EqualFold(strings.TrimSpace(valueType), "SObjectField") {
+				out.describeKeySetText = true
+			}
 		}
+		// A Map's key set refuses add and addAll (review_round9 ks_plain_map_add:
+		// the uncatchable FinalException at 62.0 and 67.0).
+		out.describeKeySetReadOnly = true
 		vm.bindMapKeySet(receiver, &out)
 		return out, true, nil
 	case "values":
@@ -4032,6 +4105,15 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 			cloned.Fields = maps.Clone(cloned.Fields)
 			delete(cloned.Fields, "__collection_readonly")
 		}
+		if isGlobalDescribeMap(cloned) {
+			// A clone of the global describe is writable (review_round11
+			// gw_clone_remove, review_round10 g_gd_clone_add).
+			cloned.Fields = maps.Clone(cloned.Fields)
+			if cloned.Fields == nil {
+				cloned.Fields = map[string]Value{}
+			}
+			cloned.Fields[globalDescribeWritableField] = Bool(true)
+		}
 		if cloned.Runtime == "pagereference-headers" {
 			// Captured clones are ordinary detached maps: null entries are
 			// accepted and neither equal nor changed values write a response.
@@ -4054,6 +4136,9 @@ func (vm *VM) callMapValueMember(receiverName string, receiver Value, method str
 	case "deepClone":
 		if len(args) != 0 {
 			return Null, true, unsupportedCallError("Map.deepClone with preserve options")
+		}
+		if err := vm.mapDeepCloneValueTypeError(receiver); err != nil {
+			return Null, true, err
 		}
 		cloned := cloneValue(receiver)
 		for _, value := range cloned.Map {
@@ -4097,4 +4182,114 @@ func hasUpperCaseLetter(text string) bool {
 		}
 	}
 	return false
+}
+
+// describeKeySetReadOnlyMethod lists the writes a field map's key set refuses:
+// add and addAll raise the FinalException, while remove, clear, retainAll and
+// removeAll succeed natively (review_round8 ks_add_*, ks_addall, ks_remove,
+// ks_clear, ks_retain, ks_removeall, both APIs).
+func describeKeySetReadOnlyMethod(method string) bool {
+	return method == "add" || method == "addAll"
+}
+
+// emptyCollectionArgument reports addAll of an empty List or Set, which a
+// read-only key set accepts as a no-op returning false (review_round12
+// ke_addall_list, ke_addall_set, ke_addall_values and the DEFERRED describe
+// rows, APIs 62.0 and 67.0). A non-empty argument still faults, even when it
+// holds only existing keys (ke_addall_existing).
+func emptyCollectionArgument(method string, args []Value) bool {
+	if method != "addAll" || len(args) != 1 {
+		return false
+	}
+	switch args[0].Kind {
+	case ValueList:
+		return len(args[0].List) == 0
+	case ValueSet:
+		return len(args[0].Set) == 0
+	}
+	return false
+}
+
+// readOnlyCollectionFault is the uncatchable FinalException that add and
+// addAll raise on a Map's key set and that R076 raises on a field map.
+const readOnlyCollectionFault = "System.FinalException: Collection is read-only"
+
+// globalDescribeViewLacksKey reports that a private global describe view (not
+// the shared cache) lost this key through its own write (review_round10
+// g_gd_remove, g_gd_clear): the key set or a direct remove deleted every alias.
+func (vm *VM) globalDescribeViewLacksKey(receiver Value, key string) bool {
+	if receiver.globalDescribeEntriesCanonical || receiver.mapBackingShared || receiver.mapEntriesShared {
+		return false
+	}
+	if _, cached := vm.globalDescribeCacheEntry(receiver.Ref); cached {
+		return false
+	}
+	// Most keys are present under their lower-case spelling; skip building
+	// the alias list for them.
+	if _, ok := receiver.Map[mapKey(String(strings.ToLower(strings.TrimSpace(key))))]; ok {
+		return false
+	}
+	for _, alias := range vm.schemaDescribeLookupAliases(key) {
+		if _, ok := receiver.Map[mapKey(String(alias))]; ok {
+			return false
+		}
+	}
+	return true
+}
+
+// globalDescribeWritableField marks a clone of the global describe map, which
+// takes put, putAll and remove like any map.
+const globalDescribeWritableField = "__global_describe_writable"
+
+// globalDescribeMapReadOnly reports a put, putAll or remove on the global
+// describe map, typed or chained, which natively raises the uncatchable
+// FinalException whatever the key (review_round11 gw_put, gw_put_existing,
+// gw_putall, gw_remove_missing, gw_chained_put, gw_chained_remove,
+// gw_remove_catch, gk_direct; APIs 62.0 and 67.0). clear stays writable
+// (gw_clear), and so does a clone (gw_clone_remove).
+func globalDescribeMapReadOnly(receiver Value, method string) bool {
+	if !isGlobalDescribeMap(receiver) {
+		return false
+	}
+	switch canonicalCollectionMemberName("Map", method) {
+	case "put", "putAll", "remove":
+	default:
+		return false
+	}
+	flag := receiver.Fields[globalDescribeWritableField]
+	return flag.Kind != ValueBool || !flag.Bool
+}
+
+// mapDeepCloneValueTypeError is the compile refusal of Map.deepClone on a map
+// whose values are not SObjects, raised when the call runs, as List.deepClone
+// does (review_round11 dc_typed_self, dc_chained_self, dc_int, dc_object,
+// dc_list_value, dc_nested_map, dc_nested_sobject_list_map, dc_fieldmap;
+// dc_sobject and dc_account compile; APIs 62.0 and 67.0).
+func (vm *VM) mapDeepCloneValueTypeError(receiver Value) error {
+	typeName := receiver.Type
+	if isGlobalDescribeMap(receiver) || typeName == globalDescribeMapType {
+		typeName = "Map<String,Schema.SObjectType>"
+	}
+	_, valueType, ok := mapTypeArgs(typeName)
+	if !ok {
+		return nil
+	}
+	valueType = strings.TrimSpace(valueType)
+	if hasPrefixFold(valueType, "Schema.") {
+		valueType = valueType[len("Schema."):]
+	}
+	if vm.isSObjectLikeType(valueType) {
+		return nil
+	}
+	if vm.Org != nil {
+		if _, ok := vm.Org.Objects[valueType]; ok {
+			return nil
+		}
+		for name := range vm.Org.Objects {
+			if strings.EqualFold(name, valueType) {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("Operation only applies to SObject value map types: %s", strings.ReplaceAll(typeName, " ", ""))
 }

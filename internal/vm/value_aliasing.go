@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -869,6 +870,7 @@ func snapshotAlias(value Value) aliasSnapshot {
 // only be skipped when the store leaves the record header and backing intact.
 func valueSameHeaderAndBacking(before, after Value) bool {
 	return before.scaleZeroNumberTokenDouble == after.scaleZeroNumberTokenDouble &&
+		before.datetimeWeekTerm == after.datetimeWeekTerm &&
 		before.loadedReferenceSnapshot == after.loadedReferenceSnapshot &&
 		before.platformHTTPDTO == after.platformHTTPDTO &&
 		before.projectClass == after.projectClass &&
@@ -879,6 +881,8 @@ func valueSameHeaderAndBacking(before, after Value) bool {
 		before.exceptionMessageConstructor == after.exceptionMessageConstructor &&
 		before.idOriginalDisplay == after.idOriginalDisplay &&
 		before.reportEmptyDimension == after.reportEmptyDimension &&
+		before.describeKeySetText == after.describeKeySetText &&
+		before.describeKeySetReadOnly == after.describeKeySetReadOnly &&
 		before.Kind == after.Kind &&
 		before.Int == after.Int &&
 		before.Decimal == after.Decimal &&
@@ -2397,6 +2401,24 @@ func (vm *VM) collectAdditionalStaticFieldValueRefsInField(value Value, location
 func (vm *VM) collectAdditionalStaticFieldValueRefsInFieldWithChildHints(value Value, location staticFieldRef) {
 	vm.ensureStaticValueRefsOwned()
 	index := vm.staticRefIndex()
+	if scalars, ok := scalarOnlyCollectionChildren(value); ok {
+		// No child can carry a ref: the walk below would only index the
+		// collection itself and visit each child once without effect.
+		root := value
+		root.List, root.Set = nil, nil
+		seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+		seen := *seenPtr
+		clear(seen)
+		defer aliasRefSetPool.Put(seenPtr)
+		if vm.perfRecorder != nil {
+			visits := uint64(scalars)
+			collectAdditionalStaticFieldValueRefsWithVisits(root, &index, location, seen, true, &visits, nil)
+			vm.perfRecorder.recordStaticAliasRefScanVisits(visits)
+		} else {
+			collectAdditionalStaticFieldValueRefsWithVisits(root, &index, location, seen, true, nil, nil)
+		}
+		return
+	}
 	known := func(ref uint64) bool {
 		return ref != 0 && index.known(ref) && index.locations(ref).contains(location)
 	}
@@ -2458,6 +2480,44 @@ func (vm *VM) collectAdditionalStaticFieldValueRefsInFieldWithChildHints(value V
 		collectAdditionalStaticFieldValueRefsWithVisits(value, &index, location, seen, true, nil, record)
 	}
 }
+
+// scalarOnlyCollectionChildren reports a List or Set none of whose elements
+// can carry an alias ref (no identity and not a collection or object), with
+// the element count.
+func scalarOnlyCollectionChildren(value Value) (int, bool) {
+	var children []Value
+	switch value.Kind {
+	case ValueList:
+		children = value.List
+	case ValueSet:
+		children = value.Set
+	default:
+		return 0, false
+	}
+	for i := range children {
+		if !staticRefWalkSkipsValue(&children[i]) {
+			return 0, false
+		}
+	}
+	return len(children), true
+}
+
+// staticRefWalkDescends reports the kinds collectAdditionalStaticFieldValueRefsWithVisits
+// recurses into.
+func staticRefWalkDescends(kind ValueKind) bool {
+	switch kind {
+	case ValueObject, ValueMap, ValueList, ValueSet:
+		return true
+	}
+	return false
+}
+
+// staticRefWalkSkipsValue reports a value the static ref walk visits without
+// effect: it has no ref to index and is not a kind the walk recurses into.
+func staticRefWalkSkipsValue(value *Value) bool {
+	return value.Ref == 0 && !staticRefWalkDescends(value.Kind)
+}
+
 func (vm *VM) collectStaticFieldValueRefsInField(value Value, location staticFieldRef) {
 	vm.ensureStaticValueRefsOwned()
 	index := vm.staticRefIndex()
@@ -3126,6 +3186,10 @@ func collectAdditionalStaticFieldValueRefsWithVisits(value Value, index *staticR
 		} else if !scanKnownChildren {
 			return
 		}
+	}
+	// scalarOnlyCollectionChildren relies on this: only these kinds are walked.
+	if !staticRefWalkDescends(value.Kind) {
+		return
 	}
 	switch value.Kind {
 	case ValueObject:
@@ -4571,6 +4635,7 @@ func (vm *VM) rememberEscapedCollectionMutation(updated Value) {
 		clear(vm.escapedCollectionLatest)
 	}
 	vm.escapedCollectionLatest[updated.Ref] = escapedCollectionMutation{seq: vm.collectionMutationSeq, value: updated}
+	vm.escapedCollectionLatestSeq = vm.collectionMutationSeq
 }
 
 // refreshCallerEscapedCollectionAliases gives a caller's local the in-place
@@ -4578,17 +4643,127 @@ func (vm *VM) rememberEscapedCollectionMutation(updated Value) {
 // Parameters and the receiver reach the caller through the argument path; a
 // collection reached only through shared state needs this identity refresh.
 func (vm *VM) refreshCallerEscapedCollectionAliases(caller map[string]Value, since uint64) {
-	if vm == nil || len(vm.escapedCollectionLatest) == 0 || len(caller) == 0 || vm.collectionMutationSeq == since {
+	if vm == nil || len(vm.escapedCollectionLatest) == 0 || len(caller) == 0 || vm.collectionMutationSeq == since || vm.escapedCollectionLatestSeq <= since {
+		// No escaped collection was mutated during the call.
 		return
 	}
+	budget := 4096
 	for name, local := range caller {
-		if local.Ref == 0 || !mutableCollectionKind(local.Kind) {
+		if !mutableCollectionKind(local.Kind) {
 			continue
 		}
-		latest, ok := vm.escapedCollectionLatest[local.Ref]
-		if !ok || latest.seq <= since || latest.value.Kind != local.Kind {
+		if local.Ref != 0 {
+			if latest, ok := vm.escapedCollectionLatest[local.Ref]; ok && latest.seq > since && latest.value.Kind == local.Kind {
+				caller[name] = latest.value
+				continue
+			}
+		}
+		// A local whose declared element type cannot hold a collection has
+		// nothing to refresh; the answer is memoized per type text. Otherwise a
+		// nested slot can only be stale if a collection inside this local was
+		// mutated during the call, which the cached receiver graph answers
+		// without visiting the elements again.
+		if !collectionTypeMayHoldCollectionsCached(local.Type) {
 			continue
 		}
-		caller[name] = latest.value
+		if local.Ref != 0 && vm.nestedCollectionsUnchangedSince(local, since, nil) {
+			continue
+		}
+		vm.refreshEscapedNestedCollections(local, since, &budget)
 	}
+}
+
+// refreshEscapedNestedCollections replaces, inside a caller's local Map or List,
+// the collections that a callee mutated through a static field or a returned
+// reference since the call began (rollup_trigger_timing x_alias: a static List
+// put into a Map is the same list natively). The nested slot is updated in
+// place; the container keeps its own identity.
+func (vm *VM) refreshEscapedNestedCollections(container Value, since uint64, budget *int) {
+	refresh := func(item *Value) {
+		// Every visited item spends budget, scalars and records included, so a
+		// large caller collection costs a bounded amount per call.
+		if *budget <= 0 {
+			return
+		}
+		*budget--
+		if !mutableCollectionKind(item.Kind) {
+			return
+		}
+		if item.Ref != 0 {
+			if latest, ok := vm.escapedCollectionLatest[item.Ref]; ok && latest.seq > since && latest.value.Kind == item.Kind {
+				*item = latest.value
+				return
+			}
+		}
+		vm.refreshEscapedNestedCollections(*item, since, budget)
+	}
+	switch container.Kind {
+	case ValueMap:
+		for key, item := range container.Map {
+			if *budget <= 0 {
+				return
+			}
+			before := item
+			refresh(&item)
+			if item.Ref != before.Ref || item.Kind != before.Kind || len(item.List) != len(before.List) || len(item.Map) != len(before.Map) {
+				container.Map[key] = item
+			}
+		}
+	case ValueList:
+		for i := range container.List {
+			if *budget <= 0 {
+				return
+			}
+			refresh(&container.List[i])
+		}
+	}
+}
+
+// collectionTypeMayHoldCollections reports whether a List, Set or Map of this
+// declared type can hold a collection element. Only collection-typed, Object
+// and untyped elements can; scalar, SObject and class elements are never
+// replaced by the nested refresh.
+func collectionTypeMayHoldCollections(typeName string) bool {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return true
+	}
+	var element string
+	if strings.HasSuffix(typeName, "[]") {
+		element = strings.TrimSpace(strings.TrimSuffix(typeName, "[]"))
+	} else if _, value, ok := mapTypeArgs(typeName); ok {
+		element = value
+	} else if only, ok := collectionElementType(typeName); ok {
+		element = only
+	} else {
+		return true
+	}
+	element = strings.ToLower(strings.TrimSpace(element))
+	if element == "" || element == "object" || strings.HasSuffix(element, "[]") {
+		return true
+	}
+	return strings.Contains(element, "<") || strings.HasPrefix(element, "list") || strings.HasPrefix(element, "set") || strings.HasPrefix(element, "map") || strings.HasPrefix(element, "iterable")
+}
+
+// collectionTypeMayHoldCache memoizes the declared-type answer per type text.
+// It holds at most collectionTypeMayHoldCacheLimit entries and restarts empty
+// beyond that, so a long-lived server or daemon cannot grow it without bound.
+var (
+	collectionTypeMayHoldCache sync.Map // declared type text -> bool
+	collectionTypeMayHoldCount atomic.Int64
+)
+
+const collectionTypeMayHoldCacheLimit = 2048
+
+func collectionTypeMayHoldCollectionsCached(typeName string) bool {
+	if cached, ok := collectionTypeMayHoldCache.Load(typeName); ok {
+		return cached.(bool)
+	}
+	result := collectionTypeMayHoldCollections(typeName)
+	if collectionTypeMayHoldCount.Add(1) > collectionTypeMayHoldCacheLimit {
+		collectionTypeMayHoldCache.Clear()
+		collectionTypeMayHoldCount.Store(1)
+	}
+	collectionTypeMayHoldCache.Store(typeName, result)
+	return result
 }

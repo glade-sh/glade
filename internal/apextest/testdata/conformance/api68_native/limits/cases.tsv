@@ -1,0 +1,13 @@
+id	api	route	phase	variant	source
+LIMITS-DEPLOY-68	68.0	deploy	case	v68	-
+LIMITS-CURSOR-68	68.0	anonymous	case	v68	snippets/cursor68.apex
+LIMITS-DEPLOY-67	67.0	deploy	case	v67	-
+LIMITS-CURSOR-67	67.0	anonymous	case	v67	snippets/cursor67.apex
+LIMITS-DEPLOY-62	62.0	deploy	case	v62	-
+LIMITS-CURSOR-62	62.0	anonymous	case	v62	snippets/cursor62.apex
+LIMITS-DC-68	68.0	anonymous	case	v68	snippets/dc68.apex
+LIMITS-FLEX-68	68.0	anonymous	case	v68	snippets/flex68.apex
+LIMITS-ORGLIMITS-68	68.0	anonymous	case	v68	snippets/org68.apex
+LIMITS-DC-67	67.0	anonymous	case	v67	snippets/dc67.apex
+LIMITS-FLEX-67	67.0	anonymous	case	v67	snippets/flex67.apex
+LIMITS-ORGLIMITS-67	67.0	anonymous	case	v67	snippets/org67.apex

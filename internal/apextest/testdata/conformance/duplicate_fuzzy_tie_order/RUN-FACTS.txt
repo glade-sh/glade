@@ -1,0 +1,16 @@
+capture: fma-tie-20261116
+started: 2026-11-16T16:41:33Z
+finished: 2026-11-16T16:42:02Z
+apis: 62.0 67.0
+routes: anonymous istest 
+cases: 2
+sf: @salesforce/cli/2.157.8
+hub: campaign Dev Hub (scratch org, 1 day, deleted after the run)
+cases.tsv sha256: f00016b1cff97b46
+mode: live
+script: capture-v3 (isTest rows ran against per-version class copies; class_api = ApexClass.ApiVersion reported by the org; copies: 2)
+note: org.tsv joins two captures (anon_*, test_*), each run twice (r1, r2), at 62.0 and 67.0. Each case creates
+  Contact records one DML at a time in the listed order, with a custom FirstName fuzzy rule, rolls back, and lists
+  Datacloud.FindDuplicates match records in returned order with their confidence. The istest rows report the same
+  lines through a deliberate assertion failure so the order is recorded; the failure is the answer, not a defect.
+  Result: records with equal shown confidence come back in creation order in every variant, both routes, both APIs.

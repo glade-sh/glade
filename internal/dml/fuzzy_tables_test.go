@@ -41,7 +41,7 @@ func TestFuzzyNameTablesMatchNativeRows(t *testing.T) {
 				continue
 			}
 			score := jaroWinkler(x, y)
-			if doubleMetaphone(x, firstNameKeyLength) == doubleMetaphone(y, firstNameKeyLength) && score >= firstNameJaroWinkler-1e-9 && math.Floor(averageWith100(100*score)+0.5) == 100 {
+			if doubleMetaphone(x, firstNameKeyLength) == doubleMetaphone(y, firstNameKeyLength) && score >= firstNameJaroWinkler-1e-9 && math.Floor(float64(averageWith100(float64(100*score)))+0.5) == 100 {
 				continue
 			}
 			proven[x+"\x00"+y] = true

@@ -653,6 +653,9 @@ func (vm *VM) ensureClassInitialized(className string) error {
 		return nil
 	}
 	vm.staticInitState[canonical] = staticInitRunning
+	if vm.coverage != nil {
+		vm.coverage.CoverClassInit(canonical, true)
+	}
 	if superClass := vm.resolvedSuperClassName(class); superClass != "" {
 		if err := vm.ensureClassInitialized(superClass); err != nil {
 			delete(vm.staticInitState, canonical)

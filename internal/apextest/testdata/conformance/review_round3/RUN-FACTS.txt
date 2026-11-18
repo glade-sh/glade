@@ -1,0 +1,10 @@
+family=review_round3
+apis=62.0 67.0
+native_complete=true
+source=fresh Developer scratch orgs, one per capture run, deleted after the run
+payloads=OBS lines from the USER_DEBUG log (anonymous) or the test assertion message (isTest); Salesforce ids masked as <id>
+repeats=two clean runs; rows identical across runs
+raw_runs=review3/out/20261117T000929Z and 20261116T235733Z (capture cache, not committed)
+shapes=nested roll-up reads at 2 and 3 levels, a nested delete with no after-delete trigger, nested MIN, MAX and filtered COUNT, and the master-detail update grid (anonymous and test class; default, system and user mode; with and without the permission set)
+order=cases run at 62.0 then 67.0 in one org, so the permission set assigned by x_fls is already held for every 67.0 row; the g_*_a rows at 62.0 are the only ones run before it
+notes=MIN and MAX after a nested statement read the live value (it includes the enclosing statement's own child); COUNT, SUM and filtered COUNT carry the nested statement's change only; update of an inserted record with its master-detail value succeeds in anonymous Apex at 62.0 and 67.0, in a test class at 62.0, and fails in a test class at 67.0 unless run as system

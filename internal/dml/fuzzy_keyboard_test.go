@@ -212,25 +212,41 @@ func keyboardBase(t *testing.T, a, b string) (bool, float64) {
 	return lastNameKeyboard(x, y)
 }
 
-// Differential against origin/main ad1577dbc6: each pair has a shape no
-// native row holds, the new scorer alone would match it, and the result stays
-// the literal origin/main score. The first four are outside the captured
+// wantLastNameFallback is the result the Last Name fallback gives two prepared
+// names that reach it from a shape no native row holds: the base result,
+// unless the base scorer misses and the flat Keyboard Distance reaches keyboardFallbackMargin.
+func wantLastNameFallback(t *testing.T, x, y string) (bool, float64) {
+	t.Helper()
+	if matched, confidence := keyboardBase(t, x, y); matched {
+		return matched, confidence
+	}
+	if score, ok := keyboardFlatDistance(x, y); ok && score >= keyboardFallbackMargin {
+		return true, averageWith100(score)
+	}
+	return keyboardBase(t, x, y)
+}
+
+// The flat score is not gated by shape. Each pair has a shape no native row
+// holds: where the flat score reaches keyboardFallbackMargin the pair matches
+// at (100 + score) / 2, and where it does not the result stays the literal
+// origin/main ad1577dbc6 score. The first four are outside the captured
 // extrema; the rest are holes inside them.
-func TestLastNameKeyboardUncapturedShapesKeepBase(t *testing.T) {
+func TestLastNameKeyboardUncapturedShapesUseFlatScore(t *testing.T) {
 	for _, pair := range []struct {
 		a, b  string
 		shape [3]int
 		score float64
+		match bool
 	}{
-		{"Farnsdelwickaaaa", "Farnsdraeovkaaaa", [3]int{16, 5, 0}, 97.625},
-		{"Farnsdelwick", "Farnsdraeovkzzzzzzzzzz", [3]int{22, 5, 10}, 92.590909090909093},
-		{"erkecpmeitrn", "erkqudnukxik", [3]int{12, 9, 0}, 91.916666666666671},
-		{"ab", "ap", [3]int{2, 1, 0}, 88},
-		{"Farnsdelwickab", "Farnsdraeovkab", [3]int{14, 5, 0}, 97.28571428571428},
-		{"Farnsdelwickabc", "Farnsdraeovkabc", [3]int{15, 5, 0}, 97.46666666666667},
-		{"Farnsdelwickam", "Farnsdraeovka", [3]int{14, 5, 1}, 96.39285714285714},
-		{"Quenderthwaits", "Quenderiltaits", [3]int{14, 3, 0}, 98.28571428571428},
-		{"Quenderthwaite", "Quenderiltait", [3]int{14, 3, 1}, 97.39285714285714},
+		{"Farnsdelwickaaaa", "Farnsdraeovkaaaa", [3]int{16, 5, 0}, 97.625, true},
+		{"Farnsdelwick", "Farnsdraeovkzzzzzzzzzz", [3]int{22, 5, 10}, 92.590909090909093, false},
+		{"erkecpmeitrn", "erkqudnukxik", [3]int{12, 9, 0}, 91.916666666666671, false},
+		{"ab", "ap", [3]int{2, 1, 0}, 88, false},
+		{"Farnsdelwickab", "Farnsdraeovkab", [3]int{14, 5, 0}, 97.28571428571428, true},
+		{"Farnsdelwickabc", "Farnsdraeovkabc", [3]int{15, 5, 0}, 97.46666666666667, true},
+		{"Farnsdelwickam", "Farnsdraeovka", [3]int{14, 5, 1}, 96.39285714285714, false},
+		{"Quenderthwaits", "Quenderiltaits", [3]int{14, 3, 0}, 98.28571428571428, true},
+		{"Quenderthwaite", "Quenderiltait", [3]int{14, 3, 1}, 97.39285714285714, true},
 	} {
 		x, y := lastNameApostrophes.Replace(foldText(pair.a)), lastNameApostrophes.Replace(foldText(pair.b))
 		if got := keyboardShape(x, y); got != pair.shape {
@@ -239,26 +255,27 @@ func TestLastNameKeyboardUncapturedShapesKeepBase(t *testing.T) {
 		if keyboardPanelShape(x, y) {
 			t.Errorf("%q/%q: shape %v is captured", pair.a, pair.b, pair.shape)
 		}
-		want, score := keyboardBase(t, pair.a, pair.b)
-		got, actual := fuzzyLastName(pair.a, pair.b, false)
-		if want || score != pair.score || got != want || actual != score {
-			t.Errorf("%q/%q: got %v %v, base %v %v, origin/main false %v", pair.a, pair.b, got, actual, want, score, pair.score)
+		if base, score := keyboardBase(t, pair.a, pair.b); base || score != pair.score {
+			t.Errorf("%q/%q: base %v %v, origin/main false %v", pair.a, pair.b, base, score, pair.score)
 		}
-		// Without the gate the result would change.
-		if raw, ok := keyboardDistance(x, y); (ok && raw >= 90) == want && averageWith100(raw) == score {
-			t.Errorf("%q/%q: the new scorer agrees with base; the row proves nothing", pair.a, pair.b)
+		want, wantScore := wantLastNameFallback(t, x, y)
+		if want != pair.match {
+			t.Errorf("%q/%q: flat score gives %v, want %v", pair.a, pair.b, want, pair.match)
+		}
+		if got, actual := fuzzyLastName(pair.a, pair.b, false); got != want || actual != wantScore {
+			t.Errorf("%q/%q: got %v %v, want %v %v", pair.a, pair.b, got, actual, want, wantScore)
 		}
 	}
 }
 
-// Every uncaptured shape keeps the base result: generated pairs sweep lengths
+// Every uncaptured shape follows the flat score: generated pairs sweep lengths
 // to 17, substitutions to 9 and trailing counts to 10. Substitutions run
 // back from the end of the shorter name so the match key survives.
-func TestLastNameKeyboardUncapturedSweepKeepsBase(t *testing.T) {
+func TestLastNameKeyboardUncapturedSweepUsesFlatScore(t *testing.T) {
 	const tail = "ertuiopasdf"
 	neighbor := strings.NewReplacer("a", "s", "b", "n", "c", "v", "d", "f", "e", "r", "f", "g", "g", "h", "h", "j", "i", "o", "k", "l",
 		"l", "k", "m", "n", "n", "m", "o", "p", "p", "o", "r", "t", "s", "d", "t", "y", "u", "i", "v", "b", "w", "e", "y", "u", "z", "x", "j", "k", "q", "w", "x", "c")
-	captured, checked, differs := map[[3]int]bool{}, map[[3]int]bool{}, 0
+	captured, checked, flat := map[[3]int]bool{}, map[[3]int]bool{}, 0
 	for _, stem := range []string{"farnsdelwickmorvn", "quenderthwaitsbly", "morvenlfddowhtkgs", "bartholomewsdfghj"} {
 		for length := 2; length <= len(stem); length++ {
 			for trailing := 0; trailing <= 10 && trailing < length; trailing++ {
@@ -278,25 +295,22 @@ func TestLastNameKeyboardUncapturedSweepKeepsBase(t *testing.T) {
 						continue
 					}
 					checked[shape] = true
-					want, score := lastNameKeyboard(x, y)
-					if raw, ok := keyboardDistance(x, y); (ok && raw >= 90) != want || averageWith100(raw) != score {
-						differs++
+					want, score := wantLastNameFallback(t, x, y)
+					if base, _ := lastNameKeyboard(x, y); want && !base {
+						flat++
 					}
 					for _, order := range [][2]string{{x, y}, {y, x}} {
 						if got, actual := fuzzyLastName(order[0], order[1], false); got != want || actual != score {
-							t.Errorf("%q/%q: got %v %v, base %v %v", order[0], order[1], got, actual, want, score)
+							t.Errorf("%q/%q: got %v %v, want %v %v", order[0], order[1], got, actual, want, score)
 						}
 					}
 				}
 			}
 		}
 	}
-	t.Logf("%d captured and %d uncaptured shapes; the new scorer differs on %d uncaptured pairs", len(captured), len(checked), differs)
-	// The gate holds only shapes with a recovered native match, so the sweep
-	// meets fewer captured shapes (58) and more uncaptured ones than the
-	// table of every shape that reaches the fallback did.
-	if len(captured) < 55 || len(checked) < 340 || differs < 900 {
-		t.Fatalf("sweep reached %d captured and %d uncaptured shapes, %d differing", len(captured), len(checked), differs)
+	t.Logf("%d captured and %d uncaptured shapes; the flat score adds %d uncaptured pairs", len(captured), len(checked), flat)
+	if len(captured) < 55 || len(checked) < 340 || flat < 300 {
+		t.Fatalf("sweep reached %d captured and %d uncaptured shapes, %d flat matches", len(captured), len(checked), flat)
 	}
 }
 
@@ -447,8 +461,8 @@ func TestLastNameKeyboardPanelCells(t *testing.T) {
 
 // keyboardMarginPanels are every native LastName panel that reaches the
 // fallback: the fitted panels, the keyboard and hkeyboard groups of
-// duplicate_fuzzy_panels, and the blind twin and second blind panel
-// (tk01-tk22 and bk01 on; the ctl_ controls replay hk2).
+// duplicate_fuzzy_panels, and the blind twin, second and third blind panels
+// (tk01-tk22, bk01 on and ck01 on; the ctl_ and rep_ controls replay earlier panels).
 func keyboardMarginPanels(t *testing.T) []keyboardNativePanel {
 	t.Helper()
 	out := keyboardFitPanels(t)
@@ -456,24 +470,24 @@ func keyboardMarginPanels(t *testing.T) []keyboardNativePanel {
 	for _, name := range slices.Sorted(maps.Keys(values)) {
 		out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
 	}
-	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard")...)
+	return append(out, keyboardTwinPanels(t, "tkeyboard", "bkeyboard", "ckeyboard", "dkeyboard", "rkeyboard", "skeyboard")...)
 }
 
 // keyboardTwinPanels reads the blind panels of
 // internal/dml/testdata/conformance/duplicate_fuzzy_panels (four native
-// observations each for the anonymous-only twin; eight for bk, both routes) without their ctl_ controls.
+// observations each for the anonymous-only twin; eight for bk, both routes) without their ctl_ and rep_ controls.
 func keyboardTwinPanels(t *testing.T, groups ...string) []keyboardNativePanel {
 	t.Helper()
 	var out []keyboardNativePanel
 	for _, group := range groups {
-		// tkeyboard is anonymous only (4 rows a panel); bkeyboard has both routes (8).
+		// tkeyboard and ckeyboard are anonymous only (4 rows a panel); bkeyboard and dkeyboard have both routes (8).
 		per := 4
-		if group == "bkeyboard" {
+		if group == "bkeyboard" || group == "dkeyboard" {
 			per = 8
 		}
 		values, observations := fuzzyPanelsLastNameFrom(t, fuzzyPanelsTwinDir, per, group)
 		for _, name := range slices.Sorted(maps.Keys(values)) {
-			if strings.HasPrefix(name, "ctl_") {
+			if strings.HasPrefix(name, "ctl_") || strings.HasPrefix(name, "rep_") {
 				continue
 			}
 			out = append(out, keyboardNativePanel{name, values[name], fuzzyNameKeysPanel(t, observations[name], len(values[name]))})
@@ -513,6 +527,60 @@ func TestLastNameKeyboardFallbackMargin(t *testing.T) {
 	}
 	if keyboardFallbackMargin < highest+0.5 {
 		t.Errorf("keyboardFallbackMargin %v is not 0.5 above the highest captured non-match %.4f", keyboardFallbackMargin, highest)
+	}
+}
+
+// The flat score keeps the same margin: no captured native non-match that
+// reaches the fallback scores keyboardFallbackMargin or more, in any shape.
+func TestLastNameKeyboardFlatMargin(t *testing.T) {
+	highest, pairs, top := 0.0, 0, ""
+	for _, panel := range keyboardMarginPanels(t) {
+		for i, a := range panel.values {
+			for j, b := range panel.values {
+				if i == j || a == "" || b == "" || panel.native[[2]int{i, j}] > 0 {
+					continue
+				}
+				x, y, ok := keyboardFallbackPair(a, b)
+				if !ok {
+					continue
+				}
+				if score, ok := keyboardFlatDistance(x, y); ok && score >= 90 {
+					pairs++
+					if score > highest {
+						highest, top = score, panel.name+" "+a+"/"+b
+					}
+				}
+			}
+		}
+	}
+	t.Logf("%d captured non-matches at 90 or more; highest %.4f (%s)", pairs, highest, top)
+	if keyboardFallbackMargin <= highest || highest < 92.50 || highest > 92.51 {
+		t.Errorf("keyboardFallbackMargin %v, highest captured flat non-match %.4f (%s), want 92.5015 below the margin until a new capture raises it", keyboardFallbackMargin, highest, top)
+	}
+}
+
+// keyboardFlatDistance scores the spec's constants: one key step costs 0.0759
+// and one trailing letter 0.2437, per unit of the longer length.
+func TestKeyboardFlatDistanceValues(t *testing.T) {
+	for _, c := range []struct {
+		a, b string
+		want float64
+		ok   bool
+	}{
+		{"riim", "riimn", 100 - 100*0.2437/5, true},
+		{"ingleborn", "inglebornxbqm", 100 - 100*(0.2437*4)/13, true},
+		{"abc", "abc", 100, true},
+		{"qa", "za", 100 - 100*0.0759*2/2, true}, // q to z: top to bottom row is two steps
+		{"qa", "qz", 100 - 100*0.05/2, true},     // a to z: one row apart, the same column, costs 0.05
+		{"qa", "qp", 100 - 100*0.0759*9/2, true},
+		{"qa", "qs", 100 - 100*0.0759*1/2, true},
+		{"harlow", "harløw", 0, false},
+		{"harlow 2", "harlow 3", 0, false},
+	} {
+		got, ok := keyboardFlatDistance(c.a, c.b)
+		if ok != c.ok || ok && math.Abs(got-c.want) > 1e-9 {
+			t.Errorf("%q/%q: %v %v, want %v %v", c.a, c.b, got, ok, c.want, c.ok)
+		}
 	}
 }
 

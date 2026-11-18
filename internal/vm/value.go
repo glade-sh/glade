@@ -10,12 +10,20 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type Value struct {
 	// C10: a recovered Number(18,0) Double token read rejects boxed Long casts.
 	// Keep this authority local to that captured read, not arbitrary Doubles.
 	scaleZeroNumberTokenDouble bool
+	// A Datetime keeps the calendar week term of the locale it was built under
+	// (native dth_loc_*: the hash follows the construction-time user, across a
+	// runAs boundary in both directions). The term is (firstDay<<1)^(minDays<<4),
+	// never zero, so zero means unset. It sits in the padding after the bool
+	// above; TestValueSizeGuard keeps Value from growing.
+	datetimeWeekTerm uint8
 
 	// Loaded SOQL reference authority cannot be authored by Apex JSON fields.
 	loadedReferenceSnapshot *sobjectLoadedReferenceSnapshot
@@ -42,6 +50,12 @@ type Value struct {
 	// A report service dimension can expose an empty getter while retaining a
 	// null raw groupings field for JSON serialization.
 	reportEmptyDimension bool
+	// The key set of a field map lists in platform order but renders its text
+	// alphabetically (record_type_shape list_forms, default_order_rest d3).
+	describeKeySetText bool
+	// The field map's own key set is read-only; a Set built from it is not
+	// (review_round8 ks_add_*, ks_set_ops).
+	describeKeySetReadOnly bool
 
 	Kind          ValueKind `json:"kind"`
 	Int           int64     `json:"int,omitempty"`
@@ -319,6 +333,9 @@ func (v Value) writeText(w *textWriter) {
 		if writeHTTPDTOText(w, v) {
 			return
 		}
+		if writeRegexObjectText(w, v) {
+			return
+		}
 		if strings.EqualFold(v.Runtime, "System.Location") {
 			writeLocationText(w, v)
 			return
@@ -346,9 +363,19 @@ func (v Value) writeText(w *textWriter) {
 			return
 		}
 		if strings.EqualFold(v.Type, "PageReference") {
-			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString {
+			// Native PgRef (surf_collections_strings dth_r2_pgref, API 62.0 and
+			// 67.0): every text form of a PageReference, String.valueOf,
+			// toString, concatenation, format, a list and debug, is
+			// System.PageReference[url]. getUrl() keeps the bare url.
+			// A page with no url (the implicit current page of a test) is
+			// System.PageReference[null].
+			w.WriteString("System.PageReference[")
+			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString && rawURL.Text != "" {
 				w.WriteString(rawURL.Text)
+			} else {
+				w.WriteString("null")
 			}
+			w.WriteString("]")
 			return
 		}
 		if strings.EqualFold(v.Type, "Schema.SObjectType") {
@@ -369,6 +396,15 @@ func (v Value) writeText(w *textWriter) {
 			if strings.EqualFold(v.Type, "Id") {
 				w.WriteString(displayIDText(raw.Text))
 				return
+			}
+			// Native dt05 (surf_datetime_locale): a Time renders with its
+			// milliseconds and a trailing Z in concatenation, like toString.
+			if strings.EqualFold(v.Type, "Time") {
+				if clock, err := parseTimeText(raw.Text); err == nil {
+					w.WriteString(clock)
+					w.WriteString("Z")
+					return
+				}
 			}
 			w.WriteString(raw.Text)
 			return
@@ -881,7 +917,269 @@ func stubProxyTypeName(value Value) (string, bool) {
 }
 
 func (v Value) Equal(other Value) bool {
+	// Two scalars never reach the cycle map: equal writes it only when both
+	// carry a ref, and scalars do not recurse.
+	if v.Ref == 0 && other.Ref == 0 && equalScalarKind(v.Kind) && equalScalarKind(other.Kind) {
+		return v.equal(other, nil)
+	}
 	return v.equal(other, make(map[[2]uint64]bool))
+}
+
+func equalScalarKind(kind ValueKind) bool {
+	switch kind {
+	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
+		return true
+	}
+	return false
+}
+
+// setEqualityIndexMin is the Set size from which Set equality buckets the
+// right side instead of scanning it for every left element.
+const setEqualityIndexMin = 16
+
+// setEqualityBucketKey returns a key that two elements share whenever one
+// Equals the other, for the elements where that can be decided cheaply:
+// Null, Boolean, non-Id Strings, and Integer/Long and text-backed Decimals by
+// exact rational value (numericDecimalValuesEqual compares those by rational
+// value, across the two kinds). Every other element (Double-backed Decimals,
+// Ids, objects, collections, anything with a ref) has no key and is compared
+// with every element, as before.
+func setEqualityBucketKey(value Value) (string, bool) {
+	if value.Ref != 0 || value.mapKeySetSource != nil {
+		return "", false
+	}
+	switch value.Kind {
+	case ValueNull:
+		return "n", true
+	case ValueBool:
+		if value.Bool {
+			return "b1", true
+		}
+		return "b0", true
+	case ValueInt:
+		return "r" + strconv.FormatInt(value.Int, 10), true
+	case ValueDecimal:
+		if isFloatBackedDecimal(value) {
+			return "", false
+		}
+		rat, ok := valueDecimalRat(value)
+		if !ok {
+			return "", false
+		}
+		return "r" + rat.RatString(), true
+	case ValueString:
+		if strings.EqualFold(value.Type, "Id") {
+			return "", false
+		}
+		return "s" + value.Text, true
+	}
+	return "", false
+}
+
+// setEqualityKeyer extends setEqualityBucketKey to Doubles and SObjects for
+// one comparison. Doubles get a key only when neither side holds a text-backed
+// Decimal: numericDecimalValuesEqual compares a Double with a text Decimal by
+// the text Decimal's float value, which no rational key can follow.
+type setEqualityKeyer struct {
+	doubles bool
+}
+
+func newSetEqualityKeyer(sides ...[]Value) setEqualityKeyer {
+	for _, side := range sides {
+		for _, value := range side {
+			if value.Kind == ValueDecimal && !isFloatBackedDecimal(value) {
+				return setEqualityKeyer{}
+			}
+		}
+	}
+	return setEqualityKeyer{doubles: true}
+}
+
+// scalarKey is a key that two elements share exactly when one Equals the
+// other: setEqualityBucketKey, plus Doubles when the keyer admits them.
+func (k setEqualityKeyer) scalarKey(value Value) (string, bool) {
+	if value.Kind == ValueDecimal && isFloatBackedDecimal(value) {
+		if !k.doubles || value.Ref != 0 || value.mapKeySetSource != nil {
+			return "", false
+		}
+		return doubleEqualityKey(value.Decimal)
+	}
+	return setEqualityBucketKey(value)
+}
+
+// doubleEqualityKey keys a Double by exact value. Two Doubles are equal when
+// both are NaN or their float64 values are equal, except that +0.0 and -0.0
+// differ (signedDoubleZeroEqual); an Integer equals a Double when
+// float64(Integer) equals it. Zeros (equal to Integer 0 but not to each other)
+// and integral values at or beyond 2^53 (where float64 rounds Integers) stay
+// unkeyed. Integral Doubles below 2^53 share the Integer's rational key.
+func doubleEqualityKey(d float64) (string, bool) {
+	switch {
+	case math.IsNaN(d):
+		return "nan", true
+	case d == 0:
+		return "", false
+	case d == math.Trunc(d):
+		if math.Abs(d) >= 1<<53 {
+			return "", false
+		}
+		return "r" + strconv.FormatInt(int64(d), 10), true
+	}
+	return "d" + strconv.FormatUint(math.Float64bits(d), 16), true
+}
+
+// groupKey is the bucket key for Set equality. Scalars use scalarKey; an
+// SObject uses sObjectEqualityGroupKey, which equal records share but unequal
+// records may share too, so the exact compare still runs inside each group.
+func (k setEqualityKeyer) groupKey(value Value) (string, bool) {
+	if value.Kind == ValueObject {
+		return sObjectEqualityGroupKey(value)
+	}
+	return k.scalarKey(value)
+}
+
+// sObjectEqualityGroupKey keys an SObject by its included equality fields
+// (sObjectEqualityFieldIncluded) and their value keys. It applies only where
+// objectFieldValue reduces to a case-insensitive name match: no namespace
+// tokens, no record type fields and no two field names that differ only in
+// case, so neither the explicit-field alias nor the null-value fallback can
+// pick another field. Every included value must have an sObjectFieldValueKey.
+// Two records Equal under sObjectValuesEqual then have the same included names
+// and pairwise equal values, so the same key.
+func sObjectEqualityGroupKey(value Value) (string, bool) {
+	if value.classInstance || value.projectClass || value.Text != "" || !sObjectValueType(value.Type) {
+		return "", false
+	}
+	names := make(map[string]struct{}, len(value.Fields))
+	parts := make([]string, 0, len(value.Fields))
+	for name, field := range value.Fields {
+		if isInternalSObjectField(name) {
+			// Bookkeeping fields never take part in equality.
+			continue
+		}
+		lower := strings.ToLower(name)
+		if _, duplicate := names[lower]; duplicate || storage.StripAnyNamespaceToken(name) != name || strings.Contains(lower, "recordtype") {
+			return "", false
+		}
+		names[lower] = struct{}{}
+		if !sObjectEqualityFieldIncluded(value, name, field) {
+			continue
+		}
+		key, ok := sObjectFieldValueKey(field)
+		if !ok {
+			return "", false
+		}
+		parts = append(parts, lower+"="+key)
+	}
+	sort.Strings(parts)
+	return "o" + strings.Join(parts, "\x00"), true
+}
+
+// sObjectFieldValueKey keys a field value so that sObjectFieldValuesEqual
+// pairs share it: any value with an Id text (every non-empty String, every Id)
+// compares by apexIDTextEqual, so it keys by canonicalIDMapKey; a plain null
+// and the scalars setEqualityBucketKey covers key as there. Relationship
+// nulls, objects, collections and Doubles have no key.
+func sObjectFieldValueKey(value Value) (string, bool) {
+	// Checked before the ref test: Id objects carry a ref, and
+	// sObjectFieldValuesEqual compares any two Id texts by apexIDTextEqual
+	// whatever their refs.
+	if id, ok := sObjectIDFromValue(value); ok {
+		return "I" + canonicalIDMapKey(string(id)), true
+	}
+	if value.Ref != 0 || value.mapKeySetSource != nil {
+		return "", false
+	}
+	switch value.Kind {
+	case ValueObject, ValueList, ValueSet, ValueMap:
+		return "", false
+	case ValueNull:
+		if isRelationshipNull(value) {
+			return "", false
+		}
+	}
+	key, ok := setEqualityBucketKey(value)
+	if !ok {
+		return "", false
+	}
+	return "K" + key, true
+}
+
+// setMembersContained reports whether every left element Equals some right
+// element (right.Equal(left), as containsValue compares). A keyed left element
+// is compared only with the right elements of its group, the right objects
+// that share its ref (equal treats those as equal at once) and the unkeyed
+// right elements; an unkeyed left element scans as before. equal is pure, so
+// the result is the scan's.
+func setMembersContained(left, right []Value) bool {
+	keyer := newSetEqualityKeyer(left, right)
+	// Key the left side first: when no left element has a key (Sets of Ids,
+	// Datetimes, user objects), the indexes cannot help and are not built.
+	leftKeys := make([]string, len(left))
+	leftKeyed := make([]bool, len(left))
+	anyKeyed, refObjects := false, false
+	for i, value := range left {
+		if key, ok := keyer.groupKey(value); ok {
+			leftKeys[i], leftKeyed[i], anyKeyed = key, true, true
+			if value.Kind == ValueObject && value.Ref != 0 {
+				refObjects = true
+			}
+		}
+	}
+	if !anyKeyed {
+		for _, value := range left {
+			if !containsValue(right, value) {
+				return false
+			}
+		}
+		return true
+	}
+	buckets := make(map[string][]int, len(right))
+	var unkeyed []int
+	var byRef map[uint64][]int
+	for i, value := range right {
+		if key, ok := keyer.groupKey(value); ok {
+			buckets[key] = append(buckets[key], i)
+		} else {
+			unkeyed = append(unkeyed, i)
+		}
+		if refObjects && value.Kind == ValueObject && value.Ref != 0 {
+			if byRef == nil {
+				byRef = make(map[uint64][]int)
+			}
+			byRef[value.Ref] = append(byRef[value.Ref], i)
+		}
+	}
+	for li, value := range left {
+		if !leftKeyed[li] {
+			if !containsValue(right, value) {
+				return false
+			}
+			continue
+		}
+		found := false
+		for _, i := range buckets[leftKeys[li]] {
+			if right[i].Equal(value) {
+				found = true
+				break
+			}
+		}
+		if !found && value.Kind == ValueObject && value.Ref != 0 {
+			for _, i := range byRef[value.Ref] {
+				if right[i].Equal(value) {
+					found = true
+					break
+				}
+			}
+		}
+		for j := 0; !found && j < len(unkeyed); j++ {
+			found = right[unkeyed[j]].Equal(value)
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
@@ -950,6 +1248,9 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 	case ValueSet:
 		if len(v.Set) != len(other.Set) {
 			return false
+		}
+		if len(v.Set) >= setEqualityIndexMin {
+			return setMembersContained(v.Set, other.Set)
 		}
 		for _, value := range v.Set {
 			if !containsValue(other.Set, value) {
@@ -1153,6 +1454,10 @@ func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
 // Equality and hashing use the same field projection. Captured Schema
 // Checkbox presence is separate from assignment; explicit nulls remain present.
 func sObjectEqualityFieldIncluded(owner Value, field string, value Value) bool {
+	// Native cs20: a child relationship list with no rows equals an absent one.
+	if value.Kind == ValueList && len(value.List) == 0 {
+		return false
+	}
 	// Captured standard records distinguish an explicitly cleared identity
 	// from an absent field. Keep other record shapes on their existing path.
 	if strings.EqualFold(field, "Id") && value.Kind == ValueNull &&
@@ -1773,7 +2078,7 @@ func writeApexCollectionText(w *textWriter, value Value, limit int) {
 		opening, closing := "(", ")"
 		var idSet bool
 		if value.Kind == ValueSet {
-			items = value.Set
+			items = describeKeySetTextOrder(value)
 			opening, closing = "{", "}"
 			elementType, typed := collectionElementType(value.Type)
 			idSet = typed && strings.EqualFold(canonicalApexScalarType(elementType), "Id")
@@ -1926,4 +2231,19 @@ func sObjectProjectedMapKey(v Value, seen map[uint64]bool) string {
 		b.WriteString(parts[name])
 	}
 	return b.String()
+}
+
+// describeKeySetTextOrder lists a field map's key set, or a Set built from it,
+// for text. Iteration and List conversion follow the platform field order
+// (default_order_rest d3, review_round8 ks_iter), but the text is alphabetical
+// by the lower-case names: record_type_shape list_forms keySetDebug and
+// keySetConcat, and review_round8 ks_a (a_b__c, ab__c, alpha__c before
+// createdbyid) and ks_b (owner__c before ownerid), both APIs.
+func describeKeySetTextOrder(set Value) []Value {
+	if !set.describeKeySetText {
+		return set.Set
+	}
+	items := append([]Value(nil), set.Set...)
+	sort.SliceStable(items, func(i, j int) bool { return items[i].Text < items[j].Text })
+	return items
 }

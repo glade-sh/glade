@@ -147,6 +147,12 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 				value.nativeListMembership = args[0].nativeListMembership
 			}
 			v, err := vm.coerceAssignable(typeName, value)
+			// A List built from a field map's key set remembers where the names
+			// came from, so a Set built from it renders like the key set
+			// (review_round9 ks_list_set). Iteration keeps the platform order.
+			if err == nil && args[0].describeKeySetText {
+				v.describeKeySetText = true
+			}
 			vm.markCollectionRefsEscaped(v)
 			vm.rememberLocalOnlyCollection(v)
 			return v, true, err
@@ -161,6 +167,12 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		}
 		if !literalArgs && len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			v, err := vm.constructTrackedSet(typeName, collectionMembers(args[0]), false, &Result{})
+			// A Set built from a field map's key set renders like it
+			// (review_round8 ks_copy); only the text order carries over, and
+			// the copy stays writable.
+			if args[0].describeKeySetText && err == nil {
+				v.describeKeySetText = true
+			}
 			vm.markCollectionRefsEscaped(v)
 			vm.rememberLocalOnlyCollection(v)
 			return v, true, err
@@ -379,6 +391,11 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 	if strings.EqualFold(typeName, "Auth.VerificationResult") {
 		return constructAuthVerificationResult(args, namedArgs)
 	}
+	if isJweTokenType(typeName) {
+		if class, registered := vm.lookupClass(typeName); !registered || class.PlatformType {
+			return constructJweToken(args, namedArgs)
+		}
+	}
 	if strings.EqualFold(typeName, "Auth.TokenValidationResult") {
 		if len(namedArgs) != 0 || len(args) != 1 || (args[0].Kind != ValueBool && args[0].Kind != ValueNull) {
 			return Null, fmt.Errorf("Auth.TokenValidationResult constructor expects Boolean")
@@ -525,10 +542,12 @@ func (vm *VM) constructValueWithNamedArgOrder(typeName string, args []Value, nam
 			}
 			// Linked platform stubs can lack the generated-constructor marker.
 			// Native Cache exception captures confirm String message initialization;
-			// preserve source constructors, executable bodies and other signatures.
+			// every platform exception constructor shape ((), (String), (Exception),
+			// (String, Exception)) mirrors the generated-platform path. Source
+			// constructors and executable bodies are preserved.
 			if class.PlatformType && ctor.IsConstructor && len(ctor.Program.Instructions) == 0 &&
-				isExceptionType(typeName) && len(ctorArgs) == 1 && ctorArgs[0].Kind == ValueString &&
-				len(ctor.Params) == 1 && strings.EqualFold(canonicalRuntimePlatformType(ctor.Params[0].Type), "String") {
+				isExceptionType(typeName) && len(ctor.Params) == len(ctorArgs) &&
+				exceptionConstructorArgsCanApply(typeName, ctorArgs) {
 				if _, err := applyExceptionConstructorArgs(&object, ctorArgs); err != nil {
 					return Null, err
 				}
@@ -1696,6 +1715,9 @@ func urlHostValue(parsed *url.URL) string {
 }
 
 func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
+	if vm.coverage != nil {
+		vm.coverage.CoverClassInit(runtimeClassName(class), false)
+	}
 	// Derived fields run
 	// before base fields; inherited fields still have their null defaults.
 	// As with method selection, prefer the caller's source unit among

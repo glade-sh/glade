@@ -126,6 +126,7 @@ func platformSpecsForTest(connectAPI bool) []StandardSymbolSpec {
 	specs = append(specs, cartHierarchyOverlays()...)
 	specs = append(specs, commerceServiceOverlays()...)
 	specs = append(specs, paymentPlatformSymbolOverlays...)
+	specs = append(specs, api68PlatformSymbolOverlays...)
 	return append(specs, captured...)
 }
 

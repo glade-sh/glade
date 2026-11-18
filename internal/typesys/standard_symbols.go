@@ -316,6 +316,7 @@ func standardPlatformSymbolSpecList(connectAPI bool) []StandardSymbolSpec {
 	specs = append(specs, cartHierarchyOverlays()...)
 	specs = append(specs, commerceServiceOverlays()...)
 	specs = append(specs, paymentPlatformSymbolOverlays...)
+	specs = append(specs, api68PlatformSymbolOverlays...)
 	// The org-captured ConnectApi shape is authoritative over the stub corpus.
 	var captured *connectAPIShape
 	if connectAPI {

@@ -232,20 +232,53 @@ NATIVE `P4.LN.*`, `N4.LN.Var.*` and the earlier rows.
    `Ingleborn` and `Inglebornxbqm`), while native matches also sit there
    (`Farnsdelwick` and `Farnsdraeovk` score 92.07). The margin is 0.74 above
    the highest captured native non-match of any shape in any panel (fitted
-   rows, k1 to k3, hk1, hk2, tk01 to tk22). Per-shape floors were tried and
+   rows, k1 to k3, hk1, hk2, tk01 to tk22, bk, ck). Per-shape floors were tried and
    dropped: a floor existed only where an earlier panel held a
    counterexample, and a fresh panel then showed 108 more false matches. The
    margin leaves the earlier result for the native matches that score below
    it, so recall in these panels is below the fitted scorer's and above the
-   earlier scorer's. The shape table was fitted to k1 to k3 with hk1 in view;
-   hk1 and hk2 are not held-out evidence for it. The twin panels and the
-   second blind panel (bk01 to bk09) were captured after the code they score
-   and fitted nothing; `TestLastNameKeyboardFuzzyPanelsNativeRows` requires
-   zero extra matches on them and `TestLastNameKeyboardFallbackMargin`
-   requires the margin above the highest captured non-match. Panels kept out
+   earlier scorer's. The shape table comes from the fit panels
+   (`fuzzy_name_keys`, `duplicate_fuzzy_matching`) with hk1 in view; k1 to k3
+   set the earlier per-shape floors. hk1 and hk2 are not held-out evidence for
+   the table. The twin panels (tk01 to tk22), the second blind panel (bk01 to
+   bk09) and the third (ck01 to ck09) were captured after the code they
+   score. bk and ck fitted nothing; the twin's tk14 sets the highest native
+   non-match that the margin clears. `TestLastNameKeyboardFuzzyPanelsNativeRows`
+   requires zero extra matches on all three, and
+   `TestLastNameKeyboardFallbackMargin` requires the margin above the highest
+   captured non-match. Panels kept out
    of the fit agree on every pair Glade matches:
    `fuzzy_keyboard_neighbors` (`Farnsdelwicka` finds `Farnsdraeovka`, native
    97; its score is below the margin, so Glade keeps the earlier result).
+   A second, flat score follows the fitted one in every shape
+   (`keyboardFlatDistance` in `internal/dml/fuzzy_keyboard_flat.go`). Each key
+   step costs 0.0759 whatever the position or key pair, a substitution of
+   two letters zero steps apart (the same column) costs 0.05, each trailing
+   letter costs 0.2437, the sum is divided by the longer length, and the pair
+   matches at `keyboardFallbackMargin` (93) with confidence
+   `(100 + score) / 2`. It is a clean-room fit to the native rows; it adds the
+   matches the fitted table misses and keeps every earlier match and
+   confidence. Over the earlier captured LastName pairs it adds 545 unordered
+   pairs and no false match; the highest captured native non-match scores
+   92.50 (`Ingleborn` and `Inglebornxbqm`, tk14), 0.50 below the margin. It
+   recovers 74 of the ck native matches the fitted table left. A first
+   version charged nothing for a same-column substitution; the blind panel
+   rkeyboard then showed 14 false matches (7 pairs) at 93.01 to 93.50, and
+   charging 0.05 (the base scorer's neighbour cost) removed them: 0 false
+   matches on rkeyboard (rk01 to rk08) and on skeyboard (sk01 to sk08,
+   predictions frozen first, 743 predicted matches all native). The margin is
+   a margin over captured names, not a native constant.
+   Spaces, punctuation and accents keep the fitted costs.
+   The fourth blind panel set (`dkeyboard`: dk01, dk02) was captured after
+   this score and its predictions were frozen. It shows no false match, and
+   it shows what the score lacks. In dk01 every pair with the same key steps
+   and a flat score of 91.65 to 92.41 matches natively at 96, whether the two
+   Metaphone codes are one character or four apart, so a graded Metaphone
+   component is not the missing part. In dk02 pure extensions match natively
+   at 3 and 4 trailing letters on five stems and at 5 or 6 on some (Bellingmoor
+   at 6 letters, flat 91.40, matches; Hartlebury at 5, flat 91.88, does not),
+   so no function of the flat score alone separates them. The margin stays 93;
+   the rows are pinned and the unreported matches stay misses.
    The fitted costs are:
    - a substitution costs by key distance, the column distance plus two
      between the top and bottom rows: 0.06 for neighbours and 0.079 a step
@@ -396,18 +429,47 @@ set these limits:
   alignment of the two names `Mandolar Outlet` rejects at 95.45 and `Orbelvanto
   Bank` matches at 93.00, and `Plovdi Trade` matches where `Zorvex Audio`
   rejects at the same 94.05. Native reports these matches at 90 to 93. Glade
-  reports none of them.
+  reports none of them. Capture S1 (26 further bases) found no separator in
+  length, word class, first-word length or vowel identity either; the rows are
+  pinned as misses in `company_s1_panels_test.go`.
+- Two parenthesis forms on one base whose one-word suffixes both start with a
+  vowel and differ only in that letter (`(East)`/`(Oast)`/`(Uast)`) match at
+  100 in every direction on every captured base (S1, R2_par, R3_long). Glade
+  scores them 100 for any vowel pair. The captures cover E, O and U; I and A
+  are untested.
+- Word endings on the `Vexlet` stem (S1 `s1_d`) that Glade still misses, such
+  as `Vexletob`/`Vexleta` at 96 and `Vexlettt`/`Vexletab` at 93, and
+  `Qelthorins`/`Qelthoriner` at 100, rest on one base each and are pinned, as
+  is `Vexlet Inc` finding `Vexlets Inc` at 93 (Glade 91).
+- A ladder on one base (`company_name_fit` T1_first and T2_last) holds the
+  native confidence at 91 while the letters change: `Plovdi Trade (East)`
+  finds `Plovdi Trade - West` on all 13 first-word variants and on 11 of 12
+  last-word variants (not `Plovdi Trad`; `Plovdi Tradex` reports 92). The
+  earlier syllable alignment candidate predicted none of the 13 and 7 of
+  the 11. Glade still reports none; `TestCompanyVowelLadderPinnedMisses` pins
+  the rows.
 - A dash candidate with a vowel suffix against a plain name (`- East`/`West`,
   native 91) is the same: it matches on `Orbel Trade`, `Zorvex Freight` and
   `Qa Trade` and not on `Mandolar Oil`, `Orbel Oil Outlet` or `Ab Logistics`.
   Glade reports none.
 - Suffixes of one to three letters do not follow the four-letter rules
   (`Zorvex Freight Art` does not find `Zorvex Freight - Bat`).
+- A spaced slash against a parenthesis form on one two-word base with
+  different one-word suffixes does not match on a base under 12 letters
+  (`Orbel Trade / East` and `Orbel Trade (West)`, `Mandolar Oil`, `Ab
+  Logistics`). On a base of 12 or 13 letters the spaced slash candidate finds
+  the parenthesis form at 90 (`Zorvex Fright / East`, `Zorvex Freight / East`
+  against `(West)`); the parenthesis candidate and longer bases keep the
+  scorer's result. Two suffixes that differ in one vowel (`East`/`Oast`,
+  `West`/`Wast`) keep the scorer's match on every base (native 93 and 94,
+  Glade 91). NATIVE `company_name_fit` R2_par, R4_sp, R7_sp and
+  `fuzzy_residual_panels` t4co1_p1, r2co_p1.
 
 `TestCompanyIsolationPanelCounts` pins the R3 panels (400 of 458 captured
 matches reported, 297 exact confidences, none that native does not report) and
-the R4 to R7 panels (1,224 of 1,398, 864 exact, 33 that native does not
-report; the word scorer and the earlier rules report those 33 too).
+the R4 to R7 panels (1,224 of 1,398, 864 exact, none that native does not
+report; the glued-digit threshold and the qualifier and direction ceilings
+removed the 33 the word scorer and the earlier rules reported).
 
 ### Phone
 
@@ -502,7 +564,17 @@ Unchanged from the third run's model.
   `Dir`/`Director` no match), but a prefix is enough when one title has more
   words (`Dir` finds `Director of IT`). Initials match (`CMO`/`Chief Marketing
   Officer`, `BDM`/`Business Development Manager`, `Bus Dev Manager`/`Business
-  Development Manager` 100). Otherwise the confidence depends on the number of
+  Development Manager` 100). A title of single letters (`A B C`, `B C D`)
+  that no other path matches finds a title with a word of letters only that
+  starts with one of them, the article `A` aside on both sides: `A B C` finds
+  `Chief Officer` and `Alpha, Beta`, not `Alpha,Beta`, `Able` or `Zorp
+  Quill`, and `C A` does not find `Alpha Beta`. The confidence follows the
+  larger of the two word counts without stop words: 93 up to two, 89 at
+  three, 88 at four or more (`A B C D` finds `Chief Officer` at 89, `A B C D
+  E` at 88; NATIVE `fuzzy_title_variant` f1t3, `fuzzy_residual_panels`
+  t3ti1_p1 and r2ti_p1). A one-letter title alone (`B`) and an acronym word
+  against letters (`ABC`/`B C`) match natively and not in Glade.
+  Otherwise the confidence depends on the number of
   shared words k and the larger content-word count n: (1,2) 93, (1,3) 89,
   (1,4) 88, (2,3) 95, (2,4) 93, (2,5) 91, (3,4) 97, (3,5) 94, (4,5) 97, and
   six words in their own table. The same words in a different order with a
@@ -724,7 +796,16 @@ B2 `s_*`, and the `Standard.Field.*`, `Standard.*.NameConfidence` rows):
   `standard_first_names`); the pairs are not transitive. Two blank last names are ignored beside two first names. The
   measured surname panels (`duplicate_save_behavior`, `surname_keyboard`,
   `surname_substitution`) keep their keyboard geometry whatever the first
-  names.
+  names. A surname pair those paths leave unmatched still matches on equal
+  Metaphone 3 codes with equal space and hyphen counts (100) or on a raw
+  keyboard score: 93 or more for two names of one length, and for two names
+  one letter apart 91 or more with the extra letter last and 93 or more with
+  it at its best position (`Smth` finds `Smiht`, `Kowalsky` finds
+  `Kowalczyk`, `Morrice` finds `Morrisun` and not `Morrison` or `Morrisin`;
+  NATIVE `fuzzy_residual_panels`). The names share their first letter and
+  have nine letters or fewer; accented letters are not stripped. The rule
+  confidence is (200 + score) / 3 cut to a whole number (`Smyth`/`Smiht` 98,
+  `Garsia`/`Gracia` 97, `Larchmon`/`Larchbon` 99).
 - The phone path is keyed on `First_Name (1,1) Last_Name Phone`: the surname
   key applies (`McAllen` does not find `Mc Allen`), and an initial or a name
   that differs only in spaces passes when the initials agree.
@@ -963,12 +1044,25 @@ on both sides), so no row covers blank Account names or Contact last names.
   matching paths. Missing records on those panels cannot all be attributed to
   the phone comparison. Identical international and extension strings in the
   Contact save fixture return no match with only the names as corroboration.
-- Standard phone confidence: with no email address on either record, two
-  numbers that differ in the last four digits score 96 on the Contact rule and
-  97 on the Lead rule unless both carry the country digit 1 (97 and 98, as
-  Glade scores every such pair; `phone_city_zip` N5.spt1, N5.slt1, 224 pairs).
-  The fit rows for 97 and 98 have an email address on every record, so the
-  point follows the rule's other fields and is not modeled.
+- Standard phone confidence: the Contact and Lead phone item scores 100 for
+  the same national number, 91 when both numbers carry the country digit 1 and
+  only the line differs, and 88 for any other line difference. The rule
+  confidence is the mean of that item with the exact items: the two names, a
+  present Lead company, and one more when both records carry the same first
+  name and the name dictionary lists it under its own spelling (`Jonathan`,
+  `Robert`, `Margaret`; not `Quill`, and not the alias `Jo`). A line
+  difference so reports 96 on the Contact rule and 97 on the Lead rule, and
+  one point more with a dictionary first name or with the country digit on
+  both numbers (two points with both on the Contact rule). The last name and
+  email addresses on the records do not change it. `phone_city_zip` N5.spt1
+  and N5.slt1 and the `fuzzy_residual_panels` phone panels are exact. A first
+  name the captured dictionary rows do not list scores as an unknown name.
+- Standard surname residuals (`fuzzy_residual_panels` t1ln1_p1, t1em1_p1,
+  r2ln_p1, r3ln_p1): native finds some surnames Glade does not, among them
+  `Morrison`/`Harrison`, `Morrison`/`Kowalsky`, `Tarvele`/`Tarvelin`,
+  `Calloway`/`Callowiys` and `Pemberton`/`Pembertzb`, and reports some
+  confidences one point away; `residuals.tsv` in that fixture pins every such
+  pair. The test reports no surname pair that native does not.
 - Standard Person Account matching rule: not activatable by metadata deploy,
   so not captured; unenforced in Glade.
 - Raw (below threshold) item scores for Company Name and Title count 50 in an

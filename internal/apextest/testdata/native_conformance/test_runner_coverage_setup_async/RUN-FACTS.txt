@@ -1,0 +1,22 @@
+capture: async work queued in @TestSetup beyond Queueable, @future and batch (cov-r3)
+captured: 2026-11-17 (UTC)
+orgs: one fresh 1-day Developer scratch org per API on campaign Dev Hubs; each deleted and verified gone
+sf: @salesforce/cli 2.157.8
+class apis: 62.0 and 67.0 (every .cls-meta.xml and .trigger-meta.xml; ApexClass.ApiVersion and ApexTrigger.ApiVersion read back)
+fixtures: a high-volume platform event CovEvt__e with an after-insert trigger, an AccountChangeEvent trigger with Account
+  selected for change data capture, and one test class per shape whose @TestSetup queues the work; each test method reports
+  what it sees through its failure message (FACTS ...)
+steps (repeats r1 and r2 in the same org):
+  R3*Test     sf apex run test --class-names <class> --synchronous --code-coverage
+  all-async   every R3*Test class in one asynchronous run
+columns: api, repeat, step, kind, test_class, method, component, covered, detail
+  test  one test method: detail = Outcome|Message
+  run   sf run summary (reads stored aggregates)
+  per   Tooling ApexCodeCoverage row of a test class the step ran, queried right after the step
+notes:
+  Per-test and test rows are identical between repeats, between APIs and between the sync and async runs.
+  A platform event published in setup is not delivered before the tests; Test.getEventBus().deliver() in setup delivers it.
+  Scheduled Apex queued in setup runs (its execute inserts R3-SCHED); its CronTrigger stays and its AsyncApexJob row reads Queued.
+  A Queueable that a batch finish() enqueues in setup runs before the tests.
+  Change data capture from setup DML is not delivered (no R3-CDC contact), with or without a Queueable beside it.
+  Ids are scrubbed.

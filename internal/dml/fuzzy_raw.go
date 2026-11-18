@@ -22,7 +22,7 @@ func FuzzyRawConfidence(method, left, right string, matchBlanks bool) float64 {
 		if x == y || nameVariantOf(x, y) {
 			return 100
 		}
-		return averageWith100(100 * jaroWinkler(x, y))
+		return averageWith100(float64(100 * jaroWinkler(x, y)))
 	case "lastname":
 		x, y := strings.ReplaceAll(foldText(left), "'", ""), strings.ReplaceAll(foldText(right), "'", "")
 		// The raw score is the method's own, without the match key: equal

@@ -254,6 +254,12 @@ func LightningBaseComponentModuleJS(name string) string {
     return Promise.resolve(detail);
   }
 `
+	case "slider":
+		moduleExtraJS = `function sliderStepDecimals(step) {
+  const text = String(step ?? "1");
+  const point = text.indexOf(".");
+  return point < 0 ? 0 : text.length - point - 1;
+}`
 	case "toastcontainer":
 		classExtraJS = `  static instance() {
     return { maxToasts: 5, toastPosition: "top-center", containerPosition: "fixed" };
@@ -750,7 +756,7 @@ registerDecorators(%[2]s, {
 });
 function basePublicProps() {
   const props = {};
-	for (const name of ["label","title","value","options","checked","disabled","type","variant","iconName","iconPosition","iconClass","alternativeText","size","columns","data","keyField","objectApiName","recordId","fields","mode","name","fieldName","error","content","href","target","street","city","province","postalCode","country","items","header","placeholder","accept","multiple","flowApiName","flowInputVariables","initials","fallbackIconName","labelWhenOff","labelWhenOn","labelWhenHover","selected","sourceLabel","selectedLabel","min","max","step","mapMarkers","zoomLevel","markersTitle","src","description","dirty","required","message","theme","defaultValue","latitude","longitude","salutation","firstName","middleName","lastName","suffix","informalName","format","formatStyle","displayValue","tabIndex","badgeCount","assistiveText","readOnly","maxToasts","toastPosition","containerPosition","expanded","horizontalAlign","verticalAlign","pullToBoundary","multipleRows","smallDeviceSize","mediumDeviceSize","largeDeviceSize","padding","flexibility","alignmentBump","currencyCode","currencyDisplayAs","minimumIntegerDigits","minimumFractionDigits","maximumFractionDigits","minimumSignificantDigits","maximumSignificantDigits"]) {
+	for (const name of ["label","title","value","options","checked","disabled","type","variant","iconName","iconPosition","iconClass","alternativeText","size","columns","data","keyField","objectApiName","recordId","fields","mode","name","fieldName","error","content","href","target","street","city","province","postalCode","country","items","header","placeholder","accept","multiple","flowApiName","flowInputVariables","initials","fallbackIconName","labelWhenOff","labelWhenOn","labelWhenHover","selected","sourceLabel","selectedLabel","min","max","step","mapMarkers","zoomLevel","markersTitle","src","description","dirty","required","message","theme","defaultValue","latitude","longitude","salutation","firstName","middleName","lastName","suffix","informalName","format","formatStyle","displayValue","tabIndex","badgeCount","assistiveText","readOnly","maxToasts","toastPosition","containerPosition","expanded","horizontalAlign","verticalAlign","pullToBoundary","multipleRows","smallDeviceSize","mediumDeviceSize","largeDeviceSize","padding","flexibility","alignmentBump","currencyCode","currencyDisplayAs","minimumIntegerDigits","minimumFractionDigits","maximumFractionDigits","minimumSignificantDigits","maximumSignificantDigits","addressLabel","streetLabel","cityLabel","provinceLabel","postalCodeLabel","countryLabel","showAddressLookup"]) {
     props[name] = { config: 0 };
   }
   if (%[3]q === "lightning-empty-state") {
@@ -1616,7 +1622,13 @@ func optionGroupTemplateJS(inputType string) string {
 		// an omitted value, rather than silently supplying an empty selection.
 		checked = "$cmp.value.indexOf(optionValue) !== -1"
 	}
-	return fmt.Sprintf(`[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("div", { classMap: { "slds-form-element__control": true }, key: 2 }, ($cmp.options || []).map((option, index) => { const optionValue = String(option.value ?? option.label ?? ""); return api_element("label", { classMap: { "slds-%[1]s": true }, key: 20 + index }, [api_element("input", { attrs: { type: %[1]q, value: optionValue, name: $cmp.name || $cmp.label || %[1]q }, props: { checked: %[2]s }, key: 200 + index, on: { change: api_bind($cmp.handleOptionGroupChange) } }), api_element("span", { key: 400 + index }, [api_text(option.label || option.value || "")])]); }) )])]`, inputType, checked)
+	requiredMarker := ""
+	if inputType == "checkbox" {
+		// Native API 68 capture: a required checkbox group puts a hidden asterisk and
+		// an assistive "required" span before the label, at API 67 and 68.
+		requiredMarker = `...($cmp.required ? [api_element("abbr", { classMap: { "slds-required": true }, attrs: { "aria-hidden": "true", title: "required" }, key: 3 }, [api_text("*")]), api_element("span", { classMap: { "slds-assistive-text": true }, key: 4 }, [api_text("required")])] : []),`
+	}
+	return fmt.Sprintf(`[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [%[3]s api_text($cmp.label || "")]), api_element("div", { classMap: { "slds-form-element__control": true }, key: 2 }, ($cmp.options || []).map((option, index) => { const optionValue = String(option.value ?? option.label ?? ""); return api_element("label", { classMap: { "slds-%[1]s": true }, key: 20 + index }, [api_element("input", { attrs: { type: %[1]q, value: optionValue, name: $cmp.name || $cmp.label || %[1]q }, props: { checked: %[2]s }, key: 200 + index, on: { change: api_bind($cmp.handleOptionGroupChange) } }), api_element("span", { key: 400 + index }, [api_text(option.label || option.value || "")])]); }) )])]`, inputType, checked, requiredMarker)
 }
 
 func selectTemplateJS() string {
@@ -1624,7 +1636,10 @@ func selectTemplateJS() string {
 }
 
 func sliderTemplateJS() string {
-	return `[api_element("label", { classMap: { "slds-form-element": true, "slds-slider": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("input", { classMap: { "slds-slider__range": true }, attrs: { type: "range", min: String($cmp.min ?? "0"), max: String($cmp.max ?? "100"), step: String($cmp.step ?? "1") }, props: { value: String($cmp.value ?? "0"), disabled: Boolean($cmp.disabled) }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } })])]`
+	// Native API 68 capture: a fractional step shows the range and the value with
+	// the step's decimal places ("0.0-100.0", "50.0" at step 0.1). Integer
+	// steps were not captured and keep the base rendering.
+	return `[api_element("label", { classMap: { "slds-form-element": true, "slds-slider": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), ...(sliderStepDecimals($cmp.step) > 0 ? [api_element("span", { classMap: { "slds-slider-label__range": true }, key: 3 }, [api_text(Number($cmp.min ?? 0).toFixed(sliderStepDecimals($cmp.step)) + "-" + Number($cmp.max ?? 100).toFixed(sliderStepDecimals($cmp.step)))])] : []), api_element("input", { classMap: { "slds-slider__range": true }, attrs: { type: "range", min: String($cmp.min ?? "0"), max: String($cmp.max ?? "100"), step: String($cmp.step ?? "1") }, props: { value: String($cmp.value ?? "0"), disabled: Boolean($cmp.disabled) }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } }), ...(sliderStepDecimals($cmp.step) > 0 ? [api_element("span", { classMap: { "slds-slider__value": true }, key: 4 }, [api_text(Number($cmp.value ?? 0).toFixed(sliderStepDecimals($cmp.step)))])] : [])])]`
 }
 
 func dualListboxTemplateJS() string {
@@ -1670,8 +1685,13 @@ func inputRichTextTemplateJS() string {
 	return `[api_element("label", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("textarea", { classMap: { "slds-textarea": true, "slds-rich-text-editor__textarea": true }, props: { value: $cmp.value || "", disabled: Boolean($cmp.disabled) }, key: 2, on: { change: api_bind($cmp.handleRichTextChange), input: api_bind($cmp.handleRichTextChange) } })])]`
 }
 
+// Native API 68 capture: with show-address-lookup the component renders the
+// address label, a "Search Address" combobox, then one labeled input per
+// address part. Without the lookup the base rendering is unchanged.
 func inputAddressTemplateJS() string {
-	return `[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.label || "Address")]), api_element("input", { classMap: { "slds-input": true }, attrs: { placeholder: "Street" }, props: { value: $cmp.street || "" }, key: 2, on: { change: api_bind($cmp.handleChange) } }), api_element("input", { classMap: { "slds-input": true }, attrs: { placeholder: "City" }, props: { value: $cmp.city || "" }, key: 3, on: { change: api_bind($cmp.handleChange) } })])]`
+	base := `[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.label || "Address")]), api_element("input", { classMap: { "slds-input": true }, attrs: { placeholder: "Street" }, props: { value: $cmp.street || "" }, key: 2, on: { change: api_bind($cmp.handleChange) } }), api_element("input", { classMap: { "slds-input": true }, attrs: { placeholder: "City" }, props: { value: $cmp.city || "" }, key: 3, on: { change: api_bind($cmp.handleChange) } })])]`
+	lookup := `[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.addressLabel || $cmp.label || "Address")]), api_element("div", { classMap: { "slds-form-element": true }, key: 2 }, [api_element("label", { classMap: { "slds-form-element__label": true }, key: 3 }, [api_text("Search Address")]), api_element("input", { classMap: { "slds-combobox__input": true, "slds-input": true }, attrs: { type: "text", role: "combobox", "aria-expanded": "false", "aria-haspopup": "listbox", "aria-autocomplete": "list", "aria-label": "Search Address", autocomplete: "off", part: "input" }, key: 4 })]), ...[["street", $cmp.streetLabel, $cmp.street], ["city", $cmp.cityLabel, $cmp.city], ["province", $cmp.provinceLabel, $cmp.province], ["postalCode", $cmp.postalCodeLabel, $cmp.postalCode], ["country", $cmp.countryLabel, $cmp.country]].map(([part, label, value], index) => api_element("label", { classMap: { "slds-form-element": true }, key: 10 + index }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 20 + index }, [api_text(label || "")]), api_element("input", { classMap: { "slds-input": true }, attrs: { name: part }, props: { value: value || "" }, key: 30 + index, on: { change: api_bind($cmp.handleChange) } })]))])]`
+	return "$cmp.showAddressLookup ? " + lookup + " : " + base
 }
 
 func fileUploadTemplateJS() string {

@@ -84,6 +84,23 @@ type Options struct {
 	ProjectSnapshot            *project.Project
 	SourceDigests              *typesys.SourceDigestSet
 	Progress                   func(TestProgress)
+	// debugSink receives each test method's System.debug lines. It is a
+	// package-internal conformance transport: native captures read the test
+	// log, and the report has no debug section.
+	debugSink func(class, method string, lines []string)
+	// CodeCoverage records Apex code coverage for each test, class and
+	// trigger, and for the run (glade test --code-coverage).
+	CodeCoverage bool
+	// CoverageGate applies a deployment coverage rule, RunLocalTests or
+	// RunSpecifiedTests, to the run's coverage. It implies CodeCoverage.
+	CoverageGate string
+	// CoverageSynchronous reports coverage as a synchronous Salesforce run
+	// does (sf apex run test --synchronous): every trigger is listed in the
+	// run and in every test's rows. The default follows an asynchronous run.
+	CoverageSynchronous bool
+
+	// coverage collects one run's coverage events; set by runCasesGated.
+	coverage *coverageSession
 }
 
 // DiskRuntimeCachePolicyReason identifies the reason a test run will or will
@@ -196,6 +213,9 @@ type TestCase struct {
 	// Salesforce-accepted value-returning or differently-modified test method.
 	ReturnType string
 	Modifiers  []string
+	// TearDownMethods are the @TearDown methods of an @IntegrationTest class.
+	// The invocation runs them after the test method, pass or fail.
+	TearDownMethods []string
 }
 
 type TestProgress struct {
@@ -211,6 +231,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 	filters := testFilters(opts.Filter)
 	selectedClasses := selectedClassSet(opts.SelectedClasses)
 	selectedMethod := strings.TrimSpace(opts.SelectedMethod)
+	integrationFeature := integrationTestsEnabled(index)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
@@ -222,14 +243,24 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 			continue
 		}
 		costHint := testCaseCostHintForType(typ)
+		integration := isIntegrationTestClass(integrationFeature, typ)
+		var tearDowns []string
+		if integration {
+			for _, member := range typ.Members {
+				if member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "TearDown") {
+					tearDowns = append(tearDowns, member.Name)
+				}
+			}
+		}
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod {
 				continue
 			}
-			if !member.IsTest {
+			integrationMethod := integration && hasModifier(member.Modifiers, "IntegrationTest")
+			if !member.IsTest && !integrationMethod {
 				continue
 			}
-			if isTestSetup(member.Modifiers) {
+			if isTestSetup(member.Modifiers, integration) {
 				continue
 			}
 			testName := typ.Name + "." + member.Name
@@ -253,10 +284,30 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				CostHint:           costHint,
 				ReturnType:         member.Type,
 				Modifiers:          member.Modifiers,
+				TearDownMethods:    integrationTearDowns(integrationMethod, tearDowns),
 			})
 		}
 	}
 	return out
+}
+
+// integrationTestsEnabled reports the ApexIntegrationTests scratch feature
+// (api68_native_second integration-shield). Without it, @IntegrationTest
+// methods are not tests.
+func integrationTestsEnabled(index typesys.Index) bool {
+	for _, feature := range index.OrgShapeFeatures {
+		if strings.EqualFold(feature, "ApexIntegrationTests") {
+			return true
+		}
+	}
+	return false
+}
+
+func integrationTearDowns(integrationMethod bool, tearDowns []string) []string {
+	if !integrationMethod {
+		return nil
+	}
+	return tearDowns
 }
 
 func selectedClassSet(classes []string) map[string]bool {
@@ -526,6 +577,9 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 	if runState.counters.enabled {
 		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.projectCompileNS, time.Since(freezeStarted))
 	}
+	if opts.CodeCoverage || opts.CoverageGate != "" {
+		opts.coverage = newCoverageSession()
+	}
 	suites := make(map[string][]testreport.Case)
 	order := make([]string, 0)
 	classSeen := make(map[string]bool)
@@ -546,13 +600,19 @@ func runCasesGated(ctx context.Context, index typesys.Index, opts Options, cases
 		}
 		key := testCaseKey(testCase)
 		testMethodErr := testMethodErrors[key]
+		invokeProgram, hasInvoke := testInvokePrograms[key]
+		invokeErr := testInvokeErrors[key]
+		if !hasInvoke && invokeErr == nil {
+			// An empty program runs nothing and would report Pass.
+			invokeErr = fmt.Errorf("internal error: no compiled invocation for %s.%s", testCase.ClassName, testCase.MethodName)
+		}
 		planned[i] = testCasePlan{
 			TestCase:           testCase,
 			TestMethod:         testMethods[key],
 			TestRuntimeMethods: testRuntimeMethods[testMethodSourceKey(testCase.ClassName, testCase.File)],
 			TestMethodErr:      testMethodErr,
-			InvokeProgram:      testInvokePrograms[key],
-			InvokeProgErr:      testInvokeErrors[key],
+			InvokeProgram:      invokeProgram,
+			InvokeProgErr:      invokeErr,
 		}
 	}
 	if emitProgress {
@@ -592,7 +652,7 @@ assemble:
 			// Report the compiled entry registered for execution, not the requested
 			// source: duplicate class/method names can bind to the same body.
 			// Other statuses do not establish that the test entry ran.
-			if results[index].Status == testreport.StatusPass || results[index].Status == testreport.StatusFail {
+			if (results[index].Status == testreport.StatusPass || results[index].Status == testreport.StatusFail) && !results[index].EntryNotRun {
 				results[index].SourceFile = testMethods[testCaseKey(cases[index])].File
 			}
 			suites[className] = append(suites[className], results[index])
@@ -612,6 +672,9 @@ assemble:
 	}
 	for _, name := range order {
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
+	}
+	if opts.coverage != nil {
+		opts.coverage.attach(&run, coverageProject(index, sources), opts.CoverageGate, opts.CoverageSynchronous)
 	}
 	if runState.counters.enabled {
 		runState.counters.recordObservedPhaseDuration(&runState.counters.phases.reportAssemblyNS, time.Since(reportStarted))
@@ -1225,11 +1288,11 @@ type setupCompileCacheEntry struct {
 	ProgramErrs map[string]error
 }
 
+// testCompileCacheEntry holds compiled test methods. Invocation programs are
+// compiled per call for the requested cases and are never cached.
 type testCompileCacheEntry struct {
-	Methods     map[string]vm.Method
-	MethodErrs  map[string]error
-	Programs    map[string]ir.Program
-	ProgramErrs map[string]error
+	Methods    map[string]vm.Method
+	MethodErrs map[string]error
 }
 
 var (
@@ -2308,7 +2371,11 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 			evictSnapshotCaches(baseKey)
 			return nil, nil, nil, nil, err
 		}
-		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs, nil
+		// A one-method run and a whole-class run share compileCases, but
+		// each needs the invocations of its own cases. They are one short
+		// statement per case, so they are compiled per call.
+		programs, programErrs := compileTestInvokePrograms(cases)
+		return cached.Methods, cached.MethodErrs, programs, programErrs, nil
 	}
 	testCacheMu.RUnlock()
 	methods, methodErrs := compileTestMethodsForIndex(&index, compileCases, sources)
@@ -2326,7 +2393,7 @@ func compileTestsCached(index typesys.Index, digests *typesys.SourceDigestSet, b
 		return methods, methodErrs, programs, programErrs, err
 	}
 	testCacheMu.Lock()
-	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs, Programs: programs, ProgramErrs: programErrs}
+	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs}
 	testCacheMu.Unlock()
 	return methods, methodErrs, programs, programErrs, nil
 }
@@ -2719,7 +2786,78 @@ func rollbackJournal(journal *storage.IsolationJournal, mark testJournalMark, co
 	return err
 }
 
+// splitClassGroupsBySourceUnit gives each source unit of a class name its own
+// run group. Same-named test classes from two package directories each read
+// their own unit's custom metadata, so they cannot share one class org. A
+// class name with one source unit keeps its name as the group key, so other
+// runs are unchanged.
+func splitClassGroupsBySourceUnit(classOrder []string, classIndexes map[string][]int, planned []testCasePlan) ([]string, map[string][]int, map[string]string, map[string]bool) {
+	groupClass := make(map[string]string, len(classOrder))
+	splitClasses := map[string]bool{}
+	for _, className := range classOrder {
+		groupClass[className] = className
+		units := map[string]bool{}
+		for _, i := range classIndexes[className] {
+			units[planned[i].TestMethod.SourceUnit] = true
+		}
+		if len(units) > 1 {
+			splitClasses[className] = true
+		}
+	}
+	if len(splitClasses) == 0 {
+		return classOrder, classIndexes, groupClass, splitClasses
+	}
+	order := make([]string, 0, len(classOrder))
+	indexes := make(map[string][]int, len(classIndexes))
+	groupClass = make(map[string]string, len(classOrder))
+	for _, className := range classOrder {
+		var units []string
+		byUnit := map[string][]int{}
+		for _, i := range classIndexes[className] {
+			unit := planned[i].TestMethod.SourceUnit
+			if _, seen := byUnit[unit]; !seen {
+				units = append(units, unit)
+			}
+			byUnit[unit] = append(byUnit[unit], i)
+		}
+		for n, unit := range units {
+			key := className
+			if n > 0 {
+				key = className + "\x00" + unit
+			}
+			order = append(order, key)
+			indexes[key] = byUnit[unit]
+			groupClass[key] = className
+		}
+	}
+	return order, indexes, groupClass, splitClasses
+}
+
+// groupSetups returns the @TestSetup methods, invocations and errors of one
+// run group. A class name split across source units runs only the setup
+// declared in its group's own file.
+func groupSetups(className string, split bool, file string, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error) ([]vm.Method, error, []ir.Program, error) {
+	if !split {
+		return setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className]
+	}
+	var methods []vm.Method
+	var programs []ir.Program
+	all, allPrograms := setups[className], setupInvokePrograms[className]
+	for i, method := range all {
+		if filepath.Clean(method.File) != filepath.Clean(file) {
+			continue
+		}
+		methods = append(methods, method)
+		if i < len(allPrograms) {
+			programs = append(programs, allPrograms[i])
+		}
+	}
+	key := setupSourceKey(className, file)
+	return methods, setupErrors[key], programs, setupInvokeErrors[key]
+}
+
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
+	classOrder, classIndexes, groupClass, splitClasses := splitClassGroupsBySourceUnit(classOrder, classIndexes, planned)
 	opts.Parallelism = testExecutionParallelism(opts.Parallelism)
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
@@ -2787,10 +2925,11 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		go func() {
 			defer wg.Done()
 			for {
-				className, ok := dispatcher.next()
+				groupKey, ok := dispatcher.next()
 				if !ok {
 					return
 				}
+				className := groupClass[groupKey]
 				classStart := time.Now()
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
@@ -2802,21 +2941,24 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				setupCtx, setupCancel := testContext(ctx, opts)
 				var setupLimits vm.Limits
 				classOrg := org
-				if indexes := classIndexes[className]; len(indexes) > 0 {
+				groupFile := ""
+				if indexes := classIndexes[groupKey]; len(indexes) > 0 {
 					classOrg = customMetadataForSourceUnit(org, planned[indexes[0]].TestMethod.SourceUnit)
+					groupFile = planned[indexes[0]].TestCase.File
 				}
-				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, classOrg, opts, counters, &setupLimits)
+				classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr := groupSetups(className, splitClasses[className], groupFile, setups, setupErrors, setupInvokePrograms, setupInvokeErrors)
+				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, classSetups, classSetupErr, classSetupPrograms, classSetupProgramErr, triggerErrors, classOrg, opts, counters, &setupLimits)
 				if setupCancel != nil {
 					setupCancel()
 				}
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
 				}
-				methodIndexes := append([]int(nil), classIndexes[className]...)
+				methodIndexes := append([]int(nil), classIndexes[groupKey]...)
 				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				if opts.ParallelMethods && len(methodIndexes) > 1 {
 					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
-					if extra := adaptiveBudgets[className]; extra > methodParallelism {
+					if extra := adaptiveBudgets[groupKey]; extra > methodParallelism {
 						methodParallelism = extra
 					}
 					methodParallelism = min(methodParallelism, executionWidth)
@@ -2824,13 +2966,13 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					// methods while it runs, instead of leaving a long class serial.
 					grow := func() int {
 						allowed := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
-						if extra := adaptiveBudgets[className]; extra > allowed {
+						if extra := adaptiveBudgets[groupKey]; extra > allowed {
 							allowed = extra
 						}
 						return min(allowed, executionWidth)
 					}
 					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupLimits, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, methodParallelism, &methodWindow, grow, workerOrgs)
-					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
+					dispatcher.recordObserved(groupKey, time.Since(classStart).Milliseconds())
 					continue
 				}
 				var journal *storage.IsolationJournal
@@ -2881,7 +3023,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 						reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 					}
 				}
-				dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
+				dispatcher.recordObserved(groupKey, time.Since(classStart).Milliseconds())
 			}
 		}()
 	}
@@ -3283,6 +3425,10 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	machine.SetContext(ctx)
 	machine.EnableTestContext()
 	machine.SetCurrentPageURLNull()
+	if recorder := opts.coverage.install(machine); recorder != nil {
+		// A failed setup keeps the coverage it reached, like a failed test.
+		defer opts.coverage.recordSetup(className, setups[0].File, recorder)
+	}
 	for i, setup := range setups {
 		machine.EnablePlatformCacheTestSetupSnapshot()
 		if err := ctx.Err(); err != nil {
@@ -3291,13 +3437,16 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 		if i >= len(setupPrograms) {
 			return setupOrg, machine.DeterministicRandomState(), fmt.Errorf("missing compiled @TestSetup invocation for %s", setup.Name), false
 		}
-		result, err := machine.ExecuteTestInClass(setupPrograms[i], setup.ClassName)
+		result, err := machine.ExecuteTestInClassFromSourceUnit(setupPrograms[i], setup.ClassName, setup.SourceUnit)
 		if err != nil {
 			return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 		}
 		if len(limits) > 0 && limits[0] != nil {
 			*limits[0] = result.Limits
 		}
+	}
+	if err := machine.DrainTestSetupAsync(); err != nil {
+		return setupOrg, machine.DeterministicRandomState(), testContextError(ctx, err), false
 	}
 	machine.CaptureChangeDataCaptureTestSetup()
 	return setupOrg, machine.DeterministicRandomState(), nil, false
@@ -3318,6 +3467,9 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 		recordRunDuration(elapsed, counters)
 		out.DurationMS = elapsed.Milliseconds()
 	}()
+	if setupFailed, ok := setupFailureCase(testCase, setupErr); ok {
+		return setupFailed
+	}
 	for _, err := range []error{setupErr, baseRuntimeErr, firstTriggerError(triggerErrors), testMethodErr, invokeErr} {
 		if err != nil {
 			return preInvocationErrorCase(testCase, err)
@@ -3362,7 +3514,14 @@ func runCase(ctx context.Context, testCase TestCase, testMethod vm.Method, testR
 	if opts.WorkSink != nil {
 		machine.SetWorkTracking(true)
 	}
+	if recorder := opts.coverage.install(machine); recorder != nil {
+		// A failed or throwing test keeps its coverage.
+		defer opts.coverage.recordCase(testCase.ClassName, testCase.MethodName, testCase.File, recorder)
+	}
 	result, err := machine.ExecuteTestInClass(invokeProgram, testCase.ClassName)
+	if opts.debugSink != nil {
+		opts.debugSink(testCase.ClassName, testCase.MethodName, result.Debug)
+	}
 	if opts.WorkSink != nil {
 		opts.WorkSink(testCase.ClassName, testCase.MethodName, machine.WorkCounts(), machine.MethodWork())
 	}
@@ -3437,6 +3596,38 @@ func firstTriggerError(errs []error) error {
 		return errs[0]
 	}
 	return nil
+}
+
+// setupFailureCase maps an Apex exception thrown by the class's @TestSetup
+// method. Salesforce fails the class: the setup row and every test method row
+// are Fail rows carrying the setup exception and its stack (org.tsv
+// ic04-sync and sf-*-sync). A setup that cannot run for a local reason (an
+// unsupported feature, a missing dependency, a timeout or cancellation) keeps
+// the preparation diagnostic from preInvocationErrorCase.
+func setupFailureCase(testCase TestCase, err error) (testreport.Case, bool) {
+	if err == nil {
+		return testreport.Case{}, false
+	}
+	var runtimeErr *vm.RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		return testreport.Case{}, false
+	}
+	switch runtimeErr.Type {
+	case "UnsupportedFeature", "dependency_missing":
+		return testreport.Case{}, false
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return testreport.Case{}, false
+	}
+	return testreport.Case{
+		ClassName: testCase.ClassName, MethodName: testCase.MethodName,
+		SelectedSourceFile: testCase.File, Status: testreport.StatusFail,
+		// The rows prove the Fail outcome only; the reason label stays what
+		// setup failures always reported.
+		Reason:      testreport.ReasonRuntimeError,
+		Problem:     problemFromError(err, testCase),
+		EntryNotRun: true,
+	}, true
 }
 
 // A setup or preparation failure has not invoked the selected test entry.
@@ -4923,6 +5114,7 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 	programs := make(map[string][]ir.Program)
 	programErrs := make(map[string]error)
 	sources := sourceCacheFor(caches)
+	integrationFeature := integrationTestsEnabled(index)
 	for _, typ := range index.Types {
 		if !typ.HasSourceSnapshot() {
 			continue
@@ -4936,31 +5128,43 @@ func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[
 		if selectedClasses != nil && !selectedClasses[typ.Name] {
 			continue
 		}
+		integration := isIntegrationTestClass(integrationFeature, typ)
 		for _, member := range typ.Members {
-			if member.Kind != apexast.DeclarationMethod || !isTestSetup(member.Modifiers) {
+			if member.Kind != apexast.DeclarationMethod || !isTestSetup(member.Modifiers, integration) {
 				continue
 			}
 			source, err := sources.read(typ.File)
 			if err != nil {
 				errs[typ.Name] = err
+				errs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, member.BodyRange, source, sources.apexAPIVersion(typ.File), namedPrefixApprovals(index, typ, member, source))
 			if err != nil {
 				errs[typ.Name] = err
+				errs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			method.IsStatic = true
+			method.SourceUnit = sources.runtimeSourceUnit(typ.File)
 			out[typ.Name] = append(out[typ.Name], method)
 			program, err := vm.CompileAnonymous(method.Name + "();")
 			if err != nil {
 				programErrs[typ.Name] = err
+				programErrs[setupSourceKey(typ.Name, typ.File)] = err
 				continue
 			}
 			programs[typ.Name] = append(programs[typ.Name], program)
 		}
 	}
 	return out, errs, programs, programErrs
+}
+
+// setupSourceKey keys a @TestSetup error by class and file, so two same-named
+// test classes from different source units keep their own errors. The maps
+// also keep the class-name key every other caller reads.
+func setupSourceKey(className, file string) string {
+	return className + "\x00" + filepath.Clean(file)
 }
 
 // compileTestMethods compiles test methods by the name path only. Runner paths
@@ -5034,7 +5238,11 @@ func compileTestInvokePrograms(cases []TestCase) (map[string]ir.Program, map[str
 	errs := make(map[string]error)
 	for _, testCase := range cases {
 		key := testCaseKey(testCase)
-		program, err := vm.CompileAnonymous(testCase.MethodName + "();")
+		invocation := testCase.MethodName + "();"
+		if len(testCase.TearDownMethods) > 0 {
+			invocation = "try { " + invocation + " } finally { " + strings.Join(testCase.TearDownMethods, "(); ") + "(); }"
+		}
+		program, err := vm.CompileAnonymous(invocation)
 		if err != nil {
 			errs[key] = err
 			continue
@@ -8307,13 +8515,24 @@ func skipBlockComment(source string, start int) int {
 	return len(source) - 1
 }
 
-func isTestSetup(modifiers []string) bool {
+// isTestSetup reports a @TestSetup method. With integration set (an
+// @IntegrationTest class under the ApexIntegrationTests feature), @BeforeClass
+// also counts: it runs once before the class methods, like @TestSetup, and its
+// data is visible to every method. No row covers @BeforeClass elsewhere.
+func isTestSetup(modifiers []string, integration bool) bool {
 	for _, modifier := range modifiers {
-		if strings.EqualFold(strings.TrimPrefix(modifier, "@"), "TestSetup") {
+		trimmed := strings.TrimPrefix(modifier, "@")
+		if strings.EqualFold(trimmed, "TestSetup") || integration && strings.EqualFold(trimmed, "BeforeClass") {
 			return true
 		}
 	}
 	return false
+}
+
+// isIntegrationTestClass reports an @IntegrationTest class with the
+// ApexIntegrationTests feature on.
+func isIntegrationTestClass(featureOn bool, typ typesys.TypeSymbol) bool {
+	return featureOn && hasModifier(typ.Modifiers, "IntegrationTest")
 }
 
 func isSeeAllDataTest(modifiers []string) bool {

@@ -230,6 +230,20 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"500 Main Street", "500 Main 5 St", true, 74},
 		{"500 Oak Hill 21 Street", "500 Oak Hill 21 St", true, 91},
 		{"100 Vane 7 Street", "100 Vane 7 St", true, 88},
+		// "Hundred" opens a whole-number name only after a single digit ("One
+		// Hundred One"); after a street number it is a name word (base).
+		{"500 Hundred 5 St", "500 Hundred 5 Street", true, 90},
+		{"500 Hundred 5 St", "500 Hundred One St", true, 94},
+		{"500 Hundred 5 St", "500 Hundred St", true, 87},
+		{"One Hundred One St", "One Hundred One Street", false, 0},
+		// An ordinal first word is no street number only with nothing but the
+		// suffix after it (o4, o5). With a name word or a suite no capture
+		// holds, so the base rules apply.
+		{"5th Main St", "5th Main St", true, 100},
+		{"5th Main St", "5th Main Rd", true, 82},
+		{"5th Main St", "5th Main Street", true, 87},
+		{"5th Main St", "5th Main St #5", true, 92},
+		{"Third Oak Dr", "3rd Oak Drive", true, 88},
 		{"Third Ave", "3rd Ave", true, 88},
 		{"101st St", "101st St", true, 88},
 		{"77 Wren St", "77 Wren St Xq", false, 0},
@@ -390,6 +404,9 @@ func TestFuzzyStreetCapturedRules(t *testing.T) {
 		{"500 Main Street", "500 Main 5 St", true, 74},
 		{"500 Oak Hill 21 Street", "500 Oak Hill 21 St", true, 91},
 		{"100 Vane 7 Street", "100 Vane 7 St", true, 88},
+		{"500 Hundred 5 St", "500 Hundred 5 Street", true, 90},
+		{"5th Main St", "5th Main St", true, 100},
+		{"5th Main St", "5th Main Rd", true, 82},
 	} {
 		match, score := FuzzyScore("Street", c.a, c.b, true)
 		got := int(math.Floor(score + 0.5))

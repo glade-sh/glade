@@ -21,6 +21,11 @@ func numericDisplayText(value Value) string {
 	digits := strings.ReplaceAll(unsigned, ".", "")
 	digits = strings.TrimLeft(digits, "0")
 	if digits == "" {
+		// BigDecimal.toString writes a zero of scale 7 or more in scientific
+		// form (numfmt capture: 0E-8, 0E-26).
+		if scale := decimalScale(value); scale > 6 {
+			return "0E-" + strconv.Itoa(scale)
+		}
 		return text
 	}
 	exponent := len(digits) - decimalScale(value) - 1

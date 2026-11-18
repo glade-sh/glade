@@ -23,9 +23,26 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		vm.callPos = expr.Pos
 		value, err := vm.evalExpr(expr, result)
 		vm.callPos = previous
+		if value.Kind == ValueObject && value.datetimeWeekTerm == 0 && value.Type == "Datetime" {
+			value = vm.stampDatetimeWeekTerm(value)
+		}
 		return value, err
 	}
-	return vm.evalExpr(expr, result)
+	value, err := vm.evalExpr(expr, result)
+	if value.Kind == ValueObject && value.datetimeWeekTerm == 0 && value.Type == "Datetime" {
+		value = vm.stampDatetimeWeekTerm(value)
+	}
+	return value, err
+}
+
+// stampDatetimeWeekTerm records the construction-time locale term in a Datetime
+// the first time an expression yields it.
+func (vm *VM) stampDatetimeWeekTerm(value Value) Value {
+	if value.Type != "Datetime" || value.projectClass || value.classInstance {
+		return value
+	}
+	value.datetimeWeekTerm = uint8(calendarWeekTerm(vm.currentUserInfoField("LocaleSidKey", "en_US")))
+	return value
 }
 
 func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
@@ -64,6 +81,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 		}
 		if expr.Operator == "||" && left.Kind == ValueBool && left.Bool {
 			return Bool(true), nil
+		}
+		if vm.coverage != nil && expr.Right.StartPos > 0 {
+			vm.coverOperand(expr.Right.StartPos)
 		}
 		right, err := vm.eval(*expr.Right, result)
 		if err != nil {
@@ -141,6 +161,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 			if conditionValue {
 				selected, other = other, selected
 			}
+			if vm.coverage != nil {
+				vm.coverOperand(selected.StartPos)
+			}
 			value, err := vm.eval(selected, result)
 			if err != nil {
 				return Null, err
@@ -158,6 +181,9 @@ func (vm *VM) evalExpr(expr ir.Expr, result *Result) (Value, error) {
 			emptyInlineQuery := expr.Args[0].Kind == ir.ExprSOQL && left.Kind == ValueList && len(left.List) == 0
 			if left.Kind != ValueNull && !emptyInlineQuery {
 				return left, nil
+			}
+			if vm.coverage != nil {
+				vm.coverOperand(expr.Args[1].StartPos)
 			}
 			return vm.eval(expr.Args[1], result)
 		}
@@ -705,6 +731,9 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 		if len(left.List) != len(right.List) {
 			return false, nil
 		}
+		if valueScaleDiffers(left, right) {
+			return false, nil
+		}
 		for i := range left.List {
 			if listElementValuesEqual(left.List[i], right.List[i], make(map[[2]uint64]bool)) {
 				continue
@@ -901,6 +930,9 @@ func mapNumericValueIdentityDiffers(left, right Value) bool {
 // equality/hash policy as membership. Preserve raw comparison for primitive,
 // mixed-type, changed-hash and other unobserved declaration shapes.
 func (vm *VM) apexSetsEqual(left, right Value, result *Result) (bool, error) {
+	if valueScaleDiffers(left, right) {
+		return false, nil
+	}
 	if left.Equal(right) {
 		return true, nil
 	}

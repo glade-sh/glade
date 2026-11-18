@@ -1,0 +1,6 @@
+id	api	route	phase	variant	source
+SHARE-ON-SETTING	68.0	deploy	case	vseton	-
+SHARE-ON-68	68.0	test	case	vseton	CapShare68Test
+SHARE-ON-67	67.0	test	case	vseton	CapShare67Test
+SHARE-ON-PERSISTED	68.0	post	post	-	retrieve:Settings:Sharing
+SHARE-RESTORE-OFF	68.0	deploy	after	vsetoff	-

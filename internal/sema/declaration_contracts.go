@@ -68,7 +68,7 @@ func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 		hasProtected := hasModifier(mods, "protected")
 		// Apex top-level declarations require public or global visibility. @IsTest
 		// private declarations remain the one documented exception.
-		if !typ.IsTest && (!hasAnyAccessModifier(mods) || hasPrivate || hasProtected) {
+		if !typ.IsTest && !hasIntegrationTestAnnotation(typ) && (!hasAnyAccessModifier(mods) || hasPrivate || hasProtected) {
 			message := fmt.Sprintf("top-level %s %q must be public or global", typ.Kind, typ.Name)
 			if typ.Kind == apexast.DeclarationClass && hasPrivate {
 				// Native authorization and request context access_controller_private at API 59/67.
@@ -439,4 +439,15 @@ func lifecycleGlobalFieldDiagnostics(index typesys.Index, typ typesys.TypeSymbol
 		}
 	}
 	return diagnostics
+}
+
+// An @IntegrationTest class may be private, like an @IsTest class
+// (api68_native_second INTEGRATION-DEPLOY-67/68).
+func hasIntegrationTestAnnotation(typ typesys.TypeSymbol) bool {
+	for _, annotation := range typ.Annotations {
+		if strings.EqualFold(annotation.Name, "IntegrationTest") {
+			return true
+		}
+	}
+	return false
 }

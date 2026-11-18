@@ -10,6 +10,7 @@
     "remaining-go": [
       "github.com/glade-sh/glade/cmd/glade",
       "github.com/glade-sh/glade/internal/apexast",
+      "github.com/glade-sh/glade/internal/apexcov",
       "github.com/glade-sh/glade/internal/apexlang",
       "github.com/glade-sh/glade/internal/apexlog",
       "github.com/glade-sh/glade/internal/apexversion",
@@ -58,6 +59,7 @@
       "github.com/glade-sh/glade/internal/sobject",
       "github.com/glade-sh/glade/internal/soql",
       "github.com/glade-sh/glade/internal/sosl",
+      "github.com/glade-sh/glade/internal/stablemath",
       "github.com/glade-sh/glade/internal/startupcache",
       "github.com/glade-sh/glade/internal/storage",
       "github.com/glade-sh/glade/internal/testdaemon",
@@ -97,7 +99,7 @@
     "./internal/dap": 13,
     "./internal/frontendcache": 1,
     "./internal/filestamp": 1,
-    "./internal/gladecli": 107,
+    "./internal/gladecli": 108,
     "./internal/gladehome": 8,
     "./internal/inputview": 2,
     "./internal/lwcbrowser": 2,
@@ -105,7 +107,7 @@
     "./internal/pluginhost": 5,
     "./internal/project": 1,
     "./internal/repoguard": 2,
-    "./internal/sema": 659,
+    "./internal/sema": 660,
     "./internal/semanticcache": 6,
     "./internal/server": 13,
     "./internal/soql": 5,
@@ -114,8 +116,8 @@
     "./internal/testutil/toolchaininstall": 5,
     "./internal/typesys": 2,
     "./internal/visualforce": 7,
-    "./internal/vm": 69,
+    "./internal/vm": 70,
     "./internal/watch": 1,
-    "./internal/dml": 2
+    "./internal/dml": 3
   }
 }

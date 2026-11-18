@@ -261,6 +261,11 @@ func (vm *VM) jsonFromValueForSerializeWithActive(value Value, suppressObjectNul
 
 func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNulls bool, state *jsonSerializationState) any {
 	value = value.currentMapKeySet()
+	if value.Kind == ValueObject && value.Type == "Matcher" && value.Fields != nil {
+		// A Matcher may hold a deferred requireEnd; settle it so the serialized
+		// fields agree with requireEnd().
+		matcherResolveRequireEnd(value)
+	}
 	root := state.root
 	state.root = false
 	// List mutation can leave an earlier slice header inside the same logical
@@ -388,6 +393,10 @@ func (vm *VM) jsonFromValueForSerializeWithState(value Value, suppressObjectNull
 		}
 		if state.rejectUnsupportedTypes && !value.classInstance && strings.EqualFold(value.Type, "JSONParser") {
 			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Type unsupported in JSON: common.apex.json.ApexJsonParser")})
+		}
+		if state.rejectUnsupportedTypes && !value.classInstance && !value.projectClass && strings.EqualFold(value.Type, "PageReference") {
+			// Native PgRef (surf_collections_strings dth_r2_pgref, API 62.0 and 67.0).
+			panic(jsonConversionFailure{err: newExceptionError("System.JSONException", "Apex Type unsupported in JSON: System.PageReference")})
 		}
 		isException := state.rejectUnsupportedTypes && vm.jsonExceptionValue(value)
 		if isException {
@@ -1275,6 +1284,11 @@ func decodeJSONUntypedValue(text string) (Value, error) {
 	decoder, text := newApexJSONDecoder(text)
 	value, err := decodeJSONUntypedToken(decoder, text)
 	if err != nil {
+		// Native jn03 (surf_json): an out-of-range bare root number reports
+		// the text alone; nested numbers keep their location.
+		if number, ok := err.(*jsonNumberInputError); ok && strings.TrimSpace(text) == number.text {
+			number.root = true
+		}
 		return Null, jsonUnexpectedCharacterError(jsonSyntaxErrorAtInput(err, text, int(decoder.InputOffset())), text)
 	}
 	return value, nil
@@ -1366,6 +1380,15 @@ func decodeJSONUntypedToken(decoder *apexJSONDecoder, source string) (Value, err
 			return Null, &jsonNumberInputError{text: value.String(), line: line, column: column}
 		}
 		decimal, err := decimalFromText(value.String())
+		if errors.Is(err, strconv.ErrRange) {
+			// Native jn03 (surf_json): 1e400 parses to a Decimal rendered 1E+400.
+			canonical, canonicalErr := canonicalDecimalText(value.String())
+			if canonicalErr != nil {
+				return Null, canonicalErr
+			}
+			parsed, _ := strconv.ParseFloat(value.String(), 64)
+			return Value{Kind: ValueDecimal, Decimal: parsed, Text: canonical}, nil
+		}
 		if err != nil {
 			return Null, err
 		}
@@ -1611,9 +1634,13 @@ type jsonNumberInputError struct {
 	text   string
 	line   int
 	column int
+	root   bool
 }
 
 func (err *jsonNumberInputError) Error() string {
+	if err.root {
+		return fmt.Sprintf("For input string: %q", err.text)
+	}
 	return fmt.Sprintf("For input string: %q at [line:%d, column:%d]", err.text, err.line, err.column)
 }
 
@@ -2766,7 +2793,10 @@ func jsonSObjectIntegerScalar(displayType, token string) (Value, bool) {
 			moment = time.UnixMilli(n).UTC()
 		}
 		if strings.EqualFold(strings.TrimSpace(displayType), "DATE") {
-			return platformScalar("Date", moment.Format("2006-01-02")), true
+			// The integer names a proleptic Gregorian date (native rows d_1, d_12,
+			// d_1000 serialize as 0001-01-01, 0012-01-01, 1000-01-01), so the Date
+			// label is the hybrid-calendar label of that instant.
+			return platformScalar("Date", dateLabelFromGregorian(moment)), true
 		}
 		// Years outside 0001-9999 keep the serialized text form.
 		return platformScalar("Datetime", moment.Format("2006-01-02T15:04:05.000Z")), true
@@ -4330,7 +4360,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		if err != nil {
 			return Null, true, jsonDeserializeException("%s", jsonDateDeserializeErrorMessage(text))
 		}
-		return platformScalar("Date", value.Format("2006-01-02")), true, nil
+		return platformScalar("Date", dateLabelFromGregorian(value)), true, nil
 	case "Datetime":
 		text, ok := raw.(string)
 		if !ok {
