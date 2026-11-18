@@ -1,0 +1,7 @@
+{
+  "name": "glade-release-scripts",
+  "private": true,
+  "dependencies": {
+    "wrangler": "4.129.0"
+  }
+}

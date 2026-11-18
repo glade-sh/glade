@@ -7,13 +7,18 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version label for artifact names.
+        description: Version label for artifact names, or the published vX.Y.Z tag to distribute.
         required: false
         default: dev
       glade_tools_sha:
         description: Full lowercase 40-hex glade-tools commit with Salesforce authority.
         required: true
         type: string
+      distribute_only:
+        description: Publish only downloads.glade.sh for the existing published GitHub Release named by version.
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -53,6 +58,7 @@ jobs:
           retention-days: 90
 
   salesforce-authority:
+    if: ${{ !inputs.distribute_only }}
     runs-on: ubuntu-24.04
     permissions:
       checks: read
@@ -493,3 +499,130 @@ jobs:
           else
             echo "Release $GITHUB_REF_NAME already published; immutable release requires no mutation"
           fi
+
+  distribute:
+    needs: publish
+    if: ${{ always() && (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && needs.publish.result == 'success' || github.event_name == 'workflow_dispatch' && inputs.distribute_only) }}
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      attestations: read
+      checks: read
+      contents: read
+    env:
+      VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+    steps:
+      - name: Require static publisher credentials
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "::error::Repository secret CLOUDFLARE_API_TOKEN is not set; add it, then rerun this job or dispatch distribute_only for $VERSION"
+            exit 1
+          fi
+          if [[ -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Repository variable CLOUDFLARE_ACCOUNT_ID is not set"
+            exit 1
+          fi
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve published release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GLADE_TOOLS_SHA: ${{ inputs.glade_tools_sha }}
+        run: |
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::static distribution requires a stable vX.Y.Z version, got '$VERSION'"
+            exit 1
+          fi
+          test "$(git cat-file -t "refs/tags/$VERSION")" = tag
+          glade_sha="$(git rev-parse "refs/tags/$VERSION^{commit}")"
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            test "$glade_sha" = "$GITHUB_SHA"
+          else
+            tag_tools_sha="$(scripts/verify-salesforce-check.sh --tag-tools-sha "$VERSION")"
+            if [[ "$GLADE_TOOLS_SHA" != "$tag_tools_sha" ]]; then
+              echo "::error::glade_tools_sha differs from the Glade-Tools-SHA trailer of tag $VERSION"
+              exit 1
+            fi
+          fi
+          release_tag="$(gh release view "$VERSION" --json tagName --jq .tagName)"
+          test "$release_tag" = "$VERSION"
+          release_draft="$(gh release view "$VERSION" --json isDraft --jq .isDraft)"
+          if [[ "$release_draft" != false ]]; then
+            echo "::error::GitHub Release $VERSION is not published; static distribution follows GitHub publication"
+            exit 1
+          fi
+          echo "GLADE_SHA=$glade_sha" >> "$GITHUB_ENV"
+      - name: Download and verify release bundle
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          bundle="glade-release-artifacts-$VERSION.tar.gz"
+          assets="$RUNNER_TEMP/release-assets"
+          rm -rf dist "$assets"
+          mkdir -p dist "$assets"
+          gh release download "$VERSION" --dir "$assets" \
+            --pattern "$bundle" \
+            --pattern SHA256SUMS.txt \
+            --pattern index.json \
+            --pattern release-manifest.json \
+            --pattern required-ci-attestation.json \
+            --pattern salesforce-release-authority.json
+          tar --no-same-owner --no-same-permissions -C dist -xzf "$assets/$bundle"
+          for name in SHA256SUMS.txt release-manifest.json required-ci-attestation.json salesforce-release-authority.json; do
+            cmp "$assets/$name" "dist/$VERSION/$name"
+          done
+          cmp "$assets/index.json" dist/index.json
+          cmp "$assets/release-manifest.json" dist/latest/release-manifest.json
+          (cd "dist/$VERSION" && sha256sum --check --strict SHA256SUMS.txt)
+          for platform in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
+            archive="glade_${VERSION}_${platform}.tar.gz"
+            (cd "dist/$VERSION" && sha256sum --check --strict "$archive.sha256")
+            gh attestation verify "dist/$VERSION/$archive" \
+              --repo glade-sh/glade \
+              --signer-workflow glade-sh/glade/.github/workflows/release.yml \
+              --source-digest "$GLADE_SHA" \
+              --source-ref "refs/tags/$VERSION"
+          done
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "22"
+      - name: Install pinned static publisher
+        run: npm ci --prefix scripts --ignore-scripts
+      - name: Publish static downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_MODULE: ${{ github.workspace }}/scripts/node_modules/wrangler
+        run: node scripts/release-publish.mjs dist "$VERSION" "$GLADE_SHA"
+      - name: Verify public downloads
+        shell: bash
+        run: |
+          public="$RUNNER_TEMP/public-downloads"
+          rm -rf "$public"
+          mkdir -p "$public"
+          fetch() {
+            curl --proto '=https' --fail --silent --show-error --location \
+              --retry 5 --retry-all-errors --retry-delay 2 "$1" --output "$2"
+          }
+          fetch https://downloads.glade.sh/latest/release-manifest.json "$public/latest-release-manifest.json"
+          test "$(jq -er .version "$public/latest-release-manifest.json")" = "$VERSION"
+          cmp dist/latest/release-manifest.json "$public/latest-release-manifest.json"
+          fetch "https://downloads.glade.sh/$VERSION/release-manifest.json" "$public/release-manifest.json"
+          cmp "dist/$VERSION/release-manifest.json" "$public/release-manifest.json"
+          fetch https://downloads.glade.sh/index.json "$public/index.json"
+          jq -e --arg version "$VERSION" '.latest == $version and any(.versions[]; .version == $version)' "$public/index.json" >/dev/null
+          jq -er '.assets[].url' "dist/$VERSION/release-manifest.json" | while IFS= read -r url; do
+            curl --proto '=https' --fail --silent --show-error --head --location \
+              --retry 5 --retry-all-errors --retry-delay 2 "$url" >/dev/null
+          done

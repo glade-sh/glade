@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict'
-import { readFile, rename, writeFile } from 'node:fs/promises'
+import { rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const sourceURL = 'https://downloads.glade.sh/latest/release-manifest.json'
 const target = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'release-manifest.json')
-const check = process.argv.includes('--check')
 
 export function validateManifest(manifest) {
   assert.equal(manifest.schemaVersion, 2, 'release manifest schema should be 2')
@@ -26,11 +25,7 @@ const response = await fetch(sourceURL)
 assert.equal(response.status, 200, `could not fetch ${sourceURL}`)
 const formatted = `${JSON.stringify(validateManifest(await response.json()), null, 2)}\n`
 
-if (check) {
-  assert.equal(await readFile(target, 'utf8'), formatted, 'checked release manifest differs from the published stable manifest')
-} else {
-  const temporary = `${target}.tmp-${process.pid}`
-  await writeFile(temporary, formatted)
-  await rename(temporary, target)
-  console.log(`Updated ${target} from ${sourceURL}.`)
-}
+const temporary = `${target}.tmp-${process.pid}`
+await writeFile(temporary, formatted)
+await rename(temporary, target)
+console.log(`Updated ${target} from ${sourceURL}.`)
